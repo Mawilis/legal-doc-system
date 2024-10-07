@@ -7,18 +7,22 @@ class ErrorBoundary extends Component {
     }
 
     static getDerivedStateFromError(error) {
+        // Update state so the next render will show the fallback UI
         return { hasError: true };
     }
 
-    componentDidCatch(error, info) {
-        console.error("ErrorBoundary caught an error", error, info);
+    componentDidCatch(error, errorInfo) {
+        // You can log the error to an error reporting service
+        console.error('Error occurred:', error, errorInfo);
     }
 
     render() {
         if (this.state.hasError) {
-            return <h2>Something went wrong. Please try again later.</h2>;
+            // Render fallback UI
+            return <h1>Something went wrong. Please try again later.</h1>;
         }
 
+        // If no error, render children
         return this.props.children;
     }
 }
