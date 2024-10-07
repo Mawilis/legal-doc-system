@@ -1,6 +1,6 @@
-// server.js
 const fs = require('fs');  // Required for SSL certificates
 const https = require('https');  // HTTPS module
+const path = require('path');  // Path module to handle file paths
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -13,139 +13,172 @@ require('dotenv').config();  // To load .env variables
 
 const app = express();
 
-// Load SSL certificates
-const httpsOptions = {
-    key: fs.readFileSync('path/to/localhost-key.pem'),  // Replace with your key path
-    cert: fs.readFileSync('path/to/localhost.pem')      // Replace with your certificate path
-};
+// Use absolute paths instead of path.join
+const sslKeyPath = '/Users/wilsonkhanyezi/legal-doc-system/server/ssl-certificates/localhost-key.pem';
+const sslCertPath = '/Users/wilsonkhanyezi/legal-doc-system/server/ssl-certificates/localhost.pem';
 
-// Create HTTPS server
-const server = https.createServer(httpsOptions, app);
-const io = new Server(server, {
-    cors: {
-        origin: process.env.CLIENT_URL || 'http://localhost:3000',  // Allow requests from the frontend
-        methods: ['GET', 'POST'],
-        credentials: true  // Enable cookies and authorization headers
-    }
-});
+// Debugging logs to verify paths
+console.log('SSL Key Path:', sslKeyPath);
+console.log('SSL Cert Path:', sslCertPath);
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-    .then(() => console.log('Connected to MongoDB'))
-    .catch((err) => {
-        console.error('Error connecting to MongoDB:', err);
-        process.exit(1);  // Exit process if database connection fails
-    });
+// Check if the certificate files exist
+if (!fs.existsSync(sslKeyPath)) {
+    console.error(`Error: SSL key file not found at path: ${sslKeyPath}`);
+    process.exit(1);  // Exit the application if the key file is not found
+}
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(helmet());  // Adds security headers
-app.use(bodyParser.json());  // Parse incoming requests with JSON payloads
+if (!fs.existsSync(sslCertPath)) {
+    console.error(`Error: SSL certificate file not found at path: ${sslCertPath}`);
+    process.exit(1);  // Exit the application if the certificate file is not found
+}
 
-// Rate Limiter Middleware for security (Limit requests from a single IP)
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,  // 15 minutes
-    max: 100,  // Limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again later.',
-});
-app.use(limiter);
+try {
+    // Log to confirm SSL files are being read correctly
+    console.log('Attempting to read SSL key file...');
+    const sslKey = fs.readFileSync(sslKeyPath);
+    console.log('SSL key file successfully read.');
 
-// VAPID keys setup for Push Notifications
-webPush.setVapidDetails(
-    'mailto:your-email@example.com',  // Your email
-    process.env.VAPID_PUBLIC_KEY,    // Loaded from .env
-    process.env.VAPID_PRIVATE_KEY    // Loaded from .env
-);
+    console.log('Attempting to read SSL certificate file...');
+    const sslCert = fs.readFileSync(sslCertPath);
+    console.log('SSL certificate file successfully read.');
 
-// In-memory notification store (replace with a database in production)
-let notifications = [];
-
-// Push notification subscribers array
-const subscribers = [];
-
-// Route for subscribing to push notifications
-app.post('/api/subscribe', (req, res) => {
-    const subscription = req.body;
-    subscribers.push(subscription);
-    res.status(201).json({});
-    console.log('User subscribed:', subscription);
-});
-
-// Route for sending push notifications
-app.post('/api/notify', async (req, res) => {
-    const notificationPayload = {
-        title: 'New Notification',
-        body: 'You have a new message!',
-        icon: '/icon.png',
+    // Load SSL certificates from the correct path
+    const httpsOptions = {
+        key: sslKey,
+        cert: sslCert,
     };
 
-    const promises = subscribers.map(subscription =>
-        webPush.sendNotification(subscription, JSON.stringify(notificationPayload))
+    // Create HTTPS server
+    const server = https.createServer(httpsOptions, app);
+    const io = new Server(server, {
+        cors: {
+            origin: process.env.CLIENT_URL || 'http://localhost:3000',  // Allow requests from the frontend
+            methods: ['GET', 'POST'],
+            credentials: true  // Enable cookies and authorization headers
+        }
+    });
+
+    // MongoDB connection
+    mongoose.connect(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+        .then(() => console.log('Connected to MongoDB'))
+        .catch((err) => {
+            console.error('Error connecting to MongoDB:', err);
+            process.exit(1);  // Exit process if database connection fails
+        });
+
+    // Middleware setup
+    app.use(cors());
+    app.use(express.json());
+    app.use(helmet());  // Adds security headers
+    app.use(bodyParser.json());  // Parse incoming requests with JSON payloads
+
+    // Rate Limiter Middleware for security (Limit requests from a single IP)
+    const limiter = rateLimit({
+        windowMs: 15 * 60 * 1000,  // 15 minutes
+        max: 100,  // Limit each IP to 100 requests per windowMs
+        message: 'Too many requests from this IP, please try again later.',
+    });
+    app.use(limiter);
+
+    // VAPID keys setup for Push Notifications
+    webPush.setVapidDetails(
+        'mailto:your-email@example.com',  // Your email
+        process.env.VAPID_PUBLIC_KEY,    // Loaded from .env
+        process.env.VAPID_PRIVATE_KEY    // Loaded from .env
     );
 
-    try {
-        await Promise.all(promises);
-        res.status(200).json({ message: 'Notification sent successfully' });
-    } catch (error) {
-        console.error('Error sending notification:', error);
-        res.status(500).json({ message: 'Error sending notification' });
-    }
-});
+    // In-memory notification store (replace with a database in production)
+    let notifications = [];
 
-// Routes for handling admin, auth, documents, and chat functionalities
-const adminRoutes = require('./routes/adminRoutes');
-const authRoutes = require('./routes/authRoutes');
-const documentRoutes = require('./routes/documentRoutes');
-const chatRoutes = require('./routes/chatRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');  // Add the dashboard route
+    // Push notification subscribers array
+    const subscribers = [];
 
-// Apply routes
-app.use('/api/admin', adminRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/dashboard', dashboardRoutes);  // Apply dashboard route
-
-// Handle WebSocket connections for real-time chat and notifications
-io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
-
-    // Listen for fetching notification history
-    socket.on('fetchNotifications', () => {
-        // Emit the existing notification history
-        socket.emit('notificationHistory', notifications);
+    // Route for subscribing to push notifications
+    app.post('/api/subscribe', (req, res) => {
+        const subscription = req.body;
+        subscribers.push(subscription);
+        res.status(201).json({});
+        console.log('User subscribed:', subscription);
     });
 
-    // Listen for new notifications
-    socket.on('new-notification', (notification) => {
-        // Save the notification (in-memory for now, consider using a database)
-        notifications.push(notification);
+    // Route for sending push notifications
+    app.post('/api/notify', async (req, res) => {
+        const notificationPayload = {
+            title: 'New Notification',
+            body: 'You have a new message!',
+            icon: '/icon.png',
+        };
 
-        // Broadcast the new notification to all connected clients
-        io.emit('new-notification', notification);
+        const promises = subscribers.map(subscription =>
+            webPush.sendNotification(subscription, JSON.stringify(notificationPayload))
+        );
+
+        try {
+            await Promise.all(promises);
+            res.status(200).json({ message: 'Notification sent successfully' });
+        } catch (error) {
+            console.error('Error sending notification:', error);
+            res.status(500).json({ message: 'Error sending notification' });
+        }
     });
 
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
-    });
-});
+    // Routes for handling admin, auth, documents, and chat functionalities
+    const adminRoutes = require('./routes/adminRoutes');
+    const authRoutes = require('./routes/authRoutes');
+    const documentRoutes = require('./routes/documentRoutes');
+    const chatRoutes = require('./routes/chatRoutes');
+    const dashboardRoutes = require('./routes/dashboardRoutes');  // Add the dashboard route
 
-// Graceful shutdown of server and MongoDB connection
-process.on('SIGTERM', () => {
-    server.close(() => {
-        console.log('Process terminated');
-        mongoose.connection.close(() => {
-            console.log('MongoDB connection closed');
+    // Apply routes
+    app.use('/api/admin', adminRoutes);
+    app.use('/api/auth', authRoutes);
+    app.use('/api/documents', documentRoutes);
+    app.use('/api/chat', chatRoutes);
+    app.use('/api/dashboard', dashboardRoutes);  // Apply dashboard route
+
+    // Handle WebSocket connections for real-time chat and notifications
+    io.on('connection', (socket) => {
+        console.log('User connected:', socket.id);
+
+        // Listen for fetching notification history
+        socket.on('fetchNotifications', () => {
+            // Emit the existing notification history
+            socket.emit('notificationHistory', notifications);
+        });
+
+        // Listen for new notifications
+        socket.on('new-notification', (notification) => {
+            // Save the notification (in-memory for now, consider using a database)
+            notifications.push(notification);
+
+            // Broadcast the new notification to all connected clients
+            io.emit('new-notification', notification);
+        });
+
+        socket.on('disconnect', () => {
+            console.log('User disconnected:', socket.id);
         });
     });
-});
 
-// Start the server with HTTPS support
-const port = process.env.PORT || 3001;
-server.listen(port, () => {
-    console.log(`Secure Server running on https://localhost:${port}`);
-});
+    // Graceful shutdown of server and MongoDB connection
+    process.on('SIGTERM', () => {
+        server.close(() => {
+            console.log('Process terminated');
+            mongoose.connection.close(() => {
+                console.log('MongoDB connection closed');
+            });
+        });
+    });
+
+    // Start the server with HTTPS support
+    const port = process.env.PORT || 3001;
+    server.listen(port, () => {
+        console.log(`Secure Server running on https://localhost:${port}`);
+    });
+} catch (error) {
+    console.error('Failed to load SSL certificates:', error);
+    process.exit(1);  // Exit the application if SSL files are not correctly read
+}

@@ -15,6 +15,16 @@ export const useWebSocket = () => {
 
         console.log('WebSocket connected:', socketRef.current);
 
+        // Handle WebSocket disconnections
+        socketRef.current.on('disconnect', () => {
+            console.log('WebSocket disconnected');
+        });
+
+        // Handle WebSocket errors
+        socketRef.current.on('connect_error', (err) => {
+            console.error('WebSocket connection error:', err);
+        });
+
         // Cleanup on component unmount
         return () => {
             if (socketRef.current) {

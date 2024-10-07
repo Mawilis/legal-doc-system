@@ -1,21 +1,24 @@
+// routes/authRoutes.js
 const express = require('express');
 const authController = require('../controllers/authController');
 const adminController = require('../controllers/adminController');
+const { protect, restrictToAdmin } = require('../middleware/authMiddleware');  // Import middlewares for role-based access control
 const router = express.Router();
 
-// Public routes
+// Public routes for authentication
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.post('/refresh-token', authController.refreshToken);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 
-// Protected admin routes
-router.use(authController.protect); // All routes below will be protected
+// All routes below this line are protected
+router.use(protect);
 
-router.get('/users', authController.restrictToAdmin, adminController.getAllUsers);
-router.post('/users', authController.restrictToAdmin, adminController.createUser);
-router.put('/users/:userId', authController.restrictToAdmin, adminController.updateUser);
-router.delete('/users/:userId', authController.restrictToAdmin, adminController.deleteUser);
+// Protected admin routes
+router.get('/users', restrictToAdmin, adminController.getAllUsers);
+router.post('/users', restrictToAdmin, adminController.createUser);
+router.put('/users/:userId', restrictToAdmin, adminController.updateUser);
+router.delete('/users/:userId', restrictToAdmin, adminController.deleteUser);
 
 module.exports = router;

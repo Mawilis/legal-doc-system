@@ -1,6 +1,8 @@
-// Profile.jsx
+// src/pages/Profile.jsx
+
 import React, { useState, useEffect } from 'react';
-import { getProfile, updateProfile } from '../services/userService';
+import { getUserDetails, updateUserProfile } from '../services/userService'; // Correct path to userService
+import './Profile.css'; // Ensure Profile.css is in the same directory
 
 const Profile = () => {
     const [profile, setProfile] = useState({ name: '', email: '' });
@@ -10,7 +12,7 @@ const Profile = () => {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const data = await getProfile();
+                const data = await getUserDetails();
                 setProfile(data);
             } catch (err) {
                 setError('Error fetching profile');
@@ -22,7 +24,7 @@ const Profile = () => {
 
     const handleUpdate = async () => {
         try {
-            await updateProfile(profile);
+            await updateUserProfile(profile);
             setIsEditing(false);
         } catch (err) {
             setError('Error updating profile');
@@ -30,10 +32,10 @@ const Profile = () => {
     };
 
     return (
-        <div>
+        <div className="profile-container">
             <h1>Profile</h1>
             {error && <p style={{ color: 'red' }}>{error}</p>}
-            <div>
+            <div className="profile-field">
                 <label>Name:</label>
                 {isEditing ? (
                     <input
@@ -45,7 +47,7 @@ const Profile = () => {
                     <p>{profile.name}</p>
                 )}
             </div>
-            <div>
+            <div className="profile-field">
                 <label>Email:</label>
                 {isEditing ? (
                     <input
