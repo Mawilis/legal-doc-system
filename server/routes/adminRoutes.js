@@ -1,10 +1,12 @@
-// routes/adminRoutes.js
 const express = require('express');
 const { check, validationResult } = require('express-validator');
-const adminController = require('../controllers/adminController');
-const { protect, admin } = require('../middleware/authMiddleware');
-const rateLimit = require('express-rate-limit');
+const adminController = require('../controllers/adminController');  // Import adminController
+const { protect, restrictToAdmin } = require('../middleware/authMiddleware');  // Import middleware for authentication and role-based access control
+const rateLimit = require('express-rate-limit');  // Rate limiting for routes
 const router = express.Router();
+
+// Debug log to confirm all functions are imported
+console.log('Admin Controller Functions:', Object.keys(adminController));  // Log imported functions
 
 // Rate limiter for admin actions (e.g., user management)
 const adminLimiter = rateLimit({
@@ -32,26 +34,24 @@ const handleValidationErrors = (req, res, next) => {
 // Admin routes (protected with role-based access)
 router.post(
     '/users',
-    protect,
-    admin,
-    adminLimiter,
+    protect,  // Apply `protect` middleware to secure the route
+    restrictToAdmin,  // Apply admin-only restriction
+    adminLimiter,  // Apply rate limiting
     [
         check('name').not().isEmpty().withMessage('Name is required'),
         check('email').isEmail().withMessage('Email is invalid'),
         passwordComplexityCheck,
     ],
-    handleValidationErrors,
-    adminController.createUser
+    handleValidationErrors,  // Validate request data
+    adminController.createUser  // Create a new user
 );
 
-router.get('/users', protect, admin, adminLimiter, adminController.getAllUsers);
-
-router.get('/users/:userId', protect, admin, adminLimiter, adminController.getUserById);
-
+router.get('/users', protect, restrictToAdmin, adminLimiter, adminController.getAllUsers);  // Get all users
+router.get('/users/:userId', protect, restrictToAdmin, adminLimiter, adminController.getUserById);  // Get a user by ID
 router.put(
     '/users/:userId',
     protect,
-    admin,
+    restrictToAdmin,
     adminLimiter,
     [
         check('name').optional().not().isEmpty().withMessage('Name must not be empty'),
@@ -59,9 +59,10 @@ router.put(
         passwordComplexityCheck.optional(),
     ],
     handleValidationErrors,
-    adminController.updateUser
+    adminController.updateUser  // Update a user
 );
 
-router.delete('/users/:userId', protect, admin, adminLimiter, adminController.deleteUser);
+router.delete('/users/:userId', protect, restrictToAdmin, adminLimiter, adminController.deleteUser);  // Delete a user
 
+// Export the router
 module.exports = router;

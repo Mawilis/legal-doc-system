@@ -1,46 +1,78 @@
-const Document = require('../models/documentModel');
+// controllers/documentController.js
 
-exports.createDocument = async (req, res) => {
+const Document = require('../models/documentModel');
+const CustomError = require('../utils/customError');
+
+// Create a new document
+const createDocument = async (req, res, next) => {
+    console.log('Inside createDocument function');
     try {
         const { title, content } = req.body;
-        const document = new Document({ title, content, owner: req.user._id });
+        const document = new Document({ title, content, user: req.user.id });
         await document.save();
-
         res.status(201).json(document);
     } catch (err) {
-        res.status(400).json({ message: 'Error creating document' });
+        console.error('Error in createDocument function:', err);
+        next(new CustomError('Failed to create document', 500));
     }
 };
 
-exports.getDocument = async (req, res) => {
+// Get a document by ID
+const getDocumentById = async (req, res, next) => {
+    console.log('Inside getDocumentById function');
     try {
-        const document = await Document.findById(req.params.id);
-        if (!document) return res.status(404).json({ message: 'Document not found' });
-
+        const document = await Document.findById(req.params.documentId);
+        if (!document) return next(new CustomError('Document not found', 404));
         res.status(200).json(document);
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error in getDocumentById function:', err);
+        next(err);
     }
 };
 
-exports.updateDocument = async (req, res) => {
+// Get all documents for the authenticated user
+const getAllDocuments = async (req, res, next) => {
+    console.log('Inside getAllDocuments function');
     try {
-        const document = await Document.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!document) return res.status(404).json({ message: 'Document not found' });
+        const documents = await Document.find({ user: req.user.id });
+        res.status(200).json(documents);
+    } catch (err) {
+        console.error('Error in getAllDocuments function:', err);
+        next(new CustomError('Failed to fetch documents', 500));
+    }
+};
 
+// Update a document by ID
+const updateDocument = async (req, res, next) => {
+    console.log('Inside updateDocument function');
+    try {
+        const document = await Document.findByIdAndUpdate(req.params.documentId, req.body, { new: true });
+        if (!document) return next(new CustomError('Document not found', 404));
         res.status(200).json(document);
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error in updateDocument function:', err);
+        next(err);
     }
 };
 
-exports.deleteDocument = async (req, res) => {
+// Delete a document by ID
+const deleteDocument = async (req, res, next) => {
+    console.log('Inside deleteDocument function');
     try {
-        const document = await Document.findByIdAndDelete(req.params.id);
-        if (!document) return res.status(404).json({ message: 'Document not found' });
-
+        const document = await Document.findByIdAndDelete(req.params.documentId);
+        if (!document) return next(new CustomError('Document not found', 404));
         res.status(200).json({ message: 'Document deleted' });
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error in deleteDocument function:', err);
+        next(err);
     }
+};
+
+// Export all functions as an object
+module.exports = {
+    createDocument,
+    getDocumentById,
+    getAllDocuments,
+    updateDocument,
+    deleteDocument,
 };

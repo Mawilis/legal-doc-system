@@ -1,4 +1,3 @@
-// client/src/services/notificationService.js
 import axios from 'axios';
 
 // Fetch all notifications for a user

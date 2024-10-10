@@ -1,6 +1,8 @@
+// src/pages/Dashboard.js
 import React, { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
 import styled from 'styled-components';
+import useWebSocket from '../hooks/useWebSocket';  // Correctly import WebSocket hook
+import { getNotifications } from '../services/notificationService';
 
 const DashboardContainer = styled.div`
   padding: 20px;
@@ -35,19 +37,15 @@ const Title = styled.h2`
 const Dashboard = () => {
     const [notifications, setNotifications] = useState([]);
     const [error, setError] = useState(null);
-
-    const socket = io('https://your-backend-url.com', { secure: true });
+    const socket = useWebSocket();  // Using WebSocket hook correctly inside the functional component
 
     useEffect(() => {
         console.log('Dashboard component mounted');
 
+        // Fetch notifications on mount
         const fetchNotifications = async () => {
             try {
-                const response = await fetch('/api/dashboard');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch dashboard data');
-                }
-                const data = await response.json();
+                const data = await getNotifications();  // Fetch notifications
                 console.log('Fetched dashboard data:', data);
                 setNotifications(data);
             } catch (err) {
@@ -58,27 +56,33 @@ const Dashboard = () => {
 
         fetchNotifications();
 
-        socket.emit('fetchNotifications');
-        console.log('Requested notification history from server');
+        // Setting up WebSocket listeners for real-time updates
+        if (socket) {
+            socket.emit('fetchNotifications');
 
-        socket.on('notificationHistory', (data) => {
-            console.log('Received notification history:', data);
-            setNotifications(data);
-        });
+            socket.on('notificationHistory', (data) => {
+                console.log('Received notification history:', data);
+                setNotifications(data);
+            });
 
-        socket.on('new-notification', (notification) => {
-            console.log('Received new notification:', notification);
-            setNotifications((prev) => [notification, ...prev]);
-        });
+            socket.on('new-notification', (notification) => {
+                console.log('Received new notification:', notification);
+                setNotifications((prev) => [notification, ...prev]);
+            });
 
-        socket.on('connect_error', (err) => {
-            console.error('WebSocket connection error:', err);
-            setError('Real-time connection error');
-        });
+            socket.on('connect_error', (err) => {
+                console.error('WebSocket connection error:', err);
+                setError('Real-time connection error');
+            });
+        }
 
+        // Cleanup listeners on unmount
         return () => {
-            console.log('Cleaning up socket connection in Dashboard');
-            socket.disconnect();
+            if (socket) {
+                socket.off('notificationHistory');
+                socket.off('new-notification');
+                socket.off('connect_error');
+            }
         };
     }, [socket]);
 
@@ -94,9 +98,7 @@ const Dashboard = () => {
                     <p>No notifications yet...</p>
                 ) : (
                     notifications.map((notification, index) => (
-                        <Notification key={index}>
-                            {notification.message}
-                        </Notification>
+                        <Notification key={index}>{notification.message}</Notification>
                     ))
                 )}
             </NotificationContainer>
