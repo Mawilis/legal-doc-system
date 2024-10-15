@@ -1,5 +1,4 @@
-// ~/legal-doc-system/client/src/App.js
-
+// App.js
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
@@ -14,25 +13,20 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const socket = useWebSocket();
 
-  // Define handleLogout to reset authentication status
   const handleLogout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem('token'); // Clear user token or session data
+    localStorage.removeItem('token');
   };
 
   useEffect(() => {
     if (socket) {
       console.log('Socket initialized in App component.');
-
-      // Example: handle some global events with the socket if needed
       socket.on('connect', () => {
         console.log('Socket connected');
       });
-
       socket.on('disconnect', () => {
         console.log('Socket disconnected');
       });
-
       return () => {
         socket.off('connect');
         socket.off('disconnect');

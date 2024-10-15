@@ -1,12 +1,14 @@
+// src/services/authService.js
+
 // Import necessary libraries and modules
-import { jwtDecode } from 'jwt-decode'; // Correctly import jwtDecode
+import jwt_decode from 'jwt-decode'; // Correct import for jwt-decode package
 import { toast } from 'react-toastify';
 
 // Helper function to get the current user's role
 export const getCurrentUserRole = () => {
     const token = localStorage.getItem('token');
     if (token) {
-        const decoded = jwtDecode(token);
+        const decoded = jwt_decode(token);
         return decoded.role;
     }
     return null;
@@ -16,7 +18,7 @@ export const getCurrentUserRole = () => {
 export const isAuthenticated = () => {
     const token = localStorage.getItem('token');
     if (token) {
-        const decoded = jwtDecode(token);
+        const decoded = jwt_decode(token);
         const currentTime = Date.now() / 1000;
         return decoded.exp > currentTime;
     }
@@ -57,7 +59,7 @@ export const logout = () => {
 export const getCurrentUser = () => {
     try {
         const token = localStorage.getItem('token');
-        return token ? jwtDecode(token) : null;
+        return token ? jwt_decode(token) : null;
     } catch (error) {
         return null;
     }

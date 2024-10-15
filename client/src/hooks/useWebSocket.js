@@ -1,35 +1,35 @@
-// src/hooks/useWebSocket.js
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-// Correctly implemented useWebSocket hook
 const useWebSocket = () => {
     const socketRef = useRef(null);
 
     useEffect(() => {
-        // Establish WebSocket connection
-        socketRef.current = io(process.env.REACT_APP_WS_URL || 'http://localhost:3001', {
-            transports: ['websocket'],
-            secure: window.location.protocol === 'https:',
-        });
+        if (!socketRef.current) {
+            socketRef.current = io(process.env.REACT_APP_WS_URL || 'ws://localhost:3001', {
+                transports: ['websocket'],
+                secure: window.location.protocol === 'https:',
+            });
 
-        console.log('WebSocket connected:', socketRef.current);
+            socketRef.current.on('connect', () => {
+                console.log('WebSocket connected');
+            });
 
-        // Handle disconnect events
-        socketRef.current.on('disconnect', () => {
-            console.log('WebSocket disconnected');
-        });
+            socketRef.current.on('disconnect', () => {
+                console.log('WebSocket disconnected');
+            });
 
-        // Handle error events
-        socketRef.current.on('connect_error', (err) => {
-            console.error('WebSocket connection error:', err);
-        });
+            socketRef.current.on('connect_error', (err) => {
+                console.error('WebSocket connection error:', err);
+            });
+        }
 
-        // Cleanup connection when unmounting
+        // Cleanup on unmount
         return () => {
             if (socketRef.current) {
                 socketRef.current.disconnect();
-                console.log('WebSocket disconnected');
+                console.log('WebSocket disconnected on unmount');
+                socketRef.current = null; // Set to null to ensure it's not reused
             }
         };
     }, []);

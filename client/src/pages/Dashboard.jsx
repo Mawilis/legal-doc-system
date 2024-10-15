@@ -1,8 +1,8 @@
-// src/pages/Dashboard.js
+// ~/legal-doc-system/client/src/pages/Dashboard.js
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import useWebSocket from '../hooks/useWebSocket';  // Correctly import WebSocket hook
-import { getNotifications } from '../services/notificationService';
+import useWebSocket from '../hooks/useWebSocket';  // Correctly import the WebSocket hook
+import { getNotifications } from '../services/notificationService'; // Ensure this service is properly exported
 
 const DashboardContainer = styled.div`
   padding: 20px;
@@ -37,15 +37,14 @@ const Title = styled.h2`
 const Dashboard = () => {
     const [notifications, setNotifications] = useState([]);
     const [error, setError] = useState(null);
-    const socket = useWebSocket();  // Using WebSocket hook correctly inside the functional component
+    const socket = useWebSocket();  // Use the WebSocket hook correctly inside the functional component
 
     useEffect(() => {
         console.log('Dashboard component mounted');
 
-        // Fetch notifications on mount
         const fetchNotifications = async () => {
             try {
-                const data = await getNotifications();  // Fetch notifications
+                const data = await getNotifications();  // Fetch notifications from the service
                 console.log('Fetched dashboard data:', data);
                 setNotifications(data);
             } catch (err) {

@@ -1,5 +1,4 @@
-// src/components/ErrorBoundary.jsx (or src/ErrorBoundary.js, depending on where you place it)
-
+// src/components/ErrorBoundary.jsx
 import React, { Component } from 'react';
 
 class ErrorBoundary extends Component {
