@@ -1,3 +1,4 @@
+// ~/legal-doc-system/client/src/pages/Login.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/authService';
@@ -41,50 +42,50 @@ const ErrorText = styled.p`
 `;
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState(null);  // Error state
-    const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null); // Error state
+  const navigate = useNavigate();
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        if (!email || !password) {
-            setError('Email and password are required');
-            return;
-        }
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Email and password are required');
+      return;
+    }
 
-        try {
-            await login({ email, password });
-            navigate('/');
-        } catch (err) {
-            console.error('Login failed', err);
-            setError('Invalid email or password');
-        }
-    };
+    try {
+      await login({ email, password });
+      navigate('/dashboard'); // Navigate to the dashboard after successful login
+    } catch (err) {
+      console.error('Login failed', err);
+      setError('Invalid email or password');
+    }
+  };
 
-    return (
-        <LoginContainer>
-            <h2>Login</h2>
-            {error && <ErrorText>{error}</ErrorText>}
-            <form onSubmit={handleLogin}>
-                <InputField
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-                <InputField
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-                <Button type="submit">Login</Button>
-            </form>
-        </LoginContainer>
-    );
+  return (
+    <LoginContainer>
+      <h2>Login</h2>
+      {error && <ErrorText>{error}</ErrorText>}
+      <form onSubmit={handleLogin}>
+        <InputField
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <InputField
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <Button type="submit">Login</Button>
+      </form>
+    </LoginContainer>
+  );
 };
 
 export default Login;

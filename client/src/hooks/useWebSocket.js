@@ -1,3 +1,4 @@
+// ~/legal-doc-system/client/src/hooks/useWebSocket.js
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
@@ -24,15 +25,15 @@ const useWebSocket = () => {
             });
         }
 
-        // Cleanup on unmount
+        // Cleanup the socket connection on component unmount
         return () => {
             if (socketRef.current) {
                 socketRef.current.disconnect();
                 console.log('WebSocket disconnected on unmount');
-                socketRef.current = null; // Set to null to ensure it's not reused
+                socketRef.current = null; // Set to null to prevent reuse
             }
         };
-    }, []);
+    }, []); // [] ensures that the socket is only initialized once
 
     return socketRef.current;
 };

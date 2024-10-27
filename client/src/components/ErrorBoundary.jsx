@@ -1,29 +1,43 @@
-// src/components/ErrorBoundary.jsx
+// ~/legal-doc-system/client/src/components/ErrorBoundary.jsx
 import React, { Component } from 'react';
 
 class ErrorBoundary extends Component {
     constructor(props) {
         super(props);
-        this.state = { hasError: false };
+        this.state = { hasError: false, error: null, errorInfo: null };
     }
 
     static getDerivedStateFromError(error) {
-        // Update state so the next render will show the fallback UI
-        return { hasError: true };
+        return { hasError: true, error };
     }
 
     componentDidCatch(error, errorInfo) {
-        // Log the error to an error reporting service if needed
-        console.error('Error occurred:', error, errorInfo);
+        console.error('ErrorBoundary caught an error:', error, errorInfo);
+        this.setState({ error, errorInfo });
     }
+
+    handleReload = () => {
+        window.location.reload();
+    };
 
     render() {
         if (this.state.hasError) {
-            // Render fallback UI
-            return <h1>Something went wrong. Please try again later.</h1>;
+            return (
+                <div style={{ padding: '20px', textAlign: 'center' }}>
+                    <h1>Something went wrong.</h1>
+                    <p>Please try reloading the page or contact support if the problem persists.</p>
+                    <button onClick={this.handleReload} style={{ marginTop: '20px', padding: '10px 20px' }}>
+                        Reload Page
+                    </button>
+                    <details style={{ whiteSpace: 'pre-wrap', marginTop: '20px' }}>
+                        {this.state.error && this.state.error.toString()}
+                        <br />
+                        {this.state.errorInfo && this.state.errorInfo.componentStack}
+                    </details>
+                </div>
+            );
         }
 
-        // If no error, render children
         return this.props.children;
     }
 }

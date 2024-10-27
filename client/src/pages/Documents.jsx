@@ -1,8 +1,8 @@
+// ~/legal-doc-system/client/src/pages/Documents.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
 
-// Styled components for modern UI
 const DocumentsContainer = styled.div`
   padding: 20px;
   max-width: 800px;
@@ -36,13 +36,11 @@ const Documents = () => {
     const [newTitle, setNewTitle] = useState('');
     const [error, setError] = useState('');
 
-    // Fetch documents on mount
     useEffect(() => {
         const fetchDocuments = async () => {
             try {
                 const response = await axios.get('/api/documents');
                 setDocuments(response.data);
-                console.log('Documents fetched successfully', response.data);
             } catch (error) {
                 console.error('Error fetching documents:', error);
                 setError('Failed to fetch documents');
@@ -58,7 +56,6 @@ const Documents = () => {
             const response = await axios.post('/api/documents', { title: newTitle });
             setDocuments([...documents, response.data]);
             setNewTitle(''); // Clear input
-            console.log('Document created:', response.data);
         } catch (error) {
             console.error('Error creating document:', error);
             setError('Failed to create document');
@@ -66,13 +63,14 @@ const Documents = () => {
     };
 
     const handleDeleteDocument = async (documentId) => {
-        try {
-            await axios.delete(`/api/documents/${documentId}`);
-            setDocuments(documents.filter(doc => doc._id !== documentId));
-            console.log(`Document with id ${documentId} deleted`);
-        } catch (error) {
-            console.error('Error deleting document:', error);
-            setError('Failed to delete document');
+        if (window.confirm('Are you sure you want to delete this document?')) {
+            try {
+                await axios.delete(`/api/documents/${documentId}`);
+                setDocuments(documents.filter((doc) => doc._id !== documentId));
+            } catch (error) {
+                console.error('Error deleting document:', error);
+                setError('Failed to delete document');
+            }
         }
     };
 
@@ -80,7 +78,6 @@ const Documents = () => {
         <DocumentsContainer>
             <h1>Documents</h1>
             {error && <p style={{ color: 'red' }}>{error}</p>}
-
             <NewDocumentForm onSubmit={handleCreateDocument}>
                 <Input
                     type="text"
@@ -90,7 +87,6 @@ const Documents = () => {
                 />
                 <button type="submit">Create Document</button>
             </NewDocumentForm>
-
             {documents.map((document) => (
                 <DocumentItem key={document._id}>
                     <h3>{document.title}</h3>

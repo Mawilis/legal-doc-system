@@ -1,8 +1,8 @@
 // ~/legal-doc-system/client/src/pages/Dashboard.js
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import useWebSocket from '../hooks/useWebSocket';  // Correctly import the WebSocket hook
-import { getNotifications } from '../services/notificationService'; // Ensure this service is properly exported
+import useWebSocket from '../hooks/useWebSocket';
+import { getNotifications } from '../services/notificationService';
 
 const DashboardContainer = styled.div`
   padding: 20px;
@@ -37,15 +37,12 @@ const Title = styled.h2`
 const Dashboard = () => {
     const [notifications, setNotifications] = useState([]);
     const [error, setError] = useState(null);
-    const socket = useWebSocket();  // Use the WebSocket hook correctly inside the functional component
+    const socket = useWebSocket();
 
     useEffect(() => {
-        console.log('Dashboard component mounted');
-
         const fetchNotifications = async () => {
             try {
-                const data = await getNotifications();  // Fetch notifications from the service
-                console.log('Fetched dashboard data:', data);
+                const data = await getNotifications();
                 setNotifications(data);
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);
@@ -55,17 +52,14 @@ const Dashboard = () => {
 
         fetchNotifications();
 
-        // Setting up WebSocket listeners for real-time updates
         if (socket) {
             socket.emit('fetchNotifications');
 
             socket.on('notificationHistory', (data) => {
-                console.log('Received notification history:', data);
                 setNotifications(data);
             });
 
             socket.on('new-notification', (notification) => {
-                console.log('Received new notification:', notification);
                 setNotifications((prev) => [notification, ...prev]);
             });
 
@@ -75,7 +69,6 @@ const Dashboard = () => {
             });
         }
 
-        // Cleanup listeners on unmount
         return () => {
             if (socket) {
                 socket.off('notificationHistory');
@@ -88,9 +81,7 @@ const Dashboard = () => {
     return (
         <DashboardContainer>
             <Title>Dashboard - Real-Time Notifications</Title>
-
             {error && <p style={{ color: 'red' }}>{error}</p>}
-
             <NotificationContainer>
                 <h3>Notifications</h3>
                 {notifications.length === 0 ? (
