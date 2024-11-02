@@ -1,5 +1,3 @@
-// File: /server.js
-
 // Import required modules
 const fs = require('fs');
 const https = require('https');
@@ -12,17 +10,46 @@ const rateLimit = require('express-rate-limit');
 const bodyParser = require('body-parser');
 const webPush = require('web-push');
 const socket = require('./utils/socket');
+const logger = require('./utils/logger');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
 
 // Initialize Express application
 const app = express();
+
+// Swagger configuration
+const swaggerOptions = {
+    swaggerDefinition: {
+        openapi: "3.0.0",
+        info: {
+            title: "Legal Document System API",
+            version: "1.0.0",
+            description: "API Documentation for Legal Document System",
+            contact: {
+                name: "Your Name",
+                email: "your-email@example.com"
+            }
+        },
+        servers: [
+            {
+                url: "https://localhost:3001",
+                description: "Development server"
+            }
+        ],
+    },
+    apis: ["./server/routes/*.js"], // Path where your API documentation comments are.
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Set SSL certificate paths and check if they exist
 const sslKeyPath = process.env.SSL_KEY_PATH || '/path/to/your/key.pem';
 const sslCertPath = process.env.SSL_CERT_PATH || '/path/to/your/cert.pem';
 
 if (!fs.existsSync(sslKeyPath) || !fs.existsSync(sslCertPath)) {
-    console.error('Error: SSL key or certificate file not found.');
+    logger.error('Error: SSL key or certificate file not found.');
     process.exit(1);
 }
 
@@ -44,17 +71,17 @@ mongoose
         useNewUrlParser: true,
         useUnifiedTopology: true,
     })
-    .then(() => console.log('Connected to MongoDB'))
+    .then(() => logger.info('Connected to MongoDB'))
     .catch((err) => {
-        console.error('Error connecting to MongoDB:', err);
+        logger.error('Error connecting to MongoDB:', err);
         process.exit(1);
     });
 
 // Middleware setup
-app.use(helmet()); // Add security-related HTTP headers
-app.use(cors()); // Enable CORS
-app.use(bodyParser.json()); // Parse incoming JSON requests
-app.use(express.json()); // Additional JSON parser
+app.use(helmet());
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.json());
 
 // Rate Limiter - Protect against DDoS
 const limiter = rateLimit({
@@ -69,7 +96,7 @@ const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 
 if (!vapidPublicKey || !vapidPrivateKey) {
-    console.error('Error: VAPID keys are missing.');
+    logger.error('Error: VAPID keys are missing.');
     process.exit(1);
 }
 
@@ -85,7 +112,7 @@ app.post('/api/subscribe', (req, res) => {
     const subscription = req.body;
     subscribers.push(subscription);
     res.status(201).json({});
-    console.log('User subscribed:', subscription);
+    logger.info('User subscribed:', subscription);
 });
 
 app.post('/api/notify', async (req, res) => {
@@ -103,7 +130,7 @@ app.post('/api/notify', async (req, res) => {
         await Promise.all(sendNotificationPromises);
         res.status(200).json({ message: 'Notification sent successfully' });
     } catch (error) {
-        console.error('Error sending notification:', error);
+        logger.error('Error sending notification:', error);
         res.status(500).json({ message: 'Error sending notification' });
     }
 });
@@ -122,37 +149,32 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 // Serve static client build files
-const clientBuildPath = path.join(__dirname, 'client', 'build');
+const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
 app.use(express.static(clientBuildPath));
 
 // Root route to serve the client index.html
-app.get('/', (req, res) => {
+app.get('*', (req, res) => {
     res.sendFile(path.join(clientBuildPath, 'index.html'), (err) => {
         if (err) {
-            console.error('Failed to load index.html:', err);
+            logger.error('Failed to load index.html:', err);
             res.status(404).send('Page not found.');
         }
     });
 });
 
-// Catch-all for undefined routes - 404 handling
-app.use((req, res) => {
-    res.status(404).json({ message: 'Resource not found' });
-});
+// Import the global error handler
+const globalErrorHandler = require('./globalErrorHandler');
 
-// Error Handling Middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'An error occurred on the server' });
-});
+// Use the global error handler
+app.use(globalErrorHandler);
 
 // Socket.io connection setup
 io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
+    logger.info('User connected:', socket.id);
 
     socket.on('joinRoom', (room) => {
         socket.join(room);
-        console.log(`User joined room: ${room}`);
+        logger.info(`User joined room: ${room}`);
     });
 
     socket.on('sendMessage', (message) => {
@@ -164,16 +186,16 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+        logger.info('User disconnected:', socket.id);
     });
 });
 
 // Handle graceful server shutdown
 process.on('SIGTERM', () => {
     server.close(() => {
-        console.log('Process terminated');
+        logger.info('Process terminated');
         mongoose.connection.close(() => {
-            console.log('MongoDB connection closed');
+            logger.info('MongoDB connection closed');
         });
     });
 });
@@ -181,5 +203,5 @@ process.on('SIGTERM', () => {
 // Start server
 const port = process.env.PORT || 3001;
 server.listen(port, () => {
-    console.log(`Secure Server running on https://localhost:${port}`);
+    logger.info(`Secure Server running on https://localhost:${port}`);
 });

@@ -1,24 +1,28 @@
 // ~/legal-doc-system/client/src/App.js
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Header from './components/Header';
+import React, { useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import Header from './components/organisms/Header';
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
-import Login from './pages/Login';
+import Login from './features/auth/pages/Login';
 import Profile from './pages/Profile';
 import ErrorPage from './pages/ErrorPage';
 import useWebSocket from './hooks/useWebSocket';
+import styled from 'styled-components';
+import { logout as logoutAction } from './reducers/authSlice';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const dispatch = useDispatch();
   const socket = useWebSocket();
 
-  // Define handleLogout to reset authentication status
+  // Handle logout using Redux action
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('token'); // Clear user token or session data
+    dispatch(logoutAction());
   };
 
+  // WebSocket lifecycle management
   useEffect(() => {
     if (socket) {
       console.log('Socket initialized in App component.');
@@ -39,20 +43,71 @@ function App() {
   }, [socket]);
 
   return (
-    <div>
+    <>
       <Header onLogout={handleLogout} />
-      <button onClick={handleLogout}>Logout</button>
-      <main>
+      <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
+      <MainContainer>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />} />
-          <Route path="/documents" element={isAuthenticated ? <Documents /> : <Navigate to="/login" replace />} />
-          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <Documents />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<ErrorPage />} />
         </Routes>
-      </main>
-    </div>
+      </MainContainer>
+    </>
   );
 }
+
+// ProtectedRoute Component to secure specific routes
+const ProtectedRoute = ({ isAuthenticated, children }) => {
+  const location = useLocation();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return children;
+};
+
+// Logout Button Styled Component
+const LogoutButton = styled.button`
+  display: block;
+  margin: 20px auto;
+  padding: 10px 20px;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.secondary};
+  }
+`;
+
+// Main Container Styled Component
+const MainContainer = styled.main`
+  padding: ${({ theme }) => theme.spacing.lg};
+`;
 
 export default App;

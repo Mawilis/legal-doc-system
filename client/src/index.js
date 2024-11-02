@@ -1,24 +1,25 @@
 // ~/legal-doc-system/client/src/index.js
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import ReactDOM from 'react-dom/client';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import store, { persistor } from './store';
 import App from './App';
-import ErrorBoundary from './components/ErrorBoundary';
+import { ThemeProvider } from 'styled-components';
+import GlobalStyles from './theme/globalStyles';
+import theme from './theme/theme';
 
-// Check if the root container exists
-const container = document.getElementById('root');
-if (container) {
-    const root = createRoot(container);
+const root = ReactDOM.createRoot(document.getElementById('root'));
 
-    root.render(
-        <React.StrictMode>
-            <ErrorBoundary>
-                <BrowserRouter>
+root.render(
+    <React.StrictMode>
+        <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+                <ThemeProvider theme={theme}>
+                    <GlobalStyles />
                     <App />
-                </BrowserRouter>
-            </ErrorBoundary>
-        </React.StrictMode>
-    );
-} else {
-    console.error('Root container not found!');
-}
+                </ThemeProvider>
+            </PersistGate>
+        </Provider>
+    </React.StrictMode>
+);

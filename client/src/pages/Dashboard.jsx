@@ -1,37 +1,21 @@
-// ~/legal-doc-system/client/src/pages/Dashboard.js
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import useWebSocket from '../hooks/useWebSocket';
-import { getNotifications } from '../services/notificationService';
+import useWebSocket from '../hooks/useWebSocket'; // Updated path to be relative to src/pages
+import { getNotifications } from '../services/notificationService'; // Updated path to be relative to src/pages
+import Notifications from '../components/Notifications'; // Assuming Notifications is in src/components
 
 const DashboardContainer = styled.div`
-  padding: 20px;
+  padding: ${({ theme }) => theme.spacing.md};
   max-width: 800px;
   margin: 0 auto;
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.background};
+  border-radius: ${({ theme }) => theme.spacing.sm};
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 `;
 
-const NotificationContainer = styled.div`
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-`;
-
-const Notification = styled.div`
-  padding: 10px;
-  border-bottom: 1px solid #e0e0e0;
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
 const Title = styled.h2`
-  margin-bottom: 20px;
-  color: #333;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const Dashboard = () => {
@@ -82,16 +66,7 @@ const Dashboard = () => {
         <DashboardContainer>
             <Title>Dashboard - Real-Time Notifications</Title>
             {error && <p style={{ color: 'red' }}>{error}</p>}
-            <NotificationContainer>
-                <h3>Notifications</h3>
-                {notifications.length === 0 ? (
-                    <p>No notifications yet...</p>
-                ) : (
-                    notifications.map((notification, index) => (
-                        <Notification key={index}>{notification.message}</Notification>
-                    ))
-                )}
-            </NotificationContainer>
+            <Notifications notifications={notifications} />
         </DashboardContainer>
     );
 };

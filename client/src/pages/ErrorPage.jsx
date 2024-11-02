@@ -1,4 +1,4 @@
-// ErrorPage.jsx
+// ~/legal-doc-system/client/src/pages/ErrorPage.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 

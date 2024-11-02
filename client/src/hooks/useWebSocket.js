@@ -30,10 +30,9 @@ const useWebSocket = () => {
             if (socketRef.current) {
                 socketRef.current.disconnect();
                 console.log('WebSocket disconnected on unmount');
-                socketRef.current = null; // Set to null to prevent reuse
             }
         };
-    }, []); // [] ensures that the socket is only initialized once
+    }, []);
 
     return socketRef.current;
 };

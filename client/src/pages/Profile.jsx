@@ -1,4 +1,4 @@
-// src/pages/Profile.jsx
+// ~/legal-doc-system/client/src/pages/Profile.jsx
 
 import React, { useState, useEffect } from 'react';
 import { getUserDetails, updateUserProfile } from '../services/userService'; // Correct path to userService
