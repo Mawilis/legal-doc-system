@@ -1,0 +1,2 @@
+[2024-10-28T20:30:00.407Z] ERROR: Failed to load index.html: ENOENT: no such file or directory, stat '/Users/wilsonkhanyezi/legal-doc-system/server/client/build/index.html'
+[2024-11-03T10:17:05.042Z] ERROR: Error connecting to MongoDB: Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/

@@ -1,13 +1,12 @@
-// routes/dashboardRoutes.js
 const express = require('express');
-const { protect, restrictToAdmin } = require('../middleware/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');  // Import the correct middleware function
 const router = express.Router();
 
 // Protect all dashboard routes if required for authentication
 router.use(protect);
 
 // Dashboard route - replace with real logic or fetching from database
-router.get('/', restrictToAdmin, (req, res) => {
+router.get('/', authorize('admin'), (req, res) => {  // Use 'authorize' instead of 'restrictToAdmin'
     const dashboardData = {
         title: "Dashboard Info",
         stats: {

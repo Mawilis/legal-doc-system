@@ -1,5 +1,5 @@
-// client/src/services/documentService.js
 import axios from 'axios';
+
 
 export const getAllDocuments = async () => {
     try {
@@ -47,6 +47,26 @@ export const deleteDocument = async (documentId) => {
         return response.data;
     } catch (error) {
         console.error(`Error deleting document with ID ${documentId}`, error);
+        throw error;
+    }
+};
+
+export const markAsScanned = async (documentId) => {
+    try {
+        const response = await axios.put(`/api/documents/${documentId}/scanned`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error marking document with ID ${documentId} as scanned`, error);
+        throw error;
+    }
+};
+
+export const updateServiceStatus = async (documentId, status) => {
+    try {
+        const response = await axios.put(`/api/documents/${documentId}/status`, { status });
+        return response.data;
+    } catch (error) {
+        console.error(`Error updating service status for document with ID ${documentId}`, error);
         throw error;
     }
 };

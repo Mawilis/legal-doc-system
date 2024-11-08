@@ -1,41 +1,32 @@
 // ~/legal-doc-system/client/src/components/ErrorBoundary.jsx
-import React, { Component } from 'react';
 
-class ErrorBoundary extends Component {
+import React from 'react';
+import styled from 'styled-components';
+
+const ErrorContainer = styled.div`
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--error-color);
+`;
+
+class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { hasError: false, error: null, errorInfo: null };
+        this.state = { hasError: false };
     }
 
     static getDerivedStateFromError(error) {
-        return { hasError: true, error };
+        return { hasError: true };
     }
 
     componentDidCatch(error, errorInfo) {
-        console.error('ErrorBoundary caught an error:', error, errorInfo);
-        this.setState({ error, errorInfo });
+        // You can log the error to an error reporting service here
+        console.error('ErrorBoundary caught an error', error, errorInfo);
     }
-
-    handleReload = () => {
-        window.location.reload();
-    };
 
     render() {
         if (this.state.hasError) {
-            return (
-                <div style={{ padding: '20px', textAlign: 'center' }}>
-                    <h1>Something went wrong.</h1>
-                    <p>Please try reloading the page or contact support if the problem persists.</p>
-                    <button onClick={this.handleReload} style={{ marginTop: '20px', padding: '10px 20px' }}>
-                        Reload Page
-                    </button>
-                    <details style={{ whiteSpace: 'pre-wrap', marginTop: '20px' }}>
-                        {this.state.error && this.state.error.toString()}
-                        <br />
-                        {this.state.errorInfo && this.state.errorInfo.componentStack}
-                    </details>
-                </div>
-            );
+            return <ErrorContainer>Something went wrong.</ErrorContainer>;
         }
 
         return this.props.children;

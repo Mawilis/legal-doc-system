@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunksrc=self.webpackChunksrc||[]).push([[785],{785:(e,s,c)=>{c.r(s),c.d(s,{default:()=>n});c(195);var d=c(667);const n=()=>(0,d.jsx)("div",{children:(0,d.jsx)("h2",{children:"Lazy Loaded Component"})})}}]);
+//# sourceMappingURL=785.1fa8ca51.chunk.js.map

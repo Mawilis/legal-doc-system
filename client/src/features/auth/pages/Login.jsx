@@ -2,81 +2,92 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/AuthContext'; // Corrected path to useAuth hook
-import { login as loginService } from '../services/authService'; // Import login service for API calls
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser } from '../reducers/authSlice'; // Updated to correct path
 import styled from 'styled-components';
 
 // Styled Components
 const LoginContainer = styled.div`
   max-width: 400px;
-  margin: 50px auto;
-  padding: 20px;
+  margin: 80px auto;
+  padding: 30px;
   border-radius: 8px;
-  background-color: #f9f9f9;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 `;
 
 const InputField = styled.input`
   width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd;
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid #cccccc;
   border-radius: 5px;
   font-size: 16px;
+  box-sizing: border-box;
 `;
 
 const Button = styled.button`
   width: 100%;
-  padding: 10px;
-  background-color: #007bff;
-  color: white;
+  padding: 14px;
+  margin-top: 10px;
+  background-color: #0069d9;
+  color: #ffffff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 17px;
+  font-weight: bold;
 
   &:hover {
-    background-color: #0056b3;
+    background-color: #0053ba;
+  }
+
+  &:disabled {
+    background-color: #a0a0a0;
+    cursor: not-allowed;
   }
 `;
 
 const ErrorText = styled.p`
-  color: red;
+  color: #e74c3c;
   text-align: center;
+  margin-bottom: 10px;
 `;
 
 const Title = styled.h2`
   text-align: center;
   margin-bottom: 20px;
+  color: #2c3e50;
+`;
+
+const Label = styled.label`
+  font-size: 14px;
   color: #333;
+  margin-bottom: 5px;
+  display: block;
 `;
 
 // Login Component
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
-  const { login } = useAuth(); // Get the login function from useAuth context
+  const { loading, error } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Handle Login Function
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Check if both fields are filled
-    if (!email || !password) {
-      setError('Email and password are required');
-      return;
-    }
-
     try {
-      // Attempt to log in the user by calling the login service
-      const userData = await loginService({ email, password }); // Fetch token or user data
-      login(userData); // Use the login function from AuthContext to set the state
-      navigate('/'); // Redirect to the home page after a successful login
+      const resultAction = await dispatch(loginUser({ email, password }));
+
+      if (loginUser.fulfilled.match(resultAction)) {
+        navigate('/dashboard'); // Redirect to dashboard on successful login
+      } else {
+        console.error('Login failed:', resultAction.payload || resultAction.error);
+      }
     } catch (err) {
-      console.error('Login failed', err);
-      setError('Invalid email or password');
+      console.error('Network error:', err);
     }
   };
 
@@ -85,21 +96,31 @@ const Login = () => {
       <Title>Login</Title>
       {error && <ErrorText>{error}</ErrorText>}
       <form onSubmit={handleLogin}>
+        <Label htmlFor="email">Email</Label>
         <InputField
           type="email"
+          name="email"
+          id="email"
           placeholder="Email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
+        <Label htmlFor="password">Password</Label>
         <InputField
           type="password"
+          name="password"
+          id="password"
           placeholder="Password"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <Button type="submit">Login</Button>
+        <Button type="submit" disabled={loading}>
+          {loading ? 'Logging in...' : 'Login'}
+        </Button>
       </form>
     </LoginContainer>
   );

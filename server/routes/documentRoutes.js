@@ -1,21 +1,18 @@
-// routes/documentRoutes.js
-
 const express = require('express');
-const documentController = require('../controllers/documentController'); // Import documentController
-const { protect } = require('../middleware/authMiddleware'); // Import protect middleware for authentication
+const documentController = require('../controllers/documentController');
+const { protect, authorize } = require('../middleware/authMiddleware');
 const router = express.Router();
 
-// Debug log to verify all functions are correctly imported from documentController
-console.log('Document Controller Functions:', Object.keys(documentController)); // Debug log
-
-// Protect all routes below this line to ensure only authenticated users can access them
+// Protect all routes to ensure only authenticated users can access them
 router.use(protect);
 
-// Define routes using correct function names from documentController
-router.post('/', documentController.createDocument);
-router.get('/:documentId', documentController.getDocumentById);
-router.get('/', documentController.getAllDocuments);
-router.put('/:documentId', documentController.updateDocument);
-router.delete('/:documentId', documentController.deleteDocument);
+// Define routes with appropriate authorization checks
+router.post('/', authorize('Admin', 'Editor'), documentController.createDocument);
+router.get('/:documentId', documentController.getDocumentById);  // Viewable by authenticated users
+router.get('/', authorize('Admin', 'User'), documentController.getAllDocuments);
+router.put('/:documentId', authorize('Admin', 'Editor'), documentController.updateDocument);
+router.delete('/:documentId', authorize('Admin'), documentController.deleteDocument);
+router.put('/:documentId/scanned', authorize('Admin', 'Editor'), documentController.markDocumentAsScanned);
+router.put('/:documentId/status', authorize('Admin', 'Editor'), documentController.updateServiceStatus);
 
 module.exports = router;

@@ -1,11 +1,18 @@
 // ~/legal-doc-system/client/src/components/organisms/Header.jsx
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { useAuth } from '../../features/auth/hooks/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../../reducers/authSlice';
 
 const Header = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const dispatch = useDispatch();
+
+  const handleLogout = () => {
+    dispatch(logout());
+  };
 
   return (
     <HeaderContainer>
@@ -14,11 +21,19 @@ const Header = () => {
       </Logo>
       <Nav>
         <NavList>
-          <NavItem><StyledLink to="/dashboard">Dashboard</StyledLink></NavItem>
+          {isAuthenticated && (
+            <NavItem>
+              <StyledLink to="/">Dashboard</StyledLink>
+            </NavItem>
+          )}
           {isAuthenticated ? (
-            <NavItem><StyledLink as="button" onClick={logout}>Logout</StyledLink></NavItem>
+            <NavItem>
+              <StyledButton onClick={handleLogout}>Logout</StyledButton>
+            </NavItem>
           ) : (
-            <NavItem><StyledLink to="/login">Login</StyledLink></NavItem>
+            <NavItem>
+              <StyledLink to="/login">Login</StyledLink>
+            </NavItem>
           )}
         </NavList>
       </Nav>
@@ -28,6 +43,7 @@ const Header = () => {
 
 export default Header;
 
+// Styled Components
 const HeaderContainer = styled.header`
   display: flex;
   justify-content: space-between;
@@ -74,6 +90,19 @@ const StyledLink = styled(Link)`
     color: #282c34;
   }
   &.active {
+    background-color: #61dafb;
+    color: #282c34;
+  }
+`;
+
+const StyledButton = styled.button`
+  color: white;
+  background: none;
+  border: none;
+  font-size: 18px;
+  padding: 8px 16px;
+  cursor: pointer;
+  &:hover {
     background-color: #61dafb;
     color: #282c34;
   }

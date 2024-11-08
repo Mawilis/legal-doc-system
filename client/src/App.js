@@ -1,113 +1,61 @@
-// ~/legal-doc-system/client/src/App.js
-import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import Header from './components/organisms/Header';
-import Dashboard from './pages/Dashboard';
-import Documents from './pages/Documents';
-import Login from './features/auth/pages/Login';
-import Profile from './pages/Profile';
-import ErrorPage from './pages/ErrorPage';
-import useWebSocket from './hooks/useWebSocket';
-import styled from 'styled-components';
-import { logout as logoutAction } from './reducers/authSlice';
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import styled, { ThemeProvider } from 'styled-components';
+import GlobalStyle from './GlobalStyle';
+import theme from './theme';
+import PrivateRoute from './components/PrivateRoute';
+import ErrorBoundary from './components/ErrorBoundary';
+import { SnackbarProvider } from 'notistack';
 
-function App() {
-  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
-  const dispatch = useDispatch();
-  const socket = useWebSocket();
+const Dashboard = lazy(() => import('./features/dashboard/pages/Dashboard'));
+const Documents = lazy(() => import('./features/documents/pages/Documents'));
+const Profile = lazy(() => import('./features/profile/pages/Profile'));
+const AdminPanel = lazy(() => import('./features/admin/pages/AdminPanel'));
+const Chat = lazy(() => import('./features/chat/pages/Chat'));
+const Instructions = lazy(() => import('./features/instructions/pages/Instructions'));
+const DocumentDetails = lazy(() => import('./features/documents/pages/DocumentDetails'));
+const DocumentForm = lazy(() => import('./features/documents/pages/DocumentForm'));
+const UserManagement = lazy(() => import('./features/admin/pages/UserManagement'));
+const ErrorPage = lazy(() => import('./features/shared/pages/ErrorPage'));
+const Login = lazy(() => import('./features/auth/pages/Login'));
 
-  // Handle logout using Redux action
-  const handleLogout = () => {
-    dispatch(logoutAction());
-  };
+const AppContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+`;
 
-  // WebSocket lifecycle management
-  useEffect(() => {
-    if (socket) {
-      console.log('Socket initialized in App component.');
-
-      socket.on('connect', () => {
-        console.log('Socket connected');
-      });
-
-      socket.on('disconnect', () => {
-        console.log('Socket disconnected');
-      });
-
-      return () => {
-        socket.off('connect');
-        socket.off('disconnect');
-      };
-    }
-  }, [socket]);
-
+const App = () => {
   return (
-    <>
-      <Header onLogout={handleLogout} />
-      <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
-      <MainContainer>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute isAuthenticated={isAuthenticated}>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/documents"
-            element={
-              <ProtectedRoute isAuthenticated={isAuthenticated}>
-                <Documents />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute isAuthenticated={isAuthenticated}>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<ErrorPage />} />
-        </Routes>
-      </MainContainer>
-    </>
+    <ThemeProvider theme={theme}>
+      <GlobalStyle />
+      <AppContainer>
+        <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+          <Router>
+            <ErrorBoundary>
+              <Suspense fallback={<div>Loading...</div>}>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                  <Route path="/documents" element={<PrivateRoute><Documents /></PrivateRoute>} />
+                  <Route path="/documents/new" element={<PrivateRoute><DocumentForm /></PrivateRoute>} />
+                  <Route path="/documents/:id" element={<PrivateRoute><DocumentDetails /></PrivateRoute>} />
+                  <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+                  <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
+                  <Route path="/admin/users" element={<PrivateRoute><UserManagement /></PrivateRoute>} />
+                  <Route path="/chat" element={<PrivateRoute><Chat /></PrivateRoute>} />
+                  <Route path="/instructions" element={<PrivateRoute><Instructions /></PrivateRoute>} />
+                  <Route path="/error" element={<ErrorPage />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
+                <div>Hello, Legal Doc System!</div>
+              </Suspense>
+            </ErrorBoundary>
+          </Router>
+        </SnackbarProvider>
+      </AppContainer>
+    </ThemeProvider>
   );
-}
-
-// ProtectedRoute Component to secure specific routes
-const ProtectedRoute = ({ isAuthenticated, children }) => {
-  const location = useLocation();
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  return children;
 };
-
-// Logout Button Styled Component
-const LogoutButton = styled.button`
-  display: block;
-  margin: 20px auto;
-  padding: 10px 20px;
-  background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.secondary};
-  }
-`;
-
-// Main Container Styled Component
-const MainContainer = styled.main`
-  padding: ${({ theme }) => theme.spacing.lg};
-`;
 
 export default App;

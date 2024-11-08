@@ -1,42 +1,43 @@
-// middleware/authMiddleware.js
-
 const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');  // Import User model
-const CustomError = require('../utils/customError');  // Custom error handling
+const User = require('../models/userModel');
+const CustomError = require('../utils/customError');
 
-// Middleware to protect routes (JWT authentication)
-async function protect(req, res, next) {
+// Protect routes by checking JWT token
+const protect = async (req, res, next) => {
+    console.log('Inside protect middleware');
     let token;
+
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        token = req.headers.authorization.split(' ')[1];
-    }
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = await User.findById(decoded.id).select('-password');
 
-    if (!token) {
-        return next(new CustomError('Not authenticated', 401));  // Handle missing token
-    }
+            if (!req.user) {
+                return next(new CustomError('User not found', 404));
+            }
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);  // Verify the token
-        req.user = await User.findById(decoded.id);  // Find the user associated with the token
-        if (!req.user) {
-            return next(new CustomError('User no longer exists', 401));  // Handle non-existing user
+            next();
+        } catch (error) {
+            console.error('Not authorized, token failed', error);
+            return next(new CustomError('Not authorized, token failed', 401));
+        }
+    } else {
+        return next(new CustomError('Not authorized, no token', 401));
+    }
+};
+
+// Authorize specific roles
+const authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return next(new CustomError('User role not authorized', 403));
         }
         next();
-    } catch (err) {
-        return next(new CustomError('Not authenticated', 401));  // Handle token verification errors
-    }
-}
+    };
+};
 
-// Middleware to restrict access to admin-only routes
-function restrictToAdmin(req, res, next) {
-    if (req.user.role !== 'admin') {
-        return next(new CustomError('Access denied: Admin only', 403));  // Handle non-admin access attempt
-    }
-    next();
-}
-
-// Export middleware functions
 module.exports = {
     protect,
-    restrictToAdmin,
+    authorize,
 };

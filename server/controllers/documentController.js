@@ -1,5 +1,3 @@
-// controllers/documentController.js
-
 const Document = require('../models/documentModel');
 const CustomError = require('../utils/customError');
 
@@ -7,8 +5,8 @@ const CustomError = require('../utils/customError');
 const createDocument = async (req, res, next) => {
     console.log('Inside createDocument function');
     try {
-        const { title, content } = req.body;
-        const document = new Document({ title, content, user: req.user.id });
+        const { title, content, client, documentType } = req.body;  // Added more details
+        const document = new Document({ title, content, client, documentType, user: req.user.id });
         await document.save();
         res.status(201).json(document);
     } catch (err) {
@@ -68,6 +66,39 @@ const deleteDocument = async (req, res, next) => {
     }
 };
 
+// Mark document as scanned
+const markDocumentAsScanned = async (req, res, next) => {
+    console.log('Inside markDocumentAsScanned function');
+    try {
+        const document = await Document.findById(req.params.documentId);
+        if (!document) return next(new CustomError('Document not found', 404));
+
+        document.scanned = true;
+        await document.save();
+        res.status(200).json(document);
+    } catch (err) {
+        console.error('Error in markDocumentAsScanned function:', err);
+        next(new CustomError('Failed to mark document as scanned', 500));
+    }
+};
+
+// Update document service status
+const updateServiceStatus = async (req, res, next) => {
+    console.log('Inside updateServiceStatus function');
+    try {
+        const { status } = req.body; // Example statuses: Pending, Served, Failed
+        const document = await Document.findById(req.params.documentId);
+        if (!document) return next(new CustomError('Document not found', 404));
+
+        document.serviceStatus = status;
+        await document.save();
+        res.status(200).json(document);
+    } catch (err) {
+        console.error('Error in updateServiceStatus function:', err);
+        next(new CustomError('Failed to update service status', 500));
+    }
+};
+
 // Export all functions as an object
 module.exports = {
     createDocument,
@@ -75,4 +106,6 @@ module.exports = {
     getAllDocuments,
     updateDocument,
     deleteDocument,
+    markDocumentAsScanned,
+    updateServiceStatus,
 };
