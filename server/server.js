@@ -28,8 +28,7 @@ dotenv.config(); // Loads .env by default from the current directory
 
 // **Verify VAPID Keys for Debugging (Temporary)**
 // Uncomment the following lines to verify VAPID keys are loaded
-//console.log('VAPID_PUBLIC_KEY:', process.env.VAPID_PUBLIC_KEY);
-//console.log('VAPID_PRIVATE_KEY:', process.env.VAPID_PRIVATE_KEY);
+
 
 // **Initialize Express Application**
 const app = express();
