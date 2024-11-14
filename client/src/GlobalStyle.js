@@ -1,6 +1,5 @@
-// ~/legal-doc-system/client/src/GlobalStyle.js
-
 import { createGlobalStyle } from 'styled-components';
+import backgroundImage from './assets/legal-office.jpeg'; // Ensure the path is correct
 
 const GlobalStyle = createGlobalStyle`
   /* CSS Reset */
@@ -46,17 +45,24 @@ const GlobalStyle = createGlobalStyle`
   html, body {
     height: 100%;
     font-family: var(--font-family);
-    background-color: var(--background-color);
+    background: url(${backgroundImage}) no-repeat center center fixed;
+    background-size: cover;
     color: var(--text-color);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
   }
 
   #root {
     height: 100%;
+    width: 100%;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 
   /* Typography */

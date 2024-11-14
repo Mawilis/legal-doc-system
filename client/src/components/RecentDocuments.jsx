@@ -1,5 +1,3 @@
-// ~/legal-doc-system/client/src/components/RecentDocuments.jsx
-
 import React from 'react';
 import styled from 'styled-components';
 import { FaFileAlt } from 'react-icons/fa';
@@ -41,6 +39,7 @@ const ViewAll = styled.button`
 
 const DocumentList = styled.ul`
   list-style: none;
+  padding: 0; // Add padding to reset default ul padding
 `;
 
 const DocumentItem = styled.li`
@@ -69,7 +68,7 @@ const DocumentName = styled.span`
   }
 `;
 
-const RecentDocuments = ({ documents }) => {
+const RecentDocuments = ({ documents, isLoading }) => { // Add isLoading prop
     const navigate = useNavigate();
 
     const handleViewAll = () => {
@@ -80,22 +79,37 @@ const RecentDocuments = ({ documents }) => {
         navigate(`/documents/${id}`);
     };
 
+    if (isLoading) {
+        return (
+            <RecentContainer>
+                <Header>
+                    <Title>Recent Documents</Title>
+                </Header>
+                <div>Loading recent documents...</div>
+            </RecentContainer>
+        );
+    }
+
     return (
         <RecentContainer>
             <Header>
                 <Title>Recent Documents</Title>
                 <ViewAll onClick={handleViewAll}>View All</ViewAll>
             </Header>
-            <DocumentList>
-                {documents.slice(0, 5).map((doc) => (
-                    <DocumentItem key={doc.id}>
-                        <DocumentIcon />
-                        <DocumentName onClick={() => handleDocumentClick(doc.id)}>
-                            {doc.title}
-                        </DocumentName>
-                    </DocumentItem>
-                ))}
-            </DocumentList>
+            {documents && documents.length > 0 ? (
+                <DocumentList>
+                    {documents.slice(0, 5).map((doc) => (
+                        <DocumentItem key={doc.id}>
+                            <DocumentIcon />
+                            <DocumentName onClick={() => handleDocumentClick(doc.id)}>
+                                {doc.title}
+                            </DocumentName>
+                        </DocumentItem>
+                    ))}
+                </DocumentList>
+            ) : (
+                <p>No recent documents found.</p>
+            )}
         </RecentContainer>
     );
 };

@@ -1,5 +1,3 @@
-// ~/legal-doc-system/server/middleware/errorMiddleware.js
-
 const { CustomError } = require('../utils/customError');
 const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');

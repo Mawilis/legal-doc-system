@@ -54,6 +54,7 @@ const corsOptions = {
         }
     },
     credentials: true, // Allow cookies and authentication headers
+    optionsSuccessStatus: 200, // For legacy browser support (e.g., IE11)
 };
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // Handle preflight requests
@@ -273,35 +274,8 @@ mongoose
         process.exit(1);
     });
 
-// **Handle Graceful Server Shutdown**
-process.on('SIGTERM', () => {
-    logger.info('SIGTERM signal received: closing HTTPS server');
-    server.close(() => {
-        logger.info('HTTPS server closed');
-        mongoose.connection.close(false, () => {
-            logger.info('MongoDB connection closed');
-            process.exit(0);
-        });
-    });
-});
-
 // **Start Server**
 const port = process.env.PORT || 3001;
 server.listen(port, () => {
-    logger.info(`Secure Server running on https://localhost:${port}`);
-});
-
-// **Handle Uncaught Exceptions and Rejections**
-process.on('unhandledRejection', (err) => {
-    logger.error('Unhandled Rejection:', err);
-    server.close(() => {
-        process.exit(1);
-    });
-});
-
-process.on('uncaughtException', (err) => {
-    logger.error('Uncaught Exception:', err);
-    server.close(() => {
-        process.exit(1);
-    });
+    logger.info(`Server running on https://localhost:${port}`);
 });

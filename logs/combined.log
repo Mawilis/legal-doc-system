@@ -67,3 +67,15 @@
 {"level":"info","message":"Connected to MongoDB","service":"legal-doc-system","timestamp":"2024-11-07T17:15:23.793Z"}
 {"level":"info","message":"Secure Server running on https://localhost:3001","service":"legal-doc-system","timestamp":"2024-11-08T08:25:24.440Z"}
 {"level":"info","message":"Connected to MongoDB","service":"legal-doc-system","timestamp":"2024-11-08T08:25:28.363Z"}
+{"level":"info","message":"Secure Server running on https://localhost:3001","service":"legal-doc-system","timestamp":"2024-11-11T14:43:26.291Z"}
+{"level":"info","message":"Connected to MongoDB","service":"legal-doc-system","timestamp":"2024-11-11T14:43:30.187Z"}
+{"level":"info","message":"Secure Server running on https://localhost:3001","service":"legal-doc-system","timestamp":"2024-11-12T06:54:00.243Z"}
+{"level":"info","message":"Connected to MongoDB","service":"legal-doc-system","timestamp":"2024-11-12T06:54:04.145Z"}
+{"level":"info","message":"Secure Server running on https://localhost:3001","service":"legal-doc-system","timestamp":"2024-11-12T11:51:39.024Z"}
+{"level":"info","message":"Connected to MongoDB","service":"legal-doc-system","timestamp":"2024-11-12T11:51:42.843Z"}
+{"level":"info","message":"Secure Server running on https://localhost:3001","service":"legal-doc-system","timestamp":"2024-11-12T13:22:54.591Z"}
+{"level":"info","message":"Connected to MongoDB","service":"legal-doc-system","timestamp":"2024-11-12T13:22:58.382Z"}
+{"level":"info","message":"Server running on https://localhost:3001","service":"legal-doc-system","timestamp":"2024-11-12T13:40:43.742Z"}
+{"level":"info","message":"Connected to MongoDB","service":"legal-doc-system","timestamp":"2024-11-12T13:40:47.842Z"}
+{"level":"info","message":"Server running on https://localhost:3001","service":"legal-doc-system","timestamp":"2024-11-12T13:50:45.068Z"}
+{"level":"info","message":"Connected to MongoDB","service":"legal-doc-system","timestamp":"2024-11-12T13:50:48.745Z"}
