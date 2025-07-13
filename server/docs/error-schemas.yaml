@@ -1,0 +1,76 @@
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          description: HTTP status code (as string) applicable to this error.
+        title:
+          type: string
+          description: Short title for the error type.
+        detail:
+          type: string
+          description: Detailed description of the error.
+        code:
+          type: string
+          description: Application-specific error code or identifier.
+        source:
+          type: object
+          properties:
+            pointer:
+              type: string
+              description: JSON Pointer to the request field related to the error.
+            parameter:
+              type: string
+              description: Query parameter related to the error.
+          additionalProperties: false
+        links:
+          type: object
+          properties:
+            about:
+              type: string
+              format: uri
+              description: Link to documentation about this error type.
+          additionalProperties: false
+        meta:
+          type: object
+          description: Additional debug metadata (e.g., stack trace in dev).
+      required: [status, detail]
+      additionalProperties: false
+
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+      required: [errors]
+      additionalProperties: false
+
+  responses:
+    ValidationError:
+      description: Request validation failed (one or more fields invalid).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnauthorizedError:
+      description: Auth required or token invalid/expired.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ConflictError:
+      description: Duplicate or conflicting resource (e.g., unique constraint).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServerError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

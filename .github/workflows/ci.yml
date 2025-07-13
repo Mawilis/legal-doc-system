@@ -1,0 +1,39 @@
+name: 🔍 Run Backend Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:6
+        ports:
+          - 27017:27017
+
+    env:
+      MONGODB_URI: mongodb://localhost:27017/testdb
+      JWT_SECRET: testjwtsecret
+      ALERT_EMAIL: dev@example.com
+      SKIP_CONNECT_DB: true
+      NODE_ENV: test
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: 📦 Install dependencies
+        run: cd server && npm ci
+
+      - name: ✅ Run tests
+        run: cd server && npm test

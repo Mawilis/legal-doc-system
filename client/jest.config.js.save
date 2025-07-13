@@ -1,0 +1,9 @@
+module.exports = {
+  moduleNameMapper: {
+    '^@services/(.*)$': '<rootDir>/src/services/$1',
+    '^.+\\.(css|less|scss|sass)$': 'identity-obj-proxy'
+  },
+  testEnvironment: 'jsdom',
+};
+
+

@@ -1,0 +1,90 @@
+components:
+  schemas:
+    RegisterUser:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+          description: Full name of the user.
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+          description: Valid email address.
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: "password123"
+          description: Password with at least 6 characters.
+
+    LoginUser:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        password:
+          type: string
+          format: password
+          example: "password123"
+
+    UpdateUserDetails:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+          example: "John Doe Updated"
+        email:
+          type: string
+          format: email
+          example: "john.updated@example.com"
+
+    UpdatePassword:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          format: password
+          example: "oldpassword123"
+        newPassword:
+          type: string
+          format: password
+          minLength: 6
+          example: "newpassword123"
+
+    ForgotPassword:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+
+    ResetPassword:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: "newpassword123"

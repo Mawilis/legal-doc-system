@@ -1,0 +1,45 @@
+openapi: 3.0.0
+info:
+  title: Document Management API
+  version: 1.0.0
+
+paths:
+  /api/documents/{documentId}/scanned:
+    put:
+      summary: Mark a document as scanned
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully marked as scanned
+        '404':
+          description: Document not found
+        '500':
+          description: Server error
+
+  /api/documents/{documentId}/status:
+    put:
+      summary: Update service status
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: body
+          required: true
+          schema:
+            type: string
+            enum: [Pending, Served, Failed]
+      responses:
+        '200':
+          description: Successfully updated status
+        '404':
+          description: Document not found
+        '500':
+          description: Server error
