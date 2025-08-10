@@ -1,4 +1,4 @@
-// server.js
+// ~/server/server.js
 
 const express = require("express");
 const path = require("path");
@@ -11,39 +11,36 @@ const xssClean = require("xss-clean");
 const hpp = require("hpp");
 const mongoSanitize = require("express-mongo-sanitize");
 const mongoose = require("mongoose");
+const http = require("http");
 require("dotenv").config();
 
 const errorHandler = require("./middleware/errorMiddleware");
 const apiLimiter = require("./middleware/rateLimiter");
 const requestLogger = require("./middleware/requestLogger");
+const auditLogger = require("./utils/auditLogger");
+const initializeSocketIO = require('./utils/socket');
 const logger = require("./utils/logger");
 
 const app = express();
+const server = http.createServer(app);
+
+// --- Real-Time Socket Setup ---
+const io = initializeSocketIO(server);
+app.set("io", io);
+
 
 // --- Connect to MongoDB ---
 const connectDB = async () => {
     try {
         mongoose.set("strictQuery", true);
-
-        const shouldSkip =
-            process.env.SKIP_CONNECT_DB === "true" &&
-            process.env.NODE_ENV !== "test";
-
-        if (shouldSkip) {
-            logger.info("⏭️  Skipping DB connection due to SKIP_CONNECT_DB=true");
-            return;
-        }
-
         const mongoUri = process.env.MONGODB_URI;
         if (!mongoUri) {
             throw new Error("❌ MONGODB_URI is not defined in .env file.");
         }
-
         await mongoose.connect(mongoUri, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
-
         logger.info(`✅ MongoDB Connected: ${mongoose.connection.host}`);
     } catch (err) {
         logger.error(`❌ MongoDB connection error: ${err.message}`);
@@ -94,6 +91,9 @@ app.use(requestLogger);
 // --- Rate Limiting ---
 app.use("/api", apiLimiter);
 
+// --- Audit Logging Middleware ---
+app.use(auditLogger);
+
 // --- Static Files ---
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -116,6 +116,9 @@ app.use("/api/settings", require("./routes/settingsRoutes"));
 app.use("/api/analytics", require("./routes/analyticsRoutes"));
 app.use("/api/ai", require("./routes/aiRoutes"));
 app.use("/api/search", require("./routes/searchRoutes"));
+app.use("/api/admin", require("./routes/admin"));
+app.use("/api/locations", require("./routes/locationRoutes"));
+app.use("/api/geofence", require("./routes/geofenceRoutes")); // ✅ Add the new geofence routes
 
 // --- Serve Frontend in Production ---
 if (process.env.NODE_ENV === "production") {
@@ -129,4 +132,8 @@ if (process.env.NODE_ENV === "production") {
 // --- Error Handler ---
 app.use(errorHandler);
 
-module.exports = app;
+// --- Launch ---
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+    logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+});

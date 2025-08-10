@@ -3,133 +3,140 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import styled from 'styled-components';
+import { toast } from 'react-toastify';
+import PageTransition from '../../../components/animations/PageTransition';
 
-// Styled Components for the form UI
+// Styled Components
 const FormContainer = styled.div`
-  padding: 20px;
+  padding: 40px;
   max-width: 600px;
-  margin: 20px auto;
-  background-color: #f9f9f9;
+  margin: 0 auto;
+  background-color: #fdfdfd;
   border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
 `;
 
 const FormTitle = styled.h2`
   text-align: center;
-  margin-bottom: 20px;
+  color: #2c3e50;
+  margin-bottom: 24px;
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  padding: 12px;
+  margin-bottom: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
 `;
 
 const Textarea = styled.textarea`
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  padding: 12px;
+  min-height: 140px;
+  margin-bottom: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
 `;
 
 const Button = styled.button`
   width: 100%;
-  padding: 10px;
-  background-color: #28a745;
+  background-color: #007bff;
   color: white;
   border: none;
-  border-radius: 5px;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 6px;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: #218838;
+    background-color: #0056b3;
   }
 `;
 
 const ErrorText = styled.p`
   color: red;
   text-align: center;
+  font-weight: 500;
 `;
 
 const DocumentForm = () => {
-    const { documentId } = useParams();  // Get document ID from URL
+    const { documentId } = useParams();
+    const navigate = useNavigate();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const [error, setError] = useState(null);
-    const navigate = useNavigate();
-    const socket = io('http://localhost:3001');  // Adjust to match your backend
+    const [error, setError] = useState('');
+    const socket = io('http://localhost:3001'); // 🔁 Adjust for prod
 
-    // Fetch document data if editing an existing document
     useEffect(() => {
         if (documentId) {
-            const fetchDocument = async () => {
+            const fetchDoc = async () => {
                 try {
-                    const response = await axios.get(`/api/documents/${documentId}`);
-                    setTitle(response.data.title);
-                    setContent(response.data.content);
+                    const res = await axios.get(`/api/documents/${documentId}`);
+                    setTitle(res.data.title);
+                    setContent(res.data.content);
                 } catch (err) {
-                    console.error('Error fetching document:', err);
-                    setError('Failed to load the document');
+                    setError('❌ Failed to load the document.');
                 }
             };
-
-            fetchDocument();
+            fetchDoc();
         }
     }, [documentId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!title || !content) {
-            setError('Both title and content are required');
+        if (!title.trim() || !content.trim()) {
+            setError('Both title and content are required.');
             return;
         }
 
-        const documentData = { title, content };
+        const payload = { title, content };
 
         try {
             if (documentId) {
-                // Update existing document
-                await axios.put(`/api/documents/${documentId}`, documentData);
-                socket.emit('document-updated', documentData);  // Notify others about the update
+                await axios.put(`/api/documents/${documentId}`, payload);
+                socket.emit('document-updated', payload);
+                toast.success('✅ Document updated');
             } else {
-                // Create new document
-                await axios.post('/api/documents', documentData);
-                socket.emit('document-created', documentData);  // Notify others about the new document
+                await axios.post('/api/documents', payload);
+                socket.emit('document-created', payload);
+                toast.success('✅ Document created');
             }
 
-            navigate('/documents');  // Redirect after successful submission
+            navigate('/documents');
         } catch (err) {
-            console.error('Error submitting form:', err);
-            setError('Failed to save the document');
+            console.error('Submission failed:', err);
+            toast.error('🚫 Failed to save document');
         }
     };
 
     return (
-        <FormContainer>
-            <FormTitle>{documentId ? 'Edit Document' : 'Create New Document'}</FormTitle>
+        <PageTransition>
+            <FormContainer>
+                <FormTitle>{documentId ? 'Edit Document' : 'Create New Document'}</FormTitle>
 
-            {error && <ErrorText>{error}</ErrorText>}
+                {error && <ErrorText>{error}</ErrorText>}
 
-            <form onSubmit={handleSubmit}>
-                <Input
-                    type="text"
-                    placeholder="Document Title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                />
-                <Textarea
-                    rows="8"
-                    placeholder="Document Content"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                />
-                <Button type="submit">{documentId ? 'Update Document' : 'Create Document'}</Button>
-            </form>
-        </FormContainer>
+                <form onSubmit={handleSubmit}>
+                    <Input
+                        type="text"
+                        placeholder="Enter Title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                    />
+                    <Textarea
+                        placeholder="Enter Content"
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                    />
+                    <Button type="submit">{documentId ? 'Update Document' : 'Create Document'}</Button>
+                </form>
+            </FormContainer>
+        </PageTransition>
     );
 };
 

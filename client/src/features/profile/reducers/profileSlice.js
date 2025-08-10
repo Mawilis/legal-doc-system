@@ -2,54 +2,59 @@
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
-// Async thunk to fetch user profile
+// 📦 Async thunk: Fetch profile
 export const fetchUserProfile = createAsyncThunk(
     'profile/fetchUserProfile',
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get('/api/profile');
-            return response.data; // Assuming it returns the user profile object
+            return response.data;
         } catch (error) {
-            if (error.response && error.response.data && error.response.data.message) {
-                return rejectWithValue(error.response.data.message);
-            } else {
-                return rejectWithValue(error.message);
-            }
+            const message =
+                error?.response?.data?.message || error.message || 'Unable to fetch profile.';
+            return rejectWithValue(message);
         }
     }
 );
 
-// Async thunk to update user profile
+// ✏️ Async thunk: Update profile
 export const updateUserProfile = createAsyncThunk(
     'profile/updateUserProfile',
     async (profileData, { rejectWithValue }) => {
         try {
             const response = await axios.put('/api/profile', profileData);
-            return response.data; // Assuming it returns the updated profile object
+            toast.success('Profile updated successfully!');
+            return response.data;
         } catch (error) {
-            if (error.response && error.response.data && error.response.data.message) {
-                return rejectWithValue(error.response.data.message);
-            } else {
-                return rejectWithValue(error.message);
-            }
+            const message =
+                error?.response?.data?.message || error.message || 'Unable to update profile.';
+            toast.error(message);
+            return rejectWithValue(message);
         }
     }
 );
 
+// 🧠 Initial state
+const initialState = {
+    userProfile: null,
+    loading: false,
+    error: null,
+};
+
+// 🧩 Profile slice
 const profileSlice = createSlice({
     name: 'profile',
-    initialState: {
-        userProfile: null,
-        loading: false,
-        error: null,
-    },
+    initialState,
     reducers: {
-        // Define synchronous reducers if needed
+        clearProfileError: (state) => {
+            state.error = null;
+        },
     },
     extraReducers: (builder) => {
         builder
-            // Fetch User Profile
+            // 📥 Fetch
             .addCase(fetchUserProfile.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -60,10 +65,10 @@ const profileSlice = createSlice({
             })
             .addCase(fetchUserProfile.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload || 'Failed to fetch user profile';
+                state.error = action.payload || 'Failed to load profile.';
             })
 
-            // Update User Profile
+            // 💾 Update
             .addCase(updateUserProfile.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -74,9 +79,11 @@ const profileSlice = createSlice({
             })
             .addCase(updateUserProfile.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload || 'Failed to update user profile';
+                state.error = action.payload || 'Update failed.';
             });
     },
 });
+
+export const { clearProfileError } = profileSlice.actions;
 
 export default profileSlice.reducer;

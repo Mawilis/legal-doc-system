@@ -1,157 +1,162 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+// ~/client/src/features/instructions/pages/Instructions.jsx
+
+import React, { useEffect, useState, useMemo } from 'react';
 import styled from 'styled-components';
-import { io } from 'socket.io-client';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchInstructions } from '../reducers/instructionSlice'; // Assuming this thunk exists
+import InstructionItem from '../../../components/InstructionItem'; // The masterpiece item component
+import LoadingSpinner from '../../../components/LoadingSpinner';
+import Button from '../../../components/atoms/Button';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { FaFilePdf } from 'react-icons/fa';
 
-// Styled Components for better UI
-const InstructionsContainer = styled.div`
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  max-width: 800px;
-  margin: 20px auto;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+// --- Styled Components for the Page Layout ---
+
+const PageWrapper = styled.div`
+  padding: 2rem;
 `;
 
-const InstructionItem = styled.div`
-  background-color: #fff;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
+const PageHeader = styled.header`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border || '#e0e0e0'};
+  padding-bottom: 1.5rem;
 `;
 
-const InstructionText = styled.p`
+const PageTitle = styled.h1`
+  font-size: 2.5rem;
+  color: ${({ theme }) => theme.colors.text || '#333'};
   margin: 0;
 `;
 
-const AddInstructionForm = styled.form`
+const FilterToolbar = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background-color: ${({ theme }) => theme.colors.background || '#ffffff'};
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
 `;
 
-const Input = styled.input`
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+const SearchInput = styled.input`
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  min-width: 250px;
 `;
 
-const Textarea = styled.textarea`
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-`;
-
-const Button = styled.button`
-  padding: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #0056b3;
-  }
-`;
+const DateInput = styled(SearchInput)``;
 
 const ErrorText = styled.p`
-  color: red;
+  color: ${({ theme }) => theme.colors.danger || '#dc3545'};
   text-align: center;
+  font-size: 1.2rem;
 `;
 
+/**
+ * The main page for displaying, filtering, and exporting a list of instructions.
+ */
 const Instructions = () => {
-    const [instructions, setInstructions] = useState([]);
-    const [newTitle, setNewTitle] = useState('');
-    const [newContent, setNewContent] = useState('');
-    const [error, setError] = useState(null);
-    const socket = io('http://localhost:3001');  // Adjust to match your backend
+    const dispatch = useDispatch();
+    const { instructions, loading, error } = useSelector((state) => state.instructions);
 
+    // --- State for Filters ---
+    const [search, setSearch] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
+    // Fetch instructions when the component mounts
     useEffect(() => {
-        const fetchInstructions = async () => {
-            try {
-                const response = await axios.get('/api/instructions');
-                setInstructions(response.data);
-            } catch (err) {
-                console.error('Error fetching instructions:', err);
-                setError('Error fetching instructions');
-            }
-        };
+        dispatch(fetchInstructions());
+    }, [dispatch]);
 
-        fetchInstructions();
+    // --- Memoized Filtering Logic for Performance ---
+    const filteredInstructions = useMemo(() => {
+        return instructions.filter(instruction => {
+            const matchesSearch = instruction.title.toLowerCase().includes(search.toLowerCase());
 
-        // Listen for real-time updates via Socket.io
-        socket.on('instruction-added', (newInstruction) => {
-            setInstructions((prev) => [newInstruction, ...prev]); // Add new instruction to the top of the list
+            const instructionDate = new Date(instruction.createdAt);
+            const start = startDate ? new Date(startDate) : null;
+            const end = endDate ? new Date(endDate) : null;
+
+            // Adjust end date to include the entire day
+            if (end) end.setHours(23, 59, 59, 999);
+
+            const inRange = (!start || start <= instructionDate) && (!end || end >= instructionDate);
+
+            return matchesSearch && inRange;
         });
+    }, [instructions, search, startDate, endDate]);
 
-        return () => {
-            socket.disconnect();  // Clean up socket connection on component unmount
-        };
-    }, [socket]);
+    /**
+     * Exports the currently visible (filtered) instructions to a PDF.
+     */
+    const exportToPDF = () => {
+        const content = document.getElementById('pdf-content');
+        if (!content) return;
 
-    const handleAddInstruction = async (e) => {
-        e.preventDefault();
-        if (!newTitle || !newContent) {
-            setError('Title and content are required');
-            return;
-        }
-
-        const newInstruction = { title: newTitle, content: newContent };
-
-        try {
-            // Post the new instruction to the server
-            await axios.post('/api/instructions', newInstruction);
-
-            // Emit event to notify others about the new instruction
-            socket.emit('instruction-added', newInstruction);
-
-            // Clear form inputs
-            setNewTitle('');
-            setNewContent('');
-            setError(null);  // Clear any previous errors
-        } catch (err) {
-            console.error('Error adding instruction:', err);
-            setError('Failed to add instruction');
-        }
+        html2canvas(content).then((canvas) => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save('instructions-report.pdf');
+        });
     };
 
+    // --- Render Logic ---
+    if (loading) return <LoadingSpinner />;
+    if (error) return <ErrorText>Error: {error}</ErrorText>;
+
     return (
-        <InstructionsContainer>
-            <h2>Instructions</h2>
+        <PageWrapper>
+            <PageHeader>
+                <PageTitle>Instructions</PageTitle>
+                <Button onClick={exportToPDF} variant="secondary">
+                    <FaFilePdf /> Export to PDF
+                </Button>
+            </PageHeader>
 
-            {error && <ErrorText>{error}</ErrorText>}
-
-            {instructions.length === 0 ? (
-                <p>No instructions available</p>
-            ) : (
-                instructions.map((instruction) => (
-                    <InstructionItem key={instruction._id}>
-                        <h3>{instruction.title}</h3>
-                        <InstructionText>{instruction.content}</InstructionText>
-                    </InstructionItem>
-                ))
-            )}
-
-            <AddInstructionForm onSubmit={handleAddInstruction}>
-                <h3>Add New Instruction</h3>
-                <Input
+            <FilterToolbar>
+                <SearchInput
                     type="text"
-                    placeholder="Instruction Title"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="🔍 Search by title..."
                 />
-                <Textarea
-                    rows="5"
-                    placeholder="Instruction Content"
-                    value={newContent}
-                    onChange={(e) => setNewContent(e.target.value)}
+                <DateInput
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
                 />
-                <Button type="submit">Add Instruction</Button>
-            </AddInstructionForm>
-        </InstructionsContainer>
+                <DateInput
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                />
+            </FilterToolbar>
+
+            {/* This div wraps the content that will be exported to PDF */}
+            <div id="pdf-content">
+                {filteredInstructions.length > 0 ? (
+                    filteredInstructions.map((inst) => (
+                        <InstructionItem key={inst._id} instruction={inst} />
+                    ))
+                ) : (
+                    <p>No instructions match your criteria.</p>
+                )}
+            </div>
+        </PageWrapper>
     );
 };
 

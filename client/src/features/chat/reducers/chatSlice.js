@@ -1,51 +1,82 @@
 // ~/legal-doc-system/client/src/features/chat/reducers/chatSlice.js
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import axios from 'axios'; // Assuming an authenticated axios instance is configured
+import { toast } from 'react-toastify';
 
-// Async thunk to fetch chat messages
+// --- Initial State ---
+const initialState = {
+    messages: [],
+    loading: false,
+    error: null,
+};
+
+// --- Helper function to handle API errors ---
+const handleApiError = (err, defaultMessage) => {
+    const message = err.response?.data?.message || err.message || defaultMessage;
+    toast.error(message);
+    return message;
+};
+
+// --- Async Thunks ---
+
+/**
+ * Fetches the initial message history for a specific chat room.
+ */
 export const fetchChatMessages = createAsyncThunk(
     'chat/fetchChatMessages',
-    async (_, { rejectWithValue }) => {
+    async (roomId, { rejectWithValue }) => {
         try {
-            const response = await axios.get('/api/chat/messages');
-            return response.data; // Assuming it returns an array of messages
-        } catch (error) {
-            if (error.response && error.response.data && error.response.data.message) {
-                return rejectWithValue(error.response.data.message);
-            } else {
-                return rejectWithValue(error.message);
-            }
+            const response = await axios.get(`/api/chat/messages/${roomId}`);
+            return response.data;
+        } catch (err) {
+            return rejectWithValue(handleApiError(err, 'Failed to fetch chat history'));
         }
     }
 );
 
-// Async thunk to send a new message
+/**
+ * Sends a new message to the backend API.
+ * The backend is responsible for saving it and broadcasting it via sockets.
+ */
 export const sendMessage = createAsyncThunk(
     'chat/sendMessage',
     async (messageData, { rejectWithValue }) => {
         try {
-            const response = await axios.post('/api/chat/messages', messageData);
-            return response.data; // Assuming it returns the created message
-        } catch (error) {
-            if (error.response && error.response.data && error.response.data.message) {
-                return rejectWithValue(error.response.data.message);
-            } else {
-                return rejectWithValue(error.message);
-            }
+            // This API call just posts the message; it doesn't need to return it,
+            // as the real-time update will come via a socket event.
+            await axios.post('/api/chat/messages', messageData);
+            return null; // No state change needed here
+        } catch (err) {
+            return rejectWithValue(handleApiError(err, 'Failed to send message'));
         }
     }
 );
 
+// --- Redux Slice Definition ---
 const chatSlice = createSlice({
     name: 'chat',
-    initialState: {
-        messages: [],
-        loading: false,
-        error: null,
-    },
+    initialState,
     reducers: {
-        // Define synchronous reducers if needed
+        /**
+         * Adds a new message to the state in real-time.
+         * This action should be dispatched by your socketMiddleware when a 'newMessage' event is received.
+         * @param {object} state - The current Redux state.
+         * @param {object} action - The action containing the new message payload.
+         */
+        addMessage: (state, action) => {
+            // Avoid adding duplicate messages
+            if (!state.messages.find(msg => msg._id === action.payload._id)) {
+                state.messages.push(action.payload);
+            }
+        },
+        /**
+         * Clears all chat messages from the state, for example, when leaving a room.
+         */
+        clearChat: (state) => {
+            state.messages = [];
+            state.error = null;
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -60,23 +91,16 @@ const chatSlice = createSlice({
             })
             .addCase(fetchChatMessages.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload || 'Failed to fetch chat messages';
+                state.error = action.payload;
             })
 
-            // Send Message
-            .addCase(sendMessage.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(sendMessage.fulfilled, (state, action) => {
-                state.loading = false;
-                state.messages.push(action.payload);
-            })
+            // Send Message (only handles error state, success is handled by socket)
             .addCase(sendMessage.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload || 'Failed to send message';
+                state.error = action.payload;
+                // Optionally add the failed message to the UI with a "failed to send" indicator
             });
     },
 });
 
+export const { addMessage, clearChat } = chatSlice.actions;
 export default chatSlice.reducer;

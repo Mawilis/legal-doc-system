@@ -1,30 +1,43 @@
-// /Users/wilsonkhanyezi/legal-doc-system/client/src/components/PrivateRoute.jsx
+// /client/src/components/PrivateRoute.jsx
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import LoadingSpinner from './LoadingSpinner'; // Import your LoadingSpinner component
+import PropTypes from 'prop-types';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 
-const PrivateRoute = ({ children, roles }) => { // Add roles prop
+const PrivateRoute = ({ children, roles = [] }) => {
     const { isAuthenticated, user, loading } = useSelector((state) => state.auth);
     const location = useLocation();
 
-    // Check if authentication status is still loading
     if (loading) {
-        return <LoadingSpinner />; // Display a loading spinner
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                <CircularProgress />
+            </Box>
+        );
     }
 
     if (!isAuthenticated) {
-        // Redirect to login page if not authenticated
         return <Navigate to="/login" replace state={{ from: location }} />;
     }
 
-    // If roles prop is provided, check if the user has the required role
-    if (roles && !roles.includes(user.role)) {
-        return <div>You do not have permission to access this page.</div>;
+    if (roles.length && !roles.includes(user?.role)) {
+        return (
+            <Box sx={{ textAlign: 'center', mt: 8 }}>
+                <h2>🚫 Access Denied</h2>
+                <p>You do not have permission to view this page.</p>
+            </Box>
+        );
     }
 
-    return children; // Render the protected component
+    return children;
+};
+
+PrivateRoute.propTypes = {
+    children: PropTypes.node.isRequired,
+    roles: PropTypes.array,
 };
 
 export default PrivateRoute;

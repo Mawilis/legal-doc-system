@@ -1,36 +1,21 @@
-// /src/index.js
+// ~/client/src/index.js
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { BrowserRouter } from 'react-router-dom';
-import { SnackbarProvider } from 'notistack';
-import { ThemeProvider as MUIThemeProvider, createTheme } from '@mui/material/styles';
-import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { store, persistor } from './store';
-import CircularProgress from '@mui/material/CircularProgress';
+import { ThemeProvider } from './context/ThemeContext';
+import { NotificationProvider } from './context/NotificationContext'; // ✅ Import our custom provider
+import GlobalStyle from './GlobalStyle';
+import LoadingSpinner from './components/LoadingSpinner'; // Assuming a custom spinner
 
-// Create a unified theme for both providers
-const theme = createTheme({
-    palette: {
-        primary: { main: '#0d47a1' },
-        secondary: { main: '#9e9e9e' },
-        background: { default: '#f5f5f5', paper: '#ffffff' },
-        text: { primary: '#212121', secondary: '#757575' },
-        error: { main: '#d32f2f' },
-    },
-    typography: {
-        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    },
-    components: {
-        MuiButton: { styleOverrides: { root: { textTransform: 'none' } } },
-        MuiPaper: { styleOverrides: { root: { padding: '20px', boxShadow: '0px 2px 4px rgba(0,0,0,0.1)' } } },
-    },
-});
-
-// Fallback loading component used by PersistGate
+/**
+ * A simple loading component displayed while the persisted Redux state is rehydrated.
+ */
 const Loading = () => (
     <div
         style={{
@@ -42,11 +27,14 @@ const Loading = () => (
         aria-label="Loading application"
         role="alert"
     >
-        <CircularProgress color="primary" />
+        <LoadingSpinner />
     </div>
 );
 
-// A simple error boundary to catch errors in the component tree
+/**
+ * A root-level error boundary to catch rendering errors anywhere in the app
+ * and display a safe fallback UI instead of a blank page.
+ */
 class RootErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
@@ -56,6 +44,7 @@ class RootErrorBoundary extends React.Component {
         return { hasError: true };
     }
     componentDidCatch(error, errorInfo) {
+        // In a real application, you would log this error to a service like Sentry or LogRocket
         console.error('RootErrorBoundary caught an error:', error, errorInfo);
     }
     render() {
@@ -84,27 +73,26 @@ class RootErrorBoundary extends React.Component {
 const container = document.getElementById('root');
 const root = createRoot(container);
 
+// --- Render the Application ---
+// The component tree is wrapped in all necessary providers for state management,
+// routing, theming, and notifications.
 root.render(
     <Provider store={store}>
         <PersistGate loading={<Loading />} persistor={persistor}>
             <BrowserRouter>
-                <SnackbarProvider
-                    maxSnack={3}
-                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                    autoHideDuration={4000}
-                >
-                    {/* Wrap the entire app with both providers */}
-                    <StyledThemeProvider theme={theme}>
-                        <MUIThemeProvider theme={theme}>
-                            <RootErrorBoundary>
-                                <App />
-                            </RootErrorBoundary>
-                        </MUIThemeProvider>
-                    </StyledThemeProvider>
-                </SnackbarProvider>
+                <ThemeProvider>
+                    {/* ✅ Our custom NotificationProvider now wraps the entire app */}
+                    <NotificationProvider>
+                        <GlobalStyle />
+                        <RootErrorBoundary>
+                            <App />
+                        </RootErrorBoundary>
+                    </NotificationProvider>
+                </ThemeProvider>
             </BrowserRouter>
         </PersistGate>
     </Provider>
 );
 
-reportWebVitals(console.log);
+// Optional: for measuring performance
+reportWebVitals();

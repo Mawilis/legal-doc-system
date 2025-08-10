@@ -1,58 +1,57 @@
-// server/models/auditLogModel.js
+// ~/legal-doc-system/server/models/auditLogModel.js
 
 const mongoose = require('mongoose');
 
-const auditLogSchema = new mongoose.Schema(
-    {
-        // The user who performed the action.
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            required: true,
-        },
-        // The action that was performed (e.g., 'DOCUMENT_UPDATED', 'USER_LOGIN_FAILED').
-        action: {
-            type: String,
-            required: [true, 'An action is required for the audit log.'],
-            trim: true,
-        },
-        // A more detailed description of the event.
-        details: {
-            type: String,
-            trim: true,
-        },
-        // The IP address from which the action was performed.
-        ipAddress: {
-            type: String,
-        },
-        // The status of the action.
-        status: {
-            type: String,
-            enum: ['SUCCESS', 'FAILURE'],
-            required: true,
-        },
-        // Optional: The entity that was affected by the action (e.g., a Document ID).
-        entity: {
-            id: {
-                type: mongoose.Schema.Types.ObjectId,
-            },
-            type: {
-                type: String, // e.g., 'Document', 'User', 'Client'
-            }
-        }
+/**
+ * Defines the Mongoose schema for an audit log entry.
+ * This schema creates a comprehensive and indexed record for every API request,
+ * which is essential for security, debugging, and compliance purposes.
+ */
+const auditLogSchema = new mongoose.Schema({
+    // A reference to the user who made the request. Null if the request was unauthenticated.
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', // This should match the name of your User model
+        default: null,
+        index: true, // Indexing this field improves query performance when filtering by user.
     },
-    {
-        timestamps: { createdAt: true, updatedAt: false }, // We only care about when the log was created.
-        // Capped collections are high-performance and have a fixed size.
-        // They are perfect for logs, as old entries are automatically removed
-        // once the collection reaches its maximum size.
-        capped: { size: 1024 * 1024 * 50, max: 50000 } // e.g., 50MB or 50,000 documents
-    }
-);
+    // The user's email is stored for quick reference and denormalization.
+    // This is useful even if the original user document is deleted.
+    email: {
+        type: String,
+        default: 'Guest',
+    },
+    // The HTTP method of the request (e.g., GET, POST, PUT, DELETE).
+    method: {
+        type: String,
+        required: true,
+    },
+    // The API endpoint path that was accessed by the request.
+    path: {
+        type: String,
+        required: true,
+    },
+    // The final status of the request, updated after the response is sent.
+    status: {
+        type: String,
+        enum: ['PENDING', 'SUCCESS', 'FAILED'], // Ensures only valid statuses can be saved.
+        default: 'PENDING',
+        index: true, // Indexing status helps in quickly finding failed or successful requests.
+    },
+    // The IP address of the client making the request, for security tracking.
+    ip: {
+        type: String,
+    },
+    // The time in milliseconds it took the server to process and respond to the request.
+    responseTime: {
+        type: Number,
+    },
+}, {
+    // Mongoose's built-in timestamp option automatically adds `createdAt` and `updatedAt` fields.
+    timestamps: true
+});
 
-// Create an index for faster querying of logs by user or action.
-auditLogSchema.index({ user: 1, action: 1 });
-
+// Compile the schema into a Mongoose model.
 const AuditLog = mongoose.model('AuditLog', auditLogSchema);
 
 module.exports = AuditLog;

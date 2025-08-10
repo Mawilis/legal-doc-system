@@ -3,10 +3,10 @@
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDocuments, addDocument, deleteDocument, updateDocument } from '../reducers/documentSlice'; // Corrected path
+import { fetchDocuments, addDocument, deleteDocument, updateDocument } from '../reducers/documentSlice';
 import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import PageTransition from '../../../components/animations/PageTransition';
 
-// Styled Components
 const DocumentsContainer = styled.div`
   padding: var(--spacing-lg);
   background-color: var(--background-color);
@@ -57,21 +57,22 @@ const AddDocumentButton = styled.button`
 
 const DocumentsList = styled.ul`
   list-style: none;
+  padding: 0;
 `;
 
 const DocumentItem = styled.li`
   padding: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
-  background-color: var (--light-color);
-  border: 1px solid var (--accent-color);
-  border-radius: var (--border-radius);
+  background-color: var(--light-color);
+  border: 1px solid var(--accent-color);
+  border-radius: var(--border-radius);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: box-shadow var (--transition);
+  transition: box-shadow var(--transition);
 
   &:hover {
-    box-shadow: var (--shadow);
+    box-shadow: var(--shadow);
   }
 `;
 
@@ -96,7 +97,7 @@ const DocumentActions = styled.div`
 `;
 
 const ErrorMessage = styled.p`
-  color: var (--error-color);
+  color: var(--error-color);
 `;
 
 const Documents = () => {
@@ -105,13 +106,13 @@ const Documents = () => {
 
   useEffect(() => {
     dispatch(fetchDocuments());
+    document.title = 'Documents | LegalDocSys';
   }, [dispatch]);
 
   const handleAddDocument = () => {
     const newDoc = {
       title: 'New Document',
       description: 'Description of the new document.',
-      // Add other necessary fields
     };
     dispatch(addDocument(newDoc));
   };
@@ -132,34 +133,35 @@ const Documents = () => {
   };
 
   return (
-    <DocumentsContainer>
-      <DocumentsHeader>
-        <DocumentsTitle>Your Documents</DocumentsTitle>
-        <AddDocumentButton onClick={handleAddDocument}>
-          <FaPlus style={{ marginRight: '0.5rem' }} /> Add Document
-        </AddDocumentButton>
-      </DocumentsHeader>
-      {loading && <p>Loading documents...</p>}
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-      <DocumentsList>
-        {documents && documents.map((doc) => (
-          <DocumentItem key={doc.id}>
-            <DocumentInfo>
-              <DocumentTitle>{doc.title}</DocumentTitle>
-              <DocumentDescription>{doc.description}</DocumentDescription>
-            </DocumentInfo>
-            <DocumentActions>
-              <button onClick={() => handleEditDocument(doc)}>
-                <FaEdit /> Edit
-              </button>
-              <button onClick={() => handleDeleteDocument(doc.id)}>
-                <FaTrash /> Delete
-              </button>
-            </DocumentActions>
-          </DocumentItem>
-        ))}
-      </DocumentsList>
-    </DocumentsContainer>
+    <PageTransition>
+      <DocumentsContainer>
+        <DocumentsHeader>
+          <DocumentsTitle>Your Documents</DocumentsTitle>
+          <AddDocumentButton onClick={handleAddDocument}>
+            <FaPlus style={{ marginRight: '0.5rem' }} /> Add Document
+          </AddDocumentButton>
+        </DocumentsHeader>
+
+        {loading && <p>Loading documents...</p>}
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        {documents?.length === 0 && <p>No documents found.</p>}
+
+        <DocumentsList>
+          {documents.map((doc) => (
+            <DocumentItem key={doc.id}>
+              <DocumentInfo>
+                <DocumentTitle>{doc.title}</DocumentTitle>
+                <DocumentDescription>{doc.description}</DocumentDescription>
+              </DocumentInfo>
+              <DocumentActions>
+                <button onClick={() => handleEditDocument(doc)}><FaEdit /> Edit</button>
+                <button onClick={() => handleDeleteDocument(doc.id)}><FaTrash /> Delete</button>
+              </DocumentActions>
+            </DocumentItem>
+          ))}
+        </DocumentsList>
+      </DocumentsContainer>
+    </PageTransition>
   );
 };
 

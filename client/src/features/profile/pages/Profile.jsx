@@ -5,6 +5,8 @@ import styled from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserProfile, updateUserProfile } from '../reducers/profileSlice';
 import { FaSave } from 'react-icons/fa';
+import PageTransition from '../../../../components/motion/PageTransition';
+import { toast } from 'react-toastify';
 
 const ProfileContainer = styled.div`
   padding: var(--spacing-lg);
@@ -112,62 +114,67 @@ const Profile = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    dispatch(updateUserProfile(formData));
+    const resultAction = await dispatch(updateUserProfile(formData));
+    if (updateUserProfile.fulfilled.match(resultAction)) {
+      toast.success('Profile updated successfully!');
+    } else {
+      toast.error(resultAction.payload || 'Profile update failed.');
+    }
   };
 
-  if (loading) {
-    return <Loading>Loading Profile...</Loading>;
-  }
-
-  if (error) {
-    return <ErrorMessage>{error}</ErrorMessage>;
-  }
-
   return (
-    <ProfileContainer>
-      <ProfileHeader>
-        <ProfileTitle>My Profile</ProfileTitle>
-      </ProfileHeader>
-      <ProfileForm onSubmit={handleSubmit}>
-        <FormGroup>
-          <Label htmlFor="name">Name</Label>
-          <Input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-        </FormGroup>
-        <FormGroup>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </FormGroup>
-        <FormGroup>
-          <Label htmlFor="bio">Bio</Label>
-          <TextArea
-            id="bio"
-            name="bio"
-            rows="4"
-            value={formData.bio}
-            onChange={handleChange}
-          />
-        </FormGroup>
-        <SaveButton type="submit">
-          Save Changes <FaSave />
-        </SaveButton>
-      </ProfileForm>
-    </ProfileContainer>
+    <PageTransition>
+      <ProfileContainer>
+        <ProfileHeader>
+          <ProfileTitle>My Profile</ProfileTitle>
+        </ProfileHeader>
+        {loading ? (
+          <Loading>Loading Profile...</Loading>
+        ) : error ? (
+          <ErrorMessage>{error}</ErrorMessage>
+        ) : (
+          <ProfileForm onSubmit={handleSubmit}>
+            <FormGroup>
+              <Label htmlFor="name">Name</Label>
+              <Input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label htmlFor="bio">Bio</Label>
+              <TextArea
+                id="bio"
+                name="bio"
+                rows="4"
+                value={formData.bio}
+                onChange={handleChange}
+              />
+            </FormGroup>
+            <SaveButton type="submit">
+              Save Changes <FaSave />
+            </SaveButton>
+          </ProfileForm>
+        )}
+      </ProfileContainer>
+    </PageTransition>
   );
 };
 

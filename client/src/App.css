@@ -1,31 +1,29 @@
+/* /src/App.css — updated for dark/light mode awareness */
+
 .App {
   text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+  font-family: 'Poppins Regular', sans-serif;
 }
 
 .App-header {
-  background-color: #282c34;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  background-color: var(--app-bg, #ffffff);
+  color: var(--app-text, #333333);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.App-logo {
+  height: 120px;
+  pointer-events: none;
+  animation: App-logo-spin infinite 20s linear;
 }
 
 .App-link {
-  color: #61dafb;
+  color: var(--app-link, #007bff);
 }
 
 @keyframes App-logo-spin {

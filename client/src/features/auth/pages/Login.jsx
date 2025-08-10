@@ -1,288 +1,159 @@
 // ~/legal-doc-system/client/src/features/auth/pages/Login.jsx
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser, clearAuthError } from '../reducers/authSlice';
+import { Navigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import backgroundImage from '../../../assets/legal-office.jpeg';
-import logo from '../../../assets/logo.png';
-import CircularProgress from '@mui/material/CircularProgress';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
+import { loginUser } from '../reducers/authSlice'; // Assuming this thunk exists
+import Button from '../../../components/atoms/Button'; // Use our masterpiece Button
+import LoadingSpinner from '../../../components/LoadingSpinner';
 
-/**
- * IMPORTANT:
- * When using styled‑components alongside Material UI (which uses Emotion by default),
- * ensure that your bundler (e.g. Webpack) is configured to alias the MUI styled engine to
- * the styled‑components version. This prevents conflicts that can cause errors like:
- * "Cannot read properties of null (reading 'useContext')".
- *
- * In your webpack.config.js, add:
- * 
- * resolve: {
- *   alias: {
- *     '@mui/styled-engine': '@mui/styled-engine-sc'
- *   }
- * }
- *
- * This configuration ensures that Material UI components (like CircularProgress)
- * work correctly within your styled‑components based project.
- */
+// --- Validation Schema for the Login Form ---
+const LoginValidationSchema = Yup.object().shape({
+    email: Yup.string().email('Invalid email address').required('Email is required'),
+    password: Yup.string().required('Password is required'),
+});
 
-// Styled Components
+// --- Styled Components for a Professional Login UI ---
 
-const LoginWrapper = styled.div`
+const LoginContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0.5),
-      rgba(0, 0, 0, 0.8)
-    ),
-    url(${backgroundImage}) no-repeat center center fixed;
-  background-size: cover;
-  padding: 20px;
-  box-sizing: border-box;
+  background-color: ${({ theme }) => theme.colors.background || '#f4f6f8'};
 `;
 
-const LoginContainer = styled.div`
-  width: 95%;
-  max-width: 500px;
-  padding: 40px;
-  border-radius: 10px;
-  background-color: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+const LoginCard = styled.div`
+  background: #fff;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  width: 100%;
+  max-width: 420px;
+`;
+
+const Header = styled.h1`
+  font-size: 2rem;
+  color: ${({ theme }) => theme.colors.text || '#333'};
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+`;
+
+const StyledForm = styled(Form)`
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  gap: 1.5rem;
 `;
 
-const Logo = styled.img`
-  width: 120px;
-  height: 120px;
-  margin-bottom: 20px;
-  border-radius: 50%;
-  object-fit: cover;
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 `;
 
-const WelcomeMessage = styled.h1`
-  font-size: 2.2rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 10px;
-`;
-
-const Title = styled.h2`
-  font-size: 1.6rem;
-  color: #555;
-  margin-bottom: 30px;
+const StyledLabel = styled.label`
   font-weight: 500;
+  color: ${({ theme }) => theme.colors.textSecondary || '#555'};
 `;
 
-const InputField = styled.input`
-  width: 100%;
-  padding: 15px;
-  margin-bottom: 20px;
-  border: 1px solid #ddd;
+const StyledField = styled(Field)`
+  padding: 0.75rem 1rem;
+  border: 1px solid ${({ theme }) => theme.colors.border || '#ccc'};
   border-radius: 5px;
   font-size: 1rem;
-  box-sizing: border-box;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.2s ease;
 
   &:focus {
-    border-color: #007bff;
     outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-  }
-
-  &::placeholder {
-    color: #999;
+    border-color: ${({ theme }) => theme.colors.primary || '#007bff'};
   }
 `;
 
-const Button = styled.button`
+const ErrorText = styled(ErrorMessage)`
+  color: ${({ theme }) => theme.colors.danger || '#d32f2f'};
+  font-size: 0.875rem;
+`;
+
+const SubmitButton = styled(Button)`
   width: 100%;
-  padding: 15px;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1.2rem;
-  font-weight: 500;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #0062cc;
-  }
-
-  &:disabled {
-    background-color: #a0a0a0;
-    cursor: not-allowed;
-  }
-`;
-
-const ErrorText = styled.p`
-  color: #dc3545;
-  margin-bottom: 20px;
-  font-size: 0.9rem;
-`;
-
-const Label = styled.label`
-  font-size: 1rem;
-  color: #333;
-  margin-bottom: 5px;
-  display: block;
-  text-align: left;
-  width: 100%;
-  font-weight: 500;
+  margin-top: 1rem;
 `;
 
 /**
- * Login Component
- *
- * This component renders the login screen. It displays a login form for the user,
- * handles form submissions by dispatching the login action, and provides immediate
- * feedback (including a loading spinner inside the button) during authentication.
- *
- * On successful authentication, it navigates to the intended route.
+ * A professional, production-ready Login page.
+ * It handles user authentication, form validation, and redirects, all integrated with Redux.
  */
 const Login = () => {
-  // Local state to hold email and password.
-  const [credentials, setCredentials] = useState({ email: '', password: '' });
-  // Local state for handling error messages.
-  const [error, setError] = useState(null);
+    // --- Hooks ---
+    const dispatch = useDispatch();
+    const location = useLocation();
+    const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
 
-  // Redux state: token, loading status, and any authentication error.
-  const { token, loading, error: authError } = useSelector((state) => state.auth);
-
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Determine the post-login redirect route; default to '/dashboard'.
-  const from = location.state?.from?.pathname || '/dashboard';
-
-  /**
-   * handleLogin
-   *
-   * This function is triggered when the user submits the login form.
-   * It clears any previous errors, dispatches the login action, and navigates
-   * to the intended page if authentication is successful.
-   */
-  const handleLogin = useCallback(
-    async (e) => {
-      e.preventDefault();
-      setError(null);
-      dispatch(clearAuthError()); // Clear previous auth errors
-
-      console.log('Login attempt with credentials:', credentials);
-
-      try {
-        // Dispatch the login action. Adjust based on your authSlice structure.
-        const loginResponse = await dispatch(loginUser(credentials));
-
-        // If login is successful, navigate to the target route.
-        if (loginResponse.payload.user || loginResponse.payload.success) {
-          console.log('Login successful, navigating to:', from);
-          navigate(from, { replace: true });
-        } else {
-          console.error('Login error:', loginResponse.error);
-          setError('Invalid credentials. Please try again.');
+    /**
+     * Handles the form submission by dispatching the loginUser async thunk.
+     * @param {object} values - The form values from Formik.
+     * @param {object} formikHelpers - Helpers from Formik.
+     */
+    const handleLogin = async (values, { setSubmitting }) => {
+        try {
+            // Dispatch the login action. The slice will handle success/error toasts.
+            await dispatch(loginUser(values)).unwrap();
+            // On success, the redirect below will handle navigation.
+        } catch (err) {
+            // Error is handled by the slice and displayed from the `error` state.
+        } finally {
+            setSubmitting(false);
         }
-      } catch (err) {
-        console.error('Login error:', err);
-        setError('Login failed. Please check your credentials and network connection.');
-      }
-    },
-    [credentials, dispatch, navigate, from]
-  );
+    };
 
-  /**
-   * handleInputChange
-   *
-   * Updates the credentials state as the user types in the input fields.
-   */
-  const handleInputChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setCredentials((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  }, []);
-
-  /**
-   * useEffect
-   *
-   * Watches for changes in the authentication state. If a valid token is present
-   * and there are no errors, it navigates the user to the designated route.
-   */
-  useEffect(() => {
-    let timeoutId;
-
-    console.log('Auth state changed:', { token, loading, authError, error });
-
-    if (token && !authError && !error) {
-      console.log('Token detected. Redirecting to:', from);
-      // Use a short delay to allow state updates before navigation.
-      timeoutId = setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 100);
+    // --- Redirect Logic ---
+    // If the user is already authenticated, redirect them away from the login page.
+    if (isAuthenticated) {
+        const from = location.state?.from?.pathname || '/dashboard';
+        return <Navigate to={from} replace />;
     }
 
-    // Clear local error if Redux authError is cleared.
-    if (!authError) {
-      setError(null);
-    }
+    // --- Render Logic ---
+    return (
+        <LoginContainer>
+            <LoginCard>
+                <Header>Sign In</Header>
+                <Formik
+                    initialValues={{ email: '', password: '' }}
+                    validationSchema={LoginValidationSchema}
+                    onSubmit={handleLogin}
+                >
+                    {({ isSubmitting }) => (
+                        <StyledForm>
+                            <FormGroup>
+                                <StyledLabel htmlFor="email">Email Address</StyledLabel>
+                                <StyledField id="email" name="email" type="email" />
+                                <ErrorText name="email" component="div" />
+                            </FormGroup>
 
-    return () => clearTimeout(timeoutId);
-  }, [token, navigate, from, authError, loading, error]);
+                            <FormGroup>
+                                <StyledLabel htmlFor="password">Password</StyledLabel>
+                                <StyledField id="password" name="password" type="password" />
+                                <ErrorText name="password" component="div" />
+                            </FormGroup>
 
-  return (
-    <LoginWrapper>
-      <LoginContainer>
-        <Logo src={logo} alt="Legal Doc System Logo" />
-        <WelcomeMessage>Welcome to the Legal Doc System</WelcomeMessage>
-        <Title>Please log in to continue</Title>
-        {/* Display any error message */}
-        {error && <ErrorText>{error}</ErrorText>}
-        <form onSubmit={handleLogin}>
-          <Label htmlFor="email">Email</Label>
-          <InputField
-            type="email"
-            name="email"
-            id="email"
-            placeholder="Enter your email"
-            autoComplete="email"
-            value={credentials.email}
-            onChange={handleInputChange}
-            required
-          />
-          <Label htmlFor="password">Password</Label>
-          <InputField
-            type="password"
-            name="password"
-            id="password"
-            placeholder="Enter your password"
-            autoComplete="current-password"
-            value={credentials.password}
-            onChange={handleInputChange}
-            required
-          />
-          <Button type="submit" disabled={loading}>
-            {loading ? (
-              // Display a spinner inside the button during login
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Login'
-            )}
-          </Button>
-        </form>
-      </LoginContainer>
-    </LoginWrapper>
-  );
+                            {/* Display loading spinner or error message */}
+                            {loading && <LoadingSpinner size="30px" />}
+                            {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
+
+                            <SubmitButton type="submit" variant="primary" size="large" disabled={isSubmitting}>
+                                {isSubmitting ? 'Signing In...' : 'Sign In'}
+                            </SubmitButton>
+                        </StyledForm>
+                    )}
+                </Formik>
+            </LoginCard>
+        </LoginContainer>
+    );
 };
 
 export default Login;

@@ -1,97 +1,76 @@
+// ~/server/routes/auditRoutes.js
+
 const express = require('express');
-const {
-    generateDocumentReportPDF,
-    generateDocumentReportCSV
-} = require('../controllers/reportController');
-const { protect, authorize } = require('../middleware/auth');
+const { getAuditLogs, exportAuditLogsToCSV } = require('../controllers/auditController');
+const { protect, authorize } = require('../middleware/authMiddleware'); // Assuming this path
 
 const router = express.Router();
 
-// Apply security middleware globally for this route
+// Apply security middleware to all routes in this file.
+// Only authenticated users with the 'admin' role can proceed.
 router.use(protect);
 router.use(authorize('admin'));
 
 /**
  * @swagger
- * /api/reports/documents/pdf:
- *   get:
- *     summary: Generate a PDF report of documents
- *     description: Creates and downloads a PDF listing documents within a date range.
- *     tags:
- *       - Reports
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: startDate
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: The start date (YYYY-MM-DD).
- *       - in: query
- *         name: endDate
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: The end date (YYYY-MM-DD).
- *     responses:
- *       200:
- *         description: PDF file generated successfully.
- *         content:
- *           application/pdf:
- *             schema:
- *               type: string
- *               format: binary
- *       400:
- *         description: Bad request (e.g., missing dates).
- *       401:
- *         description: Unauthorized (token missing/invalid).
- *       403:
- *         description: Forbidden (admin access required).
+ * /api/audit:
+ * get:
+ * summary: Retrieve audit logs for UI display
+ * description: Fetches a paginated list of audit logs. Can be filtered by user, status, or method.
+ * tags:
+ * - Audit
+ * security:
+ * - bearerAuth: []
+ * parameters:
+ * - in: query
+ * name: page
+ * schema:
+ * type: integer
+ * description: The page number for pagination.
+ * - in: query
+ * name: limit
+ * schema:
+ * type: integer
+ * description: The number of logs to return per page.
+ * - in: query
+ * name: status
+ * schema:
+ * type: string
+ * enum: [SUCCESS, FAILED]
+ * description: Filter logs by status.
+ * responses:
+ * 200:
+ * description: A paginated list of audit logs.
+ * 401:
+ * description: Unauthorized.
+ * 403:
+ * description: Forbidden.
  */
-router.get('/documents/pdf', generateDocumentReportPDF);
+router.route('/').get(getAuditLogs);
 
 /**
  * @swagger
- * /api/reports/documents/csv:
- *   get:
- *     summary: Generate a CSV report of documents
- *     description: Creates and downloads a CSV listing documents within a date range.
- *     tags:
- *       - Reports
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: startDate
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: The start date (YYYY-MM-DD).
- *       - in: query
- *         name: endDate
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: The end date (YYYY-MM-DD).
- *     responses:
- *       200:
- *         description: CSV file generated successfully.
- *         content:
- *           text/csv:
- *             schema:
- *               type: string
- *       400:
- *         description: Bad request (e.g., missing dates).
- *       401:
- *         description: Unauthorized (token missing/invalid).
- *       403:
- *         description: Forbidden (admin access required).
+ * /api/audit/export/csv:
+ * get:
+ * summary: Export all audit logs to a CSV file
+ * description: Generates and downloads a CSV file containing all audit log entries.
+ * tags:
+ * - Audit
+ * security:
+ * - bearerAuth: []
+ * responses:
+ * 200:
+ * description: CSV file generated successfully.
+ * content:
+ * text/csv:
+ * schema:
+ * type: string
+ * format: binary
+ * 401:
+ * description: Unauthorized.
+ * 403:
+ * description: Forbidden.
  */
-router.get('/documents/csv', generateDocumentReportCSV);
+router.route('/export/csv').get(exportAuditLogsToCSV);
 
 module.exports = router;

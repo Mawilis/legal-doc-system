@@ -1,2 +1,0 @@
-"use strict";(self.webpackChunklegal_doc_system_client=self.webpackChunklegal_doc_system_client||[]).push([[728],{9728:(e,s,n)=>{n.r(s),n.d(s,{default:()=>c});n(6195);var o=n(1056),t=n(5667);const c=()=>{const e=(0,o.Zp)();return(0,t.jsxs)("div",{children:[(0,t.jsx)("h1",{children:"Oops! Something went wrong."}),(0,t.jsx)("p",{children:"The page you are looking for does not exist."}),(0,t.jsx)("button",{onClick:()=>e("/"),children:"Go Back Home"})]})}}}]);
-//# sourceMappingURL=728.8978c2f0.chunk.js.map

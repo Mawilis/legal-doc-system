@@ -1,81 +1,99 @@
-import React, { useEffect, useState, useCallback } from "react";
-import styled from "styled-components";
-import useWebSocket from "../../hooks/useWebSocket";
-import { getNotifications } from "../../services/notificationService";
-import Notifications from "../../components/molecules/Notifications";
-import Banner from "../../components/atoms/Banner";
-import bannerImage from "../../assets/images/legal-office.jpg";
+// ~/legal-doc-system/client/src/components/atoms/Banner.jsx
 
-const DashboardContainer = styled.div`
-  padding: ${({ theme }) => theme.spacing.md};
-  max-width: 800px;
-  margin: 0 auto;
-  background-color: ${({ theme }) => theme.colors.background};
-  border-radius: ${({ theme }) => theme.spacing.sm};
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+import React from 'react';
+import styled from 'styled-components';
+import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
+
+// Styled Components
+const BannerWrapper = styled.section`
+  position: relative;
+  width: 100%;
+  height: ${({ height }) => height || '300px'};
+  background-image: url(${({ backgroundImage }) => backgroundImage});
+  background-size: cover;
+  background-position: center;
+  border-radius: ${({ theme }) => theme?.spacing?.sm || '8px'};
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 `;
 
-const Title = styled.h2`
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.text};
+const Overlay = styled.div`
+  background-color: rgba(0, 0, 0, 0.5); /* dark overlay */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 `;
 
-const Dashboard = () => {
-    const [notifications, setNotifications] = useState([]);
-    const [error, setError] = useState(null);
-    const socket = useWebSocket();
+const Content = styled.div`
+  position: relative;
+  z-index: 2;
+  color: white;
+  padding: 20px;
+  max-width: 700px;
+`;
 
-    const fetchNotifications = useCallback(async () => {
-        try {
-            const data = await getNotifications();
-            setNotifications(data);
-        } catch (err) {
-            console.error("Error fetching dashboard data:", err);
-            setError("Error fetching dashboard data");
-        }
-    }, []);
+const Title = styled.h1`
+  font-size: 2.4rem;
+  margin-bottom: 10px;
+`;
 
-    useEffect(() => {
-        fetchNotifications(); // Fetch initial notifications
+const Subtitle = styled.p`
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+`;
 
-        if (socket) {
-            socket.emit("fetchNotifications");
+const CTAButton = styled.button`
+  background-color: #007bff;
+  border: none;
+  color: white;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
 
-            // Event listeners for real-time updates
-            const handleNotificationHistory = (data) => {
-                setNotifications(data);
-            };
+  &:hover {
+    background-color: #0056b3;
+  }
+`;
 
-            const handleNewNotification = (notification) => {
-                setNotifications((prev) => [notification, ...prev]);
-            };
+// Component
+const Banner = ({ title, subtitle, img, height, ctaText, ctaLink }) => {
+    const navigate = useNavigate();
 
-            const handleConnectionError = (err) => {
-                console.error("WebSocket connection error:", err);
-                setError("Real-time connection error");
-            };
-
-            socket.on("notificationHistory", handleNotificationHistory);
-            socket.on("new-notification", handleNewNotification);
-            socket.on("connect_error", handleConnectionError);
-
-            // Cleanup function to remove event listeners
-            return () => {
-                socket.off("notificationHistory", handleNotificationHistory);
-                socket.off("new-notification", handleNewNotification);
-                socket.off("connect_error", handleConnectionError);
-            };
-        }
-    }, [socket, fetchNotifications]); // Include fetchNotifications in the dependency array
+    const handleCTA = () => {
+        if (ctaLink) navigate(ctaLink);
+    };
 
     return (
-        <DashboardContainer>
-            <Banner text="Welcome to the Dashboard" img={bannerImage} />
-            <Title>Dashboard - Real-Time Notifications</Title>
-            {error && <p style={{ color: "red" }}>{error}</p>}
-            <Notifications notifications={notifications} />
-        </DashboardContainer>
+        <BannerWrapper backgroundImage={img} height={height} role="banner" aria-label={title}>
+            <Overlay />
+            <Content>
+                <Title>{title}</Title>
+                {subtitle && <Subtitle>{subtitle}</Subtitle>}
+                {ctaText && ctaLink && (
+                    <CTAButton onClick={handleCTA}>{ctaText}</CTAButton>
+                )}
+            </Content>
+        </BannerWrapper>
     );
 };
 
-export default Dashboard;
+// Prop Types
+Banner.propTypes = {
+    title: PropTypes.string.isRequired,
+    subtitle: PropTypes.string,
+    img: PropTypes.string.isRequired,
+    height: PropTypes.string,
+    ctaText: PropTypes.string,
+    ctaLink: PropTypes.string,
+};
+
+export default Banner;

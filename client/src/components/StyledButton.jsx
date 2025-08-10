@@ -1,83 +1,113 @@
-import styled, { css } from "styled-components";
+import styled, { css } from 'styled-components';
+import PropTypes from 'prop-types';
 
+// --- Variant and Size Maps for clean, scalable styling ---
+const VARIANTS = {
+  primary: { bg: '#007bff', color: '#ffffff', hoverBg: '#0056b3', border: '1px solid #007bff' },
+  secondary: { bg: '#6c757d', color: '#ffffff', hoverBg: '#5a6268', border: '1px solid #6c757d' },
+  danger: { bg: '#dc3545', color: '#ffffff', hoverBg: '#c82333', border: '1px solid #dc3545' },
+  success: { bg: '#28a745', color: '#ffffff', hoverBg: '#218838', border: '1px solid #28a745' },
+};
+
+const SIZES = {
+  small: { fontSize: '0.9rem', padding: '8px 12px' },
+  medium: { fontSize: '1rem', padding: '10px 16px' },
+  large: { fontSize: '1.1rem', padding: '12px 20px' },
+};
+
+/**
+ * A versatile, theme-aware button component with multiple variants and sizes.
+ */
 const Button = styled.button`
-  /* Basic Button Styles */
-  background-color: ${({ theme, variant }) => {
-    switch (variant) {
-      case "primary":
-        return theme.colors.primary;
-      case "secondary":
-        return theme.colors.secondary;
-      case "danger":
-        return theme.colors.danger;
-      // ... more variants
-      default:
-        return theme.colors.primary;
-    }
-  }};
-  color: white;
-  border: none;
-  border-radius: 5px; /* Slightly rounded corners */
+  /* --- Base Styles --- */
+  font-family: ${({ theme }) => theme.typography?.fontFamily || 'sans-serif'};
+  border-radius: 5px;
   cursor: pointer;
   font-weight: 500;
-  transition:
-    background-color 0.2s ease,
-    transform 0.1s ease,
-    box-shadow 0.2s ease; /* Add transitions for smooth effects */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
 
-  /* Hover State */
-  &:hover {
-    background-color: ${({ theme, variant }) => {
-    switch (variant) {
-      case "primary":
-        return theme.colors.primaryDark;
-      case "secondary":
-        return theme.colors.secondaryDark;
-      case "danger":
-        return theme.colors.dangerDark;
-      // ... more variants
-      default:
-        return theme.colors.primaryDark;
+  /* --- Size Styles --- */
+  padding: ${({ size = 'medium' }) => SIZES[size]?.padding || SIZES.medium.padding};
+  font-size: ${({ size = 'medium' }) => SIZES[size]?.fontSize || SIZES.medium.fontSize};
+  
+  /* --- Variant Styles --- */
+  ${({ variant = 'primary', outline, ghost }) => {
+    const themeVariant = VARIANTS[variant] || VARIANTS.primary;
+
+    if (ghost) {
+      return css`
+        background-color: transparent;
+        border: 1px solid transparent;
+        color: ${themeVariant.bg};
+        &:hover:not(:disabled) {
+          background-color: ${themeVariant.bg};
+          color: ${themeVariant.color};
+        }
+      `;
     }
-  }};
-    transform: translateY(-1px); /* Slightly lift on hover */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Add a subtle shadow on hover */
+
+    if (outline) {
+      return css`
+        background-color: transparent;
+        border: ${themeVariant.border};
+        color: ${themeVariant.bg};
+        &:hover:not(:disabled) {
+          background-color: ${themeVariant.bg};
+          color: ${themeVariant.color};
+        }
+      `;
+    }
+
+    return css`
+      background-color: ${themeVariant.bg};
+      color: ${themeVariant.color};
+      border: ${themeVariant.border};
+      &:hover:not(:disabled) {
+        background-color: ${themeVariant.hoverBg};
+      }
+    `;
+  }}
+
+  /* --- Icon-Only Styles --- */
+  ${({ iconOnly }) => iconOnly && css`
+      padding: 8px;
+      width: 36px;
+      height: 36px;
+      & > svg {
+          margin: 0;
+      }
+  `}
+
+  /* --- State Styles --- */
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
 
-  /* Active State */
-  &:active {
-    transform: translateY(1px); /* Slightly push down on click */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Add a more pronounced shadow on click */
-  }
-
-  /* Focus State */
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Add a focus ring */
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors?.focusRing || 'rgba(0, 123, 255, 0.25)'};
   }
 
-  /* Disabled State */
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
-
-  /* Size Variations */
-  ${({ size }) =>
-    size === "large" &&
-    css`
-      font-size: 1.2rem;
-      padding: 12px 20px; /* Adjust padding for large size */
-    `}
-
-  ${({ size }) =>
-    size === "small" &&
-    css`
-      font-size: 0.8rem;
-      padding: 8px 12px; /* Adjust padding for small size */
-    `}
-
-  /* ... more size variations */
 `;
+
+Button.propTypes = {
+  variant: PropTypes.oneOf(['primary', 'secondary', 'danger', 'success']),
+  size: PropTypes.oneOf(['small', 'medium', 'large']),
+  outline: PropTypes.bool,
+  ghost: PropTypes.bool,
+  iconOnly: PropTypes.bool,
+  disabled: PropTypes.bool,
+  children: PropTypes.node.isRequired,
+};
 
 export default Button;

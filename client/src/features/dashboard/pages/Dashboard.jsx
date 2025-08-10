@@ -19,7 +19,6 @@ import {
   Bar,
 } from 'recharts';
 
-// ✅ Styled Components for UI consistency
 const DashboardContainer = styled.div`
   padding: 20px;
   background-color: #f5f5f5;
@@ -28,7 +27,7 @@ const DashboardContainer = styled.div`
 
 const SummaryGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
 `;
@@ -50,7 +49,7 @@ const ChartBox = styled.div`
   border-radius: 8px;
   padding: 20px;
   flex: 1;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 `;
 
 const Loading = styled.div`
@@ -65,100 +64,70 @@ const ErrorMessage = styled.p`
   font-size: 1.2rem;
 `;
 
-// ✅ Main Dashboard Component
 const Dashboard = () => {
   const dispatch = useDispatch();
   const { metrics, charts, loading, error } = useSelector((state) => state.dashboard);
   const { documents } = useSelector((state) => state.documents);
 
-  // ✅ Fetch Data ONLY if necessary
   useEffect(() => {
-    console.log('[Dashboard] Checking if data exists before fetching.');
-
-    if (!metrics || !charts) {
-      dispatch(fetchDashboardData());
-    }
-
-    if (!documents || documents.length === 0) {
-      dispatch(fetchDocuments());
-    }
+    if (!metrics || !charts) dispatch(fetchDashboardData());
+    if (!documents || documents.length === 0) dispatch(fetchDocuments());
   }, [dispatch, metrics, charts, documents]);
 
-  // ✅ Show Loading UI
-  if (loading) {
-    console.log('[Dashboard] Data is loading...');
-    return <Loading>Loading Dashboard...</Loading>;
-  }
+  if (loading) return <Loading>Loading Dashboard...</Loading>;
+  if (error) return <ErrorMessage>{error}</ErrorMessage>;
 
-  // ✅ Show Error UI
-  if (error) {
-    console.error('[Dashboard] Error loading data:', error);
-    return <ErrorMessage>{error}</ErrorMessage>;
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[✅ Dashboard Loaded]', { metrics, charts });
   }
-
-  console.log('[Dashboard] Data loaded successfully.', { metrics, charts, documents });
 
   return (
     <DashboardContainer>
-      {/* ✅ Summary Cards */}
       <SummaryGrid>
-        <SummaryCard
-          icon={<FaFileAlt />}
-          title="Total Documents"
-          value={metrics?.totalDocuments || 0}
-        />
-        <SummaryCard
-          icon={<FaUsers />}
-          title="Total Users"
-          value={metrics?.totalUsers || 0}
-        />
-        <SummaryCard
-          icon={<FaChartLine />}
-          title="Monthly Growth"
-          value={`${metrics?.monthlyGrowth || 0}%`}
-        />
+        <SummaryCard icon={<FaFileAlt />} title="Total Documents" value={metrics?.totalDocuments || 0} />
+        <SummaryCard icon={<FaUsers />} title="Total Users" value={metrics?.totalUsers || 0} />
+        <SummaryCard icon={<FaChartLine />} title="Monthly Growth" value={`${metrics?.monthlyGrowth || 0}%`} />
       </SummaryGrid>
 
-      {/* ✅ Charts Section */}
       <ChartsContainer>
-        {/* 📈 Documents Chart */}
         <ChartBox>
-          <h2>Documents Created Over Time</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={charts?.documentsOverTime || []}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="documents"
-                stroke="#8884d8"
-                activeDot={{ r: 8 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <h2>Documents Over Time</h2>
+          {charts?.documentsOverTime?.length ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={charts.documentsOverTime}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="documents" stroke="#8884d8" activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p>No chart data available.</p>
+          )}
         </ChartBox>
 
-        {/* 📊 User Activity Chart */}
         <ChartBox>
           <h2>User Activity</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={charts?.userActivity || []}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="user" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="actions" fill="#82ca9d" />
-            </BarChart>
-          </ResponsiveContainer>
+          {charts?.userActivity?.length ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={charts.userActivity}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="user" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="actions" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p>No user activity data.</p>
+          )}
         </ChartBox>
       </ChartsContainer>
 
-      {/* ✅ Recent Documents */}
-      <RecentDocuments documents={documents} />
+      <RecentDocuments documents={documents || []} />
     </DashboardContainer>
   );
 };
