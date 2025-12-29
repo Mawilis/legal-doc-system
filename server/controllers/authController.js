@@ -1,129 +1,81 @@
-const User = require('../models/userModel');
-const CustomError = require('../utils/customError');
-const logger = require('../utils/logger');
-const { logAuditEvent } = require('../utils/auditLogger');
-const sendEmail = require('../utils/sendMail');
+'use strict';
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const asyncHandler = require('express-async-handler');
+const User = require('../models/userModel');
 
-// In-memory failed login tracker (or use Redis for production)
-const failedLoginAttempts = {};
-
+// Generate JWT
 const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d',
+    return jwt.sign({ id }, process.env.JWT_SECRET || 'devsecret', { expiresIn: '30d' });
+};
+
+// @desc    Login User
+// @route   POST /api/auth/login
+exports.login = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+    
+    // Explicitly select password
+    const user = await User.findOne({ email }).select('+password');
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+        // ✅ FIX: Send structure matching frontend expectation
+        res.json({
+            success: true,
+            accessToken: generateToken(user._id), // Renamed from 'token'
+            user: {                               // Nested object
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } else {
+        res.status(401);
+        throw new Error('Invalid email or password');
+    }
+});
+
+// @desc    Register User
+// @route   POST /api/auth/register
+exports.register = asyncHandler(async (req, res) => {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password) {
+        res.status(400); throw new Error('Please add all fields');
+    }
+
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+        res.status(400); throw new Error('User already exists');
+    }
+
+    const user = await User.create({ name, email, password, role });
+
+    if (user) {
+        res.status(201).json({
+            success: true,
+            accessToken: generateToken(user._id),
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } else {
+        res.status(400); throw new Error('Invalid user data');
+    }
+});
+
+// @desc    Get Me
+// @route   GET /api/auth/me
+exports.getMe = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id);
+    res.status(200).json({
+        success: true,
+        user: user
     });
-};
+});
 
-const sendTokenResponse = (user, statusCode, res) => {
-    const token = generateToken(user._id);
-
-    const cookieOptions = {
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-    };
-
-    res.status(statusCode)
-        .cookie('token', token, cookieOptions)
-        .json({
-            success: true,
-            token,
-            data: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-            },
-        });
-};
-
-// --- Register ---
-exports.register = async (req, res, next) => {
-    try {
-        const { name, email, password, role } = req.body;
-
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return next(new CustomError('An account with this email already exists.', 400));
-        }
-
-        const user = await User.create({ name, email, password, role });
-
-        logger.info(`New user registered: ${user.email}`);
-        logAuditEvent(`✅ Registered new user: ${email} | IP: ${req.ip}`);
-
-        sendTokenResponse(user, 201, res);
-    } catch (error) {
-        logger.error(`Registration error: ${error.message}`);
-        next(error);
-    }
-};
-
-// --- Login ---
-exports.login = async (req, res, next) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return next(new CustomError('Please provide an email and password.', 400));
-        }
-
-        const user = await User.findOne({ email }).select('+password');
-
-        if (!user || !(await user.matchPassword(password))) {
-            logAuditEvent(`❌ Failed login for ${email} | IP: ${req.ip}`);
-
-            // Track failed attempts
-            failedLoginAttempts[email] = (failedLoginAttempts[email] || 0) + 1;
-
-            // If >= 3 failed attempts, alert admin
-            if (failedLoginAttempts[email] >= 3) {
-                logger.warn(`🚨 Multiple failed logins for ${email}`);
-                await sendEmail({
-                    to: process.env.ALERT_EMAIL,
-                    subject: `🚨 Security Alert: Failed Login Attempts`,
-                    text: `There have been ${failedLoginAttempts[email]} failed login attempts for ${email} from IP ${req.ip}`,
-                });
-                // Reset to avoid spamming
-                failedLoginAttempts[email] = 0;
-            }
-
-            return next(new CustomError('Invalid email or password.', 401));
-        }
-
-        // Successful login — reset tracker
-        failedLoginAttempts[email] = 0;
-
-        logger.info(`User logged in: ${user.email}`);
-        logAuditEvent(`✅ Successful login: ${email} | IP: ${req.ip}`);
-
-        sendTokenResponse(user, 200, res);
-    } catch (error) {
-        logger.error(`Login error: ${error.message}`);
-        next(error);
-    }
-};
-
-// --- Get Me ---
-exports.getMe = async (req, res, next) => {
-    try {
-        const user = await User.findById(req.user.id);
-
-        if (!user) {
-            return next(new CustomError('User not found.', 404));
-        }
-
-        res.status(200).json({
-            success: true,
-            data: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-            }
-        });
-    } catch (error) {
-        logger.error(`GetMe error: ${error.message}`);
-        next(error);
-    }
-};
+exports.logout = asyncHandler(async (req, res) => {
+    res.status(200).json({ success: true, message: 'Logged out' });
+});

@@ -1,5 +1,3 @@
-// server/middleware/errorMiddleware.js
-
 const CustomError = require('../utils/customError');
 const logger = require('../utils/logger');
 
@@ -11,8 +9,12 @@ const handleCastErrorDB = (err) => {
 };
 
 const handleDuplicateFieldsDB = (err) => {
-    // Extract the value from the error message for a cleaner output
-    const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
+    let value = '';
+    try {
+        value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
+    } catch {
+        value = 'duplicate value';
+    }
     const message = `Duplicate field value: ${value}. Please use another value.`;
     return new CustomError(message, 400);
 };
@@ -23,65 +25,72 @@ const handleValidationErrorDB = (err) => {
     return new CustomError(message, 400);
 };
 
-// Specific handlers for JWT authentication errors
+// JWT errors
 const handleJWTError = () => new CustomError('Invalid token. Please log in again.', 401);
 const handleJWTExpiredError = () => new CustomError('Your token has expired. Please log in again.', 401);
 
+// --- Response functions ---
 
-// --- Response functions for different environments ---
-
-// In development, send a detailed error with the stack trace for debugging
-const sendErrorDev = (err, res) => {
+const sendErrorDev = (err, req, res) => {
     res.status(err.statusCode).json({
         success: false,
         status: err.status,
-        error: err,
+        statusCode: err.statusCode,
         message: err.message,
-        stack: err.stack
+        error: err,
+        stack: err.stack,
+        path: req.originalUrl,
+        method: req.method
     });
 };
 
-// In production, send a more generic and safe error message
-const sendErrorProd = (err, res) => {
-    // A) For operational, trusted errors that we created, send the specific message to the client
+const sendErrorProd = (err, req, res) => {
     if (err.isOperational) {
         return res.status(err.statusCode).json({
             success: false,
             status: err.status,
-            error: err.message
+            statusCode: err.statusCode,
+            error: err.message,
+            path: req.originalUrl,
+            method: req.method
         });
     }
 
-    // B) For programming or other unknown errors, don't leak details
-    // 1) Log the error for the developers to see
-    logger.error('CRITICAL ERROR 💥', err);
-    // 2) Send a generic message to the client
+    // Log unknown errors
+    logger.error('CRITICAL ERROR 💥', {
+        message: err.message,
+        stack: err.stack,
+        path: req.originalUrl,
+        method: req.method
+    });
+
     return res.status(500).json({
         success: false,
         status: 'error',
-        error: 'Something went very wrong on our end. Please try again later.'
+        statusCode: 500,
+        error: 'Something went very wrong on our end. Please try again later.',
+        path: req.originalUrl,
+        method: req.method
     });
 };
 
-
-// --- The Main Error Handling Middleware ---
+// --- Main Middleware ---
 const errorHandler = (err, req, res, next) => {
     err.statusCode = err.statusCode || 500;
     err.status = err.status || 'error';
 
-    if (process.env.NODE_ENV === 'development') {
-        sendErrorDev(err, res);
-    } else { // 'production' or any other setting defaults to production for safety
-        // Create a separate error object to avoid mutating the original `err`
-        let error = { ...err, message: err.message, name: err.name, code: err.code, errmsg: err.errmsg };
+    let error = { ...err, message: err.message };
 
+    if (process.env.NODE_ENV === 'development') {
+        sendErrorDev(error, req, res);
+    } else {
         if (error.name === 'CastError') error = handleCastErrorDB(error);
         if (error.code === 11000) error = handleDuplicateFieldsDB(error);
         if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
         if (error.name === 'JsonWebTokenError') error = handleJWTError();
         if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
 
-        sendErrorProd(error, res);
+        sendErrorProd(error, req, res);
     }
 };
 

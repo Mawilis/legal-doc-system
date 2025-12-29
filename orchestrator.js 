@@ -1,0 +1,59 @@
+const { spawn } = require('child_process');
+
+
+
+
+
+
+
+
+const path = require('path');
+
+console.log('🚀 WILSY PTY LTD - SYSTEM ORCHESTRATOR STARTING...');
+
+// 1. DEFINE THE SERVICES
+const services = [
+    { name: 'Gateway',  folder: 'server',           port: 3001, color: '\x1b[37m' }, // White
+    { name: 'Billing',  folder: 'services/billing', port: 6400, color: '\x1b[32m' }, // Green
+    { name: 'AI Engine',folder: 'services/ai',      port: 6500, color: '\x1b[35m' }, // Magenta
+    { name: 'Crypto',   folder: 'services/crypto',  port: 6600, color: '\x1b[36m' }, // Cyan
+    { name: 'Ledger',   folder: 'services/ledger',  port: 6000, color: '\x1b[33m' }, // Yellow
+    { name: 'Standards',folder: 'services/standards',port: 6100,color: '\x1b[34m' }  // Blue
+];
+
+// 2. KILL OLD PROCESSES (Prevent "Port In Use" errors)
+try {
+    const ports = services.map(s => s.port).join(',');
+    console.log('🧹 Cleaning up ports: ' + ports);
+    require('child_process').execSync(`lsof -ti:${ports} | xargs kill -9 2>/dev/null`);
+} catch (e) { /* Ignore */ }
+
+// 3. LAUNCH LOOP
+services.forEach(svc => {
+    const cwd = path.join(__dirname, svc.folder);
+    
+    // Check if package.json exists to avoid "No such file" errors
+    const fs = require('fs');
+    if (!fs.existsSync(path.join(cwd, 'package.json'))) {
+        console.log(`⚠️  Skipping ${svc.name} (Folder not found or empty)`);
+        return;
+    }
+
+    console.log(`⏳ Starting ${svc.name}...`);
+
+    const child = spawn('npm', ['start'], {
+        cwd: cwd,
+        shell: true,
+        env: { ...process.env, PORT: svc.port }
+    });
+
+    // STREAM LOGS
+    child.stdout.on('data', (data) => {
+        const lines = data.toString().trim().split('\n');
+        lines.forEach(line => console.log(`${svc.color}[${svc.name}]\x1b[0m ${line}`));
+    });
+
+    child.stderr.on('data', (data) => {
+        console.error(`${svc.color}[${svc.name} ERROR]\x1b[0m ${data.toString().trim()}`);
+    });
+});

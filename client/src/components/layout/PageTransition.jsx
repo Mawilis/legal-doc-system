@@ -1,12 +1,12 @@
 // ~/legal-doc-system/client/src/middleware/socketMiddleware.js
 
-import socket from '../services/socket'; // Import the singleton socket instance
+import socket from '../../services/socket'; // Import the singleton socket instance
 import { toast } from 'react-toastify';
 import {
     addUserFromSocket,
     removeUserFromSocket,
     updateUserFromSocket,
-} from '../features/admin/reducers/adminSlice'; // Import the correct real-time actions
+} from '../../features/admin/reducers/adminSlice'; // Import the correct real-time actions
 
 /**
  * @file This file contains the Redux middleware for handling real-time events via Socket.IO.

@@ -1,139 +1,158 @@
-// ~/legal-doc-system/client/src/features/auth/reducers/authSlice.js
+/**
+ * File: client/src/features/auth/reducers/authSlice.js
+ * -----------------------------------------------------------------------------
+ * COLLABORATION NOTES:
+ * - Centralizes auth state: user, token, tenantId, flags.
+ * - Thunks:
+ *   • loginUser: authenticates and persists session data.
+ *   • logoutUser: clears session (storage + state).
+ *   • refreshUser: obtains a new access token silently.
+ * - Persistence: localStorage keys 'accessToken', 'tenantId', and 'user' (email+token).
+ * - Security:
+ *   • Prefer HttpOnly cookies for refresh tokens in production.
+ *   • Frontend only stores access tokens + minimal context.
+ * -----------------------------------------------------------------------------
+ */
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../../../services/authService';
-import { toast } from 'react-toastify';
 
-// Load from localStorage
-const savedUser = localStorage.getItem('user');
-const savedToken = localStorage.getItem('token');
+// Hydrate from storage
+const storedUser = JSON.parse(localStorage.getItem('user'));
+const storedToken = localStorage.getItem('accessToken');
+const storedTenant = localStorage.getItem('tenantId');
 
-// Initial state
 const initialState = {
-    user: savedUser ? JSON.parse(savedUser) : null,
-    token: savedToken || null,
-    loading: false,
-    error: null,
+  user: storedUser || null,
+  accessToken: storedToken || (storedUser ? storedUser.token : null),
+  tenantId: storedTenant || null,
+  isAuthenticated: !!storedToken || !!storedUser,
+  isError: false,
+  isSuccess: false,
+  isLoading: false,
+  message: ''
 };
 
-// ✅ Async Thunks
-
-// Load user from localStorage on app load
-export const loadUser = createAsyncThunk(
-    'auth/loadUser',
-    async (_, { rejectWithValue }) => {
-        try {
-            const user = localStorage.getItem('user');
-            const token = localStorage.getItem('token');
-
-            if (user && token) {
-                authService.setAuthToken(token);
-                return { user: JSON.parse(user), token };
-            }
-
-            return rejectWithValue('No session found');
-        } catch (err) {
-            return rejectWithValue('Failed to load session');
-        }
-    }
-);
-
 // Login
-export const loginUser = createAsyncThunk(
-    'auth/loginUser',
-    async ({ email, password }, { rejectWithValue }) => {
-        try {
-            const response = await authService.login(email, password);
+export const loginUser = createAsyncThunk('auth/login', async (credentials, thunkAPI) => {
+  try {
+    const payload = await authService.login(credentials);
+    const { token, user, tenantId } = payload;
 
-            localStorage.setItem('user', JSON.stringify(response.user));
-            localStorage.setItem('token', response.token);
-            authService.setAuthToken(response.token);
+    if (token) localStorage.setItem('accessToken', token);
+    if (tenantId) localStorage.setItem('tenantId', tenantId);
+    if (user) localStorage.setItem('user', JSON.stringify({ email: user.email, token }));
 
-            return response;
-        } catch (err) {
-            return rejectWithValue(err.message || 'Login failed. Please try again.');
-        }
-    }
-);
-
-// Register
-export const registerUser = createAsyncThunk(
-    'auth/registerUser',
-    async (formData, { rejectWithValue }) => {
-        try {
-            const response = await authService.register(formData);
-            return response;
-        } catch (err) {
-            return rejectWithValue(err.message || 'Registration failed. Please try again.');
-        }
-    }
-);
-
-// ✅ Slice
-const authSlice = createSlice({
-    name: 'auth',
-    initialState,
-    reducers: {
-        logoutUser: (state) => {
-            state.user = null;
-            state.token = null;
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-            authService.setAuthToken(null);
-            toast.success('✅ Logged out successfully');
-        },
-        clearAuthError: (state) => {
-            state.error = null;
-        },
-    },
-    extraReducers: (builder) => {
-        builder
-            .addCase(loadUser.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(loadUser.fulfilled, (state, action) => {
-                state.loading = false;
-                state.user = action.payload.user;
-                state.token = action.payload.token;
-            })
-            .addCase(loadUser.rejected, (state, action) => {
-                state.loading = false;
-                state.user = null;
-                state.token = null;
-                state.error = action.payload;
-            })
-            .addCase(loginUser.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(loginUser.fulfilled, (state, action) => {
-                state.loading = false;
-                state.user = action.payload.user;
-                state.token = action.payload.token;
-                toast.success(`🎉 Welcome back, ${action.payload.user.name}!`);
-            })
-            .addCase(loginUser.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload;
-                toast.error(`❌ ${action.payload}`);
-            })
-            .addCase(registerUser.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(registerUser.fulfilled, (state) => {
-                state.loading = false;
-                toast.success('🎉 Registration successful!');
-            })
-            .addCase(registerUser.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload;
-                toast.error(`❌ ${action.payload}`);
-            });
-    },
+    return payload;
+  } catch (error) {
+    const message =
+      (error.response && error.response.data && error.response.data.message) ||
+      error.message ||
+      error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
 });
 
-// ✅ Exports
-export const { logoutUser, clearAuthError } = authSlice.actions;
+// Logout
+export const logoutUser = createAsyncThunk('auth/logout', async () => {
+  await authService.logout();
+  localStorage.removeItem('user');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('tenantId');
+});
+
+// Refresh (silent renew)
+export const refreshUser = createAsyncThunk('auth/refresh', async (_, thunkAPI) => {
+  try {
+    const payload = await authService.refreshToken();
+    const { token, user, tenantId } = payload;
+
+    if (token) localStorage.setItem('accessToken', token);
+    if (tenantId) localStorage.setItem('tenantId', tenantId);
+    if (user) localStorage.setItem('user', JSON.stringify({ email: user.email, token }));
+
+    return payload;
+  } catch (error) {
+    const message =
+      (error.response && error.response.data && error.response.data.message) ||
+      error.message ||
+      error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+// Slice
+export const authSlice = createSlice({
+  name: 'auth',
+  initialState,
+  reducers: {
+    reset: (state) => {
+      state.isLoading = false;
+      state.isSuccess = false;
+      state.isError = false;
+      state.message = '';
+    },
+    forceLogout: (state) => {
+      authService.logout();
+      localStorage.clear();
+      state.user = null;
+      state.accessToken = null;
+      state.tenantId = null;
+      state.isAuthenticated = false;
+    }
+  },
+  extraReducers: (builder) => {
+    builder
+      // login
+      .addCase(loginUser.pending, (state) => {
+        state.isLoading = true;
+        state.isError = false;
+        state.isSuccess = false;
+        state.message = '';
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isAuthenticated = true;
+        state.user = action.payload.user;
+        state.accessToken = action.payload.token;
+        state.tenantId = action.payload.tenantId;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+        state.user = null;
+        state.accessToken = null;
+        state.tenantId = null;
+        state.isAuthenticated = false;
+      })
+      // logout
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.user = null;
+        state.accessToken = null;
+        state.tenantId = null;
+        state.isAuthenticated = false;
+      })
+      // refresh
+      .addCase(refreshUser.fulfilled, (state, action) => {
+        state.accessToken = action.payload.token;
+        state.user = action.payload.user;
+        state.tenantId = action.payload.tenantId;
+        state.isAuthenticated = true;
+        state.isError = false;
+        state.message = '';
+      })
+      .addCase(refreshUser.rejected, (state, action) => {
+        state.isAuthenticated = false;
+        state.accessToken = null;
+        state.user = null;
+        state.tenantId = null;
+        state.isError = true;
+        state.message = action.payload;
+      });
+  }
+});
+
+export const { reset, forceLogout } = authSlice.actions;
 export default authSlice.reducer;

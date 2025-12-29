@@ -1,41 +1,34 @@
+// File: server/middleware/authMiddleware.js
+// -----------------------------------------------------------------------------
+// COLLABORATION NOTES:
+// - Verifies JWT access tokens for protected Gateway routes.
+// - Must use SAME JWT_SECRET as Auth Service.
+// - Attaches decoded user context to req.user; forwards tenantId to headers.
+// -----------------------------------------------------------------------------
+
+'use strict';
+
 const jwt = require('jsonwebtoken');
-const asyncHandler = require('express-async-handler');
-const User = require('../models/userModel');
-const CustomError = require('../utils/customError');
+const JWT_SECRET = process.env.JWT_SECRET || 'your_billion_dollar_secret_key';
 
-exports.protect = asyncHandler(async (req, res, next) => {
-    let token;
+exports.protect = async (req, res, next) => {
+  let token;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        token = req.headers.authorization.split(' ')[1];
-    }
-
-    if (!token) {
-        return next(new CustomError('No token provided', 401));
-    }
-
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id);
-
-        if (!user) {
-            console.warn(`❌ No user found for ID: ${decoded.id}`);
-            return next(new CustomError('The user for this token no longer exists.', 401));
-        }
-
-        req.user = user;
-        next();
-    } catch (err) {
-        console.error('❌ Auth error:', err.message);
-        return next(new CustomError('Not authorized or token failed', 401));
+      const decoded = jwt.verify(token, JWT_SECRET);
+      req.user = decoded;
+      if (decoded.tenantId) {
+        req.headers['x-tenant-id'] = decoded.tenantId;
+      }
+      return next();
+    } catch (error) {
+      console.error('🔴 [AuthMiddleware] Token Verification Failed:', error.message);
+      return res.status(401).json({ message: 'Not authorized, token failed' });
     }
-});
+  }
 
-exports.authorize = (...roles) => {
-    return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
-            return next(new CustomError(`User role ${req.user.role} not authorized to access this route`, 403));
-        }
-        next();
-    };
+  console.warn('⚠️ [AuthMiddleware] No token provided for protected route');
+  return res.status(401).json({ message: 'Not authorized, no token' });
 };

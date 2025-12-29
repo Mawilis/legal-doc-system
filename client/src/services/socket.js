@@ -1,71 +1,128 @@
-// ~/legal-doc-system/client/src/store.js
+// ~/client/src/services/socket.js
+import { io } from 'socket.io-client';
 
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import {
-    persistStore,
-    persistReducer,
-    FLUSH,
-    REHYDRATE,
-    PAUSE,
-    PERSIST,
-    PURGE,
-    REGISTER,
-} from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
-import logger from 'redux-logger';
+// --- CONFIGURATION ---
+const RAW_API_ORIGIN = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001';
+const SOCKET_ORIGIN = RAW_API_ORIGIN.replace(/\/api\/?$/i, '');
 
-// --- Import Middleware ---
-import socketMiddleware from './middleware/socketMiddleware'; // ✅ Import the socket middleware
+console.log('🔌 [SocketService] Configured Origin:', SOCKET_ORIGIN);
 
-// --- Import Slice Reducers ---
-import authReducer from './features/auth/reducers/authSlice';
-import profileReducer from './features/profile/reducers/profileSlice';
-import adminReducer from './features/admin/reducers/adminSlice';
-// ... import other reducers as needed
-
-// --- Combine All Reducers ---
-const rootReducer = combineReducers({
-    auth: authReducer,
-    profile: profileReducer,
-    admin: adminReducer,
-    // ... other reducers
+// --- SINGLETON INSTANCE ---
+export const socket = io(SOCKET_ORIGIN, {
+  path: '/socket.io',
+  transports: ['websocket'],
+  autoConnect: false, // Critical: Wait for login
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
 });
 
-// --- Persist Configuration ---
-// This configuration determines which parts of your Redux state will be saved
-// to local storage and rehydrated on page refresh.
-const persistConfig = {
-    key: 'root',
-    storage,
-    // Only persist slices that are safe and necessary to store locally.
-    // Avoid persisting transient or sensitive data.
-    whitelist: ['auth', 'profile', 'settings'],
-};
+// --- LISTENERS (Global) ---
+socket.on('connect', () => {
+  console.log('✅ [Socket] CONNECTED:', socket.id);
+});
 
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+socket.on('disconnect', (reason) => {
+  console.warn('⚠️ [Socket] DISCONNECTED:', reason);
+});
+
+socket.on('connect_error', (err) => {
+  console.error('❌ [Socket] CONNECTION ERROR:', err.message);
+});
 
 /**
- * Configures the Redux store for the application.
- *
- * It includes:
- * - The persisted root reducer.
- * - A middleware chain with Redux Toolkit's defaults, redux-logger for development,
- * and our custom socketMiddleware for real-time event handling.
- * - Configuration to ignore actions from redux-persist for the serializability check.
+ * CONNECT FUNCTION
+ * Call this ONLY after login when you have a valid token.
  */
-const store = configureStore({
-    reducer: persistedReducer,
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware({
-            serializableCheck: {
-                // Ignore these action types from redux-persist
-                ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-            },
-        }).concat(logger, socketMiddleware), // ✅ Wire the socket middleware into the store
-    devTools: process.env.NODE_ENV !== 'production',
-});
+export const connectSocket = (token) => {
+  if (!token) {
+    console.warn('🚫 [Socket] Cannot connect: No token provided.');
+    return;
+  }
 
-const persistor = persistStore(store);
+  if (socket.connected) {
+    console.log('ℹ️ [Socket] Already connected.');
+    return;
+  }
 
-export { store, persistor };
-export default store;
+  console.log('🔌 [Socket] Connecting with token...');
+  socket.auth = { token };
+  socket.connect();
+};
+
+/**
+ * DISCONNECT FUNCTION
+ */
+export const disconnectSocket = () => {
+  if (socket.connected) {
+    console.log('🔌 [Socket] Disconnecting...');
+    socket.disconnect();
+  }
+};
+
+/**
+ * HELPER: Wait for connection (Used by Chat.jsx)
+ */
+export const waitUntilConnected = (timeoutMs = 5000) => {
+  if (socket.connected) return Promise.resolve();
+
+  console.log('[socket] Waiting for connection...');
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Socket connection timeout'));
+    }, timeoutMs);
+
+    const onConnect = () => {
+      cleanup();
+      resolve();
+    };
+
+    const onErr = (err) => {
+      cleanup();
+      reject(err);
+    };
+
+    function cleanup() {
+      clearTimeout(timer);
+      socket.off('connect', onConnect);
+      socket.off('connect_error', onErr);
+    }
+
+    socket.once('connect', onConnect);
+    socket.once('connect_error', onErr);
+  });
+};
+
+/**
+ * HELPER: Send Chat Message (Used by Chat.jsx)
+ */
+export const sendChatMessage = (payload) => {
+  return new Promise((resolve, reject) => {
+    if (!socket.connected) {
+      return reject(new Error('Socket not connected'));
+    }
+
+    socket.timeout(5000).emit('chat:message', payload, (err, response) => {
+      if (err) {
+        console.error('❌ [Socket] Chat Send Timeout/Error:', err);
+        return reject(err);
+      }
+      resolve(response);
+    });
+  });
+};
+
+/**
+ * HELPER: Debug Snapshot (Used by Chat.jsx)
+ */
+export const snapshotSocket = () => {
+  return {
+    connected: socket.connected,
+    id: socket.id,
+    auth: socket.auth ? 'present' : 'missing',
+    transport: socket.io?.engine?.transport?.name
+  };
+};
+
+export default socket;

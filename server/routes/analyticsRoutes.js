@@ -1,60 +1,27 @@
+'use strict';
 const express = require('express');
-const { getSystemStats } = require('../controllers/analyticsController');
-const { protect, authorize } = require('../middleware/auth');  // ✅ Updated import path
-
 const router = express.Router();
+const controller = require('../controllers/analyticsController');
+const { protect, admin } = require('../middleware/authMiddleware');
 
-// All analytics routes are sensitive and restricted to admin users
-router.use(protect);
-router.use(authorize('admin'));
+// Safety Wrapper
+const safe = (fn) => fn ? fn : (req, res) => res.status(501).json({msg: 'Not Implemented'});
 
-/**
- * @swagger
- * /api/analytics/system-stats:
- *   get:
- *     summary: Retrieve detailed system-wide analytics for the admin dashboard.
- *     description: Provides comprehensive system analytics including user trends, document metrics, and session statistics for administrators.
- *     tags:
- *       - Analytics
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully retrieved system analytics.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 userTrends:
- *                   type: object
- *                   properties:
- *                     newUsersThisMonth:
- *                       type: integer
- *                       example: 25
- *                     totalUsers:
- *                       type: integer
- *                       example: 150
- *                 documentMetrics:
- *                   type: object
- *                   properties:
- *                     totalDocuments:
- *                       type: integer
- *                       example: 320
- *                     drafts:
- *                       type: integer
- *                       example: 50
- *                     published:
- *                       type: integer
- *                       example: 270
- *                 activeSessions:
- *                   type: integer
- *                   example: 47
- *       401:
- *         description: Authentication required. Token is missing or invalid.
- *       403:
- *         description: Access forbidden. User is not an administrator.
- */
-router.get('/system-stats', getSystemStats);
+// Auth Special Case
+if ('analytics' === 'auth') {
+    router.post('/register', safe(controller.register));
+    router.post('/login', safe(controller.login));
+    router.get('/logout', safe(controller.logout));
+    router.get('/me', protect, safe(controller.getMe));
+} 
+// Dashboard Special Case
+else if ('analytics' === 'dashboard') {
+    router.get('/', protect, safe(controller.getAll));
+} 
+// Standard CRUD
+else {
+    router.route('/').get(protect, safe(controller.getAll)).post(protect, safe(controller.create));
+    router.route('/:id').get(protect, safe(controller.getOne)).put(protect, safe(controller.update)).delete(protect, admin, safe(controller.remove));
+}
 
 module.exports = router;

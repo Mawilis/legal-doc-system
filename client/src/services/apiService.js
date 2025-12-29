@@ -1,148 +1,47 @@
-// ~/legal-doc-system/client/src/services/apiService.js
+// client/src/services/apiService.js
+// -----------------------------------------------------------------------------
+// COLLABORATION NOTES:
+// - This wraps the http.js client with domain‑specific helpers.
+// - Purpose: keep component code clean by abstracting API calls.
+// - Error helper: standardizes error messages for UI display.
+// - Engineers: add new domain helpers here (e.g. getUsers, createInvoice).
+//   Always use apiGet/apiPost wrappers so interceptors apply consistently.
+// -----------------------------------------------------------------------------
 
-// Import necessary libraries
-import axios from 'axios';
-import { toast } from 'react-toastify';
+import http from './http';
 
-// Base URL for all API endpoints, retrieved from environment variables
-const API_URL = process.env.REACT_APP_API_URL || '/api';
+// Generic methods
+export const apiGet = (path, config) => http.get(path, config);
+export const apiPost = (path, data, config) => http.post(path, data, config);
+export const apiPut = (path, data, config) => http.put(path, data, config);
+export const apiPatch = (path, data, config) => http.patch(path, data, config);
+export const apiDelete = (path, config) => http.delete(path, config);
 
-// Create an Axios instance to centralize configurations
-const api = axios.create({
-    baseURL: API_URL,
-    timeout: 10000, // Set request timeout (10 seconds)
-});
-
-// Add request interceptor to include auth token in headers
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`; // Include Bearer token if available
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error); // Handle request errors
-    }
-);
-
-// Add response interceptor to handle errors globally
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        handleError(error); // Call handleError for better error messages
-        return Promise.reject(error);
-    }
-);
-
-// Function to handle different types of API errors
-const handleError = (error) => {
+// Error helper
+export const handleApiError = (error) => {
     if (error.response) {
-        // Server responded with an error
-        const { status, data } = error.response;
-        switch (status) {
-            case 400:
-                toast.error(data.message || 'Bad Request. Please check the submitted data.');
-                break;
-            case 401:
-                toast.error('Unauthorized. Please log in again.');
-                // Handle auto logout if needed
-                localStorage.removeItem('token');
-                window.location.href = '/login';
-                break;
-            case 403:
-                toast.error('You do not have permission to perform this action.');
-                break;
-            case 404:
-                toast.error('Resource not found. Please check your request.');
-                break;
-            case 500:
-                toast.error('Server error. Please try again later.');
-                break;
-            default:
-                toast.error(data.message || 'An error occurred while processing your request.');
-        }
-    } else if (error.request) {
-        // No response received from the server
-        toast.error('Server did not respond. Please check your network connection and try again.');
-    } else {
-        // An error occurred in setting up the request
-        toast.error('Unexpected error occurred. Please try again.');
+        return error.response.data?.message || 'Unexpected server error';
     }
+    return error.message || 'Network error';
 };
 
-// Function to get all documents
-export const getAllDocuments = async () => {
-    try {
-        const response = await api.get('/documents');
-        return response.data;
-    } catch (error) {
-        throw error; // Throw error to allow further handling in the calling function
-    }
-};
+// Domain‑specific helpers
+export const getDocuments = () => apiGet('/documents');
+export const createDocument = (data) => apiPost('/documents', data);
+export const updateDocumentStatus = (id, status, reason) =>
+    apiPut(`/documents/${id}/status`, { status, reason });
 
-// Function to get a document by ID
-export const getDocumentById = async (documentId) => {
-    try {
-        const response = await api.get(`/documents/${documentId}`);
-        return response.data;
-    } catch (error) {
-        throw error; // Throw error to allow further handling in the calling function
-    }
-};
-
-// Function to create a new document
-export const createDocument = async (documentData) => {
-    try {
-        const response = await api.post('/documents', documentData);
-        toast.success('Document created successfully!');
-        return response.data;
-    } catch (error) {
-        throw error; // Throw error to allow further handling in the calling function
-    }
-};
-
-// Function to update an existing document
-export const updateDocument = async (documentId, documentData) => {
-    try {
-        const response = await api.put(`/documents/${documentId}`, documentData);
-        toast.success('Document updated successfully!');
-        return response.data;
-    } catch (error) {
-        throw error; // Throw error to allow further handling in the calling function
-    }
-};
-
-// Function to delete a document
-export const deleteDocument = async (documentId) => {
-    try {
-        const response = await api.delete(`/documents/${documentId}`);
-        toast.success('Document deleted successfully!');
-        return response.data;
-    } catch (error) {
-        throw error; // Throw error to allow further handling in the calling function
-    }
-};
-
-// Function to get user instructions
-export const getInstructions = async () => {
-    try {
-        const response = await api.get('/instructions');
-        return response.data;
-    } catch (error) {
-        throw error; // Throw error to allow further handling in the calling function
-    }
-};
-
-// Export the services
+// Export object for convenience
 const apiService = {
-    getAllDocuments,
-    getDocumentById,
+    apiGet,
+    apiPost,
+    apiPut,
+    apiPatch,
+    apiDelete,
+    getDocuments,
     createDocument,
-    updateDocument,
-    deleteDocument,
-    getInstructions,
+    updateDocumentStatus,
+    handleApiError
 };
 
 export default apiService;

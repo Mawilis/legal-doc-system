@@ -1,0 +1,26 @@
+apiVersion: v2
+name: legal-os
+description: Billion-dollar Legal Document OS umbrella chart
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+dependencies:
+  - name: gateway
+    version: 1.0.0
+    repository: "file://charts/gateway"
+  - name: auth
+    version: 1.0.0
+    repository: "file://charts/auth"
+  - name: ledger
+    version: 1.0.0
+    repository: "file://charts/ledger"
+  - name: billing
+    version: 1.0.0
+    repository: "file://charts/billing"
+  - name: ai
+    version: 1.0.0
+    repository: "file://charts/ai"
+  - name: crypto
+    version: 1.0.0
+    repository: "file://charts/crypto"

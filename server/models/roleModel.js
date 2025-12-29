@@ -1,42 +1,44 @@
+/**
+ * /Users/wilsonkhanyezi/legal-doc-system/server/models/roleModel.js
+ *
+ * Role Model
+ * ----------
+ * Defines application roles and associated permissions.
+ */
+
 const mongoose = require('mongoose');
 
 const roleSchema = new mongoose.Schema(
     {
         name: {
             type: String,
-            required: [true, 'A role must have a name.'],
-            unique: true,
-            uppercase: true, // Consistency: e.g., ADMIN, USER
+            required: true,
+            uppercase: true,
             trim: true,
+            unique: true,
+            index: true,
         },
         description: {
             type: String,
             trim: true,
-            maxlength: [250, 'Description must be less than 250 characters.'],
+            default: '',
         },
         permissions: {
-            type: [String],
-            required: [true, 'A role must have at least one permission.'],
-            validate: [
-                {
-                    validator: (val) => val.length > 0,
-                    message: 'A role must have at least one permission.',
-                },
-                {
-                    validator: (val) => new Set(val).size === val.length,
-                    message: 'Permissions must be unique within the role.',
-                },
-            ],
+            type: [String], // e.g., 'documents.view', 'documents.edit', 'users.manage'
+            default: [],
+            index: true,
         },
+        systemRole: {
+            type: Boolean, // protects core roles from deletion (ADMIN, SUPERADMIN)
+            default: false,
+        },
+        createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     },
-    {
-        timestamps: true,
-    }
+    { timestamps: true }
 );
 
-// Create an index on the name field for faster queries (useful for auth checks)
-roleSchema.index({ name: 1 });
+roleSchema.index({ name: 1 }, { unique: true });
+roleSchema.index({ permissions: 1 });
 
-const Role = mongoose.model('Role', roleSchema);
-
-module.exports = Role;
+module.exports = mongoose.model('Role', roleSchema);

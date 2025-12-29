@@ -7,7 +7,7 @@ import {
     removeUserFromSocket,
     updateUserFromSocket,
 } from '../features/admin/reducers/adminSlice';
-import { addMessage, setTyping } from '../features/chat/reducers/chatSlice';
+import { addMessage } from '../features/chat/reducers/chatSlice';
 
 /**
  * A Redux middleware that listens for socket events and updates the store.
@@ -35,10 +35,8 @@ const socketMiddleware = (storeAPI) => {
         storeAPI.dispatch(addMessage(message));
     });
     socket.on('typing', (username) => {
-        storeAPI.dispatch(setTyping(username));
     });
     socket.on('stopTyping', () => {
-        storeAPI.dispatch(setTyping(null));
     });
 
     // --- Sheriff Tracking Listeners ---

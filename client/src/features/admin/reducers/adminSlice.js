@@ -1,233 +1,144 @@
-// ~/legal-doc-system/client/src/features/admin/reducers/adminSlice.js
-
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
-    createUser as createUserService,
-    deleteUser as deleteUserService,
-    getAllUsers,
-    updateUser as updateUserService,
-    // Assume a new service function for toggling a single permission exists
-    togglePermission as togglePermissionService,
+  createUser as createUserService,
+  deleteUser as deleteUserService,
+  getAllUsers,
+  updateUser as updateUserService,
+  togglePermission as togglePermissionService,
+  updatePermissions as updatePermissionsService
 } from "../services/adminService";
 import { toast } from "react-toastify";
 
 // --- Initial State ---
 const initialState = {
-    users: [],
-    loading: false,
-    error: null,
+  users: [],
+  loading: false,
+  error: null,
 };
 
-// --- Helper function to handle API errors ---
-const handleApiError = (err, defaultMessage) => {
-    const message = err.response?.data?.message || err.message || defaultMessage;
-    toast.error(message);
-    return message;
-};
+const apiError = (err, fallback) =>
+  err?.response?.data?.message || err?.message || fallback;
 
-// --- Async Thunks for API Operations ---
-
-/**
- * Fetches all users from the backend.
- */
-export const fetchAllUsers = createAsyncThunk(
-    "admin/fetchAllUsers",
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await getAllUsers();
-            // Ensure compatibility by mapping _id to id if it exists
-            return response.data.map(user => ({ ...user, id: user._id || user.id }));
-        } catch (err) {
-            return rejectWithValue(handleApiError(err, "Failed to fetch users"));
-        }
-    }
-);
-
-/**
- * Deletes a user by their ID.
- */
-export const deleteUser = createAsyncThunk(
-    "admin/deleteUser",
-    async (userId, { rejectWithValue }) => {
-        try {
-            await deleteUserService(userId);
-            // The socket middleware will handle the success toast and state update
-            return userId;
-        } catch (err) {
-            return rejectWithValue(handleApiError(err, "Failed to delete user"));
-        }
-    }
-);
-
-/**
- * Creates a new user.
- */
-export const createUser = createAsyncThunk(
-    "admin/createUser",
-    async (userData, { rejectWithValue }) => {
-        try {
-            const response = await createUserService(userData);
-            // The socket middleware will handle the success toast and state update
-            const newUser = response.data;
-            return { ...newUser, id: newUser._id || newUser.id };
-        } catch (err) {
-            return rejectWithValue(handleApiError(err, "Failed to create user"));
-        }
-    }
-);
-
-/**
- * Updates a user's core details.
- */
-export const updateUser = createAsyncThunk(
-    "admin/updateUser",
-    async ({ userId, userData }, { rejectWithValue }) => {
-        try {
-            const response = await updateUserService(userId, userData);
-            // The socket middleware will handle the success toast and state update
-            const updatedUser = response.data;
-            return { ...updatedUser, id: updatedUser._id || updatedUser.id };
-        } catch (err) {
-            return rejectWithValue(handleApiError(err, "Failed to update user"));
-        }
-    }
-);
-
-/**
- * Updates the entire permissions object for a specific user.
- */
-export const updateUserPermissions = createAsyncThunk(
-    "admin/updateUserPermissions",
-    async ({ userId, permissions }, { rejectWithValue }) => {
-        try {
-            const response = await updateUserService(userId, { permissions });
-            // The socket middleware will handle the success toast and state update
-            const updatedUser = response.data;
-            return { ...updatedUser, id: updatedUser._id || updatedUser.id };
-        } catch (err) {
-            return rejectWithValue(handleApiError(err, "Failed to update permissions"));
-        }
-    }
-);
-
-/**
- * Toggles a single permission for a user.
- */
-export const toggleUserPermission = createAsyncThunk(
-    "admin/toggleUserPermission",
-    async ({ userId, module, permission }, { rejectWithValue }) => {
-        try {
-            const response = await togglePermissionService(userId, module, permission);
-            // The socket middleware will handle the success toast and state update
-            const updatedUser = response.data;
-            return { ...updatedUser, id: updatedUser._id || updatedUser.id };
-        } catch (err) {
-            return rejectWithValue(handleApiError(err, "Failed to toggle permission"));
-        }
-    }
-);
-
-/**
- * Assigns a user to a specific team.
- */
-export const assignUserToTeam = createAsyncThunk(
-    "admin/assignUserToTeam",
-    async ({ userId, teamId }, { rejectWithValue }) => {
-        try {
-            const response = await updateUserService(userId, { team: teamId });
-            // The socket middleware will handle the success toast and state update
-            const updatedUser = response.data;
-            return { ...updatedUser, id: updatedUser._id || updatedUser.id };
-        } catch (err) {
-            return rejectWithValue(handleApiError(err, "Failed to assign team"));
-        }
-    }
-);
-
-// --- Redux Slice Definition ---
-const adminSlice = createSlice({
-    name: "admin",
-    initialState,
-    reducers: {
-        /**
-         * Adds a new user to the state. Called by socket middleware.
-         * @param {object} state - The current Redux state.
-         * @param {object} action - The action containing the new user object.
-         */
-        addUserFromSocket: (state, action) => {
-            const newUser = { ...action.payload, id: action.payload._id || action.payload.id };
-            // Avoid duplicates
-            if (!state.users.find(user => user.id === newUser.id)) {
-                state.users.push(newUser);
-            }
-        },
-        /**
-         * Removes a user from the state. Called by socket middleware.
-         * @param {object} state - The current Redux state.
-         * @param {object} action - The action containing the ID of the user to remove.
-         */
-        removeUserFromSocket: (state, action) => {
-            const userId = action.payload;
-            state.users = state.users.filter(user => user.id !== userId && user._id !== userId);
-        },
-        /**
-         * Updates an existing user in the state. Called by socket middleware.
-         * @param {object} state - The current Redux state.
-         * @param {object} action - The action containing the updated user object.
-         */
-        updateUserFromSocket: (state, action) => {
-            const updatedUser = { ...action.payload, id: action.payload._id || action.payload.id };
-            const index = state.users.findIndex(user => user.id === updatedUser.id);
-            if (index !== -1) {
-                state.users[index] = updatedUser;
-            }
-        },
-    },
-    extraReducers: (builder) => {
-        // --- Generic Pending State Handler ---
-        const handlePending = (state) => {
-            state.loading = true;
-            state.error = null;
-        };
-
-        // --- Generic Rejected State Handler ---
-        const handleRejected = (state, action) => {
-            state.loading = false;
-            state.error = action.payload;
-        };
-
-        builder
-            // Fetch All Users
-            .addCase(fetchAllUsers.pending, handlePending)
-            .addCase(fetchAllUsers.fulfilled, (state, action) => {
-                state.loading = false;
-                state.users = action.payload;
-            })
-            .addCase(fetchAllUsers.rejected, handleRejected)
-
-            // --- Matchers for cleaner state management ---
-
-            // This matcher handles the pending state for all thunks in this slice
-            .addMatcher(
-                (action) => action.type.startsWith('admin/') && action.type.endsWith('/pending'),
-                handlePending
-            )
-            // This matcher handles the rejected state for all thunks that don't have a specific rejected case
-            .addMatcher(
-                (action) => action.type.startsWith('admin/') && action.type.endsWith('/rejected'),
-                handleRejected
-            )
-            // This matcher handles the fulfilled state for all actions that don't need a specific state update,
-            // as the socket middleware will handle it. It just sets loading to false.
-            .addMatcher(
-                (action) => action.type.startsWith('admin/') && action.type.endsWith('/fulfilled') && action.type !== fetchAllUsers.fulfilled.type,
-                (state) => {
-                    state.loading = false;
-                }
-            );
-    },
+// Thunks
+export const fetchAllUsers = createAsyncThunk("admin/fetchAllUsers", async (_, { rejectWithValue }) => {
+  try {
+    const data = await getAllUsers();
+    return (Array.isArray(data) ? data : data?.data || []).map(u => ({ ...u, id: u._id || u.id }));
+  } catch (err) {
+    return rejectWithValue(apiError(err, "Failed to fetch users"));
+  }
 });
 
-// --- Export Actions and Reducer ---
-export const { addUserFromSocket, removeUserFromSocket, updateUserFromSocket } = adminSlice.actions;
+export const createUser = createAsyncThunk("admin/createUser", async (payload, { rejectWithValue }) => {
+  try {
+    const data = await createUserService(payload);
+    const u = data?.data || data;
+    return { ...u, id: u._id || u.id };
+  } catch (err) {
+    return rejectWithValue(apiError(err, "Failed to create user"));
+  }
+});
+
+export const updateUser = createAsyncThunk("admin/updateUser", async ({ userId, userData }, { rejectWithValue }) => {
+  try {
+    const data = await updateUserService(userId, userData);
+    const u = data?.data || data;
+    return { ...u, id: u._id || u.id };
+  } catch (err) {
+    return rejectWithValue(apiError(err, "Failed to update user"));
+  }
+});
+
+export const deleteUser = createAsyncThunk("admin/deleteUser", async (userId, { rejectWithValue }) => {
+  try {
+    await deleteUserService(userId);
+    return userId;
+  } catch (err) {
+    return rejectWithValue(apiError(err, "Failed to delete user"));
+  }
+});
+
+export const updateUserPermissions = createAsyncThunk(
+  "admin/updateUserPermissions",
+  async ({ userId, permissions }, { rejectWithValue }) => {
+    try {
+      const data = await updatePermissionsService(userId, permissions);
+      const u = data?.data || data;
+      return { ...u, id: u._id || u.id };
+    } catch (err) {
+      return rejectWithValue(apiError(err, "Failed to update permissions"));
+    }
+  }
+);
+
+export const toggleUserPermission = createAsyncThunk(
+  "admin/toggleUserPermission",
+  async ({ userId, module, permission }, { rejectWithValue }) => {
+    try {
+      const data = await togglePermissionService(userId, module, permission);
+      const u = data?.data || data;
+      return { ...u, id: u._id || u.id };
+    } catch (err) {
+      return rejectWithValue(apiError(err, "Failed to toggle permission"));
+    }
+  }
+);
+
+// Slice
+const adminSlice = createSlice({
+  name: "admin",
+  initialState,
+  reducers: {
+    addUserFromSocket: (state, action) => {
+      const nu = { ...action.payload, id: action.payload._id || action.payload.id };
+      if (!state.users.find(u => u.id === nu.id)) state.users.push(nu);
+    },
+    updateUserFromSocket: (state, action) => {
+      const uu = { ...action.payload, id: action.payload._id || action.payload.id };
+      const i = state.users.findIndex(u => u.id === uu.id);
+      if (i > -1) state.users[i] = uu;
+    },
+    removeUserFromSocket: (state, action) => {
+      const id = action.payload;
+      state.users = state.users.filter(u => (u.id || u._id) !== id);
+    },
+  },
+  extraReducers: (builder) => {
+    const pending = (s) => { s.loading = true; s.error = null; };
+    const rejected = (s, a) => { s.loading = false; s.error = a.payload; toast.error(a.payload); };
+
+    builder
+      .addCase(fetchAllUsers.pending, pending)
+      .addCase(fetchAllUsers.fulfilled, (s, a) => { s.loading = false; s.users = a.payload; })
+      .addCase(fetchAllUsers.rejected, rejected)
+      .addCase(createUser.pending, pending)
+      .addCase(createUser.fulfilled, (s, a) => { s.loading = false; /* socket will inject; fallback: */ s.users.unshift(a.payload); })
+      .addCase(createUser.rejected, rejected)
+      .addCase(updateUser.pending, pending)
+      .addCase(updateUser.fulfilled, (s, a) => { s.loading = false; /* socket will update; fallback: */ 
+        const i = s.users.findIndex(u => u.id === a.payload.id); if (i>-1) s.users[i] = a.payload;
+      })
+      .addCase(updateUser.rejected, rejected)
+      .addCase(deleteUser.pending, pending)
+      .addCase(deleteUser.fulfilled, (s, a) => { s.loading = false; s.users = s.users.filter(u => (u.id || u._id) !== a.payload); })
+      .addCase(deleteUser.rejected, rejected)
+      .addCase(updateUserPermissions.pending, pending)
+      .addCase(updateUserPermissions.fulfilled, (s, a) => { s.loading = false; 
+        const i = s.users.findIndex(u => u.id === a.payload.id); if (i>-1) s.users[i] = a.payload;
+      })
+      .addCase(updateUserPermissions.rejected, rejected);
+  }
+});
+
+export const {
+  addUserFromSocket,
+  updateUserFromSocket,
+  removeUserFromSocket
+} = adminSlice.actions;
+
 export default adminSlice.reducer;
+
+// Backwards-compat names (to silence previous import errors if any code still uses them)
+export const fetchUsers = fetchAllUsers;
+export const setRoles = () => ({ type: 'admin/setRoles' });
+export const clearError = () => ({ type: 'admin/clearError' });

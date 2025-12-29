@@ -1,36 +1,196 @@
-/* /src/App.css — updated for dark/light mode awareness */
+/* ~/client/src/App.css */
 
-.App {
-  text-align: center;
-  font-family: 'Poppins Regular', sans-serif;
+/* 1. GLOBAL VARIABLES (The Brain) */
+:root {
+  --font-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-bg: #f4f7f6;
+  --color-surface: #ffffff;
+  --color-text-main: #1f2937;
+  --color-text-muted: #6b7280;
+  
+  /* Brand Colors */
+  --color-accent: #2563eb;       /* Primary Blue */
+  --color-accent-dark: #1d4ed8;  /* Darker Blue for hover */
+  --color-border: #e5e7eb;
+  
+  /* System Tokens */
+  --radius: 12px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.App-header {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--app-bg, #ffffff);
-  color: var(--app-text, #333333);
-  transition: background-color 0.3s ease, color 0.3s ease;
+/* 2. RESET & BASE */
+* { box-sizing: border-box; }
+
+body {
+  font-family: var(--font-base);
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+  line-height: 1.6;
+  margin: 0; padding: 0;
+  -webkit-font-smoothing: antialiased;
 }
 
-.App-logo {
-  height: 120px;
-  pointer-events: none;
-  animation: App-logo-spin infinite 20s linear;
+/* 3. LAYOUT UTILITIES */
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
 }
 
-.App-link {
-  color: var(--app-link, #007bff);
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  align-items: start;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.panel {
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  padding: 32px;
+  height: 100%;
 }
+
+/* 4. FORM ENGINE */
+.form-group { margin-bottom: 24px; }
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  color: var(--color-text-main);
+  background-color: #fff;
+  transition: all var(--transition);
+}
+
+.form-input:focus, .form-select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+
+.form-input[type="date"] { font-family: inherit; }
+
+/* 5. BUTTONS */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--radius);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  width: 100%;
+  display: flex; justify-content: center; align-items: center; gap: 10px;
+  transition: all var(--transition);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+}
+
+.btn-back {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: color var(--transition);
+}
+
+.btn-back:hover { color: var(--color-accent); }
+
+/* 6. INVOICE COMPONENT */
+.invoice-card {
+  background-color: #fff;
+  padding: 32px;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 20px;
+}
+
+.invoice-header {
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 20px; margin-bottom: 20px;
+}
+
+.invoice-row {
+  display: flex; justify-content: space-between;
+  font-size: 0.9rem; color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+.invoice-total-row {
+  border-top: 2px dashed var(--color-border);
+  margin-top: 20px; padding-top: 20px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+}
+
+.invoice-total-amount {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #111827; /* Near Black */
+}
+
+/* 7. BADGES & UTILS */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.header-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+
+/* 8. ACCESSIBILITY & PRINT */
+:focus-visible {
+  outline: 2px dashed var(--color-accent);
+  outline-offset: 4px;
+}
+
+@media print {
+  body { background: white; color: black; }
+  .btn-primary, .btn-back { display: none; }
+  .panel, .invoice-card { box-shadow: none; border: 1px solid #000; }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: fadeIn 0.4s ease forwards; }

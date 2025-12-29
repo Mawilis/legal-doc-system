@@ -1,24 +1,22 @@
-// ~/server/middleware/validateObjectId.js
-
-const mongoose = require('mongoose');
-
 /**
- * A middleware that validates if the `id` parameter in the request URL
- * is a valid MongoDB ObjectId.
+ * /Users/wilsonkhanyezi/legal-doc-system/server/middleware/validateObjectId.js
  *
- * @param {object} req - The Express request object.
- * @param {object} res - The Express response object.
- * @param {Function} next - The next middleware function.
+ * ObjectId Validator
+ * ------------------
+ * Validates :id-like path params as 24-character hex strings (MongoDB ObjectId format).
  */
+
+const HEX_24_REGEX = /^[a-fA-F0-9]{24}$/;
+
 const validateObjectId = (req, res, next) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        // If the ID is not valid, immediately send a 400 Bad Request response.
+    // Find first param that looks like an ID, or commonly used 'id', 'userId', etc.
+    const candidate = req.params.id || req.params.userId || req.params.documentId || req.params.resettoken;
+    if (!candidate || !HEX_24_REGEX.test(candidate)) {
         return res.status(400).json({
-            success: false,
-            message: 'Invalid ID format provided.',
+            error: 'Invalid identifier format. Expecting 24-character hex string.',
+            value: candidate || null,
         });
     }
-    // If the ID is valid, pass control to the next handler.
     next();
 };
 

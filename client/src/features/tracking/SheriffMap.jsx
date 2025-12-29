@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import socket from '../../../services/socket'; // Use the shared socket instance
+import socket from '../../services/socket'; // Use the shared socket instance
 import axios from 'axios'; // Assuming an authenticated axios instance is configured
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';

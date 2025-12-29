@@ -1,55 +1,27 @@
+'use strict';
 const express = require('express');
-const { generateDocumentReportPDF } = require('../controllers/reportController');
-const { protect, authorize } = require('../middleware/auth');  // ✅ Updated path
-
 const router = express.Router();
+const controller = require('../controllers/reportController');
+const { protect, admin } = require('../middleware/authMiddleware');
 
-// Apply security globally
-router.use(protect);
-router.use(authorize('admin'));
+// Safety Wrapper
+const safe = (fn) => fn ? fn : (req, res) => res.status(501).json({msg: 'Not Implemented'});
 
-/**
- * @swagger
- * /api/reports/documents/pdf:
- *   get:
- *     summary: Generate a PDF report for documents
- *     description: Generates a PDF report of documents created within a specified date range.
- *     tags:
- *       - Reports
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: startDate
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: Start date in YYYY-MM-DD format.
- *       - in: query
- *         name: endDate
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: End date in YYYY-MM-DD format.
- *     responses:
- *       200:
- *         description: PDF report generated and downloaded successfully.
- *         content:
- *           application/pdf:
- *             schema:
- *               type: string
- *               format: binary
- *       400:
- *         description: Bad request. Missing or invalid dates.
- *       401:
- *         description: Unauthorized. Token missing or invalid.
- *       403:
- *         description: Forbidden. Admin access required.
- *       404:
- *         description: No documents found in the specified date range.
- */
-router.get('/documents/pdf', generateDocumentReportPDF);
+// Auth Special Case
+if ('report' === 'auth') {
+    router.post('/register', safe(controller.register));
+    router.post('/login', safe(controller.login));
+    router.get('/logout', safe(controller.logout));
+    router.get('/me', protect, safe(controller.getMe));
+} 
+// Dashboard Special Case
+else if ('report' === 'dashboard') {
+    router.get('/', protect, safe(controller.getAll));
+} 
+// Standard CRUD
+else {
+    router.route('/').get(protect, safe(controller.getAll)).post(protect, safe(controller.create));
+    router.route('/:id').get(protect, safe(controller.getOne)).put(protect, safe(controller.update)).delete(protect, admin, safe(controller.remove));
+}
 
 module.exports = router;

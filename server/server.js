@@ -1,139 +1,86 @@
-// ~/server/server.js
+'use strict';
 
-const express = require("express");
-const path = require("path");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const compression = require("compression");
-const cookieParser = require("cookie-parser");
-const xssClean = require("xss-clean");
-const hpp = require("hpp");
-const mongoSanitize = require("express-mongo-sanitize");
-const mongoose = require("mongoose");
-const http = require("http");
-require("dotenv").config();
+require('dotenv').config();
 
-const errorHandler = require("./middleware/errorMiddleware");
-const apiLimiter = require("./middleware/rateLimiter");
-const requestLogger = require("./middleware/requestLogger");
-const auditLogger = require("./utils/auditLogger");
-const initializeSocketIO = require('./utils/socket');
-const logger = require("./utils/logger");
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const { randomUUID } = require('crypto');
+const winston = require('winston');
+const bodyParser = require('body-parser');
+
+// ---- Configuration ----
+const PORT = 3001;
+const HOST = '127.0.0.1'; // Standard IPv4 for macOS stability
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/legal-tech';
+const CORS_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+const logger = winston.createLogger({
+    level: 'debug',
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.printf(({ timestamp, level, message }) => `${timestamp} ${level.toUpperCase()}: ${message}`)
+    ),
+    transports: [new winston.transports.Console()],
+});
 
 const app = express();
 const server = http.createServer(app);
 
-// --- Real-Time Socket Setup ---
-const io = initializeSocketIO(server);
-app.set("io", io);
+// ---- Middleware Stack ----
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" }, contentSecurityPolicy: false }));
+app.use(compression());
+app.use(cors({ origin: CORS_ORIGINS, credentials: true }));
+app.use(bodyParser.json({ limit: '10mb' }));
 
+app.use((req, res, next) => {
+    req.requestId = req.headers['x-request-id'] || randomUUID();
+    next();
+});
 
-// --- Connect to MongoDB ---
-const connectDB = async () => {
-    try {
-        mongoose.set("strictQuery", true);
-        const mongoUri = process.env.MONGODB_URI;
-        if (!mongoUri) {
-            throw new Error("❌ MONGODB_URI is not defined in .env file.");
+app.use(morgan(':method :url :status :response-time ms'));
+
+// ---- Database Connection ----
+mongoose.connect(MONGO_URI)
+    .then(() => logger.info('✅ [Wilsy Gateway] DB Connected'))
+    .catch(err => logger.error(`❌ DB Connection Failed: ${err.message}`));
+
+// ---- Proxy Logic ----
+const proxyCfg = {
+    changeOrigin: true,
+    onProxyReq: (proxyReq, req) => {
+        if (req.body && Object.keys(req.body).length > 0) {
+            const bodyData = JSON.stringify(req.body);
+            proxyReq.setHeader('Content-Type', 'application/json');
+            proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+            proxyReq.write(bodyData);
         }
-        await mongoose.connect(mongoUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        logger.info(`✅ MongoDB Connected: ${mongoose.connection.host}`);
-    } catch (err) {
-        logger.error(`❌ MongoDB connection error: ${err.message}`);
-        process.exit(1);
     }
 };
 
-connectDB();
+// ---- Service Bridges ----
+app.use('/api/auth', createProxyMiddleware({ target: 'http://127.0.0.1:4000', pathRewrite: { '^/api/auth': '' }, ...proxyCfg }));
+app.use('/api/billing', createProxyMiddleware({ target: 'http://127.0.0.1:6400', pathRewrite: { '^/api/billing': '' }, ...proxyCfg }));
+app.use('/api/ai', createProxyMiddleware({ target: 'http://127.0.0.1:6500', pathRewrite: { '^/api/ai': '' }, ...proxyCfg }));
 
-// --- Security Middleware ---
-app.use(helmet());
-app.use(mongoSanitize());
-app.use(xssClean());
-app.use(hpp());
-app.use(compression());
-
-// --- CORS Setup ---
-const allowedOrigins = [
-    "http://localhost:3000",
-    "https://localhost:3000",
-    "http://localhost:3001",
-    "https://localhost:3001",
-];
-
-app.use(
-    cors({
-        origin: (origin, callback) => {
-            if (!origin || allowedOrigins.includes(origin)) {
-                callback(null, true);
-            } else {
-                logger.warn(`🚫 Blocked by CORS: ${origin}`);
-                callback(new Error("Not allowed by CORS"));
-            }
-        },
-        credentials: true,
-    })
-);
-
-// --- Logging & Parsing ---
-if (process.env.NODE_ENV === "development") {
-    app.use(morgan("dev"));
-}
-app.use(express.json({ limit: "10kb" }));
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(requestLogger);
-
-// --- Rate Limiting ---
-app.use("/api", apiLimiter);
-
-// --- Audit Logging Middleware ---
-app.use(auditLogger);
-
-// --- Static Files ---
-app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-
-// --- Routes ---
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/users", require("./routes/userRoutes"));
-app.use("/api/clients", require("./routes/clientRoutes"));
-app.use("/api/deputies", require("./routes/deputyRoutes"));
-app.use("/api/documents", require("./routes/documentRoutes"));
-app.use("/api/instructions", require("./routes/instructionRoutes"));
-app.use("/api/invoices", require("./routes/invoiceRoutes"));
-app.use("/api/upload", require("./routes/fileUploadRoutes"));
-app.use("/api/reports", require("./routes/reportRoutes"));
-app.use("/api/chat", require("./routes/chatRoutes"));
-app.use("/api/notifications", require("./routes/notificationRoutes"));
-app.use("/api/dashboard", require("./routes/dashboardRoutes"));
-app.use("/api/password", require("./routes/passwordRoutes"));
-app.use("/api/settings", require("./routes/settingsRoutes"));
-app.use("/api/analytics", require("./routes/analyticsRoutes"));
-app.use("/api/ai", require("./routes/aiRoutes"));
-app.use("/api/search", require("./routes/searchRoutes"));
-app.use("/api/admin", require("./routes/admin"));
-app.use("/api/locations", require("./routes/locationRoutes"));
-app.use("/api/geofence", require("./routes/geofenceRoutes")); // ✅ Add the new geofence routes
-
-// --- Serve Frontend in Production ---
-if (process.env.NODE_ENV === "production") {
-    const clientBuildPath = path.join(__dirname, "..", "client", "build");
-    app.use(express.static(clientBuildPath));
-    app.get("*", (req, res) => {
-        res.sendFile(path.resolve(clientBuildPath, "index.html"));
-    });
+// ---- Local Routes (The Fix) ----
+// We mount them exactly where the frontend expects them
+try {
+    app.use('/api/documents', require('./routes/documentRoutes'));
+    app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+    logger.info('🚀 [Wilsy Gateway] Local Sheriff Ops Routes Mounted');
+} catch (e) {
+    logger.error(`❌ Failed to load local routes: ${e.message}`);
 }
 
-// --- Error Handler ---
-app.use(errorHandler);
-
-// --- Launch ---
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-    logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+// ---- Server Boot ----
+server.listen(PORT, HOST, () => {
+    logger.info(`🚀 [Wilsy Gateway] Epitome Routing Online at http://${HOST}:${PORT}`);
 });

@@ -1,243 +1,192 @@
 // ~/client/src/components/layout/Sidebar.jsx
-
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { useSelector, useDispatch } from 'react-redux';
-import { logoutUser } from '../../features/auth/reducers/authSlice';
-import {
-    Drawer,
-    IconButton,
-    Menu,
-    MenuItem,
-    Avatar,
-    useMediaQuery,
-    Tooltip,
-    Switch,
-} from '@mui/material';
-import { motion } from 'framer-motion';
-import Logo from '../atoms/Logo';
 import { useTheme } from '../../context/ThemeContext';
+import {
+  DashboardIcon, FilesIcon, UserIcon, ChatIcon, SettingsIcon,
+  AdminIcon, UsersIcon, TrackingIcon, AnalyticsIcon, GeofenceIcon,
+  SheriffIcon, SearchIcon, LogoutIcon, ThemeIcon, CollapseIcon
+} from '../icons/MonoIcons';
 
-// ✅ All 24 icons
-import dashboardIcon from '../../assets/icons/dashboard.svg';
-import documentsIcon from '../../assets/icons/documents.svg';
-import profileIcon from '../../assets/icons/profile.svg';
-import chatIcon from '../../assets/icons/chat.svg';
-import settingsIcon from '../../assets/icons/settings.svg';
-import adminIcon from '../../assets/icons/admin.svg';
-import usersIcon from '../../assets/icons/users.svg';
-import logoutIcon from '../../assets/icons/logout.svg';
-import loginIcon from '../../assets/icons/login.svg';
-import bellIcon from '../../assets/icons/bell.svg';
-import userIcon from '../../assets/icons/user.svg';
-import gearIcon from '../../assets/icons/gear.svg';
-import moonIcon from '../../assets/icons/moon.svg';
-import sunIcon from '../../assets/icons/sun.svg';
-import lockIcon from '../../assets/icons/lock.svg';
-import folderIcon from '../../assets/icons/folder.svg';
-import plusIcon from '../../assets/icons/plus.svg';
-import pencilIcon from '../../assets/icons/pencil.svg';
-import trashIcon from '../../assets/icons/trash.svg';
-import homeIcon from '../../assets/icons/home.svg';
-import shieldIcon from '../../assets/icons/shield.svg';
-import tagIcon from '../../assets/icons/tag.svg';
-import searchIcon from '../../assets/icons/search.svg';
-import arrowIcon from '../../assets/icons/arrow.svg';
-import menuIcon from '../../assets/icons/menu.svg';
-
-const SidebarWrapper = styled.div`
-  display: flex;
-`;
-
-const MobileMenuToggle = styled(IconButton)`
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1201;
-  color: white;
-
-  @media (min-width: 769px) {
-    display: none;
-  }
-`;
-
-const SidebarContainer = styled(motion.div)`
+const Wrap = styled.aside`
+  height: 100%;
+  background: ${({ theme }) => theme.colors?.sidebarBg || '#0b1c2c'};
+  color: ${({ theme }) => theme.colors?.sidebarText || '#e6eef6'};
   display: flex;
   flex-direction: column;
-  width: ${({ collapsed }) => (collapsed ? '70px' : '250px')};
-  background-color: ${({ theme }) => theme.colors.sidebarBg};
-  height: 100vh;
-  overflow-y: auto;
-  padding-top: 20px;
-  transition: width 0.3s ease;
+  border-right: 1px solid ${({ theme }) => theme.colors?.border || 'rgba(255,255,255,0.1)'};
 `;
 
-const SidebarLink = styled(NavLink)`
-  display: flex;
-  align-items: center;
-  color: ${({ theme }) => theme.colors.text};
-  padding: 12px 15px;
-  text-decoration: none;
-  transition: background-color 0.2s ease;
-
-  img {
-    margin-right: 10px;
-    width: 20px;
-    height: 20px;
-  }
-
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.hoverBg};
-  }
-
-  &.active {
-    background-color: ${({ theme }) => theme.colors.activeBg};
-    font-weight: bold;
-  }
-`;
-
-const AvatarContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 16px 0;
-`;
-
-const CollapseButton = styled(IconButton)`
-  color: ${({ theme }) => theme.colors.text};
-  margin: 8px auto;
-`;
-
-const ToggleWrapper = styled.div`
-  text-align: center;
-  margin-top: auto;
+const Head = styled.div`
+  display: flex; align-items: center; gap: 8px;
   padding: 12px;
-  color: ${({ theme }) => theme.colors.text};
+  border-bottom: 1px solid ${({ theme }) => theme.colors?.border || 'rgba(255,255,255,0.1)'};
+  font-weight: 600;
 `;
 
-const Sidebar = ({ onClose }) => {
-    const dispatch = useDispatch();
-    const { user } = useSelector((state) => state.auth);
-    const [mobileOpen, setMobileOpen] = useState(false);
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [collapsed, setCollapsed] = useState(false);
-    const isMobile = useMediaQuery('(max-width: 768px)');
-    const { isDarkMode, toggleDarkMode } = useTheme();
+const CollapseBtn = styled.button`
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.25);
+  color: inherit;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  display: inline-flex; align-items: center; gap: 6px;
+`;
 
-    const handleToggle = () => setMobileOpen(!mobileOpen);
-    const handleCollapseToggle = () => setCollapsed((prev) => !prev);
-    const handleAvatarClick = (e) => setAnchorEl(e.currentTarget);
-    const handleMenuClose = () => setAnchorEl(null);
-    const handleLogout = () => {
-        dispatch(logoutUser());
-        handleMenuClose();
-        if (isMobile && onClose) onClose();
-    };
+const SectionLabel = styled.div`
+  opacity: 0.7; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 10px 12px 4px;
+`;
 
-    const links = [
-        { to: '/dashboard', label: 'Dashboard', icon: dashboardIcon },
-        { to: '/documents', label: 'Documents', icon: documentsIcon },
-        { to: '/profile', label: 'Profile', icon: profileIcon },
-        { to: '/chat', label: 'Chat', icon: chatIcon },
-        { to: '/settings', label: 'Settings', icon: settingsIcon },
-        { to: '/search', label: 'Search', icon: searchIcon },
-        { to: '/tags', label: 'Tags', icon: tagIcon },
-        { to: '/home', label: 'Home', icon: homeIcon },
-        { to: '/trash', label: 'Trash', icon: trashIcon },
-        { to: '/pencil', label: 'Edit', icon: pencilIcon },
-        { to: '/create', label: 'Create', icon: plusIcon },
-        { to: '/folders', label: 'Folders', icon: folderIcon },
-        { to: '/lock', label: 'Lock', icon: lockIcon },
-        { to: '/gear', label: 'Gear', icon: gearIcon },
-        { to: '/bell', label: 'Alerts', icon: bellIcon },
-        { to: '/login', label: 'Login', icon: loginIcon },
-        { to: '/shield', label: 'Security', icon: shieldIcon },
-        ...(user?.role === 'admin'
-            ? [
-                { to: '/admin', label: 'Admin', icon: adminIcon },
-                { to: '/admin/users', label: 'Users', icon: usersIcon },
-            ]
-            : []),
-    ];
+const Nav = styled.nav`
+  flex: 1; padding: 8px; display: grid; gap: 6px;
+`;
 
-    const renderLinks = () => (
-        <SidebarContainer
-            collapsed={collapsed}
-            initial={{ x: -250 }}
-            animate={{ x: 0 }}
-            transition={{ duration: 0.3 }}
-        >
-            <Logo collapsed={collapsed} />
+const Item = styled(NavLink)`
+  display: grid; grid-template-columns: 20px 1fr;
+  align-items: center; gap: 10px; color: inherit;
+  text-decoration: none; padding: 10px 12px; border-radius: 8px;
+  transition: background .15s ease;
 
-            <AvatarContainer>
-                <Tooltip title={user?.name || 'User'}>
-                    <IconButton onClick={handleAvatarClick}>
-                        <Avatar alt={user?.name || 'User'}>
-                            <img src={userIcon} alt="user" width={24} height={24} />
-                        </Avatar>
-                    </IconButton>
-                </Tooltip>
-                <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-                    <MenuItem onClick={handleLogout}>
-                        <img src={logoutIcon} alt="logout" width={20} style={{ marginRight: 8 }} />
-                        Logout
-                    </MenuItem>
-                </Menu>
-            </AvatarContainer>
+  &:hover { background: rgba(255,255,255,0.06); }
+  &.active { background: rgba(255,255,255,0.12); font-weight: 600; }
+`;
 
-            {links.map((link) => (
-                <Tooltip key={link.to} title={collapsed ? link.label : ''} placement="right">
-                    <SidebarLink
-                        to={link.to}
-                        onClick={() => {
-                            if (isMobile && onClose) onClose();
-                        }}
-                    >
-                        <img src={link.icon} alt={link.label} />
-                        {!collapsed && link.label}
-                    </SidebarLink>
-                </Tooltip>
+const Tail = styled.div`
+  padding: 10px 12px;
+  border-top: 1px solid ${({ theme }) => theme.colors?.border || 'rgba(255,255,255,0.1)'};
+  display: grid; gap: 8px;
+`;
+const Row = styled.div` display: flex; align-items: center; justify-content: space-between; `;
+
+export default function Sidebar() {
+  const { darkMode, toggleTheme } = useTheme();
+  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+
+  // Role-based visibility (using localStorage to avoid Redux coupling here)
+  const currentUser = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+  }, []);
+  const role = currentUser?.role || 'guest';
+  const isAdmin = role === 'admin';
+  const isSheriff = role === 'sheriff';
+
+  const coreLinks = [
+    { to: '/dashboard', label: 'Dashboard', Icon: DashboardIcon },
+    { to: '/documents', label: 'Documents', Icon: FilesIcon },
+    { to: '/profile',   label: 'Profile',   Icon: UserIcon },
+    { to: '/chat',      label: 'Chat',      Icon: ChatIcon },
+    { to: '/settings',  label: 'Settings',  Icon: SettingsIcon },
+    { to: '/search',    label: 'Search',    Icon: SearchIcon },
+  ];
+
+  const adminLinks = [
+    { to: '/admin',                 label: 'Admin Panel',      Icon: AdminIcon },
+    { to: '/admin/users',           label: 'User Management',  Icon: UsersIcon },
+    { to: '/admin/sheriff-tracking',label: 'Sheriff Tracking', Icon: TrackingIcon },
+    { to: '/admin/analytics',       label: 'Analytics',        Icon: AnalyticsIcon },
+    { to: '/admin/geofences',       label: 'Geofences',        Icon: GeofenceIcon },
+  ];
+
+  const sheriffLinks = [
+    { to: '/sheriff/dashboard', label: 'Sheriff Dashboard', Icon: SheriffIcon },
+  ];
+
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login', { replace: true });
+  }
+
+  return (
+    <Wrap style={{ width: collapsed ? 72 : 220 }}>
+      <Head>
+        <span>Navigation</span>
+        <CollapseBtn onClick={() => setCollapsed(c => !c)}>
+          <CollapseIcon collapsed={collapsed} size={14} />
+          {collapsed ? ' ' : 'Collapse'}
+        </CollapseBtn>
+      </Head>
+
+      <Nav>
+        <SectionLabel>Core</SectionLabel>
+        {coreLinks.map(({ to, label, Icon }) => (
+          <Item key={to} to={to}>
+            <Icon size={18} />
+            {!collapsed && <span>{label}</span>}
+          </Item>
+        ))}
+
+        {isAdmin && (
+          <>
+            <SectionLabel>Admin</SectionLabel>
+            {adminLinks.map(({ to, label, Icon }) => (
+              <Item key={to} to={to}>
+                <Icon size={18} />
+                {!collapsed && <span>{label}</span>}
+              </Item>
             ))}
+          </>
+        )}
 
-            {!isMobile && (
-                <CollapseButton onClick={handleCollapseToggle} aria-label="Toggle sidebar">
-                    <img src={arrowIcon} alt="Toggle" width={20} />
-                </CollapseButton>
-            )}
+        {isSheriff && (
+          <>
+            <SectionLabel>Sheriff</SectionLabel>
+            {sheriffLinks.map(({ to, label, Icon }) => (
+              <Item key={to} to={to}>
+                <Icon size={18} />
+                {!collapsed && <span>{label}</span>}
+              </Item>
+            ))}
+          </>
+        )}
+      </Nav>
 
-            <ToggleWrapper>
-                <img
-                    src={isDarkMode ? moonIcon : sunIcon}
-                    alt="Theme toggle"
-                    width={20}
-                    style={{ verticalAlign: 'middle', marginRight: 8 }}
-                />
-                <Switch
-                    checked={isDarkMode}
-                    onChange={toggleDarkMode}
-                    inputProps={{ 'aria-label': 'toggle dark mode' }}
-                />
-            </ToggleWrapper>
-        </SidebarContainer>
-    );
-
-    return (
-        <SidebarWrapper>
-            {isMobile && (
-                <MobileMenuToggle onClick={handleToggle}>
-                    <img src={menuIcon} alt="menu" width={24} />
-                </MobileMenuToggle>
-            )}
-            {isMobile ? (
-                <Drawer anchor="left" open={mobileOpen} onClose={handleToggle}>
-                    {renderLinks()}
-                </Drawer>
-            ) : (
-                renderLinks()
-            )}
-        </SidebarWrapper>
-    );
-};
-
-export default Sidebar;
+      <Tail>
+        <Row>
+          {!collapsed && <span>Dark Mode</span>}
+          <button
+            onClick={toggleTheme}
+            aria-label="toggle dark mode"
+            style={{
+              background: 'transparent',
+              color: 'inherit',
+              border: '1px solid rgba(255,255,255,0.25)',
+              borderRadius: 8,
+              padding: '6px 8px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+          >
+            <ThemeIcon size={16} />
+            {!collapsed && (darkMode ? 'On' : 'Off')}
+          </button>
+        </Row>
+        <button
+          onClick={logout}
+          style={{
+            background: 'transparent',
+            color: 'inherit',
+            border: '1px solid rgba(255,255,255,0.25)',
+            borderRadius: 8,
+            padding: '8px 10px',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6
+          }}
+        >
+          <LogoutIcon size={16} />
+          {!collapsed && 'Logout'}
+        </button>
+      </Tail>
+    </Wrap>
+  );
+}

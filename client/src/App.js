@@ -1,120 +1,99 @@
-// ~/client/src/App.js
-
-import React, { Suspense, lazy, useEffect } from 'react';
+import AuditPage from './features/documents/pages/AuditPage';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import GlobalStyle from './GlobalStyle';
-import ProtectedRoute from './components/ProtectedRoute'; // Use the masterpiece security component
-import ErrorBoundary from './components/ErrorBoundary';
-import { loadUser } from './features/auth/reducers/authSlice';
+import { useSelector, useDispatch } from 'react-redux';
+import { connectSocket, disconnectSocket } from './services/socket';
+import { forceLogout } from './features/auth/reducers/authSlice';
+import './App.css';
+
+// Components
+import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import 'leaflet/dist/leaflet.css'; // Global Leaflet CSS for map components
+import Login from './features/auth/pages/Login';
+import Dashboard from './features/dashboard/pages/Dashboard';
+import Documents from './features/documents/pages/Documents';
+import NewCase from './pages/NewCase';
+import DocumentDetails from './features/documents/pages/DocumentDetails';
+import Profile from './features/profile/pages/Profile';
+import AdminPanel from './features/admin/pages/AdminPanel';
+import AdminDashboard from './components/AdminDashboard';
+import SheriffDashboard from './features/admin/pages/SheriffDashboard';
+import SheriffAnalytics from './features/sheriff/pages/SheriffAnalytics';
+import Search from './features/search/pages/Search';
+import SettingsHome from './features/settings/pages/SettingsHome';
+import Chat from './features/chat/pages/Chat';
+
+// --- SHERIFF MODULES ---
+import SheriffInstructionForm from './features/documents/pages/SheriffInstructionForm';
+import SheriffTracking from './features/documents/pages/SheriffTracking';
+
+// Utilities
+import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/LoadingSpinner';
+import Notifications from './components/Notifications';
 
-// --- Lazy-loaded Pages ---
-// This pattern improves initial load time by only fetching the code for the page being viewed.
-const Dashboard = lazy(() => import('./features/dashboard/pages/Dashboard'));
-const Documents = lazy(() => import('./features/documents/pages/Documents'));
-const Profile = lazy(() => import('./features/profile/pages/Profile'));
-const AdminPanel = lazy(() => import('./features/admin/pages/AdminPanel'));
-const UserManagement = lazy(() => import('./features/admin/pages/UserManagement'));
-const SheriffDashboard = lazy(() => import('./features/admin/pages/SheriffDashboard'));
-const SheriffAnalytics = lazy(() => import('./features/sheriff/pages/SheriffAnalytics'));
-const GeofenceManager = lazy(() => import('./features/admin/pages/GeofenceManager'));
-const Chat = lazy(() => import('./features/chat/pages/Chat'));
-const Login = lazy(() => import('./features/auth/pages/Login'));
-const ErrorPage = lazy(() => import('./features/shared/pages/ErrorPage'));
+function Loading() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '15px', color: '#666' }}>
+      <LoadingSpinner />
+      <div style={{ fontWeight: 500 }}>Initializing Secure Environment...</div>
+    </div>
+  );
+}
 
-// --- Fallback Loading Screen ---
-const Loading = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-    <LoadingSpinner message="Loading..." />
-  </div>
-);
-
-/**
- * The main application router.
- * This is where you define which routes are public and which are protected.
- */
-const App = () => {
+export default function App() {
   const dispatch = useDispatch();
+  const { isAuthenticated, accessToken } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Attempt to load the user from the token on initial app load
-    dispatch(loadUser());
-  }, [dispatch]);
+    if (isAuthenticated && accessToken) {
+      connectSocket(accessToken);
+    } else {
+      disconnectSocket();
+    }
+    return () => disconnectSocket();
+  }, [isAuthenticated, accessToken]);
 
   return (
-    <>
-      <GlobalStyle />
-      <ErrorBoundary>
-        <Suspense fallback={<Loading />}>
-          <BrowserRouter>
-            <Routes>
-              {/* --- Public Route --- */}
-              <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <Notifications />
+      <Suspense fallback={<Loading />}>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Routes>
+            <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
+            
+            <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              
+              {/* Documents */}
+              <Route path="documents" element={<Documents />} />
+              <Route path="documents/new" element={<NewCase />} />
+              <Route path="documents/:id" element={<DocumentDetails />} />
+              
+              {/* --- SHERIFF ROUTES (Fixed 404s) --- */}
+              {/* The sidebar points to /sheriff/new-instruction and /sheriff/tracking */}
+              <Route path="sheriff/new-instruction" element={<SheriffInstructionForm />} />
+              <Route path="sheriff/tracking" element={<SheriffTracking />} />
+              <Route path="sheriff/dashboard" element={<SheriffDashboard />} />
+              <Route path="sheriff/analytics" element={<SheriffAnalytics />} />
+              <Route path="sheriff/audit" element={<AuditPage />} />
 
-              {/* --- Protected Routes (Layout Wrapper) --- */}
-              {/* This outer route ensures a user must be authenticated to see the main app layout. */}
-              <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                {/* Nested routes will render inside AppLayout's <Outlet> */}
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="documents" element={<Documents />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="chat" element={<Chat />} />
-
-                {/* --- Admin-Only Routes --- */}
-                <Route
-                  path="admin"
-                  element={<ProtectedRoute roles={['admin']}><AdminPanel /></ProtectedRoute>}
-                />
-                <Route
-                  path="admin/users"
-                  element={<ProtectedRoute roles={['admin']}><UserManagement /></ProtectedRoute>}
-                />
-                <Route
-                  path="admin/sheriff-tracking"
-                  element={<ProtectedRoute roles={['admin']}><SheriffDashboard /></ProtectedRoute>}
-                />
-                <Route
-                  path="admin/analytics"
-                  element={<ProtectedRoute roles={['admin']}><SheriffAnalytics /></ProtectedRoute>}
-                />
-                <Route
-                  path="admin/geofences"
-                  element={<ProtectedRoute roles={['admin']}><GeofenceManager /></ProtectedRoute>}
-                />
-
-                {/* --- Sheriff-Only Route --- */}
-                <Route
-                  path="sheriff/dashboard"
-                  element={<ProtectedRoute roles={['sheriff']}><SheriffDashboard /></ProtectedRoute>}
-                />
-
-                {/* --- Error Page --- */}
-                <Route path="*" element={<ErrorPage />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </Suspense>
-      </ErrorBoundary>
-
-      {/* Global Toasts Container */}
-      <ToastContainer
-        position="top-right"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-    </>
+              {/* Admin & Utils */}
+              <Route path="admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="admin/dashboard" element={<AdminDashboard />} />
+              <Route path="admin/panel" element={<AdminPanel />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="settings" element={<SettingsHome />} />
+              <Route path="chat" element={<Chat />} />
+              <Route path="search" element={<Search />} />
+              
+              {/* Catch All */}
+              <Route path="*" element={<div style={{ padding: '50px', textAlign: 'center' }}><h2>404 - Page Not Found</h2><p>The route you requested does not exist.</p></div>} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </Suspense>
+    </ErrorBoundary>
   );
-};
-
-export default App;
+}

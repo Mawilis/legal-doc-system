@@ -1,57 +1,104 @@
-// ~/legal-doc-system/server/models/auditLogModel.js
+/**
+ * ~/server/models/auditLogModel.js
+ *
+ * Enterprise Audit Log Model
+ * --------------------------
+ * Tracks every request and programmatic event for compliance and monitoring.
+ * - Links to User for accountability.
+ * - Captures method, path, IP, status, statusCode, responseTime.
+ * - Allows optional message and meta fields for extended context.
+ * - Includes timestamps for createdAt and updatedAt.
+ */
+
+'use strict';
 
 const mongoose = require('mongoose');
 
+const auditLogSchema = new mongoose.Schema(
+    {
+        // 1) Relations
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null
+        },
+        email: {
+            type: String,
+            default: 'Guest'
+        },
+
+        // 2) Request Context
+        method: {
+            type: String,
+            required: true,
+            default: 'UNKNOWN'
+        },
+        path: {
+            type: String,
+            required: true,
+            default: 'UNKNOWN'
+        },
+        ip: {
+            type: String,
+            default: '0.0.0.0'
+        },
+
+        // 3) Status & Response
+        status: {
+            type: String,
+            enum: ['PENDING', 'SUCCESS', 'FAILED'],
+            default: 'PENDING'
+        },
+        statusCode: {
+            type: Number,
+            default: null
+        },
+        responseTime: {
+            type: Number,
+            default: null
+        },
+
+        // 4) Optional Details
+        message: {
+            type: String,
+            default: null
+        },
+        meta: {
+            type: Object,
+            default: null
+        }
+    },
+    {
+        timestamps: true // Adds createdAt and updatedAt
+    }
+);
+
+// ------------------------------------------
+// Indexes for performance
+// ------------------------------------------
+auditLogSchema.index({ status: 1, createdAt: -1 });
+auditLogSchema.index({ user: 1, createdAt: -1 });
+auditLogSchema.index({ path: 1, method: 1 });
+
+// ------------------------------------------
+// Static Methods
+// ------------------------------------------
 /**
- * Defines the Mongoose schema for an audit log entry.
- * This schema creates a comprehensive and indexed record for every API request,
- * which is essential for security, debugging, and compliance purposes.
+ * Find logs by user email.
  */
-const auditLogSchema = new mongoose.Schema({
-    // A reference to the user who made the request. Null if the request was unauthenticated.
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // This should match the name of your User model
-        default: null,
-        index: true, // Indexing this field improves query performance when filtering by user.
-    },
-    // The user's email is stored for quick reference and denormalization.
-    // This is useful even if the original user document is deleted.
-    email: {
-        type: String,
-        default: 'Guest',
-    },
-    // The HTTP method of the request (e.g., GET, POST, PUT, DELETE).
-    method: {
-        type: String,
-        required: true,
-    },
-    // The API endpoint path that was accessed by the request.
-    path: {
-        type: String,
-        required: true,
-    },
-    // The final status of the request, updated after the response is sent.
-    status: {
-        type: String,
-        enum: ['PENDING', 'SUCCESS', 'FAILED'], // Ensures only valid statuses can be saved.
-        default: 'PENDING',
-        index: true, // Indexing status helps in quickly finding failed or successful requests.
-    },
-    // The IP address of the client making the request, for security tracking.
-    ip: {
-        type: String,
-    },
-    // The time in milliseconds it took the server to process and respond to the request.
-    responseTime: {
-        type: Number,
-    },
-}, {
-    // Mongoose's built-in timestamp option automatically adds `createdAt` and `updatedAt` fields.
-    timestamps: true
-});
+auditLogSchema.statics.findByEmail = function (email) {
+    return this.find({ email }).sort({ createdAt: -1 });
+};
 
-// Compile the schema into a Mongoose model.
-const AuditLog = mongoose.model('AuditLog', auditLogSchema);
+/**
+ * Find failed logs in the last N minutes.
+ */
+auditLogSchema.statics.findRecentFailures = function (minutes = 60) {
+    const cutoff = new Date(Date.now() - minutes * 60 * 1000);
+    return this.find({ status: 'FAILED', createdAt: { $gte: cutoff } });
+};
 
-module.exports = AuditLog;
+// ------------------------------------------
+// Model Export
+// ------------------------------------------
+module.exports = mongoose.model('AuditLog', auditLogSchema);

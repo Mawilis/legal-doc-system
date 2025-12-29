@@ -1,0 +1,22 @@
+global:
+  namespace: legal-os
+  imagePullPolicy: IfNotPresent
+  storageClass: standard
+
+billing:
+  replicaCount: 2
+  image:
+    repository: wilsy/svc-billing
+    tag: latest
+
+ai:
+  replicaCount: 1
+  image:
+    repository: wilsy/svc-ai
+    tag: latest
+
+gateway:
+  replicaCount: 2
+  image:
+    repository: wilsy/svc-gateway
+    tag: latest
