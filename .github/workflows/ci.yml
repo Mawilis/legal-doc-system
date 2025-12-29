@@ -1,4 +1,15 @@
-name: 🔍 Run Backend Tests
+# File: .github/workflows/ci.yml
+# -----------------------------------------------------------------------------
+# COLLABORATION NOTES:
+# - Purpose: Continuous Integration pipeline for legal-doc-system.
+# - Current job: 🔍 Run Backend Tests (Mongo + Jest).
+# - Added jobs: Lint (code quality) + Frontend Build (React).
+# - Engineers:
+#   • Keep Node versions aligned with dev/prod.
+#   • Extend with deployment jobs as needed.
+# -----------------------------------------------------------------------------
+
+name: CI Pipeline
 
 on:
   push:
@@ -7,7 +18,9 @@ on:
     branches: [main]
 
 jobs:
+  # --- Backend Tests ---
   backend-tests:
+    name: 🔍 Run Backend Tests
     runs-on: ubuntu-latest
 
     services:
@@ -25,15 +38,56 @@ jobs:
 
     steps:
       - name: ⬇️ Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
       - name: 📦 Install dependencies
         run: cd server && npm ci
 
       - name: ✅ Run tests
         run: cd server && npm test
+
+  # --- Lint ---
+  lint:
+    name: 🧹 Lint Codebase
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔎 Run ESLint
+        run: npm run lint --if-present
+
+  # --- Frontend Build ---
+  frontend-build:
+    name: 🖥️ Build Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: cd client && npm ci
+
+      - name: 🛠️ Build React App
+        run: cd client && npm run build
