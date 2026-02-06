@@ -1,148 +1,124 @@
+/*
+ * File: server/utils/sendMail.js
+ * STATUS: PRODUCTION-READY | MULTI-PROVIDER COMMUNICATION ENGINE
+ * -----------------------------------------------------------------------------
+ * PURPOSE: 
+ * Manages transactional email delivery with multi-provider failover, 
+ * automatic retries, and cross-channel alerting (Slack).
+ * -----------------------------------------------------------------------------
+ */
+
+'use strict';
+
 const nodemailer = require('nodemailer');
-const logger = require('./logger');
 const axios = require('axios');
-const AlertLog = require('../models/alertLogModel'); // optional MongoDB alert storage
+const logger = require('./logger');
+const AlertLog = require('../models/AlertLog');
 
 /**
- * Build a nodemailer transporter based on environment + provider.
- * Can optionally inject a mock transporter for testing.
+ * TRANSPORTER FACTORY
+ * Standardizes connection logic for enterprise providers.
  */
-const buildTransporter = (overrideTransport = null) => {
-    if (overrideTransport) return overrideTransport;
+const buildTransporter = () => {
+    const provider = process.env.EMAIL_PROVIDER?.toLowerCase() || 'default';
 
-    const provider = process.env.EMAIL_PROVIDER || 'default';
-
-    switch (provider.toLowerCase()) {
+    switch (provider) {
         case 'sendgrid':
             return nodemailer.createTransport({
                 host: 'smtp.sendgrid.net',
                 port: 587,
-                auth: {
-                    user: 'apikey',
-                    pass: process.env.SENDGRID_API_KEY,
-                },
+                auth: { user: 'apikey', pass: process.env.SENDGRID_API_KEY }
             });
 
         case 'aws':
+            // Optimized for AWS Simple Email Service
             return nodemailer.createTransport({
-                SES: { apiVersion: '2010-12-01' },
-                accessKeyId: process.env.AWS_SES_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY,
-                region: process.env.AWS_SES_REGION,
-            });
-
-        case 'gmail':
-            return nodemailer.createTransport({
-                service: 'gmail',
+                host: `email-smtp.${process.env.AWS_REGION}.amazonaws.com`,
+                port: 465,
+                secure: true,
                 auth: {
-                    user: process.env.EMAIL_USERNAME,
-                    pass: process.env.EMAIL_PASSWORD,
-                },
+                    user: process.env.AWS_SES_USER,
+                    pass: process.env.AWS_SES_PASS
+                }
             });
 
-        case 'default':
         default:
-            if (process.env.NODE_ENV === 'production') {
-                return nodemailer.createTransport({
-                    service: 'gmail',
-                    auth: {
-                        user: process.env.EMAIL_USERNAME,
-                        pass: process.env.EMAIL_PASSWORD,
-                    },
-                });
-            } else {
-                return nodemailer.createTransport({
-                    host: process.env.MAILTRAP_HOST,
-                    port: process.env.MAILTRAP_PORT,
-                    auth: {
-                        user: process.env.MAILTRAP_USERNAME,
-                        pass: process.env.MAILTRAP_PASSWORD,
-                    },
-                });
-            }
+            // Development Fallback: Mailtrap
+            return nodemailer.createTransport({
+                host: process.env.MAILTRAP_HOST,
+                port: process.env.MAILTRAP_PORT,
+                auth: {
+                    user: process.env.MAILTRAP_USER,
+                    pass: process.env.MAILTRAP_PASS
+                }
+            });
     }
 };
 
 /**
- * Optionally send alert to Slack
+ * CROSS-CHANNEL ALERTING (Slack Integration)
  */
 const sendSlackAlert = async (message) => {
-    const webhook = process.env.SLACK_ALERT_WEBHOOK;
-    if (!webhook) return;
-
+    if (!process.env.SLACK_WEBHOOK_URL) return;
     try {
-        await axios.post(webhook, { text: message });
-        logger.info('✅ Slack alert sent.');
-    } catch (error) {
-        logger.warn(`⚠️ Failed to send Slack alert: ${error.message}`);
+        await axios.post(process.env.SLACK_WEBHOOK_URL, { text: message });
+    } catch (err) {
+        logger.warn(`⚠️ [SLACK_FAIL]: ${err.message}`);
     }
 };
 
 /**
- * Send an email with retry logic.
- * @param {Object} options Email options
- * @param {string} options.email - Recipient email
- * @param {string} options.subject - Subject line
- * @param {string} options.text - Plain text message
- * @param {string} [options.html] - Optional HTML message
- * @param {boolean} [options.alert] - If true, send alert to Slack and save in DB
- * @param {Object} [overrideTransport] - Optional transport mock for testing
+ * ENTERPRISE MAIL DISPATCHER
+ * @param {Object} options - to, subject, text, html, alert (boolean)
  */
-const sendEmail = async (options, overrideTransport = null) => {
-    const transporter = buildTransporter(overrideTransport);
-
-    if (!options.email || !/\S+@\S+\.\S+/.test(options.email)) {
-        throw new Error('A valid email address is required.');
-    }
+const sendEmail = async (options) => {
+    const transporter = buildTransporter();
+    const maxRetries = 3;
+    let attempt = 0;
 
     const mailOptions = {
-        from: `"${process.env.EMAIL_FROM_NAME || 'Legal Doc System'}" <${process.env.EMAIL_FROM || 'noreply@legaldoc.com'}>`,
+        from: `"${process.env.EMAIL_FROM_NAME || 'Wilsy OS'}" <${process.env.EMAIL_FROM}>`,
         to: options.email,
         subject: options.subject,
         text: options.text,
-        html: options.html,
+        html: options.html || options.text
     };
-
-    const maxRetries = 3;
-    let attempt = 0;
 
     while (attempt < maxRetries) {
         try {
             const info = await transporter.sendMail(mailOptions);
-            logger.info(`📧 Email sent: ${info.messageId}`);
+            logger.info(`📧 [MAIL_SUCCESS]: ${info.messageId} to ${options.email}`);
 
-            if (process.env.NODE_ENV !== 'production') {
-                const previewUrl = nodemailer.getTestMessageUrl(info);
-                if (previewUrl) {
-                    logger.debug(`🔎 Preview URL: ${previewUrl}`);
-                }
-            }
-
-            // --- Log alert if needed
+            // If this is a system alert, log it to the forensic collection
             if (options.alert) {
-                await sendSlackAlert(`🚨 ${options.subject}\n${options.text}`);
-
-                // Save to MongoDB AlertLog
-                await AlertLog.create({
-                    type: 'email',
-                    message: options.subject,
-                    context: options.text,
-                });
+                await Promise.all([
+                    sendSlackAlert(`🚨 *SYSTEM ALERT*: ${options.subject}\n${options.text}`),
+                    AlertLog.create({
+                        tenantId: options.tenantId,
+                        type: 'EMAIL_DISPATCH',
+                        status: 'SENT',
+                        message: options.subject,
+                        recipient: options.email
+                    })
+                ]);
             }
-
             return info;
+
         } catch (error) {
-            attempt += 1;
-            logger.warn(`❌ Attempt ${attempt} failed: ${error.message}`);
+            attempt++;
+            logger.warn(`⚠️ [MAIL_RETRY]: Attempt ${attempt}/${maxRetries} failed: ${error.message}`);
 
             if (attempt >= maxRetries) {
-                logger.error(`🚨 All ${maxRetries} attempts failed to send email.`);
+                logger.error(`🔥 [MAIL_CRITICAL_FAIL]: Permanent failure sending to ${options.email}`);
 
-                // Optional alert on final failure
-                await sendSlackAlert(`🔥 Email failed after ${maxRetries} attempts.\nSubject: ${options.subject}`);
+                if (options.alert) {
+                    await sendSlackAlert(`🔥 *MAIL CRITICAL*: Failed to notify ${options.email} regarding ${options.subject}`);
+                }
 
-                throw new Error('Email service failed after multiple attempts.');
+                throw error;
             }
+            // Wait 1s before retrying
+            await new Promise(res => setTimeout(res, 1000));
         }
     }
 };

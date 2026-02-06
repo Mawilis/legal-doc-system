@@ -1,59 +1,93 @@
-// ~/server/utils/alertUtils.js
+/*
+ * File: server/utils/alertUtils.js
+ * STATUS: PRODUCTION-READY | RESILIENT COMMUNICATIONS
+ * -----------------------------------------------------------------------------
+ * PURPOSE: 
+ * The platform's messaging backbone. Interfaces with SMTP (Email) and 
+ * SMS gateways. Designed to be called by Background Workers to ensure 
+ * non-blocking performance.
+ * -----------------------------------------------------------------------------
+ */
+
+'use strict';
 
 const nodemailer = require('nodemailer');
 const twilio = require('twilio');
 const logger = require('./logger');
 
-// --- Nodemailer (Email) Setup ---
-// It's recommended to use a transactional email service like SendGrid or AWS SES in production.
+// --- 1. INDUSTRIAL GATEWAY CONFIGURATION ---
+
+// EMAIL: Transporter Singleton
 const transporter = nodemailer.createTransport({
-    service: 'gmail', // Or your preferred SMTP provider
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: process.env.EMAIL_PORT || 465,
+    secure: true,
     auth: {
-        user: process.env.EMAIL_USER, // Your email address from .env
-        pass: process.env.EMAIL_PASS, // Your email password or app-specific password from .env
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
     },
+    // Production optimization: limit connection pool
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100
 });
 
+// SMS: Twilio Singleton
+let twilioClient;
+if (process.env.TWILIO_SID && process.env.TWILIO_AUTH_TOKEN) {
+    twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
+}
+
+// --- 2. ALERT ADAPTERS ---
+
 /**
- * Sends an email using the configured transporter.
- * @param {string} to - The recipient's email address.
- * @param {string} subject - The subject of the email.
- * @param {string} text - The plain text body of the email.
- * @param {string} [html] - Optional HTML body for the email.
+ * SEND TRANSACTIONAL EMAIL
+ * Best Practice: Call this via notificationWorker to avoid blocking API threads.
  */
 exports.sendEmail = async (to, subject, text, html) => {
+    if (!process.env.EMAIL_USER) {
+        logger.error('❌ [MAIL_SERVICE]: EMAIL_USER not configured in environment.');
+        return false;
+    }
+
     try {
-        await transporter.sendMail({
-            from: `"LegalDocSys Alerts" <${process.env.EMAIL_USER}>`,
+        const info = await transporter.sendMail({
+            from: `"Wilsy OS Notifications" <${process.env.EMAIL_USER}>`,
             to,
             subject,
             text,
             html: html || text,
         });
-        logger.info(`Email alert sent to ${to}`);
+
+        logger.info(`📧 [MAIL_SENT]: ID ${info.messageId} to ${to}`);
+        return true;
     } catch (error) {
-        logger.error(`Failed to send email to ${to}: ${error.message}`);
+        logger.error(`💥 [MAIL_FAULT]: Recipient ${to} | Error: ${error.message}`);
+        // We throw the error so the BullMQ worker knows to retry
+        throw error;
     }
 };
 
-
-// --- Twilio (SMS) Setup ---
-const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
-
 /**
- * Sends an SMS message using the Twilio client.
- * @param {string} to - The recipient's phone number (e.g., '+27821234567').
- * @param {string} body - The content of the SMS message.
+ * SEND STATUTORY SMS
  */
 exports.sendSMS = async (to, body) => {
+    if (!twilioClient) {
+        logger.error('❌ [SMS_SERVICE]: Twilio client not initialized.');
+        return false;
+    }
+
     try {
-        await twilioClient.messages.create({
+        const message = await twilioClient.messages.create({
             body,
-            from: process.env.TWILIO_PHONE_NUMBER, // Your Twilio phone number from .env
+            from: process.env.TWILIO_PHONE_NUMBER,
             to,
         });
-        logger.info(`SMS alert sent to ${to}`);
+
+        logger.info(`📱 [SMS_SENT]: SID ${message.sid} to ${to}`);
+        return true;
     } catch (error) {
-        logger.error(`Failed to send SMS to ${to}: ${error.message}`);
+        logger.error(`💥 [SMS_FAULT]: Recipient ${to} | Error: ${error.message}`);
+        throw error;
     }
 };

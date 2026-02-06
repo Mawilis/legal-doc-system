@@ -1,46 +1,78 @@
-// ~/server/utils/smsSender.js
+/*
+ * File: server/utils/smsSender.js
+ * STATUS: PRODUCTION-READY | RAPID DISPATCH GRADE
+ * -----------------------------------------------------------------------------
+ * PURPOSE: 
+ * Manages rapid-response mobile notifications. Handles South African number 
+ * formatting and provides a resilient interface for the Twilio Gateway.
+ * -----------------------------------------------------------------------------
+ */
+
+'use strict';
 
 const twilio = require('twilio');
-const logger = require('./logger'); // Assuming a standard logger like Winston
+const logger = require('./logger');
 
-// --- Twilio Client Initialization ---
-// It's crucial to pull these credentials from environment variables for security.
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+// --- 1. CONFIGURATION & INITIALIZATION ---
+const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER } = process.env;
 
-// Ensure all required Twilio credentials are present before initializing the client.
-let twilioClient;
-if (accountSid && authToken && fromNumber) {
-    twilioClient = twilio(accountSid, authToken);
+let twilioClient = null;
+
+if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN) {
+    try {
+        twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+        logger.info('✅ [SMS_GATEWAY]: Twilio client initialized.');
+    } catch (err) {
+        logger.error(`💥 [SMS_INIT_FAULT]: ${err.message}`);
+    }
 } else {
-    logger.warn('Twilio credentials are not fully configured in .env file. SMS sending will be disabled.');
+    logger.warn('⚠️ [SMS_GATEWAY]: Credentials missing. SMS delivery disabled.');
 }
 
+// --- 2. FORENSIC HELPERS ---
+
 /**
- * Sends an SMS message using the configured Twilio client.
- * It includes robust error handling and will not attempt to send if the client is not configured.
- *
- * @param {string} to - The recipient's phone number in E.164 format (e.g., '+27821234567').
- * @param {string} body - The content of the SMS message.
- * @returns {Promise<void>}
+ * E.164 FORMATTER
+ * Converts local SA numbers (082...) to international format (+2782...)
+ */
+const formatToE164 = (number) => {
+    let cleaned = number.replace(/\D/g, ''); // Remove non-digits
+    if (cleaned.startsWith('0')) {
+        cleaned = '27' + cleaned.substring(1);
+    }
+    return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
+};
+
+// --- 3. DISPATCHER ---
+
+/**
+ * SEND TRANSACTIONAL SMS
+ * @param {string} to - Recipient mobile number
+ * @param {string} body - SMS content (Keep under 160 chars for 1-segment billing)
  */
 const sendSMS = async (to, body) => {
-    // Only proceed if the Twilio client was successfully initialized.
     if (!twilioClient) {
-        logger.error('Cannot send SMS: Twilio client is not configured.');
-        return;
+        logger.error('❌ [SMS_DISPATCH_DENIED]: Gateway not configured.');
+        return { success: false, error: 'GATEWAY_UNAVAILABLE' };
     }
 
+    const formattedNumber = formatToE164(to);
+    const maskedNumber = `${formattedNumber.substring(0, 5)}***${formattedNumber.slice(-4)}`;
+
     try {
-        await twilioClient.messages.create({
+        const message = await twilioClient.messages.create({
             body,
-            from: fromNumber,
-            to,
+            from: TWILIO_PHONE_NUMBER,
+            to: formattedNumber,
         });
-        logger.info(`SMS alert sent successfully to ${to}`);
+
+        logger.info(`📱 [SMS_SENT]: SID ${message.sid} to ${maskedNumber}`);
+        return { success: true, sid: message.sid };
     } catch (error) {
-        logger.error(`Failed to send SMS to ${to}: ${error.message}`);
+        logger.error(`💥 [SMS_FAULT]: Target ${maskedNumber} | Error: ${error.message}`);
+
+        // Throwing allows the background worker to handle the retry strategy
+        throw new Error(`SMS_PROVIDER_FAILURE: ${error.message}`);
     }
 };
 

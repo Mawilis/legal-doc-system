@@ -53,7 +53,7 @@ const tokenRules = (path = 'params.resettoken') => {
     const rule = check(param)
         .exists({ checkFalsy: true }).withMessage('Reset token is required.')
         .isLength({ min: 20, max: 256 }).withMessage('Reset token length is invalid.')
-        .matches(/^[A-Za-z0-9._\-]+$/).withMessage('Reset token contains invalid characters.');
+        .matches(/^[A-Za-z0-9._\\-]+$/).withMessage('Reset token contains invalid characters.');
 
     // express-validator uses field names, not path prefixes; ensure correct location hinting
     return [rule];

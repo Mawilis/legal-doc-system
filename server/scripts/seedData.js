@@ -1,163 +1,54 @@
-// File: /Users/wilsonkhanyezi/legal-doc-system/server/scripts/seedData.js
-// Purpose: Hydrates MongoDB with realistic mock data for Sheriff Ops verification.
-// Usage: node scripts/seedData.js [--dry-run]
-// Note: Uses a DEMO_TENANT_ID. Ensure your frontend sends this ID in headers
-//       or your Auth service assigns this Tenant ID to your test user.
+/*
+ * File: server/scripts/seedData.js
+ * STATUS: PRODUCTION-READY | MASTER ORCHESTRATOR | SINGLE-QUOTE ENFORCED
+ */
 
 'use strict';
 
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+const path = require('path');
+// Load .env explicitly with single quotes
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
 const mongoose = require('mongoose');
+const seedClients = require('../seed/seedClients');
+const seedDocuments = require('../seed/seedDocuments');
+const seedAudits = require('../seed/seedAudits');
 
-// Import the strict models we created (models should use mongoose.models[...] || mongoose.model(...))
-const Document = require('../models/Document');
-const LedgerEvent = require('../models/LedgerEvent');
-
-const argv = require('yargs/yargs')(process.argv.slice(2)).option('dry-run', { type: 'boolean', default: false }).argv;
-const DRY_RUN = argv['dry-run'] === true;
-
-// --- CONFIGURATION ---
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/legal-tech';
 
-// Replace these with tenant/sheriff IDs you control in staging/test
-const DEMO_TENANT_ID_STR = process.env.DEMO_TENANT_ID || '650c1f1e1f1e1f1e1f1e1f1e';
-const DEMO_SHERIFF_ID_STR = process.env.DEMO_SHERIFF_ID || '650c99999999999999999999';
+// DEMO GUIDS
+const DEMO_TENANT_ID = new mongoose.Types.ObjectId('650c1f1e1f1e1f1e1f1e1f1e');
+const DEMO_USER_ID = new mongoose.Types.ObjectId('650c22222222222222222222');
 
-// Validate ObjectId strings and convert to ObjectId
-function toObjectId(idStr, name) {
-    if (!idStr) throw new Error(`${name} is required`);
-    if (!mongoose.Types.ObjectId.isValid(idStr)) throw new Error(`${name} is not a valid ObjectId: ${idStr}`);
-    return new mongoose.Types.ObjectId(idStr);
-}
-
-const DEMO_TENANT_ID = toObjectId(DEMO_TENANT_ID_STR, 'DEMO_TENANT_ID');
-const DEMO_SHERIFF_ID = toObjectId(DEMO_SHERIFF_ID_STR, 'DEMO_SHERIFF_ID');
-
-const SAMPLE_TITLES = [
-    'Summons: High Court Case #921/2025',
-    'Warrant of Execution: ABSA vs J. Doe',
-    'Urgent Eviction Notice: Block B, Sandton',
-    'Section 129 Notice: Default Payment',
-    'Divorce Summons: Smith vs Smith',
-    'Subpoena: Witness for State',
-    'Attachment Order: Vehicle Reg HKG123GP',
-    'Letter of Demand: Unpaid Levies',
-    'Interdict: Construction Hault',
-    'Garnishee Order: Salary Attachment'
-];
-
-function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-async function seed() {
-    console.log('🚀 [Seed Script] Initializing Data Injection...');
-    console.log(`DRY_RUN=${DRY_RUN}`);
-
+async function runMasterSeed() {
     try {
-        // 1. Database Connection
-        await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-        console.log('✅ [Seed Script] Connected to MongoDB');
+        console.log('🏛️  [WILSY_OS]: Starting Master Hydration Sequence...');
 
-        // 2. Clean Slate Protocol (Remove old data for this tenant only)
-        console.log('🧹 [Seed Script] Purging old demo data for tenant:', DEMO_TENANT_ID.toString());
-        if (!DRY_RUN) {
-            await Document.deleteMany({ tenantId: DEMO_TENANT_ID });
-            await LedgerEvent.deleteMany({ tenantId: DEMO_TENANT_ID });
-        } else {
-            console.log('DRY RUN: skipping deletes');
-        }
+        await mongoose.connect(MONGO_URI);
+        console.log('✅ [DATABASE]: Connection established.');
 
-        // 3. Document Injection Loop
-        console.log('📝 [Seed Script] Preparing Documents...');
-        const docs = [];
-        const now = Date.now();
+        // 1. Clients
+        const clientIds = await seedClients(DEMO_TENANT_ID);
 
-        for (let i = 0; i < 15; i++) {
-            const isUrgent = Math.random() > 0.8;
-            const isCompleted = Math.random() > 0.6;
-            const status = isCompleted ? 'completed' : (isUrgent ? 'in_progress' : 'pending');
-            const priority = isUrgent ? 'urgent' : (Math.random() > 0.5 ? 'high' : 'normal');
+        // 2. Documents (Linked)
+        await seedDocuments(DEMO_TENANT_ID, clientIds);
 
-            const createdAt = new Date(now - randomInt(0, 10) * 24 * 60 * 60 * 1000);
-            const updatedAt = new Date(createdAt.getTime() + randomInt(0, 3) * 60 * 60 * 1000);
+        // 3. Audits (Forensic)
+        await seedAudits(DEMO_TENANT_ID, DEMO_USER_ID);
 
-            const doc = {
-                tenantId: DEMO_TENANT_ID,
-                title: SAMPLE_TITLES[i % SAMPLE_TITLES.length] + ` (Ref: ${i + 100})`,
-                description: 'Generated by Wilsy Seed Script for System Verification',
-                status,
-                priority,
-                sheriffId: DEMO_SHERIFF_ID,
-                amount: randomInt(500, 5500),
-                createdAt,
-                updatedAt,
-                deleted: false,
-                metadata: { seeded: true, seedIndex: i }
-            };
-
-            docs.push(doc);
-        }
-
-        if (DRY_RUN) {
-            console.log('DRY RUN: Documents prepared (not inserted):', docs.length);
-        } else {
-            // Use ordered:false so one bad doc doesn't stop the batch
-            const insertResult = await Document.insertMany(docs, { ordered: false });
-            console.log(`✅ [Seed Script] Successfully injected ${insertResult.length} Documents.`);
-        }
-
-        // 4. Ledger (Financial) Injection Loop
-        console.log('💰 [Seed Script] Preparing Ledger Entries...');
-        // Re-query saved documents to ensure we use actual _id values (unless dry-run)
-        const savedDocs = DRY_RUN ? docs : await Document.find({ tenantId: DEMO_TENANT_ID }).lean();
-
-        const ledgerEntries = [];
-        for (const d of savedDocs) {
-            // Only create revenue for completed documents
-            if (String(d.status).toLowerCase() === 'completed') {
-                // Ensure amount is Decimal128 for LedgerEvent model
-                const amountDecimal = mongoose.Types.Decimal128.fromString(String(d.amount || 0));
-                ledgerEntries.push({
-                    tenantId: DEMO_TENANT_ID,
-                    referenceId: d._id || d._id, // if dry-run, may be undefined
-                    type: 'credit',
-                    amount: amountDecimal,
-                    currency: 'ZAR',
-                    description: `Sheriff Service Fee - ${d.title}`,
-                    createdAt: d.updatedAt || new Date()
-                });
-            }
-        }
-
-        if (DRY_RUN) {
-            console.log(`DRY RUN: Prepared ${ledgerEntries.length} ledger entries (not inserted).`);
-        } else if (ledgerEntries.length > 0) {
-            await LedgerEvent.insertMany(ledgerEntries, { ordered: false });
-            console.log(`✅ [Seed Script] Successfully booked ${ledgerEntries.length} Ledger Revenue Events.`);
-        } else {
-            console.log('ℹ️ [Seed Script] No completed documents found; no ledger entries created.');
-        }
-
-        // 5. Output Tenant Info for Developer
-        console.log('\n---------------------------------------------------');
-        console.log('🎉 SYSTEM HYDRATION COMPLETE');
-        console.log('---------------------------------------------------');
-        console.log('🔑 USE THIS TENANT ID FOR TESTING headers:');
-        console.log(`x-tenant-id: ${DEMO_TENANT_ID.toString()}`);
-        console.log('---------------------------------------------------');
+        console.log('\n====================================================');
+        console.log('🎉 SUCCESS: Wilsy OS Backend is Hydrated and Ready.');
+        console.log(`🔑 Tenant Context: ${DEMO_TENANT_ID}`);
+        console.log('====================================================');
 
     } catch (err) {
-        console.error('🔴 [Seed Script] Failed:', err && err.message ? err.message : err);
-        process.exitCode = 1;
+        console.error('\n💥 [CRITICAL_FAILURE]: Seed sequence aborted.');
+        console.error(`Reason: ${err.message}`);
     } finally {
-        try { await mongoose.connection.close(); } catch (e) { /* ignore */ }
-        if (DRY_RUN) {
-            console.log('DRY RUN complete. No changes were written to the database.');
-            process.exit(0);
-        }
-        process.exit(process.exitCode || 0);
+        await mongoose.connection.close();
+        console.log('🔌 [DATABASE]: Connection drained. Exiting.');
+        process.exit(0);
     }
 }
 
-seed();
+runMasterSeed();

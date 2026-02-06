@@ -1,41 +1,24 @@
-// server/tests/setup.js
-const mongoose = require('mongoose');
+// Load test environment variables
 require('dotenv').config({ path: '.env.test' });
 
-beforeAll(async () => {
-    const uri = process.env.MONGO_URI_TEST;
-    if (!uri) throw new Error('❌ MONGO_URI_TEST not found in .env.test file!');
+// Validate required test environment variables
+const requiredEnvVars = ['NODE_ENV'];
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingVars.length > 0) {
+  console.error('❌ Missing required test environment variables:', missingVars.join(', '));
+  process.exit(1);
+}
 
-    await mongoose.connect(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
+process.env.NODE_ENV = 'test';
 
-    console.log('✅ Connected to test MongoDB');
-});
+global.TEST_CONFIG = {
+  TEST_TENANT_ID: 'test-tenant-' + Date.now(),
+  TEST_USER: {
+    id: 'test-user-' + Date.now(),
+    email: 'test@wilsyos.co.za',
+    permissions: ['legal:assess:risk', 'document:read', 'document:write'],
+    role: 'TEST_ADMIN'
+  }
+};
 
-afterAll(async () => {
-    console.log('🧹 Cleaning up test database...');
-
-    if (mongoose.connection.readyState === 0) {
-        console.warn('⚠️ Mongoose not connected. Skipping cleanup.');
-        return;
-    }
-
-    try {
-        const collectionsToClean = ['users', 'documents', 'clients', 'invoices', 'settings', 'alertlogs', 'notifications', 'instructions', 'deputies', 'chats', 'chatmessages'];
-
-        for (const name of collectionsToClean) {
-            const collection = mongoose.connection.collections[name];
-            if (collection) {
-                await collection.deleteMany({});
-                console.log(`🧹 Cleared collection: ${name}`);
-            }
-        }
-
-        await mongoose.disconnect();
-        console.log('✅ Disconnected from test database');
-    } catch (err) {
-        console.error('❌ Cleanup error:', err.message);
-    }
-});
+console.log('✅ Test environment initialized');

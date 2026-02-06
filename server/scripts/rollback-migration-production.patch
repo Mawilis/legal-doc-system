@@ -1,0 +1,33 @@
+--- scripts/rollback-migration.js
++++ scripts/rollback-migration.js
+@@ -126,12 +126,19 @@
+         this._validateEnvironment();
+ 
+         // Connect to MongoDB
+-        this.dbConnection = await mongoose.createConnection(this.config.MONGO_URI, {
++        this.dbConnection = await mongoose.connect(this.config.MONGO_URI, {
+             useNewUrlParser: true,
+             useUnifiedTopology: true,
+             serverSelectionTimeoutMS: 10000,
+-            maxPoolSize: 10
++            maxPoolSize: 10,
++            ssl: true,
++            tlsAllowInvalidCertificates: false,
++            tlsAllowInvalidHostnames: false,
++            retryWrites: true,
++            w: 'majority'
+         });
++        
++        this.db = this.dbConnection.connection.db;
+ 
+         console.log(`✅ Connected to MongoDB: ${this._maskMongoUri(this.config.MONGO_URI)}`);
+ 
+@@ -255,7 +262,7 @@
+             });
+ 
+             await session.commitTransaction();
+-            console.log('✅ Schema rollback completed successfully');
++            console.log('✅ SCHEMA ROLLBACK COMPLETED SUCCESSFULLY');
+ 
+         } catch (error) {
+             await session.abortTransaction();

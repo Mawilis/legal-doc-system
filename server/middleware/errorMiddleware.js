@@ -1,97 +1,115 @@
-const CustomError = require('../utils/customError');
+/*
+ * File: server/middleware/errorMiddleware.js
+ * STATUS: EPITOME | RESILIENCY & FORENSICS GRADE
+ * -----------------------------------------------------------------------------
+ * PURPOSE: 
+ * The Global Resilience Shield. Normalizes all system exceptions, protects 
+ * against stack leakage in production, and provides a forensic trail via 
+ * Correlation IDs for all API failures.
+ * -----------------------------------------------------------------------------
+ * COLLABORATION NOTES:
+ * - DEVOPS: High-severity errors (500+) are routed to internal logging.
+ * - SECURITY: Masks internal Mongoose logic and stack traces in production.
+ * - FRONTEND-TEAM: Relies on the 'code' field for internationalization/UI alerts.
+ * -----------------------------------------------------------------------------
+ */
+
+'use strict';
+
 const logger = require('../utils/logger');
+const { errorResponse } = require('./responseHandler');
 
-// --- Helper functions for specific error types ---
-
-const handleCastErrorDB = (err) => {
-    const message = `Invalid ${err.path}: ${err.value}.`;
-    return new CustomError(message, 400);
-};
+/**
+ * DB ERROR NORMALIZERS
+ * Transforms technical Mongoose/Mongo errors into clean, high-level API feedback.
+ */
+const handleCastErrorDB = (err) => ({
+    message: `Invalid resource identifier format: ${err.value}`,
+    statusCode: 400,
+    code: 'ERR_MALFORMED_ID'
+});
 
 const handleDuplicateFieldsDB = (err) => {
-    let value = '';
-    try {
-        value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
-    } catch {
-        value = 'duplicate value';
-    }
-    const message = `Duplicate field value: ${value}. Please use another value.`;
-    return new CustomError(message, 400);
+    // Extracts the field name causing the unique constraint violation
+    const value = err.errmsg?.match(/(["'])(\\?.)*?\1/)?.[0] || 'Unknown';
+    return {
+        message: `The value ${value} is already in use within this firm. Please use a unique identifier.`,
+        statusCode: 400,
+        code: 'ERR_DUPLICATE_ENTRY'
+    };
 };
 
 const handleValidationErrorDB = (err) => {
     const errors = Object.values(err.errors).map(el => el.message);
-    const message = `Invalid input data. ${errors.join('. ')}`;
-    return new CustomError(message, 400);
+    return {
+        message: `Validation failed: ${errors.join('. ')}`,
+        statusCode: 400,
+        code: 'ERR_VALIDATION_FAILED'
+    };
 };
 
-// JWT errors
-const handleJWTError = () => new CustomError('Invalid token. Please log in again.', 401);
-const handleJWTExpiredError = () => new CustomError('Your token has expired. Please log in again.', 401);
+/**
+ * AUTH ERROR NORMALIZERS
+ */
+const handleJWTError = () => ({
+    message: 'Invalid security signature. Please log in again.',
+    statusCode: 401,
+    code: 'ERR_AUTH_INVALID'
+});
 
-// --- Response functions ---
+const handleJWTExpiredError = () => ({
+    message: 'Your session has expired. Please re-authenticate.',
+    statusCode: 401,
+    code: 'ERR_AUTH_EXPIRED'
+});
 
-const sendErrorDev = (err, req, res) => {
-    res.status(err.statusCode).json({
-        success: false,
-        status: err.status,
-        statusCode: err.statusCode,
-        message: err.message,
-        error: err,
-        stack: err.stack,
-        path: req.originalUrl,
-        method: req.method
-    });
-};
+/**
+ * GLOBAL ERROR HANDLER MIDDLEWARE
+ * The central catch-all for every unhandled exception in the Wilsy OS.
+ */
+const errorHandler = (err, req, res, next) => {
+    // 1. DEFAULT ERROR STATE
+    let error = {
+        ...err,
+        message: err.message || 'An unexpected error occurred.',
+        statusCode: err.statusCode || 500,
+        code: err.code || 'ERR_SYSTEM_CORE'
+    };
 
-const sendErrorProd = (err, req, res) => {
-    if (err.isOperational) {
-        return res.status(err.statusCode).json({
-            success: false,
-            status: err.status,
-            statusCode: err.statusCode,
-            error: err.message,
+    // 2. NORMALIZE SPECIFIC ENGINE ERRORS
+    if (err.name === 'CastError') error = handleCastErrorDB(err);
+    if (err.code === 11000) error = handleDuplicateFieldsDB(err);
+    if (err.name === 'ValidationError') error = handleValidationErrorDB(err);
+    if (err.name === 'JsonWebTokenError') error = handleJWTError();
+    if (err.name === 'TokenExpiredError') error = handleJWTExpiredError();
+
+    // 3. INTERNAL FORENSIC LOGGING
+    // We log the full technical details for the engineering team.
+    if (error.statusCode >= 500) {
+        logger.error('💥 [SYSTEM_EXCEPTION]:', {
+            correlationId: req.id || 'N/A',
             path: req.originalUrl,
-            method: req.method
+            message: err.message,
+            stack: err.stack,
+            user: req.user?._id || 'ANONYMOUS'
         });
     }
 
-    // Log unknown errors
-    logger.error('CRITICAL ERROR 💥', {
-        message: err.message,
-        stack: err.stack,
-        path: req.originalUrl,
-        method: req.method
-    });
-
-    return res.status(500).json({
-        success: false,
-        status: 'error',
-        statusCode: 500,
-        error: 'Something went very wrong on our end. Please try again later.',
-        path: req.originalUrl,
-        method: req.method
-    });
-};
-
-// --- Main Middleware ---
-const errorHandler = (err, req, res, next) => {
-    err.statusCode = err.statusCode || 500;
-    err.status = err.status || 'error';
-
-    let error = { ...err, message: err.message };
-
-    if (process.env.NODE_ENV === 'development') {
-        sendErrorDev(error, req, res);
-    } else {
-        if (error.name === 'CastError') error = handleCastErrorDB(error);
-        if (error.code === 11000) error = handleDuplicateFieldsDB(error);
-        if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
-        if (error.name === 'JsonWebTokenError') error = handleJWTError();
-        if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
-
-        sendErrorProd(error, req, res);
+    // 4. CLIENT RESPONSE DELIVERY
+    // Leverages our standardized response handler to ensure envelope consistency.
+    // We attach the stack trace to the 'req' object if in dev mode for the handler to consume.
+    if (process.env.NODE_ENV !== 'production') {
+        req.errStack = err.stack;
     }
+
+    return errorResponse(
+        req,
+        res,
+        error.statusCode,
+        error.message,
+        error.code
+    );
 };
 
-module.exports = errorHandler;
+module.exports = { errorHandler };
+
