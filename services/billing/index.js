@@ -1,10 +1,16 @@
+/**
+ * Copyright (c) 2026 Wilsy Pty Ltd [Reg: 2024/617944/07].
+ * All Rights Reserved.
+ * * This software is the confidential and proprietary information of Wilsy Pty Ltd.
+ * Unauthorized copying of this file, via any medium is strictly prohibited.
+ * Proprietary and confidential.
+ */
+
 const express = require('express');
-const cors = require('cors');
 const app = express();
-
 app.use(express.json());
-app.use(cors());
 
+// TARIFF MATRIX (South African Sheriff Board Standards)
 const TARIFFS = {
   'service_summons': { base: 180, distanceCap: 15 },
   'urgent_6_12': { base: 450, multiplier: 1.5 },
@@ -13,30 +19,26 @@ const TARIFFS = {
 };
 
 app.post('/calculate', (req, res) => {
-    console.log('💰 [Billing] Calculating Invoice...');
     const { type, distanceKm, isUrgent } = req.body;
-    
     let total = 0;
     let lines = [];
 
     const rule = TARIFFS[type] || { base: 200 };
     
-    // 1. Base Fee
+    // Base Fee
     let fee = rule.base;
     if (isUrgent || type === 'urgent_6_12') fee *= 1.5;
     total += fee;
-    
-    // SAFE SYNTAX: No backticks here
-    lines.push({ desc: "Service Fee (" + type + ")", amount: fee });
+    lines.push({ desc: `Service Fee (${type})`, amount: fee });
 
-    // 2. Travel
+    // Travel
     if (distanceKm > 0) {
         const travel = distanceKm * TARIFFS.per_km;
         total += travel;
-        lines.push({ desc: "Travel (" + distanceKm + "km @ R6.50)", amount: travel });
+        lines.push({ desc: `Travel (${distanceKm}km @ R6.50)`, amount: travel });
     }
 
-    // 3. VAT (15%)
+    // VAT (15%)
     const vat = total * 0.15;
     const grandTotal = total + vat;
 
@@ -50,5 +52,4 @@ app.post('/calculate', (req, res) => {
     });
 });
 
-const PORT = 6400;
-app.listen(PORT, '0.0.0.0', () => console.log('💰 [Smart Billing] Online on Port ' + PORT));
+app.listen(6400, () => console.log('💰 [Billing Service] Listening on Port 6400'));

@@ -1,0 +1,18 @@
+flowchart TD
+    A[Cron Scheduler] --> B{Job Dispatcher}
+    B --> C[Load Job Definition]
+    C --> D{Validate Tenant Context?}
+    D -->|Missing| E[FAIL CLOSED<br/>Security Alert]
+    D -->|Present| F[Create Tenant Isolation Context]
+    F --> G[Execute with Least Privilege]
+    G --> H{Audit Required?}
+    H -->|Yes| I[Generate Immutable Audit Entry]
+    H -->|No| J[Log Standard Execution]
+    I --> K[Anchor to Ledger<br/>ECT Act Compliance]
+    J --> L[Update Job Status]
+    K --> M[Check Compliance SLAs<br/>POPIA/Companies Act]
+    M --> N{SLAs Met?}
+    N -->|Yes| O[Success Notification]
+    N -->|No| P[Escalate to Info Officer]
+    O --> Q[Cleanup & Release Locks]
+    P --> R[Critical Alert & Dashboard]

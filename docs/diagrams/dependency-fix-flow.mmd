@@ -1,0 +1,7 @@
+graph TD
+    A[Node v20 Runtime] --> B{Module Loader}
+    B -->|Check exports map| C[agenda/package.json]
+    C -->|Success| D[Initialize Agenda Instance]
+    C -->|Fail: ERR_PACKAGE_PATH_NOT_EXPORTED| E[Clean Reinstall & Cache Clear]
+    E --> F[Verification Test]
+    F --> D

@@ -258,3 +258,6 @@ writeFile('start_wilsy_os.sh', startScript);
 
 console.log("🏁 ARCHITECTURE DEPLOYMENT COMPLETE.");
 console.log("👉 Run 'chmod +x start_wilsy_os.sh' then './start_wilsy_os.sh' to launch.");
+
+
+

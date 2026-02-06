@@ -19,3 +19,7 @@ node_modules
 .env
 .env.test
 coverage
+
+
+.env.local
+.env.*.local

@@ -1,0 +1,81 @@
+{
+  "info": {
+    "name": "Wilsy Auth, RBAC & Metrics Tests",
+    "_postman_id": "wilsy-auth-rbac-metrics-tests",
+    "description": "Test suite for authMiddleware.protect, rbacMiddleware, and metricsMiddleware",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Valid JWT",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer <VALID_JWT>" },
+          { "key": "X-Tenant-Id", "value": "tenant123" }
+        ],
+        "url": { "raw": "http://localhost:3000/api/secure-endpoint" }
+      }
+    },
+    {
+      "name": "Auth - Invalid JWT",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer invalidtoken" }
+        ],
+        "url": { "raw": "http://localhost:3000/api/secure-endpoint" }
+      }
+    },
+    {
+      "name": "Auth - API Key Bypass",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-Api-Key", "value": "<INTERNAL_API_KEY>" }
+        ],
+        "url": { "raw": "http://localhost:3000/api/secure-endpoint" }
+      }
+    },
+    {
+      "name": "RBAC - SuperAdmin Allowed",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer <VALID_SUPERADMIN_JWT>" },
+          { "key": "X-Tenant-Id", "value": "tenant123" }
+        ],
+        "url": { "raw": "http://localhost:3000/api/admin-only" }
+      }
+    },
+    {
+      "name": "RBAC - User Denied",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer <VALID_USER_JWT>" },
+          { "key": "X-Tenant-Id", "value": "tenant123" }
+        ],
+        "url": { "raw": "http://localhost:3000/api/admin-only" }
+      }
+    },
+    {
+      "name": "Tenant Scope Violation",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer <VALID_USER_JWT>" },
+          { "key": "X-Tenant-Id", "value": "wrongTenant" }
+        ],
+        "url": { "raw": "http://localhost:3000/api/tenant-resource" }
+      }
+    },
+    {
+      "name": "Metrics - Prometheus Endpoint",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://localhost:3000/metrics" }
+      }
+    }
+  ]
+}

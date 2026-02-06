@@ -1,0 +1,27 @@
+flowchart TD
+    A[Case Intake] --> B{Tenant Context Valid?}
+    B -->|No| C[FAIL CLOSED<br/>Security Violation]
+    B -->|Yes| D[Generate Case Number]
+    D --> E[POPIA Compliance Check]
+    E --> F{PAIA Request?}
+    F -->|Yes| G[Set PAIA Deadlines<br/>30-day statutory]
+    F -->|No| H[Assign Legal Team]
+    G --> I[PAIA Processing State]
+    H --> J[Court Integration]
+    I --> K[Compliance Monitoring]
+    J --> L[Case Workflow]
+    K --> M[Deadline Management]
+    L --> N{Trial/Resolution}
+    N --> O[Settlement/ Judgment]
+    O --> P[Costs Taxation]
+    P --> Q[Case Closure]
+    Q --> R[Retention Period Start]
+    R --> S{Legal Hold?}
+    S -->|Yes| T[Preserve All Evidence]
+    S -->|No| U[Archive After Retention]
+    T --> V[Legal Hold Management]
+    U --> W[Secure Deletion]
+    V --> X[Audit Trail Finalization]
+    W --> X
+    C --> Y[Security Alert & Log]
+    X --> Z[Compliance Certificate<br/>Generated]

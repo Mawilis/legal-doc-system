@@ -1,0 +1,6 @@
+graph TD
+    A[Raw Data] --> B[Encryption Service]
+    B --> C{Test Suite}
+    C -->|Match| D[✅ Integrity Verified]
+    C -->|Mismatch| E[❌ Logic Failure]
+    C -->|Tamper Check| F[🛡️ AuthTag Guard]

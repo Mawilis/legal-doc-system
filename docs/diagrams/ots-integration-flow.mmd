@@ -1,0 +1,30 @@
+sequenceDiagram
+    participant App as Wilsy OS
+    participant OTS as OTS Library
+    participant Cal as Calendar Server
+    participant BTC as Bitcoin Network
+
+    Note over App, BTC: PHASE 1: STAMPING (Immediate)
+    App->>App: 1. Calculate SHA256 Hash
+    App->>OTS: 2. Request Stamp (Hash)
+    OTS->>Cal: 3. Submit Hash to Aggregator
+    Cal-->>OTS: 4. Return Pending Stamp
+    OTS-->>App: 5. Save .ots File (Pending)
+
+    Note over App, BTC: PHASE 2: UPGRADING (Async ~10 mins)
+    App->>OTS: 6. Upgrade(.ots File)
+    OTS->>Cal: 7. Request Bitcoin Proof
+    alt Proof Ready
+        Cal-->>OTS: 8. Return Merkle Path
+        OTS-->>App: 9. Save .ots File (Anchored)
+    else Proof Pending
+        Cal-->>OTS: 404 Not Ready
+        OTS-->>App: Retry Later
+    end
+
+    Note over App, BTC: PHASE 3: VERIFICATION (Forever)
+    App->>OTS: 10. Verify(.ots, Original Hash)
+    OTS->>OTS: 11. Calculate Merkle Root
+    OTS->>BTC: 12. Check Block Header
+    BTC-->>OTS: 13. Confirmed (Exists in Block X)
+    OTS-->>App: 14. RETURN: Verified & Time

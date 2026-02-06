@@ -1,43 +1,109 @@
 # File: .github/workflows/ci.yml
 # -----------------------------------------------------------------------------
-# COLLABORATION NOTES:
-# - Purpose: Continuous Integration pipeline for legal-doc-system.
-# - Current job: 🔍 Run Backend Tests (Mongo + Jest).
-# - Added jobs: Lint (code quality) + Frontend Build (React).
-# - Engineers:
-#   • Keep Node versions aligned with dev/prod.
-#   • Extend with deployment jobs as needed.
+# STATUS: EPITOME | Investor-Grade CI Pipeline
+# -----------------------------------------------------------------------------
+# PURPOSE:
+# - Automates the "Definition of Done" for every code push.
+# - SECURITY: Fails immediately if High/Critical vulnerabilities are found.
+# - QUALITY: Enforces linting standards on both Client and Server.
+# - INTEGRITY: Preserves build artifacts for QA/Deployment.
 # -----------------------------------------------------------------------------
 
-name: CI Pipeline
+name: 🛡️ Wilsy OS Global Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+permissions:
+  contents: read
+  checks: write
 
 jobs:
-  # --- Backend Tests ---
-  backend-tests:
-    name: 🔍 Run Backend Tests
+  # ------------------------------------------------------------------
+  # JOB 1: SECURITY GATE (The "Godly" Standard)
+  # ------------------------------------------------------------------
+  security-audit:
+    name: 🕵️ Security Vulnerability Scan
     runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
 
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🛡️ Audit Server (Backend)
+        run: |
+          cd server
+          npm install --package-lock-only --ignore-scripts
+          npm audit --audit-level=high
+
+      - name: 🛡️ Audit Client (Frontend)
+        run: |
+          cd client
+          npm install --package-lock-only --ignore-scripts
+          npm audit --audit-level=high
+
+  # ------------------------------------------------------------------
+  # JOB 2: CODE QUALITY (Linting)
+  # ------------------------------------------------------------------
+  lint-codebase:
+    name: 🧹 Code Quality & Standards
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: 📦 Install & Lint Server
+        run: |
+          cd server
+          npm ci
+          npm run lint --if-present
+
+      - name: 📦 Install & Lint Client
+        run: |
+          cd client
+          npm ci
+          npm run lint --if-present
+
+  # ------------------------------------------------------------------
+  # JOB 3: BACKEND ROBUSTNESS
+  # ------------------------------------------------------------------
+  backend-tests:
+    name: 🧪 Backend Integration Tests
+    runs-on: ubuntu-latest
+    needs: [security-audit] # Only run tests if security passes
     services:
       mongo:
         image: mongo:6
         ports:
           - 27017:27017
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
       MONGODB_URI: mongodb://localhost:27017/testdb
-      JWT_SECRET: testjwtsecret
-      ALERT_EMAIL: dev@example.com
-      SKIP_CONNECT_DB: true
+      JWT_SECRET: wilsy_test_secret_key_999
       NODE_ENV: test
 
     steps:
-      - name: ⬇️ Checkout repository
+      - name: ⬇️ Checkout Code
         uses: actions/checkout@v4
 
       - name: 🟢 Setup Node.js
@@ -45,39 +111,23 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+          cache-dependency-path: 'server/package-lock.json'
 
-      - name: 📦 Install dependencies
+      - name: 📦 Install Server Dependencies
         run: cd server && npm ci
 
-      - name: ✅ Run tests
+      - name: ✅ Run Jest Tests
         run: cd server && npm test
 
-  # --- Lint ---
-  lint:
-    name: 🧹 Lint Codebase
-    runs-on: ubuntu-latest
-    steps:
-      - name: ⬇️ Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: 📦 Install dependencies
-        run: npm ci
-
-      - name: 🔎 Run ESLint
-        run: npm run lint --if-present
-
-  # --- Frontend Build ---
+  # ------------------------------------------------------------------
+  # JOB 4: FRONTEND PRODUCTION BUILD
+  # ------------------------------------------------------------------
   frontend-build:
-    name: 🖥️ Build Frontend
+    name: 🏗️ Frontend Production Build
     runs-on: ubuntu-latest
+    needs: [security-audit] # Only build if security passes
     steps:
-      - name: ⬇️ Checkout repository
+      - name: ⬇️ Checkout Code
         uses: actions/checkout@v4
 
       - name: 🟢 Setup Node.js
@@ -85,9 +135,19 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+          cache-dependency-path: 'client/package-lock.json'
 
-      - name: 📦 Install dependencies
+      - name: 📦 Install Client Dependencies
         run: cd client && npm ci
 
-      - name: 🛠️ Build React App
+      - name: 🛠️ Build React Bundle
+        env:
+          CI: true # Treats warnings as errors (Strict Quality)
         run: cd client && npm run build
+
+      - name: 📤 Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wilsy-client-build
+          path: client/build
+          retention-days: 5

@@ -1,0 +1,35 @@
+flowchart TD
+    A[Script Start] --> B[Validate Configuration]
+    B --> C{Configuration Valid?}
+    C -->|No| D[COMPLIANCE VIOLATION<br/>Exit Code 3]
+    C -->|Yes| E[Connect to Database]
+    E --> F{Database Connected?}
+    F -->|No| G[OPERATIONAL FAILURE<br/>Exit Code 1]
+    F -->|Yes| H[Get Active Tenants]
+    H --> I[For Each Tenant]
+    I --> J[Validate Tenant Context]
+    J --> K{Tenant Valid?}
+    K -->|No| L[SECURITY VIOLATION<br/>Skip Tenant]
+    K -->|Yes| M[Get Expired Documents]
+    M --> N[For Each Document]
+    N --> O[Verify Compliance<br/>POPIA/ECT/Companies Act]
+    O --> P{Compliance Verified?}
+    P -->|No| Q[PRESERVE DOCUMENT<br/>Log Violation]
+    P -->|Yes| R[Perform Secure Deletion]
+    R --> S[Generate Disposal Certificate]
+    S --> T[Create Audit Trail Entry]
+    T --> U[Document Deleted]
+    Q --> V[Update Tenant Result]
+    U --> V
+    V --> W{More Documents?}
+    W -->|Yes| N
+    W -->|No| X{More Tenants?}
+    X -->|Yes| I
+    X -->|No| Y[Generate Final Summary]
+    Y --> Z[Cleanup Resources]
+    Z --> AA[Output JSON Result]
+    D --> AB[Log Security Alert]
+    G --> AB
+    L --> AB
+    AB --> AA
+    AA --> AC[Exit with Status Code]

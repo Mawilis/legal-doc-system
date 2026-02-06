@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# 1. Create directories
+mkdir -p client/src/routes client/src/components/common
+mkdir -p client/src/features/auth/pages
+mkdir -p client/src/features/dashboard/pages
+mkdir -p client/src/features/documents/pages
+mkdir -p client/src/features/sheriff/pages
+mkdir -p client/src/features/search/pages
+mkdir -p client/src/features/collaboration/pages
+mkdir -p client/src/features/admin/pages
+mkdir -p client/src/features/settings/pages
+mkdir -p client/src/features/ledger/pages
+mkdir -p client/src/features/system/pages
+
+# 2. Create LoadingScreen if missing
+if [ ! -f client/src/components/common/LoadingScreen.jsx ]; then
+  cat > client/src/components/common/LoadingScreen.jsx << 'EOF'
+export default function LoadingScreen() {
+  return <div>Loading Wilsy OS...</div>;
+}
+EOF
+  echo "✅ Created LoadingScreen.jsx"
+else
+  echo "⏭️ Skipped LoadingScreen.jsx (Already exists)"
+fi
+
+# 3. Function to safely create a page
+create_page() {
+  local path=$1
+  local name=$2
+  if [ ! -f "$path/$name.jsx" ]; then
+    echo "export default function $name() { return <h1>$name Page</h1>; }" > "$path/$name.jsx"
+    echo "✅ Created $path/$name.jsx"
+  else
+    echo "⏭️ Skipped $path/$name.jsx (Already exists)"
+  fi
+}
+
+# 4. Generate placeholders
+for page in Login Logout AccessDenied; do create_page "client/src/features/auth/pages" "$page"; done
+for page in Dashboard SheriffDashboard SheriffAnalytics AuditPage; do create_page "client/src/features/dashboard/pages" "$page"; done
+for page in Documents NewCase DocumentDetails DocumentEditor ServeInstruction; do create_page "client/src/features/documents/pages" "$page"; done
+for page in SheriffInstructionForm SheriffTracking SheriffHeatmap SheriffFlags; do create_page "client/src/features/sheriff/pages" "$page"; done
+for page in Search AdvancedSearch ClauseSearch; do create_page "client/src/features/search/pages" "$page"; done
+for page in Chat Notifications; do create_page "client/src/features/collaboration/pages" "$page"; done
+for page in AdminDashboard AdminPanel; do create_page "client/src/features/admin/pages" "$page"; done
+for page in SettingsHome BrandingSettings ClauseLibrary; do create_page "client/src/features/settings/pages" "$page"; done
+for page in TrustLedger InvoiceList RevenueDashboard Reconciliation; do create_page "client/src/features/ledger/pages" "$page"; done
+for page in SystemHealth SystemLogs NotFound; do create_page "client/src/features/system/pages" "$page"; done
+
+echo "🛡️ Safe-Scaffolding Complete. No existing files were harmed."
+chmod +x scaffold.sh
+
+
+
+

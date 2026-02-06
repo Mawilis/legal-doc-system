@@ -1,0 +1,295 @@
+/*
+ * File: client/src/features/dashboard/pages/DashboardWrapper.css
+ * Path: client/src/features/dashboard/pages/DashboardWrapper.css
+ * STATUS: PRODUCTION-READY | EPITOME | STYLESHEET
+ * VERSION: 2026-01-14
+ *
+ * PURPOSE
+ * - Styles for DashboardWrapper component: layout, responsive grid, accessible controls,
+ *   lightweight theming, and print-friendly rules.
+ *
+ * COLLABORATION & OWNERSHIP
+ * - AUTHOR: Wilson Khanyezi (Chief Architect)
+ * - PRIMARY OWNER: @frontend-team
+ * - DESIGN OWNER: @design
+ * - QA OWNER: @qa
+ * - SRE OWNER: @sre
+ *
+ * REVIEW CHECKLIST
+ * - @frontend-team: confirm class names match JSX and component imports
+ * - @design: approve spacing, color tokens, and typography
+ * - @qa: run accessibility checks (contrast, keyboard focus)
+ * - @sre: validate CSS size and critical-path delivery
+ *
+ * NOTES
+ * - Keep this file small and dependency-free. Use CSS variables for theming.
+ * - Do not include PII in content via ::before or ::after.
+ */
+
+/* -------------------------
+   Theme tokens (override in root or :root in app)
+   ------------------------- */
+:root {
+  --wilsy-bg: #ffffff;
+  --wilsy-surface: #f8fafc;
+  --wilsy-accent: #0b5fff;
+  --wilsy-muted: #6b7280;
+  --wilsy-success: #10b981;
+  --wilsy-danger: #ef4444;
+  --wilsy-border: #e6edf3;
+  --wilsy-shadow: 0 6px 18px rgba(11, 95, 255, 0.06);
+  --wilsy-radius: 8px;
+  --wilsy-gap: 16px;
+  --wilsy-max-width: 1280px;
+  --wilsy-breakpoint-sm: 640px;
+  --wilsy-breakpoint-md: 900px;
+}
+
+/* -------------------------
+   Layout
+   ------------------------- */
+.dashboard-wrapper {
+  background: var(--wilsy-bg);
+  color: #0f172a;
+  padding: calc(var(--wilsy-gap) * 1.25);
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wilsy-gap);
+  align-items: stretch;
+}
+
+/* Constrain content width and center */
+.dashboard-wrapper > * {
+  max-width: var(--wilsy-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+/* Header */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wilsy-gap);
+  padding: calc(var(--wilsy-gap) * 0.75);
+  background: linear-gradient(180deg, rgba(11,95,255,0.03), transparent);
+  border: 1px solid var(--wilsy-border);
+  border-radius: var(--wilsy-radius);
+  box-shadow: var(--wilsy-shadow);
+}
+
+.dashboard-title h1 {
+  margin: 0;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #0b1220;
+}
+
+.dashboard-title .muted {
+  margin: 4px 0 0 0;
+  color: var(--wilsy-muted);
+  font-size: 0.9rem;
+}
+
+/* Controls area (tenant selector etc.) */
+.dashboard-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* -------------------------
+   Main grid and sections
+   ------------------------- */
+.dashboard-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: calc(var(--wilsy-gap) * 1.25);
+  align-items: start;
+}
+
+/* Stats grid */
+.dashboard-stats {
+  background: var(--wilsy-surface);
+  border: 1px solid var(--wilsy-border);
+  padding: calc(var(--wilsy-gap) * 0.75);
+  border-radius: var(--wilsy-radius);
+  box-shadow: 0 4px 12px rgba(2,6,23,0.03);
+}
+
+/* Charts row */
+.dashboard-charts .chart-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--wilsy-gap);
+}
+
+/* Audit feed */
+.dashboard-audit {
+  background: #fff;
+  border: 1px solid var(--wilsy-border);
+  padding: calc(var(--wilsy-gap) * 0.75);
+  border-radius: var(--wilsy-radius);
+  box-shadow: 0 4px 10px rgba(2,6,23,0.02);
+}
+
+/* -------------------------
+   Components placeholders and utilities
+   ------------------------- */
+.chart-placeholder,
+.ChartPlaceholder,
+.chart-card {
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border: 1px dashed var(--wilsy-border);
+  border-radius: 6px;
+  padding: 18px;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wilsy-muted);
+  font-size: 0.95rem;
+}
+
+/* StatsGrid children (assumes StatsGrid uses .stat-card) */
+.stat-card {
+  background: #fff;
+  border: 1px solid var(--wilsy-border);
+  padding: 14px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.stat-card .label {
+  color: var(--wilsy-muted);
+  font-size: 0.85rem;
+}
+
+.stat-card .value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #07103a;
+}
+
+/* Audit feed list */
+.audit-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.audit-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #fff, #fbfdff);
+  border: 1px solid var(--wilsy-border);
+}
+
+.audit-item .meta {
+  color: var(--wilsy-muted);
+  font-size: 0.85rem;
+}
+
+/* -------------------------
+   Buttons and interactive elements
+   ------------------------- */
+button,
+button[type="button"],
+button[type="submit"] {
+  background: var(--wilsy-accent);
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+button:disabled,
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button:focus {
+  outline: 3px solid rgba(11,95,255,0.12);
+  outline-offset: 2px;
+}
+
+/* Tenant selector (assumes a simple select) */
+.dashboard-controls select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--wilsy-border);
+  background: #fff;
+  color: #0b1220;
+}
+
+/* -------------------------
+   Responsive
+   ------------------------- */
+@media (min-width: var(--wilsy-breakpoint-sm)) {
+  .dashboard-main {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-charts .chart-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--wilsy-gap);
+  }
+}
+
+@media (min-width: var(--wilsy-breakpoint-md)) {
+  .dashboard-main {
+    grid-template-columns: 1fr 360px;
+    align-items: start;
+  }
+  .dashboard-charts .chart-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dashboard-audit {
+    max-height: 720px;
+    overflow: auto;
+  }
+}
+
+/* -------------------------
+   Accessibility and print
+   ------------------------- */
+:focus {
+  outline: 3px solid rgba(11,95,255,0.12);
+  outline-offset: 2px;
+}
+
+@media print {
+  .dashboard-header,
+  .dashboard-controls,
+  button,
+  .chart-placeholder {
+    display: none !important;
+  }
+  .dashboard-wrapper {
+    padding: 8px !important;
+  }
+}
+
+/* -------------------------
+   Small utilities
+   ------------------------- */
+.muted { color: var(--wilsy-muted); }
+.center { display: flex; align-items: center; justify-content: center; }
+.hidden { display: none !important; }

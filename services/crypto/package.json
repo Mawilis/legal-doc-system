@@ -1,11 +1,17 @@
+/**
+ * Copyright (c) 2026 Wilsy Pty Ltd [Reg: 2024/617944/07].
+ * All Rights Reserved.
+ * * This software is the confidential and proprietary information of Wilsy Pty Ltd.
+ * Unauthorized copying of this file, via any medium is strictly prohibited.
+ * Proprietary and confidential.
+ */
+
 {
   "name": "svc-crypto",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "crypto": "^1.0.1"
   }
 }

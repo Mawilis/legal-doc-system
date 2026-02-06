@@ -1,0 +1,63 @@
+flowchart TD
+    A[API Request] --> B{Validate Tenant Context}
+    B -->|Missing| C[Fail: 403 Forbidden]
+    B -->|Valid| D[Check Authorization]
+    
+    D -->|Denied| E[Fail: 403 Unauthorized]
+    D -->|Granted| F{Operation Type}
+    
+    F -->|Upload| G[Generate Encryption Key]
+    F -->|Read/Download| H[Retrieve Document]
+    F -->|Update| I[Validate Update Fields]
+    F -->|Delete| J[Check Retention Policy]
+    F -->|Search| K[Build Search Query]
+    F -->|Audit| L[Verify Audit Permission]
+    
+    G --> M[Encrypt Content]
+    H --> N[Decrypt Content<br>Apply Watermark]
+    I --> O[Update Metadata]
+    J --> P[Soft/Permanent Delete]
+    K --> Q[Execute Search]
+    L --> R[Retrieve Audit Trail]
+    
+    M --> S[Store Document]
+    N --> T[Stream to Client]
+    O --> U[Save Changes]
+    P --> V[Update Status]
+    Q --> W[Return Results]
+    R --> X[Return Audit Log]
+    
+    S --> Y[Log to Audit Trail]
+    T --> Y
+    U --> Y
+    V --> Y
+    W --> Y
+    X --> Y
+    
+    Y --> Z[Return Success Response]
+    C --> ZA[Return Error Response]
+    E --> ZA
+    
+    subgraph "Security & Compliance"
+        AB[Tenant Isolation]
+        AC[RBAC/ABAC Authorization]
+        AD[AES-256-GCM Encryption]
+        AE[Audit Trail Logging]
+        AF[Watermarking]
+        AG[Retention Enforcement]
+    end
+    
+    B -.-> AB
+    D -.-> AC
+    G -.-> AD
+    M -.-> AD
+    H -.-> AD
+    N -.-> AF
+    J -.-> AG
+    Y -.-> AE
+    
+    style A fill:#e1f5fe
+    style Z fill:#e8f5e8
+    style ZA fill:#ffebee
+    style C fill:#ffebee
+    style E fill:#ffebee

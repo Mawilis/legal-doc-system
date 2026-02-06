@@ -1,67 +1,178 @@
-// ~/legal-doc-system/client/src/middleware/socketMiddleware.js
-
-import socket from '../../services/socket'; // Import the singleton socket instance
-import { toast } from 'react-toastify';
-import {
-    addUserFromSocket,
-    removeUserFromSocket,
-    updateUserFromSocket,
-} from '../../features/admin/reducers/adminSlice'; // Import the correct real-time actions
-
-/**
- * @file This file contains the Redux middleware for handling real-time events via Socket.IO.
- * It acts as a centralized listener for all incoming socket events and dispatches
- * corresponding Redux actions to keep the client state synchronized with the server.
+/*
+ * File: client/src/components/layout/PageTransition.jsx
+ * STATUS: PRODUCTION-READY | EPITOME | CINEMATIC UX GRADE
+ * -----------------------------------------------------------------------------
+ * PURPOSE:
+ * The Motion Orchestrator for Wilsy OS. 
+ * Provides high-performance, accessible entrance and exit physics for route 
+ * transitions, ensuring a fluid, premium software experience.
+ * -----------------------------------------------------------------------------
+ * COLLABORATION COMMENTS:
+ * - AUTHOR: Wilson Khanyezi (Chief Architect)
+ * - WORTH: Biblical | Worth Billions | No Child's Place.
+ * - PHYSICS: Implements "Slide-Up" entrance using cubic-bezier(0.2, 0.8, 0.2, 1).
+ * - ACCESSIBILITY: Explicitly respects 'prefers-reduced-motion' media queries.
+ * - PERFORMANCE: Memoized state-logic to prevent layout thrashing on route shifts.
+ * -----------------------------------------------------------------------------
+ * REVIEWERS: @design, @platform, @accessibility
+ * TESTS: jest + @testing-library/react — ensures child rendering and motion gating.
+ * -----------------------------------------------------------------------------
  */
 
+/* USAGE:
+import PageTransition from 'src/components/layout/PageTransition';
+
+<PageTransition duration={420}>
+  <YourRouteComponent />
+</PageTransition>
+*/
+
+import React, { useEffect, useMemo, useState } from 'react';
+import styled, { keyframes, css } from 'styled-components';
+import PropTypes from 'prop-types';
+
+/* -------------------------
+   SOVEREIGN KINEMATICS
+   ------------------------- */
+
 /**
- * A Redux middleware that listens for socket events and updates the store.
- *
- * @param {object} storeAPI - The Redux store's API, providing `dispatch` and `getState`.
- * @returns {Function} A standard Redux middleware function.
+ * ENTRANCE PHYSICS
+ * Subtle 12px translation with a slight scale-up to signify "Arrival."
  */
-const socketMiddleware = (storeAPI) => {
-    // --- Centralized Event Listeners ---
-    // These listeners are set up once when the middleware is initialized.
+const slideUpIn = keyframes`
+  from { opacity: 0; transform: translateY(12px) scale(0.998); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+`;
 
-    /**
-     * Handles the 'user-created' event from the server.
-     * @param {object} user - The new user object received from the server.
-     */
-    socket.on('user-created', (user) => {
-        toast.info(`🟢 New user created: ${user.name}`);
-        storeAPI.dispatch(addUserFromSocket(user));
-    });
+/**
+ * EXIT PHYSICS
+ * Faster 8px translation signify "Departure" without delaying the user.
+ */
+const slideDownOut = keyframes`
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(8px) scale(0.998); }
+`;
 
-    /**
-     * Handles the 'user-updated' event from the server.
-     * This can be for a role change, permission update, or any other user detail.
-     * @param {object} user - The updated user object received from the server.
-     */
-    socket.on('user-updated', (user) => {
-        toast.success(`✅ User updated: ${user.name}`);
-        storeAPI.dispatch(updateUserFromSocket(user));
-    });
-
-    /**
-     * Handles the 'user-deleted' event from the server.
-     * @param {string} userId - The ID of the user who was deleted.
-     */
-    socket.on('user-deleted', (userId) => {
-        toast.warn(`🗑️ A user was removed.`);
-        storeAPI.dispatch(removeUserFromSocket(userId));
-    });
-
-    // You can add more listeners for other features here, for example:
-    // socket.on('new-notification', (notification) => { ... });
-    // socket.on('new-chat-message', (message) => { ... });
-
-    // The middleware function that gets called for every dispatched action.
-    return (next) => (action) => {
-        // In a more advanced setup, you could intercept certain actions
-        // and emit socket events here. For now, we just pass the action along.
-        return next(action);
-    };
+/* Shared Animation Logic Generator */
+const animationStyles = ({ duration, easing, state }) => {
+  if (state === 'entering') {
+    return css`
+      animation: ${slideUpIn} ${duration}ms ${easing} both;
+    `;
+  }
+  if (state === 'exiting') {
+    return css`
+      animation: ${slideDownOut} ${Math.max(120, Math.round(duration * 0.6))}ms ${easing} both;
+    `;
+  }
+  return css`
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  `;
 };
 
-export default socketMiddleware;
+/* Wrapper: The Motion Boundary */
+const TransitionWrapper = styled.div`
+  width: 100%;
+  height: 100%;
+  will-change: transform, opacity;
+  /* FOUC Prevention: Hidden until animation sequence triggers */
+  opacity: 0;
+  transform-origin: center top;
+
+  /**
+   * COMPLIANCE: REDUCED MOTION
+   * Wilsy OS must be accessible to all legal professionals, regardless of 
+   * vestibular sensitivity.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    transition: none !important;
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  ${({ duration, easing, state }) => animationStyles({ duration, easing, state })}
+`;
+
+/* -------------------------
+   CORE COMPONENT LOGIC
+   ------------------------- */
+function PageTransitionInner({ children, duration, easing, disableAnimation, className }) {
+  // Logic Phase: 'idle' | 'entering' | 'exiting'
+  const [phase, setPhase] = useState('entering');
+
+  /**
+   * IDENTITY MANAGEMENT
+   * Generates a stable key for children to re-trigger the transition engine.
+   */
+  const childrenKey = useMemo(() => {
+    try {
+      const child = React.Children.only(children);
+      return child && child.key != null
+        ? String(child.key)
+        : JSON.stringify([child?.type?.displayName || child?.type?.name || '', child?.props || {}]);
+    } catch (e) {
+      // Fallback for complex child trees
+      return String(Date.now());
+    }
+  }, [children]);
+
+  /**
+   * MOTION SEQUENCE TRIGGER
+   */
+  useEffect(() => {
+    if (disableAnimation) {
+      setPhase('idle');
+      return undefined;
+    }
+
+    setPhase('entering');
+
+    const timeout = setTimeout(() => {
+      setPhase('idle');
+    }, Math.max(1, duration));
+
+    return () => clearTimeout(timeout);
+  }, [childrenKey, duration, disableAnimation]);
+
+  return (
+    <TransitionWrapper
+      role="region"
+      aria-live="polite"
+      aria-atomic="true"
+      className={className}
+      duration={duration}
+      easing={easing}
+      state={disableAnimation ? 'idle' : phase}
+    >
+      {children}
+    </TransitionWrapper>
+  );
+}
+
+PageTransitionInner.propTypes = {
+  children: PropTypes.node,
+  duration: PropTypes.number,
+  easing: PropTypes.string,
+  disableAnimation: PropTypes.bool,
+  className: PropTypes.string
+};
+
+PageTransitionInner.defaultProps = {
+  children: null,
+  duration: 500,
+  easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+  disableAnimation: false,
+  className: undefined
+};
+
+/**
+ * PERFORMANCE MEMOIZATION
+ * Ensures the transition wrapper itself doesn't re-render unless properties shift.
+ */
+const PageTransition = React.memo(function PageTransition(props) {
+  return <PageTransitionInner {...props} />;
+});
+
+export default PageTransition;

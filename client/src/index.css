@@ -1,0 +1,71 @@
+/*
+ * File: client/src/index.css
+ * STATUS: EPITOME | GLOBAL SKIN
+ * -----------------------------------------------------------------------------
+ * PURPOSE: 
+ * Defines the visual baseline for Wilsy OS.
+ * - Resets browser inconsistencies.
+ * - Enforces the 'Inter' typography system.
+ * - Sets the "Slate" color palette foundation.
+ * -----------------------------------------------------------------------------
+ * COLLABORATION NOTES:
+ * - TYPOGRAPHY: All headings and body text inherit 'Inter' by default.
+ * - SCROLLBARS: Webkit scrollbars are customized to look like a Native App.
+ * - BOX MODEL: Global 'border-box' reset prevents layout math headaches.
+ * -----------------------------------------------------------------------------
+ */
+
+/* 1. IMPORT TYPOGRAPHY (Inter Variable Font) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* 2. CORE DEFAULTS */
+body {
+  margin: 0;
+  padding: 0;
+  /* The Voice of the OS */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  
+  /* Rendering optimizations */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Visual Foundation */
+  background-color: #F1F5F9; /* Slate 100 - High Contrast Background */
+  color: #0F172A; /* Slate 900 - Readable Text */
+}
+
+/* 3. DEVELOPER TOOLS */
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* 4. UI POLISH: CUSTOM SCROLLBARS */
+/* Gives the browser a "Native Application" feel instead of a website feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* Slate 300 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* Slate 400 */
+}
+
+/* 5. LAYOUT RESET */
+/* Ensures padding doesn't break width calculations */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+
+
