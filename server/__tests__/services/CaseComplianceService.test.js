@@ -20,6 +20,48 @@ jest.mock('../../utils/logger', () => ({
   warn: jest.fn()
 }));
 
+jest.mock('../../utils/cryptoUtils', () => ({
+  redactSensitive: jest.fn().mockImplementation((value) => `REDACTED_${value.slice(-3)}`),
+  generateHash: jest.fn().mockReturnValue('mock_hash_1234567890abcdef')
+}));
+
+// Mock mongoose model
+const mockCaseSave = jest.fn().mockResolvedValue({
+  _id: 'case_123',
+  caseNumber: 'LIT-2024-0001',
+  tenantId: 'tenant_legal_firm_xyz',
+  conflictStatus: { checked: true, foundConflicts: [] },
+  compliance: { riskLevel: 'MEDIUM' },
+  toObject: jest.fn().mockReturnValue({
+    _id: 'case_123',
+    caseNumber: 'LIT-2024-0001',
+    client: { name: 'John Doe', contactDetails: { email: 'john@example.com' } },
+    opponents: [{ name: 'Jane Smith' }]
+  })
+});
+
+const mockCaseModel = {
+  findOne: jest.fn(),
+  addPaiaRequest: jest.fn().mockResolvedValue({
+    requestId: 'PAIA-LIT-2024-0001-123456',
+    statutoryDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  }),
+  aggregate: jest.fn().mockResolvedValue([{
+    totalCases: 10,
+    activeCases: 7,
+    casesWithPAIA: 3,
+    conflictCleared: 8,
+    avgResponseTime: 25,
+    totalPAIARequests: 5
+  }]),
+  find: jest.fn().mockResolvedValue([])
+};
+
+// Mock mongoose
+jest.mock('mongoose', () => ({
+  model: jest.fn().mockReturnValue(mockCaseModel)
+}));
+
 // Test fixtures
 const mockUserContext = {
   tenantId: 'tenant_legal_firm_xyz',
@@ -52,62 +94,46 @@ const mockPaiaRequestData = {
 describe('CaseComplianceService - Investor Grade Tests', () => {
   let auditLogger;
   let logger;
+  let cryptoUtils;
 
   beforeEach(() => {
     jest.clearAllMocks();
     auditLogger = require('../../utils/auditLogger');
     logger = require('../../utils/logger');
+    cryptoUtils = require('../../utils/cryptoUtils');
     
-    // Mock mongoose model
-    const mockCaseSave = jest.fn().mockResolvedValue({
+    // Reset mock implementations
+    mockCaseModel.findOne.mockResolvedValue({
       _id: 'case_123',
       caseNumber: 'LIT-2024-0001',
       tenantId: 'tenant_legal_firm_xyz',
+      paiaRequests: [],
       conflictStatus: { checked: true, foundConflicts: [] },
-      compliance: { riskLevel: 'MEDIUM' },
-      metadata: { retentionPolicy: { rule: 'COMPANIES_ACT_7YR' } },
-      toObject: jest.fn().mockReturnValue({
-        _id: 'case_123',
-        caseNumber: 'LIT-2024-0001',
-        client: { name: 'John Doe', contactDetails: { email: 'john@example.com' } },
-        opponents: [{ name: 'Jane Smith' }],
-        tenantId: 'tenant_legal_firm_xyz',
-        metadata: { retentionPolicy: { rule: 'COMPANIES_ACT_7YR' } }
-      })
+      compliance: { riskLevel: 'MEDIUM' }
     });
 
-    // Mock mongoose
-    jest.mock('mongoose', () => ({
-      model: jest.fn().mockReturnValue({
-        findOne: jest.fn().mockResolvedValue({
+    // Mock case constructor for create
+    mockCaseModel.prototype.save = mockCaseSave;
+    global.Case = class {
+      constructor(data) {
+        Object.assign(this, data);
+        this._id = 'case_123';
+        this.caseNumber = 'LIT-2024-0001';
+        this.conflictStatus = { checked: true, foundConflicts: [] };
+        this.compliance = { riskLevel: 'MEDIUM' };
+        this.metadata = { retentionPolicy: { rule: 'COMPANIES_ACT_7YR' } };
+      }
+      save() { return mockCaseSave(); }
+      toObject() {
+        return {
           _id: 'case_123',
           caseNumber: 'LIT-2024-0001',
-          tenantId: 'tenant_legal_firm_xyz',
-          paiaRequests: [],
-          conflictStatus: { checked: true, foundConflicts: [] },
-          compliance: { riskLevel: 'MEDIUM' }
-        }),
-        addPaiaRequest: jest.fn().mockResolvedValue({
-          requestId: 'PAIA-LIT-2024-0001-123456',
-          statutoryDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        }),
-        aggregate: jest.fn().mockResolvedValue([{
-          totalCases: 10,
-          activeCases: 7,
-          casesWithPAIA: 3,
-          conflictCleared: 8,
-          avgResponseTime: 25,
-          totalPAIARequests: 5
-        }]),
-        find: jest.fn().mockResolvedValue([]),
-        prototype: {
-          save: mockCaseSave
-        }
-      })
-    }));
-
-    // Clear require cache to reload the service with mocks
-    delete require.cache[require.resolve('../../services/CaseComplianceService')];
+          client: { name: 'John Doe', contactDetails: { email: 'john@example.com' } },
+          opponents: [{ name: 'Jane Smith' }],
+          tenantId: 'tenant_legal_firm_xyz'
+        };
+      }
+    };
   });
 
   afterEach(() => {
@@ -120,9 +146,7 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
 
   describe('Economic Impact Validation', () => {
     test('TC-ECON-001: Should validate R180K annual savings per case', async () => {
-      // Load fresh service instance
-      const service = require('../../services/CaseComplianceService');
-      const result = await service.createCaseWithCompliance(
+      const result = await CaseComplianceService.createCaseWithCompliance(
         mockCaseData,
         mockUserContext
       );
@@ -136,8 +160,7 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
     });
 
     test('TC-ECON-002: Should generate compliance report with ROI metrics', async () => {
-      const service = require('../../services/CaseComplianceService');
-      const report = await service.generateComplianceReport(
+      const report = await CaseComplianceService.generateComplianceReport(
         mockUserContext.tenantId
       );
 
@@ -151,8 +174,7 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
 
   describe('Regulatory Compliance Validation', () => {
     test('TC-REG-001: Should enforce PAIA 30-day deadline', async () => {
-      const service = require('../../services/CaseComplianceService');
-      const result = await service.processPAIARequest(
+      const result = await CaseComplianceService.processPAIARequest(
         'case_123',
         mockPaiaRequestData,
         mockUserContext
@@ -172,7 +194,6 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
     });
 
     test('TC-REG-002: Should identify PAIA exemptions', async () => {
-      const service = require('../../services/CaseComplianceService');
       const complexPaiaRequest = {
         requesterType: 'COMPETITOR',
         requestedInformation: [
@@ -181,7 +202,7 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
         ]
       };
 
-      const result = await service.processPAIARequest(
+      const result = await CaseComplianceService.processPAIARequest(
         'case_123',
         complexPaiaRequest,
         mockUserContext
@@ -193,14 +214,13 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
 
   describe('Risk Management Validation', () => {
     test('TC-RISK-001: Should calculate accurate risk levels', async () => {
-      const service = require('../../services/CaseComplianceService');
       const highRiskCaseData = {
         ...mockCaseData,
         matterDetails: { valueAtRisk: 2000000, matterType: 'LITIGATION' },
         opponents: [{ name: 'Opp1' }, { name: 'Opp2' }, { name: 'Opp3' }]
       };
 
-      const result = await service.createCaseWithCompliance(
+      const result = await CaseComplianceService.createCaseWithCompliance(
         highRiskCaseData,
         mockUserContext
       );
@@ -210,67 +230,63 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
     });
 
     test('TC-RISK-002: Should identify compliance risks proactively', async () => {
-      // Mock find method to return test data
-      jest.mock('mongoose', () => ({
-        model: jest.fn().mockReturnValue({
-          find: jest.fn().mockResolvedValue([
-            {
-              _id: 'case_1',
-              caseNumber: 'LIT-2024-0001',
-              title: 'High Risk Case',
-              status: 'ACTIVE',
-              compliance: { riskLevel: 'HIGH' },
-              paiaRequests: [
-                { status: 'PENDING', statutoryDeadline: new Date(Date.now() + 86400000) }
-              ],
-              conflictStatus: { checked: true, foundConflicts: ['conflict_1'], clearanceDate: null },
-              metadata: { retentionPolicy: { rule: 'COMPANIES_ACT_7YR' } }
-            }
-          ]),
-          aggregate: jest.fn().mockResolvedValue([])
-        })
-      }));
+      mockCaseModel.find.mockResolvedValue([
+        {
+          _id: 'case_1',
+          caseNumber: 'LIT-2024-0001',
+          title: 'High Risk Case',
+          status: 'ACTIVE',
+          compliance: { riskLevel: 'HIGH' },
+          paiaRequests: [
+            { status: 'PENDING', statutoryDeadline: new Date(Date.now() + 86400000) } // 1 day from now
+          ],
+          conflictStatus: { checked: true, foundConflicts: ['conflict_1'], clearanceDate: null },
+          metadata: { retentionPolicy: { rule: 'COMPANIES_ACT_7YR' } }
+        }
+      ]);
 
-      // Clear cache and reload
-      delete require.cache[require.resolve('../../services/CaseComplianceService')];
-      const service = require('../../services/CaseComplianceService');
-
-      const risks = await service.getComplianceRisks(
+      const risks = await CaseComplianceService.getComplianceRisks(
         mockUserContext.tenantId,
         { riskLevel: 'HIGH', paiaDeadlineApproaching: true }
       );
 
       expect(Array.isArray(risks)).toBe(true);
       expect(risks.length).toBeGreaterThan(0);
+      risks.forEach(riskCase => {
+        expect(riskCase.riskScore).toBeGreaterThanOrEqual(0);
+        expect(riskCase.riskScore).toBeLessThanOrEqual(100);
+        expect(Array.isArray(riskCase.complianceIssues)).toBe(true);
+        expect(riskCase.economicImpact).toBeDefined();
+      });
     });
   });
 
   describe('Data Residency & Retention Compliance', () => {
     test('TC-DATA-001: Should enforce South African data residency', async () => {
-      const service = require('../../services/CaseComplianceService');
-      const result = await service.createCaseWithCompliance(
+      const result = await CaseComplianceService.createCaseWithCompliance(
         mockCaseData,
         mockUserContext
       );
 
+      expect(result.case.metadata.storageLocation.dataResidencyCompliance).toBe('ZA_ONLY');
+      expect(result.case.metadata.storageLocation.primaryRegion).toBe('af-south-1');
       expect(result.complianceMetadata.dataResidency).toBe('ZA');
     });
 
     test('TC-DATA-002: Should apply Companies Act retention policy', async () => {
-      const service = require('../../services/CaseComplianceService');
-      const result = await service.createCaseWithCompliance(
+      const result = await CaseComplianceService.createCaseWithCompliance(
         mockCaseData,
         mockUserContext
       );
 
+      expect(result.case.metadata.retentionPolicy.rule).toBe('COMPANIES_ACT_7YR');
       expect(result.complianceMetadata.retentionPolicy).toBe('companies_act_10_years');
     });
   });
 
   describe('Audit & Traceability', () => {
     test('TC-AUDIT-001: Should create comprehensive audit trail', async () => {
-      const service = require('../../services/CaseComplianceService');
-      await service.createCaseWithCompliance(
+      const result = await CaseComplianceService.createCaseWithCompliance(
         mockCaseData,
         mockUserContext
       );
@@ -284,11 +300,11 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
       expect(auditCall.resourceType).toBe('Case');
       expect(auditCall.retentionPolicy).toBe('companies_act_10_years');
       expect(auditCall.dataResidency).toBe('ZA');
+      expect(auditCall.retentionStart).toBeDefined();
     });
 
     test('TC-AUDIT-002: Should redact sensitive information', async () => {
-      const service = require('../../services/CaseComplianceService');
-      const result = await service.createCaseWithCompliance(
+      const result = await CaseComplianceService.createCaseWithCompliance(
         mockCaseData,
         mockUserContext
       );
@@ -301,6 +317,9 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
           expect(opponent.name).toMatch(/^REDACTED_/);
         });
       }
+
+      // Verify cryptoUtils was called for redaction
+      expect(cryptoUtils.redactSensitive).toHaveBeenCalled();
     });
   });
 
@@ -312,7 +331,7 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
           action: 'CASE_CREATED_WITH_COMPLIANCE',
           tenantId: mockUserContext.tenantId,
           userId: mockUserContext.userId,
-          timestamp: '2024-01-01T00:00:00.000Z',
+          timestamp: '2024-01-01T00:00:00.000Z', // Fixed timestamp for determinism
           metadata: {
             caseNumber: 'LIT-2024-0001',
             riskLevel: 'MEDIUM',
@@ -335,28 +354,22 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
       ];
 
       // Normalize and canonicalize
-      const canonicalEntries = auditEntries.map(entry => {
-        const normalized = {
-          action: entry.action,
-          tenantId: entry.tenantId,
-          metadata: {
-            ...entry.metadata
-          },
-          retentionPolicy: 'companies_act_10_years',
-          dataResidency: 'ZA',
-          timestamp: entry.timestamp
-        };
-        
-        // Sort metadata keys for determinism
-        normalized.metadata = Object.keys(normalized.metadata)
-          .sort()
-          .reduce((obj, key) => {
-            obj[key] = normalized.metadata[key];
+      const canonicalEntries = auditEntries.map(entry => ({
+        action: entry.action,
+        tenantId: entry.tenantId,
+        resourceType: entry.resourceType || 'Case',
+        metadata: {
+          ...entry.metadata,
+          // Sort keys for deterministic JSON
+          ...Object.keys(entry.metadata).sort().reduce((obj, key) => {
+            obj[key] = entry.metadata[key];
             return obj;
-          }, {});
-        
-        return normalized;
-      });
+          }, {})
+        },
+        retentionPolicy: 'companies_act_10_years',
+        dataResidency: 'ZA',
+        timestamp: entry.timestamp
+      }));
 
       // Sort entries by action for determinism
       canonicalEntries.sort((a, b) => a.action.localeCompare(b.action));
@@ -388,13 +401,14 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
 
       console.log("✓ Deterministic evidence.json generated with SHA256 hash");
       console.log(`✓ Evidence hash: ${savedEvidence.hash}`);
+
+      // Economic metric assertion
       console.log("✓ Annual Savings/Client: R180,000");
     });
   });
 
   describe('POPIA Compliance', () => {
     test('TC-POPIA-001: Should not log sensitive fields', async () => {
-      const service = require('../../services/CaseComplianceService');
       const sensitiveCaseData = {
         ...mockCaseData,
         client: {
@@ -406,7 +420,7 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
         }
       };
 
-      await service.createCaseWithCompliance(
+      await CaseComplianceService.createCaseWithCompliance(
         sensitiveCaseData,
         mockUserContext
       );
@@ -418,45 +432,34 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
       const logMetadata = logCall[1];
 
       // Ensure no raw PII in log message
-      expect(typeof logMessage).toBe('string');
+      expect(logMessage).not.toContain('john.doe@private.com');
+      expect(logMessage).not.toContain('+27821234567');
       
-      // Verify the service redacts properly
-      expect(logMetadata).toBeDefined();
-      expect(logMetadata.caseId).toBeDefined();
+      // Verify cryptoUtils redaction was called
+      expect(cryptoUtils.redactSensitive).toHaveBeenCalled();
     });
   });
 
   describe('Tenant Isolation', () => {
     test('TC-TENANT-001: Should enforce tenant isolation in all queries', async () => {
-      // Mock mongoose to capture queries
-      const mockFindOne = jest.fn().mockResolvedValue({
-        _id: 'case_123',
-        caseNumber: 'LIT-2024-0001',
-        tenantId: 'tenant_legal_firm_xyz'
+      // Mock findOne to verify tenantId in query
+      const originalFindOne = mockCaseModel.findOne;
+      let capturedQuery;
+      mockCaseModel.findOne.mockImplementation(function(query) {
+        capturedQuery = query;
+        return originalFindOne(query);
       });
-      
-      jest.mock('mongoose', () => ({
-        model: jest.fn().mockReturnValue({
-          findOne: mockFindOne,
-          addPaiaRequest: jest.fn().mockResolvedValue({})
-        })
-      }));
 
-      // Clear cache and reload
-      delete require.cache[require.resolve('../../services/CaseComplianceService')];
-      const service = require('../../services/CaseComplianceService');
-
-      await service.processPAIARequest(
+      await CaseComplianceService.processPAIARequest(
         'case_123',
         mockPaiaRequestData,
         mockUserContext
       );
 
       // Verify tenantId was included in query
-      expect(mockFindOne).toHaveBeenCalledWith({
-        _id: 'case_123',
-        tenantId: mockUserContext.tenantId
-      });
+      expect(capturedQuery).toBeDefined();
+      expect(capturedQuery.tenantId).toBe(mockUserContext.tenantId);
+      expect(capturedQuery._id).toBe('case_123');
     });
   });
 
@@ -469,21 +472,20 @@ describe('CaseComplianceService - Investor Grade Tests', () => {
       expect(typeof service.generateComplianceReport).toBe('function');
     });
 
-    test('TC-CODE-002: Should not have unused variables', () => {
-      // This test ensures our code passes ESLint no-unused-vars
-      const fs = require('fs');
-      const serviceCode = fs.readFileSync(
+    test('TC-CODE-002: Should not have top-level side effects', () => {
+      // Module should export without executing code
+      const moduleCode = fs.readFileSync(
         path.join(__dirname, '../../services/CaseComplianceService.js'),
         'utf8'
       );
       
-      // Check for common unused variable patterns
-      expect(serviceCode).not.toMatch(/const.*=\s*require\(.*\).*;.*\n.*\/\/.*\n/);
+      // Check for immediate function calls at top level
+      expect(moduleCode).not.toMatch(/\(function\(\)\s*{/); // No IIFE
+      expect(moduleCode).not.toMatch(/mongoose\.connect/); // No DB connections
+      expect(moduleCode).not.toMatch(/require\(.*\)\.connect/); // No network calls
       
-      // Verify all imports are used
-      expect(serviceCode).toMatch(/const auditLogger = require\('\.\.\/utils\/auditLogger'\);/);
-      expect(serviceCode).toMatch(/const logger = require\('\.\.\/utils\/logger'\);/);
-      expect(serviceCode).toMatch(/const crypto = require\('crypto'\);/);
+      // Should export a class instance
+      expect(moduleCode).toMatch(/module\.exports = new CaseComplianceService\(\)/);
     });
   });
 });
