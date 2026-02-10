@@ -642,7 +642,7 @@ superAdminSchema.pre('save', async function (next) {
  * Pre-remove Hook: Prevent deletion of sovereign entities
  * Compliance Quantum: Companies Act record retention
  */
-superAdminSchema.pre('remove', function (next) {
+superAdminSchema.pre('remove', function () {
     throw new Error('SUPREME_ENTITY_DELETION_FORBIDDEN: SuperAdmin records must be archived, not deleted. Use status change to "EMERITUS".');
 });
 
