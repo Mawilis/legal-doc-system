@@ -1,0 +1,77 @@
+{
+  "auditEntries": [
+    {
+      "action": "DOCUMENT_DOWNLOADED",
+      "tenantId": "investor_demo_tenant",
+      "resourceType": "Document",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "retentionPolicy": "companies_act_10_years",
+      "dataResidency": "ZA",
+      "compliance": {
+        "popia": "VERIFIED",
+        "ect_act": "VERIFIED",
+        "companies_act": "VERIFIED",
+        "paia": "VERIFIED"
+      }
+    },
+    {
+      "action": "DOCUMENT_UPLOADED",
+      "tenantId": "investor_demo_tenant",
+      "resourceType": "Document",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "retentionPolicy": "companies_act_10_years",
+      "dataResidency": "ZA",
+      "compliance": {
+        "popia": "VERIFIED",
+        "ect_act": "VERIFIED",
+        "companies_act": "VERIFIED",
+        "paia": "VERIFIED"
+      }
+    },
+    {
+      "action": "DOCUMENT_VIEWED",
+      "tenantId": "investor_demo_tenant",
+      "resourceType": "Document",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "retentionPolicy": "companies_act_10_years",
+      "dataResidency": "ZA",
+      "compliance": {
+        "popia": "VERIFIED",
+        "ect_act": "VERIFIED",
+        "companies_act": "VERIFIED",
+        "paia": "VERIFIED"
+      }
+    }
+  ],
+  "hash": "779fcb208c6e149c68c3319d758b3e0474245b7858c15c85ad61850ea7fb06be",
+  "timestamp": "2026-02-10T01:32:02.436Z",
+  "testResults": {
+    "totalTests": 3,
+    "passedTests": 3,
+    "failedTests": 0,
+    "coverage": "100% economic validation"
+  },
+  "economicValidation": {
+    "annualSavings": 250000,
+    "annualProfit": 212500,
+    "riskElimination": 2400000,
+    "originalRisk": 3000000,
+    "riskReductionPercentage": 80,
+    "roi": "9.6",
+    "paybackMonths": "14.1",
+    "complianceVerified": true,
+    "certifications": [
+      "POPIA",
+      "ECT_ACT",
+      "COMPANIES_ACT",
+      "PAIA",
+      "DATA_RESIDENCY_ZA"
+    ]
+  },
+  "investorMetrics": {
+    "targetAnnualSavings": 200000,
+    "targetRiskElimination": 2400000,
+    "targetROI": 8,
+    "allTargetsMet": true
+  }
+}
