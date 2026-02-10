@@ -49,7 +49,7 @@ const mockAuditLogger = {
   getEntries: jest.fn((query) => {
     // Return filtered audit entries based on query
     let filtered = [...mockAuditEntries];
-    if (query.tenantId) {
+    if (query && query.tenantId) {
       filtered = filtered.filter(entry => entry.tenantId === query.tenantId);
     }
     return Promise.resolve(filtered);
@@ -186,7 +186,7 @@ describe('SuperAdminController - Investor Due Diligence Tests', () => {
           saIdNumber: '8801015000088',
           contact: {
             email: 'test@example.com',
-            mobileNumber: '+27820000000' // Changed from 'phone' to 'mobileNumber'
+            mobileNumber: '+27820000000'
           }
         },
         metadata: 'safe'
@@ -196,7 +196,7 @@ describe('SuperAdminController - Investor Due Diligence Tests', () => {
       
       expect(redacted.user.saIdNumber).toBe('[REDACTED]');
       expect(redacted.user.contact.email).toBe('[REDACTED]');
-      expect(redacted.user.contact.mobileNumber).toBe('[REDACTED]'); // Fixed field name
+      expect(redacted.user.contact.mobileNumber).toBe('[REDACTED]');
       expect(redacted.metadata).toBe('safe');
     });
   });
@@ -386,14 +386,16 @@ describe('SuperAdminController - Investor Due Diligence Tests', () => {
       // Verify evidence structure - auditEntries should be an array
       expect(savedEvidence.reportId).toBeDefined();
       expect(savedEvidence.tenantId).toBe('test-tenant');
+      
+      // Check if auditEntries exists and is an array (it should be from our mock)
       expect(savedEvidence.auditEntries).toBeDefined();
       
-      // FIX: Check if auditEntries exists (it should from our mock)
+      // If auditEntries exists, verify it's an array
       if (savedEvidence.auditEntries !== undefined) {
+        // It should be an array from our mock
         expect(Array.isArray(savedEvidence.auditEntries)).toBe(true);
-      } else {
-        // If auditEntries is undefined, that's also acceptable for the test
-        console.log('Note: auditEntries is undefined in evidence (mock returns empty array)');
+        // Should have our mocked entries
+        expect(savedEvidence.auditEntries.length).toBeGreaterThan(0);
       }
       
       // Provide one-line verification command
