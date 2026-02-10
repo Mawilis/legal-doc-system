@@ -1,155 +1,145 @@
 /* eslint-env jest */
-'use strict';
+const CompetitiveAdvantageMatrix = require('./competitive-advantage-matrix');
 
-// MARKET VALIDATION
-// Manual pain: $500B legal tech market analysis done manually
-// Automated solution: AI-powered competitive intelligence matrix
-// Estimated savings: R500K/year per enterprise client
+// Mock dependencies
+jest.mock('../../utils/logger', () => ({
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn()
+}));
 
-// Data Source: Gartner Legal Tech Quadrant 2024
-// Assumptions: 40% market share achievable, 78.7% gross margins
+jest.mock('../../utils/auditLogger', () => ({
+  audit: jest.fn(),
+  security: jest.fn(),
+  compliance: jest.fn()
+}));
 
-describe('CompetitiveAdvantageMatrix - Investor Due Diligence', () => {
-  let CompetitiveAdvantageMatrix;
-  let logger;
-  let auditLogger;
-  let cryptoUtils;
+jest.mock('../../utils/cryptoUtils', () => ({
+  encrypt: jest.fn((data) => `encrypted_${data}`),
+  decrypt: jest.fn((data) => data.replace('encrypted_', '')),
+  hash: jest.fn(() => 'hashed_value')
+}));
+
+describe('CompetitiveAdvantageMatrix', () => {
+  let matrix;
 
   beforeEach(() => {
-    // Mock dependencies
-    logger = {
-      info: jest.fn(),
-      error: jest.fn()
-    };
-    
-    auditLogger = jest.fn().mockResolvedValue();
-    
-    cryptoUtils = {
-      generateHash: jest.fn().mockReturnValue('mock-hash-1234567890')
-    };
-
-    jest.mock('../../utils/logger', () => logger);
-    jest.mock('../../utils/auditLogger', () => auditLogger);
-    jest.mock('../../utils/cryptoUtils', () => cryptoUtils);
-
-    CompetitiveAdvantageMatrix = require('./competitive-advantage-matrix');
+    matrix = new CompetitiveAdvantageMatrix();
+    jest.clearAllMocks();
   });
 
-  test('TC1: Generate competitive analysis with economic metrics', () => {
-    console.log('   📊 Testing competitive analysis generation...');
-    
-    const matrix = new CompetitiveAdvantageMatrix();
-    const analysis = matrix.generateAnalysis('tenant-legal-tech-2024');
-
-    // Assert tenant isolation
-    expect(analysis.tenantId).toBe('tenant-legal-tech-2024');
-    
-    // Assert competitive advantages
-    expect(analysis.competitiveAdvantages).toHaveLength(4);
-    expect(analysis.competitiveAdvantages[0].advantage).toMatch(/\+[0-9]+%/);
-    
-    // Assert economic impact
-    expect(analysis.economicImpact.annualSavingsPerClient).toBe(500000);
-    expect(analysis.economicImpact.clientROI).toBe(5.9);
-    
-    // Assert audit trail
-    expect(logger.info).toHaveBeenCalledWith(
-      'Competitive analysis generated',
-      expect.objectContaining({
-        tenantId: 'tenant-legal-tech-2024'
-      })
-    );
-
-    console.log('   ✅ TC1: Competitive analysis PASSED');
-    console.log('   ✓ Annual Savings/Client: R500,000');
+  describe('Initialization', () => {
+    test('should initialize with empty matrix', () => {
+      expect(matrix.getMatrix()).toEqual({});
+    });
   });
 
-  test('TC2: Generate investor matrix with valuation metrics', () => {
-    console.log('   💰 Testing investor matrix generation...');
-    
-    const matrix = new CompetitiveAdvantageMatrix();
-    const investorMatrix = matrix.generateInvestorMatrix();
+  describe('addCompetitor', () => {
+    test('should add competitor to matrix', () => {
+      const competitor = {
+        id: 'comp1',
+        name: 'Competitor 1',
+        strengths: ['tech', 'team'],
+        weaknesses: ['market', 'funding']
+      };
 
-    // Assert investor metrics
-    expect(investorMatrix.projectedValuation).toBe(500000000);
-    expect(investorMatrix.requiredInvestment).toBe(50000000);
-    expect(investorMatrix.exitMultiples.revenue).toBe(10);
-    
-    // Assert market position
-    expect(investorMatrix.marketPosition).toBe('Disruptor - Quadrant 1');
-    
-    // Assert audit trail with retention metadata
-    expect(auditLogger).toHaveBeenCalledWith(
-      'COMPETITIVE_ANALYSIS_GENERATED',
-      'system',
-      expect.objectContaining({
-        matrixGenerated: true,
-        valuation: 500000000
-      }),
-      expect.objectContaining({
-        retentionPolicy: 'companies_act_10_years',
-        dataResidency: 'ZA'
-      })
-    );
+      matrix.addCompetitor(competitor);
+      const result = matrix.getMatrix();
 
-    // Generate deterministic evidence
-    const evidence = {
-      auditEntries: auditLogger.mock.calls.map(call => ({
-        action: call[0],
-        user: call[1],
-        details: call[2],
-        metadata: call[3]
-      })),
-      hash: cryptoUtils.generateHash(Buffer.from(JSON.stringify(investorMatrix))),
-      timestamp: new Date().toISOString()
-    };
-
-    // Write evidence to file
-    const fs = require('fs');
-    const path = require('path');
-    fs.writeFileSync(
-      path.join(__dirname, 'competitive-analysis-evidence.json'),
-      JSON.stringify(evidence, null, 2)
-    );
-
-    console.log('   ✅ TC2: Investor matrix PASSED');
-    console.log('   ✓ Projected Valuation: $500M');
-    console.log('   ✓ Required Investment: $50M');
-    console.log('   ✓ Exit Multiple: 10x revenue');
+      expect(result['comp1']).toBeDefined();
+      expect(result['comp1'].name).toBe('Competitor 1');
+    });
   });
 
-  test('TC3: Economic validation for billion-dollar potential', () => {
-    console.log('   🚀 Testing billion-dollar economic validation...');
-    
-    // Economic Model
-    const targetEnterprises = 1000;
-    const avgAnnualContract = 75000;
-    const annualRevenue = targetEnterprises * avgAnnualContract;
-    
-    const infrastructure = 3000000;
-    const engineering = 8000000;
-    const sales = 5000000;
-    const totalCosts = infrastructure + engineering + sales;
-    
-    const netProfit = annualRevenue - totalCosts;
-    const profitMargin = (netProfit / annualRevenue) * 100;
-    const roi = (netProfit / 10000000) * 100;
-    
-    const clientSavings = targetEnterprises * 150000;
+  describe('analyzeAdvantage', () => {
+    test('should calculate competitive advantage score', () => {
+      const competitor = {
+        id: 'comp1',
+        name: 'Competitor 1',
+        strengths: ['tech', 'team'],
+        weaknesses: ['market']
+      };
 
-    // Investor-Grade Assertions
-    expect(annualRevenue).toBe(75000000); // $75M
-    expect(netProfit).toBe(59000000); // $59M
-    expect(profitMargin).toBeCloseTo(78.7, 1);
-    expect(roi).toBe(590); // 590%
-    expect(clientSavings).toBe(150000000); // $150M
+      matrix.addCompetitor(competitor);
+      const score = matrix.analyzeAdvantage('comp1');
 
-    console.log('   ✅ TC3: Economic validation PASSED');
-    console.log('   📊 Investor Metrics:');
-    console.log(`      • Annual Revenue: $${annualRevenue.toLocaleString()}`);
-    console.log(`      • Net Profit: $${netProfit.toLocaleString()}`);
-    console.log(`      • Profit Margin: ${profitMargin.toFixed(1)}%`);
-    console.log(`      • ROI: ${roi}%`);
-    console.log(`      • Client Savings: $${clientSavings.toLocaleString()}`);
+      expect(typeof score).toBe('number');
+      expect(score).toBeGreaterThanOrEqual(0);
+      expect(score).toBeLessThanOrEqual(100);
+    });
+  });
+
+  describe('generateReport', () => {
+    test('should generate valid report', () => {
+      const competitors = [
+        {
+          id: 'comp1',
+          name: 'Competitor 1',
+          strengths: ['tech'],
+          weaknesses: ['market']
+        },
+        {
+          id: 'comp2',
+          name: 'Competitor 2',
+          strengths: ['market'],
+          weaknesses: ['tech']
+        }
+      ];
+
+      competitors.forEach(comp => matrix.addCompetitor(comp));
+      const report = matrix.generateReport();
+
+      expect(report).toHaveProperty('timestamp');
+      expect(report).toHaveProperty('analysis');
+      expect(report).toHaveProperty('recommendations');
+      expect(Array.isArray(report.competitors)).toBe(true);
+    });
+  });
+
+  describe('Security and Compliance', () => {
+    test('should handle encrypted data', () => {
+      const encryptedCompetitor = {
+        id: 'encrypted_comp1',
+        name: 'encrypted_Competitor X',
+        strengths: ['encrypted_tech'],
+        weaknesses: ['encrypted_market']
+      };
+
+      matrix.addCompetitor(encryptedCompetitor);
+      
+      // The cryptoUtils mock should be called
+      const cryptoUtils = require('../../utils/cryptoUtils');
+      expect(cryptoUtils.decrypt).toHaveBeenCalled();
+    });
+
+    test('should audit analysis operations', () => {
+      const competitor = {
+        id: 'comp1',
+        name: 'Competitor 1',
+        strengths: ['tech'],
+        weaknesses: ['market']
+      };
+
+      matrix.addCompetitor(competitor);
+      matrix.analyzeAdvantage('comp1');
+
+      const auditLogger = require('../../utils/auditLogger');
+      expect(auditLogger.audit).toHaveBeenCalled();
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('should handle non-existent competitor', () => {
+      expect(() => {
+        matrix.analyzeAdvantage('nonexistent');
+      }).toThrow('Competitor not found');
+    });
+
+    test('should handle invalid competitor data', () => {
+      expect(() => {
+        matrix.addCompetitor({ invalid: 'data' });
+      }).toThrow('Invalid competitor data');
+    });
   });
 });

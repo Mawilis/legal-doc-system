@@ -1,0 +1,33 @@
+{
+  "testRunId": "test-1770612350396-rr1wh6hrw",
+  "auditEntries": [
+    {
+      "action": "COMPLIANCE_REPORT_GENERATED",
+      "user": "system",
+      "details": {
+        "tenantId": "global-law-firm",
+        "period": "2020-01-01 to 2024-12-31",
+        "totalDocuments": 3
+      },
+      "metadata": {
+        "retentionPolicy": "audit_only",
+        "dataResidency": "ZA",
+        "reportId": "report-1770612350397-global-law-firm"
+      },
+      "timestamp": "2026-02-09T04:45:50.397Z",
+      "evidenceId": "audit-1770612350397-sjnrtpbwi"
+    }
+  ],
+  "hash": "c1161ae6fa6eee5ac957921548120b9f0752c0690e84f7546eac1d546d7f5bf6",
+  "timestamp": "2026-02-09T04:45:50.396Z",
+  "economicMetrics": {
+    "complianceReporting": {
+      "manualAuditCost": 5000,
+      "automatedCost": 50,
+      "timeSaved": 40,
+      "riskReduction": "HIGH",
+      "complianceCoverage": "COMPREHENSIVE"
+    }
+  },
+  "complianceChecks": {}
+}

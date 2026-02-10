@@ -1,0 +1,60 @@
+{
+  "testRunId": "test-1770610744793-6k65pitqm",
+  "auditEntries": [
+    {
+      "action": "DOCUMENT_ARCHIVED",
+      "user": "retention-system",
+      "details": {
+        "documentId": "doc-retention-1",
+        "originalName": "[DOCUMENT_NAME_REDACTED]",
+        "tenantId": "financial-services-za",
+        "retentionPolicy": "popia_7_years"
+      },
+      "metadata": {
+        "retentionPolicy": "popia_7_years",
+        "dataResidency": "ZA",
+        "archivedAt": "2026-02-09T04:19:04.793Z"
+      },
+      "timestamp": "2026-02-09T04:19:04.793Z",
+      "evidenceId": "audit-1770610744793-5nn6kqitw"
+    },
+    {
+      "action": "DOCUMENT_ARCHIVED",
+      "user": "retention-system",
+      "details": {
+        "documentId": "doc-retention-2",
+        "originalName": "[DOCUMENT_NAME_REDACTED]",
+        "tenantId": "financial-services-za",
+        "retentionPolicy": "popia_7_years"
+      },
+      "metadata": {
+        "retentionPolicy": "popia_7_years",
+        "dataResidency": "ZA",
+        "archivedAt": "2026-02-09T04:19:04.793Z"
+      },
+      "timestamp": "2026-02-09T04:19:04.793Z",
+      "evidenceId": "audit-1770610744793-vxggdfxk9"
+    },
+    {
+      "action": "DOCUMENT_ARCHIVED",
+      "user": "retention-system",
+      "details": {
+        "documentId": "doc-current-1",
+        "originalName": "[DOCUMENT_NAME_REDACTED]",
+        "tenantId": "financial-services-za",
+        "retentionPolicy": "popia_7_years"
+      },
+      "metadata": {
+        "retentionPolicy": "popia_7_years",
+        "dataResidency": "ZA",
+        "archivedAt": "2026-02-09T04:19:04.793Z"
+      },
+      "timestamp": "2026-02-09T04:19:04.793Z",
+      "evidenceId": "audit-1770610744793-qpqc2zq2s"
+    }
+  ],
+  "hash": "5222cf194e83e18ee9e0cdb25b6a7ecea45f39a3cf05a2924cdf450badd559bd",
+  "timestamp": "2026-02-09T04:19:04.793Z",
+  "economicMetrics": {},
+  "complianceChecks": {}
+}

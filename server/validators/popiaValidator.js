@@ -88,11 +88,11 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') }
 const Joi = require('joi');
 Joi.objectId = require('joi-objectid')(Joi);
 const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
-const mongoose = require('mongoose');
+// const bcrypt = require("bcrypt"); // Unused variable
+// const mongoose = require("mongoose"); // Unused variable
 
 // Security utilities
-const { sanitizePIIInput } = require('../utils/securitySanitizer');
+// const { sanitizePIIInput } = require("../utils/piiSanitizer"); // Unused variable
 const validator = require('validator');
 const sanitizeHtml = require('sanitize-html');
 const xss = require('xss');
@@ -2867,8 +2867,8 @@ class QuantumPOPIAValidator {
      * Get statistics
      */
     getStatistics(timeframe = '24h') {
-        const now = new Date();
-        const startTime = new Date(now - 24 * 60 * 60 * 1000);
+        // const now = new Date();
+        // const startTime = Date.now(); // Unused variable
 
         return {
             timeframe,

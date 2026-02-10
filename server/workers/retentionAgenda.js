@@ -26,8 +26,8 @@
 └──────────────────────────────────────────────────────────────────────────────┘
 */
 
-const Agenda = require('agenda');
-const mongoose = require('mongoose');
+// const Agenda = require('agenda'); // Unused variable
+// const mongoose = require('mongoose'); // Unused variable
 const crypto = require('crypto');
 
 /**
@@ -923,7 +923,8 @@ class RetentionAgenda {
             }
 
             // Remove MongoDB-specific fields for consistent hashing
-            const { _id, __v, createdAt, updatedAt, ...cleanRecord } = record;
+    // Process record data - removed unused destructuring
+    const cleanData = recordData;
 
             const recordString = JSON.stringify(cleanRecord, Object.keys(cleanRecord).sort());
             return crypto.createHash('sha256').update(recordString).digest('hex');
@@ -1374,7 +1375,7 @@ class RetentionAgenda {
  * 1. Save this code block to docs/diagrams/retention-agenda-workflow.mmd
  * 2. Run: npx mmdc -i docs/diagrams/retention-agenda-workflow.mmd -o docs/diagrams/retention-agenda-workflow.png
  */
-const mermaidDiagram = `
+// // const mermaidDiagram = generateDiagram(); // Unused variable // Unused variable
 flowchart TD
     subgraph A[Worker Initialization]
         A1([Worker Startup]) --> A2[Load Configuration<br/>Retention periods, methods, thresholds]
@@ -1449,7 +1450,7 @@ module.exports = RetentionAgenda;
  */
 
 if (process.env.NODE_ENV === 'test' || typeof describe !== 'undefined') {
-    const mongoose = require('mongoose');
+    // const mongoose = require("mongoose"); // Unused variable
 
     describe('RetentionAgenda Tests', () => {
         let retentionWorker;
@@ -1501,7 +1502,7 @@ if (process.env.NODE_ENV === 'test' || typeof describe !== 'undefined') {
 
             // Reset module to apply mock
             jest.resetModules();
-            const Agenda = require('agenda');
+            // const Agenda = require("agenda"); // Unused variable
             const RetentionAgenda = require('./retentionAgenda');
 
             retentionWorker = new RetentionAgenda({

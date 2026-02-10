@@ -34,7 +34,7 @@ const cryptoUtils = require('../../utils/cryptoUtils');
 const Document = require('../../models/Document');
 
 // POPIA Redaction Fields (from utils/)
-const { REDACT_FIELDS, redactSensitive } = require('../../utils/popiaUtils');
+const { redactSensitive } = require('../../utils/popiaUtils');
 
 /**
  * Document Vault Service - Secure multi-tenant document management

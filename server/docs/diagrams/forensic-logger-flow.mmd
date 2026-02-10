@@ -1,0 +1,29 @@
+flowchart TD
+    A[Log Event] --> B{POPIA Compliance Check}
+    B -->|Contains PII| C[Mask Sensitive Data]
+    B -->|No PII| D[Format Log Entry]
+    C --> D
+    
+    D --> E[Quantum Timestamp<br/>RFC 3161/Blockchain Ready]
+    E --> F[Tenant Context Injection]
+    F --> G[Immutable Write]
+    
+    G --> H{Storage Strategy}
+    H -->|High Priority| I[File + Blockchain Anchor]
+    H -->|Standard| J[Compressed Archive]
+    H -->|Audit| K[GDPR/POPIA Export Ready]
+    
+    I --> L[Super Admin Dashboard]
+    J --> L
+    K --> L
+    
+    L --> M[Forensic Search & Analytics]
+    M --> N[Legal Evidence Package]
+    
+    style A fill:#ff6b6b
+    style C fill:#feca57
+    style E fill:#1dd1a1
+    style N fill:#54a0ff,stroke:#333,stroke-width:4px
+    
+    linkStyle 0 stroke:#ff6b6b,stroke-width:2px
+    linkStyle 7 stroke:#1dd1a1,stroke-width:3px

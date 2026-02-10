@@ -34,7 +34,7 @@ const {
     POPIA_CONSENT_TYPES,
     POPIA_8_LAWFUL_CONDITIONS,
     SPECIAL_PERSONAL_INFORMATION,
-    POPIA_RETENTION_PERIODS
+// // const POPIA_RETENTION_PERIODS = require("../constants/popiaRetentionPeriods"); // Unused variable
 } = require('../constants/complianceConstants');
 
 // ============================================================================

@@ -1,0 +1,33 @@
+{
+  "testRunId": "test-1770611170911-byqzdhoi6",
+  "auditEntries": [
+    {
+      "action": "DOCUMENT_STORED",
+      "user": {
+        "userId": "partner-jane-smith",
+        "userName": "Jane Smith, Esq.",
+        "userRole": "SENIOR_PARTNER"
+      },
+      "details": {
+        "documentId": "mock-doc-mvhaghdm5",
+        "originalName": "[DOCUMENT_NAME_REDACTED]",
+        "size": 5242880,
+        "confidentiality": "SECRET",
+        "tenantId": "silicon-valley-law-firm-2026",
+        "caseId": "case-sv-2026-001"
+      },
+      "metadata": {
+        "retentionPolicy": "companies_act_10_years",
+        "dataResidency": "US-CALIFORNIA",
+        "retentionStart": "2026-02-09T04:26:10.912Z",
+        "legalBasis": "Companies Act 71 of 2008"
+      },
+      "timestamp": "2026-02-09T04:26:10.912Z",
+      "evidenceId": "audit-1770611170912-yfhbzkcwh"
+    }
+  ],
+  "hash": "7abeb739d9b11531625dfae76d8c191366c8fd4951da83a3f267f3659ff667b1",
+  "timestamp": "2026-02-09T04:26:10.911Z",
+  "economicMetrics": {},
+  "complianceChecks": {}
+}

@@ -82,7 +82,7 @@ const monitoring = require('../utils/monitoring');
 const auditService = require('../services/auditService');
 
 // QUANTUM COMPLIANCE: Legal framework integration
-const complianceService = require('../services/complianceService');
+// const complianceService = require("../services/complianceService"); // Unused variable
 
 // QUANTUM AI: Risk scoring and anomaly detection
 const riskScoringService = process.env.ENABLE_AI_RISK_SCORING === 'true'

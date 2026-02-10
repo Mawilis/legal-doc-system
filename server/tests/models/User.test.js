@@ -29,7 +29,6 @@ graph TD
 */
 
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
 // Mock utilities
@@ -76,8 +75,12 @@ describe('User Model V25.0 - Quantum Identity Colossus', () => {
   let evidenceData = { auditEntries: [], hash: '', timestamp: '' };
 
   beforeAll(async () => {
-    // Connect to test database
-    await mongoose.connect(process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/test_wilsy_users', {
+    // Use in-memory MongoDB for testing
+    const { MongoMemoryServer } = require('mongodb-memory-server');
+    const mongod = await MongoMemoryServer.create();
+    const uri = mongod.getUri();
+    
+    await mongoose.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });

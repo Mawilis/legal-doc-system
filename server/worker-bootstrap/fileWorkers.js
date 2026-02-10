@@ -25,7 +25,7 @@
 'use strict';
 
 const os = require('os');
-const path = require('path');
+// const path = require("path"); // Unused variable
 const { promisify } = require('util');
 const setTimeoutAsync = promisify(setTimeout);
 

@@ -1,0 +1,50 @@
+{
+  "testRunId": "test-1770611198312-dk92wrbdl",
+  "auditEntries": [],
+  "hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "timestamp": "2026-02-09T04:26:38.312Z",
+  "economicMetrics": {
+    "investorModel": {
+      "businessModel": {
+        "totalLawFirmsSA": 5000,
+        "totalLawFirmsGlobal": 500000,
+        "targetMarketPenetration": 0.01,
+        "pricingTiers": {
+          "STARTER": {
+            "monthly": 299,
+            "annual": 2999,
+            "features": "Basic Document Management"
+          },
+          "PROFESSIONAL": {
+            "monthly": 799,
+            "annual": 7999,
+            "features": "Advanced Compliance + AI"
+          },
+          "ENTERPRISE": {
+            "monthly": 1999,
+            "annual": 19999,
+            "features": "Full Suite + Custom Integration"
+          }
+        },
+        "customerAcquisitionCost": 3000,
+        "annualHostingCostPerClient": 500,
+        "annualSupportCostPerClient": 1000,
+        "developmentAmortization": 150000,
+        "manualDocumentProcessingHours": 20,
+        "hourlyLegalAssistantRate": 600,
+        "automatedProcessingCost": 50
+      },
+      "targetClients": 50,
+      "annualRevenue": 399950,
+      "annualClientSavings": 143950,
+      "totalMarketSavings": 7197500,
+      "grossProfit": 174950,
+      "netProfit": 24950,
+      "roi": "16.6",
+      "paybackMonths": "4.5",
+      "valuationMultiple": 10,
+      "potentialValuation": 3999500
+    }
+  },
+  "complianceChecks": {}
+}

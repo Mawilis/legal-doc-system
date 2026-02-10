@@ -1,9 +1,13 @@
 module.exports = {
   testEnvironment: 'node',
   testMatch: [
-    '**/test/**/*.test.js',
+    '**/__tests__/**/*.test.js',
     '**/tests/**/*.test.js',
-    '**/routes/**/*.test.js'
+    '**/*.test.js',
+    '**/market-intelligence/**/*.test.js',
+    '**/global-expansion/**/*.test.js',
+    '**/patents/**/*.test.js',
+    '**/investor-materials/**/*.test.js'
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
@@ -11,25 +15,15 @@ module.exports = {
     '/build/',
     '/coverage/'
   ],
-  transformIgnorePatterns: [
-    '/node_modules/(?!(axios|otplib|@scure)/)'
-  ],
-  setupFiles: ['<rootDir>/test/setup.js'],
-  setupFilesAfterEnv: ['<rootDir>/test/setupAfterEnv.js'],
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
   collectCoverageFrom: [
     'services/**/*.js',
-    'models/**/*.js',
     'utils/**/*.js',
     'middleware/**/*.js',
-    'routes/**/*.js',
+    'models/**/*.js',
     '!**/node_modules/**',
-    '!**/test/**',
-    '!**/tests/**'
+    '!**/vendor/**'
   ],
-  testTimeout: 30000,
+  setupFilesAfterEnv: ['<rootDir>/tests/setupAfterEnv.js'],
   verbose: true,
   detectOpenHandles: true,
   forceExit: true

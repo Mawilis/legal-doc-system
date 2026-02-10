@@ -1,163 +1,149 @@
-/*╔════════════════════════════════════════════════════════════════╗
-  ║ COMPETITIVE ADVANTAGE MATRIX - INVESTOR-GRADE MODULE         ║
-  ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
-  ╚════════════════════════════════════════════════════════════════╝*/
-/**
- * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/market-intelligence/competitor-analysis/competitive-advantage-matrix.js
- * INVESTOR VALUE PROPOSITION:
- * • Solves: R500K/year manual competitor analysis
- * • Generates: R2M/year revenue advantage @ 85% margin
- * • Compliance: Competitive intelligence legal boundaries respected
- */
-
-// INTEGRATION_HINT: imports -> [utils/logger, utils/cryptoUtils]
-// INTEGRATION MAP:
-// {
-//   "expectedConsumers": ["DOMINATION_PLAN.md", "investor-materials/pitch-decks/"],
-//   "expectedProviders": ["../utils/logger", "../utils/cryptoUtils"]
-// }
-
-/* MERMAID INTEGRATION DIAGRAM:
-graph TD
-    A[DOMINATION_PLAN.md] --> B[competitive-advantage-matrix.js]
-    C[investor-materials/pitch-decks] --> B
-    B --> D[utils/logger]
-    B --> E[utils/cryptoUtils]
-*/
-
 const logger = require('../../utils/logger');
+const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
 
-/**
- * Competitive Advantage Matrix Analysis
- * 
- * ASSUMPTIONS:
- * - Competitors: Clio, Lawmatics, LexisNexis, Thomson Reuters
- * - Analysis Dimensions: Technology, Compliance, Pricing, Market Share
- * - Data Source: Gartner Legal Tech Quadrant 2024, IDC Market Analysis
- */
-
 class CompetitiveAdvantageMatrix {
-  constructor() {
-    this.competitors = {
-      CLIO: {
-        strength: 'Practice Management',
-        weakness: 'Limited Compliance Depth',
-        marketShare: '35% SMB',
-        pricing: 'Mid-market'
-      },
-      LAWMATICS: {
-        strength: 'Marketing Automation',
-        weakness: 'No Enterprise Security',
-        marketShare: '15% SMB',
-        pricing: 'Low-end'
-      },
-      LEXIS_NEXIS: {
-        strength: 'Content Library',
-        weakness: 'Legacy Technology',
-        marketShare: '25% Enterprise',
-        pricing: 'Premium'
-      },
-      OUR_PLATFORM: {
-        strength: 'Zero-Trust Compliance',
-        weakness: 'New Market Entrant',
-        marketShare: 'Projected 40%',
-        pricing: 'Value-based'
-      }
-    };
-  }
-
-  /**
-   * Generate competitive analysis with economic metrics
-   */
-  generateAnalysis(tenantId) {
-    // Validate tenant format
-    if (!tenantId || !/^[a-zA-Z0-9_-]{8,64}$/.test(tenantId)) {
-      throw new Error(`Invalid tenantId format: ${tenantId}`);
+    constructor() {
+        this.matrix = {};
+        this.analysisHistory = [];
+        logger.info('CompetitiveAdvantageMatrix initialized');
     }
 
-    const analysis = {
-      tenantId,
-      timestamp: new Date().toISOString(),
-      competitiveAdvantages: [],
-      economicImpact: {},
-      hash: cryptoUtils.generateHash(Buffer.from(JSON.stringify(this.competitors)))
-    };
+    getMatrix() {
+        return this.matrix;
+    }
 
-    // Calculate advantages
-    analysis.competitiveAdvantages = [
-      {
-        dimension: 'Technology',
-        advantage: '+90%',
-        evidence: 'Zero-trust architecture vs Basic auth'
-      },
-      {
-        dimension: 'Compliance',
-        advantage: '+85%',
-        evidence: 'Built-in POPIA/GDPR vs Manual compliance'
-      },
-      {
-        dimension: 'Pricing',
-        advantage: '+60%',
-        evidence: 'Value-based pricing vs Per-user pricing'
-      },
-      {
-        dimension: 'Time-to-Value',
-        advantage: '+70%',
-        evidence: '30-day implementation vs 6-12 months'
-      }
-    ];
+    addCompetitor(competitor) {
+        if (!competitor || !competitor.id || !competitor.name) {
+            throw new Error('Invalid competitor data');
+        }
 
-    // Calculate economic impact
-    analysis.economicImpact = {
-      annualSavingsPerClient: 500000, // R500K
-      marketCapturePotential: 4000000000, // $4B
-      clientROI: 5.9, // 590%
-      competitiveMoats: [
-        'Patent-pending AI compliance',
-        'Multi-tenant isolation',
-        'Global regulatory pre-certification'
-      ]
-    };
+        // Decrypt encrypted data if present
+        const decryptedCompetitor = {
+            ...competitor,
+            name: competitor.name.startsWith('encrypted_') 
+                ? cryptoUtils.decrypt(competitor.name) 
+                : competitor.name
+        };
 
-    logger.info('Competitive analysis generated', {
-      tenantId,
-      advantages: analysis.competitiveAdvantages.length,
-      economicImpact: analysis.economicImpact.annualSavingsPerClient
-    });
+        this.matrix[competitor.id] = decryptedCompetitor;
+        logger.info(`Added competitor: ${decryptedCompetitor.name}`);
+        auditLogger.audit({
+            action: 'ADD_COMPETITOR',
+            competitorId: competitor.id,
+            timestamp: new Date()
+        });
 
-    return analysis;
-  }
+        return decryptedCompetitor;
+    }
 
-  /**
-   * Generate investor-ready competitive matrix
-   */
-  generateInvestorMatrix() {
-    const matrix = {
-      timestamp: new Date().toISOString(),
-      marketPosition: 'Disruptor - Quadrant 1',
-      timeToMarketLeadership: '36 months',
-      requiredInvestment: 50000000, // $50M
-      projectedValuation: 500000000, // $500M
-      exitMultiples: {
-        revenue: 10,
-        ebitda: 25,
-        strategic: 15
-      }
-    };
+    analyzeAdvantage(competitorId) {
+        const competitor = this.matrix[competitorId];
+        if (!competitor) {
+            throw new Error('Competitor not found');
+        }
 
-    // Audit the generation
-    const auditLogger = require('../../utils/auditLogger');
-    auditLogger('COMPETITIVE_ANALYSIS_GENERATED', 'system', {
-      matrixGenerated: true,
-      valuation: matrix.projectedValuation
-    }, {
-      retentionPolicy: 'companies_act_10_years',
-      dataResidency: 'ZA'
-    });
+        auditLogger.audit({
+            action: 'ANALYZE_ADVANTAGE',
+            competitorId,
+            timestamp: new Date()
+        });
 
-    return matrix;
-  }
+        // Calculate advantage score based on strengths and weaknesses
+        const strengths = competitor.strengths || [];
+        const weaknesses = competitor.weaknesses || [];
+        
+        if (strengths.length === 0 && weaknesses.length === 0) {
+            return 50; // Neutral score
+        }
+
+        const strengthScore = strengths.length * 10;
+        const weaknessPenalty = weaknesses.length * 5;
+        let score = 50 + strengthScore - weaknessPenalty;
+
+        // Ensure score is between 0 and 100
+        score = Math.max(0, Math.min(100, score));
+
+        logger.debug(`Advantage score for ${competitorId}: ${score}`);
+        return score;
+    }
+
+    generateReport() {
+        const competitors = Object.values(this.matrix);
+        
+        // Calculate overall market position
+        const totalScore = competitors.reduce((sum, comp) => {
+            try {
+                return sum + this.analyzeAdvantage(comp.id);
+            } catch {
+                return sum;
+            }
+        }, 0);
+        
+        const averageScore = competitors.length > 0 ? totalScore / competitors.length : 0;
+
+        const report = {
+            timestamp: new Date().toISOString(),
+            competitors: competitors.map(comp => ({
+                id: comp.id,
+                name: comp.name,
+                score: this.analyzeAdvantage(comp.id),
+                strengths: comp.strengths || [],
+                weaknesses: comp.weaknesses || []
+            })),
+            analysis: {
+                totalCompetitors: competitors.length,
+                averageAdvantageScore: averageScore,
+                marketPosition: this.getMarketPosition(averageScore),
+                recommendations: this.generateRecommendations(competitors)
+            },
+            recommendations: this.generateRecommendations(competitors)
+        };
+
+        auditLogger.audit({
+            action: 'GENERATE_REPORT',
+            reportId: `report_${Date.now()}`,
+            timestamp: new Date()
+        });
+
+        return report;
+    }
+
+    getMarketPosition(score) {
+        if (score >= 70) return 'LEADER';
+        if (score >= 40) return 'CHALLENGER';
+        if (score >= 20) return 'FOLLOWER';
+        return 'NICHE';
+    }
+
+    generateRecommendations(competitors) {
+        const recommendations = [];
+        
+        competitors.forEach(comp => {
+            const score = this.analyzeAdvantage(comp.id);
+            
+            if (score < 30) {
+                recommendations.push({
+                    competitor: comp.name,
+                    action: 'EXPLOIT_WEAKNESS',
+                    details: `Target ${comp.name}'s weaknesses: ${(comp.weaknesses || []).join(', ')}`
+                });
+            } else if (score > 70) {
+                recommendations.push({
+                    competitor: comp.name,
+                    action: 'MONITOR_CLOSELY',
+                    details: `${comp.name} is a strong competitor with strengths: ${(comp.strengths || []).join(', ')}`
+                });
+            }
+        });
+
+        return recommendations;
+    }
+
+    clearMatrix() {
+        this.matrix = {};
+        logger.info('Competitive advantage matrix cleared');
+    }
 }
 
 module.exports = CompetitiveAdvantageMatrix;
