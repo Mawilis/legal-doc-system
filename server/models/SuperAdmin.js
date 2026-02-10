@@ -69,443 +69,199 @@ const speakeasy = require('speakeasy');
 // QUANTUM SOVEREIGN SCHEMA - DIVINE OVERSCHEMA
 // =============================================================================
 const superAdminSchema = new Schema({
-    // =========================================================================
-    // DIVINE IDENTITY QUANTUM (Immortal Recognition)
-    // =========================================================================
+    // Divine Identity Quantum (Immortal Recognition)
     quantumId: {
         type: String,
         required: true,
         unique: true,
-        default: () => `SUPREME-${uuidv4().toUpperCase()}`,
+        default: () => `SUPREME-${require('uuid').v4().toUpperCase()}`,
         index: true,
-        immutable: true,
-        eternalquantumidentifierunchangingacrossalldimensions: String
+        immutable: true
     },
 
+    // Hierarchy
     sovereignTier: {
         type: String,
         required: true,
-        enum: ['OMEGA', 'ALPHA', 'BETA'],
-        default: 'OMEGA',
-        hierarchyofdivineauthorityomegasupreme: String
+        enum: ['Alpha', 'Beta', 'Gamma', 'Delta', 'Omega'],
+        default: 'Omega'
     },
 
-    // =========================================================================
-    // PERSONAL QUANTUM NEXUS (Legal Identification)
-    // =========================================================================
-    legalName: {
+    // Personal Information
+    fullName: {
         type: String,
         required: true,
-        trim: true,
-        match: /^[A-Za-z\s\-']{2,100}$/,
-        legalnameaspersouthafricanid: String
+        trim: true
     },
 
-    encryptedLegalName: {
+    fullNameEncrypted: {
         type: String,
-        select: false,
-        256gcmencryptedlegalidentity: String
+        select: false
     },
 
-    idNumber: {
+    // South African ID
+    saIdNumber: {
         type: String,
         required: true,
-        unique: true,
-        match: /^[0-9]{13}$/,
-        africanidnumber13digits: String
+        validate: {
+            validator: function(v) {
+                return /^[0-9]{13}$/.test(v);
+            },
+            message: 'SA ID must be 13 digits'
+        }
     },
 
-    encryptedIdNumber: {
+    saIdNumberEncrypted: {
+        type: String,
+        select: false
+    },
+
+    citizenshipStatus: {
         type: String,
         required: true,
-        select: false,
-        idnumberpopiacompliance: String
+        enum: ['SA Citizen', 'Permanent Resident', 'Foreign National'],
+        default: 'SA Citizen'
     },
 
-    saCitizen: {
-        type: Boolean,
-        required: true,
-        default: true,
-        mustbesouthafricancitizenperficasection21a: String
-    },
-
-    // =========================================================================
-    // CONTACT QUANTUM NEXUS (Secure Communication)
-    // =========================================================================
-    officialEmail: {
+    // Contact Information
+    email: {
         type: String,
         required: true,
         unique: true,
         lowercase: true,
-        match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-        emailforlegalcommunications: String
+        trim: true,
+        match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email format']
     },
 
-    encryptedEmail: {
+    emailEncrypted: {
         type: String,
-        select: false,
-        emailforbreachprotection: String
+        select: false
     },
 
     mobileNumber: {
         type: String,
         required: true,
-        unique: true,
-        match: /^\+27[0-9]{9}$/,
-        africanmobileformat27xxxxxxxxx: String
+        match: [/^\+27[0-9]{9}$/, 'Must be South African format: +27XXXXXXXXX']
+    },
+
+    mobileNumberEncrypted: {
+        type: String,
+        select: false
     },
 
     emergencyContact: {
-        name: String,
-        relationship: String,
-        phone: String,
-        encryptedPhone: String,
-        emergencyContact: String
+        type: String,
+        default: ''
     },
 
-    // =========================================================================
-    // SECURITY QUANTUM CITADEL (Beyond Military Grade)
-    // =========================================================================
+    // Security
     password: {
         type: String,
         required: true,
         minlength: 24,
-        select: false,
-        resistantpassword24charactersmandatory: String
+        select: false
     },
 
-    mfaSecret: {
+    totpSecret: {
         type: String,
-        select: false,
-        secretformultifactorauthentication: String
+        select: false
     },
 
-    mfaBackupCodes: [{
-        code: String,
-        used: { type: Boolean, default: false },
-        createdAt: Date
-    }],
-
-    biometricData: {
+    // Biometric Authentication
+    biometricAuth: {
         fingerprintHash: { type: String, select: false },
         facialRecognitionId: { type: String, select: false },
-        retinaHash: { type: String, select: false },
-        modalbiometricauthenticationwebauthn: String
+        retinaHash: { type: String, select: false }
     },
 
-    securityQuestions: [{
-        question: String,
-        answerHash: String,
-        createdAt: Date
-    }],
-
-    lastPasswordChange: {
-        type: Date,
-        default: Date.now,
-        rotationtracking90daymandate: String
-    },
-
-    passwordHistory: [{
-        hash: String,
-        changedAt: Date
-    }],
-
-    // =========================================================================
-    // LEGAL AUTHORITY QUANTUM (SA Statutory Mandates)
-    // =========================================================================
-    legalAppointments: [{
-        role: {
-            type: String,
-            enum: [
-                'INFORMATION_OFFICER',
-                'COMPLIANCE_OFFICER',
-                'PRACTICE_MANAGER',
-                'AUDIT_COMMITTEE_CHAIR',
-                'SECURITY_MANAGER',
-                'SYSTEM_CONTROLLER'
-            ]
-        },
-        statute: String,
-        section: String,
-        appointmentDate: Date,
-        termExpiry: Date,
-        certificateUrl: String,
-        verified: Boolean
-    }],
-
-    lpcRegistration: {
-        number: String,
-        dateIssued: Date,
-        expiryDate: Date,
-        status: String,
-        verified: Boolean
-    },
-
-    ficaCertification: {
-        level: String,
-        certificateNumber: String,
-        issuer: String,
-        expiryDate: Date,
-        verified: Boolean
-    },
-
-    professionalIndemnity: {
-        insurer: String,
-        policyNumber: String,
-        coverageAmount: Number,
-        expiryDate: Date,
-        certificateUrl: String
-    },
-
-    // =========================================================================
-    // TENANT COMMAND QUANTUM (Multi-Firm Governance)
-    // =========================================================================
-    managedTenants: [{
-        tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant' }, // FIXED: Schema.Types
-        firmName: String,
-        registrationDate: Date,
-        accessLevel: {
-            type: String,
-            enum: ['FULL', 'COMPLIANCE_ONLY', 'FINANCIAL_ONLY', 'MONITORING']
-        },
-        lastAudit: Date,
-        status: String
-    }],
-
-    tenantLimits: {
-        maxTenants: { type: Number, default: 10000 },
-        activeTenants: { type: Number, default: 0 },
-        maxFirmSize: { type: String, enum: ['SMALL', 'MEDIUM', 'LARGE', 'ENTERPRISE'] }
-    },
-
-    regionalJurisdiction: [{
-        province: {
-            type: String,
-            enum: [
-                'GAUTENG', 'WESTERN_CAPE', 'KWAZULU_NATAL', 'EASTERN_CAPE',
-                'LIMPOPO', 'MPUMALANGA', 'NORTH_WEST', 'FREE_STATE',
-                'NORTHERN_CAPE'
-            ]
-        },
-        assignedDate: Date,
-        authorityLevel: String
-    }],
-
-    // =========================================================================
-    // COMPLIANCE SOVEREIGNTY QUANTUM (Enforcement Powers)
-    // =========================================================================
-    compliancePowers: {
-        canSuspendTenants: { type: Boolean, default: true },
-        canAccessAllData: { type: Boolean, default: true },
-        canOverrideDecisions: { type: Boolean, default: true },
-        canIssueFines: { type: Boolean, default: true },
-        canInitiateAudits: { type: Boolean, default: true },
-        canExportComplianceData: { type: Boolean, default: true },
-        canModifyRetention: { type: Boolean, default: false }
-    },
-
-    auditSchedule: {
-        daily: { type: Boolean, default: true },
-        weekly: { type: Boolean, default: true },
-        monthly: { type: Boolean, default: true },
-        quarterly: { type: Boolean, default: true },
-        annual: { type: Boolean, default: true }
-    },
-
-    // =========================================================================
-    // FINANCIAL SOVEREIGNTY QUANTUM (Revenue Oversight)
-    // =========================================================================
-    financialAuthority: {
-        maxRefundAmount: { type: Number, default: 1000000 },
-        canIssueRefunds: { type: Boolean, default: true },
-        canAdjustInvoices: { type: Boolean, default: true },
-        canAccessRevenueReports: { type: Boolean, default: true },
-        canProcessBulkPayments: { type: Boolean, default: true },
-        taxClearancePin: { type: String, select: false }
-    },
-
-    billingOversight: {
-        revenueTarget: Number,
-        collectionRate: Number,
-        outstandingAmount: Number,
-        lastRevenueReport: Date
-    },
-
-    // =========================================================================
-    // EMERGENCY QUANTUM NEXUS (Crisis Management)
-    // =========================================================================
-    emergencyPowers: {
-        systemShutdown: { type: Boolean, default: true },
-        dataFreeze: { type: Boolean, default: true },
-        massNotification: { type: Boolean, default: true },
-        lawEnforcementAccess: { type: Boolean, default: true },
-        backupActivation: { type: Boolean, default: true }
-    },
-
-    emergencyContacts: [{
-        agency: String,
-        contactPerson: String,
-        phone: String,
-        email: String,
-        jurisdiction: String
-    }],
-
-    // =========================================================================
-    // SYSTEM OPERATIONS QUANTUM (Technical Control)
-    // =========================================================================
-    systemPermissions: {
-        databaseManagement: { type: Boolean, default: true },
-        serverRestart: { type: Boolean, default: true },
-        deploymentControl: { type: Boolean, default: true },
-        apiKeyManagement: { type: Boolean, default: true },
-        integrationApproval: { type: Boolean, default: true },
-        thirdPartyAccess: { type: Boolean, default: true }
-    },
-
-    apiKeys: [{
-        name: String,
-        keyHash: String,
-        createdAt: Date,
-        lastUsed: Date,
-        permissions: [String],
-        active: Boolean
-    }],
-
-    // =========================================================================
-    // ACTIVITY QUANTUM NEXUS (Immutable Audit Trail)
-    // =========================================================================
-    activityLog: [{
-        timestamp: { type: Date, default: Date.now },
-        action: String,
-        entityType: String,
-        entityId: String,
-        ipAddress: String,
-        userAgent: String,
-        location: String,
-        changes: Schema.Types.Mixed, // FIXED: Schema.Types
-        signature: String
-    }],
-
-    lastActive: {
+    // Security Metadata
+    passwordLastChanged: {
         type: Date,
         default: Date.now
     },
 
-    loginHistory: [{
-        timestamp: Date,
-        ipAddress: String,
-        location: String,
-        device: String,
-        successful: Boolean,
-        mfaUsed: Boolean
-    }],
+    failedLoginAttempts: {
+        type: Number,
+        default: 0
+    },
 
-    // =========================================================================
-    // METADATA QUANTUM NEXUS (Creation & Updates)
-    // =========================================================================
+    isLocked: {
+        type: Boolean,
+        default: false
+    },
+
+    lastLogin: {
+        type: Date
+    },
+
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+
+    // Administrative
     metadata: {
-        createdBy: {
-            type: String,
-            default: 'SYSTEM_GENESIS',
-            immutable: true
-        },
-        createdAt: {
-            type: Date,
-            default: Date.now,
-            immutable: true
-        },
-        updatedBy: { type: Schema.Types.ObjectId, ref: 'SuperAdmin' }, // FIXED: Schema.Types
-        updatedAt: { type: Date, default: Date.now },
-        version: { type: Number, default: 2 },
-        creationReason: String,
-        approvalChain: [{
-            approver: String,
-            role: String,
-            approvedAt: Date,
-            signature: String
-        }]
-    },
-
-    status: {
         type: String,
-        enum: [
-            'ACTIVE',
-            'SUSPENDED',
-            'PROBATION',
-            'EMERITUS',
-            'DECEASED',
-            'LEGALLY_RESTRICTED'
-        ],
-        default: 'ACTIVE',
-        index: true
+        default: ''
     },
 
-    statusReason: String,
-
-    // =========================================================================
-    // SUCCESSION QUANTUM NEXUS (Generational Continuity)
-    // =========================================================================
-    successor: {
-        adminId: { type: Schema.Types.ObjectId, ref: 'SuperAdmin' }, // FIXED: Schema.Types
-        designationDate: Date,
-        activationConditions: String,
-        approvalStatus: String
+    notes: {
+        type: String,
+        default: ''
     },
 
-    emergencySuccessor: {
-        adminId: { type: Schema.Types.ObjectId, ref: 'SuperAdmin' }, // FIXED: Schema.Types
-        contactDetails: String,
-        verificationMethod: String
+    mfaEnabled: {
+        type: Boolean,
+        default: false
     },
 
-    // =========================================================================
-    // INTEGRATION QUANTUM NEXUS (External Authority Links)
-    // =========================================================================
-    externalAuthorities: [{
-        authority: {
-            type: String,
-            enum: [
-                'LEGAL_PRACTICE_COUNCIL',
-                'SOUTH_AFRICAN_POLICE_SERVICE',
-                'FINANCIAL_INTELLIGENCE_CENTRE',
-                'SOUTH_AFRICAN_REVENUE_SERVICE',
-                'INFORMATION_REGULATOR',
-                'NATIONAL_PROSECUTING_AUTHORITY'
-            ]
-        },
-        contactId: String,
-        accessLevel: String,
-        lastVerified: Date
-    }]
+    role: {
+        type: String,
+        default: 'SuperAdmin',
+        immutable: true
+    },
+
+    permissions: {
+        type: [String],
+        default: ['*']
+    },
+
+    // Audit Trail
+    activityLog: {
+        type: [{
+            action: String,
+            timestamp: { type: Date, default: Date.now },
+            ipAddress: String,
+            userAgent: String,
+            details: mongoose.Schema.Types.Mixed
+        }],
+        default: []
+    },
+
+    auditTrail: {
+        type: [{
+            change: String,
+            by: String,
+            at: { type: Date, default: Date.now },
+            before: mongoose.Schema.Types.Mixed,
+            after: mongoose.Schema.Types.Mixed
+        }],
+        default: []
+    },
+
+    // Quantum Security
+    quantumSignature: {
+        type: String,
+        select: false
+    },
+
+    version: {
+        type: Number,
+        default: 1
+    }
 }, {
-    // =========================================================================
-    // SCHEMA OPTIONS QUANTUM NEXUS
-    // =========================================================================
-    timestamps: {
-        createdAt: 'metadata.createdAt',
-        updatedAt: 'metadata.updatedAt'
-    },
-    toJSON: {
-        virtuals: true,
-        transform: function (doc, ret) {
-            // Divine Filter: Remove all sensitive data from JSON (POPIA compliance)
-            delete ret.password;
-            delete ret.mfaSecret;
-            delete ret.mfaBackupCodes;
-            delete ret.biometricData;
-            delete ret.encryptedLegalName;
-            delete ret.encryptedIdNumber;
-            delete ret.encryptedEmail;
-            delete ret.securityQuestions;
-            delete ret.passwordHistory;
-            delete ret.financialAuthority.taxClearancePin;
-            delete ret.apiKeys;
-            return ret;
-        }
-    },
-    toObject: { virtuals: true },
-    strict: true,
-    collation: { locale: 'en', strength: 2 }
+    timestamps: true,
+    strict: true
 });
 
 // =============================================================================
