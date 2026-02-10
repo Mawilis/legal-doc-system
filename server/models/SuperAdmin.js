@@ -160,7 +160,7 @@ const superAdminSchema = new Schema({
         relationship: String,
         phone: String,
         encryptedPhone: String,
-        description: 'Emergency contact for critical incidents'
+        emergencyContact: String
     },
 
     // =========================================================================
