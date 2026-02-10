@@ -79,7 +79,7 @@ const superAdminSchema = new Schema({
         default: () => `SUPREME-${uuidv4().toUpperCase()}`,
         index: true,
         immutable: true,
-        description: 'Eternal quantum identifier—unchanging across all dimensions'
+        eternalquantumidentifierunchangingacrossalldimensions: String
     },
 
     sovereignTier: {
@@ -87,7 +87,7 @@ const superAdminSchema = new Schema({
         required: true,
         enum: ['OMEGA', 'ALPHA', 'BETA'],
         default: 'OMEGA',
-        description: 'Hierarchy of divine authority (Omega = Supreme)'
+        hierarchyofdivineauthorityomegasupreme: String
     },
 
     // =========================================================================
@@ -98,13 +98,13 @@ const superAdminSchema = new Schema({
         required: true,
         trim: true,
         match: /^[A-Za-z\s\-']{2,100}$/,
-        description: 'Full legal name as per South African ID'
+        legalnameaspersouthafricanid: String
     },
 
     encryptedLegalName: {
         type: String,
         select: false,
-        description: 'AES-256-GCM encrypted legal identity'
+        256gcmencryptedlegalidentity: String
     },
 
     idNumber: {
@@ -112,21 +112,21 @@ const superAdminSchema = new Schema({
         required: true,
         unique: true,
         match: /^[0-9]{13}$/,
-        description: 'South African ID Number (13 digits)'
+        africanidnumber13digits: String
     },
 
     encryptedIdNumber: {
         type: String,
         required: true,
         select: false,
-        description: 'Quantum-encrypted ID number (POPIA compliance)'
+        idnumberpopiacompliance: String
     },
 
     saCitizen: {
         type: Boolean,
         required: true,
         default: true,
-        description: 'Must be South African citizen per FICA Section 21A'
+        mustbesouthafricancitizenperficasection21a: String
     },
 
     // =========================================================================
@@ -138,13 +138,13 @@ const superAdminSchema = new Schema({
         unique: true,
         lowercase: true,
         match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-        description: 'Official email for legal communications'
+        emailforlegalcommunications: String
     },
 
     encryptedEmail: {
         type: String,
         select: false,
-        description: 'Encrypted email for breach protection'
+        emailforbreachprotection: String
     },
 
     mobileNumber: {
@@ -152,7 +152,7 @@ const superAdminSchema = new Schema({
         required: true,
         unique: true,
         match: /^\+27[0-9]{9}$/,
-        description: 'South African mobile format: +27XXXXXXXXX'
+        africanmobileformat27xxxxxxxxx: String
     },
 
     emergencyContact: {
@@ -171,13 +171,13 @@ const superAdminSchema = new Schema({
         required: true,
         minlength: 24,
         select: false,
-        description: 'Quantum-resistant password (24+ characters mandatory)'
+        resistantpassword24charactersmandatory: String
     },
 
     mfaSecret: {
         type: String,
         select: false,
-        description: 'TOTP secret for multi-factor authentication'
+        secretformultifactorauthentication: String
     },
 
     mfaBackupCodes: [{
@@ -190,7 +190,7 @@ const superAdminSchema = new Schema({
         fingerprintHash: { type: String, select: false },
         facialRecognitionId: { type: String, select: false },
         retinaHash: { type: String, select: false },
-        description: 'Multi-modal biometric authentication (WebAuthn)'
+        modalbiometricauthenticationwebauthn: String
     },
 
     securityQuestions: [{
@@ -202,7 +202,7 @@ const superAdminSchema = new Schema({
     lastPasswordChange: {
         type: Date,
         default: Date.now,
-        description: 'Password rotation tracking (90-day mandate)'
+        rotationtracking90daymandate: String
     },
 
     passwordHistory: [{
