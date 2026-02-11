@@ -3363,7 +3363,6 @@ module.exports = {
 ║ Create a .env file in /server directory with the following variables:       ║
 ║                                                                              ║
 ║ # Database Configuration                                                     ║
-║ MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/wilsy?retryWrites=true&w=majority
 ║                                                                              ║
 ║ # Regulatory API Endpoints                                                   ║
 ║ CIPC_API_URL=https://api.cipc.co.za/v1                                      ║
