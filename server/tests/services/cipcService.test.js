@@ -54,6 +54,7 @@ describe('CIPC Service - Investor Validation', () => {
     expect(typeof CIPCService.validateDirector).toBe('function');
     expect(typeof CIPCService.checkAnnualReturnCompliance).toBe('function');
     expect(typeof CIPCService.healthCheck).toBe('function');
+    expect(typeof CIPCService.generateForensicReport).toBe('function');
   });
 
   test('should validate company registration with tenant isolation', async () => {
@@ -265,21 +266,50 @@ describe('CIPC Service - Investor Validation', () => {
 
     expect(result.valid).toBe(false);
     expect(result.compliance).toBe('INVALID_REGISTRATION');
+    expect(result.auditId).toBeDefined();
+    expect(result.evidenceHash).toBeDefined();
     
-    // Verify error was logged
-    expect(mockLogger.error).toHaveBeenCalled();
+    // Verify audit was still logged (not error log)
+    expect(mockAuditLogger.log).toHaveBeenCalled();
+    const auditCalls = mockAuditLogger.log.mock.calls;
+    const validationCall = auditCalls.find(call => 
+      call[0].action.includes('COMPANY_VALIDATION')
+    );
+    expect(validationCall).toBeDefined();
+    expect(validationCall[0].changes.valid).toBe(false);
   });
 
   test('should handle validation errors gracefully', async () => {
     // Test with missing required data
     const result = await CIPCService.validateDirector({}, testTenantId);
     
+    expect(result).toBeDefined();
     expect(result.valid).toBe(false);
     expect(result.compliance).toBe('MISSING_REQUIRED_FIELDS');
+    expect(result.auditId).toBeDefined();
     
     // Verify audit log was created even for failures
     expect(mockAuditLogger.log).toHaveBeenCalled();
-    const auditCall = mockAuditLogger.log.mock.calls[0][0];
-    expect(auditCall.action).toContain('VALIDATION');
+    const auditCalls = mockAuditLogger.log.mock.calls;
+    const validationCall = auditCalls.find(call => 
+      call[0].action.includes('DIRECTOR_VALIDATION')
+    );
+    expect(validationCall).toBeDefined();
+    expect(validationCall[0].changes.valid).toBe(false);
+  });
+
+  test('should generate forensic reports for investor due diligence', async () => {
+    const result = await CIPCService.generateForensicReport(testTenantId, '2025-Q1');
+    
+    expect(result).toBeDefined();
+    expect(result.period).toBe('2025-Q1');
+    expect(result.tenantId).toBe(testTenantId);
+    expect(result.reportHash).toBeDefined();
+    expect(result.retentionPolicy).toBe('companies_act_10_years');
+    expect(result.dataResidency).toBe('ZA');
+    
+    // Verify economic impact is included
+    expect(result.economicImpact).toBeDefined();
+    expect(result.economicImpact.annualSavingsPerClient).toBe(300000);
   });
 });

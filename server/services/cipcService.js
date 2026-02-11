@@ -210,7 +210,7 @@ class CIPCService {
    * @param {String} tenantId - Tenant identifier
    * @returns {Promise<Object>} Redacted validation result
    */
-  async validateDirector(director, tenantId) {
+    async validateDirector(director, tenantId) {
     const startTime = Date.now();
     const auditId = `CIPC-DIR-${Date.now()}-${cryptoUtils.generateRandomHex(8)}`;
     
@@ -223,12 +223,12 @@ class CIPCService {
       });
       
       // Redact sensitive information immediately
-      const redactedDirector = redactSensitiveCIPCData(director);
+      const _redactedDirector = redactSensitiveCIPCData(director);
       
-      // Validate required fields
-      const hasRequiredFields = director.fullName && director.idNumber;
-      const idNumberValid = director.idNumber ? /^\d{13}$/.test(director.idNumber) : false;
-      const valid = hasRequiredFields && idNumberValid;
+      // Validate required fields - handle undefined/null
+      const hasRequiredFields = !!(director && director.fullName && director.idNumber);
+      const idNumberValid = director && director.idNumber ? /^\d{13}$/.test(director.idNumber) : false;
+      const valid = hasRequiredFields && idNumberValid;const valid = hasRequiredFields && idNumberValid;
       
       // Generate forensic evidence
       const evidenceData = {
@@ -512,7 +512,7 @@ class CIPCService {
       // Test 2: Director validation (with redaction)
       const directorTest = await this.validateDirector({
         fullName: 'Test Director',
-        idNumber: '8801234567890',
+        idNumber: '[ID_REDACTED]',
         address: '123 Test Street, Johannesburg, 2000'
       }, tenantId);
       testResults.push({
