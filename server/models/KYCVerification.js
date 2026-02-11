@@ -2242,7 +2242,6 @@ module.exports = KYCVerification;
  * .ENV CONFIGURATION FOR QUANTUM KYC VERIFICATION:
  *
  * MANDATORY VARIABLES:
- * MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/wilsy?retryWrites=true&w=majority
  * AES_ENCRYPTION_KEY=your-256-bit-encryption-key-here
  * JWT_SECRET=your-jwt-secret-key-min-32-chars
  * REDIS_URL=redis://localhost:6379
