@@ -697,7 +697,6 @@ if (require.main === module) {
 ⚠️ CRITICAL: Add these variables to your /server/.env file:
 
 # MongoDB Connection
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/wilsy?retryWrites=true&w=majority
 # 🔐 Generate with: openssl rand -base64 32
 ENCRYPTION_KEY=your_32_character_base64_encryption_key_here
 
