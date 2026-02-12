@@ -217,6 +217,9 @@ const createLpcService = () => {
 
       
       const activityId = `CPD-${uuidv4()}`;
+  // Using _startTime for performance tracking
+  const operationTime = Date.now() - _startTime;
+
       const _startTime = Date.now();
       
       try {

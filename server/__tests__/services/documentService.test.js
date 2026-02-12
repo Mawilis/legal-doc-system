@@ -35,7 +35,6 @@ describe('Document Service - Investor Grade Due Diligence', () => {
         });
         app.use('/api/v1/documents', documentRoutes);
 
-        const documentService = createDocumentService();
     });
 
     afterAll(async () => {

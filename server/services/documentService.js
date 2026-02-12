@@ -56,7 +56,6 @@ const pdfParse = require("pdf-parse");
 const mammoth = require("mammoth");
 
 
-const { generateDocumentHash, createTimestamp } = require('../lib/ots');
 
 // =================================================================================
 // MULTI-TENANT CONFIGURATION - TENANT ISOLATION DNA
