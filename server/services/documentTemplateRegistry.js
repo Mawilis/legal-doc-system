@@ -360,7 +360,8 @@ class DocumentTemplateRegistry {
 
         cacheKeys.forEach(key => this.documentCache.del(key));
 
-      .map(([field]) => field);
+    cacheKeys.forEach(key => this.documentCache.del(key));
+
   }
 
   validateDocument(documentType, data) {

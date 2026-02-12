@@ -42,7 +42,7 @@ if (!process.env.MONGO_URI && !process.env.MONGO_URI_TEST) {
 // =================================================================================
 const mongoose = require('mongoose');
 const { GridFSBucket, ObjectId } = require('mongodb');
-const { appendAuditEntry, readAuditTrail } = require("../lib/auditLedger");
+const { appendAuditEntry } = require("../lib/auditLedger");
 
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
