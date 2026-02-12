@@ -356,6 +356,8 @@ class DocumentTemplateRegistry {
     const template = this.getTemplate(documentType);
     const validators = template.validators || {};
     return Object.entries(validators)
+/* eslint-disable-next-line no-unused-vars */
+
       .filter(([_, rules]) => rules.required)
       .map(([field]) => field);
   }

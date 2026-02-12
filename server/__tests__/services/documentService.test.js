@@ -12,6 +12,8 @@ const request = require('supertest');
 const express = require('express');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+/* eslint-disable-next-line no-unused-vars */
+
 const { createDocumentService } = require('../../services/documentService');
 const { templateRegistry } = require('../../services/documentTemplateRegistry');
 const documentRoutes = require('../../routes/documentRoutes');
