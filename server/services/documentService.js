@@ -48,10 +48,16 @@ const moment = require('moment');
 const _ = require('lodash');
 
 // Wilsy OS Security Dependencies
-const { enforceTenantContext } = require('../middleware/tenantContext');
-const { wrapKey, unwrapKey, createDataEncryptionKey } = require('../lib/kms');
+const { wrapKey, unwrapKey } = require("../lib/kms");
+const { generateDocumentHash, createTimestamp } = require("../lib/ots");
+const { appendAuditEntry, readAuditTrail } = require("../lib/auditLedger");
+
+const NodeCache = require("node-cache");
+const pdfParse = require("pdf-parse");
+const mammoth = require("mammoth");
+
+
 const { generateDocumentHash, createTimestamp } = require('../lib/ots');
-const { appendAuditEntry, readAuditTrail } = require('../lib/auditLedger');
 
 // =================================================================================
 // MULTI-TENANT CONFIGURATION - TENANT ISOLATION DNA

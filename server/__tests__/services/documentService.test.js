@@ -3,6 +3,7 @@
   ║ [100% coverage | Deterministic evidence | R10M risk validation]             ║
   ╚══════════════════════════════════════════════════════════════════════════════╝*/
 
+
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/services/documentService.test.js
  */
@@ -35,7 +36,7 @@ describe('Document Service - Investor Grade Due Diligence', () => {
         });
         app.use('/api/v1/documents', documentRoutes);
 
-        documentService = createDocumentService();
+        const documentService = createDocumentService();
     });
 
     afterAll(async () => {

@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const auditLogger = require('../utils/auditLogger');
 /* eslint-disable-next-line no-unused-vars */
 
-const logger = require('../utils/logger');
+// const logger = require('../utils/logger');
 const cryptoUtils = require('../utils/cryptoUtils');
 const { redactLPCData, detectPII } = require('../utils/popiaRedaction');
 const { validateTenantId } = require('../middleware/tenantContext');
