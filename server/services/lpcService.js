@@ -1,32 +1,12 @@
 /**
- * WILSYS OS - LPC SERVICE v5.0.0
+ * WILSYS OS - LPC SERVICE v5.0.1
  * ====================================================================
  * LEGAL PRACTICE COUNCIL COMPLIANCE FORTRESS
  * QUANTUM-SEALED · FORENSIC-GRADE · PRODUCTION READY
  * 
- * @version 5.0.0
+ * @version 5.0.1
  * @author Wilson Khanyezi - Chief Quantum Sentinel
  * @copyright Wilsy OS (Pty) Ltd 2026
- * 
- * @description Complete LPC compliance orchestration engine integrating:
- *              - Attorney Profile Management (LPC §55/86)
- *              - Trust Account Forensic Accounting (LPC §86)
- *              - CPD Compliance Tracking (LPC Chapter 3)
- *              - Fidelity Fund Certificate Management (LPC §55)
- *              - Compliance Audit & Reporting (LPC §95)
- * 
- * @compliance Legal Practice Act 28 of 2014 - Sections 55, 86, 95(3)
- * @compliance LPC Rules (2023 Amendments) - Chapters 3, 7, 11
- * @compliance Trust Account Rules - Regulation 86(1)-(4)
- * @compliance CPD Regulations - Chapter 3.1-3.12
- * @compliance Fidelity Fund Rules - Section 55(1)-(8)
- * @compliance POPIA 2013 - Section 19
- * @compliance ECT Act 2002 - Section 15
- * @compliance Companies Act 71 of 2008 - Sections 33, 86, 94
- * 
- * @risk R2.1B trust violation risk ELIMINATED
- * @value R148B client trust funds PROTECTED
- * @savings R450K annual savings per firm @ 87% margin
  * ====================================================================
  */
 
@@ -64,28 +44,21 @@ const LPC_NAMESPACE = {
 };
 
 const LPC_STATUTORY_LIMITS = {
-    // Legal Practice Act Section 86 - Trust Accounts
     MINIMUM_RECONCILIATION_DAYS: 7,
     INTEREST_CALCULATION_RATE: 0.025,
     INTEREST_PAYMENT_THRESHOLD: 5000,
     MAX_CLIENT_TRUST_BALANCE: 10000000,
     SEGREGATED_ACCOUNT_REQUIRED: true,
-    
-    // LPC Rules Chapter 3 - CPD Requirements
     CPD_ANNUAL_HOURS: 12,
     CPD_ETHICS_HOURS: 2,
     CPD_CYCLE_YEARS: 3,
     CPD_MAX_ROLLOVER: 6,
     CPD_DEADLINE_MONTH: 12,
     CPD_DEADLINE_DAY: 31,
-    
-    // Legal Practice Act Section 55 - Fidelity Fund
     FIDELITY_CONTRIBUTION_PERCENTAGE: 0.0025,
     FIDELITY_MINIMUM_CONTRIBUTION: 500,
     FIDELITY_MAXIMUM_CONTRIBUTION: 50000,
     FIDELITY_CLAIM_LIMIT: 2000000,
-    
-    // Companies Act 71 of 2008 - Retention Periods (days)
     RETENTION_TRUST_TRANSACTIONS: 3650,
     RETENTION_CPD_RECORDS: 2555,
     RETENTION_COMPLIANCE_AUDITS: 3650,
@@ -145,7 +118,7 @@ class AuditChain {
             data: this._canonicalizeData(data),
             tenantId,
             nonce: crypto.randomBytes(32).toString('hex'),
-            version: '5.0.0',
+            version: '5.0.1',
             merkleRoot: null
         };
 
@@ -271,47 +244,33 @@ class AuditChain {
 
 class LpcService {
     constructor() {
-        // ====================================================================
-        // SERVICE STATE - LAZY INITIALIZATION
-        // ====================================================================
         this._initialized = false;
         this._config = null;
         this._httpClient = null;
         this._redisClient = null;
         this._cache = null;
-        
-        // ====================================================================
-        // FORENSIC AUDIT INFRASTRUCTURE
-        // ====================================================================
         this._auditChain = null;
         this._evidenceRegistry = new Map();
         this._activeSessions = new Map();
         
-        // ====================================================================
-        // PERFORMANCE METRICS - INVESTOR TRACKING
-        // ====================================================================
         this._metrics = {
             trustTransactionsProcessed: 0,
             trustTransactionVolume: 0,
             trustReconciliationsCompleted: 0,
             trustDiscrepanciesDetected: 0,
             trustDiscrepancyValue: 0,
-            
             cpdHoursValidated: 0,
             cpdActivitiesSubmitted: 0,
             cpdCertificatesIssued: 0,
             cpdNonCompliantAttorneys: 0,
-            
             fidelityCertificatesIssued: 0,
             fidelityContributionTotal: 0,
             fidelityDiscountsApplied: 0,
             fidelityDiscountValue: 0,
-            
             complianceChecksPerformed: 0,
             complianceAuditsCompleted: 0,
             complianceIssuesDetected: 0,
             complianceIssuesResolved: 0,
-            
             apiCallsTotal: 0,
             averageResponseTime: 0,
             errorCount: 0,
@@ -321,9 +280,6 @@ class LpcService {
             auditBlocksCreated: 0
         };
         
-        // ====================================================================
-        // STATUTORY COMPLIANCE TIMERS
-        // ====================================================================
         this._reconciliationScheduler = null;
         this._cpdDeadlineMonitor = null;
         this._certificateExpiryMonitor = null;
@@ -349,7 +305,7 @@ class LpcService {
                 ...config,
                 initializedAt: new Date().toISOString(),
                 initId,
-                version: '5.0.0'
+                version: '5.0.1'
             });
 
             this._httpClient = axios.create({
@@ -360,7 +316,7 @@ class LpcService {
                     'Content-Type': 'application/json',
                     'X-Quantum-Signature': this._generateQuantumSignature(),
                     'X-Request-ID': cryptoUtils.generateDeterministicId('REQ'),
-                    'X-Client-Version': '5.0.0',
+                    'X-Client-Version': '5.0.1',
                     'X-Wilsy-Tenant': 'SYSTEM'
                 }
             });
@@ -387,7 +343,7 @@ class LpcService {
                 entityId: 'LPC_SERVICE',
                 userId: 'SYSTEM',
                 ipAddress: 'SYSTEM',
-                userAgent: 'LpcService/5.0.0',
+                userAgent: 'LpcService/5.0.1',
                 changes: {
                     initId,
                     blockHash: genesisBlock.hash,
@@ -1895,7 +1851,6 @@ class LpcService {
         }).populate('attorneyId', 'lpcNumber practice.name contact.email');
 
         for (const account of overdueAccounts) {
-            // Trigger automated reconciliation reminder
             await auditLogger.log({
                 action: 'RECONCILIATION_REMINDER',
                 tenantId: account.tenantId,
@@ -1923,9 +1878,12 @@ class LpcService {
         const deadline = new Date(currentYear, 11, 31);
         const daysUntilDeadline = Math.ceil((deadline - Date.now()) / (1000 * 60 * 60 * 24));
 
+        let nonCompliantCount = 0;
+
         if (daysUntilDeadline <= 30 && daysUntilDeadline > 0) {
             const nonCompliant = await CPDRecord.findNonCompliant('SYSTEM', currentYear);
             this._metrics.cpdNonCompliantAttorneys = nonCompliant.length;
+            nonCompliantCount = nonCompliant.length;
 
             for (const attorney of nonCompliant) {
                 await auditLogger.log({
@@ -1950,7 +1908,7 @@ class LpcService {
             }
         }
 
-        return nonCompliant?.length || 0;
+        return nonCompliantCount;
     }
 
     async _checkFidelityCertificateExpiry() {
@@ -2134,8 +2092,8 @@ class LpcService {
                     'Adoption rate: 8,500+ law firms within 12 months'
                 ]
             },
-            service: 'LPC Service v5.0.0',
-            version: '5.0.0'
+            service: 'LPC Service v5.0.1',
+            version: '5.0.1'
         };
     }
 
@@ -2205,7 +2163,7 @@ class LpcService {
             Date.now() - this._metrics.serviceStartTime.getTime() : 0;
 
         const apiCallsPerTenant = {};
-        this._metrics.apiCallsPerTenant.forEach((value, key) => {
+        this._metrics.apiCallsPerTenant?.forEach((value, key) => {
             apiCallsPerTenant[key] = value;
         });
 
@@ -2220,7 +2178,7 @@ class LpcService {
             initialized: this._initialized,
             configPresent: !!this._config,
             cacheType: this._redisClient?.isReady ? 'REDIS' : this._cache ? 'MEMORY' : 'NONE',
-            serviceVersion: '5.0.0',
+            serviceVersion: '5.0.1',
             timestamp: new Date().toISOString(),
             compliance: {
                 trustAccountCompliance: this._metrics.trustDiscrepanciesDetected === 0,
@@ -2244,40 +2202,3 @@ module.exports = {
     LPC_DATA_RESIDENCY,
     LPC_VALIDATION_PATTERNS
 };
-
-/**
- * @mermaid
- * graph TD
- *     LpcService --> AttorneyProfile
- *     LpcService --> TrustAccount
- *     LpcService --> CPDRecord
- *     LpcService --> ComplianceAudit
- *     LpcService --> FidelityFund
- *
- *     AttorneyProfile --> LPC[Legal Practice Council]
- *     AttorneyProfile --> Fidelity[Fidelity Fund]
- *     AttorneyProfile --> CPD[CPD Compliance]
- *
- *     TrustAccount --> Reconciliation[Weekly Reconciliation]
- *     TrustAccount --> Ledger[Immutable Ledger]
- *     TrustAccount --> Interest[2.5% Interest]
- *
- *     CPDRecord --> Verification[CPD Verification]
- *     CPDRecord --> Certificate[Certificate Generation]
- *     CPDRecord --> Blockchain[Blockchain Anchor]
- *
- *     ComplianceAudit --> Scoring[Compliance Scoring]
- *     ComplianceAudit --> Remediation[Remediation Tracking]
- *     ComplianceAudit --> Reporting[Regulatory Reporting]
- *
- *     FidelityFund --> Calculation[Contribution Calculation]
- *     FidelityFund --> Discount[Discount Application]
- *     FidelityFund --> Renewal[Auto-Renewal]
- *
- *     style LpcService fill:#e1f5e1
- *     style AttorneyProfile fill:#fff3cd
- *     style TrustAccount fill:#f8d7da
- *     style CPDRecord fill:#d4edda
- *     style ComplianceAudit fill:#cce5ff
- *     style FidelityFund fill:#e1f5e1
- */
