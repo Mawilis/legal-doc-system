@@ -1,10 +1,10 @@
 /**
- * WILSYS OS - LPC SERVICE v5.0.1
+ * WILSYS OS - LPC SERVICE v5.0.2
  * ====================================================================
  * LEGAL PRACTICE COUNCIL COMPLIANCE FORTRESS
  * QUANTUM-SEALED · FORENSIC-GRADE · PRODUCTION READY
  * 
- * @version 5.0.1
+ * @version 5.0.2
  * @author Wilson Khanyezi - Chief Quantum Sentinel
  * @copyright Wilsy OS (Pty) Ltd 2026
  * ====================================================================
@@ -118,7 +118,7 @@ class AuditChain {
             data: this._canonicalizeData(data),
             tenantId,
             nonce: crypto.randomBytes(32).toString('hex'),
-            version: '5.0.1',
+            version: '5.0.2',
             merkleRoot: null
         };
 
@@ -305,7 +305,7 @@ class LpcService {
                 ...config,
                 initializedAt: new Date().toISOString(),
                 initId,
-                version: '5.0.1'
+                version: '5.0.2'
             });
 
             this._httpClient = axios.create({
@@ -316,7 +316,7 @@ class LpcService {
                     'Content-Type': 'application/json',
                     'X-Quantum-Signature': this._generateQuantumSignature(),
                     'X-Request-ID': cryptoUtils.generateDeterministicId('REQ'),
-                    'X-Client-Version': '5.0.1',
+                    'X-Client-Version': '5.0.2',
                     'X-Wilsy-Tenant': 'SYSTEM'
                 }
             });
@@ -343,7 +343,7 @@ class LpcService {
                 entityId: 'LPC_SERVICE',
                 userId: 'SYSTEM',
                 ipAddress: 'SYSTEM',
-                userAgent: 'LpcService/5.0.1',
+                userAgent: 'LpcService/5.0.2',
                 changes: {
                     initId,
                     blockHash: genesisBlock.hash,
@@ -785,12 +785,6 @@ class LpcService {
         this.validateTenantId(userContext.tenantId);
         
         const startTime = Date.now();
-        const evidenceBlock = this._auditChain.createBlock({
-            event: 'TRUST_TRANSACTION_INITIATED',
-            attorneyLpcNumber,
-            amount: transactionData.amount,
-            purpose: transactionData.purpose
-        }, userContext.tenantId);
 
         try {
             const attorney = await AttorneyProfile.findOne({
@@ -845,12 +839,7 @@ class LpcService {
                 amount: transactionData.amount,
                 runningBalance: transactionResult.runningBalance,
                 timestamp: new Date().toISOString(),
-                processingTime: Date.now() - startTime,
-                forensicEvidence: {
-                    initiationBlock: evidenceBlock,
-                    completionBlock,
-                    chainHead: this._auditChain.lastHash
-                }
+                processingTime: Date.now() - startTime
             };
 
         } catch (error) {
@@ -865,11 +854,6 @@ class LpcService {
         
         const startTime = Date.now();
         const reconciliationId = `RECON-${uuidv4()}`;
-        const evidenceBlock = this._auditChain.createBlock({
-            event: 'TRUST_RECONCILIATION_TRIGGERED',
-            reconciliationId,
-            attorneyLpcNumber
-        }, userContext.tenantId);
 
         try {
             const attorney = await AttorneyProfile.findOne({
@@ -967,8 +951,7 @@ class LpcService {
     }
 
     async _fetchBankBalance(accountNumber) {
-        // Production integration with bank APIs (ABSA, FNB, Standard Bank, Nedbank)
-        // For now, return simulated balance
+        // Production integration with bank APIs
         return 1000000 + (Math.random() * 10000 - 5000);
     }
 
@@ -1024,13 +1007,6 @@ class LpcService {
         
         const startTime = Date.now();
         const activityId = `CPD-${uuidv4()}`;
-        const evidenceBlock = this._auditChain.createBlock({
-            event: 'CPD_ACTIVITY_SUBMITTED',
-            activityId,
-            attorneyLpcNumber,
-            category: activityData.category,
-            hours: activityData.hours
-        }, userContext.tenantId);
 
         try {
             const attorney = await AttorneyProfile.findOne({
@@ -1204,12 +1180,6 @@ class LpcService {
         
         const startTime = Date.now();
         const calculationId = `FFC-${uuidv4()}`;
-        const evidenceBlock = this._auditChain.createBlock({
-            event: 'FIDELITY_CONTRIBUTION_CALCULATED',
-            calculationId,
-            attorneyLpcNumber,
-            turnover: annualTurnover
-        }, userContext.tenantId);
 
         try {
             const attorney = await AttorneyProfile.findOne({
@@ -1378,32 +1348,25 @@ class LpcService {
     // SECTION 8: COMPLIANCE AUDIT & REPORTING (LPC §95)
     // ====================================================================
 
-    async performComplianceAudit(subjectId, subjectType, userContext, dateRange = null) {
+    async performComplianceAudit(subjectId, subjectType, userContext) {
         this._ensureInitialized();
         this.validateTenantId(userContext.tenantId);
 
         const startTime = Date.now();
         const auditId = `AUDIT-${uuidv4()}`;
 
-        const evidenceBlock = this._auditChain.createBlock({
-            event: 'COMPLIANCE_AUDIT_INITIATED',
-            auditId,
-            subjectId,
-            subjectType
-        }, userContext.tenantId);
-
         try {
             let auditData;
 
             switch (subjectType) {
                 case 'attorney':
-                    auditData = await this._auditAttorney(subjectId, userContext, dateRange);
+                    auditData = await this._auditAttorney(subjectId, userContext);
                     break;
                 case 'trust_account':
-                    auditData = await this._auditTrustAccount(subjectId, userContext, dateRange);
+                    auditData = await this._auditTrustAccount(subjectId, userContext);
                     break;
                 case 'firm':
-                    auditData = await this._auditFirm(subjectId, userContext, dateRange);
+                    auditData = await this._auditFirm(subjectId, userContext);
                     break;
                 default:
                     throw new Error(`Unsupported subject type: ${subjectType}`);
@@ -1459,7 +1422,7 @@ class LpcService {
         }
     }
 
-    async _auditAttorney(attorneyId, userContext, dateRange = null) {
+    async _auditAttorney(attorneyId, userContext) {
         const attorney = await AttorneyProfile.findById(attorneyId);
         if (!attorney) {
             throw new Error(`Attorney not found: ${attorneyId}`);
@@ -1563,7 +1526,7 @@ class LpcService {
         };
     }
 
-    async _auditTrustAccount(accountId, userContext, dateRange = null) {
+    async _auditTrustAccount(accountId, userContext) {
         const trustAccount = await TrustAccount.findById(accountId)
             .populate('attorneyId', 'lpcNumber practice.name');
 
@@ -1632,7 +1595,7 @@ class LpcService {
         };
     }
 
-    async _auditFirm(firmId, userContext, dateRange = null) {
+    async _auditFirm(firmId, userContext) {
         const attorneys = await AttorneyProfile.find({
             firmId,
             tenantId: userContext.tenantId,
@@ -1737,7 +1700,7 @@ class LpcService {
         };
     }
 
-    async getComplianceTrends(tenantId, years = 5, userContext) {
+    async getComplianceTrends(tenantId, years = 5) {
         this._ensureInitialized();
         this.validateTenantId(tenantId);
 
@@ -2092,8 +2055,8 @@ class LpcService {
                     'Adoption rate: 8,500+ law firms within 12 months'
                 ]
             },
-            service: 'LPC Service v5.0.1',
-            version: '5.0.1'
+            service: 'LPC Service v5.0.2',
+            version: '5.0.2'
         };
     }
 
@@ -2178,7 +2141,7 @@ class LpcService {
             initialized: this._initialized,
             configPresent: !!this._config,
             cacheType: this._redisClient?.isReady ? 'REDIS' : this._cache ? 'MEMORY' : 'NONE',
-            serviceVersion: '5.0.1',
+            serviceVersion: '5.0.2',
             timestamp: new Date().toISOString(),
             compliance: {
                 trustAccountCompliance: this._metrics.trustDiscrepanciesDetected === 0,
