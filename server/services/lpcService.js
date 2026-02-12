@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const auditLogger = require('../utils/auditLogger');
-const _logger = require('../utils/logger');
+const logger = require('../utils/logger');
 const cryptoUtils = require('../utils/cryptoUtils');
 const { redactLPCData, detectPII } = require('../utils/popiaRedaction');
 const { validateTenantId } = require('../middleware/tenantContext');
@@ -103,7 +103,7 @@ const createLpcService = () => {
         userId: 'SYSTEM',
         ipAddress: 'SYSTEM',
         userAgent: 'LpcService/4.1.0',
-        changes: { duration: Date.now() - startTime, blockHash: block.hash },
+        changes: { duration: Date.now() - _startTime, blockHash: block.hash },
         metadata: {
           retentionPolicy: LPC_RETENTION_POLICIES.COMPLIANCE_AUDITS,
           dataResidency: LPC_DATA_RESIDENCY.DEFAULT,
@@ -174,7 +174,7 @@ const createLpcService = () => {
         }
         
         const completionBlock = this._auditChain.createBlock(
-          { event: 'TRUST_TRANSACTION_COMPLETED', transactionId, duration: Date.now() - startTime },
+          { event: 'TRUST_TRANSACTION_COMPLETED', transactionId, duration: Date.now() - _startTime },
           tenantId
         );
         

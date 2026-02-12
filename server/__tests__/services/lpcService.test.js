@@ -32,7 +32,6 @@ jest.mock('../../models/FidelityFund');
 // Now import the modules
 const { createLpcService, LPC_STATUTORY_LIMITS, LPC_RETENTION_POLICIES } = require('../../services/lpcService');
 const auditLogger = require('../../utils/auditLogger');
-const cryptoUtils = require('../../utils/cryptoUtils');
 const mongoose = require('mongoose');
 
 describe('LPC Service', () => {
