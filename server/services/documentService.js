@@ -50,7 +50,6 @@ const _ = require('lodash');
 // Wilsy OS Security Dependencies
 const { wrapKey, unwrapKey } = require("../lib/kms");
 const { generateDocumentHash, createTimestamp } = require("../lib/ots");
-const { appendAuditEntry, readAuditTrail } = require("../lib/auditLedger");
 
 const NodeCache = require("node-cache");
 const pdfParse = require("pdf-parse");

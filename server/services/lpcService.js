@@ -105,7 +105,7 @@ const createLpcService = () => {
         userId: 'SYSTEM',
         ipAddress: 'SYSTEM',
         userAgent: 'LpcService/4.1.0',
-        changes: { duration: Date.now() - _startTime, blockHash: block.hash },
+        changes: { duration: Date.now() - __startTime, blockHash: block.hash },
         metadata: {
           retentionPolicy: LPC_RETENTION_POLICIES.COMPLIANCE_AUDITS,
           dataResidency: LPC_DATA_RESIDENCY.DEFAULT,
@@ -176,7 +176,7 @@ const createLpcService = () => {
         }
         
         const completionBlock = this._auditChain.createBlock(
-          { event: 'TRUST_TRANSACTION_COMPLETED', transactionId, duration: Date.now() - _startTime },
+          { event: 'TRUST_TRANSACTION_COMPLETED', transactionId, duration: Date.now() - __startTime },
           tenantId
         );
         
