@@ -1,5 +1,7 @@
 const crypto = require('crypto');
 const auditLogger = require('../utils/auditLogger');
+/* eslint-disable-next-line no-unused-vars */
+
 const logger = require('../utils/logger');
 const cryptoUtils = require('../utils/cryptoUtils');
 const { redactLPCData, detectPII } = require('../utils/popiaRedaction');
@@ -211,6 +213,8 @@ const createLpcService = () => {
       this._ensureInitialized();
       this.validateTenantId(tenantId);
       this._auditChain = this._auditChain || createAuditChain();
+/* eslint-disable-next-line no-unused-vars */
+
       
       const activityId = `CPD-${uuidv4()}`;
       const _startTime = Date.now();

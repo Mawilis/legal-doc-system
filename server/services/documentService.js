@@ -46,14 +46,6 @@ const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 const _ = require('lodash');
-const Joi = require('joi');
-const axios = require('axios');
-const NodeCache = require('node-cache');
-const bcrypt = require('bcrypt');
-const pdfParse = require('pdf-parse');
-const mammoth = require('mammoth');
-const CryptoJS = require('crypto-js');
-const jwt = require('jsonwebtoken');
 
 // Wilsy OS Security Dependencies
 const { enforceTenantContext } = require('../middleware/tenantContext');
