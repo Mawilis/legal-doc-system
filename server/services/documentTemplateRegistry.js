@@ -356,13 +356,6 @@ class DocumentTemplateRegistry {
     const template = this.getTemplate(documentType);
     const validators = template.validators || {};
     return Object.entries(validators)
-/* eslint-disable-next-line no-unused-vars */
-
-        cacheKeys.forEach(key => this.documentCache.del(key));
-
-    cacheKeys.forEach(key => this.documentCache.del(key));
-
-  }
 
   validateDocument(documentType, data) {
     const template = this.getTemplate(documentType);
