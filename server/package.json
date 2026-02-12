@@ -28,6 +28,7 @@
   "private": true,
   "dependencies": {
     "@aws-sdk/client-s3": "^3.985.0",
+    "@mapbox/node-pre-gyp": "^2.0.3",
     "@sentry/node": "^7.85.0",
     "argon2": "^0.31.2",
     "axios": "^1.6.2",
@@ -72,6 +73,7 @@
     "request-ip": "^3.3.0",
     "sanitize-html": "^2.11.0",
     "stripe": "^14.15.0",
+    "tar": "^7.5.7",
     "twilio": "^4.19.2",
     "uuid": "^9.0.1",
     "validator": "^13.11.0",
