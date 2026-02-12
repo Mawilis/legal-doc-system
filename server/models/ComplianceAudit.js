@@ -4,29 +4,9 @@
  * LEGAL PRACTICE COUNCIL · FORENSIC COMPLIANCE AUDIT
  * QUANTUM-SEALED · POPIA §19 · LPC §95(3)
  * 
- * @version 5.0.0
+ * @version 5.0.1
  * @author Wilson Khanyezi - Chief Quantum Sentinel
  * @copyright Wilsy OS (Pty) Ltd 2026
- * 
- * @description Complete compliance audit system with:
- *              - Regulatory compliance verification (LPC, POPIA, PAIA, FICA)
- *              - Automated audit scoring and risk assessment
- *              - Forensic evidence collection and preservation
- *              - Remediation tracking with deadline enforcement
- *              - Multi-jurisdiction compliance mapping
- *              - Trend analysis and predictive compliance
- *              - Regulatory reporting automation
- *              - SHA3-512 audit trail integrity
- * 
- * @compliance Legal Practice Act 28 of 2014 - Section 95(3)
- * @compliance POPIA 2013 - Section 19 (Security Safeguards)
- * @compliance Companies Act 71 of 2008 - Section 33
- * @compliance ECT Act 2002 - Section 15
- * @compliance PAIA 2 of 2000 - Section 51
- * @compliance FICA 38 of 2001 - Section 21
- * 
- * @risk R10M+ POPIA non-compliance penalties ELIMINATED
- * @savings R850K annual compliance cost reduction per firm
  * ====================================================================
  */
 
@@ -34,41 +14,30 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
-const auditLogger = require('../utils/auditLogger');
-const { redactSensitiveData } = require('../utils/popiaRedaction');
 
 // ====================================================================
 // FORENSIC CONSTANTS - IMMUTABLE · REGULATORY
 // ====================================================================
 
 const AUDIT_TYPES = {
-    // LPC Compliance Audits
     TRUST_RECONCILIATION: 'TRUST_RECONCILIATION',
     CPD_COMPLIANCE: 'CPD_COMPLIANCE',
     FIDELITY_CERTIFICATE: 'FIDELITY_CERTIFICATE',
     PRACTICE_MANAGEMENT: 'PRACTICE_MANAGEMENT',
     DISCIPLINARY_MATTER: 'DISCIPLINARY_MATTER',
-    
-    // Data Protection Audits
     POPIA_COMPLIANCE: 'POPIA_COMPLIANCE',
     PAIA_COMPLIANCE: 'PAIA_COMPLIANCE',
     DATA_BREACH: 'DATA_BREACH',
     DATA_SUBJECT_REQUEST: 'DATA_SUBJECT_REQUEST',
     CONSENT_MANAGEMENT: 'CONSENT_MANAGEMENT',
-    
-    // Financial Compliance
     FICA_COMPLIANCE: 'FICA_COMPLIANCE',
     SARS_COMPLIANCE: 'SARS_COMPLIANCE',
     ANNUAL_RETURN: 'ANNUAL_RETURN',
     BEE_VERIFICATION: 'BEE_VERIFICATION',
-    
-    // Risk & Security
     RISK_ASSESSMENT: 'RISK_ASSESSMENT',
     SECURITY_INCIDENT: 'SECURITY_INCIDENT',
     PENETRATION_TEST: 'PENETRATION_TEST',
     ACCESS_REVIEW: 'ACCESS_REVIEW',
-    
-    // Client & Matter
     CLIENT_COMPLAINT: 'CLIENT_COMPLAINT',
     CONFLICT_CHECK: 'CONFLICT_CHECK',
     FILE_AUDIT: 'FILE_AUDIT',
@@ -107,15 +76,14 @@ const FINDING_STATUS = {
 };
 
 const REMEDIATION_PRIORITY = {
-    IMMEDIATE: 'IMMEDIATE',    // 24 hours
-    URGENT: 'URGENT',          // 72 hours
-    HIGH: 'HIGH',             // 7 days
-    MEDIUM: 'MEDIUM',         // 30 days
-    LOW: 'LOW'               // 90 days
+    IMMEDIATE: 'IMMEDIATE',
+    URGENT: 'URGENT',
+    HIGH: 'HIGH',
+    MEDIUM: 'MEDIUM',
+    LOW: 'LOW'
 };
 
 const COMPLIANCE_FRAMEWORKS = {
-    // South African
     POPIA: 'POPIA',
     LPA: 'LPA',
     COMPANIES_ACT: 'COMPANIES_ACT',
@@ -126,8 +94,6 @@ const COMPLIANCE_FRAMEWORKS = {
     CPA: 'CPA',
     BCEA: 'BCEA',
     LRA: 'LRA',
-    
-    // International
     GDPR: 'GDPR',
     ISO_27001: 'ISO_27001',
     SOC2: 'SOC2',
@@ -170,9 +136,6 @@ const EVIDENCE_TYPES = {
 // ====================================================================
 
 const complianceAuditSchema = new Schema({
-    // ====================================================================
-    // TENANT ISOLATION - MULTI-TENANT FORTRESS
-    // ====================================================================
     tenantId: {
         type: String,
         required: [true, 'TENANT_ISOLATION_VIOLATION: tenantId is required'],
@@ -186,9 +149,6 @@ const complianceAuditSchema = new Schema({
         }
     },
 
-    // ====================================================================
-    // PRIMARY IDENTIFIERS - AUDIT TRACKING
-    // ====================================================================
     auditId: {
         type: String,
         required: [true, 'Audit ID is required'],
@@ -219,9 +179,6 @@ const complianceAuditSchema = new Schema({
         ]
     },
 
-    // ====================================================================
-    // AUDIT SCOPE AND OBJECTIVES
-    // ====================================================================
     scope: {
         type: {
             type: String,
@@ -266,9 +223,6 @@ const complianceAuditSchema = new Schema({
         }]
     },
 
-    // ====================================================================
-    // AUDIT SUBJECT - WHAT IS BEING AUDITED
-    // ====================================================================
     subjectId: {
         type: Schema.Types.ObjectId,
         refPath: 'subjectModel',
@@ -301,15 +255,12 @@ const complianceAuditSchema = new Schema({
 
     subjectDetails: Schema.Types.Mixed,
 
-    // ====================================================================
-    // AUDIT SCHEDULING
-    // ====================================================================
     scheduling: {
         scheduledDate: Date,
         startDate: Date,
         endDate: Date,
         duration: {
-            type: Number, // in minutes
+            type: Number,
             virtual: true,
             get: function() {
                 if (this.scheduling.endDate && this.scheduling.startDate) {
@@ -329,9 +280,6 @@ const complianceAuditSchema = new Schema({
         }
     },
 
-    // ====================================================================
-    // AUDITORS AND TEAM
-    // ====================================================================
     auditors: [{
         userId: {
             type: String,
@@ -356,9 +304,6 @@ const complianceAuditSchema = new Schema({
         email: String
     },
 
-    // ====================================================================
-    // AUDIT FINDINGS - FORENSIC EVIDENCE
-    // ====================================================================
     findings: [{
         findingId: {
             type: String,
@@ -503,9 +448,6 @@ const complianceAuditSchema = new Schema({
         extensionGrantedBy: String
     }],
 
-    // ====================================================================
-    // COMPLIANCE SCORING
-    // ====================================================================
     score: {
         type: Number,
         min: 0,
@@ -533,9 +475,6 @@ const complianceAuditSchema = new Schema({
         }
     },
 
-    // ====================================================================
-    // COMPLIANCE ISSUES - AGGREGATED FINDINGS
-    // ====================================================================
     complianceIssues: [{
         issueId: {
             type: String,
@@ -596,9 +535,6 @@ const complianceAuditSchema = new Schema({
         }
     }],
 
-    // ====================================================================
-    // RECOMMENDATIONS - CORRECTIVE ACTIONS
-    // ====================================================================
     recommendations: [{
         recommendationId: {
             type: String,
@@ -645,9 +581,6 @@ const complianceAuditSchema = new Schema({
         rejectionReason: String
     }],
 
-    // ====================================================================
-    // RISK ASSESSMENT
-    // ====================================================================
     riskAssessment: {
         overallRisk: {
             type: String,
@@ -703,9 +636,6 @@ const complianceAuditSchema = new Schema({
         heatmap: Schema.Types.Mixed
     },
 
-    // ====================================================================
-    // AUDIT REPORT
-    // ====================================================================
     reportData: {
         type: Schema.Types.Mixed,
         required: true
@@ -732,9 +662,6 @@ const complianceAuditSchema = new Schema({
 
     managementSummary: String,
 
-    // ====================================================================
-    // FORENSIC EVIDENCE PACKAGE
-    // ====================================================================
     evidencePackage: {
         packageId: {
             type: String,
@@ -784,9 +711,6 @@ const complianceAuditSchema = new Schema({
         }
     },
 
-    // ====================================================================
-    // WORKFLOW STATUS
-    // ====================================================================
     workflow: {
         status: {
             type: String,
@@ -808,7 +732,7 @@ const complianceAuditSchema = new Schema({
         nextReviewDate: Date,
         reviewFrequency: {
             type: Number,
-            default: 365, // days
+            default: 365,
             min: 30,
             max: 730
         },
@@ -819,9 +743,6 @@ const complianceAuditSchema = new Schema({
         publishedBy: String
     },
 
-    // ====================================================================
-    // CORRECTIVE ACTIONS TRACKING
-    // ====================================================================
     correctiveActions: [{
         actionId: {
             type: String,
@@ -895,9 +816,6 @@ const complianceAuditSchema = new Schema({
         }]
     }],
 
-    // ====================================================================
-    // REGULATORY REPORTING
-    // ====================================================================
     regulatoryReporting: [{
         authority: {
             type: String,
@@ -916,9 +834,6 @@ const complianceAuditSchema = new Schema({
         notes: String
     }],
 
-    // ====================================================================
-    // COMPLIANCE METRICS
-    // ====================================================================
     metrics: {
         totalFindings: {
             type: Number,
@@ -943,7 +858,7 @@ const complianceAuditSchema = new Schema({
             LOW: { type: Number, default: 0 },
             INFO: { type: Number, default: 0 }
         },
-        averageRemediationTime: Number, // in days
+        averageRemediationTime: Number,
         complianceTrend: [{
             date: Date,
             score: Number
@@ -951,9 +866,6 @@ const complianceAuditSchema = new Schema({
         lastCalculated: Date
     },
 
-    // ====================================================================
-    // AUDIT TRAIL - FORENSIC INTEGRITY
-    // ====================================================================
     auditTrail: [{
         action: {
             type: String,
@@ -1008,9 +920,6 @@ const complianceAuditSchema = new Schema({
         }
     }],
 
-    // ====================================================================
-    // CRYPTOGRAPHIC VERIFICATION - TAMPER-PROOF
-    // ====================================================================
     integrityHash: {
         type: String,
         unique: true,
@@ -1032,9 +941,6 @@ const complianceAuditSchema = new Schema({
         }
     },
 
-    // ====================================================================
-    // SYSTEM FIELDS
-    // ====================================================================
     createdBy: {
         type: String,
         required: true,
@@ -1058,9 +964,6 @@ const complianceAuditSchema = new Schema({
         default: Date.now
     },
 
-    // ====================================================================
-    // RETENTION METADATA - COMPANIES ACT 71 OF 2008
-    // ====================================================================
     retentionPolicy: {
         type: String,
         default: 'companies_act_10_years'
@@ -1088,9 +991,6 @@ const complianceAuditSchema = new Schema({
         enum: ['ZA', 'EU', 'US', 'AU', 'UK']
     },
 
-    // ====================================================================
-    // SOFT DELETE - POPIA COMPLIANCE
-    // ====================================================================
     deleted: {
         type: Boolean,
         default: false,
@@ -1109,16 +1009,15 @@ const complianceAuditSchema = new Schema({
             delete ret.auditTrail;
             delete ret.integrityHash;
             delete ret.quantumSignature;
-            delete ret.reportData.sensitiveInfo;
-            delete ret.evidencePackage.files;
-            ret = redactSensitiveData(ret);
+            delete ret.reportData?.sensitiveInfo;
+            delete ret.evidencePackage?.files;
             return ret;
         }
     }
 });
 
 // ====================================================================
-// VIRTUAL FIELDS - COMPUTED PROPERTIES
+// VIRTUAL FIELDS
 // ====================================================================
 
 complianceAuditSchema.virtual('totalFindingsCount').get(function() {
@@ -1151,7 +1050,7 @@ complianceAuditSchema.virtual('overdueFindingsCount').get(function() {
 
 complianceAuditSchema.virtual('complianceScore').get(function() {
     const score = this.score;
-    for (const [key, range] of Object.entries(COMPLIANCE_SCORES)) {
+    for (const range of Object.values(COMPLIANCE_SCORES)) {
         if (score >= range.min && score <= range.max) {
             return {
                 score,
@@ -1178,7 +1077,7 @@ complianceAuditSchema.virtual('remediationProgress').get(function() {
 });
 
 // ====================================================================
-// INDEXES - PERFORMANCE OPTIMIZATION
+// INDEXES
 // ====================================================================
 
 complianceAuditSchema.index({ tenantId: 1, auditType: 1, createdAt: -1 });
@@ -1192,25 +1091,22 @@ complianceAuditSchema.index({ integrityHash: 1 }, { unique: true });
 complianceAuditSchema.index({ deleted: 1, retentionExpiry: 1 });
 
 // ====================================================================
-// PRE-SAVE HOOKS - FORENSIC INTEGRITY
+// PRE-SAVE HOOKS
 // ====================================================================
 
 complianceAuditSchema.pre('save', async function(next) {
     try {
-        // TENANT ISOLATION - FAIL CLOSED
         if (!this.tenantId) {
             throw new Error('TENANT_ISOLATION_VIOLATION: Compliance audit requires tenantId');
         }
 
-        // Calculate score label
-        for (const [key, range] of Object.entries(COMPLIANCE_SCORES)) {
+        for (const range of Object.values(COMPLIANCE_SCORES)) {
             if (this.score >= range.min && this.score <= range.max) {
                 this.scoreLabel = range.label;
                 break;
             }
         }
 
-        // Calculate metrics
         this.metrics.totalFindings = this.findings.length;
         this.metrics.openFindings = this.findings.filter(f => 
             ['OPEN', 'IN_PROGRESS'].includes(f.status)
@@ -1224,7 +1120,6 @@ complianceAuditSchema.pre('save', async function(next) {
             f.dueDate < new Date()
         ).length;
 
-        // Calculate findings by severity
         const severityCount = {
             CRITICAL: 0,
             HIGH: 0,
@@ -1234,14 +1129,13 @@ complianceAuditSchema.pre('save', async function(next) {
         };
 
         this.findings.forEach(finding => {
-            if (severityCount.hasOwnProperty(finding.severity)) {
+            if (severityCount[finding.severity] !== undefined) {
                 severityCount[finding.severity]++;
             }
         });
 
         this.metrics.findingsBySeverity = severityCount;
 
-        // Calculate average remediation time
         const remediatedFindings = this.findings.filter(f => 
             f.status === 'REMEDIATED' && f.remediatedAt && f.createdAt
         );
@@ -1256,7 +1150,6 @@ complianceAuditSchema.pre('save', async function(next) {
 
         this.metrics.lastCalculated = new Date();
 
-        // Add to compliance trend
         if (!this.metrics.complianceTrend) {
             this.metrics.complianceTrend = [];
         }
@@ -1266,24 +1159,20 @@ complianceAuditSchema.pre('save', async function(next) {
             score: this.score
         });
 
-        // Keep last 10 trend points
         if (this.metrics.complianceTrend.length > 10) {
             this.metrics.complianceTrend = this.metrics.complianceTrend.slice(-10);
         }
 
-        // Update integrity hash
         this.integrityHash = crypto
             .createHash('sha3-512')
             .update(`${this.auditId}:${this.score}:${this.workflow.status}:${Date.now()}`)
             .digest('hex');
 
-        // Generate quantum signature
         this.quantumSignature = crypto
             .createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026')
             .update(`${this.auditId}:${this.integrityHash}:${this.workflow.status}`)
             .digest('hex');
 
-        // Add audit trail for status changes
         if (this.isModified('workflow.status')) {
             this.workflow.history.push({
                 status: this.workflow.status,
@@ -1302,16 +1191,10 @@ complianceAuditSchema.pre('save', async function(next) {
 });
 
 // ====================================================================
-// STATIC METHODS - FORENSIC QUERIES
+// STATIC METHODS
 // ====================================================================
 
 complianceAuditSchema.statics = {
-    /**
-     * Get compliance summary for tenant
-     * @param {string} tenantId - Tenant ID
-     * @param {number} year - Calendar year
-     * @returns {Promise<Object>} Compliance summary
-     */
     async getComplianceSummary(tenantId, year = new Date().getFullYear()) {
         const startDate = new Date(year, 0, 1);
         const endDate = new Date(year, 11, 31, 23, 59, 59);
@@ -1353,15 +1236,11 @@ complianceAuditSchema.statics = {
         let totalScore = 0;
 
         audits.forEach(audit => {
-            // Average score
             totalScore += audit.score;
-
-            // By audit type
             summary.byAuditType[audit.auditType] = (summary.byAuditType[audit.auditType] || 0) + 1;
 
-            // Findings by severity
             audit.findings.forEach(finding => {
-                if (finding.severity && summary.bySeverity.hasOwnProperty(finding.severity)) {
+                if (summary.bySeverity[finding.severity] !== undefined) {
                     summary.bySeverity[finding.severity]++;
 
                     if (finding.severity === 'CRITICAL') summary.criticalFindings++;
@@ -1371,7 +1250,6 @@ complianceAuditSchema.statics = {
                 }
             });
 
-            // Compliance issues
             audit.complianceIssues.forEach(issue => {
                 if (issue.remediation?.status === 'PENDING' || issue.remediation?.status === 'IN_PROGRESS') {
                     summary.openIssues++;
@@ -1386,16 +1264,12 @@ complianceAuditSchema.statics = {
                 }
             });
 
-            // Add to trends
-            if (audit.score) {
-                summary.trends.push({
-                    date: audit.createdAt,
-                    score: audit.score,
-                    type: audit.auditType
-                });
-            }
+            summary.trends.push({
+                date: audit.createdAt,
+                score: audit.score,
+                type: audit.auditType
+            });
 
-            // Top risks
             audit.findings
                 .filter(f => f.severity === 'CRITICAL' || f.severity === 'HIGH')
                 .forEach(finding => {
@@ -1411,7 +1285,6 @@ complianceAuditSchema.statics = {
                     });
                 });
 
-            // Recommendations
             audit.recommendations
                 .filter(r => !r.implemented && !r.rejected)
                 .forEach(rec => {
@@ -1430,20 +1303,17 @@ complianceAuditSchema.statics = {
             ? parseFloat((totalScore / audits.length).toFixed(1)) 
             : 0;
 
-        // Determine overall compliance rating
         if (summary.averageScore >= 90) summary.overallCompliance = 'EXCELLENT';
         else if (summary.averageScore >= 75) summary.overallCompliance = 'GOOD';
         else if (summary.averageScore >= 60) summary.overallCompliance = 'SATISFACTORY';
         else if (summary.averageScore >= 40) summary.overallCompliance = 'POOR';
         else summary.overallCompliance = 'CRITICAL';
 
-        // Sort top risks by severity
         summary.topRisks.sort((a, b) => {
             const severityOrder = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
             return (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
         }).slice(0, 10);
 
-        // Sort recommendations by priority
         const priorityOrder = { IMMEDIATE: 4, URGENT: 3, HIGH: 2, MEDIUM: 1, LOW: 0 };
         summary.recommendations.sort((a, b) => 
             (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0)
@@ -1452,12 +1322,6 @@ complianceAuditSchema.statics = {
         return summary;
     },
 
-    /**
-     * Get compliance trends over multiple years
-     * @param {string} tenantId - Tenant ID
-     * @param {number} years - Number of years
-     * @returns {Promise<Array>} Compliance trends
-     */
     async getComplianceTrends(tenantId, years = 5) {
         const currentYear = new Date().getFullYear();
         const startYear = currentYear - years + 1;
@@ -1480,12 +1344,6 @@ complianceAuditSchema.statics = {
         return trends;
     },
 
-    /**
-     * Get high-risk entities requiring immediate attention
-     * @param {string} tenantId - Tenant ID
-     * @param {number} threshold - Score threshold
-     * @returns {Promise<Array>} High-risk entities
-     */
     async getHighRiskEntities(tenantId, threshold = 60) {
         return this.aggregate([
             {
@@ -1586,12 +1444,6 @@ complianceAuditSchema.statics = {
         ]);
     },
 
-    /**
-     * Get regulatory compliance status
-     * @param {string} tenantId - Tenant ID
-     * @param {string} framework - Compliance framework
-     * @returns {Promise<Object>} Regulatory status
-     */
     async getRegulatoryStatus(tenantId, framework) {
         const audits = await this.find({
             tenantId,
@@ -1643,16 +1495,10 @@ complianceAuditSchema.statics = {
 };
 
 // ====================================================================
-// INSTANCE METHODS - BUSINESS LOGIC
+// INSTANCE METHODS
 // ====================================================================
 
 complianceAuditSchema.methods = {
-    /**
-     * Add finding to audit
-     * @param {Object} findingData - Finding data
-     * @param {string} userId - User ID
-     * @returns {Promise<Object>} Created finding
-     */
     async addFinding(findingData, userId) {
         const finding = {
             findingId: `FIND-${uuidv4()}`,
@@ -1679,18 +1525,9 @@ complianceAuditSchema.methods = {
         });
 
         await this.save();
-
         return finding;
     },
 
-    /**
-     * Update finding status
-     * @param {string} findingId - Finding ID
-     * @param {string} status - New status
-     * @param {string} userId - User ID
-     * @param {string} notes - Update notes
-     * @returns {Promise<Object>} Updated finding
-     */
     async updateFindingStatus(findingId, status, userId, notes = '') {
         const finding = this.findings.id(findingId);
         if (!finding) {
@@ -1698,7 +1535,6 @@ complianceAuditSchema.methods = {
         }
 
         const oldStatus = finding.status;
-
         finding.status = status;
         finding.updatedAt = new Date();
         finding.updatedBy = userId;
@@ -1734,16 +1570,9 @@ complianceAuditSchema.methods = {
         });
 
         await this.save();
-
         return finding;
     },
 
-    /**
-     * Add corrective action
-     * @param {Object} actionData - Action data
-     * @param {string} userId - User ID
-     * @returns {Promise<Object>} Created action
-     */
     async addCorrectiveAction(actionData, userId) {
         const action = {
             actionId: `ACTION-${uuidv4()}`,
@@ -1778,18 +1607,9 @@ complianceAuditSchema.methods = {
         });
 
         await this.save();
-
         return action;
     },
 
-    /**
-     * Update corrective action status
-     * @param {string} actionId - Action ID
-     * @param {string} status - New status
-     * @param {string} userId - User ID
-     * @param {string} notes - Update notes
-     * @returns {Promise<Object>} Updated action
-     */
     async updateActionStatus(actionId, status, userId, notes = '') {
         const action = this.correctiveActions.id(actionId);
         if (!action) {
@@ -1797,7 +1617,6 @@ complianceAuditSchema.methods = {
         }
 
         const oldStatus = action.status;
-
         action.status = status;
         action.statusHistory.push({
             status,
@@ -1829,14 +1648,9 @@ complianceAuditSchema.methods = {
         });
 
         await this.save();
-
         return action;
     },
 
-    /**
-     * Generate comprehensive audit report
-     * @returns {Promise<Object>} Audit report
-     */
     async generateReport() {
         const report = {
             auditId: this.auditId,
@@ -1952,10 +1766,9 @@ complianceAuditSchema.methods = {
             },
 
             generatedAt: new Date().toISOString(),
-            generatedBy: 'WilsyOS Compliance Audit Engine v5.0.0'
+            generatedBy: 'WilsyOS Compliance Audit Engine v5.0.1'
         };
 
-        // Update report hash
         this.reportData = report;
         this.reportHash = crypto
             .createHash('sha3-512')
@@ -1970,16 +1783,9 @@ complianceAuditSchema.methods = {
         });
 
         await this.save();
-
         return report;
     },
 
-    /**
-     * Complete audit
-     * @param {string} userId - User ID
-     * @param {string} notes - Completion notes
-     * @returns {Promise<Object>} Completion result
-     */
     async completeAudit(userId, notes = '') {
         this.workflow.status = 'COMPLETED';
         this.scheduling.endDate = new Date();
@@ -1992,7 +1798,6 @@ complianceAuditSchema.methods = {
             comment: notes
         });
 
-        // Calculate next review date
         const nextReview = new Date();
         nextReview.setDate(nextReview.getDate() + this.workflow.reviewFrequency);
         this.workflow.nextReviewDate = nextReview;
@@ -2008,8 +1813,6 @@ complianceAuditSchema.methods = {
         });
 
         await this.save();
-
-        // Generate final report
         const report = await this.generateReport();
 
         return {
@@ -2018,16 +1821,10 @@ complianceAuditSchema.methods = {
             completedAt: this.completedAt,
             completedBy: userId,
             nextReviewDate: nextReview,
-            report: report
+            report
         };
     },
 
-    /**
-     * Export for regulatory submission
-     * @param {string} authority - Regulatory authority
-     * @param {string} userId - User ID
-     * @returns {Promise<Object>} Export package
-     */
     async exportForRegulator(authority, userId) {
         const report = await this.generateReport();
 
@@ -2072,13 +1869,11 @@ complianceAuditSchema.methods = {
             }
         };
 
-        // Generate export hash
         exportPackage.hash = crypto
             .createHash('sha3-512')
             .update(JSON.stringify(exportPackage))
             .digest('hex');
 
-        // Record regulatory submission
         this.regulatoryReporting.push({
             authority,
             reportId: exportPackage.exportId,
@@ -2095,16 +1890,10 @@ complianceAuditSchema.methods = {
         });
 
         await this.save();
-
         return exportPackage;
     },
 
-    /**
-     * Verify audit integrity
-     * @returns {Promise<Object>} Verification result
-     */
     async verifyIntegrity() {
-        // Recalculate report hash
         const recalculatedReportHash = crypto
             .createHash('sha3-512')
             .update(`${this.auditId}:${JSON.stringify(this.reportData)}:${this.updatedAt.getTime()}`)
@@ -2112,7 +1901,6 @@ complianceAuditSchema.methods = {
 
         const reportHashValid = recalculatedReportHash === this.reportHash;
 
-        // Recalculate integrity hash
         const recalculatedIntegrityHash = crypto
             .createHash('sha3-512')
             .update(`${this.auditId}:${this.score}:${this.workflow.status}:${this.updatedAt.getTime()}`)
@@ -2120,7 +1908,6 @@ complianceAuditSchema.methods = {
 
         const integrityHashValid = recalculatedIntegrityHash === this.integrityHash;
 
-        // Verify quantum signature
         const recalculatedSignature = crypto
             .createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026')
             .update(`${this.auditId}:${this.integrityHash}:${this.workflow.status}`)
@@ -2128,12 +1915,10 @@ complianceAuditSchema.methods = {
 
         const signatureValid = recalculatedSignature === this.quantumSignature;
 
-        // Verify finding hashes
         const findingHashesValid = this.findings.every(finding => {
             if (finding.evidence) {
                 return finding.evidence.every(e => {
                     if (e.fileHash) {
-                        // In production, would recalculate and verify
                         return true;
                     }
                     return true;
@@ -2159,47 +1944,7 @@ complianceAuditSchema.methods = {
 };
 
 // ====================================================================
-// EXPORT - SINGLETON MODEL
+// EXPORT
 // ====================================================================
 
-const ComplianceAudit = mongoose.model('ComplianceAudit', complianceAuditSchema);
-module.exports = ComplianceAudit;
-
-/**
- * @mermaid
- * graph TD
- *     ComplianceAudit --> Subject[Audit Subject]
- *     ComplianceAudit --> Findings[Audit Findings]
- *     ComplianceAudit --> Issues[Compliance Issues]
- *     ComplianceAudit --> Score[Compliance Score]
- *     ComplianceAudit --> Actions[Corrective Actions]
- *
- *     Findings --> Severity{Severity Level}
- *     Severity -->|Critical| Immediate[Immediate Action]
- *     Severity -->|High| Urgent[Urgent Remediation]
- *     Severity -->|Medium| Normal[Normal Priority]
- *     Severity -->|Low| Low[Low Priority]
- *
- *     Issues --> Framework{Compliance Framework}
- *     Framework -->|POPIA| Popia[POPIA §19]
- *     Framework -->|LPA| LPA[LPC §95(3)]
- *     Framework -->|Companies Act| Companies[Companies Act §33]
- *
- *     Actions --> Status{Action Status}
- *     Status -->|Pending| Deadline[Deadline Tracking]
- *     Status -->|In Progress| Progress[Progress Tracking]
- *     Status -->|Completed| Verify[Verification Required]
- *
- *     Score --> Rating{Compliance Rating}
- *     Rating -->|90-100| Excellent[EXCELLENT]
- *     Rating -->|75-89| Good[GOOD]
- *     Rating -->|60-74| Satisfactory[SATISFACTORY]
- *     Rating -->|40-59| Poor[POOR]
- *     Rating -->|0-39| Critical[CRITICAL]
- *
- *     style ComplianceAudit fill:#e1f5e1
- *     style Findings fill:#fff3cd
- *     style Issues fill:#f8d7da
- *     style Actions fill:#d4edda
- *     style Score fill:#cce5ff
- */
+module.exports = mongoose.model('ComplianceAudit', complianceAuditSchema);
