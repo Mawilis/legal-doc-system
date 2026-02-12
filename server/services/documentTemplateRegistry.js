@@ -358,7 +358,8 @@ class DocumentTemplateRegistry {
     return Object.entries(validators)
 /* eslint-disable-next-line no-unused-vars */
 
-      .filter(([_, rules]) => rules.required)
+        cacheKeys.forEach(key => this.documentCache.del(key));
+
       .map(([field]) => field);
   }
 
