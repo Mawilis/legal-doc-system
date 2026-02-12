@@ -956,9 +956,6 @@ class DocumentTemplateRegistry {
      * Get registry version
      * @returns {string} Registry version
      */
-    getVersion() {
-        return this._version;
-    }
 
     /**
      * Get registry statistics
