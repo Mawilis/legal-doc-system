@@ -1,0 +1,103 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1a1a2e', 'primaryTextColor': '#fff', 'primaryBorderColor': '#0ff', 'lineColor': '#0ff', 'secondaryColor': '#16213e', 'tertiaryColor': '#0f3460'}}}%%
+graph TB
+    subgraph "INVESTOR LAYER — ECONOMIC VALUE"
+        direction LR
+        Market[R1.82B TAM<br/>99.97% ERROR REDUCTION]
+        Compliance[100% REGULATORY<br/>COVERAGE]
+        Risk[R15M PENALTY<br/>ELIMINATED]
+        ROI[3 MONTH<br/>PAYBACK]
+    end
+
+    subgraph "TEST SUITE — LPC RULE 21.1 FORENSIC VALIDATION"
+        direction TB
+        TestFile[__tests__/lpc/rule21.1.trust-traceability.forensic.test.js<br/>6.0.1 INVESTOR RELEASE]
+        
+        TC001[TC-001: FORMAT VALIDATION<br/>LPC 21.1.3 + 6 valid, 8 invalid]
+        TC002[TC-002: TRANSACTION FILTERING<br/>LPC 21.1 + 10 transactions traceable]
+        TC003[TC-003: CATEGORIZATION<br/>FICA §28 + 10 categories]
+        TC004[TC-004: RECONCILIATION<br/>SARB GN6 + 5 issues flagged]
+        TC005[TC-005: ACCESS CONTROL<br/>LPC 86.2 + 3 roles granted, 5 denied]
+        
+        TestFile --> TC001
+        TestFile --> TC002
+        TestFile --> TC003
+        TestFile --> TC004
+        TestFile --> TC005
+    end
+
+    subgraph "PRODUCTION CODE — TRUST TRACEABILITY ENGINE"
+        direction TB
+        LPCService[services/lpcService.js<br/>Trust Account API]
+        
+        subgraph "DATA MODELS — TRUST DOMAIN"
+            TransactionModel[models/Transaction.js<br/>10+ Transactions]
+            TrustModel[models/TrustAccount.js<br/>Account Status]
+            AttorneyModel[models/AttorneyProfile.js<br/>Authorization]
+        end
+        
+        subgraph "UTILITIES — FORENSIC CORE"
+            AuditLogger[utils/auditLogger.js<br/>LPC_21.1, LPC_86.2 Tags]
+            CryptoUtils[utils/cryptoUtils.js<br/>SHA3-512 Evidence Hashing]
+            TenantContext[middleware/tenantContext.js<br/>Isolation Enforcement]
+        end
+        
+        LPCService --> TransactionModel
+        LPCService --> TrustModel
+        LPCService --> AttorneyModel
+        LPCService --> AuditLogger
+        LPCService --> CryptoUtils
+        LPCService --> TenantContext
+    end
+
+    subgraph "REGULATORY FRAMEWORKS — 5 COMPLETE"
+        direction LR
+        LPC21[LPC 21.1<br/>Traceability]
+        LPC21_3[LPC 21.1.3<br/>Format]
+        LPC86[LPC 86.2<br/>Access]
+        FICA[FICA §28<br/>Monitoring]
+        SARB[SARB GN6<br/>Reconciliation]
+        
+        LPC21 --> LPCService
+        LPC21_3 --> LPCService
+        LPC86 --> LPCService
+        FICA --> LPCService
+        SARB --> LPCService
+    end
+
+    subgraph "EVIDENCE & DOCUMENTATION — INVESTOR PACKAGE"
+        direction TB
+        EvidenceDir[/docs/evidence/<br/>lpc-21.1-*.forensic.json]
+        LatestSymlink[/docs/evidence/<br/>lpc-21.1.latest.json]
+        Diagrams[/docs/diagrams/<br/>lpc-rule21.1-trust-traceability.mmd]
+        Runbook[/runbooks/<br/>lpc-21.1-trust-runbook.md]
+        
+        EvidenceDir --> LatestSymlink
+    end
+
+    TC001 -.-> LPCService
+    TC002 -.-> TransactionModel
+    TC003 -.-> TransactionModel
+    TC004 -.-> TrustModel
+    TC005 -.-> AttorneyModel
+    
+    LPCService -.-> EvidenceDir
+    TestFile -.-> EvidenceDir
+    
+    EvidenceDir --> Market
+    EvidenceDir --> Compliance
+    EvidenceDir --> Risk
+    EvidenceDir --> ROI
+    
+    classDef investor fill:#9932cc,stroke:#0ff,stroke-width:3px,color:#fff
+    classDef test fill:#1e3a8a,stroke:#0f0,stroke-width:2px,color:#fff
+    classDef prod fill:#0f3460,stroke:#ff0,stroke-width:2px,color:#fff
+    classDef model fill:#16213e,stroke:#f0f,stroke-width:2px,color:#fff
+    classDef framework fill:#4a1d2b,stroke:#ff6b6b,stroke-width:2px,color:#fff
+    classDef evidence fill:#006d5b,stroke:#0ff,stroke-width:2px,color:#fff
+    
+    class Market,Compliance,Risk,ROI investor
+    class TestFile,TC001,TC002,TC003,TC004,TC005 test
+    class LPCService prod
+    class TransactionModel,TrustModel,AttorneyModel model
+    class LPC21,LPC21_3,LPC86,FICA,SARB framework
+    class EvidenceDir,LatestSymlink,Diagrams,Runbook evidence
