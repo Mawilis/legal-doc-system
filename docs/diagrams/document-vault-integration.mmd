@@ -1,0 +1,8 @@
+graph TD
+    A[routes/documents.js] --> B[documentVaultService.js]
+    C[workers/retentionCleanup.js] --> B
+    B --> D[utils/auditLogger]
+    B --> E[utils/logger]
+    B --> F[utils/cryptoUtils]
+    B --> G[models/Document]
+    H[middleware/tenantContext] --> B

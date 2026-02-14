@@ -1,4 +1,11 @@
 /* eslint-env jest */
+const mockAuditLogger = { log: jest.fn() };
+const mockLogger = { info: jest.fn(), error: jest.fn() };
+const mockCryptoUtils = { encrypt: jest.fn(), decrypt: jest.fn() };
+
+jest.mock('../utils/auditLogger', () => mockAuditLogger);
+jest.mock('../utils/logger', () => mockLogger);
+jest.mock('../utils/cryptoUtils', () => mockCryptoUtils);
 /**
  * E-Signature Controller Investor Due Diligence Tests
  * Deterministic tests for ECT Act Section 13 compliance

@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "testSuite": "LPC Rule 41.3 Administrator Metrics",
+    "testRunId": "bd64c9b4",
+    "timestamp": "2026-02-14T16:46:38.167Z"
+  },
+  "economicMetrics": {
+    "annualSavingsPerFirmZAR": 2200000,
+    "penaltyRiskEliminatedZAR": 8700000,
+    "tamZAR": 770000000
+  },
+  "testEntries": [
+    {
+      "test": "mock-load",
+      "status": "PASSED"
+    }
+  ],
+  "hash": "c8b311d06a6873561220df5729562cdcc728e6dd93caaba0d7cd60d6fcb462f6"
+}

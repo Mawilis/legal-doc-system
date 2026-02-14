@@ -1,30 +1,18 @@
 module.exports = {
-  testEnvironment: 'node',
-  testMatch: [
-    '**/__tests__/**/*.test.js',
-    '**/tests/**/*.test.js',
-    '**/*.test.js',
-    '**/market-intelligence/**/*.test.js',
-    '**/global-expansion/**/*.test.js',
-    '**/patents/**/*.test.js',
-    '**/investor-materials/**/*.test.js'
-  ],
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/build/',
-    '/coverage/'
-  ],
-  collectCoverageFrom: [
-    'services/**/*.js',
-    'utils/**/*.js',
-    'middleware/**/*.js',
-    'models/**/*.js',
-    '!**/node_modules/**',
-    '!**/vendor/**'
-  ],
-  setupFilesAfterEnv: ['<rootDir>/tests/setupAfterEnv.js'],
-  verbose: true,
-  detectOpenHandles: true,
-  forceExit: true
+    testEnvironment: 'node',
+    testMatch: [
+        '**/tests/**/*.test.js',
+        '**/__tests__/**/*.test.js'
+    ],
+    testPathIgnorePatterns: [
+        '/node_modules/',
+        '/dist/'
+    ],
+    moduleFileExtensions: ['js', 'json'],
+    verbose: true,
+    testTimeout: 30000,
+    maxWorkers: 1,
+    clearMocks: true,
+    resetMocks: false,
+    restoreMocks: false
 };

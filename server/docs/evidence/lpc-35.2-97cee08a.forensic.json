@@ -1,0 +1,81 @@
+{
+  "metadata": {
+    "testSuite": "LPC Rule 35.2 Executive Reports",
+    "testRunId": "97cee08a",
+    "timestamp": "2026-02-14T08:57:04.468Z",
+    "version": "6.0.1-investor-release"
+  },
+  "economicMetrics": {
+    "annualSavingsPerFirmZAR": 1655000,
+    "penaltyRiskEliminatedZAR": 6200000,
+    "savingsPercentage": 91.9,
+    "marginPercent": 91,
+    "tamZAR": 577500000,
+    "reportingCycleReductionDays": 21
+  },
+  "complianceVerification": {
+    "executiveRolesVerified": 5,
+    "nonExecutiveRolesTested": 4,
+    "reportTypesTested": 5,
+    "frameworksVerified": 7,
+    "testsRun": 7,
+    "testsPassed": 7
+  },
+  "testEntries": [
+    {
+      "test": "constants-validation",
+      "status": "passed",
+      "executiveRolesCount": 5,
+      "frameworksCount": 7
+    },
+    {
+      "test": "economic-value",
+      "metrics": {
+        "annualSavingsPerFirmZAR": 1655000,
+        "penaltyRiskEliminatedZAR": 6200000,
+        "savingsPercentage": 91.9,
+        "marginPercent": 91,
+        "tamZAR": 577500000,
+        "reportingCycleReductionDays": 21
+      },
+      "verified": true
+    },
+    {
+      "test": "executive-access",
+      "executiveRolesGranted": 5,
+      "nonExecutiveDenied": 4
+    },
+    {
+      "test": "tenant-isolation",
+      "sameTenantAccess": true,
+      "crossTenantDenied": true
+    },
+    {
+      "test": "regulatory-frameworks",
+      "frameworksFound": 7,
+      "expectedFrameworks": 7,
+      "frameworksList": [
+        "lpc",
+        "popia",
+        "fica",
+        "gdpr",
+        "sarb",
+        "fsca",
+        "aml"
+      ]
+    },
+    {
+      "test": "audit-trail",
+      "reportsGenerated": 3,
+      "auditEntriesCreated": 3,
+      "tagsVerified": true
+    },
+    {
+      "test": "executive-summary",
+      "strengthsCount": 2,
+      "risksCount": 2,
+      "actionsCount": 2
+    }
+  ],
+  "hash": "859f97c80a0690aa5ace9e3dc8ef17f9587a0681ad9b7616d486b33ee41a97f1"
+}

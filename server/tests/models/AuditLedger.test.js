@@ -41,7 +41,6 @@ const MONGO_URI_TEST = process.env.MONGO_URI_TEST || 'mongodb://127.0.0.1:27017/
 // Test data constants
 const TEST_TENANT_ID = `tenant_test_${Date.now()}`;
 const TEST_USER_ID = new mongoose.Types.ObjectId();
-const TEST_RESOURCE_ID = new mongoose.Types.ObjectId();
 
 /**
  * Generate test audit data with compliance markers

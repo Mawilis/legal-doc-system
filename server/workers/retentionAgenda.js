@@ -1374,12 +1374,6 @@ class RetentionAgenda {
  * * To render this diagram locally:
  * 1. Save this code block to docs/diagrams/retention-agenda-workflow.mmd
  * 2. Run: npx mmdc -i docs/diagrams/retention-agenda-workflow.mmd -o docs/diagrams/retention-agenda-workflow.png
- */
-// // const mermaidDiagram = generateDiagram(); // Unused variable // Unused variable
-flowchart TD
-    subgraph A[Worker Initialization]
-        A1([Worker Startup]) --> A2[Load Configuration<br/>Retention periods, methods, thresholds]
-        A2 --> A3[Initialize Agenda<br/>With MongoDB connection]
         A3 --> A4[Define Job Handlers<br/>5 job types with priorities]
         A4 --> A5[Setup Event Handlers<br/>Start, complete, fail, error]
         A5 --> A6[Schedule Recurring Jobs<br/>Hourly, daily, weekly schedules]

@@ -1,24 +1,44 @@
+/* eslint-env jest */
+/**
+ * Test Setup Helper
+ * 
+ * This file runs before all tests to set up the test environment,
+ * mock external dependencies, and configure encryption keys.
+ */
+
+const path = require('path');
+const dotenv = require('dotenv');
+
 // Load test environment variables
-require('dotenv').config({ path: '.env.test' });
+dotenv.config({ path: path.join(__dirname, '../.env.test') });
 
-// Validate required test environment variables
-const requiredEnvVars = ['NODE_ENV'];
-const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-if (missingVars.length > 0) {
-  console.error('❌ Missing required test environment variables:', missingVars.join(', '));
-  process.exit(1);
-}
-
+// Set test environment
 process.env.NODE_ENV = 'test';
 
-global.TEST_CONFIG = {
-  TEST_TENANT_ID: 'test-tenant-' + Date.now(),
-  TEST_USER: {
-    id: 'test-user-' + Date.now(),
-    email: 'test@wilsyos.co.za',
-    permissions: ['legal:assess:risk', 'document:read', 'document:write'],
-    role: 'TEST_ADMIN'
-  }
+// Ensure encryption keys are set for cryptoUtils
+if (!process.env.USER_DATA_ENCRYPTION_KEY) {
+    process.env.USER_DATA_ENCRYPTION_KEY = 'test-data-encryption-key-32-bytes-long!!';
+}
+if (!process.env.USER_PII_ENCRYPTION_KEY) {
+    process.env.USER_PII_ENCRYPTION_KEY = 'test-pii-encryption-key-32-bytes-long!!';
+}
+
+// Mock console methods to keep test output clean
+global.console = {
+    ...console,
+    log: jest.fn(),
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
 };
 
-console.log('✅ Test environment initialized');
+// Increase timeout for all tests
+jest.setTimeout(30000);
+
+// Global afterAll hook to clean up
+afterAll(async () => {
+    // Add any cleanup here
+    jest.clearAllMocks();
+    jest.resetAllMocks();
+});

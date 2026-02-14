@@ -1,0 +1,27 @@
+{
+  "env": {
+    "node": true,
+    "jest": true,
+    "es2021": true
+  },
+  "extends": ["eslint:recommended"],
+  "parserOptions": {
+    "ecmaVersion": 12,
+    "sourceType": "script"
+  },
+  "rules": {
+    "no-redeclare": "off",
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "no-undef": "error"
+  },
+  "globals": {
+    "describe": "readonly",
+    "it": "readonly",
+    "beforeAll": "readonly",
+    "afterAll": "readonly",
+    "beforeEach": "readonly",
+    "afterEach": "readonly",
+    "expect": "readonly",
+    "jest": "readonly"
+  }
+}

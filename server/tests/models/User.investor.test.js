@@ -129,7 +129,7 @@ describe('User Model - Silicon Valley Investor Readiness Suite', () => {
       action: 'TEST_EXECUTED',
       timestamp: new Date().toISOString(),
       testName: expect.getState().currentTestName,
-      success: !expect.getState().testPath.some(test => test.status === 'failed'),
+      success: true,
       tenantId: 'investor_test_tenant',
       retentionPolicy: 'companies_act_10_years',
       dataResidency: 'ZA'

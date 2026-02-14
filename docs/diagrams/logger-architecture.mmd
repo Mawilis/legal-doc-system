@@ -1,0 +1,10 @@
+graph TD
+    A[logger.test.js] --> B[utils/logger.js]
+    A --> C[utils/auditLogger.js]
+    A --> D[fs]
+    A --> E[path]
+    B --> F{PII Masking}
+    C --> G{Audit Trail}
+    F --> H[✓ SA_ID Masked]
+    F --> I[✓ PHONE Masked]
+    G --> J[✓ Tenant Isolation]

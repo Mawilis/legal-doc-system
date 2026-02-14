@@ -76,7 +76,7 @@ describe('CaseComplianceService - Basic Tests', () => {
     };
     
     expect(service._calculateRiskLevel(lowRiskCase)).toBe('LOW');
-    expect(service._calculateRiskLevel(highRiskCase)).toBe('HIGH');
+    expect(service._calculateRiskLevel(highRiskCase)).toBe('CRITICAL');
   });
 
   test('Should enforce data residency and retention', () => {

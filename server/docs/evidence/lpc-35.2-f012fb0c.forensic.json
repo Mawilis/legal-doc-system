@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "testSuite": "LPC Rule 35.2 Executive Reports",
+    "testRunId": "f012fb0c",
+    "timestamp": "2026-02-14T07:47:25.307Z",
+    "version": "6.0.1"
+  },
+  "economicMetrics": {
+    "annualSavingsPerFirmZAR": 1655000,
+    "penaltyRiskEliminatedZAR": 6200000,
+    "savingsPercentage": 91.9,
+    "tamZAR": 577500000
+  },
+  "complianceVerification": {
+    "executiveRolesVerified": 5,
+    "testsPassed": 2
+  },
+  "testEntries": [
+    {
+      "test": "executive-roles",
+      "passed": true
+    },
+    {
+      "test": "economic-value",
+      "savings": 1655000
+    }
+  ],
+  "hash": "ad6a5f55589d6bd9b33fe48eb7a04c306cc539af50b1719991fc9ec276f8b7f7"
+}

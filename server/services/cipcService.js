@@ -228,7 +228,7 @@ class CIPCService {
       // Validate required fields - handle undefined/null
       const hasRequiredFields = !!(director && director.fullName && director.idNumber);
       const idNumberValid = director && director.idNumber ? /^\d{13}$/.test(director.idNumber) : false;
-      const valid = hasRequiredFields && idNumberValid;const valid = hasRequiredFields && idNumberValid;
+      const isValid = hasRequiredFields const valid = hasRequiredFields && idNumberValid;const valid = hasRequiredFields && idNumberValid;const valid = hasRequiredFields && idNumberValid;const valid = hasRequiredFields && idNumberValid; idNumberValid;
       
       // Generate forensic evidence
       const evidenceData = {

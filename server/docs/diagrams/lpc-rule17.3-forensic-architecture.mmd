@@ -1,0 +1,99 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1a1a2e', 'primaryTextColor': '#fff', 'primaryBorderColor': '#0f0', 'lineColor': '#0ff', 'secondaryColor': '#16213e', 'tertiaryColor': '#0f3460'}}}%%
+graph TB
+    subgraph "INVESTOR LAYER — ECONOMIC VALUE"
+        direction LR
+        Market[R630M TAM<br/>95% COST REDUCTION]
+        Compliance[100% REGULATORY<br/>COVERAGE]
+        Risk[R5.2M PENALTY<br/>ELIMINATED]
+        Evidence[COURT-ADMISSIBLE<br/>FORENSIC EVIDENCE]
+    end
+
+    subgraph "TEST SUITE — LPC RULE 17.3 FORENSIC VALIDATION"
+        direction TB
+        TestFile[__tests__/lpc/rule17.3.attorney-audit.compliance.test.js<br/>6.0.1 INVESTOR RELEASE]
+        
+        TC001[TC-001: COMPLETE ACCESS LOGGING<br/>LPC 17.3 + POPIA §20]
+        TC002[TC-002: CHAIN OF CUSTODY<br/>LPC 95.3 + SHA3-512]
+        TC003[TC-003: BLOCKCHAIN ANCHORING<br/>LPC 3.4.3 + 13 CRITICAL EVENTS]
+        TC004[TC-004: EVIDENCE REGISTRY<br/>O(1) QUERIES + 10-YEAR RETENTION]
+        TC005[TC-005: TENANT ISOLATION<br/>POPIA §20 + ZERO LEAKAGE]
+        
+        TestFile --> TC001
+        TestFile --> TC002
+        TestFile --> TC003
+        TestFile --> TC004
+        TestFile --> TC005
+    end
+
+    subgraph "PRODUCTION CODE — FORENSIC AUDIT ENGINE"
+        direction TB
+        LPCService[services/lpcService.js<br/>Attorney Profile Management]
+        AuditService[services/auditService.js<br/>Forensic Audit Trail]
+        AuditLedger[models/AuditLedger.js<br/>Immutable Storage]
+        
+        subgraph "UTILITIES — CRYPTOGRAPHIC CORE"
+            CryptoUtils[utils/cryptoUtils.js<br/>SHA3-512 Hashing]
+            AuditLogger[utils/auditLogger.js<br/>PII Redaction]
+            PopiaRedact[utils/popia.redaction.service.js<br/>POPIA §20 Compliance]
+        end
+        
+        subgraph "MIDDLEWARE — TENANT CONTEXT"
+            TenantContext[middleware/tenantContext.js<br/>Isolation Enforcement]
+        end
+        
+        LPCService --> AuditService
+        AuditService --> AuditLedger
+        AuditService --> CryptoUtils
+        AuditService --> AuditLogger
+        AuditService --> PopiaRedact
+        AuditService --> TenantContext
+    end
+
+    subgraph "REGULATOR INTEGRATION — LPC BLOCKCHAIN"
+        direction LR
+        LPCBlockchain[LPC Regulator Network<br/>Mainnet-v2]
+        CriticalEvents[13 Critical Event Types<br/>Rule 3.4.3]
+        AnchorService[Blockchain Anchoring<br/><300s Window]
+        
+        CriticalEvents --> AnchorService
+        AnchorService --> LPCBlockchain
+    end
+
+    subgraph "EVIDENCE & DOCUMENTATION — INVESTOR PACKAGE"
+        direction TB
+        EvidenceDir[/docs/evidence/<br/>lpc-17.3-*.forensic.json]
+        LatestSymlink[/docs/evidence/<br/>lpc-17.3.latest.json]
+        Diagrams[/docs/diagrams/<br/>lpc-rule17.3-forensic-architecture.mmd]
+        Runbook[/runbooks/<br/>lpc-compliance.md]
+        
+        EvidenceDir --> LatestSymlink
+    end
+
+    TC001 -.-> AuditService
+    TC002 -.-> AuditService
+    TC003 -.-> AnchorService
+    TC004 -.-> LPCService
+    TC005 -.-> TenantContext
+    
+    AuditService -.-> EvidenceDir
+    LPCService -.-> EvidenceDir
+    TestFile -.-> EvidenceDir
+    
+    EvidenceDir --> Market
+    EvidenceDir --> Compliance
+    EvidenceDir --> Risk
+    EvidenceDir --> Evidence
+    
+    classDef investor fill:#9932cc,stroke:#0ff,stroke-width:3px,color:#fff
+    classDef test fill:#1e3a8a,stroke:#0f0,stroke-width:2px,color:#fff
+    classDef prod fill:#0f3460,stroke:#ff0,stroke-width:2px,color:#fff
+    classDef util fill:#16213e,stroke:#f0f,stroke-width:2px,color:#fff
+    classDef regulator fill:#4a1d2b,stroke:#ff6b6b,stroke-width:2px,color:#fff
+    classDef evidence fill:#006d5b,stroke:#0ff,stroke-width:2px,color:#fff
+    
+    class Market,Compliance,Risk,Evidence investor
+    class TestFile,TC001,TC002,TC003,TC004,TC005 test
+    class LPCService,AuditService,AuditLedger prod
+    class CryptoUtils,AuditLogger,PopiaRedact,TenantContext util
+    class LPCBlockchain,CriticalEvents,AnchorService regulator
+    class EvidenceDir,LatestSymlink,Diagrams,Runbook evidence

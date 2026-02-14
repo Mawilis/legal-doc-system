@@ -1,18 +1,5 @@
-/**
- * Copyright (c) 2026 Wilsy Pty Ltd [Reg: 2024/617944/07].
- * All Rights Reserved.
- * * This software is the confidential and proprietary information of Wilsy Pty Ltd.
- * Unauthorized copying of this file, via any medium is strictly prohibited.
- * Proprietary and confidential.
- */
-
 {
-  "name": "svc-billing",
+  "name": "wilsy-os-billing",
   "version": "1.0.0",
-  "main": "index.js",
-  "dependencies": {
-    "express": "^4.18.2",
-    "body-parser": "^1.20.2",
-    "cors": "^2.8.5"
-  }
+  "private": true
 }
