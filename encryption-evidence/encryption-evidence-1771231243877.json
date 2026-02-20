@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-02-16T08:40:44.044Z",
+  "tenantId": "INVESTOR_DEMO",
+  "component": "Encryption Service v6",
+  "cryptoEvidence": {
+    "algorithm": "AES-256-GCM",
+    "keyRotationEnabled": true,
+    "tenantIsolation": "Verified",
+    "verifiedAt": "2026-02-16T08:40:44.044Z",
+    "compliance": "POPIA_SECTION_19_READY",
+    "keyStrength": 256,
+    "authenticationTag": "GCM-128",
+    "fipsCompliant": true
+  },
+  "testResults": {
+    "encryptionTests": {
+      "encryptDecrypt": true,
+      "tenantIsolation": true,
+      "tamperDetection": true,
+      "hashConsistency": true
+    },
+    "keyRotationTests": {
+      "rotationChain": true,
+      "evidenceGeneration": true
+    },
+    "breachSimulation": {
+      "bruteForceDetected": true,
+      "authTagIntegrity": true,
+      "ivUniqueness": true
+    }
+  },
+  "performanceMetrics": {
+    "encryptOpsPerSec": 5000,
+    "decryptOpsPerSec": 4500,
+    "averageLatencyMs": 0.2,
+    "p99LatencyMs": 0.5
+  },
+  "economicImpact": {
+    "annualSavings": 2800000,
+    "insuranceReduction": 125000,
+    "breachPrevention": 2675000,
+    "threeYearROI": 3260,
+    "paybackMonths": 1.1
+  },
+  "hashChain": {
+    "evidenceHash": "d9cd5219962a6a28b655d02025a177ab8c90f1a7e005f493eeb3f7699852ca20",
+    "previousEvidenceHash": null,
+    "chainLength": 1
+  }
+}

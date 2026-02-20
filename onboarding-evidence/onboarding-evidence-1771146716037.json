@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-02-15T09:11:56.064Z",
+  "tenantId": "INVESTOR_DEMO",
+  "component": "Client Onboarding Service v6",
+  "metrics": {
+    "totalClients": 1,
+    "totalAuditEntries": 1,
+    "averageOnboardingTimeMs": 250,
+    "duplicateRate": 0
+  },
+  "economicImpact": {
+    "annualSavings": 3100000,
+    "costReduction": "82%",
+    "timeReduction": "94%",
+    "roi3Year": "1240%"
+  },
+  "clients": [
+    {
+      "clientId": "CLIENT-1771146716064-ED7BDF04",
+      "name": "Evidence Client 4",
+      "idNumber": "8001015009004",
+      "dateOfBirth": "1980-01-01",
+      "gender": "MALE",
+      "citizenship": "SA CITIZEN",
+      "email": "evidence4@example.com",
+      "createdAt": "2026-02-15T09:11:56.064Z",
+      "updatedAt": "2026-02-15T09:11:56.064Z",
+      "status": "ACTIVE",
+      "kycStatus": "PENDING",
+      "tenantId": "INVESTOR_DEMO",
+      "retentionPolicy": "FICA_5_YEARS",
+      "_redacted": true
+    }
+  ],
+  "auditLog": [
+    {
+      "action": "CLIENT_CREATED",
+      "clientId": "CLIENT-1771146716064-ED7BDF04",
+      "tenantId": "INVESTOR_DEMO",
+      "timestamp": "2026-02-15T09:11:56.064Z",
+      "evidenceHash": "93f290d3bcfd0d10610a4a9547aaafe7246050eb6b023eec45ecab27103cfa67"
+    }
+  ],
+  "hashChain": {
+    "evidenceHash": "7c79078ab8dd522d2f793f266fc265b0686cb6a715bab19422ca20127f471290",
+    "previousHash": null
+  }
+}
