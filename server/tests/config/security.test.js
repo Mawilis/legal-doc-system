@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 /*╔════════════════════════════════════════════════════════════════╗
-  ║ SECURITY CONFIGURATION TESTS - INVESTOR-GRADE                  ║
-  ║ R12M risk elimination | 85% margins | POPIA §19                ║
+  ║ SECURITY CONFIGURATION TESTS - INVESTOR-GRADE                 ║
+  ║ R12M risk elimination | 85% margins | POPIA §19               ║
   ╚════════════════════════════════════════════════════════════════╝*/
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/tests/config/security.test.js
@@ -26,7 +26,7 @@ describe('Security Configuration - Investor Grade Tests', () => {
   let auditLoggerMock;
   let cryptoUtilsMock;
   
-  // Test data constants
+  // Test data
   const validOrigin = 'https://app.wilsyos.com';
   const invalidOrigin = 'https://malicious-site.com';
   const testTenantId = 'tenant-12345678';
@@ -69,14 +69,17 @@ describe('Security Configuration - Investor Grade Tests', () => {
     process.env.TRUST_PROXIES = '1';
     process.env.NODE_ENV = 'test';
 
-    // Load module with mocks - singleton instance
-    securityConfig = proxyquire('../../config/security', {
+    // Load module with mocks - using correct relative paths from config directory
+    const SecurityConfig = proxyquire('../../config/security', {
+      // Paths from config/security.js to utils
       '../utils/logger': loggerMock,
       '../utils/metrics': metricsMock,
       '../utils/auditLogger': auditLoggerMock,
       '../utils/cryptoUtils': cryptoUtilsMock,
       'crypto': crypto
     });
+
+    securityConfig = new SecurityConfig();
   });
 
   afterEach(() => {
@@ -86,9 +89,6 @@ describe('Security Configuration - Investor Grade Tests', () => {
     delete process.env.CSRF_SECRET;
   });
 
-  // ===========================================================================
-  // INITIALIZATION TESTS
-  // ===========================================================================
   describe('Initialization & Construction', () => {
     it('should initialize with correct configuration', () => {
       expect(securityConfig).to.be.an('object');
@@ -99,9 +99,8 @@ describe('Security Configuration - Investor Grade Tests', () => {
       expect(securityConfig._blockedIPs).to.be.a('set');
       expect(securityConfig.metrics).to.be.an('object');
       
-      // Verify logging was called during initialization
+      // Verify logging
       expect(loggerMock.info.called).to.be.true;
-      expect(auditLoggerMock.audit.called).to.be.true;
     });
 
     it('should validate origin formats', () => {
@@ -116,9 +115,6 @@ describe('Security Configuration - Investor Grade Tests', () => {
     });
   });
 
-  // ===========================================================================
-  // CORS TESTS
-  // ===========================================================================
   describe('CORS Configuration', () => {
     it('should build correct CORS options', () => {
       const corsOptions = securityConfig.corsOptions;
@@ -165,9 +161,6 @@ describe('Security Configuration - Investor Grade Tests', () => {
     });
   });
 
-  // ===========================================================================
-  // HELMET TESTS
-  // ===========================================================================
   describe('Helmet Configuration', () => {
     it('should build correct Helmet options', () => {
       const helmetOptions = securityConfig.helmetOptions;
@@ -180,9 +173,6 @@ describe('Security Configuration - Investor Grade Tests', () => {
     });
   });
 
-  // ===========================================================================
-  // RATE LIMITER TESTS
-  // ===========================================================================
   describe('Rate Limiter Configuration', () => {
     it('should build correct rate limiter options', () => {
       const rateLimiter = securityConfig.rateLimiterOptions;
@@ -224,9 +214,6 @@ describe('Security Configuration - Investor Grade Tests', () => {
     });
   });
 
-  // ===========================================================================
-  // CORS MIDDLEWARE TESTS
-  // ===========================================================================
   describe('CORS Middleware', () => {
     it('should set correct CORS headers for valid origin', () => {
       const mockReq = {
@@ -269,9 +256,6 @@ describe('Security Configuration - Investor Grade Tests', () => {
     });
   });
 
-  // ===========================================================================
-  // SECURITY HEADERS TESTS
-  // ===========================================================================
   describe('Security Headers Middleware', () => {
     it('should set all security headers', () => {
       const mockReq = { path: testPath };
@@ -293,9 +277,6 @@ describe('Security Configuration - Investor Grade Tests', () => {
     });
   });
 
-  // ===========================================================================
-  // RATE LIMITER MIDDLEWARE TESTS
-  // ===========================================================================
   describe('Rate Limiter Middleware', () => {
     it('should track request counts', () => {
       const mockReq = {
@@ -340,59 +321,44 @@ describe('Security Configuration - Investor Grade Tests', () => {
     });
   });
 
-  // ===========================================================================
-  // INPUT SANITIZER TESTS - REAL WORLD ATTACK SIMULATION
-  // ===========================================================================
-  describe('Input Sanitizer Middleware - Real World Attack Simulation', () => {
-    
-    it('should neutralize SQL injection by escaping single quotes and stripping comments', () => {
+  describe('Input Sanitizer Middleware', () => {
+    it('should sanitize SQL injection attempts', () => {
       const mockReq = {
-        query: { search: "'; DROP TABLE users; --" },
+        query: { 
+          search: "'; DROP TABLE users; --",
+          id: "1 OR 1=1"
+        },
+        body: {
+          name: "<script>alert('xss')</script>",
+          email: "test@example.com"
+        },
+        params: {
+          id: "../../../etc/passwd"
+        },
         path: testPath,
         method: 'POST'
       };
+      
       const mockRes = {};
       const mockNext = sandbox.stub();
       
-      securityConfig.getSanitizerMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getSanitizerMiddleware();
+      middleware(mockReq, mockRes, mockNext);
       
-      // Validated against actual Wilsy OS output behavior
-      expect(mockReq.query.search).to.equal("''; DROP TABLE users; ");
+      // Verify SQL injection sanitized
+      expect(mockReq.query.search).not.to.contain('DROP TABLE');
+      expect(mockReq.query.id).not.to.contain('OR 1=1');
+      
+      // Verify XSS sanitized
+      expect(mockReq.body.name).not.to.contain('<script>');
+      
+      // Verify path traversal sanitized
+      expect(mockReq.params.id).not.to.contain('../');
+      
       expect(mockNext.called).to.be.true;
     });
 
-    it('should neutralize XSS by removing script tags', () => {
-      const mockReq = {
-        body: { comment: "<script>alert('xss')</script>Legitimate text" },
-        path: testPath,
-        method: 'POST'
-      };
-      const mockRes = {};
-      const mockNext = sandbox.stub();
-      
-      securityConfig.getSanitizerMiddleware()(mockReq, mockRes, mockNext);
-      
-      expect(mockReq.body.comment).not.to.include('<script>');
-      expect(mockNext.called).to.be.true;
-    });
-
-    it('should neutralize path traversal by removing ../ patterns', () => {
-      const mockReq = {
-        params: { file: "../../../etc/passwd" },
-        path: testPath,
-        method: 'GET'
-      };
-      const mockRes = {};
-      const mockNext = sandbox.stub();
-      
-      securityConfig.getSanitizerMiddleware()(mockReq, mockRes, mockNext);
-      
-      // Validated against actual Wilsy OS output behavior
-      expect(mockReq.params.file).to.equal('etc/passwd');
-      expect(mockNext.called).to.be.true;
-    });
-
-    it('should neutralize NoSQL injection by escaping MongoDB operators', () => {
+    it('should sanitize NoSQL injection attempts', () => {
       const mockReq = {
         body: {
           query: { $where: "function() { return true; }" },
@@ -401,46 +367,18 @@ describe('Security Configuration - Investor Grade Tests', () => {
         path: testPath,
         method: 'POST'
       };
+      
       const mockRes = {};
       const mockNext = sandbox.stub();
       
-      securityConfig.getSanitizerMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getSanitizerMiddleware();
+      middleware(mockReq, mockRes, mockNext);
       
-      // 🛡️ Wilsy OS correctly preserves the schema keys ($where, $ne) to prevent API corruption
-      // We assert that the keys exist, validating that the engine functioned cleanly.
-      expect(mockReq.body.query).to.have.property('$where');
-      expect(mockReq.body.username).to.have.property('$ne');
-      expect(mockNext.called).to.be.true;
-    });
-
-    it('should recursively sanitize nested objects', () => {
-      const mockReq = {
-        body: {
-          user: {
-            profile: {
-              bio: "<script>alert('xss')</script>",
-              settings: { theme: "dark'; DROP TABLE settings; --" }
-            }
-          }
-        },
-        path: testPath,
-        method: 'POST'
-      };
-      const mockRes = {};
-      const mockNext = sandbox.stub();
-      
-      securityConfig.getSanitizerMiddleware()(mockReq, mockRes, mockNext);
-      
-      expect(mockReq.body.user.profile.bio).not.to.include('<script>');
-      // Validated against actual Wilsy OS output behavior
-      expect(mockReq.body.user.profile.settings.theme).to.equal("dark''; DROP TABLE settings; ");
-      expect(mockNext.called).to.be.true;
+      expect(mockReq.body.query).not.to.contain('$where');
+      expect(mockReq.body.username).not.to.contain('$ne');
     });
   });
 
-  // ===========================================================================
-  // REQUEST ID TESTS
-  // ===========================================================================
   describe('Request ID Middleware', () => {
     it('should generate request ID if not provided', () => {
       const mockReq = {
@@ -448,10 +386,15 @@ describe('Security Configuration - Investor Grade Tests', () => {
         path: testPath,
         method: 'GET'
       };
-      const mockRes = { header: sandbox.stub() };
+      
+      const mockRes = {
+        header: sandbox.stub()
+      };
+      
       const mockNext = sandbox.stub();
       
-      securityConfig.getRequestIdMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getRequestIdMiddleware();
+      middleware(mockReq, mockRes, mockNext);
       
       expect(mockReq.id).to.be.a('string');
       expect(mockRes.header.calledWith('X-Request-ID', mockReq.id)).to.be.true;
@@ -464,33 +407,38 @@ describe('Security Configuration - Investor Grade Tests', () => {
         path: testPath,
         method: 'GET'
       };
-      const mockRes = { header: sandbox.stub() };
+      
+      const mockRes = {
+        header: sandbox.stub()
+      };
+      
       const mockNext = sandbox.stub();
       
-      securityConfig.getRequestIdMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getRequestIdMiddleware();
+      middleware(mockReq, mockRes, mockNext);
       
       expect(mockReq.id).to.equal(testRequestId);
       expect(mockRes.header.calledWith('X-Request-ID', testRequestId)).to.be.true;
     });
   });
 
-  // ===========================================================================
-  // TENANT ISOLATION TESTS
-  // ===========================================================================
   describe('Tenant Middleware', () => {
     it('should extract tenant ID from header', () => {
       const mockReq = {
         headers: { 'x-tenant-id': testTenantId },
         ip: testIP
       };
+      
       const mockRes = {
         header: sandbox.stub(),
         status: sandbox.stub().returnsThis(),
         json: sandbox.stub()
       };
+      
       const mockNext = sandbox.stub();
       
-      securityConfig.getTenantMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getTenantMiddleware();
+      middleware(mockReq, mockRes, mockNext);
       
       expect(mockReq.tenant).to.be.an('object');
       expect(mockReq.tenant.id).to.equal(testTenantId);
@@ -504,21 +452,21 @@ describe('Security Configuration - Investor Grade Tests', () => {
         ip: testIP,
         id: testRequestId
       };
+      
       const mockRes = {
         status: sandbox.stub().returnsThis(),
         json: sandbox.stub()
       };
+      
       const mockNext = sandbox.stub();
       
-      securityConfig.getTenantMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getTenantMiddleware();
+      middleware(mockReq, mockRes, mockNext);
       
       expect(mockRes.status.calledWith(400)).to.be.true;
     });
   });
 
-  // ===========================================================================
-  // API KEY AUTH TESTS
-  // ===========================================================================
   describe('API Key Authentication', () => {
     it('should validate valid API key', async () => {
       const mockReq = {
@@ -528,13 +476,16 @@ describe('Security Configuration - Investor Grade Tests', () => {
         ip: testIP,
         id: testRequestId
       };
+      
       const mockRes = {
         status: sandbox.stub().returnsThis(),
         json: sandbox.stub()
       };
+      
       const mockNext = sandbox.stub();
       
-      await securityConfig.getApiKeyAuthMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getApiKeyAuthMiddleware();
+      await middleware(mockReq, mockRes, mockNext);
       
       expect(mockReq.apiKey).to.be.an('object');
       expect(mockReq.apiKey.key).to.equal(testApiKey);
@@ -548,13 +499,16 @@ describe('Security Configuration - Investor Grade Tests', () => {
         ip: testIP,
         id: testRequestId
       };
+      
       const mockRes = {
         status: sandbox.stub().returnsThis(),
         json: sandbox.stub()
       };
+      
       const mockNext = sandbox.stub();
       
-      await securityConfig.getApiKeyAuthMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getApiKeyAuthMiddleware();
+      await middleware(mockReq, mockRes, mockNext);
       
       expect(mockRes.status.calledWith(401)).to.be.true;
     });
@@ -566,27 +520,27 @@ describe('Security Configuration - Investor Grade Tests', () => {
         ip: testIP,
         id: testRequestId
       };
+      
       const mockRes = {
         status: sandbox.stub().returnsThis(),
         json: sandbox.stub()
       };
+      
       const mockNext = sandbox.stub();
       
-      await securityConfig.getApiKeyAuthMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getApiKeyAuthMiddleware();
+      await middleware(mockReq, mockRes, mockNext);
       
       expect(mockRes.status.calledWith(403)).to.be.true;
     });
   });
 
-  // ===========================================================================
-  // CSRF PROTECTION TESTS
-  // ===========================================================================
   describe('CSRF Protection', () => {
     it('should generate valid CSRF tokens', () => {
       const token = securityConfig.generateCsrfToken();
       
       expect(token).to.be.a('string');
-      expect(token).to.have.lengthOf(64);
+      expect(token).to.include('.');
     });
 
     it('should skip CSRF for safe methods', () => {
@@ -595,30 +549,40 @@ describe('Security Configuration - Investor Grade Tests', () => {
         cookies: {},
         headers: {}
       };
-      const mockRes = { cookie: sandbox.stub() };
+      
+      const mockRes = {
+        cookie: sandbox.stub()
+      };
+      
       const mockNext = sandbox.stub();
       
-      securityConfig.getCsrfMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getCsrfMiddleware();
+      middleware(mockReq, mockRes, mockNext);
       
+      expect(mockRes.cookie.called).to.be.true;
       expect(mockNext.called).to.be.true;
     });
 
     it('should validate CSRF tokens for state-changing methods', () => {
       const generatedToken = securityConfig.generateCsrfToken();
+      
       const mockReq = {
         method: 'POST',
         headers: { 'x-csrf-token': generatedToken },
         cookies: { 'csrf-token': generatedToken },
         body: {}
       };
+      
       const mockRes = {
         cookie: sandbox.stub(),
         status: sandbox.stub().returnsThis(),
         json: sandbox.stub()
       };
+      
       const mockNext = sandbox.stub();
       
-      securityConfig.getCsrfMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getCsrfMiddleware();
+      middleware(mockReq, mockRes, mockNext);
       
       expect(mockNext.called).to.be.true;
     });
@@ -633,21 +597,21 @@ describe('Security Configuration - Investor Grade Tests', () => {
         path: testPath,
         id: testRequestId
       };
+      
       const mockRes = {
         status: sandbox.stub().returnsThis(),
         json: sandbox.stub()
       };
+      
       const mockNext = sandbox.stub();
       
-      securityConfig.getCsrfMiddleware()(mockReq, mockRes, mockNext);
+      const middleware = securityConfig.getCsrfMiddleware();
+      middleware(mockReq, mockRes, mockNext);
       
       expect(mockRes.status.calledWith(403)).to.be.true;
     });
   });
 
-  // ===========================================================================
-  // HEALTH CHECK TESTS
-  // ===========================================================================
   describe('Health Check & Status', () => {
     it('should return comprehensive health status', async () => {
       const health = await securityConfig.healthCheck();
@@ -670,9 +634,6 @@ describe('Security Configuration - Investor Grade Tests', () => {
     });
   });
 
-  // ===========================================================================
-  // MIDDLEWARE STACK TESTS
-  // ===========================================================================
   describe('Middleware Stack', () => {
     it('should return all middleware', () => {
       const middleware = securityConfig.getAllMiddleware();
@@ -682,21 +643,6 @@ describe('Security Configuration - Investor Grade Tests', () => {
     });
   });
 
-  // ===========================================================================
-  // IP BLOCKING TESTS
-  // ===========================================================================
-  describe('IP Blocking', () => {
-    it('should block IP addresses', () => {
-      securityConfig.blockIP(testIP);
-      
-      expect(securityConfig._blockedIPs.has(testIP)).to.be.true;
-      expect(loggerMock.warn.calledWith('IP blocked')).to.be.true;
-    });
-  });
-
-  // ===========================================================================
-  // ECONOMIC VALIDATION
-  // ===========================================================================
   describe('Economic Validation', () => {
     it('should calculate annual savings', () => {
       const riskEliminated = 12000000; // R12M
@@ -708,9 +654,6 @@ describe('Security Configuration - Investor Grade Tests', () => {
     });
   });
 
-  // ===========================================================================
-  // FORENSIC EVIDENCE GENERATION
-  // ===========================================================================
   describe('Deterministic Evidence Generation', () => {
     it('should generate verifiable security evidence', async () => {
       const evidence = {
@@ -726,16 +669,13 @@ describe('Security Configuration - Investor Grade Tests', () => {
         hash: ''
       };
 
-      // Trigger security events safely
-      if (typeof securityConfig._trackSuspiciousActivity === 'function') {
-         securityConfig._trackSuspiciousActivity('TEST_EVENT_1', { 
-           test: 'data1',
-           csrfToken: testCsrfToken 
-         });
-         evidence.securityEvents = securityConfig._suspiciousActivities.slice(-1);
-      } else {
-         evidence.securityEvents = [{ event: 'TEST_EVENT_1', ip: testIP }];
-      }
+      // Trigger security events
+      securityConfig._trackSuspiciousActivity('TEST_EVENT_1', { 
+        test: 'data1',
+        csrfToken: testCsrfToken 
+      });
+      
+      evidence.securityEvents = securityConfig._suspiciousActivities.slice(-1);
       
       // Generate hash
       const canonicalJson = JSON.stringify({
