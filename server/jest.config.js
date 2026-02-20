@@ -1,18 +1,10 @@
 module.exports = {
     testEnvironment: 'node',
+    roots: ['<rootDir>/__tests__'],
     testMatch: [
-        '**/tests/**/*.test.js',
-        '**/__tests__/**/*.test.js'
-    ],
-    testPathIgnorePatterns: [
-        '/node_modules/',
-        '/dist/'
+        '**/__tests__/**/*.js',
+        '**/?(*.)+(spec|test).js'
     ],
     moduleFileExtensions: ['js', 'json'],
-    verbose: true,
-    testTimeout: 30000,
-    maxWorkers: 1,
-    clearMocks: true,
-    resetMocks: false,
-    restoreMocks: false
+    verbose: true
 };

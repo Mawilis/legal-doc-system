@@ -85,6 +85,11 @@ REQUIRED_ENV_VARS.forEach(envVar => {
     }
 });
 
+// 🔌 INITIALIZE CASL PLUGINS FOR MONGOOSE
+// These plugins enable automatic query filtering based on user abilities
+accessibleRecordsPlugin(mongoose);
+accessibleFieldsPlugin(mongoose);
+
 // Import models for ABAC context evaluation
 const User = require('../models/userModel');
 const Firm = require('../models/firmModel');
@@ -446,6 +451,116 @@ const defineComplianceAbilityFor = (user, context = {}) => {
 
 /**
  * ============================================================================
+ * 🔍 ABAC RESOURCE VALIDATION: FIRM & CLIENT BOUNDARY ENFORCEMENT
+ * ============================================================================
+ */
+
+/**
+ * @function validateFirmBoundary
+ * @desc Quantum Shield: Validate user belongs to the firm being accessed
+ * @param {Object} user - Authenticated user
+ * @param {string} targetFirmId - Firm ID being accessed
+ * @returns {Promise<boolean>} - Whether access is allowed
+ */
+const validateFirmBoundary = async (user, targetFirmId) => {
+    if (!user || !user.firmId) return false;
+
+    // Super admins can access any firm
+    if (user.role === COMPLIANCE_ROLES.SUPER_ADMIN) return true;
+
+    const userFirmId = user.firmId.toString();
+    const targetId = targetFirmId.toString();
+
+    if (userFirmId !== targetId) {
+        // Log cross-firm access attempt
+        await AuditLog.create({
+            userId: user._id,
+            action: 'CROSS_FIRM_ACCESS_ATTEMPT',
+            entityType: 'Firm',
+            entityId: targetFirmId,
+            metadata: {
+                userFirmId,
+                targetFirmId: targetId,
+                timestamp: new Date().toISOString(),
+            },
+            securityLevel: 'CRITICAL',
+            complianceMarkers: {
+                dataIsolation: true,
+                firmBoundary: true,
+            }
+        });
+        return false;
+    }
+
+    // Verify firm exists and is active
+    const firm = await Firm.findById(targetFirmId).select('status subscriptionStatus');
+    if (!firm || firm.status !== 'active') {
+        return false;
+    }
+
+    return true;
+};
+
+/**
+ * @function validateClientRelationship
+ * @desc Quantum Shield: Validate user has legitimate relationship with client
+ * @param {Object} user - Authenticated user
+ * @param {string} clientId - Client ID being accessed
+ * @returns {Promise<boolean>} - Whether access is allowed
+ */
+const validateClientRelationship = async (user, clientId) => {
+    if (!user || !user._id) return false;
+
+    // Super admins and firm admins can access any client in their firm
+    if ([COMPLIANCE_ROLES.SUPER_ADMIN, COMPLIANCE_ROLES.FIRM_ADMIN].includes(user.role)) {
+        const client = await Client.findById(clientId).select('firmId');
+        return client && client.firmId.toString() === user.firmId.toString();
+    }
+
+    // Check if user is assigned to any matter for this client
+    const matters = await Matter.find({
+        clientId: clientId,
+        $or: [
+            { assignedTo: user._id },
+            { teamMembers: { $in: [user._id] } },
+            { createdBy: user._id }
+        ]
+    }).select('_id');
+
+    return matters.length > 0;
+};
+
+/**
+ * @function validateMatterAccess
+ * @desc Quantum Shield: Validate user has access to specific matter
+ * @param {Object} user - Authenticated user
+ * @param {string} matterId - Matter ID being accessed
+ * @returns {Promise<boolean>} - Whether access is allowed
+ */
+const validateMatterAccess = async (user, matterId) => {
+    if (!user || !user._id) return false;
+
+    // Super admins and firm admins can access any matter in their firm
+    if ([COMPLIANCE_ROLES.SUPER_ADMIN, COMPLIANCE_ROLES.FIRM_ADMIN].includes(user.role)) {
+        const matter = await Matter.findById(matterId).select('firmId');
+        return matter && matter.firmId.toString() === user.firmId.toString();
+    }
+
+    // Check direct matter assignment
+    const matter = await Matter.findOne({
+        _id: matterId,
+        $or: [
+            { assignedTo: user._id },
+            { teamMembers: { $in: [user._id] } },
+            { createdBy: user._id }
+        ]
+    });
+
+    return !!matter;
+};
+
+/**
+ * ============================================================================
  * 🛡️ COMPLIANCE AUTHORIZATION MIDDLEWARE: MAIN EXPORT
  * ============================================================================
  */
@@ -454,11 +569,11 @@ const defineComplianceAbilityFor = (user, context = {}) => {
  * @middleware complianceAuthorize
  * @desc Quantum Gatekeeper: Main compliance authorization middleware
  * @param {string} action - CASL action to authorize
- * @param {string} subject - CASL subject/resource type
+ * @param {string} _subject - CASL subject/resource type
  * @param {Object} options - Additional options for ABAC
  * @returns {Function} - Express middleware function
  */
-const complianceAuthorize = (action, subject, options = {}) => {
+const complianceAuthorize = (action, _subject, options = {}) => {
     return async (req, res, next) => {
         try {
             // 🛡️ SECURITY QUANTUM: Ensure authentication middleware has run
@@ -475,7 +590,7 @@ const complianceAuthorize = (action, subject, options = {}) => {
 
             // 📊 BUILD REQUEST CONTEXT FOR ABAC
             const context = {
-                resourceType: subject,
+                resourceType: _subject,
                 action: action,
                 clientIp: req.ip,
                 userAgent: req.headers['user-agent'],
@@ -487,18 +602,64 @@ const complianceAuthorize = (action, subject, options = {}) => {
                 ...options.context
             };
 
+            // 🔍 ABAC ENFORCEMENT: Validate firm boundaries if firmId in params/body
+            if (req.params.firmId || req.body.firmId) {
+                const targetFirmId = req.params.firmId || req.body.firmId;
+                const firmAccess = await validateFirmBoundary(req.user, targetFirmId);
+                if (!firmAccess) {
+                    return res.status(403).json({
+                        status: 'error',
+                        message: 'Firm boundary violation: Cross-firm access denied',
+                        compliance: {
+                            popia: 'Data minimization principle violated',
+                            section: 'Section 11(1)(b)',
+                        }
+                    });
+                }
+            }
+
+            // 🔍 ABAC ENFORCEMENT: Validate client relationship if clientId provided
+            if (req.params.clientId || req.body.clientId) {
+                const targetClientId = req.params.clientId || req.body.clientId;
+                const clientAccess = await validateClientRelationship(req.user, targetClientId);
+                if (!clientAccess) {
+                    return res.status(403).json({
+                        status: 'error',
+                        message: 'Client relationship validation failed',
+                        compliance: {
+                            popia: 'Legitimate interest requirement not met',
+                        }
+                    });
+                }
+            }
+
+            // 🔍 ABAC ENFORCEMENT: Validate matter access if matterId provided
+            if (req.params.matterId || req.body.matterId) {
+                const targetMatterId = req.params.matterId || req.body.matterId;
+                const matterAccess = await validateMatterAccess(req.user, targetMatterId);
+                if (!matterAccess) {
+                    return res.status(403).json({
+                        status: 'error',
+                        message: 'Matter access denied: Not assigned to matter',
+                        compliance: {
+                            lpc: 'Attorney-client privilege protection',
+                        }
+                    });
+                }
+            }
+
             // 🔧 BUILD COMPLIANCE ABILITY
             const ability = defineComplianceAbilityFor(req.user, context);
 
-            // 🎯 CHECK AUTHORIZATION
-            const isAuthorized = ability.can(action, subject);
+            // 🎯 CHECK AUTHORIZATION using CASL
+            const isAuthorized = ability.can(action, _subject);
 
             if (!isAuthorized) {
                 // 📝 AUDIT TRAIL: Log unauthorized access attempt
                 await AuditLog.create({
                     userId: req.user._id,
                     action: 'UNAUTHORIZED_COMPLIANCE_ACCESS',
-                    entityType: subject,
+                    entityType: _subject,
                     entityId: req.params.id || 'N/A',
                     metadata: {
                         attemptedAction: action,
@@ -523,7 +684,7 @@ const complianceAuthorize = (action, subject, options = {}) => {
                     compliance: {
                         act: 'POPIA Section 19 / Companies Act Section 28',
                         section: 'Unauthorized data processing / Access control violation',
-                        requiredRole: getRequiredRoleForAction(action, subject),
+                        requiredRole: getRequiredRoleForAction(action, _subject),
                         userRole: req.user.role,
                         firmId: req.user.firmId,
                         timestamp: new Date().toISOString(),
@@ -536,9 +697,17 @@ const complianceAuthorize = (action, subject, options = {}) => {
             req.ability = ability;
             req.complianceContext = context;
 
+            // 🔌 ATTACH CASL QUERY HELPERS for automatic filtering
+            req.accessibleRecords = (model) => {
+                return model.accessibleBy(ability, action);
+            };
+            req.accessibleFields = (model) => {
+                return model.accessibleFieldsBy(ability, action);
+            };
+
             // 📝 AUDIT TRAIL: Log authorized access (if sensitive operation)
-            if (isSensitiveOperation(action, subject)) {
-                await logComplianceAccess(req, action, subject, 'AUTHORIZED');
+            if (isSensitiveOperation(action, _subject)) {
+                await logComplianceAccess(req, action, _subject, 'AUTHORIZED');
             }
 
             next();
@@ -579,10 +748,10 @@ const complianceAuthorize = (action, subject, options = {}) => {
  * @function getRequiredRoleForAction
  * @desc Determine minimum required role for a compliance action
  * @param {string} action - CASL action
- * @param {string} subject - CASL subject
+ * @param {string} _subject - CASL subject
  * @returns {string} - Minimum required role
  */
-const getRequiredRoleForAction = (action, subject) => {
+const getRequiredRoleForAction = (action, _subject) => {
     const actionRoleMatrix = {
         'manage': COMPLIANCE_ROLES.SUPER_ADMIN,
         'override-compliance': COMPLIANCE_ROLES.SUPER_ADMIN,
@@ -602,10 +771,10 @@ const getRequiredRoleForAction = (action, subject) => {
  * @function isSensitiveOperation
  * @desc Determine if operation requires compliance logging
  * @param {string} action - CASL action
- * @param {string} subject - CASL subject
+ * @param {string} _subject - CASL subject
  * @returns {boolean} - Whether operation is sensitive
  */
-const isSensitiveOperation = (action, subject) => {
+const isSensitiveOperation = (action, _subject) => {
     const sensitiveActions = [
         'report-data-breach',
         'transfer-trust-funds',
@@ -624,7 +793,7 @@ const isSensitiveOperation = (action, subject) => {
         'FinancialReport',
     ];
 
-    return sensitiveActions.includes(action) || sensitiveSubjects.includes(subject);
+    return sensitiveActions.includes(action) || sensitiveSubjects.includes(_subject);
 };
 
 /**
@@ -632,10 +801,10 @@ const isSensitiveOperation = (action, subject) => {
  * @desc Create immutable audit log for compliance access
  * @param {Object} req - Express request object
  * @param {string} action - Action performed
- * @param {string} subject - Resource accessed
+ * @param {string} _subject - Resource accessed
  * @param {string} status - Access status (AUTHORIZED/DENIED)
  */
-const logComplianceAccess = async (req, action, subject, status) => {
+const logComplianceAccess = async (req, action, _subject, status) => {
     try {
         // 🛡️ ENCRYPTION QUANTUM: Encrypt sensitive metadata
         const encryptionKey = process.env.ENCRYPTION_KEY;
@@ -647,7 +816,7 @@ const logComplianceAccess = async (req, action, subject, status) => {
             },
             accessDetails: {
                 action,
-                subject,
+                subject: _subject,
                 resourceId: req.params.id,
                 timestamp: new Date().toISOString(),
             }
@@ -662,7 +831,7 @@ const logComplianceAccess = async (req, action, subject, status) => {
         await AuditLog.create({
             userId: req.user._id,
             action: `COMPLIANCE_${status}_ACCESS`,
-            entityType: subject,
+            entityType: _subject,
             entityId: req.params.id || 'N/A',
             metadata: {
                 encrypted: encryptedMetadata,
@@ -1249,6 +1418,11 @@ module.exports = {
     createComplianceToken,
     verifyComplianceToken,
     generateComplianceAuditHash,
+
+    // ABAC validation functions
+    validateFirmBoundary,
+    validateClientRelationship,
+    validateMatterAccess,
 
     // Constants for external use
     COMPLIANCE_ROLES,

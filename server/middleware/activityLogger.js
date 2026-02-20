@@ -213,7 +213,7 @@ const anonymizeHash = (value, salt = '') => {
  * @security Determines retention period and compliance reporting
  * @compliance Multiple SA Acts and Regulations
  */
-const classifyLegalCompliance = (req, res) => {
+const classifyLegalCompliance = (req, _res) => {
     const classifications = [];
 
     // Check for POPIA compliance requirements
@@ -288,7 +288,7 @@ const detectSecurityThreats = (req) => {
 
     const requestString = JSON.stringify(req.query) + JSON.stringify(req.body) + req.originalUrl;
 
-    sqlInjectionPatterns.forEach((pattern, index) => {
+    sqlInjectionPatterns.forEach((pattern, _index) => {
         if (pattern.test(requestString)) {
             threats.push({
                 type: 'SQL_INJECTION',
@@ -307,7 +307,7 @@ const detectSecurityThreats = (req) => {
         /eval\(|alert\(|confirm\(|prompt\(/i
     ];
 
-    xssPatterns.forEach((pattern, index) => {
+    xssPatterns.forEach((pattern, _index) => {
         if (pattern.test(requestString)) {
             threats.push({
                 type: 'XSS_ATTEMPT',
@@ -350,7 +350,7 @@ const detectSecurityThreats = (req) => {
  * @description Captures performance metrics for SLA compliance
  * @security Performance monitoring with anomaly detection
  */
-const capturePerformanceMetrics = (startTime, req, res) => {
+const capturePerformanceMetrics = (startTime, _req, _res) => {
     const diff = process.hrtime(startTime);
     const durationMs = (diff[0] * 1000) + (diff[1] / 1000000);
 
@@ -576,7 +576,6 @@ const archiveToColdStorage = async (auditPayload) => {
 const activityLogger = (options = {}) => {
     const {
         emitAudit: customEmitAudit,
-        logLevel = 'INFO',
         enableThreatDetection = true,
         enablePerformanceMetrics = true,
         enableLegalClassification = true,

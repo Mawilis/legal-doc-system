@@ -1,0 +1,71 @@
+{
+  "evidenceMetadata": {
+    "testSuite": "LPC Rule 41.3 Administrator Metrics Suite",
+    "testRunId": "20260216-104042-97b39d08",
+    "testSuiteVersion": "6.0.8-forensic-release",
+    "generatedAt": "2026-02-16T08:40:42.745Z",
+    "generatedBy": "WilsyOS Forensic Evidence Collector",
+    "complianceStandard": "LPC Rule 41.3/86.5/35.2 + SARB GN6.4 + FSCA",
+    "jurisdiction": "Republic of South Africa"
+  },
+  "temporalContext": {
+    "startTime": "2026-02-16T08:40:42.743Z",
+    "endTime": "2026-02-16T08:40:42.745Z",
+    "durationSeconds": 0.002
+  },
+  "economicImpactAssessment": {
+    "manualReportingCostZAR": 2400000,
+    "wilsysAutomationCostZAR": 187000,
+    "annualSavingsPerFirmZAR": 2213000,
+    "savingsPercentage": 92.21,
+    "penaltyRiskEliminatedZAR": 8700000,
+    "marginPercent": 92,
+    "totalAddressableMarketZAR": 770000000,
+    "projectedAnnualRecurringRevenueZAR": 34650000,
+    "paybackPeriodMonths": 3.8,
+    "complianceImprovementPercent": 18.5
+  },
+  "complianceVerification": {
+    "assertionSummary": [
+      {
+        "testCase": "TC-002-TENANT-ISOLATION",
+        "timestamp": "2026-02-16T08:40:42.745Z",
+        "passedAssertions": 9,
+        "totalAssertions": 5,
+        "verificationStatus": "FAILED"
+      }
+    ]
+  },
+  "forensicAuditTrail": {
+    "totalEntries": 1,
+    "entries": [
+      {
+        "testCase": "TC-002-TENANT-ISOLATION",
+        "tenant1Id": "tenant-high-123",
+        "tenant2Id": "tenant-medium-456",
+        "tenant1Data": {
+          "attorneys": 20,
+          "overallScore": 96.5
+        },
+        "tenant2Data": {
+          "attorneys": 15,
+          "overallScore": 74.8
+        },
+        "crossTenantAttempts": {
+          "tenant1ToTenant2": "DENIED (LPC_AUTH_007)",
+          "tenant2ToTenant1": "DENIED (LPC_AUTH_007)"
+        },
+        "capturedAt": "2026-02-16T08:40:42.745Z",
+        "testRunId": "20260216-104042-97b39d08"
+      }
+    ]
+  },
+  "integritySeal": {
+    "hashAlgorithm": "sha3-512",
+    "hashHex": "eb906e24410612fc98da557a23362c1fdedbf6e7d02659f0b94b11b360bbdd64df7ac40b753cae1442f8352743441022d4eb67659aeff7282d7b0980e64bca4e",
+    "hashFirst16": "eb906e24410612fc",
+    "hashLast16": "2d7b0980e64bca4e",
+    "sealedAt": "2026-02-16T08:40:42.746Z",
+    "sealedBy": "WilsyOS Forensic Evidence Service"
+  }
+}

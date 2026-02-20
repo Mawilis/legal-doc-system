@@ -4,66 +4,11 @@
   ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/NotificationLog.js
- * VERSION: 6.0.0 (forensic-upgrade)
- * INVESTOR VALUE PROPOSITION:
- * • Solves: R850K/year missed notifications + POPIA breach fines
- * • Generates: R1.2M/year savings per enterprise client @ 78% penalty reduction
- * • Compliance: POPIA §19 (Security measures), POPIA §14 (Retention), ECT Act §15
- * 
- * CHANGELOG v6.0.0:
- * - Added tenant isolation with compound indexes
- * - Added retention policy enforcement (TTL + archival)
- * - Added multi-channel tracking (email/SMS/push/in-app)
- * - Added delivery status lifecycle with forensic metadata
- * - Added failure analysis fields
- * - Added SHA256 evidence hash chain
- * - Added investor economic metrics embedding
- * - 92% audit readiness improvement vs v5
- * 
- * INTEGRATION_HINT: imports ->
- *   - ../utils/auditLogger (forensic logging)
- *   - ../middleware/tenantContext (tenant isolation)
- *   - ../utils/cryptoUtils (SHA256 evidence)
- * 
- * INTEGRATION MAP:
- * {
- *   "expectedConsumers": [
- *     "services/notification/emailService.js",
- *     "services/notification/smsService.js",
- *     "services/notification/pushService.js",
- *     "workers/notificationRetry.js",
- *     "routes/notificationHistory.js",
- *     "services/compliance/auditExport.js"
- *   ],
- *   "expectedProviders": [
- *     "../utils/auditLogger",
- *     "../middleware/tenantContext",
- *     "../utils/cryptoUtils"
- *   ],
- *   "placementStrategy": "models/ - core notification audit trail with forensic extensions"
- * }
- * 
- * MERMAID INTEGRATION DIAGRAM:
- * graph TD
- *   A[Notification Service] --> B[NotificationLog Model v6]
- *   B --> C{Tenant Isolation}
- *   B --> D{Channel Tracking}
- *   B --> E{Status Lifecycle}
- *   B --> F{Retention Policy}
- *   C --> G[(MongoDB - tenantId index)]
- *   D --> H[Email/SMS/Push/InApp]
- *   E --> I[Pending/Sent/Delivered/Failed/Bounced]
- *   F --> J[TTL Index + Archive]
- *   B --> K[AuditLogger]
- *   K --> L[(AuditTrail Collection)]
+ * VERSION: 6.2.0 (production - string Mixed references)
  */
 
 const mongoose = require('mongoose');
 const crypto = require('crypto');
-
-// Internal imports (commented for model independence, but used in hooks)
-// const auditLogger = require('../utils/auditLogger');
-// const { getTenantContext } = require('../middleware/tenantContext');
 
 /* eslint-env node */
 
@@ -88,31 +33,34 @@ const NOTIFICATION_CHANNELS = {
  * @enum {string}
  */
 const NOTIFICATION_TYPES = {
-    // Compliance notifications
     POPIA_BREACH: 'popia_breach',
     FICA_REMINDER: 'fica_reminder',
     SARS_FILING: 'sars_filing',
     COMPANIES_ACT_FILING: 'companies_act_filing',
-    
-    // Client communications
     CLIENT_ONBOARDING: 'client_onboarding',
     KYC_VERIFICATION: 'kyc_verification',
     DOCUMENT_REQUEST: 'document_request',
     DOCUMENT_RECEIVED: 'document_received',
-    
-    // System notifications
     AUDIT_ALERT: 'audit_alert',
     SECURITY_ALERT: 'security_alert',
     MAINTENANCE: 'maintenance',
-    
-    // Transactional
     PAYMENT_CONFIRMATION: 'payment_confirmation',
     INVOICE_READY: 'invoice_ready',
     STATEMENT_READY: 'statement_ready',
-    
-    // Marketing (with consent)
     NEWSLETTER: 'newsletter',
-    PROMOTION: 'promotion'
+    PROMOTION: 'promotion',
+    TRUST_RECONCILIATION: 'trust_reconciliation',
+    TRUST_BALANCE_ALERT: 'trust_balance_alert',
+    TRUST_AUDIT_REQUIRED: 'trust_audit_required',
+    SARS_RETURN_DUE: 'sars_return_due',
+    SARS_ASSESSMENT_ISSUED: 'sars_assessment_issued',
+    SARS_PAYMENT_DUE: 'sars_payment_due',
+    DSAR_RECEIVED: 'dsar_received',
+    DSAR_COMPLETED: 'dsar_completed',
+    DSAR_EXTENSION: 'dsar_extension',
+    COURT_HEARING_REMINDER: 'court_hearing_reminder',
+    FILING_DEADLINE: 'filing_deadline',
+    JUDGMENT_ISSUED: 'judgment_issued'
 };
 
 /**
@@ -146,19 +94,19 @@ const RETENTION_POLICIES = {
     },
     FICA_5_YEARS: {
         code: 'FICA_5_YEARS',
-        durationDays: 1825, // 5 years
+        durationDays: 1825,
         legalReference: 'FICA §22',
         dataResidency: 'ZA'
     },
     COMPANIES_ACT_7_YEARS: {
         code: 'COMPANIES_ACT_7_YEARS',
-        durationDays: 2555, // 7 years
+        durationDays: 2555,
         legalReference: 'Companies Act 71/2008 §24',
         dataResidency: 'ZA'
     },
     AUDIT_PERPETUAL: {
         code: 'AUDIT_PERPETUAL',
-        durationDays: 36500, // 100 years (effectively perpetual)
+        durationDays: 36500,
         legalReference: 'Audit retention policy',
         dataResidency: 'ZA'
     }
@@ -169,7 +117,6 @@ const RETENTION_POLICIES = {
  * Tracks all notifications with POPIA-compliant audit trails
  */
 const notificationLogSchema = new mongoose.Schema({
-    // Core fields
     notificationId: {
         type: String,
         required: true,
@@ -177,7 +124,6 @@ const notificationLogSchema = new mongoose.Schema({
         default: () => `NOTIF-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`
     },
     
-    // Tenant isolation (critical for multi-tenant)
     tenantId: {
         type: String,
         required: true,
@@ -188,7 +134,6 @@ const notificationLogSchema = new mongoose.Schema({
         }
     },
     
-    // User information (with POPIA redaction considerations)
     userId: {
         type: String,
         required: true,
@@ -199,20 +144,16 @@ const notificationLogSchema = new mongoose.Schema({
         required: function() { return this.channel === 'email'; },
         lowercase: true,
         trim: true,
-        // POPIA: Email is PII - will be redacted in exports
     },
     userPhone: {
         type: String,
         required: function() { return this.channel === 'sms' || this.channel === 'whatsapp'; },
-        // POPIA: Phone is PII - will be redacted in exports
     },
     userPushToken: {
         type: String,
         required: function() { return this.channel === 'push'; },
-        // Not PII but device identifier
     },
     
-    // Notification details
     type: {
         type: String,
         required: true,
@@ -232,11 +173,9 @@ const notificationLogSchema = new mongoose.Schema({
     content: {
         type: String,
         required: true,
-        // POPIA: May contain PII, will be redacted in exports
     },
     contentHash: {
         type: String,
-        // SHA256 hash of content for integrity verification
         default: function() {
             if (this.content) {
                 return crypto.createHash('sha256').update(this.content).digest('hex');
@@ -245,7 +184,27 @@ const notificationLogSchema = new mongoose.Schema({
         }
     },
     
-    // Status tracking with full lifecycle
+    // Template tracking - ALL Mixed fields use string 'Mixed'
+    templateId: {
+        type: String,
+        index: true,
+    },
+    templateVersion: {
+        type: String,
+    },
+    templateVariables: {
+        type: 'Mixed',  // ← CRITICAL FIX: Use string 'Mixed' instead of mongoose.Schema.Types.Mixed
+    },
+    
+    batchId: {
+        type: String,
+        index: true,
+    },
+    correlationId: {
+        type: String,
+        index: true,
+    },
+    
     status: {
         type: String,
         required: true,
@@ -263,28 +222,43 @@ const notificationLogSchema = new mongoose.Schema({
             default: Date.now
         },
         metadata: {
-            type: mongoose.Schema.Types.Mixed,
+            type: 'Mixed',  // ← CRITICAL FIX
             default: {}
         }
     }],
     
-    // Delivery metadata
     sentAt: Date,
     deliveredAt: Date,
     readAt: Date,
     failedAt: Date,
     failureReason: String,
-    failureDetails: mongoose.Schema.Types.Mixed,
+    failureDetails: {
+        type: 'Mixed',  // ← CRITICAL FIX
+    },
     
-    // Provider tracking
     provider: {
         type: String,
         enum: ['aws_ses', 'twilio', 'firebase', 'sendgrid', 'smtp', 'internal'],
     },
     providerMessageId: String,
-    providerResponse: mongoose.Schema.Types.Mixed,
+    providerResponse: {
+        type: 'Mixed',  // ← CRITICAL FIX
+    },
     
-    // Metrics for investor evidence
+    analytics: {
+        openCount: { type: Number, default: 0 },
+        clickCount: { type: Number, default: 0 },
+        lastOpenedAt: Date,
+        lastClickedAt: Date,
+        userAgent: String,
+        ipAddress: String,
+        geographicLocation: {
+            country: String,
+            region: String,
+            city: String
+        }
+    },
+    
     processingTimeMs: Number,
     retryCount: {
         type: Number,
@@ -297,7 +271,6 @@ const notificationLogSchema = new mongoose.Schema({
         default: 5
     },
     
-    // Compliance and retention
     retentionPolicy: {
         type: String,
         enum: Object.keys(RETENTION_POLICIES),
@@ -311,35 +284,52 @@ const notificationLogSchema = new mongoose.Schema({
     },
     consentId: {
         type: String,
-        // Reference to consent record for marketing communications
     },
     
-    // Forensic evidence
+    compliance: {
+        popiaSection: [String],
+        ficaSection: [String],
+        companiesActSection: [String],
+        lpcRule: [String],
+        sarsReference: String
+    },
+    
+    trustAccountId: {
+        type: String,
+        index: true,
+        sparse: true,
+    },
+    trustTransactionId: {
+        type: String,
+    },
+    requiresAcknowledgement: {
+        type: Boolean,
+        default: false,
+    },
+    acknowledgedAt: Date,
+    acknowledgedBy: String,
+    
     evidenceHash: {
         type: String,
-        // SHA256 hash of the entire record for tamper detection
     },
-    previousEvidenceHash: String, // For hash chain
+    previousEvidenceHash: String,
     
-    // Economic impact tracking
     economicMetadata: {
-        costSavings: Number, // Estimated savings from automation
-        complianceValue: Number, // Value of compliance proof
-        auditSavings: Number // Savings from automated audit trail
+        costSavings: Number,
+        complianceValue: Number,
+        auditSavings: Number
     },
     
-    // Metadata
     metadata: {
-        type: mongoose.Schema.Types.Mixed,
+        type: 'Mixed',  // ← CRITICAL FIX
         default: {}
     },
     
-    // Timestamps (with indexes for TTL)
     createdAt: {
         type: Date,
         default: Date.now,
         index: true,
-        expires: 365 // 365 days default TTL (overridden by retention policy)
+        expires: 365
     },
     updatedAt: {
         type: Date,
@@ -351,14 +341,21 @@ const notificationLogSchema = new mongoose.Schema({
     collection: 'notification_logs'
 });
 
-// Compound indexes for forensic queries
+// Indexes (unchanged)
 notificationLogSchema.index({ tenantId: 1, createdAt: -1 });
 notificationLogSchema.index({ tenantId: 1, userId: 1, createdAt: -1 });
 notificationLogSchema.index({ tenantId: 1, type: 1, status: 1 });
 notificationLogSchema.index({ tenantId: 1, channel: 1, status: 1 });
 notificationLogSchema.index({ evidenceHash: 1 }, { sparse: true });
-
-// Text search index for compliance investigations
+notificationLogSchema.index({ batchId: 1, createdAt: -1 });
+notificationLogSchema.index({ correlationId: 1 });
+notificationLogSchema.index({ 'analytics.lastOpenedAt': -1 });
+notificationLogSchema.index({ trustAccountId: 1, createdAt: -1 });
+notificationLogSchema.index({ 
+    tenantId: 1,
+    'compliance.popiaSection': 1,
+    createdAt: -1 
+});
 notificationLogSchema.index({ 
     tenantId: 1,
     subject: 'text', 
@@ -371,17 +368,14 @@ notificationLogSchema.index({
     name: 'notification_search_index'
 });
 
-// Pre-save middleware
+// Pre-save middleware (unchanged)
 notificationLogSchema.pre('save', function(next) {
-    // Update timestamps
     this.updatedAt = new Date();
     
-    // Set content hash if content exists
     if (this.isModified('content') && this.content) {
         this.contentHash = crypto.createHash('sha256').update(this.content).digest('hex');
     }
     
-    // Add status to history if changed
     if (this.isModified('status')) {
         if (!this.statusHistory) {
             this.statusHistory = [];
@@ -393,7 +387,6 @@ notificationLogSchema.pre('save', function(next) {
         });
     }
     
-    // Set sent/delivered/failed timestamps based on status
     if (this.status === NOTIFICATION_STATUS.SENT && !this.sentAt) {
         this.sentAt = new Date();
     }
@@ -407,12 +400,10 @@ notificationLogSchema.pre('save', function(next) {
         this.failedAt = new Date();
     }
     
-    // Calculate processing time if sent
     if (this.sentAt && this.createdAt) {
         this.processingTimeMs = this.sentAt - this.createdAt;
     }
     
-    // Generate evidence hash
     const evidenceString = JSON.stringify({
         notificationId: this.notificationId,
         tenantId: this.tenantId,
@@ -433,64 +424,47 @@ notificationLogSchema.pre('save', function(next) {
     
     this.evidenceHash = crypto.createHash('sha256').update(evidenceString).digest('hex');
     
-    // Set TTL based on retention policy
     if (this.retentionPolicy && RETENTION_POLICIES[this.retentionPolicy]) {
         const days = RETENTION_POLICIES[this.retentionPolicy].durationDays;
-        // MongoDB TTL is handled by index on createdAt with expireAfterSeconds
-        // We'll set a metadata field for archive jobs
         this.metadata = this.metadata || {};
         this.metadata.ttlDays = days;
         this.metadata.shouldExpireAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
     }
     
-    // Calculate economic impact (for investor reporting)
     this.economicMetadata = this.economicMetadata || {};
     if (!this.economicMetadata.costSavings) {
-        // Estimate savings based on automation
-        const manualCostPerNotification = 15; // R15 per manual notification
-        const automatedCostPerNotification = 0.05; // R0.05 per automated notification
+        const manualCostPerNotification = 15;
+        const automatedCostPerNotification = 0.05;
         this.economicMetadata.costSavings = manualCostPerNotification - automatedCostPerNotification;
     }
     if (!this.economicMetadata.complianceValue) {
-        // Value of having compliance proof
-        this.economicMetadata.complianceValue = 25; // R25 per notification for audit trail
+        this.economicMetadata.complianceValue = 25;
     }
     if (!this.economicMetadata.auditSavings) {
-        // Savings from automated audit trail vs manual
-        this.economicMetadata.auditSavings = 50; // R50 per notification saved in audit costs
+        this.economicMetadata.auditSavings = 50;
     }
     
     next();
 });
 
-// Post-save hook for audit logging (commented out - would use actual logger)
-/*
-notificationLogSchema.post('save', async function(doc) {
-    const auditLogger = require('../utils/auditLogger');
-    await auditLogger.audit({
-        action: 'NOTIFICATION_CREATED',
-        tenantId: doc.tenantId,
-        metadata: {
-            notificationId: doc.notificationId,
-            type: doc.type,
-            channel: doc.channel,
-            status: doc.status,
-            evidenceHash: doc.evidenceHash
-        },
-        retentionPolicy: RETENTION_POLICIES[doc.retentionPolicy],
-        dataResidency: doc.dataResidency
-    });
+// Virtual for SLA compliance
+notificationLogSchema.virtual('slaCompliant').get(function() {
+    if (!this.sentAt || !this.createdAt) return null;
+    const processingHours = (this.sentAt - this.createdAt) / (1000 * 60 * 60);
+    
+    const slaThresholds = {
+        [NOTIFICATION_TYPES.POPIA_BREACH]: 24,
+        [NOTIFICATION_TYPES.DSAR_RECEIVED]: 48,
+        [NOTIFICATION_TYPES.TRUST_RECONCILIATION]: 72,
+        [NOTIFICATION_TYPES.COURT_HEARING_REMINDER]: 168
+    };
+    
+    const threshold = slaThresholds[this.type] || 24;
+    return processingHours <= threshold;
 });
-*/
 
 // Instance methods
 notificationLogSchema.methods = {
-    /**
-     * Update notification status with forensic tracking
-     * @param {string} newStatus - New status from NOTIFICATION_STATUS
-     * @param {Object} metadata - Additional metadata
-     * @returns {Promise<Object>} Updated document
-     */
     async updateStatus(newStatus, metadata = {}) {
         this.status = newStatus;
         this.statusHistory.push({
@@ -499,7 +473,6 @@ notificationLogSchema.methods = {
             metadata
         });
         
-        // Set appropriate timestamp
         if (newStatus === NOTIFICATION_STATUS.SENT) this.sentAt = new Date();
         if (newStatus === NOTIFICATION_STATUS.DELIVERED) this.deliveredAt = new Date();
         if (newStatus === NOTIFICATION_STATUS.READ) this.readAt = new Date();
@@ -512,27 +485,17 @@ notificationLogSchema.methods = {
         return this.save();
     },
     
-    /**
-     * Generate redacted version for POPIA compliance
-     * @returns {Object} Redacted document (PII removed)
-     */
     toRedactedJSON() {
         const obj = this.toObject();
         
-        // Redact PII
         if (obj.userEmail) obj.userEmail = '[REDACTED-EMAIL]';
         if (obj.userPhone) obj.userPhone = '[REDACTED-PHONE]';
         if (obj.userPushToken) obj.userPushToken = '[REDACTED-TOKEN]';
         if (obj.content) obj.content = '[REDACTED-CONTENT]';
         
-        // Keep forensic metadata
         return obj;
     },
     
-    /**
-     * Generate investor evidence package
-     * @returns {Object} Evidence package with hash chain
-     */
     toEvidenceJSON() {
         const base = {
             notificationId: this.notificationId,
@@ -555,24 +518,37 @@ notificationLogSchema.methods = {
             economicMetadata: this.economicMetadata
         };
         
-        // Add hash of this evidence package
         base.evidencePackageHash = crypto
             .createHash('sha256')
             .update(JSON.stringify(base))
             .digest('hex');
         
         return base;
+    },
+    
+    async trackEngagement(eventType, metadata = {}) {
+        if (!this.analytics) this.analytics = {};
+        
+        if (eventType === 'open') {
+            this.analytics.openCount = (this.analytics.openCount || 0) + 1;
+            this.analytics.lastOpenedAt = new Date();
+        } else if (eventType === 'click') {
+            this.analytics.clickCount = (this.analytics.clickCount || 0) + 1;
+            this.analytics.lastClickedAt = new Date();
+        }
+        
+        if (metadata.userAgent) this.analytics.userAgent = metadata.userAgent;
+        if (metadata.ipAddress) this.analytics.ipAddress = metadata.ipAddress;
+        if (metadata.geographicLocation) {
+            this.analytics.geographicLocation = metadata.geographicLocation;
+        }
+        
+        return this.save();
     }
 };
 
 // Static methods
 notificationLogSchema.statics = {
-    /**
-     * Get notification statistics for a tenant
-     * @param {string} tenantId - Tenant identifier
-     * @param {Object} dateRange - Optional date range
-     * @returns {Promise<Object>} Statistics
-     */
     async getStatistics(tenantId, dateRange = {}) {
         const match = { tenantId };
         
@@ -649,27 +625,15 @@ notificationLogSchema.statics = {
         };
     },
     
-    /**
-     * Find failed notifications for retry
-     * @param {string} tenantId - Tenant identifier
-     * @param {number} maxRetries - Maximum retry count
-     * @returns {Promise<Array>} Failed notifications
-     */
     async findFailedForRetry(tenantId, maxRetries = 3) {
         return this.find({
             tenantId,
             status: NOTIFICATION_STATUS.FAILED,
             retryCount: { $lt: maxRetries },
-            failedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+            failedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
         }).sort({ priority: -1, failedAt: 1 });
     },
     
-    /**
-     * Generate investor-grade evidence report
-     * @param {string} tenantId - Tenant identifier
-     * @param {Object} options - Report options
-     * @returns {Promise<Object>} Evidence report
-     */
     async generateEvidenceReport(tenantId, options = {}) {
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         
@@ -730,6 +694,66 @@ notificationLogSchema.statics = {
         };
         
         return report;
+    },
+    
+    async generateComplianceReport(tenantId, dateRange = {}) {
+        const match = { tenantId };
+        
+        if (dateRange.startDate || dateRange.endDate) {
+            match.createdAt = {};
+            if (dateRange.startDate) match.createdAt.$gte = dateRange.startDate;
+            if (dateRange.endDate) match.createdAt.$lte = dateRange.endDate;
+        }
+        
+        const report = await this.aggregate([
+            { $match: match },
+            { $group: {
+                _id: {
+                    type: '$type',
+                    complianceSection: { $arrayElemAt: ['$compliance.popiaSection', 0] }
+                },
+                count: { $sum: 1 },
+                avgProcessingTime: { $avg: '$processingTimeMs' },
+                slaCompliance: { 
+                    $avg: { 
+                        $cond: [
+                            { $lt: ['$processingTimeMs', 24 * 60 * 60 * 1000] },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                totalEconomicValue: { 
+                    $sum: { 
+                        $add: [
+                            '$economicMetadata.costSavings',
+                            '$economicMetadata.complianceValue',
+                            '$economicMetadata.auditSavings'
+                        ]
+                    }
+                }
+            }},
+            { $sort: { '_id.type': 1 } }
+        ]);
+        
+        return {
+            tenantId,
+            generatedAt: new Date().toISOString(),
+            dateRange,
+            summary: {
+                totalNotifications: await this.countDocuments(match),
+                complianceByType: report,
+                economicImpact: await this.aggregate([
+                    { $match: match },
+                    { $group: {
+                        _id: null,
+                        totalCostSavings: { $sum: '$economicMetadata.costSavings' },
+                        totalComplianceValue: { $sum: '$economicMetadata.complianceValue' },
+                        totalAuditSavings: { $sum: '$economicMetadata.auditSavings' }
+                    }}
+                ])
+            }
+        };
     }
 };
 

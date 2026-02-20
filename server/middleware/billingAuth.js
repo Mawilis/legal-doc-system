@@ -450,7 +450,7 @@ const logBillingAudit = (auditData) => {
  * @middleware billingAuth
  * @description Quantum authorization middleware for billing endpoints
  * @param {Array} requiredPermissions - Array of required billing permissions
- * @param {Object} options - Configuration options
+ * @param {Object} _options - Configuration options (reserved for future use)
  * @returns {Function} Express middleware function
  * 
  * @security-layers
@@ -461,7 +461,7 @@ const logBillingAudit = (auditData) => {
  * 5. Request Validation - Input sanitization
  * 6. Audit Logging - Immutable trail
  */
-const billingAuth = (requiredPermissions = [], options = {}) => {
+const billingAuth = (requiredPermissions = [], _options = {}) => {
     return async (req, res, next) => {
         const startTime = Date.now();
         const requestId = crypto.randomUUID();

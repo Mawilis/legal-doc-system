@@ -1,0 +1,185 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "SiSwati",
+    "region": "South Africa",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "2",
+    "dateFormat": "YYYY-MM-DD",
+    "timeFormat": "HH:mm",
+    "currency": "ZAR",
+    "numberFormat": {
+      "decimal": ".",
+      "thousands": ",",
+      "grouping": [3]
+    },
+    "languageCode": "ss",
+    "speakers": "1.3 million",
+    "province": "Mpumalanga, Eswatini"
+  },
+  
+  "common": {
+    "save": "Londvolota",
+    "cancel": "Khansela",
+    "delete": "Sula",
+    "edit": "Hlela",
+    "view": "Buka",
+    "download": "Layisha",
+    "upload": "Layisha ku",
+    "search": "Phenya",
+    "filter": "Hlunga",
+    "refresh": "Vuselela",
+    "back": "Emuva",
+    "next": "Lokulandzelako",
+    "previous": "Lokwedlulile",
+    "submit": "Thumela",
+    "confirm": "Qinisekisa",
+    "yes": "Yebo",
+    "no": "Cha",
+    "ok": "Kulungile",
+    "close": "Vala",
+    "loading": "Iyalayisha...",
+    "error": "Liphutsa",
+    "success": "Impumelelo",
+    "warning": "Sexwayiso",
+    "info": "Lwati",
+    "actions": "Itenzo",
+    "status": "Simo",
+    "date": "Lusuku",
+    "time": "Sikhatsi",
+    "datetime": "Lusuku ne Sikhatsi",
+    "name": "Ligama",
+    "description": "Incazelo",
+    "details": "Imininingwane",
+    "type": "Luhlobo",
+    "category": "Sigaba",
+    "amount": "Linani",
+    "total": "Samba",
+    "subtotal": "Samba lesincane",
+    "tax": "Intela",
+    "vat": "VAT",
+    "invoice": "I-invoyisi",
+    "receipt": "Irisidi",
+    "payment": "Inkokhelo",
+    "refund": "Imbuyiselo",
+    "credit": "Ikhredithi",
+    "debit": "Idibhithi",
+    "balance": "Ibhalansi",
+    "due": "Lokufanele",
+    "paid": "Ikhokhelwe",
+    "pending": "Kusalindwe",
+    "completed": "Kuphelelwe",
+    "failed": "Kwehlulekile",
+    "processing": "Iyacutshungulwa",
+    "approved": "Kuvunyelwe",
+    "rejected": "Kwenqatshelwe",
+    "cancelled": "Kukhanseliwe"
+  },
+  
+  "navigation": {
+    "home": "Likhaya",
+    "dashboard": "Ideshibhodi",
+    "profile": "Iphrofayela",
+    "settings": "Ilungiselelo",
+    "logout": "Phuma",
+    "login": "Ngena",
+    "register": "Bhalisa",
+    "help": "Lusito",
+    "support": "Kusekelwa",
+    "contact": "Thintana natsi",
+    "about": "Mayelana",
+    "terms": "Imigomo yekusebentisa",
+    "privacy": "Inqubomgomo yekubumfihlo",
+    "security": "Kuvikeleka"
+  },
+  
+  "errors": {
+    "general": "Liphutsa lentekile. Ngicela utame futsi.",
+    "notFound": "Likhasi alitfolakali",
+    "unauthorized": "Awugunyatwanga kubona leli khasi",
+    "forbidden": "Kufinyelela kunqatshelwe",
+    "badRequest": "Isicelo lesingalungile",
+    "validation": {
+      "required": "{{field}} iyadingeka",
+      "email": "Ngicela ufake likheli le-imeyili lelivumelekile",
+      "phone": "Ngicela ufake inkhombolo yocingo lelivumelekile",
+      "idNumber": "Ngicela ufake inkhombolo yemazisi lelivumelekile",
+      "date": "Ngicela ufake lusuku loluvumelekile",
+      "number": "Ngicela ufake inkhombolo lelivumelekile"
+    }
+  },
+  
+  "auth": {
+    "login": {
+      "title": "Ngena ku-Wilsy OS",
+      "email": "Likheli le-imeyili",
+      "password": "Iphasiwedi",
+      "remember": "Ngikhumbule",
+      "forgot": "Ukhohliwe iphasiwedi?",
+      "submit": "Ngena",
+      "success": "Kungena kuphumelele",
+      "failed": "Kungena kwehlulekile",
+      "locked": "I-akhawunti ivaliwe"
+    },
+    "register": {
+      "title": "Dala i-akhawunti",
+      "firstName": "Ligama",
+      "lastName": "Sibongo",
+      "email": "Likheli le-imeyili",
+      "phone": "Inkhombolo yocingo",
+      "password": "Iphasiwedi",
+      "confirmPassword": "Qinisekisa iphasiwedi",
+      "agree": "Ngiyavumelana {{terms}} na {{privacy}}",
+      "submit": "Bhalisa",
+      "success": "Kubhalisa kuphumelele"
+    },
+    "logout": {
+      "success": "Uphumile ngempumelelo"
+    }
+  },
+  
+  "onboarding": {
+    "title": "Kungentswa kwemakhasimende",
+    "stages": {
+      "INITIATED": "Kungentswa kuqaliwe",
+      "CLIENT_INFO": "Lwati lwekhasimende",
+      "FICA_SCREENING": "Kuhlolwa kwe-FICA",
+      "DOCUMENT_UPLOAD": "Kulayishwa kwemadokhumenti",
+      "DOCUMENT_VERIFICATION": "Kuqinisekiswa kwemadokhumenti",
+      "REVIEW": "Kubuyeketwa kwemtsetfo",
+      "COMPLETED": "Kuphelelwe"
+    },
+    "status": {
+      "PENDING": "Kusalindwe",
+      "IN_PROGRESS": "Kiyaqhubeka",
+      "COMPLETED": "Kuphelelwe",
+      "CANCELLED": "Kukhanseliwe",
+      "REJECTED": "Kwenqatshelwe",
+      "PENDING_FICA": "FICA isalindwe",
+      "FICA_APPROVED": "FICA yamukelekile",
+      "FICA_REJECTED": "FICA yenqatshelwe"
+    },
+    "messages": {
+      "created": "Seshini yekungentswa yakhiwe ngempumelelo",
+      "updated": "Seshini yekungentswa ibuyekeziwe",
+      "stageAdvanced": "Idlulele esigabeni {{stage}}",
+      "documentUploaded": "Idokhumenti ilayishwe ngempumelelo",
+      "documentVerified": "Idokhumenti iqinisekisiwe",
+      "ficaApproved": "FICA yamukelekile",
+      "ficaRejected": "FICA yenqatshelwe"
+    }
+  },
+  
+  "compliance": {
+    "fica": {
+      "title": "Kutotsela i-FICA",
+      "status": "Simo se-FICA",
+      "reference": "Inkhombolo ye-FICA",
+      "riskScore": "Lizinga lengoti",
+      "riskLevel": "Lizinga lengoti",
+      "pep": "Umuntfu lowatiwa kwezepolitiki"
+    }
+  }
+}

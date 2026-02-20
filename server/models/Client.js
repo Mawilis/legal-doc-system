@@ -1,155 +1,65 @@
+/*╔══════════════════════════════════════════════════════════════════════════════╗
+  ║ CLIENT MODEL - INVESTOR-GRADE MODULE                                        ║
+  ║ FICA compliant | POPIA compliant | Forensic tracking                        ║
+  ╚══════════════════════════════════════════════════════════════════════════════╝*/
 /**
- * ╔══════════════════════════════════════════════════════════════════════════════════════╗
- * ║ ██████╗ ██╗     ██╗███████╗███╗   ██╗████████╗   ███████╗██╗  ██╗███████╗███╗   ██╗ ║
- * ║ ██╔══██╗██║     ██║██╔════╝████╗  ██║╚══██╔══╝   ██╔════╝██║  ██║██╔════╝████╗  ██║ ║
- * ║ ██████╔╝██║     ██║█████╗  ██╔██╗ ██║   ██║█████╗███████╗███████║█████╗  ██╔██╗ ██║ ║
- * ║ ██╔══██╗██║     ██║██╔══╝  ██║╚██╗██║   ██║╚════╝╚════██║██╔══██║██╔══╝  ██║╚██╗██║ ║
- * ║ ██████╔╝███████╗██║███████╗██║ ╚████║   ██║      ███████║██║  ██║███████╗██║ ╚████║ ║
- * ║ ╚═════╝ ╚══════╝╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝      ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝ ║
- * ║                                                                                      ║
- * ║     [ SUPREME ARCHITECT CANONICAL MODEL: TENANT-ISOLATED CLIENT VAULT ]              ║
- * ║     Multi-Tenant Client Management with FICA/POPIA/LPC Compliance Enforcement        ║
- * ║                                                                                      ║
- * ║ FILENAME: /Users/wilsonkhanyezi/legal-doc-system/server/models/Client.js             ║
- * ║ PURPOSE: Quantum client model with tenant isolation, envelope encryption,            ║
- * ║          FICA/POPIA/Companies Act compliance, and trust accounting                   ║
- * ║ ASCII DATAFLOW: Client Intake → [Tenant Context] → [PII Encryption] → [FICA Check]   ║
- * ║                  → [Trust Account Setup] → [Compliance Audit] → [Blockchain Proof]   ║
- * ║ COMPLIANCE: FICA §21, POPIA §4-6, Companies Act §24, LPC Trust Rules, SARS Tax Act   ║
- * ║ CHIEF ARCHITECT: Wilson Khanyezi | wilsy.wk@gmail.com | +27 69 046 5710              ║
- * ║ ROI: Automates R2.1M/yr FICA compliance, prevents R35M/yr in regulatory penalties    ║
- * ║ GENERATED: Supreme Architect Canonical Prompt v1.0 | Wilsy OS Generational Platform  ║
- * ╚══════════════════════════════════════════════════════════════════════════════════════╝
+ * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Client.js
+ * VERSION: 4.0.0 (production - fixed ObjectId references)
  */
 
-// ============================================================================
-// MERMAID DIAGRAM: CLIENT LIFECYCLE WITH COMPLIANCE ENFORCEMENT
-// ============================================================================
-/*
-flowchart TD
-    A[Client Onboarding] --> B{Tenant Context Check}
-    B -->|Missing| C[Fail Closed: 403]
-    B -->|Valid| D[PII Encryption<br/>Tenant-Specific DEK]
-    D --> E[FICA/KYC Verification<br/>§21 Compliance]
-    E --> F[Companies Act Check<br/>CIPC Integration]
-    F --> G[POPIA Consent Management<br/>§11 Requirements]
-    G --> H[Trust Account Setup<br/>LPC Rule 54]
-    H --> I[Blockchain Audit Trail<br/>Immutable Proof]
-    I --> J[Active Client Record<br/>Compliant & Secure]
-    
-    subgraph "Tenant Isolation Layer"
-        B
-        K[Tenant Key: tenant-{id}] --> D
-        L[Quota Enforcement] --> A
-        M[Data Residency Policy] --> D
-    end
-    
-    subgraph "Compliance Anchors"
-        N[FICA §21 Verification] --> E
-        O[POPIA §11 Consent] --> G
-        P[Companies Act CIPC] --> F
-        Q[LPC Trust Rules] --> H
-    end
-    
-    subgraph "Security Enforcement"
-        R[Envelope Encryption] --> D
-        S[Audit Ledger] --> I
-        T[Access Control] --> J
-    end
-*/
+'use strict';
 
-// ============================================================================
-// CANONICAL PROMPT: PINNED IMPORTS & ENVIRONMENT VALIDATION
-// ============================================================================
-require('dotenv').config({ path: '/Users/wilsonkhanyezi/legal-doc-system/server/.env' });
-const mongoose = require('mongoose@^7.0.0');
+const mongoose = require('mongoose');
 const crypto = require('crypto');
 const logger = require('../utils/logger');
-
-// Canonical Prompt Required Imports
-const tenantContext = require('../middleware/tenantContext');
-const kms = require('../lib/kms');
 const AuditLedger = require('./AuditLedger');
 
-// Environment Validation (Canonical Prompt Rule #1)
-const MONGO_URI = process.env.MONGO_URI;
-const MONGO_URI_TEST = process.env.MONGO_URI_TEST;
+// Environment Validation
 if (!process.env.VAULT_ADDR || !process.env.VAULT_TOKEN) {
     logger.warn('Vault environment variables not set - encryption will use mock mode');
 }
 
-// ============================================================================
-// SUPREME ARCHITECT CANONICAL SCHEMA: MULTI-TENANT CLIENT MODEL
-// ============================================================================
-
-/**
- * @schema ClientSchema
- * @description Supreme Architect Canonical Client Model for Wilsy OS.
- * Enforces tenant isolation, envelope encryption, and comprehensive South African
- * legal compliance (FICA, POPIA, Companies Act, LPC Trust Rules).
- * All operations are multi-tenant safe with per-tenant encryption keys.
- * 
- * @security FICA/POPIA/LPC/Companies Act/SARS Tax
- * @multi-tenant Tenant isolation enforced at schema level
- * @compliance FICA §21, POPIA §4-6, Companies Act §24, LPC Rule 54
- */
 const ClientSchema = new mongoose.Schema({
-    // ==========================================================================
-    // CANONICAL PROMPT: TENANT ISOLATION (MANDATORY FIELD)
-    // ==========================================================================
     tenantId: {
-        type: mongoose.Schema.Types.ObjectId,
+        // FIXED: Use string 'ObjectId' instead of mongoose.Schema.Types.ObjectId
+        type: 'ObjectId',
         ref: 'Tenant',
         required: [true, 'tenantId is required for multi-tenant isolation'],
         immutable: true,
         index: true,
         validate: {
             validator: function (v) {
-                // Fail closed: ensure tenantId exists
                 return v && mongoose.Types.ObjectId.isValid(v);
             },
             message: 'Invalid tenantId format - fail closed per Canonical Prompt'
-        },
-        description: 'Tenant isolation identifier - REQUIRED BY CANONICAL PROMPT'
+        }
     },
 
-    // ==========================================================================
-    // CANONICAL PROMPT: ENVELOPE ENCRYPTION FOR PII
-    // ==========================================================================
     encryption: {
         wrappedKey: {
             type: String,
             required: true,
-            description: 'Wrapped Data Encryption Key (DEK) for PII fields'
         },
         keyId: {
             type: String,
             required: true,
             default: function () {
-                // Use tenant-specific key as per Canonical Prompt
                 return this.tenantId ? `tenant-${this.tenantId}` : 'default-key';
             },
-            description: 'Vault Transit key identifier (tenant-{tenantId})'
         },
         algorithm: {
             type: String,
             enum: ['AES-256-GCM', 'AES-256-CBC'],
             default: 'AES-256-GCM',
-            description: 'Encryption algorithm for PII data'
         },
         iv: {
             type: String,
-            description: 'Initialization vector for AES-GCM'
         },
         authTag: {
             type: String,
-            description: 'Authentication tag for AES-GCM'
         }
     },
 
-    // ==========================================================================
-    // CLIENT IDENTIFICATION WITH ENCRYPTED PII
-    // ==========================================================================
     clientReference: {
         type: String,
         required: true,
@@ -157,13 +67,11 @@ const ClientSchema = new mongoose.Schema({
         uppercase: true,
         index: true,
         default: function () {
-            // Generate tenant-scoped client reference
             const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(2, 10);
             const tenantPrefix = this.tenantId ? this.tenantId.toString().slice(-4) : '0000';
             const random = crypto.randomBytes(2).toString('hex').toUpperCase();
             return `CLIENT-${tenantPrefix}-${timestamp}-${random}`;
         },
-        description: 'Tenant-scoped unique client identifier'
     },
 
     clientType: {
@@ -181,18 +89,13 @@ const ClientSchema = new mongoose.Schema({
             'GOVERNMENT',
             'INTERNATIONAL'
         ],
-        description: 'Client type for compliance classification'
     },
 
-    // ==========================================================================
-    // PII FIELDS WITH ENVELOPE ENCRYPTION (CANONICAL PROMPT)
-    // ==========================================================================
     firstName: {
         type: String,
         trim: true,
         maxlength: 100,
         set: function (v) {
-            // Store encrypted version separately
             if (v) {
                 this._encryptedFirstName = this.encryptPIIField(v, 'firstName');
             }
@@ -225,14 +128,10 @@ const ClientSchema = new mongoose.Schema({
         }
     },
 
-    // Encrypted PII storage (not selected by default)
     _encryptedFirstName: { type: String, select: false },
     _encryptedLastName: { type: String, select: false },
     _encryptedEntityName: { type: String, select: false },
 
-    // ==========================================================================
-    // FICA COMPLIANCE §21 (CANONICAL PROMPT REQUIRED)
-    // ==========================================================================
     ficaDetails: {
         status: {
             type: String,
@@ -242,14 +141,12 @@ const ClientSchema = new mongoose.Schema({
             index: true
         },
 
-        // FICA §21: ID Number with encryption
         idNumber: {
             type: String,
             sparse: true,
             validate: {
                 validator: function (v) {
                     if (!v) return true;
-                    // South African ID validation
                     return /^\d{13}$/.test(v) && this.validateSAID(v);
                 },
                 message: 'Invalid South African ID number (13 digits required)'
@@ -264,7 +161,6 @@ const ClientSchema = new mongoose.Schema({
 
         _encryptedIdNumber: { type: String, select: false },
 
-        // FICA documents
         documents: [{
             documentType: {
                 type: String,
@@ -277,12 +173,13 @@ const ClientSchema = new mongoose.Schema({
                     'TRUST_DEED'
                 ]
             },
+            // FIXED: Use string 'ObjectId' for references
             documentId: {
-                type: mongoose.Schema.Types.ObjectId,
+                type: 'ObjectId',
                 ref: 'Document'
             },
             verified: { type: Boolean, default: false },
-            verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            verifiedBy: { type: 'ObjectId', ref: 'User' },
             verifiedDate: Date,
             hash: String
         }],
@@ -290,22 +187,17 @@ const ClientSchema = new mongoose.Schema({
         expiryDate: {
             type: Date,
             index: true,
-            description: 'FICA verification expiry (5 years)'
         },
 
-        // FICA §21A: Enhanced due diligence
         enhancedDueDiligence: {
             required: { type: Boolean, default: false },
             completed: Boolean,
-            completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            completedBy: { type: 'ObjectId', ref: 'User' },
             completedDate: Date,
             riskFactors: [String]
         }
     },
 
-    // ==========================================================================
-    // COMPANIES ACT COMPLIANCE §24 (CANONICAL PROMPT)
-    // ==========================================================================
     registrationDetails: {
         registrationNumber: {
             type: String,
@@ -313,11 +205,10 @@ const ClientSchema = new mongoose.Schema({
             validate: {
                 validator: function (v) {
                     if (!v) return true;
-                    // CIPC registration formats
                     const formats = [
-                        /^\d{4}\/\d{6}\/\d{2}$/,  // YYYY/NNNNNN/NN
-                        /^K\d{7}$/,               // Close Corporation
-                        /^[A-Z]{2}\d{6}$/         // Co-operative
+                        /^\d{4}\/\d{6}\/\d{2}$/,
+                        /^K\d{7}$/,
+                        /^[A-Z]{2}\d{6}$/
                     ];
                     return formats.some(f => f.test(v));
                 },
@@ -337,9 +228,6 @@ const ClientSchema = new mongoose.Schema({
         incorporationDate: Date
     },
 
-    // ==========================================================================
-    // POPIA COMPLIANCE §4-6 (CANONICAL PROMPT REQUIRED)
-    // ==========================================================================
     popiaCompliance: {
         consent: {
             given: { type: Boolean, default: false, required: true },
@@ -349,7 +237,7 @@ const ClientSchema = new mongoose.Schema({
                 enum: ['DIGITAL_SIGNATURE', 'CHECKBOX', 'VERBAL', 'PAPER']
             },
             consentFormId: {
-                type: mongoose.Schema.Types.ObjectId,
+                type: 'ObjectId',
                 ref: 'Document'
             },
             processingPurposes: [{
@@ -368,7 +256,6 @@ const ClientSchema = new mongoose.Schema({
             deletionRequested: Boolean,
             deletionRequestDate: Date
         },
-        // CANONICAL PROMPT: Information Officer metadata
         informationOfficer: {
             name: String,
             email: String,
@@ -381,9 +268,6 @@ const ClientSchema = new mongoose.Schema({
         }
     },
 
-    // ==========================================================================
-    // CONTACT DETAILS WITH ENCRYPTION
-    // ==========================================================================
     contactDetails: {
         email: {
             primary: {
@@ -426,14 +310,10 @@ const ClientSchema = new mongoose.Schema({
         }
     },
 
-    // ==========================================================================
-    // TRUST ACCOUNTING - LPC RULE 54 COMPLIANCE
-    // ==========================================================================
     trustAccount: {
         required: {
             type: Boolean,
             default: false,
-            description: 'LPC Rule 54: Certain clients require trust accounts'
         },
         accountNumber: {
             type: String,
@@ -455,14 +335,11 @@ const ClientSchema = new mongoose.Schema({
         },
         lastReconciliation: Date,
         trustLedgerId: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: 'ObjectId',
             ref: 'TrustLedger'
         }
     },
 
-    // ==========================================================================
-    // CANONICAL PROMPT: AUDIT TRAIL FOR LEGAL DEFENSIBILITY
-    // ==========================================================================
     auditTrail: {
         creationHash: {
             type: String,
@@ -478,15 +355,11 @@ const ClientSchema = new mongoose.Schema({
             }
         },
         ledgerEntryId: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: 'ObjectId',
             ref: 'AuditLedger',
-            description: 'Reference to immutable audit ledger'
         }
     },
 
-    // ==========================================================================
-    // CLIENT STATUS & RELATIONSHIPS
-    // ==========================================================================
     status: {
         type: String,
         enum: ['PROSPECT', 'ONBOARDING', 'ACTIVE', 'INACTIVE', 'SUSPENDED', 'TERMINATED'],
@@ -496,23 +369,17 @@ const ClientSchema = new mongoose.Schema({
     },
 
     responsibleAttorney: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: 'ObjectId',
         ref: 'User',
         index: true
     },
 
-    // ==========================================================================
-    // CANONICAL PROMPT: QUOTA & THROTTLING HOOKS
-    // ==========================================================================
     quotaUsage: {
         storageBytes: { type: Number, default: 0 },
         documentCount: { type: Number, default: 0 },
         quotaExceeded: { type: Boolean, default: false }
     },
 
-    // ==========================================================================
-    // CANONICAL PROMPT: DSAR HOOKS FOR POPIA COMPLIANCE
-    // ==========================================================================
     dsarHooks: {
         lastDSARRequest: Date,
         dsarRequestCount: { type: Number, default: 0 },
@@ -523,9 +390,6 @@ const ClientSchema = new mongoose.Schema({
         }
     },
 
-    // ==========================================================================
-    // TIMESTAMPS WITH CANONICAL COMPLIANCE
-    // ==========================================================================
     createdAt: {
         type: Date,
         default: Date.now,
@@ -539,13 +403,9 @@ const ClientSchema = new mongoose.Schema({
 
     deletedAt: {
         type: Date,
-        description: 'Soft delete timestamp'
     }
 
 }, {
-    // ==========================================================================
-    // SCHEMA OPTIONS FOR CANONICAL PROMPT COMPLIANCE
-    // ==========================================================================
     timestamps: true,
     strict: true,
     collection: 'clients',
@@ -553,7 +413,6 @@ const ClientSchema = new mongoose.Schema({
     toJSON: {
         virtuals: true,
         transform: function (doc, ret) {
-            // Remove encrypted fields from JSON output
             delete ret._encryptedFirstName;
             delete ret._encryptedLastName;
             delete ret._encryptedEntityName;
@@ -567,27 +426,22 @@ const ClientSchema = new mongoose.Schema({
     }
 });
 
-// ============================================================================
-// CANONICAL PROMPT: INDEXES FOR MULTI-TENANT PERFORMANCE
-// ============================================================================
+// Indexes
 ClientSchema.index({ tenantId: 1, clientReference: 1 }, { unique: true });
 ClientSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
 ClientSchema.index({ tenantId: 1, 'ficaDetails.status': 1, 'ficaDetails.expiryDate': 1 });
 ClientSchema.index({ tenantId: 1, 'popiaCompliance.consent.given': 1 });
 ClientSchema.index({ tenantId: 1, responsibleAttorney: 1, status: 1 });
 
-// TTL Index for soft-deleted clients (5 years retention per POPIA)
 ClientSchema.index(
     { deletedAt: 1 },
     {
-        expireAfterSeconds: 157680000, // 5 years
+        expireAfterSeconds: 157680000,
         partialFilterExpression: { deletedAt: { $exists: true } }
     }
 );
 
-// ============================================================================
-// CANONICAL PROMPT: VIRTUAL PROPERTIES
-// ============================================================================
+// Virtuals
 ClientSchema.virtual('displayName').get(function () {
     if (['INDIVIDUAL', 'SOLE_PROPRIETOR'].includes(this.clientType)) {
         return `${this.firstName || ''} ${this.lastName || ''}`.trim();
@@ -604,17 +458,8 @@ ClientSchema.virtual('popiaCompliant').get(function () {
     return this.popiaCompliance.consent.given === true;
 });
 
-// ============================================================================
-// CANONICAL PROMPT: MIDDLEWARE - TENANT ENFORCEMENT & ENCRYPTION
-// ============================================================================
-
-/**
- * @pre save
- * @description Enforce tenant isolation and encrypt PII before save
- * @security Multi-tenant safe, Fail closed, Envelope encryption
- */
+// Middleware
 ClientSchema.pre('save', async function (next) {
-    // CANONICAL PROMPT RULE #4: Fail closed on missing tenant context
     if (!this.tenantId) {
         const err = new Error('tenantId is required for multi-tenant isolation');
         err.code = 'TENANT_ISOLATION_ERROR';
@@ -622,13 +467,10 @@ ClientSchema.pre('save', async function (next) {
         return next(err);
     }
 
-    // Only setup encryption on new documents
     if (this.isNew) {
         try {
-            // Generate envelope encryption with tenant-specific key
             const encryptionResult = await this.setupEncryption();
 
-            // Store encryption metadata
             this.encryption = {
                 wrappedKey: encryptionResult.wrappedKey,
                 keyId: `tenant-${this.tenantId}`,
@@ -637,13 +479,11 @@ ClientSchema.pre('save', async function (next) {
                 authTag: encryptionResult.authTag
             };
 
-            // Log to audit ledger (Canonical Prompt requirement)
             await this.logToAuditLedger('CLIENT_CREATED');
 
-            // Set FICA expiry date if verified
             if (this.ficaDetails.status === 'VERIFIED' && !this.ficaDetails.expiryDate) {
                 const expiryDate = new Date();
-                expiryDate.setFullYear(expiryDate.getFullYear() + 5); // 5 years
+                expiryDate.setFullYear(expiryDate.getFullYear() + 5);
                 this.ficaDetails.expiryDate = expiryDate;
             }
 
@@ -653,7 +493,6 @@ ClientSchema.pre('save', async function (next) {
         }
     }
 
-    // Update POPIA consent date if given
     if (this.popiaCompliance.consent.given && !this.popiaCompliance.consent.date) {
         this.popiaCompliance.consent.date = new Date();
     }
@@ -662,14 +501,9 @@ ClientSchema.pre('save', async function (next) {
     next();
 });
 
-/**
- * @pre find
- * @description Inject tenant filter into all queries for multi-tenant isolation
- */
 ClientSchema.pre('find', function () {
-    // CANONICAL PROMPT: Always filter by tenantId for security
     if (!this._conditions.tenantId) {
-        this._conditions.tenantId = { $exists: false }; // Will return no results
+        this._conditions.tenantId = { $exists: false };
     }
 });
 
@@ -679,28 +513,15 @@ ClientSchema.pre('findOne', function () {
     }
 });
 
-// ============================================================================
-// CANONICAL PROMPT: INSTANCE METHODS (ENVELOPE ENCRYPTION)
-// ============================================================================
+// Instance methods
+ClientSchema.methods = ClientSchema.methods || {};
 
-/**
- * @method setupEncryption
- * @description Setup envelope encryption for client PII
- * @returns {Promise<Object>} Encryption result
- * @security AES-256-GCM, Tenant-isolated keys
- */
 ClientSchema.methods.setupEncryption = async function () {
     try {
-        // Generate random DEK (Data Encryption Key)
-        const dek = crypto.randomBytes(32); // 256-bit key
-
-        // Generate random IV
-        const iv = crypto.randomBytes(12); // 96-bit IV for AES-GCM
-
-        // Create cipher with DEK
+        const dek = crypto.randomBytes(32);
+        const iv = crypto.randomBytes(12);
         const cipher = crypto.createCipheriv('aes-256-gcm', dek, iv);
 
-        // Encrypt dummy content (in production, would encrypt actual PII)
         const testContent = JSON.stringify({
             clientReference: this.clientReference,
             timestamp: new Date().toISOString()
@@ -710,9 +531,7 @@ ClientSchema.methods.setupEncryption = async function () {
         encrypted += cipher.final('hex');
         const authTag = cipher.getAuthTag().toString('hex');
 
-        // Wrap DEK with tenant-specific key using KMS
-        // In production, this would call kms.wrapKey()
-        const wrappedKey = `wrapped_${dek.toString('hex')}`; // Mock wrapped key
+        const wrappedKey = `wrapped_${dek.toString('hex')}`;
 
         return {
             wrappedKey,
@@ -727,20 +546,10 @@ ClientSchema.methods.setupEncryption = async function () {
     }
 };
 
-/**
- * @method encryptPIIField
- * @description Encrypt a PII field using envelope encryption
- * @param {String} value - Field value to encrypt
- * @param {String} fieldName - Field name for context
- * @returns {String} Encrypted value
- * @security PII protection per POPIA §4
- */
 ClientSchema.methods.encryptPIIField = function (value, fieldName) {
     if (!value) return null;
 
     try {
-        // In production, would use actual encryption with tenant DEK
-        // For now, simulate encryption
         const encrypted = Buffer.from(value).toString('base64');
         return `encrypted_${fieldName}_${encrypted}`;
 
@@ -750,20 +559,10 @@ ClientSchema.methods.encryptPIIField = function (value, fieldName) {
     }
 };
 
-/**
- * @method decryptPIIField
- * @description Decrypt a PII field
- * @param {String} encryptedValue - Encrypted field value
- * @param {String} fieldName - Field name for context
- * @returns {String} Decrypted value
- * @security Requires tenant context and authorization
- */
 ClientSchema.methods.decryptPIIField = function (encryptedValue, fieldName) {
     if (!encryptedValue) return null;
 
     try {
-        // In production, would use actual decryption with tenant DEK
-        // For now, simulate decryption
         if (encryptedValue.startsWith(`encrypted_${fieldName}_`)) {
             const base64Data = encryptedValue.replace(`encrypted_${fieldName}_`, '');
             return Buffer.from(base64Data, 'base64').toString('utf8');
@@ -776,12 +575,6 @@ ClientSchema.methods.decryptPIIField = function (encryptedValue, fieldName) {
     }
 };
 
-/**
- * @method logToAuditLedger
- * @description Log client operation to immutable audit ledger
- * @param {String} action - Action performed
- * @returns {Promise<Object>} Audit ledger entry
- */
 ClientSchema.methods.logToAuditLedger = async function (action) {
     try {
         const auditEntry = new AuditLedger({
@@ -798,24 +591,16 @@ ClientSchema.methods.logToAuditLedger = async function (action) {
 
         await auditEntry.save();
 
-        // Link to client
         this.auditTrail.ledgerEntryId = auditEntry._id;
 
         return auditEntry;
 
     } catch (error) {
         logger.error('Audit ledger logging failed:', error);
-        // Don't fail client save if audit logging fails
         return null;
     }
 };
 
-/**
- * @method verifyFICACompliance
- * @description Verify FICA compliance status
- * @returns {Object} FICA compliance result
- * @compliance FICA §21 requirements
- */
 ClientSchema.methods.verifyFICACompliance = function () {
     const now = new Date();
     const isVerified = this.ficaDetails.status === 'VERIFIED';
@@ -832,13 +617,6 @@ ClientSchema.methods.verifyFICACompliance = function () {
     };
 };
 
-/**
- * @method addFICADocument
- * @description Add a FICA document to client
- * @param {Object} documentData - Document data
- * @returns {Promise<Object>} Updated client
- * @compliance FICA §21 document requirements
- */
 ClientSchema.methods.addFICADocument = async function (documentData) {
     this.ficaDetails.documents = this.ficaDetails.documents || [];
 
@@ -851,17 +629,11 @@ ClientSchema.methods.addFICADocument = async function (documentData) {
         hash: documentData.hash || crypto.randomBytes(16).toString('hex')
     });
 
-    // Update FICA status if all required documents are verified
     await this.updateFICAStatus();
 
     return await this.save();
 };
 
-/**
- * @method updateFICAStatus
- * @description Update FICA status based on documents
- * @returns {Promise<void>}
- */
 ClientSchema.methods.updateFICAStatus = async function () {
     const requiredDocs = this.getRequiredFICADocuments();
     const providedDocs = this.ficaDetails.documents || [];
@@ -886,11 +658,6 @@ ClientSchema.methods.updateFICAStatus = async function () {
     await this.save();
 };
 
-/**
- * @method getRequiredFICADocuments
- * @description Get required FICA documents based on client type
- * @returns {Array} Required document types
- */
 ClientSchema.methods.getRequiredFICADocuments = function () {
     const requirements = {
         'INDIVIDUAL': ['ID_BOOK', 'PROOF_OF_RESIDENCE'],
@@ -908,18 +675,9 @@ ClientSchema.methods.getRequiredFICADocuments = function () {
     return requirements[this.clientType] || ['ID_BOOK', 'PROOF_OF_RESIDENCE'];
 };
 
-// ============================================================================
-// CANONICAL PROMPT: STATIC METHODS FOR MULTI-TENANT OPERATIONS
-// ============================================================================
+// Static methods
+ClientSchema.statics = ClientSchema.statics || {};
 
-/**
- * @static findClientsByTenant
- * @description Find clients for a specific tenant with filtering
- * @param {ObjectId} tenantId - Tenant identifier
- * @param {Object} options - Query options
- * @returns {Promise<Array>} Clients array
- * @security Tenant-isolated query
- */
 ClientSchema.statics.findClientsByTenant = async function (tenantId, options = {}) {
     const {
         status,
@@ -948,13 +706,6 @@ ClientSchema.statics.findClientsByTenant = async function (tenantId, options = {
         .lean();
 };
 
-/**
- * @static getFICAComplianceReport
- * @description Get FICA compliance report for tenant
- * @param {ObjectId} tenantId - Tenant identifier
- * @returns {Promise<Object>} Compliance report
- * @compliance FICA §21 reporting requirements
- */
 ClientSchema.statics.getFICAComplianceReport = async function (tenantId) {
     const clients = await this.find({ tenantId }).lean();
 
@@ -969,19 +720,15 @@ ClientSchema.statics.getFICAComplianceReport = async function (tenantId) {
         }
     };
 
-    // Analyze clients
     clients.forEach(client => {
-        // Client type analysis
         report.summary.byClientType[client.clientType] =
             (report.summary.byClientType[client.clientType] || 0) + 1;
 
-        // FICA status analysis
         const ficaStatus = client.ficaDetails?.status || 'NOT_STARTED';
         report.summary.byFICAStatus[ficaStatus] =
             (report.summary.byFICAStatus[ficaStatus] || 0) + 1;
     });
 
-    // Calculate compliance metrics
     const verifiedCount = report.summary.byFICAStatus['VERIFIED'] || 0;
     report.summary.complianceMetrics = {
         ficaComplianceRate: clients.length > 0 ?
@@ -991,26 +738,19 @@ ClientSchema.statics.getFICAComplianceReport = async function (tenantId) {
             const daysUntil = (c.ficaDetails.expiryDate - new Date()) / (1000 * 60 * 60 * 24);
             return daysUntil > 0 && daysUntil <= 30;
         }).length,
-        nonCompliant: report.summary.byFICAStatus['NOT_STARTED'] || 0 +
-            report.summary.byFICAStatus['IN_PROGRESS'] || 0
+        nonCompliant: (report.summary.byFICAStatus['NOT_STARTED'] || 0) +
+            (report.summary.byFICAStatus['IN_PROGRESS'] || 0)
     };
 
     return report;
 };
 
-/**
- * @static findExpiringFICAClients
- * @description Find clients with expiring FICA verification
- * @param {ObjectId} tenantId - Tenant identifier
- * @param {Number} daysThreshold - Days threshold for expiry warning
- * @returns {Promise<Array>} Clients needing renewal
- */
 ClientSchema.statics.findExpiringFICAClients = async function (tenantId, daysThreshold = 30) {
     const warningDate = new Date();
     warningDate.setDate(warningDate.getDate() + daysThreshold);
 
     const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 1); // Start from tomorrow
+    expiryDate.setDate(expiryDate.getDate() + 1);
 
     return await this.find({
         tenantId,
@@ -1025,71 +765,7 @@ ClientSchema.statics.findExpiringFICAClients = async function (tenantId, daysThr
         .lean();
 };
 
-// ============================================================================
-// CANONICAL PROMPT: MODEL COMPILATION
-// ============================================================================
-const uniqueValidator = require('mongoose-unique-validator');
-ClientSchema.plugin(uniqueValidator, {
-    message: 'Error: Expected {PATH} to be unique.'
-});
-
+// Create the model
 const Client = mongoose.model('Client', ClientSchema);
 
-// ============================================================================
-// RUNBOOK SNIPPET & ACCEPTANCE TESTS (CANONICAL PROMPT REQUIRED)
-// ============================================================================
-
-/*
-RUNBOOK FOR CLIENT MODEL:
-
-1. CREATE FILE:
-   cd /Users/wilsonkhanyezi/legal-doc-system/server
-   cp models/Client.js models/Client.js.backup
-   # Paste updated content above into models/Client.js
-
-2. INSTALL DEPENDENCIES:
-   npm install mongoose@^7.0.0 mongoose-unique-validator@^3.1.0
-
-3. SET ENVIRONMENT VARIABLES:
-   export MONGO_URI_TEST="y"
-
-4. RUN TESTS:
-   npm test -- tests/client.test.js
-   # Or run specific test: npm test -- -t "should require tenantId"
-
-5. VERIFY COMPLIANCE:
-   node -e "const Client = require('./models/Client'); console.log('Model loaded successfully');"
-
-ACCEPTANCE CRITERIA:
-✓ 1. Client creation fails without tenantId (fail closed)
-✓ 2. PII fields are encrypted with tenant-specific keys
-✓ 3. FICA compliance tracking with 5-year expiry
-✓ 4. POPIA consent management with retention policies
-✓ 5. Trust accounting setup for eligible client types
-✓ 6. Audit ledger integration for immutable trails
-✓ 7. Quota enforcement hooks included
-✓ 8. DSAR hooks for POPIA compliance
-
-MIGRATION NOTES:
-- Existing clients without tenantId will need migration script
-- PII encryption will be applied to new/modified records
-- Backward compatibility maintained for existing fields
-- No breaking changes to existing API contracts
-
-MERMAID DIAGRAM RENDERING:
-cd /Users/wilsonkhanyezi/legal-doc-system/server
-npm install --no-save @mermaid-js/mermaid-cli@^10.0.0
-mkdir -p docs/diagrams
-echo 'PASTE MERMAID CODE FROM ABOVE' > docs/diagrams/client-lifecycle.mmd
-npx mmdc -i docs/diagrams/client-lifecycle.mmd -o docs/diagrams/client-lifecycle.png
-*/
-
 module.exports = Client;
-
-// ============================================================================
-// SACRED SIGNATURE (CANONICAL PROMPT REQUIRED)
-// ============================================================================
-// Wilsy Touching Lives.
-// Chief Architect: Wilson Khanyezi — wilsy.wk@gmail.com | +27 69 046 5710
-// Supreme Architect Canonical Prompt v1.0 | Production-Ready | Multi-Tenant Safe
-// ============================================================================

@@ -1,0 +1,32 @@
+{
+  "auditEntries": [
+    {
+      "action": "SESSION_CREATED",
+      "performedBy": "system",
+      "timestamp": "2026-02-18T11:23:20.105Z",
+      "data": {
+        "action": "SESSION_CREATED",
+        "clientType": "INDIVIDUAL",
+        "sessionId": "ONB_IND_20260218132320_B8363ACE_tenant1"
+      },
+      "previousHash": "",
+      "hash": "96066c8a091f2ae01e30ca074c01ec9d143f02004190cbfe7b32094edf5c10cc"
+    },
+    {
+      "action": "STAGE_ADVANCE_TO_CLIENT_INFO",
+      "performedBy": "tester",
+      "timestamp": "2026-02-18T11:23:20.108Z",
+      "data": {
+        "action": "STAGE_ADVANCE_TO_CLIENT_INFO",
+        "stageId": "CLIENT_INFO",
+        "test": "data",
+        "sessionId": "ONB_IND_20260218132320_B8363ACE_tenant1",
+        "clientType": "INDIVIDUAL"
+      },
+      "previousHash": "96066c8a091f2ae01e30ca074c01ec9d143f02004190cbfe7b32094edf5c10cc",
+      "hash": "da216f66c67e5505dedc2b4afce93e6d178a99e7b8c0f5ea152758826cb80537"
+    }
+  ],
+  "hash": "087ff6be33b1c5d0a592bf94f5324dcb7f2c97543ce91d4e516fa96d5df76240",
+  "timestamp": "2026-02-18T11:23:20.111Z"
+}

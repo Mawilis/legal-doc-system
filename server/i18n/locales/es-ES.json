@@ -1,0 +1,173 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "Español",
+    "region": "España",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "2",
+    "dateFormat": "DD/MM/YYYY",
+    "timeFormat": "HH:mm",
+    "currency": "EUR",
+    "numberFormat": {
+      "decimal": ",",
+      "thousands": ".",
+      "grouping": [3]
+    }
+  },
+  
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "download": "Descargar",
+    "upload": "Subir",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "refresh": "Actualizar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "confirm": "Confirmar",
+    "yes": "Sí",
+    "no": "No",
+    "ok": "OK",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "info": "Información",
+    "actions": "Acciones",
+    "status": "Estado",
+    "date": "Fecha",
+    "time": "Hora",
+    "datetime": "Fecha y Hora",
+    "name": "Nombre",
+    "description": "Descripción",
+    "details": "Detalles",
+    "type": "Tipo",
+    "category": "Categoría",
+    "amount": "Importe",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "tax": "Impuesto",
+    "vat": "IVA",
+    "invoice": "Factura",
+    "receipt": "Recibo",
+    "payment": "Pago",
+    "refund": "Reembolso",
+    "credit": "Crédito",
+    "debit": "Débito"
+  },
+  
+  "navigation": {
+    "home": "Inicio",
+    "dashboard": "Panel",
+    "profile": "Perfil",
+    "settings": "Ajustes",
+    "logout": "Cerrar sesión",
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "help": "Ayuda",
+    "support": "Soporte",
+    "contact": "Contacto",
+    "about": "Acerca de",
+    "terms": "Términos de servicio",
+    "privacy": "Política de privacidad",
+    "security": "Seguridad"
+  },
+  
+  "errors": {
+    "general": "Ha ocurrido un error. Por favor, inténtelo de nuevo.",
+    "notFound": "Página no encontrada",
+    "unauthorized": "No está autorizado para ver esta página",
+    "forbidden": "Acceso prohibido",
+    "badRequest": "Solicitud inválida",
+    "validation": {
+      "required": "{{field}} es obligatorio",
+      "email": "Por favor, introduzca una dirección de email válida",
+      "phone": "Por favor, introduzca un número de teléfono válido",
+      "date": "Por favor, introduzca una fecha válida",
+      "number": "Por favor, introduzca un número válido"
+    }
+  },
+  
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión en Wilsy OS",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "remember": "Recordarme",
+      "forgot": "¿Olvidó su contraseña?",
+      "submit": "Iniciar sesión",
+      "success": "Inicio de sesión exitoso",
+      "failed": "Error al iniciar sesión",
+      "locked": "Cuenta bloqueada"
+    },
+    "register": {
+      "title": "Crear cuenta",
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "password": "Contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "agree": "Acepto los {{terms}} y la {{privacy}}",
+      "submit": "Registrarse",
+      "success": "Registro exitoso"
+    }
+  },
+  
+  "onboarding": {
+    "title": "Incorporación de clientes",
+    "stages": {
+      "INITIATED": "Incorporación iniciada",
+      "CLIENT_INFO": "Información del cliente",
+      "FICA_SCREENING": "Evaluación FICA",
+      "DOCUMENT_UPLOAD": "Carga de documentos",
+      "DOCUMENT_VERIFICATION": "Verificación de documentos",
+      "REVIEW": "Revisión legal",
+      "COMPLETED": "Completado"
+    },
+    "status": {
+      "PENDING": "Pendiente",
+      "IN_PROGRESS": "En progreso",
+      "COMPLETED": "Completado",
+      "CANCELLED": "Cancelado",
+      "REJECTED": "Rechazado",
+      "PENDING_FICA": "FICA pendiente",
+      "FICA_APPROVED": "FICA aprobado",
+      "FICA_REJECTED": "FICA rechazado"
+    },
+    "messages": {
+      "created": "Sesión de incorporación creada con éxito",
+      "updated": "Sesión de incorporación actualizada",
+      "stageAdvanced": "Avanzado a {{stage}}",
+      "documentUploaded": "Documento subido con éxito",
+      "documentVerified": "Documento verificado",
+      "ficaApproved": "FICA aprobado",
+      "ficaRejected": "FICA rechazado"
+    }
+  },
+  
+  "compliance": {
+    "fica": {
+      "title": "Cumplimiento FICA",
+      "status": "Estado FICA",
+      "reference": "Referencia FICA",
+      "riskScore": "Puntuación de riesgo",
+      "riskLevel": "Nivel de riesgo",
+      "pep": "Persona expuesta políticamente"
+    },
+    "gdpr": {
+      "title": "Cumplimiento RGPD",
+      "applicable": "RGPD aplicable",
+      "dpo": "Delegado de protección de datos"
+    }
+  }
+}

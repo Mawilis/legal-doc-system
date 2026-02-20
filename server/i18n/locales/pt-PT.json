@@ -1,0 +1,157 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "Português",
+    "region": "Portugal",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "2",
+    "dateFormat": "DD/MM/YYYY",
+    "timeFormat": "HH:mm",
+    "currency": "EUR",
+    "numberFormat": {
+      "decimal": ",",
+      "thousands": ".",
+      "grouping": [3]
+    }
+  },
+  
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "download": "Descarregar",
+    "upload": "Carregar",
+    "search": "Pesquisar",
+    "filter": "Filtrar",
+    "refresh": "Atualizar",
+    "back": "Voltar",
+    "next": "Seguinte",
+    "previous": "Anterior",
+    "submit": "Submeter",
+    "confirm": "Confirmar",
+    "yes": "Sim",
+    "no": "Não",
+    "ok": "OK",
+    "close": "Fechar",
+    "loading": "A carregar...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "warning": "Aviso",
+    "info": "Informação",
+    "actions": "Ações",
+    "status": "Estado",
+    "date": "Data",
+    "time": "Hora",
+    "datetime": "Data e Hora",
+    "name": "Nome",
+    "description": "Descrição",
+    "details": "Detalhes",
+    "type": "Tipo",
+    "category": "Categoria",
+    "amount": "Montante",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "tax": "Imposto",
+    "vat": "IVA",
+    "invoice": "Fatura",
+    "receipt": "Recibo",
+    "payment": "Pagamento",
+    "refund": "Reembolso",
+    "credit": "Crédito",
+    "debit": "Débito"
+  },
+  
+  "navigation": {
+    "home": "Início",
+    "dashboard": "Painel",
+    "profile": "Perfil",
+    "settings": "Configurações",
+    "logout": "Sair",
+    "login": "Entrar",
+    "register": "Registar",
+    "help": "Ajuda",
+    "support": "Suporte",
+    "contact": "Contacto",
+    "about": "Sobre",
+    "terms": "Termos de serviço",
+    "privacy": "Política de privacidade",
+    "security": "Segurança"
+  },
+  
+  "errors": {
+    "general": "Ocorreu um erro. Por favor, tente novamente.",
+    "notFound": "Página não encontrada",
+    "unauthorized": "Não está autorizado a ver esta página",
+    "forbidden": "Acesso proibido",
+    "badRequest": "Pedido inválido",
+    "validation": {
+      "required": "{{field}} é obrigatório",
+      "email": "Por favor, introduza um endereço de email válido",
+      "phone": "Por favor, introduza um número de telefone válido",
+      "date": "Por favor, introduza uma data válida",
+      "number": "Por favor, introduza um número válido"
+    }
+  },
+  
+  "auth": {
+    "login": {
+      "title": "Entrar no Wilsy OS",
+      "email": "Email",
+      "password": "Palavra-passe",
+      "remember": "Lembrar-me",
+      "forgot": "Esqueceu a palavra-passe?",
+      "submit": "Entrar",
+      "success": "Entrada bem-sucedida",
+      "failed": "Falha na entrada",
+      "locked": "Conta bloqueada"
+    },
+    "register": {
+      "title": "Criar conta",
+      "firstName": "Nome",
+      "lastName": "Apelido",
+      "email": "Email",
+      "phone": "Telefone",
+      "password": "Palavra-passe",
+      "confirmPassword": "Confirmar palavra-passe",
+      "agree": "Aceito os {{terms}} e a {{privacy}}",
+      "submit": "Registar",
+      "success": "Registo bem-sucedido"
+    }
+  },
+  
+  "onboarding": {
+    "title": "Integração de clientes",
+    "stages": {
+      "INITIATED": "Integração iniciada",
+      "CLIENT_INFO": "Informação do cliente",
+      "FICA_SCREENING": "Avaliação FICA",
+      "DOCUMENT_UPLOAD": "Carregamento de documentos",
+      "DOCUMENT_VERIFICATION": "Verificação de documentos",
+      "REVIEW": "Revisão legal",
+      "COMPLETED": "Concluído"
+    },
+    "status": {
+      "PENDING": "Pendente",
+      "IN_PROGRESS": "Em progresso",
+      "COMPLETED": "Concluído",
+      "CANCELLED": "Cancelado",
+      "REJECTED": "Rejeitado",
+      "PENDING_FICA": "FICA pendente",
+      "FICA_APPROVED": "FICA aprovado",
+      "FICA_REJECTED": "FICA rejeitado"
+    },
+    "messages": {
+      "created": "Sessão de integração criada com sucesso",
+      "updated": "Sessão de integração atualizada",
+      "stageAdvanced": "Avançado para {{stage}}",
+      "documentUploaded": "Documento carregado com sucesso",
+      "documentVerified": "Documento verificado",
+      "ficaApproved": "FICA aprovado",
+      "ficaRejected": "FICA rejeitado"
+    }
+  }
+}

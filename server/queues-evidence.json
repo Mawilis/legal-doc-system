@@ -1,0 +1,76 @@
+{
+  "auditEntries": [
+    {
+      "action": "QUEUES_TEST",
+      "timestamp": "2026-02-18T18:07:34.133Z",
+      "health": {
+        "service": "queues",
+        "timestamp": "2026-02-18T18:07:34.131Z",
+        "queues": {
+          "document_processing": {
+            "name": "document-processing",
+            "metrics": {
+              "waiting": 1,
+              "active": 0,
+              "completed": 0,
+              "failed": 0,
+              "delayed": 0,
+              "total": 1
+            },
+            "healthy": true
+          },
+          "fica_screening": {
+            "name": "fica-screening",
+            "metrics": {
+              "waiting": 0,
+              "active": 0,
+              "completed": 0,
+              "failed": 0,
+              "delayed": 0,
+              "total": 0
+            },
+            "healthy": true
+          },
+          "email_notification": {
+            "name": "email-notification",
+            "metrics": {
+              "waiting": 0,
+              "active": 0,
+              "completed": 0,
+              "failed": 0,
+              "delayed": 1,
+              "total": 1
+            },
+            "healthy": true
+          },
+          "report_generation": {
+            "name": "report-generation",
+            "metrics": {
+              "waiting": 0,
+              "active": 0,
+              "completed": 0,
+              "failed": 0,
+              "delayed": 0,
+              "total": 0
+            },
+            "healthy": true
+          },
+          "audit_cleanup": {
+            "name": "audit-cleanup",
+            "metrics": {
+              "waiting": 3,
+              "active": 0,
+              "completed": 0,
+              "failed": 0,
+              "delayed": 0,
+              "total": 3
+            },
+            "healthy": true
+          }
+        }
+      }
+    }
+  ],
+  "hash": "f4fb1c58420683b16811aa21c8596ed8d0373bc1ceadfc1ddb825b9e17beadde",
+  "timestamp": "2026-02-18T18:07:34.133Z"
+}

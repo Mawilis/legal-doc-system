@@ -1,0 +1,185 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "Sesotho",
+    "region": "South Africa",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "2",
+    "dateFormat": "YYYY-MM-DD",
+    "timeFormat": "HH:mm",
+    "currency": "ZAR",
+    "numberFormat": {
+      "decimal": ".",
+      "thousands": ",",
+      "grouping": [3]
+    },
+    "languageCode": "st",
+    "speakers": "3.8 million",
+    "province": "Free State, Gauteng, Lesotho"
+  },
+  
+  "common": {
+    "save": "Boloka",
+    "cancel": "Hlakola",
+    "delete": "Hlakola",
+    "edit": "Fetola",
+    "view": "Sheba",
+    "download": "Jarolla",
+    "upload": "Jarolla holimo",
+    "search": "Batla",
+    "filter": "Sefa",
+    "refresh": "Khatholla",
+    "back": "Morao",
+    "next": "Latelang",
+    "previous": "Fetileng",
+    "submit": "Romela",
+    "confirm": "Netefatsa",
+    "yes": "Ee",
+    "no": "Tjhee",
+    "ok": "Ho lokile",
+    "close": "Kwala",
+    "loading": "Ea laela...",
+    "error": "Phoso",
+    "success": "Katleho",
+    "warning": "Tlhokomediso",
+    "info": "Tlhahisoleseding",
+    "actions": "Diketsahalo",
+    "status": "Boemo",
+    "date": "Letsatsi",
+    "time": "Nako",
+    "datetime": "Letsatsi le Nako",
+    "name": "Lebitso",
+    "description": "Tlhaloso",
+    "details": "Dintlha",
+    "type": "Mofuta",
+    "category": "Sehlopha",
+    "amount": "Palo",
+    "total": "Kakaretso",
+    "subtotal": "Kakaretso e nyane",
+    "tax": "Lekhetho",
+    "vat": "VAT",
+    "invoice": "Invoice",
+    "receipt": "Rasiti",
+    "payment": "Tefo",
+    "refund": "Puseletso",
+    "credit": "Mokitlane",
+    "debit": "Debeite",
+    "balance": "Tekanyo",
+    "due": "Swanelang",
+    "paid": "E lefilwe",
+    "pending": "E emetseng",
+    "completed": "E phethilwe",
+    "failed": "E hlotsweng",
+    "processing": "Ea sebetswa",
+    "approved": "E amohetswe",
+    "rejected": "E hanngwe",
+    "cancelled": "E hlakotsweng"
+  },
+  
+  "navigation": {
+    "home": "Lapeng",
+    "dashboard": "Dashboard",
+    "profile": "Profilo",
+    "settings": "Dihlophiso",
+    "logout": "Tsoa",
+    "login": "Kena",
+    "register": "Ngodisa",
+    "help": "Thuso",
+    "support": "Tshehetso",
+    "contact": "Ikopanye le rona",
+    "about": "Ka",
+    "terms": "Dipehelo tsa tshebediso",
+    "privacy": "Leano la lekunutu",
+    "security": "Tshireletso"
+  },
+  
+  "errors": {
+    "general": "Phoso e etsahetse. Ka kopo leka hape.",
+    "notFound": "Leqephe ha le fumanehe",
+    "unauthorized": "Ha o a lumelelloa ho bona leqephe lena",
+    "forbidden": "Phihlello e hanngwe",
+    "badRequest": "Kopo e fosahetseng",
+    "validation": {
+      "required": "{{field}} e a hlokeha",
+      "email": "Ka kopo kenya aterese ya imeile e nepahetseng",
+      "phone": "Ka kopo kenya nomoro ya mohala e nepahetseng",
+      "idNumber": "Ka kopo kenya nomoro ya setifikeiti e nepahetseng",
+      "date": "Ka kopo kenya letsatsi le nepahetseng",
+      "number": "Ka kopo kenya nomoro e nepahetseng"
+    }
+  },
+  
+  "auth": {
+    "login": {
+      "title": "Kena ho Wilsy OS",
+      "email": "Aterese ya imeile",
+      "password": "Phasewete",
+      "remember": "Nkgopole",
+      "forgot": "Lebetse phasewete?",
+      "submit": "Kena",
+      "success": "Ho kena ho atlehile",
+      "failed": "Ho kena ho hlotse",
+      "locked": "Akhaonto e notletsoe"
+    },
+    "register": {
+      "title": "Bopa akhaonto",
+      "firstName": "Lebitso",
+      "lastName": "Fane",
+      "email": "Aterese ya imeile",
+      "phone": "Nomoro ya mohala",
+      "password": "Phasewete",
+      "confirmPassword": "Netefatsa phasewete",
+      "agree": "Ke dumela le {{terms}} le {{privacy}}",
+      "submit": "Ngodisa",
+      "success": "Ho ngodisa ho atlehile"
+    },
+    "logout": {
+      "success": "O tswile ka katleho"
+    }
+  },
+  
+  "onboarding": {
+    "title": "Ho kenya bareki",
+    "stages": {
+      "INITIATED": "Ho kenya ho qadilwe",
+      "CLIENT_INFO": "Tlhahisoleseding ya moreki",
+      "FICA_SCREENING": "Tlhahlobo ya FICA",
+      "DOCUMENT_UPLOAD": "Ho jarolla ditokomane",
+      "DOCUMENT_VERIFICATION": "Ho netefatsa ditokomane",
+      "REVIEW": "Tlhahlobo ya molao",
+      "COMPLETED": "E phethilwe"
+    },
+    "status": {
+      "PENDING": "E emetseng",
+      "IN_PROGRESS": "E tswela pele",
+      "COMPLETED": "E phethilwe",
+      "CANCELLED": "E hlakotsweng",
+      "REJECTED": "E hanngwe",
+      "PENDING_FICA": "FICA e emetseng",
+      "FICA_APPROVED": "FICA e amohetswe",
+      "FICA_REJECTED": "FICA e hanngwe"
+    },
+    "messages": {
+      "created": "Session ya ho kenya e theilwe ka katleho",
+      "updated": "Session ya ho kenya e ntlafaditswe",
+      "stageAdvanced": "E tswetse pele ho {{stage}}",
+      "documentUploaded": "Tokomane e jarollotsoe ka katleho",
+      "documentVerified": "Tokomane e netefaditswe",
+      "ficaApproved": "FICA e amohetswe",
+      "ficaRejected": "FICA e hanngwe"
+    }
+  },
+  
+  "compliance": {
+    "fica": {
+      "title": "Ho latela FICA",
+      "status": "Boemo ba FICA",
+      "reference": "Nomoro ya FICA",
+      "riskScore": "Tekanyo ya kotsi",
+      "riskLevel": "Boemo ba kotsi",
+      "pep": "Motho ya tsebahalang dipolotiking"
+    }
+  }
+}

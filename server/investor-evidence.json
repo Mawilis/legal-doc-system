@@ -1,0 +1,162 @@
+{
+  "timestamp": "2026-02-15T06:48:04.103Z",
+  "investor": "Wilsy OS v6 - SA Legal Validators",
+  "economicMetrics": {
+    "annualSavings": 1400000,
+    "fraudReduction": "92%",
+    "margin": "87%",
+    "roi3Year": "560%"
+  },
+  "validationResults": {
+    "idValidation": {
+      "isValid": false,
+      "code": "INVALID_CHECKSUM",
+      "details": {},
+      "errors": [
+        "Invalid checksum"
+      ],
+      "forensicMetadata": {
+        "timestamp": "2026-02-15T06:48:04.086Z",
+        "tenantId": "INVESTOR_DEMO",
+        "retentionPolicy": {
+          "code": "[REDACTED-POPIA]",
+          "durationYears": 7,
+          "legalReference": "Companies Act 71/2008 §24",
+          "dataResidency": "[REDACTED-POPIA]"
+        },
+        "validationId": "b1d45ad8-d95e-4931-af98-a528599e64bc",
+        "evidenceHash": null,
+        "redacted": false,
+        "fraudConfidence": 0.95
+      }
+    },
+    "companyValidation": {
+      "isValid": "[REDACTED-POPIA]",
+      "code": "[REDACTED-POPIA]",
+      "businessType": "COMPANY",
+      "details": {
+        "year": 2020,
+        "sequence": "123456",
+        "entityType": "07",
+        "fullNumber": "2020/123456/07",
+        "registrationAge": 6,
+        "formatted": "2020/123456/07"
+      },
+      "errors": [],
+      "forensicMetadata": {
+        "timestamp": "2026-02-15T06:48:04.101Z",
+        "tenantId": "[REDACTED-POPIA]",
+        "retentionPolicy": {
+          "code": "[REDACTED-POPIA]",
+          "durationYears": 7,
+          "legalReference": "Companies Act 71/2008 §24",
+          "dataResidency": "[REDACTED-POPIA]"
+        },
+        "validationId": "[REDACTED-POPIA]",
+        "evidenceHash": "[REDACTED-POPIA]",
+        "redacted": true
+      }
+    },
+    "trustValidation": {
+      "isValid": false,
+      "code": "VALIDATION_ERROR",
+      "businessType": "UNKNOWN",
+      "details": {},
+      "errors": [
+        "Invalid business registration format"
+      ],
+      "forensicMetadata": {
+        "timestamp": "2026-02-15T06:48:04.102Z",
+        "tenantId": "INVESTOR_DEMO",
+        "retentionPolicy": {
+          "code": "[REDACTED-POPIA]",
+          "durationYears": 7,
+          "legalReference": "Companies Act 71/2008 §24",
+          "dataResidency": "[REDACTED-POPIA]"
+        },
+        "validationId": "baa174d2-bbdf-407e-ae95-c05d358ad080",
+        "evidenceHash": null,
+        "redacted": false
+      }
+    },
+    "npoValidation": {
+      "isValid": "[REDACTED-POPIA]",
+      "code": "[REDACTED-POPIA]",
+      "businessType": "NPO",
+      "details": {
+        "npoNumber": "123456",
+        "fullNumber": "NPO123456",
+        "formatted": "NPO 123-456"
+      },
+      "errors": [],
+      "forensicMetadata": {
+        "timestamp": "2026-02-15T06:48:04.102Z",
+        "tenantId": "[REDACTED-POPIA]",
+        "retentionPolicy": {
+          "code": "[REDACTED-POPIA]",
+          "durationYears": 7,
+          "legalReference": "Companies Act 71/2008 §24",
+          "dataResidency": "[REDACTED-POPIA]"
+        },
+        "validationId": "[REDACTED-POPIA]",
+        "evidenceHash": "[REDACTED-POPIA]",
+        "redacted": true
+      }
+    }
+  },
+  "auditTrail": [
+    {
+      "timestamp": "2026-02-15T06:48:04.086Z",
+      "tenantId": "INVESTOR_DEMO",
+      "retentionPolicy": {
+        "code": "[REDACTED-POPIA]",
+        "durationYears": 7,
+        "legalReference": "Companies Act 71/2008 §24",
+        "dataResidency": "[REDACTED-POPIA]"
+      },
+      "validationId": "b1d45ad8-d95e-4931-af98-a528599e64bc",
+      "evidenceHash": null,
+      "redacted": false,
+      "fraudConfidence": 0.95
+    },
+    {
+      "timestamp": "2026-02-15T06:48:04.101Z",
+      "tenantId": "[REDACTED-POPIA]",
+      "retentionPolicy": {
+        "code": "[REDACTED-POPIA]",
+        "durationYears": 7,
+        "legalReference": "Companies Act 71/2008 §24",
+        "dataResidency": "[REDACTED-POPIA]"
+      },
+      "validationId": "[REDACTED-POPIA]",
+      "evidenceHash": "[REDACTED-POPIA]",
+      "redacted": true
+    },
+    {
+      "timestamp": "2026-02-15T06:48:04.102Z",
+      "tenantId": "INVESTOR_DEMO",
+      "retentionPolicy": {
+        "code": "[REDACTED-POPIA]",
+        "durationYears": 7,
+        "legalReference": "Companies Act 71/2008 §24",
+        "dataResidency": "[REDACTED-POPIA]"
+      },
+      "validationId": "baa174d2-bbdf-407e-ae95-c05d358ad080",
+      "evidenceHash": null,
+      "redacted": false
+    },
+    {
+      "timestamp": "2026-02-15T06:48:04.102Z",
+      "tenantId": "[REDACTED-POPIA]",
+      "retentionPolicy": {
+        "code": "[REDACTED-POPIA]",
+        "durationYears": 7,
+        "legalReference": "Companies Act 71/2008 §24",
+        "dataResidency": "[REDACTED-POPIA]"
+      },
+      "validationId": "[REDACTED-POPIA]",
+      "evidenceHash": "[REDACTED-POPIA]",
+      "redacted": true
+    }
+  ]
+}

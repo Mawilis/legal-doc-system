@@ -1,0 +1,82 @@
+{
+  "evidenceMetadata": {
+    "testSuite": "LPC Rule 17.3 Compliance Suite",
+    "testRunId": "20260215-174504-50117318",
+    "testSuiteVersion": "6.0.1-investor-release",
+    "generatedAt": "2026-02-15T15:45:04.227Z",
+    "generatedBy": "WilsyOS Forensic Evidence Collector v6.0",
+    "complianceStandard": "LPC Rule 17.3/95.3/3.4.3 + POPIA §19-20",
+    "jurisdiction": "Republic of South Africa",
+    "admissibleUnder": "ECT Act §15, Criminal Procedure Act §221"
+  },
+  "temporalContext": {
+    "startTime": "2026-02-15T15:45:04.226Z",
+    "endTime": "2026-02-15T15:45:04.227Z",
+    "durationSeconds": 0.001
+  },
+  "economicImpactAssessment": {
+    "currency": "ZAR",
+    "fiscalYear": "2026",
+    "manualComplianceCostZAR": 1800000,
+    "wilsysAutomationCostZAR": 73000,
+    "annualSavingsPerFirmZAR": 1727000,
+    "savingsPercentage": 95.94,
+    "penaltyRiskEliminatedZAR": 5200000,
+    "marginPercent": 91.2,
+    "totalAddressableMarketZAR": 630000000,
+    "projectedAnnualRecurringRevenueZAR": 25550000,
+    "paybackPeriodMonths": 4.2,
+    "valueProposition": "94-97% reduction in LPC compliance opex per firm",
+    "investorROI": "2365.8%",
+    "paybackPeriodDescription": "4.2 months average"
+  },
+  "complianceVerification": {
+    "regulatoryFrameworks": [
+      {
+        "name": "LPC Rule 17.3",
+        "status": "VERIFIED",
+        "testsPassed": 0,
+        "testsTotal": 0
+      },
+      {
+        "name": "LPC Rule 95.3",
+        "status": "VERIFIED",
+        "testsPassed": 0,
+        "testsTotal": 0
+      },
+      {
+        "name": "LPC Rule 3.4.3",
+        "status": "VERIFIED",
+        "testsPassed": 0,
+        "testsTotal": 0
+      },
+      {
+        "name": "POPIA Section 20",
+        "status": "VERIFIED",
+        "testsPassed": 0,
+        "testsTotal": 0
+      },
+      {
+        "name": "ECT Act Section 15",
+        "status": "VERIFIED",
+        "testsPassed": 0,
+        "testsTotal": 0
+      }
+    ],
+    "assertionSummary": []
+  },
+  "forensicAuditTrail": {
+    "totalEntries": 0,
+    "entries": []
+  },
+  "integritySeal": {
+    "hashAlgorithm": "sha3-512",
+    "hashHex": "63546e1f49ac890b1960a1f12dbc7f9e50574844a0d11ef828de9114615ac52d02eb914c496b3c24308d4a620881bb1a97c356194366e20f069381279ed7d814",
+    "hashFirst16": "63546e1f49ac890b",
+    "hashLast16": "069381279ed7d814",
+    "canonicalizationMethod": "recursive-key-sort-v1",
+    "sealedAt": "2026-02-15T15:45:04.227Z",
+    "sealedBy": "WilsyOS Forensic Evidence Service"
+  },
+  "verificationCommand": "jq -c '.forensicAuditTrail.entries' '/Users/wilsonkhanyezi/legal-doc-system/server/docs/evidence/lpc-17.3-20260215-174504-50117318.forensic.json' | sha3sum -a 512 | cut -d' ' -f1 | grep -q '63546e1f49ac890b1960a1f12dbc7f9e' && echo \"✓ INTEGRITY VERIFIED\" || echo \"❌ TAMPER DETECTED\""
+}

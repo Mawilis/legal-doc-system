@@ -50,7 +50,7 @@ const winston = require('winston');
 const { MongoDB } = require('winston-mongodb');
 
 // Internal Quantum Dependencies
-const { generateEventHash, generateMerkleTree, QUANTUM_CONFIG } = require('../utils/eventHashGenerator');
+const { generateEventHash } = require('../utils/eventHashGenerator');
 const AuditTrail = require('../models/AuditTrail'); // Path Directive: Create /server/models/AuditTrail.js
 
 // ====================================================================================
@@ -238,10 +238,10 @@ class AuditLogger {
      * Determines the compliance category and legal basis for an audit event.
      * Compliance Omniscience: Maps API actions to SA legal frameworks.
      * @param {Object} req - Express request object.
-     * @param {Object} res - Express response object.
+     * @param {Object} _res - Express response object (unused).
      * @returns {Object} Compliance classification.
      */
-    static classifyEvent(req, res) {
+    static classifyEvent(req, _res) {
         const path = req.originalUrl;
         const method = req.method;
 
@@ -367,8 +367,8 @@ class AuditLogger {
 
             // Asynchronously save to the structured AuditTrail collection for complex querying
             // Do not await to avoid blocking the response
-            AuditLogger.saveToStructuredTrail(auditEvent).catch(err => {
-                quantumLogger.error('Failed to save to structured AuditTrail', { error: err.message, eventId: auditEventId });
+            AuditLogger.saveToStructuredTrail(auditEvent).catch(_err => {
+                quantumLogger.error('Failed to save to structured AuditTrail', { error: _err.message, eventId: auditEventId });
             });
 
             // PERFORMANCE QUANTUM: Batch log hashing every 100 events (stub)
@@ -494,7 +494,7 @@ class AuditLogger {
             endpoint: 'internal',
             statusCode: 200,
             responseTime: 0
-        }).catch(err => {/* Ignored */ });
+        }).catch(_err => {/* Ignored */ });
     }
 }
 
@@ -519,21 +519,22 @@ module.exports.AUDIT_CONFIG = AUDIT_CONFIG;
  * To be executed in a test environment.
  */
 if (process.env.NODE_ENV === 'test') {
-    const simulateStressTest = async () => {
-        console.log('🧪 Initiating Quantum Audit Logger Stress Test...');
-        const start = Date.now();
-        const logPromises = [];
-        for (let i = 0; i < 1000; i++) {
-            logPromises.push(new Promise(resolve => {
-                quantumLogger.info(`Stress test message ${i}`, { eventId: `TEST-${i}`, userId: 'stress-user' });
-                resolve();
-            }));
-        }
-        await Promise.all(logPromises);
-        const duration = Date.now() - start;
-        console.log(`✅ Stress test completed: 1000 logs in ${duration}ms (${(1000 / (duration / 1000)).toFixed(2)} logs/sec)`);
-        // Verify no event hash collisions occurred (would be checked in real test)
-    };
+    // Stress test function - uncomment to run manually
+    // const simulateStressTest = async () => {
+    //     console.log('🧪 Initiating Quantum Audit Logger Stress Test...');
+    //     const start = Date.now();
+    //     const logPromises = [];
+    //     for (let i = 0; i < 1000; i++) {
+    //         logPromises.push(new Promise(resolve => {
+    //             quantumLogger.info(`Stress test message ${i}`, { eventId: `TEST-${i}`, userId: 'stress-user' });
+    //             resolve();
+    //         }));
+    //     }
+    //     await Promise.all(logPromises);
+    //     const duration = Date.now() - start;
+    //     console.log(`✅ Stress test completed: 1000 logs in ${duration}ms (${(1000 / (duration / 1000)).toFixed(2)} logs/sec)`);
+    //     // Verify no event hash collisions occurred (would be checked in real test)
+    // };
     // simulateStressTest(); // Uncomment for manual test runs
 }
 

@@ -1,0 +1,172 @@
+{
+  "metadata": {
+    "version": "2.0.0",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "totalLanguages": 18
+  },
+  "languages": [
+    {
+      "code": "af-ZA",
+      "name": "Afrikaans",
+      "nativeName": "Afrikaans",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "7.2 million",
+      "official": true
+    },
+    {
+      "code": "en-ZA",
+      "name": "English (South Africa)",
+      "nativeName": "English",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "4.9 million",
+      "official": true
+    },
+    {
+      "code": "nr-ZA",
+      "name": "isiNdebele",
+      "nativeName": "isiNdebele",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "1.1 million",
+      "official": true
+    },
+    {
+      "code": "nso-ZA",
+      "name": "Sepedi",
+      "nativeName": "Sepedi",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "4.6 million",
+      "official": true
+    },
+    {
+      "code": "st-ZA",
+      "name": "Sesotho",
+      "nativeName": "Sesotho",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "3.8 million",
+      "official": true
+    },
+    {
+      "code": "ss-ZA",
+      "name": "SiSwati",
+      "nativeName": "SiSwati",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "1.3 million",
+      "official": true
+    },
+    {
+      "code": "tn-ZA",
+      "name": "Setswana",
+      "nativeName": "Setswana",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "3.9 million",
+      "official": true
+    },
+    {
+      "code": "ts-ZA",
+      "name": "Xitsonga",
+      "nativeName": "Xitsonga",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "2.3 million",
+      "official": true
+    },
+    {
+      "code": "ve-ZA",
+      "name": "Tshivenda",
+      "nativeName": "Tshivenda",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "1.3 million",
+      "official": true
+    },
+    {
+      "code": "xh-ZA",
+      "name": "isiXhosa",
+      "nativeName": "isiXhosa",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "8.1 million",
+      "official": true
+    },
+    {
+      "code": "zu-ZA",
+      "name": "isiZulu",
+      "nativeName": "isiZulu",
+      "country": "South Africa",
+      "rtl": false,
+      "speakers": "12.1 million",
+      "official": true
+    },
+    {
+      "code": "en-US",
+      "name": "English (US)",
+      "nativeName": "English",
+      "country": "United States",
+      "rtl": false,
+      "speakers": "230 million",
+      "official": false
+    },
+    {
+      "code": "de-DE",
+      "name": "German",
+      "nativeName": "Deutsch",
+      "country": "Germany",
+      "rtl": false,
+      "speakers": "95 million",
+      "official": false
+    },
+    {
+      "code": "fr-FR",
+      "name": "French",
+      "nativeName": "Français",
+      "country": "France",
+      "rtl": false,
+      "speakers": "80 million",
+      "official": false
+    },
+    {
+      "code": "es-ES",
+      "name": "Spanish",
+      "nativeName": "Español",
+      "country": "Spain",
+      "rtl": false,
+      "speakers": "460 million",
+      "official": false
+    },
+    {
+      "code": "pt-PT",
+      "name": "Portuguese",
+      "nativeName": "Português",
+      "country": "Portugal",
+      "rtl": false,
+      "speakers": "10 million",
+      "official": false
+    },
+    {
+      "code": "ar-SA",
+      "name": "Arabic",
+      "nativeName": "العربية",
+      "country": "Saudi Arabia",
+      "rtl": true,
+      "speakers": "315 million",
+      "official": false
+    },
+    {
+      "code": "zh-CN",
+      "name": "Chinese (Simplified)",
+      "nativeName": "简体中文",
+      "country": "China",
+      "rtl": false,
+      "speakers": "1.3 billion",
+      "official": false
+    }
+  ]
+}

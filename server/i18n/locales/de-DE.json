@@ -1,0 +1,212 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "Deutsch",
+    "region": "Deutschland",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "1",
+    "dateFormat": "DD.MM.YYYY",
+    "timeFormat": "HH:mm",
+    "currency": "EUR",
+    "numberFormat": {
+      "decimal": ",",
+      "thousands": ".",
+      "grouping": [3]
+    }
+  },
+  
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "view": "Ansehen",
+    "download": "Herunterladen",
+    "upload": "Hochladen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "refresh": "Aktualisieren",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Vorherige",
+    "submit": "Absenden",
+    "confirm": "Bestätigen",
+    "yes": "Ja",
+    "no": "Nein",
+    "ok": "OK",
+    "close": "Schließen",
+    "loading": "Lädt...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "warning": "Warnung",
+    "info": "Information",
+    "actions": "Aktionen",
+    "status": "Status",
+    "date": "Datum",
+    "time": "Uhrzeit",
+    "datetime": "Datum & Uhrzeit",
+    "name": "Name",
+    "description": "Beschreibung",
+    "details": "Details",
+    "type": "Typ",
+    "category": "Kategorie",
+    "amount": "Betrag",
+    "total": "Gesamt",
+    "subtotal": "Zwischensumme",
+    "tax": "Steuer",
+    "vat": "MwSt.",
+    "invoice": "Rechnung",
+    "receipt": "Quittung",
+    "payment": "Zahlung",
+    "refund": "Rückerstattung",
+    "credit": "Gutschrift",
+    "debit": "Lastschrift",
+    "balance": "Saldo",
+    "due": "Fällig",
+    "paid": "Bezahlt",
+    "pending": "Ausstehend",
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "processing": "In Bearbeitung",
+    "approved": "Genehmigt",
+    "rejected": "Abgelehnt",
+    "cancelled": "Storniert"
+  },
+  
+  "navigation": {
+    "home": "Startseite",
+    "dashboard": "Dashboard",
+    "profile": "Profil",
+    "settings": "Einstellungen",
+    "logout": "Abmelden",
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "help": "Hilfe",
+    "support": "Support",
+    "contact": "Kontakt",
+    "about": "Über",
+    "terms": "Nutzungsbedingungen",
+    "privacy": "Datenschutz",
+    "security": "Sicherheit",
+    "billing": "Abrechnung",
+    "subscription": "Abonnement",
+    "notifications": "Benachrichtigungen"
+  },
+  
+  "errors": {
+    "general": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+    "notFound": "Seite nicht gefunden",
+    "unauthorized": "Sie sind nicht berechtigt, diese Seite zu sehen",
+    "forbidden": "Zugriff verweigert",
+    "badRequest": "Ungültige Anfrage",
+    "validation": {
+      "required": "{{field}} ist erforderlich",
+      "email": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+      "phone": "Bitte geben Sie eine gültige Telefonnummer ein",
+      "date": "Bitte geben Sie ein gültiges Datum ein",
+      "number": "Bitte geben Sie eine gültige Zahl ein",
+      "minLength": "{{field}} muss mindestens {{min}} Zeichen lang sein",
+      "maxLength": "{{field}} darf höchstens {{max}} Zeichen lang sein"
+    }
+  },
+  
+  "auth": {
+    "login": {
+      "title": "Anmelden bei Wilsy OS",
+      "email": "E-Mail-Adresse",
+      "password": "Passwort",
+      "remember": "Angemeldet bleiben",
+      "forgot": "Passwort vergessen?",
+      "submit": "Anmelden",
+      "success": "Anmeldung erfolgreich",
+      "failed": "Anmeldung fehlgeschlagen",
+      "locked": "Konto gesperrt"
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "email": "E-Mail-Adresse",
+      "phone": "Telefonnummer",
+      "password": "Passwort",
+      "confirmPassword": "Passwort bestätigen",
+      "agree": "Ich stimme den {{terms}} und der {{privacy}} zu",
+      "submit": "Registrieren",
+      "success": "Registrierung erfolgreich"
+    }
+  },
+  
+  "onboarding": {
+    "title": "Kunden-Onboarding",
+    "stages": {
+      "INITIATED": "Onboarding gestartet",
+      "CLIENT_INFO": "Kundeninformationen",
+      "FICA_SCREENING": "FICA-Prüfung",
+      "DOCUMENT_UPLOAD": "Dokumentenupload",
+      "DOCUMENT_VERIFICATION": "Dokumentenprüfung",
+      "REVIEW": "Rechtliche Prüfung",
+      "COMPLETED": "Abgeschlossen"
+    },
+    "status": {
+      "PENDING": "Ausstehend",
+      "IN_PROGRESS": "In Bearbeitung",
+      "COMPLETED": "Abgeschlossen",
+      "CANCELLED": "Storniert",
+      "REJECTED": "Abgelehnt",
+      "PENDING_FICA": "FICA ausstehend",
+      "FICA_APPROVED": "FICA genehmigt",
+      "FICA_REJECTED": "FICA abgelehnt",
+      "PENDING_REVIEW": "Prüfung ausstehend",
+      "MANUAL_REVIEW": "Manuelle Prüfung erforderlich",
+      "ESCALATED": "Eskaliert",
+      "EXPIRED": "Abgelaufen"
+    },
+    "fields": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "idNumber": "Personalausweisnummer",
+      "passportNumber": "Reisepassnummer",
+      "dateOfBirth": "Geburtsdatum",
+      "nationality": "Staatsangehörigkeit",
+      "businessName": "Firmenname",
+      "registrationNumber": "Handelsregisternummer",
+      "businessType": "Unternehmensform",
+      "dateOfIncorporation": "Gründungsdatum",
+      "email": "E-Mail-Adresse",
+      "phone": "Telefonnummer",
+      "address": "Adresse",
+      "taxNumber": "Steuernummer",
+      "vatNumber": "USt-IdNr."
+    },
+    "messages": {
+      "created": "Onboarding-Sitzung erfolgreich erstellt",
+      "updated": "Onboarding-Sitzung aktualisiert",
+      "stageAdvanced": "Weiter zu {{stage}}",
+      "documentUploaded": "Dokument erfolgreich hochgeladen",
+      "documentVerified": "Dokument verifiziert",
+      "ficaApproved": "FICA genehmigt",
+      "ficaRejected": "FICA abgelehnt",
+      "completed": "Onboarding abgeschlossen"
+    }
+  },
+  
+  "compliance": {
+    "fica": {
+      "title": "FICA-Compliance",
+      "status": "FICA-Status",
+      "reference": "FICA-Referenz",
+      "riskScore": "Risikobewertung",
+      "riskLevel": "Risikostufe",
+      "pep": "Politisch exponierte Person",
+      "sanctions": "Sanktionsliste"
+    },
+    "gdpr": {
+      "title": "DSGVO-Compliance",
+      "applicable": "DSGVO anwendbar",
+      "dpo": "Datenschutzbeauftragter",
+      "legitimateInterest": "Berechtigtes Interesse"
+    }
+  }
+}

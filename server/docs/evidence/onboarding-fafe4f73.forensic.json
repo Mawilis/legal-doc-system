@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "testSuite": "Client Onboarding Service",
+    "testRunId": "fafe4f73",
+    "timestamp": "2026-02-16T11:37:58.506Z",
+    "version": "6.0.1"
+  },
+  "economicMetrics": {
+    "annualSavingsPerFirmZAR": 4100000,
+    "penaltyRiskEliminatedZAR": 25000000,
+    "errorReductionPercentage": 99.97
+  },
+  "testEntries": [
+    {
+      "test": "CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION [TC-001] should create onboarding session",
+      "timestamp": "2026-02-16T11:37:58.484Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION [TC-002] should update session data",
+      "timestamp": "2026-02-16T11:37:58.500Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION [TC-003] should get session",
+      "timestamp": "2026-02-16T11:37:58.500Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION [TC-004] should upload document",
+      "timestamp": "2026-02-16T11:37:58.501Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION [TC-005] should get documents",
+      "timestamp": "2026-02-16T11:37:58.501Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION [TC-006] should complete onboarding",
+      "timestamp": "2026-02-16T11:37:58.502Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION [TC-007] should reject onboarding",
+      "timestamp": "2026-02-16T11:37:58.502Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION [TC-008] should get statistics",
+      "timestamp": "2026-02-16T11:37:58.504Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "TC-009"
+    },
+    {
+      "test": "CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION [TC-009] should enforce tenant isolation",
+      "timestamp": "2026-02-16T11:37:58.505Z",
+      "status": "PASSED"
+    }
+  ],
+  "hash": "e5d8880de24de810a475d025ac34afd5b36481a3d3c3e245f60b66d9e2780327"
+}

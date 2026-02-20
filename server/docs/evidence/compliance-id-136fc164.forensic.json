@@ -1,0 +1,112 @@
+{
+  "metadata": {
+    "testSuite": "Compliance ID Generator",
+    "testRunId": "136fc164",
+    "timestamp": "2026-02-15T05:47:08.733Z",
+    "version": "6.0.1"
+  },
+  "economicMetrics": {
+    "annualSavingsPerFirmZAR": 1500000,
+    "penaltyRiskEliminatedZAR": 5000000
+  },
+  "testEntries": [
+    {
+      "test": "Legacy IND"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should generate FICA individual reference (legacy)",
+      "timestamp": "2026-02-15T05:47:08.690Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Legacy BUS"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should generate FICA business reference (legacy)",
+      "timestamp": "2026-02-15T05:47:08.692Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Legacy REP"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should generate FICA report reference (legacy)",
+      "timestamp": "2026-02-15T05:47:08.693Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "All Types",
+      "count": 8
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should generate all ID types",
+      "timestamp": "2026-02-15T05:47:08.695Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Uniqueness",
+      "iterations": 1000
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should generate 1000 unique IDs with zero collisions",
+      "timestamp": "2026-02-15T05:47:08.714Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Format Validation"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should validate ID formats correctly",
+      "timestamp": "2026-02-15T05:47:08.716Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Tenant Isolation"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should enforce tenant isolation",
+      "timestamp": "2026-02-15T05:47:08.717Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Timestamp"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should include valid timestamp",
+      "timestamp": "2026-02-15T05:47:08.718Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should optionally include host information",
+      "timestamp": "2026-02-15T05:47:08.719Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should optionally include process ID",
+      "timestamp": "2026-02-15T05:47:08.726Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Checksum"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should calculate and include checksum",
+      "timestamp": "2026-02-15T05:47:08.727Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should extract metadata correctly",
+      "timestamp": "2026-02-15T05:47:08.728Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Error Handling"
+    },
+    {
+      "test": "COMPLIANCE ID GENERATOR — FORENSIC VALIDATION should handle errors gracefully",
+      "timestamp": "2026-02-15T05:47:08.733Z",
+      "status": "PASSED"
+    }
+  ],
+  "hash": "a082fb4d1d6d8dc12d4643f0608cc2db41f75d414edb7317665ccc99db5e94fd"
+}

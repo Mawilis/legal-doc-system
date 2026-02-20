@@ -1,0 +1,62 @@
+{
+  "metadata": {
+    "testSuite": "SA Legal Validators",
+    "testRunId": "1f7427cd",
+    "timestamp": "2026-02-15T05:26:52.262Z",
+    "version": "6.0.1"
+  },
+  "economicMetrics": {
+    "annualSavingsPerFirmZAR": 2200000,
+    "penaltyRiskEliminatedZAR": 15000000,
+    "errorReductionPercentage": 99.99
+  },
+  "testEntries": [
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION [TC-001] should validate correct SA ID number",
+      "timestamp": "2026-02-15T05:26:52.246Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "TC-002",
+      "invalidCount": 7
+    },
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION [TC-002] should reject invalid SA ID numbers",
+      "timestamp": "2026-02-15T05:26:52.256Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "TC-003",
+      "validCount": 3
+    },
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION [TC-003] should validate correct business registration numbers",
+      "timestamp": "2026-02-15T05:26:52.258Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "TC-004",
+      "validCount": 3
+    },
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION [TC-004] should validate business registrations with branch numbers",
+      "timestamp": "2026-02-15T05:26:52.259Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "TC-005",
+      "invalidCount": 8
+    },
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION [TC-005] should reject invalid business registrations",
+      "timestamp": "2026-02-15T05:26:52.260Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION [TC-006] should handle edge cases gracefully",
+      "timestamp": "2026-02-15T05:26:52.261Z",
+      "status": "PASSED"
+    }
+  ],
+  "hash": "91433edfa18c479b3a4b00ff4a6148fb0c2da629ab4a3e2f556d46699ec3885e"
+}

@@ -1,0 +1,88 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "isiZulu",
+    "region": "South Africa",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "1"
+  },
+  
+  "common": {
+    "save": "Londoloza",
+    "cancel": "Khansela",
+    "delete": "Susa",
+    "edit": "Hlela",
+    "view": "Buka",
+    "download": "Landa",
+    "upload": "Faka",
+    "search": "Cinga",
+    "filter": "Hlunga",
+    "refresh": "Vuselela",
+    "back": "Emuva",
+    "next": "Okulandelayo",
+    "previous": "Okwedlule",
+    "submit": "Thumela",
+    "confirm": "Qinisekisa",
+    "yes": "Yebo",
+    "no": "Cha",
+    "ok": "Kulungile",
+    "close": "Vala",
+    "loading": "Iyalayisha...",
+    "error": "Iphutha",
+    "success": "Impumelelo",
+    "warning": "Isexwayiso",
+    "info": "Ulwazi",
+    "actions": "Izenzo",
+    "status": "Isimo",
+    "date": "Usuku",
+    "time": "Isikhathi",
+    "datetime": "Usuku & Isikhathi",
+    "name": "Igama",
+    "description": "Incazelo",
+    "details": "Imininingwane"
+  },
+  
+  "navigation": {
+    "home": "Ikhaya",
+    "dashboard": "Ideshibhodi",
+    "profile": "Iphrofayela",
+    "settings": "Izilungiselelo",
+    "logout": "Phuma",
+    "login": "Ngena",
+    "register": "Bhalisa",
+    "help": "Usizo",
+    "support": "Ukusekela",
+    "contact": "Xhumana nathi"
+  },
+  
+  "onboarding": {
+    "title": "Ukufakwa kwamakhasimende",
+    "stages": {
+      "INITIATED": "Ukuqaliswa kokufakwa",
+      "CLIENT_INFO": "Ulwazi lwekhasimende",
+      "FICA_SCREENING": "Ukuhlolwa kwe-FICA",
+      "DOCUMENT_UPLOAD": "Ukulayishwa kwamadokhumenti",
+      "DOCUMENT_VERIFICATION": "Ukuqinisekiswa kwamadokhumenti",
+      "REVIEW": "Ukubuyekezwa kwezomthetho",
+      "COMPLETED": "Kuqediwe"
+    },
+    "status": {
+      "PENDING": "Kusalindile",
+      "IN_PROGRESS": "Kiyaqhubeka",
+      "COMPLETED": "Kuqediwe",
+      "CANCELLED": "Kukhanseliwe",
+      "REJECTED": "Kunenqatshelwe"
+    },
+    "messages": {
+      "created": "Iseshoni yokufakwa idaliwe ngempumelelo",
+      "updated": "Iseshoni yokufakwa ibuyekeziwe",
+      "stageAdvanced": "Idlulele esigabeni se-{{stage}}",
+      "documentUploaded": "Idokhumenti ilayishwe ngempumelelo",
+      "documentVerified": "Idokhumenti iqinisekisiwe",
+      "ficaApproved": "I-FICA yamukelwe",
+      "ficaRejected": "I-FICA yenqatshelwe"
+    }
+  }
+}

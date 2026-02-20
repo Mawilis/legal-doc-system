@@ -1,0 +1,551 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "Xitsonga",
+    "region": "South Africa",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "2",
+    "dateFormat": "YYYY-MM-DD",
+    "timeFormat": "HH:mm",
+    "currency": "ZAR",
+    "numberFormat": {
+      "decimal": ".",
+      "thousands": ",",
+      "grouping": [3]
+    },
+    "languageCode": "ts",
+    "speakers": "2.3 million",
+    "province": "Limpopo, Mpumalanga, Gauteng, Mozambique"
+  },
+  
+  "common": {
+    "save": "Hlayisa",
+    "cancel": "Khansela",
+    "delete": "Susa",
+    "edit": "Lulamisa",
+    "view": "Vona",
+    "download": "Rhwala",
+    "upload": "Rhwala ehenhla",
+    "search": "Lava",
+    "filter": "Sefa",
+    "refresh": "Pfuxeta",
+    "back": "Endzhaku",
+    "next": "Landzelaka",
+    "previous": "Lokukarhi",
+    "submit": "Rhumela",
+    "confirm": "Tiyisisa",
+    "yes": "Ina",
+    "no": "E-e",
+    "ok": "Kulungile",
+    "close": "Pfala",
+    "loading": "Ya layicha...",
+    "error": "Hoxeka",
+    "success": "Humelela",
+    "warning": "Xilemukiso",
+    "info": "Vuxokoxoko",
+    "actions": "Mintirho",
+    "status": "Xiyimo",
+    "date": "Siku",
+    "time": "Nkarhi",
+    "datetime": "Siku na Nkarhi",
+    "name": "Vito",
+    "description": "Nhlamuselo",
+    "details": "Vuxokoxoko byo engetela",
+    "type": "Muxaka",
+    "category": "Ntlawa",
+    "amount": "Ntsengo",
+    "total": "Nhlengeleto",
+    "subtotal": "Nhlengeleto wale hansi",
+    "tax": "Nhluto",
+    "vat": "VAT",
+    "invoice": "Inovhoisi",
+    "receipt": "Risiti",
+    "payment": "Muholo",
+    "refund": "Mbuyiselo",
+    "credit": "Khirediti",
+    "debit": "Debiti",
+    "balance": "Mbalanso",
+    "due": "Swi fanerile",
+    "paid": "Ku hakeriwile",
+    "pending": "Ku rindzile",
+    "completed": "Ku hetiwile",
+    "failed": "Ku hlulekile",
+    "processing": "Ku karhatela",
+    "approved": "Ku amukeriwa",
+    "rejected": "Ku aleriwa",
+    "cancelled": "Ku khanseleriwa",
+    "expired": "Ku hela nkarhi"
+  },
+  
+  "navigation": {
+    "home": "Ekaya",
+    "dashboard": "Daxibodo",
+    "profile": "Phurofayili",
+    "settings": "Masimeke",
+    "logout": "Huma",
+    "login": "Nghena",
+    "register": "Titsarisa",
+    "help": "Pfuno",
+    "support": "Nseketelo",
+    "contact": "Tihlanganisa na hina",
+    "about": "Hi mayelana",
+    "terms": "Mintwanano ya ntirho",
+    "privacy": "Pholisi ya xihundla",
+    "security": "Vuhlayiseki",
+    "billing": "Muholo",
+    "subscription": "Ku tsarisa",
+    "notifications": "Switiviso",
+    "integrations": "Ku hlanganisa",
+    "api": "API Access",
+    "documentation": "Matsalwa"
+  },
+  
+  "errors": {
+    "general": "Ku humelele xihoxo. Kombela u ringeta nakambe.",
+    "notFound": "Tluka a ri kumeki",
+    "unauthorized": "A wu pfumeleriwanga ku vona tluka leri",
+    "forbidden": "Ku nghena ku aleriwile",
+    "badRequest": "Xikombelo lexi hoxeke",
+    "validation": {
+      "required": "{{field}} swa fanela",
+      "email": "Kombela u nghena adirese ya imeyili leyi fanaka",
+      "phone": "Kombela u nghena nomboro ya riqingho leyi fanaka",
+      "idNumber": "Kombela u nghena nomboro ya xitiviso leyi fanaka",
+      "passport": "Kombela u nghena nomboro ya phasipoto leyi fanaka",
+      "date": "Kombela u nghena siku leri fanaka",
+      "number": "Kombela u nghena nomboro leyi fanaka",
+      "minLength": "{{field}} swa fanela ku va na {{min}} switatimente",
+      "maxLength": "{{field}} swa fanela ku va ehansi ka {{max}} switatimente",
+      "minValue": "{{field}} swa fanela ku va ehenhla ka {{min}}",
+      "maxValue": "{{field}} swa fanela ku va ehansi ka {{max}}",
+      "match": "{{field}} a yi fanani",
+      "unique": "{{field}} se yi kona",
+      "invalid": "{{field}} a yi fanangi"
+    },
+    "network": {
+      "offline": "A wu humeleriwanga eka inthanete. Kombela u languta vuhoxamfungho bya wena.",
+      "timeout": "Nkarhi wu herile. Kombela u ringeta nakambe.",
+      "serverError": "Xihoxo xa seva. Kombela u ringeta nakambe.",
+      "connectionRefused": "Ku hlanganisa ku aleriwile. Kombela u languta inthanete ya wena."
+    },
+    "database": {
+      "connection": "Ku hlanganisa eka database ku hlulekile",
+      "query": "Xikombelo xa database xi hlulekile",
+      "duplicate": "Ndongantlangu wo fana se wu kona",
+      "constraint": "Xiviko xa constraint xi thyile",
+      "transaction": "Transaction yi hlulekile"
+    },
+    "payment": {
+      "failed": "Muholo wu hlulekile",
+      "declined": "Muholo wu aleriwile",
+      "insufficient": "Timali a ti enelanga",
+      "processing": "Xihoxo eka ku karhatela muholo",
+      "gateway": "Xihoxo eka getheweya ya muholo",
+      "refund": "Mbuyiselo wu hlulekile",
+      "chargeback": "Chargeback yi sunguriwile"
+    }
+  },
+  
+  "auth": {
+    "login": {
+      "title": "Nghena eka Wilsy OS",
+      "email": "Adirese ya imeyili",
+      "password": "Phasiwedi",
+      "remember": "Ndzi tsundzuke",
+      "forgot": "U rivaliwile hi phasiwedi?",
+      "submit": "Nghena",
+      "success": "Ku nghena ku humelerile",
+      "failed": "Ku nghena ku hlulekile",
+      "locked": "Akhawunti yi lukiwe",
+      "mfa": "Xitiviso xa MFA",
+      "mfaCode": "Khodigo ya xitiviso",
+      "mfaRemember": "Ndzi tsundzuke xitirho lexi"
+    },
+    "register": {
+      "title": "Tumbuluxa akhawunti",
+      "firstName": "Vito",
+      "lastName": "Xivongo",
+      "email": "Adirese ya imeyili",
+      "phone": "Nomboro ya riqingho",
+      "company": "Vito ra bhizinisi",
+      "password": "Phasiwedi",
+      "confirmPassword": "Tiyisisa phasiwedi",
+      "agree": "Ndza pfumela eka {{terms}} na {{privacy}}",
+      "submit": "Titsarisa",
+      "success": "Ku titsarisa ku humelerile",
+      "failed": "Ku titsarisa ku hlulekile",
+      "verifyEmail": "Kombela u tiyisisa adirese ya imeyili ya wena",
+      "resendVerification": "Rhumela nakambe xitiviso"
+    },
+    "logout": {
+      "success": "U humile hi ku humelela"
+    },
+    "reset": {
+      "title": "Hlanganisa Phasiwedi",
+      "email": "Adirese ya imeyili",
+      "submit": "Rhumela Xihlanganisi",
+      "success": "Xihlanganisi xo hlanganisa phasiwedi xi rhumeriwile eka imeyili ya wena",
+      "failed": "Ku rhumela xihlanganisi ku hlulekile",
+      "invalid": "Xihlanganisi lexi hoxeke kumbe xi herile nkarhi",
+      "newPassword": "Phasiwedi yintshwa",
+      "confirmPassword": "Tiyisisa phasiwedi yintshwa",
+      "reset": "Hlanganisa Phasiwedi",
+      "complete": "Ku hlanganisa phasiwedi ku hetiwile"
+    },
+    "verify": {
+      "title": "Tiyisisa Imeyili",
+      "success": "Imeyili yi tiyisisiwile hi ku humelela",
+      "failed": "Ku tiyisisa imeyili ku hlulekile",
+      "resend": "Rhumela nakambe Xitiviso xa Imeyili",
+      "checkEmail": "Kombela u languta imeyili ya wena eka xihlanganisi xo tiyisisa"
+    }
+  },
+  
+  "onboarding": {
+    "title": "Ku nghenisa vakhendzisi",
+    "subtitle": "Heta switepisi leswi landzelaka ku nghenisa mukhendzisi wa wena",
+    "stages": {
+      "INITIATED": "Ku nghenisa ku sunguriwile",
+      "CLIENT_INFO": "Vuxokoxoko bya mukhendzisi",
+      "FICA_SCREENING": "Ku kambela FICA",
+      "DOCUMENT_UPLOAD": "Ku rhwala tidokhumente",
+      "DOCUMENT_VERIFICATION": "Ku tiyisisa tidokhumente",
+      "REVIEW": "Ku kambisisa milawu",
+      "COMPLETED": "Ku hetiwile"
+    },
+    "status": {
+      "PENDING": "Ku rindzile",
+      "IN_PROGRESS": "Ku karhatela",
+      "COMPLETED": "Ku hetiwile",
+      "CANCELLED": "Ku khanseleriwile",
+      "REJECTED": "Ku aleriwa",
+      "PENDING_FICA": "FICA yi rindzile",
+      "FICA_APPROVED": "FICA yi amukeriwile",
+      "FICA_REJECTED": "FICA yi aleriwa",
+      "PENDING_REVIEW": "Ku kambisisa ku rindzile",
+      "MANUAL_REVIEW": "Ku kambisisa hi voko swa fanela",
+      "ESCALATED": "Ku yisiwa ehenhla",
+      "EXPIRED": "Ku hela nkarhi"
+    },
+    "fields": {
+      "firstName": "Vito",
+      "lastName": "Xivongo",
+      "idNumber": "Nomboro ya xitiviso",
+      "passportNumber": "Nomboro ya phasipoto",
+      "dateOfBirth": "Siku ra ku velekiwa",
+      "nationality": "Rixaka",
+      "businessName": "Vito ra bhizinisi",
+      "registrationNumber": "Nomboro ya rejistrexini",
+      "businessType": "Muxaka wa bhizinisi",
+      "dateOfIncorporation": "Siku ra ku simekiwa",
+      "email": "Adirese ya imeyili",
+      "phone": "Nomboro ya riqingho",
+      "address": "Kherefu",
+      "city": "Doroba",
+      "province": "Xifundza",
+      "postalCode": "Khodigo ya poso",
+      "country": "Tiko",
+      "taxNumber": "Nomboro ya nhluto",
+      "vatNumber": "Nomboro ya VAT"
+    },
+    "documents": {
+      "ID_COPY": "Khopi ya xitiviso",
+      "PROOF_OF_ADDRESS": "Vumbhoni bya kherefu",
+      "PROOF_OF_INCOME": "Vumbhoni bya muholo",
+      "COMPANY_REGISTRATION": "Rejistrexini ya bhizinisi",
+      "TAX_CLEARANCE": "Xitifiketi xa nhluto",
+      "DIRECTOR_ID_COPIES": "Tikhopi ta switiviso swa vatirhisi",
+      "FINANCIAL_STATEMENTS": "Switatimende swa timali",
+      "TRUST_DEED": "Thesta ya trasti",
+      "LETTER_OF_AUTHORITY": "Papila ra mpfumelelo",
+      "CONSTITUTION": "Vumbiwa",
+      "NPO_REGISTRATION": "Rejistrexini ya NPO",
+      "BANK_STATEMENTS": "Switatimende swa bangi",
+      "AUDITED_FINANCIALS": "Timali leti kamberiweke"
+    },
+    "messages": {
+      "created": "Seshini yo nghenisa yi tumbuluxiwile hi ku humelela",
+      "updated": "Seshini yo nghenisa yi pfuxetiwe",
+      "stageAdvanced": "Yi yisiwe eka {{stage}}",
+      "documentUploaded": "Dokhumente yi rhwariwile hi ku humelela",
+      "documentVerified": "Dokhumente yi tiyisisiwile",
+      "ficaApproved": "FICA yi amukeriwile",
+      "ficaRejected": "FICA yi aleriwa",
+      "legalHoldPlaced": "Ku khomisa hi nawu ku vekiwe",
+      "legalHoldReleased": "Ku khomisa hi nawu ku susiwile",
+      "completed": "Ku nghenisa ku hetiwile",
+      "expired": "Seshini yo nghenisa yi herile nkarhi",
+      "cancelled": "Ku nghenisa ku khanseleriwile"
+    }
+  },
+  
+  "compliance": {
+    "fica": {
+      "title": "Ku landza FICA",
+      "status": "Xiyimo xa FICA",
+      "reference": "Nomboro ya FICA",
+      "riskScore": "Ntsengo wa khombo",
+      "riskLevel": "Xiyimo xa khombo",
+      "screeningDate": "Siku ra ku kambela",
+      "screenedBy": "Ku kamberiwa hi",
+      "pep": "Munhu wo tiveka eka politiki",
+      "sanctions": "Nongonoko wa swijeko",
+      "sourceOfFunds": "Xihlovo xa timali",
+      "sourceOfWealth": "Xihlovo xa rifumu",
+      "enhancedDueDiligence": "Ku kambela loku engetelekeke swa fanela",
+      "eddCompleted": "EDD yi hetiwile",
+      "eddReport": "Xiviko xa EDD",
+      "notes": "Swihlalutya swa ku landza nawu"
+    },
+    "popia": {
+      "title": "Ku landza POPIA",
+      "consent": "Mpfumelelo wu kumekile",
+      "consentDate": "Siku ra mpfumelelo",
+      "consentMethod": "Endlelo ra mpfumelelo",
+      "purpose": "Xikongomelo xa ku hlayisa",
+      "lawfulBasis": "Masungulo ya nawu",
+      "dataSubjects": "Swihloko swa data",
+      "specialData": "Data yo hlawuleka ya munhu",
+      "crossBorder": "Ku hundzisela eka mifumo yin'wana",
+      "withdrawn": "Mpfumelelo wu susiwile",
+      "withdrawalDate": "Siku ra ku susa",
+      "withdrawalReason": "Xivangelo xa ku susa"
+    },
+    "gdpr": {
+      "title": "Ku landza GDPR",
+      "applicable": "GDPR ya tirha",
+      "dpo": "Ofisala wa vuhlayiseki bya data",
+      "dpoContact": "Ku tihlanganisa na ofisala",
+      "legitimateInterest": "Mbuyelo lowu fanerile",
+      "consentObtained": "Mpfumelelo wu kumekile",
+      "rightToErasure": "Bumbelo ro susiwa",
+      "dataPortability": "Ku rhwalakanyeka ka data"
+    },
+    "legalHold": {
+      "title": "Ku khomisa hi nawu",
+      "active": "Ku khomisa hi nawu ku tirha",
+      "reason": "Xivangelo",
+      "initiatedBy": "Ku sunguriwile hi",
+      "initiatedAt": "Ku sunguriwile hi siku",
+      "expiresAt": "Ku hela hi siku",
+      "caseNumber": "Nomboro ya mhaka",
+      "courtOrder": "Xileriso xa khoto",
+      "releasedBy": "Ku susiwile hi",
+      "releasedAt": "Ku susiwile hi siku",
+      "releaseReason": "Xivangelo xa ku susa"
+    }
+  },
+  
+  "emails": {
+    "welcome": {
+      "subject": "Amukela eka Wilsy OS",
+      "greeting": "Xewani {{name}},",
+      "body": "Inkomu hi ku nghena eka Wilsy OS. Ha tsaka ku va na wena.",
+      "cta": "Sungula",
+      "footer": "Loko u nga tumbuluxanga akhawunti leyi, hlevetela imeyili leyi."
+    },
+    "verification": {
+      "subject": "Tiyisisa Imeyili ya Wena",
+      "greeting": "Xewani {{name}},",
+      "body": "Kombela u tiyisisa kherefu ya imeyili ya wena hi ku tinya eka khonkhete leyi nga laha hansi:",
+      "cta": "Tiyisisa Imeyili",
+      "expiry": "Khonekhete leyi yi ta hela nkarhi endzhaku ka 24 wa tiawara.",
+      "footer": "Loko u nga kombelanga leswi, hlevetela imeyili leyi."
+    },
+    "reset": {
+      "subject": "Ku Hlanganisa Phasiwedi",
+      "greeting": "Xewani {{name}},",
+      "body": "Hi kumele xikombelo xo hlanganisa phasiwedi ya wena. Tinya eka khonkhete leyi nga laha hansi ku ya emahlweni:",
+      "cta": "Hlanganisa Phasiwedi",
+      "expiry": "Khonekhete leyi yi ta hela nkarhi endzhaku ka awara yin'we.",
+      "footer": "Loko u nga kombelanga leswi, hlevetela imeyili leyi."
+    },
+    "notification": {
+      "subject": "Xitiviso xa Wilsy OS",
+      "view": "Vona Xitiviso",
+      "unsubscribe": "Tshika ku amukela imeyili leti"
+    },
+    "invoice": {
+      "subject": "Inovhoisi #{{number}} ku suka eka Wilsy OS",
+      "greeting": "Xewani {{name}},",
+      "body": "Inovhoisi ya wena ya {{amount}} yi kumekile sweswi.",
+      "dueDate": "Siku ra ku hela: {{date}}",
+      "viewInvoice": "Vona Inovhoisi",
+      "payNow": "Hakela Sweswi"
+    },
+    "report": {
+      "subject": "Xiviko xa wena xa {{report}} xi lunghisekile",
+      "greeting": "Xewani {{name}},",
+      "body": "Xiviko lexi u xi kombelaka xi kumekile sweswi ku xi rhwala.",
+      "download": "Rhwala Xiviko"
+    }
+  },
+  
+  "notifications": {
+    "success": "Ku humelela!",
+    "error": "Hoxeka!",
+    "warning": "Xilemukiso!",
+    "info": "Vuxokoxoko",
+    "new": "Xitiviso lexintshwa",
+    "markRead": "Sula ku vona",
+    "markAllRead": "Sula hinkwaswo",
+    "clear": "Sula hinkwaswo",
+    "empty": "A ku na switiviso",
+    "settings": "Masimeke ya switiviso",
+    "email": "Switiviso hi imeyili",
+    "sms": "Switiviso hi SMS",
+    "push": "Switiviso swa nkarhi",
+    "inApp": "Switiviso endzeni"
+  },
+  
+  "reports": {
+    "title": "Swiviko",
+    "generate": "Tumbuluxa xiviko",
+    "download": "Rhwala xiviko",
+    "email": "Rhumela xiviko hi imeyili",
+    "schedule": "Lungherisa xiviko",
+    "format": {
+      "pdf": "PDF",
+      "excel": "Excel",
+      "csv": "CSV",
+      "json": "JSON"
+    },
+    "dateRange": {
+      "today": "Namuntlha",
+      "yesterday": "Tolo",
+      "thisWeek": "Vhiki leri",
+      "lastWeek": "Vhiki leri nga hundza",
+      "thisMonth": "Nhweti leyi",
+      "lastMonth": "Nhweti leyi nga hundza",
+      "thisQuarter": "Kota leyi",
+      "lastQuarter": "Kota leyi nga hundza",
+      "thisYear": "Lembe leri",
+      "lastYear": "Lembe leri nga hundza",
+      "custom": "Xikambelwana"
+    },
+    "types": {
+      "financial": "Xiviko xa timali",
+      "compliance": "Xiviko xa ku landza nawu",
+      "audit": "Xiviko xa xikambelo",
+      "activity": "Xiviko xa ntirho",
+      "user": "Xiviko xa mutirhisi",
+      "client": "Xiviko xa mukhendzisi"
+    }
+  },
+  
+  "audit": {
+    "title": "Xikambelo xa Xikambelwana",
+    "action": "Ntirho",
+    "performedBy": "Endliwile hi",
+    "timestamp": "Nkarhi",
+    "ipAddress": "Kherefo ya IP",
+    "userAgent": "Xihangalasamoya xa mutirhisi",
+    "details": "Vuxokoxoko",
+    "hash": "Hash",
+    "previousHash": "Hash yo hundza",
+    "verify": "Tiyisisa Xikambelo",
+    "verified": "Xikambelo xa xikambelwana xi tiyisisiwile",
+    "tampered": "Xikambelo xa xikambelwana xi xanisiwile!",
+    "export": "Humesa Xikambelo",
+    "filter": "Sefa Xikambelo",
+    "clear": "Sula Xikambelo"
+  },
+  
+  "validation": {
+    "required": "Xiyenge lexi swa fanela",
+    "email": "Kombela u nghena adirese ya imeyili leyi fanaka",
+    "phone": "Kombela u nghena nomboro ya riqingho leyi fanaka",
+    "idNumber": "Kombela u nghena nomboro ya xitiviso leyi fanaka",
+    "passport": "Kombela u nghena nomboro ya phasipoto leyi fanaka",
+    "date": "Kombela u nghena siku leri fanaka",
+    "number": "Kombela u nghena nomboro leyi fanaka",
+    "minLength": "Swi fanela ku va na {{min}} switatimente",
+    "maxLength": "Swi fanela ku va ehansi ka {{max}} switatimente",
+    "minValue": "Swi fanela ku va ehenhla ka {{min}}",
+    "maxValue": "Swi fanela ku va ehansi ka {{max}}",
+    "passwordMatch": "Tiphasilwele a ti fanani",
+    "passwordStrength": "Phasiwedi swa fanela ku va na xitatimente lexikulu, xitsongo, nomboro na xikombiso lexi hlawulekeke",
+    "terms": "U fanele ku pfumela eka mintwanano ya ntirho",
+    "zipCode": "Kombela u nghena khodi ya poso leyi fanaka",
+    "creditCard": "Kombela u nghena nomboro ya kharati ya muholo leyi fanaka",
+    "cvv": "Kombela u nghena CVV leyi fanaka",
+    "expiry": "Kombela u nghena siku leri helaka leri fanaka"
+  },
+  
+  "accessibility": {
+    "skipToContent": "Tlula eka vuxokoxoko",
+    "menu": "Meniyu",
+    "closeMenu": "Pfala meniyu",
+    "search": "Lava",
+    "toggleDarkMode": "Cinca eka ndlela ya ntima",
+    "toggleRTL": "Cinca eka ndlela ya RTL",
+    "increaseFont": "Andzisa fonto",
+    "decreaseFont": "Pandzisa fonto",
+    "resetFont": "Vuyisela fonto",
+    "highContrast": "Ndlela ya mpfikamowano lowukulu"
+  },
+  
+  "errorsPages": {
+    "404": {
+      "title": "Tluka a ri kumeki",
+      "message": "Tluka leri u ri lavaka a ri kumeki kumbe ri susiwile.",
+      "backToHome": "Vuyela eka Tluka ro Sungula",
+      "contactSupport": "Tihlanganisa na Nseketelo"
+    },
+    "500": {
+      "title": "Hoxeka ya Serha",
+      "message": "Ku humelele xihoxo eka tlhelo ra hina. Kombela u ringeta nakambe endzhaku.",
+      "retry": "Ringeta Nakambe",
+      "contactSupport": "Tihlanganisa na Nseketelo"
+    },
+    "403": {
+      "title": "Ku Aleriwa ku Nghena",
+      "message": "A wu na mpfumelelo wo nghena eka tluka leri.",
+      "requestAccess": "Kombela Mpfumelelo",
+      "backToHome": "Vuyela eka Tluka ro Sungula"
+    }
+  },
+  
+  "pagination": {
+    "showing": "Ku kombisa {{start}} ku fika eka {{end}} wa {{total}}",
+    "first": "Sungula",
+    "last": "Hetelela",
+    "next": "Landzelaka",
+    "previous": "Lokukarhi",
+    "page": "Tluka {{page}}",
+    "perPage": "{{count}} hi tluka",
+    "of": "eka"
+  },
+  
+  "search": {
+    "placeholder": "Lava...",
+    "noResults": "A ku kumekangi mimbuyelo",
+    "results": "{{count}} mimbuyelo",
+    "filter": "Sefa",
+    "clear": "Sula",
+    "advanced": "Ku Lava loku Engetelekeke"
+  },
+  
+  "time": {
+    "justNow": "Kunyana",
+    "minutesAgo": "{{count}} wa timinete ku hundza",
+    "hoursAgo": "{{count}} wa tiawara ku hundza",
+    "daysAgo": "{{count}} wa masiku ku hundza",
+    "weeksAgo": "{{count}} wa mavhiki ku hundza",
+    "monthsAgo": "{{count}} wa tin'hweti ku hundza",
+    "yearsAgo": "{{count}} wa malembe ku hundza"
+  },
+  
+  "currency": {
+    "ZAR": "Randi ya Afrika-Dzonga",
+    "USD": "Dola ya Amerika",
+    "EUR": "Yuro",
+    "GBP": "Phawundi ya Britani",
+    "CNY": "Yuwani ya China",
+    "JPY": "Yeni ya Japan",
+    "AUD": "Dola ya Australia",
+    "CAD": "Dola ya Kanada"
+  }
+}

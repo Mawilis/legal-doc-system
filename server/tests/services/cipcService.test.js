@@ -102,7 +102,7 @@ describe('CIPC Service - Investor Validation', () => {
       address: '123 Main Street, Johannesburg, 2000'
     };
 
-    const result = await CIPCService.validateDirector(directorData, testTenantId);
+    const result = await CIPCService.redactDirectorInfo(directorData, testTenantId);
 
     // Verify redaction
     expect(result).toBeDefined();
@@ -281,7 +281,7 @@ describe('CIPC Service - Investor Validation', () => {
 
   test('should handle validation errors gracefully', async () => {
     // Test with missing required data
-    const result = await CIPCService.validateDirector({}, testTenantId);
+    const result = await CIPCService.redactDirectorInfo({}, testTenantId);
     
     expect(result).toBeDefined();
     expect(result.valid).toBe(false);

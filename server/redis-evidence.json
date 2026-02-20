@@ -1,0 +1,53 @@
+{
+  "auditEntries": [
+    {
+      "action": "REDIS_TEST",
+      "timestamp": "2026-02-18T18:00:40.107Z",
+      "health": {
+        "service": "redis",
+        "clients": {
+          "evidence": {
+            "status": "healthy",
+            "ping": "PONG",
+            "server": {
+              "redis_version": "8.4.0",
+              "redis_git_sha1": "00000000",
+              "redis_git_dirty": "1",
+              "redis_build_id": "971513cac427afef",
+              "redis_mode": "standalone",
+              "os": "Darwin 25.3.0 arm64",
+              "arch_bits": "64",
+              "monotonic_clock": "POSIX clock_gettime",
+              "multiplexing_api": "kqueue",
+              "atomicvar_api": "c11-builtin",
+              "gcc_version": "4.2.1",
+              "process_id": "6384",
+              "process_supervised": "no",
+              "run_id": "99aa9dfde9b9832e327c14da3023a065e0a55dfc",
+              "tcp_port": "6379",
+              "server_time_usec": "1771437640106899",
+              "uptime_in_seconds": "453556",
+              "uptime_in_days": "5",
+              "hz": "10",
+              "configured_hz": "10",
+              "lru_clock": "9829960",
+              "executable": "/opt/homebrew/opt/redis/bin/redis-server",
+              "config_file": "/opt/homebrew/etc/redis.conf",
+              "io_threads_active": "0",
+              "listener0": "name=tcp,bind=127.0.0.1,bind="
+            },
+            "memory": {
+              "used": "987.03K",
+              "max": "0B",
+              "fragmentation": "2.82"
+            },
+            "connected": true
+          }
+        },
+        "timestamp": "2026-02-18T18:00:40.107Z"
+      }
+    }
+  ],
+  "hash": "93f018c1be9ae45631215cc23be823aa3fa42a8526fddde4f0350e260c93d15f",
+  "timestamp": "2026-02-18T18:00:40.107Z"
+}

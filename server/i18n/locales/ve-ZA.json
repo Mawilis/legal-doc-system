@@ -1,0 +1,185 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "Tshivenda",
+    "region": "South Africa",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "2",
+    "dateFormat": "YYYY-MM-DD",
+    "timeFormat": "HH:mm",
+    "currency": "ZAR",
+    "numberFormat": {
+      "decimal": ".",
+      "thousands": ",",
+      "grouping": [3]
+    },
+    "languageCode": "ve",
+    "speakers": "1.3 million",
+    "province": "Limpopo"
+  },
+  
+  "common": {
+    "save": "Sevha",
+    "cancel": "Khantsela",
+    "delete": "Bvisa",
+    "edit": "Sumbedza",
+    "view": "Vhona",
+    "download": "Lavha",
+    "upload": "Lavha nga",
+    "search": "Todou",
+    "filter": "Sefa",
+    "refresh": "Vusuludza",
+    "back": "Murahu",
+    "next": "Tevhelaho",
+    "previous": "Fhasi ho",
+    "submit": "Rumela",
+    "confirm": "Khwathisedza",
+    "yes": "Ee",
+    "no": "Hai",
+    "ok": "Zwo luga",
+    "close": "Vala",
+    "loading": "I khou laela...",
+    "error": "Vhukhakhi",
+    "success": "Mvelelo",
+    "warning": "Ndondondo",
+    "info": "Mafhungo",
+    "actions": "Zwiito",
+    "status": "Vhuimo",
+    "date": "Duvha",
+    "time": "Tshifhinga",
+    "datetime": "Duvha na Tshifhinga",
+    "name": "Dzina",
+    "description": "Mafhungo",
+    "details": "Zwiendedzi",
+    "type": "Muta",
+    "category": "Khethekanyo",
+    "amount": "Tshothe",
+    "total": "Nwaha",
+    "subtotal": "Nwaha mutuku",
+    "tax": "Muṱolo",
+    "vat": "VAT",
+    "invoice": "Invoice",
+    "receipt": "Resiti",
+    "payment": "Mbadelo",
+    "refund": "Mbuedziso",
+    "credit": "Kirediti",
+    "debit": "Debiti",
+    "balance": "Tshikalo",
+    "due": "Tea",
+    "paid": "Yo badelwa",
+    "pending": "Yo livhuwa",
+    "completed": "Yo fhedziswa",
+    "failed": "Yo kundelwa",
+    "processing": "I khou shuma",
+    "approved": "Yo tendelwa",
+    "rejected": "Yo hanwa",
+    "cancelled": "Yo fheliswa"
+  },
+  
+  "navigation": {
+    "home": "Hayani",
+    "dashboard": "Dashbodo",
+    "profile": "Profili",
+    "settings": "Zwiimiswa",
+    "logout": "Fhasa",
+    "login": "I ngwine",
+    "register": "Nwalesa",
+    "help": "Thuso",
+    "support": "Thikhedzo",
+    "contact": "Ikwame na riṋe",
+    "about": "Nga ha",
+    "terms": "Milayo ya u shumisa",
+    "privacy": "Pholisi ya zwa siphira",
+    "security": "Tsireledzo"
+  },
+  
+  "errors": {
+    "general": "Vhukhakhi ho itea. Ndi khou humbela uri ni lingedze hafhu.",
+    "notFound": "Siathisi a si wani",
+    "unauthorized": "A ni tendelwi u vhona siathisi itshi",
+    "forbidden": "U swikelela ho hanwa",
+    "badRequest": "Khumbelo i si yone",
+    "validation": {
+      "required": "{{field}} i a tea",
+      "email": "Ndi khou humbela uri ni dzhenise arese ya imeili yone",
+      "phone": "Ndi khou humbela uri ni dzhenise nomoro ya luṱingo yone",
+      "idNumber": "Ndi khou humbela uri ni dzhenise nomoro ya tshitifikeiti yone",
+      "date": "Ndi khou humbela uri ni dzhenise duvha lline",
+      "number": "Ndi khou humbela uri ni dzhenise nomboro yone"
+    }
+  },
+  
+  "auth": {
+    "login": {
+      "title": "I ngwine kha Wilsy OS",
+      "email": "Arese ya imeili",
+      "password": "Phasiwede",
+      "remember": "Ndi rangulate",
+      "forgot": "No hangwa phasiwede?",
+      "submit": "I ngwine",
+      "success": "U i ngwina ho bvelela",
+      "failed": "U i ngwina ho kundelwa",
+      "locked": "Akhauṋthi yo valelwa"
+    },
+    "register": {
+      "title": "U vula akhauṋthi",
+      "firstName": "Dzina",
+      "lastName": "Tsumbo",
+      "email": "Arese ya imeili",
+      "phone": "Nomoro ya luṱingo",
+      "password": "Phasiwede",
+      "confirmPassword": "Khwathisedza phasiwede",
+      "agree": "Ndi tendelana na {{terms}} na {{privacy}}",
+      "submit": "Nwalesa",
+      "success": "U nwalesa ho bvelela"
+    },
+    "logout": {
+      "success": "No fhasa nga mvelelo"
+    }
+  },
+  
+  "onboarding": {
+    "title": "U dzhenisa vhatevhi",
+    "stages": {
+      "INITIATED": "U dzhenisa ho thoma",
+      "CLIENT_INFO": "Mafhungo a mutevhi",
+      "FICA_SCREENING": "U sedza FICA",
+      "DOCUMENT_UPLOAD": "U lavha maṅwalo",
+      "DOCUMENT_VERIFICATION": "U khwathisedza maṅwalo",
+      "REVIEW": "U sedzulusa milayo",
+      "COMPLETED": "Yo fhedziswa"
+    },
+    "status": {
+      "PENDING": "I khou livhuwa",
+      "IN_PROGRESS": "I khou bvelela",
+      "COMPLETED": "Yo fhedziswa",
+      "CANCELLED": "Yo fheliswa",
+      "REJECTED": "Yo hanwa",
+      "PENDING_FICA": "FICA i khou livhuwa",
+      "FICA_APPROVED": "FICA yo tendelwa",
+      "FICA_REJECTED": "FICA yo hanwa"
+    },
+    "messages": {
+      "created": "Seshini ya u dzhenisa yo vhumbwa nga mvelelo",
+      "updated": "Seshini ya u dzhenisa yo vhuedzedzwa",
+      "stageAdvanced": "Yo bvelela kha {{stage}}",
+      "documentUploaded": "Maṅwalo o lavhiwa nga mvelelo",
+      "documentVerified": "Maṅwalo o khwathisedzwa",
+      "ficaApproved": "FICA yo tendelwa",
+      "ficaRejected": "FICA yo hanwa"
+    }
+  },
+  
+  "compliance": {
+    "fica": {
+      "title": "U tevhedza FICA",
+      "status": "Vhuimo ha FICA",
+      "reference": "Nomoro ya FICA",
+      "riskScore": "Tshikalo tsha khombo",
+      "riskLevel": "Vhuimo ha khombo",
+      "pep": "Muthu wa zwa politiki ane a divhea"
+    }
+  }
+}

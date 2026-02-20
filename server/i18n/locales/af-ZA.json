@@ -1,0 +1,137 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "Afrikaans",
+    "region": "South Africa",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "1"
+  },
+  
+  "common": {
+    "save": "Stoor",
+    "cancel": "Kanselleer",
+    "delete": "Verwyder",
+    "edit": "Wysig",
+    "view": "Bekyk",
+    "download": "Laai Af",
+    "upload": "Laai Op",
+    "search": "Soek",
+    "filter": "Filtreer",
+    "refresh": "Verfris",
+    "back": "Terug",
+    "next": "Volgende",
+    "previous": "Vorige",
+    "submit": "Dien In",
+    "confirm": "Bevestig",
+    "yes": "Ja",
+    "no": "Nee",
+    "ok": "OK",
+    "close": "Maak Toe",
+    "loading": "Laai...",
+    "error": "Fout",
+    "success": "Sukses",
+    "warning": "Waarskuwing",
+    "info": "Inligting",
+    "actions": "Aksies",
+    "status": "Status",
+    "date": "Datum",
+    "time": "Tyd",
+    "datetime": "Datum & Tyd",
+    "name": "Naam",
+    "description": "Beskrywing",
+    "details": "Besonderhede",
+    "type": "Tipe",
+    "category": "Kategorie",
+    "amount": "Bedrag",
+    "total": "Totaal",
+    "subtotal": "Subtotaal",
+    "tax": "Belasting",
+    "vat": "BTW",
+    "invoice": "Faktuur",
+    "receipt": "Kwitansie",
+    "payment": "Betaling",
+    "refund": "Terugbetaling",
+    "credit": "Krediet",
+    "debit": "Debiet"
+  },
+  
+  "navigation": {
+    "home": "Tuis",
+    "dashboard": "Paneelbord",
+    "profile": "Profiel",
+    "settings": "Instellings",
+    "logout": "Teken Uit",
+    "login": "Teken In",
+    "register": "Registreer",
+    "help": "Hulp",
+    "support": "Ondersteuning",
+    "contact": "Kontak Ons",
+    "about": "Oor",
+    "terms": "Diensvoorwaardes",
+    "privacy": "Privaatheidsbeleid",
+    "security": "Sekuriteit"
+  },
+  
+  "onboarding": {
+    "title": "Kliënt Aanboord",
+    "stages": {
+      "INITIATED": "Aanboord Begin",
+      "CLIENT_INFO": "Kliënt Inligting",
+      "FICA_SCREENING": "FICA Sifting",
+      "DOCUMENT_UPLOAD": "Dokument Oplaai",
+      "DOCUMENT_VERIFICATION": "Dokument Verifikasie",
+      "REVIEW": "Regshersiening",
+      "COMPLETED": "Voltooi"
+    },
+    "status": {
+      "PENDING": "Hangende",
+      "IN_PROGRESS": "Aan die Gang",
+      "COMPLETED": "Voltooi",
+      "CANCELLED": "Gekanselleer",
+      "REJECTED": "Verwerp",
+      "PENDING_FICA": "Hangende FICA",
+      "FICA_APPROVED": "FICA Goedgekeur",
+      "FICA_REJECTED": "FICA Verwerp",
+      "PENDING_REVIEW": "Hangende Hersiening",
+      "MANUAL_REVIEW": "Handmatige Hersiening Vereis",
+      "ESCALATED": "Geëskaleer",
+      "EXPIRED": "Verval"
+    },
+    "messages": {
+      "created": "Aanboordsessie suksesvol geskep",
+      "updated": "Aanboordsessie opgedateer",
+      "stageAdvanced": "Gevorder na {{stage}}",
+      "documentUploaded": "Dokument suksesvol opgelaai",
+      "documentVerified": "Dokument geverifieer",
+      "ficaApproved": "FICA goedgekeur",
+      "ficaRejected": "FICA verwerp",
+      "legalHoldPlaced": "Regshouding geplaas",
+      "legalHoldReleased": "Regshouding vrygestel",
+      "completed": "Aanboord voltooi"
+    }
+  },
+  
+  "compliance": {
+    "fica": {
+      "title": "FICA Nakoming",
+      "status": "FICA Status",
+      "reference": "FICA Verwysing",
+      "riskScore": "Risiko Telling",
+      "riskLevel": "Risiko Vlak"
+    },
+    "popia": {
+      "title": "POPIA Nakoming",
+      "consent": "Toestemming Verkry",
+      "consentDate": "Toestemmingsdatum"
+    },
+    "legalHold": {
+      "title": "Regshouding",
+      "active": "Regshouding Aktief",
+      "reason": "Rede",
+      "initiatedBy": "Geloods deur",
+      "initiatedAt": "Geloods op"
+    }
+  }
+}

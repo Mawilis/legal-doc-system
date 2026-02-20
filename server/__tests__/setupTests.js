@@ -16,12 +16,5 @@ afterAll(() => {
   console.log('Jest cleanup complete');
 });
 
-// Mock console for cleaner test output
-global.console = {
-  ...console,
-  log: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-  info: jest.fn(),
-  debug: jest.fn()
-};
+// DON'T mock console - it breaks Mongoose
+// Keep console intact

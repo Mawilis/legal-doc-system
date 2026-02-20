@@ -1,0 +1,185 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "Setswana",
+    "region": "South Africa",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "2",
+    "dateFormat": "YYYY-MM-DD",
+    "timeFormat": "HH:mm",
+    "currency": "ZAR",
+    "numberFormat": {
+      "decimal": ".",
+      "thousands": ",",
+      "grouping": [3]
+    },
+    "languageCode": "tn",
+    "speakers": "3.9 million",
+    "province": "North West, Gauteng, Northern Cape, Botswana"
+  },
+  
+  "common": {
+    "save": "Boloka",
+    "cancel": "Kganela",
+    "delete": "Phimola",
+    "edit": "Fetola",
+    "view": "Lebelela",
+    "download": "Laola",
+    "upload": "Laola mo",
+    "search": "Batla",
+    "filter": "Sefa",
+    "refresh": "Tsosolosa",
+    "back": "Morago",
+    "next": "Se latelang",
+    "previous": "Se fetileng",
+    "submit": "Romela",
+    "confirm": "Netefatsa",
+    "yes": "Ee",
+    "no": "Nnyaa",
+    "ok": "Go siame",
+    "close": "Tswala",
+    "loading": "E a laela...",
+    "error": "Phoso",
+    "success": "Katlego",
+    "warning": "Tlhagiso",
+    "info": "Tshedimosetso",
+    "actions": "Ditiro",
+    "status": "Maemo",
+    "date": "Letlha",
+    "time": "Nako",
+    "datetime": "Letlha le Nako",
+    "name": "Leina",
+    "description": "Tlhaloso",
+    "details": "Dintlha",
+    "type": "Mofuta",
+    "category": "Setlhopa",
+    "amount": "Palo",
+    "total": "Kakaretso",
+    "subtotal": "Kakaretso e nnye",
+    "tax": "Lekgetho",
+    "vat": "VAT",
+    "invoice": "Invoice",
+    "receipt": "Rasiti",
+    "payment": "Tefo",
+    "refund": "Pusetso",
+    "credit": "Mokitlane",
+    "debit": "Debeite",
+    "balance": "Tekanyo",
+    "due": "Tshwanetseng",
+    "paid": "E duetswe",
+    "pending": "E eme",
+    "completed": "E phethilwe",
+    "failed": "E paletswe",
+    "processing": "E a dirwa",
+    "approved": "E amogetswe",
+    "rejected": "E gannwe",
+    "cancelled": "E kganetswe"
+  },
+  
+  "navigation": {
+    "home": "Gae",
+    "dashboard": "Dashboard",
+    "profile": "Profaele",
+    "settings": "Diphetogo",
+    "logout": "Tswa",
+    "login": "Tsena",
+    "register": "Ikwadise",
+    "help": "Thuso",
+    "support": "Kemonokeng",
+    "contact": "Ikgolaganye le rona",
+    "about": "Ka ga",
+    "terms": "Melawana ya tiriso",
+    "privacy": "Pholisi ya sephiri",
+    "security": "Tshireletso"
+  },
+  
+  "errors": {
+    "general": "Phoso e diragetse. Tswelela o leke gape.",
+    "notFound": "Tsebe ga e fitlhelele",
+    "unauthorized": "Ga o a letlelelwa go bona tsebe eno",
+    "forbidden": "Phihlelelo e gannwe",
+    "badRequest": "Kopo e sa siamang",
+    "validation": {
+      "required": "{{field}} e a tlhokega",
+      "email": "Tswelela o tsene aterese ya imeile e e siameng",
+      "phone": "Tswelela o tsene nomoro ya mogala e e siameng",
+      "idNumber": "Tswelela o tsene nomoro ya setifikeiti e e siameng",
+      "date": "Tswelela o tsene letlha le le siameng",
+      "number": "Tswelela o tsene palo e e siameng"
+    }
+  },
+  
+  "auth": {
+    "login": {
+      "title": "Tsena mo Wilsy OS",
+      "email": "Aterese ya imeile",
+      "password": "Phasewete",
+      "remember": "Nkgakolola",
+      "forgot": "A o lebetswe phasewete?",
+      "submit": "Tsena",
+      "success": "Go tsena go atlegile",
+      "failed": "Go tsena ga go a atlega",
+      "locked": "Akhaonto e notletswe"
+    },
+    "register": {
+      "title": "Bula akhaonto",
+      "firstName": "Leina",
+      "lastName": "Fane",
+      "email": "Aterese ya imeile",
+      "phone": "Nomoro ya mogala",
+      "password": "Phasewete",
+      "confirmPassword": "Netefatsa phasewete",
+      "agree": "Ke dumalana le {{terms}} le {{privacy}}",
+      "submit": "Ikwadise",
+      "success": "Go ikwadisa go atlegile"
+    },
+    "logout": {
+      "success": "O tswetse ka katlego"
+    }
+  },
+  
+  "onboarding": {
+    "title": "Go tsenya bareki",
+    "stages": {
+      "INITIATED": "Go tsenya go simolotswe",
+      "CLIENT_INFO": "Tshedimosetso ya moreki",
+      "FICA_SCREENING": "Tlhatlhobo ya FICA",
+      "DOCUMENT_UPLOAD": "Go laola ditokomane",
+      "DOCUMENT_VERIFICATION": "Go netefatsa ditokomane",
+      "REVIEW": "Tshekatsheko ya molao",
+      "COMPLETED": "E phethilwe"
+    },
+    "status": {
+      "PENDING": "E eme",
+      "IN_PROGRESS": "E a tswelela",
+      "COMPLETED": "E phethilwe",
+      "CANCELLED": "E kganetswe",
+      "REJECTED": "E gannwe",
+      "PENDING_FICA": "FICA e eme",
+      "FICA_APPROVED": "FICA e amogetswe",
+      "FICA_REJECTED": "FICA e gannwe"
+    },
+    "messages": {
+      "created": "Session ya go tsenya e tlhamilwe ka katlego",
+      "updated": "Session ya go tsenya e ntShafaditswe",
+      "stageAdvanced": "E tsweletse go {{stage}}",
+      "documentUploaded": "Tokomane e laotswe ka katlego",
+      "documentVerified": "Tokomane e netefaditswe",
+      "ficaApproved": "FICA e amogetswe",
+      "ficaRejected": "FICA e gannwe"
+    }
+  },
+  
+  "compliance": {
+    "fica": {
+      "title": "Go obamela FICA",
+      "status": "Maemo a FICA",
+      "reference": "Nomoro ya FICA",
+      "riskScore": "Tekanyo ya kotsi",
+      "riskLevel": "Maemo a kotsi",
+      "pep": "Motho yo o itsegeng mo dipolotiking"
+    }
+  }
+}

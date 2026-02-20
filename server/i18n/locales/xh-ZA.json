@@ -1,0 +1,88 @@
+{
+  "_metadata": {
+    "version": "2.0.0",
+    "language": "isiXhosa",
+    "region": "South Africa",
+    "maintainer": "Wilsy OS",
+    "lastUpdated": "2026-02-18",
+    "rtl": false,
+    "pluralRules": "1"
+  },
+  
+  "common": {
+    "save": "Gcina",
+    "cancel": "Rhoxisa",
+    "delete": "Cima",
+    "edit": "Hlela",
+    "view": "Jonga",
+    "download": "Khuphela",
+    "upload": "Faka",
+    "search": "Khangela",
+    "filter": "Hluzela",
+    "refresh": "Hlaziya",
+    "back": "Buyela",
+    "next": "Okulandelayo",
+    "previous": "Okudlulileyo",
+    "submit": "Ngenisa",
+    "confirm": "Qinisekisa",
+    "yes": "Ewe",
+    "no": "Hayi",
+    "ok": "Kulungile",
+    "close": "Vala",
+    "loading": "Iyalayisha...",
+    "error": "Impazamo",
+    "success": "Impumelelo",
+    "warning": "Isilumkiso",
+    "info": "Ulwazi",
+    "actions": "Izenzo",
+    "status": "Isimo",
+    "date": "Umhla",
+    "time": "Ixesha",
+    "datetime": "Umhla & Ixesha",
+    "name": "Igama",
+    "description": "Inkcazo",
+    "details": "Iinkcukacha"
+  },
+  
+  "navigation": {
+    "home": "Ikhaya",
+    "dashboard": "Ideshibhodi",
+    "profile": "Iprofayile",
+    "settings": "Useto",
+    "logout": "Phuma",
+    "login": "Ngena",
+    "register": "Bhalisa",
+    "help": "Uncedo",
+    "support": "Inkxaso",
+    "contact": "Qhagamshelana nathi"
+  },
+  
+  "onboarding": {
+    "title": "Ukungeniswa komthengi",
+    "stages": {
+      "INITIATED": "Ukuqaliswa kokungeniswa",
+      "CLIENT_INFO": "Ulwazi lomthengi",
+      "FICA_SCREENING": "Uvavanyo lwe-FICA",
+      "DOCUMENT_UPLOAD": "Ukufakwa kwamaxwebhu",
+      "DOCUMENT_VERIFICATION": "Ukuqinisekiswa kwamaxwebhu",
+      "REVIEW": "Uphononongo lwezomthetho",
+      "COMPLETED": "Igqityiwe"
+    },
+    "status": {
+      "PENDING": "Iyalindiswa",
+      "IN_PROGRESS": "Iyaqhutywa",
+      "COMPLETED": "Igqityiwe",
+      "CANCELLED": "Irhoxisiwe",
+      "REJECTED": "Iyaliwe"
+    },
+    "messages": {
+      "created": "Iseshoni yokungeniswa yenziwe ngempumelelo",
+      "updated": "Iseshoni yokungeniswa ihlaziyiwe",
+      "stageAdvanced": "Iqhubele phambili kwi-{{stage}}",
+      "documentUploaded": "Uxwebhu lufakwe ngempumelelo",
+      "documentVerified": "Uxwebhu luqinisekisiwe",
+      "ficaApproved": "I-FICA yamkelwe",
+      "ficaRejected": "I-FICA yaliwe"
+    }
+  }
+}

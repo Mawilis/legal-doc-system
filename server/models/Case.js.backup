@@ -1,0 +1,794 @@
+/*╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║   ██████╗ ██████╗ ███╗   ██╗███████╗██╗     ███████╗██╗████████╗            ║
+║  ██╔════╝██╔═══██╗████╗  ██║██╔════╝██║     ██╔════╝██║╚══██╔══╝            ║
+║  ██║     ██║   ██║██╔██╗ ██║█████╗  ██║     █████╗  ██║   ██║               ║
+║  ██║     ██║   ██║██║╚██╗██║██╔══╝  ██║     ██╔══╝  ██║   ██║               ║
+║  ╚██████╗╚██████╔╝██║ ╚████║██║     ███████╗██║     ██║   ██║               ║
+║   ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚══════╝╚═╝     ╚═╝   ╚═╝               ║
+║                                                                              ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  FILE: /Users/wilsonkhanyezi/legal-doc-system/server/models/Case.js         ║
+║  VERSION: 5.0.0 (production - DEFENSIVE)                                    ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+*/
+
+'use strict';
+
+const mongoose = require('mongoose');
+const crypto = require('crypto');
+
+const getObjectId = () => {
+  if (mongoose.Schema && mongoose.Schema.Types && mongoose.Schema.Types.ObjectId) {
+    return mongoose.Schema.Types.ObjectId;
+  }
+  if (mongoose.Types && mongoose.Types.ObjectId) {
+    return mongoose.Types.ObjectId;
+  }
+  return String;
+};
+
+// ==============================================
+// CONSTANTS - attached to model after compilation
+// ==============================================
+const CASE_STATUSES = {
+  PRE_INTAKE: 'PRE_INTAKE',
+  ACTIVE: 'ACTIVE',
+  LEGAL_HOLD: 'LEGAL_HOLD',
+  CLOSED: 'CLOSED'
+};
+
+const CONFLICT_SEVERITIES = {
+  CRITICAL: 'critical',
+  HIGH: 'high',
+  MEDIUM: 'medium',
+  LOW: 'low'
+};
+
+const PAIA_REQUEST_STATUSES = {
+  PENDING: 'PENDING',
+  IN_REVIEW: 'IN_REVIEW',
+  PARTIALLY_GRANTED: 'PARTIALLY_GRANTED',
+  GRANTED: 'GRANTED',
+  DENIED: 'DENIED',
+  APPEALED: 'APPEALED',
+  WITHDRAWN: 'WITHDRAWN'
+};
+
+const RESOLVED_STATUS = 'resolved';
+
+// ==============================================
+// VALIDATORS
+// ==============================================
+const validateCaseNumber = (value) => {
+  if (!value) return false;
+  const caseNumberRegex = /^[A-Z]{2,4}-\d{4}-\d{4}(-[A-Z]{2})?$/;
+  return caseNumberRegex.test(value);
+};
+
+const validateTenantId = (value) => {
+  if (!value) return false;
+  return /^tenant_[a-zA-Z0-9_]{8,32}$/.test(value);
+};
+
+// ==============================================
+// PAIA REQUEST SUB-SCHEMA
+// ==============================================
+const PaiaRequestSchema = new mongoose.Schema({
+  requestId: {
+    type: String,
+    required: [true, 'PAIA request ID is required'],
+    unique: true,
+    index: true
+  },
+  requesterType: {
+    type: String,
+    enum: ['INDIVIDUAL', 'COMPANY', 'GOVERNMENT', 'LAW_FIRM'],
+    required: true
+  },
+  requesterDetails: {
+    name: { type: String, required: true, trim: true },
+    idNumber: String,
+    contactEmail: { type: String, lowercase: true },
+    contactPhone: String,
+    postalAddress: String
+  },
+  requestedInformation: [{
+    description: { type: String, required: true },
+    documentType: String,
+    dateRange: {
+      from: Date,
+      to: Date
+    },
+    specificReference: String
+  }],
+  requestDate: { type: Date, default: Date.now },
+  statutoryDeadline: {
+    type: Date,
+    required: true,
+    validate: {
+      validator: function (value) {
+        return value > new Date();
+      },
+      message: 'Statutory deadline must be in the future'
+    }
+  },
+  status: {
+    type: String,
+    enum: Object.values(PAIA_REQUEST_STATUSES),
+    default: PAIA_REQUEST_STATUSES.PENDING,
+    index: true
+  },
+  reviewDetails: {
+    reviewedBy: { type: getObjectId(), ref: 'User' },
+    reviewedAt: Date,
+    decisionNotes: String,
+    exemptionsApplied: [{
+      section: String,
+      reason: String,
+      partialRelease: Boolean
+    }]
+  },
+  responseDetails: {
+    respondedAt: Date,
+    responseMethod: {
+      type: String,
+      enum: ['EMAIL', 'POST', 'IN_PERSON', 'PORTAL']
+    },
+    feesCharged: Number,
+    documentsReleased: [{
+      documentId: { type: getObjectId(), ref: 'Document' },
+      releaseMethod: String,
+      releasedAt: Date
+    }]
+  },
+  appealDetails: {
+    appealedAt: Date,
+    appealGrounds: String,
+    appealDecision: String,
+    appealDecidedAt: Date
+  },
+  metadata: {
+    isUrgent: { type: Boolean, default: false },
+    urgencyReason: String,
+    relatedDsarId: String,
+    retentionOverride: Boolean,
+    manualTrackingRequired: { type: Boolean, default: false }
+  },
+  audit: {
+    createdBy: { type: getObjectId(), ref: 'User', required: true },
+    createdAt: { type: Date, default: Date.now },
+    updatedBy: { type: getObjectId(), ref: 'User' },
+    updatedAt: { type: Date, default: Date.now }
+  }
+}, { _id: true });
+
+// ==============================================
+// MAIN SCHEMA
+// ==============================================
+const CaseSchema = new mongoose.Schema({
+  tenantId: {
+    type: String,
+    required: [true, 'Tenant ID is required for multi-tenant isolation'],
+    index: true,
+    validate: {
+      validator: validateTenantId,
+      message: 'Tenant ID must match pattern: tenant_[8-32 alphanumeric chars]'
+    }
+  },
+  caseNumber: {
+    type: String,
+    required: [true, 'Case number is required'],
+    unique: true,
+    index: true,
+    validate: {
+      validator: validateCaseNumber,
+      message: 'Case number must match format: XX-YYYY-ZZZZ or XX-YYYY-ZZZZ-XX'
+    }
+  },
+  title: {
+    type: String,
+    required: [true, 'Case title is required'],
+    trim: true,
+    minlength: [3, 'Case title must be at least 3 characters'],
+    maxlength: [200, 'Case title cannot exceed 200 characters']
+  },
+  status: {
+    type: String,
+    enum: Object.values(CASE_STATUSES),
+    default: CASE_STATUSES.PRE_INTAKE,
+    index: true
+  },
+  client: {
+    name: {
+      type: String,
+      required: [true, 'Client name is required'],
+      trim: true
+    },
+    entityId: String,
+    clientReference: String,
+    contactDetails: {
+      email: {
+        type: String,
+        lowercase: true,
+        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email address']
+      },
+      phone: String
+    },
+    paiaDesignation: {
+      isInformationOfficer: { type: Boolean, default: false },
+      deputyOfficers: [{ type: getObjectId(), ref: 'User' }],
+      lastDesignationUpdate: Date
+    }
+  },
+  opponents: [{
+    name: {
+      type: String,
+      required: [true, 'Opponent name is required'],
+      trim: true
+    },
+    blindIndex: {
+      type: String,
+      index: true,
+      required: [true, 'Blind index is required for searchable encryption']
+    },
+    role: {
+      type: String,
+      enum: ['ADVERSE_PARTY', 'THIRD_PARTY', 'WITNESS', 'EXPERT'],
+      default: 'ADVERSE_PARTY'
+    },
+    entityId: String,
+    paiaRelevant: { type: Boolean, default: false },
+    paiaConsentObtained: Boolean,
+    consentRecordId: String
+  }],
+  legalTeam: [{
+    userId: { type: getObjectId(), ref: 'User', required: true },
+    role: {
+      type: String,
+      enum: ['LEAD_ATTORNEY', 'ASSOCIATE', 'PARALEGAL', 'SUPPORT_STAFF', 'INFORMATION_OFFICER'],
+      required: true
+    },
+    assignedDate: { type: Date, default: Date.now },
+    isActive: { type: Boolean, default: true },
+    paiaResponsibilities: [{
+      type: String,
+      enum: ['REQUEST_PROCESSING', 'APPEAL_HANDLING', 'EXEMPTION_REVIEW', 'DISCLOSURE_AUTHORITY']
+    }]
+  }],
+  matterDetails: {
+    jurisdiction: String,
+    courtOrTribunal: String,
+    matterType: {
+      type: String,
+      enum: ['LITIGATION', 'TRANSACTIONAL', 'ADVISORY', 'REGULATORY', 'COMPLIANCE']
+    },
+    description: String,
+    openingDate: { type: Date, default: Date.now },
+    estimatedCloseDate: Date,
+    actualCloseDate: Date,
+    valueAtRisk: Number,
+    currency: { type: String, default: 'ZAR' },
+    paiaClassification: {
+      type: String,
+      enum: ['ROUTINE_DISCLOSURE', 'CONDITIONAL_DISCLOSURE', 'PROTECTED_DISCLOSURE'],
+      default: 'ROUTINE_DISCLOSURE'
+    }
+  },
+  paiaRequests: [PaiaRequestSchema],
+  paiaTracking: {
+    totalRequests: { type: Number, default: 0 },
+    pendingRequests: { type: Number, default: 0 },
+    avgResponseTimeDays: Number,
+    lastRequestDate: Date,
+    exemptionUsage: {
+      section14: { type: Number, default: 0 },
+      section34: { type: Number, default: 0 },
+      section37: { type: Number, default: 0 },
+      other: { type: Number, default: 0 }
+    },
+    appealRate: Number,
+    complianceScore: Number
+  },
+  conflictStatus: {
+    checked: { type: Boolean, default: false, index: true },
+    checkInitiatedAt: Date,
+    clearanceDate: Date,
+    clearedBy: { type: getObjectId(), ref: 'User' },
+    clearanceMethod: {
+      type: String,
+      enum: ['AUTOMATED', 'MANUAL_REVIEW', 'OVERRIDE', 'WAIVER']
+    },
+    clearanceNotes: String,
+    foundConflicts: [{
+      type: getObjectId(),
+      ref: 'Conflict',
+      index: true
+    }],
+    screeningHash: String
+  },
+  compliance: {
+    popiaConsentObtained: { type: Boolean, default: false },
+    consentRecordId: String,
+    lpcRule7Compliant: { type: Boolean, default: false },
+    paiaManualUrl: String,
+    riskLevel: {
+      type: String,
+      enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'],
+      default: 'MEDIUM'
+    },
+    ectCompliant: { type: Boolean, default: false },
+    signatureVerification: {
+      method: String,
+      verifiedAt: Date,
+      verificationId: String
+    },
+    ficaVerified: Boolean,
+    trustAccountRequired: { type: Boolean, default: false },
+    trustAccountId: String
+  },
+  audit: {
+    createdBy: { type: getObjectId(), ref: 'User', required: true },
+    createdAt: { type: Date, default: Date.now },
+    updatedBy: { type: getObjectId(), ref: 'User' },
+    updatedAt: { type: Date, default: Date.now },
+    version: { type: Number, default: 1 },
+    paiaNotifications: [{
+      type: String,
+      enum: ['REQUEST_RECEIVED', 'DEADLINE_WARNING', 'RESPONSE_SENT', 'APPEAL_FILED']
+    }]
+  },
+  metadata: {
+    isConfidential: { type: Boolean, default: true },
+    classification: {
+      type: String,
+      enum: ['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED', 'PAIA_PROTECTED'],
+      default: 'CONFIDENTIAL'
+    },
+    tags: [String],
+    retentionPolicy: {
+      rule: {
+        type: String,
+        enum: ['LPC_6YR', 'COMPANIES_ACT_7YR', 'PAIA_5YR', 'PERMANENT'],
+        default: 'LPC_6YR'
+      },
+      disposalDate: Date,
+      paiaOverride: Boolean
+    },
+    storageLocation: {
+      dataResidencyCompliance: {
+        type: String,
+        enum: ['ZA_ONLY', 'EU_ADEQUATE', 'GLOBAL'],
+        default: 'ZA_ONLY'
+      },
+      primaryRegion: { type: String, default: 'af-south-1' },
+      backupRegion: String
+    }
+  }
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// ==============================================
+// VIRTUAL PROPERTIES
+// ==============================================
+CaseSchema.virtual('isConflictFree').get(function () {
+  return this.conflictStatus.checked &&
+    (!this.conflictStatus.foundConflicts || this.conflictStatus.foundConflicts.length === 0);
+});
+
+CaseSchema.virtual('requiresManualConflictReview').get(function () {
+  return this.conflictStatus.checked &&
+    this.conflictStatus.foundConflicts &&
+    this.conflictStatus.foundConflicts.length > 0 &&
+    !this.conflictStatus.clearanceDate;
+});
+
+CaseSchema.virtual('daysOpen').get(function () {
+  if (!this.matterDetails.openingDate) return 0;
+  const diff = new Date() - this.matterDetails.openingDate;
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+});
+
+CaseSchema.virtual('paiaDeadlineApproaching').get(function () {
+  if (!this.paiaRequests || this.paiaRequests.length === 0) return false;
+  const pendingRequests = this.paiaRequests.filter(req =>
+    req.status === PAIA_REQUEST_STATUSES.PENDING || req.status === PAIA_REQUEST_STATUSES.IN_REVIEW
+  );
+  if (pendingRequests.length === 0) return false;
+  const now = new Date();
+  const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
+  return pendingRequests.some(req => req.statutoryDeadline && req.statutoryDeadline <= threeDaysFromNow);
+});
+
+CaseSchema.virtual('hasActivePaiaRequests').get(function () {
+  if (!this.paiaRequests || this.paiaRequests.length === 0) return false;
+  const activeStatuses = [PAIA_REQUEST_STATUSES.PENDING, PAIA_REQUEST_STATUSES.IN_REVIEW, PAIA_REQUEST_STATUSES.APPEALED];
+  return this.paiaRequests.some(req => activeStatuses.includes(req.status));
+});
+
+// ==============================================
+// INDEXES
+// ==============================================
+CaseSchema.index({ tenantId: 1, status: 1 });
+CaseSchema.index({ tenantId: 1, 'client.name': 1 });
+CaseSchema.index({ tenantId: 1, 'conflictStatus.checked': 1 });
+CaseSchema.index({ 'conflictStatus.clearanceDate': 1 });
+CaseSchema.index({ 'audit.createdAt': -1 });
+CaseSchema.index({ 'paiaRequests.status': 1 });
+CaseSchema.index({ 'paiaRequests.statutoryDeadline': 1 });
+
+// ==============================================
+// STATIC METHODS - Defined on schema BEFORE model compilation
+// ==============================================
+CaseSchema.statics.findByTenant = async function (tenantId, options = {}) {
+  if (!tenantId) throw new Error('Tenant ID is required');
+
+  const query = { tenantId };
+  const page = parseInt(options.page, 10) || 1;
+  const limit = parseInt(options.limit, 10) || 50;
+  const skip = (page - 1) * limit;
+
+  if (options.status) query.status = options.status;
+  if (options.conflictChecked !== undefined) {
+    query['conflictStatus.checked'] = options.conflictChecked;
+  }
+  if (options.hasPaiaRequests !== undefined) {
+    if (options.hasPaiaRequests) {
+      query['paiaRequests.0'] = { $exists: true };
+    } else {
+      query.paiaRequests = { $size: 0 };
+    }
+  }
+  if (options.search) {
+    query.$or = [
+      { caseNumber: new RegExp(options.search, 'i') },
+      { title: new RegExp(options.search, 'i') },
+      { 'client.name': new RegExp(options.search, 'i') }
+    ];
+  }
+
+  return this.find(query)
+    .sort({ 'audit.createdAt': -1 })
+    .skip(skip)
+    .limit(limit)
+    .populate('conflictStatus.foundConflicts', 'conflictReference severity status')
+    .populate('legalTeam.userId', 'name email role')
+    .populate('paiaRequests.reviewDetails.reviewedBy', 'name email');
+};
+
+CaseSchema.statics.runConflictScreening = async function (caseId) {
+  const caseDoc = await this.findById(caseId);
+  if (!caseDoc) throw new Error('Case not found');
+  return caseDoc.performConflictScreening();
+};
+
+CaseSchema.statics.addPaiaRequest = async function (caseId, paiaRequestData) {
+  const caseDoc = await this.findById(caseId);
+  if (!caseDoc) throw new Error('Case not found');
+
+  const requestId = `PAIA-${caseDoc.caseNumber}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+  const paiaRequest = {
+    ...paiaRequestData,
+    requestId,
+    audit: {
+      createdBy: paiaRequestData.createdBy || caseDoc.audit.createdBy,
+      createdAt: new Date()
+    }
+  };
+
+  caseDoc.paiaRequests.push(paiaRequest);
+  caseDoc.paiaTracking.totalRequests = (caseDoc.paiaTracking.totalRequests || 0) + 1;
+  caseDoc.paiaTracking.pendingRequests = (caseDoc.paiaTracking.pendingRequests || 0) + 1;
+  caseDoc.paiaTracking.lastRequestDate = new Date();
+
+  await caseDoc.save();
+  return { success: true, caseId: caseDoc._id, caseNumber: caseDoc.caseNumber, requestId };
+};
+
+CaseSchema.statics.getCasesWithApproachingPaiaDeadlines = async function (tenantId, daysThreshold = 3) {
+  const thresholdDate = new Date();
+  thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
+
+  const cases = await this.find({
+    tenantId,
+    'paiaRequests.status': { $in: [PAIA_REQUEST_STATUSES.PENDING, PAIA_REQUEST_STATUSES.IN_REVIEW] },
+    'paiaRequests.statutoryDeadline': { $lte: thresholdDate, $gte: new Date() }
+  })
+    .select('caseNumber title paiaRequests')
+    .lean();
+
+  return cases.map(caseDoc => ({
+    caseId: caseDoc._id,
+    caseNumber: caseDoc.caseNumber,
+    title: caseDoc.title,
+    pendingRequests: (caseDoc.paiaRequests || []).filter(req =>
+      req.statutoryDeadline <= thresholdDate &&
+      (req.status === PAIA_REQUEST_STATUSES.PENDING || req.status === PAIA_REQUEST_STATUSES.IN_REVIEW)
+    )
+  }));
+};
+
+CaseSchema.statics.findByTenantWithCallback = function (tenantId, options, callback) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  this.findByTenant(tenantId, options)
+    .then(cases => callback(null, cases))
+    .catch(err => callback(err));
+};
+
+// ==============================================
+// INSTANCE METHODS
+// ==============================================
+CaseSchema.methods.performConflictScreening = async function () {
+  if (this.conflictStatus.checked && !this._forceRescreen) {
+    return {
+      alreadyScreened: true,
+      foundConflicts: this.conflictStatus.foundConflicts?.length || 0,
+      clearanceDate: this.conflictStatus.clearanceDate
+    };
+  }
+
+  this.conflictStatus.checkInitiatedAt = new Date();
+
+  const partyNames = [];
+  if (this.client?.name) partyNames.push(this.client.name.trim());
+  if (this.opponents?.length) {
+    this.opponents.forEach(opponent => {
+      if (opponent.name?.trim()) partyNames.push(opponent.name.trim());
+    });
+  }
+
+  const involvedUsers = [];
+  if (this.legalTeam?.length) {
+    this.legalTeam.forEach(member => {
+      if (member.userId && member.isActive !== false) {
+        involvedUsers.push(member.userId);
+      }
+    });
+  }
+
+  if (partyNames.length === 0 && involvedUsers.length === 0) {
+    this.conflictStatus.checked = true;
+    this.conflictStatus.clearanceDate = new Date();
+    this.conflictStatus.clearanceMethod = 'AUTOMATED';
+    this.conflictStatus.clearanceNotes = 'No parties or legal team members to screen';
+    await this.save();
+    return { screened: true, foundConflicts: 0, status: 'CLEARED', message: 'No parties to screen' };
+  }
+
+  const screeningData = JSON.stringify({
+    partyNames: partyNames.sort(),
+    involvedUsers: involvedUsers.sort(),
+    timestamp: new Date().toISOString()
+  });
+
+  this.conflictStatus.screeningHash = crypto
+    .createHash('sha256')
+    .update(screeningData)
+    .digest('hex')
+    .substring(0, 32);
+
+  try {
+    const Conflict = mongoose.models.Conflict || mongoose.model('Conflict');
+    const identifiedConflicts = await (Conflict.screenForConflicts?.(
+      this.tenantId,
+      { partyNames, involvedUsers }
+    ) || []);
+
+    const foundConflicts = identifiedConflicts || [];
+    const criticalConflicts = foundConflicts.filter(c =>
+      c.severity === CONFLICT_SEVERITIES.CRITICAL || c.severity === CONFLICT_SEVERITIES.HIGH
+    );
+    const blockingConflicts = foundConflicts.filter(c =>
+      c.status !== RESOLVED_STATUS &&
+      (c.severity === CONFLICT_SEVERITIES.CRITICAL || c.severity === CONFLICT_SEVERITIES.HIGH)
+    );
+
+    if (foundConflicts.length > 0) {
+      this.conflictStatus.foundConflicts = foundConflicts.map(c => c._id).filter(Boolean);
+    }
+
+    let result;
+
+    if (blockingConflicts.length > 0) {
+      if (this.status === CASE_STATUSES.PRE_INTAKE) {
+        this.status = CASE_STATUSES.LEGAL_HOLD;
+      }
+      const blockingRefs = blockingConflicts.map(c => c.conflictReference).filter(Boolean);
+      this.conflictStatus.clearanceNotes = `Blocked by unresolved conflicts: ${blockingRefs.join(', ') || 'unknown'}`;
+      result = {
+        screened: true,
+        foundConflicts: foundConflicts.length,
+        criticalConflicts: criticalConflicts.length,
+        blockingConflicts: blockingConflicts.length,
+        status: 'BLOCKED',
+        blockingReferences: blockingRefs,
+        message: 'Case placed on legal hold due to unresolved high-severity conflicts'
+      };
+    } else if (foundConflicts.length > 0) {
+      this.conflictStatus.checked = true;
+      this.conflictStatus.clearanceDate = new Date();
+      this.conflictStatus.clearanceMethod = 'AUTOMATED';
+      this.conflictStatus.clearanceNotes = 'Conflicts detected but not blocking';
+      result = {
+        screened: true,
+        foundConflicts: foundConflicts.length,
+        criticalConflicts: criticalConflicts.length,
+        status: 'CLEARED_WITH_CONFLICTS',
+        message: 'Case cleared with non-blocking conflicts'
+      };
+    } else {
+      this.conflictStatus.checked = true;
+      this.conflictStatus.clearanceDate = new Date();
+      this.conflictStatus.clearanceMethod = 'AUTOMATED';
+      this.conflictStatus.clearanceNotes = 'No conflicts detected';
+      this.conflictStatus.foundConflicts = [];
+      result = {
+        screened: true,
+        foundConflicts: 0,
+        status: 'CLEARED',
+        message: 'No conflicts detected'
+      };
+    }
+
+    await this.save();
+
+    if (foundConflicts.length > 0 && this.conflictStatus.foundConflicts?.length) {
+      try {
+        const populatedConflicts = await (mongoose.models.Conflict || mongoose.model('Conflict')).find({
+          _id: { $in: this.conflictStatus.foundConflicts }
+        }).select('conflictReference severity status conflictType description').lean();
+        result.conflictDetails = populatedConflicts;
+      } catch (populateError) {
+        // Non-blocking error; keep result
+      }
+    }
+    return result;
+  } catch (error) {
+    this.conflictStatus.checked = false;
+    this.conflictStatus.clearanceNotes = `Screening failed: ${error.message}`;
+    await this.save();
+    return {
+      screened: false,
+      error: error.message,
+      message: 'Conflict screening failed, manual review required'
+    };
+  }
+};
+
+CaseSchema.methods.updatePaiaRequestStatus = async function (requestId, updateData) {
+  const requestIndex = this.paiaRequests.findIndex(req => req.requestId === requestId);
+  if (requestIndex === -1) throw new Error('PAIA request not found');
+
+  const request = this.paiaRequests[requestIndex];
+  const previousStatus = request.status;
+
+  Object.assign(request, updateData);
+  request.audit = request.audit || {};
+  request.audit.updatedAt = new Date();
+  request.audit.updatedBy = updateData.updatedBy;
+
+  if ((previousStatus === PAIA_REQUEST_STATUSES.PENDING || previousStatus === PAIA_REQUEST_STATUSES.IN_REVIEW) &&
+    ![PAIA_REQUEST_STATUSES.PENDING, PAIA_REQUEST_STATUSES.IN_REVIEW].includes(updateData.status)) {
+    this.paiaTracking.pendingRequests = Math.max(0, (this.paiaTracking.pendingRequests || 1) - 1);
+  }
+
+  if ([PAIA_REQUEST_STATUSES.GRANTED, PAIA_REQUEST_STATUSES.DENIED, PAIA_REQUEST_STATUSES.PARTIALLY_GRANTED].includes(updateData.status)) {
+    request.responseDetails = request.responseDetails || {};
+    request.responseDetails.respondedAt = new Date();
+  }
+
+  await this.save();
+  return {
+    success: true,
+    caseId: this._id,
+    caseNumber: this.caseNumber,
+    requestId,
+    previousStatus,
+    newStatus: updateData.status,
+    updatedAt: request.audit.updatedAt
+  };
+};
+
+CaseSchema.methods.manuallyClearConflicts = async function (clearanceData) {
+  if (!clearanceData.clearedBy) throw new Error('Cleared by user ID is required');
+  if (!clearanceData.clearanceMethod) throw new Error('Clearance method is required');
+
+  this.conflictStatus.checked = true;
+  this.conflictStatus.clearanceDate = new Date();
+  this.conflictStatus.clearedBy = clearanceData.clearedBy;
+  this.conflictStatus.clearanceMethod = clearanceData.clearanceMethod;
+  this.conflictStatus.clearanceNotes = clearanceData.clearanceNotes ||
+    `Manually cleared by user: ${clearanceData.clearedBy}`;
+
+  if (this.status === CASE_STATUSES.LEGAL_HOLD &&
+    this.conflictStatus.foundConflicts?.length > 0) {
+    this.status = CASE_STATUSES.PRE_INTAKE;
+  }
+
+  await this.save();
+  return {
+    success: true,
+    caseId: this._id,
+    caseNumber: this.caseNumber,
+    clearedAt: this.conflictStatus.clearanceDate,
+    clearedBy: this.conflictStatus.clearedBy,
+    clearanceMethod: this.conflictStatus.clearanceMethod,
+    previousStatus: clearanceData.previousStatus || CASE_STATUSES.LEGAL_HOLD,
+    newStatus: this.status
+  };
+};
+
+// ==============================================
+// MIDDLEWARE
+// ==============================================
+CaseSchema.pre('validate', async function (next) {
+  if (!this.isNew && !this.isModified('status')) return next();
+  if (this.status === CASE_STATUSES.CLOSED) return next();
+
+  try {
+    const screeningResult = await this.performConflictScreening();
+    if (screeningResult.status === 'BLOCKED') {
+      this.status = CASE_STATUSES.LEGAL_HOLD;
+      const error = new Error('BLOCKING_CONFLICT_DETECTED');
+      error.code = 'CONFLICT_BLOCK';
+      error.conflicts = screeningResult.blockingReferences || [];
+      return next(error);
+    }
+    if (this.isNew && this.status === CASE_STATUSES.PRE_INTAKE && screeningResult.status !== 'BLOCKED') {
+      this.status = CASE_STATUSES.ACTIVE;
+    }
+    next();
+  } catch (error) {
+    this.conflictStatus.checked = false;
+    this.conflictStatus.clearanceNotes = `Automated screening failed: ${error.message}`;
+    if (this.isNew && this.status === CASE_STATUSES.PRE_INTAKE) {
+      this.status = CASE_STATUSES.LEGAL_HOLD;
+    }
+    next();
+  }
+});
+
+CaseSchema.pre('save', function (next) {
+  if (this.isNew) {
+    this.audit.createdAt = new Date();
+  } else {
+    this.audit.updatedAt = new Date();
+    this.audit.version = (this.audit.version || 1) + 1;
+  }
+
+  if (this.status === CASE_STATUSES.ACTIVE &&
+    (!this.legalTeam || this.legalTeam.length === 0)) {
+    return next(new Error('Active cases must have at least one legal team member assigned'));
+  }
+
+  if (this.paiaRequests && this.paiaRequests.length > 0) {
+    const now = new Date();
+    for (const request of this.paiaRequests) {
+      if (request.statutoryDeadline && request.statutoryDeadline < now) {
+        return next(new Error(`PAIA request ${request.requestId || 'unknown'} has a past statutory deadline`));
+      }
+    }
+  }
+  next();
+});
+
+// ==============================================
+// SINGLETON EXPORT PATTERN
+// Prevent OverwriteModelError in test environments
+// ==============================================
+const Case = mongoose.models.Case || mongoose.model('Case', CaseSchema);
+
+// Attach constants to the model
+Case.CASE_STATUSES = CASE_STATUSES;
+Case.CONFLICT_SEVERITIES = CONFLICT_SEVERITIES;
+Case.PAIA_REQUEST_STATUSES = PAIA_REQUEST_STATUSES;
+
+module.exports = Case;

@@ -1,0 +1,73 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1a1a2e', 'primaryTextColor': '#fff', 'primaryBorderColor': '#0ff', 'lineColor': '#0ff', 'secondaryColor': '#16213e', 'tertiaryColor': '#0f3460'}}}%%
+graph TB
+    subgraph "INVESTOR LAYER — ECONOMIC VALUE"
+        direction LR
+        Market[R367.5M TAM<br/>96% COST REDUCTION]
+        Compliance[100% REGULATORY<br/>COVERAGE]
+        Risk[R8.5M PENALTY<br/>ELIMINATED]
+        ROI[2.8 MONTH<br/>PAYBACK]
+    end
+
+    subgraph "SARS eFILING SERVICE"
+        direction TB
+        SarsService[services/sarsService.js<br/>SARS API Integration]
+        
+        subgraph "CORE FUNCTIONS"
+            Submit[submitFiling]
+            Status[checkStatus]
+            Assessment[getAssessment]
+            Payment[makePayment]
+            History[queryFilingHistory]
+        end
+        
+        SarsService --> Submit
+        SarsService --> Status
+        SarsService --> Assessment
+        SarsService --> Payment
+        SarsService --> History
+    end
+
+    subgraph "UTILITIES — FORENSIC CORE"
+        AuditLogger[utils/auditLogger.js<br/>TAX_ADMIN_ACT §46 Tags]
+        CryptoUtils[utils/cryptoUtils.js<br/>SHA3-512 Evidence Hashing]
+        TenantContext[middleware/tenantContext.js<br/>Isolation Enforcement]
+        Retry[utils/retry.js<br/>3 Retries with Backoff]
+        CircuitBreaker[utils/circuitBreaker.js<br/>SARS API Protection]
+    end
+
+    subgraph "DATA MODELS"
+        TaxRecord[models/TaxRecord.js<br/>Filing History + Assessments]
+    end
+
+    subgraph "EXTERNAL API"
+        SarsAPI[SARS eFiling API<br/>Production/Sandbox]
+    end
+
+    Submit --> SarsAPI
+    Status --> SarsAPI
+    Assessment --> SarsAPI
+    Payment --> SarsAPI
+    
+    SarsService --> AuditLogger
+    SarsService --> CryptoUtils
+    SarsService --> TenantContext
+    SarsService --> Retry
+    SarsService --> CircuitBreaker
+    SarsService --> TaxRecord
+    
+    SarsAPI --> Market
+    SarsAPI --> Compliance
+    SarsAPI --> Risk
+    SarsAPI --> ROI
+    
+    classDef investor fill:#9932cc,stroke:#0ff,stroke-width:3px,color:#fff
+    classDef service fill:#0f3460,stroke:#ff0,stroke-width:2px,color:#fff
+    classDef util fill:#16213e,stroke:#f0f,stroke-width:2px,color:#fff
+    classDef model fill:#1e3a8a,stroke:#0f0,stroke-width:2px,color:#fff
+    classDef api fill:#4a1d2b,stroke:#ff6b6b,stroke-width:2px,color:#fff
+    
+    class Market,Compliance,Risk,ROI investor
+    class SarsService,Submit,Status,Assessment,Payment,History service
+    class AuditLogger,CryptoUtils,TenantContext,Retry,CircuitBreaker util
+    class TaxRecord model
+    class SarsAPI api

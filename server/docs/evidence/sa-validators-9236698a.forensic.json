@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "testSuite": "SA Legal Validators",
+    "testRunId": "9236698a",
+    "timestamp": "2026-02-15T06:06:02.742Z",
+    "version": "6.0.1"
+  },
+  "economicMetrics": {
+    "annualSavingsPerFirmZAR": 2200000,
+    "penaltyRiskEliminatedZAR": 15000000
+  },
+  "testEntries": [
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION should validate valid SA ID numbers",
+      "timestamp": "2026-02-15T06:06:02.728Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Invalid SA IDs",
+      "count": 8
+    },
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION should reject invalid SA ID numbers",
+      "timestamp": "2026-02-15T06:06:02.734Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Valid Business",
+      "count": 5
+    },
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION should validate valid business registrations",
+      "timestamp": "2026-02-15T06:06:02.736Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION should reject invalid business registrations",
+      "timestamp": "2026-02-15T06:06:02.736Z",
+      "status": "PASSED"
+    },
+    {
+      "test": "Edge Cases",
+      "count": 8
+    },
+    {
+      "test": "SA LEGAL VALIDATORS — FORENSIC VALIDATION should handle edge cases gracefully",
+      "timestamp": "2026-02-15T06:06:02.741Z",
+      "status": "PASSED"
+    }
+  ],
+  "hash": "62554ea4d95d8b0eace1334facaec724e7f73606abcd096ed86774165370e3f2"
+}
