@@ -1,0 +1,36 @@
+module.exports = {
+  env: {
+    node: true,
+    es2022: true,
+    mocha: true,
+  },
+  extends: 'eslint:recommended',
+  parserOptions: {
+    ecmaVersion: 2022,
+    sourceType: 'script',
+  },
+  rules: {
+    'max-len': 'off',
+    'comma-dangle': 'off',
+    'no-unused-vars': ['error', { 
+      argsIgnorePattern: '^_',
+      varsIgnorePattern: '^(logger|validationUtils|expect)$'
+    }],
+    'no-console': 'off',
+    'no-trailing-spaces': 'off',
+    'no-unused-expressions': 'off',
+    'no-undef': 'off',
+    'padded-blocks': 'off',
+    'import/extensions': 'off',
+    'arrow-parens': 'off',
+    'prefer-destructuring': 'off',
+    'no-nested-ternary': 'off',
+    'implicit-arrow-linebreak': 'off',
+    'function-paren-newline': 'off',
+    'prefer-template': 'off',
+    'operator-linebreak': 'off',
+    'no-plusplus': 'off',
+    'no-restricted-syntax': 'off',
+    'object-curly-newline': 'off',
+  },
+};

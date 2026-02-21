@@ -1,4 +1,6 @@
-# Legal Document System
+# Wilsy OS
+
+[![Wilsy OS Global Pipeline](https://github.com/Mawilis/legal-doc-system/actions/workflows/ci.yml/badge.svg)](https://github.com/Mawilis/legal-doc-system/actions/workflows/ci.yml)
 
 Welcome to the **Legal Document System** repository! This project is designed to help legal professionals manage and collaborate on legal documents, while also providing role-based access control, real-time notifications, and secure communication over WebSockets.
 
