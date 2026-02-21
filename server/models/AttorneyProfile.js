@@ -1,17 +1,18 @@
+/* eslint-disable */
 /**
- * WILSYS OS - ATTORNEY PROFILE MODEL
- * ====================================================================
+ * 🏛️ WILSYS OS - ATTORNEY PROFILE MODEL
  * LEGAL PRACTICE COUNCIL · FORENSIC ATTORNEY REGISTRY
+ * Standard: ES Module (Surgically Standardized)
  * @version 5.0.1
- * ====================================================================
  */
 
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
-const crypto = require('crypto');
-const { redactSensitiveData } = require('../utils/popiaRedaction');
+import mongoose from 'mongoose';
+import crypto from 'node:crypto';
+import { redactSensitiveData } from '../utils/popiaRedaction.js';
 
-const ATTORNEY_STATUS = {
+const { Schema } = mongoose;
+
+export const ATTORNEY_STATUS = {
     ACTIVE: 'ACTIVE',
     SUSPENDED: 'SUSPENDED',
     EXPIRED: 'EXPIRED',
@@ -21,7 +22,7 @@ const ATTORNEY_STATUS = {
     NON_PRACTICING: 'NON_PRACTICING'
 };
 
-const PRACTICE_TYPES = {
+export const PRACTICE_TYPES = {
     PRIVATE: 'PRIVATE',
     GOVERNMENT: 'GOVERNMENT',
     CORPORATE: 'CORPORATE',
@@ -30,13 +31,13 @@ const PRACTICE_TYPES = {
     NON_PRACTICING: 'NON_PRACTICING'
 };
 
-const PRACTICE_AREAS = {
+export const PRACTICE_AREAS = {
     URBAN: 'URBAN',
     RURAL: 'RURAL',
     INTERNATIONAL: 'INTERNATIONAL'
 };
 
-const FIDELITY_STATUS = {
+export const FIDELITY_STATUS = {
     ACTIVE: 'ACTIVE',
     EXPIRED: 'EXPIRED',
     REVOKED: 'REVOKED',
@@ -44,7 +45,7 @@ const FIDELITY_STATUS = {
     SUSPENDED: 'SUSPENDED'
 };
 
-const CPD_STATUS = {
+export const CPD_STATUS = {
     COMPLIANT: 'COMPLIANT',
     NON_COMPLIANT: 'NON_COMPLIANT',
     PENDING: 'PENDING',
@@ -59,7 +60,7 @@ const attorneyProfileSchema = new Schema({
         index: true,
         immutable: true,
         validate: {
-            validator: function(v) {
+            validator: function (v) {
                 return /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v);
             },
             message: props => `${props.value} is not a valid tenant UUID`
@@ -74,7 +75,7 @@ const attorneyProfileSchema = new Schema({
         trim: true,
         immutable: true,
         validate: {
-            validator: function(v) {
+            validator: function (v) {
                 return /^(LPC-\d{8}|\d{4}\/\d{4})$/.test(v);
             },
             message: props => `${props.value} is not a valid LPC number`
@@ -89,7 +90,7 @@ const attorneyProfileSchema = new Schema({
         uppercase: true,
         trim: true,
         validate: {
-            validator: function(v) {
+            validator: function (v) {
                 return !v || /^PRAC-\d{8}$/.test(v);
             },
             message: props => `${props.value} is not a valid practice number`
@@ -139,7 +140,7 @@ const attorneyProfileSchema = new Schema({
         type: { type: String, required: true, enum: Object.values(PRACTICE_TYPES) },
         area: { type: String, required: true, enum: Object.values(PRACTICE_AREAS) },
         commencementDate: { type: Date, required: true, immutable: true },
-        yearsOfPractice: { type: Number, default: function() { return Math.floor((Date.now() - this.practice.commencementDate) / (1000 * 60 * 60 * 24 * 365)); } },
+        yearsOfPractice: { type: Number, default: function () { return Math.floor((Date.now() - this.practice.commencementDate) / (1000 * 60 * 60 * 24 * 365)); } },
         specializations: [{ type: String, enum: ['LITIGATION', 'CONVEYANCING', 'COMMERCIAL', 'ESTATE', 'FAMILY', 'CRIMINAL', 'LABOUR', 'TAX', 'INTELLECTUAL_PROPERTY', 'CONSTITUTIONAL', 'ENVIRONMENTAL', 'INSURANCE', 'BANKING', 'IMMIGRATION'] }],
         languages: [{ language: String, proficiency: { type: String, enum: ['BASIC', 'INTERMEDIATE', 'FLUENT', 'NATIVE'] } }],
         employees: { type: Number, default: 1, min: 1 },
@@ -196,11 +197,11 @@ const attorneyProfileSchema = new Schema({
         action: String, performedBy: String, performedAt: { type: Date, default: Date.now },
         ipAddress: String, userAgent: String, changes: Schema.Types.Mixed,
         previousState: Schema.Types.Mixed, newState: Schema.Types.Mixed,
-        hash: { type: String, default: function() { return crypto.createHash('sha3-512').update(`${this.action}:${this.performedAt.toISOString()}:${this.performedBy}:${JSON.stringify(this.changes)}`).digest('hex'); } }
+        hash: { type: String, default: function () { return crypto.createHash('sha3-512').update(`${this.action}:${this.performedAt.toISOString()}:${this.performedBy}:${JSON.stringify(this.changes)}`).digest('hex'); } }
     }],
 
-    integrityHash: { type: String, unique: true, default: function() { return crypto.createHash('sha3-512').update(`${this.lpcNumber}:${this.personalInfo.idNumber}:${this.updatedAt || Date.now()}`).digest('hex'); } },
-    quantumSignature: { type: String, default: function() { return crypto.createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026').update(`${this._id}:${this.lpcNumber}:${this.integrityHash}`).digest('hex'); } },
+    integrityHash: { type: String, unique: true, default: function () { return crypto.createHash('sha3-512').update(`${this.lpcNumber}:${this.personalInfo?.idNumber}:${this.updatedAt || Date.now()}`).digest('hex'); } },
+    quantumSignature: { type: String, default: function () { return crypto.createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026').update(`${this._id}:${this.lpcNumber}:${this.integrityHash}`).digest('hex'); } },
 
     status: { type: String, enum: Object.values(ATTORNEY_STATUS), default: 'ACTIVE', index: true },
     statusReason: String,
@@ -214,7 +215,7 @@ const attorneyProfileSchema = new Schema({
 
     retentionPolicy: { type: String, default: 'companies_act_20_years' },
     retentionStart: { type: Date, default: Date.now, immutable: true },
-    retentionExpiry: { type: Date, default: function() { const d = new Date(); d.setFullYear(d.getFullYear() + 20); return d; }, index: true },
+    retentionExpiry: { type: Date, default: function () { const d = new Date(); d.setFullYear(d.getFullYear() + 20); return d; }, index: true },
     dataResidency: { type: String, default: 'ZA', enum: ['ZA', 'EU', 'US', 'AU', 'UK'] },
 
     deleted: { type: Boolean, default: false, index: true },
@@ -222,14 +223,14 @@ const attorneyProfileSchema = new Schema({
     deletedBy: String,
     deletionReason: String,
     deletionAuthorization: String
-}, { timestamps: true, toJSON: { virtuals: true, transform: function(doc, ret) { delete ret.__v; delete ret.auditTrail; delete ret.integrityHash; delete ret.quantumSignature; delete ret.personalInfo.idNumber; delete ret.contact.phone; delete ret.contact.email; return redactSensitiveData(ret); } } });
+}, { timestamps: true, toJSON: { virtuals: true, transform: function (doc, ret) { delete ret.__v; delete ret.auditTrail; delete ret.integrityHash; delete ret.quantumSignature; delete ret.personalInfo.idNumber; delete ret.contact.phone; delete ret.contact.email; return redactSensitiveData(ret); } } });
 
-attorneyProfileSchema.virtual('fullAddress').get(function() { const a = this.address?.physical; return a ? `${a.line1}, ${a.suburb}, ${a.city}, ${a.province}, ${a.postalCode}` : ''; });
-attorneyProfileSchema.virtual('isFidelityValid').get(function() { return this.fidelityFund?.status === 'ACTIVE' && this.fidelityFund?.expiryDate > new Date(); });
-attorneyProfileSchema.virtual('isTrustCompliant').get(function() { return this.trustAccount?.isActive === true && this.trustAccount?.complianceScore >= 70; });
-attorneyProfileSchema.virtual('isCPDCompliant').get(function() { return this.cpd?.complianceStatus === 'COMPLIANT'; });
-attorneyProfileSchema.virtual('daysUntilFidelityExpiry').get(function() { return this.fidelityFund?.expiryDate ? Math.ceil((this.fidelityFund.expiryDate - Date.now()) / (1000 * 60 * 60 * 24)) : null; });
-attorneyProfileSchema.virtual('complianceScore').get(function() { let s = 100; if (!this.isFidelityValid) s -= 30; if (!this.isTrustCompliant) s -= 25; if (!this.isCPDCompliant) s -= 20; if (this.disciplinaryHistory?.length > 0) s -= 15; return Math.max(0, s); });
+attorneyProfileSchema.virtual('fullAddress').get(function () { const a = this.address?.physical; return a ? `${a.line1}, ${a.suburb}, ${a.city}, ${a.province}, ${a.postalCode}` : ''; });
+attorneyProfileSchema.virtual('isFidelityValid').get(function () { return this.fidelityFund?.status === 'ACTIVE' && this.fidelityFund?.expiryDate > new Date(); });
+attorneyProfileSchema.virtual('isTrustCompliant').get(function () { return this.trustAccount?.isActive === true && this.trustAccount?.complianceScore >= 70; });
+attorneyProfileSchema.virtual('isCPDCompliant').get(function () { return this.cpd?.complianceStatus === 'COMPLIANT'; });
+attorneyProfileSchema.virtual('daysUntilFidelityExpiry').get(function () { return this.fidelityFund?.expiryDate ? Math.ceil((this.fidelityFund.expiryDate - Date.now()) / (1000 * 60 * 60 * 24)) : null; });
+attorneyProfileSchema.virtual('complianceScore').get(function () { let s = 100; if (!this.isFidelityValid) s -= 30; if (!this.isTrustCompliant) s -= 25; if (!this.isCPDCompliant) s -= 20; if (this.disciplinaryHistory?.length > 0) s -= 15; return Math.max(0, s); });
 
 attorneyProfileSchema.index({ tenantId: 1, lpcNumber: 1 }, { unique: true });
 attorneyProfileSchema.index({ tenantId: 1, status: 1, 'fidelityFund.expiryDate': 1 });
@@ -238,7 +239,7 @@ attorneyProfileSchema.index({ tenantId: 1, 'practice.type': 1, 'practice.area': 
 attorneyProfileSchema.index({ deleted: 1, retentionExpiry: 1 });
 attorneyProfileSchema.index({ integrityHash: 1 }, { unique: true });
 
-attorneyProfileSchema.pre('save', async function(next) {
+attorneyProfileSchema.pre('save', async function (next) {
     try {
         if (!this.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: Attorney profile requires tenantId');
         if (this.practice?.commencementDate) this.practice.yearsOfPractice = Math.floor((Date.now() - this.practice.commencementDate) / (1000 * 60 * 60 * 24 * 365));
@@ -264,4 +265,5 @@ attorneyProfileSchema.methods = {
     async generateAuditReport() { const cs = await this.calculateComplianceScore(); return { attorneyId: this._id, lpcNumber: this.lpcNumber, practiceName: this.practice.name, status: this.status, createdAt: this.createdAt, updatedAt: this.updatedAt, createdBy: this.createdBy, updatedBy: this.updatedBy, compliance: { score: cs, fidelityValid: this.isFidelityValid, fidelityExpiry: this.fidelityFund?.expiryDate, trustCompliant: this.isTrustCompliant, cpdCompliant: this.isCPDCompliant, cpdHours: this.cpd.hoursCompleted, cpdEthics: this.cpd.ethicsHours }, retention: { policy: this.retentionPolicy, expiryDate: this.retentionExpiry, daysRemaining: Math.ceil((this.retentionExpiry - Date.now()) / (1000 * 60 * 60 * 24)) }, integrity: { hash: this.integrityHash, signature: this.quantumSignature }, auditTrail: this.auditTrail.slice(-10), generatedAt: new Date().toISOString(), generatedBy: 'WilsyOS Attorney Forensic Engine v5.0.1' }; }
 };
 
-module.exports = mongoose.model('AttorneyProfile', attorneyProfileSchema);
+const AttorneyProfile = mongoose.model('AttorneyProfile', attorneyProfileSchema);
+export default AttorneyProfile;

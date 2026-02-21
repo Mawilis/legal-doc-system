@@ -1,16 +1,16 @@
+/* eslint-disable */
 /**
- * WILSYS OS - TRUST ACCOUNT MODEL
- * ====================================================================
- * LEGAL PRACTICE COUNCIL · FORENSIC TRUST ACCOUNTING
+ * 🏛️ WILSYS OS - TRUST ACCOUNT MODEL
+ * Standard: ES Module (Surgically Standardized)
+ * Compliance: LPC FORENSIC TRUST ACCOUNTING
  * @version 5.0.2
- * ====================================================================
  */
 
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
-const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid');
+import mongoose from 'mongoose';
+import crypto from 'node:crypto';
+import { v4 as uuidv4 } from 'uuid';
 
+const { Schema } = mongoose;
 const TRANSACTION_TYPES = { DEPOSIT: 'DEPOSIT', WITHDRAWAL: 'WITHDRAWAL', TRANSFER: 'TRANSFER', INTEREST: 'INTEREST', REFUND: 'REFUND', FEE: 'FEE', CORRECTION: 'CORRECTION', REVERSAL: 'REVERSAL' };
 const TRANSACTION_PURPOSES = { LEGAL_FEES: 'LEGAL_FEES', DISBURSEMENTS: 'DISBURSEMENTS', CLIENT_REFUND: 'CLIENT_REFUND', COURT_FEES: 'COURT_FEES', SHERIFF_FEES: 'SHERIFF_FEES', EXPERT_WITNESS_FEES: 'EXPERT_WITNESS_FEES', MEDIATION_FEES: 'MEDIATION_FEES', ARBITRATION_FEES: 'ARBITRATION_FEES', COUNSEL_FEES: 'COUNSEL_FEES', INVESTIGATION_FEES: 'INVESTIGATION_FEES', SETTLEMENT_FUNDS: 'SETTLEMENT_FUNDS', TRUST_TRANSFER: 'TRUST_TRANSFER' };
 const TRANSACTION_STATUS = { PENDING: 'PENDING', COMPLETED: 'COMPLETED', FAILED: 'FAILED', REVERSED: 'REVERSED', CANCELLED: 'CANCELLED', DISPUTED: 'DISPUTED' };
@@ -1114,4 +1114,19 @@ trustAccountSchema.methods = {
     }
 };
 
-module.exports = mongoose.model('TrustAccount', trustAccountSchema);
+
+// ============================================================================
+// SURGICAL EXPORTS FOR ESM COMPATIBILITY
+// ============================================================================
+const TrustAccount = mongoose.models.TrustAccount || mongoose.model('TrustAccount', trustAccountSchema);
+
+export {
+    TRANSACTION_TYPES,
+    TRANSACTION_PURPOSES,
+    TRANSACTION_STATUS,
+    RECONCILIATION_STATUS,
+    ACCOUNT_STATUS,
+    BANK_ACCOUNT_TYPES,
+    BANKS,
+    TrustAccount as default
+};

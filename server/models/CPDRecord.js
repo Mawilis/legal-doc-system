@@ -1,17 +1,18 @@
+/* eslint-disable */
 /**
- * WILSYS OS - CPD RECORD MODEL
- * ====================================================================
+ * 🏛️ WILSYS OS - CPD RECORD MODEL
  * LEGAL PRACTICE COUNCIL · CONTINUING PROFESSIONAL DEVELOPMENT
+ * Standard: ES Module (Surgically Standardized)
  * @version 5.0.1
- * ====================================================================
  */
 
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
-const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid');
+import mongoose from 'mongoose';
+import crypto from 'node:crypto';
+import { v4 as uuidv4 } from 'uuid';
 
-const CPD_CATEGORIES = {
+const { Schema } = mongoose;
+
+export const CPD_CATEGORIES = {
     SUBSTANTIVE: 'SUBSTANTIVE', ETHICS: 'ETHICS', PRACTICE_MANAGEMENT: 'PRACTICE_MANAGEMENT',
     PROFESSIONAL_SKILLS: 'PROFESSIONAL_SKILLS', ADVOCACY: 'ADVOCACY', DRAFTING: 'DRAFTING',
     NEGOTIATION: 'NEGOTIATION', MEDIATION: 'MEDIATION', ARBITRATION: 'ARBITRATION',
@@ -19,23 +20,23 @@ const CPD_CATEGORIES = {
     RISK_MANAGEMENT: 'RISK_MANAGEMENT', FINANCIAL_MANAGEMENT: 'FINANCIAL_MANAGEMENT'
 };
 
-const CPD_STATUS = {
+export const CPD_STATUS = {
     PENDING_VERIFICATION: 'PENDING_VERIFICATION', VERIFIED: 'VERIFIED', REJECTED: 'REJECTED',
     EXPIRED: 'EXPIRED', CANCELLED: 'CANCELLED', AUTO_VERIFIED: 'AUTO_VERIFIED', UNDER_REVIEW: 'UNDER_REVIEW'
 };
 
-const PROVIDER_TYPES = {
+export const PROVIDER_TYPES = {
     LPC_ACCREDITED: 'LPC_ACCREDITED', UNIVERSITY: 'UNIVERSITY', LAW_SOCIETY: 'LAW_SOCIETY',
     BAR_COUNCIL: 'BAR_COUNCIL', PRIVATE_PROVIDER: 'PRIVATE_PROVIDER', IN_HOUSE: 'IN_HOUSE',
     INTERNATIONAL: 'INTERNATIONAL', WEBINAR: 'WEBINAR', CONFERENCE: 'CONFERENCE', WORKSHOP: 'WORKSHOP'
 };
 
-const VERIFICATION_METHODS = {
+export const VERIFICATION_METHODS = {
     MANUAL: 'MANUAL', AUTOMATED: 'AUTOMATED', BLOCKCHAIN: 'BLOCKCHAIN',
     LPC_API: 'LPC_API', PROVIDER_API: 'PROVIDER_API', CERTIFICATE_SCAN: 'CERTIFICATE_SCAN', QR_CODE: 'QR_CODE'
 };
 
-const ACCREDITATION_LEVELS = {
+export const ACCREDITATION_LEVELS = {
     FULL: 'FULL', PROVISIONAL: 'PROVISIONAL', EXPIRED: 'EXPIRED', SUSPENDED: 'SUSPENDED', REVOKED: 'REVOKED'
 };
 
@@ -53,7 +54,7 @@ const cpdRecordSchema = new Schema({
     activityName: { type: String, required: true, trim: true, maxlength: 500 },
     activityDescription: { type: String, trim: true, maxlength: 2000 },
     activityDate: { type: Date, required: true, index: true, validate: { validator: v => v.getFullYear() >= 2020 && v.getFullYear() <= new Date().getFullYear() } },
-    year: { type: Number, required: true, default: function() { return this.activityDate.getFullYear(); }, index: true, min: 2020, max: new Date().getFullYear() },
+    year: { type: Number, required: true, default: function () { return this.activityDate.getFullYear(); }, index: true, min: 2020, max: new Date().getFullYear() },
     hours: { type: Number, required: true, min: 0.5, max: 8, validate: { validator: v => v % 0.5 === 0 } },
     category: { type: String, required: true, enum: Object.values(CPD_CATEGORIES), index: true },
     subcategory: { type: String, enum: ['PROFESSIONAL_ETHICS', 'PRACTICE_STANDARDS', 'CLIENT_CARE', 'RISK_MANAGEMENT', 'FINANCIAL_MANAGEMENT', 'INFORMATION_TECHNOLOGY', 'COMMUNICATION_SKILLS', 'LEGAL_RESEARCH', 'ADVOCACY_SKILLS', 'DRAFTING_SKILLS', 'ALTERNATIVE_DISPUTE_RESOLUTION', 'SPECIALIST_AREAS', 'LEGISLATIVE_UPDATE', 'CASE_LAW_UPDATE'] },
@@ -65,7 +66,7 @@ const cpdRecordSchema = new Schema({
         accreditationExpiry: { type: Date, validate: { validator: v => !v || v > new Date() } },
         website: String, contactEmail: String, contactPhone: String,
         verificationEndpoint: String,
-        providerHash: { type: String, default: function() { return crypto.createHash('sha3-512').update(`${this.provider.name}:${this.provider.accreditationNumber || 'N/A'}`).digest('hex').substring(0, 16); } }
+        providerHash: { type: String, default: function () { return crypto.createHash('sha3-512').update(`${this.provider.name}:${this.provider.accreditationNumber || 'N/A'}`).digest('hex').substring(0, 16); } }
     },
     evidence: {
         certificateUrl: { type: String, required: true, validate: { validator: v => /^https?:\/\/.+\..+/.test(v) } },
@@ -73,7 +74,7 @@ const cpdRecordSchema = new Schema({
         evidenceUrls: [{ url: String, description: String, uploadedAt: { type: Date, default: Date.now } }],
         attendanceProof: String,
         assessmentScore: { type: Number, min: 0, max: 100 },
-        assessmentPassed: { type: Boolean, default: function() { return this.assessmentScore >= 70; } },
+        assessmentPassed: { type: Boolean, default: function () { return this.assessmentScore >= 70; } },
         completionDate: { type: Date, required: true, validate: { validator: v => v <= new Date() } }
     },
     verificationCode: { type: String, unique: true, sparse: true, default: () => crypto.randomBytes(16).toString('hex').toUpperCase() },
@@ -94,18 +95,18 @@ const cpdRecordSchema = new Schema({
     relevanceScore: { type: Number, min: 1, max: 5, default: 3 },
     compliance: {
         countsTowardsAnnual: { type: Boolean, default: true },
-        countsTowardsEthics: { type: Boolean, default: function() { return this.category === 'ETHICS'; } },
-        rolloverEligible: { type: Boolean, default: function() { return this.hours <= 6 && ['VERIFIED', 'AUTO_VERIFIED'].includes(this.verificationStatus) && this.compliance.countsTowardsAnnual === true; } },
+        countsTowardsEthics: { type: Boolean, default: function () { return this.category === 'ETHICS'; } },
+        rolloverEligible: { type: Boolean, default: function () { return this.hours <= 6 && ['VERIFIED', 'AUTO_VERIFIED'].includes(this.verificationStatus) && this.compliance.countsTowardsAnnual === true; } },
         rolloverYear: { type: Number, validate: { validator: v => !v || v > this.year } },
         rolloverHours: { type: Number, min: 0, max: 6, validate: { validator: v => !v || v <= this.hours } },
         appliedToYear: Number
     },
     cost: { amount: { type: Number, min: 0, default: 0, get: v => parseFloat(v.toFixed(2)) }, currency: { type: String, default: 'ZAR', enum: ['ZAR', 'USD', 'EUR', 'GBP'] }, paidBy: { type: String, enum: ['ATTORNEY', 'FIRM', 'SCHOLARSHIP', 'PRO_BONO', 'EMPLOYER'] }, receiptUrl: String, receiptHash: String, taxDeductible: { type: Boolean, default: false } },
     blockchain: { anchorId: { type: String, sparse: true, unique: true }, transactionHash: { type: String, sparse: true }, blockNumber: Number, timestamp: Date, verified: { type: Boolean, default: false }, verificationUrl: String },
-    quantumSignature: { type: String, required: true, default: function() { const p = [this.activityId, this.attorneyLpcNumber, this.hours, this.category, this.activityDate.toISOString(), this.verificationCode || 'PENDING', this.evidence.certificateHash].join(':'); return crypto.createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026').update(p).digest('hex'); } },
-    forensicHash: { type: String, required: true, unique: true, default: function() { return crypto.createHash('sha3-512').update([this.activityId, this.attorneyLpcNumber, this.hours.toFixed(1), this.category, this.activityDate.toISOString(), this.provider.name, this.evidence.certificateHash, this.verificationCode || 'PENDING', this.year.toString()].join(':')).digest('hex'); } },
-    integrityHash: { type: String, unique: true, default: function() { return crypto.createHash('sha3-512').update(`${this._id || this.activityId}:${this.forensicHash}:${Date.now()}`).digest('hex'); } },
-    auditTrail: [{ action: { type: String, enum: ['SUBMITTED', 'VERIFIED', 'REJECTED', 'UPDATED', 'EXPIRED', 'ROLLED_OVER', 'CERTIFICATE_GENERATED', 'BLOCKCHAIN_ANCHORED', 'AUTO_VERIFIED'] }, performedBy: String, performedAt: { type: Date, default: Date.now }, ipAddress: String, userAgent: String, changes: Schema.Types.Mixed, previousState: Schema.Types.Mixed, newState: Schema.Types.Mixed, hash: { type: String, default: function() { return crypto.createHash('sha3-512').update(`${this.action}:${this.performedAt.toISOString()}:${this.performedBy}:${JSON.stringify(this.changes)}`).digest('hex'); } } }],
+    quantumSignature: { type: String, required: true, default: function () { const p = [this.activityId, this.attorneyLpcNumber, this.hours, this.category, this.activityDate.toISOString(), this.verificationCode || 'PENDING', this.evidence.certificateHash].join(':'); return crypto.createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026').update(p).digest('hex'); } },
+    forensicHash: { type: String, required: true, unique: true, default: function () { return crypto.createHash('sha3-512').update([this.activityId, this.attorneyLpcNumber, this.hours.toFixed(1), this.category, this.activityDate.toISOString(), this.provider.name, this.evidence.certificateHash, this.verificationCode || 'PENDING', this.year.toString()].join(':')).digest('hex'); } },
+    integrityHash: { type: String, unique: true, default: function () { return crypto.createHash('sha3-512').update(`${this._id || this.activityId}:${this.forensicHash}:${Date.now()}`).digest('hex'); } },
+    auditTrail: [{ action: { type: String, enum: ['SUBMITTED', 'VERIFIED', 'REJECTED', 'UPDATED', 'EXPIRED', 'ROLLED_OVER', 'CERTIFICATE_GENERATED', 'BLOCKCHAIN_ANCHORED', 'AUTO_VERIFIED'] }, performedBy: String, performedAt: { type: Date, default: Date.now }, ipAddress: String, userAgent: String, changes: Schema.Types.Mixed, previousState: Schema.Types.Mixed, newState: Schema.Types.Mixed, hash: { type: String, default: function () { return crypto.createHash('sha3-512').update(`${this.action}:${this.performedAt.toISOString()}:${this.performedBy}:${JSON.stringify(this.changes)}`).digest('hex'); } } }],
     submissionDate: { type: Date, default: Date.now, immutable: true, index: true },
     submittedBy: { type: String, required: true, immutable: true },
     lastUpdatedBy: String,
@@ -114,20 +115,20 @@ const cpdRecordSchema = new Schema({
     certificateGeneratedAt: Date,
     retentionPolicy: { type: String, default: 'companies_act_7_years' },
     retentionStart: { type: Date, default: Date.now, immutable: true },
-    retentionExpiry: { type: Date, default: function() { const d = new Date(); d.setFullYear(d.getFullYear() + 7); return d; }, index: true },
+    retentionExpiry: { type: Date, default: function () { const d = new Date(); d.setFullYear(d.getFullYear() + 7); return d; }, index: true },
     dataResidency: { type: String, default: 'ZA', enum: ['ZA', 'EU', 'US', 'AU', 'UK'] },
     deleted: { type: Boolean, default: false, index: true },
     deletedAt: Date, deletedBy: String, deletionReason: String, deletionAuthorization: String
-}, { timestamps: true, toJSON: { virtuals: true, transform: function(doc, ret) { delete ret.__v; delete ret.auditTrail; delete ret.quantumSignature; delete ret.forensicHash; delete ret.integrityHash; delete ret.evidence.certificateUrl; delete ret.blockchain; return ret; } } });
+}, { timestamps: true, toJSON: { virtuals: true, transform: function (doc, ret) { delete ret.__v; delete ret.auditTrail; delete ret.quantumSignature; delete ret.forensicHash; delete ret.integrityHash; delete ret.evidence.certificateUrl; delete ret.blockchain; return ret; } } });
 
-cpdRecordSchema.virtual('daysSinceSubmission').get(function() { return Math.floor((Date.now() - this.submissionDate) / (1000 * 60 * 60 * 24)); });
-cpdRecordSchema.virtual('isVerified').get(function() { return ['VERIFIED', 'AUTO_VERIFIED'].includes(this.verificationStatus); });
-cpdRecordSchema.virtual('isExpired').get(function() { return this.verificationStatus === 'EXPIRED' || (this.compliance.rolloverYear && this.compliance.rolloverYear < new Date().getFullYear() - 1); });
-cpdRecordSchema.virtual('isEthics').get(function() { return this.category === 'ETHICS'; });
-cpdRecordSchema.virtual('isSubstantive').get(function() { return this.category === 'SUBSTANTIVE'; });
-cpdRecordSchema.virtual('verificationProgress').get(function() { if (this.isVerified) return 100; if (this.verificationStatus === 'REJECTED') return 0; let p = 0; if (this.evidence.certificateHash) p += 25; if (this.verificationCode) p += 25; if (this.provider.accreditationNumber) p += 25; if (this.blockchain?.verified) p += 25; if (this.accreditation.isLpcAccredited) p += 15; return Math.min(100, p); });
-cpdRecordSchema.virtual('complianceStatus').get(function() { if (this.isVerified) { if (this.category === 'ETHICS' && this.hours >= 2) return 'ETHICS_COMPLIANT'; return 'HOURS_VERIFIED'; } return 'PENDING_VERIFICATION'; });
-cpdRecordSchema.virtual('yearsValidFor').get(function() { return this.compliance.rolloverYear ? this.compliance.rolloverYear - this.year : 1; });
+cpdRecordSchema.virtual('daysSinceSubmission').get(function () { return Math.floor((Date.now() - this.submissionDate) / (1000 * 60 * 60 * 24)); });
+cpdRecordSchema.virtual('isVerified').get(function () { return ['VERIFIED', 'AUTO_VERIFIED'].includes(this.verificationStatus); });
+cpdRecordSchema.virtual('isExpired').get(function () { return this.verificationStatus === 'EXPIRED' || (this.compliance.rolloverYear && this.compliance.rolloverYear < new Date().getFullYear() - 1); });
+cpdRecordSchema.virtual('isEthics').get(function () { return this.category === 'ETHICS'; });
+cpdRecordSchema.virtual('isSubstantive').get(function () { return this.category === 'SUBSTANTIVE'; });
+cpdRecordSchema.virtual('verificationProgress').get(function () { if (this.isVerified) return 100; if (this.verificationStatus === 'REJECTED') return 0; let p = 0; if (this.evidence.certificateHash) p += 25; if (this.verificationCode) p += 25; if (this.provider.accreditationNumber) p += 25; if (this.blockchain?.verified) p += 25; if (this.accreditation.isLpcAccredited) p += 15; return Math.min(100, p); });
+cpdRecordSchema.virtual('complianceStatus').get(function () { if (this.isVerified) { if (this.category === 'ETHICS' && this.hours >= 2) return 'ETHICS_COMPLIANT'; return 'HOURS_VERIFIED'; } return 'PENDING_VERIFICATION'; });
+cpdRecordSchema.virtual('yearsValidFor').get(function () { return this.compliance.rolloverYear ? this.compliance.rolloverYear - this.year : 1; });
 
 cpdRecordSchema.index({ tenantId: 1, attorneyId: 1, year: -1, activityDate: -1 });
 cpdRecordSchema.index({ tenantId: 1, verificationStatus: 1, year: 1 });
@@ -141,7 +142,7 @@ cpdRecordSchema.index({ 'compliance.rolloverYear': 1, 'compliance.rolloverHours'
 cpdRecordSchema.index({ deleted: 1, retentionExpiry: 1 });
 cpdRecordSchema.index({ attorneyLpcNumber: 1, year: 1, verificationStatus: 1 });
 
-cpdRecordSchema.pre('save', async function(next) {
+cpdRecordSchema.pre('save', async function (next) {
     try {
         if (!this.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: CPD record requires tenantId');
         if (this.activityDate && !this.year) this.year = this.activityDate.getFullYear();
@@ -272,4 +273,5 @@ cpdRecordSchema.methods = {
     }
 };
 
-module.exports = mongoose.model('CPDRecord', cpdRecordSchema);
+const CPDRecord = mongoose.model('CPDRecord', cpdRecordSchema);
+export default CPDRecord;

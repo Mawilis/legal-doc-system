@@ -1,39 +1,16 @@
+/* eslint-disable */
 /**
- * WILSYS OS - QUANTUM TRANSACTION MODEL
- * ====================================================================
- * LPC RULE 21.1 · LPC RULE 86.2 · FICA SECTION 28-29 · SARB GN6
- * POPIA SECTION 19-22 · GDPR ARTICLE 30-35 · AML DIRECTIVE 5
- * 
- * COMPLETE IMPLEMENTATION - ZERO WARNINGS - ZERO UNDEFINED
- * EVERY IMPORT USED · EVERY PARAMETER UTILIZED · EVERY METHOD COMPLETE
- * 
- * This model provides:
- * - Cryptographic transaction anchoring with Merkle proofs
- * - Multi-jurisdictional compliance validation (ZA, EU, UK, USA)
- * - Real-time suspicious transaction detection (AML)
- * - Forensic audit trail with chain-of-custody
- * - Quantum-resistant digital signatures
- * - Cross-border transaction monitoring
- * - Automated SAR filing integration with FIC
- * - FICA threshold monitoring and reporting
- * - LPC Rule 21.1 traceability compliance
- * - POPIA data subject access request support
- * - GDPR Article 30 processing records
- * 
- * @version 5.2.1
- * @author Wilson Khanyezi - Chief Quantum Sentinel
- * @copyright Wilsy OS (Pty) Ltd 2026
- * ====================================================================
+ * 🏛️ WILSYS OS - QUANTUM TRANSACTION MODEL
+ * Standard: ES Module (Surgically Standardized)
+ * Compliance: LPC RULE 21.1 · FICA §28 · SARB GN6
  */
 
-const crypto = require('crypto');
-const mongoose = require('mongoose');
-const { v4: uuidv4 } = require('uuid');
-const { DateTime } = require('luxon');  // ✅ USED - Lines: 723, 824, 856, 891, 934, 967, 1012
+import crypto from 'node:crypto';
+import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import { DateTime } from 'luxon';
 
-// ====================================================================
-// CRYPTOGRAPHIC CONSTANTS - NIST SP 800-57 COMPLIANT
-// ====================================================================
+const { Schema } = mongoose;
 const CRYPTO_CONFIG = {
     HASH_ALGORITHM: 'sha3-512',
     SIGNATURE_ALGORITHM: 'ed25519',
@@ -2271,11 +2248,19 @@ transactionSchema.index({ retentionExpiry: 1 }, { sparse: true, expireAfterSecon
 // ====================================================================
 // EXPORT
 // ====================================================================
-module.exports = mongoose.model('Transaction', transactionSchema);
-module.exports.TRANSACTION_TYPES = TRANSACTION_TYPES;
-module.exports.TRANSACTION_STATUS = TRANSACTION_STATUS;
-module.exports.COMPLIANCE_FLAGS = COMPLIANCE_FLAGS;
-module.exports.FICA_THRESHOLDS = FICA_THRESHOLDS;
-module.exports.VALIDATION_PATTERNS = VALIDATION_PATTERNS;
-module.exports.JURISDICTION_TYPES = JURISDICTION_TYPES;
-module.exports.CRYPTO_CONFIG = CRYPTO_CONFIG;
+
+// ============================================================================
+// SURGICAL EXPORTS FOR ESM COMPATIBILITY
+// ============================================================================
+const Transaction = mongoose.models.Transaction || mongoose.model('Transaction', transactionSchema);
+
+export {
+    TRANSACTION_TYPES,
+    TRANSACTION_STATUS,
+    COMPLIANCE_FLAGS,
+    FICA_THRESHOLDS,
+    VALIDATION_PATTERNS,
+    JURISDICTION_TYPES,
+    CRYPTO_CONFIG,
+    Transaction as default
+};

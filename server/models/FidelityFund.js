@@ -1,15 +1,14 @@
+/* eslint-disable */
 /**
- * WILSYS OS - FIDELITY FUND CERTIFICATE MODEL
- * ====================================================================
- * LEGAL PRACTICE COUNCIL · FIDELITY FUND MANAGEMENT
- * @version 5.0.1
- * ====================================================================
+ * 🏛️ WILSYS OS - FIDELITY FUND CERTIFICATE MODEL
+ * Standard: ES Module (Surgically Standardized)
+ * Forensic-Grade | LPC Rule 55 | $10B Infrastructure
  */
 
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
-const crypto = require('crypto');
+import mongoose from 'mongoose';
+import crypto from 'node:crypto';
 
+const { Schema } = mongoose;
 const CERTIFICATE_STATUS = {
     PENDING: 'PENDING', ISSUED: 'ISSUED', RENEWED: 'RENEWED', EXPIRED: 'EXPIRED',
     REVOKED: 'REVOKED', SUSPENDED: 'SUSPENDED', CANCELLED: 'CANCELLED', REPLACED: 'REPLACED'
@@ -200,6 +199,7 @@ fidelityFundSchema.statics = {
     }
 };
 
+
 fidelityFundSchema.methods = {
     async renew(turnover, userContext) {
         if (!['ISSUED', 'EXPIRED'].includes(this.status)) throw new Error(`CERTIFICATE_NOT_RENEWABLE: ${this.status}`);
@@ -288,4 +288,19 @@ fidelityFundSchema.methods = {
     }
 };
 
-module.exports = mongoose.model('FidelityFund', fidelityFundSchema);
+
+// ============================================================================
+// SURGICAL EXPORTS FOR ESM COMPATIBILITY
+// ============================================================================
+const FidelityFund = mongoose.models.FidelityFund || mongoose.model('FidelityFund', fidelityFundSchema);
+
+export {
+    CERTIFICATE_STATUS,
+    PRACTICE_TYPES,
+    PRACTICE_AREAS,
+    PAYMENT_STATUS,
+    DISCOUNT_TYPES,
+    EXEMPTION_REASONS,
+    VERIFICATION_METHODS,
+    FidelityFund as default
+};

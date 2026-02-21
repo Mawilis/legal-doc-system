@@ -1,24 +1,16 @@
+/* eslint-disable */
 /**
- * WILSYS OS - COMPLIANCE AUDIT MODEL
- * ====================================================================
- * LEGAL PRACTICE COUNCIL · FORENSIC COMPLIANCE AUDIT
- * QUANTUM-SEALED · POPIA §19 · LPC §95(3)
- * 
+ * 🏛️ WILSYS OS - COMPLIANCE AUDIT MODEL
+ * Standard: ES Module (Surgically Standardized)
+ * Standard: LPC RULE 95(3) · POPIA §19 · GDPR ARTICLE 30
  * @version 5.0.1
- * @author Wilson Khanyezi - Chief Quantum Sentinel
- * @copyright Wilsy OS (Pty) Ltd 2026
- * ====================================================================
  */
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
+import crypto from 'node:crypto';
+import { v4 as uuidv4 } from 'uuid';
+
 const { Schema } = mongoose;
-const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid');
-
-// ====================================================================
-// FORENSIC CONSTANTS - IMMUTABLE · REGULATORY
-// ====================================================================
-
 const AUDIT_TYPES = {
     TRUST_RECONCILIATION: 'TRUST_RECONCILIATION',
     CPD_COMPLIANCE: 'CPD_COMPLIANCE',
@@ -1498,6 +1490,7 @@ complianceAuditSchema.statics = {
 // INSTANCE METHODS
 // ====================================================================
 
+
 complianceAuditSchema.methods = {
     async addFinding(findingData, userId) {
         const finding = {
@@ -1947,4 +1940,23 @@ complianceAuditSchema.methods = {
 // EXPORT
 // ====================================================================
 
-module.exports = mongoose.model('ComplianceAudit', complianceAuditSchema);
+
+// ============================================================================
+// SURGICAL EXPORTS FOR ESM COMPATIBILITY
+// ============================================================================
+const ComplianceAudit = mongoose.models.ComplianceAudit || mongoose.model('ComplianceAudit', complianceAuditSchema);
+
+export {
+    AUDIT_TYPES,
+    AUDIT_STATUS,
+    SEVERITY_LEVELS,
+    FINDING_STATUS,
+    REMEDIATION_PRIORITY,
+    COMPLIANCE_FRAMEWORKS,
+    COMPLIANCE_SCORES,
+    ComplianceAudit as default
+};
+
+// ============================================================================
+// SURGICAL EXPORTS FOR ESM COMPATIBILITY
+// ============================================================================
