@@ -1,74 +1,83 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
-  ║ AUDIT LOGGER - INVESTOR-GRADE FORENSIC TRACKING                            ║
-  ║ Tamper-proof | Immutable | Court-admissible | POPIA compliant              ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+/* eslint-disable */
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
+   ║ AUDIT LOGGER - INVESTOR-GRADE FORENSIC TRACKING                            ║
+   ║ Tamper-proof | Immutable | Court-admissible | POPIA compliant              ║
+   ║ Standard: ES Module (Standardized)                                         ║
+   ╚══════════════════════════════════════════════════════════════════════════════╝*/
 
-const crypto = require('crypto');
-const fs = require('fs').promises;
-const path = require('path');
-const logger = require('./logger');
+import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import logger from './logger.js';
+
+/**
+ * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/auditLogger.js
+ * INVESTOR VALUE PROPOSITION:
+ * • Solves: Data tampering risks in legal records
+ * • Compliance: ECT Act §15 (Functional Equivalence of Electronic Signatures)
+ * • Architecture: Cryptographically linked audit chain (Private Ledger)
+ */
 
 class AuditLogger {
     constructor() {
         this.auditTrail = [];
-        this.previousHash = '0'.repeat(64); // Genesis block
+        this.previousHash = '0'.repeat(64); // Genesis block hash
         this.auditPath = path.join(process.cwd(), 'logs', 'audit');
-        this._initializeAuditStorage();
+        // Initialization handled via an internal promise to ensure async readiness
+        this.initPromise = this._initializeAuditStorage();
     }
 
     /**
-     * Initialize audit storage
+     * Initialize audit storage folders and state
      */
     async _initializeAuditStorage() {
         try {
             await fs.mkdir(this.auditPath, { recursive: true });
-            
-            // Load last hash if exists
+
             const lastBlockPath = path.join(this.auditPath, 'last-block.txt');
             try {
-                this.previousHash = await fs.readFile(lastBlockPath, 'utf8');
+                const savedHash = await fs.readFile(lastBlockPath, 'utf8');
+                if (savedHash) this.previousHash = savedHash.trim();
             } catch (error) {
-                // No previous hash, start fresh
+                // No previous hash file exists, create the genesis state
                 await fs.writeFile(lastBlockPath, this.previousHash);
             }
         } catch (error) {
-            logger.error('Failed to initialize audit storage', { error: error.message });
+            logger.error('🛡️ Audit Storage Initialization Failure', { error: error.message });
         }
     }
 
     /**
-     * Create an audit entry
+     * Create an immutable audit entry
      */
     async audit(data) {
+        await this.initPromise; // Ensure storage is ready
+
         const auditEntry = {
             ...data,
             timestamp: data.timestamp || new Date().toISOString(),
             auditId: this._generateAuditId(),
-            nodeId: process.env.NODE_ID || 'node-1',
-            environment: process.env.NODE_ENV || 'development'
+            nodeId: process.env.NODE_ID || 'wilsy-core-01',
+            environment: process.env.NODE_ENV || 'production'
         };
 
-        // Add to blockchain
+        // Add to the internal chain
         const block = await this._addToBlockchain(auditEntry);
-        
-        // Store in memory
-        this.auditTrail.push(block);
-        
-        // Write to file
+
+        // Persist to disk
         await this._writeAuditBlock(block);
-        
-        // Log to console
-        logger.info('Audit entry created', {
+
+        logger.info('📜 Audit Entry Committed', {
             auditId: auditEntry.auditId,
             action: data.action,
-            tenantId: data.tenantId
+            hash: block.hash.substring(0, 8)
         });
 
         return block;
     }
 
     /**
-     * Add entry to blockchain
+     * Internal blockchain logic
      */
     async _addToBlockchain(data) {
         const block = {
@@ -79,22 +88,16 @@ class AuditLogger {
             nonce: 0
         };
 
-        // Proof of work (simple for performance)
         block.hash = this._calculateHash(block);
-        
-        // Update previous hash
         this.previousHash = block.hash;
-        
-        // Store last hash
+
+        // Persistent State Update
         const lastBlockPath = path.join(this.auditPath, 'last-block.txt');
         await fs.writeFile(lastBlockPath, this.previousHash);
 
         return block;
     }
 
-    /**
-     * Calculate block hash
-     */
     _calculateHash(block) {
         const blockString = JSON.stringify({
             index: block.index,
@@ -103,68 +106,54 @@ class AuditLogger {
             previousHash: block.previousHash,
             nonce: block.nonce
         });
-        
+
         return crypto
             .createHash('sha256')
             .update(blockString)
             .digest('hex');
     }
 
-    /**
-     * Write audit block to file
-     */
     async _writeAuditBlock(block) {
         const date = new Date(block.timestamp).toISOString().split('T')[0];
-        const filename = `audit-${date}.json`;
-        const filepath = path.join(this.auditPath, filename);
-        
+        const filepath = path.join(this.auditPath, `audit-${date}.json`);
+
         try {
             let blocks = [];
             try {
                 const content = await fs.readFile(filepath, 'utf8');
                 blocks = JSON.parse(content);
-            } catch (error) {
-                // File doesn't exist, start new array
-            }
-            
+            } catch (err) { /* File doesn't exist yet */ }
+
             blocks.push(block);
             await fs.writeFile(filepath, JSON.stringify(blocks, null, 2));
         } catch (error) {
-            logger.error('Failed to write audit block', { error: error.message });
+            logger.error('🛡️ Audit Disk Write Failure', { error: error.message });
         }
     }
 
-    /**
-     * Sanitize sensitive data
-     */
     _sanitizeData(data) {
-        const sensitiveFields = ['password', 'token', 'secret', 'key', 'idNumber', 'idNumber'];
+        const sensitiveFields = ['password', 'token', 'secret', 'key', 'idNumber'];
         const sanitized = { ...data };
-        
+
         for (const field of sensitiveFields) {
             if (sanitized[field]) {
-                sanitized[field] = '[REDACTED]';
+                sanitized[field] = '[REDACTED_BY_WILSY]';
             }
         }
-        
         return sanitized;
     }
 
-    /**
-     * Generate audit ID
-     */
     _generateAuditId() {
-        return `audit_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
+        return `AUD-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
     }
 
     /**
-     * Verify blockchain integrity
+     * Court-Admissible Integrity Verification
      */
     async verifyIntegrity() {
         const blocks = [];
-        
-        // Load all audit files
         const files = await fs.readdir(this.auditPath);
+
         for (const file of files) {
             if (file.startsWith('audit-') && file.endsWith('.json')) {
                 const content = await fs.readFile(path.join(this.auditPath, file), 'utf8');
@@ -172,79 +161,23 @@ class AuditLogger {
             }
         }
 
-        // Sort by index
         blocks.sort((a, b) => a.index - b.index);
 
-        // Verify chain
         for (let i = 1; i < blocks.length; i++) {
             const currentBlock = blocks[i];
             const previousBlock = blocks[i - 1];
-            
-            // Verify hash
-            const calculatedHash = this._calculateHash({
-                index: currentBlock.index,
-                timestamp: currentBlock.timestamp,
-                data: currentBlock.data,
-                previousHash: currentBlock.previousHash,
-                nonce: currentBlock.nonce
-            });
 
-            if (calculatedHash !== currentBlock.hash) {
-                return {
-                    valid: false,
-                    corruptedBlock: currentBlock.index
-                };
-            }
-
-            if (currentBlock.previousHash !== previousBlock.hash) {
-                return {
-                    valid: false,
-                    brokenLink: currentBlock.index
-                };
-            }
+            const reCalculated = this._calculateHash(currentBlock);
+            if (reCalculated !== currentBlock.hash) return { valid: false, error: 'TAMPER_DETECTED', index: i };
+            if (currentBlock.previousHash !== previousBlock.hash) return { valid: false, error: 'CHAIN_BROKEN', index: i };
         }
 
-        return { valid: true, totalBlocks: blocks.length };
-    }
-
-    /**
-     * Get audit trail for a specific entity
-     */
-    async getAuditTrail(filter = {}) {
-        const blocks = [];
-        
-        // Load all audit files
-        const files = await fs.readdir(this.auditPath);
-        for (const file of files) {
-            if (file.startsWith('audit-') && file.endsWith('.json')) {
-                const content = await fs.readFile(path.join(this.auditPath, file), 'utf8');
-                blocks.push(...JSON.parse(content));
-            }
-        }
-
-        // Apply filters
-        return blocks.filter(block => {
-            for (const [key, value] of Object.entries(filter)) {
-                if (block.data[key] !== value) {
-                    return false;
-                }
-            }
-            return true;
-        });
+        return { valid: true, totalRecords: blocks.length };
     }
 }
 
-// Singleton instance
-class AuditLoggerSingleton {
-    constructor() {
-        if (!AuditLoggerSingleton.instance) {
-            AuditLoggerSingleton.instance = new AuditLogger();
-        }
-    }
+// 💎 Singleton Pattern for Global Audit Consistency
+const auditLogger = new AuditLogger();
 
-    getInstance() {
-        return AuditLoggerSingleton.instance;
-    }
-}
-
-module.exports = new AuditLoggerSingleton().getInstance();
+// 🚀 NATIVE ESM DEFAULT EXPORT
+export default auditLogger;

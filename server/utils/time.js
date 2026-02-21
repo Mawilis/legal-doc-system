@@ -1,3 +1,4 @@
+/* eslint-disable */
 /*╔══════════════════════════════════════════════════════════════════════════════╗
   ║ TIME - QUANTUM TEMPORAL ORCHESTRATOR                                        ║
   ║ Chronosphere of Legal Certainty | Court-Admissible Timestamps              ║

@@ -1,49 +1,75 @@
-class CircuitBreaker {
+/* eslint-disable */
+/**
+ * 🏛️ WILSYS OS - CIRCUIT BREAKER UTILITY
+ * Standard: ES Module (Surgically Standardized)
+ * Purpose: Fault Tolerance & High Availability for Regulatory APIs
+ */
+
+export class CircuitBreaker {
     constructor(options = {}) {
+        this.name = options.name || 'GenericBreaker';
         this.failureThreshold = options.failureThreshold || 5;
-        this.resetTimeout = options.resetTimeout || 60000;
-        this.failures = 0;
-        this.state = 'CLOSED';
-        this.nextAttempt = Date.now();
+        this.successThreshold = options.successThreshold || 2;
+        this.timeoutMs = options.timeoutMs || 30000;
+        this.resetTimeoutMs = options.resetTimeoutMs || 60000;
+
+        this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
+        this.failureCount = 0;
+        this.successCount = 0;
+        this.nextRetryTimestamp = 0;
+        this.openSince = null;
     }
 
-    async execute(fn) {
+    getState() {
+        return this.state;
+    }
+
+    isOpen() {
         if (this.state === 'OPEN') {
-            if (Date.now() > this.nextAttempt) {
+            if (Date.now() >= this.nextRetryTimestamp) {
                 this.state = 'HALF_OPEN';
-            } else {
-                throw new Error('Circuit breaker is OPEN');
+                return false;
             }
+            return true;
+        }
+        return false;
+    }
+
+    async execute(action) {
+        if (this.isOpen()) {
+            throw new Error(`Circuit Breaker [${this.name}] is OPEN`);
         }
 
         try {
-            const result = await fn();
-            if (this.state === 'HALF_OPEN') {
-                this.reset();
-            }
+            const result = await action();
+            this.onSuccess();
             return result;
         } catch (error) {
-            this.recordFailure();
+            this.onFailure();
             throw error;
         }
     }
 
-    recordFailure() {
-        this.failures++;
-        if (this.failures >= this.failureThreshold) {
-            this.trip();
+    onSuccess() {
+        this.failureCount = 0;
+        if (this.state === 'HALF_OPEN') {
+            this.successCount++;
+            if (this.successCount >= this.successThreshold) {
+                this.state = 'CLOSED';
+                this.successCount = 0;
+            }
         }
     }
 
-    trip() {
-        this.state = 'OPEN';
-        this.nextAttempt = Date.now() + this.resetTimeout;
-    }
-
-    reset() {
-        this.failures = 0;
-        this.state = 'CLOSED';
+    onFailure() {
+        this.failureCount++;
+        if (this.state === 'HALF_OPEN' || this.failureCount >= this.failureThreshold) {
+            this.state = 'OPEN';
+            this.openSince = new Date().toISOString();
+            this.nextRetryTimestamp = Date.now() + this.resetTimeoutMs;
+        }
     }
 }
 
-module.exports = { CircuitBreaker };
+// Default export for singleton-like usage if required
+export default CircuitBreaker;

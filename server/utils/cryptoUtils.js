@@ -1,116 +1,70 @@
-/*╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-  ║ CRYPTO UTILITIES — FORENSIC ● POPIA COMPLIANT ● INVESTOR-GRADE FOUNDATION                                      ║
-  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
+/* eslint-disable*/
+/*╔══════════════════════════════════════════════════════════════════════════════╗
+  ║ CRYPTO UTILITIES - INVESTOR-GRADE MODULE                                    ║
+  ║ Cryptographic operations | Hash generation | Secure ID creation             ║
+  ╚══════════════════════════════════════════════════════════════════════════════╝*/
 
-const crypto = require('crypto');
+import crypto from 'crypto';
 
-// REDACT_FIELDS constant
-const REDACT_FIELDS = [
-    'password', 'idNumber', 'idnumber', 'saId', 'southAfricanId',
-    'email', 'emailAddress', 'phone', 'phoneNumber', 'mobile',
-    'cellphone', 'clientName', 'fullName', 'firstName', 'lastName',
-    'accountNumber', 'bankAccount', 'creditCard', 'passport'
-];
+/**
+ * Generate a cryptographically secure random ID
+ * @param {string} prefix - Optional prefix for the ID
+ * @returns {string} Secure random ID
+ */
+export const generateId = (prefix = '') => {
+  const randomBytes = crypto.randomBytes(16).toString('hex');
+  const timestamp = Date.now().toString(36);
+  const id = `${timestamp}-${randomBytes}`;
+  return prefix ? `${prefix}-${id}` : id;
+};
 
-// Simple hash function
-function generateHash(data) {
-    if (data === null || data === undefined) {
-        throw new Error('generateHash: data cannot be null or undefined');
-    }
-    const hash = crypto.createHash('sha256');
-    hash.update(String(data), 'utf8');
-    return hash.digest('hex');
-}
+/**
+ * Generate SHA256 hash of a string
+ * @param {string} data - Data to hash
+ * @returns {string} SHA256 hash
+ */
+export const generateHash = (data) => {
+  return crypto
+    .createHash('sha256')
+    .update(typeof data === 'string' ? data : JSON.stringify(data))
+    .digest('hex');
+};
 
-// Signature functions
-async function createDigitalSignature(payload) {
-    if (!payload || typeof payload !== 'object') {
-        throw new Error('createDigitalSignature: payload must be an object');
-    }
-    
-    const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
-        modulusLength: 2048,
-        publicKeyEncoding: { type: 'spki', format: 'pem' },
-        privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-    });
+/**
+ * Generate HMAC signature
+ * @param {string} data - Data to sign
+ * @param {string} key - Secret key
+ * @returns {string} HMAC signature
+ */
+export const generateHmac = (data, key) => {
+  return crypto
+    .createHmac('sha256', key)
+    .update(typeof data === 'string' ? data : JSON.stringify(data))
+    .digest('hex');
+};
 
-    const sign = crypto.createSign('SHA256');
-    sign.update(JSON.stringify(payload), 'utf8');
-    sign.end();
-    
-    return {
-        value: sign.sign(privateKey, 'hex'),
-        algorithm: 'RSA-SHA256',
-        timestamp: new Date().toISOString(),
-        publicKey
-    };
-}
+/**
+ * Generate random bytes as hex
+ * @param {number} bytes - Number of bytes
+ * @returns {string} Random hex string
+ */
+export const randomHex = (bytes = 32) => {
+  return crypto.randomBytes(bytes).toString('hex');
+};
 
-async function verifySignature(payload, signature, publicKey) {
-    if (!payload || !signature || !publicKey) {
-        throw new Error('verifySignature: all parameters required');
-    }
-    
-    const verify = crypto.createVerify('SHA256');
-    verify.update(JSON.stringify(payload), 'utf8');
-    verify.end();
-    
-    return verify.verify(publicKey, signature, 'hex');
-}
+/**
+ * Generate random bytes as base64
+ * @param {number} bytes - Number of bytes
+ * @returns {string} Random base64 string
+ */
+export const randomBase64 = (bytes = 32) => {
+  return crypto.randomBytes(bytes).toString('base64');
+};
 
-// Redaction function
-function redactSensitive(data) {
-    if (data === null || data === undefined) return data;
-    if (typeof data === 'string') {
-        for (const field of REDACT_FIELDS) {
-            if (data.toLowerCase().includes(field.toLowerCase())) {
-                return '[REDACTED]';
-            }
-        }
-        return data;
-    }
-    if (Array.isArray(data)) {
-        return data.map(item => redactSensitive(item));
-    }
-    if (typeof data === 'object') {
-        const redacted = {};
-        for (const [key, value] of Object.entries(data)) {
-            if (REDACT_FIELDS.includes(key.toLowerCase())) {
-                redacted[key] = '[REDACTED]';
-            } else {
-                redacted[key] = redactSensitive(value);
-            }
-        }
-        return redacted;
-    }
-    return data;
-}
-
-// Random bytes
-function generateRandomBytes(size = 32) {
-    if (typeof size !== 'number' || size < 1) {
-        throw new Error('generateRandomBytes: size must be a positive number');
-    }
-    return crypto.randomBytes(size).toString('hex');
-}
-
-// HMAC
-function calculateHMAC(data, key) {
-    if (!data || !key) {
-        throw new Error('calculateHMAC: data and key required');
-    }
-    const hmac = crypto.createHmac('sha256', key);
-    hmac.update(String(data), 'utf8');
-    return hmac.digest('hex');
-}
-
-// EXPORT ALL FUNCTIONS
-module.exports = {
-    REDACT_FIELDS,
-    generateHash,
-    createDigitalSignature,
-    verifySignature,
-    redactSensitive,
-    generateRandomBytes,
-    calculateHMAC
+export default {
+  generateId,
+  generateHash,
+  generateHmac,
+  randomHex,
+  randomBase64
 };

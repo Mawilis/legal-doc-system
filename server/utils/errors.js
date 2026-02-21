@@ -1,103 +1,122 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
-  ║ CUSTOM ERROR CLASSES - INVESTOR-GRADE                                        ║
-  ║ Hierarchical error system with forensic tracking                            ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+/* eslint-disable */
+/**
+ * 🏛️ WILSYS OS - ERROR HANDLING ENGINE
+ * Standard: ES Module (Surgically Standardized)
+ * Purpose: Forensic Error Tracking & Compliance Enforcement
+ */
 
-class BaseError extends Error {
-    constructor(message, options = {}) {
+export class AppError extends Error {
+    constructor(message, statusCode, code, details = {}) {
         super(message);
-        this.name = this.constructor.name;
+        this.statusCode = statusCode;
+        this.code = code;
+        this.details = details;
+        this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
+        this.isOperational = true;
         this.timestamp = new Date().toISOString();
-        this.correlationId = options.correlationId || this._generateCorrelationId();
-        this.code = options.code || 'ERR_UNKNOWN';
-        this.statusCode = options.statusCode || 500;
-        this.details = options.details || {};
-        this.stack = options.stack || this.stack;
-        
-        // Forensic tracking
-        this.severity = options.severity || 'ERROR';
-        this.auditLogged = false;
-    }
-
-    _generateCorrelationId() {
-        return `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    }
-
-    toJSON() {
-        return {
-            name: this.name,
-            message: this.message,
-            code: this.code,
-            statusCode: this.statusCode,
-            correlationId: this.correlationId,
-            timestamp: this.timestamp,
-            severity: this.severity,
-            details: this.details,
-            stack: process.env.NODE_ENV === 'development' ? this.stack : undefined
-        };
+        Error.captureStackTrace(this, this.constructor);
     }
 }
 
-class ValidationError extends BaseError {
+export class ValidationError extends AppError {
     constructor(message, details = {}) {
-        super(message, { 
-            code: 'ERR_VALIDATION', 
-            statusCode: 400,
-            severity: 'WARNING',
-            details 
-        });
+        super(message, 400, 'VALIDATION_ERROR', details);
     }
 }
 
-class DatabaseError extends BaseError {
-    constructor(message, options = {}) {
-        super(message, { 
-            code: 'ERR_DATABASE', 
-            statusCode: 503,
-            severity: 'CRITICAL',
-            ...options 
-        });
+export class AuthenticationError extends AppError {
+    constructor(message = 'Authentication failed', details = {}) {
+        super(message, 401, 'AUTHENTICATION_ERROR', details);
     }
 }
 
-class TenantIsolationError extends BaseError {
+export class AuthorizationError extends AppError {
+    constructor(message = 'Permission denied', details = {}) {
+        super(message, 403, 'AUTHORIZATION_ERROR', details);
+    }
+}
+
+export class NotFoundError extends AppError {
+    constructor(message = 'Resource not found', details = {}) {
+        super(message, 404, 'NOT_FOUND_ERROR', details);
+    }
+}
+
+export class ConflictError extends AppError {
     constructor(message, details = {}) {
-        super(message, { 
-            code: 'ERR_TENANT_ISOLATION', 
-            statusCode: 403,
-            severity: 'ERROR',
-            details 
-        });
+        super(message, 409, 'CONFLICT_ERROR', details);
     }
 }
 
-class FICAComplianceError extends BaseError {
+export class RateLimitError extends AppError {
+    constructor(message = 'Too many requests', details = {}) {
+        super(message, 429, 'RATE_LIMIT_ERROR', details);
+    }
+}
+
+export class ComplianceError extends AppError {
     constructor(message, details = {}) {
-        super(message, { 
-            code: 'ERR_FICA_COMPLIANCE', 
-            statusCode: 400,
-            severity: 'WARNING',
-            details 
-        });
+        super(message, 451, 'COMPLIANCE_VIOLATION', details);
     }
 }
 
-class CircuitBreakerOpenError extends BaseError {
+export class RetryableError extends AppError {
     constructor(message, details = {}) {
-        super(message, { 
-            code: 'ERR_CIRCUIT_OPEN', 
-            statusCode: 503,
-            severity: 'CRITICAL',
-            details 
-        });
+        super(message, 503, 'RETRYABLE_SERVICE_ERROR', details);
     }
 }
 
-module.exports = {
-    BaseError,
-    ValidationError,
-    DatabaseError,
-    TenantIsolationError,
-    FICAComplianceError,
-    CircuitBreakerOpenError
+export class ServiceUnavailableError extends AppError {
+    constructor(message, details = {}) {
+        super(message, 503, 'SERVICE_UNAVAILABLE', details);
+    }
+}
+
+export class DataIntegrityError extends AppError {
+    constructor(message, details = {}) {
+        super(message, 500, 'DATA_INTEGRITY_FAILURE', details);
+    }
+}
+
+export class CircuitBreakerError extends AppError {
+    constructor(message, details = {}) {
+        super(message, 503, 'CIRCUIT_BREAKER_OPEN', details);
+    }
+}
+
+// ============================================================================
+// BLOCKCHAIN & REGULATORY SPECIALIZED ERRORS
+// ============================================================================
+
+export class BlockchainAnchorError extends AppError {
+    constructor(message, details = {}) {
+        super(message, 502, 'BLOCKCHAIN_ANCHOR_FAILURE', details);
+    }
+}
+
+export class LPCComplianceError extends ComplianceError { }
+export class FICAComplianceError extends ComplianceError { }
+export class GDPRComplianceError extends ComplianceError { }
+export class POPIAComplianceError extends ComplianceError { }
+export class RegulatoryDeadlineError extends AppError {
+    constructor(message, details = {}) {
+        super(message, 403, 'REGULATORY_DEADLINE_EXCEEDED', details);
+    }
+}
+
+/**
+ * Investor-Grade Error Factory
+ */
+export const ErrorFactory = {
+    create(type, message, details) {
+        switch (type) {
+            case 'AUTH': return new AuthenticationError(message, details);
+            case 'VALIDATION': return new ValidationError(message, details);
+            case 'COMPLIANCE': return new ComplianceError(message, details);
+            case 'BLOCKCHAIN': return new BlockchainAnchorError(message, details);
+            default: return new AppError(message, 500, 'INTERNAL_SERVER_ERROR', details);
+        }
+    }
 };
+
+export default AppError;

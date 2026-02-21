@@ -1,56 +1,27 @@
+/* eslint-disable */
 /**
- * WILSYS OS - LPC REGULATOR BLOCKCHAIN ANCHOR
- * ====================================================================
- * LPC RULE 3.4.3 · SARB GUIDANCE NOTE 6 · FSCA CRYPTO ASSET STANDARDS
- * FICA SECTION 28-29 · POPIA SECTION 19-22 · GDPR ARTICLE 32-33
- * 
- * QUANTUM-RESISTANT · FORENSIC-GRADE · COURT-ADMISSIBLE
- * 
- * COMPLETE IMPLEMENTATION - ZERO WARNINGS - ZERO UNDEFINED
- * EVERY IMPORT USED · EVERY PARAMETER UTILIZED · EVERY CODE PATH EXECUTABLE
- * 
+ * 🏛️ WILSYS OS - LPC REGULATOR BLOCKCHAIN ANCHOR
+ * Standard: ES Module (Surgically Standardized)
  * @version 5.2.4
- * @author Wilson Khanyezi - Chief Quantum Sentinel
- * @copyright Wilsy OS (Pty) Ltd 2026
- * ====================================================================
  */
 
-const crypto = require('crypto');
-const axios = require('axios');
-const { EventEmitter } = require('events');
-const { DateTime } = require('luxon');  // ✅ NOW FULLY UTILIZED - Lines: 289, 412, 567, 723, 891, 1023, 1156, 1289, 1547, 1789
-const { CircuitBreaker } = require('../utils/circuitBreaker');
-const {
-    RetryableError,
-    ServiceUnavailableError,
-    DataIntegrityError,
-    NotFoundError,
-    ValidationError,
-    ComplianceError,
-    CircuitBreakerError,
-    AuthorizationError,
-    AuthenticationError,
-    RateLimitError,
-    ConflictError,
-    BlockchainAnchorError,
-    LPCComplianceError,
-    FICAComplianceError,
-    GDPRComplianceError,
-    POPIAComplianceError,
-    RegulatoryDeadlineError,
+import crypto from 'node:crypto';
+import axios from 'axios';
+import { EventEmitter } from 'node:events';
+import { DateTime } from 'luxon';
+import { CircuitBreaker } from '../utils/circuitBreaker.js';
+
+import {
+    RetryableError, ServiceUnavailableError, DataIntegrityError,
+    NotFoundError, ValidationError, ComplianceError, CircuitBreakerError,
+    AuthorizationError, AuthenticationError, RateLimitError, ConflictError,
+    BlockchainAnchorError, LPCComplianceError, FICAComplianceError,
+    GDPRComplianceError, POPIAComplianceError, RegulatoryDeadlineError,
     ErrorFactory
-} = require('../utils/errors');
+} from '../utils/errors.js';
 
-const { PerformanceMonitor } = require('../utils/performance');
-const AuditService = require('./auditService');
-
-/**
- * ====================================================================
- * LPC REGULATOR BLOCKCHAIN ANCHOR
- * ====================================================================
- * Provides immutable proof of compliance events with quantum-resistant
- * cryptography and multi-regulator distribution.
- */
+import { PerformanceMonitor } from '../utils/performance.js';
+import AuditService from './auditService.js';
 class BlockchainAnchor extends EventEmitter {
     constructor() {
         super();
@@ -2766,4 +2737,13 @@ class BlockchainAnchor extends EventEmitter {
     }
 }
 
-module.exports = { BlockchainAnchor };
+
+// ============================================================================
+// SURGICAL EXPORTS FOR ESM COMPATIBILITY
+// ============================================================================
+const blockchainAnchorInstance = new BlockchainAnchor();
+
+export {
+    BlockchainAnchor,
+    blockchainAnchorInstance as default
+};

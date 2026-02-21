@@ -15,7 +15,9 @@
     "security:audit": "npm audit --production",
     "docker:build": "docker build -t wilsy-os:latest .",
     "migrate": "node scripts/migrate.js",
-    "test:watch": "mocha test/**/*.test.js --watch"
+    "test:watch": "mocha test/**/*.test.js --watch",
+    "test:investor": "NODE_ENV=test npx mocha tests/models/LegalPrecedent.mocha.js --timeout 30000",
+    "investor:report": "NODE_ENV=test npx mocha tests/models/LegalPrecedent.mocha.js --grep \"INVESTOR SUMMARY\" --timeout 30000"
   },
   "keywords": [
     "legal-tech",
@@ -63,6 +65,7 @@
     "luxon": "^3.7.2",
     "mammoth": "^1.11.0",
     "moment": "^2.29.4",
+    "moment-timezone": "^0.6.0",
     "mongodb": "^6.3.0",
     "mongoose": "^7.8.2",
     "mongoose-delete": "^1.0.2",
@@ -92,6 +95,8 @@
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^10.0.1",
     "@faker-js/faker": "^8.3.1",
     "@types/express": "^4.17.21",
     "@types/ioredis-mock": "^8.2.6",
@@ -100,17 +105,20 @@
     "@types/node": "^20.10.5",
     "@types/uuid": "^10.0.0",
     "chai": "^6.2.2",
-    "eslint": "^4.1.1",
-    "eslint-config-airbnb-base": "^11.3.2",
-    "eslint-plugin-import": "^1.14.0",
+    "eslint": "8.57.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jest": "^21.27.2",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.34.1",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-security": "^2.1.0",
+    "globals": "^17.3.0",
     "husky": "^8.0.3",
     "ioredis-mock": "^8.13.1",
     "jest": "^25.0.0",
     "lint-staged": "^15.2.0",
     "mocha": "^11.3.0",
-    "moment-timezone": "^0.6.0",
     "mongodb-memory-server": "^9.5.0",
     "nodemon": "^3.0.2",
     "prettier": "^3.1.0",
@@ -119,5 +127,15 @@
     "sinon": "^21.0.1",
     "supertest": "^6.3.4",
     "uuid": "^9.0.1"
-  }
+  },
+  "mocha": {
+    "timeout": 30000,
+    "exit": true,
+    "ignore": [
+      "node_modules/**"
+    ],
+    "recursive": true,
+    "reporter": "spec"
+  },
+  "type": "module"
 }

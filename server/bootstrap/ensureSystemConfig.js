@@ -46,91 +46,91 @@ const logger = require('../utils/logger');
  * @returns {Promise<Object>} the loaded SystemConfig document (lean)
  */
 async function ensureSystemConfig(opts = {}) {
-    const {
-        correlationId = uuidv4(),
-        retries = 2,
-        retryDelayMs = 500,
-        emitAudit = true
-    } = opts;
+        const {
+                          correlationId = uuidv4(),
+                          retries = 2,
+                          retryDelayMs = 500,
+                          emitAudit = true
+        } = opts;
 
-    // Attach correlation id to logs for traceability
-    const logMeta = { correlationId };
+        // Attach correlation id to logs for traceability
+        const logMeta = { correlationId };
 
-    logger.info('ensureSystemConfig: starting bootstrap', logMeta);
+        logger.info('ensureSystemConfig: starting bootstrap', logMeta);
 
-    // Retry loop for transient DB errors
-    let attempt = 0;
-    let lastErr = null;
-    while (attempt <= retries) {
-        attempt += 1;
-        try {
-            // getSingleton performs an atomic upsert and returns the config
-            const cfg = await SystemConfig.getSingleton();
+        // Retry loop for transient DB errors
+        let attempt = 0;
+        let lastErr = null;
+        while (attempt <= retries) {
+                          attempt += 1;
+                          try {
+                                                                // getSingleton performs an atomic upsert and returns the config
+                                                                const cfg = await SystemConfig.getSingleton();
 
-            // Defensive: ensure returned object has expected shape
-            if (!cfg || typeof cfg !== 'object' || cfg.scope !== 'global') {
-                logger.warn('ensureSystemConfig: unexpected config shape, returning defaults', { ...logMeta, cfg });
-            }
+                                                                // Defensive: ensure returned object has expected shape
+                                                                if (!cfg || typeof cfg !== 'object' || cfg.scope !== 'global') {
+                                                                                                                    logger.warn('ensureSystemConfig: unexpected config shape, returning defaults', { ...logMeta, cfg });
+                                                                }
 
-            logger.info('SystemConfig loaded', {
-                ...logMeta,
-                scope: cfg?.scope || 'global',
-                maintenanceMode: !!cfg?.maintenanceMode,
-                configVersion: cfg?.configVersion || null
-            });
+                                                                logger.info('SystemConfig loaded', {
+                                                                                                                    ...logMeta,
+                                                                                                                    scope: cfg?.scope || 'global',
+                                                                                                                    maintenanceMode: !!cfg?.maintenanceMode,
+                                                                                                                    configVersion: cfg?.configVersion || null
+                                                                });
 
-            // Emit startup audit (best-effort)
-            if (emitAudit) {
-                try {
-                    if (AuditEvent && typeof AuditEvent.create === 'function') {
-                        await AuditEvent.create({
-                            _id: uuidv4(),
-                            timestamp: new Date().toISOString(),
-                            actor: null,
-                            actorEmail: null,
-                            actorRole: 'system',
-                            eventType: 'SYSTEM_BOOTSTRAP',
-                            severity: 'INFO',
-                            summary: 'SystemConfig bootstrap completed',
-                            metadata: {
-                                configVersion: cfg?.configVersion || null,
-                                maintenanceMode: !!cfg?.maintenanceMode
-                            },
-                            correlationId
-                        });
-                    } else {
-                        logger.warn('AuditEvent model not available; skipping audit emission', logMeta);
-                    }
-                } catch (auditErr) {
-                    // Audit failure should not block startup; log and continue
-                    logger.warn('Failed to write bootstrap audit', { ...logMeta, err: auditErr && auditErr.message ? auditErr.message : auditErr });
-                }
-            }
+                                                                // Emit startup audit (best-effort)
+                                                                if (emitAudit) {
+                                                                                                                    try {
+                                                                                                                        if (AuditEvent && typeof AuditEvent.create === 'function') {
+                                                                                                                            await AuditEvent.create({
+                                                                                                                                _id: uuidv4(),
+                                                                                                                                timestamp: new Date().toISOString(),
+                                                                                                                                actor: null,
+                                                                                                                                actorEmail: null,
+                                                                                                                                actorRole: 'system',
+                                                                                                                                eventType: 'SYSTEM_BOOTSTRAP',
+                                                                                                                                severity: 'INFO',
+                                                                                                                                summary: 'SystemConfig bootstrap completed',
+                                                                                                                                metadata: {
+                                                                                                                                    configVersion: cfg?.configVersion || null,
+                                                                                                                                    maintenanceMode: !!cfg?.maintenanceMode
+                                                                                                                                },
+                                                                                                                                correlationId
+                                                                                                                            });
+                                                                                                                        } else {
+                                                                                                                            logger.warn('AuditEvent model not available; skipping audit emission', logMeta);
+                                                                                                                        }
+                                                                                                                    } catch (auditErr) {
+                                                                                                                        // Audit failure should not block startup; log and continue
+                                                                                                                        logger.warn('Failed to write bootstrap audit', { ...logMeta, err: auditErr && auditErr.message ? auditErr.message : auditErr });
+                                                                                                                    }
+                                                                }
 
-            return cfg;
-        } catch (err) {
-            lastErr = err;
-            // Log and decide whether to retry
-            logger.error('ensureSystemConfig: attempt failed', { ...logMeta, attempt, err: err && err.message ? err.message : err });
+                                                                return cfg;
+                          } catch (err) {
+                                                                lastErr = err;
+                                                                // Log and decide whether to retry
+                                                                logger.error('ensureSystemConfig: attempt failed', { ...logMeta, attempt, err: err && err.message ? err.message : err });
 
-            // If we've exhausted retries, rethrow
-            if (attempt > retries) break;
+                                                                // If we've exhausted retries, rethrow
+                                                                if (attempt > retries) break;
 
-            // Backoff before retrying
-            const backoff = retryDelayMs * attempt;
-            // eslint-disable-next-line no-await-in-loop
-            await new Promise((resolve) => setTimeout(resolve, backoff));
+                                                                // Backoff before retrying
+                                                                const backoff = retryDelayMs * attempt;
+                                                                // eslint-disable-next-line no-await-in-loop
+                                                                await new Promise((resolve) => setTimeout(resolve, backoff));
+                          }
         }
-    }
 
-    // If we reach here, all attempts failed
-    logger.error('ensureSystemConfig: bootstrap failed after retries', { ...logMeta, retries, lastError: lastErr && lastErr.message ? lastErr.message : lastErr });
+        // If we reach here, all attempts failed
+        logger.error('ensureSystemConfig: bootstrap failed after retries', { ...logMeta, retries, lastError: lastErr && lastErr.message ? lastErr.message : lastErr });
 
-    // Throw a clear error so server bootstrap can decide to exit or continue
-    const err = new Error('SystemConfig bootstrap failed');
-    err.cause = lastErr;
-    err.correlationId = correlationId;
-    throw err;
+        // Throw a clear error so server bootstrap can decide to exit or continue
+        const err = new Error('SystemConfig bootstrap failed');
+        err.cause = lastErr;
+        err.correlationId = correlationId;
+        throw err;
 }
 
 /**
@@ -139,21 +139,21 @@ async function ensureSystemConfig(opts = {}) {
  * Call this after updating SystemConfig in admin flows.
  */
 function invalidateSystemConfigCache() {
-    try {
-        // If SystemConfig model exposes a cache invalidator, call it
-        if (typeof SystemConfig.ensureDefaultConfig === 'function' && typeof SystemConfig.getSingleton === 'function') {
-            // No-op here; models/services that cache should expose their own invalidator.
-            // Provide a best-effort hook for known implementations.
-            if (typeof SystemConfig.invalidateCache === 'function') {
-                SystemConfig.invalidateCache();
-            }
+        try {
+                          // If SystemConfig model exposes a cache invalidator, call it
+                          if (typeof SystemConfig.ensureDefaultConfig === 'function' && typeof SystemConfig.getSingleton === 'function') {
+                                                                // No-op here; models/services that cache should expose their own invalidator.
+                                                                // Provide a best-effort hook for known implementations.
+                                                                if (typeof SystemConfig.invalidateCache === 'function') {
+                                                                                                                    SystemConfig.invalidateCache();
+                                                                }
+                          }
+        } catch (e) {
+                          logger.warn('invalidateSystemConfigCache: cache invalidation failed', { err: e && e.message ? e.message : e });
         }
-    } catch (e) {
-        logger.warn('invalidateSystemConfigCache: cache invalidation failed', { err: e && e.message ? e.message : e });
-    }
 }
 
 module.exports = {
-    ensureSystemConfig,
-    invalidateSystemConfigCache
+        ensureSystemConfig,
+        invalidateSystemConfigCache
 };
