@@ -23,3 +23,4 @@ coverage
 
 .env.local
 .env.*.local
+server/tests_legacy_backup/
