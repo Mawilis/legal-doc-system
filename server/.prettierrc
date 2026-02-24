@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json.schemastore.org/prettierrc",
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "useTabs": false,
+  "trailingComma": "es5",
+  "printWidth": 100,
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "quoteProps": "as-needed",
+  "jsxSingleQuote": false,
+  "bracketSameLine": false,
+  "vueIndentScriptAndStyle": false,
+  "htmlWhitespaceSensitivity": "css",
+  "proseWrap": "preserve",
+  "embeddedLanguageFormatting": "auto",
+  "overrides": [
+    {
+      "files": "*.cjs",
+      "options": {
+        "parser": "babel",
+        "trailingComma": "all"
+      }
+    },
+    {
+      "files": "*.mjs",
+      "options": {
+        "parser": "babel",
+        "trailingComma": "all"
+      }
+    },
+    {
+      "files": "*.test.js",
+      "options": {
+        "printWidth": 120,
+        "trailingComma": "all"
+      }
+    }
+  ]
+}

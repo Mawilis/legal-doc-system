@@ -35,89 +35,86 @@ const validate = require('../middleware/validationMiddleware');
 const { Joi } = validate;
 
 const updateSettingsSchema = {
-    branding: Joi.object({
-        firmName: Joi.string().min(2).optional(),
-        primaryColor: Joi.string().pattern(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/).optional(), // Hex code
-        logoUrl: Joi.string().uri().optional(),
-        website: Joi.string().uri().optional()
-    }).optional(),
+  branding: Joi.object({
+    firmName: Joi.string().min(2).optional(),
+    primaryColor: Joi.string()
+      .pattern(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
+      .optional(), // Hex code
+    logoUrl: Joi.string().uri().optional(),
+    website: Joi.string().uri().optional(),
+  }).optional(),
 
-    billing: Joi.object({
-        vatNumber: Joi.string().optional(),
-        currency: Joi.string().valid('ZAR', 'USD', 'EUR').optional(),
-        defaultPaymentTerms: Joi.number().min(0).max(90).optional(), // Days
-        bankDetails: Joi.string().max(1000).optional() // Free text for now, or object
-    }).optional(),
+  billing: Joi.object({
+    vatNumber: Joi.string().optional(),
+    currency: Joi.string().valid('ZAR', 'USD', 'EUR').optional(),
+    defaultPaymentTerms: Joi.number().min(0).max(90).optional(), // Days
+    bankDetails: Joi.string().max(1000).optional(), // Free text for now, or object
+  }).optional(),
 
-    notifications: Joi.object({
-        emailEnabled: Joi.boolean().optional(),
-        smsEnabled: Joi.boolean().optional(),
-        dailyDigest: Joi.boolean().optional()
-    }).optional(),
+  notifications: Joi.object({
+    emailEnabled: Joi.boolean().optional(),
+    smsEnabled: Joi.boolean().optional(),
+    dailyDigest: Joi.boolean().optional(),
+  }).optional(),
 
-    security: Joi.object({
-        mfaRequired: Joi.boolean().optional(),
-        sessionTimeout: Joi.number().min(5).max(1440).optional(), // Minutes
-        passwordExpiryDays: Joi.number().min(0).max(365).optional()
-    }).optional()
+  security: Joi.object({
+    mfaRequired: Joi.boolean().optional(),
+    sessionTimeout: Joi.number().min(5).max(1440).optional(), // Minutes
+    passwordExpiryDays: Joi.number().min(0).max(365).optional(),
+  }).optional(),
 };
 
 // ------------------------------
 // ROUTES
 // ------------------------------
 
-/**
+/*
  * @route   GET /api/settings
  * @desc    Get Tenant Configuration
  * @access  Authenticated Users
  */
-router.get(
-    '/',
-    protect,
-    requireSameTenant,
-    async (req, res, next) => {
-        try {
-            const result = await settingsController.getSettings(req, res);
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'SETTINGS_GET_FAILED';
-            next(err);
-        }
-    }
-);
+router.get('/', protect, requireSameTenant, async (req, res, next) => {
+  try {
+    const result = await settingsController.getSettings(req, res);
+    if (!res.headersSent && result) res.json({ status: 'success', data: result });
+  } catch (err) {
+    err.code = 'SETTINGS_GET_FAILED';
+    next(err);
+  }
+});
 
-/**
+/*
  * @route   PATCH /api/settings
  * @desc    Update Tenant Configuration (Deep Merge)
  * @access  Admin, SuperAdmin
  */
 router.patch(
-    '/',
-    protect,
-    requireSameTenant,
-    restrictTo('admin', 'superadmin'),
-    validate(updateSettingsSchema, 'body'),
-    async (req, res, next) => {
-        try {
-            const result = await settingsController.updateSettings(req, res);
+  '/',
+  protect,
+  requireSameTenant,
+  restrictTo('admin', 'superadmin'),
+  validate(updateSettingsSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const result = await settingsController.updateSettings(req, res);
 
-            // Critical Audit: Configuration Change
-            await emitAudit(req, {
-                resource: 'tenant_config',
-                action: 'UPDATE_SETTINGS',
-                severity: 'WARN',
-                summary: 'Firm settings updated',
-                metadata: {
-                    updatedFields: Object.keys(req.body)
-                }
-            });
+      // Critical Audit: Configuration Change
+      await emitAudit(req, {
+        resource: 'tenant_config',
+        action: 'UPDATE_SETTINGS',
+        severity: 'WARN',
+        summary: 'Firm settings updated',
+        metadata: {
+          updatedFields: Object.keys(req.body),
+        },
+      });
 
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'SETTINGS_UPDATE_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'SETTINGS_UPDATE_FAILED';
+      next(err);
     }
+  }
 );
 
 module.exports = router;

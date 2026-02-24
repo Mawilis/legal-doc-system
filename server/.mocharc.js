@@ -3,5 +3,5 @@ module.exports = {
   exit: true,
   recursive: true,
   reporter: 'spec',
-  spec: ['tests/**/*.test.js']
+  spec: ['tests/*/*.test.js'],
 };

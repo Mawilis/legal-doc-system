@@ -1,10 +1,13 @@
 {
   "extends": [".eslintrc.json"],
   "rules": {
-    "no-unused-vars": ["warn", { 
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_",
-      "ignoreRestSiblings": true 
-    }]
+    "no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ]
   }
 }

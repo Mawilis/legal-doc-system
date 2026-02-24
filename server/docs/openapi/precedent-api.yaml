@@ -1,0 +1,93 @@
+openapi: 3.0.0
+info:
+  title: Wilsy OS Precedent API
+  version: 42.0.0
+  description: Global legal precedent search and analysis API
+  contact:
+    name: Wilsy OS Support
+    email: support@wilsy.os
+    url: https://wilsy.os
+  license:
+    name: Commercial
+    url: https://wilsy.os/terms
+
+servers:
+  - url: https://api.wilsy.os/v1
+    description: Production server
+  - url: https://staging.api.wilsy.os/v1
+    description: Staging server
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Search
+    description: Precedent search endpoints
+  - name: Precedent
+    description: Precedent retrieval endpoints
+  - name: Network
+    description: Citation network endpoints
+  - name: Analysis
+    description: Deep analysis endpoints
+  - name: Compare
+    description: Precedent comparison endpoints
+  - name: Batch
+    description: Batch operations
+  - name: Export
+    description: Export endpoints
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [Health]
+      responses:
+        '200':
+          description: Healthy
+        '503':
+          description: Degraded
+
+  /search:
+    post:
+      summary: Semantic precedent search
+      tags: [Search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [q]
+              properties:
+                q:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+                jurisdiction:
+                  type: string
+                  pattern: '^[A-Z]{2}$'
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 100
+      responses:
+        '200':
+          description: Search results
+        '400':
+          description: Invalid request
+        '429':
+          description: Rate limit exceeded
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key

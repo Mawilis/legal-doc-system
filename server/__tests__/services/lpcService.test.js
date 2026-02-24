@@ -8,18 +8,18 @@
 // IMPORTANT: Mock modules BEFORE importing them
 jest.mock('../../utils/cryptoUtils', () => ({
   generateDeterministicId: jest.fn((prefix, input) => `${prefix}-${input || 'test'}-${Date.now()}`),
-  sha3_512: jest.fn((input) => require('crypto').createHash('sha256').update(String(input)).digest('hex'))
+  sha3_512: jest.fn((input) => require('crypto').createHash('sha256').update(String(input)).digest('hex')),
 }));
 
 jest.mock('../../utils/auditLogger', () => ({
-  log: jest.fn().mockResolvedValue(true)
+  log: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('../../utils/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-  debug: jest.fn()
+  debug: jest.fn(),
 }));
 
 jest.mock('axios');
@@ -42,26 +42,26 @@ describe('LPC Service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup mongoose session mock
     const mockSession = {
       startTransaction: jest.fn(),
       commitTransaction: jest.fn(),
       abortTransaction: jest.fn(),
-      endSession: jest.fn()
+      endSession: jest.fn(),
     };
     mongoose.startSession = jest.fn().mockResolvedValue(mockSession);
-    
+
     // Create fresh service instance
     lpcService = createLpcService();
-    
+
     testConfig = {
       lpcApiBaseUrl: 'https://api.lpc-test.co.za/v1',
       lpcApiKey: 'x'.repeat(32),
       encryptionKey: 'x'.repeat(64),
       jwtSecret: 'x'.repeat(32),
       redisUrl: 'redis://localhost:6379',
-      options: { timeout: 5000 }
+      options: { timeout: 5000 },
     };
   });
 
@@ -107,11 +107,11 @@ describe('LPC Service', () => {
       trustAccountNumber: 'TRUST-1234-5678-9012-3456-789012345678',
       clientIdNumber: '9001011234567',
       clientEmail: 'client@example.com',
-      nonSensitive: 'This should remain'
+      nonSensitive: 'This should remain',
     };
-    
+
     const redacted = lpcService.redactLPCData(testData);
-    
+
     expect(redacted.attorneyIdNumber).toBe('[REDACTED]');
     expect(redacted.trustAccountNumber).toBe('[REDACTED]');
     expect(redacted.clientIdNumber).toBe('[REDACTED]');
@@ -124,10 +124,10 @@ describe('LPC Service', () => {
       attorneyIdNumber: '1234567890123',
       nested: {
         clientIdNumber: '9001011234567',
-        safe: '[REDACTED]'
-      }
+        safe: '[REDACTED]',
+      },
     };
-    
+
     const violationReport = lpcService.detectPIIViolation(testData);
     expect(violationReport.hasViolations).toBe(true);
     expect(violationReport.violations.length).toBeGreaterThan(0);
@@ -139,25 +139,25 @@ describe('LPC Service', () => {
   // ===================================================================
   test('should process valid trust transaction', async () => {
     await lpcService.init(testConfig);
-    
+
     // Mock internal methods
     lpcService._verifyTrustAccountStatus = jest.fn().mockResolvedValue({
       isActive: true,
       status: 'ACTIVE',
-      complianceScore: 95
+      complianceScore: 95,
     });
     lpcService._verifyTrustAccountNumber = jest.fn().mockResolvedValue(true);
     lpcService._getClientTrustBalance = jest.fn().mockResolvedValue({ available: 100000 });
     lpcService._calculateTrustInterest = jest.fn().mockResolvedValue({
-      interestAmount: 125.50,
+      interestAmount: 125.5,
       shouldPayInterest: true,
-      daysHeld: 30
+      daysHeld: 30,
     });
     lpcService._createTrustTransactionRecord = jest.fn().mockResolvedValue({
       _id: 'transaction-123',
       transactionId: 'TRUST-abc123',
       auditId: 'audit-123',
-      blockHash: 'hash-123'
+      blockHash: 'hash-123',
     });
     lpcService._updateTrustBalances = jest.fn().mockResolvedValue(true);
     lpcService._checkReconciliationRequirement = jest.fn().mockResolvedValue(false);
@@ -168,14 +168,10 @@ describe('LPC Service', () => {
       amount: 50000,
       purpose: 'LEGAL_FEES',
       reference: 'REF-2026-001',
-      currency: 'ZAR'
+      currency: 'ZAR',
     };
 
-    const result = await lpcService.processTrustTransaction(
-      transaction,
-      testAttorneyId,
-      testTenantId
-    );
+    const result = await lpcService.processTrustTransaction(transaction, testAttorneyId, testTenantId);
 
     expect(result.success).toBe(true);
     expect(result.transactionId).toBeDefined();
@@ -189,18 +185,18 @@ describe('LPC Service', () => {
   // ===================================================================
   test('should track valid CPD activity', async () => {
     await lpcService.init(testConfig);
-    
+
     lpcService.getAttorneyCPDStatus = jest.fn().mockResolvedValue({
       effectiveHours: 8,
       ethicsHours: 1,
       isCompliant: false,
-      certificateGenerated: false
+      certificateGenerated: false,
     });
     lpcService._createCPDRecord = jest.fn().mockResolvedValue({
       _id: 'cpd-123',
       activityId: 'CPD-abc123',
       status: 'PENDING_VERIFICATION',
-      toObject: () => ({ activityId: 'CPD-abc123', status: 'PENDING_VERIFICATION' })
+      toObject: () => ({ activityId: 'CPD-abc123', status: 'PENDING_VERIFICATION' }),
     });
 
     const activity = {
@@ -209,21 +205,17 @@ describe('LPC Service', () => {
       hours: 4,
       category: 'ETHICS',
       provider: 'LPC Accredited Training',
-      evidenceUrl: 'https://provider.co.za/cert/123'
+      evidenceUrl: 'https://provider.co.za/cert/123',
     };
 
-    const result = await lpcService.trackCPDActivity(
-      activity,
-      testAttorneyId,
-      testTenantId
-    );
+    const result = await lpcService.trackCPDActivity(activity, testAttorneyId, testTenantId);
 
     expect(result.success).toBe(true);
     expect(result.activityId).toBeDefined();
     expect(result.hours).toBe(4);
     expect(result.retentionPolicy).toBe(LPC_RETENTION_POLICIES.CPD_RECORDS);
     expect(result.retentionStart).toBeDefined();
-    
+
     console.log('✓ CPD Hours Validated: 4');
   });
 
@@ -235,14 +227,10 @@ describe('LPC Service', () => {
       date: new Date('2026-10-10').toISOString(),
       hours: 12,
       category: 'SUBSTANTIVE',
-      provider: 'Test Provider'
+      provider: 'Test Provider',
     };
 
-    const result = await lpcService.trackCPDActivity(
-      activity,
-      testAttorneyId,
-      testTenantId
-    );
+    const result = await lpcService.trackCPDActivity(activity, testAttorneyId, testTenantId);
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('Single CPD activity cannot exceed 8 hours');
@@ -253,19 +241,15 @@ describe('LPC Service', () => {
   // ===================================================================
   test('should calculate Fidelity Fund contribution', async () => {
     await lpcService.init(testConfig);
-    
-    const result = await lpcService.calculateFidelityFundContribution(
-      testAttorneyId,
-      1000000,
-      testTenantId
-    );
+
+    const result = await lpcService.calculateFidelityFundContribution(testAttorneyId, 1000000, testTenantId);
 
     expect(result.success).toBe(true);
     expect(result.calculationId).toBeDefined();
     expect(result.finalContribution).toBeGreaterThan(0);
     expect(result.retentionPolicy).toBe(LPC_RETENTION_POLICIES.FIDELITY_CERTIFICATES);
     expect(result.retentionStart).toBeDefined();
-    
+
     console.log('✓ Fidelity Contribution: R' + result.finalContribution);
   });
 
@@ -274,10 +258,10 @@ describe('LPC Service', () => {
   // ===================================================================
   test('should perform health check with economic metrics', async () => {
     await lpcService.init(testConfig);
-    
+
     // Mock mongoose connection
     mongoose.connection = { readyState: 1 };
-    
+
     const result = await lpcService.healthCheck(testTenantId);
 
     expect(result.success).toBe(true);
@@ -290,7 +274,7 @@ describe('LPC Service', () => {
     expect(result.economicMetric.annualSavingsPerClient).toBe(450000);
     expect(result.retentionPolicy).toBe(LPC_RETENTION_POLICIES.COMPLIANCE_AUDITS);
     expect(result.retentionStart).toBeDefined();
-    
+
     console.log('✓ Health Check Completed: ' + result.overallStatus);
   });
 

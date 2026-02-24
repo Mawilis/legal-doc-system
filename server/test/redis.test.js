@@ -1,5 +1,5 @@
 /* eslint-env mocha */
-/**
+/*
  * REDIS CONFIGURATION TESTS
  * Investor-Grade | 99.99% uptime | Zero data loss
  * Version: 2.0.0 - Mocha Native
@@ -39,7 +39,7 @@ function createSimpleMock() {
       this.store = new Map();
       this.status = 'ready';
       this.commandQueue = [];
-      
+
       process.nextTick(() => {
         this.emit('ready');
       });
@@ -125,143 +125,143 @@ lazyfree_pending_objects:0
 
 const redisConfig = require('../config/redis');
 
-describe('🔧 Redis Configuration Tests', function() {
+describe('🔧 Redis Configuration Tests', function () {
   this.timeout(15000);
 
-  before(async function() {
+  before(async function () {
     // Set test environment
     process.env.NODE_ENV = 'test';
     process.env.REDIS_HOST = process.env.REDIS_HOST || 'localhost';
     process.env.REDIS_PORT = process.env.REDIS_PORT || '6379';
   });
 
-  afterEach(async function() {
+  afterEach(async function () {
     await redisConfig.disconnect();
   });
 
-  describe('1. Client Creation', function() {
-    it('should create default Redis client', async function() {
+  describe('1. Client Creation', function () {
+    it('should create default Redis client', async function () {
       const client = await redisConfig.createClient('default');
-      
+
       assert.ok(client);
       assert.ok(['ready', 'connect'].includes(client.status));
-      
+
       const status = redisConfig.getStatus();
       assert.strictEqual(status.totalClients, 1);
-      
+
       console.log('✅ Default client created');
     });
 
-    it('should create multiple clients with different roles', async function() {
+    it('should create multiple clients with different roles', async function () {
       await redisConfig.createClient('bull');
       await redisConfig.createClient('cache');
       await redisConfig.createClient('session');
-      
+
       const status = redisConfig.getStatus();
       assert.strictEqual(status.totalClients, 3);
-      
+
       console.log('✅ Multiple clients created');
     });
 
-    it('should get client by role', async function() {
+    it('should get client by role', async function () {
       await redisConfig.createClient('test-role');
-      
+
       const client = redisConfig.getClient('test-role');
       assert.ok(client);
       assert.ok(['ready', 'connect'].includes(client.status));
-      
+
       console.log('✅ Client retrieval by role works');
     });
   });
 
-  describe('2. BullMQ Integration', function() {
-    it('should provide BullMQ compatible connection', async function() {
+  describe('2. BullMQ Integration', function () {
+    it('should provide BullMQ compatible connection', async function () {
       await redisConfig.createClient('bull');
-      
+
       const connection = redisConfig.getBullConnection('bull');
       assert.ok(connection);
-      
+
       // BullMQ expects specific interface
       assert.ok(typeof connection.on === 'function');
-      
+
       console.log('✅ BullMQ compatible connection provided');
     });
   });
 
-  describe('3. Basic Redis Operations', function() {
-    it('should perform basic set/get operations', async function() {
+  describe('3. Basic Redis Operations', function () {
+    it('should perform basic set/get operations', async function () {
       await redisConfig.createClient('test');
       const client = redisConfig.getClient('test');
-      
+
       await client.set('test-key', 'test-value');
       const value = await client.get('test-key');
-      
+
       assert.strictEqual(value, 'test-value');
       console.log('✅ Basic Redis operations work');
     });
 
-    it('should handle expiration', async function() {
+    it('should handle expiration', async function () {
       await redisConfig.createClient('test');
       const client = redisConfig.getClient('test');
-      
+
       await client.set('expire-key', 'expire-value', 'EX', 1);
       let value = await client.get('expire-key');
       assert.strictEqual(value, 'expire-value');
-      
-      await new Promise(resolve => setTimeout(resolve, 1100));
-      
+
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+
       value = await client.get('expire-key');
       assert.strictEqual(value, null);
-      
+
       console.log('✅ Redis expiration works');
     });
   });
 
-  describe('4. Health Check', function() {
-    it('should provide health status', async function() {
+  describe('4. Health Check', function () {
+    it('should provide health status', async function () {
       await redisConfig.createClient('default');
-      
+
       const health = await redisConfig.healthCheck();
-      
+
       assert.strictEqual(health.service, 'redis');
       assert.ok(health.clients.default);
       assert.ok(health.timestamp);
-      
+
       const status = health.clients.default.status || 'unknown';
       console.log(`✅ Health check: ${status}`);
     });
   });
 
-  describe('5. Disconnection', function() {
-    it('should disconnect all clients gracefully', async function() {
+  describe('5. Disconnection', function () {
+    it('should disconnect all clients gracefully', async function () {
       await redisConfig.createClient('client1');
       await redisConfig.createClient('client2');
-      
+
       let status = redisConfig.getStatus();
       assert.strictEqual(status.totalClients, 2);
-      
+
       await redisConfig.disconnect();
-      
+
       status = redisConfig.getStatus();
       assert.strictEqual(status.totalClients, 0);
-      
+
       console.log('✅ All clients disconnected gracefully');
     });
   });
 
-  describe('6. Economic Value', function() {
-    it('should calculate performance savings', function() {
+  describe('6. Economic Value', function () {
+    it('should calculate performance savings', function () {
       const jobsPerDay = 10000;
       const processingTimeWithoutRedis = 500; // ms
       const processingTimeWithRedis = 300; // ms
       const timeSavedPerJob = (processingTimeWithoutRedis - processingTimeWithRedis) / 1000; // seconds
       const annualWorkDays = 250;
       const hourlyRate = 450; // R450/hour for developer time
-      
+
       const annualSecondsSaved = jobsPerDay * timeSavedPerJob * annualWorkDays;
       const annualHoursSaved = annualSecondsSaved / 3600;
       const annualSavings = annualHoursSaved * hourlyRate;
-      
+
       console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
 ║                REDIS ECONOMIC METRICS                            ║
@@ -273,34 +273,32 @@ describe('🔧 Redis Configuration Tests', function() {
 ║  • Annual Savings: R${annualSavings.toLocaleString()}                                      ║
 ╚══════════════════════════════════════════════════════════════════╝
       `);
-      
+
       assert.ok(annualSavings > 0);
     });
   });
 
-  describe('7. Evidence Generation', function() {
-    it('should generate deterministic evidence', async function() {
+  describe('7. Evidence Generation', function () {
+    it('should generate deterministic evidence', async function () {
       await redisConfig.createClient('evidence');
-      
+
       const health = await redisConfig.healthCheck();
-      
+
       const evidence = {
         auditEntries: [
           {
             action: 'REDIS_TEST',
             timestamp: new Date().toISOString(),
-            health: health
-          }
+            health: health,
+          },
         ],
-        hash: crypto.createHash('sha256')
-          .update(JSON.stringify(health))
-          .digest('hex'),
-        timestamp: new Date().toISOString()
+        hash: crypto.createHash('sha256').update(JSON.stringify(health)).digest('hex'),
+        timestamp: new Date().toISOString(),
       };
-      
+
       assert.ok(evidence.auditEntries);
       assert.ok(evidence.hash);
-      
+
       const evidencePath = './redis-evidence.json';
       fs.writeFileSync(evidencePath, JSON.stringify(evidence, null, 2));
       console.log(`✅ Evidence saved to ${evidencePath}`);

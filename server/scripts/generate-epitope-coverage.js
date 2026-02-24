@@ -14,7 +14,7 @@ class EpitopeCoverage {
   }
 
   ensureDirectories() {
-    [this.coverageDir, this.reportsDir].forEach(dir => {
+    [this.coverageDir, this.reportsDir].forEach((dir) => {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
@@ -23,36 +23,39 @@ class EpitopeCoverage {
 
   async generateFullCoverage() {
     console.log('🎯 GENERATING EPITOPE COVERAGE FOR WILSY OS\n');
-    
+
     // 1. Unit Test Coverage
     console.log('📊 Phase 1: Unit Test Coverage');
     this.runUnitTests();
-    
+
     // 2. Integration Test Coverage
     console.log('\n🔗 Phase 2: Integration Test Coverage');
     this.runIntegrationTests();
-    
+
     // 3. Generate Combined Report
     console.log('\n📈 Phase 3: Generating Epitope Report');
     await this.generateEpitopeReport();
-    
+
     // 4. Validate Coverage Thresholds
     console.log('\n✅ Phase 4: Validating Coverage Thresholds');
     this.validateCoverage();
-    
+
     console.log('\n🎉 EPITOPE COVERAGE GENERATION COMPLETE');
   }
 
   runUnitTests() {
     const testTypes = ['models', 'services', 'routes', 'middleware', 'utils'];
-    
-    testTypes.forEach(type => {
+
+    testTypes.forEach((type) => {
       console.log(`  Testing ${type}...`);
       try {
-        execSync(`npx jest tests/unit/${type}/ --coverage --coverageDirectory=${this.coverageDir}/unit/${type}`, {
-          stdio: 'pipe',
-          cwd: this.rootDir
-        });
+        execSync(
+          `npx jest tests/unit/${type}/ --coverage --coverageDirectory=${this.coverageDir}/unit/${type}`,
+          {
+            stdio: 'pipe',
+            cwd: this.rootDir,
+          }
+        );
         console.log(`  ✅ ${type} unit tests passed`);
       } catch (error) {
         console.error(`  ❌ ${type} unit tests failed`);
@@ -63,14 +66,17 @@ class EpitopeCoverage {
 
   runIntegrationTests() {
     const integrationSuites = ['api', 'workflows', 'transactions'];
-    
-    integrationSuites.forEach(suite => {
+
+    integrationSuites.forEach((suite) => {
       console.log(`  Testing ${suite} integration...`);
       try {
-        execSync(`npx jest tests/integration/${suite}/ --coverage --coverageDirectory=${this.coverageDir}/integration/${suite}`, {
-          stdio: 'pipe',
-          cwd: this.rootDir
-        });
+        execSync(
+          `npx jest tests/integration/${suite}/ --coverage --coverageDirectory=${this.coverageDir}/integration/${suite}`,
+          {
+            stdio: 'pipe',
+            cwd: this.rootDir,
+          }
+        );
         console.log(`  ✅ ${suite} integration tests passed`);
       } catch (error) {
         console.error(`  ❌ ${suite} integration tests failed`);
@@ -82,13 +88,13 @@ class EpitopeCoverage {
   async generateEpitopeReport() {
     // Generate architecture tree
     const tree = this.generateArchitectureTree();
-    
+
     // Generate coverage summary
     const summary = await this.generateCoverageSummary();
-    
+
     // Generate risk assessment
     const risks = this.generateRiskAssessment();
-    
+
     // Combine into epitope report
     const epitopeReport = {
       timestamp: new Date().toISOString(),
@@ -98,48 +104,49 @@ class EpitopeCoverage {
       coverage: summary,
       risks: risks,
       recommendations: this.generateRecommendations(summary),
-      compliance: this.checkCompliance()
+      compliance: this.checkCompliance(),
     };
-    
+
     // Save reports
     fs.writeFileSync(
       path.join(this.reportsDir, 'epitope-coverage.json'),
       JSON.stringify(epitopeReport, null, 2)
     );
-    
+
     fs.writeFileSync(
       path.join(this.reportsDir, 'epitope-coverage.txt'),
       this.formatTextReport(epitopeReport)
     );
-    
+
     // Generate HTML report
     this.generateHTMLReport(epitopeReport);
-    
+
     console.log('  📝 Epitope reports generated in /reports directory');
   }
 
   generateArchitectureTree() {
     const tree = {
       label: 'Wilsy OS',
-      nodes: []
+      nodes: [],
     };
-    
+
     // Scan directories
     const dirs = ['models', 'services', 'routes', 'middleware', 'utils', 'config'];
-    
-    dirs.forEach(dir => {
+
+    dirs.forEach((dir) => {
       if (fs.existsSync(path.join(this.rootDir, dir))) {
-        const files = fs.readdirSync(path.join(this.rootDir, dir))
-          .filter(f => f.endsWith('.js'))
-          .map(f => ({ label: f, nodes: [] }));
-        
+        const files = fs
+          .readdirSync(path.join(this.rootDir, dir))
+          .filter((f) => f.endsWith('.js'))
+          .map((f) => ({ label: f, nodes: [] }));
+
         tree.nodes.push({
           label: dir,
-          nodes: files
+          nodes: files,
         });
       }
     });
-    
+
     return archy(tree);
   }
 
@@ -151,10 +158,10 @@ class EpitopeCoverage {
         statements: 0,
         branches: 0,
         functions: 0,
-        lines: 0
+        lines: 0,
       },
       byModule: {},
-      uncoveredLines: []
+      uncoveredLines: [],
     };
   }
 
@@ -163,21 +170,21 @@ class EpitopeCoverage {
       critical: [],
       high: [],
       medium: [],
-      low: []
+      low: [],
     };
   }
 
   generateRecommendations(summary) {
     const recommendations = [];
-    
+
     if (summary.overall.statements < 90) {
       recommendations.push('Increase statement coverage to meet 90% threshold');
     }
-    
+
     if (summary.overall.branches < 85) {
       recommendations.push('Add more branch tests for conditional logic');
     }
-    
+
     return recommendations;
   }
 
@@ -187,7 +194,7 @@ class EpitopeCoverage {
       soc2: false,
       gdpr: false,
       popia: true,
-      pciDss: false
+      pciDss: false,
     };
   }
 
@@ -242,17 +249,17 @@ class EpitopeCoverage {
     
     <h2>⚠️ Risk Assessment</h2>
     <ul>
-        ${report.risks.critical.map(r => `<li class="risk-critical">${r}</li>`).join('')}
-        ${report.risks.high.map(r => `<li class="risk-high">${r}</li>`).join('')}
+        ${report.risks.critical.map((r) => `<li class="risk-critical">${r}</li>`).join('')}
+        ${report.risks.high.map((r) => `<li class="risk-high">${r}</li>`).join('')}
     </ul>
     
     <h2>✅ Recommendations</h2>
     <ul>
-        ${report.recommendations.map(r => `<li>${r}</li>`).join('')}
+        ${report.recommendations.map((r) => `<li>${r}</li>`).join('')}
     </ul>
 </body>
 </html>`;
-    
+
     fs.writeFileSync(path.join(this.reportsDir, 'epitope-coverage.html'), html);
   }
 
@@ -261,9 +268,9 @@ class EpitopeCoverage {
       statements: 90,
       branches: 85,
       functions: 90,
-      lines: 90
+      lines: 90,
     };
-    
+
     // This would validate against actual coverage data
     console.log('  Coverage thresholds validated');
   }
@@ -273,9 +280,9 @@ class EpitopeCoverage {
       timestamp: new Date().toISOString(),
       type: type,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     };
-    
+
     const errorFile = path.join(this.reportsDir, `failure-${type}-${Date.now()}.json`);
     fs.writeFileSync(errorFile, JSON.stringify(errorLog, null, 2));
   }

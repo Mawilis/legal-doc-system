@@ -16,7 +16,7 @@
       "grouping": [3]
     }
   },
-  
+
   "common": {
     "save": "Guardar",
     "cancel": "Cancelar",
@@ -64,7 +64,7 @@
     "credit": "Crédito",
     "debit": "Débito"
   },
-  
+
   "navigation": {
     "home": "Início",
     "dashboard": "Painel",
@@ -81,7 +81,7 @@
     "privacy": "Política de privacidade",
     "security": "Segurança"
   },
-  
+
   "errors": {
     "general": "Ocorreu um erro. Por favor, tente novamente.",
     "notFound": "Página não encontrada",
@@ -96,7 +96,7 @@
       "number": "Por favor, introduza um número válido"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "Entrar no Wilsy OS",
@@ -122,7 +122,7 @@
       "success": "Registo bem-sucedido"
     }
   },
-  
+
   "onboarding": {
     "title": "Integração de clientes",
     "stages": {

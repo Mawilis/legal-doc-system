@@ -6,19 +6,19 @@ jest.mock('../../utils/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-  debug: jest.fn()
+  debug: jest.fn(),
 }));
 
 jest.mock('../../utils/auditLogger', () => ({
   audit: jest.fn(),
   security: jest.fn(),
-  compliance: jest.fn()
+  compliance: jest.fn(),
 }));
 
 jest.mock('../../utils/cryptoUtils', () => ({
   encrypt: jest.fn((data) => `encrypted_${data}`),
   decrypt: jest.fn((data) => data.replace('encrypted_', '')),
-  hash: jest.fn(() => 'hashed_value')
+  hash: jest.fn(() => 'hashed_value'),
 }));
 
 describe('CompetitiveAdvantageMatrix', () => {
@@ -41,7 +41,7 @@ describe('CompetitiveAdvantageMatrix', () => {
         id: 'comp1',
         name: 'Competitor 1',
         strengths: ['tech', 'team'],
-        weaknesses: ['market', 'funding']
+        weaknesses: ['market', 'funding'],
       };
 
       matrix.addCompetitor(competitor);
@@ -58,7 +58,7 @@ describe('CompetitiveAdvantageMatrix', () => {
         id: 'comp1',
         name: 'Competitor 1',
         strengths: ['tech', 'team'],
-        weaknesses: ['market']
+        weaknesses: ['market'],
       };
 
       matrix.addCompetitor(competitor);
@@ -77,17 +77,17 @@ describe('CompetitiveAdvantageMatrix', () => {
           id: 'comp1',
           name: 'Competitor 1',
           strengths: ['tech'],
-          weaknesses: ['market']
+          weaknesses: ['market'],
         },
         {
           id: 'comp2',
           name: 'Competitor 2',
           strengths: ['market'],
-          weaknesses: ['tech']
-        }
+          weaknesses: ['tech'],
+        },
       ];
 
-      competitors.forEach(comp => matrix.addCompetitor(comp));
+      competitors.forEach((comp) => matrix.addCompetitor(comp));
       const report = matrix.generateReport();
 
       expect(report).toHaveProperty('timestamp');
@@ -103,11 +103,11 @@ describe('CompetitiveAdvantageMatrix', () => {
         id: 'encrypted_comp1',
         name: 'encrypted_Competitor X',
         strengths: ['encrypted_tech'],
-        weaknesses: ['encrypted_market']
+        weaknesses: ['encrypted_market'],
       };
 
       matrix.addCompetitor(encryptedCompetitor);
-      
+
       // The cryptoUtils mock should be called
       const cryptoUtils = require('../../utils/cryptoUtils');
       expect(cryptoUtils.decrypt).toHaveBeenCalled();
@@ -118,7 +118,7 @@ describe('CompetitiveAdvantageMatrix', () => {
         id: 'comp1',
         name: 'Competitor 1',
         strengths: ['tech'],
-        weaknesses: ['market']
+        weaknesses: ['market'],
       };
 
       matrix.addCompetitor(competitor);

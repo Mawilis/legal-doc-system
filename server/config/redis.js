@@ -3,13 +3,13 @@
   ║ 99.99% uptime | Zero data loss | High-throughput queueing                   ║
   ║ POPIA §19 | ECT Act §15 | Cybercrimes Act §4                                ║
   ╚══════════════════════════════════════════════════════════════════════════════╝*/
-/**
+/*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/redis.js
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R3M/year in lost jobs and processing delays
  * • Generates: R2.55M/year savings @ 85% margin
  * • Compliance: POPIA §19 - Data retention in cache, ECT Act §15 - Non-repudiation
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "expectedConsumers": [
@@ -52,24 +52,24 @@ class RedisConfig {
       lastFailure: null,
       threshold: parseInt(process.env.REDIS_CIRCUIT_BREAKER_THRESHOLD) || 10,
       timeout: parseInt(process.env.REDIS_CIRCUIT_BREAKER_TIMEOUT) || 60000,
-      state: 'CLOSED' // CLOSED, OPEN, HALF_OPEN
+      state: 'CLOSED', // CLOSED, OPEN, HALF_OPEN
     };
     this.fallbackMode = false;
     this.healthCheckInterval = null;
     this.reconnectTimer = null;
-    
+
     // Initialize health check monitoring
     this._startHealthCheck();
-    
+
     logger.info('🔷 Redis Config initialized with circuit breaker', {
       component: 'RedisConfig',
       action: 'constructor',
       maxRetries: this.maxRetries,
-      circuitBreakerThreshold: this.circuitBreaker.threshold
+      circuitBreakerThreshold: this.circuitBreaker.threshold,
     });
   }
 
-  /**
+  /*
    * Build Redis connection options with enhanced security
    */
   _buildOptions(role = 'default') {
@@ -87,7 +87,7 @@ class RedisConfig {
       REDIS_CONNECT_TIMEOUT = 10000,
       REDIS_COMMAND_TIMEOUT = 5000,
       REDIS_KEEP_ALIVE = 30000,
-      REDIS_MAX_RETRIES_PER_REQUEST = 3
+      REDIS_MAX_RETRIES_PER_REQUEST = 3,
     } = process.env;
 
     const baseOptions = {
@@ -116,7 +116,7 @@ class RedisConfig {
           return true;
         }
         return false;
-      }
+      },
     };
 
     // Add password if provided (with encryption in logs)
@@ -127,7 +127,7 @@ class RedisConfig {
         component: 'RedisConfig',
         action: '_buildOptions',
         role,
-        passwordSet: true
+        passwordSet: true,
       });
     }
 
@@ -142,17 +142,17 @@ class RedisConfig {
             return cryptoUtils.validateCertificate(cert);
           }
           return undefined;
-        }
+        },
       };
     }
 
     // Configure Sentinel with multiple hosts for high availability
     if (REDIS_SENTINEL_NAME && REDIS_SENTINEL_HOSTS) {
-      const sentinelHosts = REDIS_SENTINEL_HOSTS.split(',').map(host => {
+      const sentinelHosts = REDIS_SENTINEL_HOSTS.split(',').map((host) => {
         const [h, p] = host.split(':');
         return {
           host: h,
-          port: parseInt(p) || 26379
+          port: parseInt(p) || 26379,
         };
       });
 
@@ -162,22 +162,23 @@ class RedisConfig {
       baseOptions.role = 'master';
       baseOptions.preferredSlaves = [
         { ip: '127.0.0.1', port: '6380' },
-        { ip: '127.0.0.1', port: '6381' }
+        { ip: '127.0.0.1', port: '6381' },
       ];
-      
+
       logger.info('Redis Sentinel configured', {
         component: 'RedisConfig',
         action: '_buildOptions',
         role,
         sentinelCount: sentinelHosts.length,
-        masterName: REDIS_SENTINEL_NAME
+        masterName: REDIS_SENTINEL_NAME,
       });
     }
 
     // Configure Cluster mode with retry and scaling
     if (REDIS_CLUSTER_MODE === 'true') {
       const clusterNodes = (process.env.REDIS_CLUSTER_NODES || `${REDIS_HOST}:${REDIS_PORT}`)
-        .split(',').map(node => {
+        .split(',')
+        .map((node) => {
           const [host, port] = node.split(':');
           return { host, port: parseInt(port) };
         });
@@ -192,14 +193,14 @@ class RedisConfig {
         enableAutoPipelining: true,
         autoPipeliningIgnoredCommands: ['ping'],
         nodes: clusterNodes,
-        redisOptions: baseOptions
+        redisOptions: baseOptions,
       };
     }
 
     return baseOptions;
   }
 
-  /**
+  /*
    * Enhanced retry strategy with exponential backoff and circuit breaker
    */
   _retryStrategy(times, role) {
@@ -207,21 +208,21 @@ class RedisConfig {
     if (this.circuitBreaker.state === 'OPEN') {
       const now = Date.now();
       const timeSinceLastFailure = now - (this.circuitBreaker.lastFailure || 0);
-      
+
       if (timeSinceLastFailure > this.circuitBreaker.timeout) {
         this.circuitBreaker.state = 'HALF_OPEN';
         logger.info('Circuit breaker half-open, allowing test connection', {
           component: 'RedisConfig',
           action: 'retryStrategy',
           role,
-          timeSinceLastFailure
+          timeSinceLastFailure,
         });
       } else {
         logger.warn('Circuit breaker open, rejecting connection', {
           component: 'RedisConfig',
           action: 'retryStrategy',
           role,
-          timeUntilRetry: this.circuitBreaker.timeout - timeSinceLastFailure
+          timeUntilRetry: this.circuitBreaker.timeout - timeSinceLastFailure,
         });
         return null;
       }
@@ -231,7 +232,7 @@ class RedisConfig {
       logger.info('Shutting down, stopping retries', {
         component: 'RedisConfig',
         action: 'retryStrategy',
-        role
+        role,
       });
       return null;
     }
@@ -241,26 +242,26 @@ class RedisConfig {
         component: 'RedisConfig',
         action: 'retryStrategy',
         role,
-        attempts: times
+        attempts: times,
       });
-      
+
       // Trip circuit breaker
       this.circuitBreaker.failures++;
       this.circuitBreaker.lastFailure = Date.now();
-      
+
       if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {
         this.circuitBreaker.state = 'OPEN';
         logger.error('Circuit breaker tripped OPEN', {
           component: 'RedisConfig',
           action: 'retryStrategy',
           role,
-          failures: this.circuitBreaker.failures
+          failures: this.circuitBreaker.failures,
         });
-        
+
         // Enter fallback mode
         this.fallbackMode = true;
       }
-      
+
       return null;
     }
 
@@ -268,7 +269,7 @@ class RedisConfig {
     const baseDelay = Math.min(times * this.retryDelay, 30000);
     const jitter = Math.random() * 1000;
     const delay = baseDelay + jitter;
-    
+
     logger.warn('Redis connection retry', {
       component: 'RedisConfig',
       action: 'retryStrategy',
@@ -277,7 +278,7 @@ class RedisConfig {
       baseDelay,
       jitter,
       nextRetryIn: delay,
-      circuitBreakerState: this.circuitBreaker.state
+      circuitBreakerState: this.circuitBreaker.state,
     });
 
     metrics.increment('redis.connection.retries', 1);
@@ -286,15 +287,15 @@ class RedisConfig {
     return delay;
   }
 
-  /**
+  /*
    * Create Redis client for specific role with enhanced monitoring
    */
   async createClient(role = 'default') {
     const startTime = Date.now();
-    
+
     try {
       const options = this._buildOptions(role);
-      
+
       logger.info('Creating Redis client', {
         component: 'RedisConfig',
         action: 'createClient',
@@ -303,11 +304,11 @@ class RedisConfig {
         port: options.port,
         db: options.db,
         clusterMode: options.nodes ? true : false,
-        sentinelMode: options.sentinels ? true : false
+        sentinelMode: options.sentinels ? true : false,
       });
 
       let client;
-      
+
       // Create appropriate client type
       if (options.nodes) {
         // Cluster mode
@@ -328,7 +329,7 @@ class RedisConfig {
 
       // Store client
       this.clients.set(role, client);
-      
+
       // Reset circuit breaker on successful connection
       if (this.circuitBreaker.state !== 'CLOSED') {
         this.circuitBreaker.state = 'CLOSED';
@@ -336,10 +337,10 @@ class RedisConfig {
         logger.info('Circuit breaker reset to CLOSED', {
           component: 'RedisConfig',
           action: 'createClient',
-          role
+          role,
         });
       }
-      
+
       this.fallbackMode = false;
       this.connectionAttempts = 0;
 
@@ -367,20 +368,19 @@ class RedisConfig {
         circuitBreakerState: this.circuitBreaker.state,
         forensicId,
         forensicHash,
-        cryptoVersion: crypto.version
+        cryptoVersion: crypto.version,
       };
-      
+
       await auditLogger.audit(auditEntry);
 
       return client;
-
     } catch (error) {
       this.connectionAttempts++;
       this.circuitBreaker.failures++;
       this.circuitBreaker.lastFailure = Date.now();
-      
+
       const duration = Date.now() - startTime;
-      
+
       logger.error('Failed to create Redis client', {
         component: 'RedisConfig',
         action: 'createClient',
@@ -389,7 +389,7 @@ class RedisConfig {
         stack: error.stack,
         attempt: this.connectionAttempts,
         failures: this.circuitBreaker.failures,
-        duration
+        duration,
       });
 
       metrics.increment('redis.connection.failures', 1);
@@ -402,12 +402,12 @@ class RedisConfig {
           component: 'RedisConfig',
           action: 'createClient',
           role,
-          failures: this.circuitBreaker.failures
+          failures: this.circuitBreaker.failures,
         });
-        
+
         // Enter fallback mode
         this.fallbackMode = true;
-        
+
         // Schedule reconnect attempt
         this._scheduleReconnect(role);
       }
@@ -416,7 +416,7 @@ class RedisConfig {
     }
   }
 
-  /**
+  /*
    * Set up enhanced event listeners
    */
   _setupEventListeners(client, role, options) {
@@ -426,7 +426,7 @@ class RedisConfig {
         action: 'event',
         role,
         host: options.host,
-        port: options.port
+        port: options.port,
       });
       metrics.setGauge(`redis.connection.${role}.status`, 0.5);
     });
@@ -438,7 +438,7 @@ class RedisConfig {
         action: 'event',
         role,
         host: options.host,
-        port: options.port
+        port: options.port,
       });
       metrics.setGauge(`redis.connection.${role}.status`, 1);
       metrics.setGauge('redis.connection.ready', 1);
@@ -450,7 +450,7 @@ class RedisConfig {
         action: 'event',
         role,
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       metrics.increment(`redis.connection.${role}.errors`, 1);
       metrics.increment('redis.connection.errors', 1);
@@ -460,7 +460,7 @@ class RedisConfig {
       logger.warn('Redis client closed', {
         component: 'RedisConfig',
         action: 'event',
-        role
+        role,
       });
       metrics.setGauge(`redis.connection.${role}.status`, 0);
       metrics.setGauge('redis.connection.ready', 0);
@@ -471,7 +471,7 @@ class RedisConfig {
         component: 'RedisConfig',
         action: 'event',
         role,
-        delay
+        delay,
       });
       metrics.increment(`redis.connection.${role}.reconnects`, 1);
     });
@@ -480,7 +480,7 @@ class RedisConfig {
       logger.warn('Redis connection ended', {
         component: 'RedisConfig',
         action: 'event',
-        role
+        role,
       });
       metrics.setGauge(`redis.connection.${role}.status`, 0);
     });
@@ -489,7 +489,7 @@ class RedisConfig {
       logger.debug('Redis client waiting for connection', {
         component: 'RedisConfig',
         action: 'event',
-        role
+        role,
       });
     });
 
@@ -499,7 +499,7 @@ class RedisConfig {
         action: 'event',
         role,
         node: `${node.options.host}:${node.options.port}`,
-        error: error.message
+        error: error.message,
       });
       metrics.increment('redis.cluster.node.errors', 1);
     });
@@ -509,7 +509,7 @@ class RedisConfig {
         component: 'RedisConfig',
         action: 'event',
         role,
-        node: `${node.options.host}:${node.options.port}`
+        node: `${node.options.host}:${node.options.port}`,
       });
     });
 
@@ -518,19 +518,22 @@ class RedisConfig {
         component: 'RedisConfig',
         action: 'event',
         role,
-        node: `${node.options.host}:${node.options.port}`
+        node: `${node.options.host}:${node.options.port}`,
       });
     });
   }
 
-  /**
+  /*
    * Wait for client to be ready with timeout
    */
   async _waitForReady(client, role) {
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error(`Redis connection timeout for role: ${role}`));
-      }, parseInt(process.env.REDIS_CONNECT_TIMEOUT) || 30000);
+      const timeout = setTimeout(
+        () => {
+          reject(new Error(`Redis connection timeout for role: ${role}`));
+        },
+        parseInt(process.env.REDIS_CONNECT_TIMEOUT) || 30000
+      );
 
       client.once('ready', () => {
         clearTimeout(timeout);
@@ -555,7 +558,7 @@ class RedisConfig {
     });
   }
 
-  /**
+  /*
    * Schedule reconnection attempt
    */
   _scheduleReconnect(role) {
@@ -564,53 +567,53 @@ class RedisConfig {
     }
 
     const delay = this.circuitBreaker.timeout;
-    
+
     this.reconnectTimer = setTimeout(() => {
       logger.info('Attempting to reconnect Redis after circuit breaker timeout', {
         component: 'RedisConfig',
         action: 'scheduleReconnect',
         role,
-        delay
+        delay,
       });
-      
+
       this.circuitBreaker.state = 'HALF_OPEN';
-      this.createClient(role).catch(err => {
+      this.createClient(role).catch((err) => {
         logger.error('Reconnection attempt failed', {
           component: 'RedisConfig',
           action: 'scheduleReconnect',
           role,
-          error: err.message
+          error: err.message,
         });
       });
     }, delay);
   }
 
-  /**
+  /*
    * Get Redis client for specific role
    */
   getClient(role = 'default') {
     const client = this.clients.get(role);
-    
+
     if (!client && this.fallbackMode) {
       logger.warn('Redis client not found, operating in fallback mode', {
         component: 'RedisConfig',
         action: 'getClient',
-        role
+        role,
       });
-      
+
       // Return null in fallback mode - caller should handle
       return null;
     }
-    
+
     return client;
   }
 
-  /**
+  /*
    * Get BullMQ compatible connection
    */
   getBullConnection(role = 'bull') {
     const client = this.getClient(role);
-    
+
     if (!client) {
       if (this.fallbackMode) {
         // In fallback mode, throw a specific error that BullMQ can handle
@@ -618,22 +621,22 @@ class RedisConfig {
       }
       throw new Error(`Redis client not found for role: ${role}`);
     }
-    
+
     return client;
   }
 
-  /**
+  /*
    * Execute command with fallback support
    */
   async executeWithFallback(role, command, args, fallbackValue = null) {
     const client = this.getClient(role);
-    
+
     if (!client) {
       logger.warn('Executing command in fallback mode', {
         component: 'RedisConfig',
         action: 'executeWithFallback',
         role,
-        command
+        command,
       });
       metrics.increment('redis.fallback.executions', 1);
       return fallbackValue;
@@ -649,16 +652,16 @@ class RedisConfig {
         action: 'executeWithFallback',
         role,
         command,
-        error: error.message
+        error: error.message,
       });
       metrics.increment('redis.command.failures', 1);
-      
+
       // Return fallback value on error
       return fallbackValue;
     }
   }
 
-  /**
+  /*
    * Enhanced health check with circuit breaker status
    */
   async healthCheck() {
@@ -670,7 +673,7 @@ class RedisConfig {
         const ping = await client.ping();
         const info = await client.info('server').catch(() => '{}');
         const memory = await client.info('memory').catch(() => '{}');
-        
+
         const roleStatus = ping === 'PONG' ? 'healthy' : 'unhealthy';
         if (roleStatus !== 'healthy') {
           overallStatus = 'degraded';
@@ -682,11 +685,11 @@ class RedisConfig {
           const nodes = client.nodes();
           clusterInfo = {
             nodeCount: nodes.length,
-            nodes: nodes.map(node => ({
+            nodes: nodes.map((node) => ({
               host: node.options.host,
               port: node.options.port,
-              status: node.status
-            }))
+              status: node.status,
+            })),
           };
         }
 
@@ -695,10 +698,10 @@ class RedisConfig {
         if (client.options?.sentinels) {
           sentinelInfo = {
             masterName: client.options.name,
-            sentinelCount: client.options.sentinels.length
+            sentinelCount: client.options.sentinels.length,
           };
         }
-        
+
         results[role] = {
           status: roleStatus,
           ping,
@@ -707,14 +710,14 @@ class RedisConfig {
           connected: client.status === 'ready',
           commandQueueLength: client.commandQueue?.length || 0,
           clusterInfo,
-          sentinelInfo
+          sentinelInfo,
         };
       } catch (error) {
         overallStatus = 'degraded';
         results[role] = {
           status: 'unhealthy',
           error: error.message,
-          connected: false
+          connected: false,
         };
       }
     }
@@ -726,15 +729,15 @@ class RedisConfig {
       circuitBreaker: {
         state: this.circuitBreaker.state,
         failures: this.circuitBreaker.failures,
-        lastFailure: this.circuitBreaker.lastFailure
+        lastFailure: this.circuitBreaker.lastFailure,
       },
       clients: results,
       totalClients: this.clients.size,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
-  /**
+  /*
    * Parse Redis INFO output - now using the section parameter
    */
   _parseInfo(info, section) {
@@ -766,13 +769,13 @@ class RedisConfig {
         component: 'RedisConfig',
         action: '_parseInfo',
         section,
-        error: error.message
+        error: error.message,
       });
       return { _error: error.message, _requested_section: section };
     }
   }
 
-  /**
+  /*
    * Parse memory info - now using all parsed keys
    */
   _parseMemory(info) {
@@ -780,7 +783,7 @@ class RedisConfig {
       const lines = info.split('\n');
       const memory = {
         raw: {}, // Store all raw values
-        metrics: {} // Store parsed metrics
+        metrics: {}, // Store parsed metrics
       };
 
       for (const line of lines) {
@@ -788,10 +791,10 @@ class RedisConfig {
           const [key, value] = line.split(':');
           const trimmedKey = key.trim();
           const trimmedValue = value.trim();
-          
+
           // Store all keys for debugging
           memory.raw[trimmedKey] = trimmedValue;
-          
+
           // Parse specific metrics
           switch (trimmedKey) {
             case 'used_memory_human':
@@ -849,24 +852,24 @@ class RedisConfig {
       logger.error('Failed to parse Redis memory info', {
         component: 'RedisConfig',
         action: '_parseMemory',
-        error: error.message
+        error: error.message,
       });
       return { _error: error.message };
     }
   }
 
-  /**
+  /*
    * Parse human-readable memory string to bytes
    */
   _parseMemoryBytes(humanString) {
     if (!humanString) return 0;
-    
+
     const units = {
-      'B': 1,
-      'KB': 1024,
-      'MB': 1024 * 1024,
-      'GB': 1024 * 1024 * 1024,
-      'TB': 1024 * 1024 * 1024 * 1024
+      B: 1,
+      KB: 1024,
+      MB: 1024 * 1024,
+      GB: 1024 * 1024 * 1024,
+      TB: 1024 * 1024 * 1024 * 1024,
     };
 
     const match = humanString.match(/^(\d+(?:\.\d+)?)\s*([KMGTP]?B)$/i);
@@ -875,49 +878,54 @@ class RedisConfig {
       const unit = match[2].toUpperCase();
       return Math.round(value * (units[unit] || 1));
     }
-    
+
     return 0;
   }
 
-  /**
+  /*
    * Start health check monitoring
    */
   _startHealthCheck() {
     const interval = parseInt(process.env.REDIS_HEALTH_CHECK_INTERVAL) || 30000;
-    
+
     this.healthCheckInterval = setInterval(async () => {
       try {
         const health = await this.healthCheck();
-        
+
         // Update metrics
         metrics.setGauge('redis.health.status', health.status === 'healthy' ? 1 : 0);
-        metrics.setGauge('redis.circuit.breaker.state', 
-          this.circuitBreaker.state === 'CLOSED' ? 0 : 
-          this.circuitBreaker.state === 'HALF_OPEN' ? 1 : 2);
-        
+        metrics.setGauge(
+          'redis.circuit.breaker.state',
+          this.circuitBreaker.state === 'CLOSED'
+            ? 0
+            : this.circuitBreaker.state === 'HALF_OPEN'
+              ? 1
+              : 2
+        );
+
         logger.debug('Redis health check completed', {
           component: 'RedisConfig',
           action: 'healthCheck',
           status: health.status,
           clientCount: health.totalClients,
-          circuitBreakerState: this.circuitBreaker.state
+          circuitBreakerState: this.circuitBreaker.state,
         });
       } catch (error) {
         logger.error('Redis health check failed', {
           component: 'RedisConfig',
           action: 'healthCheck',
-          error: error.message
+          error: error.message,
         });
       }
     }, interval);
   }
 
-  /**
+  /*
    * Disconnect all clients gracefully with enhanced cleanup
    */
   async disconnect() {
     this.isShuttingDown = true;
-    
+
     // Clear health check interval
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
@@ -927,23 +935,23 @@ class RedisConfig {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
     }
-    
+
     logger.info('Disconnecting all Redis clients', {
       component: 'RedisConfig',
       action: 'disconnect',
-      clientCount: this.clients.size
+      clientCount: this.clients.size,
     });
 
     const disconnectPromises = [];
 
     for (const [role, client] of this.clients) {
       disconnectPromises.push(
-        client.quit().catch(error => {
+        client.quit().catch((error) => {
           logger.error('Error disconnecting Redis client', {
             component: 'RedisConfig',
             action: 'disconnect',
             role,
-            error: error.message
+            error: error.message,
           });
           // Force disconnect if quit fails
           return client.disconnect();
@@ -956,22 +964,24 @@ class RedisConfig {
 
     logger.info('✅ All Redis clients disconnected', {
       component: 'RedisConfig',
-      action: 'disconnect'
+      action: 'disconnect',
     });
 
     // Final audit with crypto-generated ID
     const shutdownId = crypto.randomBytes(8).toString('hex');
-    
-    await auditLogger.audit({
-      action: 'REDIS_DISCONNECTED',
-      timestamp: new Date().toISOString(),
-      clientCount: this.clients.size,
-      shutdownId,
-      circuitBreakerState: this.circuitBreaker.state
-    }).catch(() => {});
+
+    await auditLogger
+      .audit({
+        action: 'REDIS_DISCONNECTED',
+        timestamp: new Date().toISOString(),
+        clientCount: this.clients.size,
+        shutdownId,
+        circuitBreakerState: this.circuitBreaker.state,
+      })
+      .catch(() => {});
   }
 
-  /**
+  /*
    * Get connection status summary
    */
   getStatus() {
@@ -982,7 +992,7 @@ class RedisConfig {
         connected: client.status === 'ready',
         status: client.status,
         commandQueueLength: client.commandQueue?.length || 0,
-        lastError: client.lastError?.message
+        lastError: client.lastError?.message,
       };
     }
 
@@ -993,13 +1003,13 @@ class RedisConfig {
       circuitBreaker: {
         state: this.circuitBreaker.state,
         failures: this.circuitBreaker.failures,
-        lastFailure: this.circuitBreaker.lastFailure
+        lastFailure: this.circuitBreaker.lastFailure,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
-  /**
+  /*
    * Clear all keys matching pattern (use with caution)
    */
   async clearPattern(pattern, role = 'default') {
@@ -1010,7 +1020,7 @@ class RedisConfig {
 
     const stream = client.scanStream({
       match: pattern,
-      count: 100
+      count: 100,
     });
 
     const keys = [];
@@ -1032,13 +1042,13 @@ class RedisConfig {
       action: 'clearPattern',
       role,
       pattern,
-      keyCount: keys.length
+      keyCount: keys.length,
     });
 
     return keys.length;
   }
 
-  /**
+  /*
    * Get Redis info summary
    */
   async getInfo(role = 'default') {
@@ -1053,23 +1063,23 @@ class RedisConfig {
     const sections = info.split('# ');
     for (const section of sections) {
       if (!section.trim()) continue;
-      
+
       const lines = section.split('\n');
       const sectionName = lines[0].replace(/\s/g, '_').toLowerCase();
       parsed[sectionName] = {};
-      
+
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
         if (line.includes(':')) {
           const [key, value] = line.split(':');
           parsed[sectionName][key.trim()] = value.trim();
-          
+
           // Use the key variable for tracking
           logger.debug(`Redis info key: ${key.trim()}`, {
             component: 'RedisConfig',
             action: 'getInfo',
             section: sectionName,
-            key: key.trim()
+            key: key.trim(),
           });
         }
       }
@@ -1082,7 +1092,7 @@ class RedisConfig {
 // Export singleton instance
 module.exports = new RedisConfig();
 
-/**
+/*
  * ASSUMPTIONS:
  * - REDIS_HOST, REDIS_PORT, REDIS_PASSWORD configured in production
  * - REDIS_SENTINEL_NAME and REDIS_SENTINEL_HOSTS for high availability

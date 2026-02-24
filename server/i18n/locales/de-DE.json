@@ -16,7 +16,7 @@
       "grouping": [3]
     }
   },
-  
+
   "common": {
     "save": "Speichern",
     "cancel": "Abbrechen",
@@ -74,7 +74,7 @@
     "rejected": "Abgelehnt",
     "cancelled": "Storniert"
   },
-  
+
   "navigation": {
     "home": "Startseite",
     "dashboard": "Dashboard",
@@ -94,7 +94,7 @@
     "subscription": "Abonnement",
     "notifications": "Benachrichtigungen"
   },
-  
+
   "errors": {
     "general": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
     "notFound": "Seite nicht gefunden",
@@ -111,7 +111,7 @@
       "maxLength": "{{field}} darf höchstens {{max}} Zeichen lang sein"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "Anmelden bei Wilsy OS",
@@ -137,7 +137,7 @@
       "success": "Registrierung erfolgreich"
     }
   },
-  
+
   "onboarding": {
     "title": "Kunden-Onboarding",
     "stages": {
@@ -191,7 +191,7 @@
       "completed": "Onboarding abgeschlossen"
     }
   },
-  
+
   "compliance": {
     "fica": {
       "title": "FICA-Compliance",

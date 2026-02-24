@@ -18,49 +18,49 @@
 
 const compression = require('compression');
 
-/**
+/*
  * COMPRESSION FILTER LOGIC:
  * Decides whether a response is a candidate for Gzip/Deflate.
  */
 const shouldCompress = (req, res) => {
-    // 1. HEADER OPT-OUT
-    if (req.headers['x-no-compression']) return false;
+  // 1. HEADER OPT-OUT
+  if (req.headers['x-no-compression']) return false;
 
-    // 2. STREAM PROTECTION
-    // Do not compress Server-Sent Events (SSE) or streams, as it breaks real-time delivery.
-    const contentType = res.getHeader('Content-Type') || '';
-    if (contentType === 'text/event-stream') return false;
+  // 2. STREAM PROTECTION
+  // Do not compress Server-Sent Events (SSE) or streams, as it breaks real-time delivery.
+  const contentType = res.getHeader('Content-Type') || '';
+  if (contentType === 'text/event-stream') return false;
 
-    // 3. BINARY PROTECTION
-    // PDFs and Images are already compressed. Re-compressing wastes CPU.
-    if (/\b(image|audio|video|application\/zip|application\/pdf)\b/i.test(contentType)) {
-        return false;
-    }
+  // 3. BINARY PROTECTION
+  // PDFs and Images are already compressed. Re-compressing wastes CPU.
+  if (/\b(image|audio|video|application\/zip|application\/pdf)\b/i.test(contentType)) {
+    return false;
+  }
 
-    // 4. DEFAULT COMPRESSION FILTER
-    return compression.filter(req, res);
+  // 4. DEFAULT COMPRESSION FILTER
+  return compression.filter(req, res);
 };
 
-/**
+/*
  * EXPORTED MIDDLEWARE CONFIGURATION:
  * Optimized for high-concurrency legal platforms.
  */
 const compressionMiddleware = compression({
-    // THRESHOLD: 1024 bytes (1KB). 
-    // Small responses gain no benefit from compression due to header overhead.
-    threshold: 1024,
+  // THRESHOLD: 1024 bytes (1KB).
+  // Small responses gain no benefit from compression due to header overhead.
+  threshold: 1024,
 
-    // FILTER: Uses the advanced logic defined above.
-    filter: shouldCompress,
+  // FILTER: Uses the advanced logic defined above.
+  filter: shouldCompress,
 
-    // LEVEL: 6 (Balanced). 
-    // Higher levels consume significantly more CPU for marginal size gains.
-    level: parseInt(process.env.COMPRESSION_LEVEL || '6', 10),
+  // LEVEL: 6 (Balanced).
+  // Higher levels consume significantly more CPU for marginal size gains.
+  level: parseInt(process.env.COMPRESSION_LEVEL || '6', 10),
 });
 
 /*
  * NOTE FOR ENGINEERS:
- * If users report 'Slow Real-time Updates', check if the Content-Type 
+ * If users report 'Slow Real-time Updates', check if the Content-Type
  * in the controller is set correctly to 'text/event-stream' to bypass this.
  */
 

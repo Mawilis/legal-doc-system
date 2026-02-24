@@ -8,7 +8,7 @@
     "rtl": false,
     "pluralRules": "1"
   },
-  
+
   "common": {
     "save": "Londoloza",
     "cancel": "Khansela",
@@ -43,7 +43,7 @@
     "description": "Incazelo",
     "details": "Imininingwane"
   },
-  
+
   "navigation": {
     "home": "Ikhaya",
     "dashboard": "Ideshibhodi",
@@ -56,7 +56,7 @@
     "support": "Ukusekela",
     "contact": "Xhumana nathi"
   },
-  
+
   "onboarding": {
     "title": "Ukufakwa kwamakhasimende",
     "stages": {

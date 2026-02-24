@@ -15,12 +15,12 @@ const { protect } = require('./authMiddleware');
 const { authorize } = require('./authorize');
 const { tenantScope } = require('./tenantScope');
 const {
-    headerSecurity,
-    authLimiter,
-    globalApiLimiter,
-    requestId,
-    tenantGuard,
-    errorNormalizer
+  headerSecurity,
+  authLimiter,
+  globalApiLimiter,
+  requestId,
+  tenantGuard,
+  errorNormalizer,
 } = require('./security');
 
 // 2. Access Control (RBAC)
@@ -51,43 +51,43 @@ const { uploadDocument } = require('./uploadMiddleware');
 const responseHandler = require('./responseHandler');
 
 module.exports = {
-    // Identity & Protection
-    protect,
-    authorize,
-    tenantScope,
-    headerSecurity,
-    authLimiter,
-    globalApiLimiter,
-    requestId,
-    tenantGuard,
-    errorNormalizer,
+  // Identity & Protection
+  protect,
+  authorize,
+  tenantScope,
+  headerSecurity,
+  authLimiter,
+  globalApiLimiter,
+  requestId,
+  tenantGuard,
+  errorNormalizer,
 
-    // Access Control
-    ...rbac,
-    ...roles,
+  // Access Control
+  ...rbac,
+  ...roles,
 
-    // Validation
-    validate,
-    sanitizeBody,
-    validateObjectId,
+  // Validation
+  validate,
+  sanitizeBody,
+  validateObjectId,
 
-    // Monitoring
-    emitAudit,
-    metricsMiddleware,
-    metricsEndpoint,
-    requestLogger,
-    ipMetadata,
-    userAgentRequired,
-    correlationId,
+  // Monitoring
+  emitAudit,
+  metricsMiddleware,
+  metricsEndpoint,
+  requestLogger,
+  ipMetadata,
+  userAgentRequired,
+  correlationId,
 
-    // Operations
-    errorHandler,
-    maintenanceMode,
-    features,
-    checkFeature,
-    apiLimiter,
+  // Operations
+  errorHandler,
+  maintenanceMode,
+  features,
+  checkFeature,
+  apiLimiter,
 
-    // Tools
-    uploadDocument,
-    ...responseHandler
+  // Tools
+  uploadDocument,
+  ...responseHandler,
 };

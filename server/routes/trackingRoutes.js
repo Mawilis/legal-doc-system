@@ -34,66 +34,67 @@ const validate = require('../middleware/validationMiddleware');
 const { Joi } = validate;
 
 const eventSchema = {
-    category: Joi.string().required(), // e.g., 'NAVIGATION', 'FEATURE_USE', 'ERROR'
-    action: Joi.string().required(),   // e.g., 'CLICKED_BTN', 'VIEWED_PAGE'
-    label: Joi.string().allow('').optional(),
-    value: Joi.number().optional(),    // e.g., Duration in ms
-    metadata: Joi.object().optional()  // Custom JSON data
+  category: Joi.string().required(), // e.g., 'NAVIGATION', 'FEATURE_USE', 'ERROR'
+  action: Joi.string().required(), // e.g., 'CLICKED_BTN', 'VIEWED_PAGE'
+  label: Joi.string().allow('').optional(),
+  value: Joi.number().optional(), // e.g., Duration in ms
+  metadata: Joi.object().optional(), // Custom JSON data
 };
 
 const batchEventSchema = {
-    events: Joi.array().items(eventSchema).min(1).max(100).required()
+  events: Joi.array().items(eventSchema).min(1).max(100).required(),
 };
 
 // ------------------------------
 // ROUTES
 // ------------------------------
 
-/**
+/*
  * @route   POST /api/tracking/event
  * @desc    Log Single User Activity
  * @access  Authenticated Users
  */
 router.post(
-    '/event',
-    protect,
-    requireSameTenant,
-    validate(eventSchema, 'body'),
-    async (req, res, next) => {
-        try {
-            // Fire-and-forget pattern often used here, but we await for reliability in prod
-            const result = await trackingController.trackEvent(req, res);
+  '/event',
+  protect,
+  requireSameTenant,
+  validate(eventSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      // Fire-and-forget pattern often used here, but we await for reliability in prod
+      const result = await trackingController.trackEvent(req, res);
 
-            // Note: Tracking events are NOT audited to prevent infinite loops and log bloat.
+      // Note: Tracking events are NOT audited to prevent infinite loops and log bloat.
 
-            if (!res.headersSent && result) res.status(201).json({ status: 'success' });
-        } catch (err) {
-            // Tracking failures should generally not break the UI
-            console.error('Tracking Error:', err.message);
-            res.status(200).json({ status: 'ignored' });
-        }
+      if (!res.headersSent && result) res.status(201).json({ status: 'success' });
+    } catch (err) {
+      // Tracking failures should generally not break the UI
+      console.error('Tracking Error:', err.message);
+      res.status(200).json({ status: 'ignored' });
     }
+  }
 );
 
-/**
+/*
  * @route   POST /api/tracking/batch
  * @desc    Log Multiple User Activities (Performance Optimized)
  * @access  Authenticated Users
  */
 router.post(
-    '/batch',
-    protect,
-    requireSameTenant,
-    validate(batchEventSchema, 'body'),
-    async (req, res, next) => {
-        try {
-            const result = await trackingController.trackBatch(req, res);
-            if (!res.headersSent && result) res.status(201).json({ status: 'success', count: result.count });
-        } catch (err) {
-            console.error('Batch Tracking Error:', err.message);
-            res.status(200).json({ status: 'ignored' });
-        }
+  '/batch',
+  protect,
+  requireSameTenant,
+  validate(batchEventSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const result = await trackingController.trackBatch(req, res);
+      if (!res.headersSent && result)
+        res.status(201).json({ status: 'success', count: result.count });
+    } catch (err) {
+      console.error('Batch Tracking Error:', err.message);
+      res.status(200).json({ status: 'ignored' });
     }
+  }
 );
 
 module.exports = router;

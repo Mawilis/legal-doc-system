@@ -19,7 +19,7 @@
     "speakers": "4.6 million",
     "province": "Limpopo, Gauteng, Mpumalanga"
   },
-  
+
   "common": {
     "save": "Boloka",
     "cancel": "Khansela",
@@ -77,7 +77,7 @@
     "rejected": "E ganne",
     "cancelled": "E hlakahlakantšwe"
   },
-  
+
   "navigation": {
     "home": "Gae",
     "dashboard": "Deshaboto",
@@ -94,7 +94,7 @@
     "privacy": "Pholisi ya sephiri",
     "security": "Tšhireletšo"
   },
-  
+
   "errors": {
     "general": "Phošo e diregile. Hleka leka gape.",
     "notFound": "Letlakala ga le hwetšagale",
@@ -110,7 +110,7 @@
       "number": "Hleka tsenya nomoro ye e šomago"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "Tsena go Wilsy OS",
@@ -139,7 +139,7 @@
       "success": "O tšwetše ka katlego"
     }
   },
-  
+
   "onboarding": {
     "title": "Go tsenya bareki",
     "stages": {
@@ -171,7 +171,7 @@
       "ficaRejected": "FICA e ganne"
     }
   },
-  
+
   "compliance": {
     "fica": {
       "title": "Go obamela FICA",

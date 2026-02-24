@@ -1,0 +1,28 @@
+graph TD
+    A[Precedent Model] --> B[Mongoose ODM]
+    A --> C[AuditLogger]
+    A --> D[QuantumLogger]
+    A --> E[TenantContext Middleware]
+    A --> F[CryptoUtils]
+    
+    B --> G[(MongoDB Atlas)]
+    C --> H[Forensic Audit Trail]
+    D --> I[Quantum-Safe Logging]
+    
+    A --> J[PrecedentAnalyzer Service]
+    J --> K[Citation Network]
+    J --> L[Semantic Search]
+    J --> M[Authority Scoring]
+    
+    A --> N[AI Embedding Service]
+    N --> O[Vector Database]
+    
+    A --> P[Cross-Jurisdiction Analyzer]
+    P --> Q[Comparative Law]
+    
+    style A fill:#f9f,stroke:#333,stroke-width:4px
+    style B fill:#bbf,stroke:#333
+    style C fill:#bfb,stroke:#333
+    style D fill:#fbf,stroke:#333
+    style J fill:#ff9,stroke:#333
+    style N fill:#9ff,stroke:#333

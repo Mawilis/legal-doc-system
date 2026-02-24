@@ -1,7 +1,7 @@
 /* eslint-disable */
-/**
+/*
  * WILSY OS - Audit Chain Verifier
- * 
+ *
  * Usage: node scripts/verify-audit-chains.js
  */
 
@@ -14,7 +14,7 @@ dotenv.config();
 
 const log = {
   info: (...args) => console.log(...args),
-  error: (...args) => console.error(...args)
+  error: (...args) => console.error(...args),
 };
 
 async function verifyAllChains() {
@@ -32,7 +32,7 @@ async function verifyAllChains() {
     for (const tenant of tenants) {
       process.stdout.write(`\n  Verifying ${tenant.name}... `);
       const result = await ValidationAudit.verifyChain(tenant.tenantId);
-      
+
       totalEntries += result.entryCount;
 
       if (result.verified) {
@@ -55,7 +55,6 @@ async function verifyAllChains() {
 
     await mongoose.disconnect();
     process.exit(tampered > 0 ? 1 : 0);
-
   } catch (error) {
     log.error('❌ Error:', error.message);
     process.exit(1);

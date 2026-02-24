@@ -1,0 +1,44 @@
+graph TB
+    subgraph "Core Model [CaseParty]"
+        A[CaseParty Schema] --> B[Party Identification]
+        A --> C[Representation Network]
+        A --> D[Appearance Tracking]
+        A --> E[Relationship Graph]
+        A --> F[Consent Management]
+    end
+    
+    subgraph "Security Layer"
+        G[Field-Level Encryption] --> A
+        H[Quantum-Resistant Hashing] --> A
+        I[Biometric Verification] --> D
+        J[Blockchain Consent] --> F
+    end
+    
+    subgraph "Compliance Layer"
+        K[POPIA §19] --> F
+        L[GDPR Art.17] --> F
+        M[Companies Act §28] --> E
+        N[ECT Act §15] --> G
+    end
+    
+    subgraph "Integration Services"
+        O[Conflict Detection] --> E
+        P[Relationship Mapper] --> E
+        Q[Compliance Reporter] --> F
+        R[Audit Logger] --> A
+        S[Quantum Logger] --> A
+    end
+    
+    subgraph "Investor Value"
+        T[R750K Annual Savings] --> O
+        U[R2M Risk Prevention] --> O
+        V[92% Margins] --> P
+        W[R12.5M Enterprise Value] --> Q
+    end
+    
+    style A fill:#f9f,stroke:#333,stroke-width:4px
+    style G fill:#bfb,stroke:#333,stroke-width:2px
+    style H fill:#bfb,stroke:#333,stroke-width:2px
+    style K fill:#ff9,stroke:#333,stroke-width:2px
+    style O fill:#9ff,stroke:#333,stroke-width:3px
+    style T fill:#f9f9,stroke:#333,stroke-width:2px

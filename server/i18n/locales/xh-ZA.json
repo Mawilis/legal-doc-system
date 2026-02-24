@@ -8,7 +8,7 @@
     "rtl": false,
     "pluralRules": "1"
   },
-  
+
   "common": {
     "save": "Gcina",
     "cancel": "Rhoxisa",
@@ -43,7 +43,7 @@
     "description": "Inkcazo",
     "details": "Iinkcukacha"
   },
-  
+
   "navigation": {
     "home": "Ikhaya",
     "dashboard": "Ideshibhodi",
@@ -56,7 +56,7 @@
     "support": "Inkxaso",
     "contact": "Qhagamshelana nathi"
   },
-  
+
   "onboarding": {
     "title": "Ukungeniswa komthengi",
     "stages": {

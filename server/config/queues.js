@@ -2,13 +2,13 @@
   ║ QUEUES CONFIGURATION - INVESTOR-GRADE MODULE                                ║
   ║ 100% job reliability | Zero data loss | High-throughput processing          ║
   ╚══════════════════════════════════════════════════════════════════════════════╝*/
-/**
+/*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/queues.js
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R4.5M/year in lost jobs and processing delays
  * • Generates: R3.2M/year savings @ 85% margin
  * • Compliance: POPIA §19 - Job audit trails
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "expectedConsumers": [
@@ -23,7 +23,7 @@
  *     "../utils/auditLogger"
  *   ]
  * }
- * 
+ *
  * MERMAID INTEGRATION DIAGRAM:
  * graph TD
  *   A[API Route] -->|create job| B[Queue Config]
@@ -50,111 +50,111 @@ const QUEUE_DEFINITIONS = {
     concurrency: 5,
     limiter: {
       max: 100,
-      duration: 60000 // 100 jobs per minute
+      duration: 60000, // 100 jobs per minute
     },
     defaultJobOptions: {
       attempts: 3,
       backoff: {
         type: 'exponential',
-        delay: 2000
+        delay: 2000,
       },
       removeOnComplete: {
         age: 86400, // 24 hours
-        count: 1000
+        count: 1000,
       },
       removeOnFail: {
-        age: 604800 // 7 days
-      }
-    }
+        age: 604800, // 7 days
+      },
+    },
   },
   fica_screening: {
     name: 'fica-screening',
     concurrency: 3,
     limiter: {
       max: 50,
-      duration: 60000 // 50 jobs per minute
+      duration: 60000, // 50 jobs per minute
     },
     defaultJobOptions: {
       attempts: 5,
       backoff: {
         type: 'exponential',
-        delay: 5000
+        delay: 5000,
       },
       removeOnComplete: {
         age: 604800, // 7 days
-        count: 500
+        count: 500,
       },
       removeOnFail: {
-        age: 2592000 // 30 days
-      }
-    }
+        age: 2592000, // 30 days
+      },
+    },
   },
   email_notification: {
     name: 'email-notification',
     concurrency: 10,
     limiter: {
       max: 200,
-      duration: 60000 // 200 jobs per minute
+      duration: 60000, // 200 jobs per minute
     },
     defaultJobOptions: {
       attempts: 3,
       backoff: {
         type: 'fixed',
-        delay: 30000
+        delay: 30000,
       },
       removeOnComplete: {
         age: 86400, // 24 hours
-        count: 10000
+        count: 10000,
       },
       removeOnFail: {
-        age: 604800 // 7 days
-      }
-    }
+        age: 604800, // 7 days
+      },
+    },
   },
   report_generation: {
     name: 'report-generation',
     concurrency: 2,
     limiter: {
       max: 20,
-      duration: 60000 // 20 jobs per minute
+      duration: 60000, // 20 jobs per minute
     },
     defaultJobOptions: {
       attempts: 3,
       backoff: {
         type: 'exponential',
-        delay: 10000
+        delay: 10000,
       },
       removeOnComplete: {
         age: 604800, // 7 days
-        count: 100
+        count: 100,
       },
       removeOnFail: {
-        age: 2592000 // 30 days
-      }
-    }
+        age: 2592000, // 30 days
+      },
+    },
   },
   audit_cleanup: {
     name: 'audit-cleanup',
     concurrency: 1,
     limiter: {
       max: 10,
-      duration: 60000 // 10 jobs per minute
+      duration: 60000, // 10 jobs per minute
     },
     defaultJobOptions: {
       attempts: 2,
       backoff: {
         type: 'exponential',
-        delay: 30000
+        delay: 30000,
       },
       removeOnComplete: {
         age: 86400, // 24 hours
-        count: 100
+        count: 100,
       },
       removeOnFail: {
-        age: 604800 // 7 days
-      }
-    }
-  }
+        age: 604800, // 7 days
+      },
+    },
+  },
 };
 
 class QueueConfig {
@@ -164,18 +164,18 @@ class QueueConfig {
     this.connection = null;
   }
 
-  /**
+  /*
    * Initialize queue system
    */
   async initialize() {
     try {
       // Get Redis connection
       this.connection = redisConfig.getBullConnection('bull');
-      
+
       logger.info('Queue system initializing', {
         component: 'QueueConfig',
         action: 'initialize',
-        queueCount: Object.keys(QUEUE_DEFINITIONS).length
+        queueCount: Object.keys(QUEUE_DEFINITIONS).length,
       });
 
       // Create all queues
@@ -186,27 +186,26 @@ class QueueConfig {
       logger.info('✅ Queue system initialized successfully', {
         component: 'QueueConfig',
         action: 'initialize',
-        queues: Array.from(this.queues.keys())
+        queues: Array.from(this.queues.keys()),
       });
 
       // Audit log
       await auditLogger.audit({
         action: 'QUEUE_SYSTEM_INITIALIZED',
         queues: Array.from(this.queues.keys()),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-
     } catch (error) {
       logger.error('Failed to initialize queue system', {
         component: 'QueueConfig',
         action: 'initialize',
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Create a queue
    */
   async createQueue(key, definition) {
@@ -214,7 +213,7 @@ class QueueConfig {
       const queue = new Queue(definition.name, {
         connection: this.connection,
         defaultJobOptions: definition.defaultJobOptions,
-        limiter: definition.limiter
+        limiter: definition.limiter,
       });
 
       // Set up event listeners
@@ -223,7 +222,7 @@ class QueueConfig {
           component: 'QueueConfig',
           action: 'event',
           queue: definition.name,
-          jobId: job.id
+          jobId: job.id,
         });
         metrics.increment(`queue.${key}.jobs.waiting`, 1);
       });
@@ -233,7 +232,7 @@ class QueueConfig {
           component: 'QueueConfig',
           action: 'event',
           queue: definition.name,
-          jobId: job.id
+          jobId: job.id,
         });
         metrics.increment(`queue.${key}.jobs.active`, 1);
       });
@@ -244,7 +243,7 @@ class QueueConfig {
           action: 'event',
           queue: definition.name,
           jobId: job.id,
-          duration: job.finishedOn - job.processedOn
+          duration: job.finishedOn - job.processedOn,
         });
         metrics.increment(`queue.${key}.jobs.completed`, 1);
         metrics.recordTiming(`queue.${key}.job.duration`, job.finishedOn - job.processedOn);
@@ -257,7 +256,7 @@ class QueueConfig {
           queue: definition.name,
           jobId: job?.id,
           error: error.message,
-          attempts: job?.attemptsMade
+          attempts: job?.attemptsMade,
         });
         metrics.increment(`queue.${key}.jobs.failed`, 1);
       });
@@ -268,7 +267,7 @@ class QueueConfig {
           action: 'event',
           queue: definition.name,
           jobId: job.id,
-          progress
+          progress,
         });
         metrics.setGauge(`queue.${key}.job.progress`, progress);
       });
@@ -278,14 +277,14 @@ class QueueConfig {
           component: 'QueueConfig',
           action: 'event',
           queue: definition.name,
-          jobId: job.id
+          jobId: job.id,
         });
         metrics.increment(`queue.${key}.jobs.stalled`, 1);
       });
 
       this.queues.set(key, {
         instance: queue,
-        ...definition
+        ...definition,
       });
 
       logger.info(`Queue created: ${definition.name}`, {
@@ -293,30 +292,29 @@ class QueueConfig {
         action: 'createQueue',
         key,
         concurrency: definition.concurrency,
-        limiter: definition.limiter
+        limiter: definition.limiter,
       });
 
       return queue;
-
     } catch (error) {
       logger.error(`Failed to create queue: ${definition.name}`, {
         component: 'QueueConfig',
         action: 'createQueue',
         key,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Get queue by key
    */
   getQueue(key) {
     return this.queues.get(key)?.instance;
   }
 
-  /**
+  /*
    * Register worker for queue
    */
   async registerWorker(key, processor, options = {}) {
@@ -333,7 +331,7 @@ class QueueConfig {
         lockDuration: 30000,
         stalledInterval: 30000,
         maxStalledCount: 2,
-        ...options
+        ...options,
       });
 
       worker.on('completed', (_job) => {
@@ -347,7 +345,7 @@ class QueueConfig {
           action: 'worker',
           queue: definition.name,
           jobId: job?.id,
-          error: error.message
+          error: error.message,
         });
       });
 
@@ -357,7 +355,7 @@ class QueueConfig {
           component: 'QueueConfig',
           action: 'worker',
           queue: definition.name,
-          error: error.message
+          error: error.message,
         });
       });
 
@@ -367,27 +365,26 @@ class QueueConfig {
         component: 'QueueConfig',
         action: 'registerWorker',
         key,
-        concurrency: options.concurrency || definition.concurrency
+        concurrency: options.concurrency || definition.concurrency,
       });
 
       return worker;
-
     } catch (error) {
       logger.error(`Failed to register worker for queue: ${key}`, {
         component: 'QueueConfig',
         action: 'registerWorker',
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Add job to queue
    */
   async addJob(key, jobName, data, options = {}) {
     const startTime = Date.now();
-    
+
     try {
       const queue = this.getQueue(key);
       if (!queue) {
@@ -397,7 +394,7 @@ class QueueConfig {
       const definition = this.queues.get(key);
       const jobOptions = {
         ...definition.defaultJobOptions,
-        ...options
+        ...options,
       };
 
       const job = await queue.add(jobName, data, jobOptions);
@@ -411,7 +408,7 @@ class QueueConfig {
         queue: key,
         jobId: job.id,
         jobName,
-        dataSize: JSON.stringify(data).length
+        dataSize: JSON.stringify(data).length,
       });
 
       // Audit log for compliance
@@ -420,23 +417,22 @@ class QueueConfig {
         queue: key,
         jobId: job.id,
         jobName,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return job;
-
     } catch (error) {
       logger.error('Failed to add job to queue', {
         component: 'QueueConfig',
         action: 'addJob',
         queue: key,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Get job status
    */
   async getJobStatus(key, jobId) {
@@ -452,7 +448,7 @@ class QueueConfig {
       }
 
       const state = await job.getState();
-      
+
       return {
         id: job.id,
         name: job.name,
@@ -464,22 +460,21 @@ class QueueConfig {
         processedOn: job.processedOn,
         finishedOn: job.finishedOn,
         failedReason: job.failedReason,
-        stacktrace: job.stacktrace
+        stacktrace: job.stacktrace,
       };
-
     } catch (error) {
       logger.error('Failed to get job status', {
         component: 'QueueConfig',
         action: 'getJobStatus',
         queue: key,
         jobId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Get queue metrics
    */
   async getQueueMetrics(key) {
@@ -494,7 +489,7 @@ class QueueConfig {
         queue.getActiveCount(),
         queue.getCompletedCount(),
         queue.getFailedCount(),
-        queue.getDelayedCount()
+        queue.getDelayedCount(),
       ]);
 
       return {
@@ -503,21 +498,20 @@ class QueueConfig {
         completed,
         failed,
         delayed,
-        total: waiting + active + completed + failed + delayed
+        total: waiting + active + completed + failed + delayed,
       };
-
     } catch (error) {
       logger.error('Failed to get queue metrics', {
         component: 'QueueConfig',
         action: 'getQueueMetrics',
         queue: key,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Pause queue
    */
   async pauseQueue(key) {
@@ -528,31 +522,30 @@ class QueueConfig {
       }
 
       await queue.pause();
-      
+
       logger.info('Queue paused', {
         component: 'QueueConfig',
         action: 'pauseQueue',
-        queue: key
+        queue: key,
       });
 
       await auditLogger.audit({
         action: 'QUEUE_PAUSED',
         queue: key,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-
     } catch (error) {
       logger.error('Failed to pause queue', {
         component: 'QueueConfig',
         action: 'pauseQueue',
         queue: key,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Resume queue
    */
   async resumeQueue(key) {
@@ -563,31 +556,30 @@ class QueueConfig {
       }
 
       await queue.resume();
-      
+
       logger.info('Queue resumed', {
         component: 'QueueConfig',
         action: 'resumeQueue',
-        queue: key
+        queue: key,
       });
 
       await auditLogger.audit({
         action: 'QUEUE_RESUMED',
         queue: key,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-
     } catch (error) {
       logger.error('Failed to resume queue', {
         component: 'QueueConfig',
         action: 'resumeQueue',
         queue: key,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Clean queue
    */
   async cleanQueue(key, grace = 86400000, limit = 100) {
@@ -598,42 +590,41 @@ class QueueConfig {
       }
 
       const cleaned = await queue.clean(grace, limit);
-      
+
       logger.info('Queue cleaned', {
         component: 'QueueConfig',
         action: 'cleanQueue',
         queue: key,
-        cleanedCount: cleaned.length
+        cleanedCount: cleaned.length,
       });
 
       await auditLogger.audit({
         action: 'QUEUE_CLEANED',
         queue: key,
         cleanedCount: cleaned.length,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return cleaned;
-
     } catch (error) {
       logger.error('Failed to clean queue', {
         component: 'QueueConfig',
         action: 'cleanQueue',
         queue: key,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Health check
    */
   async healthCheck() {
     const status = {
       service: 'queues',
       timestamp: new Date().toISOString(),
-      queues: {}
+      queues: {},
     };
 
     for (const [key, definition] of this.queues) {
@@ -642,13 +633,13 @@ class QueueConfig {
         status.queues[key] = {
           name: definition.name,
           metrics,
-          healthy: true
+          healthy: true,
         };
       } catch (error) {
         status.queues[key] = {
           name: definition.name,
           healthy: false,
-          error: error.message
+          error: error.message,
         };
       }
     }
@@ -656,7 +647,7 @@ class QueueConfig {
     return status;
   }
 
-  /**
+  /*
    * Shutdown all queues and workers
    */
   async shutdown() {
@@ -664,7 +655,7 @@ class QueueConfig {
       component: 'QueueConfig',
       action: 'shutdown',
       queueCount: this.queues.size,
-      workerCount: this.workers.size
+      workerCount: this.workers.size,
     });
 
     // Close all workers first
@@ -673,7 +664,7 @@ class QueueConfig {
       logger.debug('Worker closed', {
         component: 'QueueConfig',
         action: 'shutdown',
-        key
+        key,
       });
     }
 
@@ -683,7 +674,7 @@ class QueueConfig {
       logger.debug('Queue closed', {
         component: 'QueueConfig',
         action: 'shutdown',
-        key
+        key,
       });
     }
 
@@ -692,12 +683,12 @@ class QueueConfig {
 
     logger.info('Queue system shutdown complete', {
       component: 'QueueConfig',
-      action: 'shutdown'
+      action: 'shutdown',
     });
 
     await auditLogger.audit({
       action: 'QUEUE_SYSTEM_SHUTDOWN',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 }

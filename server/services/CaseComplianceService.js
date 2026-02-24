@@ -2,7 +2,7 @@
   ║ CASE COMPLIANCE SERVICE - INVESTOR-GRADE MODULE              ║
   ║ [90% PAIA compliance cost reduction | R5M risk elimination]  ║
   ╚════════════════════════════════════════════════════════════════╝*/
-/**
+/*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/CaseComplianceService.js
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R300K/year manual PAIA compliance tracking
@@ -26,7 +26,7 @@ class CaseComplianceService {
     this.CONFLICT_SEVERITY_THRESHOLD = 'high';
   }
 
-  /**
+  /*
    * Create new case with automated compliance checks
    */
   async createCaseWithCompliance(caseData, userContext) {
@@ -40,7 +40,7 @@ class CaseComplianceService {
 
       // Get Case model
       const Case = this._getCaseModel();
-      
+
       // Add compliance metadata
       const enhancedCaseData = {
         ...caseData,
@@ -50,23 +50,23 @@ class CaseComplianceService {
           riskLevel: this._calculateRiskLevel(caseData),
           retentionStart: new Date(),
           lpcRule7Compliant: false,
-          popiaConsentObtained: false
+          popiaConsentObtained: false,
         },
         metadata: {
           retentionPolicy: {
             rule: 'COMPANIES_ACT_7YR',
-            disposalDate: this._calculateDisposalDate(new Date(), 'COMPANIES_ACT_7YR')
+            disposalDate: this._calculateDisposalDate(new Date(), 'COMPANIES_ACT_7YR'),
           },
           storageLocation: {
             dataResidencyCompliance: 'ZA_ONLY',
-            primaryRegion: 'af-south-1'
-          }
+            primaryRegion: 'af-south-1',
+          },
         },
         audit: {
           createdBy: userId,
           createdAt: new Date(),
-          version: 1
-        }
+          version: 1,
+        },
       };
 
       const newCase = new Case(enhancedCaseData);
@@ -83,16 +83,16 @@ class CaseComplianceService {
           caseNumber: newCase.caseNumber,
           riskLevel: newCase.compliance.riskLevel,
           retentionPolicy: 'companies_act_10_years',
-          dataResidency: 'ZA'
+          dataResidency: 'ZA',
         },
         retentionPolicy: 'companies_act_10_years',
-        dataResidency: 'ZA'
+        dataResidency: 'ZA',
       });
 
       logger.info('Case created with compliance', {
         tenantId,
         caseId: newCase._id,
-        complianceScore: this._calculateComplianceScore(newCase)
+        complianceScore: this._calculateComplianceScore(newCase),
       });
 
       return {
@@ -103,22 +103,21 @@ class CaseComplianceService {
           conflictScreened: newCase.conflictStatus.checked,
           riskLevel: newCase.compliance.riskLevel,
           retentionPolicy: 'companies_act_10_years',
-          dataResidency: 'ZA'
+          dataResidency: 'ZA',
         },
         economicImpact: {
           annualSavingsEstimate: 180000,
           riskReduction: 'R5M+ liability reduction',
-          complianceAutomation: '90% PAIA processing automated'
-        }
+          complianceAutomation: '90% PAIA processing automated',
+        },
       };
-
     } catch (error) {
       logger.error('Case creation failed', { tenantId, error: error.message });
       throw error;
     }
   }
 
-  /**
+  /*
    * Process PAIA request with statutory compliance
    */
   async processPAIARequest(caseId, paiaRequestData, userContext) {
@@ -138,7 +137,7 @@ class CaseComplianceService {
         requestDate,
         statutoryDeadline,
         status: 'PENDING',
-        audit: { createdBy: userId, createdAt: requestDate }
+        audit: { createdBy: userId, createdAt: requestDate },
       });
 
       await auditLogger.audit({
@@ -152,10 +151,10 @@ class CaseComplianceService {
           requestId: result.requestId,
           statutoryDeadline: statutoryDeadline.toISOString(),
           retentionPolicy: 'companies_act_10_years',
-          dataResidency: 'ZA'
+          dataResidency: 'ZA',
         },
         retentionPolicy: 'companies_act_10_years',
-        dataResidency: 'ZA'
+        dataResidency: 'ZA',
       });
 
       return {
@@ -164,23 +163,22 @@ class CaseComplianceService {
         statutoryDeadline: statutoryDeadline.toISOString(),
         compliance: {
           section: 'PAIA_S25',
-          responseDays: this.PAIA_DEADLINE_DAYS
-        }
+          responseDays: this.PAIA_DEADLINE_DAYS,
+        },
       };
-
     } catch (error) {
       logger.error('PAIA request failed', { tenantId, error: error.message });
       throw error;
     }
   }
 
-  /**
+  /*
    * Generate compliance report
    */
   async generateComplianceReport(tenantId) {
     try {
       const Case = this._getCaseModel();
-      
+
       const metrics = await Case.aggregate([
         { $match: { tenantId } },
         {
@@ -189,22 +187,24 @@ class CaseComplianceService {
             totalCases: { $sum: 1 },
             activeCases: { $sum: { $cond: [{ $eq: ['$status', 'ACTIVE'] }, 1, 0] } },
             casesWithPAIA: { $sum: { $cond: [{ $gt: [{ $size: '$paiaRequests' }, 0] }, 1, 0] } },
-            conflictCleared: { $sum: { $cond: [{ $eq: ['$conflictStatus.checked', true] }, 1, 0] } }
-          }
-        }
+            conflictCleared: {
+              $sum: { $cond: [{ $eq: ['$conflictStatus.checked', true] }, 1, 0] },
+            },
+          },
+        },
       ]);
 
       const complianceData = metrics[0] || {
         totalCases: 0,
         activeCases: 0,
         casesWithPAIA: 0,
-        conflictCleared: 0
+        conflictCleared: 0,
       };
 
       const complianceScore = this._calculateOverallComplianceScore(complianceData);
       const economicImpact = {
         annualSavings: complianceData.totalCases * 180000,
-        riskLiabilityReduction: complianceData.totalCases * 5000000
+        riskLiabilityReduction: complianceData.totalCases * 5000000,
       };
 
       const report = {
@@ -216,8 +216,8 @@ class CaseComplianceService {
         regulatoryCompliance: {
           paia: this._checkPAIACompliance(complianceData),
           popia: this._checkPOPIACompliance(),
-          lpc: this._checkLPCCompliance(complianceData)
-        }
+          lpc: this._checkLPCCompliance(complianceData),
+        },
       };
 
       await auditLogger.audit({
@@ -228,14 +228,13 @@ class CaseComplianceService {
           totalCases: complianceData.totalCases,
           annualSavings: economicImpact.annualSavings,
           retentionPolicy: 'companies_act_10_years',
-          dataResidency: 'ZA'
+          dataResidency: 'ZA',
         },
         retentionPolicy: 'companies_act_10_years',
-        dataResidency: 'ZA'
+        dataResidency: 'ZA',
       });
 
       return report;
-
     } catch (error) {
       logger.error('Compliance report failed', { tenantId, error: error.message });
       throw error;
@@ -259,7 +258,9 @@ class CaseComplianceService {
       redacted.client.name = `REDACTED_${redacted.client.name.slice(-3)}`;
     }
     if (redacted.client?.contactDetails?.email) {
-      redacted.client.contactDetails.email = `REDACTED_${redacted.client.contactDetails.email.split('@')[0].slice(-3)}@${redacted.client.contactDetails.email.split('@')[1]}`;
+      redacted.client.contactDetails.email = `REDACTED_${redacted.client.contactDetails.email
+        .split('@')[0]
+        .slice(-3)}@${redacted.client.contactDetails.email.split('@')[1]}`;
     }
     return redacted;
   }
@@ -267,10 +268,10 @@ class CaseComplianceService {
   _generatePAIAManualUrl(matterType) {
     const baseUrl = 'https://compliance.wilsyos.com/paia/manual';
     const matterMap = {
-      'LITIGATION': '/litigation-disclosure',
-      'TRANSACTIONAL': '/commercial-records',
-      'REGULATORY': '/regulatory-submissions',
-      'COMPLIANCE': '/internal-audits'
+      LITIGATION: '/litigation-disclosure',
+      TRANSACTIONAL: '/commercial-records',
+      REGULATORY: '/regulatory-submissions',
+      COMPLIANCE: '/internal-audits',
     };
     return `${baseUrl}${matterMap[matterType] || '/general'}`;
   }
@@ -281,7 +282,7 @@ class CaseComplianceService {
     if (caseData.matterDetails?.valueAtRisk > 1000000) score += 40;
     if (caseData.client?.entityId) score += 20;
     if (caseData.opponents?.length > 2) score += 10;
-    
+
     if (score >= 70) return 'CRITICAL';
     if (score >= 50) return 'HIGH';
     if (score >= 30) return 'MEDIUM';
@@ -290,13 +291,14 @@ class CaseComplianceService {
 
   _calculateDisposalDate(startDate, policyRule) {
     const disposalDate = new Date(startDate);
-    const yearIncrement = {
-      'COMPANIES_ACT_7YR': 7,
-      'LPC_6YR': 6,
-      'PAIA_5YR': 5,
-      'PERMANENT': 100
-    }[policyRule] || 7;
-    
+    const yearIncrement =
+      {
+        COMPANIES_ACT_7YR: 7,
+        LPC_6YR: 6,
+        PAIA_5YR: 5,
+        PERMANENT: 100,
+      }[policyRule] || 7;
+
     disposalDate.setFullYear(disposalDate.getFullYear() + yearIncrement);
     return disposalDate;
   }
@@ -313,19 +315,20 @@ class CaseComplianceService {
   _identifyComplianceIssues(caseDoc) {
     const issues = [];
     const now = new Date();
-    
-    (caseDoc.paiaRequests || []).forEach(request => {
-      if (['PENDING', 'IN_REVIEW'].includes(request.status) && 
-          request.statutoryDeadline < now) {
+
+    (caseDoc.paiaRequests || []).forEach((request) => {
+      if (['PENDING', 'IN_REVIEW'].includes(request.status) && request.statutoryDeadline < now) {
         issues.push('PAIA_DEADLINE_MISSED');
       }
     });
-    
-    if (caseDoc.conflictStatus?.foundConflicts?.length > 0 && 
-        !caseDoc.conflictStatus.clearanceDate) {
+
+    if (
+      caseDoc.conflictStatus?.foundConflicts?.length > 0 &&
+      !caseDoc.conflictStatus.clearanceDate
+    ) {
       issues.push('UNRESOLVED_CONFLICTS');
     }
-    
+
     return issues;
   }
 
@@ -340,7 +343,7 @@ class CaseComplianceService {
       section25Compliant: true,
       manualPublished: true,
       informationOfficerDesignated: true,
-      complianceLevel: 'FULL_COMPLIANCE'
+      complianceLevel: 'FULL_COMPLIANCE',
     };
   }
 
@@ -348,42 +351,46 @@ class CaseComplianceService {
     return {
       informationOfficer: { appointed: true, trained: true },
       dataProcessing: { lawfulBasis: 'CONTRACTUAL_NECESSITY' },
-      complianceLevel: 'FULL_COMPLIANCE'
+      complianceLevel: 'FULL_COMPLIANCE',
     };
   }
 
   _checkLPCCompliance(metrics) {
-    const conflictRate = metrics.totalCases > 0 ? 
-      (metrics.conflictCleared / metrics.totalCases) * 100 : 100;
-    
+    const conflictRate =
+      metrics.totalCases > 0 ? (metrics.conflictCleared / metrics.totalCases) * 100 : 100;
+
     return {
       rule7Compliance: {
-        conflictChecking: conflictRate >= 95 ? 'FULLY_COMPLIANT' : 
-                        conflictRate >= 80 ? 'PARTIALLY_COMPLIANT' : 'NON_COMPLIANT'
+        conflictChecking:
+          conflictRate >= 95
+            ? 'FULLY_COMPLIANT'
+            : conflictRate >= 80
+              ? 'PARTIALLY_COMPLIANT'
+              : 'NON_COMPLIANT',
       },
-      professionalIndemnity: { insured: true, coverAmount: 'R5,000,000' }
+      professionalIndemnity: { insured: true, coverAmount: 'R5,000,000' },
     };
   }
 
   _generateRecommendations(metrics) {
     const recommendations = [];
-    
-    if (metrics.totalCases > 0 && (metrics.conflictCleared / metrics.totalCases) < 0.95) {
+
+    if (metrics.totalCases > 0 && metrics.conflictCleared / metrics.totalCases < 0.95) {
       recommendations.push({
         priority: 'MEDIUM',
         action: 'Enhance conflict screening',
         estimatedSavings: 50000,
-        timeline: '60_DAYS'
+        timeline: '60_DAYS',
       });
     }
-    
+
     recommendations.push({
       priority: 'LOW',
       action: 'Automated compliance reporting',
       estimatedSavings: 64000,
-      timeline: '45_DAYS'
+      timeline: '45_DAYS',
     });
-    
+
     return recommendations;
   }
 
@@ -391,7 +398,7 @@ class CaseComplianceService {
     return {
       annualSavings: 300000 * 0.85, // R300K * 85% automation
       riskReduction: 5000000,
-      paiaProcessingSavings: (caseDoc.paiaRequests?.length || 0) * 5000
+      paiaProcessingSavings: (caseDoc.paiaRequests?.length || 0) * 5000,
     };
   }
 }

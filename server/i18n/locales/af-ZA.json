@@ -8,7 +8,7 @@
     "rtl": false,
     "pluralRules": "1"
   },
-  
+
   "common": {
     "save": "Stoor",
     "cancel": "Kanselleer",
@@ -56,7 +56,7 @@
     "credit": "Krediet",
     "debit": "Debiet"
   },
-  
+
   "navigation": {
     "home": "Tuis",
     "dashboard": "Paneelbord",
@@ -73,7 +73,7 @@
     "privacy": "Privaatheidsbeleid",
     "security": "Sekuriteit"
   },
-  
+
   "onboarding": {
     "title": "Kliënt Aanboord",
     "stages": {
@@ -112,7 +112,7 @@
       "completed": "Aanboord voltooi"
     }
   },
-  
+
   "compliance": {
     "fica": {
       "title": "FICA Nakoming",

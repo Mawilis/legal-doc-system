@@ -1,4 +1,4 @@
-/**
+/*
  * File: server/routes/caseFileRoutes.js
  * PATH: server/routes/caseFileRoutes.js
  * STATUS: PRODUCTION-READY | SOVEREIGN GATEWAY | EPITOME
@@ -48,88 +48,70 @@ router.use(tenantScope); // The "Iron Wall" starts here for all sub-routes
    1. CASE MANAGEMENT (Sovereign CRUD)
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * @route   POST /api/v1/cases
  * @desc    Initialize a new Legal Case File
  * @access  Private (Legal Staff / Admin / Owner)
  */
-router.post(
-    '/',
-    requireRole('LEGAL_STAFF', 'ADMIN', 'OWNER'),
-    caseFileController.createCase
-);
+router.post('/', requireRole('LEGAL_STAFF', 'ADMIN', 'OWNER'), caseFileController.createCase);
 
-/**
+/*
  * @route   GET /api/v1/cases
  * @desc    Retrieve all cases within the Law Firm's sovereign boundary
  * @access  Private (All Firm Members)
  */
-router.get(
-    '/',
-    caseFileController.getCases
-);
+router.get('/', caseFileController.getCases);
 
-/**
+/*
  * @route   GET /api/v1/cases/:id
  * @desc    Deep-dive into a specific Case File's discovery and timeline
  * @access  Private (All Firm Members)
  */
-router.get(
-    '/:id',
-    caseFileController.getCaseDetails
-);
+router.get('/:id', caseFileController.getCaseDetails);
 
 /* ---------------------------------------------------------------------------
    2. HIGH COURT DISCOVERY (Rule 35 Engine)
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * @route   GET /api/v1/cases/:id/discovery-bundle
  * @desc    Stream a Court-Ready Discovery Bundle (Zip)
  * @access  Private (Legal Professionals / Admin)
  */
 router.get(
-    '/:id/discovery-bundle',
-    requireRole('LAWYER', 'ADMIN', 'OWNER'),
-    caseFileController.generateDiscoveryBundle
+  '/:id/discovery-bundle',
+  requireRole('LAWYER', 'ADMIN', 'OWNER'),
+  caseFileController.generateDiscoveryBundle
 );
 
 /* ---------------------------------------------------------------------------
    3. LIFECYCLE GOVERNANCE
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * @route   PATCH /api/v1/cases/:id/status
  * @desc    Transition case through legal lifecycle (e.g., Litigated -> Settled)
  * @access  Private (Lawyer / Admin / Owner)
  */
 router.patch(
-    '/:id/status',
-    requireRole('LAWYER', 'ADMIN', 'OWNER'),
-    caseFileController.transitionCaseStatus
+  '/:id/status',
+  requireRole('LAWYER', 'ADMIN', 'OWNER'),
+  caseFileController.transitionCaseStatus
 );
 
-/**
+/*
  * @route   POST /api/v1/cases/:id/archive
  * @desc    Move case to Cold Storage for 7-year Law Society compliance
  * @access  Private (Admin / Owner)
  */
-router.post(
-    '/:id/archive',
-    requireRole('ADMIN', 'OWNER'),
-    caseFileController.archiveCase
-);
+router.post('/:id/archive', requireRole('ADMIN', 'OWNER'), caseFileController.archiveCase);
 
-/**
+/*
  * @route   DELETE /api/v1/cases/:id
  * @desc    Permanent expungement of a case node (POPIA Right to Erasure)
  * @access  Private (Owner / SuperAdmin)
  */
-router.delete(
-    '/:id',
-    requireRole('OWNER', 'SUPER_ADMIN'),
-    caseFileController.deleteCase
-);
+router.delete('/:id', requireRole('OWNER', 'SUPER_ADMIN'), caseFileController.deleteCase);
 
 /* ---------------------------------------------------------------------------
    EXPORTS

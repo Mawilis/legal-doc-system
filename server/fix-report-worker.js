@@ -3,12 +3,12 @@ const path = require('path');
 
 const filePath = path.join(__dirname, '../server/workers/reportWorker.js');
 if (fs.existsSync(filePath)) {
-    let content = fs.readFileSync(filePath, 'utf8');
-    
-    // Replace the function to actually use the parameter
-    content = content.replace(
-        /async function generateReport\(reportData\)\s*\{[\s\S]*?\}/,
-        `async function generateReport(reportData) {
+  let content = fs.readFileSync(filePath, 'utf8');
+
+  // Replace the function to actually use the parameter
+  content = content.replace(
+    /async function generateReport\(reportData\)\s*\{[\s\S]*?\}/,
+    `async function generateReport(reportData) {
     if (!reportData || !reportData.id) {
         throw new Error('Invalid report data');
     }
@@ -21,8 +21,8 @@ if (fs.existsSync(filePath)) {
         timestamp: new Date().toISOString()
     };
 }`
-    );
-    
-    fs.writeFileSync(filePath, content);
-    console.log('Fixed reportWorker.js to use parameter');
+  );
+
+  fs.writeFileSync(filePath, content);
+  console.log('Fixed reportWorker.js to use parameter');
 }

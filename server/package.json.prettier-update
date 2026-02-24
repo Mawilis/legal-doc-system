@@ -1,0 +1,27 @@
+{
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:staged": "pretty-quick --staged",
+    "format:js": "prettier --write \"**/*.js\"",
+    "format:json": "prettier --write \"**/*.json\"",
+    "format:md": "prettier --write \"**/*.md\"",
+    "format:yml": "prettier --write \"**/*.{yml,yaml}\"",
+    "format:fix": "prettier --write . && eslint . --fix",
+    "precommit": "lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "prettier": "^3.1.0",
+    "pretty-quick": "^3.1.0",
+    "lint-staged": "^15.2.0"
+  }
+}

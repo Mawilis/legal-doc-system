@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 
-/* *****************************************************************************
+/* 
  * ⚖️  LEGAL ROUTES INDEX - MULTI-TENANT LEGAL SERVICE GATEWAY
  * =============================================================================
- * 
+ *
  * FILENAME: index.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/legal/index.js
  * PURPOSE: Central routing hub for all legal services with tenant isolation,
  *          compliance enforcement, and audit logging
- * 
+ *
  * ASCII FLOW:
  * ┌─────────┐    ┌─────────────┐    ┌──────────────┐    ┌─────────────┐
  * │ Request │───▶│ Tenant      │───▶│ Authorization│───▶│ Legal       │
  * │         │    │ Validation  │    │              │    │ Service     │
  * └─────────┘    └─────────────┘    └──────────────┘    └─────────────┘
- * 
+ *
  * MERMAID FLOWCHART:
- * 
+ *
  * ```mermaid
  * flowchart TD
  *     A[HTTP Request] --> B{Tenant Context?}
@@ -28,38 +28,38 @@
  *     F --> H[Audit Logging]
  *     H --> I[Response]
  * ```
- * 
+ *
  * COMPLIANCE: POPIA §14, ECT Act §1, Companies Act §5, PAIA §14
  * TENANT ISOLATION: Enforced via tenantContext middleware
  * DATA RESIDENCY: South Africa enforced via storageLocation
- * 
+ *
  * CHIEF ARCHITECT:
  *   Wilson Khanyezi | wilsy.wk@gmail.com | +27 69 046 5710
- * 
+ *
  * ROI IMPACT: Centralizes legal service routing, reduces code duplication by 80%,
  *             ensures consistent compliance enforcement across all legal endpoints
- * 
- *******************************************************************************/
+ *
+ */
 
-/**
+/*
  * ============================================================================
  * LEGAL ROUTES INDEX - PRODUCTION GRADE
  * ============================================================================
- * 
- * Purpose: Central routing hub for all legal services with multi-tenant 
+ *
+ * Purpose: Central routing hub for all legal services with multi-tenant
  * isolation, compliance enforcement, and audit logging
- * 
+ *
  * Security: Tenant isolation, RBAC/ABAC authorization, audit trail
  * Compliance: POPIA, ECT Act, Companies Act, PAIA integrated
  * Multi-tenancy: Strict tenant boundary enforcement
- * 
+ *
  * Architecture:
  * 1. Tenant context validation middleware
  * 2. Authorization middleware
  * 3. Service-specific route handlers
  * 4. Audit logging middleware
  * 5. Error handling and compliance reporting
- * 
+ *
  * ============================================================================
  */
 
@@ -87,142 +87,152 @@ const precedentService = require('../../services/precedentService');
 // ============================================================================
 
 const RATE_LIMIT_CONFIG = {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: {
-        error: 'Too many requests from this IP, please try again after 15 minutes',
-        compliance: 'POPIA §14 - Rate limiting for data protection'
-    },
-    standardHeaders: true,
-    legacyHeaders: false
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: {
+    error: 'Too many requests from this IP, please try again after 15 minutes',
+    compliance: 'POPIA §14 - Rate limiting for data protection',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 };
 
 const LEGAL_SERVICE_TYPES = {
-    CONFLICT_RESOLUTION: 'CONFLICT_RESOLUTION',
-    DOCUMENT_ANALYSIS: 'DOCUMENT_ANALYSIS',
-    CASE_MANAGEMENT: 'CASE_MANAGEMENT',
-    PRECEDENT_SEARCH: 'PRECEDENT_SEARCH',
-    COMPLIANCE_CHECK: 'COMPLIANCE_CHECK'
+  CONFLICT_RESOLUTION: 'CONFLICT_RESOLUTION',
+  DOCUMENT_ANALYSIS: 'DOCUMENT_ANALYSIS',
+  CASE_MANAGEMENT: 'CASE_MANAGEMENT',
+  PRECEDENT_SEARCH: 'PRECEDENT_SEARCH',
+  COMPLIANCE_CHECK: 'COMPLIANCE_CHECK',
 };
 
 // ============================================================================
 // SECURITY MIDDLEWARE STACK
 // ============================================================================
 
-/**
+/*
  * Apply security middleware stack to all legal routes
  * @security Multi-layer protection: Helmet, rate limiting, tenant isolation
  */
-router.use(helmet({
+router.use(
+  helmet({
     contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'"],
-            imgSrc: ["'self'", "data:", "https:"]
-        }
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
     },
     hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true
-    }
-}));
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
 
-/**
+/*
  * Per-tenant rate limiting
  * @security Prevent abuse, ensure fair usage
  */
 const tenantRateLimiter = rateLimit({
-    ...RATE_LIMIT_CONFIG,
-    keyGenerator: (req) => {
-        // Rate limit by tenant + IP combination
-        const tenantId = req.tenantContext?.tenantId || 'unknown-tenant';
-        const clientIp = req.ip || req.connection.remoteAddress;
-        return `${tenantId}:${clientIp}`;
-    }
+  ...RATE_LIMIT_CONFIG,
+  keyGenerator: (req) => {
+    // Rate limit by tenant + IP combination
+    const tenantId = req.tenantContext?.tenantId || 'unknown-tenant';
+    const clientIp = req.ip || req.connection.remoteAddress;
+    return `${tenantId}:${clientIp}`;
+  },
 });
 
 router.use(tenantRateLimiter);
 
-/**
+/*
  * Tenant context validation - FAIL CLOSED
  * @security Tenant isolation enforcement
  * @compliance POPIA §11 - Lawful processing basis
  */
 router.use((req, res, next) => {
-    if (!req.tenantContext || !req.tenantContext.tenantId) {
-        return res.status(401).json({
-            error: 'Tenant context required',
-            compliance: 'POPIA §11 - Processing must have lawful basis',
-            requestId: req.id || createHash('sha256').update(Date.now().toString()).digest('hex').substring(0, 16)
-        });
-    }
-    next();
+  if (!req.tenantContext || !req.tenantContext.tenantId) {
+    return res.status(401).json({
+      error: 'Tenant context required',
+      compliance: 'POPIA §11 - Processing must have lawful basis',
+      requestId:
+        req.id || createHash('sha256').update(Date.now().toString()).digest('hex').substring(0, 16),
+    });
+  }
+  next();
 });
 
 // ============================================================================
 // LEGAL SERVICE ROUTES
 // ============================================================================
 
-/**
+/*
  * @route   GET /api/legal/health
  * @desc    Health check endpoint for legal services
  * @access  Public (with tenant validation)
  * @security Tenant isolation enforced
  * @compliance Basic availability monitoring
  */
-router.get('/health', [
-    tenantContext.validateTenant
-], async (req, res) => {
-    try {
-        const healthStatus = {
-            status: 'healthy',
-            timestamp: new Date().toISOString(),
-            tenantId: req.tenantContext.tenantId,
-            services: {
-                conflictService: conflictService ? 'available' : 'unavailable',
-                documentService: documentService ? 'available' : 'unavailable',
-                caseService: caseService ? 'available' : 'unavailable',
-                precedentService: precedentService ? 'available' : 'unavailable'
-            },
-            // Compliance evidence
-            compliance: {
-                popia: 'compliant',
-                ectAct: 'timestamped',
-                dataResidency: 'ZA'
-            }
-        };
+router.get('/health', [tenantContext.validateTenant], async (req, res) => {
+  try {
+    const healthStatus = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      tenantId: req.tenantContext.tenantId,
+      services: {
+        conflictService: conflictService ? 'available' : 'unavailable',
+        documentService: documentService ? 'available' : 'unavailable',
+        caseService: caseService ? 'available' : 'unavailable',
+        precedentService: precedentService ? 'available' : 'unavailable',
+      },
+      // Compliance evidence
+      compliance: {
+        popia: 'compliant',
+        ectAct: 'timestamped',
+        dataResidency: 'ZA',
+      },
+    };
 
-        // Log health check for monitoring
-        await auditLogger.log({
-            tenantId: req.tenantContext.tenantId,
-            userId: req.user?.id || 'system',
-            action: 'HEALTH_CHECK',
-            entityType: 'LEGAL_SERVICES',
-            details: healthStatus
-        });
+    // Log health check for monitoring
+    await auditLogger.log({
+      tenantId: req.tenantContext.tenantId,
+      userId: req.user?.id || 'system',
+      action: 'HEALTH_CHECK',
+      entityType: 'LEGAL_SERVICES',
+      details: healthStatus,
+    });
 
-        res.status(200).json(healthStatus);
-    } catch (error) {
-        res.status(503).json({
-            status: 'unhealthy',
-            error: error.message,
-            timestamp: new Date().toISOString()
-        });
-    }
+    res.status(200).json(healthStatus);
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
-/**
+/*
  * @route   POST /api/legal/conflict/analyze
  * @desc    Analyze legal conflict with jurisdiction-aware processing
  * @access  Private (requires ATTORNEY, PARTNER, or MANAGER role)
  * @security Tenant isolation, role-based authorization
  * @compliance POPIA §11, ECT Act, Companies Act
  */
-router.post('/conflict/analyze', [
+router.post(
+  '/conflict/analyze',
+  [
     // Input validation
-    body('type').isIn(['CONTRACTUAL', 'JURISDICTIONAL', 'STATUTORY', 'PROCEDURAL', 'EVIDENTIARY', 'COST']),
+    body('type').isIn([
+      'CONTRACTUAL',
+      'JURISDICTIONAL',
+      'STATUTORY',
+      'PROCEDURAL',
+      'EVIDENTIARY',
+      'COST',
+    ]),
     body('description').isString().isLength({ min: 10, max: 5000 }),
     body('parties').isArray({ min: 2 }),
     body('parties.*.name').isString().trim().notEmpty(),
@@ -241,73 +251,76 @@ router.post('/conflict/analyze', [
     complianceEnforcer.enforceDataResidency('ZA'),
 
     // Audit logging
-    auditLogger.middleware('CONFLICT_ANALYSIS')
-], async (req, res) => {
+    auditLogger.middleware('CONFLICT_ANALYSIS'),
+  ],
+  async (req, res) => {
     try {
-        // Validate input
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({
-                error: 'Validation failed',
-                details: errors.array(),
-                compliance: 'POPIA §11 - Data quality principle'
-            });
-        }
-
-        const { tenantContext, user } = req;
-        const conflictData = req.body;
-
-        // Analyze conflict
-        const analysisResult = await conflictService.analyzeConflict(
-            conflictData,
-            { tenantId: tenantContext.tenantId, user }
-        );
-
-        // Success response
-        res.status(200).json({
-            success: true,
-            data: analysisResult,
-            metadata: {
-                analyzedAt: new Date().toISOString(),
-                tenantId: tenantContext.tenantId,
-                userId: user.id,
-                // Compliance evidence
-                complianceMarkers: ['POPIA', 'ECTAct', 'CompaniesAct'],
-                dataResidency: 'ZA'
-            }
+      // Validate input
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: errors.array(),
+          compliance: 'POPIA §11 - Data quality principle',
         });
+      }
 
+      const { tenantContext, user } = req;
+      const conflictData = req.body;
+
+      // Analyze conflict
+      const analysisResult = await conflictService.analyzeConflict(conflictData, {
+        tenantId: tenantContext.tenantId,
+        user,
+      });
+
+      // Success response
+      res.status(200).json({
+        success: true,
+        data: analysisResult,
+        metadata: {
+          analyzedAt: new Date().toISOString(),
+          tenantId: tenantContext.tenantId,
+          userId: user.id,
+          // Compliance evidence
+          complianceMarkers: ['POPIA', 'ECTAct', 'CompaniesAct'],
+          dataResidency: 'ZA',
+        },
+      });
     } catch (error) {
-        // Error handling with compliance logging
-        await auditLogger.log({
-            tenantId: req.tenantContext?.tenantId,
-            userId: req.user?.id,
-            action: 'CONFLICT_ANALYSIS_ERROR',
-            entityType: 'CONFLICT',
-            details: {
-                error: error.message,
-                conflictData: req.body,
-                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-            }
-        });
+      // Error handling with compliance logging
+      await auditLogger.log({
+        tenantId: req.tenantContext?.tenantId,
+        userId: req.user?.id,
+        action: 'CONFLICT_ANALYSIS_ERROR',
+        entityType: 'CONFLICT',
+        details: {
+          error: error.message,
+          conflictData: req.body,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        },
+      });
 
-        res.status(500).json({
-            error: 'Conflict analysis failed',
-            message: error.message,
-            compliance: 'POPIA §14 - Security safeguards',
-            requestId: req.id
-        });
+      res.status(500).json({
+        error: 'Conflict analysis failed',
+        message: error.message,
+        compliance: 'POPIA §14 - Security safeguards',
+        requestId: req.id,
+      });
     }
-});
+  }
+);
 
-/**
+/*
  * @route   GET /api/legal/conflict/:conflictId
  * @desc    Get conflict analysis results
  * @access  Private (requires ATTORNEY, PARTNER, or MANAGER role)
  * @security Tenant isolation, role-based authorization
  * @compliance POPIA §14 - Access control
  */
-router.get('/conflict/:conflictId', [
+router.get(
+  '/conflict/:conflictId',
+  [
     // Input validation
     param('conflictId').isMongoId(),
 
@@ -318,52 +331,55 @@ router.get('/conflict/:conflictId', [
     authorize(['ATTORNEY', 'PARTNER', 'MANAGER'], 'read', 'conflict'),
 
     // Audit logging
-    auditLogger.middleware('CONFLICT_READ')
-], async (req, res) => {
+    auditLogger.middleware('CONFLICT_READ'),
+  ],
+  async (req, res) => {
     try {
-        const { conflictId } = req.params;
-        const { tenantContext, user } = req;
+      const { conflictId } = req.params;
+      const { tenantContext, user } = req;
 
-        // In production, this would fetch from database
-        // For now, return mock response
-        const conflictRecord = {
-            id: conflictId,
-            tenantId: tenantContext.tenantId,
-            analyzedAt: new Date().toISOString(),
-            status: 'ANALYZED',
-            // Compliance markers
-            accessControlled: true,
-            auditTrail: true,
-            dataResidency: 'ZA'
-        };
+      // In production, this would fetch from database
+      // For now, return mock response
+      const conflictRecord = {
+        id: conflictId,
+        tenantId: tenantContext.tenantId,
+        analyzedAt: new Date().toISOString(),
+        status: 'ANALYZED',
+        // Compliance markers
+        accessControlled: true,
+        auditTrail: true,
+        dataResidency: 'ZA',
+      };
 
-        res.status(200).json({
-            success: true,
-            data: conflictRecord,
-            metadata: {
-                retrievedAt: new Date().toISOString(),
-                tenantId: tenantContext.tenantId,
-                userId: user.id
-            }
-        });
-
+      res.status(200).json({
+        success: true,
+        data: conflictRecord,
+        metadata: {
+          retrievedAt: new Date().toISOString(),
+          tenantId: tenantContext.tenantId,
+          userId: user.id,
+        },
+      });
     } catch (error) {
-        res.status(404).json({
-            error: 'Conflict not found',
-            message: error.message,
-            requestId: req.id
-        });
+      res.status(404).json({
+        error: 'Conflict not found',
+        message: error.message,
+        requestId: req.id,
+      });
     }
-});
+  }
+);
 
-/**
+/*
  * @route   POST /api/legal/document/analyze
  * @desc    Analyze legal document for compliance and risk
  * @access  Private (requires ATTORNEY, PARTNER, or MANAGER role)
  * @security Tenant isolation, document encryption
  * @compliance POPIA, ECT Act, document retention
  */
-router.post('/document/analyze', [
+router.post(
+  '/document/analyze',
+  [
     // Input validation
     body('documentId').isMongoId(),
     body('analysisType').isIn(['COMPLIANCE', 'RISK', 'CONTRACT_REVIEW', 'DUE_DILIGENCE']),
@@ -379,54 +395,57 @@ router.post('/document/analyze', [
     complianceEnforcer.enforceEncryption,
 
     // Audit logging
-    auditLogger.middleware('DOCUMENT_ANALYSIS')
-], async (req, res) => {
+    auditLogger.middleware('DOCUMENT_ANALYSIS'),
+  ],
+  async (req, res) => {
     try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
-        const { documentId, analysisType } = req.body;
-        const { tenantContext, user } = req;
+      const { documentId, analysisType } = req.body;
+      const { tenantContext, user } = req;
 
-        // Analyze document (mock implementation)
-        const analysisResult = {
-            documentId,
-            analysisType,
-            tenantId: tenantContext.tenantId,
-            analyzedBy: user.id,
-            timestamp: new Date().toISOString(),
-            findings: [],
-            riskScore: 0,
-            complianceStatus: 'PENDING'
-        };
+      // Analyze document (mock implementation)
+      const analysisResult = {
+        documentId,
+        analysisType,
+        tenantId: tenantContext.tenantId,
+        analyzedBy: user.id,
+        timestamp: new Date().toISOString(),
+        findings: [],
+        riskScore: 0,
+        complianceStatus: 'PENDING',
+      };
 
-        res.status(200).json({
-            success: true,
-            data: analysisResult,
-            metadata: {
-                analyzedAt: new Date().toISOString(),
-                tenantId: tenantContext.tenantId
-            }
-        });
-
+      res.status(200).json({
+        success: true,
+        data: analysisResult,
+        metadata: {
+          analyzedAt: new Date().toISOString(),
+          tenantId: tenantContext.tenantId,
+        },
+      });
     } catch (error) {
-        res.status(500).json({
-            error: 'Document analysis failed',
-            message: error.message
-        });
+      res.status(500).json({
+        error: 'Document analysis failed',
+        message: error.message,
+      });
     }
-});
+  }
+);
 
-/**
+/*
  * @route   GET /api/legal/case/:caseId/summary
  * @desc    Get legal case summary
  * @access  Private (requires ATTORNEY, PARTNER, or MANAGER role)
  * @security Tenant isolation, case confidentiality
  * @compliance Attorney-client privilege, POPIA
  */
-router.get('/case/:caseId/summary', [
+router.get(
+  '/case/:caseId/summary',
+  [
     // Input validation
     param('caseId').isMongoId(),
     query('includeDocuments').optional().isBoolean(),
@@ -441,54 +460,57 @@ router.get('/case/:caseId/summary', [
     complianceEnforcer.enforceAttorneyClientPrivilege,
 
     // Audit logging
-    auditLogger.middleware('CASE_SUMMARY_READ')
-], async (req, res) => {
+    auditLogger.middleware('CASE_SUMMARY_READ'),
+  ],
+  async (req, res) => {
     try {
-        const { caseId } = req.params;
-        const { includeDocuments } = req.query;
-        const { tenantContext, user } = req;
+      const { caseId } = req.params;
+      const { includeDocuments } = req.query;
+      const { tenantContext, user } = req;
 
-        // Get case summary (mock implementation)
-        const caseSummary = {
-            caseId,
-            tenantId: tenantContext.tenantId,
-            caseNumber: `CASE-${Date.now()}`,
-            status: 'ACTIVE',
-            parties: [],
-            nextHearing: null,
-            // Compliance markers
-            privileged: true,
-            accessLog: [],
-            dataResidency: 'ZA'
-        };
+      // Get case summary (mock implementation)
+      const caseSummary = {
+        caseId,
+        tenantId: tenantContext.tenantId,
+        caseNumber: `CASE-${Date.now()}`,
+        status: 'ACTIVE',
+        parties: [],
+        nextHearing: null,
+        // Compliance markers
+        privileged: true,
+        accessLog: [],
+        dataResidency: 'ZA',
+      };
 
-        res.status(200).json({
-            success: true,
-            data: caseSummary,
-            metadata: {
-                retrievedAt: new Date().toISOString(),
-                tenantId: tenantContext.tenantId,
-                userId: user.id,
-                includesDocuments: includeDocuments === 'true'
-            }
-        });
-
+      res.status(200).json({
+        success: true,
+        data: caseSummary,
+        metadata: {
+          retrievedAt: new Date().toISOString(),
+          tenantId: tenantContext.tenantId,
+          userId: user.id,
+          includesDocuments: includeDocuments === 'true',
+        },
+      });
     } catch (error) {
-        res.status(404).json({
-            error: 'Case not found',
-            message: error.message
-        });
+      res.status(404).json({
+        error: 'Case not found',
+        message: error.message,
+      });
     }
-});
+  }
+);
 
-/**
+/*
  * @route   POST /api/legal/precedent/search
  * @desc    Search for legal precedents
  * @access  Private (requires ATTORNEY, PARTNER, or MANAGER role)
  * @security Tenant isolation, research confidentiality
  * @compliance Legal research confidentiality
  */
-router.post('/precedent/search', [
+router.post(
+  '/precedent/search',
+  [
     // Input validation
     body('keywords').isArray({ min: 1 }),
     body('jurisdiction').optional().isString(),
@@ -502,53 +524,56 @@ router.post('/precedent/search', [
     authorize(['ATTORNEY', 'PARTNER', 'MANAGER'], 'search', 'precedent'),
 
     // Audit logging
-    auditLogger.middleware('PRECEDENT_SEARCH')
-], async (req, res) => {
+    auditLogger.middleware('PRECEDENT_SEARCH'),
+  ],
+  async (req, res) => {
     try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
-        const { keywords, jurisdiction, dateRange, limit = 10 } = req.body;
-        const { tenantContext, user } = req;
+      const { keywords, jurisdiction, dateRange, limit = 10 } = req.body;
+      const { tenantContext, user } = req;
 
-        // Search precedents (mock implementation)
-        const searchResults = {
-            query: { keywords, jurisdiction, dateRange },
-            results: [],
-            total: 0,
-            tenantId: tenantContext.tenantId,
-            searchedBy: user.id,
-            timestamp: new Date().toISOString()
-        };
+      // Search precedents (mock implementation)
+      const searchResults = {
+        query: { keywords, jurisdiction, dateRange },
+        results: [],
+        total: 0,
+        tenantId: tenantContext.tenantId,
+        searchedBy: user.id,
+        timestamp: new Date().toISOString(),
+      };
 
-        res.status(200).json({
-            success: true,
-            data: searchResults,
-            metadata: {
-                searchedAt: new Date().toISOString(),
-                tenantId: tenantContext.tenantId,
-                resultCount: searchResults.total
-            }
-        });
-
+      res.status(200).json({
+        success: true,
+        data: searchResults,
+        metadata: {
+          searchedAt: new Date().toISOString(),
+          tenantId: tenantContext.tenantId,
+          resultCount: searchResults.total,
+        },
+      });
     } catch (error) {
-        res.status(500).json({
-            error: 'Precedent search failed',
-            message: error.message
-        });
+      res.status(500).json({
+        error: 'Precedent search failed',
+        message: error.message,
+      });
     }
-});
+  }
+);
 
-/**
+/*
  * @route   POST /api/legal/compliance/check
  * @desc    Run compliance check on legal matter
  * @access  Private (requires ATTORNEY, PARTNER, MANAGER, or COMPLIANCE_OFFICER role)
  * @security Tenant isolation, compliance data protection
  * @compliance POPIA, ECT Act, Companies Act, PAIA
  */
-router.post('/compliance/check', [
+router.post(
+  '/compliance/check',
+  [
     // Input validation
     body('matterType').isIn(['DOCUMENT', 'CONTRACT', 'PROCESS', 'DATA_PROCESSING']),
     body('matterId').isMongoId(),
@@ -564,255 +589,260 @@ router.post('/compliance/check', [
     complianceEnforcer.enforceAllCompliance,
 
     // Audit logging
-    auditLogger.middleware('COMPLIANCE_CHECK')
-], async (req, res) => {
+    auditLogger.middleware('COMPLIANCE_CHECK'),
+  ],
+  async (req, res) => {
     try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
-        const { matterType, matterId, checkTypes } = req.body;
-        const { tenantContext, user } = req;
+      const { matterType, matterId, checkTypes } = req.body;
+      const { tenantContext, user } = req;
 
-        // Run compliance check (mock implementation)
-        const complianceResult = {
-            matterType,
-            matterId,
-            checkTypes,
-            tenantId: tenantContext.tenantId,
-            checkedBy: user.id,
-            timestamp: new Date().toISOString(),
-            results: checkTypes.map(type => ({
-                type,
-                status: 'COMPLIANT',
-                findings: [],
-                recommendations: []
-            })),
-            overallStatus: 'COMPLIANT'
-        };
+      // Run compliance check (mock implementation)
+      const complianceResult = {
+        matterType,
+        matterId,
+        checkTypes,
+        tenantId: tenantContext.tenantId,
+        checkedBy: user.id,
+        timestamp: new Date().toISOString(),
+        results: checkTypes.map((type) => ({
+          type,
+          status: 'COMPLIANT',
+          findings: [],
+          recommendations: [],
+        })),
+        overallStatus: 'COMPLIANT',
+      };
 
-        res.status(200).json({
-            success: true,
-            data: complianceResult,
-            metadata: {
-                checkedAt: new Date().toISOString(),
-                tenantId: tenantContext.tenantId,
-                complianceOfficer: user.roles.includes('COMPLIANCE_OFFICER')
-            }
-        });
-
+      res.status(200).json({
+        success: true,
+        data: complianceResult,
+        metadata: {
+          checkedAt: new Date().toISOString(),
+          tenantId: tenantContext.tenantId,
+          complianceOfficer: user.roles.includes('COMPLIANCE_OFFICER'),
+        },
+      });
     } catch (error) {
-        res.status(500).json({
-            error: 'Compliance check failed',
-            message: error.message
-        });
+      res.status(500).json({
+        error: 'Compliance check failed',
+        message: error.message,
+      });
     }
-});
+  }
+);
 
 // ============================================================================
 // ERROR HANDLING MIDDLEWARE
 // ============================================================================
 
-/**
+/*
  * 404 handler for undefined legal routes
  * @security Prevent information leakage
  */
 router.use((req, res) => {
-    res.status(404).json({
-        error: 'Legal service endpoint not found',
-        path: req.path,
-        method: req.method,
-        // Security: Don't expose internal structure
-        availableServices: Object.values(LEGAL_SERVICE_TYPES),
-        compliance: 'POPIA §14 - Security safeguards'
-    });
+  res.status(404).json({
+    error: 'Legal service endpoint not found',
+    path: req.path,
+    method: req.method,
+    // Security: Don't expose internal structure
+    availableServices: Object.values(LEGAL_SERVICE_TYPES),
+    compliance: 'POPIA §14 - Security safeguards',
+  });
 });
 
-/**
+/*
  * Global error handler for legal routes
  * @security Structured error responses, audit logging
  */
 router.use((err, req, res, next) => {
-    // Log error for forensic analysis
-    console.error('Legal route error:', {
+  // Log error for forensic analysis
+  console.error('Legal route error:', {
+    error: err.message,
+    stack: err.stack,
+    tenantId: req.tenantContext?.tenantId,
+    userId: req.user?.id,
+    path: req.path,
+    method: req.method,
+    timestamp: new Date().toISOString(),
+  });
+
+  // Audit log the error
+  auditLogger
+    .log({
+      tenantId: req.tenantContext?.tenantId,
+      userId: req.user?.id,
+      action: 'LEGAL_ROUTE_ERROR',
+      entityType: 'LEGAL_SERVICES',
+      details: {
         error: err.message,
-        stack: err.stack,
-        tenantId: req.tenantContext?.tenantId,
-        userId: req.user?.id,
         path: req.path,
         method: req.method,
-        timestamp: new Date().toISOString()
+        statusCode: err.statusCode || 500,
+      },
+    })
+    .catch((logErr) => {
+      console.error('Failed to audit log error:', logErr);
     });
 
-    // Audit log the error
-    auditLogger.log({
-        tenantId: req.tenantContext?.tenantId,
-        userId: req.user?.id,
-        action: 'LEGAL_ROUTE_ERROR',
-        entityType: 'LEGAL_SERVICES',
-        details: {
-            error: err.message,
-            path: req.path,
-            method: req.method,
-            statusCode: err.statusCode || 500
-        }
-    }).catch(logErr => {
-        console.error('Failed to audit log error:', logErr);
-    });
+  // Determine appropriate status code
+  const statusCode = err.statusCode || err.status || 500;
 
-    // Determine appropriate status code
-    const statusCode = err.statusCode || err.status || 500;
+  // Structured error response
+  const errorResponse = {
+    error: 'Legal service error',
+    message:
+      process.env.NODE_ENV === 'production'
+        ? 'An error occurred processing your legal request'
+        : err.message,
+    requestId:
+      req.id || createHash('sha256').update(Date.now().toString()).digest('hex').substring(0, 16),
+    timestamp: new Date().toISOString(),
+    // Compliance information
+    compliance: {
+      reported: true,
+      logged: true,
+      dataResidency: 'ZA',
+    },
+  };
 
-    // Structured error response
-    const errorResponse = {
-        error: 'Legal service error',
-        message: process.env.NODE_ENV === 'production'
-            ? 'An error occurred processing your legal request'
-            : err.message,
-        requestId: req.id || createHash('sha256').update(Date.now().toString()).digest('hex').substring(0, 16),
-        timestamp: new Date().toISOString(),
-        // Compliance information
-        compliance: {
-            reported: true,
-            logged: true,
-            dataResidency: 'ZA'
-        }
-    };
+  // Add validation errors if present
+  if (err.validationErrors) {
+    errorResponse.validationErrors = err.validationErrors;
+  }
 
-    // Add validation errors if present
-    if (err.validationErrors) {
-        errorResponse.validationErrors = err.validationErrors;
-    }
-
-    res.status(statusCode).json(errorResponse);
+  res.status(statusCode).json(errorResponse);
 });
 
 // ============================================================================
 // TEST STUBS (Jest-compatible)
 // ============================================================================
 
-/**
+/*
  * Jest Test Suite for Legal Routes
- * 
+ *
  * Run with: npm test -- routes/legal/index.test.js
- * 
+ *
  * @eslint-env jest
  */
 if (process.env.NODE_ENV === 'test') {
-    // ESLint directive for test environment
-    /* eslint-disable no-undef */
+  // ESLint directive for test environment
+  /* eslint-disable no-undef */
 
-    describe('Legal Routes Index', () => {
-        let app;
-        let request;
-        let mockTenantContext;
-        let mockAuthMiddleware;
+  describe('Legal Routes Index', () => {
+    let app;
+    let request;
+    let mockTenantContext;
+    let mockAuthMiddleware;
 
-        beforeEach(() => {
-            jest.resetModules();
-            app = require('express')();
-            request = require('supertest')(app);
+    beforeEach(() => {
+      jest.resetModules();
+      app = require('express')();
+      request = require('supertest')(app);
 
-            // Mock middleware
-            mockTenantContext = {
-                validateTenant: (req, res, next) => {
-                    req.tenantContext = { tenantId: 'test-tenant-123' };
-                    next();
-                }
-            };
+      // Mock middleware
+      mockTenantContext = {
+        validateTenant: (req, res, next) => {
+          req.tenantContext = { tenantId: 'test-tenant-123' };
+          next();
+        },
+      };
 
-            mockAuthMiddleware = {
-                authorize: (roles, action, resource) => (req, res, next) => {
-                    req.user = { id: 'test-user-123', roles: ['ATTORNEY'] };
-                    next();
-                }
-            };
+      mockAuthMiddleware = {
+        authorize: (roles, action, resource) => (req, res, next) => {
+          req.user = { id: 'test-user-123', roles: ['ATTORNEY'] };
+          next();
+        },
+      };
 
-            // Mock services
-            jest.mock('../../middleware/tenantContext', () => mockTenantContext);
-            jest.mock('../../middleware/authMiddleware', () => mockAuthMiddleware);
-            jest.mock('../../services/conflictService', () => ({
-                analyzeConflict: jest.fn().mockResolvedValue({
-                    conflictId: 'test-conflict-123',
-                    status: 'ANALYZED'
-                })
-            }));
+      // Mock services
+      jest.mock('../../middleware/tenantContext', () => mockTenantContext);
+      jest.mock('../../middleware/authMiddleware', () => mockAuthMiddleware);
+      jest.mock('../../services/conflictService', () => ({
+        analyzeConflict: jest.fn().mockResolvedValue({
+          conflictId: 'test-conflict-123',
+          status: 'ANALYZED',
+        }),
+      }));
 
-            // Load router with mocks
-            const legalRouter = require('./index');
-            app.use('/api/legal', legalRouter);
-        });
-
-        test('GET /api/legal/health should return 200', async () => {
-            const response = await request
-                .get('/api/legal/health')
-                .expect('Content-Type', /json/)
-                .expect(200);
-
-            expect(response.body.status).toBe('healthy');
-            expect(response.body.tenantId).toBe('test-tenant-123');
-        });
-
-        test('POST /api/legal/conflict/analyze should validate input', async () => {
-            const invalidData = {
-                type: 'INVALID_TYPE',
-                description: 'Too short',
-                parties: []
-            };
-
-            const response = await request
-                .post('/api/legal/conflict/analyze')
-                .send(invalidData)
-                .expect('Content-Type', /json/)
-                .expect(400);
-
-            expect(response.body.error).toBe('Validation failed');
-        });
-
-        test('GET /api/legal/conflict/:id should require valid Mongo ID', async () => {
-            const response = await request
-                .get('/api/legal/conflict/invalid-id')
-                .expect('Content-Type', /json/)
-                .expect(400);
-
-            expect(response.body.errors).toBeDefined();
-        });
-
-        test('POST /api/legal/document/analyze should validate documentId', async () => {
-            const response = await request
-                .post('/api/legal/document/analyze')
-                .send({ documentId: 'invalid', analysisType: 'COMPLIANCE' })
-                .expect('Content-Type', /json/)
-                .expect(400);
-
-            expect(response.body.errors).toBeDefined();
-        });
-
-        test('Undefined route should return 404', async () => {
-            const response = await request
-                .get('/api/legal/nonexistent')
-                .expect('Content-Type', /json/)
-                .expect(404);
-
-            expect(response.body.error).toBe('Legal service endpoint not found');
-        });
-
-        test('Error handler should catch middleware errors', async () => {
-            // Force an error
-            app.use('/api/legal/error-test', (req, res, next) => {
-                next(new Error('Test error'));
-            });
-
-            const response = await request
-                .get('/api/legal/error-test')
-                .expect('Content-Type', /json/)
-                .expect(500);
-
-            expect(response.body.error).toBe('Legal service error');
-        });
+      // Load router with mocks
+      const legalRouter = require('./index');
+      app.use('/api/legal', legalRouter);
     });
-    /* eslint-enable no-undef */
+
+    test('GET /api/legal/health should return 200', async () => {
+      const response = await request
+        .get('/api/legal/health')
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      expect(response.body.status).toBe('healthy');
+      expect(response.body.tenantId).toBe('test-tenant-123');
+    });
+
+    test('POST /api/legal/conflict/analyze should validate input', async () => {
+      const invalidData = {
+        type: 'INVALID_TYPE',
+        description: 'Too short',
+        parties: [],
+      };
+
+      const response = await request
+        .post('/api/legal/conflict/analyze')
+        .send(invalidData)
+        .expect('Content-Type', /json/)
+        .expect(400);
+
+      expect(response.body.error).toBe('Validation failed');
+    });
+
+    test('GET /api/legal/conflict/:id should require valid Mongo ID', async () => {
+      const response = await request
+        .get('/api/legal/conflict/invalid-id')
+        .expect('Content-Type', /json/)
+        .expect(400);
+
+      expect(response.body.errors).toBeDefined();
+    });
+
+    test('POST /api/legal/document/analyze should validate documentId', async () => {
+      const response = await request
+        .post('/api/legal/document/analyze')
+        .send({ documentId: 'invalid', analysisType: 'COMPLIANCE' })
+        .expect('Content-Type', /json/)
+        .expect(400);
+
+      expect(response.body.errors).toBeDefined();
+    });
+
+    test('Undefined route should return 404', async () => {
+      const response = await request
+        .get('/api/legal/nonexistent')
+        .expect('Content-Type', /json/)
+        .expect(404);
+
+      expect(response.body.error).toBe('Legal service endpoint not found');
+    });
+
+    test('Error handler should catch middleware errors', async () => {
+      // Force an error
+      app.use('/api/legal/error-test', (req, res, next) => {
+        next(new Error('Test error'));
+      });
+
+      const response = await request
+        .get('/api/legal/error-test')
+        .expect('Content-Type', /json/)
+        .expect(500);
+
+      expect(response.body.error).toBe('Legal service error');
+    });
+  });
+  /* eslint-enable no-undef */
 }
 
 // ============================================================================
@@ -888,7 +918,7 @@ RUNBOOK: Deploy Legal Routes Index
    MERMAID
 
 8. Run tests:
-   MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*******@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
+   MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
    npm test -- routes/legal/index.test.js
 
 9. Integration with main app:

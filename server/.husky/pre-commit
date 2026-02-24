@@ -1,0 +1,24 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "╔════════════════════════════════════════════════════════════════════╗"
+echo "║ WILSY OS - STRATEGIC PRE-COMMIT HOOK                               ║"
+echo "╚════════════════════════════════════════════════════════════════════╝"
+
+# Only run on staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# Format staged files with Prettier (excluding our tools)
+echo "$STAGED_FILES" | grep -E '\.(js|cjs|mjs)$' | \
+  grep -v -E '(final-fix\.js|final-double-asterisk-fix\.js|fix-double-asterisks-permanent\.js|surgical-fix\.js|surgical-fix\.mjs)' | \
+  xargs -r npx prettier --write --loglevel=error
+
+# Add formatted files back
+git add $(git diff --name-only --cached)
+
+# Quick verification of critical files
+echo "🔍 Verifying critical files..."
+node --check app.js 2>/dev/null && echo "  ✅ app.js syntax valid"
+node --check server.js 2>/dev/null && echo "  ✅ server.js syntax valid"
+
+echo "✅ Strategic pre-commit checks completed"

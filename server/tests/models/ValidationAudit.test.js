@@ -1,12 +1,12 @@
 /* eslint-disable */
 import { expect } from 'chai';
 import mongoose from 'mongoose';
-import ValidationAudit, { 
-  AUDIT_ACTIONS, 
-  AUDIT_STATUS, 
+import ValidationAudit, {
+  AUDIT_ACTIONS,
+  AUDIT_STATUS,
   SEVERITY_LEVELS,
   RETENTION_POLICIES,
-  DATA_RESIDENCY 
+  DATA_RESIDENCY,
 } from '../../models/ValidationAudit.js';
 
 describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
@@ -36,7 +36,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       const saved = await audit.save();
@@ -50,7 +50,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
       const audit = new ValidationAudit({
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       try {
@@ -66,7 +66,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: 'invalid',
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       try {
@@ -81,7 +81,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
       const audit = new ValidationAudit({
         tenantId: testTenantId,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       try {
@@ -97,7 +97,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       expect(audit.status).to.equal(AUDIT_STATUS.SUCCESS);
@@ -108,7 +108,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       expect(audit.severity).to.equal(SEVERITY_LEVELS.INFO);
@@ -116,13 +116,13 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
 
     it('should accept all audit action types', async () => {
       const actions = Object.values(AUDIT_ACTIONS);
-      
+
       for (const action of actions) {
         const audit = new ValidationAudit({
           tenantId: testTenantId,
           action,
           resourceType: 'identity',
-          validationResult: { valid: true }
+          validationResult: { valid: true },
         });
 
         expect(audit.action).to.equal(action);
@@ -130,15 +130,26 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
     });
 
     it('should accept all resource types', async () => {
-      const resourceTypes = ['identity', 'business', 'professional', 'court', 'jurisdiction', 
-                             'document', 'financial', 'evidence', 'system', 'user', 'tenant'];
-      
+      const resourceTypes = [
+        'identity',
+        'business',
+        'professional',
+        'court',
+        'jurisdiction',
+        'document',
+        'financial',
+        'evidence',
+        'system',
+        'user',
+        'tenant',
+      ];
+
       for (const resourceType of resourceTypes) {
         const audit = new ValidationAudit({
           tenantId: testTenantId,
           action: AUDIT_ACTIONS.ID_VALIDATION,
           resourceType,
-          validationResult: { valid: true }
+          validationResult: { valid: true },
         });
 
         expect(audit.resourceType).to.equal(resourceType);
@@ -152,7 +163,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       await audit.save();
@@ -166,7 +177,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       await audit.save();
@@ -178,7 +189,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       await audit.save();
@@ -192,7 +203,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
       await audit1.save();
 
@@ -200,7 +211,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
       await audit2.save();
 
@@ -212,7 +223,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       await audit.save();
@@ -224,14 +235,14 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       await audit.save();
-      
+
       // Tamper with data
       audit.validationResult.valid = false;
-      
+
       expect(audit.verifyIntegrity()).to.be.false;
     });
   });
@@ -242,7 +253,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       await audit.save();
@@ -254,7 +265,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
       await audit1.save();
 
@@ -262,7 +273,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.CIPC_VALIDATION,
         resourceType: 'business',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
       await audit2.save();
 
@@ -275,7 +286,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
       await audit1.save();
 
@@ -283,7 +294,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.CIPC_VALIDATION,
         resourceType: 'business',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
       await audit2.save();
 
@@ -298,7 +309,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: tenant1,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
       await audit1.save();
 
@@ -306,7 +317,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: tenant2,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
       await audit2.save();
 
@@ -319,14 +330,14 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
-      
+
       const audit2 = await ValidationAudit.createAudit({
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.CIPC_VALIDATION,
         resourceType: 'business',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       const result = await ValidationAudit.verifyChain(testTenantId);
@@ -340,21 +351,18 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
-      
+
       const audit2 = await ValidationAudit.createAudit({
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.CIPC_VALIDATION,
         resourceType: 'business',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       // Break the chain by directly updating the database
-      await ValidationAudit.updateOne(
-        { _id: audit2._id },
-        { $set: { previousHash: 'tampered-hash' } }
-      );
+      await ValidationAudit.updateOne({ _id: audit2._id }, { $set: { previousHash: 'tampered-hash' } });
 
       const result = await ValidationAudit.verifyChain(testTenantId);
       expect(result.verified).to.be.false;
@@ -368,7 +376,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       await audit.save();
@@ -382,7 +390,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
         validationResult: { valid: true },
-        retentionPolicy: 'COMPANIES_ACT_10_YEARS'
+        retentionPolicy: 'COMPANIES_ACT_10_YEARS',
       });
 
       await audit.save();
@@ -396,14 +404,14 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
         validationResult: { valid: true },
-        retentionPolicy: 'COMPANIES_ACT_10_YEARS'
+        retentionPolicy: 'COMPANIES_ACT_10_YEARS',
       });
 
       await audit.save();
-      
+
       const expectedExpiry = new Date(Date.now() + policy.durationMs);
       const actualExpiry = audit.retentionExpiry;
-      
+
       expect(actualExpiry.getFullYear()).to.equal(expectedExpiry.getFullYear());
     });
 
@@ -413,7 +421,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
         validationResult: { valid: true },
-        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
       });
 
       expect(audit.ageInDays).to.be.at.least(5);
@@ -425,7 +433,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
         validationResult: { valid: true },
-        retentionExpiry: new Date(Date.now() - 1000)
+        retentionExpiry: new Date(Date.now() - 1000),
       });
 
       expect(audit.isExpired).to.be.true;
@@ -437,7 +445,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
         validationResult: { valid: true },
-        retentionExpiry: new Date(Date.now() - 5000)
+        retentionExpiry: new Date(Date.now() - 5000),
       });
       await expired.save();
 
@@ -446,7 +454,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         action: AUDIT_ACTIONS.CIPC_VALIDATION,
         resourceType: 'business',
         validationResult: { valid: true },
-        retentionExpiry: new Date(Date.now() + 86400000)
+        retentionExpiry: new Date(Date.now() + 86400000),
       });
       await active.save();
 
@@ -458,30 +466,30 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
   describe('🔍 Query Methods', () => {
     beforeEach(async () => {
       await ValidationAudit.create([
-        { 
-          tenantId: testTenantId, 
-          action: AUDIT_ACTIONS.ID_VALIDATION, 
+        {
+          tenantId: testTenantId,
+          action: AUDIT_ACTIONS.ID_VALIDATION,
           resourceType: 'identity',
           status: AUDIT_STATUS.SUCCESS,
           validationResult: { valid: true },
-          timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+          timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
         },
-        { 
-          tenantId: testTenantId, 
-          action: AUDIT_ACTIONS.CIPC_VALIDATION, 
+        {
+          tenantId: testTenantId,
+          action: AUDIT_ACTIONS.CIPC_VALIDATION,
           resourceType: 'business',
           status: AUDIT_STATUS.SUCCESS,
           validationResult: { valid: true },
-          timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+          timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
         },
-        { 
-          tenantId: testTenantId, 
-          action: AUDIT_ACTIONS.VAT_VALIDATION, 
+        {
+          tenantId: testTenantId,
+          action: AUDIT_ACTIONS.VAT_VALIDATION,
           resourceType: 'business',
           status: AUDIT_STATUS.FAILURE,
           validationResult: { valid: false },
-          timestamp: new Date()
-        }
+          timestamp: new Date(),
+        },
       ]);
     });
 
@@ -493,7 +501,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
 
     it('should filter by action', async () => {
       const entries = await ValidationAudit.findForTenant(testTenantId, {
-        action: AUDIT_ACTIONS.CIPC_VALIDATION
+        action: AUDIT_ACTIONS.CIPC_VALIDATION,
       });
 
       expect(entries).to.have.lengthOf(1);
@@ -502,7 +510,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
 
     it('should filter by status', async () => {
       const entries = await ValidationAudit.findForTenant(testTenantId, {
-        status: AUDIT_STATUS.FAILURE
+        status: AUDIT_STATUS.FAILURE,
       });
 
       expect(entries).to.have.lengthOf(1);
@@ -511,9 +519,9 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
 
     it('should filter by date range', async () => {
       const fromDate = new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000);
-      
+
       const entries = await ValidationAudit.findForTenant(testTenantId, {
-        timestamp: { $gte: fromDate }
+        timestamp: { $gte: fromDate },
       });
 
       expect(entries).to.have.lengthOf(2);
@@ -525,19 +533,27 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
     });
 
     it('should sort results', async () => {
-      const entries = await ValidationAudit.findForTenant(testTenantId, {}, { 
-        sort: { timestamp: 1 } 
-      });
+      const entries = await ValidationAudit.findForTenant(
+        testTenantId,
+        {},
+        {
+          sort: { timestamp: 1 },
+        },
+      );
 
       expect(entries[0].action).to.equal(AUDIT_ACTIONS.ID_VALIDATION);
       expect(entries[2].action).to.equal(AUDIT_ACTIONS.VAT_VALIDATION);
     });
 
     it('should skip results for pagination', async () => {
-      const entries = await ValidationAudit.findForTenant(testTenantId, {}, { 
-        skip: 1,
-        limit: 1
-      });
+      const entries = await ValidationAudit.findForTenant(
+        testTenantId,
+        {},
+        {
+          skip: 1,
+          limit: 1,
+        },
+      );
 
       expect(entries).to.have.lengthOf(1);
       expect(entries[0].action).to.equal(AUDIT_ACTIONS.CIPC_VALIDATION);
@@ -550,7 +566,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       const result = await ValidationAudit.exportEvidence(testTenantId);
@@ -565,18 +581,18 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
-      
+
       await ValidationAudit.createAudit({
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.CIPC_VALIDATION,
         resourceType: 'business',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       const result = await ValidationAudit.exportEvidence(testTenantId, {
-        action: AUDIT_ACTIONS.CIPC_VALIDATION
+        action: AUDIT_ACTIONS.CIPC_VALIDATION,
       });
 
       expect(result.package.entryCount).to.equal(1);
@@ -588,7 +604,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       const evidence = audit.generateEvidence();
@@ -606,12 +622,12 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
         validationResult: { valid: true },
-        requestData: { 
-          idNumber: '8001015009087', 
+        requestData: {
+          idNumber: '8001015009087',
           email: 'john.doe@example.com',
-          phone: '0821234567'
+          phone: '0821234567',
         },
-        userIp: '192.168.1.100'
+        userIp: '192.168.1.100',
       });
 
       const redacted = audit.redactPII();
@@ -623,7 +639,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       const summary = audit.summary;
@@ -637,7 +653,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.ID_VALIDATION,
         resourceType: 'identity',
-        validationResult: { valid: true }
+        validationResult: { valid: true },
       });
 
       expect(audit).to.exist;

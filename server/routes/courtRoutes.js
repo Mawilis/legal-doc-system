@@ -36,133 +36,133 @@ const validate = require('../middleware/validationMiddleware');
 const { Joi } = validate;
 
 const filingSchema = {
-    caseId: Joi.string().required(),
-    documentId: Joi.string().required(),
-    courtId: Joi.string().required(),
-    filingType: Joi.string().valid('PLEA', 'NOTICE', 'AFFIDAVIT', 'SUMMONS', 'URGENT_APP').required()
+  caseId: Joi.string().required(),
+  documentId: Joi.string().required(),
+  courtId: Joi.string().required(),
+  filingType: Joi.string().valid('PLEA', 'NOTICE', 'AFFIDAVIT', 'SUMMONS', 'URGENT_APP').required(),
 };
 
 const courtRollSchema = {
-    courtId: Joi.string().required(),
-    date: Joi.date().iso().required(),
-    division: Joi.string().optional() // e.g., "Civil", "Criminal"
+  courtId: Joi.string().required(),
+  date: Joi.date().iso().required(),
+  division: Joi.string().optional(), // e.g., "Civil", "Criminal"
 };
 
 const idSchema = {
-    id: Joi.string().required()
+  id: Joi.string().required(),
 };
 
 // ------------------------------
 // ROUTES
 // ------------------------------
 
-/**
+/*
  * @route   GET /api/courts
  * @desc    List Supported Courts (Registry)
  * @access  Authenticated Users
  */
 router.get(
-    '/',
-    protect,
-    // No tenant check needed for public/master registry data usually, 
-    // but good practice if you have private court configs.
-    async (req, res, next) => {
-        try {
-            const result = await courtController.listCourts(req, res);
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            next(err);
-        }
+  '/',
+  protect,
+  // No tenant check needed for public/master registry data usually,
+  // but good practice if you have private court configs.
+  async (req, res, next) => {
+    try {
+      const result = await courtController.listCourts(req, res);
+      if (!res.headersSent && result) res.json({ status: 'success', data: result });
+    } catch (err) {
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   POST /api/courts/filing
  * @desc    Submit Document to External Court System
  * @access  Lawyer, Paralegal, Admin
  */
 router.post(
-    '/filing',
-    protect,
-    requireSameTenant,
-    restrictTo('admin', 'lawyer', 'paralegal'),
-    validate(filingSchema, 'body'),
-    async (req, res, next) => {
-        try {
-            const result = await courtController.submitFiling(req, res);
+  '/filing',
+  protect,
+  requireSameTenant,
+  restrictTo('admin', 'lawyer', 'paralegal'),
+  validate(filingSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const result = await courtController.submitFiling(req, res);
 
-            // Audit the External Integration
-            await emitAudit(req, {
-                resource: 'court_integration',
-                action: 'SUBMIT_FILING',
-                severity: 'INFO',
-                summary: `Document filed to Court ${req.body.courtId}`,
-                metadata: {
-                    caseId: req.body.caseId,
-                    docId: req.body.documentId,
-                    type: req.body.filingType
-                }
-            });
+      // Audit the External Integration
+      await emitAudit(req, {
+        resource: 'court_integration',
+        action: 'SUBMIT_FILING',
+        severity: 'INFO',
+        summary: `Document filed to Court ${req.body.courtId}`,
+        metadata: {
+          caseId: req.body.caseId,
+          docId: req.body.documentId,
+          type: req.body.filingType,
+        },
+      });
 
-            if (!res.headersSent && result) res.status(202).json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'COURT_FILING_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.status(202).json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'COURT_FILING_FAILED';
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   GET /api/courts/roll
  * @desc    Fetch Court Roll (Daily Schedule)
  * @access  Lawyer, Admin
  */
 router.get(
-    '/roll',
-    protect,
-    requireSameTenant,
-    restrictTo('admin', 'lawyer'),
-    validate(courtRollSchema, 'query'),
-    async (req, res, next) => {
-        try {
-            const result = await courtController.getCourtRoll(req, res);
+  '/roll',
+  protect,
+  requireSameTenant,
+  restrictTo('admin', 'lawyer'),
+  validate(courtRollSchema, 'query'),
+  async (req, res, next) => {
+    try {
+      const result = await courtController.getCourtRoll(req, res);
 
-            // Light audit
-            await emitAudit(req, {
-                resource: 'court_integration',
-                action: 'VIEW_ROLL',
-                severity: 'INFO',
-                metadata: { courtId: req.query.courtId, date: req.query.date }
-            });
+      // Light audit
+      await emitAudit(req, {
+        resource: 'court_integration',
+        action: 'VIEW_ROLL',
+        severity: 'INFO',
+        metadata: { courtId: req.query.courtId, date: req.query.date },
+      });
 
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'COURT_ROLL_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'COURT_ROLL_FAILED';
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   GET /api/courts/filing/:id/status
  * @desc    Check Status of External Filing
  * @access  Lawyer, Paralegal
  */
 router.get(
-    '/filing/:id/status',
-    protect,
-    requireSameTenant,
-    restrictTo('admin', 'lawyer', 'paralegal'),
-    validate(idSchema, 'params'),
-    async (req, res, next) => {
-        try {
-            const result = await courtController.getFilingStatus(req, res);
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'FILING_STATUS_FAILED';
-            next(err);
-        }
+  '/filing/:id/status',
+  protect,
+  requireSameTenant,
+  restrictTo('admin', 'lawyer', 'paralegal'),
+  validate(idSchema, 'params'),
+  async (req, res, next) => {
+    try {
+      const result = await courtController.getFilingStatus(req, res);
+      if (!res.headersSent && result) res.json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'FILING_STATUS_FAILED';
+      next(err);
     }
+  }
 );
 
 module.exports = router;

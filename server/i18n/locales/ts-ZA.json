@@ -19,7 +19,7 @@
     "speakers": "2.3 million",
     "province": "Limpopo, Mpumalanga, Gauteng, Mozambique"
   },
-  
+
   "common": {
     "save": "Hlayisa",
     "cancel": "Khansela",
@@ -78,7 +78,7 @@
     "cancelled": "Ku khanseleriwa",
     "expired": "Ku hela nkarhi"
   },
-  
+
   "navigation": {
     "home": "Ekaya",
     "dashboard": "Daxibodo",
@@ -101,7 +101,7 @@
     "api": "API Access",
     "documentation": "Matsalwa"
   },
-  
+
   "errors": {
     "general": "Ku humelele xihoxo. Kombela u ringeta nakambe.",
     "notFound": "Tluka a ri kumeki",
@@ -147,7 +147,7 @@
       "chargeback": "Chargeback yi sunguriwile"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "Nghena eka Wilsy OS",
@@ -202,7 +202,7 @@
       "checkEmail": "Kombela u languta imeyili ya wena eka xihlanganisi xo tiyisisa"
     }
   },
-  
+
   "onboarding": {
     "title": "Ku nghenisa vakhendzisi",
     "subtitle": "Heta switepisi leswi landzelaka ku nghenisa mukhendzisi wa wena",
@@ -280,7 +280,7 @@
       "cancelled": "Ku nghenisa ku khanseleriwile"
     }
   },
-  
+
   "compliance": {
     "fica": {
       "title": "Ku landza FICA",
@@ -337,7 +337,7 @@
       "releaseReason": "Xivangelo xa ku susa"
     }
   },
-  
+
   "emails": {
     "welcome": {
       "subject": "Amukela eka Wilsy OS",
@@ -382,7 +382,7 @@
       "download": "Rhwala Xiviko"
     }
   },
-  
+
   "notifications": {
     "success": "Ku humelela!",
     "error": "Hoxeka!",
@@ -399,7 +399,7 @@
     "push": "Switiviso swa nkarhi",
     "inApp": "Switiviso endzeni"
   },
-  
+
   "reports": {
     "title": "Swiviko",
     "generate": "Tumbuluxa xiviko",
@@ -434,7 +434,7 @@
       "client": "Xiviko xa mukhendzisi"
     }
   },
-  
+
   "audit": {
     "title": "Xikambelo xa Xikambelwana",
     "action": "Ntirho",
@@ -452,7 +452,7 @@
     "filter": "Sefa Xikambelo",
     "clear": "Sula Xikambelo"
   },
-  
+
   "validation": {
     "required": "Xiyenge lexi swa fanela",
     "email": "Kombela u nghena adirese ya imeyili leyi fanaka",
@@ -473,7 +473,7 @@
     "cvv": "Kombela u nghena CVV leyi fanaka",
     "expiry": "Kombela u nghena siku leri helaka leri fanaka"
   },
-  
+
   "accessibility": {
     "skipToContent": "Tlula eka vuxokoxoko",
     "menu": "Meniyu",
@@ -486,7 +486,7 @@
     "resetFont": "Vuyisela fonto",
     "highContrast": "Ndlela ya mpfikamowano lowukulu"
   },
-  
+
   "errorsPages": {
     "404": {
       "title": "Tluka a ri kumeki",
@@ -507,7 +507,7 @@
       "backToHome": "Vuyela eka Tluka ro Sungula"
     }
   },
-  
+
   "pagination": {
     "showing": "Ku kombisa {{start}} ku fika eka {{end}} wa {{total}}",
     "first": "Sungula",
@@ -518,7 +518,7 @@
     "perPage": "{{count}} hi tluka",
     "of": "eka"
   },
-  
+
   "search": {
     "placeholder": "Lava...",
     "noResults": "A ku kumekangi mimbuyelo",
@@ -527,7 +527,7 @@
     "clear": "Sula",
     "advanced": "Ku Lava loku Engetelekeke"
   },
-  
+
   "time": {
     "justNow": "Kunyana",
     "minutesAgo": "{{count}} wa timinete ku hundza",
@@ -537,7 +537,7 @@
     "monthsAgo": "{{count}} wa tin'hweti ku hundza",
     "yearsAgo": "{{count}} wa malembe ku hundza"
   },
-  
+
   "currency": {
     "ZAR": "Randi ya Afrika-Dzonga",
     "USD": "Dola ya Amerika",

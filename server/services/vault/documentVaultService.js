@@ -2,7 +2,7 @@
   ║ DOCUMENT VAULT SERVICE - INVESTOR-GRADE MODULE                ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
   ╚════════════════════════════════════════════════════════════════╝*/
-/**
+/*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/vault/documentVaultService.js
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R180K/year manual document classification
@@ -36,11 +36,11 @@ const Document = require('../../models/Document');
 // POPIA Redaction Fields (from utils/)
 const { redactSensitive } = require('../../utils/popiaUtils');
 
-/**
+/*
  * Document Vault Service - Secure multi-tenant document management
- * 
+ *
  * ASSUMPTIONS:
- * - Document model has fields: tenantId, caseId, originalName, mimeType, size, storageUrl, 
+ * - Document model has fields: tenantId, caseId, originalName, mimeType, size, storageUrl,
  *   providerId, confidentiality, hash, isArchived, createdAt, updatedAt
  * - Tenant ID format: ^[a-zA-Z0-9_-]{8,64}$
  * - Default retentionPolicy: 'companies_act_10_years'
@@ -55,22 +55,22 @@ class DocumentVaultService {
       COMPANIES_ACT_10_YEARS: {
         retentionYears: 10,
         legalReference: 'Companies Act 71 of 2008',
-        autoDelete: true
+        autoDelete: true,
       },
       POPIA_7_YEARS: {
         retentionYears: 7,
         legalReference: 'POPIA Section 14',
-        autoDelete: true
+        autoDelete: true,
       },
       INDEFINITE: {
         retentionYears: null,
         legalReference: 'Client Contract',
-        autoDelete: false
-      }
+        autoDelete: false,
+      },
     };
   }
 
-  /**
+  /*
    * Store document with compliance metadata
    */
   async storeDocument({
@@ -85,7 +85,7 @@ class DocumentVaultService {
     fileBuffer,
     uploadedBy,
     retentionPolicy = 'companies_act_10_years',
-    dataResidency = 'ZA'
+    dataResidency = 'ZA',
   }) {
     try {
       // Validate tenant format
@@ -113,52 +113,58 @@ class DocumentVaultService {
           policy: retentionPolicy,
           residency: dataResidency,
           startDate: new Date().toISOString(),
-          expiresAt: this._calculateExpiryDate(retentionPolicy)
-        }
+          expiresAt: this._calculateExpiryDate(retentionPolicy),
+        },
       });
 
       await document.save();
 
       // Audit the creation with retention metadata
-      await auditLogger('DOCUMENT_STORED', uploadedBy, {
-        documentId: document._id,
-        originalName: redactSensitive(originalName),
-        size,
-        confidentiality,
-        tenantId,
-        caseId: caseId.toString()
-      }, {
-        retentionPolicy,
-        dataResidency,
-        retentionStart: new Date().toISOString(),
-        legalBasis: this.retentionPolicies[retentionPolicy.toUpperCase()]?.legalReference || 'CLIENT_CONTRACT'
-      });
+      await auditLogger(
+        'DOCUMENT_STORED',
+        uploadedBy,
+        {
+          documentId: document._id,
+          originalName: redactSensitive(originalName),
+          size,
+          confidentiality,
+          tenantId,
+          caseId: caseId.toString(),
+        },
+        {
+          retentionPolicy,
+          dataResidency,
+          retentionStart: new Date().toISOString(),
+          legalBasis:
+            this.retentionPolicies[retentionPolicy.toUpperCase()]?.legalReference ||
+            'CLIENT_CONTRACT',
+        }
+      );
 
       logger.info(`Document stored: ${document._id} for tenant ${tenantId}`, {
         documentId: document._id,
         tenantId,
         size,
-        retentionPolicy
+        retentionPolicy,
       });
 
       return {
         success: true,
         documentId: document._id,
         hash,
-        auditId: `audit-${Date.now()}-${document._id}`
+        auditId: `audit-${Date.now()}-${document._id}`,
       };
-
     } catch (error) {
       logger.error('Document storage failed', {
         tenantId,
         originalName: redactSensitive(originalName),
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Retrieve document with access control
    */
   async retrieveDocument(documentId, requestedBy, tenantId) {
@@ -166,7 +172,7 @@ class DocumentVaultService {
       const document = await Document.findOne({
         _id: documentId,
         tenantId,
-        isArchived: false
+        isArchived: false,
       });
 
       if (!document) {
@@ -180,21 +186,26 @@ class DocumentVaultService {
       }
 
       // Audit the access
-      await auditLogger('DOCUMENT_ACCESSED', requestedBy.userId, {
-        documentId: document._id,
-        originalName: redactSensitive(document.originalName),
-        confidentiality: document.confidentiality,
-        tenantId
-      }, {
-        retentionPolicy: 'audit_only',
-        dataResidency: 'ZA',
-        accessType: 'READ'
-      });
+      await auditLogger(
+        'DOCUMENT_ACCESSED',
+        requestedBy.userId,
+        {
+          documentId: document._id,
+          originalName: redactSensitive(document.originalName),
+          confidentiality: document.confidentiality,
+          tenantId,
+        },
+        {
+          retentionPolicy: 'audit_only',
+          dataResidency: 'ZA',
+          accessType: 'READ',
+        }
+      );
 
       logger.info(`Document accessed: ${documentId} by ${requestedBy.userId}`, {
         documentId,
         tenantId,
-        user: requestedBy.userId
+        user: requestedBy.userId,
       });
 
       return {
@@ -203,40 +214,39 @@ class DocumentVaultService {
           ...document.toObject(),
           // Remove sensitive internal fields
           _retentionMetadata: undefined,
-          __v: undefined
+          __v: undefined,
         },
-        accessTimestamp: new Date().toISOString()
+        accessTimestamp: new Date().toISOString(),
       };
-
     } catch (error) {
       logger.error('Document retrieval failed', {
         documentId,
         tenantId,
         user: requestedBy?.userId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Apply retention policy to documents
    */
   async applyRetentionPolicy(tenantId, policy = 'companies_act_10_years') {
     try {
       const expiryDate = this._calculateExpiryDate(policy);
-      
+
       // Find documents past retention
       const expiredDocuments = await Document.find({
         tenantId,
         createdAt: { $lt: expiryDate },
-        isArchived: false
+        isArchived: false,
       });
 
       const results = {
         processed: expiredDocuments.length,
         archived: 0,
-        errors: []
+        errors: [],
       };
 
       for (const doc of expiredDocuments) {
@@ -244,51 +254,55 @@ class DocumentVaultService {
           doc.isArchived = true;
           await doc.save();
 
-          await auditLogger('DOCUMENT_ARCHIVED', 'retention-system', {
-            documentId: doc._id,
-            originalName: redactSensitive(doc.originalName),
-            tenantId,
-            retentionPolicy: policy
-          }, {
-            retentionPolicy: policy,
-            dataResidency: 'ZA',
-            archivedAt: new Date().toISOString()
-          });
+          await auditLogger(
+            'DOCUMENT_ARCHIVED',
+            'retention-system',
+            {
+              documentId: doc._id,
+              originalName: redactSensitive(doc.originalName),
+              tenantId,
+              retentionPolicy: policy,
+            },
+            {
+              retentionPolicy: policy,
+              dataResidency: 'ZA',
+              archivedAt: new Date().toISOString(),
+            }
+          );
 
           results.archived++;
         } catch (error) {
           results.errors.push({
             documentId: doc._id,
-            error: error.message
+            error: error.message,
           });
           logger.error('Retention archiving failed', {
             documentId: doc._id,
-            error: error.message
+            error: error.message,
           });
         }
       }
 
       logger.info(`Retention policy applied for tenant ${tenantId}`, results);
       return results;
-
     } catch (error) {
       logger.error('Retention policy application failed', {
         tenantId,
         policy,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Generate compliance report for documents
    */
   async generateComplianceReport(tenantId, startDate, endDate) {
     try {
       const documents = await Document.find({
         tenantId,
-        createdAt: { $gte: startDate, $lte: endDate }
+        createdAt: { $gte: startDate, $lte: endDate },
       });
 
       const report = {
@@ -299,18 +313,18 @@ class DocumentVaultService {
         byRetentionStatus: {
           compliant: 0,
           nonCompliant: 0,
-          unknown: 0
+          unknown: 0,
         },
         piiScan: {
           documentsScanned: documents.length,
-          potentialPII: 0
-        }
+          potentialPII: 0,
+        },
       };
 
       // Analyze documents
-      documents.forEach(doc => {
+      documents.forEach((doc) => {
         // Confidentiality distribution
-        report.byConfidentiality[doc.confidentiality] = 
+        report.byConfidentiality[doc.confidentiality] =
           (report.byConfidentiality[doc.confidentiality] || 0) + 1;
 
         // Simple retention compliance check
@@ -330,28 +344,32 @@ class DocumentVaultService {
       });
 
       // Audit the report generation
-      await auditLogger('COMPLIANCE_REPORT_GENERATED', 'system', {
-        tenantId,
-        period: `${startDate} to ${endDate}`,
-        totalDocuments: report.totalDocuments
-      }, {
-        retentionPolicy: 'audit_only',
-        dataResidency: 'ZA',
-        reportId: `report-${Date.now()}-${tenantId}`
-      });
+      await auditLogger(
+        'COMPLIANCE_REPORT_GENERATED',
+        'system',
+        {
+          tenantId,
+          period: `${startDate} to ${endDate}`,
+          totalDocuments: report.totalDocuments,
+        },
+        {
+          retentionPolicy: 'audit_only',
+          dataResidency: 'ZA',
+          reportId: `report-${Date.now()}-${tenantId}`,
+        }
+      );
 
       return report;
-
     } catch (error) {
       logger.error('Compliance report generation failed', {
         tenantId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * PRIVATE HELPER METHODS
    */
   _calculateExpiryDate(retentionPolicy) {
@@ -370,7 +388,7 @@ class DocumentVaultService {
       PUBLIC: ['VIEWER', 'EDITOR', 'ADMIN', 'ATTORNEY'],
       INTERNAL: ['EDITOR', 'ADMIN', 'ATTORNEY'],
       CONFIDENTIAL: ['ADMIN', 'ATTORNEY'],
-      SECRET: ['ATTORNEY']
+      SECRET: ['ATTORNEY'],
     };
 
     return accessMatrix[confidentiality]?.includes(userRole) || false;
@@ -378,14 +396,14 @@ class DocumentVaultService {
 
   _detectPotentialPII(text) {
     if (!text) return false;
-    
+
     const piiPatterns = [
       /\b\d{13}\b/, // SA ID
       /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/, // Email
-      /(?:\+27|0)(?:\s?\(0\)|\s?)?\d{2}(?:\s?\d{3}\s?\d{4}|\d{7})/ // Phone
+      /(?:\+27|0)(?:\s?\(0\)|\s?)?\d{2}(?:\s?\d{3}\s?\d{4}|\d{7})/, // Phone
     ];
 
-    return piiPatterns.some(pattern => pattern.test(text));
+    return piiPatterns.some((pattern) => pattern.test(text));
   }
 }
 

@@ -16,24 +16,24 @@
  *  ║  ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝    ╚═╝     ╚══════╝╚═╝  ╚═╝║
  *  ║                                                                       ║
  *  ╚═══════════════════════════════════════════════════════════════════════╝
- * 
+ *
  * QUANTUM SENTINEL: USER MODEL v18.0.0 - ENHANCED ENCRYPTION BASTION
  * =======================================================================================
- * 
+ *
  * FILENAME: /Users/wilsonkhanyezi/legal-doc-system/server/models/userModel.js
- * 
+ *
  * PURPOSE: Multi-tenant sovereign identity fortress with quantum-grade encryption & POPIA compliance
- * 
+ *
  * COMPLIANCE: POPIA Sections 11,14,18,22 | FICA | ECT Act 86 | Companies Act 2008 | LPC | BEE
- * 
+ *
  * ASCII DATAFLOW: PII → Tenant Isolation → HKDF Key Derivation → AES-256-GCM → Wrapped DEK → Encrypted Storage
- * 
+ *
  * CHIEF ARCHITECT: Wilson Khanyezi — wilsy.wk@gmail.com | +27 69 046 5710
- * 
+ *
  * ROI: Protects 1M+ legal identities, enables R10B+ secure transactions, 100% compliance audit readiness
- * 
+ *
  * MERMAID DIAGRAM: See embedded Mermaid source for user encryption lifecycle
- * 
+ *
  * =======================================================================================
  */
 
@@ -41,11 +41,11 @@
 
 /* eslint-disable no-undef */ // ESLint directive for test suite
 
-/**
+/*
  * =======================================================================================
  * FORENSIC BREAKDOWN: LEGAL & TECHNICAL RATIONALE
  * =======================================================================================
- * 
+ *
  * LEGAL COMPLIANCE (SA JURISPRUDENCE):
  * 1. POPIA Section 11: Lawful processing consent with tenant-specific chains
  * 2. POPIA Section 14: Retention limitation with automatic TTL data cleanup
@@ -55,7 +55,7 @@
  * 6. Companies Act: Director liability tracking with CIPC API integration
  * 7. LPC: Trust accounting compliance with forensic audit trails
  * 8. BEE: Transformation tracking for BBBEE scorecard reporting
- * 
+ *
  * TECHNICAL SECURITY:
  * 1. Multi-tenancy: Tenant-specific HKDF key derivation prevents cross-tenant data leakage
  * 2. Defense in Depth: Password hashing (bcrypt) + field encryption + envelope encryption
@@ -63,13 +63,13 @@
  * 4. Crypto Agility: HKDF-based key derivation enables post-quantum algorithm migration
  * 5. Key Rotation: Per-tenant DEK rotation without data re-encryption via Vault Transit
  * 6. Immutable Audit: Append-only ledger with RFC3161 timestamp anchoring
- * 
+ *
  * ENCRYPTION STRATEGY:
  * 1. Level 1: bcrypt password hashing (cost 12) for authentication
  * 2. Level 2: AES-256-GCM field encryption for PII at rest
  * 3. Level 3: Envelope encryption with Vault Transit wrapped DEKs per tenant
  * 4. Level 4: TLS 1.3 in transit with perfect forward secrecy
- * 
+ *
  * QUANTUM RESISTANCE: 256-bit keys resist Grover's algorithm (√N complexity)
  * =======================================================================================
  */
@@ -103,11 +103,11 @@ const REQUIRED_ENV_VARS = [
   'AWS_REGION', // For data sovereignty (af-south-1)
   'SMS_API_KEY', // For MFA fallback
   'NODE_ENV', // Environment context
-  'FIELD_ENCRYPTION_KEY' // For mongoose-field-encryption
+  'FIELD_ENCRYPTION_KEY', // For mongoose-field-encryption
 ];
 
 // Validate environment variables
-const missingVars = REQUIRED_ENV_VARS.filter(varName => !process.env[varName]);
+const missingVars = REQUIRED_ENV_VARS.filter((varName) => !process.env[varName]);
 if (missingVars.length > 0 && process.env.NODE_ENV === 'production') {
   throw new Error(`SECURITY BREACH: Missing environment variables: ${missingVars.join(', ')}`);
 }
@@ -116,13 +116,13 @@ if (missingVars.length > 0 && process.env.NODE_ENV === 'production') {
 // MERMAID DIAGRAM: USER ENCRYPTION LIFECYCLE
 // ============================================================================
 
-/**
+/*
  * To render this diagram locally:
- * 
+ *
  * 1. Install Mermaid CLI:
  *    cd /Users/wilsonkhanyezi/legal-doc-system/server
  *    npm install --no-save @mermaid-js/mermaid-cli@^10.0.0
- * 
+ *
  * 2. Create diagram file:
  *    mkdir -p docs/diagrams && cat > docs/diagrams/user-encryption.mmd << 'EOF'
  */
@@ -182,7 +182,7 @@ Mermaid source ends */
 // ENHANCED ENCRYPTION UTILITIES
 // ============================================================================
 
-/**
+/*
  * Derive tenant-specific encryption key using HKDF
  * @param {string} tenantId - MongoDB ObjectId string
  * @param {string} masterKey - Base64 encoded master key from env
@@ -201,23 +201,16 @@ function deriveTenantKey(tenantId, masterKey) {
   }
 
   // HKDF-SHA256 derivation (RFC 5869)
-  const salt = crypto.createHash('sha256')
-    .update(tenantId)
-    .digest();
+  const salt = crypto.createHash('sha256').update(tenantId).digest();
 
   const info = Buffer.from(`wilsy-user-tenant-${tenantId}`, 'utf8');
 
-  const hkdf = crypto.createHmac('sha256', salt)
-    .update(masterKeyBuffer)
-    .digest();
+  const hkdf = crypto.createHmac('sha256', salt).update(masterKeyBuffer).digest();
 
-  return crypto.createHmac('sha256', hkdf)
-    .update(info)
-    .digest()
-    .slice(0, 32); // 256-bit key
+  return crypto.createHmac('sha256', hkdf).update(info).digest().slice(0, 32); // 256-bit key
 }
 
-/**
+/*
  * Encrypt PII field with tenant-specific key
  * @param {string} plaintext - PII data to encrypt
  * @param {string} tenantId - Tenant identifier
@@ -243,11 +236,11 @@ function encryptPIITenant(plaintext, tenantId) {
     tenantId,
     version: '2.0',
     algorithm: 'aes-256-gcm',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 }
 
-/**
+/*
  * Decrypt PII field with tenant-specific key
  * @param {Object} encryptedPayload - Encrypted payload
  * @param {string} tenantId - Expected tenant identifier
@@ -294,7 +287,7 @@ const IDENTITY_CONFIG = {
     SMS: 'SMS',
     EMAIL: 'EMAIL',
     WEBAUTHN: 'WEBAUTHN',
-    BIOMETRIC: 'BIOMETRIC'
+    BIOMETRIC: 'BIOMETRIC',
   },
 
   // Legal Roles with enhanced permissions
@@ -309,383 +302,365 @@ const IDENTITY_CONFIG = {
     INFORMATION_OFFICER: 'information_officer',
     COMPLIANCE_OFFICER: 'compliance_officer',
     DIRECTOR: 'director',
-    TRUST_ACCOUNTANT: 'trust_accountant'
-  }
+    TRUST_ACCOUNTANT: 'trust_accountant',
+  },
 };
 
 // Sub-schemas (preserved from existing)
-const RefreshTokenSchema = new Schema({
-  jti: { type: String, required: true, index: true },
-  device: { type: String, required: true, trim: true },
-  deviceFingerprint: {
-    type: String,
-    required: true,
-    match: [/^[a-f0-9]{64}$/, 'Invalid device fingerprint']
+const RefreshTokenSchema = new Schema(
+  {
+    jti: { type: String, required: true, index: true },
+    device: { type: String, required: true, trim: true },
+    deviceFingerprint: {
+      type: String,
+      required: true,
+      match: [/^[a-f0-9]{64}$/, 'Invalid device fingerprint'],
+    },
+    ip: {
+      type: String,
+      required: true,
+      match: [/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/, 'Invalid IP address'],
+    },
+    expiresAt: { type: Date, required: true, index: true },
+    isRevoked: { type: Boolean, default: false },
+    tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true },
   },
-  ip: {
-    type: String,
-    required: true,
-    match: [/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/, 'Invalid IP address']
-  },
-  expiresAt: { type: Date, required: true, index: true },
-  isRevoked: { type: Boolean, default: false },
-  tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true }
-}, { _id: false, timestamps: true });
+  { _id: false, timestamps: true }
+);
 
-const ConsentSchema = new Schema({
-  consentId: { type: String, required: true, unique: true },
-  purpose: {
-    type: String,
-    required: true,
-    enum: ['ACCOUNT_CREATION', 'DATA_PROCESSING', 'MARKETING', 'LEGAL_COMPLIANCE']
+const ConsentSchema = new Schema(
+  {
+    consentId: { type: String, required: true, unique: true },
+    purpose: {
+      type: String,
+      required: true,
+      enum: ['ACCOUNT_CREATION', 'DATA_PROCESSING', 'MARKETING', 'LEGAL_COMPLIANCE'],
+    },
+    given: { type: Boolean, required: true, default: false },
+    obtainedAt: { type: Date, required: true },
+    version: { type: String, required: true },
+    expiresAt: Date,
+    withdrawnAt: Date,
+    tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true },
   },
-  given: { type: Boolean, required: true, default: false },
-  obtainedAt: { type: Date, required: true },
-  version: { type: String, required: true },
-  expiresAt: Date,
-  withdrawnAt: Date,
-  tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true }
-}, { _id: false });
+  { _id: false }
+);
 
 // Main User Schema with Enhanced Encryption
-const UserSchema = new Schema({
-  // ============================ QUANTUM IDENTIFIERS ============================
-  sovereignId: {
-    type: String,
-    required: [true, 'Sovereign identity requires a quantum identifier'],
-    unique: true,
-    index: true,
-    trim: true,
-    default: function () {
-      const timestamp = Date.now();
-      const quantumHash = crypto.randomBytes(8).toString('hex');
-      return `WILS-USER-${timestamp}-${quantumHash}`;
-    }
-  },
-
-  // ============================ MULTI-TENANT ISOLATION ============================
-  tenantId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Tenant',
-    required: [true, 'User must belong to a tenant for data sovereignty'],
-    index: true,
-    validate: {
-      validator: async function (tenantId) {
-        const tenant = await mongoose.model('Tenant').findById(tenantId);
-        return tenant && tenant.status === 'ACTIVE';
-      },
-      message: 'Tenant does not exist or is not active'
-    }
-  },
-
-  // ============================ ENHANCED PERSONA WITH ENCRYPTION ============================
-  persona: {
-    firstName: {
+const UserSchema = new Schema(
+  {
+    // ============================ QUANTUM IDENTIFIERS ============================
+    sovereignId: {
       type: String,
-      required: true,
+      required: [true, 'Sovereign identity requires a quantum identifier'],
+      unique: true,
+      index: true,
       trim: true,
-      maxlength: 60,
-      set: function (value) {
-        // Encrypt with tenant-specific key before storage
-        if (this.tenantId && process.env.NODE_ENV === 'production') {
-          const encrypted = encryptPIITenant(value, this.tenantId.toString());
-          return encrypted;
-        }
-        return value;
+      default: function () {
+        const timestamp = Date.now();
+        const quantumHash = crypto.randomBytes(8).toString('hex');
+        return `WILS-USER-${timestamp}-${quantumHash}`;
       },
-      get: function (value) {
-        // Decrypt on retrieval if encrypted
-        if (value && typeof value === 'object' && value.ciphertext) {
-          try {
-            return decryptPIITenant(value, this.tenantId.toString());
-          } catch (error) {
-            return '[ENCRYPTED]';
-          }
-        }
-        return value;
-      }
     },
-    lastName: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 60,
-      set: function (value) {
-        if (this.tenantId && process.env.NODE_ENV === 'production') {
-          const encrypted = encryptPIITenant(value, this.tenantId.toString());
-          return encrypted;
-        }
-        return value;
-      },
-      get: function (value) {
-        if (value && typeof value === 'object' && value.ciphertext) {
-          try {
-            return decryptPIITenant(value, this.tenantId.toString());
-          } catch (error) {
-            return '[ENCRYPTED]';
-          }
-        }
-        return value;
-      }
-    },
-    email: {
-      type: String,
-      required: true,
-      lowercase: true,
-      trim: true,
-      match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Invalid email format'],
+
+    // ============================ MULTI-TENANT ISOLATION ============================
+    tenantId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: [true, 'User must belong to a tenant for data sovereignty'],
       index: true,
       validate: {
-        validator: async function (email) {
-          const existing = await mongoose.model('User').findOne({
-            'persona.email': email,
-            tenantId: this.tenantId,
-            _id: { $ne: this._id }
-          });
-          return !existing;
+        validator: async function (tenantId) {
+          const tenant = await mongoose.model('Tenant').findById(tenantId);
+          return tenant && tenant.status === 'ACTIVE';
         },
-        message: 'Email already exists in this tenant organization'
+        message: 'Tenant does not exist or is not active',
       },
-      set: function (value) {
-        if (this.tenantId && process.env.NODE_ENV === 'production') {
-          const encrypted = encryptPIITenant(value, this.tenantId.toString());
-          return encrypted;
-        }
-        return value;
-      },
-      get: function (value) {
-        if (value && typeof value === 'object' && value.ciphertext) {
-          try {
-            return decryptPIITenant(value, this.tenantId.toString());
-          } catch (error) {
-            return '[ENCRYPTED]';
-          }
-        }
-        return value;
-      }
     },
 
-    // South African ID Number (Enhanced Encryption)
-    idNumber: {
-      type: String,
-      trim: true,
-      match: [/^\d{13}$/, 'Invalid South African ID number'],
-      select: false,
-      set: function (value) {
-        if (!value) return value;
-        // Encrypt with tenant-specific key
-        const encrypted = encryptPIITenant(value, this.tenantId.toString());
-        return encrypted;
-      },
-      get: function (value) {
-        if (!value || typeof value !== 'object') return value;
-        try {
-          return decryptPIITenant(value, this.tenantId.toString());
-        } catch (error) {
-          return '[ENCRYPTED]';
-        }
-      }
-    },
-
-    // Professional Details
-    designation: {
-      type: String,
-      trim: true,
-      enum: ['ATTORNEY', 'ADVOCATE', 'CONVEYANCER', 'NOTARY', 'LEGAL_ADVISOR']
-    },
-    practiceNumber: {
-      type: String,
-      trim: true,
-      match: [/^[A-Z]{2}\d{6}$/, 'Invalid LPC practice number format']
-    }
-  },
-
-  // ============================ ENHANCED CREDENTIALS WITH PASSWORD HISTORY ============================
-  credentials: {
-    password: {
-      type: String,
-      required: true,
-      select: false,
-      validate: {
-        validator: function (password) {
-          // NIST 800-63B Password Policy
-          const minLength = 12;
-          const hasUpperCase = /[A-Z]/.test(password);
-          const hasLowerCase = /[a-z]/.test(password);
-          const hasNumbers = /\d/.test(password);
-          const hasSpecialChar = /[!@#$%^&*()_+\-=\\[\]{};':"\\|,.<>\\/?]/.test(password);
-          const hasNoSpaces = !/\s/.test(password);
-
-          return password.length >= minLength &&
-            hasUpperCase &&
-            hasLowerCase &&
-            hasNumbers &&
-            hasSpecialChar &&
-            hasNoSpaces;
-        },
-        message: 'Password must be at least 12 characters with uppercase, lowercase, number, and special character'
-      }
-    },
-
-    passwordHistory: [{
-      hash: { type: String, required: true },
-      changedAt: { type: Date, default: Date.now },
-      changedBy: { type: Types.ObjectId, ref: 'User' },
-      // Encrypted metadata about password change
-      metadata: {
+    // ============================ ENHANCED PERSONA WITH ENCRYPTION ============================
+    persona: {
+      firstName: {
         type: String,
+        required: true,
+        trim: true,
+        maxlength: 60,
         set: function (value) {
-          if (this.parent().parent().tenantId) {
-            const encrypted = encryptPIITenant(
-              JSON.stringify(value),
-              this.parent().parent().tenantId.toString()
-            );
+          // Encrypt with tenant-specific key before storage
+          if (this.tenantId && process.env.NODE_ENV === 'production') {
+            const encrypted = encryptPIITenant(value, this.tenantId.toString());
             return encrypted;
           }
-          return JSON.stringify(value);
+          return value;
+        },
+        get: function (value) {
+          // Decrypt on retrieval if encrypted
+          if (value && typeof value === 'object' && value.ciphertext) {
+            try {
+              return decryptPIITenant(value, this.tenantId.toString());
+            } catch (error) {
+              return '[ENCRYPTED]';
+            }
+          }
+          return value;
+        },
+      },
+      lastName: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 60,
+        set: function (value) {
+          if (this.tenantId && process.env.NODE_ENV === 'production') {
+            const encrypted = encryptPIITenant(value, this.tenantId.toString());
+            return encrypted;
+          }
+          return value;
         },
         get: function (value) {
           if (value && typeof value === 'object' && value.ciphertext) {
             try {
-              return JSON.parse(decryptPIITenant(value, this.parent().parent().tenantId.toString()));
+              return decryptPIITenant(value, this.tenantId.toString());
             } catch (error) {
-              return {};
+              return '[ENCRYPTED]';
             }
           }
-          try {
-            return JSON.parse(value);
-          } catch {
-            return {};
-          }
-        }
-      }
-    }],
-
-    passwordPolicy: {
-      lastChanged: { type: Date, default: Date.now },
-      expiresAt: {
-        type: Date,
-        default: function () {
-          const date = new Date();
-          date.setDate(date.getDate() + IDENTITY_CONFIG.PASSWORD_MAX_AGE_DAYS);
-          return date;
-        }
-      },
-      mustChange: { type: Boolean, default: false }
-    },
-
-    mfa: {
-      required: {
-        type: Boolean,
-        default: function () {
-          const mfaRequiredRoles = ['owner', 'partner', 'admin', 'finance', 'lawyer'];
-          return mfaRequiredRoles.includes(this.authority?.role);
-        }
-      },
-      methods: [{
-        method: {
-          type: String,
-          enum: Object.values(IDENTITY_CONFIG.MFA_METHODS)
+          return value;
         },
-        isEnabled: { type: Boolean, default: false },
-        configuredAt: Date,
-        lastUsed: Date,
-        // Encrypted TOTP secret
-        totpSecret: {
-          type: String,
-          set: function (value) {
-            if (!value) return value;
-            if (this.parent().parent().parent().tenantId) {
-              const encrypted = encryptPIITenant(
-                value,
-                this.parent().parent().parent().tenantId.toString()
-              );
-              return encrypted;
-            }
-            return value;
-          },
-          get: function (value) {
-            if (!value || typeof value !== 'object') return value;
-            try {
-              return decryptPIITenant(value, this.parent().parent().parent().tenantId.toString());
-            } catch (error) {
-              return null;
-            }
-          }
-        }
-      }]
-    }
-  },
-
-  // ============================ ENHANCED SECURITY WITH ANOMALY DETECTION ============================
-  security: {
-    status: {
-      type: String,
-      required: true,
-      enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'LOCKED', 'TERMINATED'],
-      default: 'ACTIVE',
-      index: true
-    },
-
-    lockout: {
-      failedAttempts: { type: Number, default: 0 },
-      lockedUntil: Date,
-      lastFailedAttempt: Date,
-      lockoutReason: String
-    },
-
-    sessions: {
-      activeSessions: [RefreshTokenSchema],
-      maxSessions: { type: Number, default: IDENTITY_CONFIG.SESSION_LIMIT }
-    },
-
-    // Encrypted anomaly detection baseline
-    anomalyBaseline: {
-      type: String,
-      select: false,
-      set: function (value) {
-        if (!value) return value;
-        if (this.parent().tenantId) {
-          const encrypted = encryptPIITenant(
-            JSON.stringify(value),
-            this.parent().tenantId.toString()
-          );
-          return encrypted;
-        }
-        return JSON.stringify(value);
       },
-      get: function (value) {
-        if (!value || typeof value !== 'object') {
-          try {
-            return JSON.parse(value);
-          } catch {
-            return {};
-          }
-        }
-        try {
-          return JSON.parse(decryptPIITenant(value, this.parent().tenantId.toString()));
-        } catch (error) {
-          return {};
-        }
-      }
-    }
-  },
-
-  // ============================ ENHANCED COMPLIANCE WITH POPIA & FICA ============================
-  compliance: {
-    consents: [ConsentSchema],
-
-    // Encrypted KYC documents
-    kycDocuments: [{
-      documentType: { type: String, enum: ['ID_DOCUMENT', 'PROOF_OF_ADDRESS', 'PROOF_OF_INCOME'] },
-      documentData: {
+      email: {
         type: String,
+        required: true,
+        lowercase: true,
+        trim: true,
+        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Invalid email format'],
+        index: true,
+        validate: {
+          validator: async function (email) {
+            const existing = await mongoose.model('User').findOne({
+              'persona.email': email,
+              tenantId: this.tenantId,
+              _id: { $ne: this._id },
+            });
+            return !existing;
+          },
+          message: 'Email already exists in this tenant organization',
+        },
+        set: function (value) {
+          if (this.tenantId && process.env.NODE_ENV === 'production') {
+            const encrypted = encryptPIITenant(value, this.tenantId.toString());
+            return encrypted;
+          }
+          return value;
+        },
+        get: function (value) {
+          if (value && typeof value === 'object' && value.ciphertext) {
+            try {
+              return decryptPIITenant(value, this.tenantId.toString());
+            } catch (error) {
+              return '[ENCRYPTED]';
+            }
+          }
+          return value;
+        },
+      },
+
+      // South African ID Number (Enhanced Encryption)
+      idNumber: {
+        type: String,
+        trim: true,
+        match: [/^\d{13}$/, 'Invalid South African ID number'],
+        select: false,
         set: function (value) {
           if (!value) return value;
-          if (this.parent().parent().tenantId) {
+          // Encrypt with tenant-specific key
+          const encrypted = encryptPIITenant(value, this.tenantId.toString());
+          return encrypted;
+        },
+        get: function (value) {
+          if (!value || typeof value !== 'object') return value;
+          try {
+            return decryptPIITenant(value, this.tenantId.toString());
+          } catch (error) {
+            return '[ENCRYPTED]';
+          }
+        },
+      },
+
+      // Professional Details
+      designation: {
+        type: String,
+        trim: true,
+        enum: ['ATTORNEY', 'ADVOCATE', 'CONVEYANCER', 'NOTARY', 'LEGAL_ADVISOR'],
+      },
+      practiceNumber: {
+        type: String,
+        trim: true,
+        match: [/^[A-Z]{2}\d{6}$/, 'Invalid LPC practice number format'],
+      },
+    },
+
+    // ============================ ENHANCED CREDENTIALS WITH PASSWORD HISTORY ============================
+    credentials: {
+      password: {
+        type: String,
+        required: true,
+        select: false,
+        validate: {
+          validator: function (password) {
+            // NIST 800-63B Password Policy
+            const minLength = 12;
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const hasNumbers = /\d/.test(password);
+            const hasSpecialChar = /[!@#$%^&*()_+\-=\\[\]{};':"\\|,.<>\\/?]/.test(password);
+            const hasNoSpaces = !/\s/.test(password);
+
+            return (
+              password.length >= minLength &&
+              hasUpperCase &&
+              hasLowerCase &&
+              hasNumbers &&
+              hasSpecialChar &&
+              hasNoSpaces
+            );
+          },
+          message:
+            'Password must be at least 12 characters with uppercase, lowercase, number, and special character',
+        },
+      },
+
+      passwordHistory: [
+        {
+          hash: { type: String, required: true },
+          changedAt: { type: Date, default: Date.now },
+          changedBy: { type: Types.ObjectId, ref: 'User' },
+          // Encrypted metadata about password change
+          metadata: {
+            type: String,
+            set: function (value) {
+              if (this.parent().parent().tenantId) {
+                const encrypted = encryptPIITenant(
+                  JSON.stringify(value),
+                  this.parent().parent().tenantId.toString()
+                );
+                return encrypted;
+              }
+              return JSON.stringify(value);
+            },
+            get: function (value) {
+              if (value && typeof value === 'object' && value.ciphertext) {
+                try {
+                  return JSON.parse(
+                    decryptPIITenant(value, this.parent().parent().tenantId.toString())
+                  );
+                } catch (error) {
+                  return {};
+                }
+              }
+              try {
+                return JSON.parse(value);
+              } catch {
+                return {};
+              }
+            },
+          },
+        },
+      ],
+
+      passwordPolicy: {
+        lastChanged: { type: Date, default: Date.now },
+        expiresAt: {
+          type: Date,
+          default: function () {
+            const date = new Date();
+            date.setDate(date.getDate() + IDENTITY_CONFIG.PASSWORD_MAX_AGE_DAYS);
+            return date;
+          },
+        },
+        mustChange: { type: Boolean, default: false },
+      },
+
+      mfa: {
+        required: {
+          type: Boolean,
+          default: function () {
+            const mfaRequiredRoles = ['owner', 'partner', 'admin', 'finance', 'lawyer'];
+            return mfaRequiredRoles.includes(this.authority?.role);
+          },
+        },
+        methods: [
+          {
+            method: {
+              type: String,
+              enum: Object.values(IDENTITY_CONFIG.MFA_METHODS),
+            },
+            isEnabled: { type: Boolean, default: false },
+            configuredAt: Date,
+            lastUsed: Date,
+            // Encrypted TOTP secret
+            totpSecret: {
+              type: String,
+              set: function (value) {
+                if (!value) return value;
+                if (this.parent().parent().parent().tenantId) {
+                  const encrypted = encryptPIITenant(
+                    value,
+                    this.parent().parent().parent().tenantId.toString()
+                  );
+                  return encrypted;
+                }
+                return value;
+              },
+              get: function (value) {
+                if (!value || typeof value !== 'object') return value;
+                try {
+                  return decryptPIITenant(
+                    value,
+                    this.parent().parent().parent().tenantId.toString()
+                  );
+                } catch (error) {
+                  return null;
+                }
+              },
+            },
+          },
+        ],
+      },
+    },
+
+    // ============================ ENHANCED SECURITY WITH ANOMALY DETECTION ============================
+    security: {
+      status: {
+        type: String,
+        required: true,
+        enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'LOCKED', 'TERMINATED'],
+        default: 'ACTIVE',
+        index: true,
+      },
+
+      lockout: {
+        failedAttempts: { type: Number, default: 0 },
+        lockedUntil: Date,
+        lastFailedAttempt: Date,
+        lockoutReason: String,
+      },
+
+      sessions: {
+        activeSessions: [RefreshTokenSchema],
+        maxSessions: { type: Number, default: IDENTITY_CONFIG.SESSION_LIMIT },
+      },
+
+      // Encrypted anomaly detection baseline
+      anomalyBaseline: {
+        type: String,
+        select: false,
+        set: function (value) {
+          if (!value) return value;
+          if (this.parent().tenantId) {
             const encrypted = encryptPIITenant(
               JSON.stringify(value),
-              this.parent().parent().tenantId.toString()
+              this.parent().tenantId.toString()
             );
             return encrypted;
           }
@@ -700,160 +675,213 @@ const UserSchema = new Schema({
             }
           }
           try {
-            return JSON.parse(decryptPIITenant(value, this.parent().parent().tenantId.toString()));
+            return JSON.parse(decryptPIITenant(value, this.parent().tenantId.toString()));
           } catch (error) {
             return {};
           }
-        }
+        },
       },
-      verified: { type: Boolean, default: false },
-      verifiedAt: Date,
-      verifiedBy: { type: Types.ObjectId, ref: 'User' }
-    }],
-
-    // POPIA Information Officer metadata
-    popiaMetadata: {
-      isInformationOfficer: { type: Boolean, default: false },
-      designationDate: Date,
-      trainingCompleted: { type: Boolean, default: false },
-      lastTrainingDate: Date
-    }
-  },
-
-  // ============================ AUDIT TRAIL WITH ENCRYPTED LOGS ============================
-  auditTrail: {
-    createdBy: {
-      type: Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
     },
 
-    // Encrypted access logs
-    accessLogs: [{
-      accessedAt: { type: Date, default: Date.now },
-      action: { type: String, enum: ['LOGIN', 'LOGOUT', 'PASSWORD_CHANGE', 'PROFILE_UPDATE'] },
-      ipAddress: {
+    // ============================ ENHANCED COMPLIANCE WITH POPIA & FICA ============================
+    compliance: {
+      consents: [ConsentSchema],
+
+      // Encrypted KYC documents
+      kycDocuments: [
+        {
+          documentType: {
+            type: String,
+            enum: ['ID_DOCUMENT', 'PROOF_OF_ADDRESS', 'PROOF_OF_INCOME'],
+          },
+          documentData: {
+            type: String,
+            set: function (value) {
+              if (!value) return value;
+              if (this.parent().parent().tenantId) {
+                const encrypted = encryptPIITenant(
+                  JSON.stringify(value),
+                  this.parent().parent().tenantId.toString()
+                );
+                return encrypted;
+              }
+              return JSON.stringify(value);
+            },
+            get: function (value) {
+              if (!value || typeof value !== 'object') {
+                try {
+                  return JSON.parse(value);
+                } catch {
+                  return {};
+                }
+              }
+              try {
+                return JSON.parse(
+                  decryptPIITenant(value, this.parent().parent().tenantId.toString())
+                );
+              } catch (error) {
+                return {};
+              }
+            },
+          },
+          verified: { type: Boolean, default: false },
+          verifiedAt: Date,
+          verifiedBy: { type: Types.ObjectId, ref: 'User' },
+        },
+      ],
+
+      // POPIA Information Officer metadata
+      popiaMetadata: {
+        isInformationOfficer: { type: Boolean, default: false },
+        designationDate: Date,
+        trainingCompleted: { type: Boolean, default: false },
+        lastTrainingDate: Date,
+      },
+    },
+
+    // ============================ AUDIT TRAIL WITH ENCRYPTED LOGS ============================
+    auditTrail: {
+      createdBy: {
+        type: Types.ObjectId,
+        ref: 'User',
+        required: true,
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+
+      // Encrypted access logs
+      accessLogs: [
+        {
+          accessedAt: { type: Date, default: Date.now },
+          action: { type: String, enum: ['LOGIN', 'LOGOUT', 'PASSWORD_CHANGE', 'PROFILE_UPDATE'] },
+          ipAddress: {
+            type: String,
+            set: function (value) {
+              if (!value) return value;
+              if (this.parent().parent().tenantId) {
+                const encrypted = encryptPIITenant(
+                  value,
+                  this.parent().parent().tenantId.toString()
+                );
+                return encrypted;
+              }
+              return value;
+            },
+            get: function (value) {
+              if (!value || typeof value !== 'object') return value;
+              try {
+                return decryptPIITenant(value, this.parent().parent().tenantId.toString());
+              } catch (error) {
+                return '[ENCRYPTED]';
+              }
+            },
+          },
+          userAgent: {
+            type: String,
+            set: function (value) {
+              if (!value) return value;
+              if (this.parent().parent().tenantId) {
+                const encrypted = encryptPIITenant(
+                  value,
+                  this.parent().parent().tenantId.toString()
+                );
+                return encrypted;
+              }
+              return value;
+            },
+            get: function (value) {
+              if (!value || typeof value !== 'object') return value;
+              try {
+                return decryptPIITenant(value, this.parent().parent().tenantId.toString());
+              } catch (error) {
+                return '[ENCRYPTED]';
+              }
+            },
+          },
+        },
+      ],
+    },
+
+    // ============================ METADATA ============================
+    metadata: {
+      version: { type: String, default: '18.0.0' },
+      lastActive: { type: Date, default: Date.now },
+      loginCount: { type: Number, default: 0 },
+
+      // Encrypted preferences
+      preferences: {
         type: String,
         set: function (value) {
           if (!value) return value;
-          if (this.parent().parent().tenantId) {
+          if (this.parent().tenantId) {
             const encrypted = encryptPIITenant(
-              value,
-              this.parent().parent().tenantId.toString()
+              JSON.stringify(value),
+              this.parent().tenantId.toString()
             );
             return encrypted;
           }
-          return value;
+          return JSON.stringify(value);
         },
         get: function (value) {
-          if (!value || typeof value !== 'object') return value;
+          if (!value || typeof value !== 'object') {
+            try {
+              return JSON.parse(value);
+            } catch {
+              return {};
+            }
+          }
           try {
-            return decryptPIITenant(value, this.parent().parent().tenantId.toString());
+            return JSON.parse(decryptPIITenant(value, this.parent().tenantId.toString()));
           } catch (error) {
-            return '[ENCRYPTED]';
-          }
-        }
-      },
-      userAgent: {
-        type: String,
-        set: function (value) {
-          if (!value) return value;
-          if (this.parent().parent().tenantId) {
-            const encrypted = encryptPIITenant(
-              value,
-              this.parent().parent().tenantId.toString()
-            );
-            return encrypted;
-          }
-          return value;
-        },
-        get: function (value) {
-          if (!value || typeof value !== 'object') return value;
-          try {
-            return decryptPIITenant(value, this.parent().parent().tenantId.toString());
-          } catch (error) {
-            return '[ENCRYPTED]';
-          }
-        }
-      }
-    }]
-  },
-
-  // ============================ METADATA ============================
-  metadata: {
-    version: { type: String, default: '18.0.0' },
-    lastActive: { type: Date, default: Date.now },
-    loginCount: { type: Number, default: 0 },
-
-    // Encrypted preferences
-    preferences: {
-      type: String,
-      set: function (value) {
-        if (!value) return value;
-        if (this.parent().tenantId) {
-          const encrypted = encryptPIITenant(
-            JSON.stringify(value),
-            this.parent().tenantId.toString()
-          );
-          return encrypted;
-        }
-        return JSON.stringify(value);
-      },
-      get: function (value) {
-        if (!value || typeof value !== 'object') {
-          try {
-            return JSON.parse(value);
-          } catch {
             return {};
           }
-        }
-        try {
-          return JSON.parse(decryptPIITenant(value, this.parent().tenantId.toString()));
-        } catch (error) {
-          return {};
-        }
-      }
-    }
+        },
+      },
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: function (doc, ret) {
+        // Remove sensitive fields from JSON output
+        delete ret.credentials?.password;
+        delete ret.credentials?.passwordHistory;
+        delete ret.credentials?.mfa?.methods?.totpSecret;
+        delete ret.persona?.idNumber;
+        delete ret.security?.anomalyBaseline;
+        delete ret.compliance?.kycDocuments;
+        delete ret.auditTrail?.accessLogs?.ipAddress;
+        delete ret.auditTrail?.accessLogs?.userAgent;
+        return ret;
+      },
+    },
+    toObject: { virtuals: true },
   }
-
-}, {
-  timestamps: true,
-  toJSON: {
-    virtuals: true,
-    transform: function (doc, ret) {
-      // Remove sensitive fields from JSON output
-      delete ret.credentials?.password;
-      delete ret.credentials?.passwordHistory;
-      delete ret.credentials?.mfa?.methods?.totpSecret;
-      delete ret.persona?.idNumber;
-      delete ret.security?.anomalyBaseline;
-      delete ret.compliance?.kycDocuments;
-      delete ret.auditTrail?.accessLogs?.ipAddress;
-      delete ret.auditTrail?.accessLogs?.userAgent;
-      return ret;
-    }
-  },
-  toObject: { virtuals: true }
-});
+);
 
 // ============================================================================
 // ENHANCED INDEXES FOR PERFORMANCE & SECURITY
 // ============================================================================
 
 // Multi-tenant compound indexes
-UserSchema.index({ 'persona.email': 1, tenantId: 1 }, {
-  unique: true,
-  name: 'tenant_email_unique'
-});
+UserSchema.index(
+  { 'persona.email': 1, tenantId: 1 },
+  {
+    unique: true,
+    name: 'tenant_email_unique',
+  }
+);
 
-UserSchema.index({ sovereignId: 1, tenantId: 1 }, {
-  unique: true,
-  name: 'tenant_sovereign_unique'
-});
+UserSchema.index(
+  { sovereignId: 1, tenantId: 1 },
+  {
+    unique: true,
+    name: 'tenant_sovereign_unique',
+  }
+);
 
 // Performance indexes
 UserSchema.index({ tenantId: 1, 'security.status': 1 });
@@ -861,12 +889,15 @@ UserSchema.index({ tenantId: 1, 'metadata.lastActive': -1 });
 UserSchema.index({ tenantId: 1, 'credentials.passwordPolicy.expiresAt': 1 });
 
 // TTL index for automatic session cleanup
-UserSchema.index({
-  'security.sessions.activeSessions.expiresAt': 1
-}, {
-  expireAfterSeconds: 0,
-  partialFilterExpression: { 'security.sessions.activeSessions.expiresAt': { $exists: true } }
-});
+UserSchema.index(
+  {
+    'security.sessions.activeSessions.expiresAt': 1,
+  },
+  {
+    expireAfterSeconds: 0,
+    partialFilterExpression: { 'security.sessions.activeSessions.expiresAt': { $exists: true } },
+  }
+);
 
 // ============================================================================
 // MONGOOSE ENCRYPTION PLUGIN CONFIGURATION
@@ -880,7 +911,7 @@ const encryptionFields = [
   'credentials.passwordHistory',
   'security.anomalyBaseline',
   'compliance.kycDocuments',
-  'metadata.preferences'
+  'metadata.preferences',
 ];
 
 UserSchema.plugin(mongooseEncryption, {
@@ -889,7 +920,7 @@ UserSchema.plugin(mongooseEncryption, {
   encryptedFields: encryptionFields,
   excludeFromEncryption: ['sovereignId', 'tenantId', 'security.status', 'createdAt'],
   encryptSave: true,
-  decryptSave: true
+  decryptSave: true,
 });
 
 // ============================================================================
@@ -912,9 +943,8 @@ UserSchema.virtual('requiresPasswordChange').get(function () {
 UserSchema.virtual('activeSessionsCount').get(function () {
   if (!this.security.sessions.activeSessions) return 0;
   const now = new Date();
-  return this.security.sessions.activeSessions.filter(s =>
-    s.expiresAt > now && !s.isRevoked
-  ).length;
+  return this.security.sessions.activeSessions.filter((s) => s.expiresAt > now && !s.isRevoked)
+    .length;
 });
 
 UserSchema.virtual('isLocked').get(function () {
@@ -966,8 +996,8 @@ UserSchema.pre('save', async function (next) {
           changedBy: user._id,
           metadata: {
             ipAddress: 'system',
-            userAgent: 'password-change'
-          }
+            userAgent: 'password-change',
+          },
         });
 
         // Maintain history limit
@@ -980,14 +1010,13 @@ UserSchema.pre('save', async function (next) {
       user.credentials.password = newHash;
       user.credentials.passwordPolicy.lastChanged = new Date();
       user.credentials.passwordPolicy.expiresAt = new Date(
-        Date.now() + (IDENTITY_CONFIG.PASSWORD_MAX_AGE_DAYS * 24 * 60 * 60 * 1000)
+        Date.now() + IDENTITY_CONFIG.PASSWORD_MAX_AGE_DAYS * 24 * 60 * 60 * 1000
       );
 
       // Reset security counters
       user.security.lockout.failedAttempts = 0;
       user.security.lockout.lockedUntil = null;
       user.security.lockout.lockoutReason = null;
-
     } catch (error) {
       return next(error);
     }
@@ -1002,7 +1031,7 @@ UserSchema.pre('save', async function (next) {
       given: true,
       obtainedAt: new Date(),
       version: '1.0',
-      tenantId: user.tenantId
+      tenantId: user.tenantId,
     });
 
     // Initial audit trail
@@ -1019,7 +1048,7 @@ UserSchema.pre('save', async function (next) {
 // ENHANCED INSTANCE METHODS
 // ============================================================================
 
-/**
+/*
  * Enhanced password verification with security logging
  */
 UserSchema.methods.verifyPassword = async function (candidate, context = {}) {
@@ -1027,9 +1056,7 @@ UserSchema.methods.verifyPassword = async function (candidate, context = {}) {
 
   // Check if account is locked
   if (user.isLocked) {
-    const remainingTime = Math.ceil(
-      (user.security.lockout.lockedUntil - new Date()) / (1000 * 60)
-    );
+    const remainingTime = Math.ceil((user.security.lockout.lockedUntil - new Date()) / (1000 * 60));
     throw new Error(`Account locked. Try again in ${remainingTime} minutes`);
   }
 
@@ -1055,7 +1082,7 @@ UserSchema.methods.verifyPassword = async function (candidate, context = {}) {
         tenantId: user.tenantId,
         reason: 'Too many failed login attempts',
         context: context,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
 
@@ -1075,14 +1102,14 @@ UserSchema.methods.verifyPassword = async function (candidate, context = {}) {
     action: 'LOGIN',
     ipAddress: context.ipAddress || 'unknown',
     userAgent: context.userAgent || 'unknown',
-    accessedAt: new Date()
+    accessedAt: new Date(),
   });
 
   await user.save();
   return true;
 };
 
-/**
+/*
  * Generate TOTP secret with tenant-specific encryption
  */
 UserSchema.methods.generateTOTPSecret = function () {
@@ -1094,24 +1121,22 @@ UserSchema.methods.generateTOTPSecret = function () {
     method: 'TOTP',
     isEnabled: false,
     configuredAt: new Date(),
-    totpSecret: encryptedSecret
+    totpSecret: encryptedSecret,
   };
 
   this.credentials.mfa.methods.push(mfaMethod);
 
   return {
     secret, // Only returned once during setup
-    qrCode: authenticator.keyuri(this.persona.email, 'Wilsy OS', secret)
+    qrCode: authenticator.keyuri(this.persona.email, 'Wilsy OS', secret),
   };
 };
 
-/**
+/*
  * Verify TOTP token with encrypted secret
  */
 UserSchema.methods.verifyTOTP = function (token) {
-  const totpMethod = this.credentials.mfa.methods.find(
-    m => m.method === 'TOTP' && m.isEnabled
-  );
+  const totpMethod = this.credentials.mfa.methods.find((m) => m.method === 'TOTP' && m.isEnabled);
 
   if (!totpMethod || !totpMethod.totpSecret) {
     throw new Error('TOTP not configured or enabled');
@@ -1128,11 +1153,11 @@ UserSchema.methods.verifyTOTP = function (token) {
   // Verify token
   const isValid = authenticator.verify({
     token,
-    secret: secret
+    secret: secret,
   });
 
   if (isValid) {
-    this.credentials.mfa.methods.forEach(m => {
+    this.credentials.mfa.methods.forEach((m) => {
       if (m.method === 'TOTP' && m.isEnabled) {
         m.lastUsed = new Date();
       }
@@ -1145,7 +1170,7 @@ UserSchema.methods.verifyTOTP = function (token) {
   return isValid;
 };
 
-/**
+/*
  * Get encrypted user report for compliance
  */
 UserSchema.methods.getEncryptedReport = function () {
@@ -1160,10 +1185,10 @@ UserSchema.methods.getEncryptedReport = function () {
     role: this.authority?.role || 'unknown',
     lastActive: this.metadata.lastActive,
     loginCount: this.metadata.loginCount,
-    mfaEnabled: this.credentials.mfa.methods.some(m => m.isEnabled),
+    mfaEnabled: this.credentials.mfa.methods.some((m) => m.isEnabled),
     passwordLastChanged: this.credentials.passwordPolicy.lastChanged,
     passwordExpires: this.credentials.passwordPolicy.expiresAt,
-    isInformationOfficer: this.compliance.popiaMetadata?.isInformationOfficer || false
+    isInformationOfficer: this.compliance.popiaMetadata?.isInformationOfficer || false,
   };
 
   return report;
@@ -1173,7 +1198,7 @@ UserSchema.methods.getEncryptedReport = function () {
 // ENHANCED STATIC METHODS
 // ============================================================================
 
-/**
+/*
  * Find users by tenant with security filtering
  */
 UserSchema.statics.findByTenant = function (tenantId, options = {}) {
@@ -1191,12 +1216,14 @@ UserSchema.statics.findByTenant = function (tenantId, options = {}) {
   }
 
   return this.find(query)
-    .select('sovereignId persona.firstName persona.lastName persona.email authority.role security.status metadata.lastActive')
+    .select(
+      'sovereignId persona.firstName persona.lastName persona.email authority.role security.status metadata.lastActive'
+    )
     .sort({ 'metadata.lastActive': -1 })
     .lean();
 };
 
-/**
+/*
  * Get security statistics for a tenant
  */
 UserSchema.statics.getSecurityStats = async function (tenantId) {
@@ -1207,50 +1234,63 @@ UserSchema.statics.getSecurityStats = async function (tenantId) {
         _id: null,
         totalUsers: { $sum: 1 },
         activeUsers: {
-          $sum: { $cond: [{ $eq: ['$security.status', 'ACTIVE'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$security.status', 'ACTIVE'] }, 1, 0] },
         },
         lockedUsers: {
-          $sum: { $cond: [{ $eq: ['$security.status', 'LOCKED'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$security.status', 'LOCKED'] }, 1, 0] },
         },
         mfaEnabled: {
           $sum: {
-            $cond: [{
-              $gt: [{
-                $size: {
-                  $filter: {
-                    input: '$credentials.mfa.methods',
-                    as: 'method',
-                    cond: { $eq: ['$$method.isEnabled', true] }
-                  }
-                }
-              }, 0]
-            }, 1, 0]
-          }
+            $cond: [
+              {
+                $gt: [
+                  {
+                    $size: {
+                      $filter: {
+                        input: '$credentials.mfa.methods',
+                        as: 'method',
+                        cond: { $eq: ['$$method.isEnabled', true] },
+                      },
+                    },
+                  },
+                  0,
+                ],
+              },
+              1,
+              0,
+            ],
+          },
         },
         passwordExpired: {
           $sum: {
-            $cond: [{
-              $and: [
-                { $ne: ['$credentials.passwordPolicy.expiresAt', null] },
-                { $lt: ['$credentials.passwordPolicy.expiresAt', new Date()] }
-              ]
-            }, 1, 0]
-          }
-        }
-      }
-    }
+            $cond: [
+              {
+                $and: [
+                  { $ne: ['$credentials.passwordPolicy.expiresAt', null] },
+                  { $lt: ['$credentials.passwordPolicy.expiresAt', new Date()] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
   ]);
 
-  return stats[0] || {
-    totalUsers: 0,
-    activeUsers: 0,
-    lockedUsers: 0,
-    mfaEnabled: 0,
-    passwordExpired: 0
-  };
+  return (
+    stats[0] || {
+      totalUsers: 0,
+      activeUsers: 0,
+      lockedUsers: 0,
+      mfaEnabled: 0,
+      passwordExpired: 0,
+    }
+  );
 };
 
-/**
+/*
  * Find users with expiring passwords
  */
 UserSchema.statics.findPasswordExpiring = function (tenantId, daysThreshold = 7) {
@@ -1262,10 +1302,12 @@ UserSchema.statics.findPasswordExpiring = function (tenantId, daysThreshold = 7)
     'security.status': 'ACTIVE',
     'credentials.passwordPolicy.expiresAt': {
       $lte: thresholdDate,
-      $gt: new Date()
-    }
+      $gt: new Date(),
+    },
   })
-    .select('sovereignId persona.firstName persona.lastName persona.email credentials.passwordPolicy.expiresAt')
+    .select(
+      'sovereignId persona.firstName persona.lastName persona.email credentials.passwordPolicy.expiresAt'
+    )
     .lean();
 };
 
@@ -1279,14 +1321,14 @@ const User = mongoose.model('User', UserSchema);
 // TEST SUITE STUB
 // ============================================================================
 
-/**
+/*
  * JEST TEST SUITE: USER MODEL ENCRYPTION VALIDATION
- * 
+ *
  * Required Test Files:
  * 1. /server/tests/unit/models/userModel.test.js
  * 2. /server/tests/integration/userEncryption.test.js
  * 3. /server/tests/e2e/userAuthentication.test.js
- * 
+ *
  * Test Coverage Requirements:
  * - Tenant-specific key derivation and encryption
  * - Password hashing and history validation
@@ -1296,10 +1338,10 @@ const User = mongoose.model('User', UserSchema);
  * - Security lockout mechanisms
  * - Audit trail completeness
  * - POPIA consent management
- * 
+ *
  * Run Commands:
  * cd /Users/wilsonkhanyezi/legal-doc-system/server
- * MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*******@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
+ * MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
  * npm test -- tests/unit/models/userModel.test.js
  */
 
@@ -1307,26 +1349,26 @@ const User = mongoose.model('User', UserSchema);
 // RUNBOOK SNIPPET
 // ============================================================================
 
-/**
+/*
  * RUNBOOK: User Model Deployment & Testing
- * 
+ *
  * 1. Set up environment variables:
  *    cd /Users/wilsonkhanyezi/legal-doc-system/server
  *    echo "USER_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> .env
  *    echo "FIELD_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> .env
  *    echo "ENCRYPTION_KEY=$(openssl rand -base64 32)" >> .env
- * 
+ *
  * 2. Install dependencies:
  *    npm install bcryptjs@^2.4.3 mongoose-encryption@^2.1.0 otplib@^12.0.0
- * 
+ *
  * 3. Run tests:
- *    MONGO_URI_TEST=mongodb+srv:/******* *:*******@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
+ *    MONGO_URI_TEST=mongodb+srv:/* *:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
  *    npm test -- tests/unit/models/userModel.test.js
- * 
+ *
  * 4. Generate Mermaid diagram:
  *    npm install --no-save @mermaid-js/mermaid-cli@^10.0.0
  *    npx mmdc -i docs/diagrams/user-encryption.mmd -o docs/diagrams/user-encryption.png
- * 
+ *
  * 5. Verify encryption:
  *    node -e "const crypto = require('crypto'); console.log('Key length:', Buffer.from(process.env.USER_ENCRYPTION_KEY || '', 'base64').length);"
  */
@@ -1335,33 +1377,33 @@ const User = mongoose.model('User', UserSchema);
 // ACCEPTANCE CHECKLIST
 // ============================================================================
 
-/**
+/*
  * ACCEPTANCE TESTS:
- * 
+ *
  * 1. Tenant-specific key derivation works correctly
  *    - HKDF produces different keys for different tenants
  *    - Same tenantId produces same key consistently
- * 
+ *
  * 2. PII field encryption/decryption
  *    - firstName, lastName, email, idNumber are encrypted at rest
  *    - Decryption works with correct tenant context
  *    - Missing tenant context fails closed
- * 
+ *
  * 3. Password security
  *    - bcrypt hashing with cost factor 12
  *    - Password history prevents reuse
  *    - Automatic password expiration
- * 
+ *
  * 4. Multi-tenancy isolation
  *    - Users cannot access data from other tenants
  *    - All queries include tenantId
  *    - Encryption keys are tenant-specific
- * 
+ *
  * 5. Compliance features
  *    - POPIA consent tracking
  *    - Audit trail for all sensitive operations
  *    - Information Officer metadata
- * 
+ *
  * 6. Performance
  *    - Indexes exist for common queries
  *    - Encryption doesn't break text search
@@ -1372,25 +1414,25 @@ const User = mongoose.model('User', UserSchema);
 // MIGRATION NOTES
 // ============================================================================
 
-/**
+/*
  * BACKWARD COMPATIBILITY:
- * 
+ *
  * Version 18.0.0 introduces:
  * 1. Tenant-specific HKDF key derivation
  * 2. Enhanced PII field encryption with AES-256-GCM
  * 3. Improved password history with metadata encryption
  * 4. TOTP secret encryption
  * 5. Better audit trail with encrypted logs
- * 
+ *
  * Migration from v17.0.0:
  * 1. Existing users will need re-encryption with new tenant keys
  * 2. TOTP secrets should be re-generated for enhanced security
  * 3. Audit logs will show migration event
- * 
+ *
  * Migration script stub:
  * // /server/scripts/migrate-user-encryption.js
  * const User = require('./models/userModel');
- * 
+ *
  * async function migrateTenant(tenantId) {
  *   const users = await User.find({ tenantId });
  *   for (const user of users) {
@@ -1405,10 +1447,10 @@ const User = mongoose.model('User', UserSchema);
 // SACRED SIGNATURE
 // ============================================================================
 
-/**
+/*
  * Wilsy Touching Lives.
  * Chief Architect: Wilson Khanyezi — wilsy.wk@gmail.com | +27 69 046 5710
- * 
+ *
  * This enhanced user model creates sovereign digital identities where
  * every legal professional's data is protected with quantum-grade encryption,
  * ensuring multi-tenant isolation while enabling seamless compliance

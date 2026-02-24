@@ -1,35 +1,35 @@
-/**
+/*
  * ============================================================================
  * 🌌💰 SUBSCRIPTION QUANTUM MODEL: RECURRING REVENUE COLOSSUS V25.0 🌌💰
  * ============================================================================
- * 
- *  ███████╗██╗   ██╗██████╗ ███████╗██╗████████╗ ██████╗██╗  ██╗███████╗██████╗ 
+ *
+ *  ███████╗██╗   ██╗██████╗ ███████╗██╗████████╗ ██████╗██╗  ██╗███████╗██████╗
  *  ██╔════╝██║   ██║██╔══██╗██╔════╝██║╚══██╔══╝██╔════╝██║  ██║██╔════╝██╔══██╗
  *  ███████╗██║   ██║██████╔╝███████╗██║   ██║   ██║     ███████║█████╗  ██████╔╝
  *  ╚════██║██║   ██║██╔═══╝ ╚════██║██║   ██║   ██║     ██╔══██║██╔══╝  ██╔══██╗
  *  ███████║╚██████╔╝██║     ███████║██║   ██║   ╚██████╗██║  ██║███████╗██║  ██║
  *  ╚══════╝ ╚═════╝ ╚═╝     ╚══════╝╚═╝   ╚═╝    ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
- *                                                                                
+ *
  *  ██╗  ██╗██╗   ██╗██╗     ███████╗███╗   ███╗███████╗███╗   ██╗████████╗██╗  ██╗
  *  ██║  ██║╚██╗ ██╔╝██║     ██╔════╝████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██║  ██║
  *  ███████║ ╚████╔╝ ██║     █████╗  ██╔████╔██║█████╗  ██╔██╗ ██║   ██║   ███████║
  *  ██╔══██║  ╚██╔╝  ██║     ██╔══╝  ██║╚██╔╝██║██╔══╝  ██║╚██╗██║   ██║   ██╔══██║
  *  ██║  ██║   ██║   ███████╗███████╗██║ ╚═╝ ██║███████╗██║ ╚████║   ██║   ██║  ██║
  *  ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚══════╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝
- * 
+ *
  * This quantum bastion orchestrates the eternal revenue heartbeat of Wilsy OS—
  * transmuting temporal commitments into perpetual prosperity streams. Each
  * subscription is a sacred covenant, entangling tenant aspirations with cosmic
  * compliance matrices, forging unbreakable financial symphonies that elevate
  * African legal sovereignty to trillion-dollar zeniths.
- * 
+ *
  * @file /Users/wilsonkhanyezi/legal-doc-system/server/models/Subscription.js
  * @author Chief Architect Wilson Khanyezi (Quantum Visionary)
  * @collaboration Revenue Sentinel Team: AI-driven churn prediction & retention optimization
  * @version 25.0.0 (Hyper-Scalable Multi-Tenant Revenue Architecture)
  * @created 2024-01-24
  * @updated 2024-01-30 (Supreme Architect Quantum Enhancement)
- * 
+ *
  * QUANTUM ENTANGLEMENT: Invoice Model → Subscription Model → Tenant Model → Audit Trail
  * LEGACY PROPHECY: "From humble recurring payments shall rise empires that democratize justice"
  * ============================================================================
@@ -44,7 +44,7 @@ require('dotenv').config();
 // QUANTUM ENCRYPTION UTILITIES
 // =============================================================================
 
-/**
+/*
  * Encrypt field using AES-256-GCM for PCI-DSS compliance
  * @param {string} value - Plaintext value to encrypt
  * @returns {Object} Encrypted object with metadata
@@ -71,11 +71,11 @@ const encryptField = function (value) {
     tag: tag.toString('hex'),
     algorithm,
     keyVersion: 'v1',
-    encryptedAt: new Date().toISOString()
+    encryptedAt: new Date().toISOString(),
   };
 };
 
-/**
+/*
  * Decrypt field for authorized access only
  * @param {Object} encryptedObj - Encrypted object
  * @returns {string} Decrypted plaintext
@@ -89,11 +89,7 @@ const decryptField = function (encryptedObj) {
       ? Buffer.from(process.env.SUBSCRIPTION_ENCRYPTION_KEY, 'hex')
       : Buffer.from(process.env.ENCRYPTION_KEY || 'default_key_32_bytes_here_for_dev', 'hex');
 
-    const decipher = crypto.createDecipheriv(
-      algorithm,
-      key,
-      Buffer.from(encryptedObj.iv, 'hex')
-    );
+    const decipher = crypto.createDecipheriv(algorithm, key, Buffer.from(encryptedObj.iv, 'hex'));
 
     decipher.setAuthTag(Buffer.from(encryptedObj.tag, 'hex'));
 
@@ -110,791 +106,831 @@ const decryptField = function (encryptedObj) {
 // 🌟 SUBSCRIPTION SCHEMA: RECURRING REVENUE QUANTUM MATRIX 🌟
 // =============================================================================
 
-const subscriptionSchema = new Schema({
-  // =========================================================================
-  // QUANTUM IDENTIFIERS: ENTANGLEMENT VECTORS
-  // =========================================================================
+const subscriptionSchema = new Schema(
+  {
+    // =========================================================================
+    // QUANTUM IDENTIFIERS: ENTANGLEMENT VECTORS
+    // =========================================================================
 
-  tenantId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Tenant',
-    required: [true, 'Tenant quantum anchor required for subscription entanglement'],
-    index: true,
-    // POPIA Quantum: Tenant reference encrypted at application layer
-    validate: {
-      validator: function (v) {
-        return mongoose.Types.ObjectId.isValid(v);
-      },
-      message: 'Invalid tenant ID quantum anchor'
-    }
-  },
-
-  subscriptionCode: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    uppercase: true,
-    default: function () {
-      const timestamp = Date.now().toString(36).toUpperCase();
-      const random = Math.random().toString(36).substr(2, 6).toUpperCase();
-      const tenantPrefix = this.tenantId ? this.tenantId.toString().substr(-4).toUpperCase() : 'GLOB';
-      return `SUB-${tenantPrefix}-${timestamp}-${random}`;
-    },
-    match: [/^SUB-[A-Z0-9]{4}-[A-Z0-9]{6,}-[A-Z0-9]{6}$/, 'Subscription code must follow quantum format'],
-    // Quantum Shield: Unique identifier for audit trails
-  },
-
-  // =========================================================================
-  // PLAN & PRICING QUANTUM: REVENUE ARCHITECTURE
-  // =========================================================================
-
-  planType: {
-    type: String,
-    required: [true, 'Plan type quantum required for pricing orchestration'],
-    enum: {
-      values: [
-        'SOLO_PRACTITIONER',     // Individual attorney/advocate
-        'SMALL_FIRM',            // 2-10 lawyers
-        'MID_SIZE_FIRM',         // 11-50 lawyers
-        'LARGE_FIRM',            // 51-200 lawyers
-        'ENTERPRISE',            // 200+ lawyers or corporate legal
-        'GOVERNMENT',            // Government departments
-        'NGO',                   // Non-profit organizations
-        'LEGAL_AID',             // Pro bono/legal aid societies
-        'TRIAL',                 // Trial period
-        'CUSTOM'                 // Custom enterprise solutions
-      ],
-      message: '{VALUE} is not a valid quantum plan type'
-    },
-    default: 'SOLO_PRACTITIONER',
-    index: true,
-    // SA Integration: Tailored for South African legal market segments
-  },
-
-  planName: {
-    type: String,
-    required: true,
-    enum: [
-      'BASIC',          // Core document management
-      'PROFESSIONAL',   // + Workflow automation
-      'ENTERPRISE',     // + Advanced compliance
-      'PLATINUM',       // + AI features
-      'GOVERNMENT',     // Government-specific features
-      'LEGAL_AID',      // Discounted for pro bono
-      'CUSTOM'          // Fully customized
-    ],
-    default: 'PROFESSIONAL',
-    index: true,
-    // Valuation Quantum: Directly correlates with ARPU metrics
-  },
-
-  pricingTier: {
-    type: String,
-    required: true,
-    enum: [
-      'MONTHLY_ZAR',    // Monthly billing in South African Rand
-      'QUARTERLY_ZAR',  // Quarterly billing in ZAR
-      'ANNUAL_ZAR',     // Annual billing in ZAR (discounted)
-      'MONTHLY_USD',    // Monthly billing in USD for international
-      'ANNUAL_USD',     // Annual billing in USD
-      'CUSTOM_ZAR',     // Custom billing in ZAR
-      'PRO_BONO'        // Free for qualifying pro bono work
-    ],
-    default: 'MONTHLY_ZAR',
-    index: true,
-    // SA Compliance: ZAR-first pricing with USD options for global expansion
-  },
-
-  baseAmount: {
-    type: Number,
-    required: [true, 'Base amount quantum required for financial compliance'],
-    min: [0, 'Base amount cannot be negative under South African Consumer Protection Act'],
-    set: function (val) {
-      // Financial precision: Round to 2 decimal places
-      return Math.round((parseFloat(val) || 0) * 100) / 100;
-    },
-    get: function (val) {
-      return Math.round(val * 100) / 100;
-    },
-    // CPA Compliance: Transparent pricing with no hidden fees
-  },
-
-  discountPercentage: {
-    type: Number,
-    default: 0,
-    min: [0, 'Discount cannot be negative'],
-    max: [100, 'Discount cannot exceed 100%'],
-    // Promotional Quantum: Time-limited discounts and promotions
-  },
-
-  discountAmount: {
-    type: Number,
-    default: 0,
-    min: [0, 'Discount amount cannot be negative'],
-    // Financial Quantum: Fixed amount discounts
-  },
-
-  vatRate: {
-    type: Number,
-    default: function () {
-      // SARS Compliance: Standard South African VAT rate
-      return process.env.SA_VAT_RATE ? parseFloat(process.env.SA_VAT_RATE) : 0.15;
-    },
-    min: [0, 'VAT rate cannot be negative'],
-    max: [1, 'VAT rate cannot exceed 100%'],
-    // SARS Quantum: Configurable for potential VAT changes
-  },
-
-  vatAmount: {
-    type: Number,
-    default: function () {
-      // Quantum Computation: VAT calculation on discounted amount
-      const discountedAmount = this.baseAmount - this.discountAmount;
-      const vat = discountedAmount * this.vatRate;
-      return Math.round(vat * 100) / 100;
-    },
-    // SARS Quantum: Automated VAT calculation for e-filing integration
-  },
-
-  totalAmount: {
-    type: Number,
-    default: function () {
-      const discountedAmount = this.baseAmount - this.discountAmount;
-      const vat = discountedAmount * this.vatRate;
-      return Math.round((discountedAmount + vat) * 100) / 100;
-    },
-    // Financial Integrity: Ensures accurate billing statements
-  },
-
-  currency: {
-    type: String,
-    default: function () {
-      return this.pricingTier.includes('ZAR') ? 'ZAR' : 'USD';
-    },
-    enum: ['ZAR', 'USD', 'EUR', 'GBP', 'NGN', 'KES', 'GHS'],
-    // Pan-African Expansion: Multi-currency support
-  },
-
-  // =========================================================================
-  // BILLING CYCLE QUANTUM: TEMPORAL ORCHESTRATION
-  // =========================================================================
-
-  billingCycle: {
-    type: String,
-    required: true,
-    enum: ['MONTHLY', 'QUARTERLY', 'BIANNUAL', 'ANNUAL', 'CUSTOM', 'ONE_TIME'],
-    default: 'MONTHLY',
-    index: true,
-    // Scalability Quantum: Supports diverse cash flow requirements
-  },
-
-  startDate: {
-    type: Date,
-    required: [true, 'Start date quantum required for temporal alignment'],
-    default: Date.now,
-    validate: {
-      validator: function (date) {
-        return date <= new Date();
-      },
-      message: 'Subscription start date cannot be in the future'
-    },
-    // Legal Compliance: Clear service commencement timestamp
-  },
-
-  currentPeriodStart: {
-    type: Date,
-    default: Date.now,
-    // Billing Quantum: Tracks active billing cycle
-  },
-
-  currentPeriodEnd: {
-    type: Date,
-    required: [true, 'Period end quantum required for renewal orchestration'],
-    validate: {
-      validator: function (date) {
-        return date > this.currentPeriodStart;
-      },
-      message: 'Period end must be after period start'
-    },
-    // Renewal Prediction: Critical for AI-powered retention analytics
-  },
-
-  nextBillingDate: {
-    type: Date,
-    // Revenue Forecasting: Enables predictive cash flow modeling
-  },
-
-  trialEndDate: {
-    type: Date,
-    // Trial Management: Clear trial expiration
-  },
-
-  // =========================================================================
-  // STATUS QUANTUM: FINANCIAL STATE MACHINE
-  // =========================================================================
-
-  status: {
-    type: String,
-    required: true,
-    enum: {
-      values: [
-        'DRAFT',              // Initial creation
-        'PENDING_ACTIVATION', // Awaiting payment/activation
-        'ACTIVE',             // Fully active and paid
-        'TRIAL',              // In trial period
-        'PAST_DUE',           // Payment overdue
-        'UNPAID',             // Payment failed
-        'SUSPENDED',          // Temporarily suspended
-        'CANCELLED',          // User cancelled
-        'EXPIRED',            // Automatically expired
-        'PENDING_CANCELLATION', // Cancellation requested
-        'GRACE_PERIOD'        // In grace period for payment
-      ],
-      message: '{VALUE} is not a valid subscription quantum state'
-    },
-    default: 'DRAFT',
-    index: true,
-    // Business Intelligence: Critical for churn analysis and revenue recognition
-  },
-
-  statusReason: {
-    type: String,
-    // Diagnostic Quantum: Reason for status change
-  },
-
-  cancellationDate: {
-    type: Date,
-    // Audit Quantum: When cancellation was processed
-  },
-
-  cancellationReason: {
-    type: String,
-    enum: [
-      'PRICING',
-      'FEATURES',
-      'SUPPORT',
-      'PERFORMANCE',
-      'SWITCHED_TO_COMPETITOR',
-      'BUSINESS_CLOSED',
-      'FINANCIAL_REASONS',
-      'OTHER',
-      'NONE'
-    ],
-    default: 'NONE',
-    // Growth Quantum: Churn reason analysis for product improvement
-  },
-
-  autoRenew: {
-    type: Boolean,
-    default: true,
-    // CPA Compliance: Clear auto-renewal terms required
-  },
-
-  renewalAttempts: {
-    type: Number,
-    default: 0,
-    min: 0,
-    // Payment Recovery: Track renewal retry attempts
-  },
-
-  // =========================================================================
-  // PAYMENT QUANTUM: FINANCIAL SECURITY CITADEL
-  // =========================================================================
-
-  paymentMethod: {
-    type: String,
-    enum: [
-      'CREDIT_CARD',
-      'DEBIT_ORDER',
-      'BANK_TRANSFER',
-      'EWALLET',
-      'PAYPAL',
-      'PAYFAST',      // South African payment gateway
-      'OZOW',         // South African instant EFT
-      'SNAPSCAN',     // South African QR payments
-      'MANUAL',
-      'NONE',
-      'PRO_BONO'      // No payment for pro bono work
-    ],
-    default: 'NONE',
-    index: true,
-    // SA Integration: Supports South African payment methods
-  },
-
-  paymentDetails: {
-    // Quantum Shield: All sensitive payment data encrypted at rest
-    gatewayToken: {
-      type: String,
-      set: encryptField,
-      get: decryptField,
-    },
-    gatewayCustomerId: {
-      type: String,
-      set: encryptField,
-      get: decryptField,
-    },
-    gatewaySubscriptionId: {
-      type: String,
-      set: encryptField,
-      get: decryptField,
-    },
-    lastFourDigits: {
-      type: String,
-      match: [/^\d{4}$/, 'Last four digits must be 4 digits'],
-      // Security Quantum: Masked card details for display
-    },
-    cardType: {
-      type: String,
-      enum: ['VISA', 'MASTERCARD', 'AMEX', 'DISCOVER', 'UNKNOWN']
-    },
-    bankName: String,
-    accountType: String,
-    // FICA Quantum: Payment method verification for AML compliance
-  },
-
-  lastPaymentDate: {
-    type: Date,
-    // Payment History: Track successful payments
-  },
-
-  lastPaymentAmount: {
-    type: Number,
-    min: 0,
-    // Financial Reconciliation: Amount of last successful payment
-  },
-
-  nextPaymentAmount: {
-    type: Number,
-    min: 0,
-    // User Transparency: Show upcoming payment amount
-  },
-
-  // =========================================================================
-  // INVOICE QUANTUM: BILLING DOCUMENT ENTANGLEMENT
-  // =========================================================================
-
-  lastInvoiceId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Invoice',
-    // Billing Quantum: Link to most recent invoice
-  },
-
-  invoiceHistory: [{
-    invoiceId: {
+    tenantId: {
       type: Schema.Types.ObjectId,
-      ref: 'Invoice',
-      required: true
-    },
-    periodStart: Date,
-    periodEnd: Date,
-    amount: Number,
-    status: String,
-    generatedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-
-  // =========================================================================
-  // FEATURES QUANTUM: SERVICE ENTITLEMENT MATRIX
-  // =========================================================================
-
-  features: {
-    // Storage Limits (POPIA: Data minimization principle)
-    documentStorageGB: {
-      type: Number,
-      default: function () {
-        switch (this.planName) {
-          case 'BASIC': return 10;
-          case 'PROFESSIONAL': return 50;
-          case 'ENTERPRISE': return 200;
-          case 'PLATINUM': return 1000;
-          case 'LEGAL_AID': return 20;
-          default: return 10;
-        }
+      ref: 'Tenant',
+      required: [true, 'Tenant quantum anchor required for subscription entanglement'],
+      index: true,
+      // POPIA Quantum: Tenant reference encrypted at application layer
+      validate: {
+        validator: function (v) {
+          return mongoose.Types.ObjectId.isValid(v);
+        },
+        message: 'Invalid tenant ID quantum anchor',
       },
-      min: 0,
     },
 
-    // User Management
-    userSeats: {
-      type: Number,
-      default: function () {
-        switch (this.planType) {
-          case 'SOLO_PRACTITIONER': return 1;
-          case 'SMALL_FIRM': return 10;
-          case 'MID_SIZE_FIRM': return 50;
-          case 'LARGE_FIRM': return 200;
-          case 'ENTERPRISE': return 500;
-          case 'GOVERNMENT': return 1000;
-          default: return 5;
-        }
-      },
-      min: 1,
-      // Scalability: Tier-based user allocation
-    },
-
-    // API and Integration Limits
-    apiCallsPerMonth: {
-      type: Number,
-      default: function () {
-        switch (this.planName) {
-          case 'BASIC': return 1000;
-          case 'PROFESSIONAL': return 10000;
-          case 'ENTERPRISE': return 100000;
-          case 'PLATINUM': return 1000000;
-          default: return 1000;
-        }
-      },
-      min: 0,
-      // Performance: Rate limiting foundation
-    },
-
-    // Advanced Features
-    prioritySupport: {
-      type: Boolean,
-      default: function () {
-        return ['ENTERPRISE', 'PLATINUM', 'GOVERNMENT'].includes(this.planName);
-      }
-    },
-
-    customBranding: {
-      type: Boolean,
-      default: function () {
-        return ['ENTERPRISE', 'PLATINUM', 'GOVERNMENT'].includes(this.planName);
-      }
-    },
-
-    advancedAnalytics: {
-      type: Boolean,
-      default: function () {
-        return ['PROFESSIONAL', 'ENTERPRISE', 'PLATINUM'].includes(this.planName);
-      }
-    },
-
-    aiDocumentReview: {
-      type: Boolean,
-      default: function () {
-        return ['ENTERPRISE', 'PLATINUM'].includes(this.planName);
-      }
-    },
-
-    workflowAutomation: {
-      type: Boolean,
-      default: function () {
-        return ['PROFESSIONAL', 'ENTERPRISE', 'PLATINUM'].includes(this.planName);
-      }
-    },
-
-    complianceDashboard: {
-      type: Boolean,
-      default: function () {
-        return ['ENTERPRISE', 'PLATINUM', 'GOVERNMENT'].includes(this.planName);
-      }
-    },
-
-    apiAccess: {
-      type: Boolean,
-      default: function () {
-        return ['ENTERPRISE', 'PLATINUM'].includes(this.planName);
-      }
-    },
-
-    slaGuarantee: {
+    subscriptionCode: {
       type: String,
-      enum: ['NONE', 'BUSINESS_HOURS', '24_7'],
+      required: true,
+      unique: true,
+      trim: true,
+      uppercase: true,
       default: function () {
-        return this.planName === 'PLATINUM' ? '24_7' :
-          this.planName === 'ENTERPRISE' ? 'BUSINESS_HOURS' : 'NONE';
-      }
+        const timestamp = Date.now().toString(36).toUpperCase();
+        const random = Math.random().toString(36).substr(2, 6).toUpperCase();
+        const tenantPrefix = this.tenantId
+          ? this.tenantId.toString().substr(-4).toUpperCase()
+          : 'GLOB';
+        return `SUB-${tenantPrefix}-${timestamp}-${random}`;
+      },
+      match: [
+        /^SUB-[A-Z0-9]{4}-[A-Z0-9]{6,}-[A-Z0-9]{6}$/,
+        'Subscription code must follow quantum format',
+      ],
+      // Quantum Shield: Unique identifier for audit trails
     },
 
-    dataResidency: {
+    // =========================================================================
+    // PLAN & PRICING QUANTUM: REVENUE ARCHITECTURE
+    // =========================================================================
+
+    planType: {
       type: String,
-      default: 'ZA-CAPE_TOWN', // AWS Cape Town region for POPIA compliance
-      enum: ['ZA-CAPE_TOWN', 'EU-GERMANY', 'US-VIRGINIA', 'AUSTRALIA', 'GLOBAL']
-    },
-
-    backupRetention: {
-      type: Number,
-      default: 30, // Days
-      min: 7,
-      max: 365,
-      // Disaster Recovery: Tier-based backup retention
-    },
-
-    // Product Evolution: Feature flags for gradual rollout
-    _featureVersion: {
-      type: String,
-      default: 'v25.0'
-    }
-  },
-
-  // =========================================================================
-  // COMPLIANCE QUANTUM: LEGAL SANCTITY ORCHESTRATION
-  // =========================================================================
-
-  compliance: {
-    // POPIA: Data Processing Agreement Acceptance
-    popiaConsent: {
-      accepted: {
-        type: Boolean,
-        default: false,
-        required: true,
+      required: [true, 'Plan type quantum required for pricing orchestration'],
+      enum: {
+        values: [
+          'SOLO_PRACTITIONER', // Individual attorney/advocate
+          'SMALL_FIRM', // 2-10 lawyers
+          'MID_SIZE_FIRM', // 11-50 lawyers
+          'LARGE_FIRM', // 51-200 lawyers
+          'ENTERPRISE', // 200+ lawyers or corporate legal
+          'GOVERNMENT', // Government departments
+          'NGO', // Non-profit organizations
+          'LEGAL_AID', // Pro bono/legal aid societies
+          'TRIAL', // Trial period
+          'CUSTOM', // Custom enterprise solutions
+        ],
+        message: '{VALUE} is not a valid quantum plan type',
       },
-      acceptedDate: {
-        type: Date,
-        // POPIA Quantum: Timestamp of consent acceptance
-      },
-      version: {
-        type: String,
-        default: '2.0',
-        // Version Control: Track consent document versions
-      },
-      ipAddress: {
-        type: String,
-        set: encryptField,
-        get: decryptField,
-      },
-      userAgent: String,
-      // POPIA Quantum: Explicit consent tracking with audit trail
+      default: 'SOLO_PRACTITIONER',
+      index: true,
+      // SA Integration: Tailored for South African legal market segments
     },
 
-    // ECT Act: Electronic Contract Formation
-    ectContractHash: {
-      type: String,
-      // ECT Quantum: SHA-256 hash of subscription terms for non-repudiation
-    },
-
-    ectSignature: {
-      signatory: {
-        type: String,
-        set: encryptField,
-        get: decryptField,
-      },
-      timestamp: {
-        type: Date,
-        default: Date.now
-      },
-      signatureMethod: {
-        type: String,
-        enum: ['DIGITAL_SIGNATURE', 'ADVANCED_ELECTRONIC_SIGNATURE', 'SIMPLE_ELECTRONIC_SIGNATURE'],
-        default: 'ADVANCED_ELECTRONIC_SIGNATURE'
-      },
-      // Legal Integrity: Electronic signature compliance
-    },
-
-    // Companies Act: Record Retention
-    retentionPeriod: {
-      type: Number,
-      default: function () {
-        return parseInt(process.env.SUBSCRIPTION_RETENTION_YEARS) || 7;
-      },
-      min: 5,
-      max: 10,
-      // Compliance Quantum: Meets statutory record-keeping requirements
-    },
-
-    // Consumer Protection Act: Cooling-off Period
-    coolingOffPeriodEnd: {
-      type: Date,
-      default: function () {
-        const coolingOffDays = parseInt(process.env.SUBSCRIPTION_COOLING_OFF_DAYS) || 5;
-        const date = new Date(this.startDate);
-        date.setDate(date.getDate() + coolingOffDays);
-        return date;
-      }
-      // CPA Quantum: Cooling-off period for direct marketing
-    },
-
-    // SARS VAT Compliance
-    vatRegistrationNumber: {
-      type: String,
-      match: [/^\d{10}$/, 'South African VAT number must be 10 digits'],
-      // SARS Integration: Validates VAT registration status
-    },
-
-    vatExempt: {
-      type: Boolean,
-      default: false,
-      // VAT Quantum: Some NGOs/government entities may be VAT exempt
-    },
-
-    // FICA/AML Compliance
-    ficaVerified: {
-      type: Boolean,
-      default: false,
-      // FICA Quantum: Customer verification status
-    },
-
-    ficaVerificationDate: Date,
-
-    ficaDocuments: [{
-      documentType: String,
-      verified: Boolean,
-      verifiedDate: Date,
-      verifiedBy: Schema.Types.ObjectId
-    }],
-
-    // Legal Practice Council Compliance
-    lpcCompliant: {
-      type: Boolean,
-      default: false,
-      // LPC Quantum: Trust account compliance status
-    },
-
-    trustAccountNumber: {
-      type: String,
-      set: encryptField,
-      get: decryptField,
-    },
-
-    // Pan-African Compliance
-    otherJurisdictions: [{
-      country: String,
-      regulation: String,
-      compliant: Boolean,
-      verifiedDate: Date
-    }]
-  },
-
-  // =========================================================================
-  // AUDIT QUANTUM: IMMUTABLE CHRONICLE
-  // =========================================================================
-
-  auditTrail: [{
-    action: {
+    planName: {
       type: String,
       required: true,
       enum: [
-        'CREATED',
-        'UPDATED',
-        'CANCELLED',
-        'RENEWED',
-        'PAYMENT_FAILED',
-        'PAYMENT_SUCCESS',
-        'PLAN_CHANGED',
-        'SUSPENDED',
-        'REACTIVATED',
-        'TRIAL_CONVERTED',
-        'GRACE_PERIOD_STARTED',
-        'GRACE_PERIOD_ENDED',
-        'PRICE_CHANGED',
-        'FEATURES_UPDATED',
-        'COMPLIANCE_UPDATED'
+        'BASIC', // Core document management
+        'PROFESSIONAL', // + Workflow automation
+        'ENTERPRISE', // + Advanced compliance
+        'PLATINUM', // + AI features
+        'GOVERNMENT', // Government-specific features
+        'LEGAL_AID', // Discounted for pro bono
+        'CUSTOM', // Fully customized
       ],
+      default: 'PROFESSIONAL',
+      index: true,
+      // Valuation Quantum: Directly correlates with ARPU metrics
     },
-    performedBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+
+    pricingTier: {
+      type: String,
+      required: true,
+      enum: [
+        'MONTHLY_ZAR', // Monthly billing in South African Rand
+        'QUARTERLY_ZAR', // Quarterly billing in ZAR
+        'ANNUAL_ZAR', // Annual billing in ZAR (discounted)
+        'MONTHLY_USD', // Monthly billing in USD for international
+        'ANNUAL_USD', // Annual billing in USD
+        'CUSTOM_ZAR', // Custom billing in ZAR
+        'PRO_BONO', // Free for qualifying pro bono work
+      ],
+      default: 'MONTHLY_ZAR',
+      index: true,
+      // SA Compliance: ZAR-first pricing with USD options for global expansion
     },
-    performedAt: {
+
+    baseAmount: {
+      type: Number,
+      required: [true, 'Base amount quantum required for financial compliance'],
+      min: [0, 'Base amount cannot be negative under South African Consumer Protection Act'],
+      set: function (val) {
+        // Financial precision: Round to 2 decimal places
+        return Math.round((parseFloat(val) || 0) * 100) / 100;
+      },
+      get: function (val) {
+        return Math.round(val * 100) / 100;
+      },
+      // CPA Compliance: Transparent pricing with no hidden fees
+    },
+
+    discountPercentage: {
+      type: Number,
+      default: 0,
+      min: [0, 'Discount cannot be negative'],
+      max: [100, 'Discount cannot exceed 100%'],
+      // Promotional Quantum: Time-limited discounts and promotions
+    },
+
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Discount amount cannot be negative'],
+      // Financial Quantum: Fixed amount discounts
+    },
+
+    vatRate: {
+      type: Number,
+      default: function () {
+        // SARS Compliance: Standard South African VAT rate
+        return process.env.SA_VAT_RATE ? parseFloat(process.env.SA_VAT_RATE) : 0.15;
+      },
+      min: [0, 'VAT rate cannot be negative'],
+      max: [1, 'VAT rate cannot exceed 100%'],
+      // SARS Quantum: Configurable for potential VAT changes
+    },
+
+    vatAmount: {
+      type: Number,
+      default: function () {
+        // Quantum Computation: VAT calculation on discounted amount
+        const discountedAmount = this.baseAmount - this.discountAmount;
+        const vat = discountedAmount * this.vatRate;
+        return Math.round(vat * 100) / 100;
+      },
+      // SARS Quantum: Automated VAT calculation for e-filing integration
+    },
+
+    totalAmount: {
+      type: Number,
+      default: function () {
+        const discountedAmount = this.baseAmount - this.discountAmount;
+        const vat = discountedAmount * this.vatRate;
+        return Math.round((discountedAmount + vat) * 100) / 100;
+      },
+      // Financial Integrity: Ensures accurate billing statements
+    },
+
+    currency: {
+      type: String,
+      default: function () {
+        return this.pricingTier.includes('ZAR') ? 'ZAR' : 'USD';
+      },
+      enum: ['ZAR', 'USD', 'EUR', 'GBP', 'NGN', 'KES', 'GHS'],
+      // Pan-African Expansion: Multi-currency support
+    },
+
+    // =========================================================================
+    // BILLING CYCLE QUANTUM: TEMPORAL ORCHESTRATION
+    // =========================================================================
+
+    billingCycle: {
+      type: String,
+      required: true,
+      enum: ['MONTHLY', 'QUARTERLY', 'BIANNUAL', 'ANNUAL', 'CUSTOM', 'ONE_TIME'],
+      default: 'MONTHLY',
+      index: true,
+      // Scalability Quantum: Supports diverse cash flow requirements
+    },
+
+    startDate: {
+      type: Date,
+      required: [true, 'Start date quantum required for temporal alignment'],
+      default: Date.now,
+      validate: {
+        validator: function (date) {
+          return date <= new Date();
+        },
+        message: 'Subscription start date cannot be in the future',
+      },
+      // Legal Compliance: Clear service commencement timestamp
+    },
+
+    currentPeriodStart: {
       type: Date,
       default: Date.now,
+      // Billing Quantum: Tracks active billing cycle
     },
-    changes: {
-      type: Schema.Types.Mixed,
-      // Quantum Shield: Detailed change tracking
+
+    currentPeriodEnd: {
+      type: Date,
+      required: [true, 'Period end quantum required for renewal orchestration'],
+      validate: {
+        validator: function (date) {
+          return date > this.currentPeriodStart;
+        },
+        message: 'Period end must be after period start',
+      },
+      // Renewal Prediction: Critical for AI-powered retention analytics
     },
-    ipAddress: {
+
+    nextBillingDate: {
+      type: Date,
+      // Revenue Forecasting: Enables predictive cash flow modeling
+    },
+
+    trialEndDate: {
+      type: Date,
+      // Trial Management: Clear trial expiration
+    },
+
+    // =========================================================================
+    // STATUS QUANTUM: FINANCIAL STATE MACHINE
+    // =========================================================================
+
+    status: {
       type: String,
-      set: encryptField,
-      get: decryptField,
+      required: true,
+      enum: {
+        values: [
+          'DRAFT', // Initial creation
+          'PENDING_ACTIVATION', // Awaiting payment/activation
+          'ACTIVE', // Fully active and paid
+          'TRIAL', // In trial period
+          'PAST_DUE', // Payment overdue
+          'UNPAID', // Payment failed
+          'SUSPENDED', // Temporarily suspended
+          'CANCELLED', // User cancelled
+          'EXPIRED', // Automatically expired
+          'PENDING_CANCELLATION', // Cancellation requested
+          'GRACE_PERIOD', // In grace period for payment
+        ],
+        message: '{VALUE} is not a valid subscription quantum state',
+      },
+      default: 'DRAFT',
+      index: true,
+      // Business Intelligence: Critical for churn analysis and revenue recognition
     },
-    userAgent: String,
-    reason: String,
-    // Quantum Shield: Immutable audit trail for forensic analysis
-  }],
 
-  // =========================================================================
-  // METADATA QUANTUM: BUSINESS INTELLIGENCE RESERVOIR
-  // =========================================================================
-
-  metadata: {
-    salesRep: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+    statusReason: {
+      type: String,
+      // Diagnostic Quantum: Reason for status change
     },
-    referralSource: {
+
+    cancellationDate: {
+      type: Date,
+      // Audit Quantum: When cancellation was processed
+    },
+
+    cancellationReason: {
       type: String,
       enum: [
-        'WEBSITE',
-        'PARTNER',
-        'REFERRAL',
-        'SOCIAL_MEDIA',
-        'EVENT',
-        'COLD_CALL',
-        'EMAIL_MARKETING',
-        'SEARCH_ENGINE',
-        'APP_STORE',
+        'PRICING',
+        'FEATURES',
+        'SUPPORT',
+        'PERFORMANCE',
+        'SWITCHED_TO_COMPETITOR',
+        'BUSINESS_CLOSED',
+        'FINANCIAL_REASONS',
         'OTHER',
-        'UNKNOWN'
+        'NONE',
       ],
-      default: 'UNKNOWN',
+      default: 'NONE',
+      // Growth Quantum: Churn reason analysis for product improvement
     },
-    campaignId: String,
-    affiliateId: String,
-    partnerCode: String,
-    notes: String,
-    customFields: Schema.Types.Mixed,
-    // Growth Quantum: Enables CAC calculation and marketing optimization
+
+    autoRenew: {
+      type: Boolean,
+      default: true,
+      // CPA Compliance: Clear auto-renewal terms required
+    },
+
+    renewalAttempts: {
+      type: Number,
+      default: 0,
+      min: 0,
+      // Payment Recovery: Track renewal retry attempts
+    },
+
+    // =========================================================================
+    // PAYMENT QUANTUM: FINANCIAL SECURITY CITADEL
+    // =========================================================================
+
+    paymentMethod: {
+      type: String,
+      enum: [
+        'CREDIT_CARD',
+        'DEBIT_ORDER',
+        'BANK_TRANSFER',
+        'EWALLET',
+        'PAYPAL',
+        'PAYFAST', // South African payment gateway
+        'OZOW', // South African instant EFT
+        'SNAPSCAN', // South African QR payments
+        'MANUAL',
+        'NONE',
+        'PRO_BONO', // No payment for pro bono work
+      ],
+      default: 'NONE',
+      index: true,
+      // SA Integration: Supports South African payment methods
+    },
+
+    paymentDetails: {
+      // Quantum Shield: All sensitive payment data encrypted at rest
+      gatewayToken: {
+        type: String,
+        set: encryptField,
+        get: decryptField,
+      },
+      gatewayCustomerId: {
+        type: String,
+        set: encryptField,
+        get: decryptField,
+      },
+      gatewaySubscriptionId: {
+        type: String,
+        set: encryptField,
+        get: decryptField,
+      },
+      lastFourDigits: {
+        type: String,
+        match: [/^\d{4}$/, 'Last four digits must be 4 digits'],
+        // Security Quantum: Masked card details for display
+      },
+      cardType: {
+        type: String,
+        enum: ['VISA', 'MASTERCARD', 'AMEX', 'DISCOVER', 'UNKNOWN'],
+      },
+      bankName: String,
+      accountType: String,
+      // FICA Quantum: Payment method verification for AML compliance
+    },
+
+    lastPaymentDate: {
+      type: Date,
+      // Payment History: Track successful payments
+    },
+
+    lastPaymentAmount: {
+      type: Number,
+      min: 0,
+      // Financial Reconciliation: Amount of last successful payment
+    },
+
+    nextPaymentAmount: {
+      type: Number,
+      min: 0,
+      // User Transparency: Show upcoming payment amount
+    },
+
+    // =========================================================================
+    // INVOICE QUANTUM: BILLING DOCUMENT ENTANGLEMENT
+    // =========================================================================
+
+    lastInvoiceId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Invoice',
+      // Billing Quantum: Link to most recent invoice
+    },
+
+    invoiceHistory: [
+      {
+        invoiceId: {
+          type: Schema.Types.ObjectId,
+          ref: 'Invoice',
+          required: true,
+        },
+        periodStart: Date,
+        periodEnd: Date,
+        amount: Number,
+        status: String,
+        generatedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    // =========================================================================
+    // FEATURES QUANTUM: SERVICE ENTITLEMENT MATRIX
+    // =========================================================================
+
+    features: {
+      // Storage Limits (POPIA: Data minimization principle)
+      documentStorageGB: {
+        type: Number,
+        default: function () {
+          switch (this.planName) {
+            case 'BASIC':
+              return 10;
+            case 'PROFESSIONAL':
+              return 50;
+            case 'ENTERPRISE':
+              return 200;
+            case 'PLATINUM':
+              return 1000;
+            case 'LEGAL_AID':
+              return 20;
+            default:
+              return 10;
+          }
+        },
+        min: 0,
+      },
+
+      // User Management
+      userSeats: {
+        type: Number,
+        default: function () {
+          switch (this.planType) {
+            case 'SOLO_PRACTITIONER':
+              return 1;
+            case 'SMALL_FIRM':
+              return 10;
+            case 'MID_SIZE_FIRM':
+              return 50;
+            case 'LARGE_FIRM':
+              return 200;
+            case 'ENTERPRISE':
+              return 500;
+            case 'GOVERNMENT':
+              return 1000;
+            default:
+              return 5;
+          }
+        },
+        min: 1,
+        // Scalability: Tier-based user allocation
+      },
+
+      // API and Integration Limits
+      apiCallsPerMonth: {
+        type: Number,
+        default: function () {
+          switch (this.planName) {
+            case 'BASIC':
+              return 1000;
+            case 'PROFESSIONAL':
+              return 10000;
+            case 'ENTERPRISE':
+              return 100000;
+            case 'PLATINUM':
+              return 1000000;
+            default:
+              return 1000;
+          }
+        },
+        min: 0,
+        // Performance: Rate limiting foundation
+      },
+
+      // Advanced Features
+      prioritySupport: {
+        type: Boolean,
+        default: function () {
+          return ['ENTERPRISE', 'PLATINUM', 'GOVERNMENT'].includes(this.planName);
+        },
+      },
+
+      customBranding: {
+        type: Boolean,
+        default: function () {
+          return ['ENTERPRISE', 'PLATINUM', 'GOVERNMENT'].includes(this.planName);
+        },
+      },
+
+      advancedAnalytics: {
+        type: Boolean,
+        default: function () {
+          return ['PROFESSIONAL', 'ENTERPRISE', 'PLATINUM'].includes(this.planName);
+        },
+      },
+
+      aiDocumentReview: {
+        type: Boolean,
+        default: function () {
+          return ['ENTERPRISE', 'PLATINUM'].includes(this.planName);
+        },
+      },
+
+      workflowAutomation: {
+        type: Boolean,
+        default: function () {
+          return ['PROFESSIONAL', 'ENTERPRISE', 'PLATINUM'].includes(this.planName);
+        },
+      },
+
+      complianceDashboard: {
+        type: Boolean,
+        default: function () {
+          return ['ENTERPRISE', 'PLATINUM', 'GOVERNMENT'].includes(this.planName);
+        },
+      },
+
+      apiAccess: {
+        type: Boolean,
+        default: function () {
+          return ['ENTERPRISE', 'PLATINUM'].includes(this.planName);
+        },
+      },
+
+      slaGuarantee: {
+        type: String,
+        enum: ['NONE', 'BUSINESS_HOURS', '24_7'],
+        default: function () {
+          return this.planName === 'PLATINUM'
+            ? '24_7'
+            : this.planName === 'ENTERPRISE'
+              ? 'BUSINESS_HOURS'
+              : 'NONE';
+        },
+      },
+
+      dataResidency: {
+        type: String,
+        default: 'ZA-CAPE_TOWN', // AWS Cape Town region for POPIA compliance
+        enum: ['ZA-CAPE_TOWN', 'EU-GERMANY', 'US-VIRGINIA', 'AUSTRALIA', 'GLOBAL'],
+      },
+
+      backupRetention: {
+        type: Number,
+        default: 30, // Days
+        min: 7,
+        max: 365,
+        // Disaster Recovery: Tier-based backup retention
+      },
+
+      // Product Evolution: Feature flags for gradual rollout
+      _featureVersion: {
+        type: String,
+        default: 'v25.0',
+      },
+    },
+
+    // =========================================================================
+    // COMPLIANCE QUANTUM: LEGAL SANCTITY ORCHESTRATION
+    // =========================================================================
+
+    compliance: {
+      // POPIA: Data Processing Agreement Acceptance
+      popiaConsent: {
+        accepted: {
+          type: Boolean,
+          default: false,
+          required: true,
+        },
+        acceptedDate: {
+          type: Date,
+          // POPIA Quantum: Timestamp of consent acceptance
+        },
+        version: {
+          type: String,
+          default: '2.0',
+          // Version Control: Track consent document versions
+        },
+        ipAddress: {
+          type: String,
+          set: encryptField,
+          get: decryptField,
+        },
+        userAgent: String,
+        // POPIA Quantum: Explicit consent tracking with audit trail
+      },
+
+      // ECT Act: Electronic Contract Formation
+      ectContractHash: {
+        type: String,
+        // ECT Quantum: SHA-256 hash of subscription terms for non-repudiation
+      },
+
+      ectSignature: {
+        signatory: {
+          type: String,
+          set: encryptField,
+          get: decryptField,
+        },
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+        signatureMethod: {
+          type: String,
+          enum: [
+            'DIGITAL_SIGNATURE',
+            'ADVANCED_ELECTRONIC_SIGNATURE',
+            'SIMPLE_ELECTRONIC_SIGNATURE',
+          ],
+          default: 'ADVANCED_ELECTRONIC_SIGNATURE',
+        },
+        // Legal Integrity: Electronic signature compliance
+      },
+
+      // Companies Act: Record Retention
+      retentionPeriod: {
+        type: Number,
+        default: function () {
+          return parseInt(process.env.SUBSCRIPTION_RETENTION_YEARS) || 7;
+        },
+        min: 5,
+        max: 10,
+        // Compliance Quantum: Meets statutory record-keeping requirements
+      },
+
+      // Consumer Protection Act: Cooling-off Period
+      coolingOffPeriodEnd: {
+        type: Date,
+        default: function () {
+          const coolingOffDays = parseInt(process.env.SUBSCRIPTION_COOLING_OFF_DAYS) || 5;
+          const date = new Date(this.startDate);
+          date.setDate(date.getDate() + coolingOffDays);
+          return date;
+        },
+        // CPA Quantum: Cooling-off period for direct marketing
+      },
+
+      // SARS VAT Compliance
+      vatRegistrationNumber: {
+        type: String,
+        match: [/^\d{10}$/, 'South African VAT number must be 10 digits'],
+        // SARS Integration: Validates VAT registration status
+      },
+
+      vatExempt: {
+        type: Boolean,
+        default: false,
+        // VAT Quantum: Some NGOs/government entities may be VAT exempt
+      },
+
+      // FICA/AML Compliance
+      ficaVerified: {
+        type: Boolean,
+        default: false,
+        // FICA Quantum: Customer verification status
+      },
+
+      ficaVerificationDate: Date,
+
+      ficaDocuments: [
+        {
+          documentType: String,
+          verified: Boolean,
+          verifiedDate: Date,
+          verifiedBy: Schema.Types.ObjectId,
+        },
+      ],
+
+      // Legal Practice Council Compliance
+      lpcCompliant: {
+        type: Boolean,
+        default: false,
+        // LPC Quantum: Trust account compliance status
+      },
+
+      trustAccountNumber: {
+        type: String,
+        set: encryptField,
+        get: decryptField,
+      },
+
+      // Pan-African Compliance
+      otherJurisdictions: [
+        {
+          country: String,
+          regulation: String,
+          compliant: Boolean,
+          verifiedDate: Date,
+        },
+      ],
+    },
+
+    // =========================================================================
+    // AUDIT QUANTUM: IMMUTABLE CHRONICLE
+    // =========================================================================
+
+    auditTrail: [
+      {
+        action: {
+          type: String,
+          required: true,
+          enum: [
+            'CREATED',
+            'UPDATED',
+            'CANCELLED',
+            'RENEWED',
+            'PAYMENT_FAILED',
+            'PAYMENT_SUCCESS',
+            'PLAN_CHANGED',
+            'SUSPENDED',
+            'REACTIVATED',
+            'TRIAL_CONVERTED',
+            'GRACE_PERIOD_STARTED',
+            'GRACE_PERIOD_ENDED',
+            'PRICE_CHANGED',
+            'FEATURES_UPDATED',
+            'COMPLIANCE_UPDATED',
+          ],
+        },
+        performedBy: {
+          type: Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        performedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        changes: {
+          type: Schema.Types.Mixed,
+          // Quantum Shield: Detailed change tracking
+        },
+        ipAddress: {
+          type: String,
+          set: encryptField,
+          get: decryptField,
+        },
+        userAgent: String,
+        reason: String,
+        // Quantum Shield: Immutable audit trail for forensic analysis
+      },
+    ],
+
+    // =========================================================================
+    // METADATA QUANTUM: BUSINESS INTELLIGENCE RESERVOIR
+    // =========================================================================
+
+    metadata: {
+      salesRep: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+      referralSource: {
+        type: String,
+        enum: [
+          'WEBSITE',
+          'PARTNER',
+          'REFERRAL',
+          'SOCIAL_MEDIA',
+          'EVENT',
+          'COLD_CALL',
+          'EMAIL_MARKETING',
+          'SEARCH_ENGINE',
+          'APP_STORE',
+          'OTHER',
+          'UNKNOWN',
+        ],
+        default: 'UNKNOWN',
+      },
+      campaignId: String,
+      affiliateId: String,
+      partnerCode: String,
+      notes: String,
+      customFields: Schema.Types.Mixed,
+      // Growth Quantum: Enables CAC calculation and marketing optimization
+    },
+
+    // =========================================================================
+    // SYSTEM FIELDS: QUANTUM ORCHESTRATION
+    // =========================================================================
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+      // Soft Delete: GDPR/POPIA right to erasure compliance
+    },
+
+    deletedAt: Date,
+
+    version: {
+      type: Number,
+      default: 1,
+      // Optimistic Concurrency Control
+    },
+
+    migratedFrom: {
+      type: Schema.Types.Mixed,
+      // Legacy System: Track migration from old systems
+    },
   },
+  {
+    // =========================================================================
+    // SCHEMA OPTIONS: QUANTUM CONFIGURATION MATRIX
+    // =========================================================================
 
-  // =========================================================================
-  // SYSTEM FIELDS: QUANTUM ORCHESTRATION
-  // =========================================================================
-
-  isDeleted: {
-    type: Boolean,
-    default: false,
-    index: true,
-    // Soft Delete: GDPR/POPIA right to erasure compliance
-  },
-
-  deletedAt: Date,
-
-  version: {
-    type: Number,
-    default: 1,
-    // Optimistic Concurrency Control
-  },
-
-  migratedFrom: {
-    type: Schema.Types.Mixed,
-    // Legacy System: Track migration from old systems
+    timestamps: true, // createdAt, updatedAt
+    toJSON: {
+      virtuals: true,
+      getters: true,
+      transform: function (doc, ret) {
+        // Security Quantum: Remove sensitive fields in JSON output
+        delete ret.paymentDetails;
+        delete ret.compliance.popiaConsent.ipAddress;
+        delete ret.compliance.ectSignature.signatory;
+        delete ret.compliance.trustAccountNumber;
+        delete ret.auditTrail.ipAddress;
+        delete ret.isDeleted;
+        delete ret.deletedAt;
+        delete ret.__v;
+        delete ret.version;
+        return ret;
+      },
+    },
+    toObject: {
+      virtuals: true,
+      getters: true,
+    },
+    optimisticConcurrency: true,
+    autoCreate: true,
   }
-
-}, {
-  // =========================================================================
-  // SCHEMA OPTIONS: QUANTUM CONFIGURATION MATRIX
-  // =========================================================================
-
-  timestamps: true, // createdAt, updatedAt
-  toJSON: {
-    virtuals: true,
-    getters: true,
-    transform: function (doc, ret) {
-      // Security Quantum: Remove sensitive fields in JSON output
-      delete ret.paymentDetails;
-      delete ret.compliance.popiaConsent.ipAddress;
-      delete ret.compliance.ectSignature.signatory;
-      delete ret.compliance.trustAccountNumber;
-      delete ret.auditTrail.ipAddress;
-      delete ret.isDeleted;
-      delete ret.deletedAt;
-      delete ret.__v;
-      delete ret.version;
-      return ret;
-    }
-  },
-  toObject: {
-    virtuals: true,
-    getters: true
-  },
-  optimisticConcurrency: true,
-  autoCreate: true
-});
+);
 
 // =============================================================================
 // COMPOUND INDEXES: QUERY PERFORMANCE OPTIMIZATION
@@ -914,7 +950,7 @@ subscriptionSchema.index({ totalAmount: 1, status: 1 });
 subscriptionSchema.index({
   tenantId: 1,
   status: 1,
-  currentPeriodEnd: 1
+  currentPeriodEnd: 1,
 });
 
 // TTL Index for expired subscriptions (cleanup after retention period)
@@ -927,7 +963,7 @@ subscriptionSchema.index(
 // VIRTUAL PROPERTIES: COMPUTED QUANTUM STATES
 // =============================================================================
 
-/**
+/*
  * VIRTUAL: Days until renewal
  * @returns {Number} Days until subscription renewal
  */
@@ -940,7 +976,7 @@ subscriptionSchema.virtual('daysUntilRenewal').get(function () {
   return diffDays > 0 ? diffDays : 0;
 });
 
-/**
+/*
  * VIRTUAL: Is active subscription
  * @returns {Boolean} True if subscription is active
  */
@@ -948,16 +984,15 @@ subscriptionSchema.virtual('isActive').get(function () {
   return ['ACTIVE', 'TRIAL', 'GRACE_PERIOD'].includes(this.status);
 });
 
-/**
+/*
  * VIRTUAL: Is in trial period
  * @returns {Boolean} True if subscription is in trial
  */
 subscriptionSchema.virtual('isTrial').get(function () {
-  return this.status === 'TRIAL' ||
-    (this.trialEndDate && new Date() < new Date(this.trialEndDate));
+  return this.status === 'TRIAL' || (this.trialEndDate && new Date() < new Date(this.trialEndDate));
 });
 
-/**
+/*
  * VIRTUAL: Requires payment attention
  * @returns {Boolean} True if payment action needed
  */
@@ -965,16 +1000,15 @@ subscriptionSchema.virtual('requiresPaymentAttention').get(function () {
   return ['PAST_DUE', 'UNPAID', 'SUSPENDED'].includes(this.status);
 });
 
-/**
+/*
  * VIRTUAL: Can be cancelled
  * @returns {Boolean} True if subscription can be cancelled
  */
 subscriptionSchema.virtual('canCancel').get(function () {
-  return ['ACTIVE', 'TRIAL', 'GRACE_PERIOD'].includes(this.status) &&
-    !this.isInCoolingOffPeriod;
+  return ['ACTIVE', 'TRIAL', 'GRACE_PERIOD'].includes(this.status) && !this.isInCoolingOffPeriod;
 });
 
-/**
+/*
  * VIRTUAL: Is in cooling-off period
  * @returns {Boolean} True if within cooling-off period
  */
@@ -985,7 +1019,7 @@ subscriptionSchema.virtual('isInCoolingOffPeriod').get(function () {
   return now <= coolingEnd;
 });
 
-/**
+/*
  * VIRTUAL: Annual recurring revenue (ARR) contribution
  * @returns {Number} ARR contribution in ZAR
  */
@@ -994,12 +1028,23 @@ subscriptionSchema.virtual('arrContribution').get(function () {
 
   let multiplier = 1;
   switch (this.billingCycle) {
-    case 'MONTHLY': multiplier = 12; break;
-    case 'QUARTERLY': multiplier = 4; break;
-    case 'BIANNUAL': multiplier = 2; break;
-    case 'ANNUAL': multiplier = 1; break;
-    case 'ONE_TIME': multiplier = 0; break; // One-time purchases don't contribute to ARR
-    default: multiplier = 12; // Default to monthly
+    case 'MONTHLY':
+      multiplier = 12;
+      break;
+    case 'QUARTERLY':
+      multiplier = 4;
+      break;
+    case 'BIANNUAL':
+      multiplier = 2;
+      break;
+    case 'ANNUAL':
+      multiplier = 1;
+      break;
+    case 'ONE_TIME':
+      multiplier = 0;
+      break; // One-time purchases don't contribute to ARR
+    default:
+      multiplier = 12; // Default to monthly
   }
 
   // Convert to ZAR for consistent reporting
@@ -1007,12 +1052,12 @@ subscriptionSchema.virtual('arrContribution').get(function () {
   if (this.currency !== 'ZAR') {
     // In production, use real-time exchange rates
     const exchangeRates = {
-      'USD': 18.5, // Approximate ZAR/USD
-      'EUR': 20.0, // Approximate ZAR/EUR
-      'GBP': 23.5, // Approximate ZAR/GBP
-      'NGN': 0.02, // Approximate ZAR/NGN
-      'KES': 0.13, // Approximate ZAR/KES
-      'GHS': 1.5   // Approximate ZAR/GHS
+      USD: 18.5, // Approximate ZAR/USD
+      EUR: 20.0, // Approximate ZAR/EUR
+      GBP: 23.5, // Approximate ZAR/GBP
+      NGN: 0.02, // Approximate ZAR/NGN
+      KES: 0.13, // Approximate ZAR/KES
+      GHS: 1.5, // Approximate ZAR/GHS
     };
     amount = amount * (exchangeRates[this.currency] || 1);
   }
@@ -1020,7 +1065,7 @@ subscriptionSchema.virtual('arrContribution').get(function () {
   return Math.round(amount * multiplier * 100) / 100;
 });
 
-/**
+/*
  * VIRTUAL: Monthly recurring revenue (MRR) contribution
  * @returns {Number} MRR contribution in ZAR
  */
@@ -1030,7 +1075,7 @@ subscriptionSchema.virtual('mrrContribution').get(function () {
   return Math.round((arr / 12) * 100) / 100;
 });
 
-/**
+/*
  * VIRTUAL: Subscription age in days
  * @returns {Number} Days since subscription started
  */
@@ -1045,14 +1090,17 @@ subscriptionSchema.virtual('ageInDays').get(function () {
 // MIDDLEWARE: TEMPORAL ORCHESTRATION HOOKS
 // =============================================================================
 
-/**
+/*
  * PRE-VALIDATE: Set default values based on plan type
  */
 subscriptionSchema.pre('validate', function (next) {
   // Set currency based on pricing tier
   if (this.pricingTier && !this.currency) {
-    this.currency = this.pricingTier.includes('ZAR') ? 'ZAR' :
-      this.pricingTier.includes('USD') ? 'USD' : 'ZAR';
+    this.currency = this.pricingTier.includes('ZAR')
+      ? 'ZAR'
+      : this.pricingTier.includes('USD')
+        ? 'USD'
+        : 'ZAR';
   }
 
   // Set trial end date if trial
@@ -1065,7 +1113,7 @@ subscriptionSchema.pre('validate', function (next) {
   next();
 });
 
-/**
+/*
  * PRE-SAVE: Calculate next billing date and amounts
  */
 subscriptionSchema.pre('save', function (next) {
@@ -1073,12 +1121,16 @@ subscriptionSchema.pre('save', function (next) {
   this.version = (this.version || 0) + 1;
 
   // Calculate total amount if base amount or VAT changed
-  if (this.isModified('baseAmount') || this.isModified('vatRate') ||
-    this.isModified('discountAmount') || this.isModified('discountPercentage')) {
-
+  if (
+    this.isModified('baseAmount') ||
+    this.isModified('vatRate') ||
+    this.isModified('discountAmount') ||
+    this.isModified('discountPercentage')
+  ) {
     // Calculate discount if percentage is set
     if (this.discountPercentage > 0 && this.discountAmount === 0) {
-      this.discountAmount = Math.round((this.baseAmount * this.discountPercentage / 100) * 100) / 100;
+      this.discountAmount =
+        Math.round(((this.baseAmount * this.discountPercentage) / 100) * 100) / 100;
     }
 
     const discountedAmount = this.baseAmount - this.discountAmount;
@@ -1125,7 +1177,7 @@ subscriptionSchema.pre('save', function (next) {
   next();
 });
 
-/**
+/*
  * POST-SAVE: Update tenant subscription status
  */
 subscriptionSchema.post('save', async function (doc) {
@@ -1137,8 +1189,8 @@ subscriptionSchema.post('save', async function (doc) {
         subscriptionStatus: doc.status,
         currentSubscription: doc._id,
         planType: doc.planType,
-        features: doc.features
-      }
+        features: doc.features,
+      },
     });
   } catch (error) {
     console.error('[Subscription Model] Failed to update tenant:', error.message);
@@ -1149,7 +1201,7 @@ subscriptionSchema.post('save', async function (doc) {
 // STATIC METHODS: COLLECTIVE QUANTUM OPERATIONS
 // =============================================================================
 
-/**
+/*
  * Find active subscriptions by tenant
  * @param {ObjectId} tenantId - Tenant quantum anchor
  * @returns {Promise<Array>} Active subscriptions
@@ -1158,14 +1210,14 @@ subscriptionSchema.statics.findActiveByTenant = function (tenantId) {
   return this.find({
     tenantId,
     status: { $in: ['ACTIVE', 'TRIAL', 'GRACE_PERIOD'] },
-    isDeleted: false
+    isDeleted: false,
   })
     .populate('tenantId', 'name email phone billingAddress')
     .populate('lastInvoiceId', 'invoiceNumber amount status')
     .sort({ currentPeriodEnd: 1 });
 };
 
-/**
+/*
  * Calculate MRR (Monthly Recurring Revenue) for dashboard
  * @param {String} tenantId - Optional tenant filter
  * @returns {Promise<Object>} MRR analytics
@@ -1173,7 +1225,7 @@ subscriptionSchema.statics.findActiveByTenant = function (tenantId) {
 subscriptionSchema.statics.calculateMRR = async function (tenantId = null) {
   const matchStage = {
     status: { $in: ['ACTIVE', 'TRIAL', 'GRACE_PERIOD'] },
-    isDeleted: false
+    isDeleted: false,
   };
 
   if (tenantId) {
@@ -1190,30 +1242,48 @@ subscriptionSchema.statics.calculateMRR = async function (tenantId = null) {
             $switch: {
               branches: [
                 { case: { $eq: ['$billingCycle', 'MONTHLY'] }, then: '$totalAmount' },
-                { case: { $eq: ['$billingCycle', 'QUARTERLY'] }, then: { $divide: ['$totalAmount', 3] } },
-                { case: { $eq: ['$billingCycle', 'BIANNUAL'] }, then: { $divide: ['$totalAmount', 6] } },
-                { case: { $eq: ['$billingCycle', 'ANNUAL'] }, then: { $divide: ['$totalAmount', 12] } }
+                {
+                  case: { $eq: ['$billingCycle', 'QUARTERLY'] },
+                  then: { $divide: ['$totalAmount', 3] },
+                },
+                {
+                  case: { $eq: ['$billingCycle', 'BIANNUAL'] },
+                  then: { $divide: ['$totalAmount', 6] },
+                },
+                {
+                  case: { $eq: ['$billingCycle', 'ANNUAL'] },
+                  then: { $divide: ['$totalAmount', 12] },
+                },
               ],
-              default: 0
-            }
-          }
+              default: 0,
+            },
+          },
         },
         totalARR: {
           $sum: {
             $switch: {
               branches: [
-                { case: { $eq: ['$billingCycle', 'MONTHLY'] }, then: { $multiply: ['$totalAmount', 12] } },
-                { case: { $eq: ['$billingCycle', 'QUARTERLY'] }, then: { $multiply: ['$totalAmount', 4] } },
-                { case: { $eq: ['$billingCycle', 'BIANNUAL'] }, then: { $multiply: ['$totalAmount', 2] } },
-                { case: { $eq: ['$billingCycle', 'ANNUAL'] }, then: '$totalAmount' }
+                {
+                  case: { $eq: ['$billingCycle', 'MONTHLY'] },
+                  then: { $multiply: ['$totalAmount', 12] },
+                },
+                {
+                  case: { $eq: ['$billingCycle', 'QUARTERLY'] },
+                  then: { $multiply: ['$totalAmount', 4] },
+                },
+                {
+                  case: { $eq: ['$billingCycle', 'BIANNUAL'] },
+                  then: { $multiply: ['$totalAmount', 2] },
+                },
+                { case: { $eq: ['$billingCycle', 'ANNUAL'] }, then: '$totalAmount' },
               ],
-              default: 0
-            }
-          }
+              default: 0,
+            },
+          },
         },
         activeSubscriptions: { $sum: 1 },
-        totalRevenue: { $sum: '$totalAmount' }
-      }
+        totalRevenue: { $sum: '$totalAmount' },
+      },
     },
     {
       $project: {
@@ -1222,21 +1292,23 @@ subscriptionSchema.statics.calculateMRR = async function (tenantId = null) {
         totalARR: { $round: ['$totalARR', 2] },
         activeSubscriptions: 1,
         totalRevenue: { $round: ['$totalRevenue', 2] },
-        averageMRRPerSub: { $round: [{ $divide: ['$totalMRR', '$activeSubscriptions'] }, 2] }
-      }
-    }
+        averageMRRPerSub: { $round: [{ $divide: ['$totalMRR', '$activeSubscriptions'] }, 2] },
+      },
+    },
   ]);
 
-  return result.length > 0 ? result[0] : {
-    totalMRR: 0,
-    totalARR: 0,
-    activeSubscriptions: 0,
-    totalRevenue: 0,
-    averageMRRPerSub: 0
-  };
+  return result.length > 0
+    ? result[0]
+    : {
+        totalMRR: 0,
+        totalARR: 0,
+        activeSubscriptions: 0,
+        totalRevenue: 0,
+        averageMRRPerSub: 0,
+      };
 };
 
-/**
+/*
  * Find subscriptions expiring within days
  * @param {Number} days - Days threshold
  * @returns {Promise<Array>} Expiring subscriptions
@@ -1249,26 +1321,26 @@ subscriptionSchema.statics.findExpiringSoon = function (days = 7) {
     status: { $in: ['ACTIVE', 'TRIAL'] },
     currentPeriodEnd: { $lte: thresholdDate },
     autoRenew: true,
-    isDeleted: false
+    isDeleted: false,
   })
     .populate('tenantId', 'name email phone billingContact')
     .select('subscriptionCode tenantId currentPeriodEnd totalAmount status');
 };
 
-/**
+/*
  * Find subscriptions that need payment attention
  * @returns {Promise<Array>} Subscriptions needing payment
  */
 subscriptionSchema.statics.findNeedPaymentAttention = function () {
   return this.find({
     status: { $in: ['PAST_DUE', 'UNPAID', 'SUSPENDED'] },
-    isDeleted: false
+    isDeleted: false,
   })
     .populate('tenantId', 'name email phone')
     .sort({ currentPeriodEnd: 1 });
 };
 
-/**
+/*
  * Calculate churn rate for period
  * @param {Date} startDate - Period start
  * @param {Date} endDate - Period end
@@ -1279,13 +1351,13 @@ subscriptionSchema.statics.calculateChurnRate = async function (startDate, endDa
     this.countDocuments({
       status: 'CANCELLED',
       cancellationDate: { $gte: startDate, $lte: endDate },
-      isDeleted: false
+      isDeleted: false,
     }),
     this.countDocuments({
       status: { $in: ['ACTIVE', 'TRIAL', 'GRACE_PERIOD'] },
       isDeleted: false,
-      startDate: { $lte: endDate }
-    })
+      startDate: { $lte: endDate },
+    }),
   ]);
 
   const churnRate = totalActive > 0 ? (cancelled / totalActive) * 100 : 0;
@@ -1295,7 +1367,7 @@ subscriptionSchema.statics.calculateChurnRate = async function (startDate, endDa
     cancelledSubscriptions: cancelled,
     totalActiveSubscriptions: totalActive,
     churnRate: Math.round(churnRate * 100) / 100,
-    churnRatePercentage: `${Math.round(churnRate * 100) / 100}%`
+    churnRatePercentage: `${Math.round(churnRate * 100) / 100}%`,
   };
 };
 
@@ -1303,7 +1375,7 @@ subscriptionSchema.statics.calculateChurnRate = async function (startDate, endDa
 // INSTANCE METHODS: INDIVIDUAL QUANTUM OPERATIONS
 // =============================================================================
 
-/**
+/*
  * Cancel subscription with reason
  * @param {String} reason - Cancellation reason
  * @param {ObjectId} userId - User performing cancellation
@@ -1311,7 +1383,12 @@ subscriptionSchema.statics.calculateChurnRate = async function (startDate, endDa
  * @param {String} userAgent - User agent for audit
  * @returns {Promise<this>} Updated subscription
  */
-subscriptionSchema.methods.cancel = function (reason, userId, ipAddress = 'SYSTEM', userAgent = 'SYSTEM') {
+subscriptionSchema.methods.cancel = function (
+  reason,
+  userId,
+  ipAddress = 'SYSTEM',
+  userAgent = 'SYSTEM'
+) {
   const oldStatus = this.status;
 
   this.status = 'CANCELLED';
@@ -1329,17 +1406,17 @@ subscriptionSchema.methods.cancel = function (reason, userId, ipAddress = 'SYSTE
       oldStatus,
       newStatus: this.status,
       reason,
-      cancellationDate: this.cancellationDate
+      cancellationDate: this.cancellationDate,
     },
     ipAddress,
     userAgent,
-    reason: `Subscription cancelled: ${reason}`
+    reason: `Subscription cancelled: ${reason}`,
   });
 
   return this.save();
 };
 
-/**
+/*
  * Renew subscription for next period
  * @param {ObjectId} userId - User performing renewal
  * @param {String} ipAddress - IP address for audit
@@ -1388,17 +1465,17 @@ subscriptionSchema.methods.renew = function (userId, ipAddress = 'SYSTEM', userA
       oldNextBillingDate,
       newNextBillingDate: newPeriodEnd,
       oldStatus: this.status,
-      newStatus: 'ACTIVE'
+      newStatus: 'ACTIVE',
     },
     ipAddress,
     userAgent,
-    reason: 'Subscription renewed for next period'
+    reason: 'Subscription renewed for next period',
   });
 
   return this.save();
 };
 
-/**
+/*
  * Record successful payment
  * @param {Number} amount - Payment amount
  * @param {String} transactionId - Payment gateway transaction ID
@@ -1419,7 +1496,7 @@ subscriptionSchema.methods.recordSuccessfulPayment = function (amount, transacti
     periodEnd: this.currentPeriodEnd,
     amount,
     status: 'PAID',
-    generatedAt: new Date()
+    generatedAt: new Date(),
   });
 
   // Add to audit trail
@@ -1430,15 +1507,15 @@ subscriptionSchema.methods.recordSuccessfulPayment = function (amount, transacti
       amount,
       transactionId,
       oldStatus: this.status,
-      newStatus: 'ACTIVE'
+      newStatus: 'ACTIVE',
     },
-    reason: `Payment successful: ${transactionId}`
+    reason: `Payment successful: ${transactionId}`,
   });
 
   return this.save();
 };
 
-/**
+/*
  * Record failed payment
  * @param {String} errorReason - Reason for failure
  * @param {Number} attemptNumber - Attempt number
@@ -1467,15 +1544,15 @@ subscriptionSchema.methods.recordFailedPayment = function (errorReason, attemptN
       errorReason,
       attemptNumber: this.renewalAttempts,
       oldStatus: this.status,
-      newStatus
+      newStatus,
     },
-    reason: `Payment failed (attempt ${this.renewalAttempts}): ${errorReason}`
+    reason: `Payment failed (attempt ${this.renewalAttempts}): ${errorReason}`,
   });
 
   return this.save();
 };
 
-/**
+/*
  * Upgrade/downgrade subscription plan
  * @param {String} newPlanName - New plan name
  * @param {Number} newAmount - New base amount
@@ -1505,10 +1582,10 @@ subscriptionSchema.methods.changePlan = function (newPlanName, newAmount, userId
       newPlanName,
       oldAmount,
       newAmount: this.baseAmount,
-      oldTotalAmount: oldAmount + (oldAmount * this.vatRate),
-      newTotalAmount: this.totalAmount
+      oldTotalAmount: oldAmount + oldAmount * this.vatRate,
+      newTotalAmount: this.totalAmount,
     },
-    reason: `Plan changed from ${oldPlanName} (R${oldAmount}) to ${newPlanName} (R${this.baseAmount})`
+    reason: `Plan changed from ${oldPlanName} (R${oldAmount}) to ${newPlanName} (R${this.baseAmount})`,
   });
 
   return this.save();
@@ -1525,7 +1602,7 @@ module.exports = Subscription;
 // =============================================================================
 // ENVIRONMENT VARIABLES SETUP GUIDE
 // =============================================================================
-/**
+/*
  * .ENV CONFIGURATION FOR SUBSCRIPTION MODULE V25.0:
  *
  * REQUIRED VARIABLES (Add to /server/.env if not present):
@@ -1583,7 +1660,7 @@ module.exports = Subscription;
 // =============================================================================
 // TEST SUITE FORENSIC CHECKLIST
 // =============================================================================
-/**
+/*
  * # SUBSCRIPTION MODEL - FORENSIC TESTING PROTOCOL
  *
  * ## LEGAL COMPLIANCE TESTS (South African Law):
@@ -1697,7 +1774,7 @@ module.exports = Subscription;
 // =============================================================================
 // VALUATION QUANTUM METRICS
 // =============================================================================
-/**
+/*
  * FINANCIAL IMPACT METRICS V25.0:
  *
  * REVENUE OPTIMIZATION:
@@ -1739,7 +1816,7 @@ module.exports = Subscription;
 // =============================================================================
 // INSPIRATIONAL QUANTUM
 // =============================================================================
-/**
+/*
  * "The arc of the moral universe is long, but it bends toward justice."
  * - Dr. Martin Luther King Jr., adapted for the digital age
  *

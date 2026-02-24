@@ -1,4 +1,4 @@
-/**
+/*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/routes/auditRoutes.js
  * PATH: /server/routes/auditRoutes.js
  * STATUS: QUANTUM-FORTIFIED | HYPER-SCALE | BIBLICAL IMMORTALITY
@@ -101,12 +101,14 @@ const cacheMiddleware = require('../middleware/cacheMiddleware');
 const monitoring = require('../utils/monitoring');
 
 // QUANTUM AI: Anomaly Detection Integration
-const anomalyDetection = process.env.ENABLE_AI_ANOMALY_DETECTION === 'true'
+const anomalyDetection =
+  process.env.ENABLE_AI_ANOMALY_DETECTION === 'true'
     ? require('../middleware/anomalyDetection')
     : null;
 
 // QUANTUM BLOCKCHAIN: Immutable Evidence Verification
-const blockchainVerification = process.env.ENABLE_BLOCKCHAIN_AUDIT === 'true'
+const blockchainVerification =
+  process.env.ENABLE_BLOCKCHAIN_AUDIT === 'true'
     ? require('../middleware/blockchainVerification')
     : null;
 
@@ -119,360 +121,366 @@ require('dotenv').config();
 
 // Schema for audit query parameters with compliance validation
 const auditQuerySchema = Joi.object({
-    // Pagination
-    page: Joi.number()
-        .integer()
-        .min(1)
-        .max(1000)
-        .default(1)
-        .description('Page number for pagination (1-1000)'),
+  // Pagination
+  page: Joi.number()
+    .integer()
+    .min(1)
+    .max(1000)
+    .default(1)
+    .description('Page number for pagination (1-1000)'),
 
-    limit: Joi.number()
-        .integer()
-        .min(1)
-        .max(1000)
-        .default(100)
-        .description('Number of records per page (1-1000)'),
+  limit: Joi.number()
+    .integer()
+    .min(1)
+    .max(1000)
+    .default(100)
+    .description('Number of records per page (1-1000)'),
 
-    // Date range with Companies Act retention validation
-    startDate: Joi.date()
-        .max('now')
-        .description('Start date for audit query (ISO 8601 format)')
-        .custom((value, helpers) => {
-            // Companies Act: Cannot query beyond 7-year retention without legal hold
-            const sevenYearsAgo = new Date();
-            sevenYearsAgo.setFullYear(sevenYearsAgo.getFullYear() - 7);
+  // Date range with Companies Act retention validation
+  startDate: Joi.date()
+    .max('now')
+    .description('Start date for audit query (ISO 8601 format)')
+    .custom((value, helpers) => {
+      // Companies Act: Cannot query beyond 7-year retention without legal hold
+      const sevenYearsAgo = new Date();
+      sevenYearsAgo.setFullYear(sevenYearsAgo.getFullYear() - 7);
 
-            if (value < sevenYearsAgo) {
-                return helpers.error('date.retention', {
-                    message: 'Query beyond 7-year retention period requires legal hold authorization'
-                });
-            }
-            return value;
-        }),
+      if (value < sevenYearsAgo) {
+        return helpers.error('date.retention', {
+          message: 'Query beyond 7-year retention period requires legal hold authorization',
+        });
+      }
+      return value;
+    }),
 
-    endDate: Joi.date()
-        .max('now')
-        .description('End date for audit query (ISO 8601 format)'),
+  endDate: Joi.date().max('now').description('End date for audit query (ISO 8601 format)'),
 
-    // Event filtering
-    severity: Joi.string()
-        .valid('INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL')
-        .description('Filter by security severity level'),
+  // Event filtering
+  severity: Joi.string()
+    .valid('INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL')
+    .description('Filter by security severity level'),
 
-    action: Joi.string()
-        .max(100)
-        .pattern(/^[A-Z_]+$/)
-        .description('Filter by audit action (uppercase with underscores)'),
+  action: Joi.string()
+    .max(100)
+    .pattern(/^[A-Z_]+$/)
+    .description('Filter by audit action (uppercase with underscores)'),
 
-    resource: Joi.string()
-        .max(100)
-        .pattern(/^[A-Z_]+$/)
-        .description('Filter by resource type (uppercase with underscores)'),
+  resource: Joi.string()
+    .max(100)
+    .pattern(/^[A-Z_]+$/)
+    .description('Filter by resource type (uppercase with underscores)'),
 
-    // Actor filtering
-    actorId: Joi.string()
-        .pattern(/^[a-f0-9]{24}$/)
-        .description('Filter by actor MongoDB ObjectId'),
+  // Actor filtering
+  actorId: Joi.string()
+    .pattern(/^[a-f0-9]{24}$/)
+    .description('Filter by actor MongoDB ObjectId'),
 
-    actorEmail: Joi.string()
-        .email()
-        .max(255)
-        .description('Filter by actor email (POPIA compliant anonymization applied)'),
+  actorEmail: Joi.string()
+    .email()
+    .max(255)
+    .description('Filter by actor email (POPIA compliant anonymization applied)'),
 
-    // Projection
-    fields: Joi.string()
-        .pattern(/^[a-zA-Z0-9_,]+$/)
-        .max(500)
-        .description('Comma-separated list of fields to include in response'),
+  // Projection
+  fields: Joi.string()
+    .pattern(/^[a-zA-Z0-9_,]+$/)
+    .max(500)
+    .description('Comma-separated list of fields to include in response'),
 
-    // Sorting
-    sortBy: Joi.string()
-        .valid('timestamp', 'severity', 'action', 'resource')
-        .default('timestamp')
-        .description('Field to sort results by'),
+  // Sorting
+  sortBy: Joi.string()
+    .valid('timestamp', 'severity', 'action', 'resource')
+    .default('timestamp')
+    .description('Field to sort results by'),
 
-    sortOrder: Joi.string()
-        .valid('asc', 'desc')
-        .default('desc')
-        .description('Sort order (ascending or descending)'),
+  sortOrder: Joi.string()
+    .valid('asc', 'desc')
+    .default('desc')
+    .description('Sort order (ascending or descending)'),
 
-    // Advanced filtering
-    quantumCategory: Joi.string()
-        .valid(
-            'DOCUMENT_QUANTUM',
-            'CASE_QUANTUM',
-            'CLIENT_QUANTUM',
-            'BILLING_QUANTUM',
-            'TRUST_QUANTUM',
-            'COMPLIANCE_QUANTUM',
-            'SECURITY_QUANTUM',
-            'SYSTEM_QUANTUM'
-        )
-        .description('Filter by quantum event category'),
+  // Advanced filtering
+  quantumCategory: Joi.string()
+    .valid(
+      'DOCUMENT_QUANTUM',
+      'CASE_QUANTUM',
+      'CLIENT_QUANTUM',
+      'BILLING_QUANTUM',
+      'TRUST_QUANTUM',
+      'COMPLIANCE_QUANTUM',
+      'SECURITY_QUANTUM',
+      'SYSTEM_QUANTUM'
+    )
+    .description('Filter by quantum event category'),
 
-    jurisdiction: Joi.string()
-        .valid('ZA', 'NA', 'KE', 'GH', 'EU', 'US', 'GLOBAL')
-        .description('Filter by legal jurisdiction'),
+  jurisdiction: Joi.string()
+    .valid('ZA', 'NA', 'KE', 'GH', 'EU', 'US', 'GLOBAL')
+    .description('Filter by legal jurisdiction'),
 
-    // POPIA compliance flags
-    includePII: Joi.boolean()
-        .default(false)
-        .description('Include personally identifiable information (requires compliance officer role)'),
+  // POPIA compliance flags
+  includePII: Joi.boolean()
+    .default(false)
+    .description('Include personally identifiable information (requires compliance officer role)'),
 
-    // Performance optimization
-    useCache: Joi.boolean()
-        .default(true)
-        .description('Use Redis cache for query results'),
+  // Performance optimization
+  useCache: Joi.boolean().default(true).description('Use Redis cache for query results'),
 
-    // Blockchain verification
-    verifyBlockchain: Joi.boolean()
-        .default(false)
-        .description('Verify blockchain anchoring for retrieved records')
+  // Blockchain verification
+  verifyBlockchain: Joi.boolean()
+    .default(false)
+    .description('Verify blockchain anchoring for retrieved records'),
 }).options({ stripUnknown: true });
 
 // Schema for audit export parameters
 const auditExportSchema = Joi.object({
-    format: Joi.string()
-        .valid('json', 'ndjson', 'csv', 'pdf', 'xml')
-        .default('ndjson')
-        .description('Export format'),
+  format: Joi.string()
+    .valid('json', 'ndjson', 'csv', 'pdf', 'xml')
+    .default('ndjson')
+    .description('Export format'),
 
-    compression: Joi.string()
-        .valid('none', 'gzip', 'zip')
-        .default('gzip')
-        .description('Compression method for export'),
+  compression: Joi.string()
+    .valid('none', 'gzip', 'zip')
+    .default('gzip')
+    .description('Compression method for export'),
 
-    includeMetadata: Joi.boolean()
-        .default(true)
-        .description('Include export metadata and compliance statements'),
+  includeMetadata: Joi.boolean()
+    .default(true)
+    .description('Include export metadata and compliance statements'),
 
-    digitalSignature: Joi.boolean()
-        .default(true)
-        .description('Digitally sign export for court admissibility'),
+  digitalSignature: Joi.boolean()
+    .default(true)
+    .description('Digitally sign export for court admissibility'),
 
-    retentionProof: Joi.boolean()
-        .default(true)
-        .description('Include Companies Act retention compliance proof'),
+  retentionProof: Joi.boolean()
+    .default(true)
+    .description('Include Companies Act retention compliance proof'),
 
-    // Export scope
-    startDate: Joi.date()
-        .required()
-        .max('now')
-        .description('Start date for export (required)'),
+  // Export scope
+  startDate: Joi.date().required().max('now').description('Start date for export (required)'),
 
-    endDate: Joi.date()
-        .required()
-        .max('now')
-        .greater(Joi.ref('startDate'))
-        .description('End date for export (must be after start date)'),
+  endDate: Joi.date()
+    .required()
+    .max('now')
+    .greater(Joi.ref('startDate'))
+    .description('End date for export (must be after start date)'),
 
-    // Filters
-    severity: Joi.string()
-        .valid('INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL')
-        .description('Filter by security severity level'),
+  // Filters
+  severity: Joi.string()
+    .valid('INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL')
+    .description('Filter by security severity level'),
 
-    resourceTypes: Joi.array()
-        .items(Joi.string().valid(
-            'DOCUMENT',
-            'CASE_FILE',
-            'CLIENT_RECORD',
-            'INVOICE',
-            'TRUST_TRANSACTION',
-            'USER_ACCOUNT',
-            'CONSENT_RECORD',
-            'COMPLIANCE_REPORT'
-        ))
-        .max(10)
-        .description('Array of resource types to include'),
+  resourceTypes: Joi.array()
+    .items(
+      Joi.string().valid(
+        'DOCUMENT',
+        'CASE_FILE',
+        'CLIENT_RECORD',
+        'INVOICE',
+        'TRUST_TRANSACTION',
+        'USER_ACCOUNT',
+        'CONSENT_RECORD',
+        'COMPLIANCE_REPORT'
+      )
+    )
+    .max(10)
+    .description('Array of resource types to include'),
 
-    // Compliance requirements
-    paiaRequestId: Joi.string()
-        .pattern(/^PAIA-\d{4}-\d{6}$/)
-        .description('PAIA request identifier for compliance reporting'),
+  // Compliance requirements
+  paiaRequestId: Joi.string()
+    .pattern(/^PAIA-\d{4}-\d{6}$/)
+    .description('PAIA request identifier for compliance reporting'),
 
-    legalHoldId: Joi.string()
-        .description('Legal hold identifier for litigation purposes'),
+  legalHoldId: Joi.string().description('Legal hold identifier for litigation purposes'),
 
-    // Performance
-    chunkSize: Joi.number()
-        .integer()
-        .min(100)
-        .max(10000)
-        .default(1000)
-        .description('Number of records per export chunk'),
+  // Performance
+  chunkSize: Joi.number()
+    .integer()
+    .min(100)
+    .max(10000)
+    .default(1000)
+    .description('Number of records per export chunk'),
 
-    maxSize: Joi.number()
-        .integer()
-        .min(1024) // 1KB
-        .max(1073741824) // 1GB
-        .default(104857600) // 100MB
-        .description('Maximum export size in bytes')
+  maxSize: Joi.number()
+    .integer()
+    .min(1024) // 1KB
+    .max(1073741824) // 1GB
+    .default(104857600) // 100MB
+    .description('Maximum export size in bytes'),
 }).options({ stripUnknown: true });
 
 // Schema for audit ingestion (batch)
 const auditIngestionSchema = Joi.object({
-    quantumBatchId: Joi.string()
-        .pattern(/^BATCH-\d+-[a-f0-9]{16}$/)
-        .required()
-        .description('Globally unique batch identifier'),
+  quantumBatchId: Joi.string()
+    .pattern(/^BATCH-\d+-[a-f0-9]{16}$/)
+    .required()
+    .description('Globally unique batch identifier'),
 
-    events: Joi.array()
-        .items(Joi.object({
-            // Core event schema (simplified for route validation)
-            quantumId: Joi.string().pattern(/^AUDIT-\d+-[a-f0-9]{16}$/).required(),
-            actor: Joi.object({
-                userId: Joi.string().pattern(/^[a-f0-9]{24}$/).allow(null),
-                role: Joi.string().valid('ATTORNEY', 'PARTNER', 'PARALEGAL', 'CLIENT', 'SYSTEM').required(),
-                email: Joi.string().email().required()
-            }).required(),
-            event: Joi.object({
-                action: Joi.string().required(),
-                resourceType: Joi.string().required(),
-                resourceId: Joi.string().pattern(/^[a-f0-9]{24}$/).required()
-            }).required(),
-            timestamp: Joi.date().max('now').required(),
-            tenantId: Joi.string().pattern(/^[a-f0-9]{24}$/).required()
-        }))
-        .min(1)
-        .max(parseInt(process.env.AUDIT_BATCH_MAX_SIZE) || 1000)
-        .required()
-        .description('Array of audit events'),
+  events: Joi.array()
+    .items(
+      Joi.object({
+        // Core event schema (simplified for route validation)
+        quantumId: Joi.string()
+          .pattern(/^AUDIT-\d+-[a-f0-9]{16}$/)
+          .required(),
+        actor: Joi.object({
+          userId: Joi.string()
+            .pattern(/^[a-f0-9]{24}$/)
+            .allow(null),
+          role: Joi.string()
+            .valid('ATTORNEY', 'PARTNER', 'PARALEGAL', 'CLIENT', 'SYSTEM')
+            .required(),
+          email: Joi.string().email().required(),
+        }).required(),
+        event: Joi.object({
+          action: Joi.string().required(),
+          resourceType: Joi.string().required(),
+          resourceId: Joi.string()
+            .pattern(/^[a-f0-9]{24}$/)
+            .required(),
+        }).required(),
+        timestamp: Joi.date().max('now').required(),
+        tenantId: Joi.string()
+          .pattern(/^[a-f0-9]{24}$/)
+          .required(),
+      })
+    )
+    .min(1)
+    .max(parseInt(process.env.AUDIT_BATCH_MAX_SIZE) || 1000)
+    .required()
+    .description('Array of audit events'),
 
-    metadata: Joi.object({
-        sourceSystem: Joi.string().required(),
-        encryptionAlgorithm: Joi.string().valid('aes-256-gcm', 'none').default('aes-256-gcm'),
-        priority: Joi.string().valid('LOW', 'NORMAL', 'HIGH', 'CRITICAL').default('NORMAL')
-    }).required(),
+  metadata: Joi.object({
+    sourceSystem: Joi.string().required(),
+    encryptionAlgorithm: Joi.string().valid('aes-256-gcm', 'none').default('aes-256-gcm'),
+    priority: Joi.string().valid('LOW', 'NORMAL', 'HIGH', 'CRITICAL').default('NORMAL'),
+  }).required(),
 
-    integrity: Joi.object({
-        hash: Joi.string().pattern(/^[a-f0-9]{128}$/),
-        signature: Joi.string().base64()
-    }).optional()
+  integrity: Joi.object({
+    hash: Joi.string().pattern(/^[a-f0-9]{128}$/),
+    signature: Joi.string().base64(),
+  }).optional(),
 }).options({ stripUnknown: true });
 
 /* ---------------------------------------------------------------------------
    QUANTUM VALIDATION MIDDLEWARE: Enhanced Security & Compliance
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * Quantum query validation middleware with compliance enforcement
  */
 const validateQuantumQuery = expressValidator({
-    query: auditQuerySchema,
-    joiOptions: {
-        abortEarly: false,
-        stripUnknown: true,
-        allowUnknown: false
-    }
+  query: auditQuerySchema,
+  joiOptions: {
+    abortEarly: false,
+    stripUnknown: true,
+    allowUnknown: false,
+  },
 });
 
-/**
+/*
  * Quantum export validation middleware with legal compliance checks
  */
 const validateQuantumExport = expressValidator({
-    query: auditExportSchema,
-    joiOptions: {
-        abortEarly: false,
-        stripUnknown: true,
-        allowUnknown: false
-    }
+  query: auditExportSchema,
+  joiOptions: {
+    abortEarly: false,
+    stripUnknown: true,
+    allowUnknown: false,
+  },
 });
 
-/**
+/*
  * Quantum ingestion validation middleware with threat detection
  */
 const validateQuantumIngestion = expressValidator({
-    body: auditIngestionSchema,
-    joiOptions: {
-        abortEarly: false,
-        stripUnknown: true,
-        allowUnknown: false
-    }
+  body: auditIngestionSchema,
+  joiOptions: {
+    abortEarly: false,
+    stripUnknown: true,
+    allowUnknown: false,
+  },
 });
 
-/**
+/*
  * Enhanced query parameter sanitization with threat model protection
  */
 const quantumSanitizeQuery = (req, res, next) => {
-    try {
-        // QUANTUM DEFENSE: STRIDE threat model mitigation
-        const threats = {
-            Spoofing: 'Prevented via JWT and tenant isolation',
-            Tampering: 'Prevented via input validation and sanitization',
-            Repudiation: 'Prevented via audit logging of all queries',
-            InformationDisclosure: 'Prevented via field-level encryption and RBAC',
-            DenialOfService: 'Prevented via rate limiting and query optimization',
-            ElevationOfPrivilege: 'Prevented via role-based access control'
-        };
+  try {
+    // QUANTUM DEFENSE: STRIDE threat model mitigation
+    const threats = {
+      Spoofing: 'Prevented via JWT and tenant isolation',
+      Tampering: 'Prevented via input validation and sanitization',
+      Repudiation: 'Prevented via audit logging of all queries',
+      InformationDisclosure: 'Prevented via field-level encryption and RBAC',
+      DenialOfService: 'Prevented via rate limiting and query optimization',
+      ElevationOfPrivilege: 'Prevented via role-based access control',
+    };
 
-        // Sanitize all query parameters
-        const sanitizedQuery = {};
+    // Sanitize all query parameters
+    const sanitizedQuery = {};
 
-        for (const [key, value] of Object.entries(req.query)) {
-            if (value === undefined || value === null) continue;
+    for (const [key, value] of Object.entries(req.query)) {
+      if (value === undefined || value === null) continue;
 
-            const stringValue = String(value);
+      const stringValue = String(value);
 
-            // QUANTUM DEFENSE: Prevent NoSQL injection
-            if (stringValue.includes('$') || stringValue.includes('{') || stringValue.includes('}')) {
-                return res.status(400).json({
-                    status: 'error',
-                    code: 'QUANTUM_INJECTION_DETECTED',
-                    message: 'Invalid characters detected in query parameters',
-                    threat: 'NoSQL Injection',
-                    mitigation: threats.Tampering
-                });
-            }
-
-            // QUANTUM DEFENSE: Prevent XSS
-            const xssPattern = /<[^>]*>/g;
-            if (xssPattern.test(stringValue)) {
-                return res.status(400).json({
-                    status: 'error',
-                    code: 'QUANTUM_XSS_DETECTED',
-                    message: 'Potential XSS attack detected',
-                    threat: 'Cross-Site Scripting',
-                    mitigation: threats.InformationDisclosure
-                });
-            }
-
-            // Trim and limit length
-            sanitizedQuery[key] = stringValue.trim().substring(0, 1000);
-        }
-
-        // Add compliance metadata
-        req.quantumQuery = {
-            ...sanitizedQuery,
-            _compliance: {
-                validatedAt: new Date(),
-                validator: 'QuantumSanitizeQuery',
-                jurisdiction: req.user?.jurisdiction || 'ZA',
-                retentionCompliance: 'COMPANIES_ACT_7_YEARS'
-            },
-            _security: {
-                threatModel: 'STRIDE',
-                mitigations: threats,
-                anomalyScore: 0 // Will be populated by AI middleware
-            }
-        };
-
-        next();
-    } catch (error) {
-        monitoring.logError({
-            type: 'QUANTUM_SANITIZATION_FAILURE',
-            endpoint: req.originalUrl,
-            error: error.message,
-            timestamp: new Date()
+      // QUANTUM DEFENSE: Prevent NoSQL injection
+      if (stringValue.includes('$') || stringValue.includes('{') || stringValue.includes('}')) {
+        return res.status(400).json({
+          status: 'error',
+          code: 'QUANTUM_INJECTION_DETECTED',
+          message: 'Invalid characters detected in query parameters',
+          threat: 'NoSQL Injection',
+          mitigation: threats.Tampering,
         });
+      }
 
-        res.status(500).json({
-            status: 'error',
-            code: 'QUANTUM_SANITIZATION_ERROR',
-            message: 'Query sanitization failed',
-            timestamp: new Date().toISOString()
+      // QUANTUM DEFENSE: Prevent XSS
+      const xssPattern = /<[^>]*>/g;
+      if (xssPattern.test(stringValue)) {
+        return res.status(400).json({
+          status: 'error',
+          code: 'QUANTUM_XSS_DETECTED',
+          message: 'Potential XSS attack detected',
+          threat: 'Cross-Site Scripting',
+          mitigation: threats.InformationDisclosure,
         });
+      }
+
+      // Trim and limit length
+      sanitizedQuery[key] = stringValue.trim().substring(0, 1000);
     }
+
+    // Add compliance metadata
+    req.quantumQuery = {
+      ...sanitizedQuery,
+      _compliance: {
+        validatedAt: new Date(),
+        validator: 'QuantumSanitizeQuery',
+        jurisdiction: req.user?.jurisdiction || 'ZA',
+        retentionCompliance: 'COMPANIES_ACT_7_YEARS',
+      },
+      _security: {
+        threatModel: 'STRIDE',
+        mitigations: threats,
+        anomalyScore: 0, // Will be populated by AI middleware
+      },
+    };
+
+    next();
+  } catch (error) {
+    monitoring.logError({
+      type: 'QUANTUM_SANITIZATION_FAILURE',
+      endpoint: req.originalUrl,
+      error: error.message,
+      timestamp: new Date(),
+    });
+
+    res.status(500).json({
+      status: 'error',
+      code: 'QUANTUM_SANITIZATION_ERROR',
+      message: 'Query sanitization failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
 };
 
 /* ---------------------------------------------------------------------------
@@ -481,64 +489,64 @@ const quantumSanitizeQuery = (req, res, next) => {
 
 // Configure different rate limits based on endpoint sensitivity
 const rateLimitConfigs = {
-    // Standard read operations
-    standardRead: {
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 100, // 100 requests per window
-        message: {
-            status: 'error',
-            code: 'RATE_LIMIT_EXCEEDED',
-            message: 'Too many requests. Please try again later.',
-            retryAfter: '15 minutes',
-            documentation: 'https://docs.wilsy.os/audit-api#rate-limiting'
-        }
+  // Standard read operations
+  standardRead: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 requests per window
+    message: {
+      status: 'error',
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests. Please try again later.',
+      retryAfter: '15 minutes',
+      documentation: 'https://docs.wilsy.os/audit-api#rate-limiting',
     },
+  },
 
-    // Batch ingestion (higher limit for telemetry)
-    batchIngestion: {
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 1000, // 1000 requests per window
-        message: {
-            status: 'error',
-            code: 'INGESTION_RATE_LIMIT_EXCEEDED',
-            message: 'Too many ingestion requests. Please batch events or try again later.',
-            retryAfter: '15 minutes',
-            documentation: 'https://docs.wilsy.os/audit-api#batch-ingestion'
-        }
+  // Batch ingestion (higher limit for telemetry)
+  batchIngestion: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // 1000 requests per window
+    message: {
+      status: 'error',
+      code: 'INGESTION_RATE_LIMIT_EXCEEDED',
+      message: 'Too many ingestion requests. Please batch events or try again later.',
+      retryAfter: '15 minutes',
+      documentation: 'https://docs.wilsy.os/audit-api#batch-ingestion',
     },
+  },
 
-    // Forensic export (very limited)
-    forensicExport: {
-        windowMs: 60 * 60 * 1000, // 1 hour
-        max: 10, // 10 requests per hour
-        message: {
-            status: 'error',
-            code: 'EXPORT_RATE_LIMIT_EXCEEDED',
-            message: 'Export rate limit exceeded. Please contact support for bulk exports.',
-            retryAfter: '1 hour',
-            documentation: 'https://docs.wilsy.os/audit-api#forensic-export'
-        }
+  // Forensic export (very limited)
+  forensicExport: {
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // 10 requests per hour
+    message: {
+      status: 'error',
+      code: 'EXPORT_RATE_LIMIT_EXCEEDED',
+      message: 'Export rate limit exceeded. Please contact support for bulk exports.',
+      retryAfter: '1 hour',
+      documentation: 'https://docs.wilsy.os/audit-api#forensic-export',
     },
+  },
 
-    // Compliance reporting (moderate limit)
-    complianceReport: {
-        windowMs: 30 * 60 * 1000, // 30 minutes
-        max: 50, // 50 requests per window
-        message: {
-            status: 'error',
-            code: 'REPORT_RATE_LIMIT_EXCEEDED',
-            message: 'Too many report generation requests. Please try again later.',
-            retryAfter: '30 minutes',
-            documentation: 'https://docs.wilsy.os/audit-api#compliance-reports'
-        }
-    }
+  // Compliance reporting (moderate limit)
+  complianceReport: {
+    windowMs: 30 * 60 * 1000, // 30 minutes
+    max: 50, // 50 requests per window
+    message: {
+      status: 'error',
+      code: 'REPORT_RATE_LIMIT_EXCEEDED',
+      message: 'Too many report generation requests. Please try again later.',
+      retryAfter: '30 minutes',
+      documentation: 'https://docs.wilsy.os/audit-api#compliance-reports',
+    },
+  },
 };
 
 /* ---------------------------------------------------------------------------
    QUANTUM ROUTES: Sovereign Audit Gateway Endpoints
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * @route   GET /api/v1/audit/quantum-trail
  * @desc    Retrieve quantum audit trail with advanced filtering and compliance
  * @access  Private: All authenticated users (tenant-scoped)
@@ -547,19 +555,19 @@ const rateLimitConfigs = {
  * @performance Redis caching, CDN edge optimization, query optimization
  */
 router.get(
-    '/quantum-trail',
-    authMiddleware,                    // QUANTUM SHIELD: JWT authentication
-    tenantScope,                      // QUANTUM ISOLATION: Tenant data separation
-    rateLimiter(rateLimitConfigs.standardRead), // QUANTUM PROTECTION: Rate limiting
-    validateQuantumQuery,             // QUANTUM VALIDATION: Schema validation
-    quantumSanitizeQuery,             // QUANTUM SANITIZATION: Threat model protection
-    popiaCompliance,                  // QUANTUM COMPLIANCE: POPIA access control
-    cacheMiddleware({ ttl: 300 }),    // QUANTUM PERFORMANCE: 5-minute Redis cache
-    anomalyDetection ? anomalyDetection('audit_query') : (req, res, next) => next(), // AI threat detection
-    auditController.getQuantumTrail   // QUANTUM ORCHESTRATION: Controller logic
+  '/quantum-trail',
+  authMiddleware, // QUANTUM SHIELD: JWT authentication
+  tenantScope, // QUANTUM ISOLATION: Tenant data separation
+  rateLimiter(rateLimitConfigs.standardRead), // QUANTUM PROTECTION: Rate limiting
+  validateQuantumQuery, // QUANTUM VALIDATION: Schema validation
+  quantumSanitizeQuery, // QUANTUM SANITIZATION: Threat model protection
+  popiaCompliance, // QUANTUM COMPLIANCE: POPIA access control
+  cacheMiddleware({ ttl: 300 }), // QUANTUM PERFORMANCE: 5-minute Redis cache
+  anomalyDetection ? anomalyDetection('audit_query') : (req, res, next) => next(), // AI threat detection
+  auditController.getQuantumTrail // QUANTUM ORCHESTRATION: Controller logic
 );
 
-/**
+/*
  * @route   GET /api/v1/audit/forensic-trail
  * @desc    Retrieve forensic audit trail for investigations (enhanced version)
  * @access  Private: Partners, Compliance Officers, System Admins
@@ -568,20 +576,20 @@ router.get(
  * @performance Read-replica routing, advanced indexing, parallel processing
  */
 router.get(
-    '/forensic-trail',
-    authMiddleware,                    // QUANTUM SHIELD: JWT authentication
-    tenantScope,                      // QUANTUM ISOLATION: Tenant data separation
-    requireElevatedRole(['PARTNER', 'COMPLIANCE_OFFICER', 'SYSTEM_ADMIN']), // QUANTUM RBAC
-    rateLimiter(rateLimitConfigs.forensicExport), // QUANTUM PROTECTION: Strict rate limiting
-    validateQuantumQuery,             // QUANTUM VALIDATION: Schema validation
-    quantumSanitizeQuery,             // QUANTUM SANITIZATION: Threat model protection
-    paiaCompliance,                   // QUANTUM COMPLIANCE: PAIA access control
-    companiesActCompliance,           // QUANTUM COMPLIANCE: Companies Act retention
-    blockchainVerification ? blockchainVerification() : (req, res, next) => next(), // Blockchain immutability
-    auditController.getForensicTrail  // QUANTUM ORCHESTRATION: Controller logic
+  '/forensic-trail',
+  authMiddleware, // QUANTUM SHIELD: JWT authentication
+  tenantScope, // QUANTUM ISOLATION: Tenant data separation
+  requireElevatedRole(['PARTNER', 'COMPLIANCE_OFFICER', 'SYSTEM_ADMIN']), // QUANTUM RBAC
+  rateLimiter(rateLimitConfigs.forensicExport), // QUANTUM PROTECTION: Strict rate limiting
+  validateQuantumQuery, // QUANTUM VALIDATION: Schema validation
+  quantumSanitizeQuery, // QUANTUM SANITIZATION: Threat model protection
+  paiaCompliance, // QUANTUM COMPLIANCE: PAIA access control
+  companiesActCompliance, // QUANTUM COMPLIANCE: Companies Act retention
+  blockchainVerification ? blockchainVerification() : (req, res, next) => next(), // Blockchain immutability
+  auditController.getForensicTrail // QUANTUM ORCHESTRATION: Controller logic
 );
 
-/**
+/*
  * @route   POST /api/v1/audit/quantum-batch
  * @desc    Quantum-grade batch ingestion for audit events (replacement for legacy endpoint)
  * @access  Public/Private: System components, client applications (with API key)
@@ -590,25 +598,26 @@ router.get(
  * @performance Parallel processing, batch optimization, async acknowledgment
  */
 router.post(
-    '/quantum-batch',
-    rateLimiter(rateLimitConfigs.batchIngestion), // QUANTUM PROTECTION: Higher rate limit for telemetry
-    validateQuantumIngestion,         // QUANTUM VALIDATION: Comprehensive payload validation
-    express.json({                    // QUANTUM PARSING: Secure JSON parsing
-        limit: process.env.AUDIT_MAX_PAYLOAD_SIZE || '10mb',
-        verify: (req, res, buf) => {
-            // Additional payload security checks
-            try {
-                JSON.parse(buf.toString());
-            } catch (e) {
-                throw new Error('Invalid JSON payload');
-            }
-        }
-    }),
-    anomalyDetection ? anomalyDetection('batch_ingestion') : (req, res, next) => next(), // AI anomaly detection
-    auditController.ingestQuantumBatch // QUANTUM ORCHESTRATION: Controller logic
+  '/quantum-batch',
+  rateLimiter(rateLimitConfigs.batchIngestion), // QUANTUM PROTECTION: Higher rate limit for telemetry
+  validateQuantumIngestion, // QUANTUM VALIDATION: Comprehensive payload validation
+  express.json({
+    // QUANTUM PARSING: Secure JSON parsing
+    limit: process.env.AUDIT_MAX_PAYLOAD_SIZE || '10mb',
+    verify: (req, res, buf) => {
+      // Additional payload security checks
+      try {
+        JSON.parse(buf.toString());
+      } catch (e) {
+        throw new Error('Invalid JSON payload');
+      }
+    },
+  }),
+  anomalyDetection ? anomalyDetection('batch_ingestion') : (req, res, next) => next(), // AI anomaly detection
+  auditController.ingestQuantumBatch // QUANTUM ORCHESTRATION: Controller logic
 );
 
-/**
+/*
  * @route   GET /api/v1/audit/compliance-report
  * @desc    Generate compliance reports for regulatory audits and internal governance
  * @access  Private: Compliance Officers, Partners, System Admins
@@ -617,18 +626,18 @@ router.post(
  * @performance Aggregation optimization, report caching, background generation
  */
 router.get(
-    '/compliance-report',
-    authMiddleware,                    // QUANTUM SHIELD: JWT authentication
-    tenantScope,                      // QUANTUM ISOLATION: Tenant data separation
-    requireElevatedRole(['COMPLIANCE_OFFICER', 'PARTNER', 'SYSTEM_ADMIN']), // QUANTUM RBAC
-    rateLimiter(rateLimitConfigs.complianceReport), // QUANTUM PROTECTION: Moderate rate limiting
-    validateQuantumQuery,             // QUANTUM VALIDATION: Schema validation
-    popiaCompliance,                  // QUANTUM COMPLIANCE: POPIA reporting requirements
-    companiesActCompliance,           // QUANTUM COMPLIANCE: Companies Act reporting
-    auditController.generateComplianceReport // QUANTUM ORCHESTRATION: Controller logic
+  '/compliance-report',
+  authMiddleware, // QUANTUM SHIELD: JWT authentication
+  tenantScope, // QUANTUM ISOLATION: Tenant data separation
+  requireElevatedRole(['COMPLIANCE_OFFICER', 'PARTNER', 'SYSTEM_ADMIN']), // QUANTUM RBAC
+  rateLimiter(rateLimitConfigs.complianceReport), // QUANTUM PROTECTION: Moderate rate limiting
+  validateQuantumQuery, // QUANTUM VALIDATION: Schema validation
+  popiaCompliance, // QUANTUM COMPLIANCE: POPIA reporting requirements
+  companiesActCompliance, // QUANTUM COMPLIANCE: Companies Act reporting
+  auditController.generateComplianceReport // QUANTUM ORCHESTRATION: Controller logic
 );
 
-/**
+/*
  * @route   GET /api/v1/audit/quantum-export
  * @desc    Streaming export of audit data for legal discovery and compliance
  * @access  Private: Compliance Officers, Partners (with MFA)
@@ -637,19 +646,19 @@ router.get(
  * @performance Streaming response, chunked encoding, read-replica routing
  */
 router.get(
-    '/quantum-export',
-    authMiddleware,                    // QUANTUM SHIELD: JWT authentication
-    tenantScope,                      // QUANTUM ISOLATION: Tenant data separation
-    requireElevatedRole(['COMPLIANCE_OFFICER', 'PARTNER'], { requireMFA: true }), // QUANTUM RBAC with MFA
-    rateLimiter(rateLimitConfigs.forensicExport), // QUANTUM PROTECTION: Very strict rate limiting
-    validateQuantumExport,            // QUANTUM VALIDATION: Export-specific validation
-    paiaCompliance,                   // QUANTUM COMPLIANCE: PAIA export requirements
-    companiesActCompliance,           // QUANTUM COMPLIANCE: Companies Act retention
-    blockchainVerification ? blockchainVerification({ verifyAll: true }) : (req, res, next) => next(), // Full blockchain verification
-    auditController.exportQuantumStream // QUANTUM ORCHESTRATION: Controller logic
+  '/quantum-export',
+  authMiddleware, // QUANTUM SHIELD: JWT authentication
+  tenantScope, // QUANTUM ISOLATION: Tenant data separation
+  requireElevatedRole(['COMPLIANCE_OFFICER', 'PARTNER'], { requireMFA: true }), // QUANTUM RBAC with MFA
+  rateLimiter(rateLimitConfigs.forensicExport), // QUANTUM PROTECTION: Very strict rate limiting
+  validateQuantumExport, // QUANTUM VALIDATION: Export-specific validation
+  paiaCompliance, // QUANTUM COMPLIANCE: PAIA export requirements
+  companiesActCompliance, // QUANTUM COMPLIANCE: Companies Act retention
+  blockchainVerification ? blockchainVerification({ verifyAll: true }) : (req, res, next) => next(), // Full blockchain verification
+  auditController.exportQuantumStream // QUANTUM ORCHESTRATION: Controller logic
 );
 
-/**
+/*
  * @route   GET /api/v1/audit/:id/quantum-verify
  * @desc    Verify individual audit record integrity and blockchain anchoring
  * @access  Private: All authenticated users (tenant-scoped)
@@ -658,15 +667,17 @@ router.get(
  * @performance Direct database lookup, cryptographic verification
  */
 router.get(
-    '/:id/quantum-verify',
-    authMiddleware,                    // QUANTUM SHIELD: JWT authentication
-    tenantScope,                      // QUANTUM ISOLATION: Tenant data separation
-    rateLimiter(rateLimitConfigs.standardRead), // QUANTUM PROTECTION: Rate limiting
-    blockchainVerification ? blockchainVerification({ verifySingle: true }) : (req, res, next) => next(), // Blockchain verification
-    auditController.verifyQuantumRecord // QUANTUM ORCHESTRATION: Controller logic
+  '/:id/quantum-verify',
+  authMiddleware, // QUANTUM SHIELD: JWT authentication
+  tenantScope, // QUANTUM ISOLATION: Tenant data separation
+  rateLimiter(rateLimitConfigs.standardRead), // QUANTUM PROTECTION: Rate limiting
+  blockchainVerification
+    ? blockchainVerification({ verifySingle: true })
+    : (req, res, next) => next(), // Blockchain verification
+  auditController.verifyQuantumRecord // QUANTUM ORCHESTRATION: Controller logic
 );
 
-/**
+/*
  * @route   GET /api/v1/audit/quantum-health
  * @desc    Comprehensive health check for quantum audit system
  * @access  Public: Monitoring systems, SRE teams
@@ -674,12 +685,12 @@ router.get(
  * @performance Lightweight checks, cached status, dependency verification
  */
 router.get(
-    '/quantum-health',
-    rateLimiter({ windowMs: 60000, max: 60 }), // QUANTUM PROTECTION: Health check rate limiting
-    auditController.getQuantumHealth  // QUANTUM ORCHESTRATION: Controller logic
+  '/quantum-health',
+  rateLimiter({ windowMs: 60000, max: 60 }), // QUANTUM PROTECTION: Health check rate limiting
+  auditController.getQuantumHealth // QUANTUM ORCHESTRATION: Controller logic
 );
 
-/**
+/*
  * @route   GET /api/v1/audit/anomaly-report
  * @desc    Retrieve AI-generated anomaly detection report for audit patterns
  * @access  Private: Security Officers, System Admins
@@ -688,20 +699,20 @@ router.get(
  * @performance AI model inference, pattern analysis, real-time detection
  */
 router.get(
-    '/anomaly-report',
-    authMiddleware,                    // QUANTUM SHIELD: JWT authentication
-    tenantScope,                      // QUANTUM ISOLATION: Tenant data separation
-    requireElevatedRole(['SECURITY_OFFICER', 'SYSTEM_ADMIN']), // QUANTUM RBAC
-    rateLimiter(rateLimitConfigs.complianceReport), // QUANTUM PROTECTION: Moderate rate limiting
-    anomalyDetection ? anomalyDetection('anomaly_report') : (req, res, next) => next(), // AI anomaly detection
-    auditController.getAnomalyReport  // QUANTUM ORCHESTRATION: Controller logic
+  '/anomaly-report',
+  authMiddleware, // QUANTUM SHIELD: JWT authentication
+  tenantScope, // QUANTUM ISOLATION: Tenant data separation
+  requireElevatedRole(['SECURITY_OFFICER', 'SYSTEM_ADMIN']), // QUANTUM RBAC
+  rateLimiter(rateLimitConfigs.complianceReport), // QUANTUM PROTECTION: Moderate rate limiting
+  anomalyDetection ? anomalyDetection('anomaly_report') : (req, res, next) => next(), // AI anomaly detection
+  auditController.getAnomalyReport // QUANTUM ORCHESTRATION: Controller logic
 );
 
 /* ---------------------------------------------------------------------------
    LEGACY ROUTES: Backward Compatibility with Quantum Enhancements
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * @route   GET /api/v1/audit
  * @desc    Legacy endpoint for audit trail retrieval (deprecated)
  * @access  Private: All authenticated users
@@ -709,31 +720,31 @@ router.get(
  * @note    DEPRECATED: Use /quantum-trail instead
  */
 router.get(
-    '/',
-    authMiddleware,
-    tenantScope,
-    rateLimiter(rateLimitConfigs.standardRead),
-    quantumSanitizeQuery,
-    (req, res, next) => {
-        // Deprecation warning header
-        res.set('Deprecation', 'true');
-        res.set('Link', '</api/v1/audit/quantum-trail>; rel="successor-version"');
-        res.set('Sunset', new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString()); // 1 year sunset
+  '/',
+  authMiddleware,
+  tenantScope,
+  rateLimiter(rateLimitConfigs.standardRead),
+  quantumSanitizeQuery,
+  (req, res, next) => {
+    // Deprecation warning header
+    res.set('Deprecation', 'true');
+    res.set('Link', '</api/v1/audit/quantum-trail>; rel="successor-version"');
+    res.set('Sunset', new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString()); // 1 year sunset
 
-        monitoring.logWarning({
-            type: 'LEGACY_ENDPOINT_ACCESSED',
-            endpoint: '/api/v1/audit',
-            client: req.headers['user-agent'],
-            ip: req.ip,
-            timestamp: new Date()
-        });
+    monitoring.logWarning({
+      type: 'LEGACY_ENDPOINT_ACCESSED',
+      endpoint: '/api/v1/audit',
+      client: req.headers['user-agent'],
+      ip: req.ip,
+      timestamp: new Date(),
+    });
 
-        next();
-    },
-    auditController.getAll
+    next();
+  },
+  auditController.getAll
 );
 
-/**
+/*
  * @route   POST /api/v1/audit
  * @desc    Legacy endpoint for audit ingestion (deprecated)
  * @access  Public/Private: System components
@@ -741,32 +752,32 @@ router.get(
  * @note    DEPRECATED: Use /quantum-batch instead
  */
 router.post(
-    '/',
-    rateLimiter(rateLimitConfigs.batchIngestion),
-    (req, res, next) => {
-        // Deprecation warning header
-        res.set('Deprecation', 'true');
-        res.set('Link', '</api/v1/audit/quantum-batch>; rel="successor-version"');
-        res.set('Sunset', new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toUTCString()); // 6 months sunset
+  '/',
+  rateLimiter(rateLimitConfigs.batchIngestion),
+  (req, res, next) => {
+    // Deprecation warning header
+    res.set('Deprecation', 'true');
+    res.set('Link', '</api/v1/audit/quantum-batch>; rel="successor-version"');
+    res.set('Sunset', new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toUTCString()); // 6 months sunset
 
-        monitoring.logWarning({
-            type: 'LEGACY_INGESTION_ENDPOINT_ACCESSED',
-            endpoint: '/api/v1/audit',
-            client: req.headers['user-agent'],
-            ip: req.ip,
-            timestamp: new Date()
-        });
+    monitoring.logWarning({
+      type: 'LEGACY_INGESTION_ENDPOINT_ACCESSED',
+      endpoint: '/api/v1/audit',
+      client: req.headers['user-agent'],
+      ip: req.ip,
+      timestamp: new Date(),
+    });
 
-        // Convert legacy format to quantum format
-        const convertLegacyToQuantum = require('../utils/legacyConverter');
-        req.body = convertLegacyToQuantum(req.body, req);
+    // Convert legacy format to quantum format
+    const convertLegacyToQuantum = require('../utils/legacyConverter');
+    req.body = convertLegacyToQuantum(req.body, req);
 
-        next();
-    },
-    auditController.ingestQuantumBatch // Use quantum controller for processing
+    next();
+  },
+  auditController.ingestQuantumBatch // Use quantum controller for processing
 );
 
-/**
+/*
  * @route   GET /api/v1/audit/export
  * @desc    Legacy endpoint for audit export (deprecated)
  * @access  Private: Compliance Officers, Partners
@@ -774,57 +785,57 @@ router.post(
  * @note    DEPRECATED: Use /quantum-export instead
  */
 router.get(
-    '/export',
-    authMiddleware,
-    tenantScope,
-    rateLimiter(rateLimitConfigs.forensicExport),
-    requireElevatedRole(['AUDIT_EXPORT', 'SUPER_ADMIN']),
-    (req, res, next) => {
-        // Deprecation warning header
-        res.set('Deprecation', 'true');
-        res.set('Link', '</api/v1/audit/quantum-export>; rel="successor-version"');
-        res.set('Sunset', new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toUTCString()); // 6 months sunset
+  '/export',
+  authMiddleware,
+  tenantScope,
+  rateLimiter(rateLimitConfigs.forensicExport),
+  requireElevatedRole(['AUDIT_EXPORT', 'SUPER_ADMIN']),
+  (req, res, next) => {
+    // Deprecation warning header
+    res.set('Deprecation', 'true');
+    res.set('Link', '</api/v1/audit/quantum-export>; rel="successor-version"');
+    res.set('Sunset', new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toUTCString()); // 6 months sunset
 
-        monitoring.logWarning({
-            type: 'LEGACY_EXPORT_ENDPOINT_ACCESSED',
-            endpoint: '/api/v1/audit/export',
-            client: req.headers['user-agent'],
-            ip: req.ip,
-            timestamp: new Date()
-        });
+    monitoring.logWarning({
+      type: 'LEGACY_EXPORT_ENDPOINT_ACCESSED',
+      endpoint: '/api/v1/audit/export',
+      client: req.headers['user-agent'],
+      ip: req.ip,
+      timestamp: new Date(),
+    });
 
-        next();
-    },
-    auditController.exportQuantumStream // Use quantum controller for processing
+    next();
+  },
+  auditController.exportQuantumStream // Use quantum controller for processing
 );
 
 /* ---------------------------------------------------------------------------
    QUANTUM IMMUTABILITY ENFORCEMENT: Block All Mutations
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * Method Not Allowed handler for immutable audit records
  */
 const quantumMethodNotAllowed = (req, res) => {
-    // QUANTUM SECURITY: Log all mutation attempts
-    monitoring.logSecurityEvent({
-        type: 'AUDIT_MUTATION_ATTEMPT',
-        method: req.method,
-        endpoint: req.originalUrl,
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
-        user: req.user?.email || 'anonymous',
-        timestamp: new Date()
-    });
+  // QUANTUM SECURITY: Log all mutation attempts
+  monitoring.logSecurityEvent({
+    type: 'AUDIT_MUTATION_ATTEMPT',
+    method: req.method,
+    endpoint: req.originalUrl,
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+    user: req.user?.email || 'anonymous',
+    timestamp: new Date(),
+  });
 
-    res.status(405).json({
-        status: 'error',
-        code: 'QUANTUM_IMMUTABILITY_VIOLATION',
-        message: 'Audit records are immutable quantum evidence and cannot be modified or deleted.',
-        forensicReference: `MUTATION-ATTEMPT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        legalBasis: 'Companies Act §24, POPIA §14, ECT Act §12',
-        documentation: 'https://docs.wilsy.os/audit-api#immutability'
-    });
+  res.status(405).json({
+    status: 'error',
+    code: 'QUANTUM_IMMUTABILITY_VIOLATION',
+    message: 'Audit records are immutable quantum evidence and cannot be modified or deleted.',
+    forensicReference: `MUTATION-ATTEMPT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    legalBasis: 'Companies Act §24, POPIA §14, ECT Act §12',
+    documentation: 'https://docs.wilsy.os/audit-api#immutability',
+  });
 };
 
 // Block all mutation methods to preserve forensic integrity
@@ -839,100 +850,100 @@ router.delete('/', authMiddleware, tenantScope, quantumMethodNotAllowed);
    QUANTUM ROUTE DOCUMENTATION ENDPOINT
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * @route   GET /api/v1/audit/_documentation
  * @desc    Self-documenting endpoint for quantum audit API
  * @access  Public: Developers, Integration partners
  * @security None (public documentation)
  */
 router.get('/_documentation', (req, res) => {
-    const documentation = {
-        api: 'Wilsy OS Quantum Audit API',
-        version: '35.0.0',
-        description: 'Hyper-secure, compliance-focused audit trail management system',
-        baseUrl: '/api/v1/audit',
-        endpoints: [
-            {
-                path: '/quantum-trail',
-                method: 'GET',
-                description: 'Retrieve quantum audit trail with advanced filtering',
-                authentication: 'JWT Required',
-                compliance: ['POPIA §23', 'PAIA §50', 'Companies Act §24'],
-                rateLimit: '100 requests per 15 minutes'
-            },
-            {
-                path: '/forensic-trail',
-                method: 'GET',
-                description: 'Retrieve forensic audit trail for investigations',
-                authentication: 'JWT + RBAC (Partner/Compliance Officer/Admin)',
-                compliance: ['PAIA §50', 'Cybercrimes Act §54', 'Law Society Rule 54'],
-                rateLimit: '10 requests per hour'
-            },
-            {
-                path: '/quantum-batch',
-                method: 'POST',
-                description: 'Quantum-grade batch ingestion for audit events',
-                authentication: 'API Key or JWT',
-                compliance: ['POPIA §11', 'ECT Act §12', 'Cybercrimes Act §54'],
-                rateLimit: '1000 requests per 15 minutes'
-            },
-            {
-                path: '/compliance-report',
-                method: 'GET',
-                description: 'Generate compliance reports for regulatory audits',
-                authentication: 'JWT + RBAC (Compliance Officer/Partner/Admin)',
-                compliance: ['POPIA §14', 'Companies Act §24', 'PAIA §14', 'FICA §21'],
-                rateLimit: '50 requests per 30 minutes'
-            },
-            {
-                path: '/quantum-export',
-                method: 'GET',
-                description: 'Streaming export of audit data for legal discovery',
-                authentication: 'JWT + RBAC + MFA (Compliance Officer/Partner)',
-                compliance: ['PAIA §50', 'Companies Act §24', 'Court Rule 35'],
-                rateLimit: '10 requests per hour'
-            },
-            {
-                path: '/:id/quantum-verify',
-                method: 'GET',
-                description: 'Verify individual audit record integrity and blockchain anchoring',
-                authentication: 'JWT Required',
-                compliance: ['ECT Act §12', 'Cybercrimes Act §54'],
-                rateLimit: '100 requests per 15 minutes'
-            },
-            {
-                path: '/anomaly-report',
-                method: 'GET',
-                description: 'Retrieve AI-generated anomaly detection report',
-                authentication: 'JWT + RBAC (Security Officer/Admin)',
-                compliance: ['Cybercrimes Act §54', 'POPIA §19'],
-                rateLimit: '50 requests per 30 minutes'
-            }
-        ],
-        complianceFrameworks: {
-            southAfrica: ['POPIA', 'PAIA', 'Companies Act 2008', 'ECT Act', 'FICA', 'Cybercrimes Act'],
-            international: ['GDPR', 'ISO 27001', 'SOC 2', 'NIST CSF'],
-            legalPractice: ['LPC Rules', 'Law Society Guidelines', 'Court Rules']
-        },
-        securityFeatures: [
-            'AES-256-GCM Encryption',
-            'Blockchain Immutability',
-            'AI Anomaly Detection',
-            'Zero-Trust Architecture',
-            'RBAC/ABAC Access Control',
-            'Real-time Threat Intelligence'
-        ],
-        dataResidency: 'AWS Africa (Cape Town) Region',
-        retentionPolicy: '7 years (Companies Act compliant)',
-        support: {
-            documentation: 'https://docs.wilsy.os/audit-api',
-            contact: 'api-support@wilsy.os',
-            status: 'https://status.wilsy.os'
-        },
-        timestamp: new Date().toISOString()
-    };
+  const documentation = {
+    api: 'Wilsy OS Quantum Audit API',
+    version: '35.0.0',
+    description: 'Hyper-secure, compliance-focused audit trail management system',
+    baseUrl: '/api/v1/audit',
+    endpoints: [
+      {
+        path: '/quantum-trail',
+        method: 'GET',
+        description: 'Retrieve quantum audit trail with advanced filtering',
+        authentication: 'JWT Required',
+        compliance: ['POPIA §23', 'PAIA §50', 'Companies Act §24'],
+        rateLimit: '100 requests per 15 minutes',
+      },
+      {
+        path: '/forensic-trail',
+        method: 'GET',
+        description: 'Retrieve forensic audit trail for investigations',
+        authentication: 'JWT + RBAC (Partner/Compliance Officer/Admin)',
+        compliance: ['PAIA §50', 'Cybercrimes Act §54', 'Law Society Rule 54'],
+        rateLimit: '10 requests per hour',
+      },
+      {
+        path: '/quantum-batch',
+        method: 'POST',
+        description: 'Quantum-grade batch ingestion for audit events',
+        authentication: 'API Key or JWT',
+        compliance: ['POPIA §11', 'ECT Act §12', 'Cybercrimes Act §54'],
+        rateLimit: '1000 requests per 15 minutes',
+      },
+      {
+        path: '/compliance-report',
+        method: 'GET',
+        description: 'Generate compliance reports for regulatory audits',
+        authentication: 'JWT + RBAC (Compliance Officer/Partner/Admin)',
+        compliance: ['POPIA §14', 'Companies Act §24', 'PAIA §14', 'FICA §21'],
+        rateLimit: '50 requests per 30 minutes',
+      },
+      {
+        path: '/quantum-export',
+        method: 'GET',
+        description: 'Streaming export of audit data for legal discovery',
+        authentication: 'JWT + RBAC + MFA (Compliance Officer/Partner)',
+        compliance: ['PAIA §50', 'Companies Act §24', 'Court Rule 35'],
+        rateLimit: '10 requests per hour',
+      },
+      {
+        path: '/:id/quantum-verify',
+        method: 'GET',
+        description: 'Verify individual audit record integrity and blockchain anchoring',
+        authentication: 'JWT Required',
+        compliance: ['ECT Act §12', 'Cybercrimes Act §54'],
+        rateLimit: '100 requests per 15 minutes',
+      },
+      {
+        path: '/anomaly-report',
+        method: 'GET',
+        description: 'Retrieve AI-generated anomaly detection report',
+        authentication: 'JWT + RBAC (Security Officer/Admin)',
+        compliance: ['Cybercrimes Act §54', 'POPIA §19'],
+        rateLimit: '50 requests per 30 minutes',
+      },
+    ],
+    complianceFrameworks: {
+      southAfrica: ['POPIA', 'PAIA', 'Companies Act 2008', 'ECT Act', 'FICA', 'Cybercrimes Act'],
+      international: ['GDPR', 'ISO 27001', 'SOC 2', 'NIST CSF'],
+      legalPractice: ['LPC Rules', 'Law Society Guidelines', 'Court Rules'],
+    },
+    securityFeatures: [
+      'AES-256-GCM Encryption',
+      'Blockchain Immutability',
+      'AI Anomaly Detection',
+      'Zero-Trust Architecture',
+      'RBAC/ABAC Access Control',
+      'Real-time Threat Intelligence',
+    ],
+    dataResidency: 'AWS Africa (Cape Town) Region',
+    retentionPolicy: '7 years (Companies Act compliant)',
+    support: {
+      documentation: 'https://docs.wilsy.os/audit-api',
+      contact: 'api-support@wilsy.os',
+      status: 'https://status.wilsy.os',
+    },
+    timestamp: new Date().toISOString(),
+  };
 
-    res.status(200).json(documentation);
+  res.status(200).json(documentation);
 });
 
 /* ---------------------------------------------------------------------------
@@ -945,7 +956,7 @@ module.exports = router;
    ENV ADDITIONS REQUIRED
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * # QUANTUM AUDIT ROUTES CONFIGURATION
  * AUDIT_BATCH_MAX_SIZE=1000
  * AUDIT_MAX_PAYLOAD_SIZE=10mb
@@ -992,7 +1003,7 @@ module.exports = router;
    VALUATION QUANTUM METRICS
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * This quantum audit gateway enables:
  *
  * 1. ENTERPRISE SCALE: 10,000+ concurrent legal practitioners accessing audit trails
@@ -1024,7 +1035,7 @@ module.exports = router;
    INSPIRATIONAL QUANTUM
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * "The law is the witness and external deposit of our moral life."
  * - Oliver Wendell Holmes Jr., American Jurist
  *

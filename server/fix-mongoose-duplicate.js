@@ -10,18 +10,18 @@ let mongooseFound = false;
 let newLines = [];
 
 for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes('const mongoose = require')) {
-        if (!mongooseFound) {
-            // Keep the first one
-            newLines.push(lines[i]);
-            mongooseFound = true;
-        } else {
-            // Comment out duplicates
-            newLines.push('// ' + lines[i] + ' // Duplicate removed');
-        }
+  if (lines[i].includes('const mongoose = require')) {
+    if (!mongooseFound) {
+      // Keep the first one
+      newLines.push(lines[i]);
+      mongooseFound = true;
     } else {
-        newLines.push(lines[i]);
+      // Comment out duplicates
+      newLines.push('// ' + lines[i] + ' // Duplicate removed');
     }
+  } else {
+    newLines.push(lines[i]);
+  }
 }
 
 content = newLines.join('\n');

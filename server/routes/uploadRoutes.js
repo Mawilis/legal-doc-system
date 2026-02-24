@@ -1,4 +1,4 @@
-/**
+/*
  * File: server/routes/uploadRoutes.js
  * -----------------------------------------------------------------------------
  * STATUS: EPITOME | Upload Gateway (Tenant-Scoped, Auditable, Investor-Grade)
@@ -36,8 +36,7 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 // ------------------------------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) =>
-    cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '_')),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '_')),
 });
 
 // ------------------------------
@@ -50,9 +49,7 @@ const upload = multer({
     const allowed = ['.pdf', '.jpg', '.jpeg', '.png', '.mp3', '.wav'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (!allowed.includes(ext)) {
-      return cb(
-        new Error('Invalid file type. Only PDF, Images, and Audio allowed.')
-      );
+      return cb(new Error('Invalid file type. Only PDF, Images, and Audio allowed.'));
     }
     cb(null, true);
   },
@@ -62,7 +59,7 @@ const upload = multer({
 // Routes
 // ------------------------------
 
-/**
+/*
  * @route   POST /api/uploads
  * @desc    Upload files (max 5 files, 10MB each)
  */

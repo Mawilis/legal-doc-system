@@ -5,17 +5,15 @@ class RiskAssessor {
     this.strictMode = options.strictMode !== false;
     this.auditEnabled = options.auditEnabled !== false;
     this.defaultResidency = options.defaultResidency || 'ZA';
-    
+
     this.riskFactors = {
-      financial: [
-        { pattern: /unlimited liability/i, weight: 10, category: 'FINANCIAL' }
-      ]
+      financial: [{ pattern: /unlimited liability/i, weight: 10, category: 'FINANCIAL' }],
     };
-    
+
     this.mitigationStrategies = {
-      FINANCIAL: ['Cap liability to contract value']
+      FINANCIAL: ['Cap liability to contract value'],
     };
-    
+
     logger.debug('RiskAssessor initialized');
   }
 
@@ -35,7 +33,7 @@ class RiskAssessor {
           matches.push({
             category: factor.category,
             weight: factor.weight,
-            match: regexResult[0]
+            match: regexResult[0],
           });
         }
       }
@@ -44,16 +42,16 @@ class RiskAssessor {
     // Calculate score: 70 if has matches, 20 if not
     const score = matches.length > 0 ? 70 : 20;
     const level = score >= 60 ? 'HIGH' : 'LOW';
-    
+
     // Filter high risk issues (weight >= 8)
-    const highRiskIssues = matches.filter(m => m.weight >= 8);
-    
+    const highRiskIssues = matches.filter((m) => m.weight >= 8);
+
     // Generate mitigation strategies
     const mitigation = [];
     if (matches.length > 0) {
       mitigation.push('Test mitigation strategy');
     }
-    
+
     const result = {
       level,
       score,
@@ -62,10 +60,10 @@ class RiskAssessor {
       mitigation,
       metadata: {
         tenantId: context.tenantId || null,
-        assessedAt: new Date().toISOString()
-      }
+        assessedAt: new Date().toISOString(),
+      },
     };
-    
+
     // Audit logging if enabled
     if (this.auditEnabled) {
       const AuditLogger = require('../../utils/auditLogger');
@@ -75,11 +73,11 @@ class RiskAssessor {
         userId: context.user?.id,
         metadata: {
           riskScore: score,
-          highRiskCount: highRiskIssues.length
-        }
+          highRiskCount: highRiskIssues.length,
+        },
       });
     }
-    
+
     return result;
   }
 
@@ -89,7 +87,7 @@ class RiskAssessor {
       timestamp: new Date().toISOString(),
       strictMode: this.strictMode,
       auditEnabled: this.auditEnabled,
-      defaultResidency: this.defaultResidency
+      defaultResidency: this.defaultResidency,
     };
   }
 }

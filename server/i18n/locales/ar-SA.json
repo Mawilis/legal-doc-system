@@ -16,7 +16,7 @@
       "grouping": [3]
     }
   },
-  
+
   "common": {
     "save": "حفظ",
     "cancel": "إلغاء",
@@ -64,7 +64,7 @@
     "credit": "رصيد",
     "debit": "خصم"
   },
-  
+
   "navigation": {
     "home": "الرئيسية",
     "dashboard": "لوحة التحكم",
@@ -81,7 +81,7 @@
     "privacy": "سياسة الخصوصية",
     "security": "الأمان"
   },
-  
+
   "errors": {
     "general": "حدث خطأ. يرجى المحاولة مرة أخرى.",
     "notFound": "الصفحة غير موجودة",
@@ -96,7 +96,7 @@
       "number": "يرجى إدخال رقم صحيح"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "تسجيل الدخول إلى Wilsy OS",
@@ -122,7 +122,7 @@
       "success": "تم التسجيل بنجاح"
     }
   },
-  
+
   "onboarding": {
     "title": "تسجيل العميل",
     "stages": {
@@ -154,7 +154,7 @@
       "ficaRejected": "تم رفض FICA"
     }
   },
-  
+
   "compliance": {
     "fica": {
       "title": "الامتثال لـ FICA",

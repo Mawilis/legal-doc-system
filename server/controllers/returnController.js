@@ -2,8 +2,8 @@
  * File: server/controllers/returnController.js
  * STATUS: PRODUCTION-READY | FORENSIC DOCUMENT GRADE
  * -----------------------------------------------------------------------------
- * PURPOSE: 
- * The platform's legal document factory. Generates court-admissible Return of 
+ * PURPOSE:
+ * The platform's legal document factory. Generates court-admissible Return of
  * Service PDFs by synthesizing GPS evidence, attempt logs, and crypto-hashes.
  * -----------------------------------------------------------------------------
  */
@@ -19,14 +19,20 @@ const DispatchInstruction = require('../models/DispatchInstruction');
 const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { emitAudit } = require('../middleware/auditMiddleware');
 
-/**
+/*
  * INTERNAL PDF ARCHITECT: RENDER ENGINE
  */
 const buildForensicPdf = (doc, instruction, attempts) => {
   // 1. HEADER & IDENTITY
-  doc.fontSize(18).font('Helvetica-Bold').text('OFFICIAL RETURN OF SERVICE', { align: 'center', underline: true });
+  doc
+    .fontSize(18)
+    .font('Helvetica-Bold')
+    .text('OFFICIAL RETURN OF SERVICE', { align: 'center', underline: true });
   doc.moveDown();
-  doc.fontSize(9).fillColor('#4a5568').text(`Document Hash: ${instruction._id}`, { align: 'right' });
+  doc
+    .fontSize(9)
+    .fillColor('#4a5568')
+    .text(`Document Hash: ${instruction._id}`, { align: 'right' });
   doc.text(`Timestamp: ${new Date().toLocaleString('en-ZA')}`, { align: 'right' });
   doc.moveDown();
 
@@ -45,8 +51,16 @@ const buildForensicPdf = (doc, instruction, attempts) => {
 
   attempts.forEach((a, idx) => {
     doc.rect(doc.x, doc.y, 500, 60).stroke('#e2e8f0');
-    doc.fontSize(10).font('Helvetica-Bold').text(`Attempt #${idx + 1} - ${a.outcome.toUpperCase()}`, doc.x + 10, doc.y + 10);
-    doc.font('Helvetica').fontSize(9).text(`Time: ${new Date(a.at).toLocaleString('en-ZA')} | Lat/Long: ${a.gps.lat}, ${a.gps.lng}`);
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .text(`Attempt #${idx + 1} - ${a.outcome.toUpperCase()}`, doc.x + 10, doc.y + 10);
+    doc
+      .font('Helvetica')
+      .fontSize(9)
+      .text(
+        `Time: ${new Date(a.at).toLocaleString('en-ZA')} | Lat/Long: ${a.gps.lat}, ${a.gps.lng}`
+      );
     doc.fillColor('#718096').text(`Forensic Fingerprint: ${a.hash}`);
     doc.fillColor('black').moveDown(2);
   });
@@ -54,12 +68,15 @@ const buildForensicPdf = (doc, instruction, attempts) => {
   // 4. STATUTORY DECLARATION
   doc.moveDown();
   doc.font('Helvetica-Bold').fontSize(11).text('OFFICIAL DECLARATION');
-  doc.font('Helvetica').fontSize(9).text(
-    'I, the undersigned, hereby certify that the above is a true and accurate record of service. GPS data and timestamps were captured natively at the time of the event and are sealed with cryptographic integrity.'
-  );
+  doc
+    .font('Helvetica')
+    .fontSize(9)
+    .text(
+      'I, the undersigned, hereby certify that the above is a true and accurate record of service. GPS data and timestamps were captured natively at the time of the event and are sealed with cryptographic integrity.'
+    );
 };
 
-/**
+/*
  * @desc    GENERATE & FINALIZE RETURN OF SERVICE
  * @route   POST /api/v1/returns/:id
  */
@@ -74,7 +91,13 @@ exports.generateReturns = asyncHandler(async (req, res) => {
 
   const attempts = await Attempt.find({ instructionId: id, ...req.tenantFilter }).sort({ at: 1 });
   if (!attempts.length) {
-    return errorResponse(req, res, 400, 'Non-compliance: Cannot generate return without recorded service attempts.', 'ERR_EVIDENCE_MISSING');
+    return errorResponse(
+      req,
+      res,
+      400,
+      'Non-compliance: Cannot generate return without recorded service attempts.',
+      'ERR_EVIDENCE_MISSING'
+    );
   }
 
   // 2. PDF ASSEMBLY
@@ -94,7 +117,9 @@ exports.generateReturns = asyncHandler(async (req, res) => {
 
   // 3. UPDATE LOGISTICS STATE
   stream.on('finish', async () => {
-    const wasServed = attempts.some(a => ['served', 'domicile_served'].includes(a.outcome.toLowerCase()));
+    const wasServed = attempts.some((a) =>
+      ['served', 'domicile_served'].includes(a.outcome.toLowerCase())
+    );
 
     instruction.returnOfServicePdfUrl = publicUrl;
     instruction.status = wasServed ? 'RETURNED_SERVED' : 'RETURNED_NON_SERVICE';
@@ -105,13 +130,18 @@ exports.generateReturns = asyncHandler(async (req, res) => {
       resource: 'LOGISTICS_MODULE',
       action: 'RETURN_OF_SERVICE_GENERATED',
       severity: 'INFO',
-      metadata: { instructionId: id, url: publicUrl, status: instruction.status }
+      metadata: { instructionId: id, url: publicUrl, status: instruction.status },
     });
 
-    return successResponse(req, res, {
-      url: publicUrl,
-      status: instruction.status
-    }, { message: 'Forensic Return of Service successfully generated.' });
+    return successResponse(
+      req,
+      res,
+      {
+        url: publicUrl,
+        status: instruction.status,
+      },
+      { message: 'Forensic Return of Service successfully generated.' }
+    );
   });
 
   stream.on('error', (err) => {

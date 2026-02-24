@@ -1,4 +1,4 @@
-/**
+/*
  * OpenTimestamps Shim - Placeholder for blockchain timestamping
  * This is a temporary shim until full OTS integration is implemented
  */
@@ -14,11 +14,11 @@ async function createTimestamp(hash, tenantId) {
     tenantId,
     timestamp: new Date().toISOString(),
     anchorId: `ots-${Date.now()}`,
-    verified: true
+    verified: true,
   };
 }
 
 module.exports = {
   generateDocumentHash,
-  createTimestamp
+  createTimestamp,
 };

@@ -35,125 +35,120 @@ const validate = require('../middleware/validationMiddleware');
 const { Joi } = validate;
 
 const logAttemptSchema = {
-    attemptNumber: Joi.number().min(1).max(10).required(),
-    attemptDate: Joi.date().iso().required(),
-    outcome: Joi.string().valid(
-        'NO_ANSWER',
-        'PREMISES_LOCKED',
-        'MOVED',
-        'REFUSED_ENTRY',
-        'SUCCESSFUL',
-        'OTHER'
-    ).required(),
-    location: Joi.object({
-        lat: Joi.number().min(-90).max(90).required(),
-        lng: Joi.number().min(-180).max(180).required(),
-        address: Joi.string().required()
-    }).required(),
-    notes: Joi.string().max(500).allow('').optional(),
-    photoEvidence: Joi.string().uri().optional() // URL to S3 blob
+  attemptNumber: Joi.number().min(1).max(10).required(),
+  attemptDate: Joi.date().iso().required(),
+  outcome: Joi.string()
+    .valid('NO_ANSWER', 'PREMISES_LOCKED', 'MOVED', 'REFUSED_ENTRY', 'SUCCESSFUL', 'OTHER')
+    .required(),
+  location: Joi.object({
+    lat: Joi.number().min(-90).max(90).required(),
+    lng: Joi.number().min(-180).max(180).required(),
+    address: Joi.string().required(),
+  }).required(),
+  notes: Joi.string().max(500).allow('').optional(),
+  photoEvidence: Joi.string().uri().optional(), // URL to S3 blob
 };
 
 const documentIdSchema = {
-    documentId: Joi.string().required()
+  documentId: Joi.string().required(),
 };
 
 // ------------------------------
 // ROUTES
 // ------------------------------
 
-/**
+/*
  * @route   POST /api/attempts/:documentId
  * @desc    Log a new Service Attempt (Sheriff/Server)
  * @access  Sheriff, Admin
  */
 router.post(
-    '/:documentId',
-    protect,
-    requireSameTenant,
-    restrictTo('admin', 'sheriff'), // Lawyers read, Sheriffs write
-    validate(documentIdSchema, 'params'),
-    validate(logAttemptSchema, 'body'),
-    async (req, res, next) => {
-        try {
-            const result = await attemptController.logAttempt(req, res);
+  '/:documentId',
+  protect,
+  requireSameTenant,
+  restrictTo('admin', 'sheriff'), // Lawyers read, Sheriffs write
+  validate(documentIdSchema, 'params'),
+  validate(logAttemptSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const result = await attemptController.logAttempt(req, res);
 
-            // Audit the attempt (Chain of Evidence)
-            await emitAudit(req, {
-                resource: 'legal_process',
-                action: 'LOG_ATTEMPT',
-                severity: 'INFO',
-                summary: `Service Attempt #${req.body.attemptNumber} logged`,
-                metadata: {
-                    docId: req.params.documentId,
-                    outcome: req.body.outcome,
-                    gps: req.body.location
-                }
-            });
+      // Audit the attempt (Chain of Evidence)
+      await emitAudit(req, {
+        resource: 'legal_process',
+        action: 'LOG_ATTEMPT',
+        severity: 'INFO',
+        summary: `Service Attempt #${req.body.attemptNumber} logged`,
+        metadata: {
+          docId: req.params.documentId,
+          outcome: req.body.outcome,
+          gps: req.body.location,
+        },
+      });
 
-            if (!res.headersSent && result) res.status(201).json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'ATTEMPT_LOG_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.status(201).json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'ATTEMPT_LOG_FAILED';
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   GET /api/attempts/:documentId
  * @desc    View Attempt History (Chain of Evidence)
  * @access  Admin, Lawyer, Sheriff, Client
  */
 router.get(
-    '/:documentId',
-    protect,
-    requireSameTenant,
-    restrictTo('admin', 'lawyer', 'sheriff', 'client'),
-    validate(documentIdSchema, 'params'),
-    async (req, res, next) => {
-        try {
-            const result = await attemptController.getHistory(req, res);
+  '/:documentId',
+  protect,
+  requireSameTenant,
+  restrictTo('admin', 'lawyer', 'sheriff', 'client'),
+  validate(documentIdSchema, 'params'),
+  async (req, res, next) => {
+    try {
+      const result = await attemptController.getHistory(req, res);
 
-            // Read-only access usually doesn't need heavy auditing unless sensitive
-            // We'll skip audit here for performance, or use a lightweight access log if required.
+      // Read-only access usually doesn't need heavy auditing unless sensitive
+      // We'll skip audit here for performance, or use a lightweight access log if required.
 
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'ATTEMPT_HISTORY_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'ATTEMPT_HISTORY_FAILED';
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   DELETE /api/attempts/:id
  * @desc    Strike an erroneous attempt record (Requires Justification)
  * @access  Admin only
  */
 router.delete(
-    '/:id',
-    protect,
-    requireSameTenant,
-    restrictTo('admin', 'superadmin'),
-    async (req, res, next) => {
-        try {
-            const result = await attemptController.strikeAttempt(req, res);
+  '/:id',
+  protect,
+  requireSameTenant,
+  restrictTo('admin', 'superadmin'),
+  async (req, res, next) => {
+    try {
+      const result = await attemptController.strikeAttempt(req, res);
 
-            // Critical Audit: Altering legal history
-            await emitAudit(req, {
-                resource: 'legal_process',
-                action: 'STRIKE_ATTEMPT',
-                severity: 'WARN',
-                summary: 'Service attempt record removed',
-                metadata: { attemptId: req.params.id }
-            });
+      // Critical Audit: Altering legal history
+      await emitAudit(req, {
+        resource: 'legal_process',
+        action: 'STRIKE_ATTEMPT',
+        severity: 'WARN',
+        summary: 'Service attempt record removed',
+        metadata: { attemptId: req.params.id },
+      });
 
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'ATTEMPT_DELETE_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'ATTEMPT_DELETE_FAILED';
+      next(err);
     }
+  }
 );
 
 module.exports = router;

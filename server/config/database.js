@@ -2,13 +2,13 @@
   ║ DATABASE CONFIGURATION - INVESTOR-GRADE MODULE                              ║
   ║ 99.99% uptime | Multi-tenant isolation | Connection pooling                 ║
   ╚══════════════════════════════════════════════════════════════════════════════╝*/
-/**
+/*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/database.js
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R5M/year database downtime costs
  * • Generates: R1.5M/year savings @ 99.99% availability
  * • Compliance: POPIA §19 - Data residency enforcement
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "expectedConsumers": [
@@ -34,7 +34,7 @@ const CONNECTION_STATES = {
   0: 'disconnected',
   1: 'connected',
   2: 'connecting',
-  3: 'disconnecting'
+  3: 'disconnecting',
 };
 
 class DatabaseConfig {
@@ -47,7 +47,7 @@ class DatabaseConfig {
     this.connectionString = this._buildConnectionString();
   }
 
-  /**
+  /*
    * Build MongoDB connection string from environment variables
    */
   _buildConnectionString() {
@@ -59,7 +59,7 @@ class DatabaseConfig {
       DB_NAME = 'wilsyos',
       DB_REPLICA_SET,
       DB_AUTH_SOURCE = 'admin',
-      DB_TLS = 'true'
+      DB_TLS = 'true',
     } = process.env;
 
     if (!DB_USERNAME || !DB_PASSWORD) {
@@ -67,17 +67,19 @@ class DatabaseConfig {
         component: 'DatabaseConfig',
         action: 'buildConnectionString',
         host: DB_HOST,
-        port: DB_PORT
+        port: DB_PORT,
       });
       return `mongodb://${DB_HOST}:${DB_PORT}/${DB_NAME}`;
     }
 
-    let uri = `mongodb://${encodeURIComponent(DB_USERNAME)}:${encodeURIComponent(DB_PASSWORD)}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=${DB_AUTH_SOURCE}`;
-    
+    let uri = `mongodb://${encodeURIComponent(DB_USERNAME)}:${encodeURIComponent(
+      DB_PASSWORD
+    )}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=${DB_AUTH_SOURCE}`;
+
     if (DB_REPLICA_SET) {
       uri += `&replicaSet=${DB_REPLICA_SET}`;
     }
-    
+
     if (DB_TLS === 'true') {
       uri += '&tls=true';
     }
@@ -85,7 +87,7 @@ class DatabaseConfig {
     return uri;
   }
 
-  /**
+  /*
    * Connect to MongoDB with retry logic
    */
   async connect() {
@@ -95,7 +97,7 @@ class DatabaseConfig {
         action: 'connect',
         host: process.env.DB_HOST || 'localhost',
         database: process.env.DB_NAME || 'wilsyos',
-        poolSize: this.poolSize
+        poolSize: this.poolSize,
       });
 
       const options = {
@@ -108,19 +110,19 @@ class DatabaseConfig {
         retryWrites: true,
         retryReads: true,
         autoIndex: process.env.NODE_ENV !== 'production',
-        autoCreate: process.env.NODE_ENV !== 'production'
+        autoCreate: process.env.NODE_ENV !== 'production',
       };
 
       this.connection = await mongoose.connect(this.connectionString, options);
-      
+
       this.connectionAttempts = 0;
-      
+
       logger.info('✅ Database connected successfully', {
         component: 'DatabaseConfig',
         action: 'connect',
         host: process.env.DB_HOST || 'localhost',
         database: process.env.DB_NAME || 'wilsyos',
-        connectionState: CONNECTION_STATES[mongoose.connection.readyState]
+        connectionState: CONNECTION_STATES[mongoose.connection.readyState],
       });
 
       this._setupEventListeners();
@@ -128,16 +130,15 @@ class DatabaseConfig {
       metrics.setGauge('database.connection.state', mongoose.connection.readyState);
 
       return this.connection;
-
     } catch (error) {
       this.connectionAttempts++;
-      
+
       logger.error('Database connection failed', {
         component: 'DatabaseConfig',
         action: 'connect',
         error: error.message,
         attempt: this.connectionAttempts,
-        maxRetries: this.maxRetries
+        maxRetries: this.maxRetries,
       });
 
       metrics.increment('database.connection.failures', 1);
@@ -147,25 +148,27 @@ class DatabaseConfig {
           component: 'DatabaseConfig',
           action: 'connect',
           attempt: this.connectionAttempts,
-          nextAttemptIn: this.retryDelay
+          nextAttemptIn: this.retryDelay,
         });
 
-        await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+        await new Promise((resolve) => setTimeout(resolve, this.retryDelay));
         return this.connect();
       }
 
-      throw new Error(`Failed to connect to database after ${this.maxRetries} attempts: ${error.message}`);
+      throw new Error(
+        `Failed to connect to database after ${this.maxRetries} attempts: ${error.message}`
+      );
     }
   }
 
-  /**
+  /*
    * Set up database event listeners
    */
   _setupEventListeners() {
     mongoose.connection.on('connected', () => {
       logger.info('Mongoose connected to MongoDB', {
         component: 'DatabaseConfig',
-        action: 'event'
+        action: 'event',
       });
       metrics.setGauge('database.connection.state', 1);
     });
@@ -174,7 +177,7 @@ class DatabaseConfig {
       logger.error('Mongoose connection error', {
         component: 'DatabaseConfig',
         action: 'event',
-        error: error.message
+        error: error.message,
       });
       metrics.increment('database.connection.errors', 1);
     });
@@ -182,7 +185,7 @@ class DatabaseConfig {
     mongoose.connection.on('disconnected', () => {
       logger.warn('Mongoose disconnected from MongoDB', {
         component: 'DatabaseConfig',
-        action: 'event'
+        action: 'event',
       });
       metrics.setGauge('database.connection.state', 0);
     });
@@ -190,7 +193,7 @@ class DatabaseConfig {
     mongoose.connection.on('reconnected', () => {
       logger.info('Mongoose reconnected to MongoDB', {
         component: 'DatabaseConfig',
-        action: 'event'
+        action: 'event',
       });
       metrics.setGauge('database.connection.state', 1);
     });
@@ -206,33 +209,33 @@ class DatabaseConfig {
     });
   }
 
-  /**
+  /*
    * Disconnect from database gracefully
    */
   async disconnect() {
     logger.info('Disconnecting from database...', {
       component: 'DatabaseConfig',
-      action: 'disconnect'
+      action: 'disconnect',
     });
 
     try {
       await mongoose.disconnect();
       logger.info('✅ Database disconnected successfully', {
         component: 'DatabaseConfig',
-        action: 'disconnect'
+        action: 'disconnect',
       });
       metrics.setGauge('database.connection.state', 0);
     } catch (error) {
       logger.error('Error disconnecting from database', {
         component: 'DatabaseConfig',
         action: 'disconnect',
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
   }
 
-  /**
+  /*
    * Get connection status
    */
   getStatus() {
@@ -243,16 +246,16 @@ class DatabaseConfig {
       host: mongoose.connection.host,
       name: mongoose.connection.name,
       models: Object.keys(mongoose.models).length,
-      poolSize: this.poolSize
+      poolSize: this.poolSize,
     };
   }
 
-  /**
+  /*
    * Health check
    */
   async healthCheck() {
     const status = this.getStatus();
-    
+
     try {
       if (status.connected) {
         await mongoose.connection.db.admin().ping();
@@ -266,7 +269,7 @@ class DatabaseConfig {
     return {
       service: 'database',
       ...status,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 }

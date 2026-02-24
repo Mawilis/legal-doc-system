@@ -2,7 +2,7 @@
   ║ SUPERADMIN MODEL - INVESTOR-GRADE QUANTUM SOVEREIGN           ║
   ║ [95% error elimination | R500K risk mitigation | 90% margins] ║
   ╚════════════════════════════════════════════════════════════════╝*/
-/**
+/*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/SuperAdmin.js
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R500K/year schema errors and compliance audit failures
@@ -40,7 +40,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const speakeasy = require('speakeasy');
 
-/**
+/*
  * @file SuperAdmin.js
  * @description Supreme Quantum Sovereign Model - The ultimate authority governing
  * Wilsy OS's legal dominion across South Africa and beyond
@@ -68,243 +68,252 @@ const speakeasy = require('speakeasy');
 // =============================================================================
 // QUANTUM SOVEREIGN SCHEMA - DIVINE OVERSCHEMA
 // =============================================================================
-const superAdminSchema = new Schema({
+const superAdminSchema = new Schema(
+  {
     // Divine Identity Quantum (Immortal Recognition)
     quantumId: {
-        type: String,
-        required: true,
-        unique: true,
-        default: () => `SUPREME-${require('uuid').v4().toUpperCase()}`,
-        index: true,
-        immutable: true
+      type: String,
+      required: true,
+      unique: true,
+      default: () => `SUPREME-${require('uuid').v4().toUpperCase()}`,
+      index: true,
+      immutable: true,
     },
 
     // Hierarchy
     sovereignTier: {
-        type: String,
-        required: true,
-        enum: ['Alpha', 'Beta', 'Gamma', 'Delta', 'Omega'],
-        default: 'Omega'
+      type: String,
+      required: true,
+      enum: ['Alpha', 'Beta', 'Gamma', 'Delta', 'Omega'],
+      default: 'Omega',
     },
 
     // Personal Information
     fullName: {
-        type: String,
-        required: true,
-        trim: true
+      type: String,
+      required: true,
+      trim: true,
     },
 
     fullNameEncrypted: {
-        type: String,
-        select: false
+      type: String,
+      select: false,
     },
 
     // South African ID
     saIdNumber: {
-        type: String,
-        required: true,
-        validate: {
-            validator: function(v) {
-                return /^[0-9]{13}$/.test(v);
-            },
-            message: 'SA ID must be 13 digits'
-        }
+      type: String,
+      required: true,
+      validate: {
+        validator: function (v) {
+          return /^[0-9]{13}$/.test(v);
+        },
+        message: 'SA ID must be 13 digits',
+      },
     },
 
     saIdNumberEncrypted: {
-        type: String,
-        select: false
+      type: String,
+      select: false,
     },
 
     citizenshipStatus: {
-        type: String,
-        required: true,
-        enum: ['SA Citizen', 'Permanent Resident', 'Foreign National'],
-        default: 'SA Citizen'
+      type: String,
+      required: true,
+      enum: ['SA Citizen', 'Permanent Resident', 'Foreign National'],
+      default: 'SA Citizen',
     },
 
     // Contact Information
     email: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true,
-        trim: true,
-        match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email format']
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email format'],
     },
 
     emailEncrypted: {
-        type: String,
-        select: false
+      type: String,
+      select: false,
     },
 
     mobileNumber: {
-        type: String,
-        required: true,
-        match: [/^\+27[0-9]{9}$/, 'Must be South African format: +27XXXXXXXXX']
+      type: String,
+      required: true,
+      match: [/^\+27[0-9]{9}$/, 'Must be South African format: +27XXXXXXXXX'],
     },
 
     mobileNumberEncrypted: {
-        type: String,
-        select: false
+      type: String,
+      select: false,
     },
 
     emergencyContact: {
-        type: String,
-        default: ''
+      type: String,
+      default: '',
     },
 
     // Security
     password: {
-        type: String,
-        required: true,
-        minlength: 24,
-        select: false
+      type: String,
+      required: true,
+      minlength: 24,
+      select: false,
     },
 
     totpSecret: {
-        type: String,
-        select: false
+      type: String,
+      select: false,
     },
 
     // Biometric Authentication
     biometricAuth: {
-        fingerprintHash: { type: String, select: false },
-        facialRecognitionId: { type: String, select: false },
-        retinaHash: { type: String, select: false }
+      fingerprintHash: { type: String, select: false },
+      facialRecognitionId: { type: String, select: false },
+      retinaHash: { type: String, select: false },
     },
 
     // Security Metadata
     passwordLastChanged: {
-        type: Date,
-        default: Date.now
+      type: Date,
+      default: Date.now,
     },
 
     failedLoginAttempts: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
 
     isLocked: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
 
     lastLogin: {
-        type: Date
+      type: Date,
     },
 
     isActive: {
-        type: Boolean,
-        default: true
+      type: Boolean,
+      default: true,
     },
 
     // Administrative
     metadata: {
-        type: String,
-        default: ''
+      type: String,
+      default: '',
     },
 
     notes: {
-        type: String,
-        default: ''
+      type: String,
+      default: '',
     },
 
     mfaEnabled: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
 
     role: {
-        type: String,
-        default: 'SuperAdmin',
-        immutable: true
+      type: String,
+      default: 'SuperAdmin',
+      immutable: true,
     },
 
     permissions: {
-        type: [String],
-        default: ['*']
+      type: [String],
+      default: ['*'],
     },
 
     // Audit Trail
     activityLog: {
-        type: [{
-            action: String,
-            timestamp: { type: Date, default: Date.now },
-            ipAddress: String,
-            userAgent: String,
-            details: mongoose.Schema.Types.Mixed
-        }],
-        default: []
+      type: [
+        {
+          action: String,
+          timestamp: { type: Date, default: Date.now },
+          ipAddress: String,
+          userAgent: String,
+          details: mongoose.Schema.Types.Mixed,
+        },
+      ],
+      default: [],
     },
 
     auditTrail: {
-        type: [{
-            change: String,
-            by: String,
-            at: { type: Date, default: Date.now },
-            before: mongoose.Schema.Types.Mixed,
-            after: mongoose.Schema.Types.Mixed
-        }],
-        default: []
+      type: [
+        {
+          change: String,
+          by: String,
+          at: { type: Date, default: Date.now },
+          before: mongoose.Schema.Types.Mixed,
+          after: mongoose.Schema.Types.Mixed,
+        },
+      ],
+      default: [],
     },
 
     // Quantum Security
     quantumSignature: {
-        type: String,
-        select: false
+      type: String,
+      select: false,
     },
 
     version: {
-        type: Number,
-        default: 1
-    }
-}, {
+      type: Number,
+      default: 1,
+    },
+  },
+  {
     timestamps: true,
-    strict: true
-});
+    strict: true,
+  }
+);
 
 // =============================================================================
 // VIRTUAL FIELD QUANTUM NEXUS
 // =============================================================================
-/**
+/*
  * Virtual: Days until password expiration
  * Security Quantum: POPIA Section 19 - Security safeguards
  */
 superAdminSchema.virtual('passwordExpiryDays').get(function () {
-    const expiryDate = new Date(this.lastPasswordChange);
-    expiryDate.setDate(expiryDate.getDate() + 90); // 90-day rotation
-    return Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+  const expiryDate = new Date(this.lastPasswordChange);
+  expiryDate.setDate(expiryDate.getDate() + 90); // 90-day rotation
+  return Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
 });
 
-/**
+/*
  * Virtual: Total financial oversight amount
  * Financial Quantum: Combined trust funds under management
  */
 superAdminSchema.virtual('totalOversightValue').get(function () {
-    // This would be calculated from tenant trust accounts
-    // Placeholder for aggregation - would integrate with financial models
-    return 0;
+  // This would be calculated from tenant trust accounts
+  // Placeholder for aggregation - would integrate with financial models
+  return 0;
 });
 
-/**
+/*
  * Virtual: Compliance score across managed tenants
  * Compliance Quantum: Aggregate POPIA/FICA compliance status
  */
 superAdminSchema.virtual('complianceScore').get(function () {
-    // Would calculate from tenant compliance audits
-    // Placeholder for compliance engine integration
-    return 100;
+  // Would calculate from tenant compliance audits
+  // Placeholder for compliance engine integration
+  return 100;
 });
 
-/**
+/*
  * Virtual: Emergency activation required
  * Security Quantum: Cybercrimes Act incident response
  */
 superAdminSchema.virtual('requiresEmergencyActivation').get(function () {
-    return this.status === 'LEGALLY_RESTRICTED' ||
-        this.passwordExpiryDays < 0 ||
-        (this.managedTenants && this.managedTenants.some(t => t.status === 'SUSPENDED'));
+  return (
+    this.status === 'LEGALLY_RESTRICTED' ||
+    this.passwordExpiryDays < 0 ||
+    (this.managedTenants && this.managedTenants.some((t) => t.status === 'SUSPENDED'))
+  );
 });
 
 // =============================================================================
@@ -318,247 +327,246 @@ superAdminSchema.index({ 'legalAppointments.role': 1 });
 superAdminSchema.index({ 'regionalJurisdiction.province': 1 });
 superAdminSchema.index({ status: 1 });
 superAdminSchema.index({ 'metadata.createdAt': -1 });
-superAdminSchema.index({ 'lastActive': -1 });
+superAdminSchema.index({ lastActive: -1 });
 superAdminSchema.index({ sovereignTier: 1 });
 
 // =============================================================================
 // MIDDLEWARE QUANTUM NEXUS (Pre/Post Hooks)
 // =============================================================================
-/**
+/*
  * Pre-save Hook: Quantum Security & Validation
  * Security Quantum: Military-grade encryption and validation
  */
 superAdminSchema.pre('save', async function (next) {
-    // Env Validation: Critical secrets must exist
-    const requiredSecrets = [
-        'SUPERADMIN_MASTER_KEY',
-        'JWT_SUPER_SECRET',
-        'ENCRYPTION_KEY_SALT'
-    ];
+  // Env Validation: Critical secrets must exist
+  const requiredSecrets = ['SUPERADMIN_MASTER_KEY', 'JWT_SUPER_SECRET', 'ENCRYPTION_KEY_SALT'];
 
-    for (const secret of requiredSecrets) {
-        if (!process.env[secret]) {
-            throw new Error(`CRITICAL: ${secret} not configured in .env`);
-        }
+  for (const secret of requiredSecrets) {
+    if (!process.env[secret]) {
+      throw new Error(`CRITICAL: ${secret} not configured in .env`);
+    }
+  }
+
+  // Divine Encryption: Encrypt sensitive personal data
+  if (this.isModified('legalName')) {
+    const encrypted = this.encryptData(this.legalName);
+    this.encryptedLegalName = encrypted;
+  }
+
+  if (this.isModified('idNumber')) {
+    const encrypted = this.encryptData(this.idNumber);
+    this.encryptedIdNumber = encrypted;
+  }
+
+  if (this.isModified('officialEmail')) {
+    const encrypted = this.encryptData(this.officialEmail);
+    this.encryptedEmail = encrypted;
+  }
+
+  // Quantum Password Hashing: BCrypt with high cost factor
+  if (this.isModified('password')) {
+    const saltRounds = 14; // Extremely high security
+    this.password = await bcrypt.hash(this.password, saltRounds);
+
+    // Store password in history
+    this.passwordHistory.push({
+      hash: this.password,
+      changedAt: new Date(),
+    });
+
+    // Keep only last 10 passwords
+    if (this.passwordHistory.length > 10) {
+      this.passwordHistory.shift();
     }
 
-    // Divine Encryption: Encrypt sensitive personal data
-    if (this.isModified('legalName')) {
-        const encrypted = this.encryptData(this.legalName);
-        this.encryptedLegalName = encrypted;
-    }
+    this.lastPasswordChange = new Date();
+  }
 
-    if (this.isModified('idNumber')) {
-        const encrypted = this.encryptData(this.idNumber);
-        this.encryptedIdNumber = encrypted;
-    }
+  // MFA Secret Generation (if not exists)
+  if (!this.mfaSecret) {
+    const secret = speakeasy.generateSecret({
+      length: 32,
+      name: `WilsyOS:${this.officialEmail}`,
+    });
+    this.mfaSecret = secret.base32;
+  }
 
-    if (this.isModified('officialEmail')) {
-        const encrypted = this.encryptData(this.officialEmail);
-        this.encryptedEmail = encrypted;
-    }
+  // Activity timestamp update
+  if (this.isModified()) {
+    this.metadata.updatedAt = new Date();
+  }
 
-    // Quantum Password Hashing: BCrypt with high cost factor
-    if (this.isModified('password')) {
-        const saltRounds = 14; // Extremely high security
-        this.password = await bcrypt.hash(this.password, saltRounds);
-
-        // Store password in history
-        this.passwordHistory.push({
-            hash: this.password,
-            changedAt: new Date()
-        });
-
-        // Keep only last 10 passwords
-        if (this.passwordHistory.length > 10) {
-            this.passwordHistory.shift();
-        }
-
-        this.lastPasswordChange = new Date();
-    }
-
-    // MFA Secret Generation (if not exists)
-    if (!this.mfaSecret) {
-        const secret = speakeasy.generateSecret({
-            length: 32,
-            name: `WilsyOS:${this.officialEmail}`
-        });
-        this.mfaSecret = secret.base32;
-    }
-
-    // Activity timestamp update
-    if (this.isModified()) {
-        this.metadata.updatedAt = new Date();
-    }
-
-    next();
+  next();
 });
 
-/**
+/*
  * Pre-remove Hook: Prevent deletion of sovereign entities
  * Compliance Quantum: Companies Act record retention
  */
 superAdminSchema.pre('remove', function () {
-    throw new Error('SUPREME_ENTITY_DELETION_FORBIDDEN: SuperAdmin records must be archived, not deleted. Use status change to "EMERITUS".');
+  throw new Error(
+    'SUPREME_ENTITY_DELETION_FORBIDDEN: SuperAdmin records must be archived, not deleted. Use status change to "EMERITUS".'
+  );
 });
 
 // =============================================================================
 // INSTANCE METHOD QUANTUM NEXUS
 // =============================================================================
-/**
+/*
  * Encrypt sensitive data (AES-256-GCM)
  * Security Quantum: Military-grade encryption for PII
  * @param {String} data - Plaintext data to encrypt
  * @returns {String} Encrypted string (iv:ciphertext:authTag)
  */
 superAdminSchema.methods.encryptData = function (data) {
-    const algorithm = 'aes-256-gcm';
-    const key = crypto.scryptSync(
-        process.env.SUPERADMIN_MASTER_KEY,
-        process.env.ENCRYPTION_KEY_SALT,
-        32
-    );
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(algorithm, key, iv);
+  const algorithm = 'aes-256-gcm';
+  const key = crypto.scryptSync(
+    process.env.SUPERADMIN_MASTER_KEY,
+    process.env.ENCRYPTION_KEY_SALT,
+    32
+  );
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(algorithm, key, iv);
 
-    let encrypted = cipher.update(data, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    const authTag = cipher.getAuthTag();
+  let encrypted = cipher.update(data, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  const authTag = cipher.getAuthTag();
 
-    return `${iv.toString('hex')}:${encrypted}:${authTag.toString('hex')}`;
+  return `${iv.toString('hex')}:${encrypted}:${authTag.toString('hex')}`;
 };
 
-/**
+/*
  * Decrypt sensitive data
  * Security Quantum: Authorized access only
  * @param {String} encryptedData - Encrypted string
  * @returns {String} Decrypted plaintext
  */
 superAdminSchema.methods.decryptData = function (encryptedData) {
-    const [ivHex, encrypted, authTagHex] = encryptedData.split(':');
-    const key = crypto.scryptSync(
-        process.env.SUPERADMIN_MASTER_KEY,
-        process.env.ENCRYPTION_KEY_SALT,
-        32
-    );
-    const iv = Buffer.from(ivHex, 'hex');
-    const authTag = Buffer.from(authTagHex, 'hex');
+  const [ivHex, encrypted, authTagHex] = encryptedData.split(':');
+  const key = crypto.scryptSync(
+    process.env.SUPERADMIN_MASTER_KEY,
+    process.env.ENCRYPTION_KEY_SALT,
+    32
+  );
+  const iv = Buffer.from(ivHex, 'hex');
+  const authTag = Buffer.from(authTagHex, 'hex');
 
-    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-    decipher.setAuthTag(authTag);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(authTag);
 
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
 
-    return decrypted;
+  return decrypted;
 };
 
-/**
+/*
  * Verify password with timing attack protection
  * Security Quantum: Constant-time comparison
  * @param {String} candidatePassword - Password to verify
  * @returns {Promise<Boolean>} Whether password matches
  */
 superAdminSchema.methods.verifyPassword = async function (candidatePassword) {
-    return await bcrypt.compare(candidatePassword, this.password);
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 
-/**
+/*
  * Generate MFA QR Code URL for setup
  * Security Quantum: TOTP with 30-second windows
  * @returns {String} QR Code URL
  */
 superAdminSchema.methods.generateMfaQrUrl = function () {
-    return speakeasy.otpauthURL({
-        secret: this.mfaSecret,
-        label: `WilsyOS SuperAdmin (${this.officialEmail})`,
-        issuer: 'Wilsy OS Legal System',
-        encoding: 'base32'
-    });
+  return speakeasy.otpauthURL({
+    secret: this.mfaSecret,
+    label: `WilsyOS SuperAdmin (${this.officialEmail})`,
+    issuer: 'Wilsy OS Legal System',
+    encoding: 'base32',
+  });
 };
 
-/**
+/*
  * Verify MFA token
  * Security Quantum: Time-based one-time password
  * @param {String} token - 6-digit token
  * @returns {Boolean} Whether token is valid
  */
 superAdminSchema.methods.verifyMfaToken = function (token) {
-    return speakeasy.totp.verify({
-        secret: this.mfaSecret,
-        encoding: 'base32',
-        token: token,
-        window: 1 // Allow 30-second drift
-    });
+  return speakeasy.totp.verify({
+    secret: this.mfaSecret,
+    encoding: 'base32',
+    token: token,
+    window: 1, // Allow 30-second drift
+  });
 };
 
-/**
+/*
  * Generate emergency backup codes
  * Security Quantum: One-time use backup authentication
  * @returns {Array} Array of backup codes
  */
 superAdminSchema.methods.generateBackupCodes = function () {
-    const codes = [];
-    for (let i = 0; i < 10; i++) {
-        const code = crypto.randomBytes(4).toString('hex').toUpperCase();
-        codes.push({
-            code: code,
-            used: false,
-            createdAt: new Date()
-        });
-    }
-    this.mfaBackupCodes = codes;
-    return codes.map(c => c.code);
+  const codes = [];
+  for (let i = 0; i < 10; i++) {
+    const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+    codes.push({
+      code: code,
+      used: false,
+      createdAt: new Date(),
+    });
+  }
+  this.mfaBackupCodes = codes;
+  return codes.map((c) => c.code);
 };
 
-/**
+/*
  * Verify backup code
  * Security Quantum: One-time use with immediate invalidation
  * @param {String} code - Backup code to verify
  * @returns {Boolean} Whether code is valid and unused
  */
 superAdminSchema.methods.verifyBackupCode = function (code) {
-    const backupCode = this.mfaBackupCodes.find(c => c.code === code && !c.used);
-    if (backupCode) {
-        backupCode.used = true;
-        return true;
-    }
-    return false;
+  const backupCode = this.mfaBackupCodes.find((c) => c.code === code && !c.used);
+  if (backupCode) {
+    backupCode.used = true;
+    return true;
+  }
+  return false;
 };
 
-/**
+/*
  * Log activity with digital signature
  * Compliance Quantum: Immutable audit trail (ECT Act)
  * @param {Object} activity - Activity details
  * @returns {Promise} Updated admin
  */
 superAdminSchema.methods.logActivity = async function (activity) {
-    const signature = crypto.createHmac('sha256', process.env.JWT_SUPER_SECRET)
-        .update(JSON.stringify(activity) + Date.now())
-        .digest('hex');
+  const signature = crypto
+    .createHmac('sha256', process.env.JWT_SUPER_SECRET)
+    .update(JSON.stringify(activity) + Date.now())
+    .digest('hex');
 
-    this.activityLog.push({
-        timestamp: new Date(),
-        action: activity.action,
-        entityType: activity.entityType,
-        entityId: activity.entityId,
-        ipAddress: activity.ipAddress,
-        userAgent: activity.userAgent,
-        location: activity.location,
-        changes: activity.changes,
-        signature: signature
-    });
+  this.activityLog.push({
+    timestamp: new Date(),
+    action: activity.action,
+    entityType: activity.entityType,
+    entityId: activity.entityId,
+    ipAddress: activity.ipAddress,
+    userAgent: activity.userAgent,
+    location: activity.location,
+    changes: activity.changes,
+    signature: signature,
+  });
 
-    // Keep only last 10,000 activities
-    if (this.activityLog.length > 10000) {
-        this.activityLog.shift();
-    }
+  // Keep only last 10,000 activities
+  if (this.activityLog.length > 10000) {
+    this.activityLog.shift();
+  }
 
-    this.lastActive = new Date();
-    return this.save();
+  this.lastActive = new Date();
+  return this.save();
 };
 
-/**
+/*
  * Suspend tenant with legal justification
  * Compliance Quantum: Legal Practice Act enforcement
  * @param {String} tenantId - Tenant to suspend
@@ -567,29 +575,29 @@ superAdminSchema.methods.logActivity = async function (activity) {
  * @returns {Promise} Result of suspension
  */
 superAdminSchema.methods.suspendTenant = async function (tenantId, reason, statute) {
-    // This would interface with Tenant model
-    const activity = {
-        action: 'TENANT_SUSPENSION',
-        entityType: 'Tenant',
-        entityId: tenantId,
-        ipAddress: 'SYSTEM',
-        userAgent: 'SuperAdmin Console',
-        location: 'Headquarters',
-        changes: { reason, statute, suspendedAt: new Date() }
-    };
+  // This would interface with Tenant model
+  const activity = {
+    action: 'TENANT_SUSPENSION',
+    entityType: 'Tenant',
+    entityId: tenantId,
+    ipAddress: 'SYSTEM',
+    userAgent: 'SuperAdmin Console',
+    location: 'Headquarters',
+    changes: { reason, statute, suspendedAt: new Date() },
+  };
 
-    await this.logActivity(activity);
+  await this.logActivity(activity);
 
-    // In practice, this would update the Tenant model
-    // await Tenant.findByIdAndUpdate(tenantId, { status: 'SUSPENDED' });
+  // In practice, this would update the Tenant model
+  // await Tenant.findByIdAndUpdate(tenantId, { status: 'SUSPENDED' });
 
-    return { success: true, message: `Tenant ${tenantId} suspended per ${statute}` };
+  return { success: true, message: `Tenant ${tenantId} suspended per ${statute}` };
 };
 
 // =============================================================================
 // STATIC METHOD QUANTUM NEXUS
 // =============================================================================
-/**
+/*
  * Find by credentials with security logging
  * Security Quantum: Brute force protection with logging
  * @param {String} email - Official email
@@ -597,109 +605,114 @@ superAdminSchema.methods.suspendTenant = async function (tenantId, reason, statu
  * @returns {Promise<SuperAdmin>} Admin if credentials valid
  */
 superAdminSchema.statics.findByCredentials = async function (email, password) {
-    const admin = await this.findOne({ officialEmail: email })
-        .select('+password +loginHistory +mfaSecret');
+  const admin = await this.findOne({ officialEmail: email }).select(
+    '+password +loginHistory +mfaSecret'
+  );
 
-    if (!admin) {
-        // Log failed attempt (even though admin doesn't exist for security)
-        await this.logFailedAttempt(email, 'EMAIL_NOT_FOUND');
-        return null;
-    }
+  if (!admin) {
+    // Log failed attempt (even though admin doesn't exist for security)
+    await this.logFailedAttempt(email, 'EMAIL_NOT_FOUND');
+    return null;
+  }
 
-    const isValid = await admin.verifyPassword(password);
+  const isValid = await admin.verifyPassword(password);
 
-    admin.loginHistory.push({
-        timestamp: new Date(),
-        ipAddress: 'LOGIN_SYSTEM',
-        location: 'Authentication Service',
-        device: 'API',
-        successful: isValid,
-        mfaUsed: false
-    });
+  admin.loginHistory.push({
+    timestamp: new Date(),
+    ipAddress: 'LOGIN_SYSTEM',
+    location: 'Authentication Service',
+    device: 'API',
+    successful: isValid,
+    mfaUsed: false,
+  });
 
-    await admin.save();
+  await admin.save();
 
-    if (!isValid) {
-        await this.logFailedAttempt(email, 'INVALID_PASSWORD');
-        return null;
-    }
+  if (!isValid) {
+    await this.logFailedAttempt(email, 'INVALID_PASSWORD');
+    return null;
+  }
 
-    return admin;
+  return admin;
 };
 
-/**
+/*
  * Log failed login attempt
  * Security Quantum: Intrusion detection system feed
  * @param {String} email - Attempted email
  * @param {String} reason - Failure reason
  */
 superAdminSchema.statics.logFailedAttempt = async function (email, reason) {
-    // This would interface with security logging system
-    console.warn(`SECURITY: Failed super-admin login attempt for ${email} - ${reason}`);
+  // This would interface with security logging system
+  console.warn(`SECURITY: Failed super-admin login attempt for ${email} - ${reason}`);
 
-    // In practice, this would update a security incidents collection
-    // await SecurityIncident.create({ type: 'FAILED_LOGIN', email, reason });
+  // In practice, this would update a security incidents collection
+  // await SecurityIncident.create({ type: 'FAILED_LOGIN', email, reason });
 };
 
-/**
+/*
  * Generate comprehensive compliance report
  * Compliance Quantum: POPIA Section 56 reporting requirement
  * @returns {Object} Comprehensive compliance report
  */
 superAdminSchema.statics.generateComplianceReport = async function () {
-    const admins = await this.find({ status: 'ACTIVE' });
+  const admins = await this.find({ status: 'ACTIVE' });
 
-    const report = {
-        generatedAt: new Date(),
-        totalSuperAdmins: admins.length,
-        complianceMetrics: {
-            mfaEnabled: admins.filter(a => a.mfaSecret).length,
-            passwordCompliant: admins.filter(a => a.passwordExpiryDays > 0).length,
-            legalAppointmentsValid: admins.filter(a =>
-                a.legalAppointments.every(app => app.verified)
-            ).length,
-            professionalIndemnityValid: admins.filter(a =>
-                a.professionalIndemnity &&
-                new Date(a.professionalIndemnity.expiryDate) > new Date()
-            ).length
-        },
-        activitySummary: {
-            totalLogins: admins.reduce((sum, a) => sum + a.loginHistory.length, 0),
-            last30Days: admins.reduce((sum, a) => sum +
-                a.loginHistory.filter(l =>
-                    new Date(l.timestamp) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-                ).length, 0),
-            failedAttempts: admins.reduce((sum, a) => sum +
-                a.loginHistory.filter(l => !l.successful).length, 0)
-        },
-        recommendations: []
-    };
+  const report = {
+    generatedAt: new Date(),
+    totalSuperAdmins: admins.length,
+    complianceMetrics: {
+      mfaEnabled: admins.filter((a) => a.mfaSecret).length,
+      passwordCompliant: admins.filter((a) => a.passwordExpiryDays > 0).length,
+      legalAppointmentsValid: admins.filter((a) => a.legalAppointments.every((app) => app.verified))
+        .length,
+      professionalIndemnityValid: admins.filter(
+        (a) => a.professionalIndemnity && new Date(a.professionalIndemnity.expiryDate) > new Date()
+      ).length,
+    },
+    activitySummary: {
+      totalLogins: admins.reduce((sum, a) => sum + a.loginHistory.length, 0),
+      last30Days: admins.reduce(
+        (sum, a) =>
+          sum +
+          a.loginHistory.filter(
+            (l) => new Date(l.timestamp) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          ).length,
+        0
+      ),
+      failedAttempts: admins.reduce(
+        (sum, a) => sum + a.loginHistory.filter((l) => !l.successful).length,
+        0
+      ),
+    },
+    recommendations: [],
+  };
 
-    // Generate recommendations
-    admins.forEach(admin => {
-        if (admin.passwordExpiryDays < 7) {
-            report.recommendations.push({
-                admin: admin.quantumId,
-                issue: 'PASSWORD_EXPIRING_SOON',
-                severity: 'HIGH',
-                action: 'Force password rotation'
-            });
-        }
+  // Generate recommendations
+  admins.forEach((admin) => {
+    if (admin.passwordExpiryDays < 7) {
+      report.recommendations.push({
+        admin: admin.quantumId,
+        issue: 'PASSWORD_EXPIRING_SOON',
+        severity: 'HIGH',
+        action: 'Force password rotation',
+      });
+    }
 
-        if (!admin.mfaSecret) {
-            report.recommendations.push({
-                admin: admin.quantumId,
-                issue: 'MFA_NOT_ENABLED',
-                severity: 'CRITICAL',
-                action: 'Require MFA setup immediately'
-            });
-        }
-    });
+    if (!admin.mfaSecret) {
+      report.recommendations.push({
+        admin: admin.quantumId,
+        issue: 'MFA_NOT_ENABLED',
+        severity: 'CRITICAL',
+        action: 'Require MFA setup immediately',
+      });
+    }
+  });
 
-    return report;
+  return report;
 };
 
-/**
+/*
  * ASSUMPTIONS BLOCK:
  * 1. Existing utilities: crypto, bcryptjs, speakeasy, uuid
  * 2. Environment variables: SUPERADMIN_MASTER_KEY, JWT_SUPER_SECRET, ENCRYPTION_KEY_SALT

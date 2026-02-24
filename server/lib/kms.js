@@ -1,4 +1,4 @@
-/**
+/*
  * KMS Shim - Placeholder for Vault Key Management Service
  * This is a temporary shim until full KMS integration is implemented
  */
@@ -18,5 +18,5 @@ async function unwrapKey(wrappedKey, keyId) {
 
 module.exports = {
   wrapKey,
-  unwrapKey
+  unwrapKey,
 };

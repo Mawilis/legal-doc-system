@@ -8,21 +8,21 @@
   ║                                   Court-admissible | Forensic traceability | Quantum-ready                                            ║
   ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
 
-/**
+/*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/validationUtils.js
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R2.8M/year in invalid legal data entry, R1.2M/year compliance violations, R950K/year audit failures
  * • Generates: R3.4M/year revenue @ 85% margin through automated validation API
  * • Eliminates: R15M risk exposure through POPIA compliance and court-admissible evidence
  * • Compliance: POPIA §19, ECT Act §15, Companies Act §28, National Archives Act, FICA, CIPC, LPC Rules
- * 
+ *
  * TENANT ISOLATION:
  * • Every validation includes tenantId in metadata
  * • Multi-tenant audit trails with cryptographic verification
  * • Tenant-specific validation rules and jurisdiction support
  * • Data residency enforcement (ZA primary, configurable per tenant)
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "consumers": [
@@ -44,8 +44,8 @@
  *     "../models/TenantConfig.js"
  *   ]
  * }
- * 
- * INTEGRATION_HINT: imports -> tenantContext from '../middleware/tenantContext.js', 
+ *
+ * INTEGRATION_HINT: imports -> tenantContext from '../middleware/tenantContext.js',
  *                    auditLogger from './auditLogger.js', logger from './logger.js',
  *                    cryptoUtils from './cryptoUtils.js', redactPII from './popiaRedaction.js'
  */
@@ -69,11 +69,11 @@ import { redactPII, REDACTION_PATTERNS } from './popiaRedaction.js';
 // ============================================================================
 // MERMAID INTEGRATION DIAGRAM
 // ============================================================================
-/**
+/*
  * graph TD
  *     Client[Client Request] --> TenantCtx[Tenant Context Middleware]
  *     TenantCtx --> Validator[Validation Engine]
- *     
+ *
  *     Validator --> Identity[Identity Validation]
  *     Validator --> Business[Business Registration]
  *     Validator --> Professional[Professional Licensing]
@@ -82,19 +82,19 @@ import { redactPII, REDACTION_PATTERNS } from './popiaRedaction.js';
  *     Validator --> Document[Document Validation]
  *     Validator --> Financial[Financial/FICA]
  *     Validator --> Evidence[Evidence Validation]
- *     
+ *
  *     Identity --> Audit[Audit Logger]
  *     Business --> Audit
  *     Professional --> Audit
  *     Court --> Audit
- *     
+ *
  *     Audit --> EvidenceStore[(Forensic Evidence)]
  *     Audit --> TenantDB[(Tenant Audit Trail)]
- *     
+ *
  *     Validator --> POPIA[POPIA Compliance Filter]
  *     POPIA --> Redaction[PII Redaction]
  *     Redaction --> Response[Sanitized Response]
- *     
+ *
  *     Validator --> Metrics[Investor Metrics]
  *     Metrics --> Dashboard[Real-time ROI Dashboard]
  */
@@ -112,7 +112,7 @@ export const VALIDATION_TYPES = Object.freeze({
   DOCUMENT: 'DOCUMENT',
   FINANCIAL: 'FINANCIAL',
   EVIDENCE: 'EVIDENCE',
-  COMPLIANCE: 'COMPLIANCE'
+  COMPLIANCE: 'COMPLIANCE',
 });
 
 export const SEVERITY_LEVELS = Object.freeze({
@@ -120,7 +120,7 @@ export const SEVERITY_LEVELS = Object.freeze({
   HIGH: 'HIGH',
   MEDIUM: 'MEDIUM',
   LOW: 'LOW',
-  INFO: 'INFO'
+  INFO: 'INFO',
 });
 
 export const RETENTION_POLICIES = Object.freeze({
@@ -128,32 +128,32 @@ export const RETENTION_POLICIES = Object.freeze({
     name: 'COMPANIES_ACT_10_YEARS',
     duration: 10 * 365 * 24 * 60 * 60 * 1000, // 10 years in milliseconds
     legalReference: 'Companies Act 71 of 2008, Section 28',
-    description: 'Company records retention'
+    description: 'Company records retention',
   },
   POPIA_6_YEARS: {
     name: 'POPIA_6_YEARS',
     duration: 6 * 365 * 24 * 60 * 60 * 1000, // 6 years
     legalReference: 'POPIA Section 19, Section 14',
-    description: 'Personal information processing records'
+    description: 'Personal information processing records',
   },
   ECT_5_YEARS: {
     name: 'ECT_5_YEARS',
     duration: 5 * 365 * 24 * 60 * 60 * 1000, // 5 years
     legalReference: 'ECT Act Section 15, Section 17',
-    description: 'Electronic signatures and evidence'
+    description: 'Electronic signatures and evidence',
   },
   LPC_PERMANENT: {
     name: 'LPC_PERMANENT',
     duration: null, // permanent
     legalReference: 'Legal Practice Act 28 of 2014, Section 35',
-    description: 'Legal practitioner records - permanent'
+    description: 'Legal practitioner records - permanent',
   },
   FICA_5_YEARS: {
     name: 'FICA_5_YEARS',
     duration: 5 * 365 * 24 * 60 * 60 * 1000,
     legalReference: 'FICA Section 24, Section 26',
-    description: 'Financial intelligence records'
-  }
+    description: 'Financial intelligence records',
+  },
 });
 
 export const JURISDICTIONS = Object.freeze({
@@ -170,15 +170,15 @@ export const JURISDICTIONS = Object.freeze({
   'ZA-CC': { code: 'ZA-CC', name: 'Constitutional Court', type: 'SPECIAL' },
   'ZA-SCA': { code: 'ZA-SCA', name: 'Supreme Court of Appeal', type: 'SPECIAL' },
   'ZA-LC': { code: 'ZA-LC', name: 'Labour Court', type: 'SPECIAL' },
-  'ZA-LAC': { code: 'ZA-LAC', name: 'Labour Appeal Court', type: 'SPECIAL' }
+  'ZA-LAC': { code: 'ZA-LAC', name: 'Labour Appeal Court', type: 'SPECIAL' },
 });
 
 export const COMPANY_TYPES = Object.freeze({
   '07': { name: 'PRIVATE_COMPANY', description: 'Private Company (Pty) Ltd' },
   '08': { name: 'PUBLIC_COMPANY', description: 'Public Company Ltd' },
-  '21': { name: 'NON_PROFIT_COMPANY', description: 'Non-Profit Company NPC' },
-  '23': { name: 'EXTERNAL_COMPANY', description: 'External Company' },
-  '24': { name: 'STATE_OWNED_COMPANY', description: 'State-Owned Company SOC Ltd' }
+  21: { name: 'NON_PROFIT_COMPANY', description: 'Non-Profit Company NPC' },
+  23: { name: 'EXTERNAL_COMPANY', description: 'External Company' },
+  24: { name: 'STATE_OWNED_COMPANY', description: 'State-Owned Company SOC Ltd' },
 });
 
 export const PROFESSIONAL_TYPES = Object.freeze({
@@ -186,7 +186,7 @@ export const PROFESSIONAL_TYPES = Object.freeze({
   ADVOCATE: 'ADVOCATE',
   NOTARY: 'NOTARY',
   CONVEYANCER: 'CONVEYANCER',
-  LEGAL_CONSULTANT: 'LEGAL_CONSULTANT'
+  LEGAL_CONSULTANT: 'LEGAL_CONSULTANT',
 });
 
 export const EVIDENCE_TYPES = Object.freeze({
@@ -198,13 +198,13 @@ export const EVIDENCE_TYPES = Object.freeze({
   ELECTRONIC: 'ELECTRONIC',
   PHYSICAL: 'PHYSICAL',
   TESTIMONY: 'TESTIMONY',
-  EXPERT_REPORT: 'EXPERT_REPORT'
+  EXPERT_REPORT: 'EXPERT_REPORT',
 });
 
 // ============================================================================
 // ASSUMPTIONS & DEFAULTS
 // ============================================================================
-/**
+/*
  * ASSUMPTIONS:
  * - tenantId format: ^[a-zA-Z0-9_-]{8,64}$ (from tenantContext)
  * - All validations include tenant context for multi-tenant isolation
@@ -220,7 +220,7 @@ export const EVIDENCE_TYPES = Object.freeze({
 // BASE VALIDATION RESULT FACTORY
 // ============================================================================
 
-/**
+/*
  * Creates a standardized validation result object
  * @param {string} tenantId - Tenant identifier
  * @param {string} validationType - Type of validation from VALIDATION_TYPES
@@ -236,18 +236,18 @@ const createValidationResult = (tenantId, validationType) => ({
     timestamp: new Date().toISOString(),
     validationId: uuidv4(),
     retentionPolicy: RETENTION_POLICIES.POPIA_6_YEARS.name,
-    dataResidency: 'ZA'
-  }
+    dataResidency: 'ZA',
+  },
 });
 
 // ============================================================================
 // SA IDENTITY VALIDATION - COMPLETE
 // ============================================================================
 
-/**
+/*
  * Validates South African ID number with full forensic checks
  * Implements: Luhn algorithm, date validation, citizenship, gender
- * 
+ *
  * @param {string} id - 13-digit SA ID number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier (required)
@@ -290,13 +290,14 @@ export const validateSAID = (id, options = {}) => {
     const fullYear = year > currentYear % 100 ? currentCentury - 100 + year : currentCentury + year;
 
     const birthDate = moment(`${fullYear}-${month}-${day}`, 'YYYY-MM-DD');
-    
+
     if (!birthDate.isValid()) {
       result.errors.push('Invalid birth date in ID number');
     } else {
       result.metadata.birthDate = birthDate.toISOString();
       result.metadata.age = currentYear - fullYear;
-      result.metadata.ageInMonths = (currentYear * 12) + new Date().getMonth() - ((fullYear * 12) + month - 1);
+      result.metadata.ageInMonths =
+        currentYear * 12 + new Date().getMonth() - (fullYear * 12 + month - 1);
       result.metadata.birthYear = fullYear;
       result.metadata.birthMonth = month;
       result.metadata.birthDay = day;
@@ -318,12 +319,12 @@ export const validateSAID = (id, options = {}) => {
       const raceDigit = parseInt(id[10], 10);
       const raceMap = { 0: 'OTHER', 1: 'BLACK', 2: 'COLOURED', 3: 'INDIAN', 4: 'WHITE' };
       result.metadata.historicalRace = raceMap[raceDigit] || 'UNKNOWN';
-      
+
       logger.warn('Historical race data accessed', {
         component: 'validationUtils',
         function: 'validateSAID',
         tenantId,
-        auditId: result.metadata.validationId
+        auditId: result.metadata.validationId,
       });
     }
 
@@ -362,11 +363,11 @@ export const validateSAID = (id, options = {}) => {
           errors: result.errors,
           gender: result.metadata.gender,
           citizenship: result.metadata.citizenship,
-          age: result.metadata.age
+          age: result.metadata.age,
         },
         timestamp: new Date().toISOString(),
         retentionPolicy: RETENTION_POLICIES.POPIA_6_YEARS.name,
-        dataResidency: 'ZA'
+        dataResidency: 'ZA',
       });
     }
 
@@ -375,9 +376,8 @@ export const validateSAID = (id, options = {}) => {
       function: 'validateSAID',
       tenantId,
       valid: result.valid,
-      errorCount: result.errors.length
+      errorCount: result.errors.length,
     });
-
   } catch (error) {
     result.errors.push(`Validation system error: ${error.message}`);
     logger.error('ID validation exception', {
@@ -385,7 +385,7 @@ export const validateSAID = (id, options = {}) => {
       function: 'validateSAID',
       tenantId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
   }
 
@@ -393,10 +393,10 @@ export const validateSAID = (id, options = {}) => {
   return redactPII(result, REDACTION_PATTERNS.IDENTITY);
 };
 
-/**
+/*
  * Validates South African passport
  * Supports both SA and foreign passports with format validation
- * 
+ *
  * @param {string} passport - Passport number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier (required)
@@ -440,8 +440,8 @@ export const validateSAPassport = (passport, options = {}) => {
     metadata: {
       validationId: result.metadata.validationId,
       passportType: result.metadata.type,
-      issuingCountry: result.metadata.issuingCountry
-    }
+      issuingCountry: result.metadata.issuingCountry,
+    },
   });
 
   return result;
@@ -451,10 +451,10 @@ export const validateSAPassport = (passport, options = {}) => {
 // BUSINESS REGISTRATION VALIDATION - CIPC/SARS
 // ============================================================================
 
-/**
+/*
  * Validates CIPC company registration number
  * Format: YYYY/######/XX where XX is company type code
- * 
+ *
  * @param {string} number - CIPC registration number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -503,7 +503,7 @@ export const validateCIPCNumber = (number, options = {}) => {
   }
 
   result.metadata.ageInYears = currentYear - year;
-  result.metadata.ageInMonths = ((currentYear - year) * 12) + moment().month();
+  result.metadata.ageInMonths = (currentYear - year) * 12 + moment().month();
 
   if (checkCompliance) {
     result.metadata.complianceChecked = true;
@@ -524,17 +524,17 @@ export const validateCIPCNumber = (number, options = {}) => {
       validationId: result.metadata.validationId,
       companyType: result.metadata.companyType,
       year,
-      complianceChecked: checkCompliance
-    }
+      complianceChecked: checkCompliance,
+    },
   });
 
   return result;
 };
 
-/**
+/*
  * Validates SARS VAT number with checksum verification
  * Format: 10 digits with Luhn-based checksum
- * 
+ *
  * @param {string} vat - VAT number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -570,7 +570,7 @@ export const validateVATNumber = (vat, options = {}) => {
   let sum = 0;
   for (let i = 0; i < 9; i += 1) {
     const digit = parseInt(vat[i], 10);
-    const multiplier = (i % 2 === 0) ? 2 : 1;
+    const multiplier = i % 2 === 0 ? 2 : 1;
     const product = digit * multiplier;
     sum += product > 9 ? product - 9 : product;
   }
@@ -611,17 +611,17 @@ export const validateVATNumber = (vat, options = {}) => {
     metadata: {
       validationId: result.metadata.validationId,
       category: result.metadata.category,
-      validCheckDigit: result.metadata.validCheckDigit
-    }
+      validCheckDigit: result.metadata.validCheckDigit,
+    },
   });
 
   return result;
 };
 
-/**
+/*
  * Validates SARS tax reference number
  * Format: 10 digits with type prefix (0=individual, 1-9=business)
- * 
+ *
  * @param {string} taxRef - SARS tax reference
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -673,10 +673,10 @@ export const validateSARSReference = (taxRef, options = {}) => {
   return result;
 };
 
-/**
+/*
  * Validates tax clearance certificate
  * Format: TCC-YYYY-######
- * 
+ *
  * @param {string} certNumber - Tax clearance certificate number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -707,9 +707,11 @@ export const validateTaxClearance = (certNumber, options = {}) => {
   const currentYear = moment().year();
   const yearsSinceIssue = currentYear - year;
   result.metadata.ageInYears = yearsSinceIssue;
-  result.metadata.ageInMonths = (yearsSinceIssue * 12) + moment().month();
+  result.metadata.ageInMonths = yearsSinceIssue * 12 + moment().month();
 
-  const expiryDate = moment().year(year + expiryThreshold).endOf('year');
+  const expiryDate = moment()
+    .year(year + expiryThreshold)
+    .endOf('year');
   result.metadata.expiryDate = expiryDate.toISOString();
   result.metadata.isExpired = currentYear > year + expiryThreshold;
   result.metadata.daysToExpiry = result.metadata.isExpired ? 0 : expiryDate.diff(moment(), 'days');
@@ -729,10 +731,10 @@ export const validateTaxClearance = (certNumber, options = {}) => {
 // PROFESSIONAL REGISTRATION VALIDATION - LPC/Advocates/Notaries/Conveyancers
 // ============================================================================
 
-/**
+/*
  * Validates LPC (Legal Practice Council) number
  * Format: Province code (2 letters) + 5 digits
- * 
+ *
  * @param {string} lpc - LPC number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -770,7 +772,7 @@ export const validateLPCNumber = (lpc, options = {}) => {
     NW: { name: 'NORTH_WEST', code: 'ZA-NW' },
     LP: { name: 'LIMPOPO', code: 'ZA-LP' },
     MP: { name: 'MPUMALANGA', code: 'ZA-MP' },
-    NC: { name: 'NORTHERN_CAPE', code: 'ZA-NC' }
+    NC: { name: 'NORTHERN_CAPE', code: 'ZA-NC' },
   };
 
   if (provinceMap[prefix]) {
@@ -812,17 +814,17 @@ export const validateLPCNumber = (lpc, options = {}) => {
     metadata: {
       validationId: result.metadata.validationId,
       practitionerType: result.metadata.type,
-      province: result.metadata.province
-    }
+      province: result.metadata.province,
+    },
   });
 
   return result;
 };
 
-/**
+/*
  * Validates Advocate's Society membership number
  * Format: ADV followed by 6 digits
- * 
+ *
  * @param {string} societyNum - Society number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -859,11 +861,11 @@ export const validateAdvocateSociety = (societyNum, options = {}) => {
     { name: 'CAPE_BAR', region: 'WC', min: 5001, max: 8000, chambers: 'Cape Town' },
     { name: 'DURBAN_BAR', region: 'KZN', min: 8001, max: 11000, chambers: 'Durban' },
     { name: 'BLOEMFONTEIN_BAR', region: 'FS', min: 11001, max: 14000, chambers: 'Bloemfontein' },
-    { name: 'PORT_ELIZABETH_BAR', region: 'EC', min: 14001, max: 16000, chambers: 'Gqeberha' }
+    { name: 'PORT_ELIZABETH_BAR', region: 'EC', min: 14001, max: 16000, chambers: 'Gqeberha' },
   ];
 
-  const bar = barAssociations.find(b => number >= b.min && number <= b.max);
-  
+  const bar = barAssociations.find((b) => number >= b.min && number <= b.max);
+
   if (bar) {
     result.metadata.bar = bar.name;
     result.metadata.region = bar.region;
@@ -890,10 +892,10 @@ export const validateAdvocateSociety = (societyNum, options = {}) => {
   return result;
 };
 
-/**
+/*
  * Validates Notary public number
  * Format: NOT followed by 6 digits
- * 
+ *
  * @param {string} notaryNum - Notary number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -939,7 +941,7 @@ export const validateNotaryNumber = (notaryNum, options = {}) => {
   if (verifyCommission) {
     const commissionDate = moment().subtract(2, 'years');
     const expiryDate = moment().add(8, 'years');
-    
+
     result.metadata.commissionDate = commissionDate.toISOString();
     result.metadata.commissionExpiry = expiryDate.toISOString();
     result.metadata.commissionValid = true;
@@ -952,10 +954,10 @@ export const validateNotaryNumber = (notaryNum, options = {}) => {
   return result;
 };
 
-/**
+/*
  * Validates Conveyancer number
  * Format: CON followed by 6 digits
- * 
+ *
  * @param {string} conveyancerNum - Conveyancer number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1013,10 +1015,10 @@ export const validateConveyancerNumber = (conveyancerNum, options = {}) => {
 // COURT RECORD VALIDATION
 // ============================================================================
 
-/**
+/*
  * Validates SA court roll number
  * Format: YYYY/##### (year followed by roll number)
- * 
+ *
  * @param {string} number - Court roll number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1074,7 +1076,7 @@ export const validateCourtRollNumber = (number, options = {}) => {
   }
 
   result.metadata.ageInYears = currentYear - year;
-  result.metadata.ageInMonths = ((currentYear - year) * 12) + moment().month();
+  result.metadata.ageInMonths = (currentYear - year) * 12 + moment().month();
 
   if (verifyWithCourt) {
     result.metadata.courtVerified = true;
@@ -1088,10 +1090,10 @@ export const validateCourtRollNumber = (number, options = {}) => {
   return result;
 };
 
-/**
+/*
  * Validates SA case number with comprehensive court detection
  * Supports multiple formats: 12345/2023, A123/2023, CC123/2023, etc.
- * 
+ *
  * @param {string} number - Case number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1111,50 +1113,50 @@ export const validateSACaseNumber = (number, options = {}) => {
     {
       pattern: /^(\d{5,6})\/(\d{4})$/,
       court: 'HIGH_COURT',
-      extract: (m) => ({ caseNumber: m[1], year: parseInt(m[2], 10), type: 'CIVIL' })
+      extract: (m) => ({ caseNumber: m[1], year: parseInt(m[2], 10), type: 'CIVIL' }),
     },
     {
       pattern: /^A(\d{2,3})\/(\d{4})$/,
       court: 'APPEAL',
-      extract: (m) => ({ appealNumber: m[1], year: parseInt(m[2], 10), type: 'APPEAL' })
+      extract: (m) => ({ appealNumber: m[1], year: parseInt(m[2], 10), type: 'APPEAL' }),
     },
     {
       pattern: /^CC(\d{2,3})\/(\d{4})$/,
       court: 'CONSTITUTIONAL',
-      extract: (m) => ({ caseNumber: m[1], year: parseInt(m[2], 10), type: 'CONSTITUTIONAL' })
+      extract: (m) => ({ caseNumber: m[1], year: parseInt(m[2], 10), type: 'CONSTITUTIONAL' }),
     },
     {
       pattern: /^J(\d{4})\/(\d{4})$/,
       court: 'LABOUR',
-      extract: (m) => ({ judgmentNumber: m[1], year: parseInt(m[2], 10), type: 'LABOUR' })
+      extract: (m) => ({ judgmentNumber: m[1], year: parseInt(m[2], 10), type: 'LABOUR' }),
     },
     {
       pattern: /^CIV(\d{5})\/(\d{4})$/,
       court: 'CIVIL',
-      extract: (m) => ({ civilNumber: m[1], year: parseInt(m[2], 10), type: 'CIVIL' })
+      extract: (m) => ({ civilNumber: m[1], year: parseInt(m[2], 10), type: 'CIVIL' }),
     },
     {
       pattern: /^CRIM(\d{5})\/(\d{4})$/,
       court: 'CRIMINAL',
-      extract: (m) => ({ criminalNumber: m[1], year: parseInt(m[2], 10), type: 'CRIMINAL' })
+      extract: (m) => ({ criminalNumber: m[1], year: parseInt(m[2], 10), type: 'CRIMINAL' }),
     },
     {
       pattern: /^LD(\d{4})\/(\d{4})$/,
       court: 'LAND_CLAIMS',
-      extract: (m) => ({ landNumber: m[1], year: parseInt(m[2], 10), type: 'LAND_CLAIMS' })
+      extract: (m) => ({ landNumber: m[1], year: parseInt(m[2], 10), type: 'LAND_CLAIMS' }),
     },
     {
       pattern: /^CA(\d{3})\/(\d{4})$/,
       court: 'COMPETITION_APPEAL',
-      extract: (m) => ({ appealNumber: m[1], year: parseInt(m[2], 10), type: 'COMPETITION' })
-    }
+      extract: (m) => ({ appealNumber: m[1], year: parseInt(m[2], 10), type: 'COMPETITION' }),
+    },
   ];
 
   let matched = false;
   for (let i = 0; i < patterns.length; i += 1) {
     const { pattern, court, extract } = patterns[i];
     const match = number.match(pattern);
-    
+
     if (match) {
       matched = true;
       const extracted = extract(match);
@@ -1165,12 +1167,12 @@ export const validateSACaseNumber = (number, options = {}) => {
 
       const year = result.metadata.year;
       const currentYear = moment().year();
-      
+
       if (year < 1900 || year > currentYear + 1) {
         result.errors.push('Invalid case year');
       } else {
         result.metadata.age = currentYear - year;
-        result.metadata.ageInMonths = ((currentYear - year) * 12) + moment().month();
+        result.metadata.ageInMonths = (currentYear - year) * 12 + moment().month();
       }
 
       if (getCaseDetails) {
@@ -1179,7 +1181,7 @@ export const validateSACaseNumber = (number, options = {}) => {
         result.metadata.judge = 'Judge assigned';
         result.metadata.parties = [
           { role: 'APPLICANT', count: 1 },
-          { role: 'RESPONDENT', count: 1 }
+          { role: 'RESPONDENT', count: 1 },
         ];
       }
 
@@ -1195,10 +1197,10 @@ export const validateSACaseNumber = (number, options = {}) => {
   return result;
 };
 
-/**
+/*
  * Validates SA court order number
  * Format: ORD-YYYY-######
- * 
+ *
  * @param {string} orderNum - Court order number
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1259,9 +1261,9 @@ export const validateCourtOrderNumber = (orderNum, options = {}) => {
 // JURISDICTION & LOCATION VALIDATION
 // ============================================================================
 
-/**
+/*
  * Validates SA jurisdiction with full province and court support
- * 
+ *
  * @param {string} jurisdiction - SA jurisdiction code
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1283,18 +1285,18 @@ export const validateSAJurisdiction = (jurisdiction, options = {}) => {
 
     if (includeCourts && JURISDICTIONS[jurisdiction].courts) {
       result.metadata.availableCourts = JURISDICTIONS[jurisdiction].courts;
-      
+
       // Add court details
       if (jurisdiction === 'ZA') {
         result.metadata.courtDetails = [
           { name: 'Constitutional Court', location: 'Johannesburg' },
           { name: 'Supreme Court of Appeal', location: 'Bloemfontein' },
-          { name: 'High Courts', location: 'Various' }
+          { name: 'High Courts', location: 'Various' },
         ];
       } else if (jurisdiction.includes('ZA-')) {
         result.metadata.courtDetails = [
           { name: 'High Court', location: result.metadata.capital },
-          { name: 'Magistrate Courts', location: 'Various' }
+          { name: 'Magistrate Courts', location: 'Various' },
         ];
       }
     }
@@ -1307,9 +1309,9 @@ export const validateSAJurisdiction = (jurisdiction, options = {}) => {
   return result;
 };
 
-/**
+/*
  * Validates SA location with comprehensive city database
- * 
+ *
  * @param {string} location - Location name
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1326,54 +1328,90 @@ export const validateSALocation = (location, options = {}) => {
   }
 
   const locations = {
-    'Johannesburg': { 
-      province: 'ZA-GP', type: 'METRO', population: 5635000, 
-      courts: ['High Court', 'Magistrate Court'], municipality: 'City of Johannesburg'
+    Johannesburg: {
+      province: 'ZA-GP',
+      type: 'METRO',
+      population: 5635000,
+      courts: ['High Court', 'Magistrate Court'],
+      municipality: 'City of Johannesburg',
     },
-    'Pretoria': { 
-      province: 'ZA-GP', type: 'METRO', population: 2925000,
-      courts: ['High Court', 'Magistrate Court'], municipality: 'City of Tshwane'
+    Pretoria: {
+      province: 'ZA-GP',
+      type: 'METRO',
+      population: 2925000,
+      courts: ['High Court', 'Magistrate Court'],
+      municipality: 'City of Tshwane',
     },
-    'Cape Town': { 
-      province: 'ZA-WC', type: 'METRO', population: 3740000,
-      courts: ['High Court', 'Magistrate Court'], municipality: 'City of Cape Town'
+    'Cape Town': {
+      province: 'ZA-WC',
+      type: 'METRO',
+      population: 3740000,
+      courts: ['High Court', 'Magistrate Court'],
+      municipality: 'City of Cape Town',
     },
-    'Durban': { 
-      province: 'ZA-KZN', type: 'METRO', population: 3442000,
-      courts: ['High Court', 'Magistrate Court'], municipality: 'eThekwini'
+    Durban: {
+      province: 'ZA-KZN',
+      type: 'METRO',
+      population: 3442000,
+      courts: ['High Court', 'Magistrate Court'],
+      municipality: 'eThekwini',
     },
-    'Port Elizabeth': { 
-      province: 'ZA-EC', type: 'METRO', population: 1312000,
-      courts: ['High Court', 'Magistrate Court'], municipality: 'Nelson Mandela Bay'
+    'Port Elizabeth': {
+      province: 'ZA-EC',
+      type: 'METRO',
+      population: 1312000,
+      courts: ['High Court', 'Magistrate Court'],
+      municipality: 'Nelson Mandela Bay',
     },
-    'Bloemfontein': { 
-      province: 'ZA-FS', type: 'CITY', population: 556000,
-      courts: ['Supreme Court of Appeal', 'High Court'], municipality: 'Mangaung'
+    Bloemfontein: {
+      province: 'ZA-FS',
+      type: 'CITY',
+      population: 556000,
+      courts: ['Supreme Court of Appeal', 'High Court'],
+      municipality: 'Mangaung',
     },
-    'Pietermaritzburg': { 
-      province: 'ZA-KZN', type: 'CITY', population: 679000,
-      courts: ['High Court'], municipality: 'Msunduzi'
+    Pietermaritzburg: {
+      province: 'ZA-KZN',
+      type: 'CITY',
+      population: 679000,
+      courts: ['High Court'],
+      municipality: 'Msunduzi',
     },
-    'Polokwane': { 
-      province: 'ZA-LP', type: 'CITY', population: 723000,
-      courts: ['High Court'], municipality: 'Polokwane'
+    Polokwane: {
+      province: 'ZA-LP',
+      type: 'CITY',
+      population: 723000,
+      courts: ['High Court'],
+      municipality: 'Polokwane',
     },
-    'Nelspruit': { 
-      province: 'ZA-MP', type: 'CITY', population: 584000,
-      courts: ['High Court'], municipality: 'Mbombela'
+    Nelspruit: {
+      province: 'ZA-MP',
+      type: 'CITY',
+      population: 584000,
+      courts: ['High Court'],
+      municipality: 'Mbombela',
     },
-    'Kimberley': { 
-      province: 'ZA-NC', type: 'CITY', population: 225000,
-      courts: ['High Court'], municipality: 'Sol Plaatje'
+    Kimberley: {
+      province: 'ZA-NC',
+      type: 'CITY',
+      population: 225000,
+      courts: ['High Court'],
+      municipality: 'Sol Plaatje',
     },
-    'Sandton': { 
-      province: 'ZA-GP', type: 'LEGAL_HUB', district: 'Johannesburg',
-      courts: ['Magistrate Court'], businessDistrict: true
+    Sandton: {
+      province: 'ZA-GP',
+      type: 'LEGAL_HUB',
+      district: 'Johannesburg',
+      courts: ['Magistrate Court'],
+      businessDistrict: true,
     },
-    'Umhlanga': { 
-      province: 'ZA-KZN', type: 'LEGAL_HUB', district: 'Durban',
-      courts: ['Magistrate Court'], businessDistrict: true
-    }
+    Umhlanga: {
+      province: 'ZA-KZN',
+      type: 'LEGAL_HUB',
+      district: 'Durban',
+      courts: ['Magistrate Court'],
+      businessDistrict: true,
+    },
   };
 
   const normalizedLocation = location.trim();
@@ -1382,11 +1420,11 @@ export const validateSALocation = (location, options = {}) => {
   );
 
   if (match) {
-    result.metadata = { 
-      ...result.metadata, 
+    result.metadata = {
+      ...result.metadata,
       ...locations[match],
       name: match,
-      normalizedName: match
+      normalizedName: match,
     };
 
     if (includePopulation && locations[match].population) {
@@ -1396,7 +1434,7 @@ export const validateSALocation = (location, options = {}) => {
     result.valid = true;
   } else {
     // Try to parse "City, Province" format
-    const parts = location.split(',').map(p => p.trim());
+    const parts = location.split(',').map((p) => p.trim());
     if (parts.length === 2) {
       const provinceCode = `ZA-${parts[1].substring(0, 2).toUpperCase()}`;
       if (JURISDICTIONS[provinceCode]) {
@@ -1405,7 +1443,7 @@ export const validateSALocation = (location, options = {}) => {
           province: provinceCode,
           provinceInfo: JURISDICTIONS[provinceCode],
           type: 'UNKNOWN',
-          normalizedName: parts[0]
+          normalizedName: parts[0],
         };
         result.valid = true;
         result.warnings.push('Location not in primary database, using province mapping');
@@ -1420,9 +1458,9 @@ export const validateSALocation = (location, options = {}) => {
   return result;
 };
 
-/**
+/*
  * Validates SA postal code with region mapping
- * 
+ *
  * @param {string} postalCode - SA postal code (4 digits)
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1540,10 +1578,10 @@ export const validateSAPostalCode = (postalCode, options = {}) => {
 // LEGAL DOCUMENT VALIDATION
 // ============================================================================
 
-/**
+/*
  * Validates SA legal citation with comprehensive format support
  * Supports: Neutral citations, All SA reports, court-specific formats
- * 
+ *
  * @param {string} citation - Legal citation
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1560,47 +1598,68 @@ export const validateSACitation = (citation, options = {}) => {
   }
 
   const patterns = [
-    { 
-      regex: /^\[(\d{4})\] (\d+) All SA (\d+) \(([A-Z]+)\)$/, 
+    {
+      regex: /^\[(\d{4})\] (\d+) All SA (\d+) \(([A-Z]+)\)$/,
       format: 'SA_LAW_REPORT',
-      extract: (m) => ({ year: parseInt(m[1], 10), volume: m[2], page: parseInt(m[3], 10), court: m[4] })
+      extract: (m) => ({
+        year: parseInt(m[1], 10),
+        volume: m[2],
+        page: parseInt(m[3], 10),
+        court: m[4],
+      }),
     },
-    { 
-      regex: /^\[(\d{4})\] ZA([A-Z]{2,3}) (\d+)$/, 
+    {
+      regex: /^\[(\d{4})\] ZA([A-Z]{2,3}) (\d+)$/,
       format: 'NEUTRAL',
-      extract: (m) => ({ year: parseInt(m[1], 10), courtCode: 'ZA' + m[2], number: parseInt(m[3], 10) })
+      extract: (m) => ({
+        year: parseInt(m[1], 10),
+        courtCode: 'ZA' + m[2],
+        number: parseInt(m[3], 10),
+      }),
     },
-    { 
-      regex: /^\[(\d{4})\] ZAGPJHC (\d+)$/, 
+    {
+      regex: /^\[(\d{4})\] ZAGPJHC (\d+)$/,
       format: 'GAUTENG_HIGH_COURT',
-      extract: (m) => ({ year: parseInt(m[1], 10), courtCode: 'ZAGPJHC', number: parseInt(m[2], 10) })
+      extract: (m) => ({
+        year: parseInt(m[1], 10),
+        courtCode: 'ZAGPJHC',
+        number: parseInt(m[2], 10),
+      }),
     },
-    { 
-      regex: /^\[(\d{4})\] ZASCA (\d+)$/, 
+    {
+      regex: /^\[(\d{4})\] ZASCA (\d+)$/,
       format: 'SUPREME_COURT_APPEAL',
-      extract: (m) => ({ year: parseInt(m[1], 10), courtCode: 'ZASCA', number: parseInt(m[2], 10) })
+      extract: (m) => ({
+        year: parseInt(m[1], 10),
+        courtCode: 'ZASCA',
+        number: parseInt(m[2], 10),
+      }),
     },
-    { 
-      regex: /^\[(\d{4})\] ZACC (\d+)$/, 
+    {
+      regex: /^\[(\d{4})\] ZACC (\d+)$/,
       format: 'CONSTITUTIONAL_COURT',
-      extract: (m) => ({ year: parseInt(m[1], 10), courtCode: 'ZACC', number: parseInt(m[2], 10) })
+      extract: (m) => ({ year: parseInt(m[1], 10), courtCode: 'ZACC', number: parseInt(m[2], 10) }),
     },
-    { 
-      regex: /^\[(\d{4})\] ZALC (\d+)$/, 
+    {
+      regex: /^\[(\d{4})\] ZALC (\d+)$/,
       format: 'LABOUR_COURT',
-      extract: (m) => ({ year: parseInt(m[1], 10), courtCode: 'ZALC', number: parseInt(m[2], 10) })
+      extract: (m) => ({ year: parseInt(m[1], 10), courtCode: 'ZALC', number: parseInt(m[2], 10) }),
     },
-    { 
-      regex: /^\[(\d{4})\] ZALAC (\d+)$/, 
+    {
+      regex: /^\[(\d{4})\] ZALAC (\d+)$/,
       format: 'LABOUR_APPEAL_COURT',
-      extract: (m) => ({ year: parseInt(m[1], 10), courtCode: 'ZALAC', number: parseInt(m[2], 10) })
-    }
+      extract: (m) => ({
+        year: parseInt(m[1], 10),
+        courtCode: 'ZALAC',
+        number: parseInt(m[2], 10),
+      }),
+    },
   ];
 
   for (let i = 0; i < patterns.length; i += 1) {
     const pattern = patterns[i];
     const match = citation.match(pattern.regex);
-    
+
     if (match) {
       const extracted = pattern.extract(match);
       result.metadata = { ...result.metadata, ...extracted };
@@ -1610,15 +1669,15 @@ export const validateSACitation = (citation, options = {}) => {
       // Add court information
       if (extracted.courtCode) {
         const courtMap = {
-          'ZACC': { name: 'Constitutional Court', location: 'Johannesburg' },
-          'ZASCA': { name: 'Supreme Court of Appeal', location: 'Bloemfontein' },
-          'ZAGPJHC': { name: 'Gauteng High Court', location: 'Johannesburg' },
-          'ZAWCHC': { name: 'Western Cape High Court', location: 'Cape Town' },
-          'ZAKZPHC': { name: 'KZN High Court', location: 'Durban' },
-          'ZAECPEHC': { name: 'Eastern Cape High Court', location: 'Gqeberha' },
-          'ZAFSHC': { name: 'Free State High Court', location: 'Bloemfontein' },
-          'ZALC': { name: 'Labour Court', location: 'Johannesburg' },
-          'ZALAC': { name: 'Labour Appeal Court', location: 'Johannesburg' }
+          ZACC: { name: 'Constitutional Court', location: 'Johannesburg' },
+          ZASCA: { name: 'Supreme Court of Appeal', location: 'Bloemfontein' },
+          ZAGPJHC: { name: 'Gauteng High Court', location: 'Johannesburg' },
+          ZAWCHC: { name: 'Western Cape High Court', location: 'Cape Town' },
+          ZAKZPHC: { name: 'KZN High Court', location: 'Durban' },
+          ZAECPEHC: { name: 'Eastern Cape High Court', location: 'Gqeberha' },
+          ZAFSHC: { name: 'Free State High Court', location: 'Bloemfontein' },
+          ZALC: { name: 'Labour Court', location: 'Johannesburg' },
+          ZALAC: { name: 'Labour Appeal Court', location: 'Johannesburg' },
         };
         result.metadata.courtInfo = courtMap[extracted.courtCode] || { name: 'Unknown Court' };
       }
@@ -1637,10 +1696,10 @@ export const validateSACitation = (citation, options = {}) => {
   return result;
 };
 
-/**
+/*
  * Validates POPIA compliance with comprehensive PII detection
  * Implements Section 19 of POPIA - security measures for personal information
- * 
+ *
  * @param {Object} data - Data to check for PII
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1658,8 +1717,8 @@ export const validatePOPIACompliance = (data, options = {}) => {
       tenantId,
       timestamp: new Date().toISOString(),
       validationId: uuidv4(),
-      complianceLevel
-    }
+      complianceLevel,
+    },
   };
 
   if (!data || typeof data !== 'object') {
@@ -1673,43 +1732,127 @@ export const validatePOPIACompliance = (data, options = {}) => {
   // Comprehensive PII patterns based on POPIA Schedule 1
   const patterns = [
     // South African specific
-    { pattern: /\b\d{13}\b/, type: 'ID_NUMBER', description: 'SA ID Number', severity: SEVERITY_LEVELS.CRITICAL, section: 'POPIA §1' },
-    { pattern: /\b\d{2}[A-Z]{2}\d{4}[A-Z]{3}\d{2}\b/, type: 'PASSPORT', description: 'Passport Number', severity: SEVERITY_LEVELS.CRITICAL, section: 'POPIA §1' },
-    { pattern: /\b\d{4}\/\d{6}\/\d{2}\b/, type: 'CIPC', description: 'Company Registration', severity: SEVERITY_LEVELS.HIGH, section: 'Companies Act §28' },
-    { pattern: /\b[A-Z]{2}\d{5}\b/, type: 'LPC', description: 'Legal Practitioner Number', severity: SEVERITY_LEVELS.HIGH, section: 'LPC Rules' },
-    { pattern: /\b\d{10}\b/, type: 'VAT', description: 'VAT Number', severity: SEVERITY_LEVELS.HIGH, section: 'VAT Act' },
-    
+    {
+      pattern: /\b\d{13}\b/,
+      type: 'ID_NUMBER',
+      description: 'SA ID Number',
+      severity: SEVERITY_LEVELS.CRITICAL,
+      section: 'POPIA §1',
+    },
+    {
+      pattern: /\b\d{2}[A-Z]{2}\d{4}[A-Z]{3}\d{2}\b/,
+      type: 'PASSPORT',
+      description: 'Passport Number',
+      severity: SEVERITY_LEVELS.CRITICAL,
+      section: 'POPIA §1',
+    },
+    {
+      pattern: /\b\d{4}\/\d{6}\/\d{2}\b/,
+      type: 'CIPC',
+      description: 'Company Registration',
+      severity: SEVERITY_LEVELS.HIGH,
+      section: 'Companies Act §28',
+    },
+    {
+      pattern: /\b[A-Z]{2}\d{5}\b/,
+      type: 'LPC',
+      description: 'Legal Practitioner Number',
+      severity: SEVERITY_LEVELS.HIGH,
+      section: 'LPC Rules',
+    },
+    {
+      pattern: /\b\d{10}\b/,
+      type: 'VAT',
+      description: 'VAT Number',
+      severity: SEVERITY_LEVELS.HIGH,
+      section: 'VAT Act',
+    },
+
     // Financial
-    { pattern: /\b\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b/, type: 'BANK_CARD', description: 'Credit Card Number', severity: SEVERITY_LEVELS.CRITICAL, section: 'PCI DSS' },
-    { pattern: /\b\d{6,10}\b/, type: 'BANK_ACCOUNT', description: 'Bank Account', severity: SEVERITY_LEVELS.HIGH, section: 'FICA' },
-    
+    {
+      pattern: /\b\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b/,
+      type: 'BANK_CARD',
+      description: 'Credit Card Number',
+      severity: SEVERITY_LEVELS.CRITICAL,
+      section: 'PCI DSS',
+    },
+    {
+      pattern: /\b\d{6,10}\b/,
+      type: 'BANK_ACCOUNT',
+      description: 'Bank Account',
+      severity: SEVERITY_LEVELS.HIGH,
+      section: 'FICA',
+    },
+
     // Contact
-    { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/, type: 'EMAIL', description: 'Email Address', severity: SEVERITY_LEVELS.MEDIUM, section: 'POPIA §1' },
-    { pattern: /\b(\+27|0)[1-9][0-9]{8}\b/, type: 'PHONE', description: 'Phone Number', severity: SEVERITY_LEVELS.MEDIUM, section: 'POPIA §1' },
-    
+    {
+      pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
+      type: 'EMAIL',
+      description: 'Email Address',
+      severity: SEVERITY_LEVELS.MEDIUM,
+      section: 'POPIA §1',
+    },
+    {
+      pattern: /\b(\+27|0)[1-9][0-9]{8}\b/,
+      type: 'PHONE',
+      description: 'Phone Number',
+      severity: SEVERITY_LEVELS.MEDIUM,
+      section: 'POPIA §1',
+    },
+
     // Special categories (POPIA Section 26)
-    { pattern: /\b(?:black|white|coloured|indian|asian|race|ethnic)\b/i, type: 'RACE', description: 'Racial Information', severity: SEVERITY_LEVELS.CRITICAL, section: 'POPIA §26(a)' },
-    { pattern: /\b(?:christian|muslim|jewish|hindu|buddhist|religion|faith)\b/i, type: 'RELIGION', description: 'Religious Beliefs', severity: SEVERITY_LEVELS.CRITICAL, section: 'POPIA §26(b)' },
-    { pattern: /\b(?:hiv|aids|cancer|diabetes|health|medical|condition)\b/i, type: 'HEALTH', description: 'Health Information', severity: SEVERITY_LEVELS.CRITICAL, section: 'POPIA §26(c)' },
-    { pattern: /\b(?:criminal|conviction|arrest|sentence|offence)\b/i, type: 'CRIMINAL', description: 'Criminal Record', severity: SEVERITY_LEVELS.CRITICAL, section: 'POPIA §26(e)' },
-    { pattern: /\b(?:biometric|fingerprint|retina|DNA|genetic)\b/i, type: 'BIOMETRIC', description: 'Biometric Data', severity: SEVERITY_LEVELS.CRITICAL, section: 'POPIA §26(f)' }
+    {
+      pattern: /\b(?:black|white|coloured|indian|asian|race|ethnic)\b/i,
+      type: 'RACE',
+      description: 'Racial Information',
+      severity: SEVERITY_LEVELS.CRITICAL,
+      section: 'POPIA §26(a)',
+    },
+    {
+      pattern: /\b(?:christian|muslim|jewish|hindu|buddhist|religion|faith)\b/i,
+      type: 'RELIGION',
+      description: 'Religious Beliefs',
+      severity: SEVERITY_LEVELS.CRITICAL,
+      section: 'POPIA §26(b)',
+    },
+    {
+      pattern: /\b(?:hiv|aids|cancer|diabetes|health|medical|condition)\b/i,
+      type: 'HEALTH',
+      description: 'Health Information',
+      severity: SEVERITY_LEVELS.CRITICAL,
+      section: 'POPIA §26(c)',
+    },
+    {
+      pattern: /\b(?:criminal|conviction|arrest|sentence|offence)\b/i,
+      type: 'CRIMINAL',
+      description: 'Criminal Record',
+      severity: SEVERITY_LEVELS.CRITICAL,
+      section: 'POPIA §26(e)',
+    },
+    {
+      pattern: /\b(?:biometric|fingerprint|retina|DNA|genetic)\b/i,
+      type: 'BIOMETRIC',
+      description: 'Biometric Data',
+      severity: SEVERITY_LEVELS.CRITICAL,
+      section: 'POPIA §26(f)',
+    },
   ];
 
   for (let i = 0; i < patterns.length; i += 1) {
     const { pattern, type, description, severity, section } = patterns[i];
     if (pattern.test(dataString)) {
-      result.detectedPII.push({ 
-        type, 
-        description, 
+      result.detectedPII.push({
+        type,
+        description,
         severity,
         section,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-      
+
       if (severity === SEVERITY_LEVELS.CRITICAL) {
         result.valid = false;
       }
-      
+
       result.warnings.push(`Potential ${description} exposure detected (${severity}) - ${section}`);
     }
   }
@@ -1719,7 +1862,7 @@ export const validatePOPIACompliance = (data, options = {}) => {
     result.warnings.push('Strict compliance mode: all PII must be removed or pseudonymized');
   }
 
-  if (audit && result.detectedPII.some(p => p.severity === SEVERITY_LEVELS.CRITICAL)) {
+  if (audit && result.detectedPII.some((p) => p.severity === SEVERITY_LEVELS.CRITICAL)) {
     auditLogger.log({
       action: 'PII_DETECTED',
       tenantId,
@@ -1727,30 +1870,32 @@ export const validatePOPIACompliance = (data, options = {}) => {
       status: 'WARNING',
       metadata: {
         validationId: result.metadata.validationId,
-        piiTypes: result.detectedPII.filter(p => p.severity === SEVERITY_LEVELS.CRITICAL).map(p => p.type),
+        piiTypes: result.detectedPII
+          .filter((p) => p.severity === SEVERITY_LEVELS.CRITICAL)
+          .map((p) => p.type),
         complianceLevel,
-        piiCount: result.detectedPII.length
+        piiCount: result.detectedPII.length,
       },
       timestamp: new Date().toISOString(),
       retentionPolicy: RETENTION_POLICIES.POPIA_6_YEARS.name,
-      dataResidency: 'ZA'
+      dataResidency: 'ZA',
     });
 
     logger.warn('Critical PII detected', {
       component: 'validationUtils',
       function: 'validatePOPIACompliance',
       tenantId,
-      piiTypes: result.detectedPII.filter(p => p.severity === 'CRITICAL').map(p => p.type)
+      piiTypes: result.detectedPII.filter((p) => p.severity === 'CRITICAL').map((p) => p.type),
     });
   }
 
   return result;
 };
 
-/**
+/*
  * Validates ECT Act electronic signatures
  * Implements ECT Act Section 15 - admissibility of electronic signatures
- * 
+ *
  * @param {Object} signature - Electronic signature data
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1780,12 +1925,12 @@ export const validateECTSignature = (signature, options = {}) => {
     } else {
       const now = moment();
       const age = now.diff(sigTime, 'milliseconds');
-      
+
       if (age > maxAge) {
         result.errors.push('Signature has expired');
         result.metadata.expiryReason = 'Maximum age exceeded';
       }
-      
+
       result.metadata.age = age;
       result.metadata.ageFormatted = moment.duration(age).humanize();
       result.metadata.timestampValid = true;
@@ -1830,7 +1975,7 @@ export const validateECTSignature = (signature, options = {}) => {
       'Method identified by parties',
       'Method appropriate for purpose',
       'Method reliable and appropriate',
-      'Consent obtained'
+      'Consent obtained',
     ];
   }
 
@@ -1843,10 +1988,10 @@ export const validateECTSignature = (signature, options = {}) => {
 // FINANCIAL VALIDATION - FICA & TRUST ACCOUNTS
 // ============================================================================
 
-/**
+/*
  * Validates trust accounts for legal practitioners
  * Implements LPC Rule 21 and FICA requirements
- * 
+ *
  * @param {Object} trustAccount - Trust account details
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1871,19 +2016,34 @@ export const validateTrustAccount = (trustAccount, options = {}) => {
   }
 
   // Validate account number (6-10 digits)
-  if (!validator.isNumeric(trustAccount.accountNumber) ||
-      !validator.isLength(trustAccount.accountNumber, { min: 6, max: 10 })) {
+  if (
+    !validator.isNumeric(trustAccount.accountNumber) ||
+    !validator.isLength(trustAccount.accountNumber, { min: 6, max: 10 })
+  ) {
     result.errors.push('Invalid account number format - must be 6-10 digits');
   } else {
     result.metadata.accountNumberValid = true;
-    result.metadata.accountNumberFormatted = trustAccount.accountNumber.replace(/(\d{4})(\d+)/, '$1-$2');
+    result.metadata.accountNumberFormatted = trustAccount.accountNumber.replace(
+      /(\d{4})(\d+)/,
+      '$1-$2'
+    );
   }
 
   // Validate bank name
   const validBanks = [
-    'ABSA', 'FNB', 'NEDBANK', 'STANDARD_BANK', 'CAPITEC',
-    'INVESTEC', 'AFRICAN_BANK', 'BIDVEST_BANK', 'TYMEBANK',
-    'DISCOVERY_BANK', 'GROBANK', 'SAVA', 'MERCANTILE_BANK'
+    'ABSA',
+    'FNB',
+    'NEDBANK',
+    'STANDARD_BANK',
+    'CAPITEC',
+    'INVESTEC',
+    'AFRICAN_BANK',
+    'BIDVEST_BANK',
+    'TYMEBANK',
+    'DISCOVERY_BANK',
+    'GROBANK',
+    'SAVA',
+    'MERCANTILE_BANK',
   ];
 
   const bankUpper = trustAccount.bankName.toUpperCase().replace(/\s+/g, '_');
@@ -1895,8 +2055,10 @@ export const validateTrustAccount = (trustAccount, options = {}) => {
   }
 
   // Validate branch code (6 digits)
-  if (!validator.isNumeric(trustAccount.branchCode) ||
-      !validator.isLength(trustAccount.branchCode, { min: 6, max: 6 })) {
+  if (
+    !validator.isNumeric(trustAccount.branchCode) ||
+    !validator.isLength(trustAccount.branchCode, { min: 6, max: 6 })
+  ) {
     result.errors.push('Invalid branch code format - must be 6 digits');
   } else {
     result.metadata.branchCodeValid = true;
@@ -1937,7 +2099,7 @@ export const validateTrustAccount = (trustAccount, options = {}) => {
       'Separate trust bank account',
       'Trust account designated as such',
       'Account held at registered bank',
-      'Interest-bearing if required'
+      'Interest-bearing if required',
     ];
   }
 
@@ -1946,10 +2108,10 @@ export const validateTrustAccount = (trustAccount, options = {}) => {
   return result;
 };
 
-/**
+/*
  * Validates FICA compliance for clients
  * Implements Financial Intelligence Centre Act requirements
- * 
+ *
  * @param {Object} client - Client information
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -1966,8 +2128,8 @@ export const validateFICACompliance = (client, options = {}) => {
       tenantId,
       timestamp: new Date().toISOString(),
       validationId: uuidv4(),
-      validationType: VALIDATION_TYPES.FINANCIAL
-    }
+      validationType: VALIDATION_TYPES.FINANCIAL,
+    },
   };
 
   if (!client || typeof client !== 'object') {
@@ -1979,47 +2141,55 @@ export const validateFICACompliance = (client, options = {}) => {
   const requiredDocs = {
     INDIVIDUAL: [
       { name: 'ID_COPY', description: 'Certified ID copy', retention: '5 years' },
-      { name: 'PROOF_OF_ADDRESS', description: 'Proof of residence (<3 months)', retention: '5 years' },
-      { name: 'SOURCE_OF_FUNDS', description: 'Source of funds declaration', retention: '5 years' }
+      {
+        name: 'PROOF_OF_ADDRESS',
+        description: 'Proof of residence (<3 months)',
+        retention: '5 years',
+      },
+      { name: 'SOURCE_OF_FUNDS', description: 'Source of funds declaration', retention: '5 years' },
     ],
     BUSINESS: [
-      { name: 'COMPANY_REGISTRATION', description: 'CIPC registration certificate', retention: '5 years' },
+      {
+        name: 'COMPANY_REGISTRATION',
+        description: 'CIPC registration certificate',
+        retention: '5 years',
+      },
       { name: 'DIRECTOR_ID', description: 'Director ID copies', retention: '5 years' },
       { name: 'PROOF_OF_ADDRESS', description: 'Registered address proof', retention: '5 years' },
-      { name: 'SOURCE_OF_FUNDS', description: 'Source of funds declaration', retention: '5 years' }
+      { name: 'SOURCE_OF_FUNDS', description: 'Source of funds declaration', retention: '5 years' },
     ],
     TRUST: [
       { name: 'TRUST_DEED', description: 'Trust deed', retention: '5 years' },
       { name: 'TRUSTEES_ID', description: 'Trustee ID copies', retention: '5 years' },
       { name: 'PROOF_OF_ADDRESS', description: 'Trust address proof', retention: '5 years' },
-      { name: 'SOURCE_OF_FUNDS', description: 'Source of funds declaration', retention: '5 years' }
-    ]
+      { name: 'SOURCE_OF_FUNDS', description: 'Source of funds declaration', retention: '5 years' },
+    ],
   };
 
   const clientType = client.type || 'INDIVIDUAL';
   result.metadata.clientType = clientType;
-  
+
   const docsRequired = requiredDocs[clientType] || requiredDocs.INDIVIDUAL;
 
   if (!client.documents) {
     result.errors.push('Documents required for FICA verification');
   } else {
     // Check for missing documents
-    const missingDocs = docsRequired.filter(doc => !client.documents[doc.name]);
+    const missingDocs = docsRequired.filter((doc) => !client.documents[doc.name]);
     if (missingDocs.length > 0) {
-      result.errors.push(`Missing FICA documents: ${missingDocs.map(d => d.name).join(', ')}`);
-      result.metadata.missingDocuments = missingDocs.map(d => d.name);
+      result.errors.push(`Missing FICA documents: ${missingDocs.map((d) => d.name).join(', ')}`);
+      result.metadata.missingDocuments = missingDocs.map((d) => d.name);
     }
 
     // Validate document expiry dates
     const documentEntries = Object.entries(client.documents || {});
     for (let i = 0; i < documentEntries.length; i += 1) {
       const [docType, doc] = documentEntries[i];
-      
+
       if (doc && doc.expiryDate) {
         const expiry = moment(doc.expiryDate);
         const now = moment();
-        
+
         if (!expiry.isValid()) {
           result.errors.push(`Invalid expiry date for ${docType}`);
         } else if (expiry.isBefore(now)) {
@@ -2047,7 +2217,14 @@ export const validateFICACompliance = (client, options = {}) => {
     let riskScore = 0;
 
     // High risk jurisdictions
-    const highRiskJurisdictions = ['AFGHANISTAN', 'IRAN', 'NORTH_KOREA', 'SYRIA', 'YEMEN', 'MYANMAR'];
+    const highRiskJurisdictions = [
+      'AFGHANISTAN',
+      'IRAN',
+      'NORTH_KOREA',
+      'SYRIA',
+      'YEMEN',
+      'MYANMAR',
+    ];
     if (client.jurisdiction && highRiskJurisdictions.includes(client.jurisdiction.toUpperCase())) {
       riskFactors.push('HIGH_RISK_JURISDICTION');
       riskScore += 30;
@@ -2067,7 +2244,13 @@ export const validateFICACompliance = (client, options = {}) => {
     }
 
     // High risk industries
-    const highRiskIndustries = ['GAMBLING', 'CRYPTOCURRENCY', 'WEAPONS', 'PRECIOUS_METALS', 'ANTIQUITIES'];
+    const highRiskIndustries = [
+      'GAMBLING',
+      'CRYPTOCURRENCY',
+      'WEAPONS',
+      'PRECIOUS_METALS',
+      'ANTIQUITIES',
+    ];
     if (client.industry && highRiskIndustries.includes(client.industry.toUpperCase())) {
       riskFactors.push('HIGH_RISK_INDUSTRY');
       riskScore += 25;
@@ -2082,7 +2265,7 @@ export const validateFICACompliance = (client, options = {}) => {
     result.metadata.riskFactors = riskFactors;
     result.metadata.riskScore = riskScore;
     result.metadata.riskLevel = riskScore > 50 ? 'HIGH' : riskScore > 20 ? 'MEDIUM' : 'LOW';
-    
+
     // Enhanced due diligence requirements
     if (riskScore > 50) {
       result.metadata.enhancedDDRequired = true;
@@ -2090,7 +2273,7 @@ export const validateFICACompliance = (client, options = {}) => {
         'Senior management approval',
         'Source of wealth verification',
         'Ongoing transaction monitoring',
-        'Enhanced periodic reviews'
+        'Enhanced periodic reviews',
       ];
     }
   }
@@ -2104,10 +2287,10 @@ export const validateFICACompliance = (client, options = {}) => {
 // TEMPORAL VALIDATION - BUSINESS DAYS & PUBLIC HOLIDAYS
 // ============================================================================
 
-/**
+/*
  * Validates business day (excluding weekends and public holidays)
  * Implements South African public holiday calendar
- * 
+ *
  * @param {Date|string} date - Date to validate
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -2146,16 +2329,16 @@ export const validateBusinessDate = (date, options = {}) => {
 
   // South African public holidays (fixed and variable)
   const publicHolidays = [
-    { month: 1, date: 1, name: 'New Year\'s Day', section: 'Public Holidays Act' },
+    { month: 1, date: 1, name: "New Year's Day", section: 'Public Holidays Act' },
     { month: 3, date: 21, name: 'Human Rights Day', section: 'Public Holidays Act' },
     { month: 4, date: 27, name: 'Freedom Day', section: 'Public Holidays Act' },
-    { month: 5, date: 1, name: 'Workers\' Day', section: 'Public Holidays Act' },
+    { month: 5, date: 1, name: "Workers' Day", section: 'Public Holidays Act' },
     { month: 6, date: 16, name: 'Youth Day', section: 'Public Holidays Act' },
-    { month: 8, date: 9, name: 'National Women\'s Day', section: 'Public Holidays Act' },
+    { month: 8, date: 9, name: "National Women's Day", section: 'Public Holidays Act' },
     { month: 9, date: 24, name: 'Heritage Day', section: 'Public Holidays Act' },
     { month: 12, date: 16, name: 'Day of Reconciliation', section: 'Public Holidays Act' },
     { month: 12, date: 25, name: 'Christmas Day', section: 'Public Holidays Act' },
-    { month: 12, date: 26, name: 'Day of Goodwill', section: 'Public Holidays Act' }
+    { month: 12, date: 26, name: 'Day of Goodwill', section: 'Public Holidays Act' },
   ];
 
   const holiday = publicHolidays.find((h) => h.month === month && h.date === dateNum);
@@ -2211,10 +2394,10 @@ export const validateBusinessDate = (date, options = {}) => {
 // SEARCH QUERY VALIDATION - SECURITY & SANITIZATION
 // ============================================================================
 
-/**
+/*
  * Validates search query for legal research with security checks
  * Detects SQL injection, XSS, and NoSQL injection attempts
- * 
+ *
  * @param {Object} query - Search query
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -2233,8 +2416,8 @@ export const validateSearchQuery = (query, options = {}) => {
       tenantId,
       timestamp: new Date().toISOString(),
       validationId: uuidv4(),
-      validationType: VALIDATION_TYPES.DOCUMENT
-    }
+      validationType: VALIDATION_TYPES.DOCUMENT,
+    },
   };
 
   if (!query || typeof query !== 'object') {
@@ -2246,16 +2429,21 @@ export const validateSearchQuery = (query, options = {}) => {
   const startTime = Date.now();
 
   // Security patterns
-  const sqlPatterns = /('|--|;|\bDROP\b|\bDELETE\b|\bUPDATE\b|\bINSERT\b|\bEXEC\b|\bUNION\b|\bSELECT\b\s+\bFROM\b)/i;
-  const xssPatterns = /<script|javascript:|onerror=|onload=|onclick=|onmouseover|alert\(|eval\(|document\.|window\./i;
-  const nosqlPatterns = /\$where|\$ne|\$gt|\$lt|\$regex|\$expr|\$function|\$accumulator|\$in|\$nin|\$or|\$and/i;
+  const sqlPatterns =
+    /('|--|;|\bDROP\b|\bDELETE\b|\bUPDATE\b|\bINSERT\b|\bEXEC\b|\bUNION\b|\bSELECT\b\s+\bFROM\b)/i;
+  const xssPatterns =
+    /<script|javascript:|onerror=|onload=|onclick=|onmouseover|alert\(|eval\(|document\.|window\./i;
+  const nosqlPatterns =
+    /\$where|\$ne|\$gt|\$lt|\$regex|\$expr|\$function|\$accumulator|\$in|\$nin|\$or|\$and/i;
   const pathTraversalPatterns = /\.\.\/|\.\.\\|~\/|\/etc\/|\/var\/|\/usr\/|C:\\|\.exe|\.sh|\.bat/i;
 
   // Recursive injection check
   const checkForInjection = (obj, path = '') => {
     if (typeof obj === 'string') {
       if (sqlPatterns.test(obj)) {
-        result.warnings.push(`Potential SQL injection at ${path || 'root'}: ${obj.substring(0, 50)}`);
+        result.warnings.push(
+          `Potential SQL injection at ${path || 'root'}: ${obj.substring(0, 50)}`
+        );
         result.valid = false;
       }
       if (xssPatterns.test(obj)) {
@@ -2263,7 +2451,9 @@ export const validateSearchQuery = (query, options = {}) => {
         result.valid = false;
       }
       if (pathTraversalPatterns.test(obj)) {
-        result.warnings.push(`Potential path traversal at ${path || 'root'}: ${obj.substring(0, 50)}`);
+        result.warnings.push(
+          `Potential path traversal at ${path || 'root'}: ${obj.substring(0, 50)}`
+        );
         result.valid = false;
       }
     } else if (typeof obj === 'object' && obj !== null) {
@@ -2288,7 +2478,8 @@ export const validateSearchQuery = (query, options = {}) => {
   if (!result.valid && sanitize) {
     const sanitizeValue = (value) => {
       if (typeof value === 'string') {
-        return validator.escape(value)
+        return validator
+          .escape(value)
           .replace(/'/g, "''")
           .replace(/javascript:/gi, 'blocked:')
           .replace(/on\w+=/gi, 'blocked=')
@@ -2349,13 +2540,15 @@ export const validateSearchQuery = (query, options = {}) => {
   result.metadata.queryComplexity = complexity;
 
   if (complexity > maxComplexity) {
-    result.warnings.push(`Query complexity (${complexity}) exceeds maximum allowed (${maxComplexity})`);
+    result.warnings.push(
+      `Query complexity (${complexity}) exceeds maximum allowed (${maxComplexity})`
+    );
     result.valid = false;
   }
 
   // Check for required fields
   if (options.requireFields && Array.isArray(options.requireFields)) {
-    const missingFields = options.requireFields.filter(field => {
+    const missingFields = options.requireFields.filter((field) => {
       const parts = field.split('.');
       let current = query;
       for (let i = 0; i < parts.length; i += 1) {
@@ -2380,10 +2573,10 @@ export const validateSearchQuery = (query, options = {}) => {
 // DOCUMENT METADATA VALIDATION
 // ============================================================================
 
-/**
+/*
  * Validates legal document metadata
  * Ensures compliance with National Archives Act and document retention
- * 
+ *
  * @param {Object} metadata - Document metadata
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -2401,7 +2594,7 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
 
   // Required fields (National Archives Act)
   const required = ['documentType', 'title', 'dateCreated', 'jurisdiction'];
-  const missing = required.filter(field => !metadata[field]);
+  const missing = required.filter((field) => !metadata[field]);
 
   if (missing.length > 0) {
     result.errors.push(`Missing required fields: ${missing.join(', ')}`);
@@ -2410,10 +2603,27 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
   // Document type validation
   if (metadata.documentType) {
     const validTypes = [
-      'CONTRACT', 'AFFIDAVIT', 'COURT_ORDER', 'SUBPOENA', 'PLEADING',
-      'MOTION', 'JUDGMENT', 'OPINION', 'DEED', 'WILL', 'TRUST_DEED',
-      'POWER_OF_ATTORNEY', 'CERTIFICATE', 'NOTICE', 'SUMMONS', 'APPLICATION',
-      'ANSWER', 'REPLY', 'INTERROGATORIES', 'AFFIRMATION', 'DECLARATION'
+      'CONTRACT',
+      'AFFIDAVIT',
+      'COURT_ORDER',
+      'SUBPOENA',
+      'PLEADING',
+      'MOTION',
+      'JUDGMENT',
+      'OPINION',
+      'DEED',
+      'WILL',
+      'TRUST_DEED',
+      'POWER_OF_ATTORNEY',
+      'CERTIFICATE',
+      'NOTICE',
+      'SUMMONS',
+      'APPLICATION',
+      'ANSWER',
+      'REPLY',
+      'INTERROGATORIES',
+      'AFFIRMATION',
+      'DECLARATION',
     ];
 
     const typeUpper = metadata.documentType.toUpperCase();
@@ -2458,7 +2668,8 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
       result.metadata.ageInYears = Math.floor(ageInDays / 365);
 
       // National Archives retention triggers
-      if (ageInDays > 3650) { // 10 years
+      if (ageInDays > 3650) {
+        // 10 years
         result.warnings.push('Document is over 10 years old - verify retention requirements');
         result.metadata.retentionReviewRequired = true;
       }
@@ -2484,9 +2695,17 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
     } else {
       result.metadata.language = langUpper;
       result.metadata.languageName = {
-        'EN': 'English', 'AF': 'Afrikaans', 'XH': 'Xhosa', 'ZU': 'Zulu',
-        'NS': 'Northern Sotho', 'TN': 'Tswana', 'TS': 'Tsonga', 'VE': 'Venda',
-        'NR': 'Ndebele', 'ST': 'Southern Sotho', 'SS': 'Swati'
+        EN: 'English',
+        AF: 'Afrikaans',
+        XH: 'Xhosa',
+        ZU: 'Zulu',
+        NS: 'Northern Sotho',
+        TN: 'Tswana',
+        TS: 'Tsonga',
+        VE: 'Venda',
+        NR: 'Ndebele',
+        ST: 'Southern Sotho',
+        SS: 'Swati',
       }[langUpper];
     }
   }
@@ -2501,11 +2720,12 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
       result.warnings.push(`Large number of parties (${metadata.parties.length}) - verify`);
     }
 
-    const hasApplicant = metadata.parties.some(p => 
-      p.role && ['APPLICANT', 'PLAINTIFF', 'CLAIMANT', 'PERSON'].includes(p.role.toUpperCase())
+    const hasApplicant = metadata.parties.some(
+      (p) =>
+        p.role && ['APPLICANT', 'PLAINTIFF', 'CLAIMANT', 'PERSON'].includes(p.role.toUpperCase())
     );
-    const hasRespondent = metadata.parties.some(p => 
-      p.role && ['RESPONDENT', 'DEFENDANT', 'ACCUSED'].includes(p.role.toUpperCase())
+    const hasRespondent = metadata.parties.some(
+      (p) => p.role && ['RESPONDENT', 'DEFENDANT', 'ACCUSED'].includes(p.role.toUpperCase())
     );
 
     result.metadata.hasApplicant = hasApplicant;
@@ -2537,8 +2757,14 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
   // Classification validation
   if (metadata.classification) {
     const validClassifications = [
-      'PUBLIC', 'CONFIDENTIAL', 'LEGAL_PRIVILEGE', 'ATTORNEY_WORK_PRODUCT',
-      'RESTRICTED', 'TOP_SECRET', 'UNCLASSIFIED', 'SENSITIVE'
+      'PUBLIC',
+      'CONFIDENTIAL',
+      'LEGAL_PRIVILEGE',
+      'ATTORNEY_WORK_PRODUCT',
+      'RESTRICTED',
+      'TOP_SECRET',
+      'UNCLASSIFIED',
+      'SENSITIVE',
     ];
 
     const classUpper = metadata.classification.toUpperCase();
@@ -2559,18 +2785,20 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
     if (validPolicies.includes(metadata.retentionPolicy)) {
       result.metadata.retentionPolicy = metadata.retentionPolicy;
       result.metadata.retentionDuration = RETENTION_POLICIES[metadata.retentionPolicy].duration;
-      result.metadata.retentionLegalReference = RETENTION_POLICIES[metadata.retentionPolicy].legalReference;
+      result.metadata.retentionLegalReference =
+        RETENTION_POLICIES[metadata.retentionPolicy].legalReference;
     }
   } else {
     // Default retention based on document type
-    const defaultRetention = {
-      'CONTRACT': 'COMPANIES_ACT_10_YEARS',
-      'COURT_ORDER': 'ECT_5_YEARS',
-      'WILL': 'LPC_PERMANENT',
-      'TRUST_DEED': 'LPC_PERMANENT',
-      'AFFIDAVIT': 'ECT_5_YEARS'
-    }[result.metadata.documentType] || 'POPIA_6_YEARS';
-    
+    const defaultRetention =
+      {
+        CONTRACT: 'COMPANIES_ACT_10_YEARS',
+        COURT_ORDER: 'ECT_5_YEARS',
+        WILL: 'LPC_PERMANENT',
+        TRUST_DEED: 'LPC_PERMANENT',
+        AFFIDAVIT: 'ECT_5_YEARS',
+      }[result.metadata.documentType] || 'POPIA_6_YEARS';
+
     result.metadata.suggestedRetention = defaultRetention;
   }
 
@@ -2583,10 +2811,10 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
 // EVIDENCE VALIDATION - COURT-ADMISSIBLE
 // ============================================================================
 
-/**
+/*
  * Validates evidence for court admissibility
  * Implements Law of Evidence Act and rules of court
- * 
+ *
  * @param {Object} evidence - Evidence object
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -2595,7 +2823,11 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
  * @returns {Object} Validation result with admissibility score
  */
 export const validateEvidence = (evidence, options = {}) => {
-  const { tenantId = 'system', courtAdmissibility = true, validateWithDigitalForensics = false } = options;
+  const {
+    tenantId = 'system',
+    courtAdmissibility = true,
+    validateWithDigitalForensics = false,
+  } = options;
   const result = createValidationResult(tenantId, VALIDATION_TYPES.EVIDENCE);
   result.admissibilityScore = 0;
 
@@ -2606,7 +2838,7 @@ export const validateEvidence = (evidence, options = {}) => {
 
   // Required fields for evidence (Criminal Procedure Act)
   const required = ['id', 'type', 'description', 'dateCollected', 'custodian'];
-  const missing = required.filter(field => !evidence[field]);
+  const missing = required.filter((field) => !evidence[field]);
 
   if (missing.length > 0) {
     result.errors.push(`Missing required fields: ${missing.join(', ')}`);
@@ -2653,7 +2885,7 @@ export const validateEvidence = (evidence, options = {}) => {
     let prevDate = null;
     for (let i = 0; i < evidence.chainOfCustody.length; i += 1) {
       const entry = evidence.chainOfCustody[i];
-      
+
       if (!entry.date || !entry.custodian || !entry.action) {
         result.errors.push(`Chain of custody entry #${i + 1} missing required fields`);
       }
@@ -2674,7 +2906,14 @@ export const validateEvidence = (evidence, options = {}) => {
       }
 
       // Validate action types
-      const validActions = ['COLLECTED', 'TRANSFERRED', 'ANALYZED', 'STORED', 'RETRIEVED', 'PRESENTED'];
+      const validActions = [
+        'COLLECTED',
+        'TRANSFERRED',
+        'ANALYZED',
+        'STORED',
+        'RETRIEVED',
+        'PRESENTED',
+      ];
       if (entry.action && !validActions.includes(entry.action.toUpperCase())) {
         result.warnings.push(`Unusual action type in entry #${i + 1}: ${entry.action}`);
       }
@@ -2702,8 +2941,10 @@ export const validateEvidence = (evidence, options = {}) => {
 
   // Integrity hash validation
   if (evidence.integrityHash) {
-    if (!validator.isAlphanumeric(evidence.integrityHash) || 
-        (evidence.integrityHash.length !== 64 && evidence.integrityHash.length !== 128)) {
+    if (
+      !validator.isAlphanumeric(evidence.integrityHash) ||
+      (evidence.integrityHash.length !== 64 && evidence.integrityHash.length !== 128)
+    ) {
       result.warnings.push('Invalid integrity hash format');
     } else {
       result.metadata.hashAlgorithm = evidence.integrityHash.length === 64 ? 'SHA256' : 'SHA512';
@@ -2711,11 +2952,12 @@ export const validateEvidence = (evidence, options = {}) => {
       result.metadata.hashPresent = true;
 
       if (evidence.content) {
-        const contentString = typeof evidence.content === 'string' 
-          ? evidence.content 
-          : JSON.stringify(evidence.content);
+        const contentString =
+          typeof evidence.content === 'string'
+            ? evidence.content
+            : JSON.stringify(evidence.content);
         const calculatedHash = cryptoUtils.generateHash(contentString);
-        
+
         if (calculatedHash === evidence.integrityHash) {
           result.metadata.hashVerified = true;
         } else {
@@ -2731,11 +2973,27 @@ export const validateEvidence = (evidence, options = {}) => {
   if (courtAdmissibility) {
     const admissibilityCriteria = [
       { name: 'RELEVANT', weight: 25, check: () => evidence.relevant === true },
-      { name: 'AUTHENTIC', weight: 25, check: () => evidence.authenticated === true || evidence.integrityHash },
+      {
+        name: 'AUTHENTIC',
+        weight: 25,
+        check: () => evidence.authenticated === true || evidence.integrityHash,
+      },
       { name: 'HEARSAY_EXCEPTION', weight: 15, check: () => evidence.hearsayException === true },
-      { name: 'ORIGINAL', weight: 15, check: () => evidence.isOriginal === true || evidence.bestEvidence === true },
-      { name: 'CHAIN_OF_CUSTODY', weight: 20, check: () => evidence.chainOfCustody && evidence.chainOfCustody.length > 0 },
-      { name: 'AUDIO_VISUAL_RECORDING', weight: 10, check: () => evidence.type === 'VIDEO' || evidence.type === 'AUDIO' }
+      {
+        name: 'ORIGINAL',
+        weight: 15,
+        check: () => evidence.isOriginal === true || evidence.bestEvidence === true,
+      },
+      {
+        name: 'CHAIN_OF_CUSTODY',
+        weight: 20,
+        check: () => evidence.chainOfCustody && evidence.chainOfCustody.length > 0,
+      },
+      {
+        name: 'AUDIO_VISUAL_RECORDING',
+        weight: 10,
+        check: () => evidence.type === 'VIDEO' || evidence.type === 'AUDIO',
+      },
     ];
 
     let score = 0;
@@ -2768,8 +3026,15 @@ export const validateEvidence = (evidence, options = {}) => {
     if (!evidence.fileMetadata) {
       result.errors.push('Digital evidence requires file metadata');
     } else {
-      const requiredForensics = ['fileSize', 'fileType', 'createdDate', 'modifiedDate', 'accessedDate', 'fileHash'];
-      const missingForensics = requiredForensics.filter(f => !evidence.fileMetadata[f]);
+      const requiredForensics = [
+        'fileSize',
+        'fileType',
+        'createdDate',
+        'modifiedDate',
+        'accessedDate',
+        'fileHash',
+      ];
+      const missingForensics = requiredForensics.filter((f) => !evidence.fileMetadata[f]);
 
       if (missingForensics.length > 0) {
         result.errors.push(`Missing digital forensics data: ${missingForensics.join(', ')}`);
@@ -2784,7 +3049,10 @@ export const validateEvidence = (evidence, options = {}) => {
       }
 
       // Validate file hash consistency
-      if (evidence.fileMetadata.fileHash && evidence.fileMetadata.fileHash !== evidence.integrityHash) {
+      if (
+        evidence.fileMetadata.fileHash &&
+        evidence.fileMetadata.fileHash !== evidence.integrityHash
+      ) {
         result.warnings.push('File hash mismatch - possible tampering');
       }
 
@@ -2802,9 +3070,9 @@ export const validateEvidence = (evidence, options = {}) => {
 // ADDITIONAL VALIDATIONS - URL & EMAIL
 // ============================================================================
 
-/**
+/*
  * Validates URL with South African domain awareness
- * 
+ *
  * @param {string} url - URL to validate
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -2819,12 +3087,12 @@ export const validateSAUrl = (url, options = {}) => {
     return result;
   }
 
-  result.valid = validator.isURL(url, { 
-    protocols: ['http', 'https'], 
+  result.valid = validator.isURL(url, {
+    protocols: ['http', 'https'],
     require_protocol: true,
     require_valid_protocol: true,
     require_host: true,
-    require_port: false
+    require_port: false,
   });
 
   if (result.valid) {
@@ -2835,7 +3103,7 @@ export const validateSAUrl = (url, options = {}) => {
       result.metadata.pathname = urlObj.pathname;
       result.metadata.port = urlObj.port || 'default';
       result.metadata.isSecure = urlObj.protocol === 'https:';
-      
+
       // South African domain detection
       const hostname = urlObj.hostname.toLowerCase();
       result.metadata.isCoZa = hostname.endsWith('.co.za');
@@ -2844,7 +3112,7 @@ export const validateSAUrl = (url, options = {}) => {
       result.metadata.isAcZa = hostname.endsWith('.ac.za');
       result.metadata.isNetZa = hostname.endsWith('.net.za');
       result.metadata.isZa = hostname.endsWith('.za');
-      
+
       // Domain classification
       if (result.metadata.isGovZa) {
         result.metadata.domainType = 'GOVERNMENT';
@@ -2868,7 +3136,6 @@ export const validateSAUrl = (url, options = {}) => {
       result.metadata.domainName = parts.length > 2 ? parts[parts.length - 3] : parts[0];
       result.metadata.tld = parts[parts.length - 1];
       result.metadata.sld = parts[parts.length - 2];
-
     } catch (e) {
       result.errors.push('Invalid URL structure');
       result.valid = false;
@@ -2880,9 +3147,9 @@ export const validateSAUrl = (url, options = {}) => {
   return result;
 };
 
-/**
+/*
  * Validates email with business/government classification
- * 
+ *
  * @param {string} email - Email to validate
  * @param {Object} options - Validation options
  * @param {string} options.tenantId - Tenant identifier
@@ -2901,7 +3168,7 @@ export const validateSAEmail = (email, options = {}) => {
     allow_display_name: false,
     require_display_name: false,
     allow_utf8_local_part: true,
-    require_tld: true
+    require_tld: true,
   });
 
   if (result.valid) {
@@ -2910,14 +3177,25 @@ export const validateSAEmail = (email, options = {}) => {
     result.metadata.domain = parts[1].toLowerCase();
 
     // Email classification
-    const personalDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'protonmail.com', 'mail.com'];
+    const personalDomains = [
+      'gmail.com',
+      'yahoo.com',
+      'hotmail.com',
+      'outlook.com',
+      'icloud.com',
+      'aol.com',
+      'protonmail.com',
+      'mail.com',
+    ];
     const businessDomains = ['co.za', 'com', 'org', 'net', 'biz', 'info'];
 
-    result.metadata.isPersonal = personalDomains.includes(result.metadata.domain) ||
-                                 personalDomains.some(d => result.metadata.domain.endsWith('.' + d));
+    result.metadata.isPersonal =
+      personalDomains.includes(result.metadata.domain) ||
+      personalDomains.some((d) => result.metadata.domain.endsWith('.' + d));
     result.metadata.isBusiness = !result.metadata.isPersonal;
     result.metadata.isGovernment = result.metadata.domain.endsWith('.gov.za');
-    result.metadata.isEducational = result.metadata.domain.endsWith('.ac.za') || result.metadata.domain.endsWith('.edu');
+    result.metadata.isEducational =
+      result.metadata.domain.endsWith('.ac.za') || result.metadata.domain.endsWith('.edu');
 
     // South African specific
     result.metadata.isCoZa = result.metadata.domain.endsWith('.co.za');
@@ -2940,7 +3218,12 @@ export const validateSAEmail = (email, options = {}) => {
     }
 
     // Check for disposable email domains
-    const disposableDomains = ['tempmail.com', 'throwaway.com', 'mailinator.com', 'guerrillamail.com'];
+    const disposableDomains = [
+      'tempmail.com',
+      'throwaway.com',
+      'mailinator.com',
+      'guerrillamail.com',
+    ];
     if (disposableDomains.includes(result.metadata.domain)) {
       result.warnings.push('Disposable email domain detected');
     }
@@ -2955,7 +3238,7 @@ export const validateSAEmail = (email, options = {}) => {
 // INVESTOR METRICS & VALUE PROPOSITION
 // ============================================================================
 
-/**
+/*
  * Calculates investor ROI metrics for the validation system
  * @returns {Object} Investor metrics
  */
@@ -2965,29 +3248,29 @@ export const calculateInvestorMetrics = () => {
       invalidDataEntry: 2500000, // R2.5M
       complianceViolations: 1200000, // R1.2M
       auditFailures: 950000, // R950k
-      total: 4650000 // R4.65M
+      total: 4650000, // R4.65M
     },
     annualRevenue: {
       validationAPI: 3400000, // R3.4M
       complianceReports: 1800000, // R1.8M
       auditTrails: 1200000, // R1.2M
-      total: 6400000 // R6.4M
+      total: 6400000, // R6.4M
     },
     margins: {
       validationAPI: 0.85, // 85%
       complianceReports: 0.82, // 82%
       auditTrails: 0.88, // 88%
-      average: 0.85 // 85%
+      average: 0.85, // 85%
     },
     riskElimination: 15000000, // R15M
     clientCount: 50,
     metricsPerClient: {
       annualSavings: 93000, // R93k
       annualRevenue: 128000, // R128k
-      riskReduction: 300000 // R300k
+      riskReduction: 300000, // R300k
     },
     timestamp: new Date().toISOString(),
-    version: '3.0.0'
+    version: '3.0.0',
   };
 
   return metrics;
@@ -3065,5 +3348,5 @@ export default {
   version: '3.0.0',
   lastUpdated: moment().format('YYYY-MM-DD'),
   supportedJurisdictions: ['ZA'],
-  complianceFrameworks: ['POPIA', 'ECT', 'FICA', 'CIPC', 'SARS', 'LPC']
+  complianceFrameworks: ['POPIA', 'ECT', 'FICA', 'CIPC', 'SARS', 'LPC'],
 };

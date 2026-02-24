@@ -1,11 +1,11 @@
 /* eslint-disable */
-/**
+/*
  * Wilsy OS Forensic Redactor
  * Designed for 100M+ User Scale
  */
 export const redactPII = (obj) => {
   if (!obj || typeof obj !== 'object') return obj;
-  
+
   const result = Array.isArray(obj) ? [] : {};
   const piiKeys = /email|idNumber|passport|phone|address|account|cell|mobile/i;
 

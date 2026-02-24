@@ -3,13 +3,13 @@
   ║ 99.99% breach prevention | R12M risk elimination | 85% margins              ║
   ║ POPIA §19 | ECT Act §15 | GDPR Article 32 | Cybercrimes Act §2-4            ║
   ╚══════════════════════════════════════════════════════════════════════════════╝*/
-/**
+/*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/security.js
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R12M/year in security breaches and compliance fines
  * • Generates: R8.5M/year savings @ 85% margin
  * • Compliance: POPIA §19, ECT Act §15, GDPR Article 32, Cybercrimes Act §2-4
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "expectedConsumers": [
@@ -27,7 +27,7 @@
  *     "crypto"
  *   ]
  * }
- * 
+ *
  * MERMAID INTEGRATION DIAGRAM:
  * graph TD
  *   A[Incoming Request] -->|CORS| B[CORS Validation]
@@ -64,7 +64,7 @@ class SecurityConfig {
     this.rateLimiterOptions = this._buildRateLimiterOptions();
     this.allowedOrigins = this._getAllowedOrigins();
     this.trustProxies = parseInt(process.env.TRUST_PROXIES) || 1;
-    
+
     // Security state tracking
     this._rateLimitStore = new Map();
     this._failedAttempts = new Map();
@@ -74,7 +74,7 @@ class SecurityConfig {
     this._apiKeyCache = new Map();
     this._originHashes = new Map(); // Track origin fingerprints
     this._tenantKeys = new Map(); // Tenant-specific encryption keys
-    
+
     // Security metrics
     this.metrics = {
       corsBlocks: 0,
@@ -85,41 +85,41 @@ class SecurityConfig {
       tenantViolations: 0,
       securityHeadersSet: 0,
       cryptoOperations: 0,
-      originVerifications: 0
+      originVerifications: 0,
     };
 
     // Initialize security monitoring
     this._startSecurityMonitoring();
-    
+
     // Log security initialization with cryptoUtils
     this._logSecurityInit();
-    
+
     // Pre-generate tenant keys using cryptoUtils
     this._initializeTenantKeys();
   }
 
-  /**
+  /*
    * Initialize tenant-specific encryption keys
    */
   _initializeTenantKeys() {
     const defaultTenants = ['system', 'admin', 'audit'];
-    defaultTenants.forEach(tenant => {
+    defaultTenants.forEach((tenant) => {
       const keyId = cryptoUtils.generateHash(`${tenant}:${Date.now()}`);
       this._tenantKeys.set(tenant, {
         keyId,
         createdAt: new Date().toISOString(),
-        algorithm: 'aes-256-gcm'
+        algorithm: 'aes-256-gcm',
       });
       this.metrics.cryptoOperations++;
     });
     logger.debug('Tenant keys initialized', {
       component: 'SecurityConfig',
       action: '_initializeTenantKeys',
-      tenantCount: this._tenantKeys.size
+      tenantCount: this._tenantKeys.size,
     });
   }
 
-  /**
+  /*
    * Log security initialization with audit trail using cryptoUtils
    */
   async _logSecurityInit() {
@@ -127,9 +127,9 @@ class SecurityConfig {
     const initHash = cryptoUtils.generateHash({
       initId,
       timestamp: Date.now(),
-      component: 'SecurityConfig'
+      component: 'SecurityConfig',
     });
-    
+
     logger.info('🔒 Security configuration initialized', {
       component: 'SecurityConfig',
       action: 'constructor',
@@ -138,44 +138,46 @@ class SecurityConfig {
       allowedOrigins: this.allowedOrigins.length,
       rateLimitMax: this.rateLimiterOptions.max,
       trustProxies: this.trustProxies,
-      cryptoUtilsVersion: 'active'
+      cryptoUtilsVersion: 'active',
     });
 
-    await auditLogger.audit({
-      action: 'SECURITY_INITIALIZED',
-      initId,
-      initHash,
-      timestamp: new Date().toISOString(),
-      config: {
-        corsEnabled: true,
-        helmetEnabled: true,
-        rateLimiterEnabled: true,
-        sanitizerEnabled: true,
-        tenantIsolation: true,
-        cryptoEnabled: true
-      },
-      forensicHash: cryptoUtils.generateHash({
+    await auditLogger
+      .audit({
+        action: 'SECURITY_INITIALIZED',
         initId,
-        timestamp: Date.now(),
-        component: 'SecurityConfig'
+        initHash,
+        timestamp: new Date().toISOString(),
+        config: {
+          corsEnabled: true,
+          helmetEnabled: true,
+          rateLimiterEnabled: true,
+          sanitizerEnabled: true,
+          tenantIsolation: true,
+          cryptoEnabled: true,
+        },
+        forensicHash: cryptoUtils.generateHash({
+          initId,
+          timestamp: Date.now(),
+          component: 'SecurityConfig',
+        }),
       })
-    }).catch(() => {});
+      .catch(() => {});
   }
 
-  /**
+  /*
    * Get allowed origins from environment with crypto validation
    */
   _getAllowedOrigins() {
     const origins = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://*.wilsyos.com';
-    const parsedOrigins = origins.split(',').map(o => o.trim());
-    
+    const parsedOrigins = origins.split(',').map((o) => o.trim());
+
     // Generate hashes for each origin using cryptoUtils for tracking
-    parsedOrigins.forEach(origin => {
+    parsedOrigins.forEach((origin) => {
       const originHash = cryptoUtils.generateHash(origin);
       this._originHashes.set(originHash, {
         origin,
         verified: this._isValidOriginFormat(origin),
-        added: new Date().toISOString()
+        added: new Date().toISOString(),
       });
       this.metrics.cryptoOperations++;
     });
@@ -183,7 +185,7 @@ class SecurityConfig {
     return parsedOrigins;
   }
 
-  /**
+  /*
    * Validate origin format
    */
   _isValidOriginFormat(origin) {
@@ -200,7 +202,7 @@ class SecurityConfig {
     }
   }
 
-  /**
+  /*
    * Build CORS options with crypto-enhanced validation
    */
   _buildCorsOptions() {
@@ -216,7 +218,7 @@ class SecurityConfig {
         const originFingerprint = cryptoUtils.generateHash(origin);
         this.metrics.originVerifications++;
 
-        const allowed = this.allowedOrigins.some(pattern => {
+        const allowed = this.allowedOrigins.some((pattern) => {
           if (pattern === '*') return true;
           if (pattern.includes('*')) {
             const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
@@ -230,21 +232,21 @@ class SecurityConfig {
           this._originHashes.set(originFingerprint, {
             origin,
             allowed: true,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
           callback(null, true);
         } else {
           this.metrics.corsBlocks++;
-          
+
           logger.warn('CORS blocked request', {
             component: 'SecurityConfig',
             action: 'cors',
             origin,
-            fingerprint: originFingerprint.substring(0, 16)
+            fingerprint: originFingerprint.substring(0, 16),
           });
 
           metrics.increment('security.cors.blocked', 1);
-          
+
           callback(new Error('Not allowed by CORS'));
         }
       },
@@ -260,33 +262,33 @@ class SecurityConfig {
         'X-API-Key',
         'X-CSRF-Token',
         'Origin',
-        'Accept'
+        'Accept',
       ],
       exposedHeaders: [
         'X-Request-ID',
         'X-RateLimit-Limit',
         'X-RateLimit-Remaining',
         'X-RateLimit-Reset',
-        'X-CSRF-Token'
+        'X-CSRF-Token',
       ],
-      maxAge: 86400
+      maxAge: 86400,
     };
   }
 
-  /**
+  /*
    * Build Helmet options with crypto enhancements
    */
   _buildHelmetOptions() {
     // Generate CSP nonce using cryptoUtils
     const cspNonce = cryptoUtils.generateHash(`csp-${Date.now()}`);
-    
+
     return {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           scriptSrc: ["'self'", `'nonce-${cspNonce}'`],
-          imgSrc: ["'self'", "data:", "https:"],
+          imgSrc: ["'self'", 'data:', 'https:'],
           connectSrc: ["'self'"],
           fontSrc: ["'self'"],
           objectSrc: ["'none'"],
@@ -296,9 +298,9 @@ class SecurityConfig {
           formAction: ["'self'"],
           frameAncestors: ["'none'"],
           upgradeInsecureRequests: [],
-          blockAllMixedContent: []
+          blockAllMixedContent: [],
         },
-        reportOnly: process.env.NODE_ENV !== 'production'
+        reportOnly: process.env.NODE_ENV !== 'production',
       },
       crossOriginEmbedderPolicy: true,
       crossOriginOpenerPolicy: { policy: 'same-origin' },
@@ -306,25 +308,25 @@ class SecurityConfig {
       dnsPrefetchControl: { allow: false },
       expectCt: {
         maxAge: 86400,
-        enforce: process.env.NODE_ENV === 'production'
+        enforce: process.env.NODE_ENV === 'production',
       },
       frameguard: { action: 'deny' },
       hidePoweredBy: true,
       hsts: {
         maxAge: 31536000,
         includeSubDomains: true,
-        preload: true
+        preload: true,
       },
       ieNoOpen: true,
       noSniff: true,
       originAgentCluster: true,
       permittedCrossDomainPolicies: { permittedPolicies: 'none' },
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-      xssFilter: true
+      xssFilter: true,
     };
   }
 
-  /**
+  /*
    * Build rate limiter options with crypto key fingerprinting
    */
   _buildRateLimiterOptions() {
@@ -338,30 +340,32 @@ class SecurityConfig {
         const tenantId = req.headers['x-tenant-id'] || 'unknown';
         const ip = req.ip || req.connection.remoteAddress;
         const userAgent = req.headers['user-agent'] || 'unknown';
-        
+
         // Generate fingerprint using cryptoUtils for better tracking
         const fingerprint = cryptoUtils.generateHash({
           tenantId,
           ip,
           userAgent,
-          timestamp: Math.floor(Date.now() / (60 * 1000)) // Roll every minute
+          timestamp: Math.floor(Date.now() / (60 * 1000)), // Roll every minute
         });
-        
+
         this.metrics.cryptoOperations++;
         return `${tenantId}:${fingerprint.substring(0, 16)}`;
       },
       skip: (req) => {
-        return req.path === '/health' || req.path === '/health/live' || req.path === '/health/ready';
+        return (
+          req.path === '/health' || req.path === '/health/live' || req.path === '/health/ready'
+        );
       },
       handler: (req, res) => {
         this.metrics.rateLimitExceeded++;
-        
+
         logger.warn('Rate limit exceeded', {
           component: 'SecurityConfig',
           action: 'rateLimiter',
           ip: req.ip,
           tenantId: req.headers['x-tenant-id'],
-          path: req.path
+          path: req.path,
         });
 
         metrics.increment('security.rate_limit.exceeded', 1);
@@ -369,25 +373,31 @@ class SecurityConfig {
         res.status(429).json({
           error: 'Too many requests',
           message: 'Rate limit exceeded. Please try again later.',
-          retryAfter: Math.ceil(this.rateLimiterOptions.windowMs / 1000)
+          retryAfter: Math.ceil(this.rateLimiterOptions.windowMs / 1000),
         });
-      }
+      },
     };
   }
 
-  /**
+  /*
    * Get CORS middleware
    */
   getCorsMiddleware() {
     return (req, res, next) => {
       const origin = req.headers.origin;
-      
-      if (origin && this.allowedOrigins.some(o => o.includes(origin) || o === '*')) {
+
+      if (origin && this.allowedOrigins.some((o) => o.includes(origin) || o === '*')) {
         res.header('Access-Control-Allow-Origin', origin);
         res.header('Access-Control-Allow-Credentials', 'true');
         res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-        res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Request-ID,X-Correlation-ID,X-Tenant-ID,X-API-Key,X-CSRF-Token');
-        res.header('Access-Control-Expose-Headers', 'X-Request-ID,X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Reset,X-CSRF-Token');
+        res.header(
+          'Access-Control-Allow-Headers',
+          'Content-Type,Authorization,X-Request-ID,X-Correlation-ID,X-Tenant-ID,X-API-Key,X-CSRF-Token'
+        );
+        res.header(
+          'Access-Control-Expose-Headers',
+          'X-Request-ID,X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Reset,X-CSRF-Token'
+        );
         res.header('Access-Control-Max-Age', '86400');
       }
 
@@ -400,7 +410,7 @@ class SecurityConfig {
     };
   }
 
-  /**
+  /*
    * Get security headers middleware with crypto signatures
    */
   getSecurityHeadersMiddleware() {
@@ -410,34 +420,34 @@ class SecurityConfig {
       res.header('X-XSS-Protection', '1; mode=block');
       res.header('Referrer-Policy', 'strict-origin-when-cross-origin');
       res.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-      
+
       // Add cryptographic signature header using cryptoUtils
       const requestSignature = cryptoUtils.generateHash({
         path: req.path,
         method: req.method,
         timestamp: Date.now(),
-        requestId: req.id
+        requestId: req.id,
       });
       res.header('X-Request-Signature', requestSignature.substring(0, 16));
-      
+
       if (process.env.NODE_ENV === 'production') {
         res.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
       }
 
       res.removeHeader('X-Powered-By');
-      
+
       this.metrics.securityHeadersSet++;
       this.metrics.cryptoOperations++;
       next();
     };
   }
 
-  /**
+  /*
    * Get rate limiter middleware
    */
   getRateLimiter() {
     const limiter = this.rateLimiterOptions;
-    
+
     return (req, res, next) => {
       if (limiter.skip && limiter.skip(req)) {
         return next();
@@ -445,14 +455,14 @@ class SecurityConfig {
 
       const key = limiter.keyGenerator(req);
       const now = Date.now();
-      
+
       let record = this._rateLimitStore.get(key);
-      
+
       if (!record) {
         record = {
           count: 1,
           resetTime: now + limiter.windowMs,
-          keyHash: cryptoUtils.generateHash(key) // Store hash for auditing
+          keyHash: cryptoUtils.generateHash(key), // Store hash for auditing
         };
         this._rateLimitStore.set(key, record);
         this.metrics.cryptoOperations++;
@@ -465,7 +475,7 @@ class SecurityConfig {
 
       const remaining = Math.max(0, limiter.max - record.count);
       const resetSeconds = Math.ceil((record.resetTime - now) / 1000);
-      
+
       res.header('X-RateLimit-Limit', limiter.max);
       res.header('X-RateLimit-Remaining', remaining);
       res.header('X-RateLimit-Reset', resetSeconds);
@@ -483,38 +493,38 @@ class SecurityConfig {
     };
   }
 
-  /**
+  /*
    * Clean rate limit store
    */
   _cleanRateLimitStore() {
     const now = Date.now();
     let cleaned = 0;
-    
+
     for (const [key, record] of this._rateLimitStore) {
       if (now > record.resetTime) {
         this._rateLimitStore.delete(key);
         cleaned++;
       }
     }
-    
+
     if (cleaned > 0) {
       logger.debug('Cleaned rate limit store', {
         component: 'SecurityConfig',
         action: '_cleanRateLimitStore',
-        cleanedEntries: cleaned
+        cleanedEntries: cleaned,
       });
     }
   }
 
-  /**
+  /*
    * Get input sanitizer middleware with crypto validation
    */
   getSanitizerMiddleware() {
     return (req, res, next) => {
       let sanitizedCount = 0;
-      
+
       if (req.query) {
-        Object.keys(req.query).forEach(key => {
+        Object.keys(req.query).forEach((key) => {
           if (typeof req.query[key] === 'string') {
             const original = req.query[key];
             req.query[key] = this._sanitizeInput(req.query[key]);
@@ -523,7 +533,7 @@ class SecurityConfig {
               this._trackSuspiciousActivity('SQL_INJECTION_ATTEMPT', {
                 field: key,
                 location: 'query',
-                hash: cryptoUtils.generateHash(original).substring(0, 16)
+                hash: cryptoUtils.generateHash(original).substring(0, 16),
               });
             }
           }
@@ -536,7 +546,7 @@ class SecurityConfig {
       }
 
       if (req.params) {
-        Object.keys(req.params).forEach(key => {
+        Object.keys(req.params).forEach((key) => {
           if (typeof req.params[key] === 'string') {
             const original = req.params[key];
             req.params[key] = this._sanitizeInput(req.params[key]);
@@ -545,7 +555,7 @@ class SecurityConfig {
               this._trackSuspiciousActivity('PATH_TRAVERSAL_ATTEMPT', {
                 field: key,
                 location: 'params',
-                hash: cryptoUtils.generateHash(original).substring(0, 16)
+                hash: cryptoUtils.generateHash(original).substring(0, 16),
               });
             }
           }
@@ -561,17 +571,17 @@ class SecurityConfig {
     };
   }
 
-  /**
+  /*
    * Sanitize object recursively with crypto tracking
    */
   _sanitizeObject(obj, path = []) {
     if (!obj || typeof obj !== 'object') return 0;
-    
+
     let sanitizedCount = 0;
-    
-    Object.keys(obj).forEach(key => {
+
+    Object.keys(obj).forEach((key) => {
       const currentPath = [...path, key];
-      
+
       if (typeof obj[key] === 'string') {
         const original = obj[key];
         obj[key] = this._sanitizeInput(obj[key]);
@@ -579,77 +589,81 @@ class SecurityConfig {
           sanitizedCount++;
           this._trackSuspiciousActivity('XSS_ATTEMPT', {
             field: currentPath.join('.'),
-            hash: cryptoUtils.generateHash(original).substring(0, 16)
+            hash: cryptoUtils.generateHash(original).substring(0, 16),
           });
         }
       } else if (typeof obj[key] === 'object' && obj[key] !== null) {
         sanitizedCount += this._sanitizeObject(obj[key], currentPath);
       }
     });
-    
+
     return sanitizedCount;
   }
 
-  /**
+  /*
    * Sanitize input string with enhanced protection
    */
   _sanitizeInput(input) {
     if (!input) return input;
-    
+
     let sanitized = input;
-    
+
     // SQL injection prevention
     sanitized = sanitized.replace(/'/g, "''");
     sanitized = sanitized.replace(/--/g, '');
     sanitized = sanitized.replace(/;\s*$/g, ''); // Remove trailing semicolons
-    
+
     // XSS prevention
-    sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '[REMOVED]');
+    sanitized = sanitized.replace(
+      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      '[REMOVED]'
+    );
     sanitized = sanitized.replace(/javascript:/gi, 'blocked:');
     sanitized = sanitized.replace(/onerror\s*=/gi, 'blocked=');
     sanitized = sanitized.replace(/onload\s*=/gi, 'blocked=');
     sanitized = sanitized.replace(/onclick\s*=/gi, 'blocked=');
-    
+
     // Path traversal prevention
     sanitized = sanitized.replace(/\.\.\//g, '');
     sanitized = sanitized.replace(/\.\.\\/g, '');
-    
+
     // Command injection prevention
     sanitized = sanitized.replace(/[;&|`$]/g, '');
     sanitized = sanitized.replace(/\bping\b/gi, '');
     sanitized = sanitized.replace(/\bcurl\b/gi, '');
     sanitized = sanitized.replace(/\bwget\b/gi, '');
-    
+
     return sanitized;
   }
 
-  /**
+  /*
    * Get request ID middleware with crypto enhancement
    */
   getRequestIdMiddleware() {
     return (req, res, next) => {
-      const requestId = req.headers['x-request-id'] || 
-                        req.headers['x-correlation-id'] || 
-                        `req_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
-      
+      const requestId =
+        req.headers['x-request-id'] ||
+        req.headers['x-correlation-id'] ||
+        `req_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
+
       req.id = requestId;
       res.header('X-Request-ID', requestId);
-      
+
       // Generate request fingerprint using cryptoUtils
       const requestFingerprint = cryptoUtils.generateHash({
         requestId,
         path: req.path,
         method: req.method,
         ip: req.ip,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-      
+
       req.logContext = {
         requestId,
         fingerprint: requestFingerprint.substring(0, 16),
         path: req.path,
         method: req.method,
-        ip: req.ip
+        ip: req.ip,
       };
 
       this.metrics.cryptoOperations++;
@@ -657,28 +671,29 @@ class SecurityConfig {
     };
   }
 
-  /**
+  /*
    * Get tenant middleware with crypto-enhanced isolation
    */
   getTenantMiddleware() {
     return (req, res, next) => {
-      const tenantId = req.headers['x-tenant-id'] || 
-                       req.query.tenantId || 
-                       (req.user && req.user.tenantId) ||
-                       'default';
-      
+      const tenantId =
+        req.headers['x-tenant-id'] ||
+        req.query.tenantId ||
+        (req.user && req.user.tenantId) ||
+        'default';
+
       if (!/^[a-zA-Z0-9_-]{8,64}$/.test(tenantId)) {
         this.metrics.tenantViolations++;
-        
+
         logger.warn('Invalid tenant ID format', {
           component: 'SecurityConfig',
           action: 'tenantMiddleware',
-          tenantId
+          tenantId,
         });
 
         return res.status(400).json({
           error: 'Invalid tenant ID format',
-          requestId: req.id
+          requestId: req.id,
         });
       }
 
@@ -688,7 +703,7 @@ class SecurityConfig {
         this._tenantKeys.set(tenantId, {
           keyId,
           createdAt: new Date().toISOString(),
-          algorithm: 'aes-256-gcm'
+          algorithm: 'aes-256-gcm',
         });
         this.metrics.cryptoOperations++;
       }
@@ -696,7 +711,7 @@ class SecurityConfig {
       req.tenant = {
         id: tenantId,
         region: 'ZA',
-        encryptionKey: this._tenantKeys.get(tenantId).keyId
+        encryptionKey: this._tenantKeys.get(tenantId).keyId,
       };
 
       res.header('X-Tenant-ID', tenantId);
@@ -705,50 +720,50 @@ class SecurityConfig {
     };
   }
 
-  /**
+  /*
    * Get API key auth middleware with crypto validation
    */
   getApiKeyAuthMiddleware() {
     return async (req, res, next) => {
       const apiKey = req.headers['x-api-key'];
-      
+
       if (!apiKey) {
         this.metrics.invalidApiKeys++;
-        
+
         return res.status(401).json({
           error: 'Missing API key',
-          requestId: req.id
+          requestId: req.id,
         });
       }
 
       // Hash the API key for secure comparison using cryptoUtils
       const keyHash = cryptoUtils.generateHash(apiKey);
-      
-      const validApiKeys = (process.env.API_KEYS || '').split(',').map(key => 
-        cryptoUtils.generateHash(key) // Store hashed for security
+
+      const validApiKeys = (process.env.API_KEYS || '').split(',').map(
+        (key) => cryptoUtils.generateHash(key) // Store hashed for security
       );
-      
+
       if (!validApiKeys.includes(keyHash)) {
         this.metrics.invalidApiKeys++;
         this.metrics.cryptoOperations++;
-        
+
         return res.status(403).json({
           error: 'Invalid API key',
-          requestId: req.id
+          requestId: req.id,
         });
       }
 
-      req.apiKey = { 
+      req.apiKey = {
         key: apiKey,
-        hash: keyHash.substring(0, 16)
+        hash: keyHash.substring(0, 16),
       };
-      
+
       this.metrics.cryptoOperations++;
       next();
     };
   }
 
-  /**
+  /*
    * Get CSRF middleware with crypto-enhanced tokens
    */
   getCsrfMiddleware() {
@@ -763,24 +778,24 @@ class SecurityConfig {
 
       if (!token || !cookieToken) {
         this.metrics.csrfFailures++;
-        
+
         return res.status(403).json({
           error: 'Missing CSRF token',
-          requestId: req.id
+          requestId: req.id,
         });
       }
 
       // Use cryptoUtils for constant-time comparison to prevent timing attacks
       const tokenHash = cryptoUtils.generateHash(token);
       const cookieHash = cryptoUtils.generateHash(cookieToken);
-      
+
       if (tokenHash !== cookieHash) {
         this.metrics.csrfFailures++;
         this.metrics.cryptoOperations += 2;
-        
+
         return res.status(403).json({
           error: 'Invalid CSRF token',
-          requestId: req.id
+          requestId: req.id,
         });
       }
 
@@ -789,7 +804,7 @@ class SecurityConfig {
     };
   }
 
-  /**
+  /*
    * Generate CSRF token using cryptoUtils for enhanced entropy
    */
   generateCsrfToken() {
@@ -798,14 +813,14 @@ class SecurityConfig {
     const token = cryptoUtils.generateHash({
       random: random.toString('hex'),
       timestamp,
-      salt: crypto.randomBytes(8).toString('hex')
+      salt: crypto.randomBytes(8).toString('hex'),
     });
-    
+
     this.metrics.cryptoOperations++;
     return token;
   }
 
-  /**
+  /*
    * Verify CSRF token with cryptoUtils
    */
   verifyCsrfToken(token) {
@@ -820,7 +835,7 @@ class SecurityConfig {
     }
   }
 
-  /**
+  /*
    * Get all middleware
    */
   getAllMiddleware() {
@@ -830,30 +845,33 @@ class SecurityConfig {
       this.getCorsMiddleware(),
       this.getRateLimiter(),
       this.getSanitizerMiddleware(),
-      this.getTenantMiddleware()
+      this.getTenantMiddleware(),
     ];
 
     logger.info('Security middleware stack initialized', {
       component: 'SecurityConfig',
       action: 'getAllMiddleware',
       count: middleware.length,
-      cryptoUtilsActive: true
+      cryptoUtilsActive: true,
     });
 
     return middleware;
   }
 
-  /**
+  /*
    * Start security monitoring
    */
   _startSecurityMonitoring() {
-    setInterval(() => {
-      this._cleanupExpiredData();
-      this._generateSecurityReport();
-    }, 5 * 60 * 1000);
+    setInterval(
+      () => {
+        this._cleanupExpiredData();
+        this._generateSecurityReport();
+      },
+      5 * 60 * 1000
+    );
   }
 
-  /**
+  /*
    * Generate security report using cryptoUtils
    */
   _generateSecurityReport() {
@@ -868,14 +886,14 @@ class SecurityConfig {
       reportHash: cryptoUtils.generateHash({
         timestamp: Date.now(),
         metrics: this.metrics,
-        random: crypto.randomBytes(4).toString('hex')
-      })
+        random: crypto.randomBytes(4).toString('hex'),
+      }),
     };
 
     logger.debug('Security monitoring report', {
       component: 'SecurityConfig',
       action: '_generateSecurityReport',
-      ...report
+      ...report,
     });
 
     // Update metrics
@@ -883,7 +901,7 @@ class SecurityConfig {
     metrics.setGauge('security.crypto_operations', this.metrics.cryptoOperations);
   }
 
-  /**
+  /*
    * Cleanup expired data
    */
   _cleanupExpiredData() {
@@ -916,12 +934,12 @@ class SecurityConfig {
       logger.debug('Cleaned expired security data', {
         component: 'SecurityConfig',
         action: '_cleanupExpiredData',
-        cleanedEntries: cleaned
+        cleanedEntries: cleaned,
       });
     }
   }
 
-  /**
+  /*
    * Health check with crypto verification
    */
   async healthCheck() {
@@ -932,53 +950,53 @@ class SecurityConfig {
         enabled: true,
         operations: this.metrics.cryptoOperations,
         tenantKeys: this._tenantKeys.size,
-        originHashes: this._originHashes.size
+        originHashes: this._originHashes.size,
       },
       cors: {
         enabled: true,
         allowedOrigins: this.allowedOrigins.length,
-        blocks: this.metrics.corsBlocks
+        blocks: this.metrics.corsBlocks,
       },
       rateLimiter: {
         enabled: true,
         windowMs: this.rateLimiterOptions.windowMs,
         maxRequests: this.rateLimiterOptions.max,
         exceeded: this.metrics.rateLimitExceeded,
-        storeSize: this._rateLimitStore.size
+        storeSize: this._rateLimitStore.size,
       },
       sanitizer: {
         enabled: true,
-        events: this.metrics.sanitizationEvents
+        events: this.metrics.sanitizationEvents,
       },
       apiKeyAuth: {
         enabled: true,
-        invalidKeys: this.metrics.invalidApiKeys
+        invalidKeys: this.metrics.invalidApiKeys,
       },
       csrfProtection: {
         enabled: true,
-        failures: this.metrics.csrfFailures
+        failures: this.metrics.csrfFailures,
       },
       tenantIsolation: {
         enabled: true,
         violations: this.metrics.tenantViolations,
-        activeTenants: this._tenantKeys.size
+        activeTenants: this._tenantKeys.size,
       },
       securityHeaders: {
-        set: this.metrics.securityHeadersSet
+        set: this.metrics.securityHeadersSet,
       },
       blockedIPs: this._blockedIPs.size,
       timestamp: new Date().toISOString(),
       healthHash: cryptoUtils.generateHash({
         timestamp: Date.now(),
         metrics: this.metrics,
-        service: 'security'
-      })
+        service: 'security',
+      }),
     };
 
     return health;
   }
 
-  /**
+  /*
    * Get status with crypto metrics
    */
   getStatus() {
@@ -986,104 +1004,106 @@ class SecurityConfig {
       crypto: {
         operations: this.metrics.cryptoOperations,
         tenantKeys: this._tenantKeys.size,
-        originHashes: Array.from(this._originHashes.keys()).map(h => h.substring(0, 8))
+        originHashes: Array.from(this._originHashes.keys()).map((h) => h.substring(0, 8)),
       },
       cors: {
-        blocks: this.metrics.corsBlocks
+        blocks: this.metrics.corsBlocks,
       },
       rateLimiter: {
         exceeded: this.metrics.rateLimitExceeded,
-        storeSize: this._rateLimitStore.size
+        storeSize: this._rateLimitStore.size,
       },
       apiKeyAuth: {
-        invalidKeys: this.metrics.invalidApiKeys
+        invalidKeys: this.metrics.invalidApiKeys,
       },
       csrf: {
-        failures: this.metrics.csrfFailures
+        failures: this.metrics.csrfFailures,
       },
       tenant: {
-        violations: this.metrics.tenantViolations
+        violations: this.metrics.tenantViolations,
       },
       blockedIPs: Array.from(this._blockedIPs),
       suspiciousActivities: this._suspiciousActivities.slice(-5),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
-  /**
+  /*
    * Block IP with crypto tracking
    */
   blockIP(ip, reason = 'Security violation') {
     this._blockedIPs.add(ip);
-    
+
     const blockId = cryptoUtils.generateHash(`${ip}:${Date.now()}`);
-    
-    logger.warn('IP blocked', { 
-      ip, 
+
+    logger.warn('IP blocked', {
+      ip,
       reason,
-      blockId: blockId.substring(0, 16)
+      blockId: blockId.substring(0, 16),
     });
 
     metrics.increment('security.ip.blocked', 1);
     this.metrics.cryptoOperations++;
 
-    auditLogger.audit({
-      action: 'IP_BLOCKED',
-      ip,
-      reason,
-      blockId,
-      timestamp: new Date().toISOString()
-    }).catch(() => {});
+    auditLogger
+      .audit({
+        action: 'IP_BLOCKED',
+        ip,
+        reason,
+        blockId,
+        timestamp: new Date().toISOString(),
+      })
+      .catch(() => {});
   }
 
-  /**
+  /*
    * Track suspicious activity with crypto fingerprint
    */
   _trackSuspiciousActivity(type, data) {
     const activityId = cryptoUtils.generateHash({
       type,
       timestamp: Date.now(),
-      random: crypto.randomBytes(4).toString('hex')
+      random: crypto.randomBytes(4).toString('hex'),
     });
 
     this._suspiciousActivities.push({
       id: activityId.substring(0, 16),
       type,
       timestamp: new Date().toISOString(),
-      ...data
+      ...data,
     });
-    
+
     this.metrics.cryptoOperations++;
   }
 
-  /**
+  /*
    * Get tenant encryption key
    */
   getTenantKey(tenantId) {
     return this._tenantKeys.get(tenantId);
   }
 
-  /**
+  /*
    * Rotate tenant encryption key
    */
   rotateTenantKey(tenantId) {
     const oldKey = this._tenantKeys.get(tenantId);
     const newKeyId = cryptoUtils.generateHash(`${tenantId}:${Date.now()}:rotate`);
-    
+
     this._tenantKeys.set(tenantId, {
       keyId: newKeyId,
       createdAt: new Date().toISOString(),
       previousKey: oldKey?.keyId,
-      algorithm: 'aes-256-gcm'
+      algorithm: 'aes-256-gcm',
     });
-    
+
     this.metrics.cryptoOperations += 2;
-    
+
     logger.info('Tenant key rotated', {
       component: 'SecurityConfig',
       action: 'rotateTenantKey',
       tenantId,
-      newKeyId: newKeyId.substring(0, 16)
+      newKeyId: newKeyId.substring(0, 16),
     });
 
     return this._tenantKeys.get(tenantId);
@@ -1092,7 +1112,7 @@ class SecurityConfig {
 
 module.exports = new SecurityConfig();
 
-/**
+/*
  * ASSUMPTIONS:
  * - ALLOWED_ORIGINS environment variable configured with comma-separated origins
  * - API_KEYS environment variable configured for API key authentication

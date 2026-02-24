@@ -1,4 +1,4 @@
-/**
+/*
  * File: server/routes/systemRoutes.js
  * STATUS: PRODUCTION-READY | SOVEREIGN GOD-MODE ROUTES
  * VERSION: 2026.01.19 (Global Legal OS)
@@ -34,7 +34,7 @@ const FirmController = require('../controllers/firmController');
 router.use(protect);
 router.use(requireRole('SUPER_ADMIN'));
 
-/**
+/*
  * @route   GET /api/system/dashboard
  * @desc    Main system dashboard for SUPER_ADMIN
  * @access  SUPER_ADMIN only
@@ -44,7 +44,7 @@ router.use(requireRole('SUPER_ADMIN'));
  */
 router.get('/dashboard', SystemController.getAdminDashboard);
 
-/**
+/*
  * @route   GET /api/system/firms
  * @desc    List all legal firms with pagination
  * @access  SUPER_ADMIN only
@@ -52,7 +52,7 @@ router.get('/dashboard', SystemController.getAdminDashboard);
  */
 router.get('/firms', FirmController.getAllFirms);
 
-/**
+/*
  * @route   POST /api/system/firms
  * @desc    Create new law firm (onboarding)
  * @access  SUPER_ADMIN only
@@ -60,7 +60,7 @@ router.get('/firms', FirmController.getAllFirms);
  */
 router.post('/firms', FirmController.createFirm);
 
-/**
+/*
  * @route   GET /api/system/firms/:id
  * @desc    Get detailed firm information
  * @access  SUPER_ADMIN only
@@ -68,7 +68,7 @@ router.post('/firms', FirmController.createFirm);
  */
 router.get('/firms/:id', FirmController.getFirmDetails);
 
-/**
+/*
  * @route   PUT /api/system/firms/:id
  * @desc    Update firm configuration
  * @access  SUPER_ADMIN only
@@ -77,7 +77,7 @@ router.get('/firms/:id', FirmController.getFirmDetails);
  */
 router.put('/firms/:id', FirmController.updateFirm);
 
-/**
+/*
  * @route   GET /api/system/analytics
  * @desc    Advanced analytics and reporting
  * @access  SUPER_ADMIN only
@@ -85,7 +85,7 @@ router.put('/firms/:id', FirmController.updateFirm);
  */
 router.get('/analytics', SystemController.getAdvancedAnalytics);
 
-/**
+/*
  * @route   GET /api/system/health
  * @desc    Comprehensive system health check
  * @access  SUPER_ADMIN only
@@ -93,7 +93,7 @@ router.get('/analytics', SystemController.getAdvancedAnalytics);
  */
 router.get('/health', SystemController.getSystemHealth);
 
-/**
+/*
  * @route   POST /api/system/broadcast
  * @desc    Send system-wide notification
  * @access  SUPER_ADMIN only
@@ -101,7 +101,7 @@ router.get('/health', SystemController.getSystemHealth);
  */
 router.post('/broadcast', SystemController.sendBroadcast);
 
-/**
+/*
  * @route   GET /api/system/compliance
  * @desc    System compliance status
  * @access  SUPER_ADMIN only
@@ -109,7 +109,7 @@ router.post('/broadcast', SystemController.sendBroadcast);
  */
 router.get('/compliance', SystemController.getComplianceStatus);
 
-/**
+/*
  * @route   GET /api/system/revenue
  * @desc    Revenue analytics and forecasting
  * @access  SUPER_ADMIN only
@@ -117,7 +117,7 @@ router.get('/compliance', SystemController.getComplianceStatus);
  */
 router.get('/revenue', SystemController.getRevenueAnalytics);
 
-/**
+/*
  * @route   GET /api/system/users
  * @desc    System-wide user management
  * @access  SUPER_ADMIN only
@@ -125,7 +125,7 @@ router.get('/revenue', SystemController.getRevenueAnalytics);
  */
 router.get('/users', SystemController.getAllUsers);
 
-/**
+/*
  * @route   POST /api/system/impersonate/:userId
  * @desc    Impersonate user for support
  * @access  SUPER_ADMIN only
@@ -133,7 +133,7 @@ router.get('/users', SystemController.getAllUsers);
  */
 router.post('/impersonate/:userId', SystemController.impersonateUser);
 
-/**
+/*
  * @route   GET /api/system/logs
  * @desc    System logs and audit trail
  * @access  SUPER_ADMIN only
@@ -141,7 +141,7 @@ router.post('/impersonate/:userId', SystemController.impersonateUser);
  */
 router.get('/logs', SystemController.getSystemLogs);
 
-/**
+/*
  * @route   POST /api/system/maintenance
  * @desc    Enable/disable maintenance mode
  * @access  SUPER_ADMIN only

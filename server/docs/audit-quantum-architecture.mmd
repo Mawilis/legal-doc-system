@@ -1,0 +1,50 @@
+graph TB
+    subgraph "QUANTUM AUDIT CONTROLLER [30.0.0]"
+        A[AuditController] --> B[logValidation]
+        A --> C[ingestQuantumBatch]
+        A --> D[getAuditTrail]
+        A --> E[verifyTenantChain]
+        A --> F[downloadEvidencePackage]
+    end
+    
+    subgraph "SECURITY LAYER"
+        G[Rate Limiting] --> A
+        H[Payload Encryption] --> A
+        I[Digital Signatures] --> A
+        J[Input Sanitization] --> A
+    end
+    
+    subgraph "QUANTUM SERVICES"
+        K[ValidationAudit Model] --> B
+        L[Quantum Logger] --> B
+        M[Anomaly Detection] --> C
+        N[Blockchain Anchoring] --> C
+    end
+    
+    subgraph "FORENSIC EVIDENCE"
+        O[Chain Verification] --> E
+        P[Evidence Package] --> F
+        Q[Audit Statistics] --> D
+    end
+    
+    subgraph "COMPLIANCE FRAMEWORK"
+        R[POPIA §14] --> B
+        S[Companies Act §24] --> B
+        T[ECT Act §12] --> B
+        U[PAIA §50] --> F
+    end
+    
+    subgraph "INVESTOR VALUE"
+        V[R1.1M Annual Savings] --> A
+        W[R5M Risk Prevention] --> M
+        X[94% Margins] --> A
+        Y[R18.5M Enterprise Value] --> A
+    end
+    
+    style A fill:#f9f,stroke:#333,stroke-width:4px
+    style K fill:#bfb,stroke:#333,stroke-width:2px
+    style L fill:#bfb,stroke:#333,stroke-width:2px
+    style M fill:#ff9,stroke:#333,stroke-width:2px
+    style N fill:#ff9,stroke:#333,stroke-width:2px
+    style R fill:#9ff,stroke:#333,stroke-width:2px
+    style V fill:#f9f9,stroke:#333,stroke-width:3px

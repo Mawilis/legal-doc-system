@@ -1,5 +1,5 @@
 /* eslint-disable */
-/**
+/*
  * Wilsy OS - Logger Utility
  * Structured JSON logging with levels
  */
@@ -8,7 +8,7 @@ const LOG_LEVELS = {
   error: 0,
   warn: 1,
   info: 2,
-  debug: 3
+  debug: 3,
 };
 
 class Logger {
@@ -38,9 +38,9 @@ class Logger {
         timestamp: new Date().toISOString(),
         level,
         message,
-        ...meta
+        ...meta,
       };
-      
+
       // In production, this would go to a proper logging service
       if (level === 'error') {
         console.error(JSON.stringify(logEntry));

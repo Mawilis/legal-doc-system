@@ -26,7 +26,7 @@ describe('TenantConfig Model - Multi-Tenant Configuration', () => {
       const tenant = new TenantConfig({
         tenantId: testTenantId,
         name: 'Test Law Firm',
-        contactEmail: 'info@testlaw.co.za'
+        contactEmail: 'info@testlaw.co.za',
       });
 
       const saved = await tenant.save();
@@ -40,14 +40,14 @@ describe('TenantConfig Model - Multi-Tenant Configuration', () => {
       const tenant1 = new TenantConfig({
         tenantId: testTenantId,
         name: 'Firm 1',
-        contactEmail: 'firm1@test.com'
+        contactEmail: 'firm1@test.com',
       });
       await tenant1.save();
 
       const tenant2 = new TenantConfig({
         tenantId: testTenantId,
         name: 'Firm 2',
-        contactEmail: 'firm2@test.com'
+        contactEmail: 'firm2@test.com',
       });
 
       try {
@@ -62,18 +62,20 @@ describe('TenantConfig Model - Multi-Tenant Configuration', () => {
   describe('🔐 Security & API Management', () => {
     it('should find tenant by API key via static method', async () => {
       const apiKey = 'test-api-key-12345';
-      
+
       const tenant = new TenantConfig({
         tenantId: testTenantId,
         name: 'Test Law Firm',
         contactEmail: 'info@testlaw.co.za',
         apiConfig: {
-          apiKeys: [{
-            keyId: 'key-123',
-            keyHash: apiKey,
-            name: 'Test Key'
-          }]
-        }
+          apiKeys: [
+            {
+              keyId: 'key-123',
+              keyHash: apiKey,
+              name: 'Test Key',
+            },
+          ],
+        },
       });
       await tenant.save();
 
@@ -88,8 +90,8 @@ describe('TenantConfig Model - Multi-Tenant Configuration', () => {
         name: 'Test Law Firm',
         contactEmail: 'info@testlaw.co.za',
         securitySettings: {
-          ipWhitelist: ['192.168.1.1', '10.0.0.1']
-        }
+          ipWhitelist: ['192.168.1.1', '10.0.0.1'],
+        },
       });
 
       expect(tenant.isIpAllowed('192.168.1.1')).to.be.true;
@@ -103,7 +105,7 @@ describe('TenantConfig Model - Multi-Tenant Configuration', () => {
       const tenant = new TenantConfig({
         tenantId: testTenantId,
         name: 'Test Law Firm',
-        contactEmail: 'info@testlaw.co.za'
+        contactEmail: 'info@testlaw.co.za',
       });
 
       expect(tenant.dataResidency.primary).to.equal(DATA_RESIDENCY.ZA);
@@ -121,9 +123,9 @@ describe('TenantConfig Model - Multi-Tenant Configuration', () => {
             enabled: true,
             piiRedaction: true,
             dataSubjectRights: true,
-            breachNotification: true
-          }
-        }
+            breachNotification: true,
+          },
+        },
       });
 
       expect(tenant.complianceSettings.popia.enabled).to.be.true;

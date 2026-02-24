@@ -2,8 +2,8 @@
  * File: server/controllers/attemptController.js
  * STATUS: PRODUCTION-READY | FORENSIC ADMISSIBILITY GRADE
  * -----------------------------------------------------------------------------
- * PURPOSE: 
- * Records cryptographic proof of service attempts. Captures GPS coordinates, 
+ * PURPOSE:
+ * Records cryptographic proof of service attempts. Captures GPS coordinates,
  * evidence media, and generates a SHA-256 hash to ensure data integrity.
  * -----------------------------------------------------------------------------
  */
@@ -17,7 +17,7 @@ const DispatchInstruction = require('../models/DispatchInstruction');
 const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { emitAudit } = require('../middleware/auditMiddleware');
 
-/**
+/*
  * INTERNAL UTILITY: GENERATE CRYPTOGRAPHIC SEAL
  * Creates a deterministic hash of the attempt data for court admissibility.
  */
@@ -27,17 +27,17 @@ const computeAttemptHash = (payload) => {
     at: new Date(payload.at).toISOString(),
     gps: {
       lat: Number(payload.gps.lat),
-      lng: Number(payload.gps.lng)
+      lng: Number(payload.gps.lng),
     },
     outcome: payload.outcome,
-    notes: payload.notes || ''
+    notes: payload.notes || '',
   };
 
   const serialized = JSON.stringify(data);
   return crypto.createHash('sha256').update(serialized).digest('hex');
 };
 
-/**
+/*
  * @desc    LOG SERVICE ATTEMPT (THE "KNOCK")
  * @route   POST /api/v1/attempts/:id
  */
@@ -48,16 +48,28 @@ exports.createAttempt = asyncHandler(async (req, res) => {
   // 1. SCOPED INSTRUCTION VALIDATION
   const instruction = await DispatchInstruction.findOne({
     _id: instructionId,
-    ...req.tenantFilter
+    ...req.tenantFilter,
   });
 
   if (!instruction) {
-    return errorResponse(req, res, 404, 'Instruction not found or access denied.', 'ERR_INSTRUCTION_NOT_FOUND');
+    return errorResponse(
+      req,
+      res,
+      404,
+      'Instruction not found or access denied.',
+      'ERR_INSTRUCTION_NOT_FOUND'
+    );
   }
 
   // 2. GPS REQUIREMENT (Legal Hardening)
   if (!gps || gps.lat === undefined || gps.lng === undefined) {
-    return errorResponse(req, res, 400, 'Non-repudiation failed: GPS coordinates are mandatory.', 'ERR_GPS_REQUIRED');
+    return errorResponse(
+      req,
+      res,
+      400,
+      'Non-repudiation failed: GPS coordinates are mandatory.',
+      'ERR_GPS_REQUIRED'
+    );
   }
 
   // 3. GENERATE IMMUTABLE HASH
@@ -69,7 +81,7 @@ exports.createAttempt = asyncHandler(async (req, res) => {
     instructionId,
     tenantId: req.user.tenantId,
     sheriffId: req.user.id,
-    hash
+    hash,
   });
 
   // 5. WORKFLOW STATE TRANSITION
@@ -94,17 +106,23 @@ exports.createAttempt = asyncHandler(async (req, res) => {
       attemptId: attempt._id,
       hash,
       outcome,
-      newStatus: instruction.status
-    }
+      newStatus: instruction.status,
+    },
   });
 
-  return successResponse(req, res, {
-    attempt,
-    instructionStatus: instruction.status
-  }, { message: 'Attempt recorded and sealed.' }, 201);
+  return successResponse(
+    req,
+    res,
+    {
+      attempt,
+      instructionStatus: instruction.status,
+    },
+    { message: 'Attempt recorded and sealed.' },
+    201
+  );
 });
 
-/**
+/*
  * @desc    LIST ATTEMPTS FOR INSTRUCTION
  * @route   GET /api/v1/attempts/:id
  */
@@ -113,7 +131,7 @@ exports.listAttempts = asyncHandler(async (req, res) => {
 
   const attempts = await Attempt.find({
     instructionId,
-    ...req.tenantFilter
+    ...req.tenantFilter,
   }).sort({ at: 1 });
 
   return successResponse(req, res, attempts, { results: attempts.length });

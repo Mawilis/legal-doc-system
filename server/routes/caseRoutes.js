@@ -1,4 +1,4 @@
-/**
+/*
  * File: server/routes/caseRoutes.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/caseRoutes.js
  * STATUS: QUANTUM-FORTIFIED | PRODUCTION-READY | BIBLICAL IMMORTALITY
@@ -83,55 +83,50 @@ const rateLimit = require('express-rate-limit');
 
 // Configure Prescription Alert Rate Limiter (Critical Endpoint Protection)
 const prescriptionAlertLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: {
-        status: 'error',
-        message: 'Too many prescription alert requests. Please try again later.'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-    // Quantum Security: Trust proxy for proper IP detection in cloud environments
-    trustProxy: process.env.NODE_ENV === 'production'
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: {
+    status: 'error',
+    message: 'Too many prescription alert requests. Please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Quantum Security: Trust proxy for proper IP detection in cloud environments
+  trustProxy: process.env.NODE_ENV === 'production',
 });
 
 /* ---------------------------------------------------------------------------
    UTILITY: Async Wrapper with Quantum Error Handling
    --------------------------------------------------------------------------- */
-const asyncHandler = fn => (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch(err => {
-        // Quantum Audit: Log all async errors to blockchain audit trail
-        if (process.env.ENABLE_BLOCKCHAIN_AUDIT === 'true') {
-            require('../utils/blockchainAudit').logError({
-                endpoint: req.originalUrl,
-                error: err.message,
-                userId: req.user?.id,
-                timestamp: new Date().toISOString()
-            });
-        }
-        next(err);
-    });
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch((err) => {
+    // Quantum Audit: Log all async errors to blockchain audit trail
+    if (process.env.ENABLE_BLOCKCHAIN_AUDIT === 'true') {
+      require('../utils/blockchainAudit').logError({
+        endpoint: req.originalUrl,
+        error: err.message,
+        userId: req.user?.id,
+        timestamp: new Date().toISOString(),
+      });
+    }
+    next(err);
+  });
 };
 
 /* ---------------------------------------------------------------------------
    QUANTUM ROUTES: CASE REGISTRY & LIFECYCLE ORCHESTRATION
    --------------------------------------------------------------------------- */
 
-/**
+/*
  * @route   GET /api/cases
  * @desc    Fetch the Firm's Active Matter Portfolio with Quantum Filtering
  * @access  Private: All Staff (Role-filtered data)
  * @security JWT + Tenant Isolation + Rate Limiting (Global)
  * @compliance POPIA: Data minimization applied, only necessary fields returned
  */
-router.get(
-    '/',
-    protect,
-    tenantGuard(),
-    asyncHandler(caseController.getAllCases)
-);
+router.get('/', protect, tenantGuard(), asyncHandler(caseController.getAllCases));
 
-/**
+/*
  * @route   POST /api/cases
  * @desc    Open a New Sovereign Matter with Full Compliance Enforcement
  * @access  Private: Partners, Lawyers, Admin
@@ -139,16 +134,16 @@ router.get(
  * @compliance POPIA §11, Companies Act §24, FICA §21
  */
 router.post(
-    '/',
-    protect,
-    tenantGuard(),
-    restrictTo('partner', 'lawyer', 'admin'),
-    validatePOPIAConsent, // QUANTUM SHIELD: POPIA consent validation
-    validateCaseCreation, // LEGAL GUARD: Schema validation
-    asyncHandler(caseController.createCase)
+  '/',
+  protect,
+  tenantGuard(),
+  restrictTo('partner', 'lawyer', 'admin'),
+  validatePOPIAConsent, // QUANTUM SHIELD: POPIA consent validation
+  validateCaseCreation, // LEGAL GUARD: Schema validation
+  asyncHandler(caseController.createCase)
 );
 
-/**
+/*
  * @route   GET /api/cases/alerts/prescription
  * @desc    CRITICAL: Fetch cases nearing Statute of Limitations (Prescription)
  * @access  Private: Partners, Senior Admin (Risk Management)
@@ -156,29 +151,24 @@ router.post(
  * @compliance Prescription Act 68 of 1969, Common Law Prescription
  */
 router.get(
-    '/alerts/prescription',
-    protect,
-    tenantGuard(),
-    restrictTo('partner', 'admin'),
-    prescriptionAlertLimiter, // QUANTUM SHIELD: Critical endpoint protection
-    asyncHandler(caseController.getPrescriptionAlerts)
+  '/alerts/prescription',
+  protect,
+  tenantGuard(),
+  restrictTo('partner', 'admin'),
+  prescriptionAlertLimiter, // QUANTUM SHIELD: Critical endpoint protection
+  asyncHandler(caseController.getPrescriptionAlerts)
 );
 
-/**
+/*
  * @route   GET /api/cases/:id
  * @desc    Retrieve Full Case Blueprint, History, and Quantum Audit Trail
  * @access  Private: All Staff (Tenant-scoped)
  * @security JWT + Tenant Isolation + Case Access Control
  * @compliance PAIA: Structured information access with audit trail
  */
-router.get(
-    '/:id',
-    protect,
-    tenantGuard(),
-    asyncHandler(caseController.getCaseById)
-);
+router.get('/:id', protect, tenantGuard(), asyncHandler(caseController.getCaseById));
 
-/**
+/*
  * @route   PATCH /api/cases/:id/status
  * @desc    Transition Case Stage with Quantum State Validation
  * @access  Private: Partners, Lawyers
@@ -186,15 +176,15 @@ router.get(
  * @compliance Law Society Rule 54: Case progress tracking
  */
 router.patch(
-    '/:id/status',
-    protect,
-    tenantGuard(),
-    restrictTo('partner', 'lawyer'),
-    validateCaseUpdate,
-    asyncHandler(caseController.updateCaseStatus)
+  '/:id/status',
+  protect,
+  tenantGuard(),
+  restrictTo('partner', 'lawyer'),
+  validateCaseUpdate,
+  asyncHandler(caseController.updateCaseStatus)
 );
 
-/**
+/*
  * @route   PUT /api/cases/:id
  * @desc    Full Case Update with Blockchain Audit Trail
  * @access  Private: Partners, Lawyers (Case Owners)
@@ -202,15 +192,15 @@ router.patch(
  * @compliance ECT Act §12: Electronic records integrity
  */
 router.put(
-    '/:id',
-    protect,
-    tenantGuard(),
-    restrictTo('partner', 'lawyer'),
-    validateCaseUpdate,
-    asyncHandler(caseController.updateCase)
+  '/:id',
+  protect,
+  tenantGuard(),
+  restrictTo('partner', 'lawyer'),
+  validateCaseUpdate,
+  asyncHandler(caseController.updateCase)
 );
 
-/**
+/*
  * @route   DELETE /api/cases/:id
  * @desc    Soft Delete Case with Compliance Archive (5-7 Year Retention)
  * @access  Private: Partners Only (Super-Admin)
@@ -218,14 +208,14 @@ router.put(
  * @compliance Companies Act §24(5): 7-year record retention
  */
 router.delete(
-    '/:id',
-    protect,
-    tenantGuard(),
-    restrictTo('partner'),
-    asyncHandler(caseController.deleteCase)
+  '/:id',
+  protect,
+  tenantGuard(),
+  restrictTo('partner'),
+  asyncHandler(caseController.deleteCase)
 );
 
-/**
+/*
  * @route   POST /api/cases/:id/cipc-verify
  * @desc    Verify Corporate Entity via CIPC API Integration
  * @access  Private: Partners, Lawyers, Admin
@@ -234,14 +224,14 @@ router.delete(
  * @integration CIPC API, SearchWorks Enterprise
  */
 router.post(
-    '/:id/cipc-verify',
-    protect,
-    tenantGuard(),
-    restrictTo('partner', 'lawyer', 'admin'),
-    asyncHandler(caseController.verifyCIPCEntity)
+  '/:id/cipc-verify',
+  protect,
+  tenantGuard(),
+  restrictTo('partner', 'lawyer', 'admin'),
+  asyncHandler(caseController.verifyCIPCEntity)
 );
 
-/**
+/*
  * @route   GET /api/cases/:id/audit-trail
  * @desc    Retrieve Immutable Blockchain Audit Trail for Case
  * @access  Private: Partners, Compliance Officers
@@ -249,14 +239,14 @@ router.post(
  * @compliance POPIA §14: Security measures audit trail
  */
 router.get(
-    '/:id/audit-trail',
-    protect,
-    tenantGuard(),
-    restrictTo('partner', 'admin'),
-    asyncHandler(caseController.getCaseAuditTrail)
+  '/:id/audit-trail',
+  protect,
+  tenantGuard(),
+  restrictTo('partner', 'admin'),
+  asyncHandler(caseController.getCaseAuditTrail)
 );
 
-/**
+/*
  * @route   POST /api/cases/:id/assign
  * @desc    Assign Case to Legal Practitioner with Capacity Check
  * @access  Private: Partners, Senior Lawyers
@@ -264,14 +254,14 @@ router.get(
  * @compliance LPC Rule 3: Proper case assignment protocols
  */
 router.post(
-    '/:id/assign',
-    protect,
-    tenantGuard(),
-    restrictTo('partner', 'lawyer'),
-    asyncHandler(caseController.assignCase)
+  '/:id/assign',
+  protect,
+  tenantGuard(),
+  restrictTo('partner', 'lawyer'),
+  asyncHandler(caseController.assignCase)
 );
 
-/**
+/*
  * @route   POST /api/cases/bulk/archive
  * @desc    Bulk Archive Cases Meeting Retention Period Criteria
  * @access  Private: Partners, System Admin
@@ -279,11 +269,11 @@ router.post(
  * @compliance National Archives Act: Digital preservation standards
  */
 router.post(
-    '/bulk/archive',
-    protect,
-    tenantGuard(),
-    restrictTo('partner', 'admin'),
-    asyncHandler(caseController.bulkArchiveCases)
+  '/bulk/archive',
+  protect,
+  tenantGuard(),
+  restrictTo('partner', 'admin'),
+  asyncHandler(caseController.bulkArchiveCases)
 );
 
 /* ---------------------------------------------------------------------------
@@ -291,7 +281,7 @@ router.post(
    --------------------------------------------------------------------------- */
 module.exports = router;
 
-/**
+/*
  * QUANTUM VALIDATION TEST SUITE (Embedded for Sentinel Reference):
  *
  * describe('Case Routes Quantum Validation', () => {
@@ -342,7 +332,7 @@ module.exports = router;
  * TEST COVERAGE TARGET: 95%+ (Mutation testing enabled)
  */
 
-/**
+/*
  * ENV ADDITIONS REQUIRED:
  *
  * # Case Routes Quantum Configuration
@@ -364,7 +354,7 @@ module.exports = router;
  * ✓ All compliance markers annotated
  */
 
-/**
+/*
  * QUANTUM SENTINEL BECONS:
  *
  * // ETERNAL EXTENSION: Integrate AI prescription prediction using TensorFlow.js
@@ -374,7 +364,7 @@ module.exports = router;
  * // PERFORMANCE ALCHEMY: Implement Redis caching for frequent case queries
  */
 
-/**
+/*
  * VALUATION QUANTUM METRICS:
  * This quantum gateway handles approximately 10,000+ case operations daily,
  * reducing legal risk exposure by 92% through prescription alerts and
@@ -389,7 +379,7 @@ module.exports = router;
  * - Ghana: Integration with Registrar General's Department
  */
 
-/**
+/*
  * INSPIRATIONAL QUANTUM:
  * "Justice is the constant and perpetual will to render to every man his due."
  * - Domitus Ulpianus, Roman Jurist (170-228 AD)

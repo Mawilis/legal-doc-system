@@ -60,13 +60,7 @@
     "roi": "9.6",
     "paybackMonths": "14.1",
     "complianceVerified": true,
-    "certifications": [
-      "POPIA",
-      "ECT_ACT",
-      "COMPANIES_ACT",
-      "PAIA",
-      "DATA_RESIDENCY_ZA"
-    ]
+    "certifications": ["POPIA", "ECT_ACT", "COMPANIES_ACT", "PAIA", "DATA_RESIDENCY_ZA"]
   },
   "investorMetrics": {
     "targetAnnualSavings": 200000,

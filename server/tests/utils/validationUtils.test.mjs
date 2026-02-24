@@ -1,5 +1,5 @@
 /* eslint-disable */
-/**
+/*
  * 🏛️ Wilsy OS - Validation Utilities Test Suite
  * Investor-Grade | POPIA Compliant | Court-Admissible
  * ES Module Format | Mocha + Chai
@@ -36,7 +36,7 @@ const {
   validateDocumentMetadata,
   validateEvidence,
   validateSAUrl,
-  validateSAEmail
+  validateSAEmail,
 } = validationUtils;
 
 describe('Wilsy OS Validation Utilities - Investor Grade Suite', () => {
@@ -149,7 +149,7 @@ describe('Wilsy OS Validation Utilities - Investor Grade Suite', () => {
         name: 'John Doe',
         idNumber: '8001015009087',
         email: 'john@example.com',
-        phone: '0821234567'
+        phone: '0821234567',
       };
       const result = validatePOPIACompliance(testData);
       expect(result.detectedPII.length).to.be.greaterThan(0);
@@ -160,7 +160,7 @@ describe('Wilsy OS Validation Utilities - Investor Grade Suite', () => {
         timestamp: new Date().toISOString(),
         hash: 'a'.repeat(64),
         algorithm: 'SHA256withRSA',
-        certificate: Buffer.from('test').toString('base64')
+        certificate: Buffer.from('test').toString('base64'),
       };
       const result = validateECTSignature(signature);
       expect(result.valid).to.be.true;
@@ -173,7 +173,7 @@ describe('Wilsy OS Validation Utilities - Investor Grade Suite', () => {
         accountNumber: '12345678',
         bankName: 'FNB',
         branchCode: '123456',
-        accountType: 'TRUST'
+        accountType: 'TRUST',
       };
       const result = validateTrustAccount(trustAccount);
       expect(result.valid).to.be.true;
@@ -185,8 +185,8 @@ describe('Wilsy OS Validation Utilities - Investor Grade Suite', () => {
         documents: {
           ID_COPY: { expiryDate: '2027-12-31' },
           PROOF_OF_ADDRESS: { expiryDate: '2024-12-31' },
-          SOURCE_OF_FUNDS: {}
-        }
+          SOURCE_OF_FUNDS: {},
+        },
       };
       const result = validateFICACompliance(client);
       expect(result.valid).to.be.true;
@@ -205,9 +205,9 @@ describe('Wilsy OS Validation Utilities - Investor Grade Suite', () => {
 
   describe('🔍 Search Query Validation', () => {
     it('should detect SQL injection attempts', () => {
-      const maliciousQuery = { 
-        text: "'; DROP TABLE users; --", 
-        filters: { year: 2023 } 
+      const maliciousQuery = {
+        text: "'; DROP TABLE users; --",
+        filters: { year: 2023 },
       };
       const result = validateSearchQuery(maliciousQuery, { sanitize: true });
       expect(result.valid).to.be.false;
@@ -220,7 +220,7 @@ describe('Wilsy OS Validation Utilities - Investor Grade Suite', () => {
         documentType: 'CONTRACT',
         title: 'Service Agreement',
         dateCreated: '2026-01-15',
-        jurisdiction: 'ZA-GP'
+        jurisdiction: 'ZA-GP',
       };
       const result = validateDocumentMetadata(metadata);
       expect(result.valid).to.be.true;
@@ -239,8 +239,8 @@ describe('Wilsy OS Validation Utilities - Investor Grade Suite', () => {
         content: { text: 'contract content' },
         chainOfCustody: [
           { date: '2026-02-01', custodian: 'Officer Smith', action: 'COLLECTED' },
-          { date: '2026-02-02', custodian: 'Lab Tech', action: 'ANALYZED' }
-        ]
+          { date: '2026-02-02', custodian: 'Lab Tech', action: 'ANALYZED' },
+        ],
       };
       const result = validateEvidence(evidence, { courtAdmissibility: true });
       expect(result.valid).to.be.true;
@@ -265,7 +265,7 @@ describe('Wilsy OS Validation Utilities - Investor Grade Suite', () => {
       const invalidEntriesPerYear = 50000;
       const costPerError = 50;
       const annualSavings = invalidEntriesPerYear * costPerError;
-      
+
       console.log('\n══════════════════════════════════════════════');
       logger.info('📈 INVESTOR METRICS - VALIDATION UTILITIES');
       logger.info('══════════════════════════════════════════════');
@@ -275,7 +275,7 @@ describe('Wilsy OS Validation Utilities - Investor Grade Suite', () => {
       logger.info('⚖️  Court-admissible evidence validation');
       logger.info('✅ All validation functions tested');
       logger.info('══════════════════════════════════════════════\n');
-      
+
       expect(annualSavings).to.be.at.least(2500000);
     });
   });

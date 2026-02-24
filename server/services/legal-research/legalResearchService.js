@@ -4,14 +4,14 @@
   ║ 90% cost reduction | R12M risk elimination | 85% margins | Multi-jurisdictional                          ║
   ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
 
-/**
+/*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/legal-research/legalResearchService.js
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R1.2M/year manual legal research and R850K/year compliance verification
  * • Generates: R2.4M/year revenue @ 85% margin through automated research API
  * • Compliance: POPIA §19, ECT Act §15, Companies Act §28, National Archives Act
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "expectedConsumers": [
@@ -30,7 +30,7 @@
  *     "../models/Citation"
  *   ]
  * }
- * 
+ *
  * INTEGRATION_HINT: imports -> ../../utils/auditLogger, ../../utils/logger, ../../utils/cryptoUtils,
  *                    ../../middleware/tenantContext, ../models/ResearchQuery, ../models/LegalPrecedent,
  *                    ../models/Citation
@@ -39,24 +39,24 @@
 // ============================================================================
 // MERMAID INTEGRATION DIAGRAM
 // ============================================================================
-/**
+/*
  * graph TD
  *     Client[Client Request] --> TenantCtx[Tenant Context Middleware]
  *     TenantCtx --> Validator[Request Validator]
  *     Validator --> ResearchSvc[Legal Research Service]
- *     
+ *
  *     ResearchSvc --> QueryLog[Audit Logger]
  *     ResearchSvc --> Cache[Research Cache]
  *     ResearchSvc --> PrecedentDB[(Legal Precedent DB)]
  *     ResearchSvc --> CitationDB[(Citation Database)]
- *     
+ *
  *     Cache --> Redis[(Redis Cache)]
  *     PrecedentDB --> Mongo[(MongoDB)]
- *     
+ *
  *     ResearchSvc --> POPIA[POPIA Compliance Filter]
  *     POPIA --> Redact[PII Redaction]
  *     Redact --> Response[Formatted Response]
- *     
+ *
  *     QueryLog --> Evidence[Evidence Generator]
  *     Evidence --> InvestorMetrics[Investor Metrics]
  */
@@ -73,7 +73,7 @@ const Citation = require('../models/Citation');
 // ============================================================================
 // ASSUMPTIONS & DEFAULTS
 // ============================================================================
-/**
+/*
  * ASSUMPTIONS:
  * - tenantId format: ^[a-zA-Z0-9_-]{8,64}$ (from tenantContext)
  * - ResearchQuery model exists with fields: _id, tenantId, userId, query, filters, result, metadata
@@ -83,7 +83,7 @@ const Citation = require('../models/Citation');
  * - Default retentionPolicy: companies_act_10_years
  * - Default dataResidency: ZA
  * - PII fields to redact: ['idNumber', 'passport', 'email', 'phone', 'bankAccount']
- * 
+ *
  * DEFAULTS:
  * - jurisdiction: 'ZA' (South Africa)
  * - maxResults: 50
@@ -100,42 +100,42 @@ const RETENTION_POLICIES = Object.freeze({
     name: 'COMPANIES_ACT_10_YEARS',
     duration: 10 * 365 * 24 * 60 * 60 * 1000, // 10 years in milliseconds
     legalReference: 'Companies Act 71 of 2008, Section 28',
-    description: 'Company records retention for legal research'
+    description: 'Company records retention for legal research',
   },
   POPIA_1_YEAR: {
     name: 'POPIA_1_YEAR',
     duration: 365 * 24 * 60 * 60 * 1000, // 1 year
     legalReference: 'POPIA Section 19',
-    description: 'Research query retention'
+    description: 'Research query retention',
   },
   ECT_5_YEARS: {
     name: 'ECT_5_YEARS',
     duration: 5 * 365 * 24 * 60 * 60 * 1000, // 5 years
     legalReference: 'ECT Act Section 15',
-    description: 'Electronic signature evidence retention'
-  }
+    description: 'Electronic signature evidence retention',
+  },
 });
 
 const RESEARCH_DEPTHS = Object.freeze({
   BASIC: 'basic',
   STANDARD: 'standard',
   COMPREHENSIVE: 'comprehensive',
-  FORENSIC: 'forensic'
+  FORENSIC: 'forensic',
 });
 
 const JURISDICTIONS = Object.freeze({
-  ZA: 'ZA',           // South Africa
-  ZA_GP: 'ZA-GP',     // Gauteng
-  ZA_WC: 'ZA-WC',     // Western Cape
-  ZA_KZN: 'ZA-KZN',   // KwaZulu-Natal
-  ZA_EC: 'ZA-EC',     // Eastern Cape
-  ZA_FS: 'ZA-FS',     // Free State
-  ZA_NW: 'ZA-NW',     // North West
-  ZA_LP: 'ZA-LP',     // Limpopo
-  ZA_MP: 'ZA-MP',     // Mpumalanga
-  ZA_NC: 'ZA-NC',     // Northern Cape
-  ZA_CC: 'ZA-CC',     // Constitutional Court
-  ZA_SCA: 'ZA-SCA'    // Supreme Court of Appeal
+  ZA: 'ZA', // South Africa
+  ZA_GP: 'ZA-GP', // Gauteng
+  ZA_WC: 'ZA-WC', // Western Cape
+  ZA_KZN: 'ZA-KZN', // KwaZulu-Natal
+  ZA_EC: 'ZA-EC', // Eastern Cape
+  ZA_FS: 'ZA-FS', // Free State
+  ZA_NW: 'ZA-NW', // North West
+  ZA_LP: 'ZA-LP', // Limpopo
+  ZA_MP: 'ZA-MP', // Mpumalanga
+  ZA_NC: 'ZA-NC', // Northern Cape
+  ZA_CC: 'ZA-CC', // Constitutional Court
+  ZA_SCA: 'ZA-SCA', // Supreme Court of Appeal
 });
 
 // ============================================================================
@@ -152,7 +152,7 @@ class ResearchCache {
     try {
       const fullKey = `research:${tenantId}:${cacheKey}`;
       const cached = await this.redis.get(fullKey);
-      
+
       if (cached) {
         await auditLogger.log({
           action: 'CACHE_HIT',
@@ -161,18 +161,18 @@ class ResearchCache {
           metadata: { cacheKey },
           timestamp: new Date().toISOString(),
           retentionPolicy: RETENTION_POLICIES.POPIA_1_YEAR,
-          dataResidency: 'ZA'
+          dataResidency: 'ZA',
         });
-        
+
         return JSON.parse(cached);
       }
-      
+
       return null;
     } catch (error) {
-      logger.error('Cache retrieval failed', { 
+      logger.error('Cache retrieval failed', {
         component: 'legalResearchService',
         tenantId,
-        error: error.message 
+        error: error.message,
       });
       return null;
     }
@@ -182,9 +182,9 @@ class ResearchCache {
     try {
       const fullKey = `research:${tenantId}:${cacheKey}`;
       const serialized = JSON.stringify(value);
-      
+
       await this.redis.setex(fullKey, ttl, serialized);
-      
+
       await auditLogger.log({
         action: 'CACHE_SET',
         tenantId,
@@ -192,15 +192,15 @@ class ResearchCache {
         metadata: { cacheKey, ttl },
         timestamp: new Date().toISOString(),
         retentionPolicy: RETENTION_POLICIES.POPIA_1_YEAR,
-        dataResidency: 'ZA'
+        dataResidency: 'ZA',
       });
-      
+
       return true;
     } catch (error) {
-      logger.error('Cache set failed', { 
+      logger.error('Cache set failed', {
         component: 'legalResearchService',
         tenantId,
-        error: error.message 
+        error: error.message,
       });
       return false;
     }
@@ -209,10 +209,10 @@ class ResearchCache {
   async invalidate(tenantId, pattern) {
     try {
       const keys = await this.redis.keys(`research:${tenantId}:${pattern}*`);
-      
+
       if (keys.length > 0) {
         await this.redis.del(...keys);
-        
+
         await auditLogger.log({
           action: 'CACHE_INVALIDATE',
           tenantId,
@@ -220,16 +220,16 @@ class ResearchCache {
           metadata: { pattern, keysInvalidated: keys.length },
           timestamp: new Date().toISOString(),
           retentionPolicy: RETENTION_POLICIES.POPIA_1_YEAR,
-          dataResidency: 'ZA'
+          dataResidency: 'ZA',
         });
       }
-      
+
       return keys.length;
     } catch (error) {
-      logger.error('Cache invalidation failed', { 
+      logger.error('Cache invalidation failed', {
         component: 'legalResearchService',
         tenantId,
-        error: error.message 
+        error: error.message,
       });
       return 0;
     }
@@ -247,7 +247,7 @@ class PrecedentAnalyzer {
       allSa: /^\[(\d{4})\] \d+ All SA \d+ \([A-Z]+\)$/,
       zagpjhc: /^\[(\d{4})\] ZAGPJHC (\d+)$/,
       zasca: /^\[(\d{4})\] ZASCA (\d+)$/,
-      zacc: /^\[(\d{4})\] ZACC (\d+)$/
+      zacc: /^\[(\d{4})\] ZACC (\d+)$/,
     };
   }
 
@@ -263,17 +263,17 @@ class PrecedentAnalyzer {
       overruledBy: null,
       distinguishedBy: [],
       appliedIn: [],
-      analysis: {}
+      analysis: {},
     };
 
     // Determine precedent strength based on court hierarchy
     const courtHierarchy = {
-      'CONSTITUTIONAL_COURT': 100,
-      'SUPREME_COURT_APPEAL': 90,
-      'HIGH_COURT': 80,
-      'LABOUR_APPEAL_COURT': 85,
-      'LABOUR_COURT': 75,
-      'MAGISTRATE_COURT': 60
+      CONSTITUTIONAL_COURT: 100,
+      SUPREME_COURT_APPEAL: 90,
+      HIGH_COURT: 80,
+      LABOUR_APPEAL_COURT: 85,
+      LABOUR_COURT: 75,
+      MAGISTRATE_COURT: 60,
     };
 
     analysis.strength = courtHierarchy[precedent.court] || 50;
@@ -297,17 +297,14 @@ class PrecedentAnalyzer {
       direct: [],
       cited: [],
       citing: [],
-      similar: []
+      similar: [],
     };
 
     const maxResults = depth === 'comprehensive' ? 50 : depth === 'standard' ? 25 : 10;
 
     // Find direct citations
     const citing = await Citation.find({
-      $or: [
-        { source: citation },
-        { target: citation }
-      ]
+      $or: [{ source: citation }, { target: citation }],
     }).limit(maxResults);
 
     for (const cite of citing) {
@@ -320,18 +317,18 @@ class PrecedentAnalyzer {
 
     // Find similar precedents by court and date
     const precedent = await LegalPrecedent.findOne({ citation });
-    
+
     if (precedent) {
       const similar = await LegalPrecedent.find({
         court: precedent.court,
         date: {
           $gte: new Date(precedent.date.getFullYear() - 2, 0, 1),
-          $lte: new Date(precedent.date.getFullYear() + 2, 11, 31)
+          $lte: new Date(precedent.date.getFullYear() + 2, 11, 31),
         },
-        citation: { $ne: citation }
+        citation: { $ne: citation },
       }).limit(maxResults);
 
-      related.similar = similar.map(p => p.citation);
+      related.similar = similar.map((p) => p.citation);
     }
 
     return related;
@@ -350,7 +347,7 @@ class LegalResearchService {
     this.evidenceStore = new Map();
   }
 
-  /**
+  /*
    * Execute legal research query with full forensic tracking
    */
   async research(tenantId, userId, query, options = {}) {
@@ -366,7 +363,7 @@ class LegalResearchService {
         dateFrom,
         dateTo,
         court,
-        useCache = true
+        useCache = true,
       } = options;
 
       // Validate tenant access
@@ -376,20 +373,20 @@ class LegalResearchService {
       if (useCache) {
         const cacheKey = this.generateCacheKey(query, options);
         const cached = await this.cache.get(tenantId, cacheKey);
-        
+
         if (cached) {
           logger.info('Research cache hit', {
             component: 'legalResearchService',
             tenantId,
             userId,
             researchId,
-            cacheKey
+            cacheKey,
           });
 
           return {
             researchId,
             cached: true,
-            ...cached
+            ...cached,
           };
         }
       }
@@ -401,14 +398,14 @@ class LegalResearchService {
         maxResults,
         dateFrom,
         dateTo,
-        court
+        court,
       });
 
       // Enrich with citation analysis if requested
       if (includeCitations && results.precedents.length > 0) {
         results.citationNetwork = await this.buildCitationNetwork(
           tenantId,
-          results.precedents.map(p => p.citation)
+          results.precedents.map((p) => p.citation)
         );
       }
 
@@ -430,8 +427,8 @@ class LegalResearchService {
           researchDepth: depth,
           jurisdiction,
           court,
-          dateRange: dateFrom || dateTo ? { from: dateFrom, to: dateTo } : undefined
-        }
+          dateRange: dateFrom || dateTo ? { from: dateFrom, to: dateTo } : undefined,
+        },
       };
 
       // Cache results
@@ -447,7 +444,6 @@ class LegalResearchService {
       await this.generateEvidence(researchId, response);
 
       return response;
-
     } catch (error) {
       logger.error('Research execution failed', {
         component: 'legalResearchService',
@@ -455,7 +451,7 @@ class LegalResearchService {
         userId,
         researchId,
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
 
       await auditLogger.log({
@@ -466,33 +462,26 @@ class LegalResearchService {
         metadata: {
           researchId,
           query: redactSensitive(query, REDACT_FIELDS),
-          error: error.message
+          error: error.message,
         },
         timestamp: new Date().toISOString(),
         retentionPolicy: RETENTION_POLICIES.POPIA_1_YEAR,
-        dataResidency: 'ZA'
+        dataResidency: 'ZA',
       });
 
       throw error;
     }
   }
 
-  /**
+  /*
    * Execute database research
    */
   async executeResearch(tenantId, query, options) {
-    const {
-      jurisdiction,
-      depth,
-      maxResults,
-      dateFrom,
-      dateTo,
-      court
-    } = options;
+    const { jurisdiction, depth, maxResults, dateFrom, dateTo, court } = options;
 
     const searchCriteria = {
       tenantId: { $in: [tenantId, null] }, // Allow system-wide precedents
-      $text: { $search: query }
+      $text: { $search: query },
     };
 
     if (jurisdiction) {
@@ -514,13 +503,13 @@ class LegalResearchService {
       LegalPrecedent.find(searchCriteria)
         .sort({ score: { $meta: 'textScore' } })
         .limit(maxResults)
-        .lean()
+        .lean(),
     ];
 
     if (depth === RESEARCH_DEPTHS.COMPREHENSIVE || depth === RESEARCH_DEPTHS.FORENSIC) {
       searches.push(
         Citation.find({
-          $text: { $search: query }
+          $text: { $search: query },
         })
           .limit(maxResults / 2)
           .lean()
@@ -532,17 +521,17 @@ class LegalResearchService {
     return {
       precedents,
       citations,
-      totalFound: precedents.length + citations.length
+      totalFound: precedents.length + citations.length,
     };
   }
 
-  /**
+  /*
    * Build citation network for precedents
    */
   async buildCitationNetwork(tenantId, citations) {
     const network = {
       nodes: [],
-      edges: []
+      edges: [],
     };
 
     const nodeSet = new Set();
@@ -550,9 +539,9 @@ class LegalResearchService {
 
     for (const citation of citations) {
       const related = await this.analyzer.findRelatedPrecedents(tenantId, citation, 'standard');
-      
+
       // Add nodes
-      [citation, ...related.cited, ...related.citing, ...related.similar].forEach(cite => {
+      [citation, ...related.cited, ...related.citing, ...related.similar].forEach((cite) => {
         if (!nodeSet.has(cite)) {
           nodeSet.add(cite);
           network.nodes.push({ id: cite, type: 'precedent' });
@@ -560,7 +549,7 @@ class LegalResearchService {
       });
 
       // Add edges
-      related.cited.forEach(target => {
+      related.cited.forEach((target) => {
         const edgeKey = `${citation}->${target}`;
         if (!edgeSet.has(edgeKey)) {
           edgeSet.add(edgeKey);
@@ -568,7 +557,7 @@ class LegalResearchService {
         }
       });
 
-      related.citing.forEach(source => {
+      related.citing.forEach((source) => {
         const edgeKey = `${source}->${citation}`;
         if (!edgeSet.has(edgeKey)) {
           edgeSet.add(edgeKey);
@@ -580,38 +569,41 @@ class LegalResearchService {
     return network;
   }
 
-  /**
+  /*
    * Calculate relevance scores for precedents
    */
   async calculateRelevance(precedents, query) {
     const keywords = query.toLowerCase().split(/\s+/);
-    
-    return precedents.map(precedent => {
-      let relevanceScore = precedent.score || 0;
 
-      // Boost score based on keyword matches in full text
-      if (precedent.fullText) {
-        const fullText = precedent.fullText.toLowerCase();
-        const keywordMatches = keywords.filter(k => fullText.includes(k)).length;
-        relevanceScore += keywordMatches * 0.1;
-      }
+    return precedents
+      .map((precedent) => {
+        let relevanceScore = precedent.score || 0;
 
-      // Boost based on recency
-      const ageInDays = (new Date() - new Date(precedent.date)) / (24 * 60 * 60 * 1000);
-      if (ageInDays < 365) {
-        relevanceScore += 0.3;
-      } else if (ageInDays < 1095) { // 3 years
-        relevanceScore += 0.15;
-      }
+        // Boost score based on keyword matches in full text
+        if (precedent.fullText) {
+          const fullText = precedent.fullText.toLowerCase();
+          const keywordMatches = keywords.filter((k) => fullText.includes(k)).length;
+          relevanceScore += keywordMatches * 0.1;
+        }
 
-      return {
-        ...precedent,
-        relevanceScore: Math.min(relevanceScore, 1)
-      };
-    }).sort((a, b) => b.relevanceScore - a.relevanceScore);
+        // Boost based on recency
+        const ageInDays = (new Date() - new Date(precedent.date)) / (24 * 60 * 60 * 1000);
+        if (ageInDays < 365) {
+          relevanceScore += 0.3;
+        } else if (ageInDays < 1095) {
+          // 3 years
+          relevanceScore += 0.15;
+        }
+
+        return {
+          ...precedent,
+          relevanceScore: Math.min(relevanceScore, 1),
+        };
+      })
+      .sort((a, b) => b.relevanceScore - a.relevanceScore);
   }
 
-  /**
+  /*
    * Generate cache key for research query
    */
   generateCacheKey(query, options) {
@@ -622,13 +614,13 @@ class LegalResearchService {
       c: options.court,
       f: options.dateFrom,
       t: options.dateTo,
-      m: options.maxResults
+      m: options.maxResults,
     };
-    
+
     return cryptoUtils.generateHash(JSON.stringify(normalized));
   }
 
-  /**
+  /*
    * Validate tenant access
    */
   async validateTenantAccess(tenantId, userId) {
@@ -642,7 +634,7 @@ class LegalResearchService {
     return true;
   }
 
-  /**
+  /*
    * Log research for audit trail
    */
   async logResearch(tenantId, userId, researchId, query, response) {
@@ -657,11 +649,11 @@ class LegalResearchService {
         resultCount: response.resultCount,
         processingTime: response.processingTime,
         jurisdiction: response.jurisdiction,
-        depth: response.depth
+        depth: response.depth,
       },
       timestamp: new Date().toISOString(),
       retentionPolicy: RETENTION_POLICIES.POPIA_1_YEAR,
-      dataResidency: 'ZA'
+      dataResidency: 'ZA',
     };
 
     await auditLogger.log(auditEntry);
@@ -675,18 +667,18 @@ class LegalResearchService {
       filters: { jurisdiction: response.jurisdiction, depth: response.depth },
       result: {
         count: response.resultCount,
-        processingTime: response.processingTime
+        processingTime: response.processingTime,
       },
       metadata: {
         timestamp: new Date(),
-        version: response.metadata.version
-      }
+        version: response.metadata.version,
+      },
     });
 
     return auditEntry;
   }
 
-  /**
+  /*
    * Generate forensic evidence for research
    */
   async generateEvidence(researchId, response) {
@@ -694,7 +686,7 @@ class LegalResearchService {
       researchId,
       timestamp: new Date().toISOString(),
       auditEntries: [],
-      hash: null
+      hash: null,
     };
 
     // Canonicalize audit entries
@@ -704,14 +696,14 @@ class LegalResearchService {
         researchId,
         resultCount: response.resultCount,
         processingTime: response.processingTime,
-        timestamp: response.timestamp
-      }
+        timestamp: response.timestamp,
+      },
     ];
 
     // Sort and stringify for deterministic hash
-    const canonicalized = JSON.stringify(auditEntries.sort((a, b) => 
-      a.timestamp.localeCompare(b.timestamp)
-    ));
+    const canonicalized = JSON.stringify(
+      auditEntries.sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+    );
 
     evidence.auditEntries = auditEntries;
     evidence.hash = cryptoUtils.generateHash(canonicalized);
@@ -721,13 +713,13 @@ class LegalResearchService {
     return evidence;
   }
 
-  /**
+  /*
    * Get research by ID
    */
   async getResearch(tenantId, researchId) {
     const research = await ResearchQuery.findOne({
       _id: researchId,
-      tenantId
+      tenantId,
     }).lean();
 
     if (!research) {
@@ -737,21 +729,18 @@ class LegalResearchService {
     return research;
   }
 
-  /**
+  /*
    * Get research evidence
    */
   async getEvidence(researchId) {
     return this.evidenceStore.get(researchId) || null;
   }
 
-  /**
+  /*
    * Search precedents by citation
    */
   async searchByCitation(tenantId, citation, options = {}) {
-    const {
-      includeAnalysis = true,
-      depth = RESEARCH_DEPTHS.STANDARD
-    } = options;
+    const { includeAnalysis = true, depth = RESEARCH_DEPTHS.STANDARD } = options;
 
     const precedent = await LegalPrecedent.findOne({ citation }).lean();
 
@@ -763,20 +752,16 @@ class LegalResearchService {
 
     if (includeAnalysis) {
       result.analysis = await this.analyzer.analyzePrecedent(precedent);
-      
+
       if (depth !== RESEARCH_DEPTHS.BASIC) {
-        result.related = await this.analyzer.findRelatedPrecedents(
-          tenantId,
-          citation,
-          depth
-        );
+        result.related = await this.analyzer.findRelatedPrecedents(tenantId, citation, depth);
       }
     }
 
     return result;
   }
 
-  /**
+  /*
    * Get jurisdiction information
    */
   getJurisdictionInfo(jurisdictionCode) {
@@ -784,56 +769,58 @@ class LegalResearchService {
       [JURISDICTIONS.ZA]: {
         name: 'South Africa',
         type: 'NATIONAL',
-        courts: ['CONSTITUTIONAL_COURT', 'SUPREME_COURT_APPEAL', 'HIGH_COURT']
+        courts: ['CONSTITUTIONAL_COURT', 'SUPREME_COURT_APPEAL', 'HIGH_COURT'],
       },
       [JURISDICTIONS.ZA_GP]: {
         name: 'Gauteng',
         type: 'PROVINCIAL',
         capital: 'Johannesburg',
-        courts: ['GAUTENG_HIGH_COURT', 'MAGISTRATE_COURT']
+        courts: ['GAUTENG_HIGH_COURT', 'MAGISTRATE_COURT'],
       },
       [JURISDICTIONS.ZA_WC]: {
         name: 'Western Cape',
         type: 'PROVINCIAL',
         capital: 'Cape Town',
-        courts: ['WESTERN_CAPE_HIGH_COURT', 'MAGISTRATE_COURT']
+        courts: ['WESTERN_CAPE_HIGH_COURT', 'MAGISTRATE_COURT'],
       },
       [JURISDICTIONS.ZA_CC]: {
         name: 'Constitutional Court',
         type: 'SPECIAL',
         location: 'Johannesburg',
-        courts: ['CONSTITUTIONAL_COURT']
+        courts: ['CONSTITUTIONAL_COURT'],
       },
       [JURISDICTIONS.ZA_SCA]: {
         name: 'Supreme Court of Appeal',
         type: 'SPECIAL',
         location: 'Bloemfontein',
-        courts: ['SUPREME_COURT_APPEAL']
-      }
+        courts: ['SUPREME_COURT_APPEAL'],
+      },
     };
 
-    return jurisdictionMap[jurisdictionCode] || {
-      name: 'Unknown Jurisdiction',
-      type: 'UNKNOWN',
-      courts: []
-    };
+    return (
+      jurisdictionMap[jurisdictionCode] || {
+        name: 'Unknown Jurisdiction',
+        type: 'UNKNOWN',
+        courts: [],
+      }
+    );
   }
 
-  /**
+  /*
    * Get retention policies
    */
   getRetentionPolicies() {
     return RETENTION_POLICIES;
   }
 
-  /**
+  /*
    * Get research depths
    */
   getResearchDepths() {
     return RESEARCH_DEPTHS;
   }
 
-  /**
+  /*
    * Get jurisdictions
    */
   getJurisdictions() {
@@ -847,7 +834,7 @@ class LegalResearchService {
 
 let instance = null;
 
-/**
+/*
  * Create or retrieve LegalResearchService instance
  * @param {Object} redisClient - Redis client for caching
  * @returns {LegalResearchService} Singleton instance
@@ -857,7 +844,7 @@ const createLegalResearchService = (redisClient) => {
     instance = new LegalResearchService(redisClient);
     logger.info('LegalResearchService initialized', {
       component: 'legalResearchService',
-      status: 'ready'
+      status: 'ready',
     });
   }
   return instance;
@@ -872,5 +859,5 @@ module.exports = {
   createLegalResearchService,
   RETENTION_POLICIES,
   RESEARCH_DEPTHS,
-  JURISDICTIONS
+  JURISDICTIONS,
 };

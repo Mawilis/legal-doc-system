@@ -19,7 +19,7 @@
     "speakers": "3.8 million",
     "province": "Free State, Gauteng, Lesotho"
   },
-  
+
   "common": {
     "save": "Boloka",
     "cancel": "Hlakola",
@@ -77,7 +77,7 @@
     "rejected": "E hanngwe",
     "cancelled": "E hlakotsweng"
   },
-  
+
   "navigation": {
     "home": "Lapeng",
     "dashboard": "Dashboard",
@@ -94,7 +94,7 @@
     "privacy": "Leano la lekunutu",
     "security": "Tshireletso"
   },
-  
+
   "errors": {
     "general": "Phoso e etsahetse. Ka kopo leka hape.",
     "notFound": "Leqephe ha le fumanehe",
@@ -110,7 +110,7 @@
       "number": "Ka kopo kenya nomoro e nepahetseng"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "Kena ho Wilsy OS",
@@ -139,7 +139,7 @@
       "success": "O tswile ka katleho"
     }
   },
-  
+
   "onboarding": {
     "title": "Ho kenya bareki",
     "stages": {
@@ -171,7 +171,7 @@
       "ficaRejected": "FICA e hanngwe"
     }
   },
-  
+
   "compliance": {
     "fica": {
       "title": "Ho latela FICA",

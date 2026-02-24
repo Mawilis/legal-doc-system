@@ -56,73 +56,73 @@ require('dotenv').config();
 
 // Quantum Shield: Validate critical environment variables
 const REQUIRED_ENV_VARS = [
-    'SARS_EFILING_API_KEY',
-    'SARS_EFILING_API_SECRET',
-    'SARS_BASE_URL',
-    'SARS_VAT_NUMBER',
-    'TAX_ENCRYPTION_KEY',
-    'SARS_SIGNING_CERTIFICATE',
-    'SARS_SIGNING_PRIVATE_KEY'
+  'SARS_EFILING_API_KEY',
+  'SARS_EFILING_API_SECRET',
+  'SARS_BASE_URL',
+  'SARS_VAT_NUMBER',
+  'TAX_ENCRYPTION_KEY',
+  'SARS_SIGNING_CERTIFICATE',
+  'SARS_SIGNING_PRIVATE_KEY',
 ];
 
-REQUIRED_ENV_VARS.forEach(varName => {
-    if (!process.env[varName]) {
-        throw new Error(`FATAL: Missing required environment variable: ${varName}`);
-    }
+REQUIRED_ENV_VARS.forEach((varName) => {
+  if (!process.env[varName]) {
+    throw new Error(`FATAL: Missing required environment variable: ${varName}`);
+  }
 });
 
 // SARS Compliance Configuration (Value-Added Tax Act 89 of 1991)
 const SARS_CONFIG = {
-    // SARS eFiling API Endpoints
-    endpoints: {
-        authentication: 'https://efiling.sars.gov.za/api/auth/token',
-        vat201Submission: 'https://efiling.sars.gov.za/api/vat/v201/submit',
-        vat201Status: 'https://efiling.sars.gov.za/api/vat/v201/status',
-        itr12Submission: 'https://efiling.sars.gov.za/api/income/itr12/submit',
-        payeSubmission: 'https://efiling.sars.gov.za/api/paye/submit',
-        statementOfAccount: 'https://efiling.sars.gov.za/api/account/statement',
-        taxComplianceStatus: 'https://efiling.sars.gov.za/api/compliance/status'
-    },
+  // SARS eFiling API Endpoints
+  endpoints: {
+    authentication: 'https://efiling.sars.gov.za/api/auth/token',
+    vat201Submission: 'https://efiling.sars.gov.za/api/vat/v201/submit',
+    vat201Status: 'https://efiling.sars.gov.za/api/vat/v201/status',
+    itr12Submission: 'https://efiling.sars.gov.za/api/income/itr12/submit',
+    payeSubmission: 'https://efiling.sars.gov.za/api/paye/submit',
+    statementOfAccount: 'https://efiling.sars.gov.za/api/account/statement',
+    taxComplianceStatus: 'https://efiling.sars.gov.za/api/compliance/status',
+  },
 
-    // Tax Compliance Parameters (VAT Act 89 of 1991)
-    compliance: {
-        vatPeriods: ['Monthly', 'Bi-Monthly', 'Six-Monthly'],
-        vatCategories: ['Vendor', 'Agent', 'Foreigner'],
-        taxYears: Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i),
-        submissionDeadlines: {
-            monthly: 25, // 25th of following month
-            bimonthly: 25, // 25th after second month
-            sixmonthly: 25 // 25th after six months
-        }
+  // Tax Compliance Parameters (VAT Act 89 of 1991)
+  compliance: {
+    vatPeriods: ['Monthly', 'Bi-Monthly', 'Six-Monthly'],
+    vatCategories: ['Vendor', 'Agent', 'Foreigner'],
+    taxYears: Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i),
+    submissionDeadlines: {
+      monthly: 25, // 25th of following month
+      bimonthly: 25, // 25th after second month
+      sixmonthly: 25, // 25th after six months
     },
+  },
 
-    // Security Configuration
-    security: {
-        encryptionAlgorithm: 'aes-256-gcm',
-        signingAlgorithm: 'RSASSA-PKCS1-v1_5',
-        hashAlgorithm: 'sha256',
-        tokenExpiryMinutes: 30
-    },
+  // Security Configuration
+  security: {
+    encryptionAlgorithm: 'aes-256-gcm',
+    signingAlgorithm: 'RSASSA-PKCS1-v1_5',
+    hashAlgorithm: 'sha256',
+    tokenExpiryMinutes: 30,
+  },
 
-    // Cache Configuration
-    cache: {
-        ttl: 1800, // 30 minutes
-        checkperiod: 60
-    }
+  // Cache Configuration
+  cache: {
+    ttl: 1800, // 30 minutes
+    checkperiod: 60,
+  },
 };
 
 // Initialize quantum cache for tax data
 const taxCache = new NodeCache({
-    stdTTL: SARS_CONFIG.cache.ttl,
-    checkperiod: SARS_CONFIG.cache.checkperiod,
-    useClones: false
+  stdTTL: SARS_CONFIG.cache.ttl,
+  checkperiod: SARS_CONFIG.cache.checkperiod,
+  useClones: false,
 });
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 // ║                               QUANTUM ENCRYPTION UTILITIES                                           ║
 // ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 
-/**
+/*
  * @function encryptTaxData
  * @description Quantum AES-256-GCM encryption for sensitive tax data
  * @param {Object} taxData - Sensitive tax data to encrypt
@@ -131,22 +131,22 @@ const taxCache = new NodeCache({
  * @compliance POPIA Section 19, ECT Act Section 18
  */
 const encryptTaxData = (taxData) => {
-    if (!taxData) return null;
+  if (!taxData) return null;
 
-    const encryptionKey = process.env.TAX_ENCRYPTION_KEY;
-    const dataString = JSON.stringify(taxData);
+  const encryptionKey = process.env.TAX_ENCRYPTION_KEY;
+  const dataString = JSON.stringify(taxData);
 
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(encryptionKey, 'hex'), iv);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(encryptionKey, 'hex'), iv);
 
-    let encrypted = cipher.update(dataString, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    const authTag = cipher.getAuthTag();
+  let encrypted = cipher.update(dataString, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  const authTag = cipher.getAuthTag();
 
-    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
 };
 
-/**
+/*
  * @function decryptTaxData
  * @description Quantum AES-256-GCM decryption for sensitive tax data
  * @param {String} encryptedData - Encrypted tax data string
@@ -154,23 +154,23 @@ const encryptTaxData = (taxData) => {
  * @security AES-256-GCM with authentication tag validation
  */
 const decryptTaxData = (encryptedData) => {
-    if (!encryptedData || !encryptedData.includes(':')) return encryptedData;
+  if (!encryptedData || !encryptedData.includes(':')) return encryptedData;
 
-    const encryptionKey = process.env.TAX_ENCRYPTION_KEY;
-    const [ivHex, authTagHex, encrypted] = encryptedData.split(':');
+  const encryptionKey = process.env.TAX_ENCRYPTION_KEY;
+  const [ivHex, authTagHex, encrypted] = encryptedData.split(':');
 
-    const iv = Buffer.from(ivHex, 'hex');
-    const authTag = Buffer.from(authTagHex, 'hex');
-    const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(encryptionKey, 'hex'), iv);
-    decipher.setAuthTag(authTag);
+  const iv = Buffer.from(ivHex, 'hex');
+  const authTag = Buffer.from(authTagHex, 'hex');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(encryptionKey, 'hex'), iv);
+  decipher.setAuthTag(authTag);
 
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
 
-    return JSON.parse(decrypted);
+  return JSON.parse(decrypted);
 };
 
-/**
+/*
  * @function generateDigitalSignature
  * @description Generate RSA digital signature for tax submissions
  * @param {String} data - Data to sign
@@ -179,23 +179,23 @@ const decryptTaxData = (encryptedData) => {
  * @compliance ECT Act 2002, SARS eFiling Requirements
  */
 const generateDigitalSignature = (data) => {
-    const privateKey = process.env.SARS_SIGNING_PRIVATE_KEY;
-    const signer = new jsrsasign.KJUR.crypto.Signature({ alg: 'SHA256withRSA' });
-    signer.init(privateKey);
-    signer.updateString(data);
+  const privateKey = process.env.SARS_SIGNING_PRIVATE_KEY;
+  const signer = new jsrsasign.KJUR.crypto.Signature({ alg: 'SHA256withRSA' });
+  signer.init(privateKey);
+  signer.updateString(data);
 
-    const signature = signer.sign();
-    const timestamp = new Date().toISOString();
+  const signature = signer.sign();
+  const timestamp = new Date().toISOString();
 
-    return {
-        signature: signature,
-        timestamp: timestamp,
-        algorithm: 'SHA256withRSA',
-        certificate: process.env.SARS_SIGNING_CERTIFICATE.substring(0, 100) + '...'
-    };
+  return {
+    signature: signature,
+    timestamp: timestamp,
+    algorithm: 'SHA256withRSA',
+    certificate: process.env.SARS_SIGNING_CERTIFICATE.substring(0, 100) + '...',
+  };
 };
 
-/**
+/*
  * @function validateVATNumber
  * @description Validate South African VAT number format
  * @param {String} vatNumber - VAT number to validate
@@ -203,963 +203,999 @@ const generateDigitalSignature = (data) => {
  * @compliance VAT Act 89 of 1991, SARS VAT101 Guide
  */
 const validateVATNumber = (vatNumber) => {
-    // South African VAT number format: 10 digits, first digit is 4
-    const vatRegex = /^4\d{9}$/;
+  // South African VAT number format: 10 digits, first digit is 4
+  const vatRegex = /^4\d{9}$/;
 
-    if (!vatRegex.test(vatNumber)) {
-        return {
-            valid: false,
-            error: 'Invalid VAT number format. Must be 10 digits starting with 4'
-        };
-    }
-
-    // Calculate check digit (last digit)
-    const digits = vatNumber.split('').map(Number);
-    let sum = 0;
-
-    for (let i = 0; i < 9; i++) {
-        let digit = digits[i];
-        if (i % 2 === 0) {
-            digit *= 2;
-            if (digit > 9) digit -= 9;
-        }
-        sum += digit;
-    }
-
-    const checkDigit = (10 - (sum % 10)) % 10;
-    const valid = checkDigit === digits[9];
-
+  if (!vatRegex.test(vatNumber)) {
     return {
-        valid,
-        checkDigit,
-        expectedCheckDigit: checkDigit,
-        actualCheckDigit: digits[9],
-        vatNumber
+      valid: false,
+      error: 'Invalid VAT number format. Must be 10 digits starting with 4',
     };
+  }
+
+  // Calculate check digit (last digit)
+  const digits = vatNumber.split('').map(Number);
+  let sum = 0;
+
+  for (let i = 0; i < 9; i++) {
+    let digit = digits[i];
+    if (i % 2 === 0) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+  }
+
+  const checkDigit = (10 - (sum % 10)) % 10;
+  const valid = checkDigit === digits[9];
+
+  return {
+    valid,
+    checkDigit,
+    expectedCheckDigit: checkDigit,
+    actualCheckDigit: digits[9],
+    vatNumber,
+  };
 };
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 // ║                               SARS COMPLIANCE SERVICE CORE                                           ║
 // ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 
-/**
+/*
  * @class SarsComplianceService
  * @description Quantum SARS compliance engine for tax automation
  * @compliance VAT Act 89 of 1991, Income Tax Act 58 of 1962, Tax Administration Act 28 of 2011
  */
 class SarsComplianceService {
-    constructor() {
-        this.apiClient = axios.create({
-            baseURL: process.env.SARS_BASE_URL || 'https://efiling.sars.gov.za',
-            timeout: 45000, // 45 seconds for tax submissions
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'User-Agent': 'WilsyOS/1.0.0 SARS Compliance Engine'
-            }
+  constructor() {
+    this.apiClient = axios.create({
+      baseURL: process.env.SARS_BASE_URL || 'https://efiling.sars.gov.za',
+      timeout: 45000, // 45 seconds for tax submissions
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'User-Agent': 'WilsyOS/1.0.0 SARS Compliance Engine',
+      },
+    });
+
+    // Add request interceptor for authentication
+    this.apiClient.interceptors.request.use(
+      async (config) => {
+        // Add authentication token if not present
+        if (!config.headers['Authorization']) {
+          const token = await this.getAuthenticationToken();
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        // Add digital signature for submissions
+        if (config.data && (config.url.includes('/submit') || config.url.includes('/update'))) {
+          const signature = generateDigitalSignature(JSON.stringify(config.data));
+          config.headers['X-Digital-Signature'] = signature.signature;
+          config.headers['X-Signature-Timestamp'] = signature.timestamp;
+          config.headers['X-Signature-Algorithm'] = signature.algorithm;
+        }
+
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    // Add response interceptor for error handling
+    this.apiClient.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (error.response && error.response.status === 401) {
+          // Token expired, refresh and retry
+          const newToken = await this.refreshAuthenticationToken();
+          error.config.headers['Authorization'] = `Bearer ${newToken}`;
+          return this.apiClient.request(error.config);
+        }
+
+        // Log tax API errors for audit trail
+        await this.logTaxEvent({
+          type: 'API_ERROR',
+          status: error.response?.status,
+          message: error.message,
+          url: error.config?.url,
+          timestamp: new Date().toISOString(),
         });
 
-        // Add request interceptor for authentication
-        this.apiClient.interceptors.request.use(
-            async (config) => {
-                // Add authentication token if not present
-                if (!config.headers['Authorization']) {
-                    const token = await this.getAuthenticationToken();
-                    config.headers['Authorization'] = `Bearer ${token}`;
-                }
+        return Promise.reject(error);
+      }
+    );
+  }
 
-                // Add digital signature for submissions
-                if (config.data && (config.url.includes('/submit') || config.url.includes('/update'))) {
-                    const signature = generateDigitalSignature(JSON.stringify(config.data));
-                    config.headers['X-Digital-Signature'] = signature.signature;
-                    config.headers['X-Signature-Timestamp'] = signature.timestamp;
-                    config.headers['X-Signature-Algorithm'] = signature.algorithm;
-                }
+  /*
+   * @method getAuthenticationToken
+   * @description Obtain OAuth2 token from SARS eFiling API
+   * @returns {Promise<String>} Authentication token
+   * @security OAuth2 client credentials flow
+   */
+  async getAuthenticationToken() {
+    const cacheKey = 'sars_auth_token';
+    const cachedToken = taxCache.get(cacheKey);
 
-                return config;
-            },
-            (error) => {
-                return Promise.reject(error);
-            }
-        );
-
-        // Add response interceptor for error handling
-        this.apiClient.interceptors.response.use(
-            (response) => response,
-            async (error) => {
-                if (error.response && error.response.status === 401) {
-                    // Token expired, refresh and retry
-                    const newToken = await this.refreshAuthenticationToken();
-                    error.config.headers['Authorization'] = `Bearer ${newToken}`;
-                    return this.apiClient.request(error.config);
-                }
-
-                // Log tax API errors for audit trail
-                await this.logTaxEvent({
-                    type: 'API_ERROR',
-                    status: error.response?.status,
-                    message: error.message,
-                    url: error.config?.url,
-                    timestamp: new Date().toISOString()
-                });
-
-                return Promise.reject(error);
-            }
-        );
+    if (cachedToken) {
+      return cachedToken;
     }
 
-    /**
-     * @method getAuthenticationToken
-     * @description Obtain OAuth2 token from SARS eFiling API
-     * @returns {Promise<String>} Authentication token
-     * @security OAuth2 client credentials flow
-     */
-    async getAuthenticationToken() {
-        const cacheKey = 'sars_auth_token';
-        const cachedToken = taxCache.get(cacheKey);
-
-        if (cachedToken) {
-            return cachedToken;
+    try {
+      const response = await axios.post(
+        SARS_CONFIG.endpoints.authentication,
+        {
+          grant_type: 'client_credentials',
+          client_id: process.env.SARS_EFILING_API_KEY,
+          client_secret: process.env.SARS_EFILING_API_SECRET,
+          scope: 'efiling vat income paye compliance',
+        },
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
         }
+      );
 
-        try {
-            const response = await axios.post(SARS_CONFIG.endpoints.authentication, {
-                grant_type: 'client_credentials',
-                client_id: process.env.SARS_EFILING_API_KEY,
-                client_secret: process.env.SARS_EFILING_API_SECRET,
-                scope: 'efiling vat income paye compliance'
-            }, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
+      const token = response.data.access_token;
+      const expiry = response.data.expires_in || 1800; // Default 30 minutes
 
-            const token = response.data.access_token;
-            const expiry = response.data.expires_in || 1800; // Default 30 minutes
+      // Cache token with slightly shorter TTL
+      taxCache.set(cacheKey, token, expiry - 60);
 
-            // Cache token with slightly shorter TTL
-            taxCache.set(cacheKey, token, expiry - 60);
-
-            return token;
-        } catch (error) {
-            console.error('SARS Authentication failed:', error.message);
-            throw new Error(`SARS authentication failed: ${error.response?.data?.error || error.message}`);
-        }
+      return token;
+    } catch (error) {
+      console.error('SARS Authentication failed:', error.message);
+      throw new Error(
+        `SARS authentication failed: ${error.response?.data?.error || error.message}`
+      );
     }
+  }
 
-    /**
-     * @method refreshAuthenticationToken
-     * @description Refresh expired authentication token
-     * @returns {Promise<String>} New authentication token
-     */
-    async refreshAuthenticationToken() {
-        taxCache.del('sars_auth_token');
-        return await this.getAuthenticationToken();
+  /*
+   * @method refreshAuthenticationToken
+   * @description Refresh expired authentication token
+   * @returns {Promise<String>} New authentication token
+   */
+  async refreshAuthenticationToken() {
+    taxCache.del('sars_auth_token');
+    return await this.getAuthenticationToken();
+  }
+
+  /*
+   * @method submitVAT201Return
+   * @description Submit VAT201 return to SARS eFiling
+   * @param {Object} vatData - VAT201 form data
+   * @param {String} period - Tax period (YYYY-MM)
+   * @param {String} tenantId - Tenant identifier
+   * @returns {Promise<Object>} Submission result with reference number
+   * @compliance VAT Act 89 of 1991, SARS VAT201 Guide
+   */
+  async submitVAT201Return(vatData, period, tenantId) {
+    try {
+      // Quantum Shield: Validate VAT number
+      const vatValidation = validateVATNumber(vatData.vatNumber);
+      if (!vatValidation.valid) {
+        throw new Error(`Invalid VAT number: ${vatValidation.error}`);
+      }
+
+      // Validate tax period format
+      const periodRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
+      if (!periodRegex.test(period)) {
+        throw new Error('Invalid period format. Use YYYY-MM');
+      }
+
+      // Check submission deadline
+      const deadlineStatus = this.checkVATDeadline(period, vatData.filingFrequency);
+      if (deadlineStatus.isLate) {
+        await this.logTaxEvent({
+          type: 'LATE_SUBMISSION',
+          tenantId,
+          period,
+          vatNumber: vatData.vatNumber,
+          daysLate: deadlineStatus.daysLate,
+          penaltyEstimate: deadlineStatus.penaltyEstimate,
+        });
+      }
+
+      // Encrypt sensitive financial data
+      const encryptedVatData = {
+        ...vatData,
+        sensitiveFields: encryptTaxData({
+          turnover: vatData.turnover,
+          inputTax: vatData.inputTax,
+          outputTax: vatData.outputTax,
+          netVAT: vatData.netVAT,
+        }),
+      };
+
+      // Generate VAT201 XML payload (SARS required format)
+      const xmlPayload = this.generateVAT201XML(encryptedVatData, period);
+
+      // Prepare submission request
+      const submissionRequest = {
+        vatNumber: vatData.vatNumber,
+        period: period,
+        filingFrequency: vatData.filingFrequency || 'Monthly',
+        xmlPayload: xmlPayload,
+        digitalSignature: generateDigitalSignature(xmlPayload),
+        metadata: {
+          tenantId,
+          submissionDate: new Date().toISOString(),
+          userAgent: 'WilsyOS SARS Compliance Engine',
+          ipAddress: 'ENCRYPTED_FOR_SECURITY',
+        },
+      };
+
+      // Submit to SARS eFiling API
+      const response = await this.apiClient.post(
+        SARS_CONFIG.endpoints.vat201Submission,
+        submissionRequest
+      );
+
+      const submissionResult = {
+        success: response.data.success,
+        referenceNumber: response.data.reference,
+        submissionDate: new Date().toISOString(),
+        period: period,
+        vatNumber: vatData.vatNumber,
+        netVAT: vatData.netVAT,
+        paymentDue: response.data.paymentDue || 0,
+        dueDate: response.data.dueDate,
+        complianceMarkers: {
+          vatAct: '89 of 1991',
+          submissionMethod: 'ELECTRONIC',
+          encryptionStatus: 'AES-256-GCM',
+          retentionPeriod: '5 years (Tax Administration Act)',
+        },
+      };
+
+      // Cache submission result
+      const cacheKey = `vat201_${vatData.vatNumber}_${period}_${tenantId}`;
+      taxCache.set(cacheKey, submissionResult, 604800); // 7 days
+
+      // Generate and store VAT201 PDF receipt
+      const pdfReceipt = await this.generateVAT201PDF(submissionResult);
+      await this.storeTaxDocument(
+        `VAT201_${vatData.vatNumber}_${period}.pdf`,
+        pdfReceipt,
+        tenantId,
+        'VAT201_SUBMISSION'
+      );
+
+      // Log successful submission
+      await this.logTaxEvent({
+        type: 'VAT201_SUBMISSION',
+        tenantId,
+        vatNumber: vatData.vatNumber,
+        period,
+        referenceNumber: submissionResult.referenceNumber,
+        netVAT: vatData.netVAT,
+        success: true,
+        timestamp: new Date().toISOString(),
+      });
+
+      return submissionResult;
+    } catch (error) {
+      console.error('VAT201 Submission failed:', error);
+
+      // Log submission failure
+      await this.logTaxEvent({
+        type: 'VAT201_SUBMISSION_FAILED',
+        tenantId,
+        vatNumber: vatData?.vatNumber,
+        period,
+        error: error.message,
+        success: false,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Fallback: Generate offline submission record
+      return await this.createOfflineVAT201Record(vatData, period, tenantId, error);
     }
+  }
 
-    /**
-     * @method submitVAT201Return
-     * @description Submit VAT201 return to SARS eFiling
-     * @param {Object} vatData - VAT201 form data
-     * @param {String} period - Tax period (YYYY-MM)
-     * @param {String} tenantId - Tenant identifier
-     * @returns {Promise<Object>} Submission result with reference number
-     * @compliance VAT Act 89 of 1991, SARS VAT201 Guide
-     */
-    async submitVAT201Return(vatData, period, tenantId) {
-        try {
-            // Quantum Shield: Validate VAT number
-            const vatValidation = validateVATNumber(vatData.vatNumber);
-            if (!vatValidation.valid) {
-                throw new Error(`Invalid VAT number: ${vatValidation.error}`);
-            }
+  /*
+   * @method generateVAT201XML
+   * @description Generate VAT201 XML payload for SARS submission
+   * @param {Object} vatData - VAT data
+   * @param {String} period - Tax period
+   * @returns {String} XML payload
+   * @compliance SARS VAT201 XML Schema v3.2
+   */
+  generateVAT201XML(vatData, period) {
+    const builder = new xml2js.Builder({
+      xmldec: { version: '1.0', encoding: 'UTF-8' },
+      renderOpts: { pretty: false },
+    });
 
-            // Validate tax period format
-            const periodRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
-            if (!periodRegex.test(period)) {
-                throw new Error('Invalid period format. Use YYYY-MM');
-            }
+    const xmlObject = {
+      VAT201: {
+        $: {
+          xmlns: 'http://www.sars.gov.za/efiling/VAT201/v3.2',
+          'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+        },
+        Header: {
+          VendorNumber: vatData.vatNumber,
+          Period: period,
+          SubmissionDate: new Date().toISOString().split('T')[0],
+          Frequency: vatData.filingFrequency || 'Monthly',
+        },
+        Financials: {
+          Turnover: vatData.turnover || 0,
+          StandardRateSales: vatData.standardRateSales || 0,
+          ZeroRateSales: vatData.zeroRateSales || 0,
+          ExemptSales: vatData.exemptSales || 0,
+          InputTax: vatData.inputTax || 0,
+          OutputTax: vatData.outputTax || 0,
+          NetVAT: vatData.netVAT || 0,
+          PaymentDue: vatData.paymentDue || 0,
+        },
+        Declaration: {
+          DeclaredBy: vatData.declaredBy || 'WilsyOS Automated System',
+          Capacity: vatData.capacity || 'Tax Practitioner',
+          DeclarationDate: new Date().toISOString().split('T')[0],
+        },
+      },
+    };
 
-            // Check submission deadline
-            const deadlineStatus = this.checkVATDeadline(period, vatData.filingFrequency);
-            if (deadlineStatus.isLate) {
-                await this.logTaxEvent({
-                    type: 'LATE_SUBMISSION',
-                    tenantId,
-                    period,
-                    vatNumber: vatData.vatNumber,
-                    daysLate: deadlineStatus.daysLate,
-                    penaltyEstimate: deadlineStatus.penaltyEstimate
-                });
-            }
+    return builder.buildObject(xmlObject);
+  }
 
-            // Encrypt sensitive financial data
-            const encryptedVatData = {
-                ...vatData,
-                sensitiveFields: encryptTaxData({
-                    turnover: vatData.turnover,
-                    inputTax: vatData.inputTax,
-                    outputTax: vatData.outputTax,
-                    netVAT: vatData.netVAT
-                })
-            };
-
-            // Generate VAT201 XML payload (SARS required format)
-            const xmlPayload = this.generateVAT201XML(encryptedVatData, period);
-
-            // Prepare submission request
-            const submissionRequest = {
-                vatNumber: vatData.vatNumber,
-                period: period,
-                filingFrequency: vatData.filingFrequency || 'Monthly',
-                xmlPayload: xmlPayload,
-                digitalSignature: generateDigitalSignature(xmlPayload),
-                metadata: {
-                    tenantId,
-                    submissionDate: new Date().toISOString(),
-                    userAgent: 'WilsyOS SARS Compliance Engine',
-                    ipAddress: 'ENCRYPTED_FOR_SECURITY'
-                }
-            };
-
-            // Submit to SARS eFiling API
-            const response = await this.apiClient.post(
-                SARS_CONFIG.endpoints.vat201Submission,
-                submissionRequest
-            );
-
-            const submissionResult = {
-                success: response.data.success,
-                referenceNumber: response.data.reference,
-                submissionDate: new Date().toISOString(),
-                period: period,
-                vatNumber: vatData.vatNumber,
-                netVAT: vatData.netVAT,
-                paymentDue: response.data.paymentDue || 0,
-                dueDate: response.data.dueDate,
-                complianceMarkers: {
-                    vatAct: '89 of 1991',
-                    submissionMethod: 'ELECTRONIC',
-                    encryptionStatus: 'AES-256-GCM',
-                    retentionPeriod: '5 years (Tax Administration Act)'
-                }
-            };
-
-            // Cache submission result
-            const cacheKey = `vat201_${vatData.vatNumber}_${period}_${tenantId}`;
-            taxCache.set(cacheKey, submissionResult, 604800); // 7 days
-
-            // Generate and store VAT201 PDF receipt
-            const pdfReceipt = await this.generateVAT201PDF(submissionResult);
-            await this.storeTaxDocument(
-                `VAT201_${vatData.vatNumber}_${period}.pdf`,
-                pdfReceipt,
-                tenantId,
-                'VAT201_SUBMISSION'
-            );
-
-            // Log successful submission
-            await this.logTaxEvent({
-                type: 'VAT201_SUBMISSION',
-                tenantId,
-                vatNumber: vatData.vatNumber,
-                period,
-                referenceNumber: submissionResult.referenceNumber,
-                netVAT: vatData.netVAT,
-                success: true,
-                timestamp: new Date().toISOString()
-            });
-
-            return submissionResult;
-
-        } catch (error) {
-            console.error('VAT201 Submission failed:', error);
-
-            // Log submission failure
-            await this.logTaxEvent({
-                type: 'VAT201_SUBMISSION_FAILED',
-                tenantId,
-                vatNumber: vatData?.vatNumber,
-                period,
-                error: error.message,
-                success: false,
-                timestamp: new Date().toISOString()
-            });
-
-            // Fallback: Generate offline submission record
-            return await this.createOfflineVAT201Record(vatData, period, tenantId, error);
-        }
-    }
-
-    /**
-     * @method generateVAT201XML
-     * @description Generate VAT201 XML payload for SARS submission
-     * @param {Object} vatData - VAT data
-     * @param {String} period - Tax period
-     * @returns {String} XML payload
-     * @compliance SARS VAT201 XML Schema v3.2
-     */
-    generateVAT201XML(vatData, period) {
-        const builder = new xml2js.Builder({
-            xmldec: { version: '1.0', encoding: 'UTF-8' },
-            renderOpts: { pretty: false }
+  /*
+   * @method generateVAT201PDF
+   * @description Generate PDF receipt for VAT201 submission
+   * @param {Object} submissionResult - Submission result data
+   * @returns {Promise<Buffer>} PDF buffer
+   */
+  async generateVAT201PDF(submissionResult) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 50,
+          info: {
+            Title: `VAT201 Submission - ${submissionResult.vatNumber}`,
+            Author: 'WilsyOS SARS Compliance Engine',
+            Subject: 'VAT201 Tax Return',
+            Keywords: 'SARS,VAT201,Tax,South Africa',
+            CreationDate: new Date(),
+          },
         });
 
-        const xmlObject = {
-            VAT201: {
-                $: {
-                    xmlns: 'http://www.sars.gov.za/efiling/VAT201/v3.2',
-                    'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance'
-                },
-                Header: {
-                    VendorNumber: vatData.vatNumber,
-                    Period: period,
-                    SubmissionDate: new Date().toISOString().split('T')[0],
-                    Frequency: vatData.filingFrequency || 'Monthly'
-                },
-                Financials: {
-                    Turnover: vatData.turnover || 0,
-                    StandardRateSales: vatData.standardRateSales || 0,
-                    ZeroRateSales: vatData.zeroRateSales || 0,
-                    ExemptSales: vatData.exemptSales || 0,
-                    InputTax: vatData.inputTax || 0,
-                    OutputTax: vatData.outputTax || 0,
-                    NetVAT: vatData.netVAT || 0,
-                    PaymentDue: vatData.paymentDue || 0
-                },
-                Declaration: {
-                    DeclaredBy: vatData.declaredBy || 'WilsyOS Automated System',
-                    Capacity: vatData.capacity || 'Tax Practitioner',
-                    DeclarationDate: new Date().toISOString().split('T')[0]
-                }
-            }
-        };
-
-        return builder.buildObject(xmlObject);
-    }
-
-    /**
-     * @method generateVAT201PDF
-     * @description Generate PDF receipt for VAT201 submission
-     * @param {Object} submissionResult - Submission result data
-     * @returns {Promise<Buffer>} PDF buffer
-     */
-    async generateVAT201PDF(submissionResult) {
-        return new Promise((resolve, reject) => {
-            try {
-                const doc = new PDFDocument({
-                    size: 'A4',
-                    margin: 50,
-                    info: {
-                        Title: `VAT201 Submission - ${submissionResult.vatNumber}`,
-                        Author: 'WilsyOS SARS Compliance Engine',
-                        Subject: 'VAT201 Tax Return',
-                        Keywords: 'SARS,VAT201,Tax,South Africa',
-                        CreationDate: new Date()
-                    }
-                });
-
-                const buffers = [];
-                doc.on('data', buffers.push.bind(buffers));
-                doc.on('end', () => {
-                    const pdfBuffer = Buffer.concat(buffers);
-                    resolve(pdfBuffer);
-                });
-
-                // Add header
-                doc.fontSize(20)
-                    .font('Helvetica-Bold')
-                    .text('SOUTH AFRICAN REVENUE SERVICE', { align: 'center' });
-
-                doc.moveDown();
-                doc.fontSize(16)
-                    .text('VAT201 RETURN SUBMISSION RECEIPT', { align: 'center' });
-
-                doc.moveDown(2);
-
-                // Add submission details
-                doc.fontSize(12)
-                    .font('Helvetica')
-                    .text(`Reference Number: ${submissionResult.referenceNumber}`, { continued: false })
-                    .text(`VAT Number: ${submissionResult.vatNumber}`)
-                    .text(`Tax Period: ${submissionResult.period}`)
-                    .text(`Submission Date: ${new Date(submissionResult.submissionDate).toLocaleDateString('en-ZA')}`)
-                    .text(`Net VAT Amount: R ${submissionResult.netVAT?.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}`)
-                    .text(`Payment Due Date: ${submissionResult.dueDate ? new Date(submissionResult.dueDate).toLocaleDateString('en-ZA') : 'N/A'}`);
-
-                doc.moveDown();
-
-                // Add compliance notice
-                doc.fontSize(10)
-                    .font('Helvetica-Oblique')
-                    .text('This document is generated by WilsyOS SARS Compliance Engine.')
-                    .text('Retain this receipt for your records for 5 years as per Tax Administration Act 28 of 2011.');
-
-                // Add footer
-                doc.moveDown(3);
-                doc.fontSize(8)
-                    .text('WilsyOS - Digital Justice Platform | SARS Compliant Tax Automation', { align: 'center' });
-
-                doc.end();
-            } catch (error) {
-                reject(error);
-            }
-        });
-    }
-
-    /**
-     * @method checkVATDeadline
-     * @description Check if VAT submission is within deadline
-     * @param {String} period - Tax period (YYYY-MM)
-     * @param {String} frequency - Filing frequency
-     * @returns {Object} Deadline status with penalty estimate
-     */
-    checkVATDeadline(period, frequency = 'Monthly') {
-        const [year, month] = period.split('-').map(Number);
-        const deadlineDay = SARS_CONFIG.compliance.submissionDeadlines[frequency.toLowerCase()] || 25;
-
-        // Calculate deadline date
-        let deadlineDate = new Date(year, month, deadlineDay); // Month is 0-indexed
-
-        // Adjust for weekends (SARS deadline moves to next business day)
-        const dayOfWeek = deadlineDate.getDay();
-        if (dayOfWeek === 0) { // Sunday
-            deadlineDate.setDate(deadlineDate.getDate() + 1);
-        } else if (dayOfWeek === 6) { // Saturday
-            deadlineDate.setDate(deadlineDate.getDate() + 2);
-        }
-
-        const today = new Date();
-        const isLate = today > deadlineDate;
-        const daysLate = isLate ? Math.floor((today - deadlineDate) / (1000 * 60 * 60 * 24)) : 0;
-
-        // Calculate penalty estimate (SARS penalty guidelines)
-        let penaltyEstimate = 0;
-        if (isLate) {
-            if (daysLate <= 7) {
-                penaltyEstimate = 250; // R250 for first week
-            } else if (daysLate <= 30) {
-                penaltyEstimate = 500; // R500 for first month
-            } else {
-                penaltyEstimate = 1000 + (daysLate - 30) * 50; // R1000 + R50 per additional day
-            }
-        }
-
-        return {
-            isLate,
-            deadlineDate: deadlineDate.toISOString().split('T')[0],
-            daysLate,
-            penaltyEstimate,
-            businessDaysRemaining: isLate ? 0 : this.calculateBusinessDays(today, deadlineDate)
-        };
-    }
-
-    /**
-     * @method calculateBusinessDays
-     * @description Calculate business days between two dates
-     * @param {Date} startDate - Start date
-     * @param {Date} endDate - End date
-     * @returns {Number} Business days count
-     */
-    calculateBusinessDays(startDate, endDate) {
-        let count = 0;
-        const current = new Date(startDate);
-
-        while (current <= endDate) {
-            const dayOfWeek = current.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday or Saturday
-                count++;
-            }
-            current.setDate(current.getDate() + 1);
-        }
-
-        return count;
-    }
-
-    /**
-     * @method createOfflineVAT201Record
-     * @description Create offline record when submission fails
-     * @param {Object} vatData - VAT data
-     * @param {String} period - Tax period
-     * @param {String} tenantId - Tenant ID
-     * @param {Error} error - Original error
-     * @returns {Promise<Object>} Offline submission record
-     */
-    async createOfflineVAT201Record(vatData, period, tenantId, error) {
-        const offlineRecord = {
-            success: false,
-            offlineMode: true,
-            referenceNumber: `OFFLINE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            submissionDate: new Date().toISOString(),
-            period,
-            vatNumber: vatData.vatNumber,
-            netVAT: vatData.netVAT,
-            error: error.message,
-            retryScheduled: new Date(Date.now() + 3600000).toISOString(), // 1 hour later
-            complianceMarkers: {
-                vatAct: '89 of 1991',
-                submissionMethod: 'OFFLINE_PENDING',
-                warning: 'Online submission failed, offline record created',
-                retentionPeriod: '5 years'
-            }
-        };
-
-        // Store offline record in database
-        await this.storeOfflineSubmission(offlineRecord, tenantId, 'VAT201');
-
-        // Schedule retry
-        this.scheduleRetrySubmission(offlineRecord, tenantId);
-
-        return offlineRecord;
-    }
-
-    /**
-     * @method submitIncomeTaxReturn
-     * @description Submit ITR12 income tax return to SARS
-     * @param {Object} taxData - Income tax data
-     * @param {String} taxYear - Tax year (e.g., "2024")
-     * @param {String} tenantId - Tenant identifier
-     * @returns {Promise<Object>} Submission result
-     * @compliance Income Tax Act 58 of 1962
-     */
-    async submitIncomeTaxReturn(taxData, taxYear, tenantId) {
-        try {
-            // Validate tax year
-            const currentYear = new Date().getFullYear();
-            const taxYearNum = parseInt(taxYear);
-
-            if (taxYearNum > currentYear || taxYearNum < currentYear - 5) {
-                throw new Error(`Invalid tax year. Must be between ${currentYear - 5} and ${currentYear}`);
-            }
-
-            // Encrypt sensitive income data
-            const encryptedTaxData = {
-                ...taxData,
-                sensitiveFields: encryptTaxData({
-                    grossIncome: taxData.grossIncome,
-                    deductions: taxData.deductions,
-                    taxableIncome: taxData.taxableIncome,
-                    taxLiability: taxData.taxLiability
-                })
-            };
-
-            // Generate ITR12 XML payload
-            const xmlPayload = this.generateITR12XML(encryptedTaxData, taxYear);
-
-            // Prepare submission
-            const submissionRequest = {
-                taxpayerId: taxData.taxpayerId,
-                taxYear: taxYear,
-                xmlPayload: xmlPayload,
-                digitalSignature: generateDigitalSignature(xmlPayload),
-                declaration: {
-                    declaredBy: taxData.declaredBy || 'Tax Practitioner',
-                    capacity: taxData.capacity || 'Registered Tax Practitioner',
-                    date: new Date().toISOString().split('T')[0]
-                },
-                metadata: {
-                    tenantId,
-                    submissionType: 'ITR12',
-                    softwareId: 'WilsyOS_1.0.0'
-                }
-            };
-
-            // Submit to SARS
-            const response = await this.apiClient.post(
-                SARS_CONFIG.endpoints.itr12Submission,
-                submissionRequest
-            );
-
-            const submissionResult = {
-                success: response.data.success,
-                referenceNumber: response.data.reference,
-                assessmentNumber: response.data.assessmentNumber,
-                submissionDate: new Date().toISOString(),
-                taxYear: taxYear,
-                taxpayerId: taxData.taxpayerId,
-                taxLiability: taxData.taxLiability,
-                refundDue: response.data.refundDue || 0,
-                complianceMarkers: {
-                    incomeTaxAct: '58 of 1962',
-                    submissionMethod: 'ELECTRONIC',
-                    encryptionStatus: 'AES-256-GCM'
-                }
-            };
-
-            // Cache result
-            const cacheKey = `itr12_${taxData.taxpayerId}_${taxYear}_${tenantId}`;
-            taxCache.set(cacheKey, submissionResult, 604800);
-
-            // Log submission
-            await this.logTaxEvent({
-                type: 'ITR12_SUBMISSION',
-                tenantId,
-                taxpayerId: taxData.taxpayerId,
-                taxYear,
-                referenceNumber: submissionResult.referenceNumber,
-                success: true
-            });
-
-            return submissionResult;
-
-        } catch (error) {
-            console.error('ITR12 Submission failed:', error);
-
-            await this.logTaxEvent({
-                type: 'ITR12_SUBMISSION_FAILED',
-                tenantId,
-                taxpayerId: taxData?.taxpayerId,
-                taxYear,
-                error: error.message
-            });
-
-            throw error;
-        }
-    }
-
-    /**
-     * @method generateITR12XML
-     * @description Generate ITR12 XML payload for SARS
-     * @param {Object} taxData - Tax data
-     * @param {String} taxYear - Tax year
-     * @returns {String} XML payload
-     */
-    generateITR12XML(taxData, taxYear) {
-        const builder = new xml2js.Builder({
-            xmldec: { version: '1.0', encoding: 'UTF-8' }
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+          const pdfBuffer = Buffer.concat(buffers);
+          resolve(pdfBuffer);
         });
 
-        const xmlObject = {
-            ITR12: {
-                $: {
-                    xmlns: 'http://www.sars.gov.za/efiling/ITR12/v2.1',
-                    taxYear: taxYear
-                },
-                Taxpayer: {
-                    IdNumber: taxData.taxpayerId,
-                    FirstName: taxData.firstName,
-                    LastName: taxData.lastName,
-                    DateOfBirth: taxData.dateOfBirth
-                },
-                Income: {
-                    GrossIncome: taxData.grossIncome || 0,
-                    ExemptIncome: taxData.exemptIncome || 0,
-                    TaxableIncome: taxData.taxableIncome || 0
-                },
-                Deductions: {
-                    RetirementFund: taxData.retirementFund || 0,
-                    MedicalExpenses: taxData.medicalExpenses || 0,
-                    OtherDeductions: taxData.otherDeductions || 0
-                },
-                Calculation: {
-                    TaxLiability: taxData.taxLiability || 0,
-                    ProvisionalTax: taxData.provisionalTax || 0,
-                    NetTaxDue: taxData.netTaxDue || 0
-                }
-            }
-        };
+        // Add header
+        doc
+          .fontSize(20)
+          .font('Helvetica-Bold')
+          .text('SOUTH AFRICAN REVENUE SERVICE', { align: 'center' });
 
-        return builder.buildObject(xmlObject);
-    }
+        doc.moveDown();
+        doc.fontSize(16).text('VAT201 RETURN SUBMISSION RECEIPT', { align: 'center' });
 
-    /**
-     * @method getTaxComplianceStatus
-     * @description Get tax compliance status from SARS
-     * @param {String} taxNumber - VAT or Income Tax number
-     * @param {String} taxType - Type of tax (VAT, INCOME, PAYE)
-     * @param {String} tenantId - Tenant identifier
-     * @returns {Promise<Object>} Compliance status
-     * @compliance Tax Administration Act 28 of 2011
-     */
-    async getTaxComplianceStatus(taxNumber, taxType, tenantId) {
-        const cacheKey = `compliance_${taxNumber}_${taxType}_${tenantId}`;
-        const cachedStatus = taxCache.get(cacheKey);
+        doc.moveDown(2);
 
-        if (cachedStatus) {
-            return cachedStatus;
-        }
+        // Add submission details
+        doc
+          .fontSize(12)
+          .font('Helvetica')
+          .text(`Reference Number: ${submissionResult.referenceNumber}`, { continued: false })
+          .text(`VAT Number: ${submissionResult.vatNumber}`)
+          .text(`Tax Period: ${submissionResult.period}`)
+          .text(
+            `Submission Date: ${new Date(submissionResult.submissionDate).toLocaleDateString(
+              'en-ZA'
+            )}`
+          )
+          .text(
+            `Net VAT Amount: R ${submissionResult.netVAT?.toLocaleString('en-ZA', {
+              minimumFractionDigits: 2,
+            })}`
+          )
+          .text(
+            `Payment Due Date: ${
+              submissionResult.dueDate
+                ? new Date(submissionResult.dueDate).toLocaleDateString('en-ZA')
+                : 'N/A'
+            }`
+          );
 
-        try {
-            const response = await this.apiClient.get(SARS_CONFIG.endpoints.taxComplianceStatus, {
-                params: {
-                    taxNumber,
-                    taxType,
-                    requestDate: new Date().toISOString().split('T')[0]
-                }
-            });
+        doc.moveDown();
 
-            const complianceStatus = {
-                taxNumber,
-                taxType,
-                compliant: response.data.compliant,
-                statusDate: response.data.statusDate,
-                outstandingReturns: response.data.outstandingReturns || 0,
-                outstandingDebt: response.data.outstandingDebt || 0,
-                tcsPin: response.data.tcsPin, // Tax Compliance Status PIN
-                validUntil: response.data.validUntil,
-                restrictions: response.data.restrictions || [],
-                complianceMarkers: {
-                    taxAdministrationAct: '28 of 2011',
-                    dataSource: 'SARS_eFiling_API',
-                    verificationTimestamp: new Date().toISOString()
-                }
-            };
+        // Add compliance notice
+        doc
+          .fontSize(10)
+          .font('Helvetica-Oblique')
+          .text('This document is generated by WilsyOS SARS Compliance Engine.')
+          .text(
+            'Retain this receipt for your records for 5 years as per Tax Administration Act 28 of 2011.'
+          );
 
-            // Cache for 24 hours
-            taxCache.set(cacheKey, complianceStatus, 86400);
-
-            return complianceStatus;
-
-        } catch (error) {
-            console.error('Compliance status check failed:', error);
-
-            // Return default non-compliant status if API fails
-            return {
-                taxNumber,
-                taxType,
-                compliant: false,
-                statusDate: new Date().toISOString(),
-                outstandingReturns: 0,
-                outstandingDebt: 0,
-                tcsPin: null,
-                validUntil: null,
-                restrictions: ['UNABLE_TO_VERIFY'],
-                complianceMarkers: {
-                    warning: 'SARS API unavailable, manual verification required',
-                    verificationTimestamp: new Date().toISOString()
-                }
-            };
-        }
-    }
-
-    /**
-     * @method generateTaxComplianceCertificate
-     * @description Generate tax compliance certificate PDF
-     * @param {Object} complianceStatus - Compliance status data
-     * @param {String} tenantId - Tenant identifier
-     * @returns {Promise<Buffer>} PDF certificate
-     */
-    async generateTaxComplianceCertificate(complianceStatus, tenantId) {
-        return new Promise((resolve, reject) => {
-            try {
-                const doc = new PDFDocument({
-                    size: 'A4',
-                    margin: 40,
-                    info: {
-                        Title: `Tax Compliance Certificate - ${complianceStatus.taxNumber}`,
-                        Author: 'WilsyOS SARS Compliance Engine',
-                        Creator: 'WilsyOS Digital Justice Platform',
-                        CreationDate: new Date()
-                    }
-                });
-
-                const buffers = [];
-                doc.on('data', buffers.push.bind(buffers));
-                doc.on('end', () => {
-                    resolve(Buffer.concat(buffers));
-                });
-
-                // Certificate header
-                doc.fontSize(18)
-                    .font('Helvetica-Bold')
-                    .text('TAX COMPLIANCE STATUS CERTIFICATE', { align: 'center' });
-
-                doc.moveDown();
-                doc.fontSize(12)
-                    .font('Helvetica')
-                    .text('SOUTH AFRICAN REVENUE SERVICE', { align: 'center' });
-
-                doc.moveDown(2);
-
-                // Certificate body
-                doc.fontSize(11)
-                    .text(`Tax Number: ${complianceStatus.taxNumber}`)
-                    .text(`Tax Type: ${complianceStatus.taxType}`)
-                    .text(`Compliant: ${complianceStatus.compliant ? 'YES' : 'NO'}`)
-                    .text(`Status Date: ${new Date(complianceStatus.statusDate).toLocaleDateString('en-ZA')}`)
-                    .text(`Outstanding Returns: ${complianceStatus.outstandingReturns}`)
-                    .text(`Outstanding Debt: R ${complianceStatus.outstandingDebt?.toLocaleString('en-ZA') || '0.00'}`);
-
-                if (complianceStatus.tcsPin) {
-                    doc.moveDown();
-                    doc.font('Helvetica-Bold')
-                        .text(`TCS PIN: ${complianceStatus.tcsPin}`);
-                }
-
-                doc.moveDown(2);
-
-                // Compliance notice
-                doc.fontSize(10)
-                    .font('Helvetica-Oblique')
-                    .text('This certificate is generated based on SARS eFiling data.')
-                    .text('Valid for 30 days from date of issue.')
-                    .text('Generated by WilsyOS SARS Compliance Engine.');
-
-                // Add QR code placeholder for TCS PIN
-                doc.moveDown();
-                doc.fontSize(8)
-                    .text('Scan for digital verification:', { align: 'center' });
-
-                // Footer
-                doc.moveDown(4);
-                doc.fontSize(8)
-                    .text('WilsyOS - Digital Justice Platform | SARS eFiling Integrated', { align: 'center' });
-
-                doc.end();
-            } catch (error) {
-                reject(error);
-            }
-        });
-    }
-
-    /**
-     * @method storeTaxDocument
-     * @description Store tax document in secure storage
-     * @param {String} filename - Document filename
-     * @param {Buffer} documentBuffer - Document buffer
-     * @param {String} tenantId - Tenant ID
-     * @param {String} documentType - Type of document
-     * @returns {Promise<Object>} Storage result
-     */
-    async storeTaxDocument(filename, documentBuffer, tenantId, documentType) {
-        // In production, this would upload to secure S3/Azure Blob Storage
-        const documentHash = crypto.createHash('sha256').update(documentBuffer).digest('hex');
-
-        const documentRecord = {
-            filename,
-            documentType,
-            tenantId,
-            documentHash,
-            storageLocation: `tax-documents/${tenantId}/${documentType}/${filename}`,
-            encrypted: true,
-            storageDate: new Date().toISOString(),
-            retentionYears: 5 // Tax Administration Act requirement
-        };
-
-        // Here you would implement actual cloud storage upload
-        // await s3Client.putObject({...});
-
-        return documentRecord;
-    }
-
-    /**
-     * @method storeOfflineSubmission
-     * @description Store offline submission for later retry
-     * @param {Object} submissionRecord - Submission record
-     * @param {String} tenantId - Tenant ID
-     * @param {String} submissionType - Type of submission
-     * @returns {Promise<Object>} Storage result
-     */
-    async storeOfflineSubmission(submissionRecord, tenantId, submissionType) {
-        // Store in MongoDB for later retry
-        const OfflineSubmission = mongoose.model('OfflineSubmission') ||
-            mongoose.model('OfflineSubmission', new mongoose.Schema({
-                tenantId: String,
-                submissionType: String,
-                data: Object,
-                retryCount: { type: Number, default: 0 },
-                maxRetries: { type: Number, default: 3 },
-                nextRetry: Date,
-                status: { type: String, default: 'PENDING' },
-                createdAt: { type: Date, default: Date.now }
-            }));
-
-        const offlineRecord = new OfflineSubmission({
-            tenantId,
-            submissionType,
-            data: submissionRecord,
-            nextRetry: new Date(Date.now() + 3600000), // 1 hour later
-            status: 'PENDING'
+        // Add footer
+        doc.moveDown(3);
+        doc.fontSize(8).text('WilsyOS - Digital Justice Platform | SARS Compliant Tax Automation', {
+          align: 'center',
         });
 
-        await offlineRecord.save();
-        return offlineRecord;
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /*
+   * @method checkVATDeadline
+   * @description Check if VAT submission is within deadline
+   * @param {String} period - Tax period (YYYY-MM)
+   * @param {String} frequency - Filing frequency
+   * @returns {Object} Deadline status with penalty estimate
+   */
+  checkVATDeadline(period, frequency = 'Monthly') {
+    const [year, month] = period.split('-').map(Number);
+    const deadlineDay = SARS_CONFIG.compliance.submissionDeadlines[frequency.toLowerCase()] || 25;
+
+    // Calculate deadline date
+    let deadlineDate = new Date(year, month, deadlineDay); // Month is 0-indexed
+
+    // Adjust for weekends (SARS deadline moves to next business day)
+    const dayOfWeek = deadlineDate.getDay();
+    if (dayOfWeek === 0) {
+      // Sunday
+      deadlineDate.setDate(deadlineDate.getDate() + 1);
+    } else if (dayOfWeek === 6) {
+      // Saturday
+      deadlineDate.setDate(deadlineDate.getDate() + 2);
     }
 
-    /**
-     * @method scheduleRetrySubmission
-     * @description Schedule retry for failed submission
-     * @param {Object} submissionRecord - Submission record
-     * @param {String} tenantId - Tenant ID
-     */
-    scheduleRetrySubmission(submissionRecord, tenantId) {
-        // In production, use BullMQ or similar job queue
-        setTimeout(async () => {
-            try {
-                console.log(`Retrying submission: ${submissionRecord.referenceNumber}`);
-                // Implement retry logic here
-            } catch (error) {
-                console.error('Retry failed:', error);
-            }
-        }, 3600000); // 1 hour delay
+    const today = new Date();
+    const isLate = today > deadlineDate;
+    const daysLate = isLate ? Math.floor((today - deadlineDate) / (1000 * 60 * 60 * 24)) : 0;
+
+    // Calculate penalty estimate (SARS penalty guidelines)
+    let penaltyEstimate = 0;
+    if (isLate) {
+      if (daysLate <= 7) {
+        penaltyEstimate = 250; // R250 for first week
+      } else if (daysLate <= 30) {
+        penaltyEstimate = 500; // R500 for first month
+      } else {
+        penaltyEstimate = 1000 + (daysLate - 30) * 50; // R1000 + R50 per additional day
+      }
     }
 
-    /**
-     * @method logTaxEvent
-     * @description Log tax-related events for audit trail
-     * @param {Object} eventData - Event data
-     * @returns {Promise<void>}
-     * @compliance Tax Administration Act 28 of 2011, POPIA Section 19
-     */
-    async logTaxEvent(eventData) {
-        const auditLog = {
-            ...eventData,
-            service: 'SARS_COMPLIANCE_SERVICE',
-            timestamp: new Date().toISOString(),
-            environment: process.env.NODE_ENV || 'development',
-            version: '1.0.0',
-            ipHash: crypto.createHash('sha256').update('IP_REDACTED_FOR_PRIVACY').digest('hex')
-        };
+    return {
+      isLate,
+      deadlineDate: deadlineDate.toISOString().split('T')[0],
+      daysLate,
+      penaltyEstimate,
+      businessDaysRemaining: isLate ? 0 : this.calculateBusinessDays(today, deadlineDate),
+    };
+  }
 
-        // In production, log to MongoDB audit collection
-        if (process.env.NODE_ENV === 'production') {
-            console.log('TAX_AUDIT_LOG:', JSON.stringify(auditLog));
-            // await mongoose.connection.collection('tax_audit_logs').insertOne(auditLog);
-        } else {
-            console.log('TAX_EVENT:', auditLog);
-        }
+  /*
+   * @method calculateBusinessDays
+   * @description Calculate business days between two dates
+   * @param {Date} startDate - Start date
+   * @param {Date} endDate - End date
+   * @returns {Number} Business days count
+   */
+  calculateBusinessDays(startDate, endDate) {
+    let count = 0;
+    const current = new Date(startDate);
+
+    while (current <= endDate) {
+      const dayOfWeek = current.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        // Not Sunday or Saturday
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
     }
 
-    /**
-     * @method clearCache
-     * @description Clear tax cache
-     * @param {String} pattern - Cache key pattern
-     * @returns {Number} Cleared entries count
-     */
-    clearCache(pattern = null) {
-        if (!pattern) {
-            return taxCache.flushAll();
-        }
+    return count;
+  }
 
-        const keys = taxCache.keys();
-        const matchingKeys = keys.filter(key => key.includes(pattern));
+  /*
+   * @method createOfflineVAT201Record
+   * @description Create offline record when submission fails
+   * @param {Object} vatData - VAT data
+   * @param {String} period - Tax period
+   * @param {String} tenantId - Tenant ID
+   * @param {Error} error - Original error
+   * @returns {Promise<Object>} Offline submission record
+   */
+  async createOfflineVAT201Record(vatData, period, tenantId, error) {
+    const offlineRecord = {
+      success: false,
+      offlineMode: true,
+      referenceNumber: `OFFLINE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      submissionDate: new Date().toISOString(),
+      period,
+      vatNumber: vatData.vatNumber,
+      netVAT: vatData.netVAT,
+      error: error.message,
+      retryScheduled: new Date(Date.now() + 3600000).toISOString(), // 1 hour later
+      complianceMarkers: {
+        vatAct: '89 of 1991',
+        submissionMethod: 'OFFLINE_PENDING',
+        warning: 'Online submission failed, offline record created',
+        retentionPeriod: '5 years',
+      },
+    };
 
-        let cleared = 0;
-        matchingKeys.forEach(key => {
-            if (taxCache.del(key)) {
-                cleared++;
-            }
+    // Store offline record in database
+    await this.storeOfflineSubmission(offlineRecord, tenantId, 'VAT201');
+
+    // Schedule retry
+    this.scheduleRetrySubmission(offlineRecord, tenantId);
+
+    return offlineRecord;
+  }
+
+  /*
+   * @method submitIncomeTaxReturn
+   * @description Submit ITR12 income tax return to SARS
+   * @param {Object} taxData - Income tax data
+   * @param {String} taxYear - Tax year (e.g., "2024")
+   * @param {String} tenantId - Tenant identifier
+   * @returns {Promise<Object>} Submission result
+   * @compliance Income Tax Act 58 of 1962
+   */
+  async submitIncomeTaxReturn(taxData, taxYear, tenantId) {
+    try {
+      // Validate tax year
+      const currentYear = new Date().getFullYear();
+      const taxYearNum = parseInt(taxYear);
+
+      if (taxYearNum > currentYear || taxYearNum < currentYear - 5) {
+        throw new Error(`Invalid tax year. Must be between ${currentYear - 5} and ${currentYear}`);
+      }
+
+      // Encrypt sensitive income data
+      const encryptedTaxData = {
+        ...taxData,
+        sensitiveFields: encryptTaxData({
+          grossIncome: taxData.grossIncome,
+          deductions: taxData.deductions,
+          taxableIncome: taxData.taxableIncome,
+          taxLiability: taxData.taxLiability,
+        }),
+      };
+
+      // Generate ITR12 XML payload
+      const xmlPayload = this.generateITR12XML(encryptedTaxData, taxYear);
+
+      // Prepare submission
+      const submissionRequest = {
+        taxpayerId: taxData.taxpayerId,
+        taxYear: taxYear,
+        xmlPayload: xmlPayload,
+        digitalSignature: generateDigitalSignature(xmlPayload),
+        declaration: {
+          declaredBy: taxData.declaredBy || 'Tax Practitioner',
+          capacity: taxData.capacity || 'Registered Tax Practitioner',
+          date: new Date().toISOString().split('T')[0],
+        },
+        metadata: {
+          tenantId,
+          submissionType: 'ITR12',
+          softwareId: 'WilsyOS_1.0.0',
+        },
+      };
+
+      // Submit to SARS
+      const response = await this.apiClient.post(
+        SARS_CONFIG.endpoints.itr12Submission,
+        submissionRequest
+      );
+
+      const submissionResult = {
+        success: response.data.success,
+        referenceNumber: response.data.reference,
+        assessmentNumber: response.data.assessmentNumber,
+        submissionDate: new Date().toISOString(),
+        taxYear: taxYear,
+        taxpayerId: taxData.taxpayerId,
+        taxLiability: taxData.taxLiability,
+        refundDue: response.data.refundDue || 0,
+        complianceMarkers: {
+          incomeTaxAct: '58 of 1962',
+          submissionMethod: 'ELECTRONIC',
+          encryptionStatus: 'AES-256-GCM',
+        },
+      };
+
+      // Cache result
+      const cacheKey = `itr12_${taxData.taxpayerId}_${taxYear}_${tenantId}`;
+      taxCache.set(cacheKey, submissionResult, 604800);
+
+      // Log submission
+      await this.logTaxEvent({
+        type: 'ITR12_SUBMISSION',
+        tenantId,
+        taxpayerId: taxData.taxpayerId,
+        taxYear,
+        referenceNumber: submissionResult.referenceNumber,
+        success: true,
+      });
+
+      return submissionResult;
+    } catch (error) {
+      console.error('ITR12 Submission failed:', error);
+
+      await this.logTaxEvent({
+        type: 'ITR12_SUBMISSION_FAILED',
+        tenantId,
+        taxpayerId: taxData?.taxpayerId,
+        taxYear,
+        error: error.message,
+      });
+
+      throw error;
+    }
+  }
+
+  /*
+   * @method generateITR12XML
+   * @description Generate ITR12 XML payload for SARS
+   * @param {Object} taxData - Tax data
+   * @param {String} taxYear - Tax year
+   * @returns {String} XML payload
+   */
+  generateITR12XML(taxData, taxYear) {
+    const builder = new xml2js.Builder({
+      xmldec: { version: '1.0', encoding: 'UTF-8' },
+    });
+
+    const xmlObject = {
+      ITR12: {
+        $: {
+          xmlns: 'http://www.sars.gov.za/efiling/ITR12/v2.1',
+          taxYear: taxYear,
+        },
+        Taxpayer: {
+          IdNumber: taxData.taxpayerId,
+          FirstName: taxData.firstName,
+          LastName: taxData.lastName,
+          DateOfBirth: taxData.dateOfBirth,
+        },
+        Income: {
+          GrossIncome: taxData.grossIncome || 0,
+          ExemptIncome: taxData.exemptIncome || 0,
+          TaxableIncome: taxData.taxableIncome || 0,
+        },
+        Deductions: {
+          RetirementFund: taxData.retirementFund || 0,
+          MedicalExpenses: taxData.medicalExpenses || 0,
+          OtherDeductions: taxData.otherDeductions || 0,
+        },
+        Calculation: {
+          TaxLiability: taxData.taxLiability || 0,
+          ProvisionalTax: taxData.provisionalTax || 0,
+          NetTaxDue: taxData.netTaxDue || 0,
+        },
+      },
+    };
+
+    return builder.buildObject(xmlObject);
+  }
+
+  /*
+   * @method getTaxComplianceStatus
+   * @description Get tax compliance status from SARS
+   * @param {String} taxNumber - VAT or Income Tax number
+   * @param {String} taxType - Type of tax (VAT, INCOME, PAYE)
+   * @param {String} tenantId - Tenant identifier
+   * @returns {Promise<Object>} Compliance status
+   * @compliance Tax Administration Act 28 of 2011
+   */
+  async getTaxComplianceStatus(taxNumber, taxType, tenantId) {
+    const cacheKey = `compliance_${taxNumber}_${taxType}_${tenantId}`;
+    const cachedStatus = taxCache.get(cacheKey);
+
+    if (cachedStatus) {
+      return cachedStatus;
+    }
+
+    try {
+      const response = await this.apiClient.get(SARS_CONFIG.endpoints.taxComplianceStatus, {
+        params: {
+          taxNumber,
+          taxType,
+          requestDate: new Date().toISOString().split('T')[0],
+        },
+      });
+
+      const complianceStatus = {
+        taxNumber,
+        taxType,
+        compliant: response.data.compliant,
+        statusDate: response.data.statusDate,
+        outstandingReturns: response.data.outstandingReturns || 0,
+        outstandingDebt: response.data.outstandingDebt || 0,
+        tcsPin: response.data.tcsPin, // Tax Compliance Status PIN
+        validUntil: response.data.validUntil,
+        restrictions: response.data.restrictions || [],
+        complianceMarkers: {
+          taxAdministrationAct: '28 of 2011',
+          dataSource: 'SARS_eFiling_API',
+          verificationTimestamp: new Date().toISOString(),
+        },
+      };
+
+      // Cache for 24 hours
+      taxCache.set(cacheKey, complianceStatus, 86400);
+
+      return complianceStatus;
+    } catch (error) {
+      console.error('Compliance status check failed:', error);
+
+      // Return default non-compliant status if API fails
+      return {
+        taxNumber,
+        taxType,
+        compliant: false,
+        statusDate: new Date().toISOString(),
+        outstandingReturns: 0,
+        outstandingDebt: 0,
+        tcsPin: null,
+        validUntil: null,
+        restrictions: ['UNABLE_TO_VERIFY'],
+        complianceMarkers: {
+          warning: 'SARS API unavailable, manual verification required',
+          verificationTimestamp: new Date().toISOString(),
+        },
+      };
+    }
+  }
+
+  /*
+   * @method generateTaxComplianceCertificate
+   * @description Generate tax compliance certificate PDF
+   * @param {Object} complianceStatus - Compliance status data
+   * @param {String} tenantId - Tenant identifier
+   * @returns {Promise<Buffer>} PDF certificate
+   */
+  async generateTaxComplianceCertificate(complianceStatus, tenantId) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 40,
+          info: {
+            Title: `Tax Compliance Certificate - ${complianceStatus.taxNumber}`,
+            Author: 'WilsyOS SARS Compliance Engine',
+            Creator: 'WilsyOS Digital Justice Platform',
+            CreationDate: new Date(),
+          },
         });
 
-        return cleared;
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+          resolve(Buffer.concat(buffers));
+        });
+
+        // Certificate header
+        doc
+          .fontSize(18)
+          .font('Helvetica-Bold')
+          .text('TAX COMPLIANCE STATUS CERTIFICATE', { align: 'center' });
+
+        doc.moveDown();
+        doc
+          .fontSize(12)
+          .font('Helvetica')
+          .text('SOUTH AFRICAN REVENUE SERVICE', { align: 'center' });
+
+        doc.moveDown(2);
+
+        // Certificate body
+        doc
+          .fontSize(11)
+          .text(`Tax Number: ${complianceStatus.taxNumber}`)
+          .text(`Tax Type: ${complianceStatus.taxType}`)
+          .text(`Compliant: ${complianceStatus.compliant ? 'YES' : 'NO'}`)
+          .text(`Status Date: ${new Date(complianceStatus.statusDate).toLocaleDateString('en-ZA')}`)
+          .text(`Outstanding Returns: ${complianceStatus.outstandingReturns}`)
+          .text(
+            `Outstanding Debt: R ${
+              complianceStatus.outstandingDebt?.toLocaleString('en-ZA') || '0.00'
+            }`
+          );
+
+        if (complianceStatus.tcsPin) {
+          doc.moveDown();
+          doc.font('Helvetica-Bold').text(`TCS PIN: ${complianceStatus.tcsPin}`);
+        }
+
+        doc.moveDown(2);
+
+        // Compliance notice
+        doc
+          .fontSize(10)
+          .font('Helvetica-Oblique')
+          .text('This certificate is generated based on SARS eFiling data.')
+          .text('Valid for 30 days from date of issue.')
+          .text('Generated by WilsyOS SARS Compliance Engine.');
+
+        // Add QR code placeholder for TCS PIN
+        doc.moveDown();
+        doc.fontSize(8).text('Scan for digital verification:', { align: 'center' });
+
+        // Footer
+        doc.moveDown(4);
+        doc.fontSize(8).text('WilsyOS - Digital Justice Platform | SARS eFiling Integrated', {
+          align: 'center',
+        });
+
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /*
+   * @method storeTaxDocument
+   * @description Store tax document in secure storage
+   * @param {String} filename - Document filename
+   * @param {Buffer} documentBuffer - Document buffer
+   * @param {String} tenantId - Tenant ID
+   * @param {String} documentType - Type of document
+   * @returns {Promise<Object>} Storage result
+   */
+  async storeTaxDocument(filename, documentBuffer, tenantId, documentType) {
+    // In production, this would upload to secure S3/Azure Blob Storage
+    const documentHash = crypto.createHash('sha256').update(documentBuffer).digest('hex');
+
+    const documentRecord = {
+      filename,
+      documentType,
+      tenantId,
+      documentHash,
+      storageLocation: `tax-documents/${tenantId}/${documentType}/${filename}`,
+      encrypted: true,
+      storageDate: new Date().toISOString(),
+      retentionYears: 5, // Tax Administration Act requirement
+    };
+
+    // Here you would implement actual cloud storage upload
+    // await s3Client.putObject({...});
+
+    return documentRecord;
+  }
+
+  /*
+   * @method storeOfflineSubmission
+   * @description Store offline submission for later retry
+   * @param {Object} submissionRecord - Submission record
+   * @param {String} tenantId - Tenant ID
+   * @param {String} submissionType - Type of submission
+   * @returns {Promise<Object>} Storage result
+   */
+  async storeOfflineSubmission(submissionRecord, tenantId, submissionType) {
+    // Store in MongoDB for later retry
+    const OfflineSubmission =
+      mongoose.model('OfflineSubmission') ||
+      mongoose.model(
+        'OfflineSubmission',
+        new mongoose.Schema({
+          tenantId: String,
+          submissionType: String,
+          data: Object,
+          retryCount: { type: Number, default: 0 },
+          maxRetries: { type: Number, default: 3 },
+          nextRetry: Date,
+          status: { type: String, default: 'PENDING' },
+          createdAt: { type: Date, default: Date.now },
+        })
+      );
+
+    const offlineRecord = new OfflineSubmission({
+      tenantId,
+      submissionType,
+      data: submissionRecord,
+      nextRetry: new Date(Date.now() + 3600000), // 1 hour later
+      status: 'PENDING',
+    });
+
+    await offlineRecord.save();
+    return offlineRecord;
+  }
+
+  /*
+   * @method scheduleRetrySubmission
+   * @description Schedule retry for failed submission
+   * @param {Object} submissionRecord - Submission record
+   * @param {String} tenantId - Tenant ID
+   */
+  scheduleRetrySubmission(submissionRecord, tenantId) {
+    // In production, use BullMQ or similar job queue
+    setTimeout(async () => {
+      try {
+        console.log(`Retrying submission: ${submissionRecord.referenceNumber}`);
+        // Implement retry logic here
+      } catch (error) {
+        console.error('Retry failed:', error);
+      }
+    }, 3600000); // 1 hour delay
+  }
+
+  /*
+   * @method logTaxEvent
+   * @description Log tax-related events for audit trail
+   * @param {Object} eventData - Event data
+   * @returns {Promise<void>}
+   * @compliance Tax Administration Act 28 of 2011, POPIA Section 19
+   */
+  async logTaxEvent(eventData) {
+    const auditLog = {
+      ...eventData,
+      service: 'SARS_COMPLIANCE_SERVICE',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      version: '1.0.0',
+      ipHash: crypto.createHash('sha256').update('IP_REDACTED_FOR_PRIVACY').digest('hex'),
+    };
+
+    // In production, log to MongoDB audit collection
+    if (process.env.NODE_ENV === 'production') {
+      console.log('TAX_AUDIT_LOG:', JSON.stringify(auditLog));
+      // await mongoose.connection.collection('tax_audit_logs').insertOne(auditLog);
+    } else {
+      console.log('TAX_EVENT:', auditLog);
+    }
+  }
+
+  /*
+   * @method clearCache
+   * @description Clear tax cache
+   * @param {String} pattern - Cache key pattern
+   * @returns {Number} Cleared entries count
+   */
+  clearCache(pattern = null) {
+    if (!pattern) {
+      return taxCache.flushAll();
     }
 
-    /**
-     * @method getCacheStats
-     * @description Get cache statistics
-     * @returns {Object} Cache statistics
-     */
-    getCacheStats() {
-        const stats = taxCache.getStats();
-        return {
-            hits: stats.hits,
-            misses: stats.misses,
-            keys: stats.keys,
-            ksize: stats.ksize,
-            vsize: stats.vsize,
-            timestamp: new Date().toISOString()
-        };
-    }
+    const keys = taxCache.keys();
+    const matchingKeys = keys.filter((key) => key.includes(pattern));
+
+    let cleared = 0;
+    matchingKeys.forEach((key) => {
+      if (taxCache.del(key)) {
+        cleared++;
+      }
+    });
+
+    return cleared;
+  }
+
+  /*
+   * @method getCacheStats
+   * @description Get cache statistics
+   * @returns {Object} Cache statistics
+   */
+  getCacheStats() {
+    const stats = taxCache.getStats();
+    return {
+      hits: stats.hits,
+      misses: stats.misses,
+      keys: stats.keys,
+      ksize: stats.ksize,
+      vsize: stats.vsize,
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -1171,11 +1207,11 @@ const sarsComplianceService = new SarsComplianceService();
 
 // Export service instance and utilities
 module.exports = {
-    sarsComplianceService,
-    validateVATNumber,
-    SARS_CONFIG,
-    encryptTaxData,
-    decryptTaxData
+  sarsComplianceService,
+  validateVATNumber,
+  SARS_CONFIG,
+  encryptTaxData,
+  decryptTaxData,
 };
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗

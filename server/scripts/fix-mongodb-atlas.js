@@ -9,9 +9,9 @@ console.log('='.repeat(60));
 // Get current IP
 let publicIP;
 try {
-    publicIP = execSync('curl -s ifconfig.me').toString().trim();
+  publicIP = execSync('curl -s ifconfig.me').toString().trim();
 } catch {
-    publicIP = '197.185.186.54'; // Your known IP
+  publicIP = '197.185.186.54'; // Your known IP
 }
 
 console.log('\n📡 YOUR NETWORK INFORMATION:');
@@ -57,7 +57,7 @@ console.log('    • SSL/TLS encryption for data in transit');
 console.log('    • MongoDB Atlas for managed scalability');
 console.log('    • These are industry standards for compliance."');
 console.log('');
-console.log('💬 "The \'issue\' is actually a security feature that');
+console.log("💬 \"The 'issue' is actually a security feature that");
 console.log('    demonstrates our commitment to production-grade');
 console.log('    infrastructure from day one."');
 

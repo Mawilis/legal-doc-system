@@ -1,4 +1,4 @@
-/**
+/*
  * File: server/controllers/uploadController.js
  * PATH: server/controllers/uploadController.js
  * VERSION: 2026-01-19
@@ -40,7 +40,7 @@ const router = express.Router();
    Helpers
    ------------------------- */
 
-/**
+/*
  * computeSha256Hex
  * - Compute SHA-256 hex digest for a Buffer or string
  */
@@ -48,7 +48,7 @@ function computeSha256Hex(input) {
   return crypto.createHash('sha256').update(input).digest('hex');
 }
 
-/**
+/*
  * safeRequireModels
  * - Lazy require models and middleware to avoid early mongoose.model registration
  */
@@ -60,13 +60,15 @@ function safeRequireModels() {
   return { Document, emitAudit };
 }
 
-/**
+/*
  * makePresignedUrlMock
  * - Development fallback when S3 config is missing.
  * - Returns an object { uploadUrl, key } where key is the storage key to persist.
  */
 function makePresignedUrlMock(filename, tenantId) {
-  const key = `dev/${tenantId || 'unknown'}/${Date.now().toString(36)}_${uuidv4()}_${filename.replace(/\s+/g, '_')}`;
+  const key = `dev/${tenantId || 'unknown'}/${Date.now().toString(
+    36
+  )}_${uuidv4()}_${filename.replace(/\s+/g, '_')}`;
   // In dev we return a mock URL that the client can POST to; server will accept finalizeUpload with this key.
   const uploadUrl = `http://localhost:3001/internal/mock-upload/${encodeURIComponent(key)}`;
   return { uploadUrl, key };
@@ -89,7 +91,10 @@ router.post('/presign', express.json({ limit: '10kb' }), async (req, res) => {
   try {
     // If S3 config exists, generate a real presigned URL (not implemented here).
     // For now, return a safe mock URL so clients can proceed in dev and tests.
-    const { uploadUrl, key } = makePresignedUrlMock(filename, tenantId || (req.user && req.user.tenantId));
+    const { uploadUrl, key } = makePresignedUrlMock(
+      filename,
+      tenantId || (req.user && req.user.tenantId)
+    );
     const expiresIn = 15 * 60; // 15 minutes
 
     // Audit the presign request (best-effort)
@@ -99,7 +104,7 @@ router.post('/presign', express.json({ limit: '10kb' }), async (req, res) => {
         resource: 'upload',
         action: 'request_presign',
         severity: 'info',
-        metadata: { filename, key, size, contentType, correlationId }
+        metadata: { filename, key, size, contentType, correlationId },
       });
     } catch (e) {
       // swallow audit errors
@@ -126,7 +131,9 @@ router.post('/finalize', express.json({ limit: '200kb' }), async (req, res) => {
   const correlationId = req.headers['x-correlation-id'] || `req_${Date.now().toString(36)}`;
 
   if (!key || !documentId) {
-    return res.status(400).json({ success: false, message: 'key and documentId are required', correlationId });
+    return res
+      .status(400)
+      .json({ success: false, message: 'key and documentId are required', correlationId });
   }
 
   try {
@@ -134,15 +141,28 @@ router.post('/finalize', express.json({ limit: '200kb' }), async (req, res) => {
 
     // Validate document exists and tenant scope
     const doc = await Document.findById(documentId);
-    if (!doc) return res.status(404).json({ success: false, message: 'Document not found', correlationId });
+    if (!doc)
+      return res.status(404).json({ success: false, message: 'Document not found', correlationId });
 
     // Enforce tenant scope if req.user exists
-    if (req.user && String(req.user.tenantId) !== String(doc.tenantId) && req.user.role !== 'SUPER_ADMIN') {
+    if (
+      req.user &&
+      String(req.user.tenantId) !== String(doc.tenantId) &&
+      req.user.role !== 'SUPER_ADMIN'
+    ) {
       try {
-        await emitAudit(req, { resource: 'upload', action: 'finalize_forbidden', severity: 'critical', metadata: { documentId, correlationId } });
+        await emitAudit(req, {
+          resource: 'upload',
+          action: 'finalize_forbidden',
+          severity: 'critical',
+          metadata: { documentId, correlationId },
+        });
       } catch (e) {
         // best-effort audit; log errors without affecting control flow
-        console.error('[UPLOAD] emitAudit finalize_forbidden error', e && e.message ? e.message : e);
+        console.error(
+          '[UPLOAD] emitAudit finalize_forbidden error',
+          e && e.message ? e.message : e
+        );
       }
       return res.status(403).json({ success: false, message: 'Forbidden', correlationId });
     }
@@ -161,18 +181,33 @@ router.post('/finalize', express.json({ limit: '200kb' }), async (req, res) => {
     doc.size = size || doc.size || null;
     doc.status = doc.status || 'UPLOADED';
     doc.history = doc.history || [];
-    doc.history.push({ action: 'UPLOAD_FINALIZED', performedBy: req.user ? String(req.user._id) : 'SYSTEM', details: `key=${key}`, timestamp: new Date() });
+    doc.history.push({
+      action: 'UPLOAD_FINALIZED',
+      performedBy: req.user ? String(req.user._id) : 'SYSTEM',
+      details: `key=${key}`,
+      timestamp: new Date(),
+    });
 
     await doc.save();
 
     // Emit audit
     try {
-      await emitAudit(req, { resource: 'upload', action: 'finalize', severity: 'info', metadata: { documentId, key, contentHash: finalHash, correlationId } });
+      await emitAudit(req, {
+        resource: 'upload',
+        action: 'finalize',
+        severity: 'info',
+        metadata: { documentId, key, contentHash: finalHash, correlationId },
+      });
     } catch (e) {
       console.error('[UPLOAD] emitAudit finalize error', e && e.message ? e.message : e);
     }
 
-    return res.status(200).json({ success: true, message: 'Upload finalized', data: { documentId, storageKey: key, contentHash: finalHash }, correlationId });
+    return res.status(200).json({
+      success: true,
+      message: 'Upload finalized',
+      data: { documentId, storageKey: key, contentHash: finalHash },
+      correlationId,
+    });
   } catch (err) {
     console.error('[UPLOAD] finalize error', err && err.stack ? err.stack : err);
     return res.status(500).json({ success: false, message: 'finalize_failed', correlationId });
@@ -187,17 +222,28 @@ router.delete('/:documentId', async (req, res) => {
   const { documentId } = req.params;
   const correlationId = req.headers['x-correlation-id'] || `req_${Date.now().toString(36)}`;
 
-  if (!documentId) return res.status(400).json({ success: false, message: 'documentId required', correlationId });
+  if (!documentId)
+    return res.status(400).json({ success: false, message: 'documentId required', correlationId });
 
   try {
     const { Document, emitAudit } = safeRequireModels();
     const doc = await Document.findById(documentId);
-    if (!doc) return res.status(404).json({ success: false, message: 'Document not found', correlationId });
+    if (!doc)
+      return res.status(404).json({ success: false, message: 'Document not found', correlationId });
 
     // Tenant enforcement
-    if (req.user && String(req.user.tenantId) !== String(doc.tenantId) && req.user.role !== 'SUPER_ADMIN') {
+    if (
+      req.user &&
+      String(req.user.tenantId) !== String(doc.tenantId) &&
+      req.user.role !== 'SUPER_ADMIN'
+    ) {
       try {
-        await emitAudit(req, { resource: 'document', action: 'delete_forbidden', severity: 'critical', metadata: { documentId, correlationId } });
+        await emitAudit(req, {
+          resource: 'document',
+          action: 'delete_forbidden',
+          severity: 'critical',
+          metadata: { documentId, correlationId },
+        });
       } catch (e) {
         console.error('[UPLOAD] emitAudit delete_forbidden error', e && e.message ? e.message : e);
       }
@@ -207,11 +253,21 @@ router.delete('/:documentId', async (req, res) => {
     // Soft delete
     doc.status = 'DELETED';
     doc.history = doc.history || [];
-    doc.history.push({ action: 'SOFT_DELETE', performedBy: req.user ? String(req.user._id) : 'SYSTEM', details: 'Soft-deleted via upload API', timestamp: new Date() });
+    doc.history.push({
+      action: 'SOFT_DELETE',
+      performedBy: req.user ? String(req.user._id) : 'SYSTEM',
+      details: 'Soft-deleted via upload API',
+      timestamp: new Date(),
+    });
     await doc.save();
 
     try {
-      await emitAudit(req, { resource: 'document', action: 'soft_delete', severity: 'warning', metadata: { documentId, correlationId } });
+      await emitAudit(req, {
+        resource: 'document',
+        action: 'soft_delete',
+        severity: 'warning',
+        metadata: { documentId, correlationId },
+      });
     } catch (e) {
       console.error('[UPLOAD] emitAudit delete error', e && e.message ? e.message : e);
     }
@@ -228,14 +284,22 @@ router.delete('/:documentId', async (req, res) => {
    - POST /internal/mock-upload/:key
    - Accepts raw body and stores nothing; returns 200 so clients can test presign flow locally.
    ------------------------- */
-router.post('/internal/mock-upload/:key', express.raw({ type: '*/*', limit: '50mb' }), (req, res) => {
-  // This endpoint is intentionally minimal and only for local dev/test.
-  // It does not persist files; finalizeUpload will compute a deterministic hash from the key and size.
-  const key = req.params.key;
-  const size = req.headers['content-length'] ? Number(req.headers['content-length']) : (req.body ? req.body.length : 0);
-  console.debug(`[UPLOAD-MOCK] Received mock upload for key=${key} size=${size}`);
-  res.status(200).json({ success: true, message: 'mock upload accepted', key, size });
-});
+router.post(
+  '/internal/mock-upload/:key',
+  express.raw({ type: '*/*', limit: '50mb' }),
+  (req, res) => {
+    // This endpoint is intentionally minimal and only for local dev/test.
+    // It does not persist files; finalizeUpload will compute a deterministic hash from the key and size.
+    const key = req.params.key;
+    const size = req.headers['content-length']
+      ? Number(req.headers['content-length'])
+      : req.body
+        ? req.body.length
+        : 0;
+    console.debug(`[UPLOAD-MOCK] Received mock upload for key=${key} size=${size}`);
+    res.status(200).json({ success: true, message: 'mock upload accepted', key, size });
+  }
+);
 
 /* -------------------------
    Export router

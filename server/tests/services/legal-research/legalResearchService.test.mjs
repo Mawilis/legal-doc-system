@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 /* eslint-disable import/extensions, no-unused-expressions, max-len */
 
-/**
+/*
  * 🏛️ Wilsy OS - Legal Research Service Test Suite
  * Investor-Grade | POPIA Compliant | Forensic Evidence
  * ES Module Format | Mocha + Chai | Deterministic | CI-Friendly
@@ -26,69 +26,66 @@ const mockRedisClient = {
   get: sinon.stub(),
   setex: sinon.stub(),
   keys: sinon.stub(),
-  del: sinon.stub()
+  del: sinon.stub(),
 };
 
 // Mock models
 const mockResearchQuery = {
   create: sinon.stub(),
-  findOne: sinon.stub()
+  findOne: sinon.stub(),
 };
 
 const mockLegalPrecedent = {
   find: sinon.stub(),
-  findOne: sinon.stub()
+  findOne: sinon.stub(),
 };
 
 const mockCitation = {
-  find: sinon.stub()
+  find: sinon.stub(),
 };
 
 // Mock utilities
 const mockAuditLogger = {
-  log: sinon.stub().resolves()
+  log: sinon.stub().resolves(),
 };
 
 const mockLogger = {
   info: sinon.stub(),
   error: sinon.stub(),
   warn: sinon.stub(),
-  debug: sinon.stub()
+  debug: sinon.stub(),
 };
 
 const mockCryptoUtils = {
   generateId: sinon.stub().returns('test-id-123'),
-  generateHash: sinon.stub().returns('test-hash-456')
+  generateHash: sinon.stub().returns('test-hash-456'),
 };
 
 const mockPopiaUtils = {
   redactSensitive: (data) => {
     if (typeof data === 'string') {
-      return data.replace(/\d{13}/g, '[ID-REDACTED]')
-                 .replace(/John Doe/g, '[NAME-REDACTED]')
-                 .replace(/082\d{7}/g, '[PHONE-REDACTED]');
+      return data
+        .replace(/\d{13}/g, '[ID-REDACTED]')
+        .replace(/John Doe/g, '[NAME-REDACTED]')
+        .replace(/082\d{7}/g, '[PHONE-REDACTED]');
     }
     return data;
   },
-  REDACT_FIELDS: ['idNumber', 'passport', 'email', 'phone', 'bankAccount']
+  REDACT_FIELDS: ['idNumber', 'passport', 'email', 'phone', 'bankAccount'],
 };
 
 // Import service with mocks using proxyquire
-const {
-  createLegalResearchService,
-  RETENTION_POLICIES,
-  RESEARCH_DEPTHS,
-  JURISDICTIONS
-} = proxyquire('../../../services/legal-research/legalResearchService.js', {
-  '../../middleware/tenantContext.js': { tenantContext: mockTenantContext },
-  '../../utils/auditLogger.js': mockAuditLogger,
-  '../../utils/logger.js': mockLogger,
-  '../../utils/cryptoUtils.js': mockCryptoUtils,
-  '../../utils/popiaUtils.js': mockPopiaUtils,
-  '../models/ResearchQuery.js': mockResearchQuery,
-  '../models/LegalPrecedent.js': mockLegalPrecedent,
-  '../models/Citation.js': mockCitation
-});
+const { createLegalResearchService, RETENTION_POLICIES, RESEARCH_DEPTHS, JURISDICTIONS } =
+  proxyquire('../../../services/legal-research/legalResearchService.js', {
+    '../../middleware/tenantContext.js': { tenantContext: mockTenantContext },
+    '../../utils/auditLogger.js': mockAuditLogger,
+    '../../utils/logger.js': mockLogger,
+    '../../utils/cryptoUtils.js': mockCryptoUtils,
+    '../../utils/popiaUtils.js': mockPopiaUtils,
+    '../models/ResearchQuery.js': mockResearchQuery,
+    '../models/LegalPrecedent.js': mockLegalPrecedent,
+    '../models/Citation.js': mockCitation,
+  });
 
 describe('LegalResearchService - Investor Grade Suite', () => {
   let service;
@@ -96,10 +93,10 @@ describe('LegalResearchService - Investor Grade Suite', () => {
   beforeEach(() => {
     // Reset all stubs
     sinon.reset();
-    
+
     // Create service instance
     service = createLegalResearchService(mockRedisClient);
-    
+
     // Verify service is defined
     expect(service).to.be.an('object');
     expect(service.cache).to.be.an('object');
@@ -115,14 +112,14 @@ describe('LegalResearchService - Investor Grade Suite', () => {
       const manualResearchCostPerYear = 1200000; // R1.2M
       const automationCostPerYear = 180000; // R180k
       const annualSavings = manualResearchCostPerYear - automationCostPerYear;
-      
+
       expect(annualSavings).to.be.at.least(1000000);
-      
+
       console.log('\n📈 INVESTOR METRICS:');
       console.log('   • Annual Savings/Client: R1,020,000');
       console.log('   • 85% margin on research services');
       console.log('   • R12M risk elimination across 10 clients');
-      
+
       // Assert the constant exists and has expected shape
       expect(RETENTION_POLICIES.COMPANIES_ACT_10_YEARS.legalReference).to.match(/Companies Act/i);
       expect(RETENTION_POLICIES.POPIA_1_YEAR.legalReference).to.match(/POPIA/i);
@@ -134,16 +131,16 @@ describe('LegalResearchService - Investor Grade Suite', () => {
     const mockOptions = {
       jurisdiction: JURISDICTIONS.ZA,
       depth: RESEARCH_DEPTHS.COMPREHENSIVE,
-      maxResults: 50
+      maxResults: 50,
     };
 
     it('should execute research with cache hit', async () => {
       // Mock cache hit
       const cachedResult = {
         researchId: 'cached-123',
-        results: { precedents: [], citations: [] }
+        results: { precedents: [], citations: [] },
       };
-      
+
       mockRedisClient.get.resolves(JSON.stringify(cachedResult));
 
       const result = await service.research(mockTenantId, mockUserId, mockQuery, mockOptions);
@@ -151,13 +148,13 @@ describe('LegalResearchService - Investor Grade Suite', () => {
       // Assert result structure
       expect(result).to.be.an('object');
       expect(result.cached).to.be.true;
-      
+
       // Verify cache was checked
       expect(mockRedisClient.get.calledOnce).to.be.true;
-      
+
       // Verify audit logging
       expect(mockAuditLogger.log.called).to.be.true;
-      
+
       // Verify no database queries for cached result
       expect(mockLegalPrecedent.find.called).to.be.false;
     });
@@ -165,33 +162,33 @@ describe('LegalResearchService - Investor Grade Suite', () => {
     it('should execute research with cache miss', async () => {
       // Mock cache miss
       mockRedisClient.get.resolves(null);
-      
+
       // Mock database results
       const mockPrecedents = [
-        { 
-          _id: 'prec-1', 
-          citation: '[2023] ZACC 12', 
+        {
+          _id: 'prec-1',
+          citation: '[2023] ZACC 12',
           court: 'CONSTITUTIONAL_COURT',
           date: new Date('2023-01-01'),
           fullText: 'constitutional law section 9 equality',
-          score: 0.8
-        }
+          score: 0.8,
+        },
       ];
-      
+
       // Setup find with chainable methods
       const findMock = {
         sort: sinon.stub().returnsThis(),
         limit: sinon.stub().returnsThis(),
-        lean: sinon.stub().resolves(mockPrecedents)
+        lean: sinon.stub().resolves(mockPrecedents),
       };
-      
+
       mockLegalPrecedent.find.returns(findMock);
-      
+
       const citationMock = {
         limit: sinon.stub().returnsThis(),
-        lean: sinon.stub().resolves([])
+        lean: sinon.stub().resolves([]),
       };
-      
+
       mockCitation.find.returns(citationMock);
 
       const result = await service.research(mockTenantId, mockUserId, mockQuery, mockOptions);
@@ -202,31 +199,31 @@ describe('LegalResearchService - Investor Grade Suite', () => {
       expect(result.resultCount).to.equal(1);
       expect(result.results.precedents).to.have.lengthOf(1);
       expect(result.results.precedents[0].citation).to.equal('[2023] ZACC 12');
-      
+
       // Verify database queries
       expect(mockLegalPrecedent.find.calledOnce).to.be.true;
       expect(mockCitation.find.calledOnce).to.be.true;
-      
+
       // Verify cache was set
       expect(mockRedisClient.setex.calledOnce).to.be.true;
-      
+
       // Verify research was logged
       expect(mockResearchQuery.create.calledOnce).to.be.true;
-      
+
       // Verify audit logging
       expect(mockAuditLogger.log.called).to.be.true;
     });
 
     it('should handle invalid tenant ID', async () => {
       const invalidTenantId = 'invalid';
-      
+
       try {
         await service.research(invalidTenantId, mockUserId, mockQuery, mockOptions);
         expect.fail('Should have thrown error');
       } catch (error) {
         expect(error.message).to.include('Invalid tenant ID format');
       }
-      
+
       // Verify no database queries were made
       expect(mockLegalPrecedent.find.called).to.be.false;
       expect(mockResearchQuery.create.called).to.be.false;
@@ -240,7 +237,7 @@ describe('LegalResearchService - Investor Grade Suite', () => {
         citation: '[2023] ZACC 12',
         court: 'CONSTITUTIONAL_COURT',
         date: new Date('2023-01-01'),
-        jurisdiction: 'ZA-CC'
+        jurisdiction: 'ZA-CC',
       };
 
       const analysis = await service.analyzer.analyzePrecedent(mockPrecedent);
@@ -259,7 +256,7 @@ describe('LegalResearchService - Investor Grade Suite', () => {
         citation: '[2020] ZAGPJHC 50',
         court: 'HIGH_COURT',
         date: new Date('2020-01-01'),
-        overruledBy: '[2023] ZASCA 100'
+        overruledBy: '[2023] ZASCA 100',
       };
 
       const analysis = await service.analyzer.analyzePrecedent(mockPrecedent);
@@ -276,7 +273,7 @@ describe('LegalResearchService - Investor Grade Suite', () => {
         researchId: 'research-123',
         resultCount: 5,
         processingTime: 150,
-        timestamp: '2026-02-21T10:00:00.000Z'
+        timestamp: '2026-02-21T10:00:00.000Z',
       };
 
       const evidence = await service.generateEvidence('research-123', mockResponse);
@@ -287,7 +284,7 @@ describe('LegalResearchService - Investor Grade Suite', () => {
       expect(evidence.timestamp).to.be.a('string');
       expect(evidence.auditEntries).to.have.lengthOf(1);
       expect(evidence.hash).to.be.a('string');
-      
+
       // Verify evidence was stored
       const retrieved = await service.getEvidence('research-123');
       expect(retrieved).to.deep.equal(evidence);
@@ -298,9 +295,9 @@ describe('LegalResearchService - Investor Grade Suite', () => {
     it('should isolate cache by tenant', async () => {
       const cacheKey = 'test-key';
       const value = { data: 'test' };
-      
+
       await service.cache.set(mockTenantId, cacheKey, value);
-      
+
       // Verify tenant prefix in cache key
       const setCall = mockRedisClient.setex.getCall(0).args;
       expect(setCall[0]).to.equal(`research:${mockTenantId}:${cacheKey}`);
@@ -339,14 +336,14 @@ describe('LegalResearchService - Investor Grade Suite', () => {
       const options = {
         jurisdiction: JURISDICTIONS.ZA,
         depth: RESEARCH_DEPTHS.COMPREHENSIVE,
-        maxResults: 50
+        maxResults: 50,
       };
 
       mockCryptoUtils.generateHash.returns('consistent-hash');
-      
+
       const key1 = service.generateCacheKey(query, options);
       const key2 = service.generateCacheKey(query, options);
-      
+
       expect(key1).to.equal(key2);
       expect(mockCryptoUtils.generateHash.called).to.be.true;
     });
@@ -355,18 +352,20 @@ describe('LegalResearchService - Investor Grade Suite', () => {
       const mockResearch = {
         _id: 'research-123',
         tenantId: mockTenantId,
-        query: 'test query'
+        query: 'test query',
       };
 
       mockResearchQuery.findOne.resolves(mockResearch);
 
       const result = await service.getResearch(mockTenantId, 'research-123');
-      
+
       expect(result).to.deep.equal(mockResearch);
-      expect(mockResearchQuery.findOne.calledWith({
-        _id: 'research-123',
-        tenantId: mockTenantId
-      })).to.be.true;
+      expect(
+        mockResearchQuery.findOne.calledWith({
+          _id: 'research-123',
+          tenantId: mockTenantId,
+        }),
+      ).to.be.true;
     });
 
     it('should search by citation', async () => {
@@ -375,14 +374,14 @@ describe('LegalResearchService - Investor Grade Suite', () => {
         citation: '[2023] ZACC 12',
         court: 'CONSTITUTIONAL_COURT',
         date: new Date('2023-01-01'),
-        jurisdiction: 'ZA-CC'
+        jurisdiction: 'ZA-CC',
       };
 
       mockLegalPrecedent.findOne.resolves(mockPrecedent);
 
       const result = await service.searchByCitation(mockTenantId, '[2023] ZACC 12', {
         includeAnalysis: true,
-        depth: RESEARCH_DEPTHS.STANDARD
+        depth: RESEARCH_DEPTHS.STANDARD,
       });
 
       expect(result).to.be.an('object');

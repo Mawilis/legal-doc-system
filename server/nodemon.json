@@ -1,0 +1,128 @@
+{
+  "restartable": "rs",
+  "ignore": [
+    ".git",
+    "node_modules/**/node_modules",
+    "coverage/",
+    "logs/",
+    "temp/",
+    "tmp/",
+    "uploads/",
+    "downloads/",
+    "*.test.js",
+    "*.spec.js",
+    "__tests__/",
+    "tests/",
+    "docs/",
+    "*.log",
+    ".env",
+    ".env.*",
+    "!.env.example",
+    "*.forensic.json",
+    "evidence.json"
+  ],
+  "verbose": false,
+  "execMap": {
+    "js": "node --experimental-specifier-resolution=node --trace-warnings"
+  },
+  "events": {
+    "start": "echo '🚀 WILSY OS - Starting development server...'",
+    "restart": "echo '🔄 WILSY OS - Restarting due to file changes...'",
+    "crash": "echo '💥 WILSY OS - Server crashed. Check logs for details.'",
+    "exit": "echo '👋 WILSY OS - Development server stopped.'"
+  },
+  "ext": "js,cjs,mjs,json,yml,yaml,env",
+  "watch": [
+    "server.js",
+    "app.js",
+    "config/",
+    "controllers/",
+    "middleware/",
+    "models/",
+    "routes/",
+    "services/",
+    "utils/",
+    "validators/",
+    "workers/",
+    "jobs/",
+    "lib/",
+    "integrations/"
+  ],
+  "env": {
+    "NODE_ENV": "development",
+    "DEBUG": "wilsy:*"
+  },
+  "env_development": {
+    "NODE_ENV": "development",
+    "DEBUG": "wilsy:*"
+  },
+  "env_test": {
+    "NODE_ENV": "test",
+    "DEBUG": "wilsy:test"
+  },
+  "env_staging": {
+    "NODE_ENV": "staging",
+    "DEBUG": "wilsy:warn,wilsy:error"
+  },
+  "env_production": {
+    "NODE_ENV": "production",
+    "DEBUG": "wilsy:error"
+  },
+  "legacyWatch": false,
+  "delay": "1000",
+  "quiet": false,
+  "stdin": true,
+  "stdout": true,
+  "stderr": true,
+  "runOnChangeOnly": false,
+  "pollingInterval": 1000,
+  "pollingIntervalMs": 1000,
+  "watchOptions": {
+    "usePolling": false,
+    "interval": 1000,
+    "binaryInterval": 3000,
+    "alwaysStat": false,
+    "depth": 99,
+    "awaitWriteFinish": {
+      "stabilityThreshold": 2000,
+      "pollInterval": 100
+    },
+    "ignorePermissionErrors": true,
+    "followSymlinks": false
+  },
+  "nodeArgs": [
+    "--max-old-space-size=4096",
+    "--heap-prof",
+    "--diagnostic-dir=./logs/diagnostic"
+  ],
+  "signal": "SIGTERM",
+  "killSignal": "SIGTERM",
+  "killTimeout": 3000,
+  "log": {
+    "level": "info",
+    "format": "json",
+    "output": "./logs/nodemon.log",
+    "rotate": true,
+    "maxSize": "10m",
+    "maxFiles": "7d"
+  },
+  "healthCheck": {
+    "enabled": true,
+    "endpoint": "http://localhost:3000/health",
+    "interval": 30000,
+    "timeout": 5000,
+    "retries": 3,
+    "onHealthy": "echo '✅ Server healthy'",
+    "onUnhealthy": "echo '❌ Server unhealthy - restarting'"
+  },
+  "debug": true,
+  "inspect": true,
+  "inspectBrk": false,
+  "inspectPort": 9229,
+  "lint": {
+    "enabled": true,
+    "cmd": "eslint --fix",
+    "files": ["*.js", "**/*.js"],
+    "ignorePatterns": ["node_modules/**", "coverage/**"]
+  }
+}

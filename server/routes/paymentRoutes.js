@@ -36,56 +36,56 @@ const validate = require('../middleware/validationMiddleware');
 const { Joi } = validate;
 
 const checkoutSchema = {
-    invoiceId: Joi.string().required(), // Link to Invoice
-    amount: Joi.number().min(10).required(), // Minimum amount check
-    currency: Joi.string().valid('ZAR', 'USD').default('ZAR'),
-    gateway: Joi.string().valid('PAYFAST', 'STRIPE', 'PAYGATE').default('PAYFAST'),
-    successUrl: Joi.string().uri().required(),
-    cancelUrl: Joi.string().uri().required()
+  invoiceId: Joi.string().required(), // Link to Invoice
+  amount: Joi.number().min(10).required(), // Minimum amount check
+  currency: Joi.string().valid('ZAR', 'USD').default('ZAR'),
+  gateway: Joi.string().valid('PAYFAST', 'STRIPE', 'PAYGATE').default('PAYFAST'),
+  successUrl: Joi.string().uri().required(),
+  cancelUrl: Joi.string().uri().required(),
 };
 
 const refundSchema = {
-    paymentId: Joi.string().required(),
-    reason: Joi.string().valid('DUPLICATE', 'FRAUDULENT', 'REQUESTED_BY_CLIENT', 'OTHER').required(),
-    amount: Joi.number().optional() // Partial refund allowed
+  paymentId: Joi.string().required(),
+  reason: Joi.string().valid('DUPLICATE', 'FRAUDULENT', 'REQUESTED_BY_CLIENT', 'OTHER').required(),
+  amount: Joi.number().optional(), // Partial refund allowed
 };
 
 // ------------------------------
 // ROUTES
 // ------------------------------
 
-/**
+/*
  * @route   POST /api/payments/checkout
  * @desc    Initiate Payment Session (Redirect URL)
  * @access  Authenticated Users (Client, Admin)
  */
 router.post(
-    '/checkout',
-    protect,
-    requireSameTenant,
-    validate(checkoutSchema, 'body'),
-    async (req, res, next) => {
-        try {
-            const result = await paymentController.createCheckoutSession(req, res);
+  '/checkout',
+  protect,
+  requireSameTenant,
+  validate(checkoutSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const result = await paymentController.createCheckoutSession(req, res);
 
-            // Audit the Attempt
-            await emitAudit(req, {
-                resource: 'payment_gateway',
-                action: 'INITIATE_CHECKOUT',
-                severity: 'INFO',
-                summary: `Payment session started via ${req.body.gateway}`,
-                metadata: { invoiceId: req.body.invoiceId, amount: req.body.amount }
-            });
+      // Audit the Attempt
+      await emitAudit(req, {
+        resource: 'payment_gateway',
+        action: 'INITIATE_CHECKOUT',
+        severity: 'INFO',
+        summary: `Payment session started via ${req.body.gateway}`,
+        metadata: { invoiceId: req.body.invoiceId, amount: req.body.amount },
+      });
 
-            if (!res.headersSent && result) res.status(201).json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'PAYMENT_INIT_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.status(201).json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'PAYMENT_INIT_FAILED';
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   POST /api/payments/webhook/:gateway
  * @desc    Handle Payment Provider Webhooks (Async)
  * @access  Public (Secured by Signature Verification)
@@ -93,84 +93,79 @@ router.post(
 // Note: Webhooks are typically public but require signature verification middleware.
 // We do NOT use 'protect' here as PayFast/Stripe don't have our JWTs.
 router.post(
-    '/webhook/:gateway',
-    // Middleware to verify signature would go here (e.g., verifyStripeSignature)
-    async (req, res, next) => {
-        try {
-            const result = await paymentController.handleWebhook(req, res);
+  '/webhook/:gateway',
+  // Middleware to verify signature would go here (e.g., verifyStripeSignature)
+  async (req, res, next) => {
+    try {
+      const result = await paymentController.handleWebhook(req, res);
 
-            // Critical Audit: Money Confirmed
-            // Note: We might not have req.user here, so we log as 'SYSTEM'
-            await emitAudit(req, {
-                resource: 'payment_gateway',
-                action: 'WEBHOOK_RECEIVED',
-                severity: 'INFO',
-                summary: `Webhook received from ${req.params.gateway}`,
-                actorEmail: 'system@wilsy.os', // System actor
-                metadata: { gateway: req.params.gateway }
-            });
+      // Critical Audit: Money Confirmed
+      // Note: We might not have req.user here, so we log as 'SYSTEM'
+      await emitAudit(req, {
+        resource: 'payment_gateway',
+        action: 'WEBHOOK_RECEIVED',
+        severity: 'INFO',
+        summary: `Webhook received from ${req.params.gateway}`,
+        actorEmail: 'system@wilsy.os', // System actor
+        metadata: { gateway: req.params.gateway },
+      });
 
-            if (!res.headersSent && result) res.json({ status: 'success', received: true });
-        } catch (err) {
-            // Webhooks must return 200 even on some errors to prevent retries loop, 
-            // but controller usually handles that logic.
-            err.code = 'WEBHOOK_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.json({ status: 'success', received: true });
+    } catch (err) {
+      // Webhooks must return 200 even on some errors to prevent retries loop,
+      // but controller usually handles that logic.
+      err.code = 'WEBHOOK_FAILED';
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   POST /api/payments/refund
  * @desc    Process Refund
  * @access  Admin, Finance (High Privilege)
  */
 router.post(
-    '/refund',
-    protect,
-    requireSameTenant,
-    restrictTo('admin', 'finance', 'superadmin'),
-    validate(refundSchema, 'body'),
-    async (req, res, next) => {
-        try {
-            const result = await paymentController.processRefund(req, res);
+  '/refund',
+  protect,
+  requireSameTenant,
+  restrictTo('admin', 'finance', 'superadmin'),
+  validate(refundSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const result = await paymentController.processRefund(req, res);
 
-            // Critical Audit: Money Outflow
-            await emitAudit(req, {
-                resource: 'payment_gateway',
-                action: 'PROCESS_REFUND',
-                severity: 'WARN',
-                summary: `Refund processed for Payment ${req.body.paymentId}`,
-                metadata: { reason: req.body.reason, amount: req.body.amount }
-            });
+      // Critical Audit: Money Outflow
+      await emitAudit(req, {
+        resource: 'payment_gateway',
+        action: 'PROCESS_REFUND',
+        severity: 'WARN',
+        summary: `Refund processed for Payment ${req.body.paymentId}`,
+        metadata: { reason: req.body.reason, amount: req.body.amount },
+      });
 
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'REFUND_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'REFUND_FAILED';
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   GET /api/payments/history
  * @desc    Get Transaction History
  * @access  Authenticated Users
  */
-router.get(
-    '/history',
-    protect,
-    requireSameTenant,
-    async (req, res, next) => {
-        try {
-            const result = await paymentController.getTransactionHistory(req, res);
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'TX_HISTORY_FAILED';
-            next(err);
-        }
-    }
-);
+router.get('/history', protect, requireSameTenant, async (req, res, next) => {
+  try {
+    const result = await paymentController.getTransactionHistory(req, res);
+    if (!res.headersSent && result) res.json({ status: 'success', data: result });
+  } catch (err) {
+    err.code = 'TX_HISTORY_FAILED';
+    next(err);
+  }
+});
 
 module.exports = router;
 

@@ -16,7 +16,7 @@
       "grouping": [3]
     }
   },
-  
+
   "common": {
     "save": "保存",
     "cancel": "取消",
@@ -64,7 +64,7 @@
     "credit": "信用",
     "debit": "借记"
   },
-  
+
   "navigation": {
     "home": "首页",
     "dashboard": "仪表板",
@@ -81,7 +81,7 @@
     "privacy": "隐私政策",
     "security": "安全"
   },
-  
+
   "errors": {
     "general": "发生错误，请重试。",
     "notFound": "页面未找到",
@@ -96,7 +96,7 @@
       "number": "请输入有效的数字"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "登录Wilsy OS",
@@ -122,7 +122,7 @@
       "success": "注册成功"
     }
   },
-  
+
   "onboarding": {
     "title": "客户入驻",
     "stages": {

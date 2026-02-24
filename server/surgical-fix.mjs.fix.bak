@@ -1,0 +1,89 @@
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - SURGICAL FIX ENGINE v2.0 (ES Modules)                         ║
+ * ║ [Precision fix for corrupted node_modules]                               ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+console.log('\n🔧 WILSY OS - SURGICAL FIX ENGINE v2.0');
+console.log('=======================================\n');
+
+const filesToFix = [
+  'node_modules/is-callable/index.js',
+  'node_modules/es-to-primitive/es2015.js',
+  'node_modules/es-to-primitive/es5.js',
+  'node_modules/es-to-primitive/es6.js',
+  'node_modules/has-symbols/index.js',
+  'node_modules/has-symbols/shams.js',
+  'node_modules/object-inspect/index.js',
+  'node_modules/side-channel/index.js',
+];
+
+let fixedCount = 0;
+let errorCount = 0;
+
+filesToFix.forEach((filePath) => {
+  const fullPath = path.join(__dirname, filePath);
+
+  if (fs.existsSync(fullPath)) {
+    try {
+      let content = fs.readFileSync(fullPath, 'utf8');
+      const original = content;
+
+      // Fix 1: Corrupted comment pattern: } catch (e) { /*/ }
+      content = content.replace(
+        /\}\s*catch\s*\(\s*e\s*\)\s*\{\s*\/\*\/\s*\}/g,
+        '} catch (e) { /* ignore */ }',
+      );
+
+      // Fix 2: Any /*/ pattern (unterminated comment)
+      content = content.replace(/\/\*\/\s*([\n\r])/g, '/* */$1');
+      content = content.replace(/\/\*\/\s*\}/g, '/* */ }');
+
+      // Fix 3: Double asterisks in comments
+      content = content.replace(/(\/\*[\s\S]*?)\*\*([\s\S]*?\*\/)/g, '$1*$2');
+
+      // Fix 4: Specific pattern in is-callable
+      content = content.replace(
+        /}\s+catch\s*\(\s*e\s*\)\s*{\s*\/\*\/\s*}/g,
+        '} catch (e) { /* ignore */ }',
+      );
+
+      if (content !== original) {
+        fs.writeFileSync(fullPath, content, 'utf8');
+        console.log(`✅ Fixed: ${filePath}`);
+        fixedCount++;
+      } else {
+        console.log(`✓ Clean: ${filePath}`);
+      }
+    } catch (e) {
+      console.log(`❌ Error fixing ${filePath}: ${e.message}`);
+      errorCount++;
+    }
+  } else {
+    console.log(`⚠️ Not found: ${filePath}`);
+  }
+});
+
+console.log(`\n📊 Summary:`);
+console.log(`   • Files fixed: ${fixedCount}`);
+console.log(`   • Errors: ${errorCount}`);
+
+// Verify ESLint now works
+console.log(`\n🔍 Verifying ESLint...`);
+try {
+  const { execSync } = await import('child_process');
+  const result = execSync('npx eslint --version', { encoding: 'utf8' });
+  console.log(`   ✓ ESLint ${result.trim()} is working`);
+} catch (e) {
+  console.log(`   ❌ ESLint still has issues: ${e.message}`);
+}
+
+console.log(`\n✅ Surgical fix complete`);

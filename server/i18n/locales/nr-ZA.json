@@ -19,7 +19,7 @@
     "speakers": "1.1 million",
     "province": "Mpumalanga, Limpopo, Gauteng"
   },
-  
+
   "common": {
     "save": "Londoloza",
     "cancel": "Khansela",
@@ -78,7 +78,7 @@
     "cancelled": "Kurhoxisiwe",
     "expired": "Kuphelelwe yisikhathi"
   },
-  
+
   "navigation": {
     "home": "Ikhaya",
     "dashboard": "Ideshibhodi",
@@ -97,7 +97,7 @@
     "billing": "Ukukhokha",
     "notifications": "Izaziso"
   },
-  
+
   "errors": {
     "general": "Iphutho lenzekile. Ngicela uzame futhi.",
     "notFound": "Ikhasi alitholakali",
@@ -117,7 +117,7 @@
       "maxValue": "{{field}} kufanele ingabi ngaphezu {{max}}"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "Ngena ku-Wilsy OS",
@@ -146,7 +146,7 @@
       "success": "Uphumile ngempumelelo"
     }
   },
-  
+
   "onboarding": {
     "title": "Ukungeniswa kwamakhasimende",
     "stages": {
@@ -215,7 +215,7 @@
       "completed": "Ukungeniswa kuqediwe"
     }
   },
-  
+
   "compliance": {
     "fica": {
       "title": "Ukuthobela i-FICA",

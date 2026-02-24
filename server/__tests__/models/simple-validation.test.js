@@ -1,4 +1,4 @@
-/**
+/*
  * @jest-environment node
  */
 'use strict';
@@ -8,23 +8,23 @@ const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
 describe('Model Validation', () => {
-    let mongoServer;
+  let mongoServer;
 
-    beforeAll(async () => {
-        mongoServer = await MongoMemoryServer.create();
-        const uri = mongoServer.getUri();
-        await mongoose.connect(uri);
-    });
+  beforeAll(async () => {
+    mongoServer = await MongoMemoryServer.create();
+    const uri = mongoServer.getUri();
+    await mongoose.connect(uri);
+  });
 
-    afterAll(async () => {
-        await mongoose.disconnect();
-        await mongoServer.stop();
-    });
+  afterAll(async () => {
+    await mongoose.disconnect();
+    await mongoServer.stop();
+  });
 
-    test('OnboardingSession model loads', () => {
-        const OnboardingSession = require('../../models/OnboardingSession');
-        expect(OnboardingSession).toBeDefined();
-        expect(typeof OnboardingSession).toBe('function');
-        console.log('✅ Model loaded successfully');
-    });
+  test('OnboardingSession model loads', () => {
+    const OnboardingSession = require('../../models/OnboardingSession');
+    expect(OnboardingSession).toBeDefined();
+    expect(typeof OnboardingSession).toBe('function');
+    console.log('✅ Model loaded successfully');
+  });
 });

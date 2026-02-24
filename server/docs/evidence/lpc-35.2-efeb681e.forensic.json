@@ -54,15 +54,7 @@
       "test": "regulatory-frameworks",
       "frameworksFound": 7,
       "expectedFrameworks": 7,
-      "frameworksList": [
-        "lpc",
-        "popia",
-        "fica",
-        "gdpr",
-        "sarb",
-        "fsca",
-        "aml"
-      ]
+      "frameworksList": ["lpc", "popia", "fica", "gdpr", "sarb", "fsca", "aml"]
     },
     {
       "test": "audit-trail",

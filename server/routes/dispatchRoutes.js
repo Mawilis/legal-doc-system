@@ -39,7 +39,7 @@ const boardFilterSchema = {
   status: Joi.string().valid('PENDING', 'IN_PROGRESS', 'COMPLETED', 'PROBLEM').optional(),
   zoneId: Joi.string().optional(),
   sheriffId: Joi.string().optional(),
-  date: Joi.date().iso().optional()
+  date: Joi.date().iso().optional(),
 };
 
 const optimizeRouteSchema = {
@@ -47,20 +47,20 @@ const optimizeRouteSchema = {
   instructionIds: Joi.array().items(Joi.string()).min(2).required(), // Need at least 2 points to optimize
   startLocation: Joi.object({
     lat: Joi.number().required(),
-    lng: Joi.number().required()
-  }).optional() // Defaults to Sheriff's current location or HQ
+    lng: Joi.number().required(),
+  }).optional(), // Defaults to Sheriff's current location or HQ
 };
 
 const bulkAssignSchema = {
   sheriffId: Joi.string().required(),
-  instructionIds: Joi.array().items(Joi.string()).min(1).required()
+  instructionIds: Joi.array().items(Joi.string()).min(1).required(),
 };
 
 // ------------------------------
 // ROUTES
 // ------------------------------
 
-/**
+/*
  * @route   GET /api/dispatch/board
  * @desc    Get Master Dispatch Board Data
  * @access  Admin, Dispatcher
@@ -76,7 +76,7 @@ router.get(
       const result = await dispatchController.getDispatchBoard(req, res);
 
       // Light audit for dashboard views (optional, keeps logs clean)
-      // await emitAudit(req, { ... }); 
+      // await emitAudit(req, { ... });
 
       if (!res.headersSent && result) res.json({ status: 'success', data: result });
     } catch (err) {
@@ -86,7 +86,7 @@ router.get(
   }
 );
 
-/**
+/*
  * @route   POST /api/dispatch/optimize
  * @desc    Calculate Optimal Route (TSP Solver)
  * @access  Dispatcher, Sheriff
@@ -105,7 +105,7 @@ router.post(
         resource: 'dispatch_engine',
         action: 'OPTIMIZE_ROUTE',
         severity: 'INFO',
-        metadata: { sheriffId: req.body.sheriffId, stops: req.body.instructionIds.length }
+        metadata: { sheriffId: req.body.sheriffId, stops: req.body.instructionIds.length },
       });
 
       if (!res.headersSent && result) res.json({ status: 'success', data: result });
@@ -116,7 +116,7 @@ router.post(
   }
 );
 
-/**
+/*
  * @route   POST /api/dispatch/bulk-assign
  * @desc    Bulk Assign Instructions to Sheriff
  * @access  Admin, Dispatcher
@@ -136,7 +136,7 @@ router.post(
         action: 'BULK_ASSIGN',
         severity: 'INFO',
         summary: `Assigned ${req.body.instructionIds.length} tasks to Sheriff ${req.body.sheriffId}`,
-        metadata: { taskCount: req.body.instructionIds.length }
+        metadata: { taskCount: req.body.instructionIds.length },
       });
 
       if (!res.headersSent && result) res.json({ status: 'success', data: result });

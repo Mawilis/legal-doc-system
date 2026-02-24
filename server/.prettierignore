@@ -1,0 +1,73 @@
+# WILSY OS - STRATEGIC IGNORE CONFIGURATION
+# This file intentionally ignores files that should not be formatted
+
+# Dependencies - NEVER TOUCH
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+coverage/
+.next/
+.out/
+.nuxt/
+.cache/
+
+# Our forensic tools (intentionally have patterns)
+final-fix.js
+scripts/final-double-asterisk-fix.js
+scripts/fix-double-asterisks-permanent.js
+surgical-fix.js
+surgical-fix.mjs
+*.fix.js
+*.bak
+*.backup*
+*.BAK
+
+# Legacy backup folders
+tests_legacy_backup/
+**/*.bak
+**/*.backup*
+**/*.BAK
+
+# Evidence files (already hashed)
+docs/evidence/
+*.forensic.json
+evidence.json
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs and data
+logs/
+*.log
+data/
+temp/
+tmp/
+uploads/
+downloads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Binary files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+*.woff
+*.woff2
+*.eot
+*.ttf

@@ -36,119 +36,114 @@ const validate = require('../middleware/validationMiddleware');
 const { Joi } = validate;
 
 const sendMessageSchema = {
-    recipientId: Joi.string().required(),
-    threadId: Joi.string().optional(), // If replying to existing thread
-    caseId: Joi.string().optional(), // Context for new threads
-    content: Joi.string().max(5000).required(), // Text content
-    attachments: Joi.array().items(Joi.string()).optional() // IDs of uploaded files
+  recipientId: Joi.string().required(),
+  threadId: Joi.string().optional(), // If replying to existing thread
+  caseId: Joi.string().optional(), // Context for new threads
+  content: Joi.string().max(5000).required(), // Text content
+  attachments: Joi.array().items(Joi.string()).optional(), // IDs of uploaded files
 };
 
 const idSchema = {
-    id: Joi.string().required()
+  id: Joi.string().required(),
 };
 
 // ------------------------------
 // ROUTES
 // ------------------------------
 
-/**
+/*
  * @route   POST /api/messages
  * @desc    Send Secure Message
  * @access  Authenticated Users (Staff & Clients)
  */
 router.post(
-    '/',
-    protect,
-    requireSameTenant, // Sender and Recipient must be in same tenant scope
-    validate(sendMessageSchema, 'body'),
-    async (req, res, next) => {
-        try {
-            const result = await messageController.sendMessage(req, res);
+  '/',
+  protect,
+  requireSameTenant, // Sender and Recipient must be in same tenant scope
+  validate(sendMessageSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const result = await messageController.sendMessage(req, res);
 
-            // Audit the Communication (Metadata Only)
-            await emitAudit(req, {
-                resource: 'secure_messenger',
-                action: 'SEND_MESSAGE',
-                severity: 'INFO',
-                summary: `Message sent to ${req.body.recipientId}`,
-                metadata: {
-                    caseId: req.body.caseId,
-                    hasAttachments: !!req.body.attachments
-                }
-            });
+      // Audit the Communication (Metadata Only)
+      await emitAudit(req, {
+        resource: 'secure_messenger',
+        action: 'SEND_MESSAGE',
+        severity: 'INFO',
+        summary: `Message sent to ${req.body.recipientId}`,
+        metadata: {
+          caseId: req.body.caseId,
+          hasAttachments: !!req.body.attachments,
+        },
+      });
 
-            if (!res.headersSent && result) res.status(201).json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'MSG_SEND_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.status(201).json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'MSG_SEND_FAILED';
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   GET /api/messages/thread/:id
  * @desc    Get Conversation History
  * @access  Authenticated Users (Participants Only)
  */
 router.get(
-    '/thread/:id',
-    protect,
-    requireSameTenant,
-    validate(idSchema, 'params'),
-    async (req, res, next) => {
-        try {
-            const result = await messageController.getThread(req, res);
+  '/thread/:id',
+  protect,
+  requireSameTenant,
+  validate(idSchema, 'params'),
+  async (req, res, next) => {
+    try {
+      const result = await messageController.getThread(req, res);
 
-            // Read auditing usually skipped for chat polling unless strict security required
+      // Read auditing usually skipped for chat polling unless strict security required
 
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'MSG_THREAD_FAILED';
-            next(err);
-        }
+      if (!res.headersSent && result) res.json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'MSG_THREAD_FAILED';
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   PATCH /api/messages/:id/read
  * @desc    Mark Message as Read
  * @access  Authenticated Users (Recipient Only)
  */
 router.patch(
-    '/:id/read',
-    protect,
-    requireSameTenant,
-    validate(idSchema, 'params'),
-    async (req, res, next) => {
-        try {
-            const result = await messageController.markAsRead(req, res);
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'MSG_READ_FAILED';
-            next(err);
-        }
+  '/:id/read',
+  protect,
+  requireSameTenant,
+  validate(idSchema, 'params'),
+  async (req, res, next) => {
+    try {
+      const result = await messageController.markAsRead(req, res);
+      if (!res.headersSent && result) res.json({ status: 'success', data: result });
+    } catch (err) {
+      err.code = 'MSG_READ_FAILED';
+      next(err);
     }
+  }
 );
 
-/**
+/*
  * @route   GET /api/messages/unread-count
  * @desc    Get Global Unread Count (For Badge UI)
  * @access  Authenticated Users
  */
-router.get(
-    '/unread-count',
-    protect,
-    requireSameTenant,
-    async (req, res, next) => {
-        try {
-            const result = await messageController.getUnreadCount(req, res);
-            if (!res.headersSent && result) res.json({ status: 'success', data: result });
-        } catch (err) {
-            err.code = 'MSG_COUNT_FAILED';
-            next(err);
-        }
-    }
-);
+router.get('/unread-count', protect, requireSameTenant, async (req, res, next) => {
+  try {
+    const result = await messageController.getUnreadCount(req, res);
+    if (!res.headersSent && result) res.json({ status: 'success', data: result });
+  } catch (err) {
+    err.code = 'MSG_COUNT_FAILED';
+    next(err);
+  }
+});
 
 module.exports = router;
 

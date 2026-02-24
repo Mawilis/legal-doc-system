@@ -19,7 +19,7 @@
     "speakers": "3.9 million",
     "province": "North West, Gauteng, Northern Cape, Botswana"
   },
-  
+
   "common": {
     "save": "Boloka",
     "cancel": "Kganela",
@@ -77,7 +77,7 @@
     "rejected": "E gannwe",
     "cancelled": "E kganetswe"
   },
-  
+
   "navigation": {
     "home": "Gae",
     "dashboard": "Dashboard",
@@ -94,7 +94,7 @@
     "privacy": "Pholisi ya sephiri",
     "security": "Tshireletso"
   },
-  
+
   "errors": {
     "general": "Phoso e diragetse. Tswelela o leke gape.",
     "notFound": "Tsebe ga e fitlhelele",
@@ -110,7 +110,7 @@
       "number": "Tswelela o tsene palo e e siameng"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "Tsena mo Wilsy OS",
@@ -139,7 +139,7 @@
       "success": "O tswetse ka katlego"
     }
   },
-  
+
   "onboarding": {
     "title": "Go tsenya bareki",
     "stages": {
@@ -171,7 +171,7 @@
       "ficaRejected": "FICA e gannwe"
     }
   },
-  
+
   "compliance": {
     "fica": {
       "title": "Go obamela FICA",

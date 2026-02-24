@@ -1,27 +1,27 @@
-/**
+/*
  * ====================================================================================
  * 🏛️📜 INVOICE QUANTUM MODEL: THE SACRED LEDGER V25.0 🏛️📜
  * ====================================================================================
- * 
+ *
  * FILE: /Users/wilsonkhanyezi/legal-doc-system/server/models/Invoice.js
  * ROLE: THE BIBLICAL FINANCIAL ORACLE - COURT-ADMISSIBLE BILLING TRUTH
- * 
+ *
  *      ██╗███╗   ██╗██╗   ██╗ ██████╗ ██╗   ██╗███████╗███████╗
  *      ██║████╗  ██║██║   ██║██╔═══██╗██║   ██║██╔════╝██╔════╝
- *      ██║██╔██╗ ██║██║   ██║██║   ██║██║   ██║█████╗  █████╗  
- *      ██║██║╚██╗██║██║   ██║██║   ██║██║   ██║██╔══╝  ██╔══╝  
- *      ██║██║ ╚████║╚██████╔╝╚██████╔╝╚██████╔╝██║     ██║     
- *      ╚═╝╚═╝  ╚═══╝ ╚═════╝  ╚═════╝  ╚═════╝ ╚═╝     ╚═╝     
- * 
+ *      ██║██╔██╗ ██║██║   ██║██║   ██║██║   ██║█████╗  █████╗
+ *      ██║██║╚██╗██║██║   ██║██║   ██║██║   ██║██╔══╝  ██╔══╝
+ *      ██║██║ ╚████║╚██████╔╝╚██████╔╝╚██████╔╝██║     ██║
+ *      ╚═╝╚═╝  ╚═══╝ ╚═════╝  ╚═════╝  ╚═════╝ ╚═╝     ╚═╝
+ *
  *      ████████╗██╗  ██╗███████╗    ██████╗ ██╗     ██╗██████╗ ██╗   ██╗███╗   ██╗████████╗
  *      ╚══██╔══╝██║  ██║██╔════╝    ██╔══██╗██║     ██║██╔══██╗██║   ██║████╗  ██║╚══██╔══╝
- *         ██║   ███████║█████╗      ██████╔╝██║     ██║██████╔╝██║   ██║██╔██╗ ██║   ██║   
- *         ██║   ██╔══██║██╔══╝      ██╔═══╝ ██║     ██║██╔══██╗██║   ██║██║╚██╗██║   ██║   
- *         ██║   ██║  ██║███████╗    ██║     ███████╗██║██║  ██║╚██████╔╝██║ ╚████║   ██║   
- *         ╚═╝   ╚═╝  ╚═╝╚══════╝    ╚═╝     ╚══════╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   
- * 
+ *         ██║   ███████║█████╗      ██████╔╝██║     ██║██████╔╝██║   ██║██╔██╗ ██║   ██║
+ *         ██║   ██╔══██║██╔══╝      ██╔═══╝ ██║     ██║██╔══██╗██║   ██║██║╚██╗██║   ██║
+ *         ██║   ██║  ██║███████╗    ██║     ███████╗██║██║  ██║╚██████╔╝██║ ╚████║   ██║
+ *         ╚═╝   ╚═╝  ╚═╝╚══════╝    ╚═╝     ╚══════╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝
+ *
  * QUANTUM VISUALIZATION:
- * 
+ *
  *      [South African Law Firm]                 [Wilsy OS Financial Fortress]
  *              |                                         |
  *        Legal Services                          DNA-Encrypted Invoices
@@ -42,13 +42,13 @@
  *        │ SARS eFiling│                          │Blockchain Proof│
  *        │ Integration│                          │  of Existence │
  *        └───────────┘                           └───────────────┘
- *                                                                 
+ *
  * QUANTUM MANIFEST: This sacred ledger is the indestructible financial memory
- * of Wilsy OS—every rand, every cent, every transaction immortalized in 
- * cryptographic stone. It transforms legal billing into court-admissible 
+ * of Wilsy OS—every rand, every cent, every transaction immortalized in
+ * cryptographic stone. It transforms legal billing into court-admissible
  * evidence, creating unbreakable chains of financial truth that withstand
  * SARS audits, judicial scrutiny, and temporal entropy.
- * 
+ *
  * ENHANCEMENTS V25.0:
  * 1. Multi-Currency Support with Real-Time Exchange Rates
  * 2. SARS eFiling Integration Ready (South African Revenue Service)
@@ -57,15 +57,15 @@
  * 5. AI-Powered Anomaly Detection for Billing Fraud
  * 6. Multi-Tenant Financial Isolation with Zero-Knowledge Proofs
  * 7. Automated SARS VAT 201 Return Preparation
- * 
+ *
  * INVESTMENT VALUE: This module processes R500M+ annual legal billings with
  * 99.999% accuracy, reducing billing disputes by 85% and accelerating cash flow
  * by 45 days for South African law firms. Global scaling potential: $5B+ SaaS market.
- * 
+ *
  * BIBLICAL METAPHOR: "This is the Book of Financial Truths, where every rand
  * and cent is recorded with divine precision—the golden thread that weaves
  * prosperity through Africa's legal ecosystem, creating fortunes from justice."
- * 
+ *
  * SECURITY DNA: POPIA/GDPR/FICA-compliant financial fortress with quantum-grade
  * encryption, multi-tenant isolation, and blockchain-backed audit trails.
  * ====================================================================================
@@ -84,7 +84,7 @@ require('dotenv').config();
 // QUANTUM ENCRYPTION UTILITIES
 // =============================================================================
 
-/**
+/*
  * Encrypt field using AES-256-GCM for financial data protection
  * @param {string} value - Plaintext value to encrypt
  * @returns {Object} Encrypted object with metadata
@@ -111,11 +111,11 @@ const encryptField = function (value) {
     tag: tag.toString('hex'),
     algorithm,
     keyVersion: 'v1',
-    encryptedAt: new Date().toISOString()
+    encryptedAt: new Date().toISOString(),
   };
 };
 
-/**
+/*
  * Decrypt field for authorized access only
  * @param {Object} encryptedObj - Encrypted object
  * @returns {string} Decrypted plaintext
@@ -129,11 +129,7 @@ const decryptField = function (encryptedObj) {
       ? Buffer.from(process.env.INVOICE_ENCRYPTION_KEY, 'hex')
       : Buffer.from(process.env.ENCRYPTION_KEY || 'default_key_32_bytes_here_for_dev', 'hex');
 
-    const decipher = crypto.createDecipheriv(
-      algorithm,
-      key,
-      Buffer.from(encryptedObj.iv, 'hex')
-    );
+    const decipher = crypto.createDecipheriv(algorithm, key, Buffer.from(encryptedObj.iv, 'hex'));
 
     decipher.setAuthTag(Buffer.from(encryptedObj.tag, 'hex'));
 
@@ -150,744 +146,761 @@ const decryptField = function (encryptedObj) {
 // 🌌 INVOICE SCHEMA: BIBLICAL FINANCIAL ORACLE 🌌
 // =============================================================================
 
-const invoiceSchema = new Schema({
-  // ============================================================================
-  // QUANTUM IDENTIFICATION: MULTI-TENANT FINANCIAL ANCHORS
-  // ============================================================================
+const invoiceSchema = new Schema(
+  {
+    // ============================================================================
+    // QUANTUM IDENTIFICATION: MULTI-TENANT FINANCIAL ANCHORS
+    // ============================================================================
 
-  tenantId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Tenant',
-    required: [true, 'Tenant ID quantum anchor required for multi-tenant isolation'],
-    index: true,
-    immutable: true,
-    validate: {
-      validator: function (v) {
-        return mongoose.Types.ObjectId.isValid(v);
+    tenantId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: [true, 'Tenant ID quantum anchor required for multi-tenant isolation'],
+      index: true,
+      immutable: true,
+      validate: {
+        validator: function (v) {
+          return mongoose.Types.ObjectId.isValid(v);
+        },
+        message: 'Invalid tenant ID quantum anchor',
       },
-      message: 'Invalid tenant ID quantum anchor'
-    }
-  },
-
-  invoiceNumber: {
-    type: String,
-    required: [true, 'Invoice number required for SA legal compliance'],
-    unique: true,
-    immutable: true,
-    default: function () {
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const day = date.getDate().toString().padStart(2, '0');
-      const random = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
-      const tenantCode = this.tenantId ? this.tenantId.toString().substr(-4).toUpperCase() : 'GLOB';
-
-      // South African Legal Format: INV-YYYYMMDD-TENANT-RANDOM
-      return `INV-${year}${month}${day}-${tenantCode}-${random}`;
     },
-    match: [/^INV-\d{8}-[A-Z0-9]{4,6}-\d{4,6}$/, 'Invalid SA invoice format'],
-    // Quantum Shield: Unique identifier for audit trails
-  },
 
-  externalReference: {
-    type: String,
-    // Integration Quantum: External system references (accounting software, etc.)
-  },
-
-  // ============================================================================
-  // FINANCIAL QUANTUM: SACRED MONETARY RECORDING
-  // ============================================================================
-
-  currency: {
-    type: String,
-    required: [true, 'Currency required for financial compliance'],
-    enum: ['ZAR', 'USD', 'EUR', 'GBP', 'NGN', 'KES', 'GHS', 'BWP', 'NAD', 'MUR'],
-    default: 'ZAR',
-    // SA Compliance: ZAR as default for South African firms
-  },
-
-  exchangeRate: {
-    type: Number,
-    default: 1,
-    min: [0.0001, 'Exchange rate must be positive'],
-    // Multi-Currency: Rate used for this invoice
-  },
-
-  baseCurrency: {
-    type: String,
-    default: 'ZAR',
-    enum: ['ZAR', 'USD'],
-    // Financial Quantum: All amounts stored in base currency for reporting
-  },
-
-  subtotal: {
-    type: Number,
-    required: [true, 'Subtotal required before tax'],
-    min: [0, 'Subtotal cannot be negative'],
-    set: function (val) {
-      // Financial precision: Round to 2 decimal places
-      return Math.round((parseFloat(val) || 0) * 100) / 100;
-    },
-    get: function (val) {
-      return Math.round(val * 100) / 100;
-    },
-    // Financial Integrity: Amount before any taxes or discounts
-  },
-
-  discountAmount: {
-    type: Number,
-    default: 0,
-    min: [0, 'Discount cannot be negative'],
-    // Promotional Quantum: Fixed discount amount
-  },
-
-  discountPercentage: {
-    type: Number,
-    default: 0,
-    min: [0, 'Discount percentage cannot be negative'],
-    max: [100, 'Discount percentage cannot exceed 100%'],
-    // Promotional Quantum: Percentage discount
-  },
-
-  taxableAmount: {
-    type: Number,
-    default: function () {
-      const discounted = this.subtotal - this.discountAmount;
-      return Math.round(discounted * 100) / 100;
-    },
-    // Tax Quantum: Amount subject to taxation
-  },
-
-  taxType: {
-    type: String,
-    required: [true, 'Tax type required for SARS compliance'],
-    enum: [
-      'VAT',           // Value Added Tax (South Africa: 15%)
-      'VAT_ZERO',      // Zero-rated VAT
-      'VAT_EXEMPT',    // VAT Exempt
-      'NO_TAX',        // No tax applicable
-      'WITHHOLDING',   // Withholding tax
-      'CUSTOM'         // Custom tax rate
-    ],
-    default: 'VAT',
-    // SARS Compliance: Different tax treatments
-  },
-
-  taxRate: {
-    type: Number,
-    default: function () {
-      // South African VAT rate (SARS Compliance)
-      if (this.taxType === 'VAT') {
-        return process.env.SA_VAT_RATE ? parseFloat(process.env.SA_VAT_RATE) : 0.15;
-      }
-      return 0;
-    },
-    min: [0, 'Tax rate cannot be negative'],
-    max: [1, 'Tax rate cannot exceed 100%'],
-    // Tax Quantum: Rate applied to taxable amount
-  },
-
-  taxAmount: {
-    type: Number,
-    default: function () {
-      const tax = this.taxableAmount * this.taxRate;
-      return Math.round(tax * 100) / 100;
-    },
-    // SARS Quantum: Tax amount for e-filing
-  },
-
-  totalAmount: {
-    type: Number,
-    required: [true, 'Total amount required for financial compliance'],
-    default: function () {
-      const discounted = this.subtotal - this.discountAmount;
-      const tax = discounted * this.taxRate;
-      return Math.round((discounted + tax) * 100) / 100;
-    },
-    min: [0, 'Total amount cannot be negative'],
-    // Financial Integrity: Final amount payable
-  },
-
-  amountPaid: {
-    type: Number,
-    default: 0,
-    min: [0, 'Amount paid cannot be negative'],
-    // Payment Tracking: Total payments received
-  },
-
-  outstandingAmount: {
-    type: Number,
-    default: function () {
-      return Math.max(0, this.totalAmount - this.amountPaid);
-    },
-    // Collections Quantum: Amount still due
-  },
-
-  // ============================================================================
-  // LEGAL CONTEXT QUANTUM: SOUTH AFRICAN LEGAL ECOSYSTEM
-  // ============================================================================
-
-  matterId: {
-    type: Schema.Types.ObjectId,
-    ref: 'LegalMatter',
-    required: [true, 'Must link to a legal matter for billing compliance'],
-    index: true,
-    // Legal Practice Council: Time-based billing linkage
-  },
-
-  clientId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Client',
-    required: [true, 'Client reference required for FICA compliance'],
-    index: true,
-    // FICA Quantum: Client identification for AML compliance
-  },
-
-  attorneyId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: [true, 'Responsible attorney required for billing accountability'],
-    // LPC Quantum: Attorney responsible for billing
-  },
-
-  // ============================================================================
-  // STATUS QUANTUM: DIVINE FINANCIAL JOURNEY
-  // ============================================================================
-
-  status: {
-    type: String,
-    required: [true, 'Status required for financial workflow tracking'],
-    enum: {
-      values: [
-        'DRAFT',              // Initial draft
-        'PROFORMA',           // Proforma invoice
-        'ISSUED',             // Formally issued to client
-        'PARTIALLY_PAID',     // Partial payment received
-        'PAID',               // Fully paid
-        'OVERDUE',            // Past due date
-        'WRITTEN_OFF',        // Written off (bad debt)
-        'DISPUTED',           // Client dispute raised
-        'CANCELLED',          // Invoice cancelled
-        'REFUNDED',           // Refund issued
-        'UNDER_REVIEW',       // SARS/Compliance review
-        'LEGAL_HOLD'          // Legal hold for litigation
-      ],
-      message: '{VALUE} is not a valid invoice status in South African legal context'
-    },
-    default: 'DRAFT',
-    index: true,
-    // Business Intelligence: Critical for cash flow analysis
-  },
-
-  statusReason: {
-    type: String,
-    // Diagnostic Quantum: Detailed reason for status
-  },
-
-  paymentTerms: {
-    type: Number,
-    required: true,
-    default: 30,
-    min: [0, 'Payment terms cannot be negative'],
-    max: [365, 'Payment terms cannot exceed 365 days'],
-    // SA Legal Norm: Standard 30-day terms
-  },
-
-  dueDate: {
-    type: Date,
-    validate: {
-      validator: function (v) {
-        return !v || v > this.issueDate;
-      },
-      message: 'Due date must be after issue date'
-    }
-  },
-
-  // ============================================================================
-  // TEMPORAL QUANTUM: IMMUTABLE AUDIT TRAIL
-  // ============================================================================
-
-  issueDate: {
-    type: Date,
-    required: [true, 'Issue date required for legal validity'],
-    default: Date.now,
-    validate: {
-      validator: function (v) {
-        return v <= new Date();
-      },
-      message: 'Issue date cannot be in the future'
-    },
-    // Legal Quantum: Prescription period starts from issue date
-  },
-
-  paidDate: {
-    type: Date,
-    validate: {
-      validator: function (v) {
-        return !v || v >= this.issueDate;
-      },
-      message: 'Paid date cannot be before issue date'
-    }
-  },
-
-  // ============================================================================
-  // LINE ITEMS QUANTUM: DETAILED BILLING BREAKDOWN
-  // ============================================================================
-
-  lineItems: [{
-    description: {
+    invoiceNumber: {
       type: String,
-      required: [true, 'Line item description required'],
-      maxlength: [500, 'Description cannot exceed 500 characters']
+      required: [true, 'Invoice number required for SA legal compliance'],
+      unique: true,
+      immutable: true,
+      default: function () {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const random = Math.floor(Math.random() * 9999)
+          .toString()
+          .padStart(4, '0');
+        const tenantCode = this.tenantId
+          ? this.tenantId.toString().substr(-4).toUpperCase()
+          : 'GLOB';
+
+        // South African Legal Format: INV-YYYYMMDD-TENANT-RANDOM
+        return `INV-${year}${month}${day}-${tenantCode}-${random}`;
+      },
+      match: [/^INV-\d{8}-[A-Z0-9]{4,6}-\d{4,6}$/, 'Invalid SA invoice format'],
+      // Quantum Shield: Unique identifier for audit trails
     },
 
-    quantity: {
-      type: Number,
-      required: true,
-      min: [0.0001, 'Quantity must be positive'],
-      default: 1
+    externalReference: {
+      type: String,
+      // Integration Quantum: External system references (accounting software, etc.)
     },
 
-    unitPrice: {
+    // ============================================================================
+    // FINANCIAL QUANTUM: SACRED MONETARY RECORDING
+    // ============================================================================
+
+    currency: {
+      type: String,
+      required: [true, 'Currency required for financial compliance'],
+      enum: ['ZAR', 'USD', 'EUR', 'GBP', 'NGN', 'KES', 'GHS', 'BWP', 'NAD', 'MUR'],
+      default: 'ZAR',
+      // SA Compliance: ZAR as default for South African firms
+    },
+
+    exchangeRate: {
       type: Number,
-      required: true,
-      min: [0, 'Unit price cannot be negative'],
+      default: 1,
+      min: [0.0001, 'Exchange rate must be positive'],
+      // Multi-Currency: Rate used for this invoice
+    },
+
+    baseCurrency: {
+      type: String,
+      default: 'ZAR',
+      enum: ['ZAR', 'USD'],
+      // Financial Quantum: All amounts stored in base currency for reporting
+    },
+
+    subtotal: {
+      type: Number,
+      required: [true, 'Subtotal required before tax'],
+      min: [0, 'Subtotal cannot be negative'],
       set: function (val) {
+        // Financial precision: Round to 2 decimal places
         return Math.round((parseFloat(val) || 0) * 100) / 100;
-      }
+      },
+      get: function (val) {
+        return Math.round(val * 100) / 100;
+      },
+      // Financial Integrity: Amount before any taxes or discounts
+    },
+
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Discount cannot be negative'],
+      // Promotional Quantum: Fixed discount amount
+    },
+
+    discountPercentage: {
+      type: Number,
+      default: 0,
+      min: [0, 'Discount percentage cannot be negative'],
+      max: [100, 'Discount percentage cannot exceed 100%'],
+      // Promotional Quantum: Percentage discount
+    },
+
+    taxableAmount: {
+      type: Number,
+      default: function () {
+        const discounted = this.subtotal - this.discountAmount;
+        return Math.round(discounted * 100) / 100;
+      },
+      // Tax Quantum: Amount subject to taxation
+    },
+
+    taxType: {
+      type: String,
+      required: [true, 'Tax type required for SARS compliance'],
+      enum: [
+        'VAT', // Value Added Tax (South Africa: 15%)
+        'VAT_ZERO', // Zero-rated VAT
+        'VAT_EXEMPT', // VAT Exempt
+        'NO_TAX', // No tax applicable
+        'WITHHOLDING', // Withholding tax
+        'CUSTOM', // Custom tax rate
+      ],
+      default: 'VAT',
+      // SARS Compliance: Different tax treatments
     },
 
     taxRate: {
       type: Number,
       default: function () {
-        return this.parent().taxRate;
-      }
+        // South African VAT rate (SARS Compliance)
+        if (this.taxType === 'VAT') {
+          return process.env.SA_VAT_RATE ? parseFloat(process.env.SA_VAT_RATE) : 0.15;
+        }
+        return 0;
+      },
+      min: [0, 'Tax rate cannot be negative'],
+      max: [1, 'Tax rate cannot exceed 100%'],
+      // Tax Quantum: Rate applied to taxable amount
     },
 
     taxAmount: {
       type: Number,
       default: function () {
-        const lineTotal = this.quantity * this.unitPrice;
-        return Math.round(lineTotal * this.taxRate * 100) / 100;
-      }
+        const tax = this.taxableAmount * this.taxRate;
+        return Math.round(tax * 100) / 100;
+      },
+      // SARS Quantum: Tax amount for e-filing
     },
 
-    lineTotal: {
+    totalAmount: {
+      type: Number,
+      required: [true, 'Total amount required for financial compliance'],
+      default: function () {
+        const discounted = this.subtotal - this.discountAmount;
+        const tax = discounted * this.taxRate;
+        return Math.round((discounted + tax) * 100) / 100;
+      },
+      min: [0, 'Total amount cannot be negative'],
+      // Financial Integrity: Final amount payable
+    },
+
+    amountPaid: {
+      type: Number,
+      default: 0,
+      min: [0, 'Amount paid cannot be negative'],
+      // Payment Tracking: Total payments received
+    },
+
+    outstandingAmount: {
       type: Number,
       default: function () {
-        const lineTotal = this.quantity * this.unitPrice;
-        const tax = lineTotal * this.taxRate;
-        return Math.round((lineTotal + tax) * 100) / 100;
-      }
+        return Math.max(0, this.totalAmount - this.amountPaid);
+      },
+      // Collections Quantum: Amount still due
     },
 
-    matterActivityId: {
+    // ============================================================================
+    // LEGAL CONTEXT QUANTUM: SOUTH AFRICAN LEGAL ECOSYSTEM
+    // ============================================================================
+
+    matterId: {
       type: Schema.Types.ObjectId,
-      ref: 'MatterActivity'
+      ref: 'LegalMatter',
+      required: [true, 'Must link to a legal matter for billing compliance'],
+      index: true,
+      // Legal Practice Council: Time-based billing linkage
     },
 
-    timeEntryId: {
+    clientId: {
       type: Schema.Types.ObjectId,
-      ref: 'TimeEntry'
+      ref: 'Client',
+      required: [true, 'Client reference required for FICA compliance'],
+      index: true,
+      // FICA Quantum: Client identification for AML compliance
     },
 
-    expenseId: {
+    attorneyId: {
       type: Schema.Types.ObjectId,
-      ref: 'Expense'
+      ref: 'User',
+      required: [true, 'Responsible attorney required for billing accountability'],
+      // LPC Quantum: Attorney responsible for billing
     },
 
-    category: {
-      type: String,
-      enum: [
-        'LEGAL_FEES',
-        'DISBURSEMENTS',
-        'SUNDRIES',
-        'ADVOCATE_FEES',
-        'COURT_FEES',
-        'TRAVEL',
-        'ACCOMMODATION',
-        'PRINTING',
-        'POSTAGE',
-        'OTHER'
-      ],
-      default: 'LEGAL_FEES'
-    },
-
-    // SA Legal Compliance: Detailed billing requirements
-    tariffCode: {
-      type: String,
-      // High Court/Legal Practice Council tariff codes
-    },
-
-    units: {
-      type: String,
-      enum: ['HOURS', 'DAYS', 'UNITS', 'PAGES', 'ITEMS', 'KM'],
-      default: 'HOURS'
-    }
-  }],
-
-  // ============================================================================
-  // PAYMENT QUANTUM: FINANCIAL TRANSACTION TRACKING
-  // ============================================================================
-
-  paymentHistory: [{
-    paymentDate: {
-      type: Date,
-      required: true,
-      default: Date.now
-    },
-
-    amount: {
-      type: Number,
-      required: true,
-      min: [0.01, 'Payment amount must be positive']
-    },
-
-    paymentMethod: {
-      type: String,
-      required: true,
-      enum: [
-        'CASH',
-        'BANK_TRANSFER',
-        'CREDIT_CARD',
-        'DEBIT_ORDER',
-        'CHEQUE',
-        'EWALLET',
-        'PAYFAST',
-        'OZOW',
-        'SNAPSCAN',
-        'TRUST_ACCOUNT',
-        'OTHER'
-      ]
-    },
-
-    reference: {
-      type: String,
-      required: true
-    },
-
-    bankAccount: {
-      type: String,
-      set: encryptField,
-      get: decryptField
-    },
-
-    transactionId: {
-      type: String,
-      set: encryptField,
-      get: decryptField
-    },
-
-    processedBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'User'
-    },
+    // ============================================================================
+    // STATUS QUANTUM: DIVINE FINANCIAL JOURNEY
+    // ============================================================================
 
     status: {
       type: String,
-      enum: ['PENDING', 'COMPLETED', 'FAILED', 'REVERSED'],
-      default: 'COMPLETED'
-    },
-
-    notes: String
-  }],
-
-  // ============================================================================
-  // SARS COMPLIANCE QUANTUM: SOUTH AFRICAN TAX AUTHORITY
-  // ============================================================================
-
-  sarsCompliance: {
-    vatPeriod: {
-      type: String,
-      // Format: YYYY-MM (e.g., 2024-01 for January 2024)
-      match: [/^\d{4}-\d{2}$/, 'VAT period must be YYYY-MM format']
-    },
-
-    vat201Reference: {
-      type: String,
-      // SARS VAT 201 return reference number
-    },
-
-    eFilingStatus: {
-      type: String,
-      enum: ['NOT_FILED', 'PREPARED', 'SUBMITTED', 'ASSESSED', 'AUDIT', 'DISPUTED'],
-      default: 'NOT_FILED'
-    },
-
-    eFilingDate: Date,
-
-    assessmentNumber: String,
-
-    taxCertificateNumber: String,
-
-    // SARS Quantum: Digital signature for e-filing
-    sarsDigitalSignature: {
-      type: String,
-      set: encryptField,
-      get: decryptField
-    }
-  },
-
-  // ============================================================================
-  // COMPLIANCE QUANTUM: LEGAL SANCTITY ORCHESTRATION
-  // ============================================================================
-
-  compliance: {
-    // POPIA: Data Processing Compliance
-    popiaConsent: {
-      invoiceConsent: {
-        type: Boolean,
-        default: false
+      required: [true, 'Status required for financial workflow tracking'],
+      enum: {
+        values: [
+          'DRAFT', // Initial draft
+          'PROFORMA', // Proforma invoice
+          'ISSUED', // Formally issued to client
+          'PARTIALLY_PAID', // Partial payment received
+          'PAID', // Fully paid
+          'OVERDUE', // Past due date
+          'WRITTEN_OFF', // Written off (bad debt)
+          'DISPUTED', // Client dispute raised
+          'CANCELLED', // Invoice cancelled
+          'REFUNDED', // Refund issued
+          'UNDER_REVIEW', // SARS/Compliance review
+          'LEGAL_HOLD', // Legal hold for litigation
+        ],
+        message: '{VALUE} is not a valid invoice status in South African legal context',
       },
-      financialDataConsent: {
-        type: Boolean,
-        default: false
-      },
-      consentedAt: Date
+      default: 'DRAFT',
+      index: true,
+      // Business Intelligence: Critical for cash flow analysis
     },
 
-    // FICA: Anti-Money Laundering Compliance
-    ficaVerified: {
-      type: Boolean,
-      default: false
-    },
-
-    ficaVerificationDate: Date,
-
-    // Legal Practice Council Compliance
-    lpcCompliant: {
-      type: Boolean,
-      default: false
-    },
-
-    trustAccountUsed: {
-      type: Boolean,
-      default: false
-    },
-
-    trustAccountReference: {
+    statusReason: {
       type: String,
-      set: encryptField,
-      get: decryptField
+      // Diagnostic Quantum: Detailed reason for status
     },
 
-    // Companies Act: Record Retention
-    retentionPeriod: {
+    paymentTerms: {
       type: Number,
-      default: function () {
-        return parseInt(process.env.INVOICE_RETENTION_YEARS) || 7;
+      required: true,
+      default: 30,
+      min: [0, 'Payment terms cannot be negative'],
+      max: [365, 'Payment terms cannot exceed 365 days'],
+      // SA Legal Norm: Standard 30-day terms
+    },
+
+    dueDate: {
+      type: Date,
+      validate: {
+        validator: function (v) {
+          return !v || v > this.issueDate;
+        },
+        message: 'Due date must be after issue date',
       },
-      min: 5,
-      max: 10
     },
 
-    // ECT Act: Electronic Invoice Compliance
-    ectCompliant: {
-      type: Boolean,
-      default: true
+    // ============================================================================
+    // TEMPORAL QUANTUM: IMMUTABLE AUDIT TRAIL
+    // ============================================================================
+
+    issueDate: {
+      type: Date,
+      required: [true, 'Issue date required for legal validity'],
+      default: Date.now,
+      validate: {
+        validator: function (v) {
+          return v <= new Date();
+        },
+        message: 'Issue date cannot be in the future',
+      },
+      // Legal Quantum: Prescription period starts from issue date
     },
 
-    digitalSignature: {
-      signatory: {
+    paidDate: {
+      type: Date,
+      validate: {
+        validator: function (v) {
+          return !v || v >= this.issueDate;
+        },
+        message: 'Paid date cannot be before issue date',
+      },
+    },
+
+    // ============================================================================
+    // LINE ITEMS QUANTUM: DETAILED BILLING BREAKDOWN
+    // ============================================================================
+
+    lineItems: [
+      {
+        description: {
+          type: String,
+          required: [true, 'Line item description required'],
+          maxlength: [500, 'Description cannot exceed 500 characters'],
+        },
+
+        quantity: {
+          type: Number,
+          required: true,
+          min: [0.0001, 'Quantity must be positive'],
+          default: 1,
+        },
+
+        unitPrice: {
+          type: Number,
+          required: true,
+          min: [0, 'Unit price cannot be negative'],
+          set: function (val) {
+            return Math.round((parseFloat(val) || 0) * 100) / 100;
+          },
+        },
+
+        taxRate: {
+          type: Number,
+          default: function () {
+            return this.parent().taxRate;
+          },
+        },
+
+        taxAmount: {
+          type: Number,
+          default: function () {
+            const lineTotal = this.quantity * this.unitPrice;
+            return Math.round(lineTotal * this.taxRate * 100) / 100;
+          },
+        },
+
+        lineTotal: {
+          type: Number,
+          default: function () {
+            const lineTotal = this.quantity * this.unitPrice;
+            const tax = lineTotal * this.taxRate;
+            return Math.round((lineTotal + tax) * 100) / 100;
+          },
+        },
+
+        matterActivityId: {
+          type: Schema.Types.ObjectId,
+          ref: 'MatterActivity',
+        },
+
+        timeEntryId: {
+          type: Schema.Types.ObjectId,
+          ref: 'TimeEntry',
+        },
+
+        expenseId: {
+          type: Schema.Types.ObjectId,
+          ref: 'Expense',
+        },
+
+        category: {
+          type: String,
+          enum: [
+            'LEGAL_FEES',
+            'DISBURSEMENTS',
+            'SUNDRIES',
+            'ADVOCATE_FEES',
+            'COURT_FEES',
+            'TRAVEL',
+            'ACCOMMODATION',
+            'PRINTING',
+            'POSTAGE',
+            'OTHER',
+          ],
+          default: 'LEGAL_FEES',
+        },
+
+        // SA Legal Compliance: Detailed billing requirements
+        tariffCode: {
+          type: String,
+          // High Court/Legal Practice Council tariff codes
+        },
+
+        units: {
+          type: String,
+          enum: ['HOURS', 'DAYS', 'UNITS', 'PAGES', 'ITEMS', 'KM'],
+          default: 'HOURS',
+        },
+      },
+    ],
+
+    // ============================================================================
+    // PAYMENT QUANTUM: FINANCIAL TRANSACTION TRACKING
+    // ============================================================================
+
+    paymentHistory: [
+      {
+        paymentDate: {
+          type: Date,
+          required: true,
+          default: Date.now,
+        },
+
+        amount: {
+          type: Number,
+          required: true,
+          min: [0.01, 'Payment amount must be positive'],
+        },
+
+        paymentMethod: {
+          type: String,
+          required: true,
+          enum: [
+            'CASH',
+            'BANK_TRANSFER',
+            'CREDIT_CARD',
+            'DEBIT_ORDER',
+            'CHEQUE',
+            'EWALLET',
+            'PAYFAST',
+            'OZOW',
+            'SNAPSCAN',
+            'TRUST_ACCOUNT',
+            'OTHER',
+          ],
+        },
+
+        reference: {
+          type: String,
+          required: true,
+        },
+
+        bankAccount: {
+          type: String,
+          set: encryptField,
+          get: decryptField,
+        },
+
+        transactionId: {
+          type: String,
+          set: encryptField,
+          get: decryptField,
+        },
+
+        processedBy: {
+          type: Schema.Types.ObjectId,
+          ref: 'User',
+        },
+
+        status: {
+          type: String,
+          enum: ['PENDING', 'COMPLETED', 'FAILED', 'REVERSED'],
+          default: 'COMPLETED',
+        },
+
+        notes: String,
+      },
+    ],
+
+    // ============================================================================
+    // SARS COMPLIANCE QUANTUM: SOUTH AFRICAN TAX AUTHORITY
+    // ============================================================================
+
+    sarsCompliance: {
+      vatPeriod: {
+        type: String,
+        // Format: YYYY-MM (e.g., 2024-01 for January 2024)
+        match: [/^\d{4}-\d{2}$/, 'VAT period must be YYYY-MM format'],
+      },
+
+      vat201Reference: {
+        type: String,
+        // SARS VAT 201 return reference number
+      },
+
+      eFilingStatus: {
+        type: String,
+        enum: ['NOT_FILED', 'PREPARED', 'SUBMITTED', 'ASSESSED', 'AUDIT', 'DISPUTED'],
+        default: 'NOT_FILED',
+      },
+
+      eFilingDate: Date,
+
+      assessmentNumber: String,
+
+      taxCertificateNumber: String,
+
+      // SARS Quantum: Digital signature for e-filing
+      sarsDigitalSignature: {
         type: String,
         set: encryptField,
-        get: decryptField
+        get: decryptField,
       },
-      timestamp: Date,
-      signatureHash: String
-    }
-  },
-
-  // ============================================================================
-  // AUDIT QUANTUM: IMMUTABLE CHRONICLE
-  // ============================================================================
-
-  auditTrail: [{
-    action: {
-      type: String,
-      required: true,
-      enum: [
-        'CREATED',
-        'UPDATED',
-        'ISSUED',
-        'PAYMENT_RECEIVED',
-        'STATUS_CHANGED',
-        'DISPUTE_RAISED',
-        'DISPUTE_RESOLVED',
-        'CANCELLED',
-        'REFUNDED',
-        'WRITTEN_OFF',
-        'SARS_FILED',
-        'LEGAL_HOLD_APPLIED',
-        'LEGAL_HOLD_RELEASED'
-      ]
     },
 
-    performedBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'User'
-    },
+    // ============================================================================
+    // COMPLIANCE QUANTUM: LEGAL SANCTITY ORCHESTRATION
+    // ============================================================================
 
-    performedAt: {
-      type: Date,
-      default: Date.now
-    },
+    compliance: {
+      // POPIA: Data Processing Compliance
+      popiaConsent: {
+        invoiceConsent: {
+          type: Boolean,
+          default: false,
+        },
+        financialDataConsent: {
+          type: Boolean,
+          default: false,
+        },
+        consentedAt: Date,
+      },
 
-    changes: {
-      type: Schema.Types.Mixed,
-      // Quantum Shield: Detailed change tracking
-    },
+      // FICA: Anti-Money Laundering Compliance
+      ficaVerified: {
+        type: Boolean,
+        default: false,
+      },
 
-    ipAddress: {
-      type: String,
-      set: encryptField,
-      get: decryptField
-    },
+      ficaVerificationDate: Date,
 
-    userAgent: String,
+      // Legal Practice Council Compliance
+      lpcCompliant: {
+        type: Boolean,
+        default: false,
+      },
 
-    reason: String,
+      trustAccountUsed: {
+        type: Boolean,
+        default: false,
+      },
 
-    // Blockchain Quantum: Hash of this audit entry
-    entryHash: {
-      type: String,
-      match: [/^[a-f0-9]{64}$/, 'Invalid SHA-256 hash format']
-    }
-  }],
-
-  // ============================================================================
-  // BLOCKCHAIN QUANTUM: IMMUTABLE PROOF OF EXISTENCE
-  // ============================================================================
-
-  blockchainProof: {
-    transactionHash: {
-      type: String,
-      match: [/^0x[a-fA-F0-9]{64}$/, 'Invalid blockchain transaction hash']
-    },
-
-    blockNumber: Number,
-
-    timestamp: Date,
-
-    network: {
-      type: String,
-      enum: ['ETHEREUM', 'HYPERLEDGER', 'HEDERA', 'ALGORAND', 'TESTNET']
-    },
-
-    verified: {
-      type: Boolean,
-      default: false
-    }
-  },
-
-  // ============================================================================
-  // METADATA QUANTUM: BUSINESS INTELLIGENCE RESERVOIR
-  // ============================================================================
-
-  metadata: {
-    billingCycle: {
-      type: String,
-      enum: ['MONTHLY', 'QUARTERLY', 'AD_HOC', 'MILESTONE', 'FINAL'],
-      default: 'MONTHLY'
-    },
-
-    recurringInvoiceId: {
-      type: Schema.Types.ObjectId,
-      ref: 'RecurringInvoice'
-    },
-
-    subscriptionId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Subscription'
-    },
-
-    costCenter: String,
-
-    matterPhase: String,
-
-    invoiceTemplate: {
-      type: String,
-      default: 'STANDARD_SA_LEGAL'
-    },
-
-    customFields: Schema.Types.Mixed,
-
-    // AI Quantum: Machine learning metadata
-    aiAnalysis: {
-      anomalyScore: Number,
-      predictedPaymentDate: Date,
-      riskCategory: {
+      trustAccountReference: {
         type: String,
-        enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
-      }
-    }
+        set: encryptField,
+        get: decryptField,
+      },
+
+      // Companies Act: Record Retention
+      retentionPeriod: {
+        type: Number,
+        default: function () {
+          return parseInt(process.env.INVOICE_RETENTION_YEARS) || 7;
+        },
+        min: 5,
+        max: 10,
+      },
+
+      // ECT Act: Electronic Invoice Compliance
+      ectCompliant: {
+        type: Boolean,
+        default: true,
+      },
+
+      digitalSignature: {
+        signatory: {
+          type: String,
+          set: encryptField,
+          get: decryptField,
+        },
+        timestamp: Date,
+        signatureHash: String,
+      },
+    },
+
+    // ============================================================================
+    // AUDIT QUANTUM: IMMUTABLE CHRONICLE
+    // ============================================================================
+
+    auditTrail: [
+      {
+        action: {
+          type: String,
+          required: true,
+          enum: [
+            'CREATED',
+            'UPDATED',
+            'ISSUED',
+            'PAYMENT_RECEIVED',
+            'STATUS_CHANGED',
+            'DISPUTE_RAISED',
+            'DISPUTE_RESOLVED',
+            'CANCELLED',
+            'REFUNDED',
+            'WRITTEN_OFF',
+            'SARS_FILED',
+            'LEGAL_HOLD_APPLIED',
+            'LEGAL_HOLD_RELEASED',
+          ],
+        },
+
+        performedBy: {
+          type: Schema.Types.ObjectId,
+          ref: 'User',
+        },
+
+        performedAt: {
+          type: Date,
+          default: Date.now,
+        },
+
+        changes: {
+          type: Schema.Types.Mixed,
+          // Quantum Shield: Detailed change tracking
+        },
+
+        ipAddress: {
+          type: String,
+          set: encryptField,
+          get: decryptField,
+        },
+
+        userAgent: String,
+
+        reason: String,
+
+        // Blockchain Quantum: Hash of this audit entry
+        entryHash: {
+          type: String,
+          match: [/^[a-f0-9]{64}$/, 'Invalid SHA-256 hash format'],
+        },
+      },
+    ],
+
+    // ============================================================================
+    // BLOCKCHAIN QUANTUM: IMMUTABLE PROOF OF EXISTENCE
+    // ============================================================================
+
+    blockchainProof: {
+      transactionHash: {
+        type: String,
+        match: [/^0x[a-fA-F0-9]{64}$/, 'Invalid blockchain transaction hash'],
+      },
+
+      blockNumber: Number,
+
+      timestamp: Date,
+
+      network: {
+        type: String,
+        enum: ['ETHEREUM', 'HYPERLEDGER', 'HEDERA', 'ALGORAND', 'TESTNET'],
+      },
+
+      verified: {
+        type: Boolean,
+        default: false,
+      },
+    },
+
+    // ============================================================================
+    // METADATA QUANTUM: BUSINESS INTELLIGENCE RESERVOIR
+    // ============================================================================
+
+    metadata: {
+      billingCycle: {
+        type: String,
+        enum: ['MONTHLY', 'QUARTERLY', 'AD_HOC', 'MILESTONE', 'FINAL'],
+        default: 'MONTHLY',
+      },
+
+      recurringInvoiceId: {
+        type: Schema.Types.ObjectId,
+        ref: 'RecurringInvoice',
+      },
+
+      subscriptionId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Subscription',
+      },
+
+      costCenter: String,
+
+      matterPhase: String,
+
+      invoiceTemplate: {
+        type: String,
+        default: 'STANDARD_SA_LEGAL',
+      },
+
+      customFields: Schema.Types.Mixed,
+
+      // AI Quantum: Machine learning metadata
+      aiAnalysis: {
+        anomalyScore: Number,
+        predictedPaymentDate: Date,
+        riskCategory: {
+          type: String,
+          enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'],
+        },
+      },
+    },
+
+    // ============================================================================
+    // SYSTEM FIELDS: QUANTUM ORCHESTRATION
+    // ============================================================================
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    deletedAt: Date,
+
+    version: {
+      type: Number,
+      default: 1,
+    },
+
+    migratedFrom: {
+      type: Schema.Types.Mixed,
+    },
   },
+  {
+    // ============================================================================
+    // SCHEMA OPTIONS: QUANTUM CONFIGURATION MATRIX
+    // ============================================================================
 
-  // ============================================================================
-  // SYSTEM FIELDS: QUANTUM ORCHESTRATION
-  // ============================================================================
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      getters: true,
+      transform: function (doc, ret) {
+        // Security Quantum: Remove sensitive fields in JSON output
+        delete ret.paymentHistory;
+        delete ret.compliance.trustAccountReference;
+        delete ret.compliance.digitalSignature.signatory;
+        delete ret.sarsCompliance.sarsDigitalSignature;
+        delete ret.auditTrail.ipAddress;
+        delete ret.blockchainProof;
+        delete ret.isDeleted;
+        delete ret.deletedAt;
+        delete ret.__v;
+        delete ret.version;
 
-  isDeleted: {
-    type: Boolean,
-    default: false,
-    index: true
-  },
+        // Convert amounts to strings for precision
+        const amountFields = [
+          'subtotal',
+          'discountAmount',
+          'taxableAmount',
+          'taxAmount',
+          'totalAmount',
+          'amountPaid',
+          'outstandingAmount',
+        ];
 
-  deletedAt: Date,
+        amountFields.forEach((field) => {
+          if (ret[field] !== undefined) {
+            ret[field] = parseFloat(ret[field]).toFixed(2);
+          }
+        });
 
-  version: {
-    type: Number,
-    default: 1
-  },
-
-  migratedFrom: {
-    type: Schema.Types.Mixed
+        return ret;
+      },
+    },
+    toObject: {
+      virtuals: true,
+      getters: true,
+    },
+    optimisticConcurrency: true,
+    autoCreate: true,
   }
-
-}, {
-  // ============================================================================
-  // SCHEMA OPTIONS: QUANTUM CONFIGURATION MATRIX
-  // ============================================================================
-
-  timestamps: true,
-  toJSON: {
-    virtuals: true,
-    getters: true,
-    transform: function (doc, ret) {
-      // Security Quantum: Remove sensitive fields in JSON output
-      delete ret.paymentHistory;
-      delete ret.compliance.trustAccountReference;
-      delete ret.compliance.digitalSignature.signatory;
-      delete ret.sarsCompliance.sarsDigitalSignature;
-      delete ret.auditTrail.ipAddress;
-      delete ret.blockchainProof;
-      delete ret.isDeleted;
-      delete ret.deletedAt;
-      delete ret.__v;
-      delete ret.version;
-
-      // Convert amounts to strings for precision
-      const amountFields = [
-        'subtotal', 'discountAmount', 'taxableAmount', 'taxAmount',
-        'totalAmount', 'amountPaid', 'outstandingAmount'
-      ];
-
-      amountFields.forEach(field => {
-        if (ret[field] !== undefined) {
-          ret[field] = parseFloat(ret[field]).toFixed(2);
-        }
-      });
-
-      return ret;
-    }
-  },
-  toObject: {
-    virtuals: true,
-    getters: true
-  },
-  optimisticConcurrency: true,
-  autoCreate: true
-});
+);
 
 // =============================================================================
 // COMPOUND INDEXES: QUERY PERFORMANCE OPTIMIZATION
@@ -904,13 +917,16 @@ invoiceSchema.index({ matterId: 1, status: 1 });
 invoiceSchema.index({ 'sarsCompliance.vatPeriod': 1, tenantId: 1 });
 invoiceSchema.index({ 'compliance.ficaVerified': 1 });
 invoiceSchema.index({ currency: 1, status: 1 });
-invoiceSchema.index({
-  tenantId: 1,
-  status: 1,
-  dueDate: 1
-}, {
-  partialFilterExpression: { status: { $in: ['ISSUED', 'OVERDUE', 'PARTIALLY_PAID'] } }
-});
+invoiceSchema.index(
+  {
+    tenantId: 1,
+    status: 1,
+    dueDate: 1,
+  },
+  {
+    partialFilterExpression: { status: { $in: ['ISSUED', 'OVERDUE', 'PARTIALLY_PAID'] } },
+  }
+);
 
 // TTL Index for deleted invoices (cleanup after retention period)
 invoiceSchema.index(
@@ -919,8 +935,8 @@ invoiceSchema.index(
     expireAfterSeconds: 0,
     partialFilterExpression: {
       isDeleted: true,
-      'compliance.retentionPeriod': { $exists: true }
-    }
+      'compliance.retentionPeriod': { $exists: true },
+    },
   }
 );
 
@@ -928,7 +944,7 @@ invoiceSchema.index(
 // VIRTUAL PROPERTIES: COMPUTED QUANTUM STATES
 // =============================================================================
 
-/**
+/*
  * VIRTUAL: Is invoice overdue
  * @returns {Boolean} True if invoice is overdue
  */
@@ -944,7 +960,7 @@ invoiceSchema.virtual('isOverdue').get(function () {
   return now > due;
 });
 
-/**
+/*
  * VIRTUAL: Days overdue
  * @returns {Number} Days overdue, 0 if not overdue
  */
@@ -957,7 +973,7 @@ invoiceSchema.virtual('daysOverdue').get(function () {
   return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 });
 
-/**
+/*
  * VIRTUAL: Days until due
  * @returns {Number} Days until due, negative if overdue
  */
@@ -970,7 +986,7 @@ invoiceSchema.virtual('daysUntilDue').get(function () {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 });
 
-/**
+/*
  * VIRTUAL: Age of invoice in days
  * @returns {Number} Days since issue
  */
@@ -981,7 +997,7 @@ invoiceSchema.virtual('ageInDays').get(function () {
   return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 });
 
-/**
+/*
  * VIRTUAL: Is fully paid
  * @returns {Boolean} True if invoice is fully paid
  */
@@ -989,7 +1005,7 @@ invoiceSchema.virtual('isFullyPaid').get(function () {
   return this.status === 'PAID' || Math.abs(this.outstandingAmount) < 0.01;
 });
 
-/**
+/*
  * VIRTUAL: Payment percentage
  * @returns {Number} Percentage paid (0-100)
  */
@@ -998,7 +1014,7 @@ invoiceSchema.virtual('paymentPercentage').get(function () {
   return Math.min(100, Math.round((this.amountPaid / this.totalAmount) * 100));
 });
 
-/**
+/*
  * VIRTUAL: Late penalty amount (SA Legal Norms)
  * @returns {Number} Late penalty in ZAR
  */
@@ -1013,7 +1029,7 @@ invoiceSchema.virtual('latePenalty').get(function () {
   return Math.round(penalty * 100) / 100;
 });
 
-/**
+/*
  * VIRTUAL: Total with penalty
  * @returns {Number} Total amount including late penalty
  */
@@ -1027,7 +1043,7 @@ invoiceSchema.virtual('totalWithPenalty').get(function () {
 // MIDDLEWARE: TEMPORAL ORCHESTRATION HOOKS
 // =============================================================================
 
-/**
+/*
  * PRE-VALIDATE: Set default values and validate business logic
  */
 invoiceSchema.pre('validate', function (next) {
@@ -1041,9 +1057,10 @@ invoiceSchema.pre('validate', function (next) {
   // Ensure financial consistency
   if (this.subtotal !== undefined) {
     // Calculate discounted amount
-    const discountAmt = this.discountPercentage > 0
-      ? this.subtotal * (this.discountPercentage / 100)
-      : this.discountAmount || 0;
+    const discountAmt =
+      this.discountPercentage > 0
+        ? this.subtotal * (this.discountPercentage / 100)
+        : this.discountAmount || 0;
 
     this.taxableAmount = Math.round((this.subtotal - discountAmt) * 100) / 100;
     this.taxAmount = Math.round(this.taxableAmount * this.taxRate * 100) / 100;
@@ -1055,7 +1072,7 @@ invoiceSchema.pre('validate', function (next) {
   if (this.lineItems && this.lineItems.length > 0) {
     let lineItemsTotal = 0;
 
-    this.lineItems.forEach(item => {
+    this.lineItems.forEach((item) => {
       if (item.quantity && item.unitPrice) {
         const itemTotal = item.quantity * item.unitPrice;
         const itemTax = itemTotal * (item.taxRate || this.taxRate);
@@ -1073,7 +1090,7 @@ invoiceSchema.pre('validate', function (next) {
   next();
 });
 
-/**
+/*
  * PRE-SAVE: Calculate amounts and update audit trail
  */
 invoiceSchema.pre('save', function (next) {
@@ -1093,8 +1110,11 @@ invoiceSchema.pre('save', function (next) {
   }
 
   // Mark as overdue if past due date
-  if (this.dueDate && new Date() > new Date(this.dueDate) &&
-    ['ISSUED', 'PARTIALLY_PAID'].includes(this.status)) {
+  if (
+    this.dueDate &&
+    new Date() > new Date(this.dueDate) &&
+    ['ISSUED', 'PARTIALLY_PAID'].includes(this.status)
+  ) {
     this.status = 'OVERDUE';
   }
 
@@ -1106,14 +1126,14 @@ invoiceSchema.pre('save', function (next) {
       action: 'UPDATED',
       performedAt: new Date(),
       changes: this.modifiedPaths(),
-      reason: 'Invoice updated'
+      reason: 'Invoice updated',
     });
   }
 
   next();
 });
 
-/**
+/*
  * POST-SAVE: Update related records
  */
 invoiceSchema.post('save', async function (doc) {
@@ -1122,16 +1142,15 @@ invoiceSchema.post('save', async function (doc) {
     const LegalMatter = mongoose.model('LegalMatter');
     await LegalMatter.findByIdAndUpdate(doc.matterId, {
       $addToSet: { invoices: doc._id },
-      $set: { lastBillingDate: doc.issueDate }
+      $set: { lastBillingDate: doc.issueDate },
     });
 
     // Update client with invoice reference
     const Client = mongoose.model('Client');
     await Client.findByIdAndUpdate(doc.clientId, {
       $addToSet: { invoices: doc._id },
-      $inc: { totalBilled: doc.totalAmount, totalPaid: doc.amountPaid }
+      $inc: { totalBilled: doc.totalAmount, totalPaid: doc.amountPaid },
     });
-
   } catch (error) {
     console.error('[Invoice Model] Failed to update related records:', error.message);
   }
@@ -1141,7 +1160,7 @@ invoiceSchema.post('save', async function (doc) {
 // STATIC METHODS: COLLECTIVE QUANTUM OPERATIONS
 // =============================================================================
 
-/**
+/*
  * Find invoices by tenant with security isolation
  * @param {ObjectId} tenantId - Tenant quantum anchor
  * @param {Object} filters - Additional filters
@@ -1156,7 +1175,7 @@ invoiceSchema.statics.findByTenant = function (tenantId, filters = {}) {
     .sort({ issueDate: -1 });
 };
 
-/**
+/*
  * Get financial summary for dashboard
  * @param {ObjectId} tenantId - Tenant quantum anchor
  * @param {Date} startDate - Period start
@@ -1167,7 +1186,7 @@ invoiceSchema.statics.getFinancialSummary = async function (tenantId, startDate,
   const matchStage = {
     tenantId: mongoose.Types.ObjectId(tenantId),
     issueDate: { $gte: startDate, $lte: endDate },
-    isDeleted: false
+    isDeleted: false,
   };
 
   const summary = await this.aggregate([
@@ -1187,13 +1206,13 @@ invoiceSchema.statics.getFinancialSummary = async function (tenantId, startDate,
                   $cond: [
                     { $in: ['$status', ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE']] },
                     '$outstandingAmount',
-                    0
-                  ]
-                }
-              }
-            }
+                    0,
+                  ],
+                },
+              },
+            },
           },
-          { $sort: { totalAmount: -1 } }
+          { $sort: { totalAmount: -1 } },
         ],
 
         // Monthly Trends
@@ -1202,7 +1221,7 @@ invoiceSchema.statics.getFinancialSummary = async function (tenantId, startDate,
             $group: {
               _id: {
                 year: { $year: '$issueDate' },
-                month: { $month: '$issueDate' }
+                month: { $month: '$issueDate' },
               },
               invoicesIssued: { $sum: 1 },
               totalBilled: { $sum: '$totalAmount' },
@@ -1212,13 +1231,13 @@ invoiceSchema.statics.getFinancialSummary = async function (tenantId, startDate,
                   $cond: [
                     { $eq: ['$status', 'PAID'] },
                     { $divide: [{ $subtract: ['$paidDate', '$issueDate'] }, 1000 * 60 * 60 * 24] },
-                    null
-                  ]
-                }
-              }
-            }
+                    null,
+                  ],
+                },
+              },
+            },
           },
-          { $sort: { '_id.year': 1, '_id.month': 1 } }
+          { $sort: { '_id.year': 1, '_id.month': 1 } },
         ],
 
         // Top Clients
@@ -1228,8 +1247,8 @@ invoiceSchema.statics.getFinancialSummary = async function (tenantId, startDate,
               from: 'clients',
               localField: 'clientId',
               foreignField: '_id',
-              as: 'client'
-            }
+              as: 'client',
+            },
           },
           { $unwind: '$client' },
           {
@@ -1239,11 +1258,11 @@ invoiceSchema.statics.getFinancialSummary = async function (tenantId, startDate,
               invoiceCount: { $sum: 1 },
               totalBilled: { $sum: '$totalAmount' },
               totalPaid: { $sum: '$amountPaid' },
-              outstanding: { $sum: '$outstandingAmount' }
-            }
+              outstanding: { $sum: '$outstandingAmount' },
+            },
           },
           { $sort: { totalBilled: -1 } },
-          { $limit: 10 }
+          { $limit: 10 },
         ],
 
         // Tax Summary (SARS Compliance)
@@ -1253,17 +1272,17 @@ invoiceSchema.statics.getFinancialSummary = async function (tenantId, startDate,
               _id: '$taxType',
               totalTaxable: { $sum: '$taxableAmount' },
               totalTax: { $sum: '$taxAmount' },
-              invoiceCount: { $sum: 1 }
-            }
-          }
+              invoiceCount: { $sum: 1 },
+            },
+          },
         ],
 
         // Aging Analysis
         agingAnalysis: [
           {
             $match: {
-              status: { $in: ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE'] }
-            }
+              status: { $in: ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE'] },
+            },
           },
           {
             $bucket: {
@@ -1273,13 +1292,13 @@ invoiceSchema.statics.getFinancialSummary = async function (tenantId, startDate,
               output: {
                 count: { $sum: 1 },
                 totalAmount: { $sum: '$outstandingAmount' },
-                averageAge: { $avg: { $subtract: [new Date(), '$dueDate'] } }
-              }
-            }
-          }
-        ]
-      }
-    }
+                averageAge: { $avg: { $subtract: [new Date(), '$dueDate'] } },
+              },
+            },
+          },
+        ],
+      },
+    },
   ]);
 
   // Calculate totals
@@ -1296,13 +1315,13 @@ invoiceSchema.statics.getFinancialSummary = async function (tenantId, startDate,
             $cond: [
               { $in: ['$status', ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE']] },
               '$outstandingAmount',
-              0
-            ]
-          }
+              0,
+            ],
+          },
         },
-        averageInvoiceValue: { $avg: '$totalAmount' }
-      }
-    }
+        averageInvoiceValue: { $avg: '$totalAmount' },
+      },
+    },
   ]);
 
   return {
@@ -1313,13 +1332,13 @@ invoiceSchema.statics.getFinancialSummary = async function (tenantId, startDate,
       totalBilled: 0,
       totalCollected: 0,
       totalOutstanding: 0,
-      averageInvoiceValue: 0
+      averageInvoiceValue: 0,
     },
-    ...summary[0]
+    ...summary[0],
   };
 };
 
-/**
+/*
  * Find overdue invoices for collections
  * @param {Number} daysThreshold - Days overdue threshold
  * @returns {Promise<Array>} Overdue invoices with client details
@@ -1332,7 +1351,7 @@ invoiceSchema.statics.findOverdueInvoices = function (daysThreshold = 30) {
     status: { $in: ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE'] },
     dueDate: { $lte: cutoffDate },
     outstandingAmount: { $gt: 0 },
-    isDeleted: false
+    isDeleted: false,
   })
     .populate('clientId', 'name email phone billingContact paymentTerms')
     .populate('matterId', 'matterNumber description')
@@ -1340,7 +1359,7 @@ invoiceSchema.statics.findOverdueInvoices = function (daysThreshold = 30) {
     .sort({ dueDate: 1 });
 };
 
-/**
+/*
  * Generate SARS VAT 201 return data
  * @param {ObjectId} tenantId - Tenant quantum anchor
  * @param {String} vatPeriod - VAT period (YYYY-MM)
@@ -1355,30 +1374,30 @@ invoiceSchema.statics.generateVAT201Return = async function (tenantId, vatPeriod
         tenantId: mongoose.Types.ObjectId(tenantId),
         issueDate: { $gte: startDate, $lte: endDate },
         taxType: 'VAT',
-        isDeleted: false
-      }
+        isDeleted: false,
+      },
     },
     {
       $group: {
         _id: {
           taxType: '$taxType',
-          taxRate: '$taxRate'
+          taxRate: '$taxRate',
         },
         totalTaxable: { $sum: '$taxableAmount' },
         totalTax: { $sum: '$taxAmount' },
         invoiceCount: { $sum: 1 },
         zeroRated: {
           $sum: {
-            $cond: [{ $eq: ['$taxRate', 0] }, '$taxableAmount', 0]
-          }
+            $cond: [{ $eq: ['$taxRate', 0] }, '$taxableAmount', 0],
+          },
         },
         exempt: {
           $sum: {
-            $cond: [{ $eq: ['$taxType', 'VAT_EXEMPT'] }, '$taxableAmount', 0]
-          }
-        }
-      }
-    }
+            $cond: [{ $eq: ['$taxType', 'VAT_EXEMPT'] }, '$taxableAmount', 0],
+          },
+        },
+      },
+    },
   ]);
 
   return {
@@ -1386,12 +1405,15 @@ invoiceSchema.statics.generateVAT201Return = async function (tenantId, vatPeriod
     period: { startDate, endDate },
     generatedAt: new Date(),
     vatData,
-    totals: vatData.reduce((acc, curr) => ({
-      totalTaxable: acc.totalTaxable + curr.totalTaxable,
-      totalTax: acc.totalTax + curr.totalTax,
-      totalInvoices: acc.totalInvoices + curr.invoiceCount
-    }), { totalTaxable: 0, totalTax: 0, totalInvoices: 0 }),
-    sarsFields: generateSARSFields(vatData)
+    totals: vatData.reduce(
+      (acc, curr) => ({
+        totalTaxable: acc.totalTaxable + curr.totalTaxable,
+        totalTax: acc.totalTax + curr.totalTax,
+        totalInvoices: acc.totalInvoices + curr.invoiceCount,
+      }),
+      { totalTaxable: 0, totalTax: 0, totalInvoices: 0 }
+    ),
+    sarsFields: generateSARSFields(vatData),
   };
 };
 
@@ -1399,7 +1421,7 @@ invoiceSchema.statics.generateVAT201Return = async function (tenantId, vatPeriod
 // INSTANCE METHODS: INDIVIDUAL QUANTUM OPERATIONS
 // =============================================================================
 
-/**
+/*
  * Record payment against invoice
  * @param {Number} amount - Payment amount
  * @param {String} paymentMethod - Payment method
@@ -1408,13 +1430,21 @@ invoiceSchema.statics.generateVAT201Return = async function (tenantId, vatPeriod
  * @param {String} notes - Payment notes
  * @returns {Promise<this>} Updated invoice
  */
-invoiceSchema.methods.recordPayment = function (amount, paymentMethod, reference, processedBy, notes = '') {
+invoiceSchema.methods.recordPayment = function (
+  amount,
+  paymentMethod,
+  reference,
+  processedBy,
+  notes = ''
+) {
   if (amount <= 0) {
     throw new Error('Payment amount must be positive');
   }
 
   if (amount > this.outstandingAmount) {
-    throw new Error(`Payment amount (${amount}) exceeds outstanding amount (${this.outstandingAmount})`);
+    throw new Error(
+      `Payment amount (${amount}) exceeds outstanding amount (${this.outstandingAmount})`
+    );
   }
 
   // Add to payment history
@@ -1427,7 +1457,7 @@ invoiceSchema.methods.recordPayment = function (amount, paymentMethod, reference
     reference,
     processedBy,
     status: 'COMPLETED',
-    notes
+    notes,
   });
 
   // Update amounts
@@ -1452,15 +1482,15 @@ invoiceSchema.methods.recordPayment = function (amount, paymentMethod, reference
       paymentMethod,
       reference,
       oldOutstanding: this.outstandingAmount + amount,
-      newOutstanding: this.outstandingAmount
+      newOutstanding: this.outstandingAmount,
     },
-    reason: `Payment received: ${reference}`
+    reason: `Payment received: ${reference}`,
   });
 
   return this.save();
 };
 
-/**
+/*
  * Mark invoice as disputed
  * @param {String} reason - Dispute reason
  * @param {ObjectId} raisedBy - User raising dispute
@@ -1479,15 +1509,15 @@ invoiceSchema.methods.markAsDisputed = function (reason, raisedBy) {
     changes: {
       oldStatus,
       newStatus: this.status,
-      reason
+      reason,
     },
-    reason: `Dispute raised: ${reason}`
+    reason: `Dispute raised: ${reason}`,
   });
 
   return this.save();
 };
 
-/**
+/*
  * Resolve dispute
  * @param {String} resolution - Resolution details
  * @param {ObjectId} resolvedBy - User resolving dispute
@@ -1511,15 +1541,15 @@ invoiceSchema.methods.resolveDispute = function (resolution, resolvedBy, newStat
     changes: {
       oldStatus,
       newStatus: this.status,
-      resolution
+      resolution,
     },
-    reason: `Dispute resolved: ${resolution}`
+    reason: `Dispute resolved: ${resolution}`,
   });
 
   return this.save();
 };
 
-/**
+/*
  * Write off invoice as bad debt
  * @param {String} reason - Write-off reason
  * @param {ObjectId} authorizedBy - User authorizing write-off
@@ -1539,15 +1569,15 @@ invoiceSchema.methods.writeOff = function (reason, authorizedBy) {
       oldStatus,
       newStatus: this.status,
       reason,
-      amountWrittenOff: this.outstandingAmount
+      amountWrittenOff: this.outstandingAmount,
     },
-    reason: `Invoice written off: ${reason}`
+    reason: `Invoice written off: ${reason}`,
   });
 
   return this.save();
 };
 
-/**
+/*
  * Generate invoice PDF (placeholder for actual implementation)
  * @returns {Promise<Buffer>} PDF buffer
  */
@@ -1561,7 +1591,7 @@ invoiceSchema.methods.generatePDF = async function () {
 // HELPER FUNCTIONS
 // =============================================================================
 
-/**
+/*
  * Calculate VAT period dates from period string
  */
 const calculateVATPeriodDates = (vatPeriod) => {
@@ -1571,7 +1601,7 @@ const calculateVATPeriodDates = (vatPeriod) => {
   return [startDate, endDate];
 };
 
-/**
+/*
  * Generate SARS-specific fields for VAT return
  */
 const generateSARSFields = (vatData) => {
@@ -1582,7 +1612,7 @@ const generateSARSFields = (vatData) => {
     field2: 'Total input tax',
     field3: 'Net VAT payable',
     field4: 'Zero-rated supplies',
-    field5: 'Exempt supplies'
+    field5: 'Exempt supplies',
   };
 };
 
@@ -1597,7 +1627,7 @@ module.exports = Invoice;
 // =============================================================================
 // ENVIRONMENT VARIABLES SETUP GUIDE
 // =============================================================================
-/**
+/*
  * .ENV CONFIGURATION FOR INVOICE MODULE V25.0:
  *
  * REQUIRED VARIABLES (Add to /server/.env if not present):
@@ -1654,7 +1684,7 @@ module.exports = Invoice;
 // =============================================================================
 // TEST SUITE FORENSIC CHECKLIST
 // =============================================================================
-/**
+/*
  * # INVOICE MODEL - FORENSIC TESTING PROTOCOL
  *
  * ## LEGAL COMPLIANCE TESTS (South African Law):
@@ -1773,7 +1803,7 @@ module.exports = Invoice;
 // =============================================================================
 // VALUATION QUANTUM METRICS
 // =============================================================================
-/**
+/*
  * FINANCIAL IMPACT METRICS V25.0:
  *
  * REVENUE OPTIMIZATION:
@@ -1815,7 +1845,7 @@ module.exports = Invoice;
 // =============================================================================
 // INSPIRATIONAL QUANTUM
 // =============================================================================
-/**
+/*
  * "Justice delayed is justice denied." - William E. Gladstone
  *
  * Wilsy OS extends this wisdom: "Payment delayed is justice starved."

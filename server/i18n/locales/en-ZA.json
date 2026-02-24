@@ -8,7 +8,7 @@
     "rtl": false,
     "pluralRules": "1"
   },
-  
+
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -56,7 +56,7 @@
     "credit": "Credit",
     "debit": "Debit"
   },
-  
+
   "navigation": {
     "home": "Home",
     "dashboard": "Dashboard",
@@ -73,7 +73,7 @@
     "privacy": "Privacy Policy",
     "security": "Security"
   },
-  
+
   "errors": {
     "general": "An error occurred. Please try again.",
     "notFound": "Page not found",
@@ -107,7 +107,7 @@
       "duplicate": "Duplicate entry"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "Login to Wilsy OS",
@@ -150,7 +150,7 @@
       "resend": "Resend Verification Email"
     }
   },
-  
+
   "onboarding": {
     "title": "Client Onboarding",
     "stages": {
@@ -220,7 +220,7 @@
       "completed": "Onboarding completed"
     }
   },
-  
+
   "compliance": {
     "fica": {
       "title": "FICA Compliance",
@@ -267,7 +267,7 @@
       "releasedAt": "Released At"
     }
   },
-  
+
   "emails": {
     "welcome": {
       "subject": "Welcome to Wilsy OS",
@@ -298,7 +298,7 @@
       "unsubscribe": "Unsubscribe from these emails"
     }
   },
-  
+
   "notifications": {
     "success": "Success!",
     "error": "Error!",
@@ -310,7 +310,7 @@
     "clear": "Clear All",
     "empty": "No notifications"
   },
-  
+
   "reports": {
     "title": "Reports",
     "generate": "Generate Report",
@@ -336,7 +336,7 @@
       "custom": "Custom Range"
     }
   },
-  
+
   "audit": {
     "title": "Audit Trail",
     "action": "Action",
@@ -352,7 +352,7 @@
     "tampered": "Audit trail tampered!",
     "export": "Export Audit Log"
   },
-  
+
   "validation": {
     "required": "This field is required",
     "email": "Please enter a valid email address",

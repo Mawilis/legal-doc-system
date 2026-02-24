@@ -1,0 +1,196 @@
+# ============================================================================
+# WILSY OS: GLOBAL LOAD BALANCING DOCKER COMPOSE
+# ============================================================================
+# Multi-region load balancing with automatic failover
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # NGINX LOAD BALANCER
+  # ==========================================================================
+  nginx-global:
+    image: nginx:1.25-alpine
+    container_name: wilsy-nginx-global
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - ../nginx/fortress-lb.conf:/etc/nginx/conf.d/fortress-lb.conf:ro
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../ssl:/etc/ssl/wilsy:ro
+      - /var/log/nginx:/var/log/nginx
+      - /var/cache/nginx:/var/cache/nginx
+    environment:
+      - TZ=Africa/Johannesburg
+    networks:
+      - wilsy-global-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # ==========================================================================
+  # HEALTH CHECKER SERVICE
+  # ==========================================================================
+  health-checker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.health
+    container_name: wilsy-health-checker
+    restart: unless-stopped
+    volumes:
+      - ../scripts/health-check.sh:/app/health-check.sh:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/nginx:/etc/nginx:rw
+      - /tmp:/tmp
+    environment:
+      - INTERNAL_HEALTH_SECRET=${INTERNAL_HEALTH_SECRET}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - TZ=Africa/Johannesburg
+    networks:
+      - wilsy-global-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: ["./health-check.sh", "start", "30"]
+    depends_on:
+      - nginx-global
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # ==========================================================================
+  # REDIS GLOBAL CLUSTER (for rate limiting)
+  # ==========================================================================
+  redis-global:
+    image: redis:7-alpine
+    container_name: wilsy-redis-global
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-global-data:/data
+      - ../redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    environment:
+      - TZ=Africa/Johannesburg
+    networks:
+      - wilsy-global-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # ==========================================================================
+  # PROMETHEUS (Global Metrics)
+  # ==========================================================================
+  prometheus-global:
+    image: prom/prometheus:latest
+    container_name: wilsy-prometheus-global
+    restart: unless-stopped
+    ports:
+      - "9091:9090"
+    volumes:
+      - ../prometheus/prometheus-global.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-global-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - wilsy-global-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      - nginx-global
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  # ==========================================================================
+  # GRAFANA (Global Dashboard)
+  # ==========================================================================
+  grafana-global:
+    image: grafana/grafana:latest
+    container_name: wilsy-grafana-global
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+      - TZ=Africa/Johannesburg
+    volumes:
+      - grafana-global-data:/var/lib/grafana
+      - ../grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - wilsy-global-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      - prometheus-global
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+networks:
+  wilsy-global-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.100.0.0/16
+          gateway: 10.100.0.1
+
+volumes:
+  redis-global-data:
+  prometheus-global-data:
+  grafana-global-data:

@@ -12,9 +12,7 @@
       "isValid": false,
       "code": "INVALID_CHECKSUM",
       "details": {},
-      "errors": [
-        "Invalid checksum"
-      ],
+      "errors": ["Invalid checksum"],
       "forensicMetadata": {
         "timestamp": "2026-02-15T06:48:04.086Z",
         "tenantId": "INVESTOR_DEMO",
@@ -62,9 +60,7 @@
       "code": "VALIDATION_ERROR",
       "businessType": "UNKNOWN",
       "details": {},
-      "errors": [
-        "Invalid business registration format"
-      ],
+      "errors": ["Invalid business registration format"],
       "forensicMetadata": {
         "timestamp": "2026-02-15T06:48:04.102Z",
         "tenantId": "INVESTOR_DEMO",

@@ -16,7 +16,7 @@
       "grouping": [3]
     }
   },
-  
+
   "common": {
     "save": "Enregistrer",
     "cancel": "Annuler",
@@ -64,7 +64,7 @@
     "credit": "Crédit",
     "debit": "Débit"
   },
-  
+
   "navigation": {
     "home": "Accueil",
     "dashboard": "Tableau de bord",
@@ -81,7 +81,7 @@
     "privacy": "Politique de confidentialité",
     "security": "Sécurité"
   },
-  
+
   "errors": {
     "general": "Une erreur est survenue. Veuillez réessayer.",
     "notFound": "Page non trouvée",
@@ -96,7 +96,7 @@
       "number": "Veuillez saisir un nombre valide"
     }
   },
-  
+
   "auth": {
     "login": {
       "title": "Connexion à Wilsy OS",
@@ -122,7 +122,7 @@
       "success": "Inscription réussie"
     }
   },
-  
+
   "onboarding": {
     "title": "Intégration client",
     "stages": {
@@ -154,7 +154,7 @@
       "ficaRejected": "FICA rejeté"
     }
   },
-  
+
   "compliance": {
     "fica": {
       "title": "Conformité FICA",
