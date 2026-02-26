@@ -72,26 +72,26 @@
 // 🛡️ Quantum Security: Load environment variables first
 require('dotenv').config({ path: `${process.cwd()}/server/.env` });
 // 📦 Core Dependencies (pinned versions for security)
-const mongoose = require('mongoose');
 const crypto = require('crypto');
 const axios = require('axios');
 const { validationResult } = require('express-validator');
+const mongoose = require('mongoose');
 // 🛡️ Security Quantum: Import encryption utilities from chat history
-const { encryptData, decryptData, generateHash } = require('../utils/encryptionUtils');
 // ⚖️ Compliance Quantum: Import compliance validators
+// 📊 Audit Quantum: Import logging utilities
+// 🏢 Multi-Tenant Quantum: Import tenant isolation middleware
+const { validateTenantAccess, enforceTenantBoundary } = require('../middleware/tenantMiddleware');
+// 📁 Model Imports (based on existing structure from chat history)
+const Company = require('../models/companyModel');
+const Tenant = require('../models/tenantModel');
+const User = require('../models/userModel');
+const { auditLogger, securityLogger, complianceLogger } = require('../utils/auditLogger');
 const {
   validateCompaniesAct,
   validateCIPCData,
   validateFICARequirements,
 } = require('../utils/complianceValidator');
-// 📊 Audit Quantum: Import logging utilities
-const { auditLogger, securityLogger, complianceLogger } = require('../utils/auditLogger');
-// 🏢 Multi-Tenant Quantum: Import tenant isolation middleware
-const { validateTenantAccess, enforceTenantBoundary } = require('../middleware/tenantMiddleware');
-// 📁 Model Imports (based on existing structure from chat history)
-const Company = require('../models/companyModel');
-const User = require('../models/userModel');
-const Tenant = require('../models/tenantModel');
+const { encryptData, decryptData, generateHash } = require('../utils/encryptionUtils');
 // ===========================================================================
 // QUANTUM CONSTANTS - ENVIRONMENT-DRIVEN CONFIGURATION
 // ===========================================================================
@@ -138,12 +138,11 @@ const calculateMatchScore = (userName, cipcName) => {
   try {
     if (!userName || !cipcName) return 0;
     // Normalize strings for comparison
-    const normalize = (str) =>
-      str
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+    const normalize = (str) => str
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     const normalizedUser = normalize(userName);
     const normalizedCIPC = normalize(cipcName);
     // Simple Levenshtein distance implementation
@@ -163,7 +162,7 @@ const calculateMatchScore = (userName, cipcName) => {
             matrix[i][j] = Math.min(
               matrix[i - 1][j - 1] + 1,
               matrix[i][j - 1] + 1,
-              matrix[i - 1][j] + 1
+              matrix[i - 1][j] + 1,
             );
           }
         }
@@ -349,11 +348,11 @@ const validateCompanyUpdate = async (existingCompany, updateData) => {
  * Checks if company has active legal holds or matters
  * that prevent deletion.
  */
-const checkLegalHolds = async (companyId) => {
+const checkLegalHolds = async (companyId) =>
   // In production, this would query legal holds/matters database
   // For now, return false (no legal holds)
-  return false;
-};
+  false
+;
 /*
  * 🌍 UTILITY: Verify Company with CIPC API
  *
@@ -390,7 +389,7 @@ const verifyWithCIPC_API = async (companyData) => {
         directors: cipcData.directors,
         registeredAddress: cipcData.registeredAddress,
       },
-      matchScore: matchScore,
+      matchScore,
       confidenceLevel: matchScore > 90 ? 'high' : matchScore > 70 ? 'medium' : 'low',
     };
     complianceLogger.info('CIPC_VERIFICATION_SUCCESS', {
@@ -416,7 +415,7 @@ const verifyWithCIPC_API = async (companyData) => {
         verifiedAt: new Date(),
         confidenceLevel: 'low',
       };
-    } else if (error.request) {
+    } if (error.request) {
       // No response from CIPC
       complianceLogger.warn('CIPC_NO_RESPONSE', {
         registrationNumber: companyData.registrationNumber,
@@ -429,16 +428,15 @@ const verifyWithCIPC_API = async (companyData) => {
         verifiedAt: new Date(),
         confidenceLevel: 'medium',
       };
-    } else {
-      // Other errors
-      complianceLogger.error('CIPC_UNKNOWN_ERROR', {
-        registrationNumber: companyData.registrationNumber,
-        error: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString(),
-      });
-      throw error;
     }
+    // Other errors
+    complianceLogger.error('CIPC_UNKNOWN_ERROR', {
+      registrationNumber: companyData.registrationNumber,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString(),
+    });
+    throw error;
   }
 };
 /*
@@ -497,15 +495,13 @@ const generateComplianceReportInternal = async (companyId, tenantId) => {
     },
   };
   // 📈 Calculate overall compliance score
-  const scores = Object.values(complianceChecks).map((check) =>
-    check.status === 'compliant'
-      ? 100
-      : check.status === 'pending'
-        ? 50
-        : check.status === 'non_compliant'
-          ? 0
-          : 25
-  );
+  const scores = Object.values(complianceChecks).map((check) => (check.status === 'compliant'
+    ? 100
+    : check.status === 'pending'
+      ? 50
+      : check.status === 'non_compliant'
+        ? 0
+        : 25));
   const overallScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
   // Generate recommendations
   const recommendations = generateComplianceRecommendations(complianceChecks);
@@ -522,7 +518,7 @@ const generateComplianceReportInternal = async (companyId, tenantId) => {
     complianceChecks,
     overallScore: Math.round(overallScore),
     riskLevel: overallScore >= 90 ? 'low' : overallScore >= 70 ? 'medium' : 'high',
-    recommendations: recommendations,
+    recommendations,
     nextReviewDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
     legalDisclaimer:
       'This report is for informational purposes only and does not constitute legal advice.',
@@ -582,8 +578,7 @@ const generateTenantComplianceSummary = async (tenantId) => {
     // Count CIPC verification
     const cipcStatus = company.cipcVerification?.status || 'pending';
     if (cipcStatus === 'verified') summary.cipcVerification.verified++;
-    else if (cipcStatus === 'api_error' || cipcStatus === 'no_response')
-      summary.cipcVerification.failed++;
+    else if (cipcStatus === 'api_error' || cipcStatus === 'no_response') summary.cipcVerification.failed++;
     else summary.cipcVerification.pending++;
   });
   return summary;
@@ -672,11 +667,10 @@ const checkCompaniesActCompliance = async (company) => {
     // Determine compliance status
     if (checks.length >= 3) {
       return 'compliant';
-    } else if (checks.length >= 2) {
+    } if (checks.length >= 2) {
       return 'pending';
-    } else {
-      return 'non_compliant';
     }
+    return 'non_compliant';
   } catch (error) {
     complianceLogger.error('COMPANIES_ACT_CHECK_ERROR', {
       companyId: company._id,
@@ -691,11 +685,11 @@ const checkCompaniesActCompliance = async (company) => {
  *
  * Validates company compliance with POPIA.
  */
-const checkPOPIACompliance = async (company) => {
+const checkPOPIACompliance = async (company) =>
   // Simplified POPIA check
   // In production, this would integrate with POPIA compliance engine
-  return company.popiaComplianceStatus || 'pending';
-};
+  company.popiaComplianceStatus || 'pending'
+;
 /*
  * ⚖️ COMPLIANCE: Check SARS Compliance
  *
@@ -736,7 +730,9 @@ const validateCompanyRegistration = async (req, res, next) => {
         timestamp: new Date().toISOString(),
       });
     }
-    const { registrationNumber, companyName, entityType, tenantId } = req.body;
+    const {
+      registrationNumber, companyName, entityType, tenantId,
+    } = req.body;
     // 🏛️ Compliance Quantum: Validate Companies Act requirements
     const companiesActValidation = await validateCompaniesAct({
       registrationNumber,
@@ -808,7 +804,7 @@ const enforceCompanyTenantIsolation = async (req, res, next) => {
     // Query with tenant isolation
     const company = await Company.findOne({
       _id: companyId,
-      tenantId: tenantId,
+      tenantId,
       isDeleted: false,
     });
     if (!company) {
@@ -931,7 +927,7 @@ exports.registerCompany = async (req, res) => {
       industryCode,
       taxNumber: encryptedData.taxNumber,
       ficaStatus: ficaValidation.status,
-      cipcVerification: cipcVerification,
+      cipcVerification,
       complianceStatus: {
         companiesAct: 'pending',
         popia: 'pending',
@@ -977,7 +973,7 @@ exports.registerCompany = async (req, res) => {
           cipcVerification: company.cipcVerification,
           createdAt: company.createdAt,
         },
-        complianceReport: complianceReport,
+        complianceReport,
       },
       complianceCode: 'COMPANY_REGISTERED',
       timestamp: new Date().toISOString(),
@@ -1008,11 +1004,11 @@ exports.registerCompany = async (req, res) => {
 exports.getCompany = async (req, res) => {
   try {
     const companyId = req.params.id;
-    const tenantId = req.tenantId;
+    const { tenantId } = req;
     // 🛡️ Security Quantum: Decrypt sensitive data only for authorized users
     const company = await Company.findOne({
       _id: companyId,
-      tenantId: tenantId,
+      tenantId,
       isDeleted: false,
     }).select('-__v -encryptedData');
     if (!company) {
@@ -1092,7 +1088,7 @@ exports.getCompany = async (req, res) => {
  */
 exports.getAllCompanies = async (req, res) => {
   try {
-    const tenantId = req.tenantId;
+    const { tenantId } = req;
     const {
       page = 1,
       limit = 20,
@@ -1107,7 +1103,7 @@ exports.getAllCompanies = async (req, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     // 🏢 Build query with tenant isolation
     const query = {
-      tenantId: tenantId,
+      tenantId,
       isDeleted: false,
     };
     // 🔍 Apply filters
@@ -1128,7 +1124,7 @@ exports.getAllCompanies = async (req, res) => {
     const sortDirection = sortOrder === 'desc' ? -1 : 1;
     const companies = await Company.find(query)
       .select(
-        'registrationNumber companyName entityType registrationDate complianceStatus cipcVerification createdAt'
+        'registrationNumber companyName entityType registrationDate complianceStatus cipcVerification createdAt',
       )
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
@@ -1191,13 +1187,13 @@ exports.getAllCompanies = async (req, res) => {
 exports.updateCompany = async (req, res) => {
   try {
     const companyId = req.params.id;
-    const tenantId = req.tenantId;
+    const { tenantId } = req;
     const userId = req.user.id;
     const updateData = req.body;
     // 🛡️ Security Quantum: Get existing company with tenant isolation
     const existingCompany = await Company.findOne({
       _id: companyId,
-      tenantId: tenantId,
+      tenantId,
       isDeleted: false,
     });
     if (!existingCompany) {
@@ -1272,7 +1268,7 @@ exports.updateCompany = async (req, res) => {
         updatedBy: userId,
         updatedAt: new Date(),
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
     // 📊 Audit Quantum: Log successful update
     auditLogger.info('COMPANY_UPDATED', {
@@ -1324,7 +1320,7 @@ exports.updateCompany = async (req, res) => {
 exports.deleteCompany = async (req, res) => {
   try {
     const companyId = req.params.id;
-    const tenantId = req.tenantId;
+    const { tenantId } = req;
     const userId = req.user.id;
     const { deletionReason } = req.body;
     if (!deletionReason) {
@@ -1338,7 +1334,7 @@ exports.deleteCompany = async (req, res) => {
     // 🛡️ Security Quantum: Get company with tenant isolation
     const company = await Company.findOne({
       _id: companyId,
-      tenantId: tenantId,
+      tenantId,
       isDeleted: false,
     });
     if (!company) {
@@ -1433,11 +1429,11 @@ exports.deleteCompany = async (req, res) => {
 exports.verifyWithCIPC = async (req, res) => {
   try {
     const companyId = req.params.id;
-    const tenantId = req.tenantId;
+    const { tenantId } = req;
     // 🛡️ Security Quantum: Get company with tenant isolation
     const company = await Company.findOne({
       _id: companyId,
-      tenantId: tenantId,
+      tenantId,
       isDeleted: false,
     }).select('registrationNumber companyName entityType');
     if (!company) {
@@ -1517,11 +1513,11 @@ exports.verifyWithCIPC = async (req, res) => {
 exports.generateComplianceReport = async (req, res) => {
   try {
     const companyId = req.params.id;
-    const tenantId = req.tenantId;
+    const { tenantId } = req;
     // 🛡️ Security Quantum: Get company with tenant isolation
     const company = await Company.findOne({
       _id: companyId,
-      tenantId: tenantId,
+      tenantId,
       isDeleted: false,
     });
     if (!company) {

@@ -16,10 +16,8 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
-const featureFlagService = require('../services/featureFlagService');
 const { v4: uuidv4 } = require('uuid');
+const featureFlagService = require('../services/featureFlagService');
 const logger = require('../utils/logger'); // structured logger expected (info/warn/error)
 
 /*
@@ -84,8 +82,7 @@ module.exports = function featureFlag(key, opts = {}) {
       // 1) Allow explicit infra bypass header (must be protected by infra)
       if (req.headers && req.headers[bypassHeader]) {
         logger.info('featureFlag: bypass header present', { key, correlationId, path: req.path });
-        if (metricsClient && typeof metricsClient.increment === 'function')
-          metricsClient.increment('feature.bypass.header', { feature: key });
+        if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('feature.bypass.header', { feature: key });
         return next();
       }
 
@@ -104,8 +101,7 @@ module.exports = function featureFlag(key, opts = {}) {
             correlationId,
             userId: req.user._id || req.user.id,
           });
-          if (metricsClient && typeof metricsClient.increment === 'function')
-            metricsClient.increment('feature.bypass.role', { feature: key, role });
+          if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('feature.bypass.role', { feature: key, role });
           return next();
         }
       }
@@ -114,8 +110,7 @@ module.exports = function featureFlag(key, opts = {}) {
       const enabled = await evaluate(req);
 
       if (!enabled) {
-        if (metricsClient && typeof metricsClient.increment === 'function')
-          metricsClient.increment('feature.disabled', { feature: key });
+        if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('feature.disabled', { feature: key });
         // Hide existence by returning 404 for disabled features (configurable)
         if (hide404) {
           return res.status(404).json({ status: 'error', message: 'Not found', correlationId });
@@ -126,8 +121,7 @@ module.exports = function featureFlag(key, opts = {}) {
       }
 
       // 4) Allowed: proceed
-      if (metricsClient && typeof metricsClient.increment === 'function')
-        metricsClient.increment('feature.enabled', { feature: key });
+      if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('feature.enabled', { feature: key });
       return next();
     } catch (err) {
       // On unexpected errors, fail-open to avoid blocking critical flows, but log and emit metric
@@ -136,8 +130,7 @@ module.exports = function featureFlag(key, opts = {}) {
         key,
         correlationId,
       });
-      if (metricsClient && typeof metricsClient.increment === 'function')
-        metricsClient.increment('feature.error', { feature: key });
+      if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('feature.error', { feature: key });
       return next();
     }
   };

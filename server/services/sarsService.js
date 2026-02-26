@@ -1,7 +1,7 @@
-/*╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ SARS eFILING INTEGRATION SERVICE — INVESTOR-GRADE ● REGULATOR-READY ● COURT-ADMISSIBLE                        ║
   ║ [96% COST REDUCTION | R8.5M RISK ELIMINATION | 92% MARGINS | R367.5M TAM]                                     ║
-  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/sarsService.js
  *
@@ -23,12 +23,12 @@ const { URL } = require('url');
 // ====================================================================
 // UTILITIES IMPORTS
 // ====================================================================
+const tenantContext = require('../middleware/tenantContext');
 const auditLogger = require('../utils/auditLogger');
+const { CircuitBreaker } = require('../utils/circuitBreaker');
 const cryptoUtils = require('../utils/cryptoUtils');
 const logger = require('../utils/logger');
-const tenantContext = require('../middleware/tenantContext');
 const { withRetry } = require('../utils/retry');
-const { CircuitBreaker } = require('../utils/circuitBreaker');
 
 // ====================================================================
 // CONSTANTS - INVESTOR-GRADE, FORENSIC TRACEABILITY
@@ -128,7 +128,7 @@ class SarsError extends Error {
     this.metadata = metadata;
     this.timestamp = new Date().toISOString();
     this.forensicHash = cryptoUtils.generateForensicHash(
-      `${message}:${code}:${JSON.stringify(metadata)}`
+      `${message}:${code}:${JSON.stringify(metadata)}`,
     );
   }
 }
@@ -174,10 +174,9 @@ class SarsService {
       },
     };
 
-    this.baseUrl =
-      this.config.environment === 'production'
-        ? SARS_API_ENDPOINTS.PRODUCTION
-        : SARS_API_ENDPOINTS.SANDBOX;
+    this.baseUrl = this.config.environment === 'production'
+      ? SARS_API_ENDPOINTS.PRODUCTION
+      : SARS_API_ENDPOINTS.SANDBOX;
 
     this.circuitBreaker = new CircuitBreaker(this.config.circuitBreaker);
     this.TaxRecord = null; // Lazy load to avoid circular deps
@@ -258,25 +257,23 @@ class SarsService {
   // ====================================================================
   async _testConnection(correlationId) {
     return withRetry(
-      async () => {
-        return this.circuitBreaker.execute(async () => {
-          const response = await this._makeRequest('GET', '/health', null, correlationId);
+      async () => this.circuitBreaker.execute(async () => {
+        const response = await this._makeRequest('GET', '/health', null, correlationId);
 
-          if (response.status !== 'available') {
-            throw new SarsError('SARS API unavailable', 'SARS_UNAVAILABLE_004', {
-              correlationId,
-              response,
-            });
-          }
+        if (response.status !== 'available') {
+          throw new SarsError('SARS API unavailable', 'SARS_UNAVAILABLE_004', {
+            correlationId,
+            response,
+          });
+        }
 
-          return response;
-        });
-      },
+        return response;
+      }),
       {
         maxRetries: this.config.maxRetries,
         initialDelay: 1000,
         correlationId,
-      }
+      },
     );
   }
 
@@ -327,7 +324,7 @@ class SarsService {
                   correlationId,
                   statusCode: res.statusCode,
                   response: parsedData,
-                })
+                }),
               );
             }
           } catch (error) {
@@ -335,7 +332,7 @@ class SarsService {
               new SarsError('Invalid SARS API response', 'SARS_INVALID_RESPONSE_005', {
                 correlationId,
                 responseData: responseData.substring(0, 1000),
-              })
+              }),
             );
           }
         });
@@ -346,7 +343,7 @@ class SarsService {
           new SarsError(`SARS API request failed: ${error.message}`, 'SARS_NETWORK_ERROR_006', {
             correlationId,
             error: error.message,
-          })
+          }),
         );
       });
 
@@ -440,8 +437,7 @@ class SarsService {
     }
 
     if (assessment.latePaymentMonths > 0) {
-      const amount =
-        assessment.amountDue * PENALTY_RATES.LATE_PAYMENT * assessment.latePaymentMonths;
+      const amount = assessment.amountDue * PENALTY_RATES.LATE_PAYMENT * assessment.latePaymentMonths;
       penalties.push({
         type: 'LATE_PAYMENT',
         amount,
@@ -494,73 +490,71 @@ class SarsService {
         });
       }
 
-      const result = await this.circuitBreaker.execute(async () => {
-        return withRetry(
-          async () => {
-            const payload = {
-              taxpayerId: filingData.taxpayerId,
-              filingType: filingData.filingType,
-              taxYear: filingData.taxYear,
-              practitionerNumber: this.config.taxPractitionerNumber,
-              returnData: filingData.returnData,
-              amountDue: filingData.amountDue || 0,
-              documents: filingData.documents || [],
-              submissionDate: new Date().toISOString(),
-              softwareVendor: 'WilsyOS',
-              softwareVersion: '6.0.1',
-            };
+      const result = await this.circuitBreaker.execute(async () => withRetry(
+        async () => {
+          const payload = {
+            taxpayerId: filingData.taxpayerId,
+            filingType: filingData.filingType,
+            taxYear: filingData.taxYear,
+            practitionerNumber: this.config.taxPractitionerNumber,
+            returnData: filingData.returnData,
+            amountDue: filingData.amountDue || 0,
+            documents: filingData.documents || [],
+            submissionDate: new Date().toISOString(),
+            softwareVendor: 'WilsyOS',
+            softwareVersion: '6.0.1',
+          };
 
-            const response = await this._makeRequest('POST', '/filings', payload, correlationId);
+          const response = await this._makeRequest('POST', '/filings', payload, correlationId);
 
-            const taxRecord = new this.TaxRecord({
-              tenantId,
-              taxpayerId: filingData.taxpayerId,
-              taxpayerType: filingData.taxpayerType || 'INDIVIDUAL',
-              filingType: filingData.filingType,
-              taxYear: filingData.taxYear,
-              filingDate: new Date(),
-              submissionId: response.submissionId,
-              status: FILING_STATUS.SUBMITTED,
-              responseData: response,
-              amountDue: filingData.amountDue || 0,
-              documents: filingData.documents || [],
-              retentionPolicy: DEFAULT_RETENTION_POLICY,
-              dataResidency: DEFAULT_DATA_RESIDENCY,
-              retentionStart: new Date(),
-            });
+          const taxRecord = new this.TaxRecord({
+            tenantId,
+            taxpayerId: filingData.taxpayerId,
+            taxpayerType: filingData.taxpayerType || 'INDIVIDUAL',
+            filingType: filingData.filingType,
+            taxYear: filingData.taxYear,
+            filingDate: new Date(),
+            submissionId: response.submissionId,
+            status: FILING_STATUS.SUBMITTED,
+            responseData: response,
+            amountDue: filingData.amountDue || 0,
+            documents: filingData.documents || [],
+            retentionPolicy: DEFAULT_RETENTION_POLICY,
+            dataResidency: DEFAULT_DATA_RESIDENCY,
+            retentionStart: new Date(),
+          });
 
-            await taxRecord.save();
+          await taxRecord.save();
 
-            const evidence = this._generateForensicEvidence(
-              'SUBMIT_FILING',
-              filingData,
-              { submissionId: response.submissionId, status: 'SUBMITTED' },
-              correlationId
-            );
-
-            logger.info('Tax filing submitted successfully', {
-              correlationId,
-              tenantId,
-              submissionId: response.submissionId,
-              timestamp: new Date().toISOString(),
-            });
-
-            return {
-              success: true,
-              submissionId: response.submissionId,
-              status: FILING_STATUS.SUBMITTED,
-              timestamp: new Date().toISOString(),
-              correlationId,
-              evidence,
-            };
-          },
-          {
-            maxRetries: this.config.maxRetries,
-            initialDelay: 2000,
+          const evidence = this._generateForensicEvidence(
+            'SUBMIT_FILING',
+            filingData,
+            { submissionId: response.submissionId, status: 'SUBMITTED' },
             correlationId,
-          }
-        );
-      });
+          );
+
+          logger.info('Tax filing submitted successfully', {
+            correlationId,
+            tenantId,
+            submissionId: response.submissionId,
+            timestamp: new Date().toISOString(),
+          });
+
+          return {
+            success: true,
+            submissionId: response.submissionId,
+            status: FILING_STATUS.SUBMITTED,
+            timestamp: new Date().toISOString(),
+            correlationId,
+            evidence,
+          };
+        },
+        {
+          maxRetries: this.config.maxRetries,
+          initialDelay: 2000,
+          correlationId,
+        },
+      ));
 
       return result;
     } catch (error) {
@@ -593,18 +587,14 @@ class SarsService {
         timestamp: new Date().toISOString(),
       });
 
-      const response = await this.circuitBreaker.execute(async () => {
-        return withRetry(
-          async () => {
-            return this._makeRequest('GET', `/filings/${submissionId}/status`, null, correlationId);
-          },
-          {
-            maxRetries: this.config.maxRetries,
-            initialDelay: 1000,
-            correlationId,
-          }
-        );
-      });
+      const response = await this.circuitBreaker.execute(async () => withRetry(
+        async () => this._makeRequest('GET', `/filings/${submissionId}/status`, null, correlationId),
+        {
+          maxRetries: this.config.maxRetries,
+          initialDelay: 1000,
+          correlationId,
+        },
+      ));
 
       await this.TaxRecord.findOneAndUpdate(
         { submissionId },
@@ -612,14 +602,14 @@ class SarsService {
           status: response.status,
           responseData: response,
           updatedAt: new Date(),
-        }
+        },
       );
 
       const evidence = this._generateForensicEvidence(
         'CHECK_STATUS',
         { submissionId },
         response,
-        correlationId
+        correlationId,
       );
 
       logger.info('Filing status retrieved', {
@@ -669,23 +659,19 @@ class SarsService {
         timestamp: new Date().toISOString(),
       });
 
-      const response = await this.circuitBreaker.execute(async () => {
-        return withRetry(
-          async () => {
-            return this._makeRequest(
-              'GET',
-              `/filings/${submissionId}/assessment`,
-              null,
-              correlationId
-            );
-          },
-          {
-            maxRetries: this.config.maxRetries,
-            initialDelay: 1000,
-            correlationId,
-          }
-        );
-      });
+      const response = await this.circuitBreaker.execute(async () => withRetry(
+        async () => this._makeRequest(
+          'GET',
+          `/filings/${submissionId}/assessment`,
+          null,
+          correlationId,
+        ),
+        {
+          maxRetries: this.config.maxRetries,
+          initialDelay: 1000,
+          correlationId,
+        },
+      ));
 
       await this.TaxRecord.findOneAndUpdate(
         { submissionId },
@@ -695,7 +681,7 @@ class SarsService {
           status: response.status,
           complianceFlags: response.flags || [],
           updatedAt: new Date(),
-        }
+        },
       );
 
       const penalties = this._calculatePenalties(response);
@@ -704,7 +690,7 @@ class SarsService {
         'GET_ASSESSMENT',
         { submissionId },
         { ...response, penalties },
-        correlationId
+        correlationId,
       );
 
       logger.info('Tax assessment retrieved', {
@@ -764,18 +750,14 @@ class SarsService {
         paymentDate: new Date().toISOString(),
       };
 
-      const response = await this.circuitBreaker.execute(async () => {
-        return withRetry(
-          async () => {
-            return this._makeRequest('POST', '/payments', payload, correlationId);
-          },
-          {
-            maxRetries: this.config.maxRetries,
-            initialDelay: 1000,
-            correlationId,
-          }
-        );
-      });
+      const response = await this.circuitBreaker.execute(async () => withRetry(
+        async () => this._makeRequest('POST', '/payments', payload, correlationId),
+        {
+          maxRetries: this.config.maxRetries,
+          initialDelay: 1000,
+          correlationId,
+        },
+      ));
 
       await this.TaxRecord.findOneAndUpdate(
         { submissionId },
@@ -785,14 +767,14 @@ class SarsService {
           paymentReference: response.reference,
           status: FILING_STATUS.ACCEPTED,
           updatedAt: new Date(),
-        }
+        },
       );
 
       const evidence = this._generateForensicEvidence(
         'MAKE_PAYMENT',
         { submissionId, amount },
         response,
-        correlationId
+        correlationId,
       );
 
       logger.info('Payment made successfully', {

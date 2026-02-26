@@ -4,8 +4,8 @@
  * ============================================================================
  */
 
-const redis = require('redis');
 const { promisify } = require('util');
+const redis = require('redis');
 
 // ENV VALIDATION
 if (!process.env.REDIS_URL) {

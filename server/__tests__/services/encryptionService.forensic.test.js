@@ -7,7 +7,7 @@ const encryptionService = require('../../services/encryptionService');
 
 describe('ENCRYPTION SERVICE — FORENSIC VALIDATION', () => {
   let testRunId;
-  let evidenceEntries = [];
+  const evidenceEntries = [];
 
   beforeAll(() => {
     testRunId = crypto.randomUUID().substring(0, 8);

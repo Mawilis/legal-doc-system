@@ -39,19 +39,19 @@
 // ===============================================================================================================
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
-const mongoose = require('mongoose'); // ^8.0.0 - Quantum Data Nexus
 const crypto = require('crypto'); // Node.js core - Cryptographic integrity
-const { MerkleTree } = require('merkletreejs'); // ^0.3.0 - Blockchain-like audit trails
-const SHA256 = require('crypto-js/sha256'); // ^4.1.1 - Merkle tree hashing
-const Joi = require('joi'); // ^17.12.0 - Input validation fortress
-const Redis = require('ioredis'); // ^5.3.2 - Performance alchemy
-const PDFDocument = require('pdfkit'); // ^0.14.0 - Legal document rendering
-const ExcelJS = require('exceljs'); // ^4.4.0 - Audit spreadsheet generation
-const { v4: uuidv4 } = require('uuid'); // ^9.0.0 - Non-sequential ID generation
-const axios = require('axios'); // ^1.6.0 - External API integration
-const path = require('path');
 const fs = require('fs').promises;
+const path = require('path');
 const zlib = require('zlib'); // Compression for report storage
+const axios = require('axios'); // ^1.6.0 - External API integration
+const SHA256 = require('crypto-js/sha256'); // ^4.1.1 - Merkle tree hashing
+const ExcelJS = require('exceljs'); // ^4.4.0 - Audit spreadsheet generation
+const Redis = require('ioredis'); // ^5.3.2 - Performance alchemy
+const Joi = require('joi'); // ^17.12.0 - Input validation fortress
+const { MerkleTree } = require('merkletreejs'); // ^0.3.0 - Blockchain-like audit trails
+const mongoose = require('mongoose'); // ^8.0.0 - Quantum Data Nexus
+const PDFDocument = require('pdfkit'); // ^0.14.0 - Legal document rendering
+const { v4: uuidv4 } = require('uuid'); // ^9.0.0 - Non-sequential ID generation
 
 // ===============================================================================================================
 // ENVIRONMENTAL SANCTITY - ABSOLUTE ZERO-TRUST VALIDATION
@@ -76,7 +76,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(
-      `❌ QUANTUM BREACH: Missing ${envVar} in .env vault. Legal compliance cannot be guaranteed.`
+      `❌ QUANTUM BREACH: Missing ${envVar} in .env vault. Legal compliance cannot be guaranteed.`,
     );
   }
 });
@@ -304,7 +304,7 @@ class QuantumAuditTrailNexus {
 
       return {
         isValid,
-        proof: proof.map((p) => p.position + ':' + p.data.toString('hex')),
+        proof: proof.map((p) => `${p.position}:${p.data.toString('hex')}`),
         leafHash,
         rootHash: this.rootHash,
         verifiedAt: new Date().toISOString(),
@@ -362,10 +362,9 @@ class POPIAComplianceNexus {
         name: 'PROCESSING_LIMITATION',
         description: 'Lawful, minimal, and consensual processing',
         legalReference: 'POPIA Section 9-12',
-        validation: () =>
-          dataProcessing.consentType &&
-          dataProcessing.purposeSpecified &&
-          dataProcessing.dataMinimized,
+        validation: () => dataProcessing.consentType
+          && dataProcessing.purposeSpecified
+          && dataProcessing.dataMinimized,
         weight: 0.2,
       },
       {
@@ -381,8 +380,7 @@ class POPIAComplianceNexus {
         name: 'FURTHER_PROCESSING_LIMITATION',
         description: 'Compatible with purpose for which collected',
         legalReference: 'POPIA Section 14',
-        validation: () =>
-          !dataProcessing.furtherProcessing || dataProcessing.furtherProcessingCompatible,
+        validation: () => !dataProcessing.furtherProcessing || dataProcessing.furtherProcessingCompatible,
         weight: 0.1,
       },
       {
@@ -422,12 +420,11 @@ class POPIAComplianceNexus {
     // Calculate compliance score
     const totalWeight = conditions.reduce(
       (sum, condition) => (condition.validation() ? sum + condition.weight : sum),
-      0
+      0,
     );
 
     const complianceScore = (totalWeight * 100).toFixed(2);
-    const isCompliant =
-      parseFloat(complianceScore) >= parseFloat(process.env.COMPLIANCE_THRESHOLD || 85);
+    const isCompliant = parseFloat(complianceScore) >= parseFloat(process.env.COMPLIANCE_THRESHOLD || 85);
 
     // Identify non-compliant conditions
     const nonCompliantConditions = conditions
@@ -556,12 +553,12 @@ class FICAKYCNexus {
             rejectUnauthorized: true,
             ciphers: 'TLS_AES_256_GCM_SHA384',
           }),
-        }
+        },
       );
 
       const kycLevel = this.determineKYCLevel(
         verificationResponse.data,
-        customerDetails.riskProfile
+        customerDetails.riskProfile,
       );
 
       return {
@@ -571,7 +568,7 @@ class FICAKYCNexus {
         verificationDate: new Date().toISOString(),
         // Quantum Security: Store encrypted verification evidence
         encryptedVerification: QuantumEncryptionNexus.encrypt(
-          JSON.stringify(verificationResponse.data)
+          JSON.stringify(verificationResponse.data),
         ),
         ficaCompliant: this.checkFICACompliance(verificationResponse.data),
         amlRiskScore: this.calculateAMLRiskScore(verificationResponse.data),
@@ -581,7 +578,7 @@ class FICAKYCNexus {
         retentionUntil: new Date(
           new Date().getFullYear() + 5,
           new Date().getMonth(),
-          new Date().getDate()
+          new Date().getDate(),
         ).toISOString(),
       };
     } catch (error) {
@@ -601,8 +598,8 @@ class FICAKYCNexus {
       highRiskCountry: verificationData.countryRisk === 'HIGH',
       unusualActivity: verificationData.activityPattern === 'UNUSUAL',
       largeTransaction:
-        verificationData.estimatedTransactionValue >
-        SA_COMPLIANCE_FRAMEWORKS.FICA.AML_THRESHOLD_ZAR,
+        verificationData.estimatedTransactionValue
+        > SA_COMPLIANCE_FRAMEWORKS.FICA.AML_THRESHOLD_ZAR,
       sanctionsMatch: verificationData.sanctionsMatch || false,
     };
 
@@ -610,11 +607,10 @@ class FICAKYCNexus {
 
     if (riskScore >= 3 || riskProfile === 'HIGH' || riskFactors.isPEP) {
       return 'ENHANCED';
-    } else if (riskScore >= 1 || riskProfile === 'MEDIUM') {
+    } if (riskScore >= 1 || riskProfile === 'MEDIUM') {
       return 'STANDARD';
-    } else {
-      return 'SIMPLIFIED';
     }
+    return 'SIMPLIFIED';
   }
 
   /*
@@ -767,8 +763,7 @@ class ComplianceReportService {
     this.db = mongoose.connection;
 
     // Quantum Storage with data residency enforcement
-    this.reportStoragePath =
-      process.env.REPORT_STORAGE_PATH || path.join(__dirname, '../../storage/compliance_reports');
+    this.reportStoragePath = process.env.REPORT_STORAGE_PATH || path.join(__dirname, '../../storage/compliance_reports');
 
     // Compliance thresholds
     this.complianceThreshold = parseFloat(process.env.COMPLIANCE_THRESHOLD) || 85;
@@ -960,15 +955,12 @@ class ComplianceReportService {
       ]);
 
       // Analyze 8 lawful conditions
-      const complianceResults = processingActivities.map((activity) =>
-        POPIAComplianceNexus.validateLawfulProcessing(activity)
-      );
+      const complianceResults = processingActivities.map((activity) => POPIAComplianceNexus.validateLawfulProcessing(activity));
 
       const compliantActivities = complianceResults.filter((r) => r.isCompliant);
-      const complianceRate =
-        processingActivities.length > 0
-          ? (compliantActivities.length / processingActivities.length) * 100
-          : 100;
+      const complianceRate = processingActivities.length > 0
+        ? (compliantActivities.length / processingActivities.length) * 100
+        : 100;
 
       // Calculate breach incidents
       const SecurityIncident = require('../models/SecurityIncident');
@@ -1022,7 +1014,7 @@ class ComplianceReportService {
       }).lean();
 
       const fulfilledRequests = paiaRequests.filter(
-        (req) => req.status === 'CLOSED' || req.status === 'FULFILLED'
+        (req) => req.status === 'CLOSED' || req.status === 'FULFILLED',
       );
 
       // Calculate response times
@@ -1095,8 +1087,7 @@ class ComplianceReportService {
         }),
       ]);
 
-      const retentionCompliance =
-        companyDocs > 0 ? ((companyDocs - overdueDocs) / companyDocs) * 100 : 100;
+      const retentionCompliance = companyDocs > 0 ? ((companyDocs - overdueDocs) / companyDocs) * 100 : 100;
 
       // Check CIPC filings
       const cipcReady = await Document.countDocuments({
@@ -1203,8 +1194,7 @@ class ComplianceReportService {
         createdAt: { $gte: startDate, $lte: endDate },
       });
 
-      const digitalSignatureRate =
-        totalDocuments > 0 ? (signedDocuments / totalDocuments) * 100 : 100;
+      const digitalSignatureRate = totalDocuments > 0 ? (signedDocuments / totalDocuments) * 100 : 100;
 
       return {
         totalDocuments,
@@ -1237,14 +1227,12 @@ class ComplianceReportService {
       }).lean();
 
       const compliantAgreements = agreements.filter(
-        (agreement) =>
-          agreement.hasCoolingOffPeriod &&
-          agreement.warrantyPeriod >= 6 &&
-          !agreement.hasUnfairTerms
+        (agreement) => agreement.hasCoolingOffPeriod
+          && agreement.warrantyPeriod >= 6
+          && !agreement.hasUnfairTerms,
       );
 
-      const complianceRate =
-        agreements.length > 0 ? (compliantAgreements.length / agreements.length) * 100 : 100;
+      const complianceRate = agreements.length > 0 ? (compliantAgreements.length / agreements.length) * 100 : 100;
 
       return {
         totalAgreements: agreements.length,
@@ -1274,18 +1262,15 @@ class ComplianceReportService {
         incidentDate: { $gte: startDate, $lte: endDate },
       }).lean();
 
-      const reportableIncidents = incidents.filter((incident) =>
-        SA_COMPLIANCE_FRAMEWORKS.CYBERCRIMES_ACT.REPORTABLE_INCIDENTS.includes(incident.type)
-      );
+      const reportableIncidents = incidents.filter((incident) => SA_COMPLIANCE_FRAMEWORKS.CYBERCRIMES_ACT.REPORTABLE_INCIDENTS.includes(incident.type));
 
       const reportedIncidents = reportableIncidents.filter(
-        (incident) => incident.reportedToAuthorities
+        (incident) => incident.reportedToAuthorities,
       );
 
-      const reportingRate =
-        reportableIncidents.length > 0
-          ? (reportedIncidents.length / reportableIncidents.length) * 100
-          : 100;
+      const reportingRate = reportableIncidents.length > 0
+        ? (reportedIncidents.length / reportableIncidents.length) * 100
+        : 100;
 
       return {
         totalIncidents: incidents.length,
@@ -1380,7 +1365,7 @@ class ComplianceReportService {
 
     if (data.companiesActCompliance?.retentionCompliance < 95) {
       findings.push(
-        `Companies Act retention compliance at ${data.companiesActCompliance.retentionCompliance}%`
+        `Companies Act retention compliance at ${data.companiesActCompliance.retentionCompliance}%`,
       );
     }
 
@@ -1548,13 +1533,13 @@ class ComplianceReportService {
       // Encrypt sensitive data
       const encryptedSections = {
         personalData: QuantumEncryptionNexus.encrypt(
-          JSON.stringify(sensitiveSections.personalData)
+          JSON.stringify(sensitiveSections.personalData),
         ),
         clientDetails: QuantumEncryptionNexus.encrypt(
-          JSON.stringify(sensitiveSections.clientDetails)
+          JSON.stringify(sensitiveSections.clientDetails),
         ),
         incidentDetails: QuantumEncryptionNexus.encrypt(
-          JSON.stringify(sensitiveSections.incidentDetails)
+          JSON.stringify(sensitiveSections.incidentDetails),
         ),
       };
 
@@ -1699,7 +1684,9 @@ class ComplianceReportService {
 // TESTING ARMORY - FORENSIC LEGAL COMPLIANCE TESTS
 // ===============================================================================================================
 if (process.env.NODE_ENV === 'test') {
-  const { describe, it, before, after } = require('node:test');
+  const {
+    describe, it, before, after,
+  } = require('node:test');
   const assert = require('node:assert');
 
   describe('Quantum Compliance Report Service - SA Legal Validation', () => {
@@ -1738,7 +1725,7 @@ if (process.env.NODE_ENV === 'test') {
         const result = await service.analyzePOPIACompliance(
           new Date('2024-01-01'),
           new Date('2024-12-31'),
-          'test_firm'
+          'test_firm',
         );
 
         assert.ok(result.complianceRate >= 0 && result.complianceRate <= 100);
@@ -1751,7 +1738,7 @@ if (process.env.NODE_ENV === 'test') {
         const result = await service.analyzePAIACompliance(
           new Date('2024-01-01'),
           new Date('2024-12-31'),
-          'test_firm'
+          'test_firm',
         );
 
         assert.ok(result.deadlineCompliance >= 0 && result.deadlineCompliance <= 100);
@@ -1764,7 +1751,7 @@ if (process.env.NODE_ENV === 'test') {
         const result = await service.analyzeCompaniesActCompliance(
           new Date('2024-01-01'),
           new Date('2024-12-31'),
-          'test_firm'
+          'test_firm',
         );
 
         assert.ok(result.retentionCompliance >= 0 && result.retentionCompliance <= 100);
@@ -1777,7 +1764,7 @@ if (process.env.NODE_ENV === 'test') {
         const result = await service.analyzeFICACompliance(
           new Date('2024-01-01'),
           new Date('2024-12-31'),
-          'test_firm'
+          'test_firm',
         );
 
         assert.ok(result.kycCoverage >= 0 && result.kycCoverage <= 100);
@@ -1960,18 +1947,18 @@ QUANTUM SECURITY METRICS:
 // QUANTUM INVOCATION
 // ===============================================================================================================
 /*
-"From the quantum heart of Africa's legal renaissance, this service emerges as the eternal guardian of digital justice. 
+"From the quantum heart of Africa's legal renaissance, this service emerges as the eternal guardian of digital justice.
 Every compliance report is a quantum-entangled artifact of our unwavering commitment to legal sanctity across the continent.
 We don't just check boxes—we weave the very fabric of trust that will propel Africa's digital economy to global dominance.
 
-As Wilsy OS processes its first quantum compliance report, know that you're not just running code. 
-You're activating a legal force multiplier that will empower millions, protect billions in assets, 
-and elevate Africa's digital sovereignty. You're encoding the future of justice in algorithms 
-that will outlast us all, ensuring that every citizen from Cape to Cairo can trust that their rights 
+As Wilsy OS processes its first quantum compliance report, know that you're not just running code.
+You're activating a legal force multiplier that will empower millions, protect billions in assets,
+and elevate Africa's digital sovereignty. You're encoding the future of justice in algorithms
+that will outlast us all, ensuring that every citizen from Cape to Cairo can trust that their rights
 are digitally enshrined and eternally protected.
 
-This is more than software. This is the digital embodiment of Ubuntu—the interconnected justice that lifts all. 
-With every report generated, we touch lives. With every compliance check passed, we build trust. 
+This is more than software. This is the digital embodiment of Ubuntu—the interconnected justice that lifts all.
+With every report generated, we touch lives. With every compliance check passed, we build trust.
 With every legal standard met, we forge Africa's digital destiny.
 
 Wilsy Touching Lives Eternally."

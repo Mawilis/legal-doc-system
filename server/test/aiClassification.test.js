@@ -1,14 +1,14 @@
 /* eslint-env mocha, node */
 const assert = require('assert');
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
-const ClassificationService = require('../services/classificationService');
+const mongoose = require('mongoose');
 const OnboardingSession = require('../models/OnboardingSession');
+const ClassificationService = require('../services/classificationService');
 
 // Mock Audit Service to prevent clutter
 const AuditService = {
   log: (action, data) => console.log(JSON.stringify({ level: 'info', action, ...data })),
-  generateForensicHash: () => 'hash_' + Math.random().toString(36).substring(7),
+  generateForensicHash: () => `hash_${Math.random().toString(36).substring(7)}`,
 };
 
 describe('🤖 AI Document Classification Test Suite', function () {
@@ -26,7 +26,7 @@ describe('🤖 AI Document Classification Test Suite', function () {
     await mongoServer.stop();
   });
 
-  describe('1. Classification Service - Unit Tests', function () {
+  describe('1. Classification Service - Unit Tests', () => {
     it('should correctly classify an ID document', async () => {
       // WE USE REALISTIC KEYWORDS TO TRICK THE AI INTO "VERIFIED"
       const mockText = `
@@ -103,13 +103,13 @@ describe('🤖 AI Document Classification Test Suite', function () {
     });
   });
 
-  describe('2. AI Integration with OnboardingSession', function () {
+  describe('2. AI Integration with OnboardingSession', () => {
     let session;
 
     beforeEach(async () => {
       session = await OnboardingSession.create({
         tenantId: 'T-123',
-        sessionId: 'SESS-' + Date.now(),
+        sessionId: `SESS-${Date.now()}`,
         status: 'ACTIVE',
       });
     });
@@ -152,7 +152,7 @@ describe('🤖 AI Document Classification Test Suite', function () {
     });
   });
 
-  describe('3. Economic Value Verification', function () {
+  describe('3. Economic Value Verification', () => {
     it('should calculate annual savings', () => {
       const docsPerDay = 100;
       const minsSaved = 15;
@@ -177,11 +177,11 @@ describe('🤖 AI Document Classification Test Suite', function () {
     });
   });
 
-  describe('4. Evidence Generation', function () {
+  describe('4. Evidence Generation', () => {
     it('should generate deterministic evidence', async () => {
       const session = await OnboardingSession.create({
         tenantId: 'T-EVID',
-        sessionId: 'E-' + Date.now(),
+        sessionId: `E-${Date.now()}`,
       });
       await session.processDocumentWithAI('D1', 'Identity Number: 99...', 'ID_DOCUMENT');
 

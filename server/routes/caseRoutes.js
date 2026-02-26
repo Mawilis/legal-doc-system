@@ -61,25 +61,24 @@
  * divine order.
  */
 
-'use strict';
-
 // QUANTUM IMPORTS: Secure, Pinned Dependencies
 const express = require('express');
+
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const caseController = require('../controllers/caseController');
 
 // QUANTUM SECURITY MIDDLEWARE: The Indestructible Bastion
 const { protect } = require('../middleware/authMiddleware');
+const { validatePOPIAConsent } = require('../middleware/complianceMiddleware');
 const { tenantGuard, restrictTo } = require('../middleware/security');
 
 // QUANTUM VALIDATION: Legal Schema Enforcement
 const { validateCaseCreation, validateCaseUpdate } = require('../validators/caseValidator');
 
 // QUANTUM COMPLIANCE: POPIA Consent Guardian
-const { validatePOPIAConsent } = require('../middleware/complianceMiddleware');
 
 // QUANTUM RATE LIMITING: DDoS & Abuse Protection
-const rateLimit = require('express-rate-limit');
 
 // Configure Prescription Alert Rate Limiter (Critical Endpoint Protection)
 const prescriptionAlertLimiter = rateLimit({
@@ -140,7 +139,7 @@ router.post(
   restrictTo('partner', 'lawyer', 'admin'),
   validatePOPIAConsent, // QUANTUM SHIELD: POPIA consent validation
   validateCaseCreation, // LEGAL GUARD: Schema validation
-  asyncHandler(caseController.createCase)
+  asyncHandler(caseController.createCase),
 );
 
 /*
@@ -156,7 +155,7 @@ router.get(
   tenantGuard(),
   restrictTo('partner', 'admin'),
   prescriptionAlertLimiter, // QUANTUM SHIELD: Critical endpoint protection
-  asyncHandler(caseController.getPrescriptionAlerts)
+  asyncHandler(caseController.getPrescriptionAlerts),
 );
 
 /*
@@ -181,7 +180,7 @@ router.patch(
   tenantGuard(),
   restrictTo('partner', 'lawyer'),
   validateCaseUpdate,
-  asyncHandler(caseController.updateCaseStatus)
+  asyncHandler(caseController.updateCaseStatus),
 );
 
 /*
@@ -197,7 +196,7 @@ router.put(
   tenantGuard(),
   restrictTo('partner', 'lawyer'),
   validateCaseUpdate,
-  asyncHandler(caseController.updateCase)
+  asyncHandler(caseController.updateCase),
 );
 
 /*
@@ -212,7 +211,7 @@ router.delete(
   protect,
   tenantGuard(),
   restrictTo('partner'),
-  asyncHandler(caseController.deleteCase)
+  asyncHandler(caseController.deleteCase),
 );
 
 /*
@@ -228,7 +227,7 @@ router.post(
   protect,
   tenantGuard(),
   restrictTo('partner', 'lawyer', 'admin'),
-  asyncHandler(caseController.verifyCIPCEntity)
+  asyncHandler(caseController.verifyCIPCEntity),
 );
 
 /*
@@ -243,7 +242,7 @@ router.get(
   protect,
   tenantGuard(),
   restrictTo('partner', 'admin'),
-  asyncHandler(caseController.getCaseAuditTrail)
+  asyncHandler(caseController.getCaseAuditTrail),
 );
 
 /*
@@ -258,7 +257,7 @@ router.post(
   protect,
   tenantGuard(),
   restrictTo('partner', 'lawyer'),
-  asyncHandler(caseController.assignCase)
+  asyncHandler(caseController.assignCase),
 );
 
 /*
@@ -273,7 +272,7 @@ router.post(
   protect,
   tenantGuard(),
   restrictTo('partner', 'admin'),
-  asyncHandler(caseController.bulkArchiveCases)
+  asyncHandler(caseController.bulkArchiveCases),
 );
 
 /* ---------------------------------------------------------------------------

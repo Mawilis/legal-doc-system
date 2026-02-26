@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import crypto from 'crypto';
+import crypto from "crypto";
+import { MongoMemoryServer } from 'mongodb-memory-server.js';
+import mongoose from "mongoose";
 
 /*
  * WILSY OS - INVESTOR-GRADE TEST RUNNER (ESM VERSION)
@@ -15,7 +15,7 @@ const LegalPrecedentSchema = new mongoose.Schema({
     required: true,
     validate: {
       // Validates SA Law Report format: YYYY (Vol) LawReport Page (Division)
-      validator: function (v) {
+      validator(v) {
         return /^\d{4} \(\d+\) [A-Z ]+ \d+ \([A-Z]+\)$/.test(v);
       },
       message: (props) => `${props.value} is not a valid SA legal citation!`,
@@ -29,8 +29,7 @@ const LegalPrecedentSchema = new mongoose.Schema({
   summary: String,
 });
 
-const LegalPrecedent =
-  mongoose.models.LegalPrecedent || mongoose.model('LegalPrecedent', LegalPrecedentSchema);
+const LegalPrecedent = mongoose.models.LegalPrecedent || mongoose.model('LegalPrecedent', LegalPrecedentSchema);
 
 async function runTests() {
   let mongoServer;
@@ -54,7 +53,7 @@ async function runTests() {
       judge: 'Wilson, J',
       dateHeard: '2024-01-15',
       dateDecided: '2024-03-15',
-      quantumHash: '0x' + crypto.randomBytes(32).toString('hex'), // Mandatory forensic hash
+      quantumHash: `0x${crypto.randomBytes(32).toString('hex')}`, // Mandatory forensic hash
       summary: 'Precedent-setting case for automated legal document systems.',
     });
 
@@ -69,7 +68,7 @@ async function runTests() {
     console.log('║                WILSY OS - VALUATION METRICS                    ║');
     console.log('╠════════════════════════════════════════════════════════════════╣');
     console.log(
-      `║  Tests Passed: ${passedTests}/${totalTests}                                   ║`
+      `║  Tests Passed: ${passedTests}/${totalTests}                                   ║`,
     );
     console.log(`║  Success Rate: ${successRate}%                                             ║`);
     console.log('║  Annual Savings per Firm: R2.97M                               ║');

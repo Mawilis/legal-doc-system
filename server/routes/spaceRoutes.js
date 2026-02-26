@@ -50,37 +50,36 @@
  * --------------------------------------------------------------------------------
  */
 
-'use strict';
-
 // =============================================================================
 // QUANTUM IMPORTS: SPATIAL ORCHESTRATION DEPENDENCIES
 // =============================================================================
 
 // Core Framework - Pinned, Secure Versions
 const express = require('express');
+
 const router = express.Router();
 
 // Security & Authentication Quantum
 const { authenticateJWT, authorize } = require('../middleware/auth');
-const { validateInput, sanitizeInput } = require('../middleware/validation');
-const { rateLimitByTenant } = require('../middleware/rateLimit');
-
-// Compliance & Legal Quantum
 const {
   enforcePOPIA,
   enforcePEPUDA,
   auditCompliance,
   generateComplianceReport,
 } = require('../middleware/compliance');
+const { rateLimitByTenant } = require('../middleware/rateLimit');
+const { emitAudit } = require('../middleware/security');
+const { validateInput, sanitizeInput } = require('../middleware/validation');
+
+// Compliance & Legal Quantum
 
 // Spatial Services Quantum
 const SpaceService = require('../services/spaceService');
-const VirtualCourtService = require('../services/virtualCourtService');
 const SpatialAnalyticsService = require('../services/spatialAnalyticsService');
+const VirtualCourtService = require('../services/virtualCourtService');
 
 // Monitoring & Logging Quantum
 const logger = require('../utils/logger');
-const { emitAudit } = require('../middleware/security');
 
 // =============================================================================
 // QUANTUM MIDDLEWARE: SPATIAL ACCESS CONTROL & VALIDATION
@@ -90,37 +89,35 @@ const { emitAudit } = require('../middleware/security');
  * Spatial Access Control Middleware
  * Ensures quantum-secure access to spatial resources with jurisdictional compliance
  */
-const spatialAccessControl = (requiredPermissions = ['view_spaces']) => {
-  return [
-    authenticateJWT,
-    authorize(requiredPermissions),
-    rateLimitByTenant('space_operations', 100, 15 * 60 * 1000), // 100 requests per 15 minutes
-    enforcePOPIA(['space_data', 'booking_records']),
-    enforcePEPUDA(['accessibility_features', 'spatial_inclusivity']),
-    (req, res, next) => {
-      // Spatial Jurisdiction Validation
-      if (!req.tenant?.jurisdiction) {
-        return res.status(400).json({
-          error: 'Jurisdiction required',
-          message: 'Tenant jurisdiction must be specified for spatial operations',
-          compliance: 'POPIA Section 14 - Jurisdictional Data Processing',
-        });
-      }
+const spatialAccessControl = (requiredPermissions = ['view_spaces']) => [
+  authenticateJWT,
+  authorize(requiredPermissions),
+  rateLimitByTenant('space_operations', 100, 15 * 60 * 1000), // 100 requests per 15 minutes
+  enforcePOPIA(['space_data', 'booking_records']),
+  enforcePEPUDA(['accessibility_features', 'spatial_inclusivity']),
+  (req, res, next) => {
+    // Spatial Jurisdiction Validation
+    if (!req.tenant?.jurisdiction) {
+      return res.status(400).json({
+        error: 'Jurisdiction required',
+        message: 'Tenant jurisdiction must be specified for spatial operations',
+        compliance: 'POPIA Section 14 - Jurisdictional Data Processing',
+      });
+    }
 
-      req.spatialContext = {
-        tenantId: req.tenant.id,
-        jurisdiction: req.tenant.jurisdiction,
-        userId: req.user.id,
-        userRole: req.user.role,
-        timestamp: new Date().toISOString(),
-        // Quantum Spatial Tracking
-        spatialSessionId: require('crypto').randomBytes(16).toString('hex'),
-      };
+    req.spatialContext = {
+      tenantId: req.tenant.id,
+      jurisdiction: req.tenant.jurisdiction,
+      userId: req.user.id,
+      userRole: req.user.role,
+      timestamp: new Date().toISOString(),
+      // Quantum Spatial Tracking
+      spatialSessionId: require('crypto').randomBytes(16).toString('hex'),
+    };
 
-      next();
-    },
-  ];
-};
+    next();
+  },
+];
 
 /*
  * Spatial Data Validation Schema
@@ -128,7 +125,9 @@ const spatialAccessControl = (requiredPermissions = ['view_spaces']) => {
  */
 const spatialValidationSchema = {
   createSpace: {
-    name: { type: 'string', min: 2, max: 100, required: true },
+    name: {
+      type: 'string', min: 2, max: 100, required: true,
+    },
     type: {
       type: 'string',
       enum: [
@@ -143,7 +142,9 @@ const spatialValidationSchema = {
       ],
       required: true,
     },
-    capacity: { type: 'number', min: 1, max: 1000, required: true },
+    capacity: {
+      type: 'number', min: 1, max: 1000, required: true,
+    },
     location: {
       address: { type: 'string', required: true },
       coordinates: {
@@ -329,16 +330,16 @@ router.get(
           capacity:
             capacityMin || capacityMax
               ? {
-                  min: parseInt(capacityMin) || 1,
-                  max: parseInt(capacityMax) || 1000,
-                }
+                min: parseInt(capacityMin) || 1,
+                max: parseInt(capacityMax) || 1000,
+              }
               : undefined,
           availability:
             availableFrom && availableTo
               ? {
-                  from: new Date(availableFrom),
-                  to: new Date(availableTo),
-                }
+                from: new Date(availableFrom),
+                to: new Date(availableTo),
+              }
               : undefined,
         },
         pagination: {
@@ -420,7 +421,7 @@ router.get(
         requestId: req.spatialContext?.spatialSessionId,
       });
     }
-  }
+  },
 );
 
 /*
@@ -453,8 +454,8 @@ router.get('/:id', spatialAccessControl(['view_spaces']), async (req, res) => {
 
     // Jurisdictional Access Control
     if (
-      space.jurisdiction !== req.spatialContext.jurisdiction &&
-      !['admin', 'cross_jurisdiction_manager'].includes(req.user.role)
+      space.jurisdiction !== req.spatialContext.jurisdiction
+      && !['admin', 'cross_jurisdiction_manager'].includes(req.user.role)
     ) {
       return res.status(403).json({
         error: 'Jurisdictional access denied',
@@ -485,8 +486,8 @@ router.get('/:id', spatialAccessControl(['view_spaces']), async (req, res) => {
         compliance: {
           popiaCompliant: true,
           pepudaCompliant:
-            space.accessibilityFeatures?.wheelchairAccess &&
-            space.accessibilityFeatures?.hearingLoops,
+            space.accessibilityFeatures?.wheelchairAccess
+            && space.accessibilityFeatures?.hearingLoops,
           ectActCompliant: space.virtualOptions?.digitalSignatureSupport || false,
           jurisdictionCompliance: space.jurisdictionCompliance || {},
         },
@@ -601,10 +602,10 @@ router.post(
           },
           virtualTwin: newSpace.virtualTwinId
             ? {
-                id: newSpace.virtualTwinId,
-                status: 'initializing',
-                accessUrl: `${process.env.VIRTUAL_COURT_URL}/space/${newSpace.virtualTwinId}`,
-              }
+              id: newSpace.virtualTwinId,
+              status: 'initializing',
+              accessUrl: `${process.env.VIRTUAL_COURT_URL}/space/${newSpace.virtualTwinId}`,
+            }
             : null,
         },
         metadata: {
@@ -666,7 +667,7 @@ router.post(
         requestId: req.spatialContext?.spatialSessionId,
       });
     }
-  }
+  },
 );
 
 /*
@@ -721,14 +722,14 @@ router.post(
         },
         virtualOptions: bookingData.virtualOptions?.enableVirtual
           ? {
-              ...bookingData.virtualOptions,
-              accessControl: {
-                authenticationRequired: true,
-                recordingConsentRequired: true,
-                encryption: 'AES-256-GCM',
-                sessionExpiry: new Date(Date.parse(bookingData.endTime) + 3600000), // 1 hour after meeting
-              },
-            }
+            ...bookingData.virtualOptions,
+            accessControl: {
+              authenticationRequired: true,
+              recordingConsentRequired: true,
+              encryption: 'AES-256-GCM',
+              sessionExpiry: new Date(Date.parse(bookingData.endTime) + 3600000), // 1 hour after meeting
+            },
+          }
           : null,
       };
 
@@ -752,7 +753,7 @@ router.post(
       if (bookingData.virtualOptions?.enableVirtual) {
         virtualCourtroom = await VirtualCourtService.createVirtualSession({
           bookingId: booking.id,
-          spaceId: spaceId,
+          spaceId,
           hostId: req.user.id,
           participants: bookingData.participants,
           startTime: bookingData.startTime,
@@ -775,11 +776,11 @@ router.post(
           },
           virtualCourtroom: virtualCourtroom
             ? {
-                sessionId: virtualCourtroom.sessionId,
-                joinUrl: virtualCourtroom.joinUrl,
-                hostControls: virtualCourtroom.hostControls,
-                participantInstructions: virtualCourtroom.participantInstructions,
-              }
+              sessionId: virtualCourtroom.sessionId,
+              joinUrl: virtualCourtroom.joinUrl,
+              hostControls: virtualCourtroom.hostControls,
+              participantInstructions: virtualCourtroom.participantInstructions,
+            }
             : null,
           space: {
             id: space.id,
@@ -859,7 +860,7 @@ router.post(
         requestId: req.spatialContext?.spatialSessionId,
       });
     }
-  }
+  },
 );
 
 /*
@@ -871,7 +872,9 @@ router.post(
 router.get('/:id/bookings', spatialAccessControl(['view_bookings']), async (req, res) => {
   try {
     const spaceId = req.params.id;
-    const { startDate, endDate, status, purpose } = req.query;
+    const {
+      startDate, endDate, status, purpose,
+    } = req.query;
 
     // Verify Space Ownership/Access
     const space = await SpaceService.getSpaceById(spaceId);
@@ -885,9 +888,9 @@ router.get('/:id/bookings', spatialAccessControl(['view_bookings']), async (req,
 
     // Jurisdictional Access Check
     if (
-      space.tenantId !== req.spatialContext.tenantId &&
-      space.jurisdiction !== req.spatialContext.jurisdiction &&
-      !['admin', 'auditor'].includes(req.user.role)
+      space.tenantId !== req.spatialContext.tenantId
+      && space.jurisdiction !== req.spatialContext.jurisdiction
+      && !['admin', 'auditor'].includes(req.user.role)
     ) {
       return res.status(403).json({
         error: 'Access denied',
@@ -1015,8 +1018,8 @@ router.put(
 
       // Check Jurisdictional Authority
       if (
-        existingSpace.jurisdiction !== req.spatialContext.jurisdiction &&
-        !['admin', 'cross_jurisdiction_manager'].includes(req.user.role)
+        existingSpace.jurisdiction !== req.spatialContext.jurisdiction
+        && !['admin', 'cross_jurisdiction_manager'].includes(req.user.role)
       ) {
         return res.status(403).json({
           error: 'Jurisdictional authority required',
@@ -1145,7 +1148,7 @@ router.put(
         requestId: req.spatialContext?.spatialSessionId,
       });
     }
-  }
+  },
 );
 
 /*
@@ -1193,7 +1196,7 @@ router.delete('/:id', spatialAccessControl(['admin']), async (req, res) => {
         archiveRecords: true,
         generateDecommissionReport: true,
         notifyRegulatoryBodies: existingSpace.type.includes('courtroom'),
-        preserveVirtualTwin: existingSpace.virtualTwinId ? true : false,
+        preserveVirtualTwin: !!existingSpace.virtualTwinId,
       },
     });
 
@@ -1407,7 +1410,7 @@ router.get(
         requestId: req.spatialContext?.spatialSessionId,
       });
     }
-  }
+  },
 );
 
 /*
@@ -1641,9 +1644,9 @@ function classifySpatialError(error) {
   }
 
   if (
-    errorMessage.includes('permission') ||
-    errorMessage.includes('authorization') ||
-    errorMessage.includes('access denied')
+    errorMessage.includes('permission')
+    || errorMessage.includes('authorization')
+    || errorMessage.includes('access denied')
   ) {
     return {
       type: 'authorization',
@@ -1657,9 +1660,9 @@ function classifySpatialError(error) {
   }
 
   if (
-    errorMessage.includes('compliance') ||
-    errorMessage.includes('regulation') ||
-    errorMessage.includes('accessibility')
+    errorMessage.includes('compliance')
+    || errorMessage.includes('regulation')
+    || errorMessage.includes('accessibility')
   ) {
     return {
       type: 'compliance',
@@ -1673,9 +1676,9 @@ function classifySpatialError(error) {
   }
 
   if (
-    errorMessage.includes('conflict') ||
-    errorMessage.includes('already exists') ||
-    errorMessage.includes('duplicate')
+    errorMessage.includes('conflict')
+    || errorMessage.includes('already exists')
+    || errorMessage.includes('duplicate')
   ) {
     return {
       type: 'conflict',

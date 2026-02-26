@@ -6,9 +6,9 @@
  * @version 5.2.4
  */
 
-import crypto from 'node:crypto';
-import { EventEmitter } from 'node:events';
-import { DateTime } from 'luxon';
+import crypto from 'node:crypto.js';
+import { EventEmitter } from 'node:events.js';
+import { DateTime } from 'luxon.js';
 
 // Dependency Services
 import AuditService from './auditService.js';

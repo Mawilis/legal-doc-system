@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "scripts": {
+    "test": "NODE_ENV=test mocha",
+    "test:workers": "NODE_ENV=test mocha __tests__/workers/**/*.test.js",
+    "test:retention": "NODE_ENV=test mocha __tests__/workers/retentionAgenda.test.js",
+    "test:evidence": "node scripts/generate-evidence.js",
+    "test:verify": "jq -c '.auditEntries' __tests__/workers/evidence.json | sha256sum | cut -d' ' -f1 | cmp -s <(jq -r '.hash' __tests__/workers/evidence.json) - && echo '✅ Evidence verified' || echo '❌ Evidence tampered'"
+  }
+}

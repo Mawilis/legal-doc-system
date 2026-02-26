@@ -45,14 +45,12 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 // =============================================================================
 // SECTION 1: SOVEREIGN DEPENDENCIES - NO FAILURES TOLERATED
 // =============================================================================
 
-const mongoose = require('mongoose');
 const { format } = require('date-fns');
+const mongoose = require('mongoose');
 
 // =============================================================================
 // SECTION 2: SYSTEM CONTROLLER - BILLION-DOLLAR COMMAND CENTER
@@ -75,15 +73,14 @@ class SystemController {
       const Document = mongoose.model('Document');
 
       // Parallel execution for maximum performance
-      const [userStats, tenantStats, firmStats, documentStats, revenueMetrics, systemHealth] =
-        await Promise.all([
-          this.getUserStatistics(),
-          this.getTenantStatistics(),
-          this.getFirmStatistics(),
-          this.getDocumentStatistics(),
-          this.getRevenueMetrics(),
-          this.getSystemHealth(),
-        ]);
+      const [userStats, tenantStats, firmStats, documentStats, revenueMetrics, systemHealth] = await Promise.all([
+        this.getUserStatistics(),
+        this.getTenantStatistics(),
+        this.getFirmStatistics(),
+        this.getDocumentStatistics(),
+        this.getRevenueMetrics(),
+        this.getSystemHealth(),
+      ]);
 
       // Compile billion-dollar dashboard
       const dashboard = {

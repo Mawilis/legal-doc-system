@@ -17,12 +17,10 @@ jest.mock('../../utils/complianceIdGenerator');
 jest.mock('../../workers/documentVerificationWorker');
 
 // Mock models - IMPORTANT: Do NOT use DateTime or other outer scope variables here
-jest.mock('../../models/Client', () => {
-  return jest.fn().mockImplementation(() => ({
-    clientId: 'CL-12345678',
-    save: jest.fn().mockResolvedValue(true),
-  }));
-});
+jest.mock('../../models/Client', () => jest.fn().mockImplementation(() => ({
+  clientId: 'CL-12345678',
+  save: jest.fn().mockResolvedValue(true),
+})));
 
 jest.mock('../../models/OnboardingSession', () => {
   // Use static dates instead of DateTime
@@ -79,18 +77,18 @@ jest.mock('../../models/Document', () => {
   return MockDocument;
 });
 
-const auditLogger = require('../../utils/auditLogger');
-const cryptoUtils = require('../../utils/cryptoUtils');
-const logger = require('../../utils/logger');
 const tenantContext = require('../../middleware/tenantContext');
+const Client = require('../../models/Client');
+const Document = require('../../models/Document');
+const OnboardingSession = require('../../models/OnboardingSession');
 const ficaService = require('../../services/ficaScreeningService');
 const notificationService = require('../../services/notificationService');
-const { validateSAIDNumber } = require('../../validators/saLegalValidators');
+const auditLogger = require('../../utils/auditLogger');
 const { generateFICARefNumber } = require('../../utils/complianceIdGenerator');
+const cryptoUtils = require('../../utils/cryptoUtils');
+const logger = require('../../utils/logger');
+const { validateSAIDNumber } = require('../../validators/saLegalValidators');
 const documentWorker = require('../../workers/documentVerificationWorker');
-const Client = require('../../models/Client');
-const OnboardingSession = require('../../models/OnboardingSession');
-const Document = require('../../models/Document');
 
 // Mock implementations
 cryptoUtils.generateForensicHash = jest.fn().mockReturnValue('mock-hash-1234567890abcdef');
@@ -133,7 +131,7 @@ const clientOnboardingService = require('../../services/clientOnboardingService'
 
 describe('CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION', () => {
   let testRunId;
-  let evidenceEntries = [];
+  const evidenceEntries = [];
 
   beforeAll(() => {
     testRunId = crypto.randomUUID().substring(0, 8);

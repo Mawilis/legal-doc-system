@@ -111,16 +111,16 @@
  * ╚══════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-'use strict';
-
 // =============================================================================
 // SECTION 1: PRODUCTION DEPENDENCIES - VERSION-LOCKED, SECURITY-AUDITED
 // =============================================================================
 
 const crypto = require('crypto');
 const { promisify } = require('util');
-const { createCipheriv, createDecipheriv, createHmac, randomBytes, scrypt, timingSafeEqual } =
-  crypto;
+
+const {
+  createCipheriv, createDecipheriv, createHmac, randomBytes, scrypt, timingSafeEqual,
+} = crypto;
 const { performance, PerformanceObserver } = require('perf_hooks');
 const fs = require('fs').promises;
 const path = require('path');
@@ -291,7 +291,7 @@ const initializeKMSClient = () => {
       maxRetries: 3,
       retryDelayOptions: {
         base: 100,
-        customBackoff: (retryCount) => Math.min(1000, 50 * Math.pow(2, retryCount)),
+        customBackoff: (retryCount) => Math.min(1000, 50 * 2 ** retryCount),
       },
       httpOptions: {
         timeout: 10000,
@@ -359,7 +359,7 @@ class KeyManagementService {
         // Fallback: Generate locally (for development only)
         console.warn('⚠️ USING LOCAL KEY GENERATION - NOT FOR PRODUCTION');
         keyMaterial = crypto.randomBytes(
-          ENCRYPTION_CONFIG.ALGORITHMS.SYMMETRIC.AES_256_GCM.keyLength
+          ENCRYPTION_CONFIG.ALGORITHMS.SYMMETRIC.AES_256_GCM.keyLength,
         );
         wrappedKey = this.wrapKeyWithMaster(keyMaterial);
       }
@@ -373,7 +373,7 @@ class KeyManagementService {
         keyLength: ENCRYPTION_CONFIG.ALGORITHMS.SYMMETRIC.AES_256_GCM.keyLength,
         createdAt: new Date().toISOString(),
         expiresAt: new Date(
-          Date.now() + ENCRYPTION_CONFIG.KEY_MANAGEMENT.ROTATION_INTERVAL_DAYS * 24 * 60 * 60 * 1000
+          Date.now() + ENCRYPTION_CONFIG.KEY_MANAGEMENT.ROTATION_INTERVAL_DAYS * 24 * 60 * 60 * 1000,
         ).toISOString(),
         version: 1,
         status: 'ACTIVE',
@@ -467,7 +467,7 @@ class KeyManagementService {
   static deriveMasterKey() {
     const salt = Buffer.from(process.env.ENCRYPTION_SALT || 'wilsy-encryption-salt');
     const password = Buffer.from(
-      process.env.ENCRYPTION_PASSWORD || 'dev-only-change-in-production'
+      process.env.ENCRYPTION_PASSWORD || 'dev-only-change-in-production',
     );
 
     return crypto.scryptSync(password, salt, 32);
@@ -603,7 +603,7 @@ class EncryptionService {
         ENCRYPTION_CONFIG.ALGORITHMS.SYMMETRIC.AES_256_GCM.mode,
         keyMaterial,
         iv,
-        { authTagLength: ENCRYPTION_CONFIG.ALGORITHMS.SYMMETRIC.AES_256_GCM.tagLength }
+        { authTagLength: ENCRYPTION_CONFIG.ALGORITHMS.SYMMETRIC.AES_256_GCM.tagLength },
       );
 
       // 5. Encrypt data
@@ -723,7 +723,7 @@ class EncryptionService {
       if (
         !timingSafeEqual(
           Buffer.from(calculatedHash, 'hex'),
-          Buffer.from(encryptedPackage.integrityHash, 'hex')
+          Buffer.from(encryptedPackage.integrityHash, 'hex'),
         )
       ) {
         throw new Error('Integrity check failed - data may have been tampered with');
@@ -734,7 +734,7 @@ class EncryptionService {
         ENCRYPTION_CONFIG.ALGORITHMS.SYMMETRIC.AES_256_GCM.mode,
         keyMaterial,
         iv,
-        { authTagLength: ENCRYPTION_CONFIG.ALGORITHMS.SYMMETRIC.AES_256_GCM.tagLength }
+        { authTagLength: ENCRYPTION_CONFIG.ALGORITHMS.SYMMETRIC.AES_256_GCM.tagLength },
       );
       decipher.setAuthTag(authTag);
 
@@ -927,14 +927,13 @@ class FieldEncryptionService {
       for (const field of fieldsToEncrypt) {
         if (data[field] !== undefined && data[field] !== null) {
           // Convert field value to string if needed
-          const fieldValue =
-            typeof data[field] === 'object' ? JSON.stringify(data[field]) : String(data[field]);
+          const fieldValue = typeof data[field] === 'object' ? JSON.stringify(data[field]) : String(data[field]);
 
           // Encrypt the field
           const encryptionResult = await EncryptionService.encrypt(
             fieldValue,
             tenantId,
-            `field_${field}`
+            `field_${field}`,
           );
 
           if (encryptionResult.success) {
@@ -987,8 +986,7 @@ class FieldEncryptionService {
     try {
       // Find encrypted fields
       const encryptedFields = Object.keys(data).filter(
-        (key) =>
-          data[key] && typeof data[key] === 'object' && data[key].ciphertext && data[key].keyId
+        (key) => data[key] && typeof data[key] === 'object' && data[key].ciphertext && data[key].keyId,
       );
 
       for (const field of encryptedFields) {
@@ -1068,7 +1066,7 @@ class EncryptionHealthMonitor {
 
     try {
       // Test encryption/decryption cycle
-      const testData = 'Wilsy OS Encryption Health Check ' + Date.now();
+      const testData = `Wilsy OS Encryption Health Check ${Date.now()}`;
       const tenantId = 'health-check';
 
       // Perform test encryption
@@ -1248,7 +1246,7 @@ if (process.env.NODE_ENV === 'production') {
         console.error(`❌ Encryption health check error: ${error.message}`);
       }
     },
-    5 * 60 * 1000
+    5 * 60 * 1000,
   ); // Every 5 minutes
 }
 

@@ -1,8 +1,8 @@
 /* eslint-env jest */
-/*╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ ENCRYPTION SERVICE TEST V6 — FORENSIC INTEGRITY ● POPIA §19 ● COURT-ADMISSIBLE                                 ║
   ║ 99.999% encryption integrity | R12.5M breach prevention | 73% risk reduction                                   ║
-  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/__tests__/encryptionService.test.js
  * VERSION: 6.0.0 (forensic-upgrade)
@@ -21,9 +21,9 @@
  * - 99.999% encryption integrity vs industry standard 99.9%
  */
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 
 // Mock the encryption service for testing
 // In production, this would be: const { encrypt, decrypt, hash, rotateKeys, generateKeyEvidence } = require('../encryptionService');
@@ -207,7 +207,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
       const parsed = JSON.parse(encrypted);
 
       // Tamper with the encrypted data
-      parsed.encrypted = parsed.encrypted.substring(0, parsed.encrypted.length - 2) + '00';
+      parsed.encrypted = `${parsed.encrypted.substring(0, parsed.encrypted.length - 2)}00`;
 
       expect(() => {
         encryptionService.decrypt(JSON.stringify(parsed), testTenant);
@@ -348,7 +348,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
 
       // Tamper with auth tag
       const originalAuthTag = parsed.authTag;
-      parsed.authTag = parsed.authTag.substring(0, parsed.authTag.length - 2) + '00';
+      parsed.authTag = `${parsed.authTag.substring(0, parsed.authTag.length - 2)}00`;
 
       expect(() => {
         encryptionService.decrypt(JSON.stringify(parsed), testTenant);

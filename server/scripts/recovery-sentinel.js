@@ -53,22 +53,22 @@
  * }
  */
 
-import axios from 'axios';
-import { exec, spawn } from 'child_process';
-import { promisify } from 'util';
-import fs from 'fs/promises';
-import path from 'path';
-import os from 'os';
-import { fileURLToPath } from 'url';
-import { createHmac, randomBytes } from 'crypto';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios.js';
+import { exec, spawn } from 'child_process.js';
+import { promisify } from "util";
+import fs from 'fs/promises.js';
+import path from "path";
+import os from 'os.js';
+import { fileURLToPath } from 'url.js';
+import { createHmac, randomBytes } from "crypto";
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
 
 // WILSY OS CORE IMPORTS
-import logger from '../../utils/logger.js';
-import quantumLogger from '../../utils/quantumLogger.js';
-import auditLogger from '../../utils/auditLogger.js';
-import { metrics } from '../../utils/metricsCollector.js';
+import logger from '../../utils/logger.js.js';
+import quantumLogger from '../../utils/quantumLogger.js.js';
+import auditLogger from '../../utils/auditLogger.js.js';
+import { metrics } from '../../utils/metricsCollector.js.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

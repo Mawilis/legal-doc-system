@@ -23,7 +23,7 @@ const ECONOMIC_METRICS = {
 
 describe('LPC RULE 35.2 — EXECUTIVE REPORTS [FORENSIC GRADE]', () => {
   let testRunId;
-  let evidenceEntries = [];
+  const evidenceEntries = [];
 
   beforeAll(() => {
     testRunId = crypto.randomUUID().substring(0, 8);

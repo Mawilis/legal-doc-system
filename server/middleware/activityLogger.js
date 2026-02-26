@@ -45,12 +45,10 @@
  * ====================================================================================
  */
 
-'use strict';
-
 // SECURE IMPORTS - Minimal attack surface, quantum-resistant
 const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
+const { v4: uuidv4 } = require('uuid');
 
 /*
  * @enum AUDIT_SEVERITY_LEVELS
@@ -407,7 +405,7 @@ const createHashChain = (auditPayload, previousHash = null) => {
     timestamp: auditPayload.timestamp,
     correlationId: auditPayload.correlationId,
     // Remove recursive references
-    previousHash: previousHash,
+    previousHash,
   });
 
   // Generate current hash
@@ -416,7 +414,7 @@ const createHashChain = (auditPayload, previousHash = null) => {
   // Create chain entry
   const hashChain = {
     currentHash: `sha3-512:${currentHash}`,
-    previousHash: previousHash,
+    previousHash,
     timestamp: new Date().toISOString(),
     algorithm: 'SHA3-512',
     payloadHash: crypto.createHash('sha256').update(JSON.stringify(auditPayload)).digest('hex'),
@@ -511,7 +509,7 @@ const encryptForTransmission = (payload) => {
   const key = crypto.scryptSync(
     process.env.TRANSMISSION_KEY || 'default_transmission_key',
     'salt',
-    32
+    32,
   );
   const iv = crypto.randomBytes(16);
 
@@ -588,19 +586,16 @@ const activityLogger = (options = {}) => {
     const startTime = process.hrtime();
 
     // 1. CORRELATION IDENTITY & TRACEABILITY
-    const correlationId =
-      req.headers['x-correlation-id'] ||
-      req.headers['x-request-id'] ||
-      `corr_${uuidv4()}_${Date.now().toString(36)}`;
+    const correlationId = req.headers['x-correlation-id']
+      || req.headers['x-request-id']
+      || `corr_${uuidv4()}_${Date.now().toString(36)}`;
 
     req.correlationId = correlationId;
     res.setHeader('X-Correlation-Id', correlationId);
     res.setHeader('X-Trace-Id', `trace_${crypto.randomBytes(8).toString('hex')}`);
 
     // 2. REQUEST CLASSIFICATION & ENRICHMENT
-    const isLegalOperation = LEGAL_OPERATION_PATTERNS.some((pattern) =>
-      pattern.test(req.originalUrl)
-    );
+    const isLegalOperation = LEGAL_OPERATION_PATTERNS.some((pattern) => pattern.test(req.originalUrl));
 
     const requestClassification = {
       isLegalOperation,
@@ -696,9 +691,9 @@ const activityLogger = (options = {}) => {
             // Headers (sanitized)
             headers: {
               contentType: req.headers['content-type'],
-              accept: req.headers['accept'],
-              origin: req.headers['origin'],
-              referer: req.headers['referer'],
+              accept: req.headers.accept,
+              origin: req.headers.origin,
+              referer: req.headers.referer,
               // Privacy: Hash user-agent already captured in actor
             },
 
@@ -741,10 +736,10 @@ const activityLogger = (options = {}) => {
             // Error context
             error: res.locals.error
               ? {
-                  message: res.locals.error.message,
-                  code: res.locals.error.code,
-                  stack: process.env.NODE_ENV === 'production' ? undefined : res.locals.error.stack,
-                }
+                message: res.locals.error.message,
+                code: res.locals.error.code,
+                stack: process.env.NODE_ENV === 'production' ? undefined : res.locals.error.stack,
+              }
               : undefined,
           },
 
@@ -757,11 +752,11 @@ const activityLogger = (options = {}) => {
               response: 'N/A',
             },
             cspViolation: req.headers['x-csp-violation'] || false,
-            corsOrigin: req.headers['origin'] || 'none',
+            corsOrigin: req.headers.origin || 'none',
           },
 
           // Legal Compliance Context
-          legalCompliance: legalCompliance,
+          legalCompliance,
           requiresComplianceReporting: legalCompliance.some((lc) => lc.requiresReporting),
 
           // Performance Metrics
@@ -895,7 +890,7 @@ if (process.env.NODE_ENV === 'test') {
 
     console.assert(
       anonymized.startsWith('anon_') && anonymized.length === 29,
-      'SHA3-512 anonymization failed'
+      'SHA3-512 anonymization failed',
     );
 
     // Test PII masking
@@ -909,7 +904,7 @@ if (process.env.NODE_ENV === 'test') {
 
     console.assert(
       masked.password.masked === true && masked.password.hash.startsWith('sha3-512:'),
-      'PII masking failed'
+      'PII masking failed',
     );
 
     // Test legal compliance classification
@@ -924,7 +919,7 @@ if (process.env.NODE_ENV === 'test') {
 
     console.assert(
       classifications.some((c) => c.category === 'ECTA'),
-      'ECTA compliance classification failed'
+      'ECTA compliance classification failed',
     );
 
     // Test threat detection

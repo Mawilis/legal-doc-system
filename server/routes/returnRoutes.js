@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; tests file association and verification workflows.
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -22,14 +20,15 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const returnController = require('../controllers/returnController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
 // Note: 'upload' middleware (Multer) is usually injected before validation for multipart forms
 // const upload = require('../middleware/uploadMiddleware');
@@ -99,7 +98,7 @@ router.post(
       err.code = 'RETURN_UPLOAD_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -121,7 +120,7 @@ router.get(
       err.code = 'RETURN_LIST_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -152,7 +151,7 @@ router.get(
       err.code = 'RETURN_GET_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -185,7 +184,7 @@ router.patch(
       err.code = 'RETURN_VERIFY_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

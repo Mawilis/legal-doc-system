@@ -31,22 +31,16 @@
  * @complianceMatrix: POPIA-COMPLIANT | SARS-READY | NDPA-ALIGNED
  */
 
-'use strict';
-
 // =============================================================================
 // QUANTUM IMPORTS: COMPLETE MODULAR ARCHITECTURE
 // =============================================================================
 require('dotenv').config(); // ENV VAULT MANDATE
 
-const asyncHandler = require('express-async-handler');
 const crypto = require('crypto');
 const { performance } = require('perf_hooks');
+const asyncHandler = require('express-async-handler');
 
 // QUANTUM MODELS (Existing in your architecture)
-const Subscription = require('../models/Subscription');
-const Invoice = require('../models/Invoice');
-const Tenant = require('../models/Tenant');
-const User = require('../models/User');
 
 // Assume AuditEvent model exists, fallback to basic
 let AuditEvent;
@@ -66,27 +60,16 @@ try {
 // QUANTUM MIDDLEWARE (Existing)
 const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { validateRBAC, emitAudit } = require('../middleware/security');
+const Invoice = require('../models/Invoice');
+const Subscription = require('../models/Subscription');
+const Tenant = require('../models/Tenant');
+const User = require('../models/User');
 
 // QUANTUM UTILITY MODULES (MISSING - MUST CREATE ALL)
 // -----------------------------------------------------------------------------
 // PATH DIRECTIVE: Create /server/utils/financialCalculations.js
-const {
-  calculateMRRFromAggregation,
-  calculateARRFromMRR,
-  calculateARPUFromAggregation,
-  calculateLTVFromAggregation,
-  calculateChurnRate,
-  calculateRecoveryValue,
-  aggregateChurnReasons,
-} = require('../utils/financialCalculations');
 
 // PATH DIRECTIVE: Create /server/utils/currencyIntelligence.js
-const {
-  getDominantCurrency,
-  fetchExchangeRates,
-  calculateCurrencyRisk,
-  convertCurrency,
-} = require('../utils/currencyIntelligence');
 
 // PATH DIRECTIVE: Create /server/utils/cacheOrchestrator.js
 const {
@@ -97,20 +80,8 @@ const {
 } = require('../utils/cacheOrchestrator');
 
 // PATH DIRECTIVE: Create /server/utils/timeQuantum.js
-const {
-  calculateTimeWindow,
-  getTimeQuantum,
-  formatTimeForAnalytics,
-  calculateBusinessDays,
-} = require('../utils/timeQuantum');
 
 // PATH DIRECTIVE: Create /server/utils/securityForensics.js
-const {
-  createEvidenceChain,
-  calculateThreatScore,
-  analyzeSecurityAnomalies,
-  generateSecurityRecommendations,
-} = require('../utils/securityForensics');
 
 // PATH DIRECTIVE: Create /server/utils/complianceIntelligence.js
 const {
@@ -119,6 +90,12 @@ const {
   validatePAIATimeline,
   generateComplianceDashboard,
 } = require('../utils/complianceIntelligence');
+const {
+  getDominantCurrency,
+  fetchExchangeRates,
+  calculateCurrencyRisk,
+  convertCurrency,
+} = require('../utils/currencyIntelligence');
 
 // PATH DIRECTIVE: Create /server/utils/encryptionEngine.js
 const {
@@ -127,6 +104,27 @@ const {
   createDataIntegrityHash,
   generateQuantumNonce,
 } = require('../utils/encryptionEngine');
+const {
+  calculateMRRFromAggregation,
+  calculateARRFromMRR,
+  calculateARPUFromAggregation,
+  calculateLTVFromAggregation,
+  calculateChurnRate,
+  calculateRecoveryValue,
+  aggregateChurnReasons,
+} = require('../utils/financialCalculations');
+const {
+  createEvidenceChain,
+  calculateThreatScore,
+  analyzeSecurityAnomalies,
+  generateSecurityRecommendations,
+} = require('../utils/securityForensics');
+const {
+  calculateTimeWindow,
+  getTimeQuantum,
+  formatTimeForAnalytics,
+  calculateBusinessDays,
+} = require('../utils/timeQuantum');
 
 // =============================================================================
 // ENVIRONMENT VALIDATION: QUANTUM CRITICAL
@@ -151,7 +149,7 @@ const validateEnvironment = () => {
     const keyBuffer = Buffer.from(process.env.ANALYTICS_ENCRYPTION_KEY, 'hex');
     if (keyBuffer.length !== 32) {
       throw new Error(
-        'QUANTUM BREACH: ANALYTICS_ENCRYPTION_KEY must be 32 bytes (64 hex characters)'
+        'QUANTUM BREACH: ANALYTICS_ENCRYPTION_KEY must be 32 bytes (64 hex characters)',
       );
     }
   }
@@ -207,7 +205,7 @@ exports.getFinancialDashboard = asyncHandler(async (req, res) => {
   await validateRBAC(
     req,
     ['SUPER_ADMIN', 'TENANT_ADMIN', 'FINANCE_MANAGER'],
-    'FINANCIAL_ANALYTICS_READ'
+    'FINANCIAL_ANALYTICS_READ',
   );
 
   // INPUT VALIDATION
@@ -349,33 +347,33 @@ exports.getFinancialDashboard = asyncHandler(async (req, res) => {
     // Churn Data (if requested)
     includeChurn === 'true'
       ? Subscription.aggregate([
-          {
-            $match: {
-              ...tenantScope,
-              status: { $in: ['CANCELLED', 'EXPIRED'] },
-              cancellationDate: { $gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) },
+        {
+          $match: {
+            ...tenantScope,
+            status: { $in: ['CANCELLED', 'EXPIRED'] },
+            cancellationDate: { $gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              month: { $month: '$cancellationDate' },
+              reason: '$cancellationReason',
+            },
+            count: { $sum: 1 },
+            lostRevenue: { $sum: '$totalAmount' },
+            avgTenureAtCancel: {
+              $avg: {
+                $divide: [
+                  { $subtract: ['$cancellationDate', '$startDate'] },
+                  1000 * 60 * 60 * 24,
+                ],
+              },
             },
           },
-          {
-            $group: {
-              _id: {
-                month: { $month: '$cancellationDate' },
-                reason: '$cancellationReason',
-              },
-              count: { $sum: 1 },
-              lostRevenue: { $sum: '$totalAmount' },
-              avgTenureAtCancel: {
-                $avg: {
-                  $divide: [
-                    { $subtract: ['$cancellationDate', '$startDate'] },
-                    1000 * 60 * 60 * 24,
-                  ],
-                },
-              },
-            },
-          },
-          { $sort: { '_id.month': -1 } },
-        ])
+        },
+        { $sort: { '_id.month': -1 } },
+      ])
       : Promise.resolve([]),
   ]);
 
@@ -536,7 +534,7 @@ exports.getFinancialDashboard = asyncHandler(async (req, res) => {
         popia: 'COMPLIANT',
         sars: 'EFILING_READY',
       },
-    }
+    },
   );
 });
 
@@ -564,7 +562,7 @@ exports.getSecurityHeatmap = asyncHandler(async (req, res) => {
   await validateRBAC(
     req,
     ['SUPER_ADMIN', 'SECURITY_ADMIN', 'COMPLIANCE_OFFICER'],
-    'SECURITY_ANALYTICS'
+    'SECURITY_ANALYTICS',
   );
 
   const { timeframe = '24h', severity = 'all', includeIOCs = 'true' } = req.query;
@@ -643,8 +641,8 @@ exports.getSecurityHeatmap = asyncHandler(async (req, res) => {
       totalEvents: securityEvents.reduce((sum, event) => sum + event.count, 0),
       uniqueThreatTypes: [...new Set(securityEvents.map((e) => e._id.threatType))].length,
       avgThreatScore:
-        securityEvents.reduce((sum, event) => sum + event.avgThreatScore, 0) /
-          securityEvents.length || 0,
+        securityEvents.reduce((sum, event) => sum + event.avgThreatScore, 0)
+          / securityEvents.length || 0,
     },
 
     // Detailed Threats
@@ -724,7 +722,7 @@ exports.getComplianceDashboard = asyncHandler(async (req, res) => {
   await validateRBAC(
     req,
     ['SUPER_ADMIN', 'COMPLIANCE_OFFICER', 'LEAL_COUNSEL'],
-    'COMPLIANCE_ANALYTICS'
+    'COMPLIANCE_ANALYTICS',
   );
 
   const { jurisdictions = 'ZA', includeGapAnalysis = 'true' } = req.query;
@@ -775,7 +773,7 @@ exports.getComplianceDashboard = asyncHandler(async (req, res) => {
         jurisdictions: jurisdictionList.join(', '),
         frameworks: 'POPIA, NDPA, DPA2019, GDPR',
       },
-    }
+    },
   );
 });
 
@@ -787,7 +785,9 @@ exports.getComplianceDashboard = asyncHandler(async (req, res) => {
  * Generate revenue forecast based on historical data
  */
 async function generateRevenueForecast(config) {
-  const { historicalMRR, growthRate, period, currency } = config;
+  const {
+    historicalMRR, growthRate, period, currency,
+  } = config;
 
   const forecast = {
     method: 'EXPONENTIAL_SMOOTHING',
@@ -799,7 +799,7 @@ async function generateRevenueForecast(config) {
   // Generate 12-month forecast
   for (let i = 1; i <= 12; i++) {
     const monthGrowth = growthRate * (1 - i * 0.02); // Diminishing growth
-    const projectedRevenue = historicalMRR * Math.pow(1 + monthGrowth, i);
+    const projectedRevenue = historicalMRR * (1 + monthGrowth) ** i;
 
     forecast.periods.push({
       month: i,

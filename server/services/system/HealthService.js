@@ -56,16 +56,16 @@
  */
 
 import { redisClient } from '../../cache/redisClient.js';
-import mongoose from 'mongoose';
-import cron from 'node-cron';
-import os from 'os';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import mongoose from "mongoose";
+import cron from 'node-cron.js';
+import os from 'os.js';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import { exec } from 'child_process.js';
+import { promisify } from "util";
+import fs from 'fs/promises.js';
+import path from "path";
+import { fileURLToPath } from 'url.js';
 
 // WILSY OS CORE IMPORTS
 import logger from '../../utils/logger.js';

@@ -2,7 +2,8 @@
  * WILSY OS - User Routes
  */
 
-import express from 'express';
+import express from 'express.js';
+
 const router = express.Router();
 
 router.get('/', (req, res) => {

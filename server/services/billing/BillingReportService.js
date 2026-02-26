@@ -61,9 +61,9 @@
  *   J --> M[Upsell Automation]
  */
 
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
-import { createHash } from 'crypto';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import { createHash } from "crypto";
 
 // WILSY OS CORE IMPORTS
 import auditLogger from '../../utils/auditLogger.js';

@@ -1,10 +1,9 @@
 /*
  * @jest-environment node
  */
-'use strict';
 
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 const testAdapter = require('./onboardingSession.test.adapter');
 
 // This will be populated by the adapter
@@ -46,7 +45,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
     });
 
     test('All Mixed types should be string literals', () => {
-      const schema = OnboardingSession.schema;
+      const { schema } = OnboardingSession;
 
       const verifyMixedType = (path) => {
         if (path && path.options && path.options.type) {

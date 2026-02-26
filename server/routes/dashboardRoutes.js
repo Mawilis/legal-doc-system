@@ -1,4 +1,15 @@
-const express = require('express');
+import express from 'express.js';
+import path from "path";
+import { fileURLToPath } from 'url.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const router = express.Router();
-router.get('/', (req, res) => res.json({ msg: 'Dashboard Route OK' }));
-module.exports = router;
+
+router.get('/warroom', (req, res) => {
+  const filePath = path.join(__dirname, '../public/dashboard/warroom.html');
+  res.sendFile(filePath);
+});
+
+export default router;

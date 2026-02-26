@@ -1,11 +1,10 @@
 /*
  * @jest-environment node
  */
-'use strict';
 
 const crypto = require('crypto');
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 const OnboardingSession = require('../../models/OnboardingSession');
 
 describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', () => {
@@ -35,7 +34,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
     });
 
     test('All Mixed types should be string literals', () => {
-      const schema = OnboardingSession.schema;
+      const { schema } = OnboardingSession;
 
       // Helper function to check if a path has Mixed type as string literal
       const verifyMixedType = (path) => {

@@ -47,8 +47,8 @@ describe('CompetitiveAdvantageMatrix', () => {
       matrix.addCompetitor(competitor);
       const result = matrix.getMatrix();
 
-      expect(result['comp1']).toBeDefined();
-      expect(result['comp1'].name).toBe('Competitor 1');
+      expect(result.comp1).toBeDefined();
+      expect(result.comp1.name).toBe('Competitor 1');
     });
   });
 

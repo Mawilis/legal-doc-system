@@ -11,11 +11,11 @@
  * • Confirms forensic PDF integrity
  */
 
-import PDFDocument from 'pdfkit';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { Readable } from 'stream';
+import PDFDocument from 'pdfkit.js';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url.js';
+import { Readable } from "stream";
 
 // Mock dependencies
 jest.mock('pdfkit');
@@ -34,9 +34,9 @@ import {
   generateImpactPdf,
   generateCompliancePdf,
   generateInvestorPdf,
-} from '../../../services/pdf/ForensicPdfService.js';
-import { generateMonthlyBillingReport } from '../../../services/billing/BillingReportService.js';
-import auditLogger from '../../../utils/auditLogger.js';
+} from '../../../services/pdf/ForensicPdfService.js.js';
+import { generateMonthlyBillingReport } from '../../../services/billing/BillingReportService.js.js';
+import auditLogger from '../../../utils/auditLogger.js.js';
 
 describe('ForensicPdfService - PDF Generation Due Diligence', () => {
   let mockReq;

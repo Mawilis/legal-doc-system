@@ -6,12 +6,10 @@
  * SECURITY: Tenant Isolation. Procedural Integrity Checks.
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
+const { emitAudit } = require('../middleware/auditMiddleware');
 const Case = require('../models/Case');
 const Notification = require('../models/Notification');
-const { emitAudit } = require('../middleware/auditMiddleware');
 
 /*
  * @desc    Initialize Workflow for a Case
@@ -20,7 +18,7 @@ const { emitAudit } = require('../middleware/auditMiddleware');
  */
 exports.initializeWorkflow = asyncHandler(async (req, res) => {
   const { caseId, workflowType } = req.body;
-  const tenantId = req.user.tenantId;
+  const { tenantId } = req.user;
 
   // 1. Verify Case Ownership
   const caseFile = await Case.findOne({ _id: caseId, tenantId });
@@ -33,9 +31,15 @@ exports.initializeWorkflow = asyncHandler(async (req, res) => {
   // In production, these templates would be pulled from a WorkflowTemplate model
   const templates = {
     DEBT_COLLECTION: [
-      { step: 1, name: 'Letter of Demand', status: 'PENDING', durationDays: 14 },
-      { step: 2, name: 'Summons Issued', status: 'LOCKED', durationDays: 30 },
-      { step: 3, name: 'Judgment Application', status: 'LOCKED', durationDays: 60 },
+      {
+        step: 1, name: 'Letter of Demand', status: 'PENDING', durationDays: 14,
+      },
+      {
+        step: 2, name: 'Summons Issued', status: 'LOCKED', durationDays: 30,
+      },
+      {
+        step: 3, name: 'Judgment Application', status: 'LOCKED', durationDays: 60,
+      },
     ],
   };
 
@@ -45,7 +49,7 @@ exports.initializeWorkflow = asyncHandler(async (req, res) => {
   caseFile.workflow = {
     type: workflowType,
     currentStep: 1,
-    steps: steps,
+    steps,
     startedAt: new Date(),
   };
   await caseFile.save();

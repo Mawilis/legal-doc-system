@@ -7,10 +7,10 @@
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
-import fs from 'fs';
-import path from 'path';
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
+import { execSync } from 'child_process.js';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,7 +22,7 @@ console.log('============================\n');
 // Find all project files with double asterisks
 console.log('🔍 Scanning for files with double asterisks...');
 
-const findCmd = `find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
+const findCmd = 'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
   -not -path "*/node_modules/*" \
   -not -path "*/coverage/*" \
   -not -path "*/dist/*" \
@@ -30,12 +30,12 @@ const findCmd = `find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mj
   -not -path "*/.git/*" \
   -not -name "*.bak" \
   -not -name "*.backup*" \
-  -not -path "*/tests_legacy_backup/*" 2>/dev/null | xargs grep -l "\\*\\*" 2>/dev/null || true`;
+  -not -path "*/tests_legacy_backup/*" 2>/dev/null | xargs grep -l "\\*\\*" 2>/dev/null || true';
 
 let filesWithIssues = [];
 try {
   const output = execSync(findCmd, { encoding: 'utf8' }).trim();
-  filesWithIssues = output.split('\n').filter(f => f.trim());
+  filesWithIssues = output.split('\n').filter((f) => f.trim());
 } catch (e) {
   // No files found or error
 }
@@ -50,7 +50,7 @@ if (filesWithIssues.length === 0) {
 // Show the files
 filesWithIssues.forEach((file, index) => {
   console.log(`${index + 1}. ${file}`);
-  
+
   // Show the problematic lines
   try {
     const content = fs.readFileSync(file, 'utf8');
@@ -70,31 +70,31 @@ filesWithIssues.forEach((file, index) => {
 console.log('\n🔧 Applying fixes...');
 
 let fixedCount = 0;
-filesWithIssues.forEach(file => {
+filesWithIssues.forEach((file) => {
   try {
     const fullPath = path.join(rootDir, file.replace(/^\.\//, ''));
     let content = fs.readFileSync(fullPath, 'utf8');
     const original = content;
-    
+
     // Fix 1: JSDoc comments with double asterisks
     content = content.replace(/\/\*\*([\s\S]*?)\*\*\//g, '/*$1*/');
-    
+
     // Fix 2: @param with double asterisks
     content = content.replace(/@param\s*\{[^}]+\}\s*(\[?\w+\]?)\s*-\s*(.*?)\*\*/g, '@param {$1} - $2');
-    
+
     // Fix 3: @returns with double asterisks
     content = content.replace(/@returns?\s*\{[^}]+\}\s*-\s*(.*?)\*\*/g, '@returns $1');
-    
+
     // Fix 4: Any remaining double asterisks in comments
     content = content.replace(/(\/\*[\s\S]*?)\*\*([\s\S]*?\*\/)/g, '$1*$2');
     content = content.replace(/(\/\/.*?)\*\*/g, '$1');
-    
+
     // Fix 5: Specific pattern for catch blocks
     content = content.replace(/catch\s*\(\s*error\s*\)\s*\{\s*\/\*\/\s*\}/g, 'catch (error) { /* ignore */ }');
-    
+
     // Fix 6: Any remaining ** that might be in strings (preserve them)
     // This is a safe approach - we only fix ** that are likely in comments
-    
+
     if (content !== original) {
       fs.writeFileSync(fullPath, content, 'utf8');
       console.log(`✅ Fixed: ${file}`);
@@ -114,11 +114,11 @@ console.log('\n🔍 Final verification...');
 
 try {
   const remainingOutput = execSync(findCmd, { encoding: 'utf8' }).trim();
-  const remaining = remainingOutput.split('\n').filter(f => f.trim());
-  
+  const remaining = remainingOutput.split('\n').filter((f) => f.trim());
+
   if (remaining.length === 0) {
     console.log('\n✅🎉 VICTORY! All files are clean! 🎉✅');
-    
+
     // Show the victory banner
     console.log(`
 ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -139,7 +139,7 @@ try {
     `);
   } else {
     console.log(`\n⚠️ ${remaining.length} files still have issues:`);
-    remaining.forEach(f => console.log(`   • ${f}`));
+    remaining.forEach((f) => console.log(`   • ${f}`));
   }
 } catch (e) {
   console.log('\n✅ No files with double asterisks found!');

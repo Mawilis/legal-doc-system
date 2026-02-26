@@ -8,11 +8,11 @@ const Case = require('../models/Case');
 exports.createCase = async (req, res) => {
   try {
     // Enforce Multi-Tenancy from the user's JWT (simulated here)
-    const tenantId = req.user.tenantId;
+    const { tenantId } = req.user;
 
     const newCase = new Case({
       ...req.body,
-      tenantId: tenantId,
+      tenantId,
       createdBy: req.user.id,
     });
 

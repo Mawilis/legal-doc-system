@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict';
 
 // ============================================================================
 // QUANTUM POPIA CONSENT ROUTER: THE DIGNITY GATEWAY
@@ -28,19 +27,20 @@ require('dotenv').config();
 
 // QUANTUM DEPENDENCIES
 const express = require('express');
+
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const cors = require('cors');
 
 // QUANTUM MIDDLEWARE
+const PopiaConsentController = require('../controllers/popiaConsentController');
+const audit = require('../middleware/audit');
 const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize');
 const validate = require('../middleware/validate');
-const audit = require('../middleware/audit');
 
 // QUANTUM CONTROLLER
-const PopiaConsentController = require('../controllers/popiaConsentController');
 
 // QUANTUM VALIDATORS
 const {
@@ -65,10 +65,10 @@ const quantumRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
-  keyGenerator: (req) => {
+  keyGenerator: (req) =>
     // Use user ID if authenticated, otherwise IP
-    return req.user?.id || req.ip;
-  },
+    req.user?.id || req.ip
+  ,
 });
 
 // ============================================================================
@@ -96,13 +96,13 @@ router.use(
       includeSubDomains: true,
       preload: true,
     },
-  })
+  }),
 );
 
 // CORS with strict origin validation
 router.use(
   cors({
-    origin: function (origin, callback) {
+    origin(origin, callback) {
       const allowedOrigins = [
         process.env.APP_URL,
         process.env.ADMIN_URL,
@@ -118,7 +118,7 @@ router.use(
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Quantum-Signature'],
-  })
+  }),
 );
 
 // ============================================================================
@@ -144,7 +144,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -166,7 +166,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -188,7 +188,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -213,7 +213,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -253,7 +253,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -315,7 +315,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -376,7 +376,7 @@ router.get(
 
     res.set('Content-Type', register.contentType);
     res.end(await register.metrics());
-  }
+  },
 );
 
 // ============================================================================

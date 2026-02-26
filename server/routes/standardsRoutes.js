@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; tests template variable parsing and storage.
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -22,14 +20,15 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const standardsController = require('../controllers/standardsController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
 
 // 3. VALIDATION SCHEMAS (Joi)
@@ -86,7 +85,7 @@ router.post(
       err.code = 'STD_CREATE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -122,7 +121,7 @@ router.get(
       err.code = 'STD_GET_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -146,7 +145,7 @@ router.post(
       err.code = 'STD_RENDER_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -178,7 +177,7 @@ router.put(
       err.code = 'STD_UPDATE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

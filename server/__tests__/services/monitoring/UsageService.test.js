@@ -4,10 +4,10 @@
   ║ 100% coverage | Real-time quota | Predictive alerts                      ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import { expect } from 'chai';
-import sinon from 'sinon';
-import { v4 as uuidv4 } from 'uuid';
-import usageService from '../../../services/monitoring/UsageService.js';
+import { expect } from 'chai.js';
+import sinon from 'sinon.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import usageService from '../../../services/monitoring/UsageService.js.js';
 
 describe('UsageService - Gateway Quota Dashboard Due Diligence', () => {
   let clock;

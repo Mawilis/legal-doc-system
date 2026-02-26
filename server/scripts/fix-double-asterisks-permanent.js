@@ -7,9 +7,9 @@
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +25,7 @@ const scanDirs = [
   'scripts', 'seed', 'tests', '__tests__', 'test', 'integrations',
   'lib', 'cron', 'websockets', 'policies', 'queues', 'monitoring',
   'i18n', 'market-intelligence', 'investor-materials', 'patents',
-  'global-expansion', 'bootstrap'
+  'global-expansion', 'bootstrap',
 ];
 
 let fixedCount = 0;
@@ -36,20 +36,20 @@ function fixFile(filePath) {
   try {
     let content = fs.readFileSync(filePath, 'utf8');
     const original = content;
-    
+
     // Fix JSDoc comments with double asterisks
     content = content.replace(/\/\*\*([\s\S]*?)\*\*\//g, '/*$1*/');
-    
+
     // Fix @param with double asterisks
     content = content.replace(/@param\s*\{[^}]+\}\s*(\[?\w+\]?)\s*-\s*(.*?)\*\*/g, '@param {$1} - $2');
-    
+
     // Fix @returns with double asterisks
     content = content.replace(/@returns?\s*\{[^}]+\}\s*-\s*(.*?)\*\*/g, '@returns $1');
-    
+
     // Fix any remaining double asterisks in comments
     content = content.replace(/(\/\*[\s\S]*?)\*\*([\s\S]*?\*\/)/g, '$1*$2');
     content = content.replace(/(\/\/.*?)\*\*/g, '$1');
-    
+
     if (content !== original) {
       fs.writeFileSync(filePath, content, 'utf8');
       return true;
@@ -61,19 +61,19 @@ function fixFile(filePath) {
 }
 
 // Scan each directory
-scanDirs.forEach(dir => {
+scanDirs.forEach((dir) => {
   const fullDir = path.join(rootDir, dir);
   if (!fs.existsSync(fullDir)) return;
-  
+
   console.log(`\n📁 Scanning ${dir}/...`);
-  
+
   function walk(currentPath) {
     const files = fs.readdirSync(currentPath);
-    
-    files.forEach(file => {
+
+    files.forEach((file) => {
       const filePath = path.join(currentPath, file);
       const stat = fs.statSync(filePath);
-      
+
       if (stat.isDirectory()) {
         walk(filePath);
       } else if (file.match(/\.(js|cjs|mjs)$/)) {
@@ -85,20 +85,18 @@ scanDirs.forEach(dir => {
       }
     });
   }
-  
+
   walk(fullDir);
 });
 
 // Also scan root JS files
 console.log('\n📁 Scanning root directory...');
-const rootFiles = fs.readdirSync(rootDir).filter(f => 
-  f.match(/\.(js|cjs|mjs)$/) && 
-  !f.includes('node_modules') &&
-  !f.includes('backup') &&
-  !f.includes('bak')
-);
+const rootFiles = fs.readdirSync(rootDir).filter((f) => f.match(/\.(js|cjs|mjs)$/)
+  && !f.includes('node_modules')
+  && !f.includes('backup')
+  && !f.includes('bak'));
 
-rootFiles.forEach(file => {
+rootFiles.forEach((file) => {
   const filePath = path.join(rootDir, file);
   scannedCount++;
   if (fixFile(filePath)) {
@@ -107,8 +105,8 @@ rootFiles.forEach(file => {
   }
 });
 
-console.log(`\n📊 SUMMARY:`);
+console.log('\n📊 SUMMARY:');
 console.log(`   • Files scanned: ${scannedCount}`);
 console.log(`   • Files fixed: ${fixedCount}`);
-console.log(`   • Remaining issues: 0 (in project files)`);
-console.log(`\n✅ Permanent fix complete - node_modules and backups are ignored`);
+console.log('   • Remaining issues: 0 (in project files)');
+console.log('\n✅ Permanent fix complete - node_modules and backups are ignored');

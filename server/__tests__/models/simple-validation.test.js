@@ -1,11 +1,10 @@
 /*
  * @jest-environment node
  */
-'use strict';
 
 jest.unmock('mongoose');
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 
 describe('Model Validation', () => {
   let mongoServer;

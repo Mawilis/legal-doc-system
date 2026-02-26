@@ -48,25 +48,25 @@ require('dotenv').config(); // Quantum Env Vault Loading
 
 // Core Security & Cryptography
 const crypto = require('crypto'); // Node.js Crypto (Native)
-const { v4: uuidv4 } = require('uuid');
 
 // Validation & Security Libraries
-const Joi = require('joi');
 const rateLimit = require('express-rate-limit');
 
 // Performance & Caching
 const Redis = require('ioredis');
+const Joi = require('joi');
+const { v4: uuidv4 } = require('uuid');
 
 // Blockchain Integration
-const { QuantumBlockchain, createLegalOperation } = require('../utils/blockchainUtils');
 
 // SA Legal Services Integration
 const { validateCIPCCompany } = require('../services/cipcService');
-const { verifySARSCompliance } = require('../services/sarsService');
 const { checkLPCTrustAccount } = require('../services/lpcService');
+const { verifySARSCompliance } = require('../services/sarsService');
 
 // Quantum Audit Logger
 const { getQuantumAuditLogger } = require('../utils/auditUtils');
+const { QuantumBlockchain, createLegalOperation } = require('../utils/blockchainUtils');
 
 /*
  * ⚠️ DEPENDENCIES INSTALLATION PATH:
@@ -288,7 +288,7 @@ class QuantumComplianceSentinel {
               'health',
               'sexual',
               'biometric',
-              'criminal'
+              'criminal',
             )
             .optional(),
           additionalSafeguards: Joi.boolean().required(),
@@ -341,8 +341,8 @@ class QuantumComplianceSentinel {
               'director_register',
               'meeting_minutes',
               'financial_statements',
-              'annual_returns'
-            )
+              'annual_returns',
+            ),
           )
           .min(6)
           .required(),
@@ -455,7 +455,7 @@ class QuantumComplianceSentinel {
       // Perform statute-specific validations
       const statuteValidations = await this._validateQuantumStatutes(
         jurisdiction,
-        validationContext
+        validationContext,
       );
 
       // Execute SA-specific legal checks
@@ -468,7 +468,7 @@ class QuantumComplianceSentinel {
       const decision = this._generateQuantumDecision(
         riskAssessment,
         statuteValidations,
-        saLegalValidations
+        saLegalValidations,
       );
 
       // Create immutable blockchain audit trail
@@ -491,7 +491,7 @@ class QuantumComplianceSentinel {
         processingTime: Date.now() - startTime,
         complianceScore: this._calculateQuantumComplianceScore(
           statuteValidations,
-          saLegalValidations
+          saLegalValidations,
         ),
         quantumSignature: this._generateQuantumSignature(validationId, decision),
       };
@@ -664,8 +664,8 @@ class QuantumComplianceSentinel {
 
     // Section 10: Data Minimization
     if (
-      context.dataClassification === COMPLIANCE_CONFIG.DATA_CLASSIFICATIONS.PERSONAL_INFORMATION &&
-      !context.dataMinimizationApplied
+      context.dataClassification === COMPLIANCE_CONFIG.DATA_CLASSIFICATIONS.PERSONAL_INFORMATION
+      && !context.dataMinimizationApplied
     ) {
       warnings.push('POPIA Section 10: Data minimization principle not confirmed');
     }
@@ -705,8 +705,8 @@ class QuantumComplianceSentinel {
 
     // Section 56: Information Officer Appointment
     if (
-      this.complianceRules.POPIA.informationOfficerRequired &&
-      !context.informationOfficerAppointed
+      this.complianceRules.POPIA.informationOfficerRequired
+      && !context.informationOfficerAppointed
     ) {
       warnings.push('POPIA Section 56: Information Officer appointment not confirmed');
     }
@@ -745,9 +745,9 @@ class QuantumComplianceSentinel {
    */
   async _validateECTActQuantum(context) {
     if (
-      !context.signatureType &&
-      !context.requestMetadata.path.includes('/sign') &&
-      !context.requestMetadata.path.includes('/contract')
+      !context.signatureType
+      && !context.requestMetadata.path.includes('/sign')
+      && !context.requestMetadata.path.includes('/contract')
     ) {
       return {
         valid: true,
@@ -769,13 +769,13 @@ class QuantumComplianceSentinel {
 
     // Section 13(2): Advanced Electronic Signatures
     if (
-      context.documentType === 'will' ||
-      context.documentType === 'contract' ||
-      context.documentType === 'court_document'
+      context.documentType === 'will'
+      || context.documentType === 'contract'
+      || context.documentType === 'court_document'
     ) {
       if (context.signatureType !== COMPLIANCE_CONFIG.ECT_SIGNATURE_TYPES.ADVANCED) {
         errors.push(
-          'ECT Act Section 13(2): Legal documents require advanced electronic signatures'
+          'ECT Act Section 13(2): Legal documents require advanced electronic signatures',
         );
       }
     }
@@ -841,7 +841,7 @@ class QuantumComplianceSentinel {
             path: context.requestMetadata.path,
           },
         },
-        context.userId
+        context.userId,
       );
 
       await this.blockchain.addLegalOperation(blockchainOperation);
@@ -871,7 +871,7 @@ class QuantumComplianceSentinel {
             signatory: context.userId,
             timestamp: context.signatureTimestamp,
             type: context.signatureType,
-          })
+          }),
         )
         .digest('hex');
 
@@ -912,7 +912,7 @@ class QuantumComplianceSentinel {
       if (encryptedContext[field]) {
         const cipher = crypto.createCipher(
           'aes-256-gcm',
-          process.env.ENCRYPTION_KEY || 'wilsy-default-key'
+          process.env.ENCRYPTION_KEY || 'wilsy-default-key',
         );
         let encrypted = cipher.update(encryptedContext[field], 'utf8', 'hex');
         encrypted += cipher.final('hex');
@@ -934,10 +934,10 @@ class QuantumComplianceSentinel {
 
     // Quantum Shield: Mask internal IPs for privacy
     if (
-      firstIp.startsWith('192.168.') ||
-      firstIp.startsWith('10.') ||
-      firstIp.startsWith('172.') ||
-      firstIp.startsWith('fe80:')
+      firstIp.startsWith('192.168.')
+      || firstIp.startsWith('10.')
+      || firstIp.startsWith('172.')
+      || firstIp.startsWith('fe80:')
     ) {
       return '0.0.0.0';
     }
@@ -947,7 +947,7 @@ class QuantumComplianceSentinel {
 
   _classifyQuantumData(request) {
     const path = request.path.toLowerCase();
-    const method = request.method;
+    const { method } = request;
 
     // Quantum Classification Matrix
     if (path.includes('/health') || path.includes('/status')) {
@@ -960,9 +960,9 @@ class QuantumComplianceSentinel {
       return COMPLIANCE_CONFIG.DATA_CLASSIFICATIONS.PERSONAL_INFORMATION;
     }
     if (
-      path.includes('/medical') ||
-      path.includes('/health-record') ||
-      path.includes('/disability')
+      path.includes('/medical')
+      || path.includes('/health-record')
+      || path.includes('/disability')
     ) {
       return COMPLIANCE_CONFIG.DATA_CLASSIFICATIONS.SPECIAL_CATEGORY;
     }
@@ -980,7 +980,7 @@ class QuantumComplianceSentinel {
   }
 
   _determineQuantumPurpose(request) {
-    const method = request.method;
+    const { method } = request;
     const path = request.path.toLowerCase();
 
     // Quantum Purpose Matrix aligned with POPIA Section 13
@@ -1010,8 +1010,7 @@ class QuantumComplianceSentinel {
   _checkCrossBorderTransfer(request, user) {
     const userJurisdiction = user.jurisdiction || 'ZA';
     const serverLocation = process.env.SERVER_LOCATION || 'ZA';
-    const dataResidencyRequired =
-      COMPLIANCE_CONFIG.AFRICAN_JURISDICTIONS[userJurisdiction]?.dataResidency;
+    const dataResidencyRequired = COMPLIANCE_CONFIG.AFRICAN_JURISDICTIONS[userJurisdiction]?.dataResidency;
 
     if (dataResidencyRequired && userJurisdiction !== serverLocation) {
       return {
@@ -1040,10 +1039,10 @@ class QuantumComplianceSentinel {
   _requiresBlockchainAudit(request) {
     const path = request.path.toLowerCase();
     return (
-      path.includes('/legal/') ||
-      path.includes('/contract/') ||
-      path.includes('/signature/') ||
-      path.includes('/financial/transaction')
+      path.includes('/legal/')
+      || path.includes('/contract/')
+      || path.includes('/signature/')
+      || path.includes('/financial/transaction')
     );
   }
 
@@ -1053,7 +1052,7 @@ class QuantumComplianceSentinel {
 
     if (missingFields.length > 0) {
       throw new Error(
-        `QUANTUM CONTEXT BREACH: Missing required fields: ${missingFields.join(', ')}`
+        `QUANTUM CONTEXT BREACH: Missing required fields: ${missingFields.join(', ')}`,
       );
     }
 
@@ -1062,7 +1061,7 @@ class QuantumComplianceSentinel {
       !Object.values(COMPLIANCE_CONFIG.DATA_CLASSIFICATIONS).includes(context.dataClassification)
     ) {
       throw new Error(
-        `QUANTUM CONTEXT BREACH: Invalid data classification: ${context.dataClassification}`
+        `QUANTUM CONTEXT BREACH: Invalid data classification: ${context.dataClassification}`,
       );
     }
   }
@@ -1120,7 +1119,7 @@ class QuantumComplianceSentinel {
 
         this.lastCacheCleanup = now;
       },
-      30 * 60 * 1000
+      30 * 60 * 1000,
     ); // Every 30 minutes
   }
 
@@ -1273,7 +1272,7 @@ function quantumComplianceMiddleware(options = {}) {
       // Perform quantum validation
       const validationResult = await sentinelInstance.validateQuantumRequest(
         req,
-        additionalContext
+        additionalContext,
       );
       req.compliance = validationResult;
 
@@ -1287,7 +1286,7 @@ function quantumComplianceMiddleware(options = {}) {
               userId: req.user?.id || 'anonymous',
               requestMetadata: { path: req.path, method: req.method, ip: req.ip },
             },
-            validationResult.decision
+            validationResult.decision,
           );
         }
 
@@ -1319,7 +1318,7 @@ function quantumComplianceMiddleware(options = {}) {
         console.log(
           `✅ Compliance validated: ${validationResult.validationId} | Risk: ${
             validationResult.riskAssessment.overallRisk
-          } | Score: ${validationResult.complianceScore} | Time: ${Date.now() - startTime}ms`
+          } | Score: ${validationResult.complianceScore} | Time: ${Date.now() - startTime}ms`,
         );
       }
 

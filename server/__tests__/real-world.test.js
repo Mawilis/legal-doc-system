@@ -20,12 +20,12 @@
  * • Peak load handling (Black Friday for Legal)
  */
 
-import request from 'supertest';
-import mongoose from 'mongoose';
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import request from 'supertest.js';
+import mongoose from "mongoose";
+import crypto from "crypto";
+import fs from 'fs/promises.js';
+import path from "path";
+import { fileURLToPath } from 'url.js';
 
 // Import the actual server (not mocked - real integration tests)
 import app, {
@@ -35,7 +35,7 @@ import app, {
   generationalLogger,
   FINANCIAL_TARGETS,
   GENERATIONS,
-} from '../server.js';
+} from '../server.js.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

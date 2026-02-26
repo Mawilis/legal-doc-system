@@ -89,9 +89,9 @@ import { metrics, trackError } from '../../utils/metricsCollector.js';
 import { TenantConfig } from '../../models/TenantConfig.js';
 import { BillingSubscription } from '../../models/BillingSubscription.js';
 import { UsageHistory } from '../../models/UsageHistory.js';
-import { Op } from 'sequelize';
-import { v4 as uuidv4 } from 'uuid';
-import { performance } from 'perf_hooks';
+import { Op } from 'sequelize.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import { performance } from 'perf_hooks.js';
 
 // =============================================================================
 // QUANTUM CONSTANTS

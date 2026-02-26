@@ -6,9 +6,9 @@
  * Example worker that processes queued report generation tasks.
  */
 
-const { startTask, completeTask, failTask } = require('../services/taskService');
-const Task = require('../models/taskModel');
 const Report = require('../models/reportModel');
+const Task = require('../models/taskModel');
+const { startTask, completeTask, failTask } = require('../services/taskService');
 
 exports.processReports = async () => {
   const tasks = await Task.find({ type: 'report.generate', status: 'queued' })

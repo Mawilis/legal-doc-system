@@ -3,8 +3,8 @@ const path = require('path');
 
 const filePath = path.join(__dirname, '../server/validators/superAdminValidator.js');
 if (fs.existsSync(filePath)) {
-  let content = fs.readFileSync(filePath, 'utf8');
-  let lines = content.split('\n');
+  const content = fs.readFileSync(filePath, 'utf8');
+  const lines = content.split('\n');
 
   // Fix line 1114
   if (lines[1113] && lines[1113].includes('(_email)')) {

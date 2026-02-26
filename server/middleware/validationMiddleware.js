@@ -1,5 +1,5 @@
 /* eslint-disable */
-import * as validation from '../utils/validationUtils.js';
+import * as validation from '../utils/validationUtils.js.js';
 
 /*
  * Wilsy OS Global Validation Middleware

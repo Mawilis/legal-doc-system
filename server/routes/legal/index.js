@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-/* 
+/*
  * ⚖️  LEGAL ROUTES INDEX - MULTI-TENANT LEGAL SERVICE GATEWAY
  * =============================================================================
  *
@@ -64,22 +64,25 @@
  */
 
 const express = require('express');
+
 const router = express.Router();
-const { body, param, query, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
+const {
+  body, param, query, validationResult,
+} = require('express-validator');
 const helmet = require('helmet');
 const { createHash } = require('crypto');
 
 // Middleware imports
-const tenantContext = require('../../middleware/tenantContext');
-const { authorize } = require('../../middleware/authMiddleware');
 const auditLogger = require('../../middleware/auditLogger');
+const { authorize } = require('../../middleware/authMiddleware');
 const complianceEnforcer = require('../../middleware/complianceEnforcer');
+const tenantContext = require('../../middleware/tenantContext');
 
 // Service imports
+const caseService = require('../../services/caseService');
 const conflictService = require('../../services/conflictService');
 const documentService = require('../../services/documentService');
-const caseService = require('../../services/caseService');
 const precedentService = require('../../services/precedentService');
 
 // ============================================================================
@@ -128,7 +131,7 @@ router.use(
       includeSubDomains: true,
       preload: true,
     },
-  })
+  }),
 );
 
 /*
@@ -308,7 +311,7 @@ router.post(
         requestId: req.id,
       });
     }
-  }
+  },
 );
 
 /*
@@ -367,7 +370,7 @@ router.get(
         requestId: req.id,
       });
     }
-  }
+  },
 );
 
 /*
@@ -433,7 +436,7 @@ router.post(
         message: error.message,
       });
     }
-  }
+  },
 );
 
 /*
@@ -498,7 +501,7 @@ router.get(
         message: error.message,
       });
     }
-  }
+  },
 );
 
 /*
@@ -533,7 +536,9 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { keywords, jurisdiction, dateRange, limit = 10 } = req.body;
+      const {
+        keywords, jurisdiction, dateRange, limit = 10,
+      } = req.body;
       const { tenantContext, user } = req;
 
       // Search precedents (mock implementation)
@@ -561,7 +566,7 @@ router.post(
         message: error.message,
       });
     }
-  }
+  },
 );
 
 /*
@@ -633,7 +638,7 @@ router.post(
         message: error.message,
       });
     }
-  }
+  },
 );
 
 // ============================================================================

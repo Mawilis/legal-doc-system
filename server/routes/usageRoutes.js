@@ -4,20 +4,20 @@
  * ============================================================================
  */
 
-import express from 'express';
-import { body, query, param, validationResult } from 'express-validator';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
+import express from 'express.js';
+import { body, query, param, validationResult } from 'express-validator.js';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
 
-import { tenantGuard } from '../middleware/tenantGuard.js';
-import { authenticate, authorize } from '../middleware/auth.js';
-import { rateLimiter } from '../middleware/rateLimiter.js';
-import { cacheMiddleware } from '../middleware/cache.js';
-import { auditMiddleware } from '../middleware/audit.js';
-import { QuantumLogger } from '../utils/quantumLogger.js';
-import { trackRequest, trackError } from '../utils/metricsCollector.js';
-import { AppError } from '../utils/errorHandler.js';
-import usageService from '../services/monitoring/UsageService.js';
+import { tenantGuard } from '../middleware/tenantGuard.js.js';
+import { authenticate, authorize } from '../middleware/auth.js.js';
+import { rateLimiter } from '../middleware/rateLimiter.js.js';
+import { cacheMiddleware } from '../middleware/cache.js.js';
+import { auditMiddleware } from '../middleware/audit.js.js';
+import { QuantumLogger } from '../utils/quantumLogger.js.js';
+import { trackRequest, trackError } from '../utils/metricsCollector.js.js';
+import { AppError } from '../utils/errorHandler.js.js';
+import usageService from '../services/monitoring/UsageService.js.js';
 
 const router = express.Router();
 

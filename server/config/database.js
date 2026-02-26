@@ -1,7 +1,7 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ DATABASE CONFIGURATION - INVESTOR-GRADE MODULE                              ║
   ║ 99.99% uptime | Multi-tenant isolation | Connection pooling                 ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/database.js
  * INVESTOR VALUE PROPOSITION:
@@ -22,8 +22,6 @@
  *   ]
  * }
  */
-
-'use strict';
 
 const mongoose = require('mongoose');
 const logger = require('../utils/logger');
@@ -73,7 +71,7 @@ class DatabaseConfig {
     }
 
     let uri = `mongodb://${encodeURIComponent(DB_USERNAME)}:${encodeURIComponent(
-      DB_PASSWORD
+      DB_PASSWORD,
     )}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=${DB_AUTH_SOURCE}`;
 
     if (DB_REPLICA_SET) {
@@ -156,7 +154,7 @@ class DatabaseConfig {
       }
 
       throw new Error(
-        `Failed to connect to database after ${this.maxRetries} attempts: ${error.message}`
+        `Failed to connect to database after ${this.maxRetries} attempts: ${error.message}`,
       );
     }
   }

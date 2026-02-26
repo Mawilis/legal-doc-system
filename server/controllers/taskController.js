@@ -8,20 +8,20 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
-const Task = require('../models/Task');
-const Case = require('../models/Case');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
+const Case = require('../models/Case');
+const Task = require('../models/Task');
 
 /*
  * @desc    CREATE CASE-LINKED TASK
  * @route   POST /api/v1/tasks
  */
 exports.createTask = asyncHandler(async (req, res) => {
-  const { title, caseId, assignedTo, dueDate, priority } = req.body;
+  const {
+    title, caseId, assignedTo, dueDate, priority,
+  } = req.body;
 
   // 1. CASE SCOPE VALIDATION
   if (caseId) {
@@ -32,7 +32,7 @@ exports.createTask = asyncHandler(async (req, res) => {
         res,
         404,
         'The referenced case matter is invalid or inaccessible.',
-        'ERR_CASE_NOT_FOUND'
+        'ERR_CASE_NOT_FOUND',
       );
     }
   }

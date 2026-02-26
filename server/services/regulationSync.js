@@ -44,21 +44,22 @@
 // ============================================================================
 require('dotenv').config();
 const crypto = require('crypto');
+
 const { createHash, createHmac } = crypto;
-const mongoose = require('mongoose');
 const axios = require('axios');
-const cron = require('node-cron');
 const cheerio = require('cheerio');
-const natural = require('natural');
 const { diffWords } = require('diff');
+const mongoose = require('mongoose');
+const natural = require('natural');
+const cron = require('node-cron');
 
 // Internal quantum dependencies
-const Regulation = require('../models/regulation.js');
 const ComplianceRule = require('../models/complianceRule');
+const Regulation = require('../models/regulation.js');
 const AuditLogger = require('../utils/auditLogger');
-const NotificationService = require('../services/notificationService');
 const { encryptData, decryptData } = require('../utils/cryptoUtils');
 const { validateRegulation } = require('../validators/regulationValidator');
+const NotificationService = require('./notificationService');
 
 // ============================================================================
 // QUANTUM CONSTANTS: Immutable Configuration Parameters
@@ -306,7 +307,7 @@ class RegulationSyncEngine {
 
     if (missingVars.length > 0) {
       throw new Error(
-        `QUANTUM BREACH: Missing regulation sync environment variables: ${missingVars.join(', ')}`
+        `QUANTUM BREACH: Missing regulation sync environment variables: ${missingVars.join(', ')}`,
       );
     }
 
@@ -377,15 +378,15 @@ class RegulationSyncEngine {
       'LAWS_AFRICA',
       this.createAxiosClient(
         REGULATION_SOURCES.LAWS_AFRICA.baseUrl,
-        process.env.LAWS_AFRICA_API_KEY
-      )
+        process.env.LAWS_AFRICA_API_KEY,
+      ),
     );
 
     // SA Government Client
     if (process.env.SA_GOV_API_KEY) {
       this.sourceClients.set(
         'SA_GOVERNMENT',
-        this.createAxiosClient(REGULATION_SOURCES.SA_GOVERNMENT.baseUrl, process.env.SA_GOV_API_KEY)
+        this.createAxiosClient(REGULATION_SOURCES.SA_GOVERNMENT.baseUrl, process.env.SA_GOV_API_KEY),
       );
     }
 
@@ -393,7 +394,7 @@ class RegulationSyncEngine {
     if (process.env.CIPC_API_KEY) {
       this.sourceClients.set(
         'CIPC',
-        this.createAxiosClient(REGULATION_SOURCES.CIPC.baseUrl, process.env.CIPC_API_KEY)
+        this.createAxiosClient(REGULATION_SOURCES.CIPC.baseUrl, process.env.CIPC_API_KEY),
       );
     }
 
@@ -401,7 +402,7 @@ class RegulationSyncEngine {
     if (process.env.SARS_API_KEY) {
       this.sourceClients.set(
         'SARS',
-        this.createAxiosClient(REGULATION_SOURCES.SARS.baseUrl, process.env.SARS_API_KEY, 'Bearer')
+        this.createAxiosClient(REGULATION_SOURCES.SARS.baseUrl, process.env.SARS_API_KEY, 'Bearer'),
       );
     }
 
@@ -411,8 +412,8 @@ class RegulationSyncEngine {
         'INTERNATIONAL',
         this.createAxiosClient(
           REGULATION_SOURCES.INTERNATIONAL.baseUrl,
-          process.env.INTERNATIONAL_API_KEY
-        )
+          process.env.INTERNATIONAL_API_KEY,
+        ),
       );
     }
 
@@ -468,7 +469,7 @@ class RegulationSyncEngine {
       this.syncState.totalRegulations = regulations.length;
 
       console.log(
-        `✅ Loaded ${regulations.length} regulations across ${this.regulationCache.size} frameworks`
+        `✅ Loaded ${regulations.length} regulations across ${this.regulationCache.size} frameworks`,
       );
     } catch (error) {
       console.error('Failed to load existing regulations:', error);
@@ -492,7 +493,7 @@ class RegulationSyncEngine {
       {
         scheduled: true,
         timezone: 'Africa/Johannesburg',
-      }
+      },
     );
 
     // Schedule SA Government sync (Daily at 3 AM)
@@ -504,7 +505,7 @@ class RegulationSyncEngine {
       {
         scheduled: true,
         timezone: 'Africa/Johannesburg',
-      }
+      },
     );
 
     // Schedule CIPC sync (Weekly on Monday at 4 AM)
@@ -516,7 +517,7 @@ class RegulationSyncEngine {
       {
         scheduled: true,
         timezone: 'Africa/Johannesburg',
-      }
+      },
     );
 
     // Schedule SARS sync (Weekly on Monday at 5 AM)
@@ -529,7 +530,7 @@ class RegulationSyncEngine {
         {
           scheduled: true,
           timezone: 'Africa/Johannesburg',
-        }
+        },
       );
     }
 
@@ -542,7 +543,7 @@ class RegulationSyncEngine {
       {
         scheduled: true,
         timezone: 'Africa/Johannesburg',
-      }
+      },
     );
 
     // Schedule International sync (Weekly on Monday at 7 AM)
@@ -555,7 +556,7 @@ class RegulationSyncEngine {
         {
           scheduled: true,
           timezone: 'Africa/Johannesburg',
-        }
+        },
       );
     }
 
@@ -568,7 +569,7 @@ class RegulationSyncEngine {
       {
         scheduled: true,
         timezone: 'Africa/Johannesburg',
-      }
+      },
     );
 
     console.log('✅ Sync tasks scheduled - Quantum Temporal Orchestration Active');
@@ -589,7 +590,7 @@ class RegulationSyncEngine {
       {
         scheduled: true,
         timezone: 'Africa/Johannesburg',
-      }
+      },
     );
 
     console.log('✅ Backup tasks scheduled - Data Preservation Active');
@@ -621,9 +622,7 @@ class RegulationSyncEngine {
       });
 
       // Sync each source in parallel with controlled concurrency
-      const sourcePromises = Array.from(this.sourceClients.keys()).map((source) =>
-        this.syncSource(source, syncId)
-      );
+      const sourcePromises = Array.from(this.sourceClients.keys()).map((source) => this.syncSource(source, syncId));
 
       const results = await Promise.allSettled(sourcePromises);
 
@@ -642,7 +641,7 @@ class RegulationSyncEngine {
       const duration = Date.now() - startTime;
 
       console.log(
-        `✅ Full sync completed in ${duration}ms - Success: ${successCount}, Failed: ${failureCount}`
+        `✅ Full sync completed in ${duration}ms - Success: ${successCount}, Failed: ${failureCount}`,
       );
 
       // Log completion
@@ -689,8 +688,7 @@ class RegulationSyncEngine {
 
     try {
       const startTime = Date.now();
-      const sourceSyncId =
-        syncId || `SOURCE-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+      const sourceSyncId = syncId || `SOURCE-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
 
       const source = REGULATION_SOURCES[sourceKey];
       const client = this.sourceClients.get(sourceKey);
@@ -726,7 +724,7 @@ class RegulationSyncEngine {
       const duration = Date.now() - startTime;
 
       console.log(
-        `✅ Source ${sourceKey} sync completed in ${duration}ms - ${successCount}/${totalCount} successful`
+        `✅ Source ${sourceKey} sync completed in ${duration}ms - ${successCount}/${totalCount} successful`,
       );
 
       // Log source sync completion
@@ -878,7 +876,7 @@ class RegulationSyncEngine {
         }
 
         // Calculate delay with exponential backoff and jitter
-        const delay = SYNC_CONFIG.RETRY_DELAY * Math.pow(2, attempt - 1);
+        const delay = SYNC_CONFIG.RETRY_DELAY * 2 ** (attempt - 1);
         const jitter = Math.random() * 1000;
         await this.sleep(delay + jitter);
 
@@ -1006,7 +1004,7 @@ class RegulationSyncEngine {
       effectiveDate: item.effective_date ? new Date(item.effective_date) : new Date(),
       status: item.status || 'ACTIVE',
       content: item.content || item.text || JSON.stringify(item),
-      source: source,
+      source,
       url: item.url || item.source_url,
       sourceDataHash: this.hashData(JSON.stringify(item)),
     }));
@@ -1020,7 +1018,7 @@ class RegulationSyncEngine {
     // Calculate change significance
     const changeAnalysis = await this.analyzeRegulationChanges(
       existingRegulation.content,
-      newData.content
+      newData.content,
     );
 
     // Determine if change is significant
@@ -1033,7 +1031,7 @@ class RegulationSyncEngine {
       const newRegulation = await this.createRegulationVersion(
         existingRegulation,
         newData,
-        newHash
+        newHash,
       );
 
       // Store change analysis
@@ -1049,17 +1047,16 @@ class RegulationSyncEngine {
         changeType: 'SIGNIFICANT_UPDATE',
         regulationId: newRegulation._id,
       };
-    } else {
-      // Update existing regulation metadata
-      existingRegulation.metadata.lastChecked = new Date();
-      existingRegulation.metadata.sourceDataHash = newData.sourceDataHash;
-      await existingRegulation.save();
-
-      return {
-        changeType: 'MINOR_UPDATE',
-        regulationId: existingRegulation._id,
-      };
     }
+    // Update existing regulation metadata
+    existingRegulation.metadata.lastChecked = new Date();
+    existingRegulation.metadata.sourceDataHash = newData.sourceDataHash;
+    await existingRegulation.save();
+
+    return {
+      changeType: 'MINOR_UPDATE',
+      regulationId: existingRegulation._id,
+    };
   }
 
   /*
@@ -1294,7 +1291,7 @@ class RegulationSyncEngine {
       const sectionChanged = wordDiff.some((diff) => {
         if (diff.added || diff.removed) {
           return section.sentence.includes(
-            diff.value.substring(0, Math.min(50, diff.value.length))
+            diff.value.substring(0, Math.min(50, diff.value.length)),
           );
         }
         return false;
@@ -1357,8 +1354,8 @@ class RegulationSyncEngine {
    */
   isChangeSubstantial(changePercentage, semanticChange) {
     return (
-      changePercentage > 0.1 || // More than 10% change
-      semanticChange.jaccardSimilarity < 0.8
+      changePercentage > 0.1 // More than 10% change
+      || semanticChange.jaccardSimilarity < 0.8
     ); // Less than 80% similarity
   }
 
@@ -1372,11 +1369,9 @@ class RegulationSyncEngine {
     let summary = `Regulation updated with ${addedCount} additions and ${removedCount} removals. `;
 
     if (keySections.length > 0) {
-      const keySectionChanges = keySections.filter((s) =>
-        wordDiff.some(
-          (d) => (d.added || d.removed) && s.sentence.includes(d.value.substring(0, 20))
-        )
-      );
+      const keySectionChanges = keySections.filter((s) => wordDiff.some(
+        (d) => (d.added || d.removed) && s.sentence.includes(d.value.substring(0, 20)),
+      ));
 
       if (keySectionChanges.length > 0) {
         summary += `Key sections modified: ${keySectionChanges.length}. `;
@@ -1387,16 +1382,16 @@ class RegulationSyncEngine {
     const changes = wordDiff.filter((d) => d.added || d.removed);
     const changeTypes = {
       definitions: changes.filter(
-        (d) => d.value.toLowerCase().includes('means') || d.value.includes('"')
+        (d) => d.value.toLowerCase().includes('means') || d.value.includes('"'),
       ).length,
       obligations: changes.filter(
-        (d) => d.value.toLowerCase().includes('must') || d.value.includes('shall')
+        (d) => d.value.toLowerCase().includes('must') || d.value.includes('shall'),
       ).length,
       prohibitions: changes.filter(
-        (d) => d.value.toLowerCase().includes('prohibited') || d.value.includes('may not')
+        (d) => d.value.toLowerCase().includes('prohibited') || d.value.includes('may not'),
       ).length,
       penalties: changes.filter(
-        (d) => d.value.toLowerCase().includes('penalty') || d.value.includes('fine')
+        (d) => d.value.toLowerCase().includes('penalty') || d.value.includes('fine'),
       ).length,
     };
 
@@ -1452,7 +1447,7 @@ class RegulationSyncEngine {
     // Update cache
     const frameworkRegulations = this.regulationCache.get(existingRegulation.frameworkId) || [];
     const index = frameworkRegulations.findIndex(
-      (r) => r._id.toString() === existingRegulation._id.toString()
+      (r) => r._id.toString() === existingRegulation._id.toString(),
     );
     if (index !== -1) {
       frameworkRegulations[index] = newVersion.toObject();
@@ -1635,7 +1630,7 @@ class RegulationSyncEngine {
     }
 
     console.log(
-      `✅ Created ${requirements.length} initial compliance rules for ${regulation.frameworkId}`
+      `✅ Created ${requirements.length} initial compliance rules for ${regulation.frameworkId}`,
     );
   }
 
@@ -1644,8 +1639,7 @@ class RegulationSyncEngine {
    */
   extractComplianceRequirements(regulationContent) {
     const requirements = [];
-    const content =
-      typeof regulationContent === 'string' ? regulationContent : JSON.stringify(regulationContent);
+    const content = typeof regulationContent === 'string' ? regulationContent : JSON.stringify(regulationContent);
 
     // Split into sections
     const sections = content.split(/\n\s*\n/);
@@ -1670,9 +1664,7 @@ class RegulationSyncEngine {
         'sanction',
       ];
 
-      const hasComplianceLanguage = complianceIndicators.some((indicator) =>
-        section.toLowerCase().includes(indicator)
-      );
+      const hasComplianceLanguage = complianceIndicators.some((indicator) => section.toLowerCase().includes(indicator));
 
       if (hasComplianceLanguage) {
         requirements.push({
@@ -1699,9 +1691,9 @@ class RegulationSyncEngine {
 
     sentences.forEach((sentence) => {
       if (
-        sentence.toLowerCase().includes('must') ||
-        sentence.toLowerCase().includes('shall') ||
-        sentence.toLowerCase().includes('required')
+        sentence.toLowerCase().includes('must')
+        || sentence.toLowerCase().includes('shall')
+        || sentence.toLowerCase().includes('required')
       ) {
         requirements.push(sentence.trim());
       }
@@ -1838,7 +1830,7 @@ class RegulationSyncEngine {
         if (!validation.valid) {
           console.warn(
             `⚠️ Validation failed for regulation ${regulation.frameworkId}:`,
-            validation.errors
+            validation.errors,
           );
           invalidCount++;
         }
@@ -1849,7 +1841,7 @@ class RegulationSyncEngine {
     }
 
     console.log(
-      `✅ Regulation validation complete - Valid: ${validCount}, Invalid: ${invalidCount}`
+      `✅ Regulation validation complete - Valid: ${validCount}, Invalid: ${invalidCount}`,
     );
 
     await AuditLogger.log({
@@ -1913,7 +1905,9 @@ class RegulationSyncEngine {
         filepath,
       });
 
-      return { success: true, backupId, filepath, regulationCount: regulations.length };
+      return {
+        success: true, backupId, filepath, regulationCount: regulations.length,
+      };
     } catch (error) {
       console.error('❌ Regulation backup failed:', error);
 
@@ -2047,9 +2041,8 @@ class RegulationSyncEngine {
   async manualSync(source = null) {
     if (source) {
       return await this.syncSource(source);
-    } else {
-      return await this.performFullSync();
     }
+    return await this.performFullSync();
   }
 
   /*
@@ -2087,10 +2080,9 @@ class RegulationSyncEngine {
    * HASH REGULATION: Quantum Content Hashing
    */
   hashRegulation(regulation) {
-    const hashInput =
-      typeof regulation.content === 'string'
-        ? regulation.content
-        : JSON.stringify(regulation.content);
+    const hashInput = typeof regulation.content === 'string'
+      ? regulation.content
+      : JSON.stringify(regulation.content);
 
     return createHash('sha384').update(hashInput).digest('hex');
   }

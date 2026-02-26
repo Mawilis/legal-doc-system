@@ -1,7 +1,6 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ JWT UTILS - INVESTOR-GRADE JWT UTILITIES (TEST VERSION)                     ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
-'use strict';
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
 const jwt = require('jsonwebtoken');
 
@@ -9,9 +8,7 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-key-min-32-chars-for-testing-only';
 
 const jwtUtils = {
-  generateToken: (payload, expiresIn = '1h') => {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn });
-  },
+  generateToken: (payload, expiresIn = '1h') => jwt.sign(payload, JWT_SECRET, { expiresIn }),
 
   verifyToken: (token) => {
     try {
@@ -21,9 +18,7 @@ const jwtUtils = {
     }
   },
 
-  decodeToken: (token) => {
-    return jwt.decode(token);
-  },
+  decodeToken: (token) => jwt.decode(token),
 
   // Test helper to validate environment (always returns true in test)
   validateEnvironment: () => {

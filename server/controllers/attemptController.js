@@ -8,14 +8,12 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const crypto = require('crypto');
 const asyncHandler = require('express-async-handler');
+const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const Attempt = require('../models/Attempt');
 const DispatchInstruction = require('../models/DispatchInstruction');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
-const { emitAudit } = require('../middleware/auditMiddleware');
 
 /*
  * INTERNAL UTILITY: GENERATE CRYPTOGRAPHIC SEAL
@@ -43,7 +41,9 @@ const computeAttemptHash = (payload) => {
  */
 exports.createAttempt = asyncHandler(async (req, res) => {
   const { id: instructionId } = req.params;
-  const { at, gps, outcome, notes, evidence } = req.body;
+  const {
+    at, gps, outcome, notes, evidence,
+  } = req.body;
 
   // 1. SCOPED INSTRUCTION VALIDATION
   const instruction = await DispatchInstruction.findOne({
@@ -57,7 +57,7 @@ exports.createAttempt = asyncHandler(async (req, res) => {
       res,
       404,
       'Instruction not found or access denied.',
-      'ERR_INSTRUCTION_NOT_FOUND'
+      'ERR_INSTRUCTION_NOT_FOUND',
     );
   }
 
@@ -68,12 +68,14 @@ exports.createAttempt = asyncHandler(async (req, res) => {
       res,
       400,
       'Non-repudiation failed: GPS coordinates are mandatory.',
-      'ERR_GPS_REQUIRED'
+      'ERR_GPS_REQUIRED',
     );
   }
 
   // 3. GENERATE IMMUTABLE HASH
-  const hash = computeAttemptHash({ instructionId, at, gps, outcome, notes });
+  const hash = computeAttemptHash({
+    instructionId, at, gps, outcome, notes,
+  });
 
   // 4. PERSIST ATTEMPT
   const attempt = await Attempt.create({
@@ -118,7 +120,7 @@ exports.createAttempt = asyncHandler(async (req, res) => {
       instructionStatus: instruction.status,
     },
     { message: 'Attempt recorded and sealed.' },
-    201
+    201,
   );
 });
 

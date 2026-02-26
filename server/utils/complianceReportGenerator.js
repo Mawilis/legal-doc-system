@@ -62,8 +62,6 @@
  * ===================================================================================================================
  */
 
-'use strict';
-
 // ===================================================================================================================
 // QUANTUM IMPORTS - PRODUCTION DEPENDENCIES WITH VERSION CONTROL
 // ===================================================================================================================
@@ -99,12 +97,13 @@ const path = require('path');
 
 // Template and rendering
 const Handlebars = require('handlebars');
+
 let puppeteer;
 try {
   puppeteer = require('puppeteer');
 } catch (error) {
   console.warn(
-    '⚠️ Puppeteer not available for HTML to PDF. Install: npm install puppeteer@^21.0.0'
+    '⚠️ Puppeteer not available for HTML to PDF. Install: npm install puppeteer@^21.0.0',
   );
 }
 
@@ -122,8 +121,8 @@ try {
 }
 
 // Security utilities
-const validator = require('validator');
 const sanitizeHtml = require('sanitize-html');
+const validator = require('validator');
 
 // Existing utilities (from previous files)
 let auditLogger;
@@ -507,7 +506,7 @@ const COMPLIANCE_REPORT_TEMPLATES = Object.freeze({
       'Detailed Compliance Metrics',
     ],
     legalRequirements: Object.values(SA_COMPLIANCE_FRAMEWORKS).flatMap(
-      (fw) => fw.reportingRequirements
+      (fw) => fw.reportingRequirements,
     ),
     retentionPeriod: 7, // Years
     format: ['Interactive HTML', 'PDF', 'Excel'],
@@ -616,7 +615,9 @@ class QuantumComplianceReportGenerator {
       },
       formats: {
         pdf: {
-          margins: { top: 50, bottom: 50, left: 50, right: 50 },
+          margins: {
+            top: 50, bottom: 50, left: 50, right: 50,
+          },
           fontSize: 10,
           fontFamily: 'Helvetica',
         },
@@ -677,7 +678,7 @@ class QuantumComplianceReportGenerator {
           await redisClient.setEx(
             `${this.config.caching.prefix}${key}`,
             ttl,
-            JSON.stringify(value)
+            JSON.stringify(value),
           );
         },
         delete: async (key) => {
@@ -839,14 +840,10 @@ class QuantumComplianceReportGenerator {
    */
   registerTemplateHelpers() {
     // Format date helper
-    Handlebars.registerHelper('formatDate', function (date) {
-      return moment(date).format('DD MMMM YYYY');
-    });
+    Handlebars.registerHelper('formatDate', (date) => moment(date).format('DD MMMM YYYY'));
 
     // Format number with commas
-    Handlebars.registerHelper('formatNumber', function (number) {
-      return new Intl.NumberFormat('en-ZA').format(number);
-    });
+    Handlebars.registerHelper('formatNumber', (number) => new Intl.NumberFormat('en-ZA').format(number));
 
     // Conditional rendering
     Handlebars.registerHelper('ifEquals', function (arg1, arg2, options) {
@@ -854,14 +851,10 @@ class QuantumComplianceReportGenerator {
     });
 
     // Percentage formatting
-    Handlebars.registerHelper('percentage', function (value) {
-      return `${(value * 100).toFixed(1)}%`;
-    });
+    Handlebars.registerHelper('percentage', (value) => `${(value * 100).toFixed(1)}%`);
 
     // Legal reference formatting
-    Handlebars.registerHelper('legalRef', function (section) {
-      return `Section ${section}`;
-    });
+    Handlebars.registerHelper('legalRef', (section) => `Section ${section}`);
   }
 
   /*
@@ -922,14 +915,14 @@ class QuantumComplianceReportGenerator {
       const reportSections = await this.buildPOPIASections(
         reportData,
         complianceScore,
-        riskAssessment
+        riskAssessment,
       );
 
       // Generate executive summary
       const executiveSummary = this.generatePOPIAExecutiveSummary(
         reportData,
         complianceScore,
-        riskAssessment
+        riskAssessment,
       );
 
       // Create the complete report
@@ -1241,7 +1234,7 @@ class QuantumComplianceReportGenerator {
       this.statistics.reportsGenerated++;
 
       console.log(
-        `✅ Comprehensive dashboard generated: ${reportId} (${Date.now() - startTime}ms)`
+        `✅ Comprehensive dashboard generated: ${reportId} (${Date.now() - startTime}ms)`,
       );
 
       return report;
@@ -1683,8 +1676,8 @@ class QuantumComplianceReportGenerator {
                      Email: ${data.informationOfficer.email}<br>
                      Phone: ${data.informationOfficer.phone}<br>
                      Registration Number: ${
-                       data.informationOfficer.registrationNumber || 'Pending'
-                     }`,
+  data.informationOfficer.registrationNumber || 'Pending'
+}`,
       subsections: [
         {
           title: 'Duties Performed',
@@ -1728,16 +1721,16 @@ class QuantumComplianceReportGenerator {
       title: 'Data Breach Management',
       content: `Total breaches: ${data.breachData.totalBreaches}<br>
                      All breaches notified within 72 hours: ${
-                       data.breachData.notificationStatus.within72Hours ===
-                       data.breachData.totalBreaches
-                         ? 'YES'
-                         : 'NO'
-                     }<br>
+  data.breachData.notificationStatus.within72Hours
+                       === data.breachData.totalBreaches
+    ? 'YES'
+    : 'NO'
+}<br>
                      All breaches resolved: ${
-                       data.breachData.resolutionStatus.resolved === data.breachData.totalBreaches
-                         ? 'YES'
-                         : 'NO'
-                     }`,
+  data.breachData.resolutionStatus.resolved === data.breachData.totalBreaches
+    ? 'YES'
+    : 'NO'
+}`,
       metrics: [
         { label: 'Breaches Resolved', value: data.breachData.resolutionStatus.resolved },
         {
@@ -1808,32 +1801,32 @@ class QuantumComplianceReportGenerator {
   generatePOPIAExecutiveSummary(data, complianceScore, riskAssessment) {
     return `
         <p>This POPIA Compliance Report provides a comprehensive overview of ${
-          process.env.COMPANY_NAME
-        }'s 
+  process.env.COMPANY_NAME
+}'s 
         compliance with the Protection of Personal Information Act (Act 4 of 2013) for the reporting period.</p>
         
         <p><strong>Overall Compliance Score:</strong> ${complianceScore.score}% (${
-          complianceScore.level
-        })</p>
+  complianceScore.level
+})</p>
         
         <p><strong>Key Findings:</strong></p>
         <ul>
             <li>${data.dsarData.totalRequests} Data Subject Access Requests processed</li>
             <li>${data.breachData.totalBreaches} data breaches managed and resolved</li>
             <li>${data.consentData.totalConsents.toLocaleString()} consents managed with ${(
-              (data.consentData.consentValidity.valid / data.consentData.totalConsents) *
-              100
-            ).toFixed(1)}% validity rate</li>
+  (data.consentData.consentValidity.valid / data.consentData.totalConsents)
+              * 100
+).toFixed(1)}% validity rate</li>
             <li>All ${
-              data.thirdPartyData.totalProcessors
-            } third-party processors have Data Processing Agreements</li>
+  data.thirdPartyData.totalProcessors
+} third-party processors have Data Processing Agreements</li>
         </ul>
         
         <p><strong>Risk Assessment:</strong> ${riskAssessment.level} risk level</p>
         
         <p>This report confirms that ${
-          process.env.COMPANY_NAME
-        } is substantially compliant with POPIA 
+  process.env.COMPANY_NAME
+} is substantially compliant with POPIA 
         requirements and continues to implement improvements to maintain and enhance data protection standards.</p>
         `;
   }
@@ -1852,11 +1845,10 @@ class QuantumComplianceReportGenerator {
       gaps.push(`${data.dsarData.completionTimes.overdue} overdue DSARs`);
     }
 
-    const explicitConsentRate =
-      data.consentData.consentByType.explicit / data.consentData.totalConsents;
+    const explicitConsentRate = data.consentData.consentByType.explicit / data.consentData.totalConsents;
     if (explicitConsentRate < 0.8) {
       gaps.push(
-        `Explicit consent rate ${(explicitConsentRate * 100).toFixed(1)}% below target of 80%`
+        `Explicit consent rate ${(explicitConsentRate * 100).toFixed(1)}% below target of 80%`,
       );
     }
 
@@ -1916,7 +1908,7 @@ class QuantumComplianceReportGenerator {
 
       // Generate unique filename
       const filename = `POPIA_Compliance_Report_${report.reportId}_${moment().format(
-        'YYYYMMDD_HHmmss'
+        'YYYYMMDD_HHmmss',
       )}.pdf`;
       const filepath = path.join(this.config.reportStorage.path, filename);
 
@@ -2080,7 +2072,7 @@ class QuantumComplianceReportGenerator {
 
       // Generate filename and save
       const filename = `Compliance_Report_${report.reportId}_${moment().format(
-        'YYYYMMDD_HHmmss'
+        'YYYYMMDD_HHmmss',
       )}.xlsx`;
       const filepath = path.join(this.config.reportStorage.path, filename);
 
@@ -2116,7 +2108,7 @@ class QuantumComplianceReportGenerator {
   async exportToJSON(report, options = {}) {
     try {
       const filename = `Compliance_Report_${report.reportId}_${moment().format(
-        'YYYYMMDD_HHmmss'
+        'YYYYMMDD_HHmmss',
       )}.json`;
       const filepath = path.join(this.config.reportStorage.path, filename);
 
@@ -2456,14 +2448,14 @@ class QuantumComplianceReportGenerator {
     } catch (error) {
       checks.components.reportGeneration = 'FAILED';
       checks.status = 'DEGRADED';
-      checks.recommendations.push('Fix report generation: ' + error.message);
+      checks.recommendations.push(`Fix report generation: ${error.message}`);
     }
 
     // Legal frameworks check
     checks.components.legalFrameworks = {
       supported: Object.keys(SA_COMPLIANCE_FRAMEWORKS).length,
       configured: Object.keys(SA_COMPLIANCE_FRAMEWORKS).filter(
-        (fw) => process.env[`ENABLE_${fw}_REPORTS`] !== 'false'
+        (fw) => process.env[`ENABLE_${fw}_REPORTS`] !== 'false',
       ).length,
     };
 
@@ -2484,9 +2476,9 @@ class QuantumComplianceReportGenerator {
       },
       cacheEfficiency:
         this.statistics.cacheHits + this.statistics.cacheMisses > 0
-          ? (this.statistics.cacheHits /
-              (this.statistics.cacheHits + this.statistics.cacheMisses)) *
-            100
+          ? (this.statistics.cacheHits
+              / (this.statistics.cacheHits + this.statistics.cacheMisses))
+            * 100
           : 0,
       averageReportsPerDay:
         this.statistics.reportsGenerated / (uptime / (1000 * 60 * 60 * 24)) || 0,

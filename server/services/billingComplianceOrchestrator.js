@@ -21,13 +21,13 @@
 // QUANTUM DEPENDENCIES - PINNED, SECURE, AI-ENHANCED
 // ============================================================
 const crypto = require('crypto');
+const tf = require('@tensorflow/tfjs-node'); // AI/ML integration
 const axios = require('axios');
 const moment = require('moment');
-const winston = require('winston');
-const { v4: uuidv4, v5: uuidv5 } = require('uuid');
-const NodeCache = require('node-cache');
 const natural = require('natural');
-const tf = require('@tensorflow/tfjs-node'); // AI/ML integration
+const NodeCache = require('node-cache');
+const { v4: uuidv4, v5: uuidv5 } = require('uuid');
+const winston = require('winston');
 
 // Load quantum environment variables with strict validation
 require('dotenv').config();
@@ -46,7 +46,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(
-      `Critical environment variable ${envVar} is missing for compliance orchestrator`
+      `Critical environment variable ${envVar} is missing for compliance orchestrator`,
     );
   }
 });
@@ -92,7 +92,7 @@ const complianceLogger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.json(),
     winston.format.errors({ stack: true }),
-    winston.format.metadata()
+    winston.format.metadata(),
   ),
   defaultMeta: { service: 'billing-compliance-orchestrator' },
   transports: [
@@ -105,7 +105,7 @@ const complianceLogger = winston.createLogger({
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.json(),
-        winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] })
+        winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] }),
       ),
     }),
     new winston.transports.File({
@@ -137,9 +137,9 @@ if (process.env.NODE_ENV !== 'production') {
       format: winston.format.combine(
         winston.format.colorize(),
         winston.format.simple(),
-        winston.format.timestamp()
+        winston.format.timestamp(),
       ),
-    })
+    }),
   );
 }
 
@@ -347,7 +347,7 @@ class QuantumRegulatoryChangeDetector {
         // Analyze changes using AI/NLP
         const analyzedChanges = await this.analyzeRegulatoryChanges(
           regulatoryUpdates,
-          jurisdictionData
+          jurisdictionData,
         );
 
         if (analyzedChanges.length > 0) {
@@ -514,7 +514,7 @@ class QuantumRegulatoryChangeDetector {
         const recommendations = this.generateComplianceRecommendations(
           update,
           impactScore,
-          affectedAreas
+          affectedAreas,
         );
 
         analyzedChanges.push({
@@ -779,7 +779,7 @@ class QuantumRegulatoryChangeDetector {
     if (summary.jurisdictions.length > 0) {
       const totalScore = summary.jurisdictions.reduce((sum, j) => sum + j.complianceScore, 0);
       summary.overallComplianceScore = parseFloat(
-        (totalScore / summary.jurisdictions.length).toFixed(2)
+        (totalScore / summary.jurisdictions.length).toFixed(2),
       );
     }
 
@@ -1008,7 +1008,7 @@ class QuantumDPIAEngine {
         processingData,
         template,
         riskAssessment,
-        jurisdiction
+        jurisdiction,
       );
 
       // Store DPIA record
@@ -1082,9 +1082,7 @@ class QuantumDPIAEngine {
         'racial',
         'political',
       ];
-      const hasSensitiveData = sensitiveCategories.some((category) =>
-        processingData.data_categories.toLowerCase().includes(category)
-      );
+      const hasSensitiveData = sensitiveCategories.some((category) => processingData.data_categories.toLowerCase().includes(category));
 
       if (hasSensitiveData && !processingData.special_category_justification) {
         errors.push('Special category data requires justification');
@@ -1157,7 +1155,7 @@ class QuantumDPIAEngine {
     // 4. Cross-Border Transfer Risk
     const transferRisk = this.assessTransferRisk(
       processingData.cross_border_transfers,
-      jurisdiction
+      jurisdiction,
     );
     risks.push(transferRisk);
     totalRiskScore += transferRisk.score;
@@ -1233,9 +1231,9 @@ class QuantumDPIAEngine {
     let score = 3;
 
     if (
-      dataVolume.includes('large') ||
-      dataVolume.includes('massive') ||
-      dataVolume.includes('big data')
+      dataVolume.includes('large')
+      || dataVolume.includes('massive')
+      || dataVolume.includes('big data')
     ) {
       score = 5;
     } else if (dataVolume.includes('moderate') || dataVolume.includes('medium')) {
@@ -1295,9 +1293,9 @@ class QuantumDPIAEngine {
     const text = transfers.toLowerCase();
 
     if (
-      text.includes('yes') ||
-      text.includes('multiple countries') ||
-      text.includes('international')
+      text.includes('yes')
+      || text.includes('multiple countries')
+      || text.includes('international')
     ) {
       score = 5;
 
@@ -1664,13 +1662,13 @@ class QuantumTaxCalculationEngine {
       // Calculate taxes for each jurisdiction
       const jurisdictionCalculations = [];
       let totalTax = 0;
-      let totalAmount = transaction.amount;
+      const totalAmount = transaction.amount;
 
       for (const jurisdiction of jurisdictions) {
         const jurisdictionCalculation = await this.calculateJurisdictionTax(
           transaction,
           jurisdiction,
-          jurisdictions
+          jurisdictions,
         );
 
         jurisdictionCalculations.push(jurisdictionCalculation);
@@ -1754,8 +1752,8 @@ class QuantumTaxCalculationEngine {
     }
 
     if (
-      !transaction.type ||
-      !['sale', 'service', 'royalty', 'dividend', 'interest'].includes(transaction.type)
+      !transaction.type
+      || !['sale', 'service', 'royalty', 'dividend', 'interest'].includes(transaction.type)
     ) {
       errors.push('Invalid transaction type');
     }
@@ -1796,7 +1794,7 @@ class QuantumTaxCalculationEngine {
       breakdown: {},
     };
 
-    const amount = transaction.amount;
+    const { amount } = transaction;
 
     // Calculate VAT/GST
     if (this.shouldApplyVAT(transaction, jurisdiction)) {
@@ -1814,16 +1812,15 @@ class QuantumTaxCalculationEngine {
 
     // Calculate Withholding Tax
     if (
-      transaction.type === 'dividend' ||
-      transaction.type === 'royalty' ||
-      transaction.type === 'interest'
+      transaction.type === 'dividend'
+      || transaction.type === 'royalty'
+      || transaction.type === 'interest'
     ) {
-      const withholdingRate =
-        taxRates[`${transaction.type}Withholding`] || taxRates.dividendWithholding;
+      const withholdingRate = taxRates[`${transaction.type}Withholding`] || taxRates.dividendWithholding;
       const treatyRate = this.getTreatyRate(
         transaction.sellerJurisdiction,
         jurisdiction,
-        transaction.type
+        transaction.type,
       );
 
       const applicableRate = treatyRate || withholdingRate;
@@ -1935,14 +1932,13 @@ class QuantumTaxCalculationEngine {
     if (!treaty) return null;
 
     // Map transaction type to treaty field
-    const treatyField =
-      taxType === 'dividend'
-        ? 'dividend'
-        : taxType === 'interest'
-          ? 'interest'
-          : taxType === 'royalty'
-            ? 'royalties'
-            : null;
+    const treatyField = taxType === 'dividend'
+      ? 'dividend'
+      : taxType === 'interest'
+        ? 'interest'
+        : taxType === 'royalty'
+          ? 'royalties'
+          : null;
 
     return treatyField ? treaty[treatyField] : null;
   }
@@ -2303,7 +2299,7 @@ class QuantumBlockchainAuditTrail {
         currentBlock.timestamp,
         currentBlock.data,
         previousBlock.hash,
-        currentBlock.nonce
+        currentBlock.nonce,
       );
 
       // Check hash integrity
@@ -2360,7 +2356,7 @@ class QuantumBlockchainAuditTrail {
     const previousBlocks = this.auditChain.slice(Math.max(0, blockIndex - 3), blockIndex);
     const subsequentBlocks = this.auditChain.slice(
       blockIndex + 1,
-      Math.min(this.auditChain.length, blockIndex + 4)
+      Math.min(this.auditChain.length, blockIndex + 4),
     );
 
     return {
@@ -2676,7 +2672,7 @@ class QuantumAIComplianceScorer {
     }
 
     // Adjust for DPIA risk
-    const dpiaRisk = complianceData.dpiaRisk;
+    const { dpiaRisk } = complianceData;
     if (dpiaRisk === 'HIGH') score -= 20;
     if (dpiaRisk === 'EXTREME') score -= 40;
     if (dpiaRisk === 'LOW') score += 10;
@@ -2976,7 +2972,7 @@ class QuantumBillingComplianceOrchestrator {
 
       // 1. Monitor regulatory changes
       const regulatoryChanges = await this.regulatoryDetector.monitorRegulatoryChanges(
-        organization.jurisdictions || ['ZA']
+        organization.jurisdictions || ['ZA'],
       );
 
       // 2. Conduct DPIA if required
@@ -2984,14 +2980,14 @@ class QuantumBillingComplianceOrchestrator {
       if (this.requiresDPIA(billingData, organization)) {
         dpiaResult = await this.dpiaEngine.conductDPIA(
           this.prepareDPIAInput(billingData, organization),
-          organization.primaryJurisdiction || 'ZA'
+          organization.primaryJurisdiction || 'ZA',
         );
       }
 
       // 3. Calculate multi-jurisdictional taxes
       const taxCalculation = await this.taxEngine.calculateMultiJurisdictionalTax(
         billingData.transaction,
-        organization.jurisdictions || ['ZA']
+        organization.jurisdictions || ['ZA'],
       );
 
       // 4. Calculate AI compliance risk score
@@ -3017,7 +3013,7 @@ class QuantumBillingComplianceOrchestrator {
           complianceRisk: complianceRisk.riskLevel,
           timestamp: new Date().toISOString(),
         },
-        'COMPLIANCE_ORCHESTRATION'
+        'COMPLIANCE_ORCHESTRATION',
       );
 
       // 6. Generate compliance certificate if low risk
@@ -3025,7 +3021,7 @@ class QuantumBillingComplianceOrchestrator {
       if (complianceRisk.riskLevel === 'LOW') {
         complianceCertificate = this.blockchainAudit.generateComplianceCertificate(
           organization.id,
-          'BILLING_COMPLIANCE'
+          'BILLING_COMPLIANCE',
         );
       }
 
@@ -3063,7 +3059,7 @@ class QuantumBillingComplianceOrchestrator {
           regulatoryChanges,
           dpiaResult,
           taxCalculation,
-          complianceRisk
+          complianceRisk,
         ),
         timestamp: new Date().toISOString(),
       };
@@ -3112,11 +3108,8 @@ class QuantumBillingComplianceOrchestrator {
     // 2. Special category data
     const sensitiveData = ['health', 'financial', 'biometric', 'genetic', 'racial', 'political'];
     if (
-      sensitiveData.some((category) =>
-        (billingData.dataCategories || '').toLowerCase().includes(category)
-      )
-    )
-      return true;
+      sensitiveData.some((category) => (billingData.dataCategories || '').toLowerCase().includes(category))
+    ) return true;
 
     // 3. Systematic monitoring
     if (billingData.systematicMonitoring) return true;
@@ -3306,8 +3299,7 @@ class QuantumBillingComplianceOrchestrator {
 
     // Regulatory change actions
     if (data.regulatoryChanges.changesDetected > 0) {
-      const highImpactChanges =
-        data.regulatoryChanges.changes?.filter((c) => c.impactScore >= 7) || [];
+      const highImpactChanges = data.regulatoryChanges.changes?.filter((c) => c.impactScore >= 7) || [];
       if (highImpactChanges.length > 0) {
         actions.push({
           priority: 'HIGH',
@@ -3393,7 +3385,7 @@ class QuantumBillingComplianceOrchestrator {
     regulatoryChanges,
     dpiaResult,
     taxCalculation,
-    complianceRisk
+    complianceRisk,
   ) {
     const recommendations = [];
 

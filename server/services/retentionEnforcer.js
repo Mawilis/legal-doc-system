@@ -1,7 +1,7 @@
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ RETENTION POLICY ENFORCER - INVESTOR-GRADE MODULE             ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/retentionEnforcer.js
  * INVESTOR VALUE PROPOSITION:
@@ -43,8 +43,8 @@ flowchart TD
 */
 
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
 const { REDACT_FIELDS, redactSensitive } = require('../utils/auditUtils');
+const logger = require('../utils/logger');
 
 // Retention policies aligned with South African law
 const RETENTION_POLICIES = {
@@ -125,7 +125,7 @@ function calculateDisposalSchedule(creationDate, policyName, tenantId) {
     },
   });
 
-  logger.info(`Retention schedule calculated`, {
+  logger.info('Retention schedule calculated', {
     tenantId,
     policy: policy.name,
     years: policy.durationYears,
@@ -147,8 +147,7 @@ function identifyDisposalCandidates(records, tenantId) {
   const retained = [];
 
   records.forEach((record) => {
-    const hasRequiredFields =
-      record.retentionPolicy && record.retentionStart && record.dataResidency === 'ZA';
+    const hasRequiredFields = record.retentionPolicy && record.retentionStart && record.dataResidency === 'ZA';
 
     if (!hasRequiredFields) {
       logger.warn('Record missing retention metadata', {
@@ -161,12 +160,12 @@ function identifyDisposalCandidates(records, tenantId) {
     }
 
     const disposalDate = new Date(
-      record.disposalDate ||
-        calculateDisposalSchedule(
+      record.disposalDate
+        || calculateDisposalSchedule(
           new Date(record.createdAt || record.retentionStart),
           record.retentionPolicy,
-          tenantId
-        ).disposalDate
+          tenantId,
+        ).disposalDate,
     );
 
     if (disposalDate <= now) {
@@ -335,7 +334,7 @@ module.exports = {
 
 /*
 ASSUMPTIONS & DEFAULTS:
-1. Models assumed to exist: 
+1. Models assumed to exist:
    - RetentionPolicy (fields: name, description, durationYears, legalReference)
    - RetentionLogger (fields: tenantId, eventType, metadata, timestamp)
 2. Default retention policy: companies_act_7_years (7 years)

@@ -8,8 +8,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const GeofenceBreach = require('../models/GeofenceBreach');
 const User = require('../models/User');
 const { sendEmail, sendSMS } = require('./alertUtils');

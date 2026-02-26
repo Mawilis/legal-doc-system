@@ -1,13 +1,11 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ SMS CONFIGURATION - INVESTOR-GRADE MODULE                                   ║
   ║ Multi-provider | POPIA compliant | Forensic logging                         ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/sms.js
  * VERSION: 1.0.0 (production)
  */
-
-'use strict';
 
 const smsConfig = {
   primary: {

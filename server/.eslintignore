@@ -1,0 +1,27 @@
+# Public assets - not JavaScript
+public/
+public/**/*
+
+# Build artifacts
+dist/
+build/
+coverage/
+
+# Dependencies
+node_modules/
+
+# Minified files
+*.min.js
+
+# Non-JS files
+*.css
+*.html
+*.md
+*.json
+*.yml
+*.yaml
+*.sh
+
+# Configuration files
+*.config.js
+jest.setup.js

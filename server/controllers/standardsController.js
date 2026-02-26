@@ -6,8 +6,6 @@
  * SECURITY: Internal Service Secret Authentication. Tenant-Scoping.
  */
 
-'use strict';
-
 const axios = require('axios');
 const { emitAudit } = require('../middleware/auditMiddleware');
 
@@ -36,7 +34,7 @@ exports.validateDocument = async (req, res, next) => {
       {
         headers: { 'x-service-secret': SERVICE_SECRET },
         timeout: 5000,
-      }
+      },
     );
 
     // 2. Audit the Compliance Check

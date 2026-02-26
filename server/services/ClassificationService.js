@@ -1,5 +1,3 @@
-'use strict';
-
 /*
  * WILSY OS - CLASSIFICATION ENGINE
  * Version: 2.4.0 (Deterministic Return Patch)

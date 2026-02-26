@@ -7,10 +7,10 @@
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
-import fs from 'fs';
-import path from 'path';
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
+import { execSync } from 'child_process.js';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +29,7 @@ const checks = [
 
 let passed = 0;
 
-checks.forEach(check => {
+checks.forEach((check) => {
   try {
     execSync(check.cmd, { cwd: rootDir, stdio: 'pipe' });
     console.log(`✅ ${check.name}`);
@@ -44,7 +44,7 @@ console.log(`\n📊 Health Score: ${passed}/${checks.length}`);
 // Check for double asterisks in production code (excluding tools)
 console.log('\n🔍 Scanning production code for double asterisks...');
 
-const findCmd = `find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
+const findCmd = 'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
   -not -path "*/node_modules/*" \
   -not -path "*/coverage/*" \
   -not -path "*/dist/*" \
@@ -57,12 +57,12 @@ const findCmd = `find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mj
   -not -path "*/scripts/final-double-asterisk-fix.js" \
   -not -path "*/scripts/fix-double-asterisks-permanent.js" \
   -not -path "*/surgical-fix.js" \
-  -not -path "*/surgical-fix.mjs" 2>/dev/null | xargs grep -l "\\*\\*" 2>/dev/null | wc -l`;
+  -not -path "*/surgical-fix.mjs" 2>/dev/null | xargs grep -l "\\*\\*" 2>/dev/null | wc -l';
 
 try {
   const output = execSync(findCmd, { cwd: rootDir, encoding: 'utf8' }).trim();
   const count = parseInt(output) || 0;
-  
+
   if (count === 0) {
     console.log('✅ Production code is clean (no double asterisks)');
   } else {

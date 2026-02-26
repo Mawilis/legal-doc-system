@@ -1,10 +1,10 @@
 /* eslint-env jest */
 /* eslint-disable no-unused-vars */
 
-const { DateTime } = require('luxon');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { DateTime } = require('luxon');
 
 // Mock everything at the very top
 jest.mock('../../utils/cryptoUtils', () => ({
@@ -74,10 +74,10 @@ jest.mock('mongoose', () => {
   Schema.Types = {
     Mixed: 'Mixed',
     ObjectId: 'ObjectId',
-    String: String,
-    Number: Number,
-    Date: Date,
-    Boolean: Boolean,
+    String,
+    Number,
+    Date,
+    Boolean,
   };
 
   return {
@@ -100,7 +100,7 @@ const { createLpcService } = require('../../services/lpcService');
 
 describe('LPC RULE 41.3 — ADMINISTRATOR METRICS FORENSIC', () => {
   let testRunId;
-  let evidenceEntries = [];
+  const evidenceEntries = [];
 
   beforeAll(() => {
     testRunId = crypto.randomUUID().substring(0, 8);

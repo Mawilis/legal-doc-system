@@ -63,16 +63,16 @@
 // QUANTUM IMPORTS: Dependencies from the Eternal Forge
 // ============================================================================
 require('dotenv').config();
-const mongoose = require('mongoose');
-const axios = require('axios');
 const crypto = require('crypto');
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const axios = require('axios');
+const mongoose = require('mongoose');
 
 // Internal quantum dependencies (forensically verified from chat history)
+const ComplianceRecord = require('../models/complianceRecordModel');
 const Tenant = require('../models/tenantModel');
 const User = require('../models/userModel');
 const AuditLogger = require('../utils/auditLogger');
-const ComplianceRecord = require('../models/complianceRecordModel');
 
 // ============================================================================
 // QUANTUM ENVIRONMENT VALIDATION: Secure Configuration
@@ -265,7 +265,7 @@ class ComplianceService {
           verificationId,
           'INVALID_FORMAT',
           'LPC number format is invalid',
-          { lpcNumber, firmName }
+          { lpcNumber, firmName },
         );
       }
 
@@ -284,7 +284,7 @@ class ComplianceService {
           verificationId,
           'BASIC_VERIFICATION_FAILED',
           basicVerification.reason,
-          { lpcNumber, firmName, details: basicVerification }
+          { lpcNumber, firmName, details: basicVerification },
         );
       }
 
@@ -339,7 +339,7 @@ class ComplianceService {
                 lpcNumber,
                 firmName,
                 verificationDate: new Date().toISOString(),
-              })
+              }),
             )
             .digest('hex'),
         },
@@ -365,7 +365,7 @@ class ComplianceService {
         'VERIFICATION_FAILED',
         `LPC verification failed: ${error.message}`,
         { lpcNumber, firmName, error: error.message },
-        true
+        true,
       );
     }
   }
@@ -434,7 +434,7 @@ class ComplianceService {
       // In production, this would call the LPC API
       // For now, simulate with validation logic
 
-      const apiEndpoint = COMPLIANCE_CONFIG.REGULATORY_BODIES.LPC.apiEndpoint;
+      const { apiEndpoint } = COMPLIANCE_CONFIG.REGULATORY_BODIES.LPC;
       const apiKey = process.env.LPC_API_KEY;
 
       if (!apiKey) {
@@ -564,7 +564,7 @@ class ComplianceService {
           validationId,
           'INVALID_FORMAT',
           formatValidation.reason,
-          { vatNumber, companyName }
+          { vatNumber, companyName },
         );
       }
 
@@ -575,7 +575,7 @@ class ComplianceService {
           validationId,
           'INVALID_CHECK_DIGIT',
           checkDigitValidation.reason,
-          { vatNumber, companyName }
+          { vatNumber, companyName },
         );
       }
 
@@ -627,7 +627,7 @@ class ComplianceService {
                 vatNumber,
                 companyName,
                 validationDate: new Date().toISOString(),
-              })
+              }),
             )
             .digest('hex'),
         },
@@ -654,7 +654,7 @@ class ComplianceService {
         'VALIDATION_FAILED',
         `VAT validation failed: ${error.message}`,
         { vatNumber, companyName, error: error.message },
-        true
+        true,
       );
     }
   }
@@ -733,7 +733,7 @@ class ComplianceService {
    */
   async _verifyVATWithSARS(vatNumber, companyName) {
     try {
-      const apiEndpoint = COMPLIANCE_CONFIG.REGULATORY_BODIES.SARS.apiEndpoint;
+      const { apiEndpoint } = COMPLIANCE_CONFIG.REGULATORY_BODIES.SARS;
       const apiKey = process.env.SARS_API_KEY;
 
       if (!apiKey) {
@@ -789,7 +789,7 @@ class ComplianceService {
     const verificationId = `BBBEE-VERIFY-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
 
     console.log(
-      `🔍 [BBBEE VERIFICATION] Starting verification: ${certificateNumber} - ${companyName}`
+      `🔍 [BBBEE VERIFICATION] Starting verification: ${certificateNumber} - ${companyName}`,
     );
 
     try {
@@ -800,7 +800,7 @@ class ComplianceService {
           verificationId,
           'INVALID_FORMAT',
           formatValidation.reason,
-          { certificateNumber, companyName }
+          { certificateNumber, companyName },
         );
       }
 
@@ -855,7 +855,7 @@ class ComplianceService {
                 certificateNumber,
                 companyName,
                 verificationDate: new Date().toISOString(),
-              })
+              }),
             )
             .digest('hex'),
         },
@@ -882,7 +882,7 @@ class ComplianceService {
         'VERIFICATION_FAILED',
         `BBBEE verification failed: ${error.message}`,
         { certificateNumber, companyName, error: error.message },
-        true
+        true,
       );
     }
   }
@@ -953,7 +953,7 @@ class ComplianceService {
                 tenantId,
                 auditDate: new Date().toISOString(),
                 score: complianceScore,
-              })
+              }),
             )
             .digest('hex'),
         },
@@ -972,7 +972,7 @@ class ComplianceService {
       await this._logComplianceEvent('POPIA_AUDIT', auditReport, tenantId);
 
       console.log(
-        `✅ [POPIA AUDIT] Completed audit for tenant ${tenantId}: Score ${complianceScore}%`
+        `✅ [POPIA AUDIT] Completed audit for tenant ${tenantId}: Score ${complianceScore}%`,
       );
 
       return auditReport;
@@ -984,7 +984,7 @@ class ComplianceService {
         'AUDIT_FAILED',
         `POPIA audit failed: ${error.message}`,
         { tenantId, error: error.message },
-        true
+        true,
       );
     }
   }
@@ -1019,10 +1019,10 @@ class ComplianceService {
         score: compliant ? 100 : 0,
         recommendations: !compliant
           ? [
-              'Designate Information Officer',
-              'Create and publish privacy policy',
-              'Maintain processing register',
-            ]
+            'Designate Information Officer',
+            'Create and publish privacy policy',
+            'Maintain processing register',
+          ]
           : [],
         evidenceRequired: ['IO Appointment Letter', 'Privacy Policy', 'Processing Register'],
       };
@@ -1066,7 +1066,7 @@ class ComplianceService {
       return {
         stored: true,
         bucket: bucketName,
-        key: key,
+        key,
         url: `s3://${bucketName}/${key}`,
       };
     } catch (error) {
@@ -1152,10 +1152,10 @@ class ComplianceService {
       fallback: isFallback,
       recommendations: isFallback
         ? [
-            'Verify LPC registration manually with Legal Practice Council',
-            'Check LPC number format: LPC/YYYY/XXXXX',
-            'Contact LPC for registration status',
-          ]
+          'Verify LPC registration manually with Legal Practice Council',
+          'Check LPC number format: LPC/YYYY/XXXXX',
+          'Contact LPC for registration status',
+        ]
         : ['Contact LPC for verification'],
       regulatoryReference: {
         body: 'Legal Practice Council',
@@ -1179,10 +1179,10 @@ class ComplianceService {
       fallback: isFallback,
       recommendations: isFallback
         ? [
-            'Verify VAT registration manually with SARS',
-            'Check VAT number format: 10 digits',
-            'Contact SARS eFiling support',
-          ]
+          'Verify VAT registration manually with SARS',
+          'Check VAT number format: 10 digits',
+          'Contact SARS eFiling support',
+        ]
         : ['Contact SARS for verification'],
       regulatoryReference: {
         body: 'South African Revenue Service',
@@ -1206,10 +1206,10 @@ class ComplianceService {
       fallback: isFallback,
       recommendations: isFallback
         ? [
-            'Verify BBBEE certificate manually with SANAS',
-            'Check certificate number format',
-            'Contact accredited verification agency',
-          ]
+          'Verify BBBEE certificate manually with SANAS',
+          'Check certificate number format',
+          'Contact accredited verification agency',
+        ]
         : ['Contact SANAS for verification'],
       regulatoryReference: {
         body: 'South African National Accreditation System',
@@ -1233,10 +1233,10 @@ class ComplianceService {
       fallback: isFallback,
       recommendations: isFallback
         ? [
-            'Conduct manual POPIA compliance review',
-            'Designate Information Officer',
-            'Implement 8 conditions for lawful processing',
-          ]
+          'Conduct manual POPIA compliance review',
+          'Designate Information Officer',
+          'Implement 8 conditions for lawful processing',
+        ]
         : ['Contact Information Regulator for guidance'],
       regulatoryReference: {
         body: 'Information Regulator of South Africa',
@@ -1316,28 +1316,27 @@ class ComplianceService {
         description: 'High risk of disciplinary action',
         actions: ['Immediate remediation required', 'Notify LPC', 'Engage compliance officer'],
       };
-    } else if (failedChecks >= 2) {
+    } if (failedChecks >= 2) {
       return {
         level: 'HIGH',
         color: COMPLIANCE_CONFIG.RISK_CATEGORIES.HIGH.color,
         description: 'Significant compliance gaps',
         actions: ['Remediate within 30 days', 'Update compliance documentation'],
       };
-    } else if (failedChecks >= 1) {
+    } if (failedChecks >= 1) {
       return {
         level: 'MEDIUM',
         color: COMPLIANCE_CONFIG.RISK_CATEGORIES.MEDIUM.color,
         description: 'Minor compliance gaps',
         actions: ['Address gaps within 90 days'],
       };
-    } else {
-      return {
-        level: 'LOW',
-        color: COMPLIANCE_CONFIG.RISK_CATEGORIES.LOW.color,
-        description: 'Compliant with LPC requirements',
-        actions: ['Continue monitoring', 'Schedule annual review'],
-      };
     }
+    return {
+      level: 'LOW',
+      color: COMPLIANCE_CONFIG.RISK_CATEGORIES.LOW.color,
+      description: 'Compliant with LPC requirements',
+      actions: ['Continue monitoring', 'Schedule annual review'],
+    };
   }
 
   // Similar risk assessment methods for VAT, BBBEE, and POPIA would be implemented
@@ -1407,12 +1406,12 @@ class ComplianceService {
       const [lpcVerification, vatValidation, bbbeeVerification, popiaAudit] = await Promise.all([
         this.verifyLPCRegistration(
           tenant.compliance?.lpc?.registrationNumber,
-          tenant.legalIdentity?.name
+          tenant.legalIdentity?.name,
         ),
         this.validateVATNumber(tenant.subscription?.billing?.vatNumber, tenant.legalIdentity?.name),
         this.verifyBBBEECertification(
           tenant.compliance?.bbbee?.certificateNumber,
-          tenant.legalIdentity?.name
+          tenant.legalIdentity?.name,
         ),
         this.performPOPIAComplianceAudit(tenantId),
       ]);
@@ -1484,7 +1483,7 @@ class ComplianceService {
                 tenantId,
                 generationDate: new Date().toISOString(),
                 overallScore,
-              })
+              }),
             )
             .digest('hex'),
         },
@@ -1497,7 +1496,7 @@ class ComplianceService {
       await this._logComplianceEvent('DASHBOARD_GENERATED', dashboard, tenantId);
 
       console.log(
-        `✅ [COMPLIANCE DASHBOARD] Generated dashboard for tenant ${tenantId}: Score ${overallScore}%`
+        `✅ [COMPLIANCE DASHBOARD] Generated dashboard for tenant ${tenantId}: Score ${overallScore}%`,
       );
 
       return dashboard;
@@ -1546,28 +1545,27 @@ class ComplianceService {
           'Notify regulators if required',
         ],
       };
-    } else if (riskLevels.includes('HIGH')) {
+    } if (riskLevels.includes('HIGH')) {
       return {
         level: 'HIGH',
         color: '#EF4444',
         description: 'High compliance risks present',
         actions: ['Address high-risk items within 30 days', 'Schedule compliance review'],
       };
-    } else if (riskLevels.includes('MEDIUM')) {
+    } if (riskLevels.includes('MEDIUM')) {
       return {
         level: 'MEDIUM',
         color: '#F59E0B',
         description: 'Medium compliance risks identified',
         actions: ['Address medium-risk items within 90 days', 'Update compliance documentation'],
       };
-    } else {
-      return {
-        level: 'LOW',
-        color: '#10B981',
-        description: 'Low compliance risk profile',
-        actions: ['Continue monitoring', 'Schedule quarterly reviews'],
-      };
     }
+    return {
+      level: 'LOW',
+      color: '#10B981',
+      description: 'Low compliance risk profile',
+      actions: ['Continue monitoring', 'Schedule quarterly reviews'],
+    };
   }
 
   // ==========================================================================
@@ -1650,7 +1648,7 @@ class ComplianceService {
       };
 
       console.log(
-        `🎉 [COMPLIANCE TEST] Completed: ${testResults.summary.passedTests}/${testResults.summary.totalTests} tests passed`
+        `🎉 [COMPLIANCE TEST] Completed: ${testResults.summary.passedTests}/${testResults.summary.totalTests} tests passed`,
       );
 
       return testResults;

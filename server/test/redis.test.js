@@ -7,8 +7,8 @@
 
 const assert = require('assert');
 const crypto = require('crypto');
-const fs = require('fs');
 const EventEmitter = require('events');
+const fs = require('fs');
 
 // Load real modules
 let Redis;
@@ -128,19 +128,19 @@ const redisConfig = require('../config/redis');
 describe('🔧 Redis Configuration Tests', function () {
   this.timeout(15000);
 
-  before(async function () {
+  before(async () => {
     // Set test environment
     process.env.NODE_ENV = 'test';
     process.env.REDIS_HOST = process.env.REDIS_HOST || 'localhost';
     process.env.REDIS_PORT = process.env.REDIS_PORT || '6379';
   });
 
-  afterEach(async function () {
+  afterEach(async () => {
     await redisConfig.disconnect();
   });
 
-  describe('1. Client Creation', function () {
-    it('should create default Redis client', async function () {
+  describe('1. Client Creation', () => {
+    it('should create default Redis client', async () => {
       const client = await redisConfig.createClient('default');
 
       assert.ok(client);
@@ -152,7 +152,7 @@ describe('🔧 Redis Configuration Tests', function () {
       console.log('✅ Default client created');
     });
 
-    it('should create multiple clients with different roles', async function () {
+    it('should create multiple clients with different roles', async () => {
       await redisConfig.createClient('bull');
       await redisConfig.createClient('cache');
       await redisConfig.createClient('session');
@@ -163,7 +163,7 @@ describe('🔧 Redis Configuration Tests', function () {
       console.log('✅ Multiple clients created');
     });
 
-    it('should get client by role', async function () {
+    it('should get client by role', async () => {
       await redisConfig.createClient('test-role');
 
       const client = redisConfig.getClient('test-role');
@@ -174,8 +174,8 @@ describe('🔧 Redis Configuration Tests', function () {
     });
   });
 
-  describe('2. BullMQ Integration', function () {
-    it('should provide BullMQ compatible connection', async function () {
+  describe('2. BullMQ Integration', () => {
+    it('should provide BullMQ compatible connection', async () => {
       await redisConfig.createClient('bull');
 
       const connection = redisConfig.getBullConnection('bull');
@@ -188,8 +188,8 @@ describe('🔧 Redis Configuration Tests', function () {
     });
   });
 
-  describe('3. Basic Redis Operations', function () {
-    it('should perform basic set/get operations', async function () {
+  describe('3. Basic Redis Operations', () => {
+    it('should perform basic set/get operations', async () => {
       await redisConfig.createClient('test');
       const client = redisConfig.getClient('test');
 
@@ -200,7 +200,7 @@ describe('🔧 Redis Configuration Tests', function () {
       console.log('✅ Basic Redis operations work');
     });
 
-    it('should handle expiration', async function () {
+    it('should handle expiration', async () => {
       await redisConfig.createClient('test');
       const client = redisConfig.getClient('test');
 
@@ -217,8 +217,8 @@ describe('🔧 Redis Configuration Tests', function () {
     });
   });
 
-  describe('4. Health Check', function () {
-    it('should provide health status', async function () {
+  describe('4. Health Check', () => {
+    it('should provide health status', async () => {
       await redisConfig.createClient('default');
 
       const health = await redisConfig.healthCheck();
@@ -232,8 +232,8 @@ describe('🔧 Redis Configuration Tests', function () {
     });
   });
 
-  describe('5. Disconnection', function () {
-    it('should disconnect all clients gracefully', async function () {
+  describe('5. Disconnection', () => {
+    it('should disconnect all clients gracefully', async () => {
       await redisConfig.createClient('client1');
       await redisConfig.createClient('client2');
 
@@ -249,8 +249,8 @@ describe('🔧 Redis Configuration Tests', function () {
     });
   });
 
-  describe('6. Economic Value', function () {
-    it('should calculate performance savings', function () {
+  describe('6. Economic Value', () => {
+    it('should calculate performance savings', () => {
       const jobsPerDay = 10000;
       const processingTimeWithoutRedis = 500; // ms
       const processingTimeWithRedis = 300; // ms
@@ -278,8 +278,8 @@ describe('🔧 Redis Configuration Tests', function () {
     });
   });
 
-  describe('7. Evidence Generation', function () {
-    it('should generate deterministic evidence', async function () {
+  describe('7. Evidence Generation', () => {
+    it('should generate deterministic evidence', async () => {
       await redisConfig.createClient('evidence');
 
       const health = await redisConfig.healthCheck();
@@ -289,7 +289,7 @@ describe('🔧 Redis Configuration Tests', function () {
           {
             action: 'REDIS_TEST',
             timestamp: new Date().toISOString(),
-            health: health,
+            health,
           },
         ],
         hash: crypto.createHash('sha256').update(JSON.stringify(health)).digest('hex'),

@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; tests bundle compilation triggers and permission gates.
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -22,14 +20,15 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const bundleController = require('../controllers/bundleController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
 
 // 3. VALIDATION SCHEMAS (Joi)
@@ -45,7 +44,7 @@ const createBundleSchema = {
         documentId: Joi.string().required(),
         order: Joi.number().required(),
         section: Joi.string().valid('A', 'B', 'C', 'D', 'NONE').default('NONE'),
-      })
+      }),
     )
     .min(1)
     .max(200)
@@ -98,7 +97,7 @@ router.post(
       err.code = 'BUNDLE_CREATE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -121,7 +120,7 @@ router.get(
       err.code = 'BUNDLE_GET_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -151,7 +150,7 @@ router.post(
       err.code = 'BUNDLE_REGEN_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -181,7 +180,7 @@ router.delete(
       err.code = 'BUNDLE_DELETE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

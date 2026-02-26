@@ -4,7 +4,7 @@
   ║ Cryptographic operations | Hash generation | Secure ID creation             ║
   ╚══════════════════════════════════════════════════════════════════════════════╝*/
 
-import crypto from 'crypto';
+import crypto from "crypto";
 
 /*
  * Generate a cryptographically secure random ID

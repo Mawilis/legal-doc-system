@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict';
 
 // ============================================================================
 // QUANTUM POPIA SINGULARITY: THE IMMUTABLE DATA PROTECTION ORACLE
@@ -84,16 +83,6 @@ const tf = require('@tensorflow/tfjs-node');
 const { Contract, Gateway, Wallets } = require('fabric-network');
 
 // QUANTUM COMPLIANCE IMPORTS
-const { createAuditLog } = require('../utils/auditLogger');
-const {
-  encryptField,
-  decryptField,
-  generateQuantumKeyPair,
-  homomorphicEncrypt,
-  homomorphicDecrypt,
-} = require('../utils/cryptoQuantizer');
-
-// QUANTUM CONSTANTS: Legal and compliance constants
 const {
   POPIA_RETENTION_PERIODS,
   POPIA_CONSENT_TYPES,
@@ -106,8 +95,6 @@ const {
   GDPR_RIGHTS_EQUIVALENCE,
   CCPA_RIGHTS_EQUIVALENCE,
 } = require('../constants/complianceConstants');
-
-// QUANTUM MODELS: Injected database models
 const {
   Client,
   Consent,
@@ -122,6 +109,18 @@ const {
   DataAnonymization,
   ComplianceAudit,
 } = require('../models');
+const { createAuditLog } = require('../utils/auditLogger');
+const {
+  encryptField,
+  decryptField,
+  generateQuantumKeyPair,
+  homomorphicEncrypt,
+  homomorphicDecrypt,
+} = require('../utils/cryptoQuantizer');
+
+// QUANTUM CONSTANTS: Legal and compliance constants
+
+// QUANTUM MODELS: Injected database models
 
 // ============================================================================
 // QUANTUM ERROR HIERARCHY: POPIA Exception Taxonomy
@@ -162,7 +161,7 @@ class DataBreachResponseError extends QuantumPOPIAError {
       `${notificationType} notification failed for ${breachType} breach`,
       'BREACH_ERROR',
       'CRITICAL',
-      '22'
+      '22',
     );
     this.breachType = breachType;
     this.notificationType = notificationType;
@@ -177,7 +176,7 @@ class CrossBorderTransferError extends QuantumPOPIAError {
       `Cross-border data transfer ${sourceJurisdiction}→${destinationJurisdiction} failed`,
       'CROSS_BORDER_ERROR',
       'HIGH',
-      '72'
+      '72',
     );
     this.sourceJurisdiction = sourceJurisdiction;
     this.destinationJurisdiction = destinationJurisdiction;
@@ -829,13 +828,11 @@ class PopiaComplianceService {
 
     const worker = new Worker(
       'quantum-dsar-processing',
-      async (job) => {
-        return await this.processDSARJob(job.data);
-      },
+      async (job) => await this.processDSARJob(job.data),
       {
         connection: this.redis,
         concurrency: 5,
-      }
+      },
     );
 
     worker.on('completed', (job) => {
@@ -867,13 +864,11 @@ class PopiaComplianceService {
 
     const worker = new Worker(
       'quantum-breach-response',
-      async (job) => {
-        return await this.processBreachJob(job.data);
-      },
+      async (job) => await this.processBreachJob(job.data),
       {
         connection: this.redis,
         concurrency: 3,
-      }
+      },
     );
 
     worker.on('completed', (job) => {
@@ -905,13 +900,11 @@ class PopiaComplianceService {
 
     const worker = new Worker(
       'quantum-consent-management',
-      async (job) => {
-        return await this.processConsentJob(job.data);
-      },
+      async (job) => await this.processConsentJob(job.data),
       {
         connection: this.redis,
         concurrency: 10,
-      }
+      },
     );
 
     worker.on('completed', (job) => {
@@ -977,7 +970,7 @@ class PopiaComplianceService {
       const gateway = new Gateway();
       await gateway.connect(blockchainConfig.connectionProfile, {
         wallet,
-        identity: identity,
+        identity,
         discovery: { enabled: true, asLocalhost: true },
       });
 
@@ -1010,7 +1003,7 @@ class PopiaComplianceService {
       throw new QuantumPOPIAError(
         `Quantum Configuration Breach: Missing env vars: ${missing.join(', ')}`,
         'ENV_CONFIG_ERROR',
-        'CRITICAL'
+        'CRITICAL',
       );
     }
 
@@ -1020,7 +1013,7 @@ class PopiaComplianceService {
       throw new QuantumPOPIAError(
         'Invalid Information Officer email format',
         'INVALID_EMAIL_ERROR',
-        'HIGH'
+        'HIGH',
       );
     }
 
@@ -1058,7 +1051,7 @@ class PopiaComplianceService {
       if (specialInfoCheck.hasSpecialInfo && !consentData.explicitConsent) {
         throw new ConsentValidationError(
           'Explicit consent required for special personal information',
-          consentData.consentType
+          consentData.consentType,
         );
       }
 
@@ -1069,7 +1062,7 @@ class PopiaComplianceService {
         if (piaResult.riskLevel === 'HIGH') {
           throw new ConsentValidationError(
             `High privacy risk detected: ${piaResult.risks.join(', ')}`,
-            consentData.consentType
+            consentData.consentType,
           );
         }
       }
@@ -1093,7 +1086,7 @@ class PopiaComplianceService {
       // PHASE 8: SEND QUANTUM CONSENT CONFIRMATION
       const confirmationResult = await this.sendQuantumConsentConfirmation(
         consentRecord,
-        consentCertificate
+        consentCertificate,
       );
 
       // PHASE 9: UPDATE DATA PROCESSING REGISTER
@@ -1155,7 +1148,7 @@ class PopiaComplianceService {
 
       throw new ConsentValidationError(
         `Quantum consent acquisition failed: ${error.message}`,
-        consentData?.consentType
+        consentData?.consentType,
       );
     }
   }
@@ -1175,7 +1168,8 @@ class PopiaComplianceService {
       lawfulCondition: Joi.string()
         .valid(...Object.keys(this.lawfulConditions))
         .required(),
-      retentionPeriod: Joi.number().integer().min(1).max(100).required(),
+      retentionPeriod: Joi.number().integer().min(1).max(100)
+        .required(),
       explicitConsent: Joi.boolean().when('requiresExplicitConsent', {
         is: true,
         then: Joi.required().valid(true),
@@ -1203,7 +1197,7 @@ class PopiaComplianceService {
     if (error) {
       throw new ConsentValidationError(
         `Consent validation failed: ${error.details.map((d) => d.message).join(', ')}`,
-        consentData.consentType
+        consentData.consentType,
       );
     }
 
@@ -1212,7 +1206,7 @@ class PopiaComplianceService {
     if (template && template.requiresExplicitConsent && !consentData.explicitConsent) {
       throw new ConsentValidationError(
         'Explicit consent required for this consent type',
-        consentData.consentType
+        consentData.consentType,
       );
     }
   }
@@ -1269,7 +1263,7 @@ class PopiaComplianceService {
         if (category.toLowerCase().includes(specialType.toLowerCase())) {
           foundSpecialInfo.push({
             type: specialType,
-            category: category,
+            category,
             protectionLevel: this.specialPersonalInformation[specialType].protectionLevel,
           });
         }
@@ -1300,19 +1294,18 @@ class PopiaComplianceService {
 
         return {
           riskLevel: riskScore > 0.7 ? 'HIGH' : riskScore > 0.4 ? 'MEDIUM' : 'LOW',
-          riskScore: riskScore,
+          riskScore,
           risks: this.identifyPIARisks(consentData),
           recommendations: this.generatePIARrecommendations(consentData, riskScore),
         };
-      } else {
-        // Rule-based PIA
-        return {
-          riskLevel: 'MEDIUM', // Default
-          riskScore: 0.5,
-          risks: this.identifyPIARisks(consentData),
-          recommendations: this.generatePIARrecommendations(consentData, 0.5),
-        };
       }
+      // Rule-based PIA
+      return {
+        riskLevel: 'MEDIUM', // Default
+        riskScore: 0.5,
+        risks: this.identifyPIARisks(consentData),
+        recommendations: this.generatePIARrecommendations(consentData, 0.5),
+      };
     } catch (error) {
       console.error('PIA assessment failed:', error);
       return {
@@ -1394,11 +1387,11 @@ class PopiaComplianceService {
     if (this.popiaConfig.quantumFeatures.homomorphicEncryption) {
       consentRecord.encryptedPurposes = await homomorphicEncrypt(
         JSON.stringify(consentData.purposes),
-        'consent-purposes'
+        'consent-purposes',
       );
       consentRecord.encryptedDataCategories = await homomorphicEncrypt(
         JSON.stringify(consentData.dataCategories),
-        'consent-categories'
+        'consent-categories',
       );
 
       // REMOVE PLAINTEXT SENSITIVE DATA
@@ -1408,11 +1401,11 @@ class PopiaComplianceService {
       // USE STANDARD ENCRYPTION
       consentRecord.encryptedPurposes = await encryptField(
         JSON.stringify(consentData.purposes),
-        'consent'
+        'consent',
       );
       consentRecord.encryptedDataCategories = await encryptField(
         JSON.stringify(consentData.dataCategories),
-        'consent'
+        'consent',
       );
 
       delete consentRecord.purposes;
@@ -1439,14 +1432,14 @@ class PopiaComplianceService {
     let dataCategories = [];
 
     if (
-      this.popiaConfig.quantumFeatures.homomorphicEncryption &&
-      consentRecord.encryptedPurposes?.homomorphic
+      this.popiaConfig.quantumFeatures.homomorphicEncryption
+      && consentRecord.encryptedPurposes?.homomorphic
     ) {
       purposes = JSON.parse(
-        await homomorphicDecrypt(consentRecord.encryptedPurposes, 'consent-purposes')
+        await homomorphicDecrypt(consentRecord.encryptedPurposes, 'consent-purposes'),
       );
       dataCategories = JSON.parse(
-        await homomorphicDecrypt(consentRecord.encryptedDataCategories, 'consent-categories')
+        await homomorphicDecrypt(consentRecord.encryptedDataCategories, 'consent-categories'),
       );
     } else {
       purposes = JSON.parse(await decryptField(consentRecord.encryptedPurposes));
@@ -1474,8 +1467,8 @@ class PopiaComplianceService {
       consentDetails: {
         type: consentRecord.consentType,
         version: consentRecord.version,
-        purposes: purposes,
-        dataCategories: dataCategories,
+        purposes,
+        dataCategories,
         lawfulCondition: consentRecord.lawfulCondition,
         retentionPeriod: consentRecord.retentionPeriod,
         explicitConsent: consentRecord.explicitConsent,
@@ -1519,7 +1512,7 @@ class PopiaComplianceService {
         'metadata.certificateGeneratedAt': new Date(),
         'compliance.certificateGenerated': true,
       },
-      { where: { id: consentRecord.id } }
+      { where: { id: consentRecord.id } },
     );
 
     return certificate;
@@ -1548,7 +1541,7 @@ class PopiaComplianceService {
       // Submit to blockchain
       const result = await this.consentLedger.submitTransaction(
         'createConsentRecord',
-        JSON.stringify(consentData)
+        JSON.stringify(consentData),
       );
 
       return {
@@ -1588,7 +1581,7 @@ class PopiaComplianceService {
         throw new DSARProcessingError(
           dsarData.requestType,
           `Identity verification failed: ${identityVerification.reason}`,
-          false
+          false,
         );
       }
 
@@ -1601,34 +1594,34 @@ class PopiaComplianceService {
       const dataDiscovery = await this.initiateQuantumDataDiscovery(
         dsarData.userId,
         dsarData.dataCategories,
-        dsarData.requestType
+        dsarData.requestType,
       );
 
       // APPLY LEGAL RESTRICTIONS AND EXEMPTIONS
       const filteredData = await this.applyDSARLegalRestrictions(
         dataDiscovery.discoveredData,
-        dsarData
+        dsarData,
       );
 
       // FORMAT DATA ACCORDING TO REQUEST TYPE
       const formattedResponse = await this.formatDSARResponse(
         filteredData,
         dsarData.requestType,
-        dsarData.format
+        dsarData.format,
       );
 
       // GENERATE DSAR REPORT
       const dsarReport = await this.generateQuantumDSARReport(
         dsarRecord,
         formattedResponse,
-        dataDiscovery
+        dataDiscovery,
       );
 
       // SEND RESPONSE VIA PREFERRED METHOD
       const deliveryResult = await this.deliverDSARResponse(
         dsarRecord,
         dsarReport,
-        dsarData.responseMethod
+        dsarData.responseMethod,
       );
 
       // UPDATE DSAR STATUS
@@ -1678,7 +1671,7 @@ class PopiaComplianceService {
           exempt: formattedResponse.exempt?.length || 0,
         },
         delivery: deliveryResult,
-        deadline: deadline,
+        deadline,
         certificateUrl: `${process.env.APP_URL}/dsar/certificate/${dsarId}`,
         retentionPeriod: POPIA_RETENTION_PERIODS.ACCESS_RECORDS,
       };
@@ -1707,7 +1700,7 @@ class PopiaComplianceService {
       throw new DSARProcessingError(
         dsarData?.requestType || 'UNKNOWN',
         error.message,
-        deadlineApproaching
+        deadlineApproaching,
       );
     }
   }
@@ -1726,7 +1719,7 @@ class PopiaComplianceService {
           'PORTABILITY',
           'RESTRICTION',
           'OBJECTION',
-          'COMPLAINT'
+          'COMPLAINT',
         )
         .required(),
       dataCategories: Joi.array().items(Joi.string()).min(1).required(),
@@ -1751,7 +1744,7 @@ class PopiaComplianceService {
       throw new DSARProcessingError(
         dsarData.requestType,
         `DSAR validation failed: ${error.details.map((d) => d.message).join(', ')}`,
-        false
+        false,
       );
     }
   }
@@ -1802,7 +1795,7 @@ class PopiaComplianceService {
       // Verify document hash against stored records
       const documentVerified = await this.verifyIdentityDocument(
         dsarData.userId,
-        dsarData.identityProof
+        dsarData.identityProof,
       );
 
       if (!documentVerified) {
@@ -1812,7 +1805,7 @@ class PopiaComplianceService {
       // Additional verification for sensitive requests
       if (['DELETION', 'CORRECTION'].includes(dsarData.requestType)) {
         const additionalVerification = await this.performAdditionalIdentityVerification(
-          dsarData.userId
+          dsarData.userId,
         );
 
         if (!additionalVerification.passed) {
@@ -1870,7 +1863,7 @@ class PopiaComplianceService {
       const relevantData = await this.filterRelevantData(
         discoveredData,
         requestType,
-        dataCategories
+        dataCategories,
       );
 
       return {
@@ -1914,7 +1907,7 @@ class PopiaComplianceService {
       // INITIATE IMMEDIATE CONTAINMENT
       const containmentResult = await this.initiateQuantumBreachContainment(
         breachData,
-        severityAssessment
+        severityAssessment,
       );
 
       // NOTIFY INFORMATION OFFICER
@@ -2013,7 +2006,7 @@ class PopiaComplianceService {
           'PHISHING',
           'INSIDER_THREAT',
           'SYSTEM_FAILURE',
-          'OTHER'
+          'OTHER',
         )
         .required(),
       detectionTime: Joi.date().required(),
@@ -2040,7 +2033,7 @@ class PopiaComplianceService {
       throw new DataBreachResponseError(
         breachData.breachType,
         'VALIDATION',
-        new Error(`Breach validation failed: ${error.details.map((d) => d.message).join(', ')}`)
+        new Error(`Breach validation failed: ${error.details.map((d) => d.message).join(', ')}`),
       );
     }
   }
@@ -2088,9 +2081,9 @@ class PopiaComplianceService {
 
       return {
         level: severityLevel,
-        riskScore: riskScore,
-        notifyRegulator: notifyRegulator,
-        notifyDataSubjects: notifyDataSubjects,
+        riskScore,
+        notifyRegulator,
+        notifyDataSubjects,
         dataSubjectsAffected: breachData.estimatedAffectedSubjects,
         assessmentTime: new Date(),
         factors: this.identifySeverityFactors(breachData, riskScore),
@@ -2130,7 +2123,7 @@ class PopiaComplianceService {
       // ASSESS 8 LAWFUL CONDITIONS
       const lawfulConditionsAssessment = await this.assessQuantumLawfulConditions(
         startDate,
-        endDate
+        endDate,
       );
 
       // REVIEW DATA SUBJECT REQUESTS
@@ -2151,13 +2144,13 @@ class PopiaComplianceService {
         dsarReview,
         breachReview,
         consentReview,
-        crossBorderReview
+        crossBorderReview,
       );
 
       // GENERATE AI-POWERED RECOMMENDATIONS
       const recommendations = await this.generateQuantumComplianceRecommendations(
         complianceMetrics,
-        complianceScore
+        complianceScore,
       );
 
       // CREATE QUANTUM AUDIT REPORT
@@ -2213,7 +2206,7 @@ class PopiaComplianceService {
         },
         compliance: ['POPIA', 'GDPR', 'CCPA', 'ISO27001'],
         severity: 'LOW',
-        auditId: auditId,
+        auditId,
       });
 
       return auditReport;
@@ -2228,13 +2221,13 @@ class PopiaComplianceService {
           auditParams,
         },
         compliance: ['POPIA'],
-        auditId: auditId,
+        auditId,
       });
 
       throw new QuantumPOPIAError(
         `Quantum compliance audit generation failed: ${error.message}`,
         'AUDIT_GENERATION_ERROR',
-        'HIGH'
+        'HIGH',
       );
     }
   }
@@ -2587,7 +2580,9 @@ class PopiaComplianceService {
 
   static async testQuantumSuite() {
     if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
-      const { describe, it, expect, beforeAll, afterAll, jest } = require('@jest/globals');
+      const {
+        describe, it, expect, beforeAll, afterAll, jest,
+      } = require('@jest/globals');
 
       describe('QUANTUM POPIA SINGULARITY TEST SUITE', () => {
         let popiaService;
@@ -2670,7 +2665,7 @@ class PopiaComplianceService {
             expect(popiaService.specialPersonalInformation.HEALTH_SEX_LIFE).toBeDefined();
             expect(popiaService.specialPersonalInformation.BIO_METRIC).toBeDefined();
             expect(
-              popiaService.specialPersonalInformation.RELIGIOUS_PHILOSOPHICAL_BELIEFS
+              popiaService.specialPersonalInformation.RELIGIOUS_PHILOSOPHICAL_BELIEFS,
             ).toBeDefined();
           });
 
@@ -2747,7 +2742,7 @@ class PopiaComplianceService {
             const deadline = popiaService.calculateRegulatorDeadline();
             const expectedDeadline = new Date();
             expectedDeadline.setHours(
-              expectedDeadline.getHours() + POPIA_BREACH_NOTIFICATION_HOURS
+              expectedDeadline.getHours() + POPIA_BREACH_NOTIFICATION_HOURS,
             );
 
             // Allow 1 second difference for execution time

@@ -9,14 +9,12 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
-const Client = require('../models/Client');
-const Case = require('../models/Case');
-const Document = require('../models/Document');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
+const Case = require('../models/Case');
+const Client = require('../models/Client');
+const Document = require('../models/Document');
 
 /*
  * @desc    GLOBAL UNIFIED SEARCH

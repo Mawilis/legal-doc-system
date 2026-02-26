@@ -8,13 +8,11 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
+const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const Subscription = require('../models/Subscription');
 const Tenant = require('../models/Tenant');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
-const { emitAudit } = require('../middleware/auditMiddleware');
 
 /*
  * @desc    GET CURRENT PLAN & ENTITLEMENTS
@@ -58,7 +56,7 @@ exports.changePlan = asyncHandler(async (req, res) => {
   // 3. UPDATE TENANT-LEVEL ENTITLEMENTS
   await Tenant.findOneAndUpdate(
     { _id: req.user.tenantId },
-    { 'subscription.tier': newPlanId, 'subscription.status': 'ACTIVE' }
+    { 'subscription.tier': newPlanId, 'subscription.status': 'ACTIVE' },
   );
 
   // 4. HIGH-SEVERITY AUDIT (Monetization Event)
@@ -134,8 +132,7 @@ exports.cancelSubscription = asyncHandler(async (req, res) => {
  * @desc    HANDLE INCOMING WEBHOOKS (STRIPE/PAYFAST)
  * @route   POST /api/v1/subscriptions/webhook
  */
-exports.handleWebhook = asyncHandler(async (req, res) => {
+exports.handleWebhook = asyncHandler(async (req, res) =>
   // This is a placeholder for the raw-body webhook handler
   // It would verify signatures and update subscription.status (PAST_DUE, ACTIVE, etc.)
-  return successResponse(req, res, { received: true });
-});
+  successResponse(req, res, { received: true }));

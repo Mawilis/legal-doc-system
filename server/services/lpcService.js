@@ -25,11 +25,11 @@ import {
   RegulatoryDeadlineError,
 } from '../utils/errors.js';
 
-import crypto from 'node:crypto';
-import mongoose from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
-import axios from 'axios';
-import { DateTime } from 'luxon';
+import crypto from 'node:crypto.js';
+import mongoose from "mongoose";
+import { v4 as uuidv4 } from 'uuid.js';
+import axios from 'axios.js';
+import { DateTime } from 'luxon.js';
 
 import auditLogger from '../utils/auditLogger.js';
 import cryptoUtils from '../utils/cryptoUtils.js';

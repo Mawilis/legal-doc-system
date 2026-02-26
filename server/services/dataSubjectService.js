@@ -39,16 +39,16 @@
 // QUANTUM IMPORTS: PRECISION-PINNED DEPENDENCIES
 require('dotenv').config(); // Env Vault Loading - MANDATORY
 const crypto = require('crypto');
-const { DataSubjectRequest } = require('../models/dataSubjectRequest');
+const redis = require('../config/redis');
 const { AuditTrail } = require('../models/AuditTrail');
 const { User } = require('../models/User');
 const { ComplianceRule } = require('../models/complianceRule');
-const redis = require('../config/redis');
-const logger = require('../utils/quantumLogger.js');
+const { DataSubjectRequest } = require('../models/dataSubjectRequest');
 const { encryptData, decryptData } = require('../utils/cryptoEngine');
-const { validatePOPIAConsent } = require('../validators/popiaValidator');
 const { sendSecureNotification } = require('../utils/notificationService');
+const logger = require('../utils/quantumLogger.js');
 const { generateDSARReport } = require('../utils/reportGenerator');
+const { validatePOPIAConsent } = require('../validators/popiaValidator');
 
 // QUANTUM CONSTANTS: IMMUTABLE COMPLIANCE PARAMETERS
 const DSAR_TIMELINES = {
@@ -172,13 +172,13 @@ class DataSubjectService {
       requestType: sanitizedData.requestType,
       dataSubject: {
         encryptedData: encryptedPII,
-        jurisdiction: jurisdiction,
+        jurisdiction,
         verificationStatus: 'pending',
       },
       status: STATUS.PENDING,
       priority: this.calculatePriority(sanitizedData),
       statutoryDeadline: deadline,
-      ipAddress: ipAddress,
+      ipAddress,
       metadata: {
         userAgent: sanitizedData.userAgent,
         requestSource: sanitizedData.requestSource,
@@ -195,9 +195,9 @@ class DataSubjectService {
       entityId: dsar._id,
       action: 'CREATE',
       actor: sanitizedData.email || 'anonymous',
-      ipAddress: ipAddress,
+      ipAddress,
       metadata: {
-        jurisdiction: jurisdiction,
+        jurisdiction,
         requestType: sanitizedData.requestType,
       },
       blockchainHash: await this.generateBlockchainHash(dsar),
@@ -207,8 +207,8 @@ class DataSubjectService {
     await sendSecureNotification({
       type: 'DSAR_CREATED',
       dsarId: dsar.requestId,
-      deadline: deadline,
-      jurisdiction: jurisdiction,
+      deadline,
+      jurisdiction,
       priority: dsar.priority,
     });
 
@@ -220,11 +220,11 @@ class DataSubjectService {
         id: dsar.requestId,
         status: dsar.status,
         deadline: dsar.statutoryDeadline,
-      })
+      }),
     );
 
     logger.info(
-      `DSAR ${dsar.requestId} created - Jurisdiction: ${jurisdiction}, Deadline: ${deadline}`
+      `DSAR ${dsar.requestId} created - Jurisdiction: ${jurisdiction}, Deadline: ${deadline}`,
     );
 
     return {
@@ -302,7 +302,7 @@ class DataSubjectService {
     // ENCRYPTION QUANTUM: Secure report storage
     const encryptedReport = encryptData(
       report,
-      process.env.DSAR_REPORT_ENCRYPTION_KEY || this.encryptionKey
+      process.env.DSAR_REPORT_ENCRYPTION_KEY || this.encryptionKey,
     );
 
     // UPDATE QUANTUM: Mark as ready for review
@@ -467,7 +467,7 @@ class DataSubjectService {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(this.encryptionKey, 'hex'),
-        iv
+        iv,
       );
 
       let encrypted = cipher.update(JSON.stringify(piiToEncrypt), 'utf8', 'hex');
@@ -704,11 +704,11 @@ class DataSubjectService {
 /*
 describe('Quantum DataSubjectService Tests', () => {
     let service;
-    
+
     beforeAll(() => {
         service = new DataSubjectService();
     });
-    
+
     it('should create DSAR with POPIA compliance', async () => {
         const dsarData = {
             requestType: 'ACCESS',
@@ -716,23 +716,23 @@ describe('Quantum DataSubjectService Tests', () => {
             email: 'test@example.com',
             jurisdiction: 'ZA'
         };
-        
+
         const result = await service.createDSAR(dsarData, '192.168.1.1');
         expect(result.success).toBe(true);
         expect(result.requestId).toMatch(/^DSAR-ZA-/);
     });
-    
+
     it('should reject invalid SA ID numbers', async () => {
         const dsarData = {
             requestType: 'ACCESS',
             idNumber: '1234567890123', // Invalid SA ID
             jurisdiction: 'ZA'
         };
-        
+
         await expect(service.createDSAR(dsarData, '192.168.1.1'))
             .rejects.toThrow('Invalid South African ID Number format');
     });
-    
+
     it('should enforce statutory deadlines', async () => {
         // Timeline enforcement test
     });

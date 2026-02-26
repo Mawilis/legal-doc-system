@@ -97,14 +97,8 @@ jest.mock('../../models/TaxRecord', () => MockTaxRecord);
 // ====================================================================
 // IMPORTS
 // ====================================================================
-const auditLogger = require('../../utils/auditLogger');
-const cryptoUtils = require('../../utils/cryptoUtils');
-const logger = require('../../utils/logger');
 const tenantContext = require('../../middleware/tenantContext');
-const { withRetry } = require('../../utils/retry');
-const { CircuitBreaker } = require('../../utils/circuitBreaker');
 const TaxRecord = require('../../models/TaxRecord');
-
 const {
   createSarsService,
   FILING_TYPES,
@@ -113,6 +107,11 @@ const {
   TAXPAYER_TYPES,
   COMPLIANCE_FLAGS,
 } = require('../../services/sarsService');
+const auditLogger = require('../../utils/auditLogger');
+const { CircuitBreaker } = require('../../utils/circuitBreaker');
+const cryptoUtils = require('../../utils/cryptoUtils');
+const logger = require('../../utils/logger');
+const { withRetry } = require('../../utils/retry');
 
 // ====================================================================
 // MOCK IMPLEMENTATIONS
@@ -178,14 +177,14 @@ describe('SARS SERVICE - CONSTANT VALIDATION', () => {
 describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => {
   let sarsService;
   let testRunId;
-  let evidenceEntries = [];
+  const evidenceEntries = [];
   let mockHttpRequest;
   let mockHttpResponse;
 
   beforeAll(() => {
     testRunId = crypto.randomUUID().substring(0, 8);
     console.log(`\n🔬 TEST RUN: ${testRunId}`);
-    console.log(`💰 Investor Value: R1,050,000 annual savings per firm | R8.5M risk eliminated`);
+    console.log('💰 Investor Value: R1,050,000 annual savings per firm | R8.5M risk eliminated');
 
     mockHttpResponse = {
       on: jest.fn().mockImplementation((event, handler) => {
@@ -604,8 +603,8 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
 
     expect(TaxRecord.find).toHaveBeenCalledWith(
       expect.objectContaining({
-        tenantId: tenantId,
-        taxpayerId: taxpayerId,
+        tenantId,
+        taxpayerId,
       }),
     );
 
@@ -624,12 +623,12 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
     expect(metrics.totalAmountDue).toBe(850000);
     expect(metrics.totalAmountPaid).toBe(425000);
 
-    console.log(`  ✅ Annual Savings/Client: R1,050,000`);
-    console.log(`  ✅ Penalty Risk Eliminated: R8,500,000 per firm`);
-    console.log(`  ✅ Cost Reduction: 96.0%`);
-    console.log(`  ✅ Total Addressable Market: R367,500,000`);
-    console.log(`  ✅ Payback Period: 2.8 months`);
-    console.log(`  ✅ Error Reduction: 99.97%`);
+    console.log('  ✅ Annual Savings/Client: R1,050,000');
+    console.log('  ✅ Penalty Risk Eliminated: R8,500,000 per firm');
+    console.log('  ✅ Cost Reduction: 96.0%');
+    console.log('  ✅ Total Addressable Market: R367,500,000');
+    console.log('  ✅ Payback Period: 2.8 months');
+    console.log('  ✅ Error Reduction: 99.97%');
 
     expect(FILING_TYPES).toBeDefined();
     expect(FILING_STATUS).toBeDefined();

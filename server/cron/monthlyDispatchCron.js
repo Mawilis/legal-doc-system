@@ -11,21 +11,21 @@
  * • Creates forensic proof of delivery
  */
 
-import cron from 'node-cron';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import cron from 'node-cron.js';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import fs from 'fs/promises.js';
+import path from "path";
+import { fileURLToPath } from 'url.js';
 
 // WILSY OS CORE IMPORTS
-import TenantConfig from '../models/TenantConfig.js';
-import { generateBillingPdf } from '../services/pdf/ForensicPdfService.js';
-import { sendEmailWithAttachment } from '../services/email/EmailService.js';
-import logger from '../utils/logger.js';
-import quantumLogger from '../utils/quantumLogger.js';
-import auditLogger from '../utils/auditLogger.js';
-import { metrics } from '../utils/metricsCollector.js';
+import TenantConfig from '../models/TenantConfig.js.js';
+import { generateBillingPdf } from '../services/pdf/ForensicPdfService.js.js';
+import { sendEmailWithAttachment } from '../services/email/EmailService.js.js';
+import logger from '../utils/logger.js.js';
+import quantumLogger from '../utils/quantumLogger.js.js';
+import auditLogger from '../utils/auditLogger.js.js';
+import { metrics } from '../utils/metricsCollector.js.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -71,17 +71,17 @@
 // QUANTUM DEPENDENCIES: IMMUTABLE FINANCIAL ORBS
 // ============================================================================
 
-import axios from 'axios';
-import crypto from 'crypto';
-import asyncHandler from 'express-async-handler';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
-import https from 'https';
+import axios from 'axios.js';
+import crypto from "crypto";
+import asyncHandler from 'express-async-handler.js';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import https from "https";
 
 // WILSY OS CORE IMPORTS
-import { successResponse, errorResponse } from '../middleware/responseHandler.js';
-import { emitAudit, createImmutableAuditTrail } from '../middleware/auditMiddleware.js';
-import { validateBillingRequest, sanitizeFinancialInput } from '../validators/billingValidator.js';
+import { successResponse, errorResponse } from '../middleware/responseHandler.js.js';
+import { emitAudit, createImmutableAuditTrail } from '../middleware/auditMiddleware.js.js';
+import { validateBillingRequest, sanitizeFinancialInput } from '../validators/billingValidator.js.js';
 import {
   SARS_VAT_RATE,
   LEGAL_FEE_CAPS,
@@ -98,7 +98,7 @@ import {
   PAYMENT_METHODS,
   INVOICE_STATUS,
   JURISDICTIONS,
-} from '../constants/complianceConstants.js';
+} from '../constants/complianceConstants.js.js';
 
 import {
   encryptSensitiveData,
@@ -106,38 +106,38 @@ import {
   generateFinancialHash,
   redactSensitive,
   generateDigitalSignature,
-} from '../utils/cryptoUtils.js';
+} from '../utils/cryptoUtils.js.js';
 
 import {
   validatePOPIAConsent,
   generateComplianceCertificate,
   verifyTaxCompliance,
   checkLFCRegulations,
-} from '../utils/complianceUtils.js';
+} from '../utils/complianceUtils.js.js';
 
 import {
   createBlockchainReceipt,
   verifyFinancialTransaction,
   anchorToBlockchain,
-} from '../utils/blockchainUtils.js';
+} from '../utils/blockchainUtils.js.js';
 
 // Models
-import BillingInvoice from '../models/BillingInvoice.js';
-import TenantConfig from '../models/TenantConfig.js';
-import FinancialAudit from '../models/FinancialAudit.js';
-import PaymentTransaction from '../models/PaymentTransaction.js';
+import BillingInvoice from '../models/BillingInvoice.js.js';
+import TenantConfig from '../models/TenantConfig.js.js';
+import FinancialAudit from '../models/FinancialAudit.js.js';
+import PaymentTransaction from '../models/PaymentTransaction.js.js';
 
 // Services
-import { generateInvoicePdf } from '../services/pdf/InvoicePdfService.js';
-import { sendInvoiceEmail } from '../services/email/EmailService.js';
-import { submitToSARS } from '../services/compliance/SARSIntegrationService.js';
-import { screenForAML } from '../services/compliance/FICAScreeningService.js';
+import { generateInvoicePdf } from '../services/pdf/InvoicePdfService.js.js';
+import { sendInvoiceEmail } from '../services/email/EmailService.js.js';
+import { submitToSARS } from '../services/compliance/SARSIntegrationService.js.js';
+import { screenForAML } from '../services/compliance/FICAScreeningService.js.js';
 
 // Logger
-import logger from '../utils/logger.js';
-import quantumLogger from '../utils/quantumLogger.js';
-import auditLogger from '../utils/auditLogger.js';
-import { metrics } from '../utils/metricsCollector.js';
+import logger from '../utils/logger.js.js';
+import quantumLogger from '../utils/quantumLogger.js.js';
+import auditLogger from '../utils/auditLogger.js.js';
+import { metrics } from '../utils/metricsCollector.js.js';
 
 // ============================================================================
 // QUANTUM CONFIGURATION: FINANCIAL NEXUS PARAMETERS

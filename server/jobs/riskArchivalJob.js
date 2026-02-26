@@ -20,23 +20,23 @@
 ║                                                                               ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 
-🔮 QUANTUM PROPHECY: This archival nexus transmutes temporal legal liabilities 
-   into immortal digital assets, catalyzing Wilsy OS's ascent to trillion-rand 
+🔮 QUANTUM PROPHECY: This archival nexus transmutes temporal legal liabilities
+   into immortal digital assets, catalyzing Wilsy OS's ascent to trillion-rand
    valuation through unbreakable compliance orchestration.
 */
 
 // ============================================================================
 // COSMIC DEPENDENCIES - SECURELY PINNED VERSIONS
 // ============================================================================
-const cron = require('node-cron@^3.0.3');
+const crypto = require('crypto');
 const mongoose = require('mongoose@^7.0.0');
-const RiskAssessment = require('../models/riskAssessmentModel');
-const RiskAssessmentArchive = require('../models/riskAssessmentArchiveModel');
+const cron = require('node-cron@^3.0.3');
+const redis = require('../config/redisClient');
 const ArchiveAuditLog = require('../models/archiveAuditLogModel');
+const RiskAssessmentArchive = require('../models/riskAssessmentArchiveModel');
+const RiskAssessment = require('../models/riskAssessmentModel');
 const NotificationService = require('../services/notificationService');
 const logger = require('../utils/quantumLogger.js');
-const redis = require('../config/redisClient');
-const crypto = require('crypto');
 require('dotenv').config({ path: '/server/.env' });
 
 // ============================================================================
@@ -60,7 +60,7 @@ const JOB_CONFIG = {
 if (!process.env.ARCHIVAL_ENCRYPTION_KEY) {
   logger.quantumAlert(
     'CRITICAL',
-    'ARCHIVAL_ENCRYPTION_KEY missing from .env - Archival encryption disabled'
+    'ARCHIVAL_ENCRYPTION_KEY missing from .env - Archival encryption disabled',
   );
   throw new Error('Missing ARCHIVAL_ENCRYPTION_KEY environment variable');
 }
@@ -92,12 +92,12 @@ const encryptArchivalData = (data) => {
       encryptedData: encrypted,
       authTag: cipher.getAuthTag().toString('hex'),
       iv: iv.toString('hex'),
-      algorithm: algorithm,
+      algorithm,
       encryptedAt: new Date(),
     };
   } catch (error) {
     logger.quantumError('ENCRYPTION_FAILURE', error);
-    throw new Error('Data encryption failed: ' + error.message);
+    throw new Error(`Data encryption failed: ${error.message}`);
   }
 };
 
@@ -210,7 +210,7 @@ class RiskArchivalQuantumOrchestrator {
       return {
         status: 'success',
         metrics: this.metrics,
-        duration: duration,
+        duration,
       };
     } catch (error) {
       logger.quantumError('ARCHIVAL_JOB_FAILED', error);
@@ -243,7 +243,7 @@ class RiskArchivalQuantumOrchestrator {
         // Companies Act Quantum: Ensure minimum retention period met
         createdAt: {
           $lte: new Date(
-            new Date().setFullYear(new Date().getFullYear() - JOB_CONFIG.RETENTION_YEARS)
+            new Date().setFullYear(new Date().getFullYear() - JOB_CONFIG.RETENTION_YEARS),
           ),
         },
       };
@@ -256,7 +256,7 @@ class RiskArchivalQuantumOrchestrator {
 
       logger.quantumInfo('IDENTIFIED_ASSESSMENTS', {
         count: assessments.length,
-        query: query,
+        query,
       });
 
       return assessments;
@@ -280,9 +280,7 @@ class RiskArchivalQuantumOrchestrator {
       batchSize: batch.length,
     });
 
-    const promises = batch.map(async (assessment) => {
-      return await this.archiveSingleAssessment(assessment);
-    });
+    const promises = batch.map(async (assessment) => await this.archiveSingleAssessment(assessment));
 
     const results = await Promise.allSettled(promises);
 
@@ -347,7 +345,7 @@ class RiskArchivalQuantumOrchestrator {
         archivalReason: 'scheduled_expiry',
         archivedBy: 'system_automation',
         retentionUntil: new Date(
-          new Date().setFullYear(new Date().getFullYear() + JOB_CONFIG.RETENTION_YEARS)
+          new Date().setFullYear(new Date().getFullYear() + JOB_CONFIG.RETENTION_YEARS),
         ),
         legalComplianceTags: ['POPIA_RETENTION', 'COMPANIES_ACT_2008', 'SA_LEGAL_MANDATE'],
         metadata: {
@@ -391,7 +389,7 @@ class RiskArchivalQuantumOrchestrator {
             archiveReference: archiveRecord._id,
           },
         },
-        { session }
+        { session },
       );
 
       await session.commitTransaction();
@@ -439,7 +437,7 @@ class RiskArchivalQuantumOrchestrator {
         JSON.stringify({
           timestamp: new Date(),
           metrics: this.metrics,
-        })
+        }),
       );
     } catch (error) {
       logger.quantumError('CLEANUP_FAILED', error);
@@ -475,7 +473,7 @@ class RiskArchivalQuantumOrchestrator {
       const auditLog = new ArchiveAuditLog({
         action: 'JOB_EXECUTION',
         performedBy: 'system_cron',
-        status: status,
+        status,
         details: {
           jobName: 'RiskArchivalQuantumOrchestrator',
           version: '2.1.0',
@@ -499,7 +497,7 @@ class RiskArchivalQuantumOrchestrator {
   async updateAuditTrail(auditId, status, metrics) {
     try {
       await ArchiveAuditLog.findByIdAndUpdate(auditId, {
-        status: status,
+        status,
         completedAt: new Date(),
         'details.metrics': metrics,
       });
@@ -560,7 +558,7 @@ const initializeRiskArchivalScheduler = () => {
   if (!JOB_CONFIG.ENABLED) {
     logger.quantumInfo(
       'JOB_DISABLED',
-      'Risk archival job is disabled via environment configuration'
+      'Risk archival job is disabled via environment configuration',
     );
     return;
   }
@@ -586,7 +584,7 @@ const initializeRiskArchivalScheduler = () => {
     {
       scheduled: true,
       timezone: 'Africa/Johannesburg', // SAST timezone
-    }
+    },
   );
 
   logger.quantumSuccess('SCHEDULER_INITIALIZED', {

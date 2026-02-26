@@ -10,10 +10,8 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
-const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const { Server } = require('socket.io');
 
 module.exports = (httpServer) => {
   // 1. CONFIGURATION
@@ -32,7 +30,7 @@ module.exports = (httpServer) => {
   // 2. MIDDLEWARE: SECURITY GATEKEEPER
   // This runs BEFORE a connection is accepted.
   io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
+    const { token } = socket.handshake.auth;
 
     if (!token) {
       console.warn(`⛔ [Socket] Blocked connection attempt (No Token): ${socket.id}`);

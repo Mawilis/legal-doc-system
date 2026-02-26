@@ -22,12 +22,13 @@
  * Biblical worth billions no child's place. Wilsy OS to the World.
  */
 
-'use strict';
-
 const express = require('express');
+
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const { body, param, query, validationResult } = require('express-validator');
+const {
+  body, param, query, validationResult,
+} = require('express-validator');
 const chalk = require('chalk');
 
 // --- DEPENDENCIES ---
@@ -48,7 +49,7 @@ try {
   requireRole = roleMiddleware.requireRole;
 } catch (e) {
   console.warn(
-    chalk.yellow('⚠️ [TENANT-GATE] Role Middleware missing. Defaulting to Protected Stance.')
+    chalk.yellow('⚠️ [TENANT-GATE] Role Middleware missing. Defaulting to Protected Stance.'),
   );
   requireRole = () => (req, res, next) => next();
 }
@@ -69,13 +70,12 @@ const REQUIRED_TENANT_HANDLERS = [
 REQUIRED_TENANT_HANDLERS.forEach((handler) => {
   if (typeof tenantController[handler] !== 'function') {
     console.warn(
-      chalk.cyan(`[TENANT-SYSTEM] Protocol ${handler} missing in Controller. Mapping to 501.`)
+      chalk.cyan(`[TENANT-SYSTEM] Protocol ${handler} missing in Controller. Mapping to 501.`),
     );
-    tenantController[handler] = (req, res) =>
-      res.status(501).json({
-        success: false,
-        message: `The ${handler} governance protocol is currently being drafted by the Chief Architect.`,
-      });
+    tenantController[handler] = (req, res) => res.status(501).json({
+      success: false,
+      message: `The ${handler} governance protocol is currently being drafted by the Chief Architect.`,
+    });
   }
 });
 
@@ -133,7 +133,7 @@ router.get(
       .withMessage('Identifier contains illegal characters'),
   ],
   handleValidation,
-  tenantController.lookupTenant
+  tenantController.lookupTenant,
 );
 
 /* ---------------------------------------------------------------------------
@@ -156,7 +156,7 @@ router.post(
     body('dataResidency').optional().isIn(['ZA', 'EU', 'US']),
   ],
   handleValidation,
-  tenantController.createTenant
+  tenantController.createTenant,
 );
 
 /*
@@ -178,7 +178,7 @@ router.patch(
     body('status').optional().isIn(['active', 'suspended', 'trial_expired']),
   ],
   handleValidation,
-  tenantController.updateTenantAdmin
+  tenantController.updateTenantAdmin,
 );
 
 /*
@@ -194,7 +194,7 @@ router.post(
     body('reason').notEmpty().withMessage('Suspension reason required for forensic ledger'),
   ],
   handleValidation,
-  tenantController.suspendTenant
+  tenantController.suspendTenant,
 );
 
 /*
@@ -206,7 +206,7 @@ router.patch(
   requireRole(['OWNER', 'ADMIN']),
   [body('brandColor').optional().isHexColor(), body('logoUrl').optional().isURL()],
   handleValidation,
-  tenantController.updateBranding
+  tenantController.updateBranding,
 );
 
 /* ---------------------------------------------------------------------------

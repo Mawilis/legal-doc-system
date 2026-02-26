@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict';
 
 // ============================================================================
 // QUANTUM POPIA CONSENT VALIDATOR: THE DIGNITY SENTINEL
@@ -79,11 +78,13 @@ const consentSchema = Joi.object({
     }),
 
   // PROCESSING DETAILS
-  purposes: Joi.array().required().min(1).max(20).items(Joi.string().max(200)).messages({
-    'array.min': 'At least one purpose must be specified',
-    'array.max': 'Maximum 20 purposes allowed',
-    'any.required': 'Processing purposes are required',
-  }),
+  purposes: Joi.array().required().min(1).max(20)
+    .items(Joi.string().max(200))
+    .messages({
+      'array.min': 'At least one purpose must be specified',
+      'array.max': 'Maximum 20 purposes allowed',
+      'any.required': 'Processing purposes are required',
+    }),
 
   dataCategories: Joi.array()
     .required()
@@ -93,9 +94,7 @@ const consentSchema = Joi.object({
     .custom((value, helpers) => {
       // Check for special personal information
       const specialInfoTypes = Object.keys(SPECIAL_PERSONAL_INFORMATION);
-      const hasSpecialInfo = value.some((category) =>
-        specialInfoTypes.some((type) => category.toLowerCase().includes(type.toLowerCase()))
-      );
+      const hasSpecialInfo = value.some((category) => specialInfoTypes.some((type) => category.toLowerCase().includes(type.toLowerCase())));
 
       if (hasSpecialInfo) {
         // If special info is present, explicit consent must be true
@@ -124,7 +123,7 @@ const consentSchema = Joi.object({
     .valid(...Object.keys(POPIA_8_LAWFUL_CONDITIONS))
     .messages({
       'any.only': `Lawful condition must be one of: ${Object.keys(POPIA_8_LAWFUL_CONDITIONS).join(
-        ', '
+        ', ',
       )}`,
       'any.required': 'Lawful processing condition is required',
     }),
@@ -133,7 +132,7 @@ const consentSchema = Joi.object({
     .default(false)
     .when('dataCategories', {
       is: Joi.array().has(
-        Joi.string().regex(/health|biometric|religious|race|political|trade.?union|criminal/i)
+        Joi.string().regex(/health|biometric|religious|race|political|trade.?union|criminal/i),
       ),
       then: Joi.required().valid(true),
       otherwise: Joi.optional(),
@@ -144,11 +143,14 @@ const consentSchema = Joi.object({
     }),
 
   // RETENTION AND EXPIRY
-  retentionPeriod: Joi.number().required().integer().min(1).max(100).default(5).messages({
-    'number.min': 'Retention period must be at least 1 year',
-    'number.max': 'Retention period cannot exceed 100 years',
-    'any.required': 'Retention period is required',
-  }),
+  retentionPeriod: Joi.number().required().integer().min(1)
+    .max(100)
+    .default(5)
+    .messages({
+      'number.min': 'Retention period must be at least 1 year',
+      'number.max': 'Retention period cannot exceed 100 years',
+      'any.required': 'Retention period is required',
+    }),
 
   // CONSENT METHODOLOGY
   consentObtainedMethod: Joi.string()
@@ -158,7 +160,7 @@ const consentSchema = Joi.object({
       'PAPER_FORM',
       'VERBAL',
       'ELECTRONIC_SIGNATURE',
-      'BLOCKCHAIN_SMART_CONTRACT'
+      'BLOCKCHAIN_SMART_CONTRACT',
     )
     .default('WEB_FORM'),
 
@@ -196,11 +198,12 @@ const consentSchema = Joi.object({
  * Validates consent withdrawal requests with POPIA Section 11(2) compliance
  */
 const withdrawalSchema = Joi.object({
-  reason: Joi.string().required().min(10).max(500).messages({
-    'string.min': 'Withdrawal reason must be at least 10 characters',
-    'string.max': 'Withdrawal reason cannot exceed 500 characters',
-    'any.required': 'Withdrawal reason is required',
-  }),
+  reason: Joi.string().required().min(10).max(500)
+    .messages({
+      'string.min': 'Withdrawal reason must be at least 10 characters',
+      'string.max': 'Withdrawal reason cannot exceed 500 characters',
+      'any.required': 'Withdrawal reason is required',
+    }),
 
   method: Joi.string()
     .required()
@@ -225,14 +228,17 @@ const withdrawalSchema = Joi.object({
  * Validates consent listing query parameters
  */
 const querySchema = Joi.object({
-  page: Joi.number().integer().min(1).default(1).messages({
-    'number.min': 'Page must be at least 1',
-  }),
+  page: Joi.number().integer().min(1).default(1)
+    .messages({
+      'number.min': 'Page must be at least 1',
+    }),
 
-  limit: Joi.number().integer().min(1).max(100).default(20).messages({
-    'number.min': 'Limit must be at least 1',
-    'number.max': 'Limit cannot exceed 100',
-  }),
+  limit: Joi.number().integer().min(1).max(100)
+    .default(20)
+    .messages({
+      'number.min': 'Limit must be at least 1',
+      'number.max': 'Limit cannot exceed 100',
+    }),
 
   status: Joi.string()
     .valid('DRAFT', 'PENDING', 'ACTIVE', 'EXPIRED', 'WITHDRAWN', 'SUSPENDED', 'REVOKED', 'INVALID')
@@ -268,7 +274,8 @@ const updateSchema = Joi.object({
 
   validity: Joi.string().valid('VALID', 'INVALID', 'UNDER_REVIEW').optional(),
 
-  retentionPeriod: Joi.number().integer().min(1).max(100).optional(),
+  retentionPeriod: Joi.number().integer().min(1).max(100)
+    .optional(),
 
   metadata: Joi.object({
     reviewNotes: Joi.string().max(1000).optional(),
@@ -428,10 +435,9 @@ async function validateConsentBusinessRules(data) {
 
   // Check for proper purpose specification
   const vaguePurposes = data.purposes.filter(
-    (purpose) =>
-      purpose.toLowerCase().includes('other') ||
-      purpose.toLowerCase().includes('miscellaneous') ||
-      purpose.length < 10
+    (purpose) => purpose.toLowerCase().includes('other')
+      || purpose.toLowerCase().includes('miscellaneous')
+      || purpose.length < 10,
   );
 
   if (vaguePurposes.length > 0) {
@@ -482,13 +488,11 @@ async function checkConsentConflicts(data) {
     const existingPurposes = JSON.parse(await decryptField(existingConsent.encryptedPurposes));
 
     // Check if purposes overlap significantly
-    const overlap = data.purposes.filter((purpose) =>
-      existingPurposes.some((existing) => existing.includes(purpose) || purpose.includes(existing))
-    );
+    const overlap = data.purposes.filter((purpose) => existingPurposes.some((existing) => existing.includes(purpose) || purpose.includes(existing)));
 
     if (overlap.length > 0) {
       throw new Error(
-        `Active consent already exists for overlapping purposes: ${overlap.join(', ')}`
+        `Active consent already exists for overlapping purposes: ${overlap.join(', ')}`,
       );
     }
   }
@@ -534,9 +538,7 @@ function sanitizeConsentData(data) {
   }
 
   if (sanitized.dataCategories) {
-    sanitized.dataCategories = sanitized.dataCategories.map((category) =>
-      category.trim().replace(/[<>]/g, '')
-    );
+    sanitized.dataCategories = sanitized.dataCategories.map((category) => category.trim().replace(/[<>]/g, ''));
   }
 
   // Sanitize metadata
@@ -548,7 +550,7 @@ function sanitizeConsentData(data) {
     if (sanitized.metadata.deviceFingerprint) {
       sanitized.metadata.deviceFingerprint = sanitized.metadata.deviceFingerprint.replace(
         /[^a-f0-9-]/gi,
-        ''
+        '',
       );
     }
   }
@@ -576,12 +578,11 @@ function sanitizeConsentResponse(consent) {
     }
 
     if (sanitized.metadata.deviceFingerprint) {
-      sanitized.metadata.deviceFingerprint =
-        '*' + (sanitized.metadata.deviceFingerprint.slice(-4) || '');
+      sanitized.metadata.deviceFingerprint = `*${sanitized.metadata.deviceFingerprint.slice(-4) || ''}`;
     }
 
     if (sanitized.metadata.sessionId) {
-      sanitized.metadata.sessionId = '*' + (sanitized.metadata.sessionId.slice(-4) || '');
+      sanitized.metadata.sessionId = `*${sanitized.metadata.sessionId.slice(-4) || ''}`;
     }
   }
 

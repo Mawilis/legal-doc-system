@@ -61,8 +61,6 @@
  * ===========================================================================================================
  */
 
-'use strict';
-
 // ===========================================================================================================
 // QUANTUM IMPORTS - PRODUCTION DEPENDENCIES WITH VERSION CONTROL
 // ===========================================================================================================
@@ -93,8 +91,8 @@ const crypto = require('crypto');
 
 // Security utilities
 // const { sanitizePIIInput } = require("../utils/piiSanitizer"); // Unused variable
-const validator = require('validator');
 const sanitizeHtml = require('sanitize-html');
+const validator = require('validator');
 const xss = require('xss');
 
 // Performance caching
@@ -706,7 +704,7 @@ class QuantumPOPIAValidator {
                   'number.min': `Retention period must be at least ${RETENTION_PERIODS.POPIA_MINIMUM} year`,
                   'number.max': `Retention period cannot exceed ${RETENTION_PERIODS.POPIA_MAXIMUM} years`,
                 }),
-            })
+            }),
           )
           .min(1)
           .max(parseInt(process.env.MAX_DATA_CATEGORIES || '20'))
@@ -822,8 +820,8 @@ class QuantumPOPIAValidator {
               'employee_training',
               'physical_security',
               'network_security',
-              'application_security'
-            )
+              'application_security',
+            ),
           )
           .min(parseInt(process.env.MIN_SECURITY_MEASURES || '3'))
           .required()
@@ -843,8 +841,8 @@ class QuantumPOPIAValidator {
               'right_to_object',
               'right_to_complain',
               'right_to_be_informed',
-              'right_to_data_portability'
-            )
+              'right_to_data_portability',
+            ),
           )
           .min(6)
           .required()
@@ -907,7 +905,7 @@ class QuantumPOPIAValidator {
           }),
       }).custom(
         this.validateConsentBusinessRules.bind(this),
-        'POPIA consent business logic validation'
+        'POPIA consent business logic validation',
       ),
 
       // Schema 2: Data Subject Request (Sections 23-25)
@@ -925,7 +923,7 @@ class QuantumPOPIAValidator {
             'objection',
             'complaint',
             'restriction',
-            'portability'
+            'portability',
           )
           .messages({
             'any.only':
@@ -1006,7 +1004,7 @@ class QuantumPOPIAValidator {
             'popia_section_24',
             'popia_section_25',
             'popia_section_69',
-            'popia_section_71'
+            'popia_section_71',
           ),
 
         // Status tracking
@@ -1037,7 +1035,7 @@ class QuantumPOPIAValidator {
             'human_error',
             'malware',
             'physical_theft',
-            'insider_threat'
+            'insider_threat',
           ),
 
         // Breach timeline validation
@@ -1072,8 +1070,8 @@ class QuantumPOPIAValidator {
               'reputational_damage',
               'legal_consequences',
               'national_security',
-              'public_health'
-            )
+              'public_health',
+            ),
           )
           .min(1)
           .max(8)
@@ -1123,7 +1121,7 @@ class QuantumPOPIAValidator {
         reputationalImpact: Joi.string().optional().valid('low', 'medium', 'high', 'severe'),
       }).custom(
         this.validateBreachBusinessRules.bind(this),
-        'Breach notification business logic validation'
+        'Breach notification business logic validation',
       ),
 
       // Schema 4: Cross-border Transfer (Section 72)
@@ -1142,7 +1140,7 @@ class QuantumPOPIAValidator {
           .required()
           .custom(
             this.validateAuthorizedDestinations.bind(this),
-            'Authorized destination validation'
+            'Authorized destination validation',
           ),
 
         // Data being transferred
@@ -1229,7 +1227,7 @@ class QuantumPOPIAValidator {
             'contract_performance',
             'legal_claim',
             'vital_interests',
-            'public_interest'
+            'public_interest',
           ),
 
         // Retention in destination
@@ -1239,7 +1237,7 @@ class QuantumPOPIAValidator {
           .max(RETENTION_PERIODS.POPIA_MAXIMUM),
       }).custom(
         this.validateTransferBusinessRules.bind(this),
-        'Cross-border transfer business logic validation'
+        'Cross-border transfer business logic validation',
       ),
 
       // Schema 5: Retention Policy (Section 14)
@@ -1269,8 +1267,8 @@ class QuantumPOPIAValidator {
               'basic_conditions_of_employment_act',
               'compensation_for_occupational_injuries_and_diseases_act',
               'unemployment_insurance_act',
-              'sector_specific_regulation'
-            )
+              'sector_specific_regulation',
+            ),
           )
           .min(1)
           .max(5)
@@ -1284,7 +1282,7 @@ class QuantumPOPIAValidator {
             'physical_destruction',
             'anonymization',
             'archival',
-            'pseudonymization'
+            'pseudonymization',
           ),
 
         destructionCertificateRequired: Joi.boolean().required(),
@@ -1311,7 +1309,7 @@ class QuantumPOPIAValidator {
         complianceOfficer: Joi.string().required().pattern(SA_LEGAL_PATTERNS.IO_REG_NUMBER),
       }).custom(
         this.validateRetentionBusinessRules.bind(this),
-        'Retention policy business logic validation'
+        'Retention policy business logic validation',
       ),
     };
   }
@@ -1383,7 +1381,7 @@ class QuantumPOPIAValidator {
       await this.logPOPIAValidation('consent', schemaValidation, result, null);
 
       logger.info(
-        `✅ POPIA Consent validated: ${schemaValidation.consentId}, Score: ${complianceScore.score}%`
+        `✅ POPIA Consent validated: ${schemaValidation.consentId}, Score: ${complianceScore.score}%`,
       );
       return result;
     } catch (error) {
@@ -1428,7 +1426,7 @@ class QuantumPOPIAValidator {
         compliance: {
           popiaSection: '23-25',
           timeline: 30,
-          priority: priority,
+          priority,
           verificationRequired: true,
           legalBasis: schemaValidation.legalBasis,
         },
@@ -1467,7 +1465,7 @@ class QuantumPOPIAValidator {
         {
           abortEarly: false,
           stripUnknown: true,
-        }
+        },
       );
 
       // Validate breach severity
@@ -1489,11 +1487,11 @@ class QuantumPOPIAValidator {
           subjectNotification: schemaValidation.notifySubjects,
           hoursRemaining: this.calculateHoursRemaining(
             schemaValidation.detectionTime,
-            schemaValidation.notificationDeadline
+            schemaValidation.notificationDeadline,
           ),
         },
-        severity: severity,
-        responsePlan: responsePlan,
+        severity,
+        responsePlan,
         legalRequirements: this.getBreachLegalRequirements(severity),
         validationTime: Date.now() - startTime,
       };
@@ -1502,7 +1500,7 @@ class QuantumPOPIAValidator {
       await this.logPOPIAValidation('breach', schemaValidation, result, null);
 
       logger.info(
-        `✅ Breach notification validated: ${schemaValidation.breachId}, Severity: ${severity}`
+        `✅ Breach notification validated: ${schemaValidation.breachId}, Severity: ${severity}`,
       );
       return result;
     } catch (error) {
@@ -1632,22 +1630,21 @@ class QuantumPOPIAValidator {
         });
       }
       return value;
-    } else if (SA_LEGAL_PATTERNS.SA_PASSPORT.test(value)) {
+    } if (SA_LEGAL_PATTERNS.SA_PASSPORT.test(value)) {
       if (!identityValidator.validatePassport(value)) {
         return helpers.error('any.custom', {
           message: 'Invalid South African passport number',
         });
       }
       return value;
-    } else if (SA_LEGAL_PATTERNS.ASYLUM_NUMBER.test(value)) {
+    } if (SA_LEGAL_PATTERNS.ASYLUM_NUMBER.test(value)) {
       return value;
-    } else if (SA_LEGAL_PATTERNS.COMPANY_REG.test(value)) {
+    } if (SA_LEGAL_PATTERNS.COMPANY_REG.test(value)) {
       return value;
-    } else {
-      return helpers.error('any.custom', {
-        message: 'Invalid South African identity document format',
-      });
     }
+    return helpers.error('any.custom', {
+      message: 'Invalid South African identity document format',
+    });
   }
 
   /*
@@ -1817,9 +1814,9 @@ class QuantumPOPIAValidator {
   validateTransferBusinessRules(value, helpers) {
     // Adequacy or safeguards required
     if (
-      !value.adequacyAssessment.countryAdequate &&
-      !['appropriate_safeguards', 'derogation', 'binding_corporate_rules'].includes(
-        value.adequacyAssessment.adequacyBasis
+      !value.adequacyAssessment.countryAdequate
+      && !['appropriate_safeguards', 'derogation', 'binding_corporate_rules'].includes(
+        value.adequacyAssessment.adequacyBasis,
       )
     ) {
       return helpers.error('any.custom', {
@@ -1845,8 +1842,8 @@ class QuantumPOPIAValidator {
   validateRetentionBusinessRules(value, helpers) {
     // Retention must be justified
     if (
-      value.retentionPeriod > RETENTION_PERIODS.POPIA_MAXIMUM &&
-      !value.legalBasis.includes('sector_specific_regulation')
+      value.retentionPeriod > RETENTION_PERIODS.POPIA_MAXIMUM
+      && !value.legalBasis.includes('sector_specific_regulation')
     ) {
       return helpers.error('any.custom', {
         message: `Retention period exceeding ${RETENTION_PERIODS.POPIA_MAXIMUM} years requires sector-specific regulation justification`,
@@ -2000,9 +1997,9 @@ class QuantumPOPIAValidator {
         const result = JSON.parse(cached);
         // Check if cache is still valid
         if (
-          result.cachedAt &&
-          Date.now() - new Date(result.cachedAt).getTime() <
-            this.cacheConfig.schemaValidation.ttl * 1000
+          result.cachedAt
+          && Date.now() - new Date(result.cachedAt).getTime()
+            < this.cacheConfig.schemaValidation.ttl * 1000
         ) {
           logger.info(`🔄 Using cached validation for ${type}`);
           return result;
@@ -2031,7 +2028,7 @@ class QuantumPOPIAValidator {
       await redisClient.setEx(
         cacheKey,
         this.cacheConfig.schemaValidation.ttl,
-        JSON.stringify(cachedResult)
+        JSON.stringify(cachedResult),
       );
     } catch (error) {
       // Silently fail cache write
@@ -2234,7 +2231,7 @@ class QuantumPOPIAValidator {
     if (data.securityMeasures && data.securityMeasures.length < minSecurity) {
       score -= (minSecurity - data.securityMeasures.length) * 5;
       deductions.push(
-        `Insufficient security measures (-${(minSecurity - data.securityMeasures.length) * 5})`
+        `Insufficient security measures (-${(minSecurity - data.securityMeasures.length) * 5})`,
       );
     }
 
@@ -2254,7 +2251,7 @@ class QuantumPOPIAValidator {
 
     return {
       score: Math.round(score),
-      deductions: deductions,
+      deductions,
       level: this.getComplianceLevel(score),
     };
   }
@@ -2409,9 +2406,9 @@ class QuantumPOPIAValidator {
     const expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
 
     return {
-      certificateId: certificateId,
-      issueDate: issueDate,
-      expiryDate: expiryDate,
+      certificateId,
+      issueDate,
+      expiryDate,
       dataController: process.env.COMPANY_NAME || 'Wilsy OS',
       informationOfficer: data.informationOfficerId,
       processingPurpose: data.processingPurpose,
@@ -2437,7 +2434,7 @@ class QuantumPOPIAValidator {
    */
   generateQRCode(certificateId) {
     const qrData = {
-      certificateId: certificateId,
+      certificateId,
       verificationUrl: `${process.env.BASE_URL}/popia/verify/${certificateId}`,
       issueDate: new Date().toISOString(),
     };
@@ -2468,16 +2465,15 @@ class QuantumPOPIAValidator {
         legalReference: 'Protection of Personal Information Act (Act 4 of 2013)',
         remediation: this.getErrorRemediation(error.details),
       };
-    } else {
-      return {
-        type: 'POPIA_BUSINESS_RULE_ERROR',
-        code: 'POPIA_PRINCIPLE_VIOLATION',
-        message: error.message,
-        timestamp: new Date().toISOString(),
-        legalReference: this.mapErrorToPOPIASection(error.message),
-        severity: 'high',
-      };
     }
+    return {
+      type: 'POPIA_BUSINESS_RULE_ERROR',
+      code: 'POPIA_PRINCIPLE_VIOLATION',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+      legalReference: this.mapErrorToPOPIASection(error.message),
+      severity: 'high',
+    };
   }
 
   /*
@@ -2566,9 +2562,9 @@ class QuantumPOPIAValidator {
       success: !error,
       ...(result && {
         resultId:
-          result.validatedData?.consentId ||
-          result.validatedData?.requestId ||
-          result.validatedData?.breachId,
+          result.validatedData?.consentId
+          || result.validatedData?.requestId
+          || result.validatedData?.breachId,
       }),
       ...(error && {
         errorCode: error.code,
@@ -2773,10 +2769,9 @@ class QuantumPOPIAValidator {
       low: 1,
     };
 
-    const totalRisk =
-      auditResults.highRisk * riskScores.high +
-      auditResults.mediumRisk * riskScores.medium +
-      auditResults.lowRisk * riskScores.low;
+    const totalRisk = auditResults.highRisk * riskScores.high
+      + auditResults.mediumRisk * riskScores.medium
+      + auditResults.lowRisk * riskScores.low;
 
     const average = totalRisk / auditResults.total;
     return average >= 2.5 ? 'high' : average >= 1.5 ? 'medium' : 'low';
@@ -2901,7 +2896,7 @@ class QuantumPOPIAValidator {
     } catch (error) {
       checks.components.schemaValidation = 'FAILED';
       checks.status = 'DEGRADED';
-      checks.recommendations.push('Fix schema validation: ' + error.message);
+      checks.recommendations.push(`Fix schema validation: ${error.message}`);
     }
 
     // Cache check
@@ -2909,10 +2904,9 @@ class QuantumPOPIAValidator {
 
     // Statistics
     checks.statistics.totalValidations = this.validationStats.totalValidations;
-    checks.statistics.successRate =
-      this.validationStats.totalValidations > 0
-        ? (this.validationStats.successfulValidations / this.validationStats.totalValidations) * 100
-        : 0;
+    checks.statistics.successRate = this.validationStats.totalValidations > 0
+      ? (this.validationStats.successfulValidations / this.validationStats.totalValidations) * 100
+      : 0;
     checks.statistics.uptime = Date.now() - this.validationStats.startTime.getTime();
 
     // Environment check
@@ -2935,8 +2929,8 @@ class QuantumPOPIAValidator {
       failedValidations: this.validationStats.failedValidations,
       successRate:
         this.validationStats.totalValidations > 0
-          ? (this.validationStats.successfulValidations / this.validationStats.totalValidations) *
-            100
+          ? (this.validationStats.successfulValidations / this.validationStats.totalValidations)
+            * 100
           : 0,
       averageValidationTime: 0, // Would need to track individual times
       startTime: this.validationStats.startTime,

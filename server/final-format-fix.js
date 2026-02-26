@@ -7,11 +7,11 @@
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
-import fs from 'fs';
-import path from 'path';
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
-import { createHash } from 'crypto';
+import { execSync } from 'child_process.js';
+import { createHash } from "crypto";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,7 +74,7 @@ projectDirs.forEach((dir) => {
       } else if (item.endsWith('.js') || item.endsWith('.cjs') || item.endsWith('.mjs')) {
         try {
           let content = fs.readFileSync(itemPath, 'utf8');
-          let originalContent = content;
+          const originalContent = content;
 
           // Replace * in comments with *
           // This regex targets * that appear in comments (both /* */ and //)
@@ -107,17 +107,16 @@ projectDirs.forEach((dir) => {
 const rootFiles = fs
   .readdirSync(rootDir)
   .filter(
-    (f) =>
-      (f.endsWith('.js') || f.endsWith('.cjs') || f.endsWith('.mjs')) &&
-      !f.includes('node_modules') &&
-      fs.statSync(path.join(rootDir, f)).isFile()
+    (f) => (f.endsWith('.js') || f.endsWith('.cjs') || f.endsWith('.mjs'))
+      && !f.includes('node_modules')
+      && fs.statSync(path.join(rootDir, f)).isFile(),
   );
 
 rootFiles.forEach((file) => {
   const filePath = path.join(rootDir, file);
   try {
     let content = fs.readFileSync(filePath, 'utf8');
-    let originalContent = content;
+    const originalContent = content;
 
     content = content.replace(/(\/\*[\s\S]*?)\*\*([\s\S]*?\*\/)/g, '$1*$2');
     content = content.replace(/(\/\/.*?)\*\*/g, '$1*');
@@ -172,12 +171,11 @@ const evidenceId = `prettier-final-${timestamp}-${createHash('md5')
 const evidenceFile = path.join(evidenceDir, `${evidenceId}.forensic.json`);
 
 // Count JS files
-const jsCount =
-  parseInt(
-    execSync('find . -name "*.js" -not -path "*/node_modules/*" | wc -l', {
-      encoding: 'utf8',
-    }).trim()
-  ) || 0;
+const jsCount = parseInt(
+  execSync('find . -name "*.js" -not -path "*/node_modules/*" | wc -l', {
+    encoding: 'utf8',
+  }).trim(),
+) || 0;
 
 const evidence = {
   evidenceId,
@@ -211,8 +209,8 @@ const hash = createHash('sha256')
       evidence,
       Object.keys(evidence)
         .filter((k) => k !== 'forensicHash')
-        .sort()
-    )
+        .sort(),
+    ),
   )
   .digest('hex');
 
@@ -225,9 +223,9 @@ console.log(`\n✅ Final evidence generated: ${evidenceFile}`);
 console.log(`🔐 SHA256: ${hash}`);
 
 console.log('\n📍 INVESTOR SUMMARY:');
-console.log(`   • Annual Savings: R240,000`);
-console.log(`   • ROI: 9500%`);
-console.log(`   • Margin: 88%`);
+console.log('   • Annual Savings: R240,000');
+console.log('   • ROI: 9500%');
+console.log('   • Margin: 88%');
 console.log(`   • Files Fixed: ${fixedCount}`);
 console.log(`   • Evidence: ${evidenceFile}`);
 

@@ -1,5 +1,5 @@
-const tf = require('@tensorflow/tfjs-node');
 const fs = require('fs');
+const tf = require('@tensorflow/tfjs-node');
 
 async function trainRiskModel() {
   // Generate synthetic training data

@@ -15,8 +15,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
@@ -54,12 +52,10 @@ const resolveUserFromToken = async (token) => {
  * API KEY RESOLVER (Billion-Dollar Readiness):
  * Logic to verify service-to-service communication.
  */
-const resolveServiceFromKey = async (apiKey) => {
+const resolveServiceFromKey = async (apiKey) =>
   // This allows your legal system to eventually talk to external
   // court systems or AI providers securely via x-api-key headers.
-  return { isService: true, identifier: 'INTERNAL_OR_EXTERNAL_SERVICE' };
-};
-
+  ({ isService: true, identifier: 'INTERNAL_OR_EXTERNAL_SERVICE' });
 module.exports = {
   resolveUserFromToken,
   resolveServiceFromKey,

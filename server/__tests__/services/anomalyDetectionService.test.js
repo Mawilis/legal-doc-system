@@ -4,13 +4,13 @@
   ║ 100% coverage | AI-powered | Real-time fraud prevention                  ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import { expect } from 'chai';
-import sinon from 'sinon';
-import { v4 as uuidv4 } from 'uuid';
+import { expect } from 'chai.js';
+import sinon from 'sinon.js';
+import { v4 as uuidv4 } from 'uuid.js';
 import AnomalyDetectionService, {
   AnomalyDetectionServiceFactory,
   ANOMALY_CONSTANTS,
-} from '../../services/anomalyDetectionService.js';
+} from '../../services/anomalyDetectionService.js.js';
 
 describe('AnomalyDetectionService - Legal Fraud Sentinel Due Diligence', () => {
   let service;

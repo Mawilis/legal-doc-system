@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; tests rule execution logic and circular dependency prevention.
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -22,14 +20,15 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const workflowController = require('../controllers/workflowController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
 
 // 3. VALIDATION SCHEMAS (Joi)
@@ -51,7 +50,7 @@ const createWorkflowSchema = {
           .valid('SEND_EMAIL', 'CREATE_TASK', 'GENERATE_DOC', 'UPDATE_STATUS')
           .required(),
         config: Joi.object().required(),
-      })
+      }),
     )
     .min(1)
     .required(),
@@ -95,7 +94,7 @@ router.post(
       err.code = 'WORKFLOW_CREATE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -116,7 +115,7 @@ router.get(
       err.code = 'WORKFLOW_LIST_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -147,7 +146,7 @@ router.post(
       err.code = 'WORKFLOW_TRIGGER_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -177,7 +176,7 @@ router.delete(
       err.code = 'WORKFLOW_DELETE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

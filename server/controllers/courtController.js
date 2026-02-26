@@ -9,12 +9,10 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
-const Court = require('../models/Court'); // Assumes a Court model exists
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
+const Court = require('../models/Court'); // Assumes a Court model exists
 
 /*
  * @desc    LIST ALL COURTS (Searchable & Categorized)
@@ -47,7 +45,7 @@ exports.getOne = asyncHandler(async (req, res) => {
       res,
       404,
       'Court seating not found in registry.',
-      'ERR_COURT_NOT_FOUND'
+      'ERR_COURT_NOT_FOUND',
     );
   }
 
@@ -67,7 +65,7 @@ exports.create = asyncHandler(async (req, res) => {
       res,
       403,
       'System registry management restricted to SuperAdmins.',
-      'ERR_RBAC_FORBIDDEN'
+      'ERR_RBAC_FORBIDDEN',
     );
   }
 
@@ -95,7 +93,7 @@ exports.update = asyncHandler(async (req, res) => {
       res,
       403,
       'System registry management restricted to SuperAdmins.',
-      'ERR_RBAC_FORBIDDEN'
+      'ERR_RBAC_FORBIDDEN',
     );
   }
 
@@ -130,7 +128,7 @@ exports.remove = asyncHandler(async (req, res) => {
       res,
       403,
       'System registry management restricted to SuperAdmins.',
-      'ERR_RBAC_FORBIDDEN'
+      'ERR_RBAC_FORBIDDEN',
     );
   }
 

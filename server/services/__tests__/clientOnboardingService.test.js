@@ -1,8 +1,8 @@
 /* eslint-env jest */
-/*╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ CLIENT ONBOARDING SERVICE TEST V6 — FORENSIC ● FICA COMPLIANT ● POPIA READY                                    ║
   ║ 94% faster KYC | R3.1M annual savings | 82% cost reduction                                                     ║
-  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/__tests__/clientOnboardingService.test.js
  * VERSION: 6.0.0 (forensic-upgrade)
@@ -21,9 +21,9 @@
  * - Added investor evidence generation with SHA256 chain
  */
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 
 // Mock the client onboarding service
 // In production, this would be: const { createClient, validateClientData, checkDuplicateClient, searchClients, generateOnboardingEvidence } = require('../clientOnboardingService');

@@ -66,25 +66,27 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 // =============================================================================
 // CORE DEPENDENCIES - SOVEREIGN CONTROL STACK
 // =============================================================================
 const express = require('express');
+
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const { body, query, param, validationResult } = require('express-validator');
+const {
+  body, query, param, validationResult,
+} = require('express-validator');
 
 // =============================================================================
 // CONTROLLER IMPORTS - SOVEREIGN BUSINESS LOGIC
 // =============================================================================
-const tenantController = require('../controllers/tenantController');
 const adminController = require('../controllers/adminController');
+const tenantController = require('../controllers/tenantController');
 
 // =============================================================================
 // SECURITY MIDDLEWARE - THE ARCHANGEL SHIELD
 // =============================================================================
+const { createForensicAudit } = require('../middleware/audit');
 const {
   protect, // Quantum-resistant JWT validation
   restrictTo, // Enterprise-grade RBAC
@@ -111,7 +113,6 @@ const {
 // =============================================================================
 // AUDIT MIDDLEWARE - FORENSIC TRANSPARENCY
 // =============================================================================
-const { createForensicAudit } = require('../middleware/audit');
 
 // =============================================================================
 // GENERATIONAL CONFIGURATION - SOVEREIGN PARAMETERS
@@ -198,7 +199,7 @@ const validateAdminController = (req, res, next) => {
   ];
 
   const missingMethods = REQUIRED_METHODS.filter(
-    (method) => typeof adminController[method] !== 'function'
+    (method) => typeof adminController[method] !== 'function',
   );
 
   if (missingMethods.length > 0) {
@@ -348,7 +349,7 @@ router.get(
   geoBlock(),
   threatDetector,
   validateAdminController,
-  adminController.getDashboardStats
+  adminController.getDashboardStats,
 );
 
 /*
@@ -366,7 +367,7 @@ router.get(
   protect,
   restrictTo('SUPER_ADMIN', 'GLOBAL_ADMIN'),
   adminActionLimiter,
-  adminController.getSystemHealth
+  adminController.getSystemHealth,
 );
 
 /*
@@ -384,7 +385,7 @@ router.get(
   protect,
   restrictTo('SUPER_ADMIN', 'GLOBAL_ADMIN'),
   adminActionLimiter,
-  adminController.getBillingAnalytics
+  adminController.getBillingAnalytics,
 );
 
 // =============================================================================
@@ -423,9 +424,10 @@ router.get(
       .withMessage('Invalid severity level'),
     query('startDate').optional().isISO8601().withMessage('Start date must be ISO 8601 format'),
     query('endDate').optional().isISO8601().withMessage('End date must be ISO 8601 format'),
-    query('action').optional().trim().notEmpty().withMessage('Action filter cannot be empty'),
+    query('action').optional().trim().notEmpty()
+      .withMessage('Action filter cannot be empty'),
   ]),
-  adminController.getSystemAudits
+  adminController.getSystemAudits,
 );
 
 /*
@@ -450,7 +452,7 @@ router.get(
     query('startDate').isISO8601().withMessage('Start date is required in ISO 8601 format'),
     query('endDate').isISO8601().withMessage('End date is required in ISO 8601 format'),
   ]),
-  adminController.exportAuditReport
+  adminController.exportAuditReport,
 );
 
 // =============================================================================
@@ -492,7 +494,7 @@ router.get(
       .notEmpty()
       .withMessage('Jurisdiction filter cannot be empty'),
   ]),
-  tenantController.getAllTenants
+  tenantController.getAllTenants,
 );
 
 /*
@@ -537,7 +539,7 @@ router.post(
     });
     next();
   },
-  tenantController.createTenant
+  tenantController.createTenant,
 );
 
 /*
@@ -584,7 +586,7 @@ router.post(
     });
     next();
   },
-  tenantController.suspendTenant
+  tenantController.suspendTenant,
 );
 
 /*
@@ -609,7 +611,7 @@ router.post(
       .notEmpty()
       .withMessage('Mandatory activation reason required for audit trail'),
   ]),
-  tenantController.activateTenant
+  tenantController.activateTenant,
 );
 
 // =============================================================================
@@ -632,7 +634,8 @@ router.get(
   restrictTo('SUPER_ADMIN', 'GLOBAL_ADMIN'),
   adminActionLimiter,
   validateAdminRequest([
-    query('q').optional().trim().notEmpty().withMessage('Search query cannot be empty'),
+    query('q').optional().trim().notEmpty()
+      .withMessage('Search query cannot be empty'),
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be positive integer'),
     query('limit')
       .optional()
@@ -656,7 +659,7 @@ router.get(
       .withMessage('Invalid status filter'),
     query('firmId').optional().isMongoId().withMessage('Firm ID must be valid MongoID'),
   ]),
-  adminController.getAllUsers
+  adminController.getAllUsers,
 );
 
 /*
@@ -677,7 +680,7 @@ router.get(
   validateAdminRequest([
     param('userId').isMongoId().withMessage('User ID must be a valid MongoID'),
   ]),
-  adminController.getUserProfile
+  adminController.getUserProfile,
 );
 
 /*
@@ -716,7 +719,7 @@ router.patch(
     });
     next();
   },
-  adminController.updateUser
+  adminController.updateUser,
 );
 
 /*
@@ -771,7 +774,7 @@ router.delete(
     });
     next();
   },
-  adminController.deleteUser
+  adminController.deleteUser,
 );
 
 // =============================================================================
@@ -821,7 +824,7 @@ router.post(
     });
     next();
   },
-  adminController.executeEmergencyLock
+  adminController.executeEmergencyLock,
 );
 
 /*
@@ -845,7 +848,7 @@ router.post(
       .withMessage('Recovery confirmation code required'),
     body('recoveryPoint').isISO8601().withMessage('Recovery point must be ISO 8601 timestamp'),
   ]),
-  adminController.executeEmergencyRecovery
+  adminController.executeEmergencyRecovery,
 );
 
 // =============================================================================
@@ -888,7 +891,7 @@ router.post(
     });
     next();
   },
-  adminController.rotateKeys
+  adminController.rotateKeys,
 );
 
 /*
@@ -906,7 +909,7 @@ router.get(
   protect,
   restrictTo('SUPER_ADMIN', 'SECURITY_ADMIN'),
   adminActionLimiter,
-  adminController.getCryptoStatus
+  adminController.getCryptoStatus,
 );
 
 // =============================================================================
@@ -928,7 +931,7 @@ router.get(
   protect,
   restrictTo('SUPER_ADMIN', 'COMPLIANCE_ADMIN'),
   adminActionLimiter,
-  adminController.getComplianceStatus
+  adminController.getComplianceStatus,
 );
 
 /*
@@ -950,7 +953,7 @@ router.post(
     body('scope').isIn(['full', 'targeted', 'jurisdictional']).withMessage('Invalid scan scope'),
     body('jurisdictions').optional().isArray().withMessage('Jurisdictions must be array'),
   ]),
-  adminController.executeComplianceScan
+  adminController.executeComplianceScan,
 );
 
 // =============================================================================
@@ -972,7 +975,7 @@ router.get(
   protect,
   restrictTo('SUPER_ADMIN', 'GLOBAL_ADMIN'),
   adminActionLimiter,
-  adminController.getPerformanceMetrics
+  adminController.getPerformanceMetrics,
 );
 
 /*
@@ -998,7 +1001,7 @@ router.post(
       .isIn(['aggressive', 'conservative', 'balanced'])
       .withMessage('Invalid optimization strategy'),
   ]),
-  adminController.executeOptimization
+  adminController.executeOptimization,
 );
 
 // =============================================================================
@@ -1046,7 +1049,7 @@ router.get(
         date: new Date().toISOString(),
       },
     });
-  }
+  },
 );
 
 // =============================================================================

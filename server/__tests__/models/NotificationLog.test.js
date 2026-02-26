@@ -4,8 +4,8 @@
  * Investor-grade deterministic tests with economic metrics
  */
 
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 const NotificationLog = require('../../models/NotificationLog');
 const {
   NOTIFICATION_CHANNELS,
@@ -44,8 +44,7 @@ describe('FORENSIC NOTIFICATION LOG MODEL V6', () => {
       const complianceValuePerNotification = 25; // R25 compliance proof value
       const auditSavingsPerNotification = 50; // R50 audit savings
 
-      const totalEconomicValue =
-        notificationsPerYear * (savingsPerNotification + complianceValuePerNotification + auditSavingsPerNotification);
+      const totalEconomicValue = notificationsPerYear * (savingsPerNotification + complianceValuePerNotification + auditSavingsPerNotification);
 
       console.log(`✓ Savings per notification: R${savingsPerNotification}`);
       console.log(`✓ Annual savings (100k notifications): R${totalSavings.toLocaleString()}`);

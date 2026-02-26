@@ -5,7 +5,7 @@
    ║ Standard: ES Module (Surgically Standardized)                               ║
    ╚══════════════════════════════════════════════════════════════════════════════╝*/
 
-import crypto from 'node:crypto';
+import crypto from 'node:crypto.js';
 import logger from '../utils/logger.js';
 
 class AuditService {

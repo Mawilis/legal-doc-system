@@ -1,7 +1,7 @@
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE COMPLIANCE SERVICE - INVESTOR-GRADE MODULE              ║
   ║ [90% PAIA compliance cost reduction | R5M risk elimination]  ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/CaseComplianceService.js
  * INVESTOR VALUE PROPOSITION:
@@ -291,13 +291,12 @@ class CaseComplianceService {
 
   _calculateDisposalDate(startDate, policyRule) {
     const disposalDate = new Date(startDate);
-    const yearIncrement =
-      {
-        COMPANIES_ACT_7YR: 7,
-        LPC_6YR: 6,
-        PAIA_5YR: 5,
-        PERMANENT: 100,
-      }[policyRule] || 7;
+    const yearIncrement = {
+      COMPANIES_ACT_7YR: 7,
+      LPC_6YR: 6,
+      PAIA_5YR: 5,
+      PERMANENT: 100,
+    }[policyRule] || 7;
 
     disposalDate.setFullYear(disposalDate.getFullYear() + yearIncrement);
     return disposalDate;
@@ -323,8 +322,8 @@ class CaseComplianceService {
     });
 
     if (
-      caseDoc.conflictStatus?.foundConflicts?.length > 0 &&
-      !caseDoc.conflictStatus.clearanceDate
+      caseDoc.conflictStatus?.foundConflicts?.length > 0
+      && !caseDoc.conflictStatus.clearanceDate
     ) {
       issues.push('UNRESOLVED_CONFLICTS');
     }
@@ -356,8 +355,7 @@ class CaseComplianceService {
   }
 
   _checkLPCCompliance(metrics) {
-    const conflictRate =
-      metrics.totalCases > 0 ? (metrics.conflictCleared / metrics.totalCases) * 100 : 100;
+    const conflictRate = metrics.totalCases > 0 ? (metrics.conflictCleared / metrics.totalCases) * 100 : 100;
 
     return {
       rule7Compliance: {

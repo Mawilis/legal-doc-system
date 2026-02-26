@@ -1,7 +1,7 @@
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ E-SIGNATURE QUANTUM CONTROLLER - INVESTOR-GRADE MODULE        ║
   ║ [95% validation accuracy | R3M risk elimination | 90% margins]║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/eSignController.js
  * INVESTOR VALUE PROPOSITION:
@@ -32,8 +32,8 @@ graph TD
 */
 
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
 const cryptoUtils = require('../utils/cryptoUtils');
+const logger = require('../utils/logger');
 const quantumCrypto = require('../utils/quantumCryptoEngine');
 
 // Assumptions based on ECT Act Section 13 requirements:
@@ -56,14 +56,15 @@ class ESignController {
    */
   async validateAdvancedSignature(signatureData) {
     const startTime = Date.now();
-    const { signatureType, documentType, integrityHash, signatoryInfo, timestamp, tenantId } =
-      signatureData;
+    const {
+      signatureType, documentType, integrityHash, signatoryInfo, timestamp, tenantId,
+    } = signatureData;
 
     try {
       // ECT Act Section 13(1): Validate signature type
       if (!this._isValidSignatureType(signatureType)) {
         throw new Error(
-          `Invalid signature type: ${signatureType}. Must be SIMPLE, ADVANCED, or QUALIFIED`
+          `Invalid signature type: ${signatureType}. Must be SIMPLE, ADVANCED, or QUALIFIED`,
         );
       }
 
@@ -82,7 +83,7 @@ class ESignController {
       // ECT Act Section 13(4): Check timestamp authority
       const timestampValid = await this.verifyTimestampAuthority(
         signatureData.timestampAuthority,
-        timestamp
+        timestamp,
       );
 
       // Create validation record
@@ -143,7 +144,7 @@ class ESignController {
           documentType,
           processingTime: `${Date.now() - startTime}ms`,
           compliance: 'ECT_ACT_SECTION_13',
-        })
+        }),
       );
 
       return validationResult;
@@ -156,7 +157,7 @@ class ESignController {
           signatureType,
           documentType,
           complianceViolation: 'ECT_ACT_SECTION_13',
-        })
+        }),
       );
 
       await auditLogger.log({
@@ -200,9 +201,7 @@ class ESignController {
         'https://tsa.quovadisglobal.com',
       ];
 
-      const isTrusted = trustedAuthorities.some((auth) =>
-        timestampAuthority.toLowerCase().includes(auth.replace('https://', ''))
-      );
+      const isTrusted = trustedAuthorities.some((auth) => timestampAuthority.toLowerCase().includes(auth.replace('https://', '')));
 
       if (!isTrusted) {
         logger.warn('Untrusted timestamp authority', {
@@ -296,7 +295,7 @@ class ESignController {
             size: document.size || 0,
           },
         },
-        tenantId
+        tenantId,
       );
 
       // Log audit entry
@@ -326,7 +325,7 @@ class ESignController {
           documentType: document.type,
           processingTime: `${Date.now() - startTime}ms`,
           compliance: 'ECT_ACT_SECTION_13',
-        })
+        }),
       );
 
       return {
@@ -344,7 +343,7 @@ class ESignController {
           error: error.message,
           documentId: document?.id,
           signatoryId: signatory?.id,
-        })
+        }),
       );
 
       await auditLogger.log({
@@ -456,7 +455,7 @@ class ESignController {
           tenantId,
           signatureId,
           status: status.status,
-        })
+        }),
       );
 
       return status;
@@ -467,7 +466,7 @@ class ESignController {
           tenantId,
           signatureId,
           error: error.message,
-        })
+        }),
       );
       throw new Error(`Status retrieval failed: ${error.message}`);
     }
@@ -505,15 +504,14 @@ class ESignController {
     }
 
     // Check for required identification methods
-    const hasValidIdentification =
-      signatoryInfo.identification?.type && signatoryInfo.identification?.number;
+    const hasValidIdentification = signatoryInfo.identification?.type && signatoryInfo.identification?.number;
 
     // For advanced signatures, require stronger authentication
     if (signatoryInfo.signatureType === 'ADVANCED' || signatoryInfo.signatureType === 'QUALIFIED') {
       return (
-        hasValidIdentification &&
-        (signatoryInfo.authenticationMethod === 'BIOMETRIC' ||
-          signatoryInfo.authenticationMethod === 'DIGITAL_CERTIFICATE')
+        hasValidIdentification
+        && (signatoryInfo.authenticationMethod === 'BIOMETRIC'
+          || signatoryInfo.authenticationMethod === 'DIGITAL_CERTIFICATE')
       );
     }
 
@@ -572,7 +570,7 @@ class ESignController {
     return {
       url: verificationUrl,
       dataUrl: `data:image/svg+xml;base64,${Buffer.from(
-        `<svg>Mock QR for ${signatureId}</svg>`
+        `<svg>Mock QR for ${signatureId}</svg>`,
       ).toString('base64')}`,
       signatureId,
     };
@@ -584,14 +582,14 @@ class ESignController {
    */
   _generateSignatureLegalNotice(signaturePackage) {
     return {
-      notice: `This advanced electronic signature is provided under Section 13 of the Electronic Communications and Transactions Act 25 of 2002.`,
+      notice: 'This advanced electronic signature is provided under Section 13 of the Electronic Communications and Transactions Act 25 of 2002.',
       legalReferences: [
         'ECT Act Section 13(1): Advanced electronic signatures',
         'ECT Act Section 13(2): Integrity of data messages',
         'ECT Act Section 13(3): Identification of signatory',
         'ECT Act Section 13(4): Time of signature',
       ],
-      retentionNotice: `This signature record will be retained for 10 years as required by the Companies Act.`,
+      retentionNotice: 'This signature record will be retained for 10 years as required by the Companies Act.',
       verificationInstructions: `Verify at: ${signaturePackage.verificationUrl}`,
       jurisdiction: 'Republic of South Africa',
       regulator: 'Department of Communications and Digital Technologies',

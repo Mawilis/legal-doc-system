@@ -18,19 +18,17 @@
  * └─────────────────────────────────────────────────────────────────────────────────────────────┘
  */
 
-'use strict';
-
 // ============================================================================
 // QUANTUM IMPORTS
 // ============================================================================
-const asyncHandler = require('express-async-handler');
-const mongoose = require('mongoose');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const validator = require('validator');
+const asyncHandler = require('express-async-handler');
 const Joi = require('joi');
+const mongoose = require('mongoose');
 const redis = require('redis');
 const { v4: uuidv4 } = require('uuid');
+const validator = require('validator');
 
 // Quantum Security: Load environment variables
 require('dotenv').config({ path: '/server/.env' });
@@ -38,22 +36,22 @@ require('dotenv').config({ path: '/server/.env' });
 // ============================================================================
 // WILSY OS CORE IMPORTS
 // ============================================================================
-const User = require('../models/userModel');
-const Tenant = require('../models/tenantModel');
-const Client = require('../models/clientModel');
 const Document = require('../models/Document');
 const AuditEvent = require('../models/auditEventModel');
-const CustomError = require('../utils/customError');
-const generateToken = require('../utils/generateToken');
+const Client = require('../models/clientModel');
+const Tenant = require('../models/tenantModel');
+const User = require('../models/userModel');
 
 // ============================================================================
 // SA LEGAL SERVICES
 // ============================================================================
+const BillingService = require('../services/billingService');
+const ComplianceService = require('../services/complianceService');
 const EmailService = require('../services/emailService');
 const LPCService = require('../services/lpcService');
 const POPIAService = require('../services/popiaService');
-const BillingService = require('../services/billingService');
-const ComplianceService = require('../services/complianceService');
+const CustomError = require('../utils/customError');
+const generateToken = require('../utils/generateToken');
 
 // ============================================================================
 // QUANTUM CONSTANTS
@@ -222,7 +220,8 @@ function getDateRange(period, startDate, endDate) {
     };
   }
 
-  let start, end;
+  let start; let
+    end;
 
   switch (period.toUpperCase()) {
     case 'DAILY': {
@@ -442,7 +441,7 @@ exports.getFirmDashboard = asyncHandler(async (req, res) => {
       storageUsage,
     ] = await Promise.all([
       Tenant.findById(tenantId).select(
-        'name plan status billing settings lpcNumber province practiceAreas'
+        'name plan status billing settings lpcNumber province practiceAreas',
       ),
       getTeamStatistics(tenantId),
       getDocumentStatistics(tenantId),
@@ -555,7 +554,7 @@ exports.updateFirmSettings = asyncHandler(async (req, res) => {
   if (error) {
     throw new CustomError(
       `Validation error: ${error.details.map((d) => d.message).join(', ')}`,
-      400
+      400,
     );
   }
 
@@ -663,7 +662,9 @@ exports.updateFirmSettings = asyncHandler(async (req, res) => {
  */
 exports.getTeamMembers = asyncHandler(async (req, res) => {
   const { tenantId } = req.user;
-  const { page = 1, limit = 50, role, department, status = 'ACTIVE', search } = req.query;
+  const {
+    page = 1, limit = 50, role, department, status = 'ACTIVE', search,
+  } = req.query;
 
   // Build query
   const query = { tenantId, deletedAt: null };
@@ -714,7 +715,7 @@ exports.getTeamMembers = asyncHandler(async (req, res) => {
         roleDisplay: formatLegalRole(user.role),
         permissions: user.permissions || getDefaultPermissions(user.role),
       };
-    })
+    }),
   );
 
   // Get role distribution
@@ -758,7 +759,7 @@ exports.inviteTeamMember = asyncHandler(async (req, res) => {
   if (error) {
     throw new CustomError(
       `Validation error: ${error.details.map((d) => d.message).join(', ')}`,
-      400
+      400,
     );
   }
 
@@ -772,7 +773,7 @@ exports.inviteTeamMember = asyncHandler(async (req, res) => {
   if (currentTeamSize >= maxTeamSize) {
     throw new CustomError(
       `Team limit reached for ${firm.plan} plan. Maximum: ${maxTeamSize} members`,
-      400
+      400,
     );
   }
 
@@ -795,7 +796,7 @@ exports.inviteTeamMember = asyncHandler(async (req, res) => {
     // Validate LPC registration
     const lpcValid = await LPCService.validatePractitioner(
       value.saLegal.practitionerNumber,
-      value.firstName + ' ' + value.lastName
+      `${value.firstName} ${value.lastName}`,
     ).catch(() => false);
 
     if (!lpcValid) {
@@ -839,7 +840,7 @@ exports.inviteTeamMember = asyncHandler(async (req, res) => {
           },
         },
       ],
-      { session }
+      { session },
     );
 
     // Send invitation email
@@ -884,7 +885,7 @@ exports.inviteTeamMember = asyncHandler(async (req, res) => {
           },
         },
       ],
-      { session }
+      { session },
     );
 
     await session.commitTransaction();
@@ -1154,7 +1155,7 @@ exports.getComplianceDashboard = asyncHandler(async (req, res) => {
       lpc: lpcStatus,
       fica: ficaStatus,
       tax: taxStatus,
-      dataResidency: dataResidency,
+      dataResidency,
       audit: auditStatus,
       team: teamCompliance,
     },
@@ -1262,7 +1263,7 @@ async function getDocumentStatistics(tenantId) {
     totalSizeGB: totalSize[0] ? (totalSize[0].totalSize / (1024 * 1024 * 1024)).toFixed(2) : 0,
     byType: byType.reduce(
       (acc, curr) => ({ ...acc, [curr._id]: { count: curr.count, size: curr.totalSize } }),
-      {}
+      {},
     ),
     byStatus: byStatus.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
     recentActivity,
@@ -1546,8 +1547,8 @@ async function getFICACompliance(tenantId) {
       details: {
         hasFicaOfficer: ficaOfficer !== null,
         clientVerificationRate: verificationRate,
-        suspiciousReports: suspiciousReports,
-        trainingCompleted: ficaOfficer ? true : false,
+        suspiciousReports,
+        trainingCompleted: !!ficaOfficer,
         lastTrainingDate: ficaOfficer?.saLegal?.ficaTrainingDate || null,
       },
       requirements: [
@@ -1595,8 +1596,8 @@ async function getTaxCompliance(tenantId) {
       compliant: !vatRegistered || (vatRegistered && vatSubmitted),
       score: vatRegistered ? (vatSubmitted ? 100 : 50) : 100,
       details: {
-        vatRegistered: vatRegistered,
-        vatNumber: vatNumber,
+        vatRegistered,
+        vatNumber,
         vatSubmissionsCurrent: vatSubmitted,
         taxCertificatesGenerated: taxCertificates,
         lastVatReturn: vatRegistered ? new Date() : null,
@@ -1646,8 +1647,8 @@ async function checkDataResidency(tenantId) {
       score: Math.round(residencyRate),
       details: {
         saResidentDocuments: saResidentCount,
-        totalChecked: totalChecked,
-        residencyRate: residencyRate,
+        totalChecked,
+        residencyRate,
         primaryRegion: documents[0]?.storageLocation?.region || 'unknown',
       },
       requirements: [
@@ -1702,8 +1703,8 @@ async function getTeamCompliance(tenantId) {
 
       // Check FICA training for finance/compliance roles
       if (
-        ['FINANCE_OFFICER', 'COMPLIANCE_OFFICER'].includes(member.role) &&
-        !member.saLegal?.ficaTrainingCompleted
+        ['FINANCE_OFFICER', 'COMPLIANCE_OFFICER'].includes(member.role)
+        && !member.saLegal?.ficaTrainingCompleted
       ) {
         isCompliant = false;
         issues.push('FICA training not completed');
@@ -1715,7 +1716,7 @@ async function getTeamCompliance(tenantId) {
         nonCompliant.push({
           userId: member._id,
           role: member.role,
-          issues: issues,
+          issues,
         });
       }
     });
@@ -1730,7 +1731,7 @@ async function getTeamCompliance(tenantId) {
         compliantMembers: compliantCount,
         nonCompliantCount: nonCompliant.length,
         nonCompliantMembers: nonCompliant,
-        complianceRate: complianceRate,
+        complianceRate,
       },
       requirements: [
         'Annual POPIA training for all staff',
@@ -1801,7 +1802,9 @@ async function getFinancialAnalytics(tenantId, dateRange) {
   } catch (error) {
     console.error('Financial analytics error:', error);
     return {
-      revenue: { total: 0, currency: 'ZAR', growth: 0, breakdown: {} },
+      revenue: {
+        total: 0, currency: 'ZAR', growth: 0, breakdown: {},
+      },
       expenses: { total: 0, breakdown: {} },
       profitability: { netProfit: 0, margin: '0.00', perAttorney: 0 },
       receivables: { outstanding: 0, aging: {} },
@@ -1841,27 +1844,27 @@ async function getDocumentAnalytics(tenantId, dateRange) {
 
     // Get signature statistics
     const signedDocs = documents.filter(
-      (doc) => doc.documentStatus?.status === 'SIGNED' || doc.electronicSignatures?.length > 0
+      (doc) => doc.documentStatus?.status === 'SIGNED' || doc.electronicSignatures?.length > 0,
     ).length;
 
     return {
       total: documents.length,
       totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
-      byType: byType,
-      byStatus: byStatus,
+      byType,
+      byStatus,
       signatures: {
         signedDocuments: signedDocs,
         signatureRate: documents.length > 0 ? (signedDocs / documents.length) * 100 : 0,
         averageSignatures:
           documents.length > 0
-            ? documents.reduce((sum, doc) => sum + (doc.electronicSignatures?.length || 0), 0) /
-              documents.length
+            ? documents.reduce((sum, doc) => sum + (doc.electronicSignatures?.length || 0), 0)
+              / documents.length
             : 0,
       },
       productivity: {
         documentsPerDay:
-          documents.length /
-          Math.max(1, (dateRange.endDate - dateRange.startDate) / (1000 * 60 * 60 * 24)),
+          documents.length
+          / Math.max(1, (dateRange.endDate - dateRange.startDate) / (1000 * 60 * 60 * 24)),
         averageSizeKB: documents.length > 0 ? (totalSize / documents.length / 1024).toFixed(2) : 0,
       },
       period: dateRange,
@@ -1923,16 +1926,15 @@ async function getClientAnalytics(tenantId, dateRange) {
       deletedAt: null,
     });
 
-    const retentionRate =
-      previousClients > 0
-        ? (clients.filter((c) => previousClients > 0).length / previousClients) * 100
-        : 100;
+    const retentionRate = previousClients > 0
+      ? (clients.filter((c) => previousClients > 0).length / previousClients) * 100
+      : 100;
 
     return {
       total: clients.length,
       active: activeClients,
-      byType: byType,
-      bySource: bySource,
+      byType,
+      bySource,
       acquisition: {
         newClients: clients.length,
         growthRate:
@@ -1998,11 +2000,11 @@ async function getComplianceTrends(tenantId, dateRange) {
     }
 
     return {
-      trends: trends,
+      trends,
       summary: {
         currentScore: trends[trends.length - 1]?.scores.overall || 0,
         averageScore: Math.round(
-          trends.reduce((sum, t) => sum + t.scores.overall, 0) / trends.length
+          trends.reduce((sum, t) => sum + t.scores.overall, 0) / trends.length,
         ),
         improvement:
           trends.length > 1
@@ -2073,7 +2075,7 @@ async function getTeamProductivity(tenantId, dateRange) {
           signed: signedCount,
           productivity: docCount > 0 ? (signedCount / docCount) * 100 : 0,
         };
-      })
+      }),
     );
 
     return {
@@ -2306,7 +2308,7 @@ async function getFirmNotifications(tenantId, firm) {
       type: 'STORAGE_LIMIT',
       severity: 'MEDIUM',
       message: `Storage usage at ${((storageUsage.totalSizeBytes / storageLimit) * 100).toFixed(
-        0
+        0,
       )}% of limit`,
       action: 'UPGRADE_STORAGE',
       deadline: null,
@@ -2478,7 +2480,7 @@ async function getAuditStatus(tenantId) {
       details: {
         lastAudit: lastAudit?.timestamp || null,
         nextAudit: nextAuditDate,
-        daysUntilAudit: daysUntilAudit,
+        daysUntilAudit,
         auditCycle: '6_MONTHS',
       },
     };
@@ -2552,7 +2554,7 @@ async function validateStatusChange(user, newStatus, requester) {
       if (activeMatters > 0) {
         throw new CustomError(
           `Cannot deactivate ${formatLegalRole(user.role)} with ${activeMatters} active matters.`,
-          400
+          400,
         );
       }
     } catch (error) {
@@ -2567,14 +2569,13 @@ async function validateStatusChange(user, newStatus, requester) {
  * @description Calculate productivity metrics
  */
 function calculateProductivityMetrics(teamStats, documentStats) {
-  const activeAttorneys =
-    (teamStats.byRole['SENIOR_ATTORNEY'] || 0) +
-      (teamStats.byRole['JUNIOR_ATTORNEY'] || 0) +
-      (teamStats.byRole['CANDIDATE_ATTORNEY'] || 0) || 1;
+  const activeAttorneys = (teamStats.byRole.SENIOR_ATTORNEY || 0)
+      + (teamStats.byRole.JUNIOR_ATTORNEY || 0)
+      + (teamStats.byRole.CANDIDATE_ATTORNEY || 0) || 1;
 
   return {
     documentsPerAttorney: documentStats.total / activeAttorneys,
-    activeDocumentRatio: (documentStats.byStatus['ACTIVE'] || 0) / documentStats.total || 0,
+    activeDocumentRatio: (documentStats.byStatus.ACTIVE || 0) / documentStats.total || 0,
     teamUtilization: teamStats.active / teamStats.total || 0,
   };
 }

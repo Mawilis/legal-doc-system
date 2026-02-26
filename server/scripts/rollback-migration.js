@@ -1,4 +1,4 @@
-/*===========================================================================
+/*= ==========================================================================
   WILSY OS - SUPREME ARCHITECT GENERATED FILE
   ===========================================================================
   ██████╗  ██████╗ ██╗     ██╗     ██╗      ██████╗██╗  ██╗    ███╗   ███╗██╗ ██████╗ ██████╗  █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
@@ -23,17 +23,17 @@
   CHIEF ARCHITECT: Wilson Khanyezi <wilsy.wk@gmail.com> | +27 69 046 5710
   ROI: Automated rollback reduces system downtime by 95%, ensures 100% data integrity,
        and maintains statutory compliance during migration reversals.
-  ==========================================================================*/
+  ========================================================================== */
 
 /* eslint-disable no-undef */
-'use strict';
 
 const mongoose = require('mongoose');
 const fs = require('fs').promises;
-const path = require('path');
-const crypto = require('crypto');
 const { exec } = require('child_process');
+const crypto = require('crypto');
+const path = require('path');
 const util = require('util');
+
 const execAsync = util.promisify(exec);
 
 // Load environment variables
@@ -166,15 +166,15 @@ class MigrationRollbackManager {
         if (this.dbConnection && typeof this.dbConnection.close === 'function') {
           await this.dbConnection.close();
         } else if (
-          this.dbConnection &&
-          this.dbConnection.client &&
-          typeof this.dbConnection.client.close === 'function'
+          this.dbConnection
+          && this.dbConnection.client
+          && typeof this.dbConnection.client.close === 'function'
         ) {
           await this.dbConnection.client.close();
         } else if (
-          this.dbConnection &&
-          this.dbConnection.connection &&
-          typeof this.dbConnection.connection.close === 'function'
+          this.dbConnection
+          && this.dbConnection.connection
+          && typeof this.dbConnection.connection.close === 'function'
         ) {
           await this.dbConnection.connection.close();
         }
@@ -352,7 +352,7 @@ async function main() {
       console.log(`   Duration: ${result.metrics.endTime - result.metrics.startTime}ms`);
     }
     if (result.dryRun) {
-      console.log(`   Mode: DRY RUN - No changes made`);
+      console.log('   Mode: DRY RUN - No changes made');
     }
 
     process.exit(0);

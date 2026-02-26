@@ -24,11 +24,9 @@
  * Biblical worth billions no child's place. Wilsy OS to the World.
  */
 
-'use strict';
-
-const Invoice = require('../models/invoiceModel');
-const Client = require('../models/clientModel'); // Assumption: clientModel exists
 const { emitAudit } = require('../middleware/auditMiddleware');
+const Client = require('../models/clientModel'); // Assumption: clientModel exists
+const Invoice = require('../models/invoiceModel');
 const CustomError = require('../utils/customError');
 
 /*
@@ -38,7 +36,9 @@ const CustomError = require('../utils/customError');
  */
 exports.createInvoice = async (req, res, next) => {
   try {
-    const { clientId, caseId, lineItems, dueDate, notes, terms } = req.body;
+    const {
+      clientId, caseId, lineItems, dueDate, notes, terms,
+    } = req.body;
 
     // 1. Mandatory Input Guard
     if (!clientId || !lineItems || lineItems.length === 0) {
@@ -99,7 +99,9 @@ exports.createInvoice = async (req, res, next) => {
  */
 exports.getAllInvoices = async (req, res, next) => {
   try {
-    const { status, clientId, page = 1, limit = 50 } = req.query;
+    const {
+      status, clientId, page = 1, limit = 50,
+    } = req.query;
     const query = { tenantId: req.user.tenantId };
 
     if (status) query.status = status;
@@ -180,7 +182,7 @@ exports.voidInvoice = async (req, res, next) => {
     if (parseFloat(invoice.totalAmount.toString()) !== parseFloat(invoice.balanceDue.toString())) {
       throw new CustomError(
         'Fiscal Integrity Violation: Paid invoices cannot be voided. Issue a Credit Note.',
-        403
+        403,
       );
     }
 

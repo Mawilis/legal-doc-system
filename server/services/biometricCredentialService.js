@@ -10,27 +10,27 @@
 
 require('dotenv').config();
 const crypto = require('crypto');
-const mongoose = require('mongoose');
 const {
   generateRegistrationOptions,
   verifyRegistrationResponse,
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } = require('@simplewebauthn/server');
-const { createClient } = require('redis');
-const Bull = require('bull');
 const bcrypt = require('bcrypt');
+const Bull = require('bull');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const { createClient } = require('redis');
 const { v4: uuidv4 } = require('uuid');
 
 // =================================================================================
 // MODEL IMPORTS
 // =================================================================================
-const BiometricCredential = require('../models/BiometricCredential');
-const User = require('../models/User');
-const LegalFirm = require('../models/LegalFirm');
 const BiometricAudit = require('../models/BiometricAudit');
+const BiometricCredential = require('../models/BiometricCredential');
 const Consent = require('../models/Consent');
+const LegalFirm = require('../models/LegalFirm');
+const User = require('../models/User');
 
 // =================================================================================
 // ENVIRONMENT VALIDATION
@@ -121,9 +121,7 @@ const initializeBiometricInfrastructure = async () => {
     redisClient = createClient({
       url: process.env.REDIS_CACHE_URL,
       socket: {
-        reconnectStrategy: (retries) => {
-          return Math.min(retries * 100, 3000);
-        },
+        reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
       },
     });
 
@@ -178,7 +176,7 @@ const encryptBiometricTemplate = (biometricData) => {
     const cipher = crypto.createCipheriv(
       'aes-256-gcm',
       Buffer.from(process.env.BIOMETRIC_ENCRYPTION_KEY, 'hex'),
-      iv
+      iv,
     );
 
     let encrypted = cipher.update(dataBuffer);
@@ -207,7 +205,7 @@ const decryptBiometricTemplate = (encryptedTemplate) => {
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       Buffer.from(process.env.BIOMETRIC_ENCRYPTION_KEY, 'hex'),
-      Buffer.from(encryptedTemplate.iv, 'base64')
+      Buffer.from(encryptedTemplate.iv, 'base64'),
     );
 
     decipher.setAuthTag(Buffer.from(encryptedTemplate.authTag, 'base64'));
@@ -269,7 +267,7 @@ const validateBiometricQuality = async (biometricData) => {
 
     if (!validation.isValid) {
       validation.complianceIssues.push(
-        `Quality score ${validation.qualityScore} below minimum ${minQuality}`
+        `Quality score ${validation.qualityScore} below minimum ${minQuality}`,
       );
     }
 
@@ -359,13 +357,13 @@ class BiometricCredentialService {
       const qualityValidation = await validateBiometricQuality(credentialData);
       if (!qualityValidation.isValid) {
         throw new Error(
-          `Biometric quality validation failed: ${qualityValidation.complianceIssues.join(', ')}`
+          `Biometric quality validation failed: ${qualityValidation.complianceIssues.join(', ')}`,
         );
       }
 
       // Check for duplicate templates
       const templateHash = generateTemplateHash(
-        Buffer.from(JSON.stringify(credentialData.template || {}))
+        Buffer.from(JSON.stringify(credentialData.template || {})),
       );
 
       const existingCredential = await BiometricCredential.findOne({
@@ -441,7 +439,7 @@ class BiometricCredentialService {
             credentialId: credentialRecord.credentialId,
             activationToken: activationToken.token,
             expiresAt: activationToken.expiresAt,
-          })
+          }),
         );
       }
 
@@ -498,7 +496,7 @@ class BiometricCredentialService {
         await this.redisClient.setEx(
           `webauthn:challenge:${userId}`,
           300,
-          registrationOptions.challenge
+          registrationOptions.challenge,
         );
       }
 
@@ -564,9 +562,8 @@ class BiometricCredentialService {
           credential: verification.registrationInfo,
           compliance: ['FIDO2', 'W3C WebAuthn'],
         };
-      } else {
-        throw new Error('WebAuthn registration verification failed');
       }
+      throw new Error('WebAuthn registration verification failed');
     } catch (error) {
       console.error('WebAuthn registration verification failed:', error);
       throw new Error(`Registration verification failed: ${error.message}`);
@@ -605,19 +602,19 @@ class BiometricCredentialService {
         case BIOMETRIC_TYPES.WEBAUTHN_SECURITY_KEY:
           authenticationResult = await this.verifyWebAuthnAuthentication(
             credential.userId,
-            authenticationData
+            authenticationData,
           );
           break;
         case BIOMETRIC_TYPES.FINGERPRINT:
           authenticationResult = await this.verifyFingerprintAuthentication(
             credential,
-            authenticationData
+            authenticationData,
           );
           break;
         case BIOMETRIC_TYPES.FACIAL_RECOGNITION:
           authenticationResult = await this.verifyFacialAuthentication(
             credential,
-            authenticationData
+            authenticationData,
           );
           break;
         default:
@@ -628,7 +625,7 @@ class BiometricCredentialService {
       if (authenticationResult.matchScore < this.biometricThreshold) {
         await this.recordFailedAttempt(credential.userId, authenticationId);
         throw new Error(
-          `Biometric match score ${authenticationResult.matchScore} below threshold ${this.biometricThreshold}`
+          `Biometric match score ${authenticationResult.matchScore} below threshold ${this.biometricThreshold}`,
         );
       }
 
@@ -644,7 +641,7 @@ class BiometricCredentialService {
       const jwtToken = this.generateBiometricJWT(
         credential.userId,
         credentialId,
-        authenticationResult
+        authenticationResult,
       );
 
       // Update credential usage
@@ -682,7 +679,7 @@ class BiometricCredentialService {
             authenticationId,
             timestamp: new Date(),
             deviceInfo: authenticationData.deviceInfo,
-          })
+          }),
         );
       }
 
@@ -747,7 +744,7 @@ class BiometricCredentialService {
         await this.redisClient.setEx(
           `webauthn:auth:challenge:${userId}`,
           300,
-          authOptions.challenge
+          authOptions.challenge,
         );
       }
 
@@ -800,9 +797,8 @@ class BiometricCredentialService {
           authenticationLevel: AUTHENTICATION_LEVELS.LEVEL_3,
           authenticatorInfo: verification.authenticationInfo,
         };
-      } else {
-        throw new Error('WebAuthn authentication verification failed');
       }
+      throw new Error('WebAuthn authentication verification failed');
     } catch (error) {
       console.error('WebAuthn authentication verification failed:', error);
       throw new Error(`Authentication verification failed: ${error.message}`);
@@ -832,7 +828,7 @@ class BiometricCredentialService {
       // Validate revocation authorization
       const hasPermission = await this.validateRevocationPermission(
         revocationData.requestorId,
-        credential.userId
+        credential.userId,
       );
 
       if (!hasPermission) {
@@ -899,7 +895,7 @@ class BiometricCredentialService {
         purpose: 'biometric_activation',
       },
       this.jwtSecret,
-      { expiresIn: '1h' }
+      { expiresIn: '1h' },
     );
 
     return {
@@ -927,7 +923,7 @@ class BiometricCredentialService {
       const providedTemplate = authenticationData.template || {};
 
       // Calculate matching score (simplified)
-      let matchScore = 0.8; // Default score for demonstration
+      const matchScore = 0.8; // Default score for demonstration
 
       // Calculate liveness score
       const livenessScore = calculateLivenessScore({
@@ -963,7 +959,7 @@ class BiometricCredentialService {
       const providedTemplate = authenticationData.template || {};
 
       // Calculate matching score (simplified)
-      let matchScore = 0.85; // Default score for demonstration
+      const matchScore = 0.85; // Default score for demonstration
 
       // Calculate liveness score
       const livenessScore = calculateLivenessScore({
@@ -996,10 +992,9 @@ class BiometricCredentialService {
       const lockoutData = JSON.parse(lockoutStatus);
       if (lockoutData.expiresAt > Date.now()) {
         return true;
-      } else {
-        await this.redisClient.del(lockoutKey);
-        return false;
       }
+      await this.redisClient.del(lockoutKey);
+      return false;
     }
 
     return false;
@@ -1037,11 +1032,11 @@ class BiometricCredentialService {
       await this.redisClient.setEx(
         lockoutKey,
         this.lockoutDuration * 60,
-        JSON.stringify(lockoutData)
+        JSON.stringify(lockoutData),
       );
 
       console.log(
-        `🚨 Account lockout: User ${userId} locked out for ${this.lockoutDuration} minutes`
+        `🚨 Account lockout: User ${userId} locked out for ${this.lockoutDuration} minutes`,
       );
     }
   }
@@ -1186,7 +1181,7 @@ class BiometricCredentialService {
 
       // Overall status
       const unhealthyComponents = Object.values(health.components).filter(
-        (status) => status === 'UNHEALTHY'
+        (status) => status === 'UNHEALTHY',
       ).length;
 
       if (unhealthyComponents > 0) {

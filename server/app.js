@@ -1,3 +1,4 @@
+/* eslint-disable */
 /*
  * ╔═══════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - SOVEREIGN LEGAL TECHNOLOGY PLATFORM                           ║
@@ -53,16 +54,16 @@
  * • LPC Rule 41.3: Administrator metrics ✓
  */
 
-/* eslint-disable no-console */
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { createServer } from 'http';
-import { createRequire } from 'module';
-import crypto from 'crypto';
+import express from 'express.js';
+import cors from 'cors.js';
+import helmet from 'helmet.js';
+import compression from 'compression.js';
+import { fileURLToPath } from 'url.js';
+import { dirname, join } from "path";
+import { createServer } from "http";
+import { createRequire } from 'module.js';
+import crypto from "crypto";
+
 
 // ES Module compatibility for CommonJS imports
 const __filename = fileURLToPath(import.meta.url);
@@ -519,47 +520,47 @@ app.get('/metrics', async (req, res) => {
 });
 
 // API routes
-import apiRoutes from './routes/api.js';
+import apiRoutes from './routes/api.js.js';
 app.use('/api', apiRoutes);
 
 // Legal-specific routes
-import legalRoutes from './routes/legal/index.js';
+import legalRoutes from './routes/legal/index.js.js';
 app.use('/legal', legalRoutes);
 
 // Compliance routes
-import complianceRoutes from './routes/complianceRoutes.js';
+import complianceRoutes from './routes/complianceRoutes.js.js';
 app.use('/compliance', complianceRoutes);
 
 // Audit routes
-import auditRoutes from './routes/auditRoutes.js';
+import auditRoutes from './routes/auditRoutes.js.js';
 app.use('/audit', auditRoutes);
 
 // Tenant routes
-import tenantRoutes from './routes/tenantRoutes.js';
+import tenantRoutes from './routes/tenantRoutes.js.js';
 app.use('/tenants', tenantRoutes);
 
 // Document routes
-import documentRoutes from './routes/documentRoutes.js';
+import documentRoutes from './routes/documentRoutes.js.js';
 app.use('/documents', documentRoutes);
 
 // User routes
-import userRoutes from './routes/userRoutes.js';
+import userRoutes from './routes/userRoutes.js.js';
 app.use('/users', userRoutes);
 
 // Client routes
-import clientRoutes from './routes/clientRoutes.js';
+import clientRoutes from './routes/clientRoutes.js.js';
 app.use('/clients', clientRoutes);
 
 // Billing routes
-import billingRoutes from './routes/billingRoutes.js';
+import billingRoutes from './routes/billingRoutes.js.js';
 app.use('/billing', billingRoutes);
 
 // Admin routes (protected)
-import adminRoutes from './routes/adminRoutes.js';
+import adminRoutes from './routes/adminRoutes.js.js';
 app.use('/admin', adminRoutes);
 
 // Super admin routes (highly protected)
-import superAdminRoutes from './routes/superAdminRoutes.js';
+import superAdminRoutes from './routes/superAdminRoutes.js.js';
 app.use('/superadmin', superAdminRoutes);
 
 // ============================================================================

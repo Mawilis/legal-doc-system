@@ -61,22 +61,23 @@ require('dotenv').config();
 const crypto = require('crypto');
 const { createHash, createHmac } = require('crypto');
 const EC = require('elliptic').ec;
+
 const secp256k1 = new EC('secp256k1');
-const { SHA3 } = require('sha3');
-const MerkleTree = require('merkletreejs');
 const { Transaction } = require('ethereumjs-tx');
+const MerkleTree = require('merkletreejs');
+const mongoose = require('mongoose');
+const { SHA3 } = require('sha3');
 const Web3 = require('web3');
 
 // 🗄️ Database & Models
-const mongoose = require('mongoose');
+const AuditLog = require('../models/auditLogModel');
 const BlockchainTransaction = require('../models/blockchainTransactionModel');
 const Document = require('../models/documentModel');
-const AuditLog = require('../models/auditLogModel');
 const Firm = require('../models/firmModel');
 
 // 🛡️ Wilsy OS Security
-const { encryptData, decryptData, generateKeyPair } = require('../utils/cryptoUtils');
 const { validatePOPIAConsent } = require('../utils/complianceUtils');
+const { encryptData, decryptData, generateKeyPair } = require('../utils/cryptoUtils');
 
 // 📜 Logger
 const logger = require('../utils/logger');
@@ -169,7 +170,7 @@ class BlockchainService {
     this.initSmartContracts();
 
     logger.info(
-      `🔗 Quantum Blockchain Service initialized: ${this.isActive ? 'ACTIVE' : 'SIMULATION MODE'}`
+      `🔗 Quantum Blockchain Service initialized: ${this.isActive ? 'ACTIVE' : 'SIMULATION MODE'}`,
     );
   }
 
@@ -226,16 +227,15 @@ class BlockchainService {
    */
   initEthereum() {
     try {
-      const providerUrl =
-        BLOCKCHAIN_CONFIG.rpcProviders[BLOCKCHAIN_CONFIG.network] ||
-        BLOCKCHAIN_CONFIG.rpcProviders.testnet;
+      const providerUrl = BLOCKCHAIN_CONFIG.rpcProviders[BLOCKCHAIN_CONFIG.network]
+        || BLOCKCHAIN_CONFIG.rpcProviders.testnet;
 
       this.web3 = new Web3(new Web3.providers.HttpProvider(providerUrl));
 
       // Add wallet if private key is available
       if (BLOCKCHAIN_CONFIG.wallet.privateKey) {
         const account = this.web3.eth.accounts.privateKeyToAccount(
-          BLOCKCHAIN_CONFIG.wallet.privateKey
+          BLOCKCHAIN_CONFIG.wallet.privateKey,
         );
         this.web3.eth.accounts.wallet.add(account);
         this.web3.eth.defaultAccount = account.address;
@@ -256,9 +256,7 @@ class BlockchainService {
 
     // Simulated Fabric client for development
     this.fabricClient = {
-      submitTransaction: async (channel, chaincode, functionName, args) => {
-        return this.simulateFabricTransaction(channel, chaincode, functionName, args);
-      },
+      submitTransaction: async (channel, chaincode, functionName, args) => this.simulateFabricTransaction(channel, chaincode, functionName, args),
     };
   }
 
@@ -300,7 +298,7 @@ class BlockchainService {
       // Initialize contract instances
       this.notarizationContract = new this.web3.eth.Contract(
         notarizationContractABI,
-        BLOCKCHAIN_CONFIG.contracts.notarization
+        BLOCKCHAIN_CONFIG.contracts.notarization,
       );
 
       logger.info('📜 Smart contracts initialized successfully');
@@ -346,14 +344,14 @@ class BlockchainService {
         transactionResult = await this.executeBlockchainNotarization(
           documentHash,
           metadata,
-          channelName
+          channelName,
         );
       } else {
         // 🧪 Simulation mode (for development/testing)
         transactionResult = await this.simulateBlockchainNotarization(
           documentHash,
           metadata,
-          firmId
+          firmId,
         );
       }
 
@@ -361,11 +359,11 @@ class BlockchainService {
       const savedTransaction = await this.saveBlockchainTransaction({
         type: 'DOCUMENT_NOTARIZATION',
         documentId: documentData._id,
-        documentHash: documentHash,
-        firmId: firmId,
+        documentHash,
+        firmId,
         userId: user._id,
         userRole: user.role,
-        metadata: metadata,
+        metadata,
         blockchainData: transactionResult,
         status: 'CONFIRMED',
         timestamp: new Date(),
@@ -389,7 +387,7 @@ class BlockchainService {
       await this.createAuditLog({
         action: 'DOCUMENT_NOTARIZED',
         userId: user._id,
-        firmId: firmId,
+        firmId,
         documentId: documentData._id,
         blockchainTransactionId: savedTransaction._id,
         metadata: {
@@ -400,14 +398,14 @@ class BlockchainService {
       });
 
       logger.info(
-        `✅ Document notarized: ${documentData.title} (Hash: ${documentHash.substring(0, 16)}...)`
+        `✅ Document notarized: ${documentData.title} (Hash: ${documentHash.substring(0, 16)}...)`,
       );
 
       return {
         success: true,
         transactionId: savedTransaction._id,
         blockchainTxHash: transactionResult.transactionHash,
-        documentHash: documentHash,
+        documentHash,
         timestamp: new Date(),
         network: BLOCKCHAIN_CONFIG.network,
         // ⚖️ ECT Act Compliance Proof
@@ -420,7 +418,7 @@ class BlockchainService {
       await this.saveBlockchainTransaction({
         type: 'DOCUMENT_NOTARIZATION',
         documentId: documentData._id,
-        firmId: firmId,
+        firmId,
         userId: user._id,
         status: 'FAILED',
         error: error.message,
@@ -549,7 +547,7 @@ class BlockchainService {
           quantumResistant: BLOCKCHAIN_CONFIG.compliance.quantumResistant,
           encryptionAlgorithm: 'AES-256-GCM',
         },
-      })
+      }),
     );
   }
 
@@ -564,7 +562,7 @@ class BlockchainService {
     try {
       const nonce = await this.web3.eth.getTransactionCount(
         BLOCKCHAIN_CONFIG.wallet.address,
-        'latest'
+        'latest',
       );
 
       // Prepare transaction
@@ -584,7 +582,7 @@ class BlockchainService {
       // Sign transaction
       const signedTx = await this.web3.eth.accounts.signTransaction(
         txObject,
-        BLOCKCHAIN_CONFIG.wallet.privateKey
+        BLOCKCHAIN_CONFIG.wallet.privateKey,
       );
 
       // Send transaction
@@ -678,8 +676,8 @@ class BlockchainService {
 
       // 🔍 Check local database for additional verification
       const dbTransaction = await BlockchainTransaction.findOne({
-        documentHash: documentHash,
-        firmId: firmId,
+        documentHash,
+        firmId,
         status: 'CONFIRMED',
       }).sort({ timestamp: -1 });
 
@@ -691,7 +689,7 @@ class BlockchainService {
       // 📊 Calculate verification confidence score
       const confidenceScore = this.calculateVerificationConfidence(
         verificationResult,
-        dbTransaction
+        dbTransaction,
       );
 
       // ⚖️ Generate legal proof for court admissibility
@@ -700,11 +698,11 @@ class BlockchainService {
       return {
         success: true,
         verified: verificationResult.isVerified,
-        confidenceScore: confidenceScore,
+        confidenceScore,
         timestamp: verificationResult.timestamp,
         blockchainProof: verificationResult,
         databaseProof: dbTransaction,
-        legalProof: legalProof,
+        legalProof,
         recommendations: this.generateVerificationRecommendations(confidenceScore),
       };
     } catch (error) {
@@ -746,8 +744,8 @@ class BlockchainService {
   async simulateBlockchainVerification(documentHash, firmId) {
     // Check simulated transactions
     const simulatedTx = await BlockchainTransaction.findOne({
-      documentHash: documentHash,
-      firmId: firmId,
+      documentHash,
+      firmId,
       status: 'CONFIRMED',
     });
 
@@ -796,20 +794,20 @@ class BlockchainService {
         executionResult = await this.simulateContractExecution(
           contractHash,
           executionParams,
-          firmId
+          firmId,
         );
       }
 
       // 💾 Save contract execution record
       const savedContract = await this.saveSmartContractExecution({
         contractType: contractData.type,
-        contractHash: contractHash,
-        firmId: firmId,
+        contractHash,
+        firmId,
         parties: contractData.parties,
         terms: contractData.terms,
         jurisdiction: contractData.jurisdiction || 'ZA',
         executedBy: user._id,
-        executionResult: executionResult,
+        executionResult,
         status: 'EXECUTED',
         timestamp: new Date(),
       });
@@ -818,11 +816,11 @@ class BlockchainService {
       await this.createAuditLog({
         action: 'SMART_CONTRACT_EXECUTED',
         userId: user._id,
-        firmId: firmId,
+        firmId,
         contractId: savedContract._id,
         metadata: {
           contractType: contractData.type,
-          contractHash: contractHash,
+          contractHash,
           blockchainTxHash: executionResult.transactionHash,
         },
       });
@@ -830,15 +828,15 @@ class BlockchainService {
       logger.info(
         `🤝 Smart contract executed: ${contractData.type} (Hash: ${contractHash.substring(
           0,
-          16
-        )}...)`
+          16,
+        )}...)`,
       );
 
       return {
         success: true,
         contractId: savedContract._id,
-        contractHash: contractHash,
-        executionResult: executionResult,
+        contractHash,
+        executionResult,
         legalValidity: this.generateLegalValidityCertificate(savedContract),
         timestamp: new Date(),
       };
@@ -848,7 +846,7 @@ class BlockchainService {
       await this.createAuditLog({
         action: 'SMART_CONTRACT_FAILED',
         userId: user._id,
-        firmId: firmId,
+        firmId,
         metadata: {
           contractType: contractData.type,
           error: error.message,
@@ -1012,7 +1010,7 @@ class BlockchainService {
     const privateKey = secp256k1.keyFromPrivate(crypto.randomBytes(32).toString('hex'));
 
     const signature = privateKey.sign(
-      createHash('sha256').update(JSON.stringify(signatureData)).digest()
+      createHash('sha256').update(JSON.stringify(signatureData)).digest(),
     );
 
     return {
@@ -1060,19 +1058,19 @@ class BlockchainService {
       recommendations.push(
         'Consider obtaining additional witness signatures',
         'Request manual verification from legal authority',
-        'Supplement with physical document evidence'
+        'Supplement with physical document evidence',
       );
     } else if (confidenceScore < 80) {
       recommendations.push(
         'Verify document with secondary blockchain explorer',
         'Check timestamp authority certificate',
-        'Confirm signatory authority'
+        'Confirm signatory authority',
       );
     } else {
       recommendations.push(
         'Document verification meets court admissibility standards',
         'Consider periodic re-verification for long-term contracts',
-        'Maintain backup of cryptographic proofs'
+        'Maintain backup of cryptographic proofs',
       );
     }
 
@@ -1233,7 +1231,7 @@ class BlockchainService {
   async verifyFirmDocuments(firmId) {
     try {
       const documents = await Document.find({
-        firmId: firmId,
+        firmId,
         blockchainNotarized: true,
       }).select('_id title blockchainHash');
 
@@ -1242,7 +1240,7 @@ class BlockchainService {
           documentId: doc._id,
           title: doc.title,
           verification: await this.verifyDocument(doc.blockchainHash, firmId),
-        }))
+        })),
       );
 
       const summary = {
@@ -1250,8 +1248,8 @@ class BlockchainService {
         verified: verificationResults.filter((r) => r.verification.verified).length,
         failed: verificationResults.filter((r) => !r.verification.verified).length,
         averageConfidence:
-          verificationResults.reduce((sum, r) => sum + (r.verification.confidenceScore || 0), 0) /
-          documents.length,
+          verificationResults.reduce((sum, r) => sum + (r.verification.confidenceScore || 0), 0)
+          / documents.length,
         results: verificationResults,
       };
 

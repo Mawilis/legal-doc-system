@@ -1,4 +1,4 @@
-/* 
+/*
 =============================================================================================================
 QUANTUM AGREEMENT VALIDATION FORTRESS - ETERNAL SANCTITY OF LEGAL CONTRACT INTEGRITY
 =============================================================================================================
@@ -34,6 +34,7 @@ require('dotenv').config();
 const Joi = require('joi');
 const ObjectId = require('joi-objectid')(Joi);
 const JoiDate = require('@hapi/joi-date');
+
 const JoiExtended = Joi.extend(JoiDate);
 const crypto = require('crypto');
 
@@ -276,8 +277,8 @@ const partySchema = Joi.object({
           'legal_obligation',
           'marketing',
           'credit_check',
-          'service_improvement'
-        )
+          'service_improvement',
+        ),
       )
       .min(1)
       .required(),
@@ -309,7 +310,7 @@ const partySchema = Joi.object({
           'Mpumalanga',
           'North West',
           'Northern Cape',
-          'Western Cape'
+          'Western Cape',
         )
         .required(),
     }).required(),
@@ -361,7 +362,7 @@ const createAgreementSchema = Joi.object({
       'partnership_agreement',
       'shareholders_agreement',
       'loan_agreement',
-      'settlement_agreement'
+      'settlement_agreement',
     )
     .required()
     .messages({
@@ -406,9 +407,8 @@ const createAgreementSchema = Joi.object({
 
       // Quantum Compliance: At least one SA resident party for jurisdiction
       const hasSAResident = parties.some(
-        (party) =>
-          party.contactDetails.physicalAddress.province &&
-          party.contactDetails.physicalAddress.postalCode
+        (party) => party.contactDetails.physicalAddress.province
+          && party.contactDetails.physicalAddress.postalCode,
       );
 
       if (!hasSAResident) {
@@ -428,10 +428,11 @@ const createAgreementSchema = Joi.object({
   // ============================================
   // QUANTUM TERMS: Agreement Content Validation
   // ============================================
-  title: Joi.string().min(10).max(200).required().messages({
-    'string.min': 'Title must be at least 10 characters',
-    'any.required': 'Title is required',
-  }),
+  title: Joi.string().min(10).max(200).required()
+    .messages({
+      'string.min': 'Title must be at least 10 characters',
+      'any.required': 'Title is required',
+    }),
 
   description: Joi.string()
     .min(parseInt(process.env.MIN_AGREEMENT_TERMS_LENGTH) || SA_LEGAL_CONSTANTS.ECT_MIN_TERM_LENGTH)
@@ -536,7 +537,7 @@ const createAgreementSchema = Joi.object({
         'Mpumalanga Division',
         'North West Division',
         'Northern Cape Division',
-        'Western Cape Division'
+        'Western Cape Division',
       )
       .default('Gauteng Division'),
     language: Joi.string()
@@ -563,7 +564,7 @@ const createAgreementSchema = Joi.object({
           description: Joi.string().min(5).required(),
           lateFeePercentage: Joi.number().min(0).max(25).default(10),
           vatInclusive: Joi.boolean().default(true),
-        })
+        }),
       )
       .min(1)
       .optional(),
@@ -645,7 +646,7 @@ const createAgreementSchema = Joi.object({
       'property',
       'financial',
       'legal',
-      'other'
+      'other',
     ),
     priority: Joi.string().valid('low', 'medium', 'high', 'critical').default('medium'),
     tags: Joi.array().items(Joi.string().min(2).max(50)).max(10).default([]),
@@ -699,7 +700,7 @@ const updateAgreementSchema = Joi.object({
           amount: zarCurrencySchema.required(),
           dueDate: Joi.date().iso().required(),
           description: Joi.string().min(5).required(),
-        })
+        }),
       )
       .min(1)
       .optional(),
@@ -754,13 +755,14 @@ const searchAgreementSchema = Joi.object({
       'sale_of_goods',
       'lease_agreement',
       'consulting_agreement',
-      'partnership_agreement'
+      'partnership_agreement',
     )
     .optional(),
 
   dateRange: Joi.object({
     startDate: Joi.date().iso().max('now').optional(),
-    endDate: Joi.date().iso().max('now').min(Joi.ref('startDate')).optional(),
+    endDate: Joi.date().iso().max('now').min(Joi.ref('startDate'))
+      .optional(),
   }).optional(),
 
   financialRange: Joi.object({
@@ -772,13 +774,14 @@ const searchAgreementSchema = Joi.object({
   legalFirmId: ObjectId().optional(),
 
   // POPIA Compliance: Limit search results
-  limit: Joi.number().integer().min(1).max(100).default(50),
+  limit: Joi.number().integer().min(1).max(100)
+    .default(50),
   offset: Joi.number().integer().min(0).default(0),
 
   // Security: Prevent excessive data exposure
   fields: Joi.array()
     .items(
-      Joi.string().valid('title', 'agreementType', 'parties', 'totalValue', 'startDate', 'endDate')
+      Joi.string().valid('title', 'agreementType', 'parties', 'totalValue', 'startDate', 'endDate'),
     )
     .max(10)
     .default(['title', 'agreementType', 'parties', 'startDate']),
@@ -995,7 +998,7 @@ const validateSALegalCompliance = (agreementData) => {
 
   // POPIA Validation
   const hasPersonalData = agreementData.parties.some(
-    (party) => party.partyType === 'individual' || party.contactDetails.email.includes('personal')
+    (party) => party.partyType === 'individual' || party.contactDetails.email.includes('personal'),
   );
 
   if (hasPersonalData && !agreementData.compliance.popiaCompliant) {
@@ -1008,9 +1011,7 @@ const validateSALegalCompliance = (agreementData) => {
   }
 
   // Companies Act Validation
-  const hasCompanies = agreementData.parties.some((party) =>
-    ['company', 'cc', 'close_corporation'].includes(party.partyType)
-  );
+  const hasCompanies = agreementData.parties.some((party) => ['company', 'cc', 'close_corporation'].includes(party.partyType));
 
   if (hasCompanies && !agreementData.compliance.companiesActCompliant) {
     complianceIssues.push('Companies Act compliance required for corporate parties');

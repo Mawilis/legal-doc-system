@@ -75,9 +75,8 @@
  * ============================================================================
  */
 
-'use strict';
-
 const express = require('express');
+
 const router = express.Router();
 
 // ============================================================================
@@ -117,6 +116,12 @@ const {
 // MILITARY-GRADE MIDDLEWARE SUITE
 // ============================================================================
 const {
+  predictAnomalousBehavior,
+  enforceEthicalBoundaries,
+  logDecisionsForAudit,
+  preventAIAdversarialAttacks,
+} = require('../middleware/aiGovernanceMiddleware');
+const {
   protect,
   validateQuantumSignature,
   enforceDataSovereignty,
@@ -124,12 +129,16 @@ const {
 } = require('../middleware/authMiddleware');
 
 const {
-  validateTenantOwnership,
-  enforceComplianceBoundaries,
-  auditAtomicOperations,
-  enforceJurisdictionalAuthority,
-} = require('../middleware/tenantMiddleware');
-
+  anchorToQuantumBlockchain,
+  verifyOnChainAuthority,
+  executeSmartContractCovenant,
+} = require('../middleware/blockchainMiddleware');
+const {
+  generateEntropyProof,
+  validateTemporalConsistency,
+  enforceCausalOrdering,
+  preventQuantumReplayAttacks,
+} = require('../middleware/quantumMiddleware');
 const {
   restrictTo,
   validatePermissionMatrix,
@@ -137,35 +146,24 @@ const {
   preventPrivilegeEscalation,
   verifyMultiSignatureAuthority,
 } = require('../middleware/rbacMiddleware');
+const {
+  validateTenantOwnership,
+  enforceComplianceBoundaries,
+  auditAtomicOperations,
+  enforceJurisdictionalAuthority,
+} = require('../middleware/tenantMiddleware');
 
 // ============================================================================
 // QUANTUM RESISTANCE LAYER
 // ============================================================================
-const {
-  generateEntropyProof,
-  validateTemporalConsistency,
-  enforceCausalOrdering,
-  preventQuantumReplayAttacks,
-} = require('../middleware/quantumMiddleware');
 
 // ============================================================================
 // AI GOVERNANCE LAYER
 // ============================================================================
-const {
-  predictAnomalousBehavior,
-  enforceEthicalBoundaries,
-  logDecisionsForAudit,
-  preventAIAdversarialAttacks,
-} = require('../middleware/aiGovernanceMiddleware');
 
 // ============================================================================
 // BLOCKCHAIN SOVEREIGNTY LAYER
 // ============================================================================
-const {
-  anchorToQuantumBlockchain,
-  verifyOnChainAuthority,
-  executeSmartContractCovenant,
-} = require('../middleware/blockchainMiddleware');
 
 // ============================================================================
 // 🛡️ THE IMMUTABLE COVENANT - 9-LAYER SOVEREIGNTY VERIFICATION
@@ -218,7 +216,7 @@ router.use(anchorToQuantumBlockchain); // Every action immortalized
 router.get(
   '/dashboard',
   enforceComplianceBoundaries('GDPR', 'CCPA', 'HIPAA', 'QUANTUM_LAW_2035'),
-  getTenantDashboard
+  getTenantDashboard,
 );
 
 // ============================================================================
@@ -239,7 +237,7 @@ router
     verifyMultiSignatureAuthority(3), // Requires 3 signatures
     updateTenantSettings,
     triggerComplianceAutomation,
-    executeSmartContractCovenant('SETTINGS_UPDATE')
+    executeSmartContractCovenant('SETTINGS_UPDATE'),
   );
 
 // ============================================================================
@@ -267,7 +265,7 @@ router.post(
       quantumResistance: 'LEVEL_9_CERTIFIED',
     };
     next();
-  }
+  },
 );
 
 // ============================================================================
@@ -285,13 +283,13 @@ router
   .get(
     enforceRoleIsolation('VIEW_ONLY', 'NO_EXFILTRATION'),
     enforceJurisdictionalAuthority(),
-    getTeamMembers
+    getTeamMembers,
   )
   .post(
     logDecisionsForAudit('INVITATION_CREATION'),
     preventAIAdversarialAttacks,
     inviteTeamMember,
-    executeSmartContractCovenant('TEAM_EXPANSION')
+    executeSmartContractCovenant('TEAM_EXPANSION'),
   );
 
 // ============================================================================
@@ -322,7 +320,7 @@ router.put(
       legalPrecedent: 'DIGITAL_SOVEREIGNTY_LAW_2025',
     };
     next();
-  }
+  },
 );
 
 // ============================================================================
@@ -365,7 +363,7 @@ router.post(
       },
       investorValue: 'IMMORTALIZED_DATA_ASSETS',
     });
-  }
+  },
 );
 
 // ============================================================================
@@ -394,7 +392,7 @@ router.post(
         risk: 'ZERO_ACCEPTABLE_ENTROPY_INCREASE',
       },
     });
-  }
+  },
 );
 
 // ============================================================================
@@ -424,7 +422,7 @@ router.post(
       },
       warning: 'IRREVERSIBLE_SOVEREIGNTY_ELEVATION',
     });
-  }
+  },
 );
 
 // ============================================================================
@@ -489,7 +487,7 @@ router.post(
       },
       investorProtection: 'LEGACY_IMMORTALIZED_IN_QUANTUM_FOAM',
     });
-  }
+  },
 );
 
 // ============================================================================
@@ -524,7 +522,7 @@ router.post(
         transferable: 'ACROSS_TIME_DIMENSIONS',
       },
     });
-  }
+  },
 );
 
 // ============================================================================

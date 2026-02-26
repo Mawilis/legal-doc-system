@@ -1,6 +1,5 @@
-'use strict';
-const { EventEmitter } = require('events');
 const crypto = require('crypto');
+const { EventEmitter } = require('events');
 const logger = require('../utils/logger');
 
 class DocumentVerificationWorker extends EventEmitter {

@@ -1,7 +1,7 @@
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ SuperAdminController - INVESTOR-GRADE MODULE                  ║
   ║ [95% cost reduction | R10M risk elimination | 85% margins]    ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/superAdminController.js
  * INVESTOR VALUE PROPOSITION:
@@ -46,13 +46,13 @@ graph TD
     A --> D[middleware/tenantContext]
     A --> E[models/SuperAdmin]
     A --> F[middleware/superAdminAuth]
-    
+
     B --> G[services/complianceService]
     C --> H[storage/encryptedVault]
     D --> I[models/Tenant]
     E --> J[workers/backupWorker]
     F --> K[routes/superAdminRoutes]
-    
+
     G --> L[external/LPC_API]
     H --> M[external/HSM]
     I --> N[services/billingService]
@@ -78,7 +78,8 @@ require('dotenv').config();
  */
 
 // Attempt to import existing utilities with graceful fallbacks
-let auditLogger, cryptoUtils, logger, REDACT_FIELDS;
+let auditLogger; let cryptoUtils; let logger; let
+  REDACT_FIELDS;
 
 try {
   auditLogger = require('../utils/auditLogger');
@@ -213,7 +214,7 @@ const generateQuantumResponse = (data, message = '', success = true, tenantId = 
     action: 'QUANTUM_RESPONSE_GENERATED',
     entityType: 'SuperAdminController',
     entityId: response.metadata.quantumId,
-    tenantId: tenantId,
+    tenantId,
     details: { success, messageLength: message.length },
     retention: response.metadata.retention,
     ipAddress: 'internal',
@@ -302,8 +303,8 @@ const registerSuperAdmin = async (req, res) => {
             null,
             'Divine genesis requires emergency override authority',
             false,
-            tenantId
-          )
+            tenantId,
+          ),
         );
     }
 
@@ -333,8 +334,8 @@ const registerSuperAdmin = async (req, res) => {
             null,
             'Invalid South African ID number format (13 digits required)',
             false,
-            tenantId
-          )
+            tenantId,
+          ),
         );
     }
 
@@ -360,8 +361,8 @@ const registerSuperAdmin = async (req, res) => {
             null,
             'SuperAdmin with these credentials already exists in this tenant',
             false,
-            tenantId
-          )
+            tenantId,
+          ),
         );
     }
 
@@ -431,7 +432,7 @@ const registerSuperAdmin = async (req, res) => {
       },
       'Supreme Administrator created successfully with divine authority and forensic audit trail',
       true,
-      tenantId
+      tenantId,
     );
 
     logger.info('SUPERADMIN_GENESIS_COMPLETE', {
@@ -459,7 +460,7 @@ const registerSuperAdmin = async (req, res) => {
     res
       .status(500)
       .json(
-        generateQuantumResponse(null, `Divine genesis failed: ${error.message}`, false, tenantId)
+        generateQuantumResponse(null, `Divine genesis failed: ${error.message}`, false, tenantId),
       );
   }
 };
@@ -510,8 +511,8 @@ const loginSuperAdmin = async (req, res) => {
             null,
             'Authentication failed. Check your credentials.',
             false,
-            tenantId
-          )
+            tenantId,
+          ),
         );
     }
 
@@ -534,8 +535,8 @@ const loginSuperAdmin = async (req, res) => {
             null,
             'Authentication failed. Check your credentials.',
             false,
-            tenantId
-          )
+            tenantId,
+          ),
         );
     }
 
@@ -555,8 +556,8 @@ const loginSuperAdmin = async (req, res) => {
             null,
             `Account is ${superAdmin.status}. Contact system administrator.`,
             false,
-            tenantId
-          )
+            tenantId,
+          ),
         );
     }
 
@@ -608,7 +609,7 @@ const loginSuperAdmin = async (req, res) => {
       },
       'Divine authentication successful with forensic audit trail.',
       true,
-      tenantId
+      tenantId,
     );
 
     logger.info('SUPERADMIN_LOGIN_SUCCESS', {
@@ -640,8 +641,8 @@ const loginSuperAdmin = async (req, res) => {
           null,
           `Authentication system error: ${error.message}`,
           false,
-          tenantId
-        )
+          tenantId,
+        ),
       );
   }
 };
@@ -665,8 +666,8 @@ const getSuperAdminProfile = async (req, res) => {
           null,
           'Tenant context required for profile access',
           false,
-          'unknown'
-        )
+          'unknown',
+        ),
       );
   }
 
@@ -686,8 +687,8 @@ const getSuperAdminProfile = async (req, res) => {
             null,
             'Divine authority not recognized or tenant mismatch',
             false,
-            tenantId
-          )
+            tenantId,
+          ),
         );
     }
 
@@ -731,7 +732,7 @@ const getSuperAdminProfile = async (req, res) => {
       },
       'Divine profile retrieved with forensic audit trail',
       true,
-      tenantId
+      tenantId,
     );
 
     logger.info('PROFILE_ACCESS_SUCCESS', {
@@ -757,7 +758,7 @@ const getSuperAdminProfile = async (req, res) => {
     res
       .status(500)
       .json(
-        generateQuantumResponse(null, `Profile retrieval failed: ${error.message}`, false, tenantId)
+        generateQuantumResponse(null, `Profile retrieval failed: ${error.message}`, false, tenantId),
       );
   }
 };
@@ -786,8 +787,8 @@ const getEconomicImpactReport = async (req, res) => {
           null,
           'Tenant context required for economic impact report',
           false,
-          'unknown'
-        )
+          'unknown',
+        ),
       );
   }
 
@@ -836,8 +837,7 @@ const getEconomicImpactReport = async (req, res) => {
     };
 
     // Generate deterministic hash
-    const hashInput =
-      JSON.stringify(evidence.auditEntries) + evidence.economicMetrics.totalAnnualSavings;
+    const hashInput = JSON.stringify(evidence.auditEntries) + evidence.economicMetrics.totalAnnualSavings;
     evidence.hash = require('crypto').createHash('sha256').update(hashInput).digest('hex');
 
     // Log economic report generation
@@ -868,7 +868,7 @@ const getEconomicImpactReport = async (req, res) => {
       },
       'Economic impact report generated with forensic evidence',
       true,
-      tenantId
+      tenantId,
     );
 
     logger.info('ECONOMIC_REPORT_GENERATED', {
@@ -900,8 +900,8 @@ const getEconomicImpactReport = async (req, res) => {
           null,
           `Economic impact report generation failed: ${error.message}`,
           false,
-          tenantId
-        )
+          tenantId,
+        ),
       );
   }
 };

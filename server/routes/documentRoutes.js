@@ -1,20 +1,21 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT SERVICE ROUTES - BACKEND CONTRACT                                  ║
   ║ [OpenAPI 3.0 | 100% type safety | Parallel frontend/backend dev]           ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/documentRoutes.js
  */
 
 const express = require('express');
+
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const { tenantContext, requireTenantContext } = require('../middleware/tenantContext');
-const rateLimit = require('express-rate-limit');
 const { createDocumentService } = require('../services/documentService');
-const { createValidationService } = require('../services/documentValidationService');
 const { templateRegistry } = require('../services/documentTemplateRegistry');
+const { createValidationService } = require('../services/documentValidationService');
 
 const documentService = createDocumentService();
 const validationService = createValidationService();
@@ -42,7 +43,7 @@ const upload = multer({
     } else {
       cb(
         new Error('INVALID_FILE_TYPE: Only PDF, DOC, DOCX, TXT, JPEG, PNG files are allowed'),
-        false
+        false,
       );
     }
   },
@@ -53,10 +54,9 @@ const upload = multer({
 // =================================================================================
 const documentLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: (req) => {
+  max: (req) =>
     // Get tenant-specific rate limit from config
-    return req.tenant?.rateLimit || 100;
-  },
+    req.tenant?.rateLimit || 100,
   keyGenerator: (req) => req.tenant?.id || req.ip,
   standardHeaders: true,
   legacyHeaders: false,
@@ -338,7 +338,7 @@ router.post('/', upload.single('file'), async (req, res, next) => {
       const validation = await validationService.validateDocument(
         req.body.documentType,
         req.body,
-        userContext
+        userContext,
       );
 
       if (!validation.valid) {
@@ -393,7 +393,7 @@ router.get('/:documentId', async (req, res, next) => {
     res.setHeader('Content-Type', result.content.mimeType);
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="${result.content.originalFileName}"`
+      `attachment; filename="${result.content.originalFileName}"`,
     );
     res.setHeader('X-Document-Id', result.documentId);
     res.setHeader('X-Document-Version', result.metadata.fullVersion);
@@ -463,7 +463,7 @@ router.put('/:documentId', upload.single('file'), async (req, res, next) => {
     const result = await documentService.updateDocument(
       req.params.documentId,
       updates,
-      userContext
+      userContext,
     );
 
     res.json({
@@ -501,7 +501,7 @@ router.delete('/:documentId', async (req, res, next) => {
     const result = await documentService.deleteDocument(
       req.params.documentId,
       userContext,
-      req.query.reason || 'USER_REQUESTED'
+      req.query.reason || 'USER_REQUESTED',
     );
 
     res.json({
@@ -575,7 +575,7 @@ router.post('/audit', async (req, res, next) => {
     const result = await documentService.performComplianceAudit(
       req.tenant.id,
       req.body,
-      userContext
+      userContext,
     );
 
     res.json({
@@ -611,7 +611,7 @@ router.use((error, req, res) => {
         success: false,
         error: {
           code: 'FILE_TOO_LARGE',
-          message: `File exceeds maximum size of 100MB`,
+          message: 'File exceeds maximum size of 100MB',
         },
       });
     }

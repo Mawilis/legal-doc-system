@@ -1,0 +1,30 @@
+{
+  "eslint.validate": [
+    "javascript"
+  ],
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+  "eslint.options": {
+    "extensions": [".js"]
+  },
+  "files.associations": {
+    "*.css": "css",
+    "*.html": "html"
+  },
+  "css.validate": true,
+  "html.validate.scripts": true,
+  "html.validate.styles": true,
+  "[css]": {
+    "editor.defaultFormatter": "vscode.css-language-features"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "files.watcherExclude": {
+    "**/public/**": true,
+    "**/dist/**": true
+  }
+}

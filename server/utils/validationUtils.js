@@ -53,9 +53,9 @@
 // ============================================================================
 // EXTERNAL DEPENDENCIES
 // ============================================================================
-import validator from 'validator';
-import moment from 'moment-timezone';
-import { v4 as uuidv4 } from 'uuid';
+import validator from 'validator.js';
+import moment from 'moment-timezone.js';
+import { v4 as uuidv4 } from 'uuid.js';
 
 // ============================================================================
 // INTERNAL DEPENDENCIES

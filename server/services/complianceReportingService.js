@@ -54,7 +54,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 // Quantum Security Validation
 if (!process.env.REPORT_ENCRYPTION_KEY || process.env.REPORT_ENCRYPTION_KEY.length !== 64) {
   throw new Error(
-    'QUANTUM SECURITY BREACH: REPORT_ENCRYPTION_KEY must be 64-character hex string. Generate with: openssl rand -hex 32'
+    'QUANTUM SECURITY BREACH: REPORT_ENCRYPTION_KEY must be 64-character hex string. Generate with: openssl rand -hex 32',
   );
 }
 
@@ -63,29 +63,29 @@ if (!process.env.MONGO_URI) {
 }
 
 // Core Dependencies
-const mongoose = require('mongoose');
 const crypto = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
 const { promisify } = require('util');
 
 // External Dependencies (install via npm install)
-const moment = require('moment-timezone');
-const PDFDocument = require('pdfkit');
-const { Table } = require('pdf-table');
 const CryptoJS = require('crypto-js');
+const moment = require('moment-timezone');
+const mongoose = require('mongoose');
+const { Table } = require('pdf-table');
+const PDFDocument = require('pdfkit');
 
 // Internal Dependencies (based on existing Wilsy OS architecture)
 const AuditLog = require('../models/auditLogModel');
-const User = require('../models/userModel');
-const Document = require('../models/documentModel');
 const ConsentRecord = require('../models/consentRecordModel');
-const DSARRequest = require('../models/dsarRequestModel');
 const DataBreach = require('../models/dataBreachModel');
-const { sendEmail } = require('./emailService');
+const Document = require('../models/documentModel');
+const DSARRequest = require('../models/dsarRequestModel');
+const User = require('../models/userModel');
 const { encryptData, decryptData } = require('../utils/cryptoUtils');
-const { validatePOPIACompliance } = require('../validators/popiaValidator');
 const logger = require('../utils/quantumLogger');
+const { validatePOPIACompliance } = require('../validators/popiaValidator');
+const { sendEmail } = require('./emailService');
 
 // ===================================================================================
 // QUANTUM COMPLIANCE REPORTING SERVICE CLASS
@@ -220,7 +220,7 @@ class ComplianceReportingService {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(this.encryptionKey, 'hex'),
-        iv
+        iv,
       );
 
       const encrypted = Buffer.concat([
@@ -253,7 +253,7 @@ class ComplianceReportingService {
       const decipher = crypto.createDecipheriv(
         'aes-256-gcm',
         Buffer.from(this.encryptionKey, 'hex'),
-        Buffer.from(encryptedReport.iv, 'hex')
+        Buffer.from(encryptedReport.iv, 'hex'),
       );
 
       decipher.setAuthTag(Buffer.from(encryptedReport.tag, 'hex'));
@@ -431,8 +431,8 @@ class ComplianceReportingService {
             affectedRecords: b.affectedRecordsCount,
           })),
           section22Compliance:
-            dataBreaches.filter((b) => b.reportedWithin72h && b.notifiedRegulator).length ===
-            dataBreaches.length
+            dataBreaches.filter((b) => b.reportedWithin72h && b.notifiedRegulator).length
+            === dataBreaches.length
               ? 'COMPLIANT'
               : 'NON_COMPLIANT',
         },
@@ -442,8 +442,8 @@ class ComplianceReportingService {
             ? 'NON_COMPLIANT'
             : 'COMPLIANT',
           averageResponseTime:
-            dsarRequests.reduce((sum, r) => sum + (r.avgResponseTime || 0), 0) /
-            dsarRequests.length,
+            dsarRequests.reduce((sum, r) => sum + (r.avgResponseTime || 0), 0)
+            / dsarRequests.length,
         },
         recommendations: this.generatePOPIARecommendations(complianceScore),
         legalCitations: [
@@ -503,10 +503,9 @@ class ComplianceReportingService {
 
     // Score breach reporting (Principle 10)
     const timelyBreaches = data.dataBreaches.filter(
-      (b) => b.reportedWithin72h && b.notifiedRegulator
+      (b) => b.reportedWithin72h && b.notifiedRegulator,
     ).length;
-    scores.breachReporting =
-      data.dataBreaches.length > 0 ? (timelyBreaches / data.dataBreaches.length) * 100 : 100;
+    scores.breachReporting = data.dataBreaches.length > 0 ? (timelyBreaches / data.dataBreaches.length) * 100 : 100;
 
     // Score DSAR response (Principle 5)
     const completedDSAR = data.dsarRequests.find((r) => r._id === 'COMPLETED')?.count || 0;
@@ -768,7 +767,7 @@ class ComplianceReportingService {
       // Cross-jurisdictional data mapping
       const dataTransfers = await this.analyzeCrossBorderTransfers();
       const consentRecords = await ConsentRecord.countDocuments({
-        jurisdiction: jurisdiction,
+        jurisdiction,
       });
 
       const reportData = {
@@ -848,7 +847,7 @@ class ComplianceReportingService {
           .text(
             `Generated: ${moment().tz(this.timezone).format('YYYY-MM-DD HH:mm:ss')} SAST`,
             160,
-            80
+            80,
           )
           .text(`Report ID: ${reportData.metadata.reportId}`, 160, 95)
           .moveDown();
@@ -860,7 +859,7 @@ class ComplianceReportingService {
           .text(
             'LEGAL DISCLAIMER: This report is generated by Wilsy OS for compliance purposes only. ',
             50,
-            120
+            120,
           )
           .text('Consult legal counsel for formal compliance certification. ', 50, 132)
           .text(`Jurisdiction: ${reportData.metadata.jurisdiction || 'South Africa'}`, 50, 144)
@@ -875,14 +874,14 @@ class ComplianceReportingService {
           .text(
             `Compliance Score: ${reportData.executiveSummary?.complianceScore || 'N/A'}`,
             50,
-            200
+            200,
           )
           .text(`Risk Level: ${reportData.executiveSummary?.riskLevel || 'N/A'}`, 50, 215)
           .text(`Data Subjects: ${reportData.executiveSummary?.dataSubjects || 'N/A'}`, 50, 230)
           .text(
             `Active Documents: ${reportData.executiveSummary?.activeDocuments || 'N/A'}`,
             50,
-            245
+            245,
           )
           .moveDown();
 
@@ -922,12 +921,12 @@ class ComplianceReportingService {
           .text(
             'Wilsy OS Quantum Compliance Engine • ISO 27001:2022 Compliant • Quantum Encrypted',
             50,
-            bottom
+            bottom,
           )
           .text(
             '© 2026 Wilsy OS Technologies • Reg No: 2026/123456/07 • VAT: 4920267890',
             50,
-            bottom + 12
+            bottom + 12,
           )
           .text('Generated with cryptographic integrity: SHA-256', 50, bottom + 24)
           .text('Wilsy Touching Lives Eternally', 50, bottom + 36);
@@ -1088,12 +1087,12 @@ class ComplianceReportingService {
         <h3>Details:</h3>
         <ul>
           ${healthReport.checks
-            .map(
-              (check) => `
+    .map(
+      (check) => `
             <li>${check.check}: ${check.status} - ${check.details}</li>
-          `
-            )
-            .join('')}
+          `,
+    )
+    .join('')}
         </ul>
         <p>Generated: ${healthReport.timestamp}</p>
         <p>Immediate action required for compliance maintenance.</p>
@@ -1131,10 +1130,9 @@ class ComplianceReportingService {
       },
       {
         name: 'PAIA Section 51 - Manual Availability',
-        method: async () => {
+        method: async () =>
           // Check if PAIA manual is accessible
-          return true; // Would actually check file existence/accessibility
-        },
+          true, // Would actually check file existence/accessibility
         required: true,
       },
       {
@@ -1150,10 +1148,9 @@ class ComplianceReportingService {
       },
       {
         name: 'ECT Act Section 12 - E-Signature Integrity',
-        method: async () => {
+        method: async () =>
           // Verify digital signature certificates
-          return true;
-        },
+          true,
         required: true,
       },
     ];
@@ -1177,7 +1174,7 @@ class ComplianceReportingService {
             compliance: 'FAILED',
           };
         }
-      })
+      }),
     );
 
     return {

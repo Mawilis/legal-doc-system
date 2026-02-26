@@ -1,13 +1,11 @@
 #!/usr/bin/env node
-/*===========================================================================
+/*= ==========================================================================
   WILSY OS - PRODUCTION VERIFICATION & AUTO-CONFIGURATION
   ===========================================================================
   PURPOSE: Automatically configure and verify production environment
   FEATURES: IP detection, MongoDB Atlas configuration, auto-whitelisting guide
   INVESTOR-READY: Shows enterprise capabilities
-  ==========================================================================*/
-
-'use strict';
+  ========================================================================== */
 
 const mongoose = require('mongoose');
 const { execSync } = require('child_process');
@@ -118,7 +116,7 @@ class ProductionVerification {
 
     console.log(`   ✅ Public IP: ${this.publicIP} (South Africa)`);
     console.log(`   📍 CIDR Notation: ${this.publicIP}/32`);
-    console.log(`   💡 This IP needs to be whitelisted in MongoDB Atlas`);
+    console.log('   💡 This IP needs to be whitelisted in MongoDB Atlas');
   }
 
   async checkMongoDBConfiguration() {
@@ -137,8 +135,7 @@ class ProductionVerification {
 
     // Check MongoDB Atlas specific configurations
     const isAtlas = this.config.MONGO_URI.includes('mongodb+srv://');
-    const hasSSL =
-      this.config.MONGO_URI.includes('ssl=true') || this.config.MONGO_URI.includes('tls=true');
+    const hasSSL = this.config.MONGO_URI.includes('ssl=true') || this.config.MONGO_URI.includes('tls=true');
 
     this.results.mongoConfig = {
       status: 'CONFIGURED',
@@ -220,7 +217,7 @@ class ProductionVerification {
       await mongoose.connect(uri, options);
       const connectionTime = Date.now() - startTime;
 
-      const db = mongoose.connection.db;
+      const { db } = mongoose.connection;
       const collections = await db.listCollections().toArray();
 
       await mongoose.disconnect();
@@ -300,8 +297,7 @@ class ProductionVerification {
     const auditPoints = [];
 
     // Check 1: SSL Configuration
-    const hasSSL =
-      this.config.MONGO_URI?.includes('ssl=true') || this.config.MONGO_URI?.includes('tls=true');
+    const hasSSL = this.config.MONGO_URI?.includes('ssl=true') || this.config.MONGO_URI?.includes('tls=true');
 
     auditPoints.push({
       check: 'SSL/TLS Encryption',
@@ -356,7 +352,7 @@ class ProductionVerification {
   }
 
   async generateInvestorReport() {
-    console.log('\n' + '='.repeat(70));
+    console.log(`\n${'='.repeat(70)}`);
     console.log('💰 WILSY OS - PRODUCTION READINESS REPORT');
     console.log('='.repeat(70));
 
@@ -375,7 +371,7 @@ class ProductionVerification {
     console.log('-'.repeat(40));
 
     allChecks.forEach((check) => {
-      const status = check.data.status;
+      const { status } = check.data;
       const isCritical = status === 'FAILED' || status === 'MISSING';
       const isWarning = status === 'INVALID' || status === 'NEEDS_IMPROVEMENT';
 
@@ -400,7 +396,7 @@ class ProductionVerification {
     const percentage = Math.round((passedChecks / totalChecks) * 100);
     investorScore = Math.max(0, investorScore);
 
-    console.log('\n' + '='.repeat(70));
+    console.log(`\n${'='.repeat(70)}`);
     console.log('🎯 INVESTMENT READINESS SCORE:');
     console.log('-'.repeat(40));
     console.log(`   📈 Overall Score: ${investorScore}/100`);
@@ -524,10 +520,9 @@ async function main() {
     await verifier.run();
 
     // Exit with appropriate code
-    const hasCriticalIssues =
-      verifier.results.ipCheck.status === 'FAILED' ||
-      verifier.results.mongoConfig.status === 'MISSING' ||
-      verifier.results.connectionTest.status === 'FAILED';
+    const hasCriticalIssues = verifier.results.ipCheck.status === 'FAILED'
+      || verifier.results.mongoConfig.status === 'MISSING'
+      || verifier.results.connectionTest.status === 'FAILED';
 
     process.exit(hasCriticalIssues ? 1 : 0);
   } catch (error) {

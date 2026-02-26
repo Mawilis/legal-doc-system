@@ -5,10 +5,10 @@
  * Usage: node scripts/verify-audit-chains.js
  */
 
-import mongoose from 'mongoose';
-import ValidationAudit from '../models/ValidationAudit.js';
-import TenantConfig from '../models/TenantConfig.js';
-import dotenv from 'dotenv';
+import mongoose from "mongoose";
+import ValidationAudit from '../models/ValidationAudit.js.js';
+import TenantConfig from '../models/TenantConfig.js.js';
+import dotenv from 'dotenv.js';
 
 dotenv.config();
 

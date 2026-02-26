@@ -73,16 +73,16 @@ for (const envVar of REQUIRED_ENV_VARS) {
 }
 
 // Core Dependencies
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { RateLimiterMongo } = require('rate-limiter-flexible');
+const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const { RateLimiterMongo } = require('rate-limiter-flexible');
 
 // Internal Dependencies (based on existing Wilsy OS architecture)
-const SuperAdmin = require('../models/SuperAdmin');
-const AuditLog = require('../models/AuditLog');
-const Tenant = require('../models/Tenant');
 const { appLogger, securityLogger } = require('../config/loggingConfig');
+const AuditLog = require('../models/AuditLog');
+const SuperAdmin = require('../models/SuperAdmin');
+const Tenant = require('../models/Tenant');
 
 // ===================================================================================
 // QUANTUM SECURITY CONFIGURATION - MULTI-TENANT AWARE
@@ -116,7 +116,7 @@ const extractToken = (req) => {
     }
 
     return {
-      token: token,
+      token,
       tenantId: req.headers['x-tenant-id'],
       source: 'authorization_header',
     };
@@ -153,8 +153,8 @@ const generateTokens = (superAdmin, tenantId) => {
 
   const payload = {
     quantumId: superAdmin.quantumId,
-    tenantId: tenantId,
-    sessionId: sessionId,
+    tenantId,
+    sessionId,
     sovereignTier: superAdmin.sovereignTier,
     legalAppointments: superAdmin.legalAppointments,
     permissions: superAdmin.compliancePowers,
@@ -186,7 +186,7 @@ const generateTokens = (superAdmin, tenantId) => {
       algorithm: 'RS256',
       issuer: 'Wilsy OS Supreme Authentication',
       audience: 'token-refresh',
-    }
+    },
   );
 
   return {
@@ -206,7 +206,7 @@ const validateTenantAccess = async (superAdmin, tenantId) => {
   try {
     // Super-admins with 'NATIONAL' jurisdiction can access all tenants
     const hasNationalAccess = superAdmin.regionalJurisdiction.some(
-      (j) => j.province === 'NATIONAL'
+      (j) => j.province === 'NATIONAL',
     );
 
     if (hasNationalAccess) {
@@ -232,15 +232,14 @@ const validateTenantAccess = async (superAdmin, tenantId) => {
     const adminJurisdictions = superAdmin.regionalJurisdiction.map((j) => j.province);
     const tenantJurisdiction = tenant.jurisdiction || 'NATIONAL';
 
-    const jurisdictionValid =
-      tenantJurisdiction === 'NATIONAL' || adminJurisdictions.includes(tenantJurisdiction);
+    const jurisdictionValid = tenantJurisdiction === 'NATIONAL' || adminJurisdictions.includes(tenantJurisdiction);
 
     if (!jurisdictionValid) {
       return {
         authorized: false,
         reason: 'Jurisdiction mismatch',
-        adminJurisdictions: adminJurisdictions,
-        tenantJurisdiction: tenantJurisdiction,
+        adminJurisdictions,
+        tenantJurisdiction,
         requiredAction: 'Request jurisdiction extension',
       };
     }
@@ -254,7 +253,7 @@ const validateTenantAccess = async (superAdmin, tenantId) => {
   } catch (error) {
     securityLogger.error('Tenant access validation failed', {
       superAdminId: superAdmin._id,
-      tenantId: tenantId,
+      tenantId,
       error: error.message,
     });
 
@@ -319,7 +318,7 @@ const logAuthenticationAttempt = async (data) => {
     console.log(
       `AUTH_LOG: ${data.event} - ${data.success ? 'SUCCESS' : 'FAILED'} - ${data.superAdminId}@${
         data.tenantId
-      }`
+      }`,
     );
     return null;
   }
@@ -390,10 +389,10 @@ const checkThreatIntelligence = async (requestData) => {
 
   return {
     safe: threats.length === 0,
-    threats: threats,
-    warnings: warnings,
+    threats,
+    warnings,
     recommendedAction: threats.length > 0 ? 'BLOCK_AND_ALERT' : 'PROCEED',
-    saTime: saTime,
+    saTime,
     jurisdiction: 'ZA',
   };
 };
@@ -416,9 +415,8 @@ const superAdminAuth = async (req, res, next) => {
     // =====================================================================
     const clientIP = req.ip || req.connection.remoteAddress || '0.0.0.0';
     const userAgent = req.headers['user-agent'] || 'Unknown';
-    const deviceFingerprint =
-      req.headers['x-device-fingerprint'] ||
-      crypto
+    const deviceFingerprint = req.headers['x-device-fingerprint']
+      || crypto
         .createHash('sha256')
         .update(userAgent + clientIP)
         .digest('hex');
@@ -432,8 +430,8 @@ const superAdminAuth = async (req, res, next) => {
         superAdminId: 'UNKNOWN',
         tenantId: req.headers['x-tenant-id'],
         ipAddress: clientIP,
-        userAgent: userAgent,
-        deviceFingerprint: deviceFingerprint,
+        userAgent,
+        deviceFingerprint,
         location: 'Rate Limiter',
         success: false,
         failureReason: 'Excessive authentication attempts',
@@ -447,7 +445,7 @@ const superAdminAuth = async (req, res, next) => {
         message: 'Too many authentication attempts. Please try again in 1 hour.',
         complianceReference: 'POPIA Section 19 - Security safeguards',
         retryAfter: 3600,
-        requestId: requestId,
+        requestId,
         timestamp: new Date().toISOString(),
       });
     }
@@ -455,8 +453,8 @@ const superAdminAuth = async (req, res, next) => {
     // Threat intelligence assessment
     const threatAssessment = await checkThreatIntelligence({
       ipAddress: clientIP,
-      userAgent: userAgent,
-      deviceFingerprint: deviceFingerprint,
+      userAgent,
+      deviceFingerprint,
       tenantId: req.headers['x-tenant-id'],
     });
 
@@ -466,8 +464,8 @@ const superAdminAuth = async (req, res, next) => {
         superAdminId: 'UNKNOWN',
         tenantId: req.headers['x-tenant-id'],
         ipAddress: clientIP,
-        userAgent: userAgent,
-        deviceFingerprint: deviceFingerprint,
+        userAgent,
+        deviceFingerprint,
         location: 'Threat Assessment',
         success: false,
         failureReason: 'Threat intelligence flagged this attempt',
@@ -487,7 +485,7 @@ const superAdminAuth = async (req, res, next) => {
         warnings: threatAssessment.warnings,
         complianceReference: 'Cybercrimes Act Section 54(1)(c)',
         actionRequired: 'Contact Wilsy OS Security immediately',
-        requestId: requestId,
+        requestId,
         securityContact: '+27 69 046 5710',
       });
     }
@@ -503,8 +501,8 @@ const superAdminAuth = async (req, res, next) => {
         superAdminId: 'UNKNOWN',
         tenantId: req.headers['x-tenant-id'],
         ipAddress: clientIP,
-        userAgent: userAgent,
-        deviceFingerprint: deviceFingerprint,
+        userAgent,
+        deviceFingerprint,
         location: 'Token Extraction',
         success: false,
         failureReason: 'Missing or invalid authentication headers',
@@ -519,7 +517,7 @@ const superAdminAuth = async (req, res, next) => {
         complianceReference: 'ECT Act Section 18(1) - Advanced electronic signatures required',
         requiredHeaders: ['Authorization: Bearer <token>', 'X-Tenant-Id: <tenantId>'],
         documentation: 'https://wilsyos.co.za/docs/super-admin-authentication',
-        requestId: requestId,
+        requestId,
       });
     }
 
@@ -535,8 +533,8 @@ const superAdminAuth = async (req, res, next) => {
         superAdminId: 'UNKNOWN',
         tenantId: tokenData.tenantId,
         ipAddress: clientIP,
-        userAgent: userAgent,
-        deviceFingerprint: deviceFingerprint,
+        userAgent,
+        deviceFingerprint,
         location: 'Tenant Validation',
         success: false,
         failureReason: 'Tenant not found or inactive',
@@ -551,7 +549,7 @@ const superAdminAuth = async (req, res, next) => {
         tenantId: tokenData.tenantId,
         complianceReference: 'Legal Practice Act Section 36(1)',
         actionRequired: 'Verify tenant ID or contact support',
-        requestId: requestId,
+        requestId,
       });
     }
 
@@ -571,8 +569,8 @@ const superAdminAuth = async (req, res, next) => {
         superAdminId: 'UNKNOWN',
         tenantId: tokenData.tenantId,
         ipAddress: clientIP,
-        userAgent: userAgent,
-        deviceFingerprint: deviceFingerprint,
+        userAgent,
+        deviceFingerprint,
         location: 'JWT Validation',
         success: false,
         failureReason: `JWT validation failed: ${jwtError.message}`,
@@ -587,7 +585,7 @@ const superAdminAuth = async (req, res, next) => {
         complianceReference: 'POPIA Section 19(c) - Security of integrity',
         action: 'Obtain new token through proper authentication flow',
         jwtError: jwtError.message,
-        requestId: requestId,
+        requestId,
       });
     }
 
@@ -598,8 +596,8 @@ const superAdminAuth = async (req, res, next) => {
         superAdminId: decoded.quantumId || 'UNKNOWN',
         tenantId: tokenData.tenantId,
         ipAddress: clientIP,
-        userAgent: userAgent,
-        deviceFingerprint: deviceFingerprint,
+        userAgent,
+        deviceFingerprint,
         location: 'Tenant Consistency',
         success: false,
         failureReason: 'Token tenant does not match request tenant',
@@ -615,7 +613,7 @@ const superAdminAuth = async (req, res, next) => {
         requestTenant: tokenData.tenantId,
         complianceReference: 'POPIA Section 18(1) - Lawfulness of processing',
         actionRequired: 'Use token issued for correct tenant',
-        requestId: requestId,
+        requestId,
       });
     }
 
@@ -626,7 +624,7 @@ const superAdminAuth = async (req, res, next) => {
       quantumId: decoded.quantumId,
       status: 'ACTIVE',
     }).select(
-      '+loginHistory +mfaSecret +lastPasswordChange +regionalJurisdiction +professionalIndemnity'
+      '+loginHistory +mfaSecret +lastPasswordChange +regionalJurisdiction +professionalIndemnity',
     );
 
     if (!superAdmin) {
@@ -635,8 +633,8 @@ const superAdminAuth = async (req, res, next) => {
         superAdminId: decoded.quantumId,
         tenantId: tokenData.tenantId,
         ipAddress: clientIP,
-        userAgent: userAgent,
-        deviceFingerprint: deviceFingerprint,
+        userAgent,
+        deviceFingerprint,
         location: 'Identity Verification',
         success: false,
         failureReason: 'SuperAdmin not found or inactive',
@@ -650,7 +648,7 @@ const superAdminAuth = async (req, res, next) => {
         message: 'SuperAdmin account not found or inactive',
         complianceReference: 'Legal Practice Act Section 36(1)',
         actionRequired: 'Contact Wilsy OS Legal Compliance Department',
-        requestId: requestId,
+        requestId,
       });
     }
 
@@ -665,8 +663,8 @@ const superAdminAuth = async (req, res, next) => {
         superAdminId: superAdmin.quantumId,
         tenantId: tokenData.tenantId,
         ipAddress: clientIP,
-        userAgent: userAgent,
-        deviceFingerprint: deviceFingerprint,
+        userAgent,
+        deviceFingerprint,
         location: 'Tenant Authorization',
         success: false,
         failureReason: tenantAccess.reason || 'Unauthorized tenant access',
@@ -685,7 +683,7 @@ const superAdminAuth = async (req, res, next) => {
         reason: tenantAccess.reason,
         complianceReference: 'Legal Practice Act Section 36(5) - Jurisdictional limitations',
         actionRequired: tenantAccess.requiredAction || 'Request access through proper channels',
-        requestId: requestId,
+        requestId,
       });
     }
 
@@ -695,7 +693,7 @@ const superAdminAuth = async (req, res, next) => {
     // Password rotation policy (90 days)
     if (superAdmin.lastPasswordChange) {
       const daysSinceChange = Math.floor(
-        (new Date() - superAdmin.lastPasswordChange) / (1000 * 60 * 60 * 24)
+        (new Date() - superAdmin.lastPasswordChange) / (1000 * 60 * 60 * 24),
       );
 
       if (daysSinceChange > 90) {
@@ -704,14 +702,14 @@ const superAdminAuth = async (req, res, next) => {
           superAdminId: superAdmin.quantumId,
           tenantId: tokenData.tenantId,
           ipAddress: clientIP,
-          userAgent: userAgent,
-          deviceFingerprint: deviceFingerprint,
+          userAgent,
+          deviceFingerprint,
           location: 'Security Compliance',
           success: false,
           failureReason: 'Password rotation overdue (90-day policy)',
           legalBasis: 'POPIA Section 19 - Security safeguards',
           threatLevel: 'MEDIUM',
-          metadata: { daysSinceChange: daysSinceChange },
+          metadata: { daysSinceChange },
         });
 
         return res.status(403).json({
@@ -719,10 +717,10 @@ const superAdminAuth = async (req, res, next) => {
           error: 'PASSWORD_ROTATION_REQUIRED',
           message: 'Password rotation required per security policy',
           complianceReference: 'POPIA Section 19(1) - Appropriate technical measures',
-          daysSinceChange: daysSinceChange,
+          daysSinceChange,
           actionRequired: 'Password must be changed immediately',
           rotationUrl: '/api/super-admin/change-password',
-          requestId: requestId,
+          requestId,
         });
       }
     }
@@ -737,8 +735,8 @@ const superAdminAuth = async (req, res, next) => {
           superAdminId: superAdmin.quantumId,
           tenantId: tokenData.tenantId,
           ipAddress: clientIP,
-          userAgent: userAgent,
-          deviceFingerprint: deviceFingerprint,
+          userAgent,
+          deviceFingerprint,
           location: 'Compliance Verification',
           success: false,
           failureReason: 'Professional indemnity insurance has expired',
@@ -753,7 +751,7 @@ const superAdminAuth = async (req, res, next) => {
           expiryDate: superAdmin.professionalIndemnity.expiryDate,
           complianceReference: 'Legal Practice Act Section 36(3) - Insurance requirements',
           actionRequired: 'Renew professional indemnity insurance immediately',
-          requestId: requestId,
+          requestId,
         });
       }
     }
@@ -762,10 +760,9 @@ const superAdminAuth = async (req, res, next) => {
     // PHASE 7: MULTI-FACTOR AUTHENTICATION (Conditional)
     // =====================================================================
     const mfaToken = req.headers['x-mfa-token'] || req.body.mfaToken;
-    const requiresMFA =
-      req.path.includes('/critical') ||
-      req.path.includes('/financial') ||
-      req.path.includes('/compliance');
+    const requiresMFA = req.path.includes('/critical')
+      || req.path.includes('/financial')
+      || req.path.includes('/compliance');
 
     if (requiresMFA && superAdmin.mfaSecret && !mfaToken) {
       await logAuthenticationAttempt({
@@ -773,8 +770,8 @@ const superAdminAuth = async (req, res, next) => {
         superAdminId: superAdmin.quantumId,
         tenantId: tokenData.tenantId,
         ipAddress: clientIP,
-        userAgent: userAgent,
-        deviceFingerprint: deviceFingerprint,
+        userAgent,
+        deviceFingerprint,
         location: 'MFA Validation',
         success: false,
         failureReason: 'MFA token required for this action',
@@ -789,7 +786,7 @@ const superAdminAuth = async (req, res, next) => {
         complianceReference: 'ECT Act Section 18(4) - Enhanced security requirements',
         actionRequired: 'Provide MFA token in X-MFA-Token header',
         mfaMethods: ['TOTP', 'SMS', 'EMAIL'],
-        requestId: requestId,
+        requestId,
       });
     }
 
@@ -813,8 +810,8 @@ const superAdminAuth = async (req, res, next) => {
             superAdminId: superAdmin.quantumId,
             tenantId: tokenData.tenantId,
             ipAddress: clientIP,
-            userAgent: userAgent,
-            deviceFingerprint: deviceFingerprint,
+            userAgent,
+            deviceFingerprint,
             location: 'MFA Validation',
             success: false,
             failureReason: 'Invalid MFA token provided',
@@ -829,7 +826,7 @@ const superAdminAuth = async (req, res, next) => {
             complianceReference: 'ECT Act Section 18(2) - Reliability of electronic signatures',
             actionRequired: 'Use valid MFA token or backup code',
             remainingAttempts: 2,
-            requestId: requestId,
+            requestId,
           });
         }
       }
@@ -848,13 +845,13 @@ const superAdminAuth = async (req, res, next) => {
       superAdminId: superAdmin.quantumId,
       tenantId: tokenData.tenantId,
       ipAddress: clientIP,
-      userAgent: userAgent,
-      deviceFingerprint: deviceFingerprint,
+      userAgent,
+      deviceFingerprint,
       location: 'Authentication Complete',
       success: true,
       legalBasis: 'POPIA Section 18 - Lawful processing',
       authenticationMethod: mfaToken ? 'MFA_ENABLED' : 'TOKEN_ONLY',
-      sessionId: sessionId,
+      sessionId,
       jurisdiction: tenantAccess.jurisdiction,
       threatLevel: 'LOW',
     });
@@ -868,7 +865,7 @@ const superAdminAuth = async (req, res, next) => {
       tenantId: tokenData.tenantId,
       successful: true,
       mfaUsed: !!mfaToken,
-      sessionId: sessionId,
+      sessionId,
       threatAssessment: threatAssessment.threats.length > 0 ? threatAssessment.threats : null,
     });
 
@@ -886,7 +883,7 @@ const superAdminAuth = async (req, res, next) => {
     req.superAdmin = superAdmin;
     req.tenant = tenant;
     req.session = {
-      sessionId: sessionId,
+      sessionId,
       authenticatedAt: new Date(),
       authenticationMethod: mfaToken ? 'MFA' : 'TOKEN_ONLY',
       legalAuthority: superAdmin.legalAppointments.map((a) => a.role),
@@ -914,7 +911,7 @@ const superAdminAuth = async (req, res, next) => {
       tenantName: tenant.name,
       authTimeMs: authTime,
       ipAddress: clientIP,
-      sessionId: sessionId,
+      sessionId,
       jurisdiction: tenantAccess.jurisdiction,
     });
 
@@ -968,7 +965,7 @@ const superAdminAuth = async (req, res, next) => {
       timestamp: new Date().toISOString(),
       supportContact: 'security@wilsyos.co.za',
       emergencyContact: '+27 69 046 5710',
-      requestId: requestId,
+      requestId,
     });
   }
 };
@@ -977,62 +974,60 @@ const superAdminAuth = async (req, res, next) => {
  * Enhanced Security Middleware for Critical Operations
  * Security Quantum: Additional security for financial, compliance, or system operations
  */
-const superAdminEnhancedAuth = (requiredPermission) => {
-  return async (req, res, next) => {
-    // First apply standard super-admin authentication
-    await superAdminAuth(req, res, (err) => {
-      if (err) return next(err);
+const superAdminEnhancedAuth = (requiredPermission) => async (req, res, next) => {
+  // First apply standard super-admin authentication
+  await superAdminAuth(req, res, (err) => {
+    if (err) return next(err);
 
-      // Check for specific permission
-      if (requiredPermission) {
-        const hasPermission = req.superAdmin.compliancePowers[requiredPermission];
+    // Check for specific permission
+    if (requiredPermission) {
+      const hasPermission = req.superAdmin.compliancePowers[requiredPermission];
 
-        if (!hasPermission) {
-          // Log permission denied attempt
-          logAuthenticationAttempt({
-            event: 'PERMISSION_DENIED',
-            superAdminId: req.superAdmin.quantumId,
-            tenantId: req.tenant._id,
-            ipAddress: req.ip,
-            userAgent: req.headers['user-agent'],
-            deviceFingerprint: req.headers['x-device-fingerprint'],
-            location: 'Permission Check',
-            success: false,
-            failureReason: `Insufficient permissions: ${requiredPermission}`,
-            legalBasis: 'Legal Practice Act Section 36(4) - Authority limitations',
-            threatLevel: 'MEDIUM',
-          });
+      if (!hasPermission) {
+        // Log permission denied attempt
+        logAuthenticationAttempt({
+          event: 'PERMISSION_DENIED',
+          superAdminId: req.superAdmin.quantumId,
+          tenantId: req.tenant._id,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          deviceFingerprint: req.headers['x-device-fingerprint'],
+          location: 'Permission Check',
+          success: false,
+          failureReason: `Insufficient permissions: ${requiredPermission}`,
+          legalBasis: 'Legal Practice Act Section 36(4) - Authority limitations',
+          threatLevel: 'MEDIUM',
+        });
 
-          return res.status(403).json({
-            success: false,
-            error: 'INSUFFICIENT_PERMISSIONS',
-            message: `Insufficient permissions for: ${requiredPermission}`,
-            complianceReference: 'Legal Practice Act Section 36(4) - Limited authority',
-            requiredPermission: requiredPermission,
-            currentPermissions: req.superAdmin.compliancePowers,
-            tenantId: req.tenant._id,
-            requestId: crypto.randomBytes(8).toString('hex'),
-          });
-        }
-      }
-
-      // Additional MFA requirement for enhanced operations
-      const hasMFA = req.headers['x-mfa-token'] || req.body.mfaToken;
-      if (!hasMFA) {
         return res.status(403).json({
           success: false,
-          error: 'ENHANCED_AUTH_REQUIRED',
-          message: 'MFA token required for this enhanced operation',
-          complianceReference: 'ECT Act Section 18(4) - Enhanced security for critical operations',
-          requiredAuthLevel: 'MFA',
+          error: 'INSUFFICIENT_PERMISSIONS',
+          message: `Insufficient permissions for: ${requiredPermission}`,
+          complianceReference: 'Legal Practice Act Section 36(4) - Limited authority',
+          requiredPermission,
+          currentPermissions: req.superAdmin.compliancePowers,
           tenantId: req.tenant._id,
           requestId: crypto.randomBytes(8).toString('hex'),
         });
       }
+    }
 
-      next();
-    });
-  };
+    // Additional MFA requirement for enhanced operations
+    const hasMFA = req.headers['x-mfa-token'] || req.body.mfaToken;
+    if (!hasMFA) {
+      return res.status(403).json({
+        success: false,
+        error: 'ENHANCED_AUTH_REQUIRED',
+        message: 'MFA token required for this enhanced operation',
+        complianceReference: 'ECT Act Section 18(4) - Enhanced security for critical operations',
+        requiredAuthLevel: 'MFA',
+        tenantId: req.tenant._id,
+        requestId: crypto.randomBytes(8).toString('hex'),
+      });
+    }
+
+    next();
+  });
 };
 
 /*
@@ -1064,7 +1059,7 @@ const emergencyAuth = async (req, res, next) => {
     await logAuthenticationAttempt({
       event: 'EMERGENCY_ACCESS_ATTEMPT',
       superAdminId: 'EMERGENCY_OVERRIDE',
-      tenantId: tenantId,
+      tenantId,
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
       deviceFingerprint: req.headers['x-device-fingerprint'],
@@ -1097,7 +1092,7 @@ const emergencyAuth = async (req, res, next) => {
       success: false,
       error: 'TENANT_NOT_FOUND',
       message: 'Tenant not found or inactive',
-      tenantId: tenantId,
+      tenantId,
       complianceReference: 'Legal Practice Act Section 36(1)',
       requestId: crypto.randomBytes(8).toString('hex'),
     });
@@ -1107,7 +1102,7 @@ const emergencyAuth = async (req, res, next) => {
   await logAuthenticationAttempt({
     event: 'EMERGENCY_ACCESS_GRANTED',
     superAdminId: 'EMERGENCY_OVERRIDE',
-    tenantId: tenantId,
+    tenantId,
     ipAddress: req.ip,
     userAgent: req.headers['user-agent'],
     deviceFingerprint: req.headers['x-device-fingerprint'],
@@ -1141,7 +1136,7 @@ const emergencyAuth = async (req, res, next) => {
 
   // Notify security team
   securityLogger.critical('EMERGENCY ACCESS ACTIVATED', {
-    tenantId: tenantId,
+    tenantId,
     tenantName: tenant.name,
     ipAddress: req.ip,
     userAgent: req.headers['user-agent'],
@@ -1157,49 +1152,46 @@ const emergencyAuth = async (req, res, next) => {
  * Jurisdiction Authentication Middleware
  * Compliance Quantum: Pan-African legal authority validation with tenant sovereignty
  */
-const jurisdictionAuth = (requiredJurisdictions) => {
-  return async (req, res, next) => {
-    // First apply standard super-admin authentication
-    await superAdminAuth(req, res, (err) => {
-      if (err) return next(err);
+const jurisdictionAuth = (requiredJurisdictions) => async (req, res, next) => {
+  // First apply standard super-admin authentication
+  await superAdminAuth(req, res, (err) => {
+    if (err) return next(err);
 
-      // Check jurisdiction authorization
-      const adminJurisdictions = req.superAdmin.regionalJurisdiction.map((j) => j.province);
-      const tenantJurisdiction = req.tenant.jurisdiction || 'NATIONAL';
+    // Check jurisdiction authorization
+    const adminJurisdictions = req.superAdmin.regionalJurisdiction.map((j) => j.province);
+    const tenantJurisdiction = req.tenant.jurisdiction || 'NATIONAL';
 
-      const hasJurisdiction = requiredJurisdictions.some(
-        (j) =>
-          adminJurisdictions.includes(j) ||
-          j === tenantJurisdiction ||
-          adminJurisdictions.includes('NATIONAL')
-      );
+    const hasJurisdiction = requiredJurisdictions.some(
+      (j) => adminJurisdictions.includes(j)
+          || j === tenantJurisdiction
+          || adminJurisdictions.includes('NATIONAL'),
+    );
 
-      if (!hasJurisdiction) {
-        return res.status(403).json({
-          success: false,
-          error: 'JURISDICTION_UNAUTHORIZED',
-          message: 'Not authorized for requested jurisdiction',
-          complianceReference: 'Legal Practice Act Section 36(5) - Jurisdictional limitations',
-          requiredJurisdictions: requiredJurisdictions,
-          adminJurisdictions: adminJurisdictions,
-          tenantJurisdiction: tenantJurisdiction,
-          actionRequired: 'Request access to additional jurisdictions',
-          tenantId: req.tenant._id,
-          requestId: crypto.randomBytes(8).toString('hex'),
-        });
-      }
+    if (!hasJurisdiction) {
+      return res.status(403).json({
+        success: false,
+        error: 'JURISDICTION_UNAUTHORIZED',
+        message: 'Not authorized for requested jurisdiction',
+        complianceReference: 'Legal Practice Act Section 36(5) - Jurisdictional limitations',
+        requiredJurisdictions,
+        adminJurisdictions,
+        tenantJurisdiction,
+        actionRequired: 'Request access to additional jurisdictions',
+        tenantId: req.tenant._id,
+        requestId: crypto.randomBytes(8).toString('hex'),
+      });
+    }
 
-      // Add jurisdiction context to request
-      req.jurisdictionContext = {
-        required: requiredJurisdictions,
-        authorized: adminJurisdictions,
-        tenantJurisdiction: tenantJurisdiction,
-        hasNationalAuthority: adminJurisdictions.includes('NATIONAL'),
-      };
+    // Add jurisdiction context to request
+    req.jurisdictionContext = {
+      required: requiredJurisdictions,
+      authorized: adminJurisdictions,
+      tenantJurisdiction,
+      hasNationalAuthority: adminJurisdictions.includes('NATIONAL'),
+    };
 
-      next();
-    });
-  };
+    next();
+  });
 };
 
 // ===================================================================================

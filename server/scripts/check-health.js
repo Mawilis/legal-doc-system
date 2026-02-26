@@ -7,6 +7,7 @@ console.log('=====================================\n');
 // Check 1: Environment variables
 console.log('1. 🔑 Environment Variables Check...');
 require('dotenv').config();
+
 const requiredVars = ['MONGO_URI', 'JWT_SECRET', 'PORT'];
 const missingVars = requiredVars.filter((v) => !process.env[v]);
 
@@ -18,6 +19,7 @@ if (missingVars.length === 0) {
 
 // Check 2: Database connection
 console.log('\n2. 🗄️ Database Connection Check...');
+const http = require('http');
 const { MongoClient } = require('mongodb');
 
 async function checkDatabase() {
@@ -51,7 +53,6 @@ async function checkDatabase() {
 
 // Check 3: Server status
 console.log('\n3. 🌐 Server Status Check...');
-const http = require('http');
 
 function checkServer() {
   return new Promise((resolve) => {
@@ -71,7 +72,7 @@ function checkServer() {
           console.log(`   ⚠️ Server responded with status: ${res.statusCode}`);
           resolve(false);
         }
-      }
+      },
     );
 
     req.on('error', (err) => {

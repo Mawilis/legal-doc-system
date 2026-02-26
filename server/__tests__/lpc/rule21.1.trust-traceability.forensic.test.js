@@ -48,7 +48,7 @@ const INVALID_ACCOUNTS = [
 // ====================================================================
 describe('LPC RULE 21.1 — TRUST ACCOUNT TRACEABILITY', () => {
   let testRunId;
-  let evidenceEntries = [];
+  const evidenceEntries = [];
 
   beforeAll(() => {
     testRunId = crypto.randomUUID().substring(0, 8);

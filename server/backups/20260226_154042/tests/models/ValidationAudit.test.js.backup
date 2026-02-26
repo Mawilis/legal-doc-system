@@ -1,0 +1,722 @@
+/* eslint-disable */
+/* eslint-env mocha */
+/* eslint-disable import/extensions, no-unused-expressions, max-len */
+
+/**
+ * 🏛️ Wilsy OS - ValidationAudit Model Test Suite
+ * Investor-Grade | POPIA Compliant | Forensic Audit Trail
+ * Mocha + Chai | Deterministic | CI-Friendly
+ */
+
+import { expect } from 'chai';
+import mongoose from 'mongoose';
+import ValidationAudit, { AUDIT_ACTIONS, AUDIT_STATUS, SEVERITY_LEVELS, RETENTION_POLICIES } from '../../models/ValidationAudit.js';
+import cryptoUtils from '../../utils/cryptoUtils.js';
+import logger from '../../utils/logger.js';
+
+describe('ValidationAudit Model - Forensic Grade Audit Trail', () => {
+  const testTenantId = 'test-tenant-12345678';
+  const testAuditId = 'audit-12345678-test';
+
+  before(async () => {
+    // Connect to test database
+    const mongoUrl = process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/wilsy-test';
+    await mongoose.connect(mongoUrl, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    logger.info('Connected to test database');
+  });
+
+  after(async () => {
+    await mongoose.connection.dropDatabase();
+    await mongoose.disconnect();
+    logger.info('Disconnected from test database');
+  });
+
+  beforeEach(async () => {
+    await ValidationAudit.deleteMany({});
+    logger.debug('Cleared ValidationAudit collection');
+  });
+
+  describe('📊 Schema Validation', () => {
+    it('should create a valid audit entry with minimal fields', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        validationResult: { valid: true }
+      });
+
+      expect(audit).to.be.an('object');
+      expect(audit.tenantId).to.equal(testTenantId);
+      expect(audit.action).to.equal(AUDIT_ACTIONS.ID_VALIDATION);
+      expect(audit.resourceType).to.equal('identity');
+      expect(audit.validationResult.valid).to.be.true;
+    });
+
+    it('should require tenantId', async () => {
+      const audit = new ValidationAudit({
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+
+      let error = null;
+      try {
+        await audit.save();
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error).to.exist;
+      expect(error.errors.tenantId).to.exist;
+    });
+
+    it('should validate tenantId format', async () => {
+      const audit = new ValidationAudit({
+        tenantId: 'invalid',
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+
+      let error = null;
+      try {
+        await audit.save();
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error).to.exist;
+      expect(error.errors.tenantId).to.exist;
+    });
+
+    it('should require action', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        resourceType: 'identity'
+      });
+
+      let error = null;
+      try {
+        await audit.save();
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error).to.exist;
+      expect(error.errors.action).to.exist;
+    });
+
+    it('should have default status as SUCCESS', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+
+      expect(audit.status).to.equal(AUDIT_STATUS.SUCCESS);
+    });
+
+    it('should have default severity as INFO', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+
+      expect(audit.severity).to.equal(SEVERITY_LEVELS.INFO);
+    });
+
+    it('should accept all audit action types', async () => {
+      const actions = Object.values(AUDIT_ACTIONS);
+      
+      for (let i = 0; i < actions.length; i += 1) {
+        const action = actions[i];
+        const audit = new ValidationAudit({
+          tenantId: testTenantId,
+          action,
+          resourceType: 'identity'
+        });
+
+        expect(audit.action).to.equal(action);
+      }
+    });
+
+    it('should accept all resource types', async () => {
+      const resourceTypes = ['identity', 'business', 'professional', 'court', 'jurisdiction', 
+                             'document', 'financial', 'evidence', 'system', 'user', 'tenant'];
+      
+      for (let i = 0; i < resourceTypes.length; i += 1) {
+        const resourceType = resourceTypes[i];
+        const audit = new ValidationAudit({
+          tenantId: testTenantId,
+          action: AUDIT_ACTIONS.ID_VALIDATION,
+          resourceType
+        });
+
+        expect(audit.resourceType).to.equal(resourceType);
+      }
+    });
+  });
+
+  describe('🔐 Cryptographic Security', () => {
+    it('should generate auditId if not provided', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+
+      await audit.save();
+
+      expect(audit.auditId).to.exist;
+      expect(audit.auditId).to.be.a('string');
+      expect(audit.auditId.length).to.be.at.least(10);
+    });
+
+    it('should use provided auditId if given', async () => {
+      const audit = new ValidationAudit({
+        auditId: testAuditId,
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+
+      await audit.save();
+
+      expect(audit.auditId).to.equal(testAuditId);
+    });
+
+    it('should generate hash on save', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        validationResult: { valid: true }
+      });
+
+      await audit.save();
+
+      expect(audit.hash).to.exist;
+      expect(audit.hash).to.be.a('string');
+      expect(audit.hash).to.have.lengthOf(64); // SHA256
+    });
+
+    it('should generate consistent hash for same data', async () => {
+      const audit1 = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        validationResult: { valid: true }
+      });
+      await audit1.save();
+
+      const audit2 = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        validationResult: { valid: true }
+      });
+      await audit2.save();
+
+      // Different chain positions, so hashes should be different
+      expect(audit1.hash).to.not.equal(audit2.hash);
+    });
+
+    it('should verify integrity correctly', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        validationResult: { valid: true }
+      });
+
+      await audit.save();
+
+      const verified = audit.verifyIntegrity();
+      expect(verified).to.be.true;
+    });
+
+    it('should detect tampering', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        validationResult: { valid: true }
+      });
+
+      await audit.save();
+
+      // Tamper with data
+      audit.validationResult.valid = false;
+
+      const verified = audit.verifyIntegrity();
+      expect(verified).to.be.false;
+    });
+  });
+
+  describe('⛓️ Hash Chain', () => {
+    it('should set chain position starting from 1', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+
+      await audit.save();
+
+      expect(audit.chainPosition).to.equal(1);
+    });
+
+    it('should link to previous hash', async () => {
+      const audit1 = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+      await audit1.save();
+
+      const audit2 = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.CIPC_VALIDATION,
+        resourceType: 'business',
+        previousHash: audit1.hash
+      });
+      await audit2.save();
+
+      expect(audit2.previousHash).to.equal(audit1.hash);
+      expect(audit2.chainPosition).to.equal(2);
+    });
+
+    it('should auto-increment chain position without previousHash', async () => {
+      const audit1 = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+      await audit1.save();
+
+      const audit2 = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.CIPC_VALIDATION,
+        resourceType: 'business'
+      });
+      await audit2.save();
+
+      expect(audit2.chainPosition).to.equal(2);
+      expect(audit2.previousHash).to.be.undefined;
+    });
+
+    it('should maintain separate chains per tenant', async () => {
+      const tenant1 = 'tenant-1-12345678';
+      const tenant2 = 'tenant-2-12345678';
+
+      const audit1 = new ValidationAudit({
+        tenantId: tenant1,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+      await audit1.save();
+
+      const audit2 = new ValidationAudit({
+        tenantId: tenant2,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+      await audit2.save();
+
+      expect(audit1.chainPosition).to.equal(1);
+      expect(audit2.chainPosition).to.equal(1);
+    });
+
+    it('should verify chain integrity', async () => {
+      await ValidationAudit.create([
+        { tenantId: testTenantId, action: AUDIT_ACTIONS.ID_VALIDATION, resourceType: 'identity' },
+        { tenantId: testTenantId, action: AUDIT_ACTIONS.CIPC_VALIDATION, resourceType: 'business' },
+        { tenantId: testTenantId, action: AUDIT_ACTIONS.VAT_VALIDATION, resourceType: 'business' }
+      ]);
+
+      const result = await ValidationAudit.verifyChain(testTenantId);
+      
+      expect(result).to.be.an('object');
+      expect(result.verified).to.be.true;
+      expect(result.entryCount).to.equal(3);
+      expect(result.brokenLinks).to.be.an('array').that.is.empty;
+      expect(result.tenantId).to.equal(testTenantId);
+    });
+
+    it('should detect broken chain', async () => {
+      const audits = await ValidationAudit.create([
+        { tenantId: testTenantId, action: AUDIT_ACTIONS.ID_VALIDATION, resourceType: 'identity' },
+        { tenantId: testTenantId, action: AUDIT_ACTIONS.CIPC_VALIDATION, resourceType: 'business' },
+        { tenantId: testTenantId, action: AUDIT_ACTIONS.VAT_VALIDATION, resourceType: 'business' }
+      ]);
+
+      // Tamper with the second audit
+      audits[1].validationResult = { valid: false };
+      audits[1].hash = 'tampered-hash';
+      await audits[1].save();
+
+      const result = await ValidationAudit.verifyChain(testTenantId);
+      
+      expect(result.verified).to.be.false;
+      expect(result.brokenLinks).to.have.length.of.at.least(1);
+    });
+  });
+
+  describe('📦 Retention Policies', () => {
+    it('should set default retention policy', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+
+      await audit.save();
+
+      expect(audit.retentionPolicy).to.equal('POPIA_6_YEARS');
+      expect(audit.retentionExpiry).to.exist;
+    });
+
+    it('should accept specified retention policy', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        retentionPolicy: 'COMPANIES_ACT_10_YEARS'
+      });
+
+      await audit.save();
+
+      expect(audit.retentionPolicy).to.equal('COMPANIES_ACT_10_YEARS');
+    });
+
+    it('should calculate retention expiry correctly', async () => {
+      const policy = RETENTION_POLICIES.COMPANIES_ACT_10_YEARS;
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        retentionPolicy: 'COMPANIES_ACT_10_YEARS'
+      });
+
+      await audit.save();
+
+      const expectedExpiry = new Date(Date.now() + policy.duration);
+      const actualExpiry = new Date(audit.retentionExpiry);
+
+      expect(actualExpiry.getFullYear()).to.equal(expectedExpiry.getFullYear());
+      expect(actualExpiry.getMonth()).to.equal(expectedExpiry.getMonth());
+    });
+
+    it('should calculate age in days virtual property', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) // 5 days ago
+      });
+
+      expect(audit.ageInDays).to.be.at.least(5);
+    });
+
+    it('should determine if expired', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        retentionExpiry: new Date(Date.now() - 1000) // Expired 1 second ago
+      });
+
+      expect(audit.isExpired).to.be.true;
+    });
+
+    it('should apply retention policies via static method', async () => {
+      await ValidationAudit.create([
+        { 
+          tenantId: testTenantId, 
+          action: AUDIT_ACTIONS.ID_VALIDATION, 
+          resourceType: 'identity',
+          retentionExpiry: new Date(Date.now() - 1000) // Expired
+        },
+        { 
+          tenantId: testTenantId, 
+          action: AUDIT_ACTIONS.CIPC_VALIDATION, 
+          resourceType: 'business',
+          retentionExpiry: new Date(Date.now() + 86400000) // Not expired
+        }
+      ]);
+
+      const result = await ValidationAudit.applyRetention();
+
+      expect(result.deletedCount).to.equal(1);
+      
+      const remaining = await ValidationAudit.countDocuments({ tenantId: testTenantId });
+      expect(remaining).to.equal(1);
+    });
+  });
+
+  describe('🔍 Query Methods', () => {
+    beforeEach(async () => {
+      await ValidationAudit.create([
+        { 
+          tenantId: testTenantId, 
+          action: AUDIT_ACTIONS.ID_VALIDATION, 
+          resourceType: 'identity',
+          status: AUDIT_STATUS.SUCCESS,
+          timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+        },
+        { 
+          tenantId: testTenantId, 
+          action: AUDIT_ACTIONS.CIPC_VALIDATION, 
+          resourceType: 'business',
+          status: AUDIT_STATUS.SUCCESS,
+          timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+        },
+        { 
+          tenantId: testTenantId, 
+          action: AUDIT_ACTIONS.VAT_VALIDATION, 
+          resourceType: 'business',
+          status: AUDIT_STATUS.FAILURE,
+          timestamp: new Date()
+        },
+        { 
+          tenantId: 'other-tenant-12345678', 
+          action: AUDIT_ACTIONS.ID_VALIDATION, 
+          resourceType: 'identity',
+          timestamp: new Date()
+        }
+      ]);
+    });
+
+    it('should find entries for tenant', async () => {
+      const entries = await ValidationAudit.findForTenant(testTenantId);
+
+      expect(entries).to.be.an('array');
+      expect(entries).to.have.lengthOf(3);
+    });
+
+    it('should filter by action', async () => {
+      const entries = await ValidationAudit.findForTenant(testTenantId, {
+        action: AUDIT_ACTIONS.CIPC_VALIDATION
+      });
+
+      expect(entries).to.have.lengthOf(1);
+      expect(entries[0].action).to.equal(AUDIT_ACTIONS.CIPC_VALIDATION);
+    });
+
+    it('should filter by status', async () => {
+      const entries = await ValidationAudit.findForTenant(testTenantId, {
+        status: AUDIT_STATUS.FAILURE
+      });
+
+      expect(entries).to.have.lengthOf(1);
+      expect(entries[0].status).to.equal(AUDIT_STATUS.FAILURE);
+    });
+
+    it('should filter by date range', async () => {
+      const fromDate = new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000);
+      
+      const entries = await ValidationAudit.findForTenant(testTenantId, {
+        timestamp: { $gte: fromDate }
+      });
+
+      expect(entries).to.have.lengthOf(2);
+    });
+
+    it('should limit results', async () => {
+      const entries = await ValidationAudit.findForTenant(testTenantId, {}, { limit: 2 });
+
+      expect(entries).to.have.lengthOf(2);
+    });
+
+    it('should sort results', async () => {
+      const entries = await ValidationAudit.findForTenant(testTenantId, {}, { 
+        sort: { timestamp: 1 } 
+      });
+
+      expect(entries[0].action).to.equal(AUDIT_ACTIONS.ID_VALIDATION);
+      expect(entries[2].action).to.equal(AUDIT_ACTIONS.VAT_VALIDATION);
+    });
+
+    it('should skip results for pagination', async () => {
+      const entries = await ValidationAudit.findForTenant(testTenantId, {}, { 
+        skip: 1,
+        limit: 1
+      });
+
+      expect(entries).to.have.lengthOf(1);
+      expect(entries[0].action).to.equal(AUDIT_ACTIONS.CIPC_VALIDATION);
+    });
+  });
+
+  describe('📤 Evidence Export', () => {
+    it('should export evidence package', async () => {
+      await ValidationAudit.create([
+        { tenantId: testTenantId, action: AUDIT_ACTIONS.ID_VALIDATION, resourceType: 'identity' },
+        { tenantId: testTenantId, action: AUDIT_ACTIONS.CIPC_VALIDATION, resourceType: 'business' }
+      ]);
+
+      const evidence = await ValidationAudit.exportEvidence(testTenantId);
+
+      expect(evidence).to.be.an('object');
+      expect(evidence.tenantId).to.equal(testTenantId);
+      expect(evidence.exportId).to.exist;
+      expect(evidence.exportTimestamp).to.exist;
+      expect(evidence.entryCount).to.equal(2);
+      expect(evidence.entries).to.have.lengthOf(2);
+      expect(evidence.chainVerification).to.exist;
+      expect(evidence.overallHash).to.exist;
+      expect(evidence.overallHash).to.have.lengthOf(64);
+    });
+
+    it('should export filtered evidence', async () => {
+      await ValidationAudit.create([
+        { tenantId: testTenantId, action: AUDIT_ACTIONS.ID_VALIDATION, resourceType: 'identity' },
+        { tenantId: testTenantId, action: AUDIT_ACTIONS.CIPC_VALIDATION, resourceType: 'business' }
+      ]);
+
+      const evidence = await ValidationAudit.exportEvidence(testTenantId, {
+        action: AUDIT_ACTIONS.CIPC_VALIDATION
+      });
+
+      expect(evidence.entryCount).to.equal(1);
+      expect(evidence.entries[0].action).to.equal(AUDIT_ACTIONS.CIPC_VALIDATION);
+    });
+
+    it('should generate evidence from instance', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity'
+      });
+      await audit.save();
+
+      const evidence = audit.generateEvidence();
+
+      expect(evidence).to.be.an('object');
+      expect(evidence.auditId).to.equal(audit.auditId);
+      expect(evidence.tenantId).to.equal(testTenantId);
+      expect(evidence.hash).to.equal(audit.hash);
+      expect(evidence.verification).to.equal('VERIFIED');
+      expect(evidence.verificationTimestamp).to.exist;
+    });
+  });
+
+  describe('🔒 POPIA Compliance', () => {
+    it('should redact PII from request data', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        requestData: { 
+          idNumber: '8001015009087', 
+          email: 'john.doe@example.com',
+          phone: '0821234567',
+          bankAccount: '1234567890',
+          address: '123 Main St, Johannesburg'
+        },
+        userIp: '192.168.1.100'
+      });
+
+      const redacted = audit.redactPII();
+
+      expect(redacted.requestData.idNumber).to.equal('[REDACTED]');
+      expect(redacted.requestData.email).to.equal('[REDACTED]');
+      expect(redacted.requestData.phone).to.equal('[REDACTED]');
+      expect(redacted.requestData.bankAccount).to.equal('[REDACTED]');
+      expect(redacted.requestData.address).to.equal('[REDACTED]');
+      expect(redacted.userIp).to.include('xxx');
+    });
+
+    it('should redact PII from response data', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        responseData: { 
+          user: { email: 'john.doe@example.com' },
+          metadata: { phone: '0821234567' }
+        }
+      });
+
+      const redacted = audit.redactPII();
+
+      expect(redacted.responseData.user.email).to.equal('[REDACTED]');
+      expect(redacted.responseData.metadata.phone).to.equal('[REDACTED]');
+    });
+
+    it('should redact PII from validation metadata', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        validationMetadata: { 
+          idNumber: '8001015009087',
+          passport: 'SA1234567'
+        }
+      });
+
+      const redacted = audit.redactPII();
+
+      expect(redacted.validationMetadata.idNumber).to.equal('[REDACTED]');
+      expect(redacted.validationMetadata.passport).to.equal('[REDACTED]');
+    });
+
+    it('should recursively redact nested objects', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        requestData: {
+          user: {
+            personal: {
+              idNumber: '8001015009087',
+              email: 'john@example.com'
+            },
+            employment: {
+              companyEmail: 'john@company.co.za'
+            }
+          }
+        }
+      });
+
+      const redacted = audit.redactPII();
+
+      expect(redacted.requestData.user.personal.idNumber).to.equal('[REDACTED]');
+      expect(redacted.requestData.user.personal.email).to.equal('[REDACTED]');
+      expect(redacted.requestData.user.employment.companyEmail).to.equal('[REDACTED]');
+    });
+  });
+
+  describe('📊 Investor Metrics', () => {
+    it('should provide summary virtual property', async () => {
+      const audit = new ValidationAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        validationResult: { valid: true }
+      });
+
+      const summary = audit.summary;
+
+      expect(summary).to.be.an('object');
+      expect(summary.auditId).to.equal(audit.auditId);
+      expect(summary.action).to.equal(AUDIT_ACTIONS.ID_VALIDATION);
+      expect(summary.valid).to.be.true;
+    });
+
+    it('should create audit entry with createAudit static method', async () => {
+      const audit = await ValidationAudit.createAudit({
+        tenantId: testTenantId,
+        action: AUDIT_ACTIONS.ID_VALIDATION,
+        resourceType: 'identity',
+        validationResult: { valid: true }
+      });
+
+      expect(audit).to.exist;
+      expect(audit.auditId).to.exist;
+      expect(audit.tenantId).to.equal(testTenantId);
+    });
+  });
+});

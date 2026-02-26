@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { readFile } from 'fs/promises.js';
+import { join, dirname } from "path";
+import { fileURLToPath } from 'url.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,15 +20,15 @@ const colors = {
 
 async function checkErrorLogs() {
   console.log(
-    colors.cyan +
-      '\n═══════════════════════════════════════════════════════════════════════════════' +
-      colors.reset
+    `${colors.cyan
+    }\n═══════════════════════════════════════════════════════════════════════════════${
+      colors.reset}`,
   );
-  console.log(colors.yellow + '                     WILSY OS ERROR DIAGNOSTIC' + colors.reset);
+  console.log(`${colors.yellow}                     WILSY OS ERROR DIAGNOSTIC${colors.reset}`);
   console.log(
-    colors.cyan +
-      '═══════════════════════════════════════════════════════════════════════════════' +
-      colors.reset
+    `${colors.cyan
+    }═══════════════════════════════════════════════════════════════════════════════${
+      colors.reset}`,
   );
   console.log('');
 
@@ -39,19 +38,19 @@ async function checkErrorLogs() {
     try {
       const content = await readFile(logFile, 'utf8');
       if (content.trim()) {
-        console.log(colors.red + `\n❌ Worker ${i} Errors:` + colors.reset);
+        console.log(`${colors.red}\n❌ Worker ${i} Errors:${colors.reset}`);
         console.log(
           content
             .split('\n')
             .slice(0, 10)
             .map((line) => `  ${line}`)
-            .join('\n')
+            .join('\n'),
         );
       } else {
-        console.log(colors.green + `✅ Worker ${i}: No errors` + colors.reset);
+        console.log(`${colors.green}✅ Worker ${i}: No errors${colors.reset}`);
       }
     } catch (err) {
-      console.log(colors.yellow + `⚠️  Worker ${i}: No log file found` + colors.reset);
+      console.log(`${colors.yellow}⚠️  Worker ${i}: No log file found${colors.reset}`);
     }
   }
 
@@ -60,25 +59,25 @@ async function checkErrorLogs() {
   try {
     const content = await readFile(apiLog, 'utf8');
     if (content.trim()) {
-      console.log(colors.red + `\n❌ API Errors:` + colors.reset);
+      console.log(`${colors.red}\n❌ API Errors:${colors.reset}`);
       console.log(
         content
           .split('\n')
           .slice(0, 10)
           .map((line) => `  ${line}`)
-          .join('\n')
+          .join('\n'),
       );
     } else {
-      console.log(colors.green + `\n✅ API: No errors` + colors.reset);
+      console.log(`${colors.green}\n✅ API: No errors${colors.reset}`);
     }
   } catch (err) {
-    console.log(colors.yellow + `\n⚠️  API: No log file found` + colors.reset);
+    console.log(`${colors.yellow}\n⚠️  API: No log file found${colors.reset}`);
   }
 
   console.log(
-    colors.cyan +
-      '\n═══════════════════════════════════════════════════════════════════════════════' +
-      colors.reset
+    `${colors.cyan
+    }\n═══════════════════════════════════════════════════════════════════════════════${
+      colors.reset}`,
   );
   console.log('');
 }

@@ -8,12 +8,32 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 // 1. Security & Identity
+
+// 2. Access Control (RBAC)
+
+// 3. Data Integrity & Validation
+
+// 4. Observability & Forensics
+const { emitAudit } = require('./auditMiddleware');
 const { protect } = require('./authMiddleware');
 const { authorize } = require('./authorize');
-const { tenantScope } = require('./tenantScope');
+const correlationId = require('./correlationId');
+
+// 5. Operational Safety
+const { errorHandler } = require('./errorMiddleware');
+const { features, checkFeature } = require('./featureFlags');
+const { ipMetadata } = require('./ipMetadata');
+const maintenanceMode = require('./maintenanceMode');
+const { metricsMiddleware, metricsEndpoint } = require('./metricsMiddleware');
+const apiLimiter = require('./rateLimiter');
+const rbac = require('./rbacMiddleware');
+const requestLogger = require('./requestLogger');
+
+// 6. Specialized Utilities
+const responseHandler = require('./responseHandler');
+const roles = require('./roleMiddleware');
+const { sanitizeBody } = require('./sanitizeMiddleware');
 const {
   headerSecurity,
   authLimiter,
@@ -22,33 +42,11 @@ const {
   tenantGuard,
   errorNormalizer,
 } = require('./security');
-
-// 2. Access Control (RBAC)
-const rbac = require('./rbacMiddleware');
-const roles = require('./roleMiddleware');
-
-// 3. Data Integrity & Validation
-const validate = require('./validationMiddleware');
-const { sanitizeBody } = require('./sanitizeMiddleware');
-const validateObjectId = require('./validateObjectId');
-
-// 4. Observability & Forensics
-const { emitAudit } = require('./auditMiddleware');
-const { metricsMiddleware, metricsEndpoint } = require('./metricsMiddleware');
-const requestLogger = require('./requestLogger');
-const { ipMetadata } = require('./ipMetadata');
-const { userAgentRequired } = require('./userAgentMiddleware');
-const correlationId = require('./correlationId');
-
-// 5. Operational Safety
-const { errorHandler } = require('./errorMiddleware');
-const maintenanceMode = require('./maintenanceMode');
-const { features, checkFeature } = require('./featureFlags');
-const apiLimiter = require('./rateLimiter');
-
-// 6. Specialized Utilities
+const { tenantScope } = require('./tenantScope');
 const { uploadDocument } = require('./uploadMiddleware');
-const responseHandler = require('./responseHandler');
+const { userAgentRequired } = require('./userAgentMiddleware');
+const validateObjectId = require('./validateObjectId');
+const validate = require('./validationMiddleware');
 
 module.exports = {
   // Identity & Protection

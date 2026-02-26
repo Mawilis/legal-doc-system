@@ -11,9 +11,8 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const express = require('express');
+
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
@@ -22,8 +21,8 @@ const fs = require('fs');
 const { saveUpload } = require('../controllers/uploadController');
 
 // Security + Observability middleware
-const { tenantGuard, emitAudit } = require('../middleware/security');
 const { protect, authorize } = require('../middleware/authProtect');
+const { tenantGuard, emitAudit } = require('../middleware/security');
 
 // ------------------------------
 // Ensure upload directory exists
@@ -36,7 +35,7 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 // ------------------------------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '_')),
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`),
 });
 
 // ------------------------------
@@ -91,7 +90,7 @@ router.post(
       err.code = 'UPLOAD_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

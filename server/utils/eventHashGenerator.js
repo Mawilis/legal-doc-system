@@ -188,7 +188,7 @@ function validateEventStructure(event) {
 
   return {
     isValid: errors.length === 0,
-    errors: errors,
+    errors,
   };
 }
 
@@ -236,7 +236,7 @@ function generateEventHash(eventData, options = {}) {
 
     // Return comprehensive hash result for audit trail
     return {
-      hash: hash,
+      hash,
       algorithm: QUANTUM_CONFIG.HASH_ALGORITHM,
       timestamp: new Date().toISOString(),
       dataLength: normalizedData.length,
@@ -251,8 +251,7 @@ function generateEventHash(eventData, options = {}) {
     const forensicError = new Error(QUANTUM_ERRORS.HASH_GENERATION_FAILED.message);
     forensicError.code = QUANTUM_ERRORS.HASH_GENERATION_FAILED.code;
     forensicError.originalError = error.message;
-    forensicError.eventData =
-      typeof eventData === 'string' ? eventData.substring(0, 100) + '...' : 'Object';
+    forensicError.eventData = typeof eventData === 'string' ? `${eventData.substring(0, 100)}...` : 'Object';
 
     throw forensicError;
   }
@@ -284,9 +283,9 @@ function generateHashChain(events) {
 
     // Create chain data object
     const chainData = {
-      event: event,
+      event,
       eventIndex: i,
-      previousHash: previousHash,
+      previousHash,
       timestamp: new Date().toISOString(),
     };
 
@@ -301,7 +300,7 @@ function generateHashChain(events) {
       eventType: event.eventType,
       hash: linkHash.hash,
       timestamp: linkHash.timestamp,
-      previousHash: previousHash,
+      previousHash,
     });
 
     // Set previous hash for next iteration
@@ -320,7 +319,7 @@ function generateHashChain(events) {
 
   return {
     rootHash: rootHash.hash,
-    chain: chain,
+    chain,
     metadata: {
       totalEvents: chain.length,
       generationTimestamp: rootHash.timestamp,
@@ -351,11 +350,10 @@ function generateMerkleTree(events, options = {}) {
     if (typeof event === 'string' && event.match(/^[a-f0-9]{64}$/i)) {
       // Already a hash, use directly
       return Buffer.from(event, QUANTUM_CONFIG.OUTPUT_ENCODING);
-    } else {
-      // Generate hash from event data
-      const hashResult = generateEventHash(event, options);
-      return Buffer.from(hashResult.hash, QUANTUM_CONFIG.OUTPUT_ENCODING);
     }
+    // Generate hash from event data
+    const hashResult = generateEventHash(event, options);
+    return Buffer.from(hashResult.hash, QUANTUM_CONFIG.OUTPUT_ENCODING);
   });
 
   // Create Merkle tree
@@ -381,10 +379,10 @@ function generateMerkleTree(events, options = {}) {
   });
 
   return {
-    rootHash: rootHash,
-    tree: tree,
+    rootHash,
+    tree,
     leaves: leaves.map((l) => l.toString(QUANTUM_CONFIG.OUTPUT_ENCODING)),
-    proofs: proofs,
+    proofs,
     metadata: {
       totalLeaves: leaves.length,
       treeDepth: tree.getDepth(),
@@ -423,13 +421,13 @@ function verifyMerkleProof(eventHash, proof, rootHash) {
     const isValid = tree.verify(
       formattedProof,
       Buffer.from(eventHash, QUANTUM_CONFIG.OUTPUT_ENCODING),
-      Buffer.from(rootHash, QUANTUM_CONFIG.OUTPUT_ENCODING)
+      Buffer.from(rootHash, QUANTUM_CONFIG.OUTPUT_ENCODING),
     );
 
     return {
-      isValid: isValid,
-      eventHash: eventHash,
-      rootHash: rootHash,
+      isValid,
+      eventHash,
+      rootHash,
       verificationTimestamp: new Date().toISOString(),
       complianceMarkers: isValid
         ? [QUANTUM_CONFIG.COMPLIANCE_MARKERS.ECT, 'VERIFIED_NON_REPUDIATION']
@@ -501,7 +499,7 @@ function generatePOPIAConsentHash(consentData) {
       section14Compliant: true,
       consentId: `POPIA-CONSENT-${hashResult.hash.substring(0, 16).toUpperCase()}`,
       recommendedReviewDate: new Date(
-        Date.now() + popiaConsentObject.retentionPeriodMonths * 30 * 24 * 60 * 60 * 1000
+        Date.now() + popiaConsentObject.retentionPeriodMonths * 30 * 24 * 60 * 60 * 1000,
       ).toISOString(),
     },
   };
@@ -516,9 +514,9 @@ function generatePOPIAConsentHash(consentData) {
 function generateECTSignatureHash(signatureData) {
   // Validate ECT Act requirements
   if (
-    !signatureData.signatoryId ||
-    !signatureData.documentHash ||
-    !signatureData.signatureTimestamp
+    !signatureData.signatoryId
+    || !signatureData.documentHash
+    || !signatureData.signatureTimestamp
   ) {
     throw new Error('ECT signature requires signatoryId, documentHash, and signatureTimestamp');
   }

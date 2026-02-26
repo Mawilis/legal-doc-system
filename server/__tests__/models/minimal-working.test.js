@@ -1,10 +1,9 @@
 /*
  * @jest-environment node
  */
-'use strict';
 
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 const modelLoader = require('../helpers/modelLoader');
 
 describe('🔧 MINIMAL WORKING TEST - Model Loading Verification', () => {

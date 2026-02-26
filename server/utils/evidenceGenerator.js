@@ -1,13 +1,11 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ EVIDENCE GENERATOR - INVESTOR-GRADE MODULE                                  ║
   ║ SHA256 forensic evidence | Deterministic audit trails                       ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/evidenceGenerator.js
  * VERSION: 2.0.0
  */
-
-'use strict';
 
 const crypto = require('crypto');
 const fs = require('fs').promises;
@@ -31,9 +29,7 @@ class EvidenceGenerator {
     }
 
     // Canonicalize audit entries (sort keys for determinism)
-    const canonicalEntries = auditEntries.map((entry) =>
-      JSON.parse(JSON.stringify(entry, Object.keys(entry).sort()))
-    );
+    const canonicalEntries = auditEntries.map((entry) => JSON.parse(JSON.stringify(entry, Object.keys(entry).sort())));
 
     // Create evidence object
     const evidence = {

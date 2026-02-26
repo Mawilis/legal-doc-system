@@ -87,10 +87,8 @@
  * ============================================================================
  */
 
-'use strict';
-
-const mongoose = require('mongoose');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 
 // ============================================================================
 // SOVEREIGNTY CONSTANTS (IMMUTABLE)
@@ -134,7 +132,7 @@ const resolveAuditService = () => {
 
     _auditService = async (req, auditData) => {
       process.stderr.write(
-        `📝 [AUDIT_STUB] ${auditData.action}: ${JSON.stringify(auditData.metadata)}\n`
+        `📝 [AUDIT_STUB] ${auditData.action}: ${JSON.stringify(auditData.metadata)}\n`,
       );
     };
 
@@ -192,12 +190,10 @@ const resolveTenantService = () => {
     process.stderr.write(`⚠️ [SCOPE_WARNING] Tenant service resolution failed: ${error.message}\n`);
 
     _tenantService = {
-      validateTenantExistence: async (tenantId) => {
-        return {
-          valid: mongoose.Types.ObjectId.isValid(tenantId),
-          reason: 'Validation service unavailable',
-        };
-      },
+      validateTenantExistence: async (tenantId) => ({
+        valid: mongoose.Types.ObjectId.isValid(tenantId),
+        reason: 'Validation service unavailable',
+      }),
     };
 
     return _tenantService;
@@ -363,7 +359,9 @@ const tenantScope = async (req, res, next) => {
       });
     }
 
-    const { role, tenantId, email, _id: userId } = req.user;
+    const {
+      role, tenantId, email, _id: userId,
+    } = req.user;
     const normalizedRole = normalizeRole(role);
 
     // ====================
@@ -381,7 +379,7 @@ const tenantScope = async (req, res, next) => {
 
         if (!tenantValidation.valid) {
           process.stderr.write(
-            `❌ [OVERRIDE_DENIED] Sovereign ${email} attempted invalid override: ${tenantValidation.reason}\n`
+            `❌ [OVERRIDE_DENIED] Sovereign ${email} attempted invalid override: ${tenantValidation.reason}\n`,
           );
 
           await auditService(req, {
@@ -408,7 +406,7 @@ const tenantScope = async (req, res, next) => {
 
         // Log the sovereign override with high-court fidelity
         process.stdout.write(
-          `🕵️ [SOVEREIGN_OVERRIDE] ${normalizedRole} ${email} accessing Tenant: ${overrideId} (${tenantValidation.tenant.name})\n`
+          `🕵️ [SOVEREIGN_OVERRIDE] ${normalizedRole} ${email} accessing Tenant: ${overrideId} (${tenantValidation.tenant.name})\n`,
         );
 
         // Create immutable sovereignty filter
@@ -417,11 +415,11 @@ const tenantScope = async (req, res, next) => {
           _override: {
             by: userId,
             role: normalizedRole,
-            email: email,
+            email,
             reason: overrideReason,
             justification: overrideJustification,
             timestamp: new Date().toISOString(),
-            traceId: traceId,
+            traceId,
           },
         });
 
@@ -437,12 +435,12 @@ const tenantScope = async (req, res, next) => {
           scopeType: 'SOVEREIGN_OVERRIDE',
           sovereignRole: normalizedRole,
           sovereignEmail: email,
-          overrideReason: overrideReason,
-          overrideJustification: overrideJustification,
+          overrideReason,
+          overrideJustification,
           scopeTimestamp: new Date().toISOString(),
           isScoped: true,
           isOverride: true,
-          traceId: traceId,
+          traceId,
         };
 
         // Record sovereign audit trail
@@ -490,8 +488,8 @@ const tenantScope = async (req, res, next) => {
         severity: 'HIGH',
         summary: 'User attempted access without tenant assignment',
         metadata: {
-          userId: userId,
-          email: email,
+          userId,
+          email,
           role: normalizedRole,
           path: req.originalUrl,
           traceId,
@@ -520,9 +518,9 @@ const tenantScope = async (req, res, next) => {
         severity: 'HIGH',
         summary: 'Tenant validation failed during scope enforcement',
         metadata: {
-          userId: userId,
-          email: email,
-          tenantId: tenantId,
+          userId,
+          email,
+          tenantId,
           validationError: tenantValidation.reason,
           path: req.originalUrl,
           traceId,
@@ -552,7 +550,7 @@ const tenantScope = async (req, res, next) => {
           .digest('hex')
           .substring(0, 16),
         timestamp: new Date().toISOString(),
-        traceId: traceId,
+        traceId,
       },
     });
 
@@ -574,7 +572,7 @@ const tenantScope = async (req, res, next) => {
       scopeTimestamp: new Date().toISOString(),
       isScoped: true,
       isOverride: false,
-      traceId: traceId,
+      traceId,
       sovereignty: {
         enforcedAt: new Date().toISOString(),
         filterHash: sovereignFilter._integrity.hash,
@@ -609,15 +607,15 @@ const tenantScope = async (req, res, next) => {
       severity: 'INFO',
       summary: `Tenant scope enforced for ${email} accessing ${tenantValidation.tenant.name}`,
       metadata: {
-        userId: userId,
-        email: email,
+        userId,
+        email,
         role: normalizedRole,
-        tenantId: tenantId,
+        tenantId,
         tenantName: tenantValidation.tenant.name,
         tenantStatus: tenantValidation.tenant.status,
         path: req.originalUrl,
         method: req.method,
-        traceId: traceId,
+        traceId,
         scopeDuration: Date.now() - scopeStartTime,
         sovereigntyHash: sovereignFilter._integrity.hash,
       },
@@ -647,7 +645,7 @@ const tenantScope = async (req, res, next) => {
         metadata: {
           error: error.message,
           stackTrace: error.stack,
-          traceId: traceId,
+          traceId,
           path: req.originalUrl,
           method: req.method,
           userId: req.user?._id,
@@ -658,7 +656,7 @@ const tenantScope = async (req, res, next) => {
       });
     } catch (auditError) {
       process.stderr.write(
-        `💥 [AUDIT_FAILURE] Failed to record sovereignty failure: ${auditError.message}\n`
+        `💥 [AUDIT_FAILURE] Failed to record sovereignty failure: ${auditError.message}\n`,
       );
     }
 
@@ -667,7 +665,7 @@ const tenantScope = async (req, res, next) => {
       success: false,
       code: SCOPE_VIOLATION_CODES.TENANT_SCOPE_ENGINE_FAULT,
       message: 'A critical error occurred while enforcing law firm data sovereignty',
-      traceId: traceId,
+      traceId,
       timestamp: new Date().toISOString(),
       supportReference: `SOV-${Date.now().toString(36).toUpperCase()}`,
     });
@@ -688,14 +686,14 @@ const requireTenantScope = (req, res, next) => {
     const traceId = req.headers['x-request-id'] || generateScopeTraceId();
 
     process.stderr.write(
-      `🚨 [SCOPE_VIOLATION] Attempted data access without tenant scope [Trace: ${traceId}]\n`
+      `🚨 [SCOPE_VIOLATION] Attempted data access without tenant scope [Trace: ${traceId}]\n`,
     );
 
     return res.status(500).json({
       success: false,
       code: SCOPE_VIOLATION_CODES.DATA_SOVEREIGNTY_BREACH,
       message: 'Data sovereignty violation: Tenant scope not applied',
-      traceId: traceId,
+      traceId,
       timestamp: new Date().toISOString(),
     });
   }
@@ -709,40 +707,38 @@ const requireTenantScope = (req, res, next) => {
  * @param {Object} baseQuery - Base query object
  * @returns {Function} Middleware function
  */
-const enrichQueryWithTenantScope = (baseQuery = {}) => {
-  return (req, res, next) => {
-    try {
-      if (!req.tenantFilter) {
-        throw new Error('Tenant scope not applied');
-      }
-
-      // Create enriched query with tenant scope
-      req.enrichedQuery = {
-        ...baseQuery,
-        ...req.tenantFilter,
-      };
-
-      // Remove internal integrity fields from query
-      delete req.enrichedQuery._integrity;
-      delete req.enrichedQuery._override;
-
-      next();
-    } catch (error) {
-      const traceId = req.headers['x-request-id'] || generateScopeTraceId();
-
-      process.stderr.write(
-        `🚨 [QUERY_ENRICHMENT] Failed to enrich query: ${error.message} [Trace: ${traceId}]\n`
-      );
-
-      return res.status(500).json({
-        success: false,
-        code: SCOPE_VIOLATION_CODES.DATA_SOVEREIGNTY_BREACH,
-        message: 'Failed to apply tenant scope to database query',
-        traceId: traceId,
-        timestamp: new Date().toISOString(),
-      });
+const enrichQueryWithTenantScope = (baseQuery = {}) => (req, res, next) => {
+  try {
+    if (!req.tenantFilter) {
+      throw new Error('Tenant scope not applied');
     }
-  };
+
+    // Create enriched query with tenant scope
+    req.enrichedQuery = {
+      ...baseQuery,
+      ...req.tenantFilter,
+    };
+
+    // Remove internal integrity fields from query
+    delete req.enrichedQuery._integrity;
+    delete req.enrichedQuery._override;
+
+    next();
+  } catch (error) {
+    const traceId = req.headers['x-request-id'] || generateScopeTraceId();
+
+    process.stderr.write(
+      `🚨 [QUERY_ENRICHMENT] Failed to enrich query: ${error.message} [Trace: ${traceId}]\n`,
+    );
+
+    return res.status(500).json({
+      success: false,
+      code: SCOPE_VIOLATION_CODES.DATA_SOVEREIGNTY_BREACH,
+      message: 'Failed to apply tenant scope to database query',
+      traceId,
+      timestamp: new Date().toISOString(),
+    });
+  }
 };
 
 // ============================================================================

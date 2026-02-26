@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; tests event batch ingestion and anonymization.
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -21,6 +19,7 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const trackingController = require('../controllers/trackingController');
@@ -42,7 +41,8 @@ const eventSchema = {
 };
 
 const batchEventSchema = {
-  events: Joi.array().items(eventSchema).min(1).max(100).required(),
+  events: Joi.array().items(eventSchema).min(1).max(100)
+    .required(),
 };
 
 // ------------------------------
@@ -72,7 +72,7 @@ router.post(
       console.error('Tracking Error:', err.message);
       res.status(200).json({ status: 'ignored' });
     }
-  }
+  },
 );
 
 /*
@@ -88,13 +88,12 @@ router.post(
   async (req, res, next) => {
     try {
       const result = await trackingController.trackBatch(req, res);
-      if (!res.headersSent && result)
-        res.status(201).json({ status: 'success', count: result.count });
+      if (!res.headersSent && result) res.status(201).json({ status: 'success', count: result.count });
     } catch (err) {
       console.error('Batch Tracking Error:', err.message);
       res.status(200).json({ status: 'ignored' });
     }
-  }
+  },
 );
 
 module.exports = router;

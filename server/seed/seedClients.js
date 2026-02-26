@@ -3,8 +3,6 @@
  * STATUS: PRODUCTION-READY | COMPLIANCE SEEDER
  */
 
-'use strict';
-
 const mongoose = require('mongoose');
 // MATCHES YOUR LS: Client.js
 const Client = require('../models/Client');

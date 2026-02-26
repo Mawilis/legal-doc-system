@@ -1,8 +1,7 @@
-/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ RECOVERY SENTINEL TESTS - INVESTOR DUE DILIGENCE              ║
   ║ 100% coverage | Self-healing | Autonomous recovery           ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/scripts/recovery-sentinel.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -11,12 +10,14 @@
  * • Confirms $1.5B valuation premium enablement
  */
 
-import axios from 'axios';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import fs from 'fs/promises';
-import path from 'path';
-import crypto from 'crypto';
+import fs from 'fs/promises.js';
+import axios from 'axios.js';
+import { exec } from 'child_process.js';
+import crypto from "crypto";
+import path from "path";
+import { promisify } from "util";
+
+import * as recoverySentinel from 'wilsy-os-sentinel/recovery-sentinel.js.js';
 
 // Mock dependencies
 jest.mock('axios');
@@ -30,8 +31,6 @@ jest.mock('../../utils/auditLogger');
 jest.mock('../../utils/metricsCollector');
 
 const execAsync = promisify(exec);
-
-import * as recoverySentinel from '../../scripts/recovery-sentinel.js';
 
 describe('RecoverySentinel - Self-Healing System Due Diligence', () => {
   let healthChecker;

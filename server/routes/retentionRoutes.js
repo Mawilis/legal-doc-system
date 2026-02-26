@@ -1,195 +1,216 @@
-/*
- * File: server/routes/retentionRoutes.js
- * STATUS: PRODUCTION-READY
- * PURPOSE: Retention Policy Gateway (Tenant-Scoped). Manages data lifecycle, automated archiving, and destruction policies (POPIA/GDPR Compliance).
- * AUTHOR: Wilsy Core Team
- * REVIEWERS: @compliance,@legal,@security
- * MIGRATION_NOTES: Migrated to Joi Validation; enforced strict deletion safeguards.
- * TESTS: mocha@9.x + chai@4.x; tests policy application and soft-delete vs hard-delete logic.
- */
+/* eslint-disable */
+import express from 'express';
+import RetentionPolicy from '../models/RetentionPolicy.js';
+import { authenticate } from '../middleware/auth.js';
+import { extractTenant } from '../middleware/tenantContext.js';
+import { rateLimiter } from '../middleware/rateLimiter.js';
+import { auditLogger } from '../utils/auditLogger.js';
+import logger from '../utils/logger.js';
 
-'use strict';
-
-// 1. USAGE COMMENTS
-// -----------------------------------------------------------------------------
-// Usage:
-//   app.use('/api/retention', retentionRoutes);
-//
-// Functionality:
-//   - POST /policies: Define a retention rule (e.g., "Archive Closed Cases after 5 years").
-//   - POST /execute: Manually trigger a retention sweep (Admin only).
-//   - GET /logs: Audit trail of what data was archived/deleted.
-// -----------------------------------------------------------------------------
-
-const express = require('express');
 const router = express.Router();
 
-const retentionController = require('../controllers/retentionController');
+// Apply middleware
+router.use(extractTenant);
+router.use(authenticate({ required: true }));
 
-// 2. MIDDLEWARE (The "Godly" Stack)
-const { protect } = require('../middleware/authMiddleware');
-const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
-const validate = require('../middleware/validationMiddleware');
-
-// 3. VALIDATION SCHEMAS (Joi)
-const { Joi } = validate;
-
-const policySchema = {
-  name: Joi.string().required(),
-  resourceType: Joi.string().valid('CASE', 'DOCUMENT', 'INVOICE', 'MESSAGE').required(),
-  retentionPeriodDays: Joi.number().min(30).max(3650).required(), // Min 30 days, Max 10 years
-  action: Joi.string().valid('ARCHIVE', 'SOFT_DELETE', 'HARD_DELETE', 'ANONYMIZE').required(),
-  description: Joi.string().max(500).optional(),
-};
-
-const executeSchema = {
-  policyId: Joi.string().required(),
-  dryRun: Joi.boolean().default(true), // Safer default
-};
-
-const idSchema = {
-  id: Joi.string().required(),
-};
-
-// ------------------------------
-// ROUTES
-// ------------------------------
-
-/*
- * @route   GET /api/retention/policies
- * @desc    List Active Retention Policies
- * @access  Admin, Compliance Officer
+/**
+ * Create new retention policy
  */
-router.get(
-  '/policies',
-  protect,
-  requireSameTenant,
-  restrictTo('admin', 'compliance_officer', 'superadmin'),
-  async (req, res, next) => {
-    try {
-      const result = await retentionController.listPolicies(req, res);
-      if (!res.headersSent && result) res.json({ status: 'success', data: result });
-    } catch (err) {
-      err.code = 'RETENTION_LIST_FAILED';
-      next(err);
-    }
-  }
-);
+router.post('/policies', rateLimiter({ mode: 'standard' }), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] || req.tenantContext?.tenantId;
+    
+    const policyData = {
+      ...req.body,
+      tenantId,
+      createdBy: req.user?.id || 'system'
+    };
 
-/*
- * @route   POST /api/retention/policies
- * @desc    Create/Update Retention Policy
- * @access  Admin, Compliance Officer
+    const policy = new RetentionPolicy(policyData);
+    await policy.save();
+
+    await auditLogger.log(tenantId, 'RETENTION_POLICY_CREATED', req.user?.id, {
+      policyId: policy.policyId,
+      policyName: policy.policyName
+    });
+
+    res.status(201).json({
+      success: true,
+      data: policy
+    });
+  } catch (error) {
+    logger.error('Failed to create retention policy', { error: error.message });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get policies by tenant
  */
-router.post(
-  '/policies',
-  protect,
-  requireSameTenant,
-  restrictTo('admin', 'compliance_officer', 'superadmin'),
-  validate(policySchema, 'body'),
-  async (req, res, next) => {
-    try {
-      const result = await retentionController.createPolicy(req, res);
+router.get('/policies', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] || req.tenantContext?.tenantId;
+    const { matterType, status } = req.query;
 
-      // Audit Governance Change
-      await emitAudit(req, {
-        resource: 'compliance_engine',
-        action: 'DEFINE_RETENTION_POLICY',
-        severity: 'WARN',
-        summary: `Policy '${req.body.name}' created`,
-        metadata: {
-          resource: req.body.resourceType,
-          action: req.body.action,
-          period: req.body.retentionPeriodDays,
-        },
-      });
+    const query = { tenantId };
+    if (matterType) query.matterType = matterType;
+    if (status) query.status = status;
 
-      if (!res.headersSent && result) res.status(201).json({ status: 'success', data: result });
-    } catch (err) {
-      err.code = 'RETENTION_CREATE_FAILED';
-      next(err);
-    }
+    const policies = await RetentionPolicy.find(query)
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: policies
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-);
+});
 
-/*
- * @route   POST /api/retention/execute
- * @desc    Trigger Retention Sweep (Manual Override)
- * @access  SuperAdmin Only (Dangerous Operation)
+/**
+ * Get active policy for matter type
  */
-router.post(
-  '/execute',
-  protect,
-  requireSameTenant,
-  restrictTo('superadmin'), // Highest privilege only
-  validate(executeSchema, 'body'),
-  async (req, res, next) => {
-    try {
-      const result = await retentionController.executePolicy(req, res);
+router.get('/policies/active/:matterType', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] || req.tenantContext?.tenantId;
+    const { matterType } = req.params;
 
-      // Critical Audit: Data Destruction/Movement
-      await emitAudit(req, {
-        resource: 'compliance_engine',
-        action: 'EXECUTE_RETENTION',
-        severity: req.body.dryRun ? 'INFO' : 'CRITICAL',
-        summary: `Retention sweep triggered for Policy ${req.body.policyId}`,
-        metadata: { dryRun: req.body.dryRun },
-      });
+    const policy = await RetentionPolicy.getActivePolicy(tenantId, matterType);
 
-      if (!res.headersSent && result) res.json({ status: 'success', data: result });
-    } catch (err) {
-      err.code = 'RETENTION_EXEC_FAILED';
-      next(err);
+    if (!policy) {
+      return res.status(404).json({ error: 'No active policy found' });
     }
-  }
-);
 
-/*
- * @route   DELETE /api/retention/policies/:id
- * @desc    Delete Retention Policy
- * @access  Admin, Compliance Officer
+    res.json({
+      success: true,
+      data: policy
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get policies expiring soon
  */
-router.delete(
-  '/policies/:id',
-  protect,
-  requireSameTenant,
-  restrictTo('admin', 'compliance_officer', 'superadmin'),
-  validate(idSchema, 'params'),
-  async (req, res, next) => {
-    try {
-      const result = await retentionController.deletePolicy(req, res);
+router.get('/policies/expiring', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] || req.tenantContext?.tenantId;
+    const days = parseInt(req.query.days) || 30;
 
-      await emitAudit(req, {
-        resource: 'compliance_engine',
-        action: 'DELETE_RETENTION_POLICY',
-        severity: 'WARN',
-        metadata: { policyId: req.params.id },
-      });
+    const policies = await RetentionPolicy.getExpiringPolicies(tenantId, days);
 
-      if (!res.headersSent && result) res.json({ status: 'success', data: result });
-    } catch (err) {
-      err.code = 'RETENTION_DELETE_FAILED';
-      next(err);
-    }
+    res.json({
+      success: true,
+      data: policies
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-);
+});
 
-module.exports = router;
+/**
+ * Get compliance report
+ */
+router.get('/compliance-report', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] || req.tenantContext?.tenantId;
 
-// 4. USAGE EXAMPLE
-// -----------------------------------------------------------------------------
-/*
-const retentionRoutes = require('./server/routes/retentionRoutes');
-app.use('/api/retention', retentionRoutes);
-*/
+    const report = await RetentionPolicy.getComplianceReport(tenantId);
 
-// 5. ACCEPTANCE CRITERIA
-// -----------------------------------------------------------------------------
-/*
-1. [ ] Correctly imports 'validationMiddleware' (Joi).
-2. [ ] Validates retention periods (min 30 days, max 10 years).
-3. [ ] Restricts execution of sweeps to 'superadmin' only.
-4. [ ] Defaults manual execution to 'dryRun: true' for safety.
-5. [ ] Emits CRITICAL audit events when data is actually deleted/archived.
-*/
+    res.json({
+      success: true,
+      data: report
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get policy by ID
+ */
+router.get('/policies/:policyId', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] || req.tenantContext?.tenantId;
+    const { policyId } = req.params;
+
+    const policy = await RetentionPolicy.findOne({
+      policyId,
+      tenantId
+    });
+
+    if (!policy) {
+      return res.status(404).json({ error: 'Policy not found' });
+    }
+
+    res.json({
+      success: true,
+      data: policy
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Update policy
+ */
+router.put('/policies/:policyId', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] || req.tenantContext?.tenantId;
+    const { policyId } = req.params;
+    const userId = req.user?.id;
+
+    const existing = await RetentionPolicy.findOne({
+      policyId,
+      tenantId
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Policy not found' });
+    }
+
+    const newVersion = await existing.createNewVersion(req.body, userId);
+
+    res.json({
+      success: true,
+      data: newVersion
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Delete policy (soft delete by archiving)
+ */
+router.delete('/policies/:policyId', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] || req.tenantContext?.tenantId;
+    const { policyId } = req.params;
+
+    const policy = await RetentionPolicy.findOne({
+      policyId,
+      tenantId
+    });
+
+    if (!policy) {
+      return res.status(404).json({ error: 'Policy not found' });
+    }
+
+    policy.status = 'archived';
+    policy.effectiveTo = new Date();
+    await policy.save();
+
+    res.json({
+      success: true,
+      message: 'Policy archived successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+export default router;

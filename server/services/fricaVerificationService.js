@@ -16,20 +16,18 @@
 * verification, PEP screening, and risk assessment across Africa's financial ecosystem. As the
 * divine guardian against money laundering and terrorist financing, it forges unbreakable compliance
 * chains that propel Wilsy OS to trillion-dollar valuations through impeccable regulatory sanctity.
-* 
+*
 * COLLABORATION QUANTA:
 * - Chief Architect: Wilson Khanyezi (Financial Compliance Visionary)
 * - Quantum Sentinel: Omniscient Quantum Forger
 * - Regulatory Oracles: Financial Intelligence Centre (FIC), South African Reserve Bank (SARB)
 * - Integration Partners: Datanamix, LexisNexis, Refinitiv, Compuscan
-* 
+*
 * EVOLUTION VECTORS:
 * - Quantum Leap 1.1.0: Real-time blockchain anchoring of verification proofs
 * - Horizon Expansion: Cross-border AML/CFT compliance across 54 African nations
 * - Eternal Extension: AI-driven anomaly detection for suspicious transaction patterns
 */
-
-'use strict';
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 // ║                                    QUANTUM DEPENDENCY IMPORTS                                        ║
@@ -37,16 +35,16 @@
 // File Path: /server/services/fricaVerificationService.js
 // Dependencies Installation: npm install axios crypto-js bcryptjs node-cache pdf-parse mammoth exceljs xml2js
 
-const axios = require('axios');
 const crypto = require('crypto');
-const CryptoJS = require('crypto-js');
+const axios = require('axios');
 const bcrypt = require('bcryptjs');
+const CryptoJS = require('crypto-js');
+const ExcelJS = require('exceljs');
+const mammoth = require('mammoth');
+const mongoose = require('mongoose');
 const NodeCache = require('node-cache');
 const pdf = require('pdf-parse');
-const mammoth = require('mammoth');
-const ExcelJS = require('exceljs');
 const xml2js = require('xml2js');
-const mongoose = require('mongoose');
 
 // Load environment variables
 require('dotenv').config();
@@ -189,9 +187,7 @@ const decryptSensitiveData = (encryptedData, keyType = 'FICA') => {
  * @returns {String} SHA-256 hash of document
  * @security Cryptographic hash for document integrity
  */
-const generateDocumentHash = (documentBuffer) => {
-  return crypto.createHash('sha256').update(documentBuffer).digest('hex');
-};
+const generateDocumentHash = (documentBuffer) => crypto.createHash('sha256').update(documentBuffer).digest('hex');
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 // ║                               SOUTH AFRICAN ID VALIDATION ENGINE                                     ║
@@ -358,7 +354,7 @@ class SAIDValidator {
     idBase += '8'; // Race digit (arbitrary)
 
     // Calculate checksum
-    const checksum = this.calculateChecksum(idBase + '0');
+    const checksum = this.calculateChecksum(`${idBase}0`);
 
     return idBase + checksum;
   }
@@ -403,7 +399,7 @@ class FicaVerificationService {
           // Handle API errors
           console.error(`FICA API Error: ${error.response.status}`, error.response.data);
           throw new Error(
-            `FICA verification failed: ${error.response.data.message || 'Unknown error'}`
+            `FICA verification failed: ${error.response.data.message || 'Unknown error'}`,
           );
         } else if (error.request) {
           // Handle network errors
@@ -414,7 +410,7 @@ class FicaVerificationService {
           console.error('FICA Service Error:', error.message);
           throw error;
         }
-      }
+      },
     );
   }
 
@@ -484,7 +480,7 @@ class FicaVerificationService {
       // Make API call to external verification service
       const response = await this.apiClient.post(
         FICA_CONFIG.endpoints.identityVerification,
-        requestPayload
+        requestPayload,
       );
 
       // Process verification result
@@ -494,7 +490,7 @@ class FicaVerificationService {
         verificationMethod: response.data.method || 'ELECTRONIC',
         referenceNumber: response.data.reference,
         timestamp: new Date().toISOString(),
-        idValidation: idValidation,
+        idValidation,
         rawResponse: response.data,
         complianceMarkers: {
           ficaSection: '21',
@@ -622,7 +618,7 @@ class FicaVerificationService {
       // Make API call to document verification service
       const response = await this.apiClient.post(
         FICA_CONFIG.endpoints.documentVerification,
-        requestPayload
+        requestPayload,
       );
 
       const verificationResult = {
@@ -668,7 +664,7 @@ class FicaVerificationService {
         documentType,
         metadata,
         tenantId,
-        error
+        error,
       );
     }
   }
@@ -699,35 +695,33 @@ class FicaVerificationService {
           if (documentBuffer.toString('hex', 0, 4) === '25504446') {
             const pdfData = await pdf(documentBuffer);
             return pdfData.text;
-          } else {
-            // Try Excel parsing
-            const workbook = new ExcelJS.Workbook();
-            await workbook.xlsx.load(documentBuffer);
-            let text = '';
-            workbook.eachSheet((worksheet) => {
-              worksheet.eachRow((row) => {
-                row.eachCell((cell) => {
-                  if (cell.value) text += cell.value.toString() + ' ';
-                });
+          }
+          // Try Excel parsing
+          const workbook = new ExcelJS.Workbook();
+          await workbook.xlsx.load(documentBuffer);
+          let text = '';
+          workbook.eachSheet((worksheet) => {
+            worksheet.eachRow((row) => {
+              row.eachCell((cell) => {
+                if (cell.value) text += `${cell.value.toString()} `;
               });
             });
-            return text;
-          }
+          });
+          return text;
 
         case 'PROOF_OF_RESIDENCE':
           // For various document types
           if (documentBuffer.toString('hex', 0, 4) === '25504446') {
             const pdfData = await pdf(documentBuffer);
             return pdfData.text;
-          } else if (documentBuffer.toString('utf8', 0, 100).includes('<?xml')) {
+          } if (documentBuffer.toString('utf8', 0, 100).includes('<?xml')) {
             // XML document
             const parser = new xml2js.Parser();
             const result = await parser.parseStringPromise(documentBuffer.toString());
             return JSON.stringify(result);
-          } else {
-            // Try as plain text
-            return documentBuffer.toString('utf8');
           }
+          // Try as plain text
+          return documentBuffer.toString('utf8');
       }
 
       return documentBuffer.toString('utf8', 0, 5000); // Limit extracted text
@@ -752,7 +746,7 @@ class FicaVerificationService {
     documentType,
     metadata,
     tenantId,
-    originalError
+    originalError,
   ) {
     // Basic document validation
     const documentHash = generateDocumentHash(documentBuffer);
@@ -929,7 +923,7 @@ class FicaVerificationService {
 
     // Calculate risk score based on PEP status
     let score = 0;
-    let reasons = [];
+    const reasons = [];
 
     if (pepData.isPEP) {
       score += 70;
@@ -945,10 +939,8 @@ class FicaVerificationService {
       // Adjust based on position
       const positions = ['PRESIDENT', 'MINISTER', 'MP', 'JUDGE'];
       if (
-        pepData.matches &&
-        pepData.matches.some((match) =>
-          positions.some((pos) => match.position && match.position.includes(pos))
-        )
+        pepData.matches
+        && pepData.matches.some((match) => positions.some((pos) => match.position && match.position.includes(pos)))
       ) {
         score += 10;
         reasons.push('HIGH_RISK_POSITION');
@@ -982,9 +974,7 @@ class FicaVerificationService {
     // Check against known high-risk names (for testing only)
     const highRiskNames = process.env.HIGH_RISK_NAMES ? process.env.HIGH_RISK_NAMES.split(',') : [];
 
-    const isHighRiskName = highRiskNames.some((riskName) =>
-      name.includes(riskName.trim().toUpperCase())
-    );
+    const isHighRiskName = highRiskNames.some((riskName) => name.includes(riskName.trim().toUpperCase()));
 
     const result = {
       pepScreening: {
@@ -1188,18 +1178,18 @@ class FicaVerificationService {
         'Conduct enhanced due diligence',
         'Obtain senior management approval',
         'Implement enhanced monitoring',
-        'Review client relationship quarterly'
+        'Review client relationship quarterly',
       );
     } else if (riskLevel === 'MEDIUM') {
       recommendations.push(
         'Conduct additional verification',
         'Monitor transactions closely',
-        'Review client relationship semi-annually'
+        'Review client relationship semi-annually',
       );
     } else {
       recommendations.push(
         'Standard monitoring procedures',
-        'Annual review of client relationship'
+        'Annual review of client relationship',
       );
     }
 
@@ -1466,7 +1456,7 @@ QUANTUM IMPACT METRICS:
 - Risk assessment coverage: 100% of clients assessed within 24 hours
 - Regulatory penalty avoidance: Estimated $2.5M annually
 
-INSPIRATIONAL QUANTUM: 
+INSPIRATIONAL QUANTUM:
 "Financial integrity is the bedrock of economic justice. Through rigorous verification,
 we build trust that transcends borders and transforms economies."
 - Wilson Khanyezi, Architect of Africa's Financial Compliance Renaissance

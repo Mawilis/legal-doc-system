@@ -20,8 +20,6 @@ ROI: Centralized compliance logging reduces forensic time by 80% and ensures leg
 FILENAME: config/logger.js
 */
 
-'use strict';
-
 /*
  * Wilsy OS - Supreme Logging Configuration
  *
@@ -45,22 +43,23 @@ FILENAME: config/logger.js
  * @requires os
  */
 
-var winston = require('winston');
-var createLogger = winston.createLogger;
-var format = winston.format;
-var transports = winston.transports;
-var combine = format.combine;
-var timestamp = format.timestamp;
-var json = format.json;
-var errors = format.errors;
-var metadata = format.metadata;
-var printf = format.printf;
-var colorize = format.colorize;
-var os = require('os');
-var path = require('path');
+const winston = require('winston');
+
+const { createLogger } = winston;
+const { format } = winston;
+const { transports } = winston;
+const { combine } = format;
+const { timestamp } = format;
+const { json } = format;
+const { errors } = format;
+const { metadata } = format;
+const { printf } = format;
+const { colorize } = format;
+const os = require('os');
+const path = require('path');
 
 // Security: Never log sensitive fields (POPIA/ECT compliance)
-var REDACT_FIELDS = [
+const REDACT_FIELDS = [
   'password',
   'token',
   'authorization',
@@ -116,21 +115,19 @@ function redactSensitive(data) {
   }
 
   if (Array.isArray(data)) {
-    return data.map(function (item) {
-      return redactSensitive(item);
-    });
+    return data.map((item) => redactSensitive(item));
   }
 
-  var sanitized = {};
-  var keys = Object.keys(data);
+  const sanitized = {};
+  const keys = Object.keys(data);
 
-  for (var i = 0; i < keys.length; i++) {
-    var key = keys[i];
-    var value = data[key];
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    const value = data[key];
 
     // Check if key is in REDACT_FIELDS (case insensitive)
-    var shouldRedact = false;
-    for (var j = 0; j < REDACT_FIELDS.length; j++) {
+    let shouldRedact = false;
+    for (let j = 0; j < REDACT_FIELDS.length; j++) {
       if (key.toLowerCase() === REDACT_FIELDS[j].toLowerCase()) {
         shouldRedact = true;
         break;
@@ -166,7 +163,7 @@ function tenantContextFormat(context) {
     context = {};
   }
 
-  return format(function (info) {
+  return format((info) => {
     // Fail-closed: if tenantId missing in production, mark security alert
     if (process.env.NODE_ENV === 'production' && !context.tenantId) {
       info.tenantId = 'SECURITY_ALERT_MISSING_TENANT';
@@ -231,8 +228,8 @@ function createTenantLogger(context) {
 
   // Production security: enforce tenant context with fail-closed design
   if (process.env.NODE_ENV === 'production' && !context.tenantId) {
-    var securityError = new Error(
-      'LOGGER_SECURITY_VIOLATION: tenantId is required in production context. Fail-closed enforced.'
+    const securityError = new Error(
+      'LOGGER_SECURITY_VIOLATION: tenantId is required in production context. Fail-closed enforced.',
     );
     securityError.code = 'TENANT_CONTEXT_REQUIRED';
     securityError.timestamp = new Date().toISOString();
@@ -240,52 +237,51 @@ function createTenantLogger(context) {
     throw securityError;
   }
 
-  var logLevel =
-    process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
-  var logsDir = process.env.LOG_DIRECTORY || path.join(process.cwd(), 'logs');
-  var auditFilePath = path.join(logsDir, 'wilsy-audit.log');
-  var debugFilePath = path.join(logsDir, 'wilsy-debug.log');
+  const logLevel = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
+  const logsDir = process.env.LOG_DIRECTORY || path.join(process.cwd(), 'logs');
+  const auditFilePath = path.join(logsDir, 'wilsy-audit.log');
+  const debugFilePath = path.join(logsDir, 'wilsy-debug.log');
 
   // Ensure logs directory exists
   try {
-    var fs = require('fs');
+    const fs = require('fs');
     if (!fs.existsSync(logsDir)) {
       fs.mkdirSync(logsDir, { recursive: true });
     }
   } catch (err) {
-    console.warn('Could not create logs directory: ' + err.message);
+    console.warn(`Could not create logs directory: ${err.message}`);
   }
 
-  var loggerTransports = [
+  const loggerTransports = [
     // Console transport (colorized for dev, structured for prod)
     new transports.Console({
       format: combine(
         process.env.NODE_ENV === 'production' ? format.uncolorize() : colorize(),
         timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
         tenantContextFormat(context)(),
-        printf(function (info) {
-          var metaKeys = Object.keys(info);
-          var metaStr = '';
+        printf((info) => {
+          const metaKeys = Object.keys(info);
+          let metaStr = '';
 
           if (metaKeys.length > 5) {
             metaStr = JSON.stringify(info);
           }
 
           return (
-            '[' +
-            info.timestamp +
-            '] ' +
-            info.level +
-            ' [T:' +
-            info.tenantId +
-            '|U:' +
-            info.userId +
-            ']: ' +
-            info.message +
-            ' ' +
-            metaStr
+            `[${
+              info.timestamp
+            }] ${
+              info.level
+            } [T:${
+              info.tenantId
+            }|U:${
+              info.userId
+            }]: ${
+              info.message
+            } ${
+              metaStr}`
           );
-        })
+        }),
       ),
       silent: process.env.NODE_ENV === 'test' || process.env.DISABLE_CONSOLE_LOG === 'true',
     }),
@@ -302,7 +298,7 @@ function createTenantLogger(context) {
         tailable: true,
         format: combine(timestamp(), tenantContextFormat(context)(), json()),
         options: { flags: 'a' },
-      })
+      }),
     );
 
     // Debug file for development
@@ -316,34 +312,32 @@ function createTenantLogger(context) {
           format: combine(
             timestamp(),
             tenantContextFormat(context)(),
-            printf(function (info) {
-              return (
-                '[' +
-                info.timestamp +
-                '] ' +
-                info.level +
-                ' [T:' +
-                info.tenantId +
-                '|U:' +
-                info.userId +
-                ']: ' +
-                info.message
-              );
-            })
+            printf((info) => (
+              `[${
+                info.timestamp
+              }] ${
+                info.level
+              } [T:${
+                info.tenantId
+              }|U:${
+                info.userId
+              }]: ${
+                info.message}`
+            )),
           ),
-        })
+        }),
       );
     }
   }
 
-  var logger = createLogger({
+  const logger = createLogger({
     level: logLevel,
     format: combine(
       errors({ stack: true }),
       timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
       metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] }),
       tenantContextFormat(context)(),
-      json()
+      json(),
     ),
     transports: loggerTransports,
     exitOnError: false,
@@ -372,17 +366,17 @@ function createTenantLogger(context) {
  */
 function setupSentryIntegration(logger) {
   try {
-    var Sentry = require('@sentry/node');
+    const Sentry = require('@sentry/node');
 
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       environment: process.env.NODE_ENV || 'production',
       tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1'),
-      beforeSend: function (event) {
+      beforeSend(event) {
         // Redact sensitive data before sending to Sentry
         if (event.request && event.request.headers) {
-          for (var i = 0; i < REDACT_FIELDS.length; i++) {
-            var field = REDACT_FIELDS[i];
+          for (let i = 0; i < REDACT_FIELDS.length; i++) {
+            const field = REDACT_FIELDS[i];
             if (event.request.headers[field]) {
               event.request.headers[field] = '[REDACTED]';
             }
@@ -393,19 +387,19 @@ function setupSentryIntegration(logger) {
     });
 
     // Capture logger errors in Sentry
-    logger.on('error', function (error) {
+    logger.on('error', (error) => {
       try {
         Sentry.captureException(error, {
           tags: { module: 'logger', level: 'error' },
         });
       } catch (e) {
-        console.error('Sentry capture failed: ' + e.message);
+        console.error(`Sentry capture failed: ${e.message}`);
       }
     });
 
     logger.info('Sentry integration initialized successfully');
   } catch (e) {
-    logger.warn('Sentry integration skipped: ' + e.message);
+    logger.warn(`Sentry integration skipped: ${e.message}`);
   }
 }
 
@@ -413,7 +407,7 @@ function setupSentryIntegration(logger) {
  * Global system logger for startup, shutdown, and system-wide events.
  * Use with caution - does not include tenant context but includes system metadata.
  */
-var systemLogger = createTenantLogger({
+const systemLogger = createTenantLogger({
   tenantId: 'system',
   userId: 'bootstrapper',
   action: 'system_startup',
@@ -437,25 +431,25 @@ function createDSARLogger(dsarId, context) {
     context = {};
   }
 
-  var dsarContext = {
+  const dsarContext = {
     tenantId: context.tenantId || 'dsar-system',
-    userId: 'dsar-' + dsarId,
+    userId: `dsar-${dsarId}`,
     action: 'DSAR_PROCESSING',
     paiaCompliance: true,
-    dsarId: dsarId,
+    dsarId,
     dsarSlaStart: new Date().toISOString(),
     dsarSlaDays: 30,
   };
 
-  var logger = createTenantLogger(dsarContext);
-  var originalInfo = logger.info;
+  const logger = createTenantLogger(dsarContext);
+  const originalInfo = logger.info;
 
   logger.info = function (message, meta) {
-    var dsarMeta = meta || {};
+    const dsarMeta = meta || {};
     dsarMeta.dsarId = dsarId;
     dsarMeta.paiaCompliance = true;
     dsarMeta.dsarStage = dsarMeta.dsarStage || 'processing';
-    return originalInfo.call(logger, 'DSAR: ' + message, dsarMeta);
+    return originalInfo.call(logger, `DSAR: ${message}`, dsarMeta);
   };
 
   return logger;
@@ -479,10 +473,10 @@ function createDSARLogger(dsarId, context) {
  * auditLog('Document accessed', { ipAddress: '192.168.1.1' });
  */
 function createAuditLogger(auditContext) {
-  var logger = createTenantLogger(auditContext);
+  const logger = createTenantLogger(auditContext);
 
   return function (event, metadata) {
-    var auditMetadata = {
+    const auditMetadata = {
       auditVersion: '2.0',
       retentionPolicy: 'companies_act_10_years',
       nonRepudiation: true,
@@ -497,9 +491,9 @@ function createAuditLogger(auditContext) {
 
     // Merge user metadata with audit metadata
     if (metadata) {
-      var metaKeys = Object.keys(metadata);
-      for (var i = 0; i < metaKeys.length; i++) {
-        var key = metaKeys[i];
+      const metaKeys = Object.keys(metadata);
+      for (let i = 0; i < metaKeys.length; i++) {
+        const key = metaKeys[i];
         if (!hasOwnProperty(auditMetadata, key)) {
           auditMetadata[key] = metadata[key];
         }
@@ -514,7 +508,7 @@ function createAuditLogger(auditContext) {
       }
     }
 
-    logger.info('AUDIT_EVENT: ' + event, auditMetadata);
+    logger.info(`AUDIT_EVENT: ${event}`, auditMetadata);
   };
 }
 
@@ -544,24 +538,24 @@ function createChildLogger(parentLogger, extraContext) {
  * @returns {Object} Simple logger with error, warn, info methods
  */
 function createEmergencyLogger() {
-  var fs = require('fs');
-  var logsDir = process.env.LOG_DIRECTORY || path.join(process.cwd(), 'logs');
-  var emergencyLogPath = path.join(logsDir, 'wilsy-emergency.log');
+  const fs = require('fs');
+  const logsDir = process.env.LOG_DIRECTORY || path.join(process.cwd(), 'logs');
+  const emergencyLogPath = path.join(logsDir, 'wilsy-emergency.log');
 
   try {
     if (!fs.existsSync(logsDir)) {
       fs.mkdirSync(logsDir, { recursive: true });
     }
   } catch (err) {
-    console.error('EMERGENCY: Cannot create logs directory: ' + err.message);
+    console.error(`EMERGENCY: Cannot create logs directory: ${err.message}`);
   }
 
   function log(level, message, meta) {
-    var timestamp = new Date().toISOString();
-    var logEntry = '[' + timestamp + '] ' + level.toUpperCase() + ': ' + message;
+    const timestamp = new Date().toISOString();
+    let logEntry = `[${timestamp}] ${level.toUpperCase()}: ${message}`;
 
     if (meta) {
-      logEntry += ' ' + JSON.stringify(meta);
+      logEntry += ` ${JSON.stringify(meta)}`;
     }
 
     logEntry += '\n';
@@ -570,32 +564,32 @@ function createEmergencyLogger() {
     try {
       fs.appendFileSync(emergencyLogPath, logEntry, { flag: 'a' });
     } catch (err) {
-      console.error('EMERGENCY: Failed to write to emergency log: ' + err.message);
+      console.error(`EMERGENCY: Failed to write to emergency log: ${err.message}`);
     }
   }
 
   return {
-    error: function (message, meta) {
+    error(message, meta) {
       log('error', message, meta);
     },
-    warn: function (message, meta) {
+    warn(message, meta) {
       log('warn', message, meta);
     },
-    info: function (message, meta) {
+    info(message, meta) {
       log('info', message, meta);
     },
   };
 }
 
 module.exports = {
-  createTenantLogger: createTenantLogger,
-  createDSARLogger: createDSARLogger,
-  createAuditLogger: createAuditLogger,
-  createChildLogger: createChildLogger,
-  createEmergencyLogger: createEmergencyLogger,
-  systemLogger: systemLogger,
-  redactSensitive: redactSensitive,
-  REDACT_FIELDS: REDACT_FIELDS,
-  tenantContextFormat: tenantContextFormat,
-  hasOwnProperty: hasOwnProperty,
+  createTenantLogger,
+  createDSARLogger,
+  createAuditLogger,
+  createChildLogger,
+  createEmergencyLogger,
+  systemLogger,
+  redactSensitive,
+  REDACT_FIELDS,
+  tenantContextFormat,
+  hasOwnProperty,
 };

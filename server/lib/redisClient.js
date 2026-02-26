@@ -24,8 +24,6 @@
  * Biblical worth billions no child's place. Wilsy OS to the World.
  */
 
-'use strict';
-
 const IORedis = require('ioredis');
 
 // --- 1. SECURE ENVIRONMENT RESOLUTION ---
@@ -64,10 +62,10 @@ const createSecureOptions = () => {
     connectTimeout: 10000, // 10s Genesis Handshake
     commandTimeout: 3000, // 3s Execution Ceiling (Billion-dollar speed)
     enableOfflineQueue: false, // Prevent Memory Bloat during outages
-    reconnectOnError: (err) => {
+    reconnectOnError: (err) =>
       // Force reconnection if we hit a Read-Only slave during AWS/Azure failover
-      return err.message.includes('READONLY');
-    },
+      err.message.includes('READONLY')
+    ,
   };
 
   // --- ENFORCE PRODUCTION TLS ---

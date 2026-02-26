@@ -7,7 +7,7 @@ let content = fs.readFileSync(filePath, 'utf8');
 // Remove all mongoose declarations and keep only one at the top
 const lines = content.split('\n');
 let mongooseFound = false;
-let newLines = [];
+const newLines = [];
 
 for (let i = 0; i < lines.length; i++) {
   if (lines[i].includes('const mongoose = require')) {
@@ -17,7 +17,7 @@ for (let i = 0; i < lines.length; i++) {
       mongooseFound = true;
     } else {
       // Comment out duplicates
-      newLines.push('// ' + lines[i] + ' // Duplicate removed');
+      newLines.push(`// ${lines[i]} // Duplicate removed`);
     }
   } else {
     newLines.push(lines[i]);

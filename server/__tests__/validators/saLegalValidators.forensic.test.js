@@ -11,7 +11,7 @@ const {
 
 describe('SA LEGAL VALIDATORS — FORENSIC VALIDATION', () => {
   let testRunId;
-  let evidenceEntries = [];
+  const evidenceEntries = [];
 
   beforeAll(() => {
     testRunId = crypto.randomUUID().substring(0, 8);

@@ -44,16 +44,16 @@
 // QUANTUM DEPENDENCIES: Importing Cosmic Building Blocks
 // ============================================================================
 require('dotenv').config(); // Env Vault Loading - MANDATORY
-const DataProcessingRecord = require('../DataProcessingRecord');
-const { validationResult } = require('express-validator');
 const crypto = require('crypto');
-const { Op, QueryTypes } = require('sequelize');
-const sequelize = require('../config/database');
-const Redis = require('ioredis');
-const auditLogger = require('../utils/auditLogger');
-const complianceEngine = require('../services/complianceEngine');
-const { encryptData, decryptData } = require('../utils/cryptoUtils');
 const rateLimit = require('express-rate-limit');
+const { validationResult } = require('express-validator');
+const Redis = require('ioredis');
+const { Op, QueryTypes } = require('sequelize');
+const DataProcessingRecord = require('../DataProcessingRecord');
+const sequelize = require('../config/database');
+const complianceEngine = require('../services/complianceEngine');
+const auditLogger = require('../utils/auditLogger');
+const { encryptData, decryptData } = require('../utils/cryptoUtils');
 
 // ============================================================================
 // QUANTUM CONSTANTS: Configuration & Security Parameters
@@ -63,7 +63,7 @@ const RATE_LIMIT_WINDOW = parseInt(process.env.DPR_RATE_WINDOW) || 15;
 const MAX_REQUESTS = parseInt(process.env.DPR_MAX_REQUESTS) || 100;
 const ENCRYPTION_KEY = process.env.DPR_ENCRYPTION_KEY;
 const HASH_SALT = process.env.HASH_SALT || 'wilsy-quantum-legal-2024';
-const DEFAULT_INFO_OFFICER = process.env.DEFAULT_INFO_OFFICER;
+const { DEFAULT_INFO_OFFICER } = process.env;
 const DEFAULT_JURISDICTION = process.env.DEFAULT_JURISDICTION || 'POPIA_SA';
 
 // Quantum Shield: Validate critical environment variables
@@ -255,10 +255,10 @@ class DataProcessingRecordController {
             : 'Internal quantum processing error',
         details: isValidationError
           ? error.errors.map((e) => ({
-              field: e.path,
-              message: e.message,
-              type: e.type,
-            }))
+            field: e.path,
+            message: e.message,
+            type: e.type,
+          }))
           : undefined,
         complianceCode: isValidationError
           ? 'POPIA-VALID-002'
@@ -337,7 +337,7 @@ class DataProcessingRecordController {
       const hasAccess = await DataProcessingRecordController._validateAccess(
         req.user,
         record.jurisdiction,
-        record.informationOfficer
+        record.informationOfficer,
       );
 
       if (!hasAccess) {
@@ -481,7 +481,7 @@ class DataProcessingRecordController {
 
       // Quantum Cache: Generate cache key from query and user context
       const cacheKey = `dpr:list:${req.user.id}:${JSON.stringify(
-        whereClause
+        whereClause,
       )}:${pageNum}:${limitNum}`;
       const cached = await redis.get(cacheKey);
 
@@ -500,16 +500,14 @@ class DataProcessingRecordController {
       const { count, rows } = await DataProcessingRecord.findAndCountAll({
         where: whereClause,
         limit: limitNum,
-        offset: offset,
+        offset,
         order: [['createdAt', 'DESC']],
         attributes: { exclude: ['processingActivityHash'] }, // Security: Exclude hash from list
       });
 
       // Quantum Compliance: Generate jurisdiction summary
-      const jurisdictionSummary =
-        await DataProcessingRecordController._getJurisdictionSummary(whereClause);
-      const lawfulBasisSummary =
-        await DataProcessingRecordController._getLawfulBasisSummary(whereClause);
+      const jurisdictionSummary = await DataProcessingRecordController._getJurisdictionSummary(whereClause);
+      const lawfulBasisSummary = await DataProcessingRecordController._getLawfulBasisSummary(whereClause);
 
       // Quantum Response: Format for compliance dashboard
       const responseData = {
@@ -525,9 +523,7 @@ class DataProcessingRecordController {
           totalActive: count,
           byJurisdiction: jurisdictionSummary,
           byLawfulBasis: lawfulBasisSummary,
-          retentionCompliance: rows.filter((r) =>
-            DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod)
-          ).length,
+          retentionCompliance: rows.filter((r) => DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod)).length,
           securityCompliance: rows.filter((r) => r.securityMeasures.length >= 3).length,
         },
         filters: {
@@ -632,8 +628,8 @@ class DataProcessingRecordController {
 
       // Quantum Access: Verify Information Officer authorization
       if (
-        record.informationOfficer !== req.user.email &&
-        !req.user.roles.includes('SYSTEM_ADMIN')
+        record.informationOfficer !== req.user.email
+        && !req.user.roles.includes('SYSTEM_ADMIN')
       ) {
         // Quantum Audit: Log unauthorized update attempt
         await auditLogger.logAuditTrail({
@@ -661,9 +657,7 @@ class DataProcessingRecordController {
 
       // Quantum Validation: Check for immutable fields
       const immutableFields = ['processingActivityHash', 'createdAt', 'createdBy', 'id'];
-      const attemptedImmutableChanges = Object.keys(req.body).filter((key) =>
-        immutableFields.includes(key)
-      );
+      const attemptedImmutableChanges = Object.keys(req.body).filter((key) => immutableFields.includes(key));
 
       if (attemptedImmutableChanges.length > 0) {
         return res.status(400).json({
@@ -706,7 +700,7 @@ class DataProcessingRecordController {
         'retentionPeriod',
       ];
       const hasSignificantChanges = significantFields.some(
-        (field) => req.body[field] !== undefined && req.body[field] !== record[field]
+        (field) => req.body[field] !== undefined && req.body[field] !== record[field],
       );
 
       if (hasSignificantChanges) {
@@ -820,7 +814,9 @@ class DataProcessingRecordController {
         });
       }
 
-      const { startDate, endDate, jurisdiction, reportType = 'FULL' } = req.body;
+      const {
+        startDate, endDate, jurisdiction, reportType = 'FULL',
+      } = req.body;
 
       // Quantum Validation: Date range validation
       const start = new Date(startDate);
@@ -875,7 +871,7 @@ class DataProcessingRecordController {
         ip: req.ip,
         timestamp: new Date().toISOString(),
         complianceMarker: 'POPIA_SECTION_17_REPORT_GENERATED',
-        reportHash: reportHash,
+        reportHash,
       });
 
       // Quantum Response: Structured report with download options
@@ -974,7 +970,7 @@ class DataProcessingRecordController {
       // Quantum Retrieval: Get records for data subject
       const records = await DataProcessingRecord.findByDataSubject(
         decryptedSubjectId,
-        jurisdiction || req.user.jurisdiction
+        jurisdiction || req.user.jurisdiction,
       );
 
       // Quantum Redaction: Remove sensitive internal fields for DSAR response
@@ -1020,9 +1016,8 @@ class DataProcessingRecordController {
           }, {}),
           activeProcessing: records.filter((r) => r.isActive).length,
           needsAttention: records.filter(
-            (r) =>
-              r.nextReviewDate < new Date() ||
-              !DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod)
+            (r) => r.nextReviewDate < new Date()
+              || !DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod),
           ).length,
         };
       }
@@ -1059,16 +1054,14 @@ class DataProcessingRecordController {
                 ? Math.max(...records.map((r) => new Date(r.createdAt).getTime()))
                 : null,
           },
-          retentionCompliance: records.filter((r) =>
-            DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod)
-          ).length,
+          retentionCompliance: records.filter((r) => DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod)).length,
           internationalTransfers: records.filter((r) => r.internationalTransfers.length > 0).length,
         },
         complianceMarkers: {
           popiaSection23: true,
           dataSubjectInformed: true,
           responseTime: 'WITHIN_21_DAYS',
-          format: format,
+          format,
           jurisdiction: jurisdiction || req.user.jurisdiction,
           timestamp: new Date().toISOString(),
           regulatoryReference: `DSAR-${new Date().getFullYear()}-${crypto
@@ -1132,7 +1125,7 @@ class DataProcessingRecordController {
         DataProcessingRecordController._setNestedValue(
           encrypted,
           field,
-          await encryptData(JSON.stringify(fieldValue), ENCRYPTION_KEY)
+          await encryptData(JSON.stringify(fieldValue), ENCRYPTION_KEY),
         );
       }
     }
@@ -1153,7 +1146,7 @@ class DataProcessingRecordController {
     if (report.riskAssessment) {
       encryptedReport.riskAssessment = await encryptData(
         JSON.stringify(report.riskAssessment),
-        ENCRYPTION_KEY
+        ENCRYPTION_KEY,
       );
     }
 

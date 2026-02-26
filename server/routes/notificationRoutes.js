@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; tests token registration and preference enforcement.
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -22,14 +20,15 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const notificationController = require('../controllers/notificationController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
 
 // 3. VALIDATION SCHEMAS (Joi)
@@ -85,7 +84,7 @@ router.post(
       err.code = 'NOTIF_TOKEN_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -121,7 +120,7 @@ router.patch(
       err.code = 'NOTIF_READ_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -157,7 +156,7 @@ router.patch(
       err.code = 'NOTIF_PREF_UPDATE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -188,7 +187,7 @@ router.post(
       err.code = 'NOTIF_BROADCAST_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

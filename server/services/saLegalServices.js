@@ -27,8 +27,8 @@
  * ================================================================================================
  */
 
-const axios = require('axios');
 const crypto = require('crypto');
+const axios = require('axios');
 const cheerio = require('cheerio');
 const { XMLParser } = require('fast-xml-parser');
 
@@ -127,7 +127,7 @@ class SALegalServices {
       // Filter, deduplicate, and sort
       const uniqueUpdates = this.deduplicateLegislationUpdates(allUpdates);
       const recentUpdates = uniqueUpdates.filter(
-        (update) => new Date(update.publicationDate || update.date) >= cutoffDate
+        (update) => new Date(update.publicationDate || update.date) >= cutoffDate,
       );
 
       // Enhance with compliance impact analysis
@@ -167,7 +167,7 @@ class SALegalServices {
       });
 
       console.log(
-        `[SA LEGAL] Legislation updates fetched: ${enhancedUpdates.length} updates in ${processingTime}ms`
+        `[SA LEGAL] Legislation updates fetched: ${enhancedUpdates.length} updates in ${processingTime}ms`,
       );
       return result;
     } catch (error) {
@@ -195,7 +195,8 @@ class SALegalServices {
 
       // Parse the legislation page (adjust selectors based on actual page structure)
       $('.legislation-item, .act-item, .update-item').each((index, element) => {
-        const title = $(element).find('h3, .title, a').first().text().trim();
+        const title = $(element).find('h3, .title, a').first().text()
+          .trim();
         const link = $(element).find('a').first().attr('href');
         const dateText = $(element).find('.date, .published-date, time').text().trim();
 
@@ -235,7 +236,7 @@ class SALegalServices {
 
       const response = await axios.get(`${this.baseUrls.LAWS_AFRICA}/za/updates`, {
         params: {
-          days: days,
+          days,
           limit: 100,
           include: 'metadata,points_in_time',
         },
@@ -278,7 +279,7 @@ class SALegalServices {
         'https://www.gpwonline.co.za/Gazettes/Pages/PublishedGazettes.aspx',
         {
           timeout: 10000,
-        }
+        },
       );
 
       const $ = cheerio.load(response.data);
@@ -296,7 +297,7 @@ class SALegalServices {
             updates.push({
               title: `Government Gazette ${gazetteNumber}: ${title}`,
               source: 'Government Gazette of South Africa',
-              gazetteNumber: gazetteNumber,
+              gazetteNumber,
               publicationDate: this.parseSADate(dateText) || new Date(),
               type: 'GAZETTE_NOTICE',
               status: 'PUBLISHED',
@@ -545,9 +546,9 @@ class SALegalServices {
     const isMajorAct = majorActs.some((act) => cleaned.toUpperCase().includes(act));
 
     if (
-      isMajorAct &&
-      !cleaned.toUpperCase().includes('ACT') &&
-      !cleaned.toUpperCase().includes('BILL')
+      isMajorAct
+      && !cleaned.toUpperCase().includes('ACT')
+      && !cleaned.toUpperCase().includes('BILL')
     ) {
       cleaned += ' Act';
     }
@@ -677,21 +678,20 @@ class SALegalServices {
         timeframe: 'WITHIN_7_DAYS',
         actions: ['Review legislation', 'Update compliance protocols', 'Notify stakeholders'],
       };
-    } else if (impact.level === 'MEDIUM') {
+    } if (impact.level === 'MEDIUM') {
       return {
         required: true,
         priority: 'MEDIUM',
         timeframe: 'WITHIN_30_DAYS',
         actions: ['Review legislation', 'Assess impact', 'Schedule training'],
       };
-    } else {
-      return {
-        required: false,
-        priority: 'LOW',
-        timeframe: 'MONITOR_ONLY',
-        actions: ['Add to watchlist'],
-      };
     }
+    return {
+      required: false,
+      priority: 'LOW',
+      timeframe: 'MONITOR_ONLY',
+      actions: ['Add to watchlist'],
+    };
   }
 
   calculateDeadline(update) {
@@ -700,11 +700,10 @@ class SALegalServices {
 
     if (impact.level === 'HIGH') {
       return new Date(publicationDate.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    } else if (impact.level === 'MEDIUM') {
+    } if (impact.level === 'MEDIUM') {
       return new Date(publicationDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
-    } else {
-      return new Date(publicationDate.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days
     }
+    return new Date(publicationDate.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days
   }
 
   determineEnforcementDate(update) {
@@ -949,14 +948,11 @@ class SALegalServices {
     if (keywords && keywords.length > 0) {
       const searchTerms = keywords.toLowerCase().split(' ');
       return precedents
-        .filter((precedent) =>
-          searchTerms.some(
-            (term) =>
-              precedent.title.toLowerCase().includes(term) ||
-              precedent.summary.toLowerCase().includes(term) ||
-              precedent.keywords.some((kw) => kw.includes(term))
-          )
-        )
+        .filter((precedent) => searchTerms.some(
+          (term) => precedent.title.toLowerCase().includes(term)
+              || precedent.summary.toLowerCase().includes(term)
+              || precedent.keywords.some((kw) => kw.includes(term)),
+        ))
         .slice(0, limit);
     }
 

@@ -53,14 +53,14 @@
  * }
  */
 
-import PDFDocument from 'pdfkit';
-import qr from 'qr-image';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { createHash } from 'crypto';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
+import PDFDocument from 'pdfkit.js';
+import qr from 'qr-image.js';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url.js';
+import { createHash } from "crypto";
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
 
 // WILSY OS CORE IMPORTS
 import {

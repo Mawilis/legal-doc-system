@@ -54,23 +54,23 @@
  * }
  */
 
-import promClient from 'prom-client';
-import express from 'express';
-import os from 'os';
-import process from 'process';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
+import promClient from 'prom-client.js';
+import express from 'express.js';
+import os from 'os.js';
+import process from 'process.js';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
 
 // WILSY OS CORE IMPORTS
-import logger from '../utils/logger.js';
-import quantumLogger from '../utils/quantumLogger.js';
-import { getSystemHealth } from '../services/system/HealthService.js';
+import logger from '../utils/logger.js.js';
+import quantumLogger from '../utils/quantumLogger.js.js';
+import { getSystemHealth } from '../services/system/HealthService.js.js';
 
 // Models
-import TenantConfig from '../models/TenantConfig.js';
-import BillingInvoice from '../models/BillingInvoice.js';
-import UsageHistory from '../models/UsageHistory.js';
-import AuditTrail from '../models/AuditTrail.js';
+import TenantConfig from '../models/TenantConfig.js.js';
+import BillingInvoice from '../models/BillingInvoice.js.js';
+import UsageHistory from '../models/UsageHistory.js.js';
+import AuditTrail from '../models/AuditTrail.js.js';
 
 /*
  * MERMAID INTEGRATION DIAGRAM:

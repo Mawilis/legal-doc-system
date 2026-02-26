@@ -1,15 +1,13 @@
 #!/usr/bin/env node
-/*===========================================================================
+/*= ==========================================================================
   WILSY OS - DIAGNOSTIC VERIFICATION SYSTEM
   ===========================================================================
   PURPOSE: Diagnose and fix MongoDB connection issues for investors
-  ==========================================================================*/
+  ========================================================================== */
 
-'use strict';
-
-const mongoose = require('mongoose');
 const { execSync } = require('child_process');
 const path = require('path');
+const mongoose = require('mongoose');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 class DiagnosticVerifier {
@@ -62,7 +60,7 @@ class DiagnosticVerifier {
     if (this.config.MONGO_URI.includes('mongodb+srv://')) {
       console.log('   🌐 Using: MongoDB Atlas (Cloud)');
       console.log('   ⚠️  Note: IP whitelisting required');
-      console.log('   🔗 Your IP to whitelist:', this.publicIP + '/32');
+      console.log('   🔗 Your IP to whitelist:', `${this.publicIP}/32`);
     } else {
       console.log('   💻 Using: Local/On-premise MongoDB');
     }
@@ -124,7 +122,7 @@ class DiagnosticVerifier {
   }
 
   async _generateInvestorDiagnosticReport() {
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${'='.repeat(60)}`);
     console.log('💰 WILSY OS - INVESTOR CONNECTION REPORT');
     console.log('='.repeat(60));
 
@@ -132,7 +130,7 @@ class DiagnosticVerifier {
     console.log('   Public IP Address:', this.publicIP);
     console.log(
       '   MongoDB Type:',
-      this.config.MONGO_URI.includes('mongodb+srv://') ? 'Atlas (Cloud)' : 'Local'
+      this.config.MONGO_URI.includes('mongodb+srv://') ? 'Atlas (Cloud)' : 'Local',
     );
 
     console.log('\n🔧 RECOMMENDED ACTIONS:');

@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; tests deep-merge updates and audit logging of config changes.
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -21,14 +19,15 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const settingsController = require('../controllers/settingsController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
 
 // 3. VALIDATION SCHEMAS (Joi)
@@ -114,7 +113,7 @@ router.patch(
       err.code = 'SETTINGS_UPDATE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

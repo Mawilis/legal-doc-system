@@ -50,12 +50,12 @@ const fs = require('fs').promises;
 const path = require('path');
 
 // Database dependencies
+const archiver = require('archiver');
 const mongoose = require('mongoose');
 
 // External dependencies for enhanced functionality
 // Path to install: /Users/wilsonkhanyezi/legal-doc-system/server/ (run: npm install winston@^3.11.0 archiver@^5.0.0)
 const winston = require('winston');
-const archiver = require('archiver');
 
 // Internal Quantum Dependencies
 const AuditTrail = require('../model/AuditTrail');
@@ -182,18 +182,18 @@ const createPurgeLogger = () => {
     level: RETENTION_CONFIG.EXECUTION_CONFIG.LOG_LEVEL,
     format: winston.format.combine(
       winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-      winston.format.json()
+      winston.format.json(),
     ),
     transports: [
       // Console for immediate visibility
       new winston.transports.Console({
         format: winston.format.combine(
           winston.format.colorize(),
-          winston.format.printf(({ timestamp, level, message, ...meta }) => {
-            return `${timestamp} [${level}]: ${message} ${
-              Object.keys(meta).length ? JSON.stringify(meta) : ''
-            }`;
-          })
+          winston.format.printf(({
+            timestamp, level, message, ...meta
+          }) => `${timestamp} [${level}]: ${message} ${
+            Object.keys(meta).length ? JSON.stringify(meta) : ''
+          }`),
         ),
       }),
       // File for permanent record
@@ -206,14 +206,14 @@ const createPurgeLogger = () => {
       // MongoDB for queryable audit (if connection available)
       ...(process.env.MONGO_URI
         ? [
-            new winston.transports.MongoDB({
-              db: process.env.MONGO_URI,
-              collection: 'purge_operation_logs',
-              capped: true,
-              cappedSize: 100 * 1024 * 1024, // 100MB
-              options: { useUnifiedTopology: true },
-            }),
-          ]
+          new winston.transports.MongoDB({
+            db: process.env.MONGO_URI,
+            collection: 'purge_operation_logs',
+            capped: true,
+            cappedSize: 100 * 1024 * 1024, // 100MB
+            options: { useUnifiedTopology: true },
+          }),
+        ]
         : []),
     ],
     defaultMeta: {
@@ -454,7 +454,7 @@ class PurgeOperationManager {
       const criticalFailures = failedValidations.filter((v) => v.severity === 'CRITICAL');
       if (criticalFailures.length > 0) {
         throw new Error(
-          `Critical validation failures: ${criticalFailures.map((f) => f.message).join(', ')}`
+          `Critical validation failures: ${criticalFailures.map((f) => f.message).join(', ')}`,
         );
       }
     } else {
@@ -517,13 +517,13 @@ class PurgeOperationManager {
 
       // Archive records before deletion (if enabled)
       if (
-        RETENTION_CONFIG.EXECUTION_CONFIG.ARCHIVE_BEFORE_DELETE &&
-        !RETENTION_CONFIG.EXECUTION_CONFIG.DRY_RUN
+        RETENTION_CONFIG.EXECUTION_CONFIG.ARCHIVE_BEFORE_DELETE
+        && !RETENTION_CONFIG.EXECUTION_CONFIG.DRY_RUN
       ) {
         collectionSummary.archived = await this.archiveRecords(
           collectionKey,
           expiredRecords,
-          policy
+          policy,
         );
       }
 
@@ -532,7 +532,7 @@ class PurgeOperationManager {
         collectionSummary.purged = await this.deleteExpiredRecords(policy, expiredRecords);
       } else {
         purgeLogger.info(
-          `DRY RUN: Would purge ${expiredRecords.length} records from ${collectionKey}`
+          `DRY RUN: Would purge ${expiredRecords.length} records from ${collectionKey}`,
         );
         collectionSummary.purged = expiredRecords.length; // Simulated
       }
@@ -540,7 +540,7 @@ class PurgeOperationManager {
       // Check for compliance violations
       collectionSummary.complianceViolations = await this.checkComplianceViolations(
         policy,
-        expiredRecords
+        expiredRecords,
       );
     } catch (error) {
       collectionSummary.errors++;
@@ -563,8 +563,8 @@ class PurgeOperationManager {
         rate:
           collectionSummary.processed > 0
             ? `${(collectionSummary.processed / (collectionDuration / 1000)).toFixed(
-                2
-              )} records/sec`
+              2,
+            )} records/sec`
             : 'N/A',
         summary: collectionSummary,
       });
@@ -579,7 +579,7 @@ class PurgeOperationManager {
     const cutoffDate = new Date(now);
 
     // Use default retention unless specific legal basis requires different
-    let retentionDays = policy.defaultRetentionDays;
+    const retentionDays = policy.defaultRetentionDays;
 
     // For collections with legal basis field, we need to check each record individually
     // This is handled in the query building phase
@@ -623,14 +623,13 @@ class PurgeOperationManager {
         .select('_id timestamp compliance.legalBasis') // Select minimal fields for efficiency
         .limit(RETENTION_CONFIG.EXECUTION_CONFIG.BATCH_SIZE * 10) // Safety limit
         .lean();
-    } else {
-      // Use direct MongoDB collection (for system logs, etc.)
-      const collection = mongoose.connection.db.collection(policy.collectionName);
-      return await collection
-        .find(query)
-        .limit(RETENTION_CONFIG.EXECUTION_CONFIG.BATCH_SIZE * 10)
-        .toArray();
     }
+    // Use direct MongoDB collection (for system logs, etc.)
+    const collection = mongoose.connection.db.collection(policy.collectionName);
+    return await collection
+      .find(query)
+      .limit(RETENTION_CONFIG.EXECUTION_CONFIG.BATCH_SIZE * 10)
+      .toArray();
   }
 
   /*
@@ -655,7 +654,7 @@ class PurgeOperationManager {
       const archiveFileName = `${archiveId}.json.gz`;
       const archiveFilePath = path.join(
         RETENTION_CONFIG.EXECUTION_CONFIG.ARCHIVE_PATH,
-        archiveFileName
+        archiveFileName,
       );
 
       // Create archive manifest
@@ -697,7 +696,7 @@ class PurgeOperationManager {
         collectionKey,
         records.length,
         archiveHash,
-        archiveFilePath
+        archiveFilePath,
       );
 
       const archiveDuration = Date.now() - archiveStartTime;
@@ -768,9 +767,8 @@ class PurgeOperationManager {
    * Create archive record in database for tracking
    */
   async createArchiveRecord(archiveId, collection, recordCount, fileHash, filePath) {
-    const ArchiveRecord =
-      mongoose.models.ArchiveRecord ||
-      mongoose.model(
+    const ArchiveRecord = mongoose.models.ArchiveRecord
+      || mongoose.model(
         'ArchiveRecord',
         new mongoose.Schema({
           archiveId: String,
@@ -784,7 +782,7 @@ class PurgeOperationManager {
             legalBasis: String,
             retentionPeriodDays: Number,
           },
-        })
+        }),
       );
 
     await ArchiveRecord.create({
@@ -838,7 +836,7 @@ class PurgeOperationManager {
             deleteResult.deletedCount > 0
               ? `${(deleteResult.deletedCount / (deleteDuration / 1000)).toFixed(2)} records/sec`
               : 'N/A',
-        }
+        },
       );
 
       return deleteResult.deletedCount;
@@ -896,9 +894,7 @@ class PurgeOperationManager {
    * Helper to get nested object value
    */
   getNestedValue(obj, path) {
-    return path.split('.').reduce((current, key) => {
-      return current && current[key] !== undefined ? current[key] : null;
-    }, obj);
+    return path.split('.').reduce((current, key) => (current && current[key] !== undefined ? current[key] : null), obj);
   }
 
   /*
@@ -950,9 +946,8 @@ class PurgeOperationManager {
    */
   async saveReportToDatabase(report) {
     try {
-      const PurgeReport =
-        mongoose.models.PurgeReport ||
-        mongoose.model(
+      const PurgeReport = mongoose.models.PurgeReport
+        || mongoose.model(
           'PurgeReport',
           new mongoose.Schema({
             operationId: String,
@@ -962,7 +957,7 @@ class PurgeOperationManager {
             complianceViolations: Array,
             legalCompliance: Object,
             reportHash: String,
-          })
+          }),
         );
 
       // Generate hash for report integrity
@@ -986,14 +981,13 @@ class PurgeOperationManager {
    */
   async sendComplianceNotifications() {
     // Check if notifications are required
-    const needsNotification =
-      this.purgeSummary.complianceViolations.length > 0 ||
-      this.purgeSummary.totalErrors > 0 ||
-      this.purgeSummary.totalPurged > 1000;
+    const needsNotification = this.purgeSummary.complianceViolations.length > 0
+      || this.purgeSummary.totalErrors > 0
+      || this.purgeSummary.totalPurged > 1000;
 
     if (
-      !needsNotification ||
-      RETENTION_CONFIG.SAFEGUARDS.MANDATORY_NOTIFICATION_EMAILS.length === 0
+      !needsNotification
+      || RETENTION_CONFIG.SAFEGUARDS.MANDATORY_NOTIFICATION_EMAILS.length === 0
     ) {
       return;
     }
@@ -1131,8 +1125,8 @@ class PurgeOperationManager {
    */
   async verifyOperationIntegrity() {
     // Verify that purge counts match expected patterns
-    const totalPurged = this.purgeSummary.totalPurged;
-    const totalProcessed = this.purgeSummary.totalProcessed;
+    const { totalPurged } = this.purgeSummary;
+    const { totalProcessed } = this.purgeSummary;
 
     if (totalPurged > totalProcessed) {
       this.purgeSummary.safeguardsTriggered.push({

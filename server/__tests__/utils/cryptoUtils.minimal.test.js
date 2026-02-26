@@ -18,6 +18,6 @@ describe('CRYPTO UTILITIES - MINIMAL EXPORT TEST', () => {
     const hash = cryptoUtils.generateHash('test');
     expect(hash).toBeDefined();
     expect(hash.length).toBe(64);
-    console.log('✅ generateHash works:', hash.substring(0, 10) + '...');
+    console.log('✅ generateHash works:', `${hash.substring(0, 10)}...`);
   });
 });

@@ -1,13 +1,11 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ CIPC VALIDATION RULES - INVESTOR-GRADE MODULE                              ║
   ║ Companies Act compliance | Registration validation                          ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/cipcValidationRules.js
  * VERSION: 1.0.0
  */
-
-'use strict';
 
 class CIPCValidationRules {
   /*

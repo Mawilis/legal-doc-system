@@ -21,6 +21,7 @@ const { createHash } = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
 const { promisify } = require('util');
+
 const sleep = promisify(setTimeout);
 
 // Tenant mapping strategies
@@ -136,7 +137,7 @@ class DocumentMigrationEngine {
           error: error.message,
           stack: error.stack,
         },
-        'ERROR'
+        'ERROR',
       );
       throw error;
     }
@@ -174,13 +175,13 @@ class DocumentMigrationEngine {
       confidence,
       topUploader: topUploader
         ? {
-            userId: topUploader._id,
-            documentCount: topUploader.documentCount,
-            dateRange: {
-              earliest: topUploader.earliestDocument,
-              latest: topUploader.latestDocument,
-            },
-          }
+          userId: topUploader._id,
+          documentCount: topUploader.documentCount,
+          dateRange: {
+            earliest: topUploader.earliestDocument,
+            latest: topUploader.latestDocument,
+          },
+        }
         : null,
       requiresManualReview: confidence < 70,
     };
@@ -266,7 +267,7 @@ class DocumentMigrationEngine {
             error: error.message,
             processedSoFar: processed,
           },
-          'ERROR'
+          'ERROR',
         );
 
         if (!forceMigration) {
@@ -305,7 +306,7 @@ class DocumentMigrationEngine {
               reason: 'NO_TENANT_ASSIGNMENT',
               strategy: strategy.strategy,
             },
-            'WARN'
+            'WARN',
           );
           continue;
         }
@@ -313,7 +314,7 @@ class DocumentMigrationEngine {
         // Prepare update operation
         const update = {
           $set: {
-            tenantId: tenantId,
+            tenantId,
             migratedAt: new Date(),
             migrationId: this.logger.getMigrationId(),
           },
@@ -336,7 +337,7 @@ class DocumentMigrationEngine {
             updatedAt: doc.updatedAt,
           },
           newState: {
-            tenantId: tenantId,
+            tenantId,
             migratedAt: new Date(),
           },
           timestamp: new Date().toISOString(),
@@ -346,13 +347,12 @@ class DocumentMigrationEngine {
         operations.push({
           updateOne: {
             filter: { _id: doc._id },
-            update: update,
+            update,
           },
         });
 
         // Update tenant statistics
-        this.migrationStats.tenantAssignments[tenantId] =
-          (this.migrationStats.tenantAssignments[tenantId] || 0) + 1;
+        this.migrationStats.tenantAssignments[tenantId] = (this.migrationStats.tenantAssignments[tenantId] || 0) + 1;
 
         results.success++;
       } catch (error) {
@@ -364,7 +364,7 @@ class DocumentMigrationEngine {
             documentId: doc._id,
             error: error.message,
           },
-          'ERROR'
+          'ERROR',
         );
       }
     }
@@ -421,7 +421,7 @@ class DocumentMigrationEngine {
           userId: document.uploadedBy,
           error: error.message,
         },
-        'WARN'
+        'WARN',
       );
       return null;
     }
@@ -449,7 +449,7 @@ class DocumentMigrationEngine {
           caseId: document.caseId,
           error: error.message,
         },
-        'WARN'
+        'WARN',
       );
       return null;
     }
@@ -593,7 +593,7 @@ class DocumentMigrationEngine {
           error: error.message,
           stack: error.stack,
         },
-        'ERROR'
+        'ERROR',
       );
       throw error;
     }

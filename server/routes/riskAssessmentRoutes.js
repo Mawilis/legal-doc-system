@@ -1,4 +1,4 @@
-/*                                                                                                                              
+/*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                                                              ║
 ║  ██████╗ ██╗███████╗██╗  ██╗    ██████╗  █████╗ ███████╗███████╗███████╗███████╗██████╗ ███╗   ███╗███████╗███╗   ██╗████████╗║
@@ -26,8 +26,11 @@
 // QUANTUM DEPENDENCIES - SECURELY PINNED FOR PRODUCTION
 // ============================================================================
 const express = require('express');
+
 const router = express.Router();
-const { body, param, query, validationResult } = require('express-validator');
+const {
+  body, param, query, validationResult,
+} = require('express-validator');
 const Joi = require('joi');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -42,9 +45,12 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 // ============================================================================
 
 // Try to import middleware, provide fallbacks if they don't exist
-let authenticateJWT, authorizeRole, requireMFA, validateRequest, sanitizeInput;
-let apiRateLimiter, strictRateLimiter, logAuditTrail, logSecurityEvent;
-let riskAssessmentController, riskAssessmentValidator;
+let authenticateJWT; let authorizeRole; let requireMFA; let validateRequest; let
+  sanitizeInput;
+let apiRateLimiter; let strictRateLimiter; let logAuditTrail; let
+  logSecurityEvent;
+let riskAssessmentController; let
+  riskAssessmentValidator;
 
 try {
   // Authentication middleware
@@ -65,27 +71,22 @@ try {
 try {
   // Validation middleware
   const validationMiddleware = require('../middleware/validationMiddleware');
-  validateRequest =
-    validationMiddleware.validateRequest ||
-    ((schema, location = 'body') =>
-      (req, res, next) => {
-        const { error } = schema.validate(req[location]);
-        if (error) {
-          return res.status(400).json({
-            success: false,
-            error: 'VALIDATION_ERROR',
-            message: error.details[0].message,
-            details: error.details,
-          });
-        }
-        next();
-      });
+  validateRequest = validationMiddleware.validateRequest
+    || ((schema, location = 'body') => (req, res, next) => {
+      const { error } = schema.validate(req[location]);
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          error: 'VALIDATION_ERROR',
+          message: error.details[0].message,
+          details: error.details,
+        });
+      }
+      next();
+    });
   sanitizeInput = validationMiddleware.sanitizeInput || ((req, res, next) => next());
 } catch (error) {
-  validateRequest =
-    (schema, location = 'body') =>
-    (req, res, next) =>
-      next();
+  validateRequest = (schema, location = 'body') => (req, res, next) => next();
   sanitizeInput = (req, res, next) => next();
 }
 
@@ -93,8 +94,7 @@ try {
   // Rate limiting middleware
   const rateLimiter = require('../middleware/rateLimiter');
   apiRateLimiter = rateLimiter.apiRateLimiter || ((max, windowMs) => (req, res, next) => next());
-  strictRateLimiter =
-    rateLimiter.strictRateLimiter || ((max, windowMs) => (req, res, next) => next());
+  strictRateLimiter = rateLimiter.strictRateLimiter || ((max, windowMs) => (req, res, next) => next());
 } catch (error) {
   apiRateLimiter = (max, windowMs) => (req, res, next) => next();
   strictRateLimiter = (max, windowMs) => (req, res, next) => next();
@@ -104,8 +104,7 @@ try {
   // Audit logging middleware
   const auditLogger = require('../middleware/auditLogger');
   logAuditTrail = auditLogger.logAuditTrail || ((action, fields) => (req, res, next) => next());
-  logSecurityEvent =
-    auditLogger.logSecurityEvent || ((event, data) => console.log(`Security: ${event}`, data));
+  logSecurityEvent = auditLogger.logSecurityEvent || ((event, data) => console.log(`Security: ${event}`, data));
 } catch (error) {
   logAuditTrail = (action, fields) => (req, res, next) => next();
   logSecurityEvent = (event, data) => console.log(`Security: ${event}`, data);
@@ -127,10 +126,14 @@ try {
     }),
     getAssessments: async (filters) => ({
       data: [],
-      pagination: { total: 0, page: 1, limit: 20, totalPages: 0 },
+      pagination: {
+        total: 0, page: 1, limit: 20, totalPages: 0,
+      },
     }),
     getAssessmentById: async (id, firmId) => ({
-      data: { id, firmId, status: 'DRAFT', overallRiskRating: 'MEDIUM' },
+      data: {
+        id, firmId, status: 'DRAFT', overallRiskRating: 'MEDIUM',
+      },
     }),
     updateAssessment: async (id, data, firmId) => ({
       data: { id, ...data, updatedAt: new Date().toISOString() },
@@ -153,7 +156,9 @@ try {
     }),
     getStatistics: async (params) => ({
       totalAssessments: 0,
-      riskDistribution: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 },
+      riskDistribution: {
+        LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0,
+      },
     }),
   };
 }
@@ -202,8 +207,12 @@ const RISK_CATEGORIES = Object.freeze({
 });
 
 const RISK_LEVELS = Object.freeze({
-  LOW: { code: 'LOW', score: 1, color: '#4CAF50', action: 'STANDARD_DUE_DILIGENCE' },
-  MEDIUM: { code: 'MEDIUM', score: 2, color: '#FFC107', action: 'ENHANCED_DUE_DILIGENCE' },
+  LOW: {
+    code: 'LOW', score: 1, color: '#4CAF50', action: 'STANDARD_DUE_DILIGENCE',
+  },
+  MEDIUM: {
+    code: 'MEDIUM', score: 2, color: '#FFC107', action: 'ENHANCED_DUE_DILIGENCE',
+  },
   HIGH: {
     code: 'HIGH',
     score: 3,
@@ -233,7 +242,7 @@ const riskAssessmentSchemas = {
         'FICA_RISK_ASSESSMENT',
         'AML_RISK_ASSESSMENT',
         'CYBER_RISK_ASSESSMENT',
-        'COMPLIANCE_RISK_ASSESSMENT'
+        'COMPLIANCE_RISK_ASSESSMENT',
       ),
     categories: Joi.array()
       .items(
@@ -247,10 +256,10 @@ const riskAssessmentSchemas = {
               score: Joi.number().min(1).max(5).required(),
               evidence: Joi.string().max(1000).optional(),
               supportingDocuments: Joi.array().items(Joi.string()).optional(),
-            })
+            }),
           ),
           mitigationMeasures: Joi.array().items(Joi.string()).optional(),
-        })
+        }),
       )
       .min(1)
       .required(),
@@ -285,10 +294,10 @@ const riskAssessmentSchemas = {
               score: Joi.number().min(1).max(5).required(),
               evidence: Joi.string().max(1000).optional(),
               supportingDocuments: Joi.array().items(Joi.string()).optional(),
-            })
+            }),
           ),
           mitigationMeasures: Joi.array().items(Joi.string()).optional(),
-        })
+        }),
       )
       .min(1)
       .optional(),
@@ -306,14 +315,15 @@ const riskAssessmentSchemas = {
           actor: Joi.string().required(),
           timestamp: Joi.date().iso().required(),
           changes: Joi.object().optional(),
-        })
+        }),
       )
       .optional(),
   }),
 
   queryParams: Joi.object({
     page: Joi.number().integer().min(1).default(1),
-    limit: Joi.number().integer().min(1).max(100).default(20),
+    limit: Joi.number().integer().min(1).max(100)
+      .default(20),
     sortBy: Joi.string()
       .valid('createdAt', 'updatedAt', 'overallRiskRating', 'assessmentDate')
       .default('createdAt'),
@@ -339,7 +349,7 @@ const riskAssessmentSchemas = {
     query: Joi.string().min(2).max(100).required(),
     fields: Joi.array()
       .items(
-        Joi.string().valid('clientName', 'assessmentType', 'riskFactors', 'mitigationMeasures')
+        Joi.string().valid('clientName', 'assessmentType', 'riskFactors', 'mitigationMeasures'),
       )
       .default(['clientName', 'assessmentType']),
     firmId: Joi.string()
@@ -378,11 +388,11 @@ function validateFICACompliance(assessmentData) {
   }
 
   if (
-    assessmentData.overallRiskRating === 'HIGH' ||
-    assessmentData.overallRiskRating === 'CRITICAL'
+    assessmentData.overallRiskRating === 'HIGH'
+    || assessmentData.overallRiskRating === 'CRITICAL'
   ) {
     const hasEnhancedDD = assessmentData.categories?.some(
-      (cat) => cat.mitigationMeasures && cat.mitigationMeasures.length > 0
+      (cat) => cat.mitigationMeasures && cat.mitigationMeasures.length > 0,
     );
     if (!hasEnhancedDD) {
       violations.push({
@@ -403,7 +413,7 @@ function validateFICACompliance(assessmentData) {
 
   return {
     valid: violations.length === 0,
-    violations: violations,
+    violations,
   };
 }
 
@@ -424,11 +434,11 @@ async function encryptSensitiveData(data) {
       const authTag = cipher.getAuthTag();
 
       encryptedData[field] = {
-        encrypted: encrypted,
+        encrypted,
         key: key.toString('base64'),
         iv: iv.toString('base64'),
         authTag: authTag.toString('base64'),
-        algorithm: algorithm,
+        algorithm,
         encryptedAt: new Date().toISOString(),
       };
     }
@@ -446,7 +456,7 @@ async function decryptSensitiveData(encryptedData, userId) {
       const decipher = crypto.createDecipheriv(
         encryptedData.algorithm || 'aes-256-gcm',
         Buffer.from(encryptedData.key, 'base64'),
-        Buffer.from(encryptedData.iv, 'base64')
+        Buffer.from(encryptedData.iv, 'base64'),
       );
       decipher.setAuthTag(Buffer.from(encryptedData.authTag, 'base64'));
 
@@ -497,7 +507,7 @@ async function getNextVersion(assessmentId) {
 // Notify risk level change
 async function notifyRiskLevelChange(assessmentId, previousRating, newRating, userId) {
   console.log(
-    `Risk level changed from ${previousRating} to ${newRating} for assessment ${assessmentId}`
+    `Risk level changed from ${previousRating} to ${newRating} for assessment ${assessmentId}`,
   );
   return true;
 }
@@ -552,10 +562,10 @@ async function addDigitalSignature(report, userId, type) {
 
   return {
     ...(typeof report === 'object' ? report : { content: report }),
-    signature: signature,
+    signature,
     signedBy: userId,
     signedAt: new Date().toISOString(),
-    type: type,
+    type,
   };
 }
 
@@ -593,7 +603,7 @@ async function checkBulkOperationLimit(userId, operation, count) {
 // Send bulk operation notification
 async function sendBulkOperationNotification(userId, operation, summary) {
   console.log(
-    `Bulk ${operation} completed: ${summary.processed} processed, ${summary.failed} failed`
+    `Bulk ${operation} completed: ${summary.processed} processed, ${summary.failed} failed`,
   );
   return true;
 }
@@ -629,7 +639,7 @@ async function analyzeRiskTrends(statistics, period) {
   return {
     trend: 'STABLE',
     change: 0,
-    period: period,
+    period,
   };
 }
 
@@ -719,7 +729,7 @@ function setReportHeaders(res, format, report) {
     },
   };
 
-  const formatHeaders = headers[format] || headers['JSON'];
+  const formatHeaders = headers[format] || headers.JSON;
   Object.keys(formatHeaders).forEach((key) => {
     res.setHeader(key, formatHeaders[key]);
   });
@@ -888,7 +898,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // 3. GET RISK ASSESSMENT BY ID
@@ -903,7 +913,7 @@ router.get(
           .pattern(/^[a-fA-F0-9]{24}$/)
           .required(),
       },
-      'params'
+      'params',
     ),
     async (req, res, next) => {
       try {
@@ -927,7 +937,7 @@ router.get(
     try {
       const result = await riskAssessmentController.getAssessmentById(
         req.params.id,
-        req.user?.firmId || 'demo-firm'
+        req.user?.firmId || 'demo-firm',
       );
 
       let assessmentData = result.data;
@@ -954,7 +964,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // 4. UPDATE RISK ASSESSMENT
@@ -968,7 +978,7 @@ router.put(
           .pattern(/^[a-fA-F0-9]{24}$/)
           .required(),
       },
-      'params'
+      'params',
     ),
   ],
   async (req, res, next) => {
@@ -1000,7 +1010,7 @@ router.put(
           changeLog: changes,
           version: await getNextVersion(req.params.id),
         },
-        req.user?.firmId || 'demo-firm'
+        req.user?.firmId || 'demo-firm',
       );
 
       if (result.data.riskLevelChanged) {
@@ -1008,7 +1018,7 @@ router.put(
           req.params.id,
           result.data.previousRiskRating,
           result.data.overallRiskRating,
-          req.user?.id
+          req.user?.id,
         );
       }
 
@@ -1016,7 +1026,7 @@ router.put(
         success: true,
         message: 'Risk assessment updated successfully',
         data: result.data,
-        changes: changes,
+        changes,
         compliance: {
           versionControlled: true,
           auditTrail: true,
@@ -1026,7 +1036,7 @@ router.put(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // 5. DELETE RISK ASSESSMENT
@@ -1040,7 +1050,7 @@ router.delete(
           .pattern(/^[a-fA-F0-9]{24}$/)
           .required(),
       },
-      'params'
+      'params',
     ),
     validateRequest({ hardDelete: Joi.boolean().default(false) }, 'query'),
     authorizeRole(['PARTNER', 'SYSTEM_ADMIN']),
@@ -1084,7 +1094,7 @@ router.delete(
           reason: req.body.reason || 'Manual deletion by authorized user',
           ipAddress: req.ip,
         },
-        req.user?.firmId || 'demo-firm'
+        req.user?.firmId || 'demo-firm',
       );
 
       logSecurityEvent('RISK_ASSESSMENT_DELETED', {
@@ -1113,7 +1123,7 @@ router.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // 6. SUBMIT FOR REVIEW
@@ -1129,7 +1139,7 @@ router.post(
           .pattern(/^[a-fA-F0-9]{24}$/)
           .required(),
       },
-      'params'
+      'params',
     ),
     validateRequest({
       decision: Joi.string().valid('APPROVE', 'REJECT', 'REQUEST_CHANGES').required(),
@@ -1183,7 +1193,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // 7. GENERATE RISK ASSESSMENT REPORT
@@ -1199,7 +1209,7 @@ router.get(
         const canGenerateReport = await canGenerateAssessmentReport(
           req.user?.id,
           req.params.id,
-          req.user?.role
+          req.user?.role,
         );
         if (!canGenerateReport) {
           return res.status(403).json({
@@ -1231,7 +1241,7 @@ router.get(
       const signedReport = await addDigitalSignature(
         result.report,
         req.user?.id,
-        'RISK_ASSESSMENT_REPORT'
+        'RISK_ASSESSMENT_REPORT',
       );
 
       setReportHeaders(res, reportOptions.format, result.report);
@@ -1260,7 +1270,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // 8. BULK RISK ASSESSMENT OPERATIONS
@@ -1287,7 +1297,7 @@ router.post(
         const limitCheck = await checkBulkOperationLimit(
           req.user?.id,
           req.body.operation,
-          req.body.assessmentIds.length
+          req.body.assessmentIds.length,
         );
         if (!limitCheck.allowed) {
           return res.status(429).json({
@@ -1314,7 +1324,7 @@ router.post(
           firmId: req.user?.firmId || 'demo-firm',
           ipAddress: req.ip,
         },
-        req.body.validateOnly
+        req.body.validateOnly,
       );
 
       if (req.body.notifyOnComplete && !req.body.validateOnly) {
@@ -1337,7 +1347,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // 9. SEARCH RISK ASSESSMENTS
@@ -1366,9 +1376,7 @@ router.get(
       };
 
       const result = await riskAssessmentController.searchAssessments(searchParams);
-      const sanitizedResults = result.data.map((assessment) =>
-        sanitizeSearchResult(assessment, req.user?.role)
-      );
+      const sanitizedResults = result.data.map((assessment) => sanitizeSearchResult(assessment, req.user?.role));
 
       res.status(200).json({
         success: true,
@@ -1384,7 +1392,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // 10. RISK ASSESSMENT STATISTICS
@@ -1403,7 +1411,7 @@ router.get(
           .pattern(/^[a-fA-F0-9]{24}$/)
           .optional(),
       },
-      'query'
+      'query',
     ),
     (req, res, next) => {
       if (req.query.firmId && req.user?.role !== 'SYSTEM_ADMIN') {
@@ -1433,7 +1441,7 @@ router.get(
         message: 'Statistics retrieved successfully',
         data: statistics,
         analytics: {
-          trends: trends,
+          trends,
           insights: generateRiskInsights(statistics),
           recommendations: generateStatisticalRecommendations(statistics),
         },
@@ -1446,7 +1454,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -1465,7 +1473,7 @@ router.use((err, req, res, next) => {
   });
 
   let statusCode = err.statusCode || 500;
-  let errorMessage = err.message || 'Internal Server Error';
+  const errorMessage = err.message || 'Internal Server Error';
   let errorCode = err.code || 'INTERNAL_SERVER_ERROR';
 
   if (err.name === 'ValidationError') {

@@ -62,25 +62,25 @@
  * ============================================================================
  */
 
-import express from 'express';
-import { body, query, param, validationResult } from 'express-validator';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
-import cors from 'cors';
-import compression from 'compression';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import express from 'express.js';
+import { body, query, param, validationResult } from 'express-validator.js';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import cors from 'cors.js';
+import compression from 'compression.js';
+import helmet from 'helmet.js';
+import rateLimit from 'express-rate-limit.js';
 
 // WILSY OS CORE IMPORTS
-import { authenticate, authorize } from '../middleware/auth.js';
-import { tenantGuard } from '../middleware/tenantGuard.js';
-import { rateLimiter, investorRateLimiter } from '../middleware/rateLimiter.js';
-import { cacheMiddleware, invalidateCache } from '../middleware/cache.js';
-import { auditMiddleware } from '../middleware/audit.js';
-import { QuantumLogger, globalLogger } from '../utils/quantumLogger.js';
-import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js';
-import { AppError, errorHandler } from '../utils/errorHandler.js';
-import investorIntelligenceService from '../services/analytics/investorIntelligenceService.js';
+import { authenticate, authorize } from '../middleware/auth.js.js';
+import { tenantGuard } from '../middleware/tenantGuard.js.js';
+import { rateLimiter, investorRateLimiter } from '../middleware/rateLimiter.js.js';
+import { cacheMiddleware, invalidateCache } from '../middleware/cache.js.js';
+import { auditMiddleware } from '../middleware/audit.js.js';
+import { QuantumLogger, globalLogger } from '../utils/quantumLogger.js.js';
+import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js.js';
+import { AppError, errorHandler } from '../utils/errorHandler.js.js';
+import investorIntelligenceService from '../services/analytics/investorIntelligenceService.js.js';
 
 // =============================================================================
 // QUANTUM CONSTANTS

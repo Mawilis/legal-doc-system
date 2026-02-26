@@ -1,8 +1,8 @@
 /* eslint-env jest */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ HEALTH ROUTES TESTS - INVESTOR-GRADE                          ║
   ║ 85% cost reduction | R382k/year savings | 99.99% uptime       ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/routes/health.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -70,12 +70,12 @@ jest.mock('../../services/ClassificationService', () => ({
   }),
 }));
 
-const request = require('supertest');
 const express = require('express');
+const request = require('supertest');
 const healthRoutes = require('../../routes/health');
+const auditLogger = require('../../utils/auditLogger');
 const logger = require('../../utils/logger');
 const metrics = require('../../utils/metrics');
-const auditLogger = require('../../utils/auditLogger');
 
 describe('Health Routes - Investor Grade Tests', () => {
   let app;

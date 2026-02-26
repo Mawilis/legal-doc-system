@@ -15,10 +15,10 @@ const investorTarget = 200000; // R200K/year minimum
 
 if (annualSavings >= investorTarget) {
   console.log(
-    `✓ Annual Savings/Client: R${annualSavings.toLocaleString()} (Target: R${investorTarget.toLocaleString()})`
+    `✓ Annual Savings/Client: R${annualSavings.toLocaleString()} (Target: R${investorTarget.toLocaleString()})`,
   );
   console.log(
-    `  Margin: 85% → Net Profit: R${Math.round(annualSavings * 0.85).toLocaleString()}/year`
+    `  Margin: 85% → Net Profit: R${Math.round(annualSavings * 0.85).toLocaleString()}/year`,
   );
 } else {
   console.log(`✗ Annual Savings/Client: R${annualSavings} (FAILED - Below target)`);
@@ -35,7 +35,7 @@ const eliminatedRisk = originalRisk * riskReduction;
 
 if (eliminatedRisk >= 2400000) {
   console.log(`✓ Risk Elimination Validated: R${Math.round(eliminatedRisk).toLocaleString()}/year`);
-  console.log(`  Calculation:`);
+  console.log('  Calculation:');
   console.log(`    • Max POPIA Fine: R${maxFine.toLocaleString()}`);
   console.log(`    • Breach Likelihood: ${(breachLikelihood * 100).toFixed(0)}%`);
   console.log(`    • Original Risk: R${Math.round(originalRisk).toLocaleString()}/year`);
@@ -44,8 +44,8 @@ if (eliminatedRisk >= 2400000) {
 } else {
   console.log(
     `✗ Risk Elimination: R${Math.round(
-      eliminatedRisk
-    ).toLocaleString()} (FAILED - Below R2.4M claim)`
+      eliminatedRisk,
+    ).toLocaleString()} (FAILED - Below R2.4M claim)`,
   );
   process.exit(1);
 }
@@ -126,7 +126,7 @@ const evidence = {
     coverage: '100% economic validation',
   },
   economicValidation: {
-    annualSavings: annualSavings,
+    annualSavings,
     annualProfit: Math.round(annualSavings * 0.85),
     riskElimination: Math.round(eliminatedRisk),
     originalRisk: Math.round(originalRisk),
@@ -160,7 +160,7 @@ console.log('╚═════════════════════�
 console.log(`Evidence Path: ${evidencePath}`);
 console.log(`Evidence Hash: ${evidence.hash}`);
 console.log(`Audit Entries: ${evidence.auditEntries.length}`);
-console.log(`Deterministic: YES (sorted by action, fixed timestamps)`);
+console.log('Deterministic: YES (sorted by action, fixed timestamps)');
 
 // ==================== COMPLIANCE CERTIFICATION ====================
 
@@ -216,12 +216,12 @@ console.log('\n╔════════════════════�
 console.log('║   INVESTOR RECOMMENDATION: STRONG BUY                          ║');
 console.log('╚════════════════════════════════════════════════════════════════╝');
 console.log('ALL INVESTOR CRITERIA MET:');
-console.log('✓ Annual Savings ≥ R200K: R' + annualSavings.toLocaleString());
-console.log('✓ Risk Elimination ≥ R2.4M: R' + Math.round(eliminatedRisk).toLocaleString());
-console.log('✓ ROI ≥ 8:1: ' + roi.toFixed(1) + ':1');
+console.log(`✓ Annual Savings ≥ R200K: R${annualSavings.toLocaleString()}`);
+console.log(`✓ Risk Elimination ≥ R2.4M: R${Math.round(eliminatedRisk).toLocaleString()}`);
+console.log(`✓ ROI ≥ 8:1: ${roi.toFixed(1)}:1`);
 console.log('✓ Full Compliance: POPIA, ECT Act, Companies Act, PAIA');
 console.log('✓ Forensic Audit Trail: 10-year retention, ZA data residency');
 console.log('✓ Production Ready: Silicon Valley grade, investor validated');
 
-console.log('\nReport Generated: ' + new Date().toISOString());
+console.log(`\nReport Generated: ${new Date().toISOString()}`);
 console.log('Validation Status: ✅ ALL CRITERIA MET - READY FOR DUE DILIGENCE');

@@ -1,8 +1,8 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ SECURITY CONFIGURATION - INVESTOR-GRADE MODULE                              ║
   ║ 99.99% breach prevention | R12M risk elimination | 85% margins              ║
   ║ POPIA §19 | ECT Act §15 | GDPR Article 32 | Cybercrimes Act §2-4            ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/security.js
  * INVESTOR VALUE PROPOSITION:
@@ -49,13 +49,12 @@
  */
 
 /* eslint-env node */
-'use strict';
 
 const crypto = require('crypto');
-const logger = require('../utils/logger');
-const metrics = require('../utils/metrics');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils'); // Now fully utilized
+const logger = require('../utils/logger');
+const metrics = require('../utils/metrics');
 
 class SecurityConfig {
   constructor() {
@@ -221,7 +220,7 @@ class SecurityConfig {
         const allowed = this.allowedOrigins.some((pattern) => {
           if (pattern === '*') return true;
           if (pattern.includes('*')) {
-            const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+            const regex = new RegExp(`^${pattern.replace(/\*/g, '.*')}$`);
             return regex.test(origin);
           }
           return pattern === origin;
@@ -352,11 +351,9 @@ class SecurityConfig {
         this.metrics.cryptoOperations++;
         return `${tenantId}:${fingerprint.substring(0, 16)}`;
       },
-      skip: (req) => {
-        return (
-          req.path === '/health' || req.path === '/health/live' || req.path === '/health/ready'
-        );
-      },
+      skip: (req) => (
+        req.path === '/health' || req.path === '/health/live' || req.path === '/health/ready'
+      ),
       handler: (req, res) => {
         this.metrics.rateLimitExceeded++;
 
@@ -384,7 +381,7 @@ class SecurityConfig {
    */
   getCorsMiddleware() {
     return (req, res, next) => {
-      const origin = req.headers.origin;
+      const { origin } = req.headers;
 
       if (origin && this.allowedOrigins.some((o) => o.includes(origin) || o === '*')) {
         res.header('Access-Control-Allow-Origin', origin);
@@ -392,11 +389,11 @@ class SecurityConfig {
         res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
         res.header(
           'Access-Control-Allow-Headers',
-          'Content-Type,Authorization,X-Request-ID,X-Correlation-ID,X-Tenant-ID,X-API-Key,X-CSRF-Token'
+          'Content-Type,Authorization,X-Request-ID,X-Correlation-ID,X-Tenant-ID,X-API-Key,X-CSRF-Token',
         );
         res.header(
           'Access-Control-Expose-Headers',
-          'X-Request-ID,X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Reset,X-CSRF-Token'
+          'X-Request-ID,X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Reset,X-CSRF-Token',
         );
         res.header('Access-Control-Max-Age', '86400');
       }
@@ -616,7 +613,7 @@ class SecurityConfig {
     // XSS prevention
     sanitized = sanitized.replace(
       /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-      '[REMOVED]'
+      '[REMOVED]',
     );
     sanitized = sanitized.replace(/javascript:/gi, 'blocked:');
     sanitized = sanitized.replace(/onerror\s*=/gi, 'blocked=');
@@ -641,10 +638,9 @@ class SecurityConfig {
    */
   getRequestIdMiddleware() {
     return (req, res, next) => {
-      const requestId =
-        req.headers['x-request-id'] ||
-        req.headers['x-correlation-id'] ||
-        `req_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
+      const requestId = req.headers['x-request-id']
+        || req.headers['x-correlation-id']
+        || `req_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
 
       req.id = requestId;
       res.header('X-Request-ID', requestId);
@@ -676,11 +672,10 @@ class SecurityConfig {
    */
   getTenantMiddleware() {
     return (req, res, next) => {
-      const tenantId =
-        req.headers['x-tenant-id'] ||
-        req.query.tenantId ||
-        (req.user && req.user.tenantId) ||
-        'default';
+      const tenantId = req.headers['x-tenant-id']
+        || req.query.tenantId
+        || (req.user && req.user.tenantId)
+        || 'default';
 
       if (!/^[a-zA-Z0-9_-]{8,64}$/.test(tenantId)) {
         this.metrics.tenantViolations++;
@@ -740,7 +735,7 @@ class SecurityConfig {
       const keyHash = cryptoUtils.generateHash(apiKey);
 
       const validApiKeys = (process.env.API_KEYS || '').split(',').map(
-        (key) => cryptoUtils.generateHash(key) // Store hashed for security
+        (key) => cryptoUtils.generateHash(key), // Store hashed for security
       );
 
       if (!validApiKeys.includes(keyHash)) {
@@ -867,7 +862,7 @@ class SecurityConfig {
         this._cleanupExpiredData();
         this._generateSecurityReport();
       },
-      5 * 60 * 1000
+      5 * 60 * 1000,
     );
   }
 

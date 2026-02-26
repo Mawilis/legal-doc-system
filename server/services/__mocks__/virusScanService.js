@@ -34,8 +34,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const fs = require('fs');
 const path = require('path');
 
@@ -50,7 +48,7 @@ let behavior = {
  * Test helper to configure mock behavior.
  */
 function setBehavior(opts = {}) {
-  behavior = Object.assign({}, behavior, opts);
+  behavior = { ...behavior, ...opts };
 }
 
 /*
@@ -126,12 +124,18 @@ async function scanFile(localPath) {
     const forced = behavior.forceStatus;
     const durationMs = Date.now() - start;
     if (forced === 'infected') {
-      return { status: 'infected', details: 'forced-infected', engine: 'mock', durationMs };
+      return {
+        status: 'infected', details: 'forced-infected', engine: 'mock', durationMs,
+      };
     }
     if (forced === 'error') {
-      return { status: 'error', details: 'forced-error', engine: 'mock', durationMs };
+      return {
+        status: 'error', details: 'forced-error', engine: 'mock', durationMs,
+      };
     }
-    return { status: 'clean', details: 'forced-clean', engine: 'mock', durationMs };
+    return {
+      status: 'clean', details: 'forced-clean', engine: 'mock', durationMs,
+    };
   }
 
   // Deterministic content-based rules
@@ -140,18 +144,24 @@ async function scanFile(localPath) {
   // Explicit error marker in file content
   if (lower.includes('error-scan')) {
     const durationMs = Date.now() - start;
-    return { status: 'error', details: 'simulated-scan-error-marker', engine: 'mock', durationMs };
+    return {
+      status: 'error', details: 'simulated-scan-error-marker', engine: 'mock', durationMs,
+    };
   }
 
   // Infected marker
   if (lower.includes('infected')) {
     const durationMs = Date.now() - start;
-    return { status: 'infected', details: 'test-signature-match', engine: 'mock', durationMs };
+    return {
+      status: 'infected', details: 'test-signature-match', engine: 'mock', durationMs,
+    };
   }
 
   // Default: clean
   const durationMs = Date.now() - start;
-  return { status: 'clean', details: null, engine: 'mock', durationMs };
+  return {
+    status: 'clean', details: null, engine: 'mock', durationMs,
+  };
 }
 
 /* Export the mock API */
@@ -161,5 +171,5 @@ module.exports = {
   setBehavior,
   resetBehavior,
   // Expose current behavior for assertions in tests
-  _behavior: () => Object.assign({}, behavior),
+  _behavior: () => ({ ...behavior }),
 };

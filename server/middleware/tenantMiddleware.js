@@ -73,14 +73,17 @@
 require('dotenv').config({ path: `${process.cwd()}/server/.env` });
 
 // 📦 Core Dependencies (from chat history - already installed)
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { validationResult } = require('express-validator');
+const jwt = require('jsonwebtoken');
 
 // 🛡️  Security Quantum: Import encryption utilities from chat history
-const { encryptData, decryptData, generateTenantKey } = require('../utils/encryptionUtils');
 
 // 📊  Audit Quantum: Import logging utilities from chat history
+const Company = require('../models/companyModel');
+const Session = require('../models/sessionModel');
+const Tenant = require('../models/tenantModel');
+const User = require('../models/userModel');
 const { auditLogger, securityLogger, tenantLogger } = require('../utils/auditLogger');
 
 // ⚖️  Compliance Quantum: Import compliance validators
@@ -90,10 +93,7 @@ const {
 } = require('../utils/complianceValidator');
 
 // 📁  Model Imports (from chat history)
-const Tenant = require('../models/tenantModel');
-const User = require('../models/userModel');
-const Company = require('../models/companyModel');
-const Session = require('../models/sessionModel');
+const { encryptData, decryptData, generateTenantKey } = require('../utils/encryptionUtils');
 
 // ===========================================================================
 // QUANTUM CONSTANTS - ENVIRONMENT-DRIVEN CONFIGURATION
@@ -290,7 +290,7 @@ const extractTenantId = async (req) => {
       timestamp: new Date().toISOString(),
     });
 
-    throw new Error('Tenant extraction failed: ' + error.message);
+    throw new Error(`Tenant extraction failed: ${error.message}`);
   }
 };
 
@@ -396,7 +396,7 @@ const validateQueryParamTenant = async (req, tenantId) => {
   // Verify user has access to this tenant
   const user = await User.findOne({
     _id: req.session.userId,
-    tenantId: tenantId,
+    tenantId,
     isActive: true,
   }).select('_id tenantId role');
 
@@ -445,7 +445,7 @@ const validateTenantAccess = async (req, res, next) => {
       });
     }
 
-    const tenantId = extractionResult.tenantId;
+    const { tenantId } = extractionResult;
     const extractionSource = extractionResult.source;
 
     // 🎯  Step 2: Validate tenant ID format
@@ -488,7 +488,7 @@ const validateTenantAccess = async (req, res, next) => {
 
     // 🎯  Step 4: Verify tenant exists and is active
     const tenant = await Tenant.findOne({
-      tenantId: tenantId,
+      tenantId,
       status: 'active',
       isDeleted: false,
     }).select('tenantId name status subscriptionTier jurisdiction complianceSettings');
@@ -611,8 +611,7 @@ const detectCrossTenantAttempt = async (req, requestedTenantId) => {
       createdAt: { $gte: new Date(Date.now() - 60 * 60 * 1000) }, // Last hour
     });
 
-    const isSuspicious =
-      recentAttempts >= TENANT_CONFIG.crossTenantPrevention.maxCrossTenantAttempts;
+    const isSuspicious = recentAttempts >= TENANT_CONFIG.crossTenantPrevention.maxCrossTenantAttempts;
 
     // Log the attempt
     securityLogger.warn('CROSS_TENANT_ATTEMPT', {
@@ -783,7 +782,7 @@ const validateTenantCompliance = async (tenantId) => {
 
     return {
       compliant: issues.length === 0,
-      issues: issues,
+      issues,
       lastChecked: new Date().toISOString(),
     };
   } catch (error) {
@@ -813,136 +812,134 @@ const validateTenantCompliance = async (tenantId) => {
  * Middleware that enforces tenant boundary for database queries
  * Automatically adds tenant filter to mongoose queries
  */
-const enforceTenantBoundary = (modelName) => {
-  return async (req, res, next) => {
-    try {
-      // Skip if no tenant context
-      if (!req.tenantId) {
-        return next();
-      }
+const enforceTenantBoundary = (modelName) => async (req, res, next) => {
+  try {
+    // Skip if no tenant context
+    if (!req.tenantId) {
+      return next();
+    }
 
-      // Get the model
-      const Model = require(`../models/${modelName}`);
+    // Get the model
+    const Model = require(`../models/${modelName}`);
 
-      // Store original find method
-      const originalFind = Model.find;
-      const originalFindOne = Model.findOne;
-      const originalFindById = Model.findById;
-      const originalCountDocuments = Model.countDocuments;
-      const originalAggregate = Model.aggregate;
+    // Store original find method
+    const originalFind = Model.find;
+    const originalFindOne = Model.findOne;
+    const originalFindById = Model.findById;
+    const originalCountDocuments = Model.countDocuments;
+    const originalAggregate = Model.aggregate;
 
-      // 🛡️  Override find method to add tenant filter
-      Model.find = function (conditions, projection, options) {
-        const tenantConditions = {
-          ...conditions,
-          tenantId: req.tenantId,
-          isDeleted: false,
-        };
-
-        auditLogger.debug('TENANT_QUERY_FILTER_APPLIED', {
-          model: modelName,
-          originalConditions: conditions,
-          tenantConditions: { tenantId: req.tenantId },
-          userId: req.user?.id,
-          timestamp: new Date().toISOString(),
-        });
-
-        return originalFind.call(this, tenantConditions, projection, options);
-      };
-
-      // 🛡️  Override findOne method
-      Model.findOne = function (conditions, projection, options) {
-        const tenantConditions = {
-          ...conditions,
-          tenantId: req.tenantId,
-          isDeleted: false,
-        };
-
-        return originalFindOne.call(this, tenantConditions, projection, options);
-      };
-
-      // 🛡️  Override findById method
-      Model.findById = function (id, projection, options) {
-        return originalFindOne.call(
-          this,
-          {
-            _id: id,
-            tenantId: req.tenantId,
-            isDeleted: false,
-          },
-          projection,
-          options
-        );
-      };
-
-      // 🛡️  Override countDocuments method
-      Model.countDocuments = function (conditions, options) {
-        const tenantConditions = {
-          ...conditions,
-          tenantId: req.tenantId,
-          isDeleted: false,
-        };
-
-        return originalCountDocuments.call(this, tenantConditions, options);
-      };
-
-      // 🛡️  Override aggregate method (more complex)
-      Model.aggregate = function (pipeline) {
-        // Add $match stage for tenant filtering
-        const tenantMatchStage = {
-          $match: {
-            tenantId: req.tenantId,
-            isDeleted: false,
-          },
-        };
-
-        // Insert at beginning of pipeline
-        pipeline.unshift(tenantMatchStage);
-
-        auditLogger.debug('TENANT_AGGREGATE_FILTER_APPLIED', {
-          model: modelName,
-          pipelineLength: pipeline.length,
-          userId: req.user?.id,
-          timestamp: new Date().toISOString(),
-        });
-
-        return originalAggregate.call(this, pipeline);
-      };
-
-      // 🎯  Attach modified model to request for downstream use
-      req.tenantScopedModel = Model;
-
-      // 🧹  Cleanup after response
-      const originalSend = res.send;
-      res.send = function (body) {
-        // Restore original methods
-        Model.find = originalFind;
-        Model.findOne = originalFindOne;
-        Model.findById = originalFindById;
-        Model.countDocuments = originalCountDocuments;
-        Model.aggregate = originalAggregate;
-
-        return originalSend.call(this, body);
-      };
-
-      next();
-    } catch (error) {
-      securityLogger.error('TENANT_BOUNDARY_ENFORCEMENT_ERROR', {
-        error: error.message,
-        modelName,
+    // 🛡️  Override find method to add tenant filter
+    Model.find = function (conditions, projection, options) {
+      const tenantConditions = {
+        ...conditions,
         tenantId: req.tenantId,
+        isDeleted: false,
+      };
+
+      auditLogger.debug('TENANT_QUERY_FILTER_APPLIED', {
+        model: modelName,
+        originalConditions: conditions,
+        tenantConditions: { tenantId: req.tenantId },
         userId: req.user?.id,
         timestamp: new Date().toISOString(),
       });
 
-      return res.status(500).json({
-        status: 'error',
-        error: 'Tenant boundary enforcement failed',
-        complianceCode: 'TENANT_BOUNDARY_ERROR',
+      return originalFind.call(this, tenantConditions, projection, options);
+    };
+
+    // 🛡️  Override findOne method
+    Model.findOne = function (conditions, projection, options) {
+      const tenantConditions = {
+        ...conditions,
+        tenantId: req.tenantId,
+        isDeleted: false,
+      };
+
+      return originalFindOne.call(this, tenantConditions, projection, options);
+    };
+
+    // 🛡️  Override findById method
+    Model.findById = function (id, projection, options) {
+      return originalFindOne.call(
+        this,
+        {
+          _id: id,
+          tenantId: req.tenantId,
+          isDeleted: false,
+        },
+        projection,
+        options,
+      );
+    };
+
+    // 🛡️  Override countDocuments method
+    Model.countDocuments = function (conditions, options) {
+      const tenantConditions = {
+        ...conditions,
+        tenantId: req.tenantId,
+        isDeleted: false,
+      };
+
+      return originalCountDocuments.call(this, tenantConditions, options);
+    };
+
+    // 🛡️  Override aggregate method (more complex)
+    Model.aggregate = function (pipeline) {
+      // Add $match stage for tenant filtering
+      const tenantMatchStage = {
+        $match: {
+          tenantId: req.tenantId,
+          isDeleted: false,
+        },
+      };
+
+      // Insert at beginning of pipeline
+      pipeline.unshift(tenantMatchStage);
+
+      auditLogger.debug('TENANT_AGGREGATE_FILTER_APPLIED', {
+        model: modelName,
+        pipelineLength: pipeline.length,
+        userId: req.user?.id,
         timestamp: new Date().toISOString(),
       });
-    }
-  };
+
+      return originalAggregate.call(this, pipeline);
+    };
+
+    // 🎯  Attach modified model to request for downstream use
+    req.tenantScopedModel = Model;
+
+    // 🧹  Cleanup after response
+    const originalSend = res.send;
+    res.send = function (body) {
+      // Restore original methods
+      Model.find = originalFind;
+      Model.findOne = originalFindOne;
+      Model.findById = originalFindById;
+      Model.countDocuments = originalCountDocuments;
+      Model.aggregate = originalAggregate;
+
+      return originalSend.call(this, body);
+    };
+
+    next();
+  } catch (error) {
+    securityLogger.error('TENANT_BOUNDARY_ENFORCEMENT_ERROR', {
+      error: error.message,
+      modelName,
+      tenantId: req.tenantId,
+      userId: req.user?.id,
+      timestamp: new Date().toISOString(),
+    });
+
+    return res.status(500).json({
+      status: 'error',
+      error: 'Tenant boundary enforcement failed',
+      complianceCode: 'TENANT_BOUNDARY_ERROR',
+      timestamp: new Date().toISOString(),
+    });
+  }
 };
 
 /*
@@ -974,7 +971,7 @@ const getTenantEncryptionKey = async (tenantId) => {
             encryptionKey: newKey,
             keyRotationDate: new Date(),
             previousEncryptionKey: tenant.encryptionKey,
-          }
+          },
         );
 
         securityLogger.info('TENANT_ENCRYPTION_KEY_ROTATED', {
@@ -997,7 +994,7 @@ const getTenantEncryptionKey = async (tenantId) => {
         encryptionKey: newKey,
         keyRotationDate: new Date(),
       },
-      { upsert: true }
+      { upsert: true },
     );
 
     securityLogger.info('TENANT_ENCRYPTION_KEY_GENERATED', {

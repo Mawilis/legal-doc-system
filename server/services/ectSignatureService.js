@@ -52,23 +52,23 @@
 // Core Quantum Modules
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
-const forge = require('node-forge');
-const { v4: uuidv4 } = require('uuid');
-const moment = require('moment');
-const axios = require('axios');
-const NodeRSA = require('node-rsa');
-const { ec: EC } = require('elliptic');
 const asn1 = require('asn1.js');
-const pkijs = require('pkijs');
-const NodeCache = require('node-cache');
-const _ = require('lodash');
+const axios = require('axios');
+const { ec: EC } = require('elliptic');
 const Joi = require('joi');
+const jwt = require('jsonwebtoken');
+const _ = require('lodash');
+const moment = require('moment');
+const NodeCache = require('node-cache');
+const forge = require('node-forge');
+const NodeRSA = require('node-rsa');
+const pkijs = require('pkijs');
+const { v4: uuidv4 } = require('uuid');
 
 // Initialize PKIJS Crypto Engine
 const cryptoEngine = new pkijs.CryptoEngine({
   name: 'Quantum PKI Engine',
-  crypto: crypto,
+  crypto,
   subtle: crypto.subtle,
 });
 
@@ -103,15 +103,15 @@ const REQUIRED_ECT_ENV_VARS = [
 REQUIRED_ECT_ENV_VARS.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(
-      `QUANTUM BREACH ALERT: Missing ECT environment variable ${varName}. Signature Service cannot initialize.`
+      `QUANTUM BREACH ALERT: Missing ECT environment variable ${varName}. Signature Service cannot initialize.`,
     );
   }
 });
 
 // Validate RSA key format
 if (
-  process.env.ECT_SIGNATURE_PRIVATE_KEY &&
-  !process.env.ECT_SIGNATURE_PRIVATE_KEY.includes('-----BEGIN')
+  process.env.ECT_SIGNATURE_PRIVATE_KEY
+  && !process.env.ECT_SIGNATURE_PRIVATE_KEY.includes('-----BEGIN')
 ) {
   throw new Error('ECT_SIGNATURE_PRIVATE_KEY must be in PEM format with proper headers');
 }
@@ -199,8 +199,8 @@ class QuantumKeyManagementService {
       return {
         privateKey: key.exportKey('private'),
         publicKey: key.exportKey('public'),
-        algorithm: algorithm,
-        keyStrength: keyStrength,
+        algorithm,
+        keyStrength,
         generatedAt: new Date().toISOString(),
         keyId: `RSA-KEY-${uuidv4().substring(0, 8)}`,
       };
@@ -214,7 +214,7 @@ class QuantumKeyManagementService {
       return {
         privateKey: keyPair.getPrivate('hex'),
         publicKey: keyPair.getPublic('hex'),
-        algorithm: algorithm,
+        algorithm,
         curve: 'p256',
         generatedAt: new Date().toISOString(),
         keyId: `ECDSA-KEY-${uuidv4().substring(0, 8)}`,
@@ -239,7 +239,7 @@ class QuantumKeyManagementService {
   static validateKeyPair(privateKey, publicKey) {
     try {
       // Test signature validation cycle
-      const testData = 'QUANTUM_KEY_VALIDATION_' + Date.now();
+      const testData = `QUANTUM_KEY_VALIDATION_${Date.now()}`;
       const testHash = crypto.createHash('sha256').update(testData).digest();
 
       if (ECT_QUANTUM_CONFIG.ALGORITHM.includes('RSA')) {
@@ -338,7 +338,7 @@ class QuantumTimestampingService {
         {
           headers: { 'Content-Type': 'application/timestamp-query' },
           timeout: 10000,
-        }
+        },
       );
 
       if (response.status === 200) {
@@ -361,14 +361,14 @@ class QuantumTimestampingService {
         forge.asn1.Class.UNIVERSAL,
         forge.asn1.Type.INTEGER,
         false,
-        forge.util.hexToBytes('01')
+        forge.util.hexToBytes('01'),
       ), // Version
       forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SEQUENCE, true, [
         forge.asn1.create(
           forge.asn1.Class.UNIVERSAL,
           forge.asn1.Type.OID,
           false,
-          forge.util.hexToBytes('0609608648016503040201')
+          forge.util.hexToBytes('0609608648016503040201'),
         ), // SHA-256 OID
         forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.NULL, false, ''),
       ]),
@@ -376,13 +376,13 @@ class QuantumTimestampingService {
         forge.asn1.Class.UNIVERSAL,
         forge.asn1.Type.OCTETSTRING,
         false,
-        forge.util.hexToBytes(dataHash)
+        forge.util.hexToBytes(dataHash),
       ),
       forge.asn1.create(
         forge.asn1.Class.UNIVERSAL,
         forge.asn1.Type.INTEGER,
         false,
-        forge.util.hexToBytes('00')
+        forge.util.hexToBytes('00'),
       ), // Nonce
     ]);
   }
@@ -406,7 +406,7 @@ class QuantumTimestampingService {
       const blockchainId = `BLOCKCHAIN-ANCHOR-${uuidv4()}`;
 
       return {
-        blockchainId: blockchainId,
+        blockchainId,
         transactionHash: `0x${crypto.createHash('sha256').update(dataHash).digest('hex')}`,
         anchoredAt: new Date().toISOString(),
         network: 'BITCOIN_MAINNET', // or ETHEREUM_MAINNET
@@ -444,7 +444,7 @@ class QuantumTimestampingService {
 
     return {
       valid: true,
-      age: now.diff(timestampDate, 'days') + ' days',
+      age: `${now.diff(timestampDate, 'days')} days`,
       legalStatus: 'VALID_FOR_EVIDENCE',
     };
   }
@@ -504,7 +504,7 @@ class ECTSignatureService {
       const cryptographicSignature = await this._generateCryptographicSignature(
         documentHash,
         signatoryInfo,
-        options
+        options,
       );
 
       // Generate trusted timestamp
@@ -517,9 +517,9 @@ class ECTSignatureService {
       // Assemble complete signature package
       const advancedSignature = {
         signatureId: `ASIG-${uuidv4()}`,
-        documentHash: documentHash,
-        cryptographicSignature: cryptographicSignature,
-        timestamp: timestamp,
+        documentHash,
+        cryptographicSignature,
+        timestamp,
         signatory: _.omit(signatoryInfo, ['privateKey', 'password']), // Never expose private data
         metadata: signatureMetadata,
         compliance: this._generateComplianceProof(signatoryInfo),
@@ -535,7 +535,7 @@ class ECTSignatureService {
       this.signatureCache.set(
         `signature:${advancedSignature.signatureId}`,
         advancedSignature,
-        86400
+        86400,
       ); // 24 hours
 
       // Log signature creation
@@ -583,7 +583,7 @@ class ECTSignatureService {
       // Perform full verification
       const verificationResult = await this._performVerification(
         signaturePackage,
-        originalDocument
+        originalDocument,
       );
 
       // Cache verification result
@@ -591,7 +591,7 @@ class ECTSignatureService {
         this.signatureCache.set(
           `verification:${signaturePackage.signatureId}`,
           verificationResult,
-          3600
+          3600,
         );
       }
 
@@ -652,7 +652,7 @@ class ECTSignatureService {
     }
 
     const batchSummary = {
-      batchId: batchId,
+      batchId,
       totalDocuments: documents.length,
       successfulSignatures: results.length,
       failedSignatures: errors.length,
@@ -665,10 +665,10 @@ class ECTSignatureService {
     this.signatureCache.set(`batch:${batchId}`, batchSummary, 86400);
 
     return {
-      batchId: batchId,
+      batchId,
       success: errors.length === 0,
-      results: results,
-      errors: errors,
+      results,
+      errors,
       summary: batchSummary,
     };
   }
@@ -696,15 +696,15 @@ class ECTSignatureService {
       // Create revocation record
       const revocationRecord = {
         revocationId: `REVOKE-${uuidv4()}`,
-        signatureId: signatureId,
+        signatureId,
         originalSignatureDate: signature.createdAt,
         revokedAt: new Date().toISOString(),
-        revocationReason: revocationReason,
+        revocationReason,
         revoker: _.omit(revokerInfo, ['privateKey', 'password']),
         legalBasis: this._determineRevocationLegalBasis(revocationReason),
         timestamp: await this.timestampingService.generateTimestamp({
           action: 'SIGNATURE_REVOCATION',
-          signatureId: signatureId,
+          signatureId,
           revokerId: revokerInfo.id,
         }),
       };
@@ -724,7 +724,7 @@ class ECTSignatureService {
       return {
         success: true,
         revocationId: revocationRecord.revocationId,
-        signatureId: signatureId,
+        signatureId,
         revokedAt: revocationRecord.revokedAt,
         legalStatus: 'SIGNATURE_LEGALLY_REVOKED',
         timestamp: revocationRecord.timestamp.timestamp,
@@ -814,8 +814,8 @@ class ECTSignatureService {
 
     return {
       compliant: violations.length === 0,
-      complianceChecks: complianceChecks,
-      violations: violations,
+      complianceChecks,
+      violations,
       timestamp: new Date().toISOString(),
       legalReference: 'ECT_ACT_25_OF_2002_SECTION_13',
     };
@@ -848,21 +848,21 @@ class ECTSignatureService {
 
     const report = {
       reportId: `LEGAL-REPORT-${uuidv4()}`,
-      signatureId: signatureId,
+      signatureId,
       generatedAt: new Date().toISOString(),
       jurisdiction: 'SOUTH_AFRICA',
 
       // Legal Analysis
       ectActCompliance: compliance,
-      evidenceActCompliance: evidenceActCompliance,
-      caseLawPrecedents: caseLawPrecedents,
+      evidenceActCompliance,
+      caseLawPrecedents,
 
       // Technical Analysis
-      technicalValidation: technicalValidation,
+      technicalValidation,
       cryptographicIntegrity: this._verifyCryptographicIntegrity(signature),
 
       // Contextual Analysis
-      documentContext: documentContext,
+      documentContext,
       signatoryVerification: this._verifySignatoryIdentity(signature.signatory),
 
       // Overall Assessment
@@ -933,13 +933,13 @@ class ECTSignatureService {
           response: saaResponse,
           timestamp: new Date().toISOString(),
         },
-        604800
+        604800,
       ); // 7 days
 
       return {
         success: true,
         integrated: true,
-        saaResponse: saaResponse,
+        saaResponse,
         legalEffect: 'ENHANCED_EVIDENTIAL_WEIGHT',
         timestamp: new Date().toISOString(),
       };
@@ -967,7 +967,7 @@ class ECTSignatureService {
     // Create selective disclosure presentation
     const presentation = {
       presentationId: `VP-${uuidv4()}`,
-      signatureId: signatureId,
+      signatureId,
       generatedAt: new Date().toISOString(),
       recipient: _.omit(recipientInfo, ['privateKey', 'password']),
 
@@ -1032,8 +1032,7 @@ class ECTSignatureService {
   }
 
   _generateDocumentHash(documentData) {
-    const documentString =
-      typeof documentData === 'string' ? documentData : JSON.stringify(documentData);
+    const documentString = typeof documentData === 'string' ? documentData : JSON.stringify(documentData);
 
     // Double hash for additional security
     const firstHash = crypto.createHash('sha256').update(documentString).digest('hex');
@@ -1105,7 +1104,7 @@ class ECTSignatureService {
       signature = key.sign(dataToSign, 'base64', 'utf8');
 
       signatureDetails = {
-        algorithm: algorithm,
+        algorithm,
         keyStrength: ECT_QUANTUM_CONFIG.KEY_STRENGTH,
         padding: 'PSS', // Probabilistic Signature Scheme
         encoding: 'base64',
@@ -1122,7 +1121,7 @@ class ECTSignatureService {
       };
 
       signatureDetails = {
-        algorithm: algorithm,
+        algorithm,
         curve: 'P-256',
         encoding: 'hex',
       };
@@ -1139,11 +1138,11 @@ class ECTSignatureService {
         timestamp: signingData.timestamp,
       },
       ECT_QUANTUM_CONFIG.JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '30d' },
     );
 
     return {
-      signature: signature,
+      signature,
       algorithm: signatureDetails,
       signedData: signingData,
       signatureId: `CRYPTO-SIG-${uuidv4()}`,
@@ -1183,7 +1182,7 @@ class ECTSignatureService {
     if (!cryptoVerification.valid) {
       return {
         valid: false,
-        verificationId: verificationId,
+        verificationId,
         reason: 'Cryptographic verification failed',
         details: cryptoVerification.details,
         timestamp: new Date().toISOString(),
@@ -1194,12 +1193,12 @@ class ECTSignatureService {
     if (originalDocument) {
       const integrityCheck = this._verifyDocumentIntegrity(
         signaturePackage.documentHash,
-        originalDocument
+        originalDocument,
       );
       if (!integrityCheck.valid) {
         return {
           valid: false,
-          verificationId: verificationId,
+          verificationId,
           reason: 'Document integrity check failed',
           details: integrityCheck.details,
           timestamp: new Date().toISOString(),
@@ -1209,12 +1208,12 @@ class ECTSignatureService {
 
     // 3. Verify timestamp
     const timestampVerification = QuantumTimestampingService.validateTimestamp(
-      signaturePackage.timestamp
+      signaturePackage.timestamp,
     );
     if (!timestampVerification.valid) {
       return {
         valid: false,
-        verificationId: verificationId,
+        verificationId,
         reason: 'Timestamp verification failed',
         details: timestampVerification.reason,
         timestamp: new Date().toISOString(),
@@ -1226,7 +1225,7 @@ class ECTSignatureService {
     if (!complianceVerification.compliant) {
       return {
         valid: false,
-        verificationId: verificationId,
+        verificationId,
         reason: 'ECT Act compliance check failed',
         violations: complianceVerification.violations,
         timestamp: new Date().toISOString(),
@@ -1236,7 +1235,7 @@ class ECTSignatureService {
     // All checks passed
     return {
       valid: true,
-      verificationId: verificationId,
+      verificationId,
       signatureId: signaturePackage.signatureId,
       signatory: signaturePackage.signatory,
       documentHash: signaturePackage.documentHash,
@@ -1270,7 +1269,7 @@ class ECTSignatureService {
           cryptographicSignature.signedData,
           cryptographicSignature.signature,
           'utf8',
-          'base64'
+          'base64',
         );
 
         return {
@@ -1296,8 +1295,8 @@ class ECTSignatureService {
       return {
         valid: false,
         details: 'Document hash mismatch - document may have been altered',
-        storedHash: storedHash.sha256.substring(0, 16) + '...',
-        regeneratedHash: regeneratedHash.sha256.substring(0, 16) + '...',
+        storedHash: `${storedHash.sha256.substring(0, 16)}...`,
+        regeneratedHash: `${regeneratedHash.sha256.substring(0, 16)}...`,
       };
     }
 
@@ -1325,7 +1324,7 @@ class ECTSignatureService {
   }
 
   _verifySignatoryIdentification(signaturePackage) {
-    const signatory = signaturePackage.signatory;
+    const { signatory } = signaturePackage;
 
     // Minimum identification requirements
     const requiredFields = ['id', 'name'];
@@ -1366,7 +1365,7 @@ class ECTSignatureService {
     ];
 
     const hasControlIndicators = soleControlIndicators.some(
-      (indicator) => indicator && indicator !== 'NOT_CAPTURED'
+      (indicator) => indicator && indicator !== 'NOT_CAPTURED',
     );
 
     return {
@@ -1468,7 +1467,7 @@ class ECTSignatureService {
 
     return {
       valid: allValid,
-      checks: checks,
+      checks,
       performedAt: new Date().toISOString(),
     };
   }
@@ -1495,7 +1494,7 @@ class ECTSignatureService {
 
     return {
       verified: verificationMethods.length > 0,
-      verificationMethods: verificationMethods,
+      verificationMethods,
       confidence: verificationMethods.length >= 2 ? 'HIGH' : 'MEDIUM',
     };
   }
@@ -1525,7 +1524,7 @@ class ECTSignatureService {
   _generateDigitalWatermark(signatureId, recipientInfo) {
     // Create tamper-evident watermark
     const watermarkData = {
-      signatureId: signatureId,
+      signatureId,
       recipientId: recipientInfo.id,
       generatedAt: new Date().toISOString(),
       uniqueSalt: crypto.randomBytes(16).toString('hex'),
@@ -1553,7 +1552,7 @@ class ECTSignatureService {
       .digest('hex');
 
     return {
-      signature: signature,
+      signature,
       algorithm: 'HMAC-SHA256',
       signedAt: new Date().toISOString(),
       verifier: 'WILSY_OS_SIGNATURE_SERVICE',
@@ -1587,6 +1586,7 @@ class ECTSignatureService {
     // Create deterministic hash (same input = same hash)
     return crypto.createHash('sha256').update(fingerprintString).digest('hex').substring(0, 32); // First 32 chars for readability
   }
+
   _hashBiometricData(biometricData) {
     // Create non-reversible hash of biometric data
     const dataString = JSON.stringify(biometricData);
@@ -1632,7 +1632,7 @@ class ECTSignatureService {
       event: 'SIGNATURE_CREATED',
       signatureId: signature.signatureId,
       signatoryId: signature.signatory.id,
-      documentHash: signature.documentHash.sha256.substring(0, 16) + '...',
+      documentHash: `${signature.documentHash.sha256.substring(0, 16)}...`,
       timestamp: signature.createdAt,
       level: signature.metadata.signatureLevel,
       ipAddress: signature.metadata.ipAddress,
@@ -1657,11 +1657,11 @@ class ECTSignatureService {
       error: error.message,
       signatoryId: signatoryInfo?.id || 'UNKNOWN',
       documentHash: documentData
-        ? crypto
-            .createHash('sha256')
-            .update(JSON.stringify(documentData))
-            .digest('hex')
-            .substring(0, 16) + '...'
+        ? `${crypto
+          .createHash('sha256')
+          .update(JSON.stringify(documentData))
+          .digest('hex')
+          .substring(0, 16)}...`
         : 'NO_DOCUMENT',
       timestamp: new Date().toISOString(),
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
@@ -1688,7 +1688,7 @@ class ECTSignatureService {
     this.signatureCache.set(
       `audit:revocation:${revocationRecord.signatureId}`,
       revocationLog,
-      604800
+      604800,
     ); // 7 days
 
     console.log('Signature revoked:', {
@@ -1706,7 +1706,8 @@ const ECTSignatureSchemas = {
   // Signatory Information Schema
   SIGNATORY_SCHEMA: Joi.object({
     id: Joi.string().required().description('Unique signatory identifier'),
-    name: Joi.string().min(2).max(100).required().description('Full legal name'),
+    name: Joi.string().min(2).max(100).required()
+      .description('Full legal name'),
     email: Joi.string().email().optional().description('Verified email address'),
     phone: Joi.string()
       .pattern(/^(\+27|0)[6-8][0-9]{8}$/)
@@ -1767,7 +1768,7 @@ const ECTSignatureSchemas = {
           id: Joi.string().required(),
           name: Joi.string().required(),
           role: Joi.string().required(),
-        })
+        }),
       )
       .min(2)
       .required()
@@ -1846,19 +1847,17 @@ const ECTSignatureUtils = {
   /*
    * Generate human-readable signature summary
    */
-  generateSignatureSummary: (signature) => {
-    return {
-      summaryId: `SUMMARY-${uuidv4()}`,
-      signatureId: signature.signatureId,
-      signatory: signature.signatory.name,
-      documentType: signature.metadata.documentType,
-      timestamp: signature.timestamp.timestamp,
-      validity: moment(signature.expiresAt).fromNow(),
-      compliance: signature.compliance.ectActCompliance.section13,
-      verificationUrl: signature.verification.selfVerificationUrl,
-      qrCodeData: `WILSY-VERIFY:${signature.signatureId}:${signature.verification.publicVerificationToken}`,
-    };
-  },
+  generateSignatureSummary: (signature) => ({
+    summaryId: `SUMMARY-${uuidv4()}`,
+    signatureId: signature.signatureId,
+    signatory: signature.signatory.name,
+    documentType: signature.metadata.documentType,
+    timestamp: signature.timestamp.timestamp,
+    validity: moment(signature.expiresAt).fromNow(),
+    compliance: signature.compliance.ectActCompliance.section13,
+    verificationUrl: signature.verification.selfVerificationUrl,
+    qrCodeData: `WILSY-VERIFY:${signature.signatureId}:${signature.verification.publicVerificationToken}`,
+  }),
 
   /*
    * Create downloadable verification certificate
@@ -1867,7 +1866,7 @@ const ECTSignatureUtils = {
     const certificateId = `CERT-${uuidv4()}`;
 
     return {
-      certificateId: certificateId,
+      certificateId,
       title: 'Electronic Signature Verification Certificate',
       issuer: 'Wilsy OS ECT Signature Service',
       issueDate: new Date().toISOString(),
@@ -1881,7 +1880,7 @@ const ECTSignatureUtils = {
         id: verificationResult.signatureId,
         signatory: verificationResult.signatory,
         timestamp: verificationResult.timestamp,
-        documentHash: verificationResult.documentHash.sha256.substring(0, 32) + '...',
+        documentHash: `${verificationResult.documentHash.sha256.substring(0, 32)}...`,
       },
 
       // Verification Results
@@ -1899,10 +1898,10 @@ const ECTSignatureUtils = {
                 and Transactions Act 25 of 2002 of South Africa.
                 
                 ${
-                  verificationResult.valid
-                    ? 'The signature is legally binding and admissible as evidence in South African courts.'
-                    : 'The signature does not meet legal requirements and may not be legally binding.'
-                }
+  verificationResult.valid
+    ? 'The signature is legally binding and admissible as evidence in South African courts.'
+    : 'The signature does not meet legal requirements and may not be legally binding.'
+}
                 
                 Certificate issued by: Wilsy OS Quantum Signature Service
                 Jurisdiction: Republic of South Africa
@@ -1961,14 +1960,12 @@ const ECTSignatureUtils = {
       },
     };
 
-    const allRequirementsMet = Object.values(requirements).every((section) =>
-      Object.values(section).every((met) => met === true)
-    );
+    const allRequirementsMet = Object.values(requirements).every((section) => Object.values(section).every((met) => met === true));
 
     return {
       compliant: allRequirementsMet,
-      requirements: requirements,
-      context: context,
+      requirements,
+      context,
       timestamp: new Date().toISOString(),
       legalOpinion: allRequirementsMet
         ? 'Meets all South African legal requirements for electronic signatures'

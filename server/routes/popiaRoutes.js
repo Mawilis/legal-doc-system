@@ -37,38 +37,37 @@
  * Wilsy OS to dominate Africa's legal tech landscape through unassailable trust.
  */
 
-'use strict';
-
 // ============================================================================
 // QUANTUM DEPENDENCIES: Importing Privacy Enforcement Building Blocks
 // ============================================================================
 require('dotenv').config(); // Env Vault Loading - MANDATORY FIRST LINE
 const express = require('express');
+
 const router = express.Router();
 const crypto = require('crypto');
 
 // ============================================================================
 // QUANTUM CONTROLLERS: Privacy Orchestration Centers
 // ============================================================================
-const popiaController = require('../controllers/popiaController');
-const consentController = require('../controllers/consentController');
 const breachController = require('../controllers/breachController');
+const consentController = require('../controllers/consentController');
 const dsarController = require('../controllers/dsarController');
+const popiaController = require('../controllers/popiaController');
 
 // ============================================================================
 // QUANTUM MIDDLEWARE: The Celestial Privacy Stack
 // ============================================================================
+const { emitAudit, createPrivacyAuditTrail } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
+const { encryptPII, decryptPII } = require('../middleware/encryptionMiddleware');
+const { validateDataSubjectIdentity } = require('../middleware/identityMiddleware');
+const { rateLimitPOPIA } = require('../middleware/rateLimitMiddleware');
 const {
   requireSameTenant,
   restrictTo,
   checkPOPIAPermissions,
 } = require('../middleware/rbacMiddleware');
-const { emitAudit, createPrivacyAuditTrail } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
-const { rateLimitPOPIA } = require('../middleware/rateLimitMiddleware');
-const { encryptPII, decryptPII } = require('../middleware/encryptionMiddleware');
-const { validateDataSubjectIdentity } = require('../middleware/identityMiddleware');
 
 // ============================================================================
 // QUANTUM VALIDATION SCHEMAS: POPIA Compliance Sanctity
@@ -95,8 +94,8 @@ const consentSchema = {
         'FINANCIAL_DATA',
         'HEALTH_DATA',
         'BIOMETRIC_DATA',
-        'SPECIAL_PERSONAL_DATA'
-      )
+        'SPECIAL_PERSONAL_DATA',
+      ),
     )
     .min(1)
     .required()
@@ -116,7 +115,7 @@ const consentSchema = {
         purpose: Joi.string().required(),
         country: Joi.string().required(),
         adequacyDetermination: Joi.boolean().default(false),
-      })
+      }),
     )
     .optional()
     .description('Cross-border transfers as per POPIA Section 72'),
@@ -142,7 +141,7 @@ const dsarSchema = {
         type: Joi.string().valid('ID_BOOK', 'PASSPORT', 'DRIVERS_LICENSE', 'COMPANY_REG'),
         number: Joi.string().required(),
         fileId: Joi.string().uuid().optional(),
-      })
+      }),
     )
     .min(1)
     .required()
@@ -166,7 +165,7 @@ const breachSchema = {
       'DATA_CORRUPTION',
       'RANSOMWARE',
       'PHISHING',
-      'INSIDER_THREAT'
+      'INSIDER_THREAT',
     )
     .required()
     .description('Type of security compromise as per POPIA Section 22'),
@@ -182,8 +181,8 @@ const breachSchema = {
         'CONTACT_DETAILS',
         'FINANCIAL_DATA',
         'HEALTH_DATA',
-        'SPECIAL_PERSONAL_DATA'
-      )
+        'SPECIAL_PERSONAL_DATA',
+      ),
     )
     .min(1)
     .required()
@@ -223,7 +222,7 @@ const processingRecordSchema = {
       'LEGAL_OBLIGATION',
       'VITAL_INTEREST',
       'PUBLIC_INTEREST',
-      'LEGITIMATE_INTEREST'
+      'LEGITIMATE_INTEREST',
     )
     .required()
     .description('Lawful basis for processing per POPIA Section 11'),
@@ -295,8 +294,10 @@ const crossBorderTransferSchema = {
     .length(2)
     .required()
     .description('ISO 3166-1 alpha-2 country code'),
-  recipientEntity: Joi.string().min(2).max(200).required().description('Name of recipient entity'),
-  transferPurpose: Joi.string().min(10).max(500).required().description('Purpose of the transfer'),
+  recipientEntity: Joi.string().min(2).max(200).required()
+    .description('Name of recipient entity'),
+  transferPurpose: Joi.string().min(10).max(500).required()
+    .description('Purpose of the transfer'),
   dataCategories: Joi.array()
     .items(Joi.string())
     .min(1)
@@ -307,7 +308,7 @@ const crossBorderTransferSchema = {
       'ADEQUACY_DECISION',
       'STANDARD_CONTRACTUAL_CLAUSES',
       'BINDING_CORPORATE_RULES',
-      'DEROGATION'
+      'DEROGATION',
     )
     .required()
     .description('Legal mechanism for transfer'),
@@ -384,10 +385,10 @@ router.post(
         purpose: result.purpose,
         withdrawalInstructions: generateWithdrawalInstructions(
           result.id,
-          req.body.withdrawalMechanism
+          req.body.withdrawalMechanism,
         ),
         // POPIA Section 18: Right to object
-        objectionMechanism: 'EMAIL_TO_IO@' + process.env.DOMAIN,
+        objectionMechanism: `EMAIL_TO_IO@${process.env.DOMAIN}`,
         // ECT Act: Acknowledgement of receipt
         receiptValid: true,
         receiptId: crypto.randomBytes(16).toString('hex'),
@@ -428,7 +429,7 @@ router.post(
 
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -485,7 +486,7 @@ router.delete(
       // Quantum Automation: Trigger downstream processing cessation
       if (process.env.CONSENT_WITHDRAWAL_WEBHOOK) {
         console.log(
-          `[CONSENT CESSATION] Notifying downstream processors for consent ${req.params.id}`
+          `[CONSENT CESSATION] Notifying downstream processors for consent ${req.params.id}`,
         );
       }
 
@@ -508,7 +509,7 @@ router.delete(
       err.severity = 'CRITICAL';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -596,7 +597,7 @@ router.post(
 
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -734,7 +735,7 @@ router.post(
       // Automated Alert: Notify Information Regulator if configured
       if (process.env.INFORMATION_REGULATOR_WEBHOOK && req.body.potentialHarm === 'SEVERE') {
         console.log(
-          `[REGULATOR NOTIFICATION] Severe breach ${result.id} queued for immediate notification`
+          `[REGULATOR NOTIFICATION] Severe breach ${result.id} queued for immediate notification`,
         );
       }
 
@@ -773,7 +774,7 @@ router.post(
 
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -819,7 +820,7 @@ router.post(
             // POPIA Section 17(2): Annual review requirement
             nextReviewDate: req.body.retentionSchedule.reviewDate,
             // POPIA Section 18: Data Protection Impact Assessment trigger
-            dpiaRequired: req.body.dataCategories.includes('SPECIAL_PERSONAL_DATA') ? true : false,
+            dpiaRequired: !!req.body.dataCategories.includes('SPECIAL_PERSONAL_DATA'),
           },
           // POPIA Section 14: Processing record retention
           retentionPeriod: 'PERMANENT',
@@ -829,7 +830,7 @@ router.post(
       // Quantum Automation: Schedule annual review
       if (process.env.PROCESSING_REVIEW_SCHEDULER) {
         console.log(
-          `[REVIEW SCHEDULER] Annual review scheduled for processing record ${result.id}`
+          `[REVIEW SCHEDULER] Annual review scheduled for processing record ${result.id}`,
         );
       }
 
@@ -858,7 +859,7 @@ router.post(
       err.severity = 'HIGH';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -903,7 +904,7 @@ router.post(
             accuracyRate: req.body.testingResults.accuracyRate,
             biasAssessment: req.body.testingResults.biasAssessment,
             // POPIA Section 71(2): Data subject notification requirement
-            notificationRequired: req.body.significance === 'HIGH' ? true : false,
+            notificationRequired: req.body.significance === 'HIGH',
             // Ethical AI: Fairness certification
             fairnessCertified: req.body.testingResults.biasAssessment === 'LOW',
           },
@@ -943,7 +944,7 @@ router.post(
       err.severity = 'HIGH';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -992,7 +993,7 @@ router.post(
             safeguards: req.body.safeguards.length,
             // POPIA Section 72(2): Information Regulator notification
             regulatorNotificationRequired:
-              req.body.adequacyMechanism === 'DEROGATION' ? true : false,
+              req.body.adequacyMechanism === 'DEROGATION',
             // GDPR Chapter V: Adequacy decision alignment
             gdprAdequacy: checkGDPRAdequacy(req.body.recipientCountry),
           },
@@ -1031,7 +1032,7 @@ router.post(
       err.severity = 'HIGH';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -1100,7 +1101,7 @@ router.get(
       err.severity = 'MEDIUM';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -1169,7 +1170,7 @@ router.post(
       err.severity = 'HIGH';
       next(err);
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -1318,7 +1319,9 @@ function assessBreachSeverity(breachData) {
   if (breachData.dataCategories.includes('HEALTH_DATA')) severityScore += 3;
 
   // Factor 3: Potential harm
-  const harmScores = { LOW: 1, MEDIUM: 2, HIGH: 3, SEVERE: 4 };
+  const harmScores = {
+    LOW: 1, MEDIUM: 2, HIGH: 3, SEVERE: 4,
+  };
   severityScore += harmScores[breachData.potentialHarm] || 0;
 
   // Determine severity level

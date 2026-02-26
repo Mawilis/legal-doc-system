@@ -14,13 +14,13 @@
 /* eslint-env jest */
 /* global describe, it, expect, beforeEach, afterEach, jest */
 
-import request from 'supertest';
-import express from 'express';
-import mongoose from 'mongoose';
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import request from 'supertest.js';
+import express from 'express.js';
+import mongoose from "mongoose";
+import crypto from "crypto";
+import fs from 'fs/promises.js';
+import path from "path";
+import { v4 as uuidv4 } from 'uuid.js';
 
 // Mock dependencies
 jest.mock('axios');
@@ -40,12 +40,12 @@ jest.mock('../../services/compliance/SARSIntegrationService');
 jest.mock('../../services/pdf/InvoicePdfService');
 jest.mock('../../services/email/EmailService');
 
-import axios from 'axios';
-import * as billingController from '../../controllers/billingController.js';
-import BillingInvoice from '../../models/BillingInvoice.js';
-import PaymentTransaction from '../../models/PaymentTransaction.js';
-import { screenForAML } from '../../services/compliance/FICAScreeningService.js';
-import { generateFinancialHash } from '../../utils/cryptoUtils.js';
+import axios from 'axios.js';
+import * as billingController from '../../controllers/billingController.js.js';
+import BillingInvoice from '../../models/BillingInvoice.js.js';
+import PaymentTransaction from '../../models/PaymentTransaction.js.js';
+import { screenForAML } from '../../services/compliance/FICAScreeningService.js.js';
+import { generateFinancialHash } from '../../utils/cryptoUtils.js.js';
 
 describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
   let app;

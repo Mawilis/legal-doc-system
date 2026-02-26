@@ -1,7 +1,7 @@
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ POPIA QUANTUM CONTROLLER - INVESTOR-GRADE MODULE              ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/popiaController.js
  * INVESTOR VALUE PROPOSITION:
@@ -30,9 +30,9 @@ graph TD
     I[services/dsarService.js] --> B
 */
 
-const quantumCrypto = require('../utils/quantumCryptoEngine');
 const auditLogger = require('../utils/auditLogger');
 const logger = require('../utils/logger');
+const quantumCrypto = require('../utils/quantumCryptoEngine');
 
 // Assumptions based on routes/complianceRoutes.js references:
 // - Consent model exists with fields: _id, tenantId, dataSubjectId, consentType, legalBasis, status, encryptedData

@@ -1,10 +1,9 @@
 /*
  * @jest-environment node
  */
-'use strict';
 
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 const OnboardingSession = require('../../models/OnboardingSession.minimal');
 
 describe('MINIMAL MODEL TEST', () => {

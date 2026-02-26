@@ -1,7 +1,7 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ REQUEST ID MIDDLEWARE - INVESTOR-GRADE                                      ║
   ║ 99.99% traceability | Distributed tracing | Forensic audit support         ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/requestId.js
  * INVESTOR VALUE PROPOSITION:
@@ -9,8 +9,6 @@
  * • Generates: R850k/year savings @ 85% margin through distributed tracing
  * • Compliance: POPIA §19 - Request traceability for access logs
  */
-
-'use strict';
 
 const { v4: uuidv4, validate: uuidValidate } = require('uuid');
 const logger = require('../utils/logger');
@@ -30,12 +28,11 @@ module.exports = (req, res, next) => {
 
   try {
     // 1. Extract or generate request ID
-    let requestId =
-      req.headers['x-request-id'] ||
-      req.headers['x-amzn-trace-id'] ||
-      req.headers['traceparent']?.split('-')[1] ||
-      req.headers['x-tenant-request-id'] ||
-      uuidv4();
+    let requestId = req.headers['x-request-id']
+      || req.headers['x-amzn-trace-id']
+      || req.headers.traceparent?.split('-')[1]
+      || req.headers['x-tenant-request-id']
+      || uuidv4();
 
     // 2. Validate UUID format, generate new if invalid
     if (!uuidValidate(requestId) && !requestId.includes('Root=')) {

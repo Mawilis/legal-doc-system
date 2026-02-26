@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; tests access control lists (ACLs) and signed URL expiry.
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -22,14 +20,15 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const storageController = require('../controllers/storageController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
 // Note: Actual file parsing is handled by 'uploadMiddleware' (Multer/Busboy) in the controller or route chain.
 // const upload = require('../middleware/uploadMiddleware');
@@ -85,7 +84,7 @@ router.post(
       err.code = 'STORAGE_UPLOAD_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -110,7 +109,7 @@ router.get(
       err.code = 'STORAGE_URL_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -142,7 +141,7 @@ router.delete(
       err.code = 'STORAGE_DELETE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -163,7 +162,7 @@ router.get(
       err.code = 'STORAGE_META_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

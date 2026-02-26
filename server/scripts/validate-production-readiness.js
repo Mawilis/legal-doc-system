@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Production Readiness Validator for Wilsy OS
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 
 class ProductionValidator {
   constructor() {
@@ -160,7 +160,7 @@ class ProductionValidator {
               this.addIssue(
                 'Structure',
                 `File misplaced: ${relativePath} should be in ${suggestedDir}/ directory`,
-                'LOW'
+                'LOW',
               );
             }
           }
@@ -189,7 +189,9 @@ class ProductionValidator {
   }
 
   addIssue(category, message, severity) {
-    this.issues.push({ category, message, severity, timestamp: new Date().toISOString() });
+    this.issues.push({
+      category, message, severity, timestamp: new Date().toISOString(),
+    });
   }
 
   addCriticalIssue(category, message) {
@@ -197,7 +199,7 @@ class ProductionValidator {
   }
 
   generateReport() {
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${'='.repeat(80)}`);
     console.log('📋 PRODUCTION READINESS REPORT');
     console.log('='.repeat(80));
 
@@ -244,11 +246,11 @@ class ProductionValidator {
 
     fs.writeFileSync(
       path.join(reportsDir, 'production-readiness.json'),
-      JSON.stringify(report, null, 2)
+      JSON.stringify(report, null, 2),
     );
 
     console.log(
-      `\n📝 Detailed report saved to: ${path.join(reportsDir, 'production-readiness.json')}`
+      `\n📝 Detailed report saved to: ${path.join(reportsDir, 'production-readiness.json')}`,
     );
   }
 
@@ -278,42 +280,55 @@ class ProductionValidator {
   scanForSecrets() {
     /* Implementation */
   }
+
   checkSSLConfig() {
     /* Implementation */
   }
+
   validateAuthMiddleware() {
     /* Implementation */
   }
+
   checkMemoryPatterns() {
     /* Implementation */
   }
+
   validateDatabaseIndexes() {
     /* Implementation */
   }
+
   checkQueryPatterns() {
     /* Implementation */
   }
+
   checkPrivacyCompliance() {
     /* Implementation */
   }
+
   validateLegalComponents() {
     /* Implementation */
   }
+
   checkAuditTrails() {
     /* Implementation */
   }
+
   checkDependencyVersions() {
     /* Implementation */
   }
+
   validateProductionDeps() {
     /* Implementation */
   }
+
   checkEnvConfiguration() {
     /* Implementation */
   }
+
   validateConfigFiles() {
     /* Implementation */
   }
+
   checkLoggingConfig() {
     /* Implementation */
   }

@@ -3,8 +3,6 @@
  * STATUS: PRODUCTION-READY | FORENSIC ALIGNMENT
  */
 
-'use strict';
-
 const mongoose = require('mongoose');
 const Document = require('../models/Document');
 
@@ -86,7 +84,7 @@ const seedDocuments = async (tenantId, clientIds) => {
     const savedDocs = await Document.insertMany(demoDocs);
 
     console.log(
-      `✅ [SEED_DOCUMENTS]: Successfully injected ${savedDocs.length} forensic-grade documents.`
+      `✅ [SEED_DOCUMENTS]: Successfully injected ${savedDocs.length} forensic-grade documents.`,
     );
     return savedDocs.map((d) => d._id);
   } catch (err) {

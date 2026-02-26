@@ -3,16 +3,14 @@
  * STATUS: PRODUCTION-READY | MASTER ORCHESTRATOR | SINGLE-QUOTE ENFORCED
  */
 
-'use strict';
-
 const path = require('path');
 // Load .env explicitly with single quotes
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const mongoose = require('mongoose');
+const seedAudits = require('../seed/seedAudits');
 const seedClients = require('../seed/seedClients');
 const seedDocuments = require('../seed/seedDocuments');
-const seedAudits = require('../seed/seedAudits');
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/legal-tech';
 

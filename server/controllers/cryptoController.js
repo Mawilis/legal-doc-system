@@ -8,16 +8,14 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const axios = require('axios');
 const asyncHandler = require('express-async-handler');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
 
 // CONFIGURATION - Service-to-Service Security
 const CRYPTO_SERVICE_URL = process.env.CRYPTO_SERVICE_URL || 'http://127.0.0.1:6600';
-const SERVICE_SECRET = process.env.SERVICE_SECRET;
+const { SERVICE_SECRET } = process.env;
 
 /*
  * INTERNAL UTILITY: VAULT CLIENT
@@ -45,7 +43,7 @@ exports.signDocument = asyncHandler(async (req, res) => {
       res,
       400,
       'Document hash is required for cryptographic sealing.',
-      'ERR_HASH_MISSING'
+      'ERR_HASH_MISSING',
     );
   }
 
@@ -78,7 +76,7 @@ exports.signDocument = asyncHandler(async (req, res) => {
         res,
         503,
         'Vault Service unreachable. Signing suspended.',
-        'ERR_VAULT_OFFLINE'
+        'ERR_VAULT_OFFLINE',
       );
     }
     return errorResponse(req, res, 500, 'Cryptographic signing failure.', 'ERR_CRYPTO_FAULT');
@@ -107,7 +105,7 @@ exports.verifySignature = asyncHandler(async (req, res) => {
       res,
       500,
       'Signature verification engine failure.',
-      'ERR_VERIFY_FAULT'
+      'ERR_VERIFY_FAULT',
     );
   }
 });
@@ -171,7 +169,7 @@ exports.decryptData = asyncHandler(async (req, res) => {
       res,
       403,
       'Decryption unauthorized or key mismatch.',
-      'ERR_DECRYPT_DENIED'
+      'ERR_DECRYPT_DENIED',
     );
   }
 });

@@ -1,7 +1,7 @@
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ SOVEREIGN DOCUMENT CONTROLLER - INVESTOR-GRADE MODULE         ║
   ║ [90% manual effort reduction | R10M risk elimination | 85% margin]║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/documentController.js
  * INVESTOR VALUE PROPOSITION:
@@ -34,13 +34,13 @@ graph TD
     J --> M[MongoDB Audit Trails]
 */
 
+const AuditTrail = require('../models/AuditTrail');
+const Document = require('../models/Document');
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
 const cryptoUtils = require('../utils/cryptoUtils');
+const logger = require('../utils/logger');
 // Note: redactSensitive and REDACT_FIELDS are referenced in JSDoc for documentation
 // but not directly used to avoid unused variable warnings
-const Document = require('../models/Document');
-const AuditTrail = require('../models/AuditTrail');
 
 /*
  * ASSUMPTIONS:
@@ -100,7 +100,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context is required for document operations',
-          auditId
+          auditId,
         );
       }
 
@@ -130,7 +130,7 @@ class DocumentController {
           403,
           'UNAUTHORIZED',
           'User not authorized to upload documents',
-          auditId
+          auditId,
         );
       }
 
@@ -140,8 +140,10 @@ class DocumentController {
         return this._sendError(res, 400, 'VALIDATION_ERROR', validation.message, auditId);
       }
 
-      const { title, documentType, classification, retentionPolicy, caseId, tags } = req.body;
-      const file = req.file;
+      const {
+        title, documentType, classification, retentionPolicy, caseId, tags,
+      } = req.body;
+      const { file } = req;
 
       // 4. ENCRYPT DOCUMENT (FIPS-140 Compliant)
       const encryptionResult = await this._encryptDocument(file.buffer, tenantId);
@@ -157,7 +159,7 @@ class DocumentController {
           500,
           'ENCRYPTION_FAILED',
           'Failed to encrypt document',
-          auditId
+          auditId,
         );
       }
 
@@ -316,7 +318,7 @@ class DocumentController {
         500,
         'UPLOAD_FAILED',
         'Failed to upload document with forensic audit',
-        auditId
+        auditId,
       );
     }
   }
@@ -341,7 +343,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId
+          auditId,
         );
       }
 
@@ -354,7 +356,7 @@ class DocumentController {
           403,
           'UNAUTHORIZED',
           'Not authorized to view document',
-          auditId
+          auditId,
         );
       }
 
@@ -389,7 +391,7 @@ class DocumentController {
           404,
           'DOCUMENT_NOT_FOUND',
           'Document not found or deleted',
-          auditId
+          auditId,
         );
       }
 
@@ -416,9 +418,7 @@ class DocumentController {
       });
 
       // 5. UPDATE ACCESS STATISTICS (Async)
-      this._updateAccessStats(id, tenantId, 'VIEW', true).catch((err) =>
-        logger.error('Failed to update access stats', { documentId: id, error: err.message })
-      );
+      this._updateAccessStats(id, tenantId, 'VIEW', true).catch((err) => logger.error('Failed to update access stats', { documentId: id, error: err.message }));
 
       // 6. RETURN REDACTED METADATA
       return res.status(200).json({
@@ -489,7 +489,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId
+          auditId,
         );
       }
 
@@ -517,7 +517,7 @@ class DocumentController {
         document.storage.encryptionKeyId,
         document.storage.iv,
         document.storage.authTag,
-        tenantId
+        tenantId,
       );
 
       if (!decryptionResult.success) {
@@ -551,7 +551,7 @@ class DocumentController {
           500,
           'DECRYPTION_FAILED',
           'Failed to decrypt document',
-          auditId
+          auditId,
         );
       }
 
@@ -603,7 +603,7 @@ class DocumentController {
       res.setHeader('Content-Length', finalContent.length);
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="${encodeURIComponent(document.metadata.originalFileName)}"`
+        `attachment; filename="${encodeURIComponent(document.metadata.originalFileName)}"`,
       );
       res.setHeader('X-Document-Id', id);
       res.setHeader('X-Classification', document.classification);
@@ -613,7 +613,7 @@ class DocumentController {
       res.setHeader('X-Audit-Id', auditId);
       res.setHeader(
         'X-Retention-Policy',
-        document.retentionPolicy?.rule || 'companies_act_10_years'
+        document.retentionPolicy?.rule || 'companies_act_10_years',
       );
 
       return res.send(finalContent);
@@ -649,7 +649,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId
+          auditId,
         );
       }
 
@@ -689,7 +689,7 @@ class DocumentController {
           400,
           'NO_VALID_UPDATES',
           'No valid fields provided for update',
-          auditId
+          auditId,
         );
       }
 
@@ -700,7 +700,7 @@ class DocumentController {
           423,
           'LEGAL_HOLD_ACTIVE',
           'Cannot modify retention policy while under legal hold',
-          auditId
+          auditId,
         );
       }
 
@@ -713,8 +713,8 @@ class DocumentController {
             rule: updates.retentionPolicy,
             disposalDate: this._calculateDisposalDate(updates.retentionPolicy),
             legalReference:
-              this.RETENTION_POLICIES[updates.retentionPolicy]?.legalReference ||
-              'Companies Act 71 of 2008',
+              this.RETENTION_POLICIES[updates.retentionPolicy]?.legalReference
+              || 'Companies Act 71 of 2008',
           };
         } else {
           document[key] = updates[key];
@@ -797,7 +797,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId
+          auditId,
         );
       }
 
@@ -811,7 +811,7 @@ class DocumentController {
           403,
           'UNAUTHORIZED',
           `Not authorized to ${permanent ? 'permanently ' : ''}delete`,
-          auditId
+          auditId,
         );
       }
 
@@ -832,11 +832,12 @@ class DocumentController {
           423,
           'LEGAL_HOLD_ACTIVE',
           'Document is under legal hold and cannot be deleted',
-          auditId
+          auditId,
         );
       }
 
-      let deletionMethod, deletionDetails;
+      let deletionMethod; let
+        deletionDetails;
 
       if (permanent) {
         // 4A. PERMANENT DELETION (Compliance Officer only)
@@ -952,7 +953,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId
+          auditId,
         );
       }
 
@@ -965,7 +966,7 @@ class DocumentController {
           403,
           'UNAUTHORIZED',
           'Not authorized to search documents',
-          auditId
+          auditId,
         );
       }
 
@@ -1115,7 +1116,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId
+          auditId,
         );
       }
 
@@ -1128,7 +1129,7 @@ class DocumentController {
           403,
           'UNAUTHORIZED',
           'Not authorized to view audit history',
-          auditId
+          auditId,
         );
       }
 
@@ -1312,7 +1313,7 @@ class DocumentController {
    */
   _validateUploadInput(req) {
     const { title, documentType } = req.body;
-    const file = req.file;
+    const { file } = req;
 
     if (!title || title.trim().length < 1 || title.trim().length > 255) {
       return { valid: false, message: 'Title must be 1-255 characters' };
@@ -1422,8 +1423,7 @@ class DocumentController {
    * @private
    */
   _calculateDisposalDate(retentionPolicy) {
-    const policy =
-      this.RETENTION_POLICIES[retentionPolicy] || this.RETENTION_POLICIES.COMPANIES_ACT_7YR;
+    const policy = this.RETENTION_POLICIES[retentionPolicy] || this.RETENTION_POLICIES.COMPANIES_ACT_7YR;
     if (policy.years === 0) return null; // Legal hold
 
     const date = new Date();
@@ -1516,7 +1516,7 @@ class DocumentController {
 
   _redactTitle(title) {
     if (!title) return '[REDACTED_TITLE]';
-    return title.length > 50 ? title.substring(0, 50) + '...' : title;
+    return title.length > 50 ? `${title.substring(0, 50)}...` : title;
   }
 
   _redactFileName(fileName) {
@@ -1545,12 +1545,12 @@ class DocumentController {
 
   _redactUserAgent(userAgent) {
     if (!userAgent) return '[REDACTED_UA]';
-    return userAgent.length > 100 ? userAgent.substring(0, 100) + '...' : userAgent;
+    return userAgent.length > 100 ? `${userAgent.substring(0, 100)}...` : userAgent;
   }
 
   _redactSearchQuery(query) {
     if (!query) return '[NO_QUERY]';
-    return query.length > 50 ? query.substring(0, 50) + '...' : query;
+    return query.length > 50 ? `${query.substring(0, 50)}...` : query;
   }
 
   _redactUpdates(updates, original) {

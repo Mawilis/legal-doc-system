@@ -55,50 +55,45 @@
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-'use strict';
-
 // =============================================================================
 // QUANTUM IMPORTS - AI/ML & LEGAL TECHNOLOGIES
 // =============================================================================
 require('dotenv').config(); // ENV VAULT MANDATORY
-const tf = require('@tensorflow/tfjs-node');
 const crypto = require('crypto');
 const path = require('path');
+const tf = require('@tensorflow/tfjs-node');
 const fs = require('fs').promises;
 const { EventEmitter } = require('events');
+const { redisClient } = require('../config/redis');
 const { AuditLogger } = require('../utils/auditLogger');
 const { CustomError } = require('../utils/customError');
-const { redisClient } = require('../config/redis');
 
 // Fairlearn for bias mitigation (simulated - would be proper integration in production)
 const fairlearn = {
-  mitigateBias: async (data, sensitiveAttributes) => {
+  mitigateBias: async (data, sensitiveAttributes) =>
     // Placeholder for Fairlearn bias mitigation
-    return { ...data, biasMitigated: true };
-  },
-  checkFairness: (predictions, sensitiveAttributes) => {
+    ({ ...data, biasMitigated: true }),
+  checkFairness: (predictions, sensitiveAttributes) =>
     // Fairness metrics for South African demographic groups
-    return {
+    ({
       demographicParity: 0.95,
       equalizedOdds: 0.93,
       biasDetected: false,
-    };
-  },
+    })
+  ,
 };
 
 // SHAP/LIME for explainable AI (simulated)
 const explainableAI = {
-  generateExplanation: async (prediction, features) => {
-    return {
-      topFeatures: features.slice(0, 5).map((f) => ({
-        feature: f.name,
-        importance: f.importance,
-        impact: f.impact > 0 ? 'POSITIVE' : 'NEGATIVE',
-      })),
-      confidence: prediction.confidence,
-      reasoning: 'Based on similar South African legal precedents',
-    };
-  },
+  generateExplanation: async (prediction, features) => ({
+    topFeatures: features.slice(0, 5).map((f) => ({
+      feature: f.name,
+      importance: f.importance,
+      impact: f.impact > 0 ? 'POSITIVE' : 'NEGATIVE',
+    })),
+    confidence: prediction.confidence,
+    reasoning: 'Based on similar South African legal precedents',
+  }),
 };
 
 // =============================================================================
@@ -121,8 +116,8 @@ const validateAIEnvironment = () => {
   if (missingVars.length > 0) {
     throw new Error(
       `QUANTUM BREACH: Missing AI Legal Predictor environment variables: ${missingVars.join(
-        ', '
-      )}\n` + 'Add these to /server/.env with appropriate values.'
+        ', ',
+      )}\n` + 'Add these to /server/.env with appropriate values.',
     );
   }
 
@@ -288,8 +283,7 @@ class QuantumDataProcessor {
   constructor() {
     this.featureEncoders = new Map();
     this.scalers = new Map();
-    this.anonymizationSalt =
-      process.env.AI_ANONYMIZATION_SALT || crypto.randomBytes(32).toString('hex');
+    this.anonymizationSalt = process.env.AI_ANONYMIZATION_SALT || crypto.randomBytes(32).toString('hex');
   }
 
   /*
@@ -319,7 +313,7 @@ class QuantumDataProcessor {
     // Categorize rather than store exact values
     if (anonymized.jurisdiction?.courtName) {
       anonymized.jurisdiction.courtRegion = this.categorizeCourtRegion(
-        anonymized.jurisdiction.courtName
+        anonymized.jurisdiction.courtName,
       );
       delete anonymized.jurisdiction.courtName;
     }
@@ -365,10 +359,8 @@ class QuantumDataProcessor {
     }
 
     // Categorical Features (One-hot encoded indices)
-    features.practiceAreaIndex =
-      AI_CONSTANTS.LEGAL_FEATURES.PRACTICE_AREAS.indexOf(caseData.practiceArea) || 0;
-    features.courtTypeIndex =
-      AI_CONSTANTS.LEGAL_FEATURES.COURT_TYPES.indexOf(caseData.jurisdiction?.courtType) || 0;
+    features.practiceAreaIndex = AI_CONSTANTS.LEGAL_FEATURES.PRACTICE_AREAS.indexOf(caseData.practiceArea) || 0;
+    features.courtTypeIndex = AI_CONSTANTS.LEGAL_FEATURES.COURT_TYPES.indexOf(caseData.jurisdiction?.courtType) || 0;
     features.statusIndex = AI_CONSTANTS.LEGAL_FEATURES.STATUSES.indexOf(caseData.status) || 0;
 
     // Complexity Features
@@ -380,8 +372,7 @@ class QuantumDataProcessor {
     if (caseData.budget) {
       features.estimatedHours = caseData.budget.estimatedHours || 0;
       features.actualHours = caseData.budget.actualHours || 0;
-      features.hourUtilization =
-        features.estimatedHours > 0 ? features.actualHours / features.estimatedHours : 0;
+      features.hourUtilization = features.estimatedHours > 0 ? features.actualHours / features.estimatedHours : 0;
     }
 
     // Risk Features
@@ -440,13 +431,11 @@ class QuantumDataProcessor {
    */
   categorizeCourtRegion(courtName) {
     const courtNameUpper = courtName.toUpperCase();
-    if (courtNameUpper.includes('JOHANNESBURG') || courtNameUpper.includes('PRETORIA'))
-      return 'GAUTENG';
+    if (courtNameUpper.includes('JOHANNESBURG') || courtNameUpper.includes('PRETORIA')) return 'GAUTENG';
     if (courtNameUpper.includes('CAPE TOWN')) return 'WESTERN_CAPE';
     if (courtNameUpper.includes('DURBAN')) return 'KWAZULU_NATAL';
     if (courtNameUpper.includes('BLOEMFONTEIN')) return 'FREE_STATE';
-    if (courtNameUpper.includes('PORT ELIZABETH') || courtNameUpper.includes('EAST LONDON'))
-      return 'EASTERN_CAPE';
+    if (courtNameUpper.includes('PORT ELIZABETH') || courtNameUpper.includes('EAST LONDON')) return 'EASTERN_CAPE';
     return 'OTHER';
   }
 
@@ -596,7 +585,7 @@ class QuantumModelRegistry {
       process.env.AI_MODEL_STORAGE_PATH,
       modelType,
       modelVersion === 'latest' ? 'latest' : `v${modelVersion}`,
-      'model.json'
+      'model.json',
     );
 
     try {
@@ -625,7 +614,7 @@ class QuantumModelRegistry {
       throw new ModelLoadError(
         `Failed to load AI model ${modelType} v${modelVersion}`,
         modelType,
-        error
+        error,
       );
     }
   }
@@ -659,9 +648,7 @@ class QuantumModelRegistry {
    */
   getModelMetrics(modelType = null) {
     if (modelType) {
-      const modelKey = Array.from(this.modelVersions.keys()).find((key) =>
-        key.startsWith(modelType)
-      );
+      const modelKey = Array.from(this.modelVersions.keys()).find((key) => key.startsWith(modelType));
 
       if (!modelKey) return null;
 
@@ -781,7 +768,7 @@ class AILegalPredictorService {
         throw new ModelLoadError(
           'Failed to initialize AI Legal Predictor service',
           'INITIALIZATION',
-          error
+          error,
         );
       }
     })();
@@ -801,7 +788,7 @@ class AILegalPredictorService {
           console.error('Health check failed:', error);
         }
       },
-      parseInt(process.env.AI_HEALTH_CHECK_INTERVAL || '300000')
+      parseInt(process.env.AI_HEALTH_CHECK_INTERVAL || '300000'),
     ); // 5 minutes
 
     // Store interval for cleanup
@@ -900,7 +887,7 @@ class AILegalPredictorService {
       // Generate explainable AI insights
       const explanation = await explainableAI.generateExplanation(
         predictionResult,
-        this._extractImportantFeatures(features, predictionArray)
+        this._extractImportantFeatures(features, predictionArray),
       );
 
       // Update model usage
@@ -1014,14 +1001,14 @@ class AILegalPredictorService {
       // Calculate risk score (0-100)
       const riskScore = Math.min(
         100,
-        Math.max(0, (1 - predictionArray[0]) * 100 * (1 / (daysToPrescription / 30)))
+        Math.max(0, (1 - predictionArray[0]) * 100 * (1 / (daysToPrescription / 30))),
       );
 
       // Generate mitigation strategies
       const mitigationStrategies = this._generatePrescriptionMitigationStrategies(
         riskLevel,
         daysToPrescription,
-        caseData
+        caseData,
       );
 
       // Update stats
@@ -1113,7 +1100,7 @@ class AILegalPredictorService {
 
       // Load optimization model
       const model = await this.modelRegistry.loadModel(
-        AI_CONSTANTS.MODEL_TYPES.RESOURCE_OPTIMIZATION
+        AI_CONSTANTS.MODEL_TYPES.RESOURCE_OPTIMIZATION,
       );
 
       // Perform prediction
@@ -1202,7 +1189,7 @@ class AILegalPredictorService {
       if (casesData.length > maxBatchSize) {
         throw new PredictionError(
           `Batch size ${casesData.length} exceeds maximum ${maxBatchSize}`,
-          'BATCH_PREDICTION'
+          'BATCH_PREDICTION',
         );
       }
 
@@ -1223,7 +1210,7 @@ class AILegalPredictorService {
             default:
               throw new PredictionError(
                 `Unknown prediction type: ${predictionType}`,
-                'BATCH_PREDICTION'
+                'BATCH_PREDICTION',
               );
           }
         });
@@ -1269,7 +1256,7 @@ class AILegalPredictorService {
       };
 
       console.log(
-        `📊 Batch prediction ${batchId} completed: ${results.length}/${casesData.length} successful`
+        `📊 Batch prediction ${batchId} completed: ${results.length}/${casesData.length} successful`,
       );
 
       return batchResult;
@@ -1280,7 +1267,7 @@ class AILegalPredictorService {
       throw new PredictionError(
         `Batch prediction failed: ${error.message}`,
         'BATCH_PREDICTION',
-        error
+        error,
       );
     }
   }
@@ -1379,13 +1366,12 @@ class AILegalPredictorService {
   _interpretPrescriptionRisk(riskProbability) {
     if (riskProbability >= AI_CONSTANTS.THRESHOLDS.HIGH_RISK) {
       return 'CRITICAL';
-    } else if (riskProbability >= AI_CONSTANTS.THRESHOLDS.MEDIUM_RISK) {
+    } if (riskProbability >= AI_CONSTANTS.THRESHOLDS.MEDIUM_RISK) {
       return 'HIGH';
-    } else if (riskProbability >= AI_CONSTANTS.THRESHOLDS.LOW_RISK) {
+    } if (riskProbability >= AI_CONSTANTS.THRESHOLDS.LOW_RISK) {
       return 'MEDIUM';
-    } else {
-      return 'LOW';
     }
+    return 'LOW';
   }
 
   /*
@@ -1704,7 +1690,7 @@ class AILegalPredictorService {
         successMetrics: {
           targetSavings:
             rec.type === 'COST_OPTIMIZATION' ? rec.estimatedCostSavings : rec.estimatedTimeSavings,
-          kpi: 'REDUCTION_IN_' + rec.type.split('_')[0],
+          kpi: `REDUCTION_IN_${rec.type.split('_')[0]}`,
         },
       });
     });
@@ -1728,8 +1714,8 @@ class AILegalPredictorService {
    */
   _fallbackOutcomePrediction(caseData) {
     // Rule-based fallback prediction
-    const practiceArea = caseData.practiceArea;
-    const complexity = caseData.complexity;
+    const { practiceArea } = caseData;
+    const { complexity } = caseData;
 
     let successProbability = 0.5;
 
@@ -1759,7 +1745,7 @@ class AILegalPredictorService {
     if (!prescriptionDate) return { riskLevel: 'UNKNOWN', riskScore: 50 };
 
     const daysToPrescription = Math.ceil(
-      (new Date(prescriptionDate) - new Date()) / (1000 * 60 * 60 * 24)
+      (new Date(prescriptionDate) - new Date()) / (1000 * 60 * 60 * 24),
     );
 
     let riskLevel = 'LOW';

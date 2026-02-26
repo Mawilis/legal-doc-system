@@ -17,7 +17,7 @@ try {
 console.log('\n📡 YOUR NETWORK INFORMATION:');
 console.log(`   Public IP Address: ${publicIP}`);
 console.log(`   CIDR Notation: ${publicIP}/32`);
-console.log(`   Location: South Africa`);
+console.log('   Location: South Africa');
 console.log(`   Timestamp: ${new Date().toISOString()}`);
 
 console.log('\n🚨 CRITICAL ACTION REQUIRED:');

@@ -345,11 +345,11 @@ class WilsyForensicEngineV21 {
         filesProcessed: this.stats.filesProcessed,
         successRate:
           this.stats.filesProcessed > 0
-            ? (
+            ? `${(
                 ((this.stats.filesProcessed - this.stats.filesWithIssues) /
                   this.stats.filesProcessed) *
                 100
-              ).toFixed(2) + '%'
+              ).toFixed(2)  }%`
             : '100%',
       },
       economicImpact: {
@@ -571,7 +571,7 @@ class WilsyForensicEngineV21 {
   • File: ${path.relative(__dirname, this.evidenceFile)}
   • Hash: ${
     this.evidenceFile
-      ? JSON.parse(fs.readFileSync(this.evidenceFile, 'utf8')).forensicHash.substring(0, 16) + '...'
+      ? `${JSON.parse(fs.readFileSync(this.evidenceFile, 'utf8')).forensicHash.substring(0, 16)  }...`
       : 'N/A'
   }
 

@@ -14,8 +14,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 /*
  * UTILITY: CONTROL CHARACTER STRIPPER
  * Removes ASCII 0-31 and 127. High-performance iteration.
@@ -34,9 +32,7 @@ const cleanString = (str) => {
  * UTILITY: HTML STRIPPER
  * Prevents basic script injection.
  */
-const stripHTML = (str) => {
-  return str.replace(/<[^>]*>?/gm, '');
-};
+const stripHTML = (str) => str.replace(/<[^>]*>?/gm, '');
 
 /*
  * MASTER SANITIZER ENGINE
@@ -64,40 +60,38 @@ const sanitizeValue = (field, value) => {
  * SANITIZE BODY MIDDLEWARE
  * Usage: router.post('/', sanitizeBody(['email', 'name', 'bio']), controller);
  */
-const sanitizeBody = (fields = []) => {
-  return async (req, res, next) => {
-    if (!req.body || typeof req.body !== 'object') return next();
+const sanitizeBody = (fields = []) => async (req, res, next) => {
+  if (!req.body || typeof req.body !== 'object') return next();
 
-    const changes = [];
+  const changes = [];
 
-    try {
-      fields.forEach((field) => {
-        if (req.body[field] !== undefined) {
-          const original = req.body[field];
-          const sanitized = sanitizeValue(field, original);
+  try {
+    fields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        const original = req.body[field];
+        const sanitized = sanitizeValue(field, original);
 
-          if (original !== sanitized) {
-            req.body[field] = sanitized;
-            changes.push(field);
-          }
+        if (original !== sanitized) {
+          req.body[field] = sanitized;
+          changes.push(field);
         }
-      });
-
-      // LOGGING: If significant sanitization happened, inform the audit trail.
-      if (changes.length > 0 && req.logAudit) {
-        await req.logAudit('INPUT_SANITIZED', {
-          fields: changes,
-          path: req.originalUrl,
-          severity: 'NOTICE',
-        });
       }
+    });
 
-      next();
-    } catch (err) {
-      console.error('CRITICAL_SANITIZATION_FAULT:', err);
-      next(); // Fail open but log the error
+    // LOGGING: If significant sanitization happened, inform the audit trail.
+    if (changes.length > 0 && req.logAudit) {
+      await req.logAudit('INPUT_SANITIZED', {
+        fields: changes,
+        path: req.originalUrl,
+        severity: 'NOTICE',
+      });
     }
-  };
+
+    next();
+  } catch (err) {
+    console.error('CRITICAL_SANITIZATION_FAULT:', err);
+    next(); // Fail open but log the error
+  }
 };
 
 module.exports = { sanitizeBody };

@@ -6,9 +6,9 @@
  */
 
 const mongoose = require('mongoose');
-const testSetup = require('../helpers/testSetup');
 const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
+const testSetup = require('../helpers/testSetup');
 
 // Mock only external services
 jest.mock('../../utils/auditLogger', () => ({
@@ -16,9 +16,7 @@ jest.mock('../../utils/auditLogger', () => ({
 }));
 
 jest.mock('../../utils/cryptoUtils', () => ({
-  generateForensicHash: jest.fn().mockImplementation((data) => {
-    return `hash_${Buffer.from(data).toString('hex').substring(0, 10)}`;
-  }),
+  generateForensicHash: jest.fn().mockImplementation((data) => `hash_${Buffer.from(data).toString('hex').substring(0, 10)}`),
   redactSensitive: jest.fn().mockImplementation((data) => data),
 }));
 

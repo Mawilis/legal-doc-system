@@ -16,20 +16,18 @@
 * VAT calculations, and tax compliance across Africa's economic ecosystem. As the divine ledger
 * of fiscal responsibility, it forges unbreakable compliance chains that propel Wilsy OS to
 * trillion-dollar valuations through impeccable tax sanctity and automated regulatory harmony.
-* 
+*
 * COLLABORATION QUANTA:
 * - Chief Architect: Wilson Khanyezi (Fiscal Compliance Visionary)
 * - Quantum Sentinel: Omniscient Quantum Forger
 * - Regulatory Oracles: South African Revenue Service (SARS), National Treasury
 * - Integration Partners: SARS eFiling, TaxTim, SimpleTax, Xero South Africa
-* 
+*
 * EVOLUTION VECTORS:
 * - Quantum Leap 1.1.0: Real-time blockchain anchoring of tax submissions
 * - Horizon Expansion: Cross-border VAT compliance across 54 African nations
 * - Eternal Extension: AI-driven tax optimization and anomaly detection
 */
-
-'use strict';
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 // ║                                    QUANTUM DEPENDENCY IMPORTS                                        ║
@@ -37,15 +35,15 @@
 // File Path: /server/services/sarsComplianceService.js
 // Dependencies Installation: npm install axios crypto-js xml2js pdfkit node-cache moment jsrsasign
 
-const axios = require('axios');
 const crypto = require('crypto');
+const axios = require('axios');
 const CryptoJS = require('crypto-js');
-const xml2js = require('xml2js');
-const PDFDocument = require('pdfkit');
-const NodeCache = require('node-cache');
-const moment = require('moment');
 const jsrsasign = require('jsrsasign');
+const moment = require('moment');
 const mongoose = require('mongoose');
+const NodeCache = require('node-cache');
+const PDFDocument = require('pdfkit');
+const xml2js = require('xml2js');
 
 // Load environment variables
 require('dotenv').config();
@@ -188,10 +186,10 @@ const generateDigitalSignature = (data) => {
   const timestamp = new Date().toISOString();
 
   return {
-    signature: signature,
-    timestamp: timestamp,
+    signature,
+    timestamp,
     algorithm: 'SHA256withRSA',
-    certificate: process.env.SARS_SIGNING_CERTIFICATE.substring(0, 100) + '...',
+    certificate: `${process.env.SARS_SIGNING_CERTIFICATE.substring(0, 100)}...`,
   };
 };
 
@@ -263,9 +261,9 @@ class SarsComplianceService {
     this.apiClient.interceptors.request.use(
       async (config) => {
         // Add authentication token if not present
-        if (!config.headers['Authorization']) {
+        if (!config.headers.Authorization) {
           const token = await this.getAuthenticationToken();
-          config.headers['Authorization'] = `Bearer ${token}`;
+          config.headers.Authorization = `Bearer ${token}`;
         }
 
         // Add digital signature for submissions
@@ -278,9 +276,7 @@ class SarsComplianceService {
 
         return config;
       },
-      (error) => {
-        return Promise.reject(error);
-      }
+      (error) => Promise.reject(error),
     );
 
     // Add response interceptor for error handling
@@ -290,7 +286,7 @@ class SarsComplianceService {
         if (error.response && error.response.status === 401) {
           // Token expired, refresh and retry
           const newToken = await this.refreshAuthenticationToken();
-          error.config.headers['Authorization'] = `Bearer ${newToken}`;
+          error.config.headers.Authorization = `Bearer ${newToken}`;
           return this.apiClient.request(error.config);
         }
 
@@ -304,7 +300,7 @@ class SarsComplianceService {
         });
 
         return Promise.reject(error);
-      }
+      },
     );
   }
 
@@ -335,7 +331,7 @@ class SarsComplianceService {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
-        }
+        },
       );
 
       const token = response.data.access_token;
@@ -348,7 +344,7 @@ class SarsComplianceService {
     } catch (error) {
       console.error('SARS Authentication failed:', error.message);
       throw new Error(
-        `SARS authentication failed: ${error.response?.data?.error || error.message}`
+        `SARS authentication failed: ${error.response?.data?.error || error.message}`,
       );
     }
   }
@@ -416,9 +412,9 @@ class SarsComplianceService {
       // Prepare submission request
       const submissionRequest = {
         vatNumber: vatData.vatNumber,
-        period: period,
+        period,
         filingFrequency: vatData.filingFrequency || 'Monthly',
-        xmlPayload: xmlPayload,
+        xmlPayload,
         digitalSignature: generateDigitalSignature(xmlPayload),
         metadata: {
           tenantId,
@@ -431,14 +427,14 @@ class SarsComplianceService {
       // Submit to SARS eFiling API
       const response = await this.apiClient.post(
         SARS_CONFIG.endpoints.vat201Submission,
-        submissionRequest
+        submissionRequest,
       );
 
       const submissionResult = {
         success: response.data.success,
         referenceNumber: response.data.reference,
         submissionDate: new Date().toISOString(),
-        period: period,
+        period,
         vatNumber: vatData.vatNumber,
         netVAT: vatData.netVAT,
         paymentDue: response.data.paymentDue || 0,
@@ -461,7 +457,7 @@ class SarsComplianceService {
         `VAT201_${vatData.vatNumber}_${period}.pdf`,
         pdfReceipt,
         tenantId,
-        'VAT201_SUBMISSION'
+        'VAT201_SUBMISSION',
       );
 
       // Log successful submission
@@ -591,20 +587,20 @@ class SarsComplianceService {
           .text(`Tax Period: ${submissionResult.period}`)
           .text(
             `Submission Date: ${new Date(submissionResult.submissionDate).toLocaleDateString(
-              'en-ZA'
-            )}`
+              'en-ZA',
+            )}`,
           )
           .text(
             `Net VAT Amount: R ${submissionResult.netVAT?.toLocaleString('en-ZA', {
               minimumFractionDigits: 2,
-            })}`
+            })}`,
           )
           .text(
             `Payment Due Date: ${
               submissionResult.dueDate
                 ? new Date(submissionResult.dueDate).toLocaleDateString('en-ZA')
                 : 'N/A'
-            }`
+            }`,
           );
 
         doc.moveDown();
@@ -615,7 +611,7 @@ class SarsComplianceService {
           .font('Helvetica-Oblique')
           .text('This document is generated by WilsyOS SARS Compliance Engine.')
           .text(
-            'Retain this receipt for your records for 5 years as per Tax Administration Act 28 of 2011.'
+            'Retain this receipt for your records for 5 years as per Tax Administration Act 28 of 2011.',
           );
 
         // Add footer
@@ -643,7 +639,7 @@ class SarsComplianceService {
     const deadlineDay = SARS_CONFIG.compliance.submissionDeadlines[frequency.toLowerCase()] || 25;
 
     // Calculate deadline date
-    let deadlineDate = new Date(year, month, deadlineDay); // Month is 0-indexed
+    const deadlineDate = new Date(year, month, deadlineDay); // Month is 0-indexed
 
     // Adjust for weekends (SARS deadline moves to next business day)
     const dayOfWeek = deadlineDate.getDay();
@@ -776,8 +772,8 @@ class SarsComplianceService {
       // Prepare submission
       const submissionRequest = {
         taxpayerId: taxData.taxpayerId,
-        taxYear: taxYear,
-        xmlPayload: xmlPayload,
+        taxYear,
+        xmlPayload,
         digitalSignature: generateDigitalSignature(xmlPayload),
         declaration: {
           declaredBy: taxData.declaredBy || 'Tax Practitioner',
@@ -794,7 +790,7 @@ class SarsComplianceService {
       // Submit to SARS
       const response = await this.apiClient.post(
         SARS_CONFIG.endpoints.itr12Submission,
-        submissionRequest
+        submissionRequest,
       );
 
       const submissionResult = {
@@ -802,7 +798,7 @@ class SarsComplianceService {
         referenceNumber: response.data.reference,
         assessmentNumber: response.data.assessmentNumber,
         submissionDate: new Date().toISOString(),
-        taxYear: taxYear,
+        taxYear,
         taxpayerId: taxData.taxpayerId,
         taxLiability: taxData.taxLiability,
         refundDue: response.data.refundDue || 0,
@@ -859,7 +855,7 @@ class SarsComplianceService {
       ITR12: {
         $: {
           xmlns: 'http://www.sars.gov.za/efiling/ITR12/v2.1',
-          taxYear: taxYear,
+          taxYear,
         },
         Taxpayer: {
           IdNumber: taxData.taxpayerId,
@@ -1009,7 +1005,7 @@ class SarsComplianceService {
           .text(
             `Outstanding Debt: R ${
               complianceStatus.outstandingDebt?.toLocaleString('en-ZA') || '0.00'
-            }`
+            }`,
           );
 
         if (complianceStatus.tcsPin) {
@@ -1084,9 +1080,8 @@ class SarsComplianceService {
    */
   async storeOfflineSubmission(submissionRecord, tenantId, submissionType) {
     // Store in MongoDB for later retry
-    const OfflineSubmission =
-      mongoose.model('OfflineSubmission') ||
-      mongoose.model(
+    const OfflineSubmission = mongoose.model('OfflineSubmission')
+      || mongoose.model(
         'OfflineSubmission',
         new mongoose.Schema({
           tenantId: String,
@@ -1097,7 +1092,7 @@ class SarsComplianceService {
           nextRetry: Date,
           status: { type: String, default: 'PENDING' },
           createdAt: { type: Date, default: Date.now },
-        })
+        }),
       );
 
     const offlineRecord = new OfflineSubmission({
@@ -1315,7 +1310,7 @@ QUANTUM IMPACT METRICS:
 - Submission success rate: Increased to 99.5% with retry mechanisms
 - Data encryption coverage: 100% of sensitive tax data
 
-INSPIRATIONAL QUANTUM: 
+INSPIRATIONAL QUANTUM:
 "Tax compliance is the financial expression of social contract. Through precise automation,
 we transform fiscal responsibility from burden to strategic advantage."
 - Wilson Khanyezi, Architect of Africa's Fiscal Compliance Renaissance

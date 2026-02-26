@@ -1,7 +1,7 @@
 // Mock mongoose for testing
 const mongoose = jest.createMockFromModule('mongoose');
 
-let connectionState = 1; // 1 = connected
+const connectionState = 1; // 1 = connected
 
 // Mock connection
 mongoose.connect = jest.fn().mockResolvedValue({

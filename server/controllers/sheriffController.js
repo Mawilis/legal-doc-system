@@ -13,12 +13,10 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
-const Sheriff = require('../models/Sheriff');
-const Document = require('../models/Document');
 const { successResponse, errorResponse } = require('../middleware/responseHandler');
+const Document = require('../models/Document');
+const Sheriff = require('../models/Sheriff');
 
 /*
  * @desc    INITIALIZE SHERIFF PROFILE
@@ -34,7 +32,7 @@ exports.createSheriff = asyncHandler(async (req, res) => {
       res,
       400,
       'A valid UserId is required for profile linkage.',
-      'ERR_USER_ID_REQUIRED'
+      'ERR_USER_ID_REQUIRED',
     );
   }
 
@@ -70,7 +68,7 @@ exports.updateLocation = asyncHandler(async (req, res) => {
       res,
       400,
       'Valid numeric GPS coordinates are required.',
-      'ERR_INVALID_GPS'
+      'ERR_INVALID_GPS',
     );
   }
 
@@ -86,7 +84,7 @@ exports.updateLocation = asyncHandler(async (req, res) => {
         ...(typeof isOnline === 'boolean' ? { isOnline } : {}),
       },
     },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   );
 
   if (!sheriff) {
@@ -95,7 +93,7 @@ exports.updateLocation = asyncHandler(async (req, res) => {
       res,
       404,
       'Sheriff profile not found in current scope.',
-      'ERR_SHERIFF_NOT_FOUND'
+      'ERR_SHERIFF_NOT_FOUND',
     );
   }
 
@@ -122,7 +120,7 @@ exports.findNearest = asyncHandler(async (req, res) => {
       res,
       400,
       'Valid lng/lat query parameters required.',
-      'ERR_COORD_MISSING'
+      'ERR_COORD_MISSING',
     );
   }
 
@@ -168,7 +166,7 @@ exports.markServed = asyncHandler(async (req, res) => {
       servedAt: new Date(),
       servedBy: id,
     },
-    { new: true }
+    { new: true },
   );
 
   if (!doc) {
@@ -177,7 +175,7 @@ exports.markServed = asyncHandler(async (req, res) => {
       res,
       404,
       'Target document not found in firm registry.',
-      'ERR_DOC_NOT_FOUND'
+      'ERR_DOC_NOT_FOUND',
     );
   }
 
@@ -200,7 +198,7 @@ exports.markServed = asyncHandler(async (req, res) => {
     req,
     res,
     { stats: sheriff.stats },
-    { message: 'Service of process successfully recorded.' }
+    { message: 'Service of process successfully recorded.' },
   );
 });
 
@@ -239,7 +237,7 @@ exports.updateSheriff = asyncHandler(async (req, res) => {
   const sheriff = await Sheriff.findOneAndUpdate(
     { _id: req.params.id, tenantId: req.user.tenantId },
     { $set: req.body },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   );
 
   if (!sheriff) {

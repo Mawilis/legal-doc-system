@@ -50,8 +50,8 @@ const winston = require('winston');
 const { MongoDB } = require('winston-mongodb');
 
 // Internal Quantum Dependencies
-const { generateEventHash } = require('../utils/eventHashGenerator');
 const AuditTrail = require('../models/AuditTrail'); // Path Directive: Create /server/models/AuditTrail.js
+const { generateEventHash } = require('../utils/eventHashGenerator');
 
 // ====================================================================================
 // II. QUANTUM CONFIGURATION & CONSTANTS
@@ -108,8 +108,12 @@ const AUDIT_CONFIG = {
  */
 const createQuantumLogger = () => {
   // Custom format for compliance metadata
-  const complianceFormat = winston.format.printf(({ timestamp, level, message, ...meta }) => {
-    const { eventId, userId, ip, userAgent, jurisdiction, legalBasis, eventHash } = meta;
+  const complianceFormat = winston.format.printf(({
+    timestamp, level, message, ...meta
+  }) => {
+    const {
+      eventId, userId, ip, userAgent, jurisdiction, legalBasis, eventHash,
+    } = meta;
     return JSON.stringify({
       timestamp,
       level: level.toUpperCase(),
@@ -164,7 +168,7 @@ const createQuantumLogger = () => {
     level: 'forensic',
     format: winston.format.combine(
       winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-      complianceFormat
+      complianceFormat,
     ),
     transports,
     // Do not exit on unhandled errors
@@ -240,7 +244,7 @@ class AuditLogger {
    */
   static classifyEvent(req, _res) {
     const path = req.originalUrl;
-    const method = req.method;
+    const { method } = req;
 
     // Classification logic
     if (path.includes('/api/auth')) {
@@ -248,13 +252,13 @@ class AuditLogger {
         category: AUDIT_CONFIG.EVENT_CATEGORIES.AUTHENTICATION,
         legalBasis: 'ECT Act (Authentication)',
       };
-    } else if (path.includes('/api/documents')) {
+    } if (path.includes('/api/documents')) {
       if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
         return {
           category: AUDIT_CONFIG.EVENT_CATEGORIES.DOCUMENT_MODIFICATION,
           legalBasis: 'Companies Act 2008 (Record Keeping)',
         };
-      } else if (method === 'GET') {
+      } if (method === 'GET') {
         return {
           category: AUDIT_CONFIG.EVENT_CATEGORIES.DOCUMENT_ACCESS,
           legalBasis: 'PAIA / POPIA (Access Right)',
@@ -291,15 +295,15 @@ class AuditLogger {
    * @returns {String} Audit log level.
    */
   static determineLogLevel(req, res, responseTime) {
-    const statusCode = res.statusCode;
+    const { statusCode } = res;
     const path = req.originalUrl;
 
     // Forensic: Critical security or compliance events
     if (
-      path.includes('/admin') ||
-      path.includes('/system') ||
-      statusCode === 401 ||
-      statusCode === 403
+      path.includes('/admin')
+      || path.includes('/system')
+      || statusCode === 401
+      || statusCode === 403
     ) {
       return 'forensic';
     }
@@ -492,7 +496,7 @@ class AuditLogger {
       ip: 'internal',
       userAgent: 'WilsyOS-ComplianceEngine',
       specificEvent: event,
-      details: details, // Ensure no PII in details
+      details, // Ensure no PII in details
       category: eventClassification.category,
       legalBasis: eventClassification.legalBasis,
       jurisdiction: 'ZA',
@@ -507,7 +511,7 @@ class AuditLogger {
     }
 
     quantumLogger.log({
-      level: level,
+      level,
       message: `Compliance Event: ${event}`,
       ...logData,
     });

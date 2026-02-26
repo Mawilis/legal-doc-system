@@ -25,9 +25,9 @@
 */
 
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const natural = require('natural');
 const { OpenAI } = require('openai');
-const mongoose = require('mongoose');
 
 /*
  * FORENSIC BREAKDOWN:
@@ -262,9 +262,7 @@ class ContractAnalyzer {
       if (!trimmedSentence) return;
 
       // Check if sentence starts a new clause
-      const isClauseStart = clausePatterns.some((pattern) =>
-        pattern.test(trimmedSentence.substring(0, 100))
-      );
+      const isClauseStart = clausePatterns.some((pattern) => pattern.test(trimmedSentence.substring(0, 100)));
 
       if (isClauseStart || !currentClause) {
         if (currentClause) {
@@ -287,13 +285,13 @@ class ContractAnalyzer {
             hasObligations: /\b(shall|must|will|agree to|undertakes? to)\b/i.test(trimmedSentence),
             hasRights: /\b(right to|may|entitled to|permitted to)\b/i.test(trimmedSentence),
             hasConditions: /\b(if|provided that|subject to|condition precedent)\b/i.test(
-              trimmedSentence
+              trimmedSentence,
             ),
           },
         };
       } else if (currentClause) {
         // Continue current clause
-        currentClause.text += ' ' + trimmedSentence;
+        currentClause.text += ` ${trimmedSentence}`;
       }
     });
 
@@ -447,7 +445,7 @@ Return analysis in JSON-like structure with:
       highRiskClauses: highRiskMatch ? [highRiskMatch[2].trim()] : [],
       complianceIssues: this.extractComplianceIssues(aiResponse),
       recommendedActions: this.extractRecommendedActions(aiResponse),
-      summary: aiResponse.substring(0, 500) + '...',
+      summary: `${aiResponse.substring(0, 500)}...`,
       rawResponse: aiResponse,
       parsedSuccessfully: false,
     };
@@ -501,8 +499,8 @@ Return analysis in JSON-like structure with:
       issues,
       complianceScore,
       hasCriticalIssues:
-        issues.popia.some((i) => i.severity === 'high') ||
-        issues.companiesAct.some((i) => i.severity === 'high'),
+        issues.popia.some((i) => i.severity === 'high')
+        || issues.companiesAct.some((i) => i.severity === 'high'),
     };
   }
 
@@ -513,8 +511,7 @@ Return analysis in JSON-like structure with:
    */
   extractComplianceIssues(aiResponse) {
     const issues = [];
-    const complianceRegex =
-      /(POPIA|Companies Act|ECT Act|LPC).*?(non.?compliant|violat|missing|required)/gi;
+    const complianceRegex = /(POPIA|Companies Act|ECT Act|LPC).*?(non.?compliant|violat|missing|required)/gi;
 
     let match;
     while ((match = complianceRegex.exec(aiResponse)) !== null) {
@@ -523,7 +520,7 @@ Return analysis in JSON-like structure with:
         issue: match[0].substring(0, 200),
         context: aiResponse.substring(
           Math.max(0, match.index - 100),
-          Math.min(aiResponse.length, match.index + 200)
+          Math.min(aiResponse.length, match.index + 200),
         ),
       });
     }
@@ -918,7 +915,7 @@ if (process.env.NODE_ENV === 'test') {
 
   describe('ContractAnalyzer Tests', () => {
     let analyzer;
-    const testTenantId = 'test-tenant-' + Date.now();
+    const testTenantId = `test-tenant-${Date.now()}`;
     const testContractText = `
         AGREEMENT
         
@@ -1002,13 +999,13 @@ if (process.env.NODE_ENV === 'test') {
 
     test('should reject invalid contract input', () => {
       expect(() => analyzer.validateContractInput('')).toThrow(
-        'Contract text must be a non-empty string'
+        'Contract text must be a non-empty string',
       );
       expect(() => analyzer.validateContractInput('a'.repeat(1000001))).toThrow(
-        'Contract text exceeds maximum length'
+        'Contract text exceeds maximum length',
       );
       expect(() => analyzer.validateContractInput('short')).toThrow(
-        'Contract text must be at least 100 characters'
+        'Contract text must be at least 100 characters',
       );
     });
 
@@ -1026,12 +1023,9 @@ if (process.env.NODE_ENV === 'test') {
     });
 
     test('should classify clause types correctly', () => {
-      const definitionsClause =
-        '1.1 "Personal Information" means information relating to an identifiable natural person.';
-      const obligationsClause =
-        '2.1 The Parties agree to maintain the confidentiality of all Personal Information.';
-      const limitationsClause =
-        "3.1 The Service Provider's liability shall be limited to the fees paid under this Agreement.";
+      const definitionsClause = '1.1 "Personal Information" means information relating to an identifiable natural person.';
+      const obligationsClause = '2.1 The Parties agree to maintain the confidentiality of all Personal Information.';
+      const limitationsClause = "3.1 The Service Provider's liability shall be limited to the fees paid under this Agreement.";
 
       expect(analyzer.classifyClauseType(definitionsClause)).toBe('definitions');
       expect(analyzer.classifyClauseType(obligationsClause)).toBe('obligations');
@@ -1092,13 +1086,13 @@ if (process.env.NODE_ENV === 'test') {
 
     test('should handle AI analysis errors gracefully', async () => {
       analyzer.openaiClient.chat.completions.create.mockRejectedValueOnce(
-        new Error('API rate limit exceeded')
+        new Error('API rate limit exceeded'),
       );
 
       const clauses = analyzer.extractClausesNLP(testContractText);
 
       await expect(analyzer.analyzeWithAI(testContractText, clauses)).rejects.toThrow(
-        'AI analysis failed'
+        'AI analysis failed',
       );
     });
   });

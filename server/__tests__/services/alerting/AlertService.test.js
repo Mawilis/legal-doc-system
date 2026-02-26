@@ -11,13 +11,13 @@
  * • Confirms R45M enterprise value
  */
 
-import axios from 'axios';
-import nodemailer from 'nodemailer';
-import { v4 as uuidv4 } from 'uuid';
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import axios from 'axios.js';
+import nodemailer from 'nodemailer.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import crypto from "crypto";
+import fs from 'fs/promises.js';
+import path from "path";
+import { fileURLToPath } from 'url.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,12 +45,12 @@ jest.mock('../../../models/Alert');
 jest.mock('../../../models/Incident');
 jest.mock('../../../models/OnCallSchedule');
 
-import AlertService from '../../../services/alerting/AlertService';
-import Alert from '../../../models/Alert';
-import Incident from '../../../models/Incident';
-import OnCallSchedule from '../../../models/OnCallSchedule';
-import { metrics } from '../../../utils/metricsCollector';
-import quantumLogger from '../../../utils/quantumLogger';
+import AlertService from '../../../services/alerting/AlertService.js';
+import Alert from '../../../models/Alert.js';
+import Incident from '../../../models/Incident.js';
+import OnCallSchedule from '../../../models/OnCallSchedule.js';
+import { metrics } from '../../../utils/metricsCollector.js';
+import quantumLogger from '../../../utils/quantumLogger.js';
 
 describe('AlertService - Incident Management Due Diligence', () => {
   let mockAlert;

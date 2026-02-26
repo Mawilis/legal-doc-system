@@ -25,14 +25,12 @@
  * Biblical worth billions no child's place. Wilsy OS to the World.
  */
 
-'use strict';
-
-const asyncHandler = require('express-async-handler');
-const User = require('../models/userModel');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
 const chalk = require('chalk');
+const asyncHandler = require('express-async-handler');
+const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
+const User = require('../models/userModel');
 
 // --- SOVEREIGN LOGGER LOGIC ---
 const logger = (() => {
@@ -228,7 +226,9 @@ async function emitAuditSafe(req, entry) {
  * @route   POST /api/auth/register
  */
 exports.register = asyncHandler(async (req, res) => {
-  const { name, email, password, tenantId } = req.body;
+  const {
+    name, email, password, tenantId,
+  } = req.body;
 
   if (!name || !email || !password) {
     return res

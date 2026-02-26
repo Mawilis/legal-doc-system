@@ -139,7 +139,7 @@ class QuantumBlock {
    */
   calculateHash() {
     const hashString = `${this.index}${this.previousHash}${this.timestamp}${JSON.stringify(
-      this.data
+      this.data,
     )}${this.nonce}`;
     // Quantum Security Citadel: SHA-256 cryptographic hashing
     return crypto.createHash('sha256').update(hashString).digest('hex');
@@ -198,8 +198,7 @@ class QuantumBlock {
   isValid() {
     const currentHash = this.calculateHash();
     const merkleValid = this.hash === currentHash;
-    const complianceValid =
-      this.complianceMetadata && this.complianceMetadata.jurisdiction === 'ZA';
+    const complianceValid = this.complianceMetadata && this.complianceMetadata.jurisdiction === 'ZA';
 
     return merkleValid && complianceValid;
   }
@@ -323,8 +322,8 @@ class QuantumBlockchain {
     // Mine separate blocks per legal firm (multi-tenant isolation)
     for (const [legalFirmId, operations] of operationsByFirm) {
       const blockData = {
-        operations: operations,
-        legalFirmId: legalFirmId,
+        operations,
+        legalFirmId,
         operationType: 'BATCH_LEGAL_OPERATIONS',
         complianceRef: 'POPIA_AUDIT_TRAIL',
         batchSize: operations.length,
@@ -335,7 +334,7 @@ class QuantumBlockchain {
         this.chain.length,
         new Date(),
         blockData,
-        this.getLatestBlock().hash
+        this.getLatestBlock().hash,
       );
 
       newBlock.mineBlock(this.difficulty);
@@ -351,7 +350,7 @@ class QuantumBlockchain {
       console.log(
         `⚖️ LEGAL BLOCK MINED: Firm ${legalFirmId} | Ops: ${
           operations.length
-        } | Hash: ${newBlock.hash.substring(0, 16)}...`
+        } | Hash: ${newBlock.hash.substring(0, 16)}...`,
       );
     }
 
@@ -405,7 +404,7 @@ class QuantumBlockchain {
       const blockAgeDays = (new Date() - currentBlock.timestamp) / (1000 * 60 * 60 * 24);
       if (blockAgeDays > BLOCKCHAIN_CONFIG.RETENTION_DAYS) {
         console.warn(
-          `⚠️ RETENTION WARNING: Block ${currentBlock.index} exceeds ${BLOCKCHAIN_CONFIG.RETENTION_DAYS} day retention`
+          `⚠️ RETENTION WARNING: Block ${currentBlock.index} exceeds ${BLOCKCHAIN_CONFIG.RETENTION_DAYS} day retention`,
         );
       }
     }
@@ -495,7 +494,7 @@ class QuantumBlockchain {
             results.push({
               blockIndex: block.index,
               blockTimestamp: block.timestamp,
-              operation: operation,
+              operation,
               complianceRef: block.data.complianceRef,
             });
           }
@@ -544,7 +543,7 @@ class QuantumBlockchain {
     const report = {
       period: { startDate, endDate },
       generatedAt: new Date(),
-      legalFirmId: legalFirmId,
+      legalFirmId,
       summary: {
         totalBlocks: 0,
         totalOperations: 0,
@@ -590,7 +589,7 @@ class QuantumBlockchain {
     // Companies Act Quantum: Ensure 7-year retention
     if (!report.summary.retentionCompliance) {
       console.warn(
-        `⚠️ COMPANIES ACT VIOLATION: Records older than ${BLOCKCHAIN_CONFIG.RETENTION_DAYS} days detected`
+        `⚠️ COMPANIES ACT VIOLATION: Records older than ${BLOCKCHAIN_CONFIG.RETENTION_DAYS} days detected`,
       );
     }
 
@@ -612,10 +611,10 @@ function createLegalOperation(operationType, data, legalFirmId) {
   }
 
   const operation = {
-    operationType: operationType,
+    operationType,
     timestamp: new Date(),
     legalFirmId: legalFirmId || 'system',
-    data: data,
+    data,
     legalBasis: data.legalBasis || 'LEGAL_OBLIGATION',
     complianceRef: determineComplianceReference(operationType, data),
     // POPIA Quantum: Add data protection flags
@@ -722,7 +721,7 @@ function validateProofSignature(proof, signatureKey) {
   const expectedSignature = crypto
     .createHmac(
       'sha256',
-      signatureKey || process.env.BLOCKCHAIN_SIGNATURE_KEY || 'wilsy-quantum-default'
+      signatureKey || process.env.BLOCKCHAIN_SIGNATURE_KEY || 'wilsy-quantum-default',
     )
     .update(proofString)
     .digest('hex');
@@ -747,7 +746,7 @@ function runBlockchainTests() {
   console.assert(genesisBlock.index === 0, '❌ Genesis block index should be 0');
   console.assert(
     genesisBlock.previousHash === '0',
-    '❌ Genesis block should have previousHash of "0"'
+    '❌ Genesis block should have previousHash of "0"',
   );
   console.assert(genesisBlock.isValid(), '❌ Genesis block should be valid');
 
@@ -759,7 +758,7 @@ function runBlockchainTests() {
       userId: 'user_456',
       accessReason: 'LEGAL_PROCEEDING',
     },
-    'legal_firm_789'
+    'legal_firm_789',
   );
 
   const result = testBlockchain.addLegalOperation(testOperation);

@@ -82,11 +82,11 @@ jest.mock('../../middleware/tenantContext');
 // ====================================================================
 // IMPORTS
 // ====================================================================
+const tenantContext = require('../../middleware/tenantContext');
+const TaxRecord = require('../../models/TaxRecord');
 const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
 const logger = require('../../utils/logger');
-const tenantContext = require('../../middleware/tenantContext');
-const TaxRecord = require('../../models/TaxRecord');
 
 // Service under test - create a mock version since we don't have the actual file yet
 const COMPLIANCE_REPORT_TYPES = {
@@ -169,9 +169,9 @@ class SarsComplianceService {
   async generateRiskAssessment(tenantId) {
     const filings = await TaxRecord.find({ tenantId }).lean().exec();
 
-    let highRisk = 0,
-      mediumRisk = 0,
-      lowRisk = 0;
+    let highRisk = 0;
+    let mediumRisk = 0;
+    let lowRisk = 0;
 
     filings.forEach((filing) => {
       if (filing.riskScore >= 70) highRisk++;
@@ -225,12 +225,12 @@ tenantContext.getCurrentTenant = jest.fn().mockReturnValue('tenant-test-12345678
 describe('SARS COMPLIANCE SERVICE - FORENSIC VALIDATION', () => {
   let complianceService;
   let testRunId;
-  let evidenceEntries = [];
+  const evidenceEntries = [];
 
   beforeAll(() => {
     testRunId = crypto.randomUUID().substring(0, 8);
     console.log(`\n🔬 TEST RUN: ${testRunId}`);
-    console.log(`💰 Investor Value: R2.5M annual compliance savings per firm`);
+    console.log('💰 Investor Value: R2.5M annual compliance savings per firm');
 
     // Verify constants
     expect(Object.keys(COMPLIANCE_REPORT_TYPES).length).toBe(5);
@@ -360,8 +360,8 @@ describe('SARS COMPLIANCE SERVICE - FORENSIC VALIDATION', () => {
     expect(economicValue.penaltyRecovery).toBe(85);
     expect(economicValue.roi).toBe(450);
 
-    console.log(`  ✅ Annual Compliance Savings: R2,500,000`);
-    console.log(`  ✅ Penalty Recovery Rate: 85%`);
-    console.log(`  ✅ Risk Reduction: 76%`);
+    console.log('  ✅ Annual Compliance Savings: R2,500,000');
+    console.log('  ✅ Penalty Recovery Rate: 85%');
+    console.log('  ✅ Risk Reduction: 76%');
   });
 });

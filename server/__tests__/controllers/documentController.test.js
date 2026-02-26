@@ -1,8 +1,8 @@
 /* eslint-env jest */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT CONTROLLER TESTS - INVESTOR DUE DILIGENCE SUITE      ║
   ║ [100% test coverage | Deterministic evidence | Forensic-grade]║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/controllers/documentController.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -27,8 +27,10 @@ const TEST_DOCUMENT_ID = 'doc_5f8d0d55b547644a7c9d8e1f';
 const TEST_AUDIT_ID = 'audit_test_123';
 
 describe('DocumentController - Investor Due Diligence Suite', () => {
-  let mockReq, mockRes, documentController;
-  let auditLogger, logger, Document, AuditTrail;
+  let mockReq; let mockRes; let
+    documentController;
+  let auditLogger; let logger; let Document; let
+    AuditTrail;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -117,11 +119,11 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
 
       global.riskEvidence = {
         calculation: {
-          maxFine: maxFine,
-          breachLikelihood: breachLikelihood,
-          riskReduction: riskReduction,
-          originalRisk: originalRisk,
-          eliminatedRisk: eliminatedRisk,
+          maxFine,
+          breachLikelihood,
+          riskReduction,
+          originalRisk,
+          eliminatedRisk,
         },
         claimValid: eliminatedRisk >= 2400000,
       };

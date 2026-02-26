@@ -5,10 +5,10 @@
  * ============================================================================
  */
 
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import fs from 'fs/promises';
+import fs from 'fs/promises.js';
+import { execSync } from 'child_process.js';
+import { dirname, join } from "path";
+import { fileURLToPath } from 'url.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,15 +25,15 @@ const colors = {
 
 console.log('');
 console.log(
-  colors.blue +
-    '═══════════════════════════════════════════════════════════════════════════════' +
-    colors.reset
+  `${colors.blue
+  }═══════════════════════════════════════════════════════════════════════════════${
+    colors.reset}`,
 );
-console.log(colors.yellow + '                 SHUTTING DOWN WILSY OS' + colors.reset);
+console.log(`${colors.yellow}                 SHUTTING DOWN WILSY OS${colors.reset}`);
 console.log(
-  colors.blue +
-    '═══════════════════════════════════════════════════════════════════════════════' +
-    colors.reset
+  `${colors.blue
+  }═══════════════════════════════════════════════════════════════════════════════${
+    colors.reset}`,
 );
 console.log('');
 
@@ -71,14 +71,14 @@ async function main() {
   // Final cleanup
   try {
     execSync(
-      'pkill -f "node.*(server|precedentVectorizer|MonitoringDashboard)" 2>/dev/null || true'
+      'pkill -f "node.*(server|precedentVectorizer|MonitoringDashboard)" 2>/dev/null || true',
     );
   } catch (error) {
     // Ignore
   }
 
   console.log('');
-  console.log(colors.green + '✓ Shutdown complete' + colors.reset);
+  console.log(`${colors.green}✓ Shutdown complete${colors.reset}`);
   console.log('');
 }
 

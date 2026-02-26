@@ -56,8 +56,6 @@
  * ================================================================================
  */
 
-'use strict';
-
 // ================================================================================
 // QUANTUM DEPENDENCIES - PRODUCTION-READY, SECURELY PINNED
 // ================================================================================
@@ -95,30 +93,30 @@ validateBiometricEnvironment();
 
 // CORE DEPENDENCIES
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-
-// WEB AUTHENTICATION (FIDO2/WebAuthn)
 const {
   generateRegistrationOptions,
   verifyRegistrationResponse,
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } = require('@simplewebauthn/server');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+
+// WEB AUTHENTICATION (FIDO2/WebAuthn)
 
 // BIOMETRIC DEVICE INTEGRATION
-const fingerprintScanner = require('./integrations/fingerprintScanner');
-const facialRecognition = require('./integrations/facialRecognition');
-
-// DATABASE MODELS
-const User = require('../models/User');
 const BiometricAudit = require('../models/BiometricAudit');
 const ConsentRecord = require('../models/ConsentRecord');
+const User = require('../models/User');
+const { logActivity } = require('./auditService');
+const { encryptData, decryptData } = require('./encryptionService');
+const facialRecognition = require('./integrations/facialRecognition');
+const fingerprintScanner = require('./integrations/fingerprintScanner');
+
+// DATABASE MODELS
 
 // SUPPORTING SERVICES
 const { sendSecurityAlert } = require('./notificationService');
-const { encryptData, decryptData } = require('./encryptionService');
-const { logActivity } = require('./auditService');
 
 // ================================================================================
 // QUANTUM CONFIGURATION - SOUTH AFRICAN LEGAL COMPLIANCE
@@ -267,7 +265,7 @@ class WebAuthnService {
 
       return {
         success: true,
-        options: options,
+        options,
         metadata: {
           rpID: this.rpID,
           algorithm: 'WebAuthn',
@@ -300,7 +298,7 @@ class WebAuthnService {
 
       const verification = await verifyRegistrationResponse({
         response: credential,
-        expectedChallenge: expectedChallenge,
+        expectedChallenge,
         expectedOrigin: this.rpOrigin,
         expectedRPID: this.rpID,
         requireUserVerification: true,
@@ -314,7 +312,7 @@ class WebAuthnService {
         const legalEvidence = await this.generateLegalEvidence(
           user,
           verification,
-          'PASSKEY_REGISTRATION'
+          'PASSKEY_REGISTRATION',
         );
 
         // Update user biometric status
@@ -346,23 +344,22 @@ class WebAuthnService {
           success: true,
           verified: true,
           credentialId: verification.registrationInfo.credentialID,
-          legalEvidence: legalEvidence,
+          legalEvidence,
           compliance: {
             ectAct: 'ADVANCED_ELECTRONIC_SIGNATURE',
             popia: 'BIOMETRIC_CONSENT_RECORDED',
             fido2: 'LEVEL_3_CERTIFIED',
           },
         };
-      } else {
-        await logActivity({
-          userId: user._id,
-          action: 'PASSKEY_REGISTRATION_FAILED',
-          details: { error: 'Verification failed' },
-          severity: 'MEDIUM',
-        });
-
-        throw new Error('Passkey registration verification failed');
       }
+      await logActivity({
+        userId: user._id,
+        action: 'PASSKEY_REGISTRATION_FAILED',
+        details: { error: 'Verification failed' },
+        severity: 'MEDIUM',
+      });
+
+      throw new Error('Passkey registration verification failed');
     } catch (error) {
       console.error('Passkey registration verification failed:', error);
 
@@ -373,7 +370,7 @@ class WebAuthnService {
         severity: 'HIGH',
       });
 
-      throw new Error('Passkey registration failed: ' + error.message);
+      throw new Error(`Passkey registration failed: ${error.message}`);
     }
   }
 
@@ -402,7 +399,7 @@ class WebAuthnService {
 
       return {
         success: true,
-        options: options,
+        options,
         metadata: {
           rpID: this.rpID,
           timestamp: new Date(),
@@ -433,7 +430,7 @@ class WebAuthnService {
 
       const verification = await verifyAuthenticationResponse({
         response: credential,
-        expectedChallenge: expectedChallenge,
+        expectedChallenge,
         expectedOrigin: this.rpOrigin,
         expectedRPID: this.rpID,
         credential: {
@@ -449,14 +446,14 @@ class WebAuthnService {
         // Update credential counter
         await this.updateCredentialCounter(
           storedCredential._id,
-          verification.authenticationInfo.newCounter
+          verification.authenticationInfo.newCounter,
         );
 
         // Generate authentication evidence
         const authenticationEvidence = await this.generateLegalEvidence(
           user,
           verification,
-          'BIOMETRIC_AUTHENTICATION'
+          'BIOMETRIC_AUTHENTICATION',
         );
 
         // Log successful authentication
@@ -488,16 +485,15 @@ class WebAuthnService {
             expiresIn: '24h',
           },
         };
-      } else {
-        await logActivity({
-          userId: user._id,
-          action: 'BIOMETRIC_AUTHENTICATION_FAILED',
-          details: { reason: 'Verification failed' },
-          severity: 'MEDIUM',
-        });
-
-        throw new Error('Biometric authentication verification failed');
       }
+      await logActivity({
+        userId: user._id,
+        action: 'BIOMETRIC_AUTHENTICATION_FAILED',
+        details: { reason: 'Verification failed' },
+        severity: 'MEDIUM',
+      });
+
+      throw new Error('Biometric authentication verification failed');
     } catch (error) {
       console.error('Authentication verification failed:', error);
 
@@ -508,7 +504,7 @@ class WebAuthnService {
         severity: 'HIGH',
       });
 
-      throw new Error('Authentication failed: ' + error.message);
+      throw new Error(`Authentication failed: ${error.message}`);
     }
   }
 
@@ -524,11 +520,11 @@ class WebAuthnService {
     try {
       // Encrypt sensitive credential data
       const encryptedPublicKey = await encryptData(
-        registrationInfo.credentialPublicKey.toString('base64')
+        registrationInfo.credentialPublicKey.toString('base64'),
       );
 
       const credential = new BiometricCredential({
-        userId: userId,
+        userId,
         credentialID: registrationInfo.credentialID,
         credentialPublicKey: encryptedPublicKey,
         counter: registrationInfo.counter,
@@ -568,17 +564,17 @@ class WebAuthnService {
     const evidenceId = `BIOMETRIC_EVIDENCE_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
 
     const evidence = {
-      evidenceId: evidenceId,
+      evidenceId,
       userId: user._id,
       userEmail: user.email,
       userFullName: user.fullName,
-      actionType: actionType,
+      actionType,
       timestamp: new Date(),
       verificationDetails: {
         verified: verification.verified,
         deviceType:
-          verification.registrationInfo?.credentialDeviceType ||
-          verification.authenticationInfo?.credentialDeviceType,
+          verification.registrationInfo?.credentialDeviceType
+          || verification.authenticationInfo?.credentialDeviceType,
         algorithm: 'WebAuthn/FIDO2',
         rpID: this.rpID,
         origin: this.rpOrigin,
@@ -620,10 +616,10 @@ class WebAuthnService {
 
     // Store evidence in audit log
     await BiometricAudit.create({
-      evidenceId: evidenceId,
+      evidenceId,
       userId: user._id,
       action: actionType,
-      evidence: evidence,
+      evidence,
       timestamp: new Date(),
     });
 
@@ -652,7 +648,7 @@ class WebAuthnService {
       {
         expiresIn: '24h',
         algorithm: 'HS256',
-      }
+      },
     );
   }
 
@@ -670,7 +666,7 @@ class WebAuthnService {
 
     global.challenges = global.challenges || {};
     global.challenges[key] = {
-      challenge: challenge,
+      challenge,
       expiresAt: Date.now() + ttl,
     };
 
@@ -703,7 +699,7 @@ class WebAuthnService {
       return null;
     }
 
-    const challenge = entry.challenge;
+    const { challenge } = entry;
     delete global.challenges[key];
 
     return challenge;
@@ -753,10 +749,10 @@ class BiometricConsentService {
       const consentId = `BIOMETRIC_CONSENT_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
 
       const consentRecord = new ConsentRecord({
-        consentId: consentId,
+        consentId,
         userId: user._id,
         consentType: 'BIOMETRIC_DATA_PROCESSING',
-        purpose: purpose,
+        purpose,
         granted: true,
         grantedAt: new Date(),
         expiresAt: new Date(Date.now() + this.consentValidityDays * 24 * 60 * 60 * 1000),
@@ -772,7 +768,7 @@ class BiometricConsentService {
             action: 'CONSENT_RECORDED',
             timestamp: new Date(),
             details: {
-              purpose: purpose,
+              purpose,
               userAcknowledged: true,
             },
           },
@@ -787,8 +783,8 @@ class BiometricConsentService {
           'consent.biometric': {
             granted: true,
             grantedAt: new Date(),
-            purpose: purpose,
-            consentId: consentId,
+            purpose,
+            consentId,
           },
         },
       });
@@ -797,8 +793,8 @@ class BiometricConsentService {
         userId: user._id,
         action: 'BIOMETRIC_CONSENT_RECORDED',
         details: {
-          consentId: consentId,
-          purpose: purpose,
+          consentId,
+          purpose,
           expiresAt: consentRecord.expiresAt,
         },
         legalCompliance: {
@@ -809,7 +805,7 @@ class BiometricConsentService {
 
       return {
         success: true,
-        consentId: consentId,
+        consentId,
         record: consentRecord,
         legalNotice: 'Biometric consent recorded in compliance with POPIA Section 19',
       };
@@ -829,9 +825,9 @@ class BiometricConsentService {
   async verifyConsent(userId, purpose) {
     try {
       const consent = await ConsentRecord.findOne({
-        userId: userId,
+        userId,
         consentType: 'BIOMETRIC_DATA_PROCESSING',
-        purpose: purpose,
+        purpose,
         granted: true,
         expiresAt: { $gt: new Date() },
       }).sort({ grantedAt: -1 });
@@ -875,8 +871,8 @@ class BiometricConsentService {
   async revokeConsent(userId, consentId) {
     try {
       const consent = await ConsentRecord.findOne({
-        consentId: consentId,
-        userId: userId,
+        consentId,
+        userId,
       });
 
       if (!consent) {
@@ -907,10 +903,10 @@ class BiometricConsentService {
 
       // Log the revocation
       await logActivity({
-        userId: userId,
+        userId,
         action: 'BIOMETRIC_CONSENT_REVOKED',
         details: {
-          consentId: consentId,
+          consentId,
           revocationReason: 'USER_REQUEST',
         },
         legalCompliance: {
@@ -977,10 +973,10 @@ class BiometricService {
         user,
         `Biometric authentication using ${biometricType}`,
         {
-          biometricType: biometricType,
+          biometricType,
           processingPurpose: 'AUTHENTICATION_AND_VERIFICATION',
           dataRetention: 'ENCRYPTED_TEMPLATES_ONLY',
-        }
+        },
       );
 
       let registrationResult;
@@ -1017,7 +1013,7 @@ class BiometricService {
       return {
         success: true,
         registration: registrationResult,
-        consent: consent,
+        consent,
         nextStep: 'Complete biometric enrollment using the provided options',
         compliance: {
           popia: 'EXPLICIT_CONSENT_RECORDED',
@@ -1031,7 +1027,7 @@ class BiometricService {
         userId: user?._id,
         action: 'BIOMETRIC_REGISTRATION_FAILED',
         details: {
-          biometricType: biometricType,
+          biometricType,
           error: error.message,
         },
         severity: 'HIGH',
@@ -1070,7 +1066,7 @@ class BiometricService {
       // Verify consent exists (POPIA)
       const consentCheck = await this.consentService.verifyConsent(
         userId,
-        'Biometric authentication'
+        'Biometric authentication',
       );
 
       if (!consentCheck.valid) {
@@ -1115,10 +1111,10 @@ class BiometricService {
 
         // Log successful verification
         await logActivity({
-          userId: userId,
+          userId,
           action: 'BIOMETRIC_VERIFICATION_SUCCESS',
           details: {
-            biometricType: biometricType,
+            biometricType,
             confidenceScore: verificationResult.confidence,
             legalEvidenceId: verificationResult.legalEvidence?.evidenceId,
           },
@@ -1147,26 +1143,25 @@ class BiometricService {
             admissibility: 'COURT_ADMISSIBLE',
           },
         };
-      } else {
-        // Record failed attempt
-        await this.recordFailedAttempt(userId, context);
-
-        return {
-          verified: false,
-          reason: verificationResult.reason || 'Biometric verification failed',
-          attemptsRemaining: this.getRemainingAttempts(userId),
-          securityLevel: 'MEDIUM',
-        };
       }
+      // Record failed attempt
+      await this.recordFailedAttempt(userId, context);
+
+      return {
+        verified: false,
+        reason: verificationResult.reason || 'Biometric verification failed',
+        attemptsRemaining: this.getRemainingAttempts(userId),
+        securityLevel: 'MEDIUM',
+      };
     } catch (error) {
       console.error('Biometric verification failed:', error);
 
       await logActivity({
-        userId: userId,
+        userId,
         action: 'BIOMETRIC_VERIFICATION_ERROR',
         details: {
           error: error.message,
-          context: context,
+          context,
         },
         severity: 'HIGH',
       });
@@ -1204,9 +1199,9 @@ class BiometricService {
         .toString('hex')}`;
 
       const signature = {
-        signatureId: signatureId,
+        signatureId,
         userId: user._id,
-        documentHash: documentHash,
+        documentHash,
         biometricType: verification.biometric.type,
         verificationEvidence: verification.biometric,
         timestamp: new Date(),
@@ -1242,11 +1237,11 @@ class BiometricService {
 
       // Store signature in audit trail
       await BiometricAudit.create({
-        signatureId: signatureId,
+        signatureId,
         userId: user._id,
         action: 'BIOMETRIC_SIGNATURE_GENERATED',
-        documentHash: documentHash,
-        signature: signature,
+        documentHash,
+        signature,
         timestamp: new Date(),
       });
 
@@ -1255,8 +1250,8 @@ class BiometricService {
         userId: user._id,
         action: 'BIOMETRIC_DOCUMENT_SIGNATURE_CREATED',
         details: {
-          signatureId: signatureId,
-          documentHash: documentHash,
+          signatureId,
+          documentHash,
           biometricType: verification.biometric.type,
         },
         legalCompliance: {
@@ -1267,8 +1262,8 @@ class BiometricService {
 
       return {
         success: true,
-        signature: signature,
-        verification: verification,
+        signature,
+        verification,
         legalNotice:
           'Biometric signature compliant with ECT Act Section 18 as Advanced Electronic Signature',
       };
@@ -1307,7 +1302,7 @@ class BiometricService {
       const verificationResult = await this.webAuthnService.verifyAuthentication(
         user,
         credential,
-        storedCredentials[0]
+        storedCredentials[0],
       );
 
       return {
@@ -1452,11 +1447,11 @@ class BiometricService {
 
     // Log failed attempt
     await logActivity({
-      userId: userId,
+      userId,
       action: 'BIOMETRIC_VERIFICATION_FAILED',
       details: {
         attemptNumber: attempts,
-        context: context,
+        context,
         lockoutThreshold: this.lockoutThreshold,
       },
       severity: attempts >= this.lockoutThreshold ? 'CRITICAL' : 'MEDIUM',
@@ -1468,13 +1463,13 @@ class BiometricService {
 
       // Send security alert
       await sendSecurityAlert({
-        userId: userId,
+        userId,
         alertType: 'BIOMETRIC_LOCKOUT',
         severity: 'CRITICAL',
         details: {
-          attempts: attempts,
+          attempts,
           lockoutDuration: this.lockoutDuration,
-          context: context,
+          context,
         },
       });
     }
@@ -1505,7 +1500,7 @@ class BiometricService {
     this.failedAttempts.set(lockoutKey, lockoutUntil);
 
     console.warn(
-      `User ${userId} locked out for biometric attempts until ${new Date(lockoutUntil)}`
+      `User ${userId} locked out for biometric attempts until ${new Date(lockoutUntil)}`,
     );
   }
 
@@ -1569,7 +1564,7 @@ class BiometricService {
 
     const token = jwt.sign(
       {
-        sessionId: sessionId,
+        sessionId,
         userId: user._id,
         email: user.email,
         authMethod: 'BIOMETRIC',
@@ -1582,12 +1577,12 @@ class BiometricService {
       {
         expiresIn: '24h',
         algorithm: 'HS256',
-      }
+      },
     );
 
     return {
-      token: token,
-      sessionId: sessionId,
+      token,
+      sessionId,
       expiresIn: '24h',
       biometric: {
         type: verificationResult.method,
@@ -1613,13 +1608,13 @@ class BiometricService {
 
       const BiometricCredential = require('../models/BiometricCredential');
       const credentials = await BiometricCredential.find({
-        userId: userId,
+        userId,
         status: 'ACTIVE',
       });
 
       const consentCheck = await this.consentService.verifyConsent(
         userId,
-        'Biometric authentication'
+        'Biometric authentication',
       );
 
       return {
@@ -1664,8 +1659,8 @@ class BiometricService {
       // Deactivate credentials
       const BiometricCredential = require('../models/BiometricCredential');
       await BiometricCredential.updateMany(
-        { userId: userId, status: 'ACTIVE' },
-        { $set: { status: 'REVOKED', revokedAt: new Date() } }
+        { userId, status: 'ACTIVE' },
+        { $set: { status: 'REVOKED', revokedAt: new Date() } },
       );
 
       // Update user profile
@@ -1678,7 +1673,7 @@ class BiometricService {
       });
 
       await logActivity({
-        userId: userId,
+        userId,
         action: 'BIOMETRIC_REGISTRATION_REVOKED',
         details: {
           revokedAt: new Date(),

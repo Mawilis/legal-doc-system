@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/integrations/ficaVerificationService.js
  * PATH: /server/integrations/ficaVerificationService.js

@@ -35,29 +35,29 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') }
 // Fail closed if MONGO_URI is missing (non-negotiable)
 if (!process.env.MONGO_URI && !process.env.MONGO_URI_TEST) {
   throw new Error(
-    'QUANTUM BREACH: MongoDB connection string required. Set MONGO_URI or MONGO_URI_TEST'
+    'QUANTUM BREACH: MongoDB connection string required. Set MONGO_URI or MONGO_URI_TEST',
   );
 }
 
 // =================================================================================
 // CORE DEPENDENCIES - PINNED VERSIONS
 // =================================================================================
-const mongoose = require('mongoose');
-const { GridFSBucket, ObjectId } = require('mongodb');
-const { appendAuditEntry } = require('../lib/auditLedger');
 
 const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid');
-const moment = require('moment');
 const _ = require('lodash');
 
 // Wilsy OS Security Dependencies
-const { wrapKey, unwrapKey } = require('../lib/kms');
-const { generateDocumentHash, createTimestamp } = require('../lib/ots');
 
+const mammoth = require('mammoth');
+const moment = require('moment');
+const { GridFSBucket, ObjectId } = require('mongodb');
+const mongoose = require('mongoose');
 const NodeCache = require('node-cache');
 const pdfParse = require('pdf-parse');
-const mammoth = require('mammoth');
+const { v4: uuidv4 } = require('uuid');
+const { appendAuditEntry } = require('../lib/auditLedger');
+const { wrapKey, unwrapKey } = require('../lib/kms');
+const { generateDocumentHash, createTimestamp } = require('../lib/ots');
 
 // =================================================================================
 // MULTI-TENANT CONFIGURATION - TENANT ISOLATION DNA
@@ -79,8 +79,8 @@ const DOCUMENT_CONFIG = {
 
   // Allowed MIME Types (Legal Document Focus)
   ALLOWED_MIME_TYPES: (
-    process.env.DOCUMENT_ALLOWED_MIME_TYPES ||
-    'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/jpeg,image/png'
+    process.env.DOCUMENT_ALLOWED_MIME_TYPES
+    || 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/jpeg,image/png'
   )
     .split(',')
     .map((type) => type.trim()),
@@ -146,7 +146,7 @@ const documentMetadataSchema = new mongoose.Schema(
       required: true,
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v);
         },
         message: (props) => `${props.value} is not a valid tenant ID!`,
@@ -231,7 +231,7 @@ const documentMetadataSchema = new mongoose.Schema(
     encryptionKeyId: {
       type: String,
       required: true,
-      default: function () {
+      default() {
         // Tenant-specific key ID for envelope encryption
         return `tenant-${this.tenantId}-dek-${uuidv4().substring(0, 8)}`;
       },
@@ -468,7 +468,7 @@ const documentMetadataSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // Multi-Tenant Indexes
@@ -495,7 +495,7 @@ documentMetadataSchema.virtual('isExpired').get(function () {
 documentMetadataSchema.virtual('requiresArchival').get(function () {
   const archivalThreshold = moment(this.createdAt).add(
     DOCUMENT_CONFIG.ARCHIVAL_THRESHOLD_DAYS,
-    'days'
+    'days',
   );
   return moment().isAfter(archivalThreshold) && this.status !== 'ARCHIVED';
 });
@@ -572,7 +572,7 @@ const tenantQuotaSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 tenantQuotaSchema.virtual('storageUsedPercentage').get(function () {
@@ -678,14 +678,14 @@ class MultiTenantStorageEngine {
           }
 
           const result = {
-            storageId: storageId,
-            fileName: fileName,
-            contentHash: contentHash,
-            encryptedHash: encryptedHash,
-            wrappedKey: wrappedKey,
+            storageId,
+            fileName,
+            contentHash,
+            encryptedHash,
+            wrappedKey,
             fileSize: fileBuffer.length,
             encryptedSize: encryptedBuffer.length,
-            timestampProof: timestampProof,
+            timestampProof,
             uploadedAt: new Date().toISOString(),
           };
 
@@ -763,9 +763,9 @@ class MultiTenantStorageEngine {
       }
 
       return {
-        storageId: storageId,
+        storageId,
         fileName: fileInfo.filename,
-        decryptedBuffer: decryptedBuffer,
+        decryptedBuffer,
         mimeType: fileInfo.metadata?.mimeType || 'application/octet-stream',
         originalFileName: fileInfo.metadata?.originalFileName,
         contentHash: decryptedHash,
@@ -806,9 +806,9 @@ class MultiTenantStorageEngine {
 
       return {
         success: true,
-        storageId: storageId,
+        storageId,
         deletedAt: new Date().toISOString(),
-        tenantId: tenantId,
+        tenantId,
       };
     } catch (error) {
       console.error(`[Tenant: ${tenantId}] Document deletion failed:`, error);
@@ -969,7 +969,7 @@ class MultiTenantDocumentService {
           ownerUserId: userId,
           allowedUsers: [
             {
-              userId: userId,
+              userId,
               accessLevel: 'EDIT',
               grantedAt: new Date(),
               expiresAt: moment().add(1, 'year').toDate(),
@@ -1010,7 +1010,7 @@ class MultiTenantDocumentService {
       this.documentCache.set(
         `${tenantId}:metadata:${documentMetadata.documentId}`,
         documentMetadata.toObject(),
-        3600
+        3600,
       );
 
       return {
@@ -1086,7 +1086,7 @@ class MultiTenantDocumentService {
       const storageResult = await this.storageEngine.retrieveDocument(
         documentMetadata.storageId,
         tenantId,
-        documentMetadata.wrappedKey
+        documentMetadata.wrappedKey,
       );
 
       // Log access
@@ -1218,10 +1218,8 @@ class MultiTenantDocumentService {
         newDocumentMetadata.wrappedKey = storageResult.wrappedKey;
         newDocumentMetadata.fileSize = newFileBuffer.length;
         newDocumentMetadata.mimeType = updates.file.mimetype || existingDocument.mimeType;
-        newDocumentMetadata.originalFileName =
-          updates.file.originalname || existingDocument.originalFileName;
-        newDocumentMetadata.fileExtension =
-          this._getFileExtension(updates.file.originalname) || existingDocument.fileExtension;
+        newDocumentMetadata.originalFileName = updates.file.originalname || existingDocument.originalFileName;
+        newDocumentMetadata.fileExtension = this._getFileExtension(updates.file.originalname) || existingDocument.fileExtension;
 
         // Update PII classification
         newDocumentMetadata.piiClassification = {
@@ -1329,7 +1327,7 @@ class MultiTenantDocumentService {
       // Check retention compliance
       if (moment().isBefore(document.retentionExpiry)) {
         throw new Error(
-          `Document cannot be deleted before retention expiry: ${document.retentionExpiry.toISOString()}`
+          `Document cannot be deleted before retention expiry: ${document.retentionExpiry.toISOString()}`,
         );
       }
 
@@ -1467,7 +1465,7 @@ class MultiTenantDocumentService {
           },
           $set: { updatedAt: new Date() },
         },
-        { upsert: true, new: true }
+        { upsert: true, new: true },
       );
     } catch (error) {
       console.error(`[Tenant: ${tenantId}] Quota update failed:`, error);
@@ -1506,7 +1504,7 @@ class MultiTenantDocumentService {
 
     // Check allowed users
     const userAccess = documentMetadata.accessControl.allowedUsers.find(
-      (user) => user.userId === userId
+      (user) => user.userId === userId,
     );
 
     if (!userAccess) {
@@ -1519,7 +1517,9 @@ class MultiTenantDocumentService {
     }
 
     // Check access level hierarchy
-    const accessLevels = { VIEW: 1, EDIT: 2, SHARE: 3, DELETE: 4 };
+    const accessLevels = {
+      VIEW: 1, EDIT: 2, SHARE: 3, DELETE: 4,
+    };
     const userLevel = accessLevels[userAccess.accessLevel] || 0;
     const requiredLevel = accessLevels[requiredAccess] || 0;
 
@@ -1664,12 +1664,11 @@ class MultiTenantDocumentService {
   async _processDocumentFile(file) {
     if (file.buffer) {
       return file.buffer;
-    } else if (file.path) {
+    } if (file.path) {
       const fs = require('fs').promises;
       return await fs.readFile(file.path);
-    } else {
-      throw new Error('Invalid file object');
     }
+    throw new Error('Invalid file object');
   }
 
   async _performPIIScan(buffer, metadata) {
@@ -1704,12 +1703,11 @@ class MultiTenantDocumentService {
       highestRiskLevel:
         detectedPII.length > 0
           ? detectedPII.reduce(
-              (max, pii) =>
-                this._getRiskLevelValue(pii.riskLevel) > this._getRiskLevelValue(max)
-                  ? pii.riskLevel
-                  : max,
-              'LOW'
-            )
+            (max, pii) => (this._getRiskLevelValue(pii.riskLevel) > this._getRiskLevelValue(max)
+              ? pii.riskLevel
+              : max),
+            'LOW',
+          )
           : 'LOW',
     };
   }
@@ -1719,10 +1717,10 @@ class MultiTenantDocumentService {
       if (mimeType === 'application/pdf') {
         const data = await pdfParse(buffer);
         return data.text || '';
-      } else if (mimeType.includes('word')) {
+      } if (mimeType.includes('word')) {
         const result = await mammoth.extractRawText({ buffer });
         return result.value || '';
-      } else if (mimeType.startsWith('text/')) {
+      } if (mimeType.startsWith('text/')) {
         return buffer.toString('utf-8');
       }
       return '';
@@ -1779,18 +1777,19 @@ class MultiTenantDocumentService {
       overallSeverity:
         complianceIssues.length > 0
           ? complianceIssues.reduce(
-              (max, issue) =>
-                this._getSeverityValue(issue.severity) > this._getSeverityValue(max)
-                  ? issue.severity
-                  : max,
-              'LOW'
-            )
+            (max, issue) => (this._getSeverityValue(issue.severity) > this._getSeverityValue(max)
+              ? issue.severity
+              : max),
+            'LOW',
+          )
           : 'NONE',
     };
   }
 
   _getSeverityValue(severity) {
-    const values = { NONE: 0, LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
+    const values = {
+      NONE: 0, LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4,
+    };
     return values[severity] || 0;
   }
 
@@ -1812,13 +1811,12 @@ class MultiTenantDocumentService {
       });
     });
 
-    summary.complianceScore =
-      auditResults.length > 0
-        ? (
-            ((auditResults.length - summary.documentsWithIssues) / auditResults.length) *
-            100
-          ).toFixed(2)
-        : 100;
+    summary.complianceScore = auditResults.length > 0
+      ? (
+        ((auditResults.length - summary.documentsWithIssues) / auditResults.length)
+            * 100
+      ).toFixed(2)
+      : 100;
 
     return summary;
   }
@@ -1839,11 +1837,10 @@ class MultiTenantDocumentService {
     for (const [type, issues] of Object.entries(issuesByType)) {
       const count = issues.length;
       const highestSeverity = issues.reduce(
-        (max, issue) =>
-          this._getSeverityValue(issue.severity) > this._getSeverityValue(max)
-            ? issue.severity
-            : max,
-        'LOW'
+        (max, issue) => (this._getSeverityValue(issue.severity) > this._getSeverityValue(max)
+          ? issue.severity
+          : max),
+        'LOW',
       );
 
       recommendations.push({
@@ -1856,7 +1853,7 @@ class MultiTenantDocumentService {
     }
 
     return recommendations.sort(
-      (a, b) => this._getSeverityValue(b.severity) - this._getSeverityValue(a.severity)
+      (a, b) => this._getSeverityValue(b.severity) - this._getSeverityValue(a.severity),
     );
   }
 

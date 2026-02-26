@@ -27,12 +27,10 @@
  * =======================================================================================
  */
 
-'use strict';
-
 const crypto = require('crypto');
-const { Vault } = require('./kms'); // Future Vault integration
-const AuditLedger = require('../models/AuditLedger');
 const mongoose = require('mongoose');
+const AuditLedger = require('../models/AuditLedger');
+const { Vault } = require('./kms'); // Future Vault integration
 
 // Encryption constants per POPIA/GDPR requirements
 const ALGORITHM = 'aes-256-gcm';
@@ -86,14 +84,14 @@ class CompanyCrypto {
   constructor(options = {}) {
     this.masterKey = Buffer.from(
       options.masterKey || process.env.FIELD_ENCRYPTION_KEY || '',
-      'base64'
+      'base64',
     );
 
     if (this.masterKey.length !== KEY_LENGTH) {
       throw new Error(
-        `Master key must be ${KEY_LENGTH} bytes (${KEY_LENGTH * 8}-bit). ` +
-          `Current: ${this.masterKey.length} bytes. ` +
-          'Generate with: openssl rand -base64 32'
+        `Master key must be ${KEY_LENGTH} bytes (${KEY_LENGTH * 8}-bit). `
+          + `Current: ${this.masterKey.length} bytes. `
+          + 'Generate with: openssl rand -base64 32',
       );
     }
 
@@ -209,10 +207,10 @@ class CompanyCrypto {
   async decryptField(encryptedPayload, tenantId, context = {}) {
     // Validate payload structure
     if (
-      !encryptedPayload ||
-      !encryptedPayload.ciphertext ||
-      !encryptedPayload.iv ||
-      !encryptedPayload.tag
+      !encryptedPayload
+      || !encryptedPayload.ciphertext
+      || !encryptedPayload.iv
+      || !encryptedPayload.tag
     ) {
       throw new Error('Invalid encrypted payload structure');
     }
@@ -344,9 +342,9 @@ class CompanyCrypto {
 
     for (const field of encryptedFields) {
       if (
-        encryptedCompany[field] &&
-        typeof encryptedCompany[field] === 'object' &&
-        encryptedCompany[field].ciphertext
+        encryptedCompany[field]
+        && typeof encryptedCompany[field] === 'object'
+        && encryptedCompany[field].ciphertext
       ) {
         try {
           const plaintext = await this.decryptField(encryptedCompany[field], tenantId, {

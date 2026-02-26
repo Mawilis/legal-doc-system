@@ -1,7 +1,7 @@
 /* eslint-env jest */
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ COMPLIANCE ID GENERATOR — FORENSIC VALIDATION TEST SUITE                     ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
 const crypto = require('crypto');
 const fs = require('fs');
@@ -17,6 +17,8 @@ jest.mock('../../middleware/tenantContext', () => ({
   getTenantContext: jest.fn(() => ({ tenantId: 'TEST_TENANT_001' })),
 }));
 
+const { getTenantContext } = require('../../middleware/tenantContext');
+const auditLogger = require('../../utils/auditLogger');
 const {
   generateFICARefNumber,
   generateComplianceId,
@@ -25,12 +27,9 @@ const {
   ID_TYPES,
 } = require('../../utils/complianceIdGenerator');
 
-const auditLogger = require('../../utils/auditLogger');
-const { getTenantContext } = require('../../middleware/tenantContext');
-
 describe('COMPLIANCE ID GENERATOR — FORENSIC VALIDATION', () => {
   let testRunId;
-  let evidenceEntries = [];
+  const evidenceEntries = [];
 
   beforeAll(() => {
     testRunId = crypto.randomUUID().substring(0, 8);

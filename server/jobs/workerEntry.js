@@ -8,12 +8,10 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 require('dotenv').config();
-const mongoose = require('mongoose');
 const { Worker, QueueEvents } = require('bullmq');
 const IORedis = require('ioredis');
+const mongoose = require('mongoose');
 const winston = require('winston');
 
 // --- 1. INDUSTRIAL LOGGING ---
@@ -66,13 +64,13 @@ const complianceWorker = new Worker(
           severity: 'WARNING',
           summary: `Identity document expired for ${client.name}`,
           metadata: { clientId: client._id },
-        }
+        },
       );
     }
 
     return { totalScanned: expired.length };
   },
-  { connection }
+  { connection },
 );
 
 /*
@@ -85,7 +83,7 @@ const notificationWorker = new Worker(
     logger.info(`📨 [NOTIF_SEND]: Job ${job.id} for ${job.data.email}`);
     // Integration point for SendGrid/AWS SES would go here
   },
-  { connection }
+  { connection },
 );
 
 /*
@@ -97,7 +95,7 @@ const invoiceWorker = new Worker(
   async (job) => {
     logger.info(`💰 [BILLING_JOB]: Processing ${job.name}`);
   },
-  { connection }
+  { connection },
 );
 
 // --- 4. LIFECYCLE MANAGEMENT ---

@@ -138,19 +138,17 @@
  * COMPLIANCE_ALERT_TEMPLATE=compliance_breach_alert
  */
 
-'use strict';
-
 // ============================================================================
 // QUANTUM DEPENDENCIES
 // ============================================================================
-const mongoose = require('mongoose');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const validator = require('validator');
-const { v4: uuidv4 } = require('uuid');
 const Joi = require('joi');
 const moment = require('moment');
+const mongoose = require('mongoose');
 const redis = require('redis');
+const { v4: uuidv4 } = require('uuid');
+const validator = require('validator');
 
 // Quantum Security: Load environment variables
 require('dotenv').config({ path: '/server/.env' });
@@ -158,24 +156,24 @@ require('dotenv').config({ path: '/server/.env' });
 // ============================================================================
 // WILSY OS CORE IMPORTS
 // ============================================================================
-const Tenant = require('../models/tenantModel');
-const User = require('../models/userModel');
+const Document = require('../models/Document'); // Added missing import
+const AuditEvent = require('../models/auditEventModel');
 const Compliance = require('../models/complianceModel');
 const Subscription = require('../models/subscriptionModel');
-const CustomError = require('../utils/customError');
-const AuditEvent = require('../models/auditEventModel');
-const { validatePOPIAConsent } = require('../validators/popiaValidator');
-const { encryptField, decryptField } = require('../utils/cryptoUtils');
-const Document = require('../models/Document'); // Added missing import
+const Tenant = require('../models/tenantModel');
+const User = require('../models/userModel');
 
 // ============================================================================
 // SA LEGAL SERVICES
 // ============================================================================
+const BillingService = require('../services/billingService');
+const ComplianceService = require('../services/complianceService');
+const EmailService = require('../services/emailService');
 const LPCService = require('../services/lpcService');
 const POPIAService = require('../services/popiaService');
-const BillingService = require('../services/billingService');
-const EmailService = require('../services/emailService');
-const ComplianceService = require('../services/complianceService');
+const { encryptField, decryptField } = require('../utils/cryptoUtils');
+const CustomError = require('../utils/customError');
+const { validatePOPIAConsent } = require('../validators/popiaValidator');
 
 // ============================================================================
 // QUANTUM CONSTANTS
@@ -302,8 +300,7 @@ async function validateLPCNumber(lpcNumber) {
  */
 function generateSecurePassword() {
   const length = 16; // Increased for quantum security
-  const charset =
-    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
   let password = '';
 
   // Ensure compliance with POPIA password policies
@@ -335,7 +332,7 @@ function scrubTenantPublic(tenant) {
     id: tenant._id,
     name: tenant.name,
     slug: tenant.slug,
-    lpcNumber: tenant.lpcNumber ? 'LPC/*/*' + tenant.lpcNumber.slice(-3) : null,
+    lpcNumber: tenant.lpcNumber ? `LPC/*/*${tenant.lpcNumber.slice(-3)}` : null,
     province: tenant.province,
     branding: {
       logoUrl: tenant.settings?.logoUrl || null,
@@ -370,7 +367,9 @@ async function emitFirmAudit({
     // Create cryptographic hash of audit data
     const auditHash = crypto
       .createHash('sha256')
-      .update(JSON.stringify({ tenantId, actorId, eventType, summary, timestamp: new Date() }))
+      .update(JSON.stringify({
+        tenantId, actorId, eventType, summary, timestamp: new Date(),
+      }))
       .digest('hex');
 
     await AuditEvent.create({
@@ -510,7 +509,9 @@ exports.updateComplianceSettings = async (req, res, next) => {
 
   try {
     const { id } = req.params;
-    const { popiaSettings, gdprSettings, dataRetention, auditFrequency } = req.body;
+    const {
+      popiaSettings, gdprSettings, dataRetention, auditFrequency,
+    } = req.body;
 
     // Validate tenant access
     if (req.user.tenantId.toString() !== id && req.user.role !== 'SUPER_ADMIN') {
@@ -577,7 +578,7 @@ exports.updateComplianceSettings = async (req, res, next) => {
           },
         },
       },
-      { upsert: true, session }
+      { upsert: true, session },
     );
 
     // Invalidate compliance cache
@@ -854,7 +855,7 @@ exports.upgradePlan = async (req, res, next) => {
           nextBillingDate: upgradeDetails.nextBillingDate,
         },
       },
-      { session }
+      { session },
     );
 
     // Process payment if immediate upgrade with charge
@@ -1116,8 +1117,8 @@ exports.createTenant = async (req, res, next) => {
     await ComplianceService.initializeTenantCompliance(tenantId, {
       firmName: name,
       principalEmail: ownerEmail,
-      province: province,
-      lpcNumber: lpcNumber,
+      province,
+      lpcNumber,
       plan: plan.toUpperCase(),
     }).catch((err) => {
       console.error('Compliance workflow initialization failed:', err.message);
@@ -1148,8 +1149,8 @@ exports.createTenant = async (req, res, next) => {
     await POPIAService.initializeTenantCompliance(tenantId, {
       firmName: name,
       principalEmail: ownerEmail,
-      province: province,
-      lpcNumber: lpcNumber,
+      province,
+      lpcNumber,
       dataProcessingActivities: [
         'CLIENT_DOCUMENT_MANAGEMENT',
         'CASE_MANAGEMENT',
@@ -1306,25 +1307,25 @@ function generateComplianceRecommendations(score) {
     recommendations.push(
       'Urgent: Appoint Information Officer and register with Regulator',
       'Priority: Implement POPIA-compliant consent management system',
-      'Required: Conduct data protection impact assessment'
+      'Required: Conduct data protection impact assessment',
     );
   } else if (score < 75) {
     recommendations.push(
       'Implement automated data subject access request processing',
       'Schedule quarterly security audits',
-      'Document all data processing activities'
+      'Document all data processing activities',
     );
   } else if (score < 90) {
     recommendations.push(
       'Consider GDPR compliance for international clients',
       'Implement advanced data encryption for sensitive documents',
-      'Setup automated compliance reporting'
+      'Setup automated compliance reporting',
     );
   } else {
     recommendations.push(
       'Maintain compliance with quarterly reviews',
       'Consider ISO 27001 certification',
-      'Explore blockchain document notarization for enhanced security'
+      'Explore blockchain document notarization for enhanced security',
     );
   }
 
@@ -1520,7 +1521,9 @@ exports.activateTenant = async (req, res, next) => {
 exports.updateBranding = async (req, res, next) => {
   try {
     const { tenantId } = req.user;
-    const { logoUrl, brandColor, secondaryColor, fontFamily } = req.body;
+    const {
+      logoUrl, brandColor, secondaryColor, fontFamily,
+    } = req.body;
 
     const tenant = await Tenant.findById(tenantId);
 

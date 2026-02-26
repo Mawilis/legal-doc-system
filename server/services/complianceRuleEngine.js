@@ -1,14 +1,14 @@
-/*███████╗██╗    ██╗██╗██╗  ██╗███████╗██╗   ██╗    ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ██╗      █████╗ ███╗   ██╗ ██████╗███████╗     ██████╗ ██╗   ██╗██╗     ███████╗     ███████╗███╗   ██╗ ██████╗ ██╗███╗   ██╗███████╗
+/* ███████╗██╗    ██╗██╗██╗  ██╗███████╗██╗   ██╗    ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ██╗      █████╗ ███╗   ██╗ ██████╗███████╗     ██████╗ ██╗   ██╗██╗     ███████╗     ███████╗███╗   ██╗ ██████╗ ██╗███╗   ██╗███████╗
 ██╔════╝██║    ██║██║██║ ██╔╝██╔════╝╚██╗ ██╔╝    ██╔════╝██╔═══██╗████╗ ████║██╔══██╗██║     ██║     ██╔══██╗████╗  ██║██╔════╝██╔════╝    ██╔═══██╗██║   ██║██║     ██╔════╝    ██╔════╝████╗  ██║██╔════╝ ██║████╗  ██║██╔════╝
-███████╗██║ █╗ ██║██║█████╔╝ ███████╗ ╚████╔╝     ██║     ██║   ██║██╔████╔██║██████╔╝██║     ██║     ███████║██╔██╗ ██║██║     █████╗      ██║   ██║██║   ██║██║     █████╗      █████╗  ██╔██╗ ██║██║  ███╗██║██╔██╗ ██║█████╗  
-╚════██║██║███╗██║██║██╔═██╗ ╚════██║  ╚██╔╝      ██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██║     ██║     ██╔══██║██║╚██╗██║██║     ██╔══╝      ██║   ██║██║   ██║██║     ██╔══╝      ██╔══╝  ██║╚██╗██║██║   ██║██║██║╚██╗██║██╔══╝  
+███████╗██║ █╗ ██║██║█████╔╝ ███████╗ ╚████╔╝     ██║     ██║   ██║██╔████╔██║██████╔╝██║     ██║     ███████║██╔██╗ ██║██║     █████╗      ██║   ██║██║   ██║██║     █████╗      █████╗  ██╔██╗ ██║██║  ███╗██║██╔██╗ ██║█████╗
+╚════██║██║███╗██║██║██╔═██╗ ╚════██║  ╚██╔╝      ██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██║     ██║     ██╔══██║██║╚██╗██║██║     ██╔══╝      ██║   ██║██║   ██║██║     ██╔══╝      ██╔══╝  ██║╚██╗██║██║   ██║██║██║╚██╗██║██╔══╝
 ███████║╚███╔███╔╝██║██║  ██╗███████║   ██║       ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║     ███████╗███████╗██║  ██║██║ ╚████║╚██████╗███████╗    ╚██████╔╝╚██████╔╝███████╗███████╗    ███████╗██║ ╚████║╚██████╔╝██║██║ ╚████║███████╗
 ╚══════╝ ╚══╝╚══╝ ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝        ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝╚══════╝     ╚═════╝  ╚═════╝ ╚══════╝╚══════╝    ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚══════╝
-                                                                                                                                                                                                                                          
-                                   QUANTUM COMPLIANCE RULE ENGINE - ERROR CORRECTED VERSION                                                                                
-                         The Supreme Orchestrator of Multi-Jurisdictional Legal Canons                                                                                        
-                                Wilsy OS - Eternal Compliance Dominion                                                                                                        
-                                                                                                                                                                              
+
+                                   QUANTUM COMPLIANCE RULE ENGINE - ERROR CORRECTED VERSION
+                         The Supreme Orchestrator of Multi-Jurisdictional Legal Canons
+                                Wilsy OS - Eternal Compliance Dominion
+
 ===============================================================================================================================================================================
  QUANTUM MANIFESTO:
  This celestial engine transmutes raw legal statutes into executable compliance quanta, weaving multi-jurisdictional
@@ -24,22 +24,23 @@
  VERSION: 1.0.1 | QUANTUM HASH: Qx9c8a3b7d5e2f4g6-corrected
  CREATED: 2026-01-24 | LAST QUANTUM SYNC: 2026-01-24 18:30:00 UTC
  ERROR CORRECTION: All missing methods implemented, security vulnerabilities fixed, performance optimizations applied
-===============================================================================================================================================================================*/
+=============================================================================================================================================================================== */
 
 // ================================================================================================================
 // QUANTUM IMPORTS & ENVIRONMENT CONFIGURATION
 // ================================================================================================================
 require('dotenv').config({ path: `${__dirname}/../.env` });
 const crypto = require('crypto');
+const EventEmitter = require('events');
 const axios = require('axios');
 const jsonata = require('jsonata');
 const moment = require('moment');
-const EventEmitter = require('events');
 const fs = require('fs').promises;
 const path = require('path');
 
 // Quantum Sentinel: Optional dependencies for enhanced capabilities
-let Redis, BullMQ, mongoose;
+let Redis; let BullMQ; let
+  mongoose;
 try {
   Redis = require('ioredis');
 } catch (e) {
@@ -82,7 +83,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((varName) => {
   if (!process.env[varName] && process.env.NODE_ENV === 'production') {
     throw new Error(
-      `🚨 QUANTUM RULE ENGINE BREACH: Missing required environment variable: ${varName}`
+      `🚨 QUANTUM RULE ENGINE BREACH: Missing required environment variable: ${varName}`,
     );
   }
 });
@@ -251,8 +252,8 @@ class ComplianceRuleEngine extends EventEmitter {
       if (timeSinceFailure < this.config.circuitBreakerResetTimeout) {
         throw new Error(
           `Circuit breaker OPEN. Retry after ${Math.ceil(
-            (this.config.circuitBreakerResetTimeout - timeSinceFailure) / 1000
-          )} seconds`
+            (this.config.circuitBreakerResetTimeout - timeSinceFailure) / 1000,
+          )} seconds`,
         );
       }
       this.engineState.circuitBreakerState = 'HALF_OPEN';
@@ -268,8 +269,7 @@ class ComplianceRuleEngine extends EventEmitter {
       await this.loadBaseRuleSets();
 
       // Load jurisdiction-specific rules
-      const jurisdictions =
-        options.jurisdictions || RULE_ENGINE_CONSTANTS.JURISDICTION_PRIORITIES.PRIMARY;
+      const jurisdictions = options.jurisdictions || RULE_ENGINE_CONSTANTS.JURISDICTION_PRIORITIES.PRIMARY;
       await this.loadJurisdictionalRules(jurisdictions);
 
       // Load context-specific rules
@@ -313,7 +313,7 @@ class ComplianceRuleEngine extends EventEmitter {
 
       console.log(`✅ Quantum Compliance Rule Engine initialized in ${initializationDuration}ms`);
       console.log(
-        `📊 Rules Loaded: ${this.engineState.rulesLoaded}, Active: ${this.engineState.rulesActive}`
+        `📊 Rules Loaded: ${this.engineState.rulesLoaded}, Active: ${this.engineState.rulesActive}`,
       );
 
       return {
@@ -547,7 +547,7 @@ class ComplianceRuleEngine extends EventEmitter {
           await this.redisClient.setex(
             cacheKey,
             RULE_ENGINE_CONSTANTS.PERFORMANCE.CACHE_TTL,
-            JSON.stringify(rule)
+            JSON.stringify(rule),
           );
         }
       }
@@ -655,7 +655,7 @@ class ComplianceRuleEngine extends EventEmitter {
         transformedData = await this.applyTransformations(
           rule.transformations,
           data,
-          evaluationResult
+          evaluationResult,
         );
       }
 
@@ -772,7 +772,7 @@ class ComplianceRuleEngine extends EventEmitter {
             await this.redisClient.setex(
               `rule:${ruleId}`,
               RULE_ENGINE_CONSTANTS.PERFORMANCE.CACHE_TTL,
-              JSON.stringify(rule)
+              JSON.stringify(rule),
             );
           }
           return rule;
@@ -845,7 +845,7 @@ class ComplianceRuleEngine extends EventEmitter {
         await this.redisClient.setex(
           cacheKey,
           RULE_ENGINE_CONSTANTS.PERFORMANCE.CACHE_TTL,
-          JSON.stringify(result)
+          JSON.stringify(result),
         );
       }
 
@@ -909,7 +909,7 @@ class ComplianceRuleEngine extends EventEmitter {
                   const result = await expression.evaluate(data);
                   return {
                     compliant: Boolean(result),
-                    result: result,
+                    result,
                     message: rule.message,
                     severity: rule.severity,
                   };
@@ -943,8 +943,8 @@ class ComplianceRuleEngine extends EventEmitter {
                 for (const transformation of transformations) {
                   try {
                     if (
-                      !transformation.condition ||
-                      (await transformation.condition.evaluate({ data: result, context }))
+                      !transformation.condition
+                      || (await transformation.condition.evaluate({ data: result, context }))
                     ) {
                       const value = await transformation.expression.evaluate({
                         data: result,
@@ -957,7 +957,7 @@ class ComplianceRuleEngine extends EventEmitter {
                   } catch (error) {
                     console.warn(
                       `Transformation failed for path ${transformation.path}:`,
-                      error.message
+                      error.message,
                     );
                   }
                 }
@@ -977,19 +977,15 @@ class ComplianceRuleEngine extends EventEmitter {
 
       default: {
         version: '1.0.0',
-        compile: async (rule) => {
-          return {
-            type: rule.type,
-            raw: rule,
-            execute: async (data, context) => {
-              return {
-                compliant: false,
-                message: `No compiler available for rule type: ${rule.type}`,
-                severity: 'HIGH',
-              };
-            },
-          };
-        },
+        compile: async (rule) => ({
+          type: rule.type,
+          raw: rule,
+          execute: async (data, context) => ({
+            compliant: false,
+            message: `No compiler available for rule type: ${rule.type}`,
+            severity: 'HIGH',
+          }),
+        }),
       },
     };
   }
@@ -1061,7 +1057,9 @@ class ComplianceRuleEngine extends EventEmitter {
         this.Rule = mongoose.model(
           'ComplianceRule',
           new mongoose.Schema({
-            ruleId: { type: String, required: true, unique: true, index: true },
+            ruleId: {
+              type: String, required: true, unique: true, index: true,
+            },
             name: { type: String, required: true },
             description: { type: String },
             type: {
@@ -1079,13 +1077,15 @@ class ComplianceRuleEngine extends EventEmitter {
             condition: { type: mongoose.Schema.Types.Mixed },
             transformations: { type: [mongoose.Schema.Types.Mixed] },
             severity: { type: String, enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] },
-            priority: { type: Number, min: 1, max: 10, default: 5 },
+            priority: {
+              type: Number, min: 1, max: 10, default: 5,
+            },
             active: { type: Boolean, default: true },
             metadata: { type: mongoose.Schema.Types.Mixed },
             createdAt: { type: Date, default: Date.now },
             updatedAt: { type: Date, default: Date.now },
             expiresAt: { type: Date },
-          })
+          }),
         );
 
         this.RuleEvaluation = mongoose.model(
@@ -1103,7 +1103,7 @@ class ComplianceRuleEngine extends EventEmitter {
             performance: { type: mongoose.Schema.Types.Mixed },
             timestamp: { type: Date, default: Date.now },
             metadata: { type: mongoose.Schema.Types.Mixed },
-          })
+          }),
         );
       } catch (error) {
         console.warn('⚠️  MongoDB connection failed:', error.message);
@@ -1162,13 +1162,11 @@ class ComplianceRuleEngine extends EventEmitter {
 
       this.evaluationWorker = new BullMQ.Worker(
         'rule-evaluation',
-        async (job) => {
-          return await this.processEvaluationJob(job.data);
-        },
+        async (job) => await this.processEvaluationJob(job.data),
         {
           connection: { url: this.config.redisUrl },
           concurrency: this.config.maxConcurrentEvaluations,
-        }
+        },
       );
 
       console.log('🔧 Initialized BullMQ processing queues for rule operations');
@@ -1254,7 +1252,7 @@ class ComplianceRuleEngine extends EventEmitter {
         await this.redisClient.setex(
           `logs:engine:${logEntry.eventId}`,
           86400, // 24 hours
-          JSON.stringify(logEntry)
+          JSON.stringify(logEntry),
         );
       }
 
@@ -1507,7 +1505,7 @@ class ComplianceRuleEngine extends EventEmitter {
           // Test compilation with a simple rule
           const testRule = {
             ruleId: 'test',
-            type: type,
+            type,
             condition: 'true',
             transformations: [],
           };

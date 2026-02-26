@@ -37,6 +37,7 @@
 
 // 🔷 QUANTUM IMPORTS: DEPENDENCY ENTANGLEMENT
 require('dotenv').config(); // Env Vault Mandate
+const crypto = require('crypto');
 const {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -44,12 +45,11 @@ const {
   verifyAuthenticationResponse,
 } = require('@simplewebauthn/server');
 const { isoBase64URL } = require('@simplewebauthn/server/helpers');
-const crypto = require('crypto');
-const { v4: uuidv4 } = require('uuid');
 const CryptoJS = require('crypto-js');
-const User = require('../models/userModel');
-const BiometricCredential = require('../models/biometricCredentialModel');
+const { v4: uuidv4 } = require('uuid');
 const AuditLog = require('../models/auditLogModel');
+const BiometricCredential = require('../models/biometricCredentialModel');
+const User = require('../models/userModel');
 const { ApiError } = require('../utils/apiError');
 const { asyncHandler } = require('../utils/asyncHandler');
 const redisClient = require('../utils/redis');
@@ -103,8 +103,8 @@ exports.generateRegistrationOptions = asyncHandler(async (req, res, next) => {
     return next(
       new ApiError(
         'POPIA Compliance: Explicit biometric consent required. Please provide consent in user settings.',
-        403
-      )
+        403,
+      ),
     );
   }
 
@@ -117,7 +117,7 @@ exports.generateRegistrationOptions = asyncHandler(async (req, res, next) => {
   // 🛡️ SECURITY QUANTUM: Limit number of biometric credentials per user
   if (existingCredentials.length >= 3) {
     return next(
-      new ApiError('Security Policy: Maximum of 3 biometric credentials allowed per user', 400)
+      new ApiError('Security Policy: Maximum of 3 biometric credentials allowed per user', 400),
     );
   }
 
@@ -232,7 +232,7 @@ exports.verifyRegistration = asyncHandler(async (req, res, next) => {
   const encryptionKey = process.env.ENCRYPTION_KEY;
   const encryptedPrivateKey = CryptoJS.AES.encrypt(
     JSON.stringify(registrationInfo.credentialPrivateKey),
-    encryptionKey
+    encryptionKey,
   ).toString();
 
   // 🗃️ Create biometric credential record
@@ -351,8 +351,8 @@ exports.generateAuthenticationOptions = asyncHandler(async (req, res, next) => {
     return next(
       new ApiError(
         'POPIA Compliance: Biometric consent expired or revoked. Please renew consent.',
-        403
-      )
+        403,
+      ),
     );
   }
 
@@ -720,7 +720,7 @@ exports.updateBiometricConsent = asyncHandler(async (req, res, next) => {
         isActive: false,
         revokedAt: new Date(),
         revokedReason: 'Consent revoked by user',
-      }
+      },
     );
   }
 

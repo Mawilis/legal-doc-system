@@ -22,13 +22,12 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const express = require('express');
+
 const router = express.Router();
-const { protect, requireRole } = require('../middleware/authMiddleware');
-const SystemController = require('../controllers/systemController');
 const FirmController = require('../controllers/firmController');
+const SystemController = require('../controllers/systemController');
+const { protect, requireRole } = require('../middleware/authMiddleware');
 
 // SUPER_ADMIN only routes
 router.use(protect);

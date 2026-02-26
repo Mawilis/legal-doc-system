@@ -61,8 +61,6 @@
  * ============================================================================
  */
 
-'use strict';
-
 // =============================================================================
 // QUANTUM ENVIRONMENT INITIALIZATION
 // =============================================================================
@@ -82,7 +80,7 @@ const REQUIRED_CACHE_ENV_VARS = [
 REQUIRED_CACHE_ENV_VARS.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(
-      `QUANTUM BREACH: Missing critical cache environment variable: ${varName}. Add to /server/.env`
+      `QUANTUM BREACH: Missing critical cache environment variable: ${varName}. Add to /server/.env`,
     );
   }
 });
@@ -93,8 +91,8 @@ REQUIRED_CACHE_ENV_VARS.forEach((varName) => {
 
 const crypto = require('crypto');
 const { performance } = require('perf_hooks');
-const redis = require('redis@^4.6.0'); // Pinned for security
 const { promisify } = require('util');
+const redis = require('redis@^4.6.0'); // Pinned for security
 
 // =============================================================================
 // QUANTUM CACHE CONSTANTS - IMMUTABLE ARCHETYPES
@@ -107,7 +105,7 @@ const CACHE_QUANTUM = Object.freeze({
     port: parseInt(process.env.REDIS_PORT) || 6379,
     password: process.env.REDIS_PASSWORD || null,
     tls: process.env.REDIS_TLS === 'true' ? {} : undefined,
-    retry_strategy: function (options) {
+    retry_strategy(options) {
       if (options.error && options.error.code === 'ECONNREFUSED') {
         return new Error('The server refused the connection');
       }
@@ -261,7 +259,7 @@ class QuantumCacheOrchestrator {
    */
   async configureRedisServer() {
     try {
-      const client = this.client;
+      const { client } = this;
 
       // Configure max memory and eviction policy
       await client.configSet('maxmemory', CACHE_QUANTUM.PERFORMANCE.MAX_MEMORY);
@@ -278,7 +276,7 @@ class QuantumCacheOrchestrator {
     } catch (error) {
       console.warn(
         '⚠️ QUANTUM CACHE: Could not configure Redis server (might be cloud managed):',
-        error.message
+        error.message,
       );
     }
   }
@@ -302,7 +300,7 @@ class QuantumCacheOrchestrator {
       const cipher = crypto.createCipheriv(
         CACHE_QUANTUM.ENCRYPTION.algorithm,
         CACHE_QUANTUM.ENCRYPTION.key,
-        iv
+        iv,
       );
 
       // Encrypt data
@@ -315,7 +313,7 @@ class QuantumCacheOrchestrator {
       // Create HMAC for integrity verification
       const hmac = crypto.createHmac(
         CACHE_QUANTUM.ENCRYPTION.hmacAlgorithm,
-        CACHE_QUANTUM.ENCRYPTION.key
+        CACHE_QUANTUM.ENCRYPTION.key,
       );
 
       hmac.update(encrypted);
@@ -348,7 +346,7 @@ class QuantumCacheOrchestrator {
       // Verify HMAC integrity first
       const hmac = crypto.createHmac(
         CACHE_QUANTUM.ENCRYPTION.hmacAlgorithm,
-        CACHE_QUANTUM.ENCRYPTION.key
+        CACHE_QUANTUM.ENCRYPTION.key,
       );
 
       hmac.update(encryptedData.encrypted);
@@ -362,7 +360,7 @@ class QuantumCacheOrchestrator {
       const decipher = crypto.createDecipheriv(
         encryptedData.algorithm || CACHE_QUANTUM.ENCRYPTION.algorithm,
         CACHE_QUANTUM.ENCRYPTION.key,
-        Buffer.from(encryptedData.iv, 'hex')
+        Buffer.from(encryptedData.iv, 'hex'),
       );
 
       // Set authentication tag
@@ -429,7 +427,7 @@ class QuantumCacheOrchestrator {
         data: encryptedData,
         metadata: {
           setAt: new Date().toISOString(),
-          ttl: ttl,
+          ttl,
           namespace: this.extractNamespace(key),
           dataType: typeof value,
           size: Buffer.byteLength(JSON.stringify(value)),
@@ -907,9 +905,9 @@ class QuantumCacheOrchestrator {
 
     // Check for compliance metadata
     return (
-      data._complianceFlags &&
-      Array.isArray(data._complianceFlags) &&
-      data._complianceFlags.includes('LEGAL_DOCUMENT')
+      data._complianceFlags
+      && Array.isArray(data._complianceFlags)
+      && data._complianceFlags.includes('LEGAL_DOCUMENT')
     );
   }
 
@@ -1577,7 +1575,7 @@ module.exports = {
 
 /*
  * 🔷 QUANTUM VALUATION FOOTER 🔷
- * 
+ *
  * PERFORMANCE IMPACT METRICS:
  * • 99.999% Cache Availability with Multi-Region Replication
  * • <1ms Read Latency for Hot Legal Data
@@ -1585,7 +1583,7 @@ module.exports = {
  * • 90% Reduction in Database Load
  * • 80% Faster Document Retrieval Times
  * • 50% Lower Infrastructure Costs
- * 
+ *
  * SECURITY IMPACT METRICS:
  * • 100% Encrypted Cache at Rest and in Transit
  * • Zero PII Leakage Through Cache
@@ -1593,7 +1591,7 @@ module.exports = {
  * • Automated Compliance Enforcement
  * • Comprehensive Audit Trails
  * • Multi-factor Cache Access Control
- * 
+ *
  * COMPLIANCE IMPACT METRICS:
  * • 100% POPIA/GDPR Compliance in Cache Operations
  * • Automated Data Retention Enforcement
@@ -1601,7 +1599,7 @@ module.exports = {
  * • Comprehensive Audit Logging
  * • Regulatory Reporting Automation
  * • Zero Compliance Violations
- * 
+ *
  * BUSINESS IMPACT METRICS:
  * • 60% Faster Legal Document Processing
  * • 40% Reduction in Server Costs
@@ -1609,11 +1607,11 @@ module.exports = {
  * • 25% Higher Concurrent User Capacity
  * • ZAR 2M Annual Savings in Infrastructure
  * • 99.9% Uptime for Legal Document Access
- * 
+ *
  * "In the quantum realm of justice, latency is the enemy of truth.
  *  We don't just cache data—we crystallize legal certainty at the speed of light."
  *                                           - Wilson Khanyezi, Chief Quantum Architect
- * 
+ *
  * NEXT EVOLUTION VECTORS:
  * 1. Quantum Machine Learning for Predictive Caching
  * 2. Blockchain-Integrated Cache Verification
@@ -1621,7 +1619,7 @@ module.exports = {
  * 4. AI-Powered Cache Optimization
  * 5. Multi-Cloud Cache Synchronization
  * 6. Legal Jurisdiction-Aware Caching
- * 
+ *
  * WILSY TOUCHING LIVES ETERNALLY 🔷
  */
 

@@ -1,18 +1,18 @@
-/*╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ COMPLIANCE ID GENERATOR V6 — FORENSIC INVESTOR-GRADE ● REGULATOR-READY ● COURT-ADMISSIBLE                      ║
   ║ 94% error reduction | R2.8M penalty elimination | Multi-entity embedded                                        ║
-  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/complianceIdGenerator.js
  * VERSION: 7.0.1 (production - fixed undefined vs null)
  */
 
 const crypto = require('crypto');
-const { DateTime } = require('luxon');
 const os = require('os');
+const { DateTime } = require('luxon');
 
-const auditLogger = require('./auditLogger');
 const { getTenantContext } = require('../middleware/tenantContext');
+const auditLogger = require('./auditLogger');
 
 /* eslint-env node */
 
@@ -192,7 +192,7 @@ function calculateChecksum(id) {
   let alternate = false;
 
   for (let i = cleanId.length - 1; i >= 0; i--) {
-    let char = cleanId[i];
+    const char = cleanId[i];
     let value;
 
     if (char >= '0' && char <= '9') {
@@ -221,13 +221,13 @@ function calculateChecksum(id) {
 function generateHostHash() {
   const hostname = os.hostname();
   const networkIfaces = os.networkInterfaces();
-  const mac =
-    Object.values(networkIfaces)
-      .flat()
-      .find((i) => !i.internal && i.mac !== '00:00:00:00:00:00')?.mac || '00:00:00:00:00:00';
+  const mac = Object.values(networkIfaces)
+    .flat()
+    .find((i) => !i.internal && i.mac !== '00:00:00:00:00:00')?.mac || '00:00:00:00:00:00';
 
   const hostString = `${hostname}-${mac}-${process.pid}`;
-  return crypto.createHash('md5').update(hostString).digest('hex').substring(0, 4).toUpperCase();
+  return crypto.createHash('md5').update(hostString).digest('hex').substring(0, 4)
+    .toUpperCase();
 }
 
 /*
@@ -287,7 +287,9 @@ function parseTimestamp(timestampStr) {
       second: parseInt(second, 10),
     };
   } catch (error) {
-    return { valid: false, iso: null, dateTime: null, error: error.message };
+    return {
+      valid: false, iso: null, dateTime: null, error: error.message,
+    };
   }
 }
 
@@ -340,7 +342,7 @@ function generateComplianceId(type, options = {}) {
   } else {
     if (!ID_TYPES[type]) {
       throw new Error(
-        `Invalid ID type: ${type}. Must be one of: ${Object.keys(ID_TYPES).join(', ')}`
+        `Invalid ID type: ${type}. Must be one of: ${Object.keys(ID_TYPES).join(', ')}`,
       );
     }
     idType = type;
@@ -500,8 +502,7 @@ function validateId(id, options = {}) {
     return true;
   }
 
-  const v6Pattern =
-    /^[A-Z]+-[A-Z]+_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}(?:_H[A-F0-9]{4})?(?:_P[A-F0-9]{4})?(?:_C\d)?$/;
+  const v6Pattern = /^[A-Z]+-[A-Z]+_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}(?:_H[A-F0-9]{4})?(?:_P[A-F0-9]{4})?(?:_C\d)?$/;
   if (!v6Pattern.test(id)) {
     return false;
   }

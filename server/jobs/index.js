@@ -8,11 +8,9 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const winston = require('winston');
-const scheduler = require('./scheduler');
 const { bundleWorker } = require('./bundleWorker');
+const scheduler = require('./scheduler');
 // Import other workers as they are created
 // const { notificationWorker } = require('./notificationWorker');
 

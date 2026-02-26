@@ -65,11 +65,11 @@
 
 // 🔷 QUANTUM IMPORTS: DEPENDENCY ENTANGLEMENT
 require('dotenv').config(); // Env Vault Mandate
-const { AbilityBuilder, Ability, ForbiddenError } = require('casl');
-const { accessibleRecordsPlugin, accessibleFieldsPlugin } = require('@casl/mongoose');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { accessibleRecordsPlugin, accessibleFieldsPlugin } = require('@casl/mongoose');
+const { AbilityBuilder, Ability, ForbiddenError } = require('casl');
 const CryptoJS = require('crypto-js');
+const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
 // 🛡️ QUANTUM SECURITY: ENVIRONMENT VALIDATION
@@ -87,11 +87,11 @@ accessibleRecordsPlugin(mongoose);
 accessibleFieldsPlugin(mongoose);
 
 // Import models for ABAC context evaluation
-const User = require('../models/userModel');
-const Firm = require('../models/firmModel');
-const Client = require('../models/clientModel');
-const Matter = require('../models/matterModel');
 const AuditLog = require('../models/auditLogModel');
+const Client = require('../models/clientModel');
+const Firm = require('../models/firmModel');
+const Matter = require('../models/matterModel');
+const User = require('../models/userModel');
 
 /*
  * ============================================================================
@@ -412,9 +412,9 @@ const defineComplianceAbilityFor = (user, context = {}) => {
 
   // LPC Rules: Trust account segregation
   if (
-    user.role !== COMPLIANCE_ROLES.FINANCE_MANAGER &&
-    user.role !== COMPLIANCE_ROLES.FIRM_ADMIN &&
-    user.role !== COMPLIANCE_ROLES.SUPER_ADMIN
+    user.role !== COMPLIANCE_ROLES.FINANCE_MANAGER
+    && user.role !== COMPLIANCE_ROLES.FIRM_ADMIN
+    && user.role !== COMPLIANCE_ROLES.SUPER_ADMIN
   ) {
     cannot('transfer-trust-funds', 'TrustAccount');
   }
@@ -436,9 +436,9 @@ const defineComplianceAbilityFor = (user, context = {}) => {
     const isBusinessHours = hour >= 8 && hour <= 17;
 
     if (
-      !isBusinessHours &&
-      context.action.includes('transfer') &&
-      context.resourceType === 'TrustAccount'
+      !isBusinessHours
+      && context.action.includes('transfer')
+      && context.resourceType === 'TrustAccount'
     ) {
       cannot(context.action, context.resourceType);
     }
@@ -525,7 +525,7 @@ const validateClientRelationship = async (user, clientId) => {
 
   // Check if user is assigned to any matter for this client
   const matters = await Matter.find({
-    clientId: clientId,
+    clientId,
     $or: [{ assignedTo: user._id }, { teamMembers: { $in: [user._id] } }, { createdBy: user._id }],
   }).select('_id');
 
@@ -571,169 +571,163 @@ const validateMatterAccess = async (user, matterId) => {
  * @param {Object} options - Additional options for ABAC
  * @returns {Function} - Express middleware function
  */
-const complianceAuthorize = (action, _subject, options = {}) => {
-  return async (req, res, next) => {
-    try {
-      // 🛡️ SECURITY QUANTUM: Ensure authentication middleware has run
-      if (!req.user || !req.user._id) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required for compliance authorization',
-          compliance: {
-            popia: 'Unauthorized data processing attempt logged',
-            auditRequired: true,
-          },
-        });
-      }
-
-      // 📊 BUILD REQUEST CONTEXT FOR ABAC
-      const context = {
-        resourceType: _subject,
-        action: action,
-        clientIp: req.ip,
-        userAgent: req.headers['user-agent'],
-        requestId: req.id || crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        path: req.path,
-        method: req.method,
-        queryParams: Object.keys(req.query),
-        ...options.context,
-      };
-
-      // 🔍 ABAC ENFORCEMENT: Validate firm boundaries if firmId in params/body
-      if (req.params.firmId || req.body.firmId) {
-        const targetFirmId = req.params.firmId || req.body.firmId;
-        const firmAccess = await validateFirmBoundary(req.user, targetFirmId);
-        if (!firmAccess) {
-          return res.status(403).json({
-            status: 'error',
-            message: 'Firm boundary violation: Cross-firm access denied',
-            compliance: {
-              popia: 'Data minimization principle violated',
-              section: 'Section 11(1)(b)',
-            },
-          });
-        }
-      }
-
-      // 🔍 ABAC ENFORCEMENT: Validate client relationship if clientId provided
-      if (req.params.clientId || req.body.clientId) {
-        const targetClientId = req.params.clientId || req.body.clientId;
-        const clientAccess = await validateClientRelationship(req.user, targetClientId);
-        if (!clientAccess) {
-          return res.status(403).json({
-            status: 'error',
-            message: 'Client relationship validation failed',
-            compliance: {
-              popia: 'Legitimate interest requirement not met',
-            },
-          });
-        }
-      }
-
-      // 🔍 ABAC ENFORCEMENT: Validate matter access if matterId provided
-      if (req.params.matterId || req.body.matterId) {
-        const targetMatterId = req.params.matterId || req.body.matterId;
-        const matterAccess = await validateMatterAccess(req.user, targetMatterId);
-        if (!matterAccess) {
-          return res.status(403).json({
-            status: 'error',
-            message: 'Matter access denied: Not assigned to matter',
-            compliance: {
-              lpc: 'Attorney-client privilege protection',
-            },
-          });
-        }
-      }
-
-      // 🔧 BUILD COMPLIANCE ABILITY
-      const ability = defineComplianceAbilityFor(req.user, context);
-
-      // 🎯 CHECK AUTHORIZATION using CASL
-      const isAuthorized = ability.can(action, _subject);
-
-      if (!isAuthorized) {
-        // 📝 AUDIT TRAIL: Log unauthorized access attempt
-        await AuditLog.create({
-          userId: req.user._id,
-          action: 'UNAUTHORIZED_COMPLIANCE_ACCESS',
-          entityType: _subject,
-          entityId: req.params.id || 'N/A',
-          metadata: {
-            attemptedAction: action,
-            userRole: req.user.role,
-            firmId: req.user.firmId,
-            ipAddress: req.ip,
-            userAgent: req.headers['user-agent'],
-            requestPath: req.path,
-            complianceContext: context,
-            timestamp: new Date().toISOString(),
-          },
-          securityLevel: 'HIGH_ALERT',
-          complianceMarkers: {
-            popia: true,
-            unauthorizedAccess: true,
-            potentialBreach: true,
-          },
-        });
-
-        // 🚫 RETURN FORBIDDEN RESPONSE WITH COMPLIANCE DETAILS
-        throw new ForbiddenError('You are not authorized to perform this compliance action', {
-          compliance: {
-            act: 'POPIA Section 19 / Companies Act Section 28',
-            section: 'Unauthorized data processing / Access control violation',
-            requiredRole: getRequiredRoleForAction(action, _subject),
-            userRole: req.user.role,
-            firmId: req.user.firmId,
-            timestamp: new Date().toISOString(),
-            referenceId: `COMPLIANCE-AUTH-${Date.now()}`,
-          },
-        });
-      }
-
-      // ✅ AUTHORIZATION GRANTED - ATTACH ABILITY TO REQUEST
-      req.ability = ability;
-      req.complianceContext = context;
-
-      // 🔌 ATTACH CASL QUERY HELPERS for automatic filtering
-      req.accessibleRecords = (model) => {
-        return model.accessibleBy(ability, action);
-      };
-      req.accessibleFields = (model) => {
-        return model.accessibleFieldsBy(ability, action);
-      };
-
-      // 📝 AUDIT TRAIL: Log authorized access (if sensitive operation)
-      if (isSensitiveOperation(action, _subject)) {
-        await logComplianceAccess(req, action, _subject, 'AUTHORIZED');
-      }
-
-      next();
-    } catch (error) {
-      // 🛡️ ERROR HANDLING QUANTUM
-      if (error instanceof ForbiddenError) {
-        return res.status(403).json({
-          status: 'error',
-          message: error.message,
-          compliance: error.compliance || {},
-          timestamp: new Date().toISOString(),
-          reference: `COMPLIANCE-AUTH-${Date.now()}`,
-        });
-      }
-
-      console.error('Compliance authorization error:', error);
-
-      return res.status(500).json({
+const complianceAuthorize = (action, _subject, options = {}) => async (req, res, next) => {
+  try {
+    // 🛡️ SECURITY QUANTUM: Ensure authentication middleware has run
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
         status: 'error',
-        message: 'Compliance authorization system error',
+        message: 'Authentication required for compliance authorization',
         compliance: {
-          popia: 'Authorization system failure logged',
-          incidentResponse: 'System administrator notified',
-          timestamp: new Date().toISOString(),
+          popia: 'Unauthorized data processing attempt logged',
+          auditRequired: true,
         },
       });
     }
-  };
+
+    // 📊 BUILD REQUEST CONTEXT FOR ABAC
+    const context = {
+      resourceType: _subject,
+      action,
+      clientIp: req.ip,
+      userAgent: req.headers['user-agent'],
+      requestId: req.id || crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      path: req.path,
+      method: req.method,
+      queryParams: Object.keys(req.query),
+      ...options.context,
+    };
+
+    // 🔍 ABAC ENFORCEMENT: Validate firm boundaries if firmId in params/body
+    if (req.params.firmId || req.body.firmId) {
+      const targetFirmId = req.params.firmId || req.body.firmId;
+      const firmAccess = await validateFirmBoundary(req.user, targetFirmId);
+      if (!firmAccess) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'Firm boundary violation: Cross-firm access denied',
+          compliance: {
+            popia: 'Data minimization principle violated',
+            section: 'Section 11(1)(b)',
+          },
+        });
+      }
+    }
+
+    // 🔍 ABAC ENFORCEMENT: Validate client relationship if clientId provided
+    if (req.params.clientId || req.body.clientId) {
+      const targetClientId = req.params.clientId || req.body.clientId;
+      const clientAccess = await validateClientRelationship(req.user, targetClientId);
+      if (!clientAccess) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'Client relationship validation failed',
+          compliance: {
+            popia: 'Legitimate interest requirement not met',
+          },
+        });
+      }
+    }
+
+    // 🔍 ABAC ENFORCEMENT: Validate matter access if matterId provided
+    if (req.params.matterId || req.body.matterId) {
+      const targetMatterId = req.params.matterId || req.body.matterId;
+      const matterAccess = await validateMatterAccess(req.user, targetMatterId);
+      if (!matterAccess) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'Matter access denied: Not assigned to matter',
+          compliance: {
+            lpc: 'Attorney-client privilege protection',
+          },
+        });
+      }
+    }
+
+    // 🔧 BUILD COMPLIANCE ABILITY
+    const ability = defineComplianceAbilityFor(req.user, context);
+
+    // 🎯 CHECK AUTHORIZATION using CASL
+    const isAuthorized = ability.can(action, _subject);
+
+    if (!isAuthorized) {
+      // 📝 AUDIT TRAIL: Log unauthorized access attempt
+      await AuditLog.create({
+        userId: req.user._id,
+        action: 'UNAUTHORIZED_COMPLIANCE_ACCESS',
+        entityType: _subject,
+        entityId: req.params.id || 'N/A',
+        metadata: {
+          attemptedAction: action,
+          userRole: req.user.role,
+          firmId: req.user.firmId,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          requestPath: req.path,
+          complianceContext: context,
+          timestamp: new Date().toISOString(),
+        },
+        securityLevel: 'HIGH_ALERT',
+        complianceMarkers: {
+          popia: true,
+          unauthorizedAccess: true,
+          potentialBreach: true,
+        },
+      });
+
+      // 🚫 RETURN FORBIDDEN RESPONSE WITH COMPLIANCE DETAILS
+      throw new ForbiddenError('You are not authorized to perform this compliance action', {
+        compliance: {
+          act: 'POPIA Section 19 / Companies Act Section 28',
+          section: 'Unauthorized data processing / Access control violation',
+          requiredRole: getRequiredRoleForAction(action, _subject),
+          userRole: req.user.role,
+          firmId: req.user.firmId,
+          timestamp: new Date().toISOString(),
+          referenceId: `COMPLIANCE-AUTH-${Date.now()}`,
+        },
+      });
+    }
+
+    // ✅ AUTHORIZATION GRANTED - ATTACH ABILITY TO REQUEST
+    req.ability = ability;
+    req.complianceContext = context;
+
+    // 🔌 ATTACH CASL QUERY HELPERS for automatic filtering
+    req.accessibleRecords = (model) => model.accessibleBy(ability, action);
+    req.accessibleFields = (model) => model.accessibleFieldsBy(ability, action);
+
+    // 📝 AUDIT TRAIL: Log authorized access (if sensitive operation)
+    if (isSensitiveOperation(action, _subject)) {
+      await logComplianceAccess(req, action, _subject, 'AUTHORIZED');
+    }
+
+    next();
+  } catch (error) {
+    // 🛡️ ERROR HANDLING QUANTUM
+    if (error instanceof ForbiddenError) {
+      return res.status(403).json({
+        status: 'error',
+        message: error.message,
+        compliance: error.compliance || {},
+        timestamp: new Date().toISOString(),
+        reference: `COMPLIANCE-AUTH-${Date.now()}`,
+      });
+    }
+
+    console.error('Compliance authorization error:', error);
+
+    return res.status(500).json({
+      status: 'error',
+      message: 'Compliance authorization system error',
+      compliance: {
+        popia: 'Authorization system failure logged',
+        incidentResponse: 'System administrator notified',
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 };
 
 /*
@@ -822,7 +816,7 @@ const logComplianceAccess = async (req, action, _subject, status) => {
 
     const encryptedMetadata = CryptoJS.AES.encrypt(
       JSON.stringify(sensitiveData),
-      encryptionKey
+      encryptionKey,
     ).toString();
 
     // 📝 CREATE AUDIT LOG
@@ -867,91 +861,88 @@ const logComplianceAccess = async (req, action, _subject, status) => {
  * @param {string} processingPurpose - Purpose of data processing
  * @returns {Function} - Express middleware
  */
-const popiaConsentRequired = (processingPurpose) => {
-  return async (req, res, next) => {
-    try {
-      // 🛡️ VALIDATION: Ensure user exists
-      if (!req.user) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required for POPIA-compliant processing',
-          compliance: {
-            popia: 'Section 11: Processing limitation - Authentication required',
-            purpose: processingPurpose,
-          },
-        });
-      }
-
-      // 📊 CHECK CONSENT: User must have explicit consent for this purpose
-      const user = await User.findById(req.user._id).select('+popiaConsents');
-
-      if (!user || !user.popiaConsents) {
-        return res.status(403).json({
-          status: 'error',
-          message: 'POPIA compliance: Explicit consent required for data processing',
-          compliance: {
-            popia: 'Section 11(1)(a): Consent requirement',
-            purpose: processingPurpose,
-            remedy: 'User must provide explicit consent in settings',
-          },
-        });
-      }
-
-      const hasConsent = user.popiaConsents.some(
-        (consent) =>
-          consent.purpose === processingPurpose &&
-          consent.status === 'granted' &&
-          new Date(consent.expiry) > new Date()
-      );
-
-      if (!hasConsent) {
-        // 📝 AUDIT TRAIL: Log consent violation
-        await AuditLog.create({
-          userId: req.user._id,
-          action: 'POPIA_CONSENT_VIOLATION',
-          entityType: 'User',
-          entityId: req.user._id,
-          metadata: {
-            processingPurpose,
-            userConsents: user.popiaConsents,
-            ipAddress: req.ip,
-            timestamp: new Date().toISOString(),
-          },
-          securityLevel: 'HIGH_ALERT',
-          complianceMarkers: {
-            popia: true,
-            consentViolation: true,
-            section: '11(1)(a)',
-          },
-        });
-
-        return res.status(403).json({
-          status: 'error',
-          message: `POPIA compliance: Explicit consent required for "${processingPurpose}"`,
-          compliance: {
-            popia: 'Section 11: Processing limitation',
-            requiredAction: 'Obtain explicit consent',
-            consentPurpose: processingPurpose,
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
-
-      // ✅ CONSENT VALID - PROCEED
-      req.popiaProcessingPurpose = processingPurpose;
-      next();
-    } catch (error) {
-      console.error('POPIA consent check error:', error);
-      return res.status(500).json({
+const popiaConsentRequired = (processingPurpose) => async (req, res, next) => {
+  try {
+    // 🛡️ VALIDATION: Ensure user exists
+    if (!req.user) {
+      return res.status(401).json({
         status: 'error',
-        message: 'POPIA compliance system error',
+        message: 'Authentication required for POPIA-compliant processing',
         compliance: {
-          popia: 'Consent verification system failure',
-          incidentResponse: 'System administrator notified',
+          popia: 'Section 11: Processing limitation - Authentication required',
+          purpose: processingPurpose,
         },
       });
     }
-  };
+
+    // 📊 CHECK CONSENT: User must have explicit consent for this purpose
+    const user = await User.findById(req.user._id).select('+popiaConsents');
+
+    if (!user || !user.popiaConsents) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'POPIA compliance: Explicit consent required for data processing',
+        compliance: {
+          popia: 'Section 11(1)(a): Consent requirement',
+          purpose: processingPurpose,
+          remedy: 'User must provide explicit consent in settings',
+        },
+      });
+    }
+
+    const hasConsent = user.popiaConsents.some(
+      (consent) => consent.purpose === processingPurpose
+          && consent.status === 'granted'
+          && new Date(consent.expiry) > new Date(),
+    );
+
+    if (!hasConsent) {
+      // 📝 AUDIT TRAIL: Log consent violation
+      await AuditLog.create({
+        userId: req.user._id,
+        action: 'POPIA_CONSENT_VIOLATION',
+        entityType: 'User',
+        entityId: req.user._id,
+        metadata: {
+          processingPurpose,
+          userConsents: user.popiaConsents,
+          ipAddress: req.ip,
+          timestamp: new Date().toISOString(),
+        },
+        securityLevel: 'HIGH_ALERT',
+        complianceMarkers: {
+          popia: true,
+          consentViolation: true,
+          section: '11(1)(a)',
+        },
+      });
+
+      return res.status(403).json({
+        status: 'error',
+        message: `POPIA compliance: Explicit consent required for "${processingPurpose}"`,
+        compliance: {
+          popia: 'Section 11: Processing limitation',
+          requiredAction: 'Obtain explicit consent',
+          consentPurpose: processingPurpose,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
+    // ✅ CONSENT VALID - PROCEED
+    req.popiaProcessingPurpose = processingPurpose;
+    next();
+  } catch (error) {
+    console.error('POPIA consent check error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'POPIA compliance system error',
+      compliance: {
+        popia: 'Consent verification system failure',
+        incidentResponse: 'System administrator notified',
+      },
+    });
+  }
 };
 
 /*
@@ -960,94 +951,92 @@ const popiaConsentRequired = (processingPurpose) => {
  * @param {string} resourceType - Type of resource being accessed
  * @returns {Function} - Express middleware
  */
-const companiesActRetentionCheck = (resourceType) => {
-  return async (req, res, next) => {
-    try {
-      const resourceId = req.params.id;
+const companiesActRetentionCheck = (resourceType) => async (req, res, next) => {
+  try {
+    const resourceId = req.params.id;
 
-      if (!resourceId) {
-        return next(); // No specific resource to check
+    if (!resourceId) {
+      return next(); // No specific resource to check
+    }
+
+    // 🔍 FIND RESOURCE AND CHECK CREATION DATE
+    let resource;
+    switch (resourceType) {
+      case 'Document':
+        resource = await mongoose.model('Document').findById(resourceId);
+        break;
+      case 'FinancialRecord':
+        resource = await mongoose.model('FinancialRecord').findById(resourceId);
+        break;
+      default:
+        resource = null;
+    }
+
+    if (!resource) {
+      return next(); // Resource not found, let controller handle 404
+    }
+
+    // ⏳ CHECK IF WITHIN 7-YEAR RETENTION PERIOD
+    const sevenYearsAgo = new Date();
+    sevenYearsAgo.setFullYear(sevenYearsAgo.getFullYear() - 7);
+
+    if (resource.createdAt < sevenYearsAgo) {
+      // 🚫 ATTEMPT TO ACCESS EXPIRED RECORD
+      if (req.method === 'DELETE') {
+        // Allow deletion after 7 years (Companies Act compliance)
+        return next();
       }
 
-      // 🔍 FIND RESOURCE AND CHECK CREATION DATE
-      let resource;
-      switch (resourceType) {
-        case 'Document':
-          resource = await mongoose.model('Document').findById(resourceId);
-          break;
-        case 'FinancialRecord':
-          resource = await mongoose.model('FinancialRecord').findById(resourceId);
-          break;
-        default:
-          resource = null;
-      }
+      // 📝 AUDIT TRAIL: Log access to expired record
+      await AuditLog.create({
+        userId: req.user._id,
+        action: 'COMPANIES_ACT_RETENTION_ACCESS',
+        entityType: resourceType,
+        entityId: resourceId,
+        metadata: {
+          resourceCreatedAt: resource.createdAt,
+          retentionThreshold: sevenYearsAgo,
+          currentDate: new Date(),
+          accessMethod: req.method,
+          ipAddress: req.ip,
+          timestamp: new Date().toISOString(),
+        },
+        securityLevel: 'MEDIUM',
+        complianceMarkers: {
+          companiesAct: true,
+          section: '28',
+          retentionPeriod: '7 years',
+        },
+      });
 
-      if (!resource) {
-        return next(); // Resource not found, let controller handle 404
-      }
-
-      // ⏳ CHECK IF WITHIN 7-YEAR RETENTION PERIOD
-      const sevenYearsAgo = new Date();
-      sevenYearsAgo.setFullYear(sevenYearsAgo.getFullYear() - 7);
-
-      if (resource.createdAt < sevenYearsAgo) {
-        // 🚫 ATTEMPT TO ACCESS EXPIRED RECORD
-        if (req.method === 'DELETE') {
-          // Allow deletion after 7 years (Companies Act compliance)
-          return next();
-        }
-
-        // 📝 AUDIT TRAIL: Log access to expired record
-        await AuditLog.create({
-          userId: req.user._id,
-          action: 'COMPANIES_ACT_RETENTION_ACCESS',
-          entityType: resourceType,
-          entityId: resourceId,
-          metadata: {
-            resourceCreatedAt: resource.createdAt,
-            retentionThreshold: sevenYearsAgo,
-            currentDate: new Date(),
-            accessMethod: req.method,
-            ipAddress: req.ip,
-            timestamp: new Date().toISOString(),
-          },
-          securityLevel: 'MEDIUM',
-          complianceMarkers: {
-            companiesAct: true,
-            section: '28',
-            retentionPeriod: '7 years',
-          },
-        });
-
-        return res.status(403).json({
-          status: 'error',
-          message: 'Companies Act compliance: Record retention period expired',
-          compliance: {
-            companiesAct: 'Section 28: Retention of records',
-            retentionPeriod: '7 years',
-            resourceAge: `${Math.floor(
-              (new Date() - resource.createdAt) / (365 * 24 * 60 * 60 * 1000)
-            )} years`,
-            actionRequired: 'Contact compliance officer for archival access',
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
-
-      // ✅ WITHIN RETENTION PERIOD - PROCEED
-      next();
-    } catch (error) {
-      console.error('Companies Act retention check error:', error);
-      return res.status(500).json({
+      return res.status(403).json({
         status: 'error',
-        message: 'Companies Act compliance system error',
+        message: 'Companies Act compliance: Record retention period expired',
         compliance: {
-          companiesAct: 'Retention verification system failure',
-          incidentResponse: 'System administrator notified',
+          companiesAct: 'Section 28: Retention of records',
+          retentionPeriod: '7 years',
+          resourceAge: `${Math.floor(
+            (new Date() - resource.createdAt) / (365 * 24 * 60 * 60 * 1000),
+          )} years`,
+          actionRequired: 'Contact compliance officer for archival access',
+          timestamp: new Date().toISOString(),
         },
       });
     }
-  };
+
+    // ✅ WITHIN RETENTION PERIOD - PROCEED
+    next();
+  } catch (error) {
+    console.error('Companies Act retention check error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Companies Act compliance system error',
+      compliance: {
+        companiesAct: 'Retention verification system failure',
+        incidentResponse: 'System administrator notified',
+      },
+    });
+  }
 };
 
 /*
@@ -1056,94 +1045,92 @@ const companiesActRetentionCheck = (resourceType) => {
  * @param {string} signatureLevel - Required signature authority level (1-5)
  * @returns {Function} - Express middleware
  */
-const ectActSignatureValidation = (signatureLevel = 1) => {
-  return async (req, res, next) => {
-    try {
-      // 🛡️ VALIDATION: Ensure user exists and has signature authority
-      if (!req.user) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required for electronic signature',
-          compliance: {
-            ectAct: 'Section 13: Advanced electronic signatures require authentication',
-            signatureLevelRequired: signatureLevel,
-          },
-        });
-      }
-
-      // 🔍 CHECK USER'S SIGNATURE AUTHORITY
-      const user = await User.findById(req.user._id).select('+signatureAuthority');
-
-      if (!user || !user.signatureAuthority) {
-        return res.status(403).json({
-          status: 'error',
-          message: 'ECT Act compliance: Electronic signature authority not granted',
-          compliance: {
-            ectAct: 'Section 13(1): Signature authority requirement',
-            requiredLevel: signatureLevel,
-            userLevel: 'Not assigned',
-            remedy: 'Contact firm administrator for signature authority delegation',
-          },
-        });
-      }
-
-      // 🎯 VERIFY SIGNATURE LEVEL AUTHORIZATION
-      if (user.signatureAuthority.level < signatureLevel) {
-        // 📝 AUDIT TRAIL: Log unauthorized signature attempt
-        await AuditLog.create({
-          userId: user._id,
-          action: 'ECT_ACT_SIGNATURE_VIOLATION',
-          entityType: 'Document',
-          entityId: req.params.documentId,
-          metadata: {
-            requiredLevel: signatureLevel,
-            userLevel: user.signatureAuthority.level,
-            documentType: req.body.documentType,
-            ipAddress: req.ip,
-            timestamp: new Date().toISOString(),
-          },
-          securityLevel: 'HIGH_ALERT',
-          complianceMarkers: {
-            ectAct: true,
-            section: '13',
-            signatureViolation: true,
-          },
-        });
-
-        return res.status(403).json({
-          status: 'error',
-          message: 'ECT Act compliance: Insufficient electronic signature authority',
-          compliance: {
-            ectAct: 'Section 13: Advanced electronic signature requirements',
-            requiredAuthorityLevel: signatureLevel,
-            userAuthorityLevel: user.signatureAuthority.level,
-            authorizedSignatoryTypes: user.signatureAuthority.authorizedTypes || [],
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
-
-      // ✅ SIGNATURE AUTHORITY VALID - PROCEED
-      req.signatureAuthority = {
-        level: user.signatureAuthority.level,
-        types: user.signatureAuthority.authorizedTypes,
-        delegationDate: user.signatureAuthority.delegatedAt,
-        expiresAt: user.signatureAuthority.expiresAt,
-      };
-
-      next();
-    } catch (error) {
-      console.error('ECT Act signature validation error:', error);
-      return res.status(500).json({
+const ectActSignatureValidation = (signatureLevel = 1) => async (req, res, next) => {
+  try {
+    // 🛡️ VALIDATION: Ensure user exists and has signature authority
+    if (!req.user) {
+      return res.status(401).json({
         status: 'error',
-        message: 'ECT Act compliance system error',
+        message: 'Authentication required for electronic signature',
         compliance: {
-          ectAct: 'Signature validation system failure',
-          incidentResponse: 'System administrator notified',
+          ectAct: 'Section 13: Advanced electronic signatures require authentication',
+          signatureLevelRequired: signatureLevel,
         },
       });
     }
-  };
+
+    // 🔍 CHECK USER'S SIGNATURE AUTHORITY
+    const user = await User.findById(req.user._id).select('+signatureAuthority');
+
+    if (!user || !user.signatureAuthority) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'ECT Act compliance: Electronic signature authority not granted',
+        compliance: {
+          ectAct: 'Section 13(1): Signature authority requirement',
+          requiredLevel: signatureLevel,
+          userLevel: 'Not assigned',
+          remedy: 'Contact firm administrator for signature authority delegation',
+        },
+      });
+    }
+
+    // 🎯 VERIFY SIGNATURE LEVEL AUTHORIZATION
+    if (user.signatureAuthority.level < signatureLevel) {
+      // 📝 AUDIT TRAIL: Log unauthorized signature attempt
+      await AuditLog.create({
+        userId: user._id,
+        action: 'ECT_ACT_SIGNATURE_VIOLATION',
+        entityType: 'Document',
+        entityId: req.params.documentId,
+        metadata: {
+          requiredLevel: signatureLevel,
+          userLevel: user.signatureAuthority.level,
+          documentType: req.body.documentType,
+          ipAddress: req.ip,
+          timestamp: new Date().toISOString(),
+        },
+        securityLevel: 'HIGH_ALERT',
+        complianceMarkers: {
+          ectAct: true,
+          section: '13',
+          signatureViolation: true,
+        },
+      });
+
+      return res.status(403).json({
+        status: 'error',
+        message: 'ECT Act compliance: Insufficient electronic signature authority',
+        compliance: {
+          ectAct: 'Section 13: Advanced electronic signature requirements',
+          requiredAuthorityLevel: signatureLevel,
+          userAuthorityLevel: user.signatureAuthority.level,
+          authorizedSignatoryTypes: user.signatureAuthority.authorizedTypes || [],
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
+    // ✅ SIGNATURE AUTHORITY VALID - PROCEED
+    req.signatureAuthority = {
+      level: user.signatureAuthority.level,
+      types: user.signatureAuthority.authorizedTypes,
+      delegationDate: user.signatureAuthority.delegatedAt,
+      expiresAt: user.signatureAuthority.expiresAt,
+    };
+
+    next();
+  } catch (error) {
+    console.error('ECT Act signature validation error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'ECT Act compliance system error',
+      compliance: {
+        ectAct: 'Signature validation system failure',
+        incidentResponse: 'System administrator notified',
+      },
+    });
+  }
 };
 
 /*
@@ -1151,73 +1138,71 @@ const ectActSignatureValidation = (signatureLevel = 1) => {
  * @desc FICA Quantum: Enforce FICA/KYC verification for financial operations
  * @returns {Function} - Express middleware
  */
-const ficaVerificationRequired = () => {
-  return async (req, res, next) => {
-    try {
-      // 🛡️ VALIDATION: Ensure user exists
-      if (!req.user) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required for FICA-compliant operations',
-          compliance: {
-            fica: 'Customer identification and verification required',
-            section: 'Financial Intelligence Centre Act',
-          },
-        });
-      }
-
-      // 🔍 CHECK USER'S FICA VERIFICATION STATUS
-      const user = await User.findById(req.user._id).select('+ficaVerification');
-
-      if (!user || !user.ficaVerification || user.ficaVerification.status !== 'verified') {
-        // 📝 AUDIT TRAIL: Log FICA verification attempt
-        await AuditLog.create({
-          userId: user._id,
-          action: 'FICA_VERIFICATION_REQUIRED',
-          entityType: 'FinancialOperation',
-          metadata: {
-            ficaStatus: user?.ficaVerification?.status || 'not-verified',
-            operationType: req.body.operationType || 'unknown',
-            amount: req.body.amount,
-            ipAddress: req.ip,
-            timestamp: new Date().toISOString(),
-          },
-          securityLevel: 'HIGH',
-          complianceMarkers: {
-            fica: true,
-            aml: true,
-            kyc: true,
-            verificationRequired: true,
-          },
-        });
-
-        return res.status(403).json({
-          status: 'error',
-          message: 'FICA compliance: Customer verification required for financial operations',
-          compliance: {
-            fica: 'Customer Due Diligence requirements',
-            verificationStatus: user?.ficaVerification?.status || 'not-initiated',
-            requiredDocuments: ['ID Document', 'Proof of Address', 'Source of Funds Declaration'],
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
-
-      // ✅ FICA VERIFIED - PROCEED
-      req.ficaVerification = user.ficaVerification;
-      next();
-    } catch (error) {
-      console.error('FICA verification check error:', error);
-      return res.status(500).json({
+const ficaVerificationRequired = () => async (req, res, next) => {
+  try {
+    // 🛡️ VALIDATION: Ensure user exists
+    if (!req.user) {
+      return res.status(401).json({
         status: 'error',
-        message: 'FICA compliance system error',
+        message: 'Authentication required for FICA-compliant operations',
         compliance: {
-          fica: 'Verification system failure',
-          incidentResponse: 'System administrator notified',
+          fica: 'Customer identification and verification required',
+          section: 'Financial Intelligence Centre Act',
         },
       });
     }
-  };
+
+    // 🔍 CHECK USER'S FICA VERIFICATION STATUS
+    const user = await User.findById(req.user._id).select('+ficaVerification');
+
+    if (!user || !user.ficaVerification || user.ficaVerification.status !== 'verified') {
+      // 📝 AUDIT TRAIL: Log FICA verification attempt
+      await AuditLog.create({
+        userId: user._id,
+        action: 'FICA_VERIFICATION_REQUIRED',
+        entityType: 'FinancialOperation',
+        metadata: {
+          ficaStatus: user?.ficaVerification?.status || 'not-verified',
+          operationType: req.body.operationType || 'unknown',
+          amount: req.body.amount,
+          ipAddress: req.ip,
+          timestamp: new Date().toISOString(),
+        },
+        securityLevel: 'HIGH',
+        complianceMarkers: {
+          fica: true,
+          aml: true,
+          kyc: true,
+          verificationRequired: true,
+        },
+      });
+
+      return res.status(403).json({
+        status: 'error',
+        message: 'FICA compliance: Customer verification required for financial operations',
+        compliance: {
+          fica: 'Customer Due Diligence requirements',
+          verificationStatus: user?.ficaVerification?.status || 'not-initiated',
+          requiredDocuments: ['ID Document', 'Proof of Address', 'Source of Funds Declaration'],
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
+    // ✅ FICA VERIFIED - PROCEED
+    req.ficaVerification = user.ficaVerification;
+    next();
+  } catch (error) {
+    console.error('FICA verification check error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'FICA compliance system error',
+      compliance: {
+        fica: 'Verification system failure',
+        incidentResponse: 'System administrator notified',
+      },
+    });
+  }
 };
 
 /*

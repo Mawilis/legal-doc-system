@@ -10,8 +10,6 @@
  * ============================================================================
  */
 
-'use strict';
-
 // Load environment variables
 require('dotenv').config({ path: '/server/.env' });
 
@@ -65,7 +63,7 @@ function quantumEncryptData(data) {
     const cipher = crypto.createCipheriv(
       'aes-256-gcm',
       Buffer.from(CURRENCY_CONSTANTS.ENCRYPTION_KEY, 'hex'),
-      iv
+      iv,
     );
 
     const encrypted = Buffer.concat([cipher.update(JSON.stringify(data), 'utf8'), cipher.final()]);
@@ -93,7 +91,7 @@ function quantumDecryptData(encryptedData) {
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       Buffer.from(CURRENCY_CONSTANTS.ENCRYPTION_KEY, 'hex'),
-      Buffer.from(encryptedData.iv, 'hex')
+      Buffer.from(encryptedData.iv, 'hex'),
     );
 
     decipher.setAuthTag(Buffer.from(encryptedData.tag, 'hex'));
@@ -160,8 +158,8 @@ function getDominantCurrency(currencyBreakdown = []) {
       currency: dominant.currency || dominant._id || 'UNKNOWN',
       percentage: parseFloat(percentage.toFixed(2)),
       amount: maxAmount,
-      total: total,
-      risk: risk,
+      total,
+      risk,
       concentration: percentage,
       message: 'Dominant currency analysis complete',
     };
@@ -194,9 +192,7 @@ async function fetchExchangeRates(baseCurrency = 'ZAR', targetCurrencies = []) {
     }
 
     // Filter valid currencies
-    const validTargets = targetCurrencies.filter((c) =>
-      CURRENCY_CONSTANTS.SUPPORTED_CURRENCIES.includes(c)
-    );
+    const validTargets = targetCurrencies.filter((c) => CURRENCY_CONSTANTS.SUPPORTED_CURRENCIES.includes(c));
 
     // Try OpenExchangeRates API first
     if (process.env.OPENEXCHANGERATES_APP_ID) {
@@ -254,7 +250,7 @@ function calculateCurrencyRisk(currencyBreakdown = []) {
     let hhi = 0;
     percentages.forEach((p) => {
       const marketShare = p.percentage / 100;
-      hhi += Math.pow(marketShare * 100, 2);
+      hhi += (marketShare * 100) ** 2;
     });
 
     // Overall risk score
@@ -277,7 +273,7 @@ function calculateCurrencyRisk(currencyBreakdown = []) {
       recommendations: generateRiskRecommendations(
         overallRisk,
         dominantPercentage,
-        currencyBreakdown.length
+        currencyBreakdown.length,
       ),
     };
   } catch (error) {
@@ -422,9 +418,15 @@ async function fetchFromOpenExchangeRates(baseCurrency, targetCurrencies) {
  */
 function getFallbackExchangeRates(baseCurrency, targetCurrencies) {
   const fallbackRates = {
-    ZAR: { USD: 0.055, EUR: 0.051, GBP: 0.044, NGN: 50.5, KES: 8.2, GHS: 0.85, ZAR: 1 },
-    USD: { ZAR: 18.18, EUR: 0.92, GBP: 0.79, NGN: 920, KES: 150, GHS: 15.5, USD: 1 },
-    EUR: { ZAR: 19.61, USD: 1.09, GBP: 0.86, NGN: 1000, KES: 162, GHS: 16.8, EUR: 1 },
+    ZAR: {
+      USD: 0.055, EUR: 0.051, GBP: 0.044, NGN: 50.5, KES: 8.2, GHS: 0.85, ZAR: 1,
+    },
+    USD: {
+      ZAR: 18.18, EUR: 0.92, GBP: 0.79, NGN: 920, KES: 150, GHS: 15.5, USD: 1,
+    },
+    EUR: {
+      ZAR: 19.61, USD: 1.09, GBP: 0.86, NGN: 1000, KES: 162, GHS: 16.8, EUR: 1,
+    },
   };
 
   const rates = {};
@@ -441,7 +443,7 @@ function getFallbackExchangeRates(baseCurrency, targetCurrencies) {
 
   return {
     base: baseCurrency,
-    rates: rates,
+    rates,
     timestamp: new Date().toISOString(),
     source: 'fallback',
     note: 'Configure OPENEXCHANGERATES_APP_ID for live rates',
@@ -458,8 +460,8 @@ function calculateConversionFees(amount, fromCurrency, toCurrency) {
   // Higher fees for African currencies
   let multiplier = 1;
   if (
-    ['NGN', 'KES', 'GHS', 'XOF', 'XAF'].includes(fromCurrency) ||
-    ['NGN', 'KES', 'GHS', 'XOF', 'XAF'].includes(toCurrency)
+    ['NGN', 'KES', 'GHS', 'XOF', 'XAF'].includes(fromCurrency)
+    || ['NGN', 'KES', 'GHS', 'XOF', 'XAF'].includes(toCurrency)
   ) {
     multiplier = 1.5;
   }
@@ -518,7 +520,7 @@ function checkSARBCompliance(amount, fromCurrency, toCurrency) {
   return {
     requiresApproval,
     threshold: CURRENCY_CONSTANTS.SARB_THRESHOLD,
-    amount: amount,
+    amount,
     status: requiresApproval ? 'APPROVAL_REQUIRED' : 'AUTO_APPROVED',
     regulation: 'SARB Exchange Control Regulations',
     reportingRequired: amount > 50000,
@@ -549,8 +551,8 @@ function validateCurrencyTransaction(transaction) {
   // Check for high-risk currencies
   const highRiskCurrencies = ['ZWD', 'VEF', 'IRR'];
   if (
-    highRiskCurrencies.includes(transaction.fromCurrency) ||
-    highRiskCurrencies.includes(transaction.toCurrency)
+    highRiskCurrencies.includes(transaction.fromCurrency)
+    || highRiskCurrencies.includes(transaction.toCurrency)
   ) {
     warnings.push('High-risk currency detected - Enhanced due diligence required');
   }
@@ -558,7 +560,7 @@ function validateCurrencyTransaction(transaction) {
   // Check SARB compliance
   if (transaction.amount > CURRENCY_CONSTANTS.SARB_THRESHOLD) {
     warnings.push(
-      `Amount exceeds SARB threshold (ZAR ${CURRENCY_CONSTANTS.SARB_THRESHOLD.toLocaleString()})`
+      `Amount exceeds SARB threshold (ZAR ${CURRENCY_CONSTANTS.SARB_THRESHOLD.toLocaleString()})`,
     );
   }
 
@@ -650,7 +652,7 @@ function generateCurrencyReport(breakdown, period = 'MONTHLY') {
     recommendations: generateRiskRecommendations(
       riskAnalysis.overallRisk,
       riskAnalysis.dominantCurrency?.percentage || 0,
-      breakdown.length
+      breakdown.length,
     ),
 
     compliance: {

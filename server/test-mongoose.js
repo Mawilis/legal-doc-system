@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 console.log('Mongoose version:', mongoose.version);
 
 const schema = new mongoose.Schema({ name: String });

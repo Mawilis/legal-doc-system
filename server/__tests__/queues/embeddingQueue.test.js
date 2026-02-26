@@ -15,12 +15,12 @@
 /* eslint-env jest */
 /* global describe, it, expect, beforeEach, afterEach, jest */
 
-import { jest } from '@jest/globals';
-import Redis from 'ioredis-mock';
-import { performance } from 'perf_hooks';
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
+import { jest } from '@jest/globals.js';
+import Redis from 'ioredis-mock.js';
+import { performance } from 'perf_hooks.js';
+import crypto from "crypto";
+import fs from 'fs/promises.js';
+import path from "path";
 
 // Mock Redis
 jest.mock('ioredis', () => require('ioredis-mock'));
@@ -84,8 +84,8 @@ jest.mock('bullmq', () => {
 });
 
 // Import after mocks
-import * as embeddingQueue from '../../queues/embeddingQueue.js';
-import { embeddingQueue as queueInstance } from '../../queues/embeddingQueue.js';
+import * as embeddingQueue from '../../queues/embeddingQueue.js.js';
+import { embeddingQueue as queueInstance } from '../../queues/embeddingQueue.js.js';
 
 describe('EmbeddingQueue - Hyper-scale Infrastructure Due Diligence', () => {
   let mockPrecedentId;

@@ -1,13 +1,11 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ EMAIL CONFIGURATION - INVESTOR-GRADE MODULE                                 ║
   ║ Multi-provider support | POPIA compliant | Forensic logging                 ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/email.js
  * VERSION: 2.0.0 (production - cleaned)
  */
-
-'use strict';
 
 const crypto = require('crypto');
 
@@ -23,8 +21,8 @@ const emailConfig = {
   primary: {
     provider: isProduction ? 'aws-ses' : isTest ? 'test' : 'ethereal',
     host:
-      process.env.EMAIL_HOST ||
-      (isProduction ? 'email-smtp.af-south-1.amazonaws.com' : 'smtp.ethereal.email'),
+      process.env.EMAIL_HOST
+      || (isProduction ? 'email-smtp.af-south-1.amazonaws.com' : 'smtp.ethereal.email'),
     port: parseInt(process.env.EMAIL_PORT, 10) || (isProduction ? 587 : 587),
     secure: process.env.EMAIL_SECURE === 'true' || false,
     auth: {
@@ -113,8 +111,7 @@ const emailTemplates = {
 /*
  * POPIA-compliant email footer
  */
-const getPopiaFooter = (tenantId = 'SYSTEM') => {
-  return `
+const getPopiaFooter = (tenantId = 'SYSTEM') => `
 ---
 This communication is protected by POPIA (Protection of Personal Information Act, 2013).
 Wilsy OS - Legal Document Management System
@@ -122,7 +119,6 @@ Tenant: ${tenantId}
 Timestamp: ${new Date().toISOString()}
 Reference: ${crypto.randomBytes(4).toString('hex').toUpperCase()}
 `;
-};
 
 /*
  * Email sending options with forensic tracking

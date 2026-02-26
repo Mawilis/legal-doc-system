@@ -17,8 +17,8 @@
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
-const logger = require('../config/logger');
 const mongoose = require('mongoose');
+const logger = require('../config/logger');
 const { AuditLedger } = require('../models/AuditLedger');
 
 // Configuration
@@ -60,7 +60,7 @@ function parseCacheFilename(filename) {
 async function shouldRetainFile(filePath, fileInfo) {
   try {
     // Check if file is anchored (has .ots.upgraded companion)
-    const upgradedPath = filePath + '.upgraded';
+    const upgradedPath = `${filePath}.upgraded`;
     try {
       await fs.access(upgradedPath);
 
@@ -106,7 +106,7 @@ async function deleteCacheFile(filePath, fileInfo) {
     const trashDir = path.join(OTS_CACHE_DIR, '.trash');
     await fs.mkdir(trashDir, { recursive: true });
 
-    const trashPath = path.join(trashDir, path.basename(filePath) + '.' + Date.now());
+    const trashPath = path.join(trashDir, `${path.basename(filePath)}.${Date.now()}`);
     await fs.rename(filePath, trashPath);
 
     // Securely delete after 7 days via separate cleanup

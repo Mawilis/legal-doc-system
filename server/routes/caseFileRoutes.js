@@ -24,9 +24,8 @@
  * Biblical worth billions no child's place. Wilsy OS to the World.
  */
 
-'use strict';
-
 const express = require('express');
+
 const router = express.Router();
 
 // --- CONTROLLER INJECTION ---
@@ -81,7 +80,7 @@ router.get('/:id', caseFileController.getCaseDetails);
 router.get(
   '/:id/discovery-bundle',
   requireRole('LAWYER', 'ADMIN', 'OWNER'),
-  caseFileController.generateDiscoveryBundle
+  caseFileController.generateDiscoveryBundle,
 );
 
 /* ---------------------------------------------------------------------------
@@ -96,7 +95,7 @@ router.get(
 router.patch(
   '/:id/status',
   requireRole('LAWYER', 'ADMIN', 'OWNER'),
-  caseFileController.transitionCaseStatus
+  caseFileController.transitionCaseStatus,
 );
 
 /*

@@ -1,10 +1,9 @@
 /*
  * @jest-environment node
  */
-'use strict';
 
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 const OnboardingSession = require('../../models/OnboardingSession');
 
 describe('🏛️ OnboardingSession Model - Legal Grade Validation', () => {
@@ -36,7 +35,7 @@ describe('🏛️ OnboardingSession Model - Legal Grade Validation', () => {
     });
 
     test('Schema should have required legal fields', () => {
-      const schema = OnboardingSession.schema;
+      const { schema } = OnboardingSession;
 
       // Core legal fields
       expect(schema.paths.sessionId).toBeDefined();

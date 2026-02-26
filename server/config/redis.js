@@ -1,8 +1,9 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* eslint-disable */
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ REDIS CONFIGURATION - INVESTOR-GRADE MODULE                                 ║
   ║ 99.99% uptime | Zero data loss | High-throughput queueing                   ║
   ║ POPIA §19 | ECT Act §15 | Cybercrimes Act §4                                ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/redis.js
  * INVESTOR VALUE PROPOSITION:
@@ -31,14 +32,13 @@
  */
 
 /* eslint-env node */
-'use strict';
 
-const Redis = require('ioredis');
 const crypto = require('crypto'); // Used for generating secure IDs and hashes
-const logger = require('../utils/logger');
-const metrics = require('../utils/metrics');
+const Redis = require('ioredis');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
+const logger = require('../utils/logger');
+const metrics = require('../utils/metrics');
 
 class RedisConfig {
   constructor() {
@@ -303,8 +303,8 @@ class RedisConfig {
         host: options.host,
         port: options.port,
         db: options.db,
-        clusterMode: options.nodes ? true : false,
-        sentinelMode: options.sentinels ? true : false,
+        clusterMode: !!options.nodes,
+        sentinelMode: !!options.sentinels,
       });
 
       let client;
@@ -532,7 +532,7 @@ class RedisConfig {
         () => {
           reject(new Error(`Redis connection timeout for role: ${role}`));
         },
-        parseInt(process.env.REDIS_CONNECT_TIMEOUT) || 30000
+        parseInt(process.env.REDIS_CONNECT_TIMEOUT) || 30000,
       );
 
       client.once('ready', () => {
@@ -900,7 +900,7 @@ class RedisConfig {
             ? 0
             : this.circuitBreaker.state === 'HALF_OPEN'
               ? 1
-              : 2
+              : 2,
         );
 
         logger.debug('Redis health check completed', {
@@ -955,7 +955,7 @@ class RedisConfig {
           });
           // Force disconnect if quit fails
           return client.disconnect();
-        })
+        }),
       );
     }
 

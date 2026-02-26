@@ -22,11 +22,9 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
-const SystemConfig = require('../models/systemConfigModel');
-const AuditEvent = require('../models/auditEventModel');
 const { v4: uuidv4 } = require('uuid');
+const AuditEvent = require('../models/auditEventModel');
+const SystemConfig = require('../models/systemConfigModel');
 const logger = require('../utils/logger');
 
 /*
@@ -46,7 +44,9 @@ const logger = require('../utils/logger');
  * @returns {Promise<Object>} the loaded SystemConfig document (lean)
  */
 async function ensureSystemConfig(opts = {}) {
-  const { correlationId = uuidv4(), retries = 2, retryDelayMs = 500, emitAudit = true } = opts;
+  const {
+    correlationId = uuidv4(), retries = 2, retryDelayMs = 500, emitAudit = true,
+  } = opts;
 
   // Attach correlation id to logs for traceability
   const logMeta = { correlationId };
@@ -151,8 +151,8 @@ function invalidateSystemConfigCache() {
   try {
     // If SystemConfig model exposes a cache invalidator, call it
     if (
-      typeof SystemConfig.ensureDefaultConfig === 'function' &&
-      typeof SystemConfig.getSingleton === 'function'
+      typeof SystemConfig.ensureDefaultConfig === 'function'
+      && typeof SystemConfig.getSingleton === 'function'
     ) {
       // No-op here; models/services that cache should expose their own invalidator.
       // Provide a best-effort hook for known implementations.

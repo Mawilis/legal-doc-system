@@ -1,13 +1,13 @@
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const assert = require('assert');
 const crypto = require('crypto');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 
-describe('🏛️ OnboardingSession Model Tests', function () {
+describe('🏛️ OnboardingSession Model Tests', () => {
   let mongoServer;
   let OnboardingSession;
 
-  before(async function () {
+  before(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
@@ -19,25 +19,25 @@ describe('🏛️ OnboardingSession Model Tests', function () {
     console.log('📊 Model type:', typeof OnboardingSession);
   });
 
-  after(async function () {
+  after(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
   });
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     if (OnboardingSession) {
       await OnboardingSession.deleteMany({});
     }
   });
 
-  describe('1. Model Integrity', function () {
-    it('should be a constructor function', function () {
+  describe('1. Model Integrity', () => {
+    it('should be a constructor function', () => {
       assert.strictEqual(typeof OnboardingSession, 'function');
     });
   });
 
-  describe('2. SA ID Validation', function () {
-    it('should validate valid SA ID', async function () {
+  describe('2. SA ID Validation', () => {
+    it('should validate valid SA ID', async () => {
       const session = new OnboardingSession({
         sessionId: 'ONB_IND_20250218120000_TEST_tenant-1',
         tenantId: 'tenant-1',
@@ -57,7 +57,7 @@ describe('🏛️ OnboardingSession Model Tests', function () {
       assert.strictEqual(saved.idNumber, '8001015009081');
     });
 
-    it('should reject invalid SA ID', async function () {
+    it('should reject invalid SA ID', async () => {
       const session = new OnboardingSession({
         sessionId: 'ONB_IND_20250218120000_TEST2_tenant-1',
         tenantId: 'tenant-1',
@@ -82,8 +82,8 @@ describe('🏛️ OnboardingSession Model Tests', function () {
     });
   });
 
-  describe('3. Passport Validation', function () {
-    it('should validate valid Passport', async function () {
+  describe('3. Passport Validation', () => {
+    it('should validate valid Passport', async () => {
       const session = new OnboardingSession({
         sessionId: 'ONB_IND_20250218120000_TEST3_tenant-1',
         tenantId: 'tenant-1',
@@ -105,8 +105,8 @@ describe('🏛️ OnboardingSession Model Tests', function () {
     });
   });
 
-  describe('4. Business Registration Validation', function () {
-    it('should validate valid company registration', async function () {
+  describe('4. Business Registration Validation', () => {
+    it('should validate valid company registration', async () => {
       const session = new OnboardingSession({
         sessionId: 'ONB_BUS_20250218120000_TEST5_tenant-1',
         tenantId: 'tenant-1',
@@ -125,8 +125,8 @@ describe('🏛️ OnboardingSession Model Tests', function () {
     });
   });
 
-  describe('5. Stage Advancement', function () {
-    it('should advance stage', async function () {
+  describe('5. Stage Advancement', () => {
+    it('should advance stage', async () => {
       const session = new OnboardingSession({
         sessionId: 'ONB_IND_20250218120000_TEST8_tenant-1',
         tenantId: 'tenant-1',
@@ -150,8 +150,8 @@ describe('🏛️ OnboardingSession Model Tests', function () {
     });
   });
 
-  describe('6. Document Management', function () {
-    it('should add and verify document', async function () {
+  describe('6. Document Management', () => {
+    it('should add and verify document', async () => {
       const session = new OnboardingSession({
         sessionId: 'ONB_IND_20250218120000_TEST9_tenant-1',
         tenantId: 'tenant-1',
@@ -183,8 +183,8 @@ describe('🏛️ OnboardingSession Model Tests', function () {
     });
   });
 
-  describe('7. Legal Hold', function () {
-    it('should place and release legal hold', async function () {
+  describe('7. Legal Hold', () => {
+    it('should place and release legal hold', async () => {
       const session = new OnboardingSession({
         sessionId: 'ONB_IND_20250218120000_TEST10_tenant-1',
         tenantId: 'tenant-1',
@@ -212,8 +212,8 @@ describe('🏛️ OnboardingSession Model Tests', function () {
     });
   });
 
-  describe('8. Static Methods', function () {
-    beforeEach(async function () {
+  describe('8. Static Methods', () => {
+    beforeEach(async () => {
       // Create test sessions
       await OnboardingSession.create({
         sessionId: 'ONB_IND_20250218120000_STATIC1_tenant-1',
@@ -246,17 +246,17 @@ describe('🏛️ OnboardingSession Model Tests', function () {
       });
     });
 
-    it('findByTenant should filter correctly', async function () {
+    it('findByTenant should filter correctly', async () => {
       const results = await OnboardingSession.findByTenant('tenant-1');
       assert.strictEqual(results.length, 2);
     });
 
-    it('generateSessionId should create valid ID', function () {
+    it('generateSessionId should create valid ID', () => {
       const id = OnboardingSession.generateSessionId('INDIVIDUAL', 'tenant-1');
       assert.ok(id.match(/^ONB_IND_\d{14}_[A-F0-9]{8}_[a-zA-Z0-9-]{4,12}$/));
     });
 
-    it('createSession should work', async function () {
+    it('createSession should work', async () => {
       const session = await OnboardingSession.createSession('tenant-1', {
         clientType: 'INDIVIDUAL',
         identityType: 'SA_ID',

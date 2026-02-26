@@ -41,7 +41,7 @@
 import logger from './logger.js';
 import auditLogger from './auditLogger.js';
 import SecurityLogModel from '../models/securityLogModel.js';
-import crypto from 'crypto';
+import crypto from "crypto";
 
 /**
  * Security Alert Severity Levels

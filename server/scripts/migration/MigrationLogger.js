@@ -70,7 +70,7 @@ class MigrationLogger {
     this.logEntries.push(entry);
 
     // Write to file (append mode)
-    const logLine = JSON.stringify(entry) + '\n';
+    const logLine = `${JSON.stringify(entry)}\n`;
     await fs.appendFile(CONFIG.MIGRATION_LOG_FILE, logLine, 'utf8');
 
     // Console output for monitoring
@@ -88,7 +88,9 @@ class MigrationLogger {
    * @private
    */
   generateEntryHash(phase, action, details, timestamp) {
-    const data = JSON.stringify({ phase, action, details, timestamp });
+    const data = JSON.stringify({
+      phase, action, details, timestamp,
+    });
     return createHash('sha256').update(data).digest('hex');
   }
 
@@ -147,7 +149,7 @@ class MigrationLogger {
 
     const reportPath = path.join(
       __dirname,
-      `../../logs/migration-compliance-${this.migrationId}.json`
+      `../../logs/migration-compliance-${this.migrationId}.json`,
     );
     await fs.writeFile(reportPath, JSON.stringify(report, null, 2), 'utf8');
 

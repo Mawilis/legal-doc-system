@@ -98,8 +98,6 @@
  * ============================================================================
  */
 
-'use strict';
-
 // =============================================================================
 // QUANTUM ENVIRONMENT INITIALIZATION
 // =============================================================================
@@ -118,7 +116,7 @@ const REQUIRED_TEMPORAL_ENV_VARS = [
 REQUIRED_TEMPORAL_ENV_VARS.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(
-      `QUANTUM TEMPORAL BREACH: Missing critical environment variable: ${varName}. Add to /server/.env`
+      `QUANTUM TEMPORAL BREACH: Missing critical environment variable: ${varName}. Add to /server/.env`,
     );
   }
 });
@@ -311,7 +309,7 @@ class QuantumTimeOrchestrator {
     // Initialize blockchain timestamp service if configured
     this.blockchainEnabled = !!process.env.BLOCKCHAIN_TIMESTAMP_API;
 
-    logger.info('⏰ QUANTUM TIME: Chronosphere initialized for ' + TIME_QUANTUM.DEFAULT_TIMEZONE);
+    logger.info(`⏰ QUANTUM TIME: Chronosphere initialized for ${TIME_QUANTUM.DEFAULT_TIMEZONE}`);
   }
 
   /*
@@ -511,7 +509,7 @@ class QuantumTimeOrchestrator {
       const start = this.parseDate(startDate);
       if (!start) throw new Error('Invalid start date');
 
-      let current = new Date(start);
+      const current = new Date(start);
       let daysAdded = 0;
       let courtDaysAdded = 0;
       const excludedDays = [];
@@ -728,14 +726,12 @@ class QuantumTimeOrchestrator {
     } else if (isDuringLunch) {
       minutesUntilChange = lunchEndMinutes - totalMinutes;
       nextState = 'LUNCH_END';
+    } else if (totalMinutes < lunchStartMinutes) {
+      minutesUntilChange = lunchStartMinutes - totalMinutes;
+      nextState = 'LUNCH_START';
     } else {
-      if (totalMinutes < lunchStartMinutes) {
-        minutesUntilChange = lunchStartMinutes - totalMinutes;
-        nextState = 'LUNCH_START';
-      } else {
-        minutesUntilChange = endMinutes - totalMinutes;
-        nextState = 'BUSINESS_HOURS_END';
-      }
+      minutesUntilChange = endMinutes - totalMinutes;
+      nextState = 'BUSINESS_HOURS_END';
     }
 
     return {
@@ -991,7 +987,7 @@ class QuantumTimeOrchestrator {
    */
   calculateNextAvailableCourtDate(fromDate = null, minNoticeDays = 10) {
     const startDate = fromDate ? this.parseDate(fromDate) : this.now();
-    let current = new Date(startDate);
+    const current = new Date(startDate);
 
     // Move to next business day if starting on excluded day
     while (!this.isBusinessDay(current)) {
@@ -1037,9 +1033,7 @@ class QuantumTimeOrchestrator {
     };
 
     // Sort timeline by date
-    const sortedTimeline = [...timeline.events].sort((a, b) => {
-      return new Date(a.date) - new Date(b.date);
-    });
+    const sortedTimeline = [...timeline.events].sort((a, b) => new Date(a.date) - new Date(b.date));
 
     // Validate each event
     sortedTimeline.forEach((event, index) => {
@@ -1147,7 +1141,7 @@ class QuantumTimeOrchestrator {
 
     return {
       blockchain: 'ETHEREUM_MAINNET',
-      transactionHash: '0x' + crypto.randomBytes(32).toString('hex'),
+      transactionHash: `0x${crypto.randomBytes(32).toString('hex')}`,
       blockNumber: Math.floor(Math.random() * 10000000),
       timestamp: timestamp.toISOString(),
       anchoredHash: hash,
@@ -1243,17 +1237,16 @@ class QuantumTimeOrchestrator {
 
     if (days > 0) {
       return `${days} day${days !== 1 ? 's' : ''} ${hours % 24} hour${hours % 24 !== 1 ? 's' : ''}`;
-    } else if (hours > 0) {
+    } if (hours > 0) {
       return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes % 60} minute${
         minutes % 60 !== 1 ? 's' : ''
       }`;
-    } else if (minutes > 0) {
+    } if (minutes > 0) {
       return `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds % 60} second${
         seconds % 60 !== 1 ? 's' : ''
       }`;
-    } else {
-      return `${seconds} second${seconds !== 1 ? 's' : ''}`;
     }
+    return `${seconds} second${seconds !== 1 ? 's' : ''}`;
   }
 
   /*
@@ -1279,10 +1272,10 @@ class QuantumTimeOrchestrator {
 
     // Quarter ends
     if (
-      (month === 3 && day === 31) ||
-      (month === 6 && day === 30) ||
-      (month === 9 && day === 30) ||
-      (month === 12 && day === 31)
+      (month === 3 && day === 31)
+      || (month === 6 && day === 30)
+      || (month === 9 && day === 30)
+      || (month === 12 && day === 31)
     ) {
       return 'Quarter-end financial reporting';
     }
@@ -1467,29 +1460,28 @@ function calculateCourtDeadline(serviceDate, documentType) {
     },
   };
 
-  const deadlineConfig = deadlines[documentType] || deadlines['NOTICE_OF_MOTION'];
+  const deadlineConfig = deadlines[documentType] || deadlines.NOTICE_OF_MOTION;
 
   if (deadlineConfig.courtDays) {
     return timeOrchestrator.calculateLegalDeadline(service, deadlineConfig.courtDays);
-  } else {
-    // Simple calendar days calculation
-    const deadline = new Date(service);
-    deadline.setDate(deadline.getDate() + deadlineConfig.calendarDays);
-
-    // Adjust if falls on weekend/holiday
-    while (!timeOrchestrator.isBusinessDay(deadline)) {
-      deadline.setDate(deadline.getDate() + 1);
-    }
-
-    return {
-      deadline,
-      serviceDate: service,
-      days: deadlineConfig.calendarDays,
-      type: 'CALENDAR_DAYS',
-      rule: deadlineConfig.rule,
-      documentType: deadlineConfig.description,
-    };
   }
+  // Simple calendar days calculation
+  const deadline = new Date(service);
+  deadline.setDate(deadline.getDate() + deadlineConfig.calendarDays);
+
+  // Adjust if falls on weekend/holiday
+  while (!timeOrchestrator.isBusinessDay(deadline)) {
+    deadline.setDate(deadline.getDate() + 1);
+  }
+
+  return {
+    deadline,
+    serviceDate: service,
+    days: deadlineConfig.calendarDays,
+    type: 'CALENDAR_DAYS',
+    rule: deadlineConfig.rule,
+    documentType: deadlineConfig.description,
+  };
 }
 
 // =============================================================================
@@ -1753,7 +1745,7 @@ module.exports = {
 
 /*
  * 🔷 QUANTUM VALUATION FOOTER 🔷
- * 
+ *
  * LEGAL IMPACT METRICS:
  * • 100% Companies Act compliance for document retention
  * • Zero missed court deadlines due to miscalculation
@@ -1761,7 +1753,7 @@ module.exports = {
  * • 100% accurate holiday exclusion in all timelines
  * • Court-admissible timestamps for all documents
  * • Automated 5-7 year archival scheduling
- * 
+ *
  * EFFICIENCY IMPACT METRICS:
  * • 90% faster deadline calculations
  * • 80% reduction in manual calendar checking
@@ -1769,7 +1761,7 @@ module.exports = {
  * • Real-time court date availability
  * • Instant timeline validation
  * • Automated compliance reporting
- * 
+ *
  * SECURITY IMPACT METRICS:
  * • Cryptographic proof for all timestamps
  * • Blockchain anchoring for critical documents
@@ -1777,7 +1769,7 @@ module.exports = {
  * • Audit trail for all temporal operations
  * • ECT Act compliant electronic signatures
  * • Non-repudiation for all timed operations
- * 
+ *
  * BUSINESS IMPACT METRICS:
  * • 99.9% reduction in missed deadlines
  * • ZAR 500k annual savings in deadline penalties
@@ -1785,11 +1777,11 @@ module.exports = {
  * • 100% audit-ready time records
  * • 30% increase in court filing efficiency
  * • Multi-jurisdictional timezone support
- * 
+ *
  * "Time is the silent witness to all justice. We don't merely track it;
  *  we sanctify it, making every moment a verifiable testament to truth."
  *                                           - Wilson Khanyezi, Chief Quantum Architect
- * 
+ *
  * NEXT EVOLUTION VECTORS:
  * 1. AI-Predictive Court Date Availability
  * 2. Blockchain-Integrated Court Calendar
@@ -1797,7 +1789,7 @@ module.exports = {
  * 4. Real-time Court Docket Synchronization
  * 5. Multi-Language Date Format Support
  * 6. Voice-Activated Time Calculations
- * 
+ *
  * WILSY TOUCHING LIVES ETERNALLY 🔷
  */
 

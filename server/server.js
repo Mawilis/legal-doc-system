@@ -3,21 +3,27 @@
  * WILSY OS - Complete Working Server
  */
 
-import express from 'express';
-import fs from 'fs';
-import path from 'path';
-import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import mongoose from 'mongoose';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import express from 'express.js';
+import fs from "fs";
+import fsPromises from 'fs/promises.js';
+import path from "path";
+import cors from 'cors.js';
+import helmet from 'helmet.js';
+import compression from 'compression.js';
+import mongoose from "mongoose";
+import { fileURLToPath } from 'url.js';
+import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Test route to verify server is working - MUST BE FIRST
+app.get("/ping", (req, res) => {
+  res.json({ message: "pong", timestamp: new Date().toISOString() });
+});
 
 // ============================================================================
 // MIDDLEWARE
@@ -43,6 +49,16 @@ mongoose.connect(MONGODB_URI)
 // ROUTES
 // ============================================================================
 // Import routes dynamically to avoid errors if files don't exist yet
+
+// Test minimal API route
+try {
+  const testApiRoutes = await import('./routes/test-api.js').then(module => module.default);
+  app.use('/api/test-only', testApiRoutes);
+  console.log('✅ Test API routes loaded');
+} catch (err) {
+  console.log('⚠️ Test API routes not available:', err.message);
+}
+
 try {
   const apiRoutes = await import('./routes/api.js').then(module => module.default);
   app.use('/api', apiRoutes);
@@ -94,6 +110,7 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`\n🚀 WILSY OS server running on port ${PORT}`);
   console.log(`   Health check: http://localhost:${PORT}/health`);
+  console.log(`   Ping: http://localhost:${PORT}/ping`);
   console.log(`   API: http://localhost:${PORT}/api`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   MongoDB: ${mongoose.connection.readyState === 1 ? '✅ Connected' : '❌ Disconnected'}\n`);

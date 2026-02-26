@@ -1,7 +1,7 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ERROR MIDDLEWARE - INVESTOR-GRADE GLOBAL RESILIENCE SHIELD                  ║
   ║ 99.99% error capture | Zero stack leakage | Forensic-grade logging          ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/errorMiddleware.js
  * INVESTOR VALUE PROPOSITION:
@@ -57,11 +57,10 @@
  */
 
 /* eslint-env node */
-'use strict';
 
 const crypto = require('crypto');
-const logger = require('../utils/logger');
 const auditLogger = require('../utils/auditLogger');
+const logger = require('../utils/logger');
 const metrics = require('../utils/metrics');
 
 // ============================================================================
@@ -364,7 +363,9 @@ const ERROR_CLASSIFICATIONS = Object.freeze({
     notify: true,
     popiaRelevant: true,
   },
-  PAIA: { type: 'PAIA', severity: 'HIGH', sla: '1_HOUR', notify: true, popiaRelevant: false },
+  PAIA: {
+    type: 'PAIA', severity: 'HIGH', sla: '1_HOUR', notify: true, popiaRelevant: false,
+  },
   FICA: {
     type: 'FICA',
     severity: 'CRITICAL',
@@ -393,9 +394,15 @@ const ERROR_CLASSIFICATIONS = Object.freeze({
     notify: true,
     popiaRelevant: false,
   },
-  SARS: { type: 'SARS', severity: 'HIGH', sla: '4_HOURS', notify: true, popiaRelevant: false },
-  LPC: { type: 'LPC', severity: 'CRITICAL', sla: 'IMMEDIATE', notify: true, popiaRelevant: false },
-  GDPR: { type: 'GDPR', severity: 'HIGH', sla: '1_HOUR', notify: true, popiaRelevant: false },
+  SARS: {
+    type: 'SARS', severity: 'HIGH', sla: '4_HOURS', notify: true, popiaRelevant: false,
+  },
+  LPC: {
+    type: 'LPC', severity: 'CRITICAL', sla: 'IMMEDIATE', notify: true, popiaRelevant: false,
+  },
+  GDPR: {
+    type: 'GDPR', severity: 'HIGH', sla: '1_HOUR', notify: true, popiaRelevant: false,
+  },
 });
 
 /*
@@ -459,22 +466,22 @@ const ERROR_CODES = Object.freeze({
 
   // POPIA Compliance Errors
   ...Object.fromEntries(
-    Object.entries(POPIA_CODES).map(([k, v]) => [k, { ...v, classification: 'POPIA' }])
+    Object.entries(POPIA_CODES).map(([k, v]) => [k, { ...v, classification: 'POPIA' }]),
   ),
 
   // PAIA Compliance Errors
   ...Object.fromEntries(
-    Object.entries(PAIA_CODES).map(([k, v]) => [k, { ...v, classification: 'PAIA' }])
+    Object.entries(PAIA_CODES).map(([k, v]) => [k, { ...v, classification: 'PAIA' }]),
   ),
 
   // FICA Compliance Errors
   ...Object.fromEntries(
-    Object.entries(FICA_CODES).map(([k, v]) => [k, { ...v, classification: 'FICA' }])
+    Object.entries(FICA_CODES).map(([k, v]) => [k, { ...v, classification: 'FICA' }]),
   ),
 
   // Cybercrimes Act Errors
   ...Object.fromEntries(
-    Object.entries(CYBERCRIMES_CODES).map(([k, v]) => [k, { ...v, classification: 'CYBERCRIMES' }])
+    Object.entries(CYBERCRIMES_CODES).map(([k, v]) => [k, { ...v, classification: 'CYBERCRIMES' }]),
   ),
 
   // Companies Act Errors
@@ -482,27 +489,27 @@ const ERROR_CODES = Object.freeze({
     Object.entries(COMPANIES_ACT_CODES).map(([k, v]) => [
       k,
       { ...v, classification: 'COMPANIES_ACT' },
-    ])
+    ]),
   ),
 
   // ECT Act Errors
   ...Object.fromEntries(
-    Object.entries(ECT_ACT_CODES).map(([k, v]) => [k, { ...v, classification: 'ECT_ACT' }])
+    Object.entries(ECT_ACT_CODES).map(([k, v]) => [k, { ...v, classification: 'ECT_ACT' }]),
   ),
 
   // SARS Errors
   ...Object.fromEntries(
-    Object.entries(SARS_CODES).map(([k, v]) => [k, { ...v, classification: 'SARS' }])
+    Object.entries(SARS_CODES).map(([k, v]) => [k, { ...v, classification: 'SARS' }]),
   ),
 
   // LPC Errors
   ...Object.fromEntries(
-    Object.entries(LPC_CODES).map(([k, v]) => [k, { ...v, classification: 'LPC' }])
+    Object.entries(LPC_CODES).map(([k, v]) => [k, { ...v, classification: 'LPC' }]),
   ),
 
   // GDPR Errors
   ...Object.fromEntries(
-    Object.entries(GDPR_CODES).map(([k, v]) => [k, { ...v, classification: 'GDPR' }])
+    Object.entries(GDPR_CODES).map(([k, v]) => [k, { ...v, classification: 'GDPR' }]),
   ),
 });
 
@@ -749,9 +756,9 @@ const normalizeSystemError = (err) => ({
   details:
     process.env.NODE_ENV !== 'production'
       ? {
-          stack: err.stack,
-          name: err.name,
-        }
+        stack: err.stack,
+        name: err.name,
+      }
       : {},
   retryable: true,
 });
@@ -820,10 +827,10 @@ const logForensicError = (error, req) => {
     id:
       req.user?.id || req.user?._id
         ? crypto
-            .createHash('sha256')
-            .update(req.user.id || req.user._id)
-            .digest('hex')
-            .substring(0, 16)
+          .createHash('sha256')
+          .update(req.user.id || req.user._id)
+          .digest('hex')
+          .substring(0, 16)
         : 'anonymous',
     role: req.user?.role || 'guest',
     tenantId: req.tenant?.id,
@@ -844,10 +851,10 @@ const logForensicError = (error, req) => {
       ip:
         req.ip === '::1' || req.ip === '127.0.0.1'
           ? 'internal'
-          : req.ip
-              ?.split(',')
-              .map((ip) => ip.trim())[0]
-              .substring(0, 15) + '...',
+          : `${req.ip
+            ?.split(',')
+            .map((ip) => ip.trim())[0]
+            .substring(0, 15)}...`,
       userAgent: req.get('user-agent') ? 'present' : 'none', // Redact full UA for privacy
       query: Object.keys(req.query || {}).length > 0 ? 'present' : 'none', // Don't log query params
       params: Object.keys(req.params || {}).length > 0 ? 'present' : 'none', // Don't log path params
@@ -887,15 +894,14 @@ const logForensicError = (error, req) => {
  */
 const auditError = async (error, req, correlationId, classification) => {
   // Audit criteria: 5xx, auth failures, compliance violations, legal requirements
-  const shouldAudit =
-    error.statusCode >= 500 ||
-    error.statusCode === 401 ||
-    error.statusCode === 403 ||
-    error.classification === 'POPIA' ||
-    error.classification === 'FICA' ||
-    error.classification === 'CYBERCRIMES' ||
-    error.classification === 'COMPANIES_ACT' ||
-    error.code?.includes('COMPLIANCE');
+  const shouldAudit = error.statusCode >= 500
+    || error.statusCode === 401
+    || error.statusCode === 403
+    || error.classification === 'POPIA'
+    || error.classification === 'FICA'
+    || error.classification === 'CYBERCRIMES'
+    || error.classification === 'COMPANIES_ACT'
+    || error.code?.includes('COMPLIANCE');
 
   if (shouldAudit) {
     const auditEntry = {
@@ -958,9 +964,9 @@ const recordErrorMetrics = (error, req) => {
 
   // Track compliance violations separately
   if (
-    error.classification === 'POPIA' ||
-    error.classification === 'FICA' ||
-    error.classification === 'CYBERCRIMES'
+    error.classification === 'POPIA'
+    || error.classification === 'FICA'
+    || error.classification === 'CYBERCRIMES'
   ) {
     metrics.increment('error.compliance', 1);
     metrics.increment(`error.compliance.${error.classification.toLowerCase()}`, 1);
@@ -976,13 +982,12 @@ const recordErrorMetrics = (error, req) => {
  */
 const triggerAlert = async (error, req, correlationId, classification) => {
   // Alert criteria: system errors, compliance violations, legal reporting requirements
-  const shouldAlert =
-    error.statusCode >= 500 ||
-    classification.requiresBreachReport ||
-    classification.requiresSAPSReport ||
-    classification.requiresFICReport ||
-    error.classification === 'POPIA' ||
-    error.classification === 'CYBERCRIMES';
+  const shouldAlert = error.statusCode >= 500
+    || classification.requiresBreachReport
+    || classification.requiresSAPSReport
+    || classification.requiresFICReport
+    || error.classification === 'POPIA'
+    || error.classification === 'CYBERCRIMES';
 
   if (shouldAlert) {
     const alert = {
@@ -1211,16 +1216,16 @@ const errorHandler = (err, req, res, _next) => {
     // Strip any PII from details before sending
     const safeDetails = { ...error.details };
     if (
-      safeDetails.value &&
-      typeof safeDetails.value === 'string' &&
-      safeDetails.value.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Z|a-z]{2,}/)
+      safeDetails.value
+      && typeof safeDetails.value === 'string'
+      && safeDetails.value.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Z|a-z]{2,}/)
     ) {
       safeDetails.value = '[EMAIL REDACTED]';
     }
     if (
-      safeDetails.value &&
-      typeof safeDetails.value === 'string' &&
-      safeDetails.value.match(/\d{13}/)
+      safeDetails.value
+      && typeof safeDetails.value === 'string'
+      && safeDetails.value.match(/\d{13}/)
     ) {
       safeDetails.value = '[ID NUMBER REDACTED]';
     }
@@ -1263,7 +1268,7 @@ const createBusinessError = (
   message,
   code = 'ERR_BUSINESS_RULE',
   statusCode = 422,
-  details = {}
+  details = {},
 ) => {
   const error = new Error(message);
   error.statusCode = statusCode;

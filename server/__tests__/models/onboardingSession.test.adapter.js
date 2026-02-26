@@ -11,17 +11,15 @@ let OnboardingSession;
 // Override the require to use our loaded model
 jest.mock(
   '../../models/OnboardingSession',
-  () => {
-    return OnboardingSession;
-  },
-  { virtual: true }
+  () => OnboardingSession,
+  { virtual: true },
 );
 
 // Export a function to initialize the model
 module.exports.initializeModel = async () => {
   OnboardingSession = await modelLoader.loadModel(
     'OnboardingSession',
-    'models/OnboardingSession.js'
+    'models/OnboardingSession.js',
   );
   return OnboardingSession;
 };

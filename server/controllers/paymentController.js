@@ -39,8 +39,6 @@
  * advantage, propelling Wilsy OS to unicorn valuation through financial sovereignty.
  */
 
-'use strict';
-
 // ============================================================================
 // QUANTUM DEPENDENCIES: Importing Financial Building Blocks
 // ============================================================================
@@ -49,14 +47,14 @@ const crypto = require('crypto');
 const axios = require('axios');
 const { DataTypes, Op, QueryTypes } = require('sequelize');
 const sequelize = require('../config/database');
-const Payment = require('../models/Payment');
-const Invoice = require('../models/Invoice');
 const Client = require('../models/Client');
+const Invoice = require('../models/Invoice');
+const Payment = require('../models/Payment');
 const TrustAccount = require('../models/TrustAccount');
-const { encryptData, decryptData } = require('../utils/cryptoUtils');
-const { validateBankingDetails } = require('../utils/bankingValidator');
-const { sendSecureNotification } = require('../utils/notificationService');
 const { createAuditTrail } = require('../utils/auditUtils');
+const { validateBankingDetails } = require('../utils/bankingValidator');
+const { encryptData, decryptData } = require('../utils/cryptoUtils');
+const { sendSecureNotification } = require('../utils/notificationService');
 const { calculateVAT } = require('../utils/taxCalculator');
 
 // ============================================================================
@@ -277,8 +275,8 @@ class PaymentController {
           amount: paymentData.amount,
           currency: paymentData.currency,
           gateway: paymentData.gateway,
-          ficaScreening: ficaScreening,
-          vatCalculation: vatCalculation,
+          ficaScreening,
+          vatCalculation,
           // National Payment System Act: Transaction logging
           paymentSystemCompliant: true,
           timestamp: new Date().toISOString(),
@@ -303,10 +301,10 @@ class PaymentController {
           currency: payment.currency,
           status: payment.status,
           gatewayReference: payment.gatewayReference,
-          receipt: receipt,
+          receipt,
           // CPA: Consumer rights information
           consumerRights: {
-            coolingOffPeriod: CPA_COOLING_OFF_PERIOD + ' days',
+            coolingOffPeriod: `${CPA_COOLING_OFF_PERIOD} days`,
             refundPolicy: '14-day refund policy applies',
             complaintProcedure: 'complaints@wilsyos.co.za',
           },
@@ -558,7 +556,7 @@ class PaymentController {
           refundAmount: refundData.amount,
           refundReason: refundData.reason,
           coolingOffPeriod: withinCoolingOff,
-          vatAdjustment: vatAdjustment,
+          vatAdjustment,
           // CPA: Consumer protection compliance
           cpaCompliance: true,
           timestamp: new Date().toISOString(),
@@ -576,7 +574,7 @@ class PaymentController {
           reference: refund.reference,
           amount: refundData.amount,
           status: refund.status,
-          estimatedProcessing: REFUND_PROCESSING_DAYS + ' days',
+          estimatedProcessing: `${REFUND_PROCESSING_DAYS} days`,
           // CPA: Consumer rights
           consumerRights: {
             coolingOffPeriod: withinCoolingOff ? 'Applied' : 'Expired',
@@ -653,7 +651,7 @@ class PaymentController {
       const reconciliation = await this.createReconciliationRecord(
         reconciliationData,
         reconciliationResult,
-        discrepancies
+        discrepancies,
       );
 
       // Create audit trail
@@ -695,8 +693,8 @@ class PaymentController {
             unmatched: reconciliationResult.unmatched.length,
             discrepancies: discrepancies.length,
           },
-          report: report,
-          discrepancies: discrepancies,
+          report,
+          discrepancies,
           // Companies Act: Compliance status
           complianceStatus: discrepancies.length === 0 ? 'COMPLIANT' : 'REVIEW_REQUIRED',
         },
@@ -763,7 +761,7 @@ class PaymentController {
       const reportRecord = await this.createTaxReportRecord(
         taxReport,
         digitalSignature,
-        reportParams
+        reportParams,
       );
 
       // Create audit trail
@@ -798,7 +796,7 @@ class PaymentController {
           period: reportParams.period,
           report: taxReport,
           signature: digitalSignature,
-          sarsCompliance: sarsCompliance,
+          sarsCompliance,
           // SARS: Filing deadlines
           filingDeadline: this.calculateFilingDeadline(reportParams.period),
           // ECT Act: Digital validity
@@ -1092,12 +1090,11 @@ class PaymentController {
         paymentData,
         clientData,
         suspiciousPatterns,
-        sanctionCheck
+        sanctionCheck,
       );
 
       // Determine if reporting required
-      const reportingRequired =
-        riskLevel === 'HIGH' || paymentData.amount >= SUSPICIOUS_TRANSACTION_THRESHOLD;
+      const reportingRequired = riskLevel === 'HIGH' || paymentData.amount >= SUSPICIOUS_TRANSACTION_THRESHOLD;
 
       return {
         screened: true,
@@ -1288,9 +1285,8 @@ class PaymentController {
           redirectUrl: response.data.payment_url,
           gateway: 'PAYFAST',
         };
-      } else {
-        throw new Error('Invalid response from PayFast');
       }
+      throw new Error('Invalid response from PayFast');
     } catch (error) {
       console.error('PayFast processing failed:', error);
       throw new Error(`PayFast error: ${error.response?.data || error.message}`);
@@ -1350,13 +1346,13 @@ class PaymentController {
       },
       consumer: clientData
         ? {
-            name: clientData.name,
-            contact: clientData.contactEmail || 'Not provided',
-          }
+          name: clientData.name,
+          contact: clientData.contactEmail || 'Not provided',
+        }
         : null,
       // CPA Consumer rights
       consumerRights: {
-        coolingOffPeriod: CPA_COOLING_OFF_PERIOD + ' days',
+        coolingOffPeriod: `${CPA_COOLING_OFF_PERIOD} days`,
         refundPolicy: '14-day refund policy applies for eligible transactions',
         complaintsProcedure: 'Email complaints@wilsyos.co.za or call 0800 123 456',
       },
@@ -1417,7 +1413,7 @@ class PaymentController {
 
     // Mask other sensitive information
     if (sanitized.bankAccount) {
-      sanitized.bankAccount = '*' + sanitized.bankAccount.slice(-4);
+      sanitized.bankAccount = `*${sanitized.bankAccount.slice(-4)}`;
     }
 
     return sanitized;

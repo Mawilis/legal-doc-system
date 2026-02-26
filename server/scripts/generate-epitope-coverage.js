@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Epitope Coverage Generator for Wilsy OS
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 const archy = require('archy');
 
 class EpitopeCoverage {
@@ -54,7 +54,7 @@ class EpitopeCoverage {
           {
             stdio: 'pipe',
             cwd: this.rootDir,
-          }
+          },
         );
         console.log(`  ✅ ${type} unit tests passed`);
       } catch (error) {
@@ -75,7 +75,7 @@ class EpitopeCoverage {
           {
             stdio: 'pipe',
             cwd: this.rootDir,
-          }
+          },
         );
         console.log(`  ✅ ${suite} integration tests passed`);
       } catch (error) {
@@ -102,7 +102,7 @@ class EpitopeCoverage {
       version: this.getPackageVersion(),
       architecture: tree,
       coverage: summary,
-      risks: risks,
+      risks,
       recommendations: this.generateRecommendations(summary),
       compliance: this.checkCompliance(),
     };
@@ -110,12 +110,12 @@ class EpitopeCoverage {
     // Save reports
     fs.writeFileSync(
       path.join(this.reportsDir, 'epitope-coverage.json'),
-      JSON.stringify(epitopeReport, null, 2)
+      JSON.stringify(epitopeReport, null, 2),
     );
 
     fs.writeFileSync(
       path.join(this.reportsDir, 'epitope-coverage.txt'),
-      this.formatTextReport(epitopeReport)
+      this.formatTextReport(epitopeReport),
     );
 
     // Generate HTML report
@@ -208,15 +208,15 @@ class EpitopeCoverage {
   }
 
   formatTextReport(report) {
-    let text = '='.repeat(80) + '\n';
+    let text = `${'='.repeat(80)}\n`;
     text += 'WILSY OS EPITOPE COVERAGE REPORT\n';
-    text += '='.repeat(80) + '\n\n';
+    text += `${'='.repeat(80)}\n\n`;
     text += `Generated: ${report.timestamp}\n`;
     text += `Version: ${report.version}\n\n`;
     text += 'ARCHITECTURE OVERVIEW:\n';
-    text += report.architecture + '\n';
+    text += `${report.architecture}\n`;
     text += '\nCOVERAGE SUMMARY:\n';
-    text += JSON.stringify(report.coverage.overall, null, 2) + '\n';
+    text += `${JSON.stringify(report.coverage.overall, null, 2)}\n`;
     return text;
   }
 
@@ -278,7 +278,7 @@ class EpitopeCoverage {
   logFailure(error, type) {
     const errorLog = {
       timestamp: new Date().toISOString(),
-      type: type,
+      type,
       error: error.message,
       stack: error.stack,
     };

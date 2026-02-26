@@ -80,29 +80,34 @@
  * ==============================================================================================================
  */
 
-'use strict';
-
 // ==============================================================================================================
 // QUANTUM DEPENDENCIES - PINNED FOR SECURITY
 // ==============================================================================================================
 
 const crypto = require('crypto');
-const mongoose = require('mongoose');
+const axios = require('axios');
 const asyncHandler = require('express-async-handler');
 const { validationResult } = require('express-validator');
-const axios = require('axios');
+const mongoose = require('mongoose');
 const fs = require('fs').promises;
 const path = require('path');
 
 // SECURITY: Import quantum cryptographic utilities
-const {
-  generateDigitalSignature,
-  verifyDigitalSignature,
-  createDocumentHash,
-  generateSignatureCertificate,
-} = require('../utils/quantumCrypto');
 
 // COMPLIANCE: Import ECT Act validation engine
+const ComplianceRecord = require('../models/ComplianceRecord');
+const Document = require('../models/Document');
+const ESignatureRequest = require('../models/ESignatureRequest');
+const {
+  verifyBiometricSignature,
+  generateWebAuthnChallenge,
+  validatePasskeySignature,
+} = require('../services/biometricService.js');
+const {
+  anchorSignatureToBlockchain,
+  verifyBlockchainSignature,
+  createSmartContractEvidence,
+} = require('../services/blockchainService');
 const {
   validateECTActCompliance,
   generateSignatureCertificateECT,
@@ -110,11 +115,6 @@ const {
 } = require('../services/complianceEngine');
 
 // BLOCKCHAIN: Import Hyperledger Fabric anchoring
-const {
-  anchorSignatureToBlockchain,
-  verifyBlockchainSignature,
-  createSmartContractEvidence,
-} = require('../services/blockchainService');
 
 // NOTIFICATION: Multi-channel notification system
 const {
@@ -124,11 +124,6 @@ const {
 } = require('../services/notificationService');
 
 // BIOMETRIC: WebAuthn and biometric verification
-const {
-  verifyBiometricSignature,
-  generateWebAuthnChallenge,
-  validatePasskeySignature,
-} = require('../services/biometricService.js');
 
 // ENV VALIDATION: Critical security check
 require('dotenv').config();
@@ -157,11 +152,14 @@ validateEnvVars();
 // QUANTUM MODEL IMPORTS - LEGAL DOCUMENT ECOSYSTEM
 // ==============================================================================================================
 
-const ESignatureRequest = require('../models/ESignatureRequest');
-const Document = require('../models/Document');
 const User = require('../models/User');
 const Firm = require('../models/Firm');
-const ComplianceRecord = require('../models/ComplianceRecord');
+const {
+  generateDigitalSignature,
+  verifyDigitalSignature,
+  createDocumentHash,
+  generateSignatureCertificate,
+} = require('../utils/quantumCrypto');
 
 // ==============================================================================================================
 // QUANTUM VALIDATION SCHEMAS - EXPRESS-VALIDATOR RULES
@@ -178,9 +176,7 @@ const eSignValidationRules = {
       in: ['body'],
       isArray: true,
       custom: {
-        options: (value) => {
-          return Array.isArray(value) && value.length > 0 && value.length <= 10;
-        },
+        options: (value) => Array.isArray(value) && value.length > 0 && value.length <= 10,
       },
       errorMessage: 'Signatories must be an array of 1-10 users',
     },
@@ -264,59 +260,57 @@ const eSignValidationRules = {
  * @middleware validateESignRequest
  * @description Validates e-signature requests against ECT Act and security requirements
  */
-const validateESignRequest = (validationRule) => {
-  return asyncHandler(async (req, res, next) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          success: false,
-          error: 'Validation failed',
-          details: errors.array(),
-          compliance: {
-            act: 'ECT Act 25 of 2002',
-            section: '13(1)',
-            requirement: 'Electronic signature must meet prescribed standards',
-          },
-        });
-      }
-
-      // Additional compliance validation based on jurisdiction
-      if (req.body.jurisdiction) {
-        const jurisdictionValidation = await validateECTActCompliance(
-          req.body.jurisdiction,
-          req.body.signatureType
-        );
-
-        if (!jurisdictionValidation.valid) {
-          return res.status(422).json({
-            success: false,
-            error: 'Jurisdictional compliance failed',
-            details: jurisdictionValidation.reasons,
-            compliance: {
-              jurisdiction: req.body.jurisdiction,
-              act: jurisdictionValidation.applicableAct,
-              section: jurisdictionValidation.applicableSection,
-            },
-          });
-        }
-      }
-
-      next();
-    } catch (error) {
-      console.error('ESign validation middleware error:', error);
-      res.status(500).json({
+const validateESignRequest = (validationRule) => asyncHandler(async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
         success: false,
-        error: 'Signature validation system error',
+        error: 'Validation failed',
+        details: errors.array(),
         compliance: {
-          act: 'ECT Act',
-          section: '18',
-          requirement: 'Reliable signature validation systems required',
+          act: 'ECT Act 25 of 2002',
+          section: '13(1)',
+          requirement: 'Electronic signature must meet prescribed standards',
         },
       });
     }
-  });
-};
+
+    // Additional compliance validation based on jurisdiction
+    if (req.body.jurisdiction) {
+      const jurisdictionValidation = await validateECTActCompliance(
+        req.body.jurisdiction,
+        req.body.signatureType,
+      );
+
+      if (!jurisdictionValidation.valid) {
+        return res.status(422).json({
+          success: false,
+          error: 'Jurisdictional compliance failed',
+          details: jurisdictionValidation.reasons,
+          compliance: {
+            jurisdiction: req.body.jurisdiction,
+            act: jurisdictionValidation.applicableAct,
+            section: jurisdictionValidation.applicableSection,
+          },
+        });
+      }
+    }
+
+    next();
+  } catch (error) {
+    console.error('ESign validation middleware error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Signature validation system error',
+      compliance: {
+        act: 'ECT Act',
+        section: '18',
+        requirement: 'Reliable signature validation systems required',
+      },
+    });
+  }
+});
 
 /*
  * @middleware enforceSignatureSecurity
@@ -325,7 +319,7 @@ const validateESignRequest = (validationRule) => {
 const enforceSignatureSecurity = asyncHandler(async (req, res, next) => {
   try {
     // SECURITY: Validate API key for external integrations
-    const apiKey = req.headers['x-api-key'] || req.headers['authorization'];
+    const apiKey = req.headers['x-api-key'] || req.headers.authorization;
 
     if (!apiKey) {
       return res.status(401).json({
@@ -494,28 +488,28 @@ const initiateSignature = asyncHandler(async (req, res) => {
     // COMPLIANCE: Create ECT Act compliant signature certificate
     const signatureCertificate = await generateSignatureCertificateECT({
       documentId: document._id,
-      documentHash: documentHash,
-      signatureType: signatureType,
-      jurisdiction: jurisdiction,
+      documentHash,
+      signatureType,
+      jurisdiction,
       initiator: requestingUser._id,
       signatories: validatedSignatories.map((s) => s.userId),
-      expiryHours: expiryHours,
+      expiryHours,
     });
 
     // Create signature request
     const signatureRequest = new ESignatureRequest({
       requestId: `ESR-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`,
       documentId: document._id,
-      documentHash: documentHash,
+      documentHash,
       initiatorId: requestingUser._id,
       firmId: requestingUser.firmId,
       signatories: validatedSignatories,
-      signatureType: signatureType,
-      jurisdiction: jurisdiction,
-      signingOrder: signingOrder,
+      signatureType,
+      jurisdiction,
+      signingOrder,
       status: 'INITIATED',
       expiryAt: new Date(Date.now() + expiryHours * 60 * 60 * 1000),
-      signatureCertificate: signatureCertificate,
+      signatureCertificate,
       metadata: {
         ...metadata,
         compliance: {
@@ -532,8 +526,8 @@ const initiateSignature = asyncHandler(async (req, res) => {
           performedBy: requestingUser._id,
           timestamp: new Date(),
           details: {
-            signatureType: signatureType,
-            jurisdiction: jurisdiction,
+            signatureType,
+            jurisdiction,
             signatoryCount: validatedSignatories.length,
           },
         },
@@ -547,7 +541,7 @@ const initiateSignature = asyncHandler(async (req, res) => {
     if (signatureType === 'BLOCKCHAIN' || signatureType === 'QUALIFIED') {
       await anchorSignatureToBlockchain({
         requestId: signatureRequest._id,
-        documentHash: documentHash,
+        documentHash,
         initiator: requestingUser._id,
         timestamp: new Date(),
         action: 'SIGNATURE_REQUEST_INITIATED',
@@ -611,7 +605,7 @@ const initiateSignature = asyncHandler(async (req, res) => {
         signatureUrl: `${process.env.APP_URL}/sign/${signatureRequest.requestId}`,
         compliance: {
           ectActCompliant: true,
-          jurisdiction: jurisdiction,
+          jurisdiction,
           certificateId: signatureCertificate.certificateId,
         },
       },
@@ -727,7 +721,7 @@ const signDocument = asyncHandler(async (req, res) => {
 
     // SECURITY: Verify user is authorized signatory
     const signatoryIndex = signatureRequest.signatories.findIndex(
-      (s) => s.userId.toString() === signingUser._id.toString()
+      (s) => s.userId.toString() === signingUser._id.toString(),
     );
 
     if (signatoryIndex === -1) {
@@ -779,8 +773,8 @@ const signDocument = asyncHandler(async (req, res) => {
 
     // BIOMETRIC SECURITY: Verify biometric evidence if required
     if (
-      signatureRequest.signatureType === 'BIOMETRIC' ||
-      signatureRequest.signatureType === 'QUALIFIED'
+      signatureRequest.signatureType === 'BIOMETRIC'
+      || signatureRequest.signatureType === 'QUALIFIED'
     ) {
       if (!biometricEvidence) {
         return res.status(400).json({
@@ -797,7 +791,7 @@ const signDocument = asyncHandler(async (req, res) => {
       const biometricVerification = await verifyBiometricSignature(
         signingUser._id,
         biometricEvidence,
-        signatureRequest.documentHash
+        signatureRequest.documentHash,
       );
 
       if (!biometricVerification.verified) {
@@ -817,7 +811,7 @@ const signDocument = asyncHandler(async (req, res) => {
     const digitalSignature = await generateDigitalSignature({
       userId: signingUser._id,
       documentHash: signatureRequest.documentHash,
-      signatureData: signatureData,
+      signatureData,
       timestamp: new Date(),
       signatureType: signatureRequest.signatureType,
       jurisdiction: signatureRequest.jurisdiction,
@@ -850,8 +844,8 @@ const signDocument = asyncHandler(async (req, res) => {
       details: {
         signatoryName: signingUser.fullName,
         signatureType: signatureRequest.signatureType,
-        ipAddress: ipAddress,
-        userAgent: userAgent,
+        ipAddress,
+        userAgent,
       },
     });
 
@@ -860,8 +854,8 @@ const signDocument = asyncHandler(async (req, res) => {
 
     // BLOCKCHAIN: Anchor signature to blockchain
     if (
-      signatureRequest.signatureType === 'BLOCKCHAIN' ||
-      signatureRequest.signatureType === 'QUALIFIED'
+      signatureRequest.signatureType === 'BLOCKCHAIN'
+      || signatureRequest.signatureType === 'QUALIFIED'
     ) {
       const blockchainProof = await anchorSignatureToBlockchain({
         requestId: signatureRequest._id,
@@ -890,7 +884,7 @@ const signDocument = asyncHandler(async (req, res) => {
     // NOTIFICATION: Notify other parties if sequential signing
     if (signatureRequest.signingOrder === 'SEQUENTIAL' && !allSigned) {
       const nextSignatory = signatureRequest.signatories.find(
-        (s) => s.signatureStatus === 'PENDING'
+        (s) => s.signatureStatus === 'PENDING',
       );
       if (nextSignatory) {
         await sendSignatureNotification({
@@ -923,7 +917,7 @@ const signDocument = asyncHandler(async (req, res) => {
               collectedBy: signingUser._id,
             },
           },
-        }
+        },
       );
     }
 
@@ -1036,7 +1030,7 @@ const verifySignature = asyncHandler(async (req, res) => {
           signedAt: signatory.signedAt,
           signatureValid: verification.valid,
           verificationDetails: verification.details,
-          biometricVerified: signatory.biometricEvidence ? true : false,
+          biometricVerified: !!signatory.biometricEvidence,
           ipAddress: signatory.ipAddress,
           userAgent: signatory.userAgent,
         });
@@ -1044,13 +1038,13 @@ const verifySignature = asyncHandler(async (req, res) => {
     }
 
     // BLOCKCHAIN VERIFICATION: Verify blockchain proofs if available
-    let blockchainVerifications = [];
+    const blockchainVerifications = [];
 
     if (['BLOCKCHAIN', 'QUALIFIED'].includes(signatureRecord.signatureType)) {
       for (const signatory of signatureRecord.signatories) {
         if (signatory.blockchainProof) {
           const blockchainVerification = await verifyBlockchainSignature(
-            signatory.blockchainProof.transactionId
+            signatory.blockchainProof.transactionId,
           );
 
           blockchainVerifications.push({
@@ -1069,17 +1063,16 @@ const verifySignature = asyncHandler(async (req, res) => {
     const verificationCertificate = await generateSignatureCertificateECT({
       type: 'VERIFICATION_REPORT',
       signatureRequestId: signatureRecord._id,
-      verificationLevel: verificationLevel,
+      verificationLevel,
       documentHashIntegrity: hashIntegrity,
-      signatureVerifications: signatureVerifications,
-      blockchainVerifications: blockchainVerifications,
+      signatureVerifications,
+      blockchainVerifications,
       jurisdiction: signatureRecord.jurisdiction,
     });
 
     // LEGAL COMPLIANCE: Determine legal validity
     const allSignaturesValid = signatureVerifications.every((v) => v.signatureValid);
-    const allBlockchainValid =
-      blockchainVerifications.length === 0 || blockchainVerifications.every((v) => v.verified);
+    const allBlockchainValid = blockchainVerifications.length === 0 || blockchainVerifications.every((v) => v.verified);
 
     let legalValidity = 'INVALID';
     let legalBasis = '';
@@ -1102,13 +1095,13 @@ const verifySignature = asyncHandler(async (req, res) => {
         documentId: signatureRecord.documentId._id,
         documentName: signatureRecord.documentId.name,
         verificationTimestamp: new Date(),
-        verificationLevel: verificationLevel,
+        verificationLevel,
 
         // Integrity checks
         integrity: {
           documentHashIntegrity: hashIntegrity,
           originalDocumentHash: signatureRecord.documentHash,
-          currentDocumentHash: currentDocumentHash,
+          currentDocumentHash,
           tamperDetected: !hashIntegrity,
         },
 
@@ -1116,10 +1109,10 @@ const verifySignature = asyncHandler(async (req, res) => {
         signatures: {
           totalSignatories: signatureRecord.signatories.length,
           signedSignatories: signatureRecord.signatories.filter(
-            (s) => s.signatureStatus === 'SIGNED'
+            (s) => s.signatureStatus === 'SIGNED',
           ).length,
           verificationResults: signatureVerifications,
-          allSignaturesValid: allSignaturesValid,
+          allSignaturesValid,
         },
 
         // Blockchain verification
@@ -1200,9 +1193,8 @@ const getSignatureStatus = asyncHandler(async (req, res) => {
 
     // SECURITY: Check authorization - user must be initiator or signatory
     const userId = req.user.id;
-    const isAuthorized =
-      signatureRequest.initiatorId._id.toString() === userId ||
-      signatureRequest.signatories.some((s) => s.userId._id.toString() === userId);
+    const isAuthorized = signatureRequest.initiatorId._id.toString() === userId
+      || signatureRequest.signatories.some((s) => s.userId._id.toString() === userId);
 
     if (!isAuthorized) {
       return res.status(403).json({
@@ -1214,7 +1206,7 @@ const getSignatureStatus = asyncHandler(async (req, res) => {
     // Calculate statistics
     const totalSignatories = signatureRequest.signatories.length;
     const signedCount = signatureRequest.signatories.filter(
-      (s) => s.signatureStatus === 'SIGNED'
+      (s) => s.signatureStatus === 'SIGNED',
     ).length;
     const pendingCount = totalSignatories - signedCount;
 
@@ -1242,9 +1234,9 @@ const getSignatureStatus = asyncHandler(async (req, res) => {
 
         // Statistics
         statistics: {
-          totalSignatories: totalSignatories,
-          signedCount: signedCount,
-          pendingCount: pendingCount,
+          totalSignatories,
+          signedCount,
+          pendingCount,
           completionPercentage:
             totalSignatories > 0 ? Math.round((signedCount / totalSignatories) * 100) : 0,
         },
@@ -1271,7 +1263,7 @@ const getSignatureStatus = asyncHandler(async (req, res) => {
         expiry: {
           isExpired: new Date() > signatureRequest.expiryAt,
           daysRemaining: Math.ceil(
-            (signatureRequest.expiryAt - new Date()) / (1000 * 60 * 60 * 24)
+            (signatureRequest.expiryAt - new Date()) / (1000 * 60 * 60 * 24),
           ),
           hoursRemaining: Math.ceil((signatureRequest.expiryAt - new Date()) / (1000 * 60 * 60)),
         },
@@ -1339,7 +1331,7 @@ const cancelSignatureRequest = asyncHandler(async (req, res) => {
       action: 'REQUEST_CANCELLED',
       performedBy: req.user.id,
       timestamp: new Date(),
-      details: { reason: reason },
+      details: { reason },
     });
 
     await signatureRequest.save();
@@ -1352,7 +1344,7 @@ const cancelSignatureRequest = asyncHandler(async (req, res) => {
         signatureRequestId: signatureRequest._id,
         documentName: signatureRequest.documentId.name,
         cancelledBy: req.user.fullName,
-        reason: reason,
+        reason,
       });
     }
 
@@ -1397,9 +1389,8 @@ const downloadSignedDocument = asyncHandler(async (req, res) => {
 
     // SECURITY: Check authorization
     const userId = req.user.id;
-    const isAuthorized =
-      signatureRequest.initiatorId.toString() === userId ||
-      signatureRequest.signatories.some((s) => s.userId.toString() === userId);
+    const isAuthorized = signatureRequest.initiatorId.toString() === userId
+      || signatureRequest.signatories.some((s) => s.userId.toString() === userId);
 
     if (!isAuthorized) {
       return res.status(403).json({
@@ -1448,7 +1439,7 @@ const downloadSignedDocument = asyncHandler(async (req, res) => {
           userAgent: s.userAgent,
         })),
       verification: {
-        certificate: certificate,
+        certificate,
         blockchainProofs: signatureRequest.signatories
           .filter((s) => s.blockchainProof)
           .map((s) => s.blockchainProof),
@@ -1461,7 +1452,7 @@ const downloadSignedDocument = asyncHandler(async (req, res) => {
     const timestamp = new Date().toISOString().split('T')[0];
     const filename = `${signatureRequest.documentId.name.replace(
       /\.[^/.]+$/,
-      ''
+      '',
     )}_signed_${timestamp}.json`;
 
     // Set response headers
@@ -1479,8 +1470,8 @@ const downloadSignedDocument = asyncHandler(async (req, res) => {
       userId: req.user.id,
       signatureRequestId: signatureRequest._id,
       details: {
-        filename: filename,
-        includeCertificate: includeCertificate,
+        filename,
+        includeCertificate,
         downloadTimestamp: new Date(),
       },
     });
@@ -1540,7 +1531,7 @@ const generateSignatureReport = asyncHandler(async (req, res) => {
       data: report,
       metadata: {
         generatedAt: new Date(),
-        reportType: reportType,
+        reportType,
         signatureRequestId: signatureRequest._id,
         documentId: signatureRequest.documentId._id,
       },
@@ -1562,125 +1553,121 @@ const generateSignatureReport = asyncHandler(async (req, res) => {
  * @function generateLegalAuditReport
  * @description Generates legal audit report for Law Society compliance
  */
-const generateLegalAuditReport = async (signatureRequest) => {
-  return {
-    reportType: 'LEGAL_AUDIT',
-    generatedAt: new Date(),
-    signatureRequest: {
-      id: signatureRequest._id,
-      requestId: signatureRequest.requestId,
-      status: signatureRequest.status,
-      signatureType: signatureRequest.signatureType,
-      jurisdiction: signatureRequest.jurisdiction,
-      createdAt: signatureRequest.createdAt,
-      completedAt: signatureRequest.completedAt,
-      expiryAt: signatureRequest.expiryAt,
+const generateLegalAuditReport = async (signatureRequest) => ({
+  reportType: 'LEGAL_AUDIT',
+  generatedAt: new Date(),
+  signatureRequest: {
+    id: signatureRequest._id,
+    requestId: signatureRequest.requestId,
+    status: signatureRequest.status,
+    signatureType: signatureRequest.signatureType,
+    jurisdiction: signatureRequest.jurisdiction,
+    createdAt: signatureRequest.createdAt,
+    completedAt: signatureRequest.completedAt,
+    expiryAt: signatureRequest.expiryAt,
+  },
+  document: {
+    id: signatureRequest.documentId._id,
+    name: signatureRequest.documentId.name,
+    hash: signatureRequest.documentHash,
+    size: signatureRequest.documentId.size,
+    contentType: signatureRequest.documentId.contentType,
+  },
+  parties: {
+    initiator: {
+      id: signatureRequest.initiatorId._id,
+      name: signatureRequest.initiatorId.fullName,
+      email: signatureRequest.initiatorId.email,
+      firm: signatureRequest.firmId?.name,
     },
-    document: {
-      id: signatureRequest.documentId._id,
-      name: signatureRequest.documentId.name,
-      hash: signatureRequest.documentHash,
-      size: signatureRequest.documentId.size,
-      contentType: signatureRequest.documentId.contentType,
+    signatories: signatureRequest.signatories.map((s) => ({
+      id: s.userId._id,
+      name: s.userId.fullName,
+      email: s.userId.email,
+      role: s.role,
+      status: s.signatureStatus,
+      signedAt: s.signedAt,
+      signatureMethod: s.signatureMethod,
+      ipAddress: s.ipAddress,
+      userAgent: s.userAgent,
+    })),
+  },
+  compliance: {
+    ectAct: {
+      compliant: true,
+      sections: ['13', '15', '18'],
+      requirements: [
+        'Advanced electronic signature',
+        'Non-repudiation',
+        'Integrity protection',
+        'Timestamp authority',
+      ],
     },
-    parties: {
-      initiator: {
-        id: signatureRequest.initiatorId._id,
-        name: signatureRequest.initiatorId.fullName,
-        email: signatureRequest.initiatorId.email,
-        firm: signatureRequest.firmId?.name,
-      },
-      signatories: signatureRequest.signatories.map((s) => ({
-        id: s.userId._id,
-        name: s.userId.fullName,
-        email: s.userId.email,
-        role: s.role,
-        status: s.signatureStatus,
-        signedAt: s.signedAt,
-        signatureMethod: s.signatureMethod,
-        ipAddress: s.ipAddress,
-        userAgent: s.userAgent,
-      })),
+    popia: {
+      compliant: true,
+      dataProcessing: 'LAWFUL',
+      consent: 'EXPLICIT',
+      security: 'ADEQUATE',
     },
-    compliance: {
-      ectAct: {
-        compliant: true,
-        sections: ['13', '15', '18'],
-        requirements: [
-          'Advanced electronic signature',
-          'Non-repudiation',
-          'Integrity protection',
-          'Timestamp authority',
-        ],
-      },
-      popia: {
-        compliant: true,
-        dataProcessing: 'LAWFUL',
-        consent: 'EXPLICIT',
-        security: 'ADEQUATE',
-      },
-      lpc:
+    lpc:
         signatureRequest.jurisdiction === 'ZA'
           ? {
-              compliant: true,
-              rules: ['3.5', '4.1'],
-              requirements: ['Electronic communication records', 'Proper record keeping'],
-            }
+            compliant: true,
+            rules: ['3.5', '4.1'],
+            requirements: ['Electronic communication records', 'Proper record keeping'],
+          }
           : null,
-    },
-    verification: {
-      documentIntegrity: 'VERIFIED',
-      signaturesValid: signatureRequest.signatories.every((s) => s.signatureStatus === 'SIGNED'),
-      timestampAuthority: process.env.SIGNATURE_TIMESTAMP_AUTHORITY,
-      certificateAuthority: process.env.SIGNATURE_CERTIFICATE_AUTHORITY,
-    },
-    auditTrail: signatureRequest.auditTrail.map((entry) => ({
-      action: entry.action,
-      performedBy: entry.performedBy,
-      timestamp: entry.timestamp,
-      details: entry.details,
-    })),
-    legalOpinion: {
-      validity: 'VALID',
-      admissibility: 'ADMISSIBLE',
-      enforceability: 'ENFORCEABLE',
-      basis: 'Complies with ECT Act 25 of 2002 requirements for advanced electronic signatures',
-    },
-  };
-};
+  },
+  verification: {
+    documentIntegrity: 'VERIFIED',
+    signaturesValid: signatureRequest.signatories.every((s) => s.signatureStatus === 'SIGNED'),
+    timestampAuthority: process.env.SIGNATURE_TIMESTAMP_AUTHORITY,
+    certificateAuthority: process.env.SIGNATURE_CERTIFICATE_AUTHORITY,
+  },
+  auditTrail: signatureRequest.auditTrail.map((entry) => ({
+    action: entry.action,
+    performedBy: entry.performedBy,
+    timestamp: entry.timestamp,
+    details: entry.details,
+  })),
+  legalOpinion: {
+    validity: 'VALID',
+    admissibility: 'ADMISSIBLE',
+    enforceability: 'ENFORCEABLE',
+    basis: 'Complies with ECT Act 25 of 2002 requirements for advanced electronic signatures',
+  },
+});
 
 /*
  * @function generateComplianceReport
  * @description Generates regulatory compliance report
  */
-const generateComplianceReport = async (signatureRequest) => {
-  return {
-    reportType: 'COMPLIANCE',
-    generatedAt: new Date(),
-    complianceChecks: {
-      ectAct: await validateECTActCompliance(
-        signatureRequest.jurisdiction,
-        signatureRequest.signatureType
-      ),
-      popia: {
-        dataMinimization: true,
-        purposeLimitation: true,
-        storageLimitation: true,
-        integrityAndConfidentiality: true,
-      },
-      industryStandards: {
-        iso27001: true,
-        soc2: true,
-        pciDss: signatureRequest.metadata?.containsPaymentData ? true : 'NOT_APPLICABLE',
-      },
+const generateComplianceReport = async (signatureRequest) => ({
+  reportType: 'COMPLIANCE',
+  generatedAt: new Date(),
+  complianceChecks: {
+    ectAct: await validateECTActCompliance(
+      signatureRequest.jurisdiction,
+      signatureRequest.signatureType,
+    ),
+    popia: {
+      dataMinimization: true,
+      purposeLimitation: true,
+      storageLimitation: true,
+      integrityAndConfidentiality: true,
     },
-    recommendations: [
-      'Maintain audit trail for 7 years per Companies Act 2008',
-      'Regularly update cryptographic algorithms',
-      'Conduct quarterly security audits',
-    ],
-  };
-};
+    industryStandards: {
+      iso27001: true,
+      soc2: true,
+      pciDss: signatureRequest.metadata?.containsPaymentData ? true : 'NOT_APPLICABLE',
+    },
+  },
+  recommendations: [
+    'Maintain audit trail for 7 years per Companies Act 2008',
+    'Regularly update cryptographic algorithms',
+    'Conduct quarterly security audits',
+  ],
+});
 
 /*
  * @function generateForensicReport
@@ -1712,7 +1699,7 @@ const generateForensicReport = async (signatureRequest) => {
             location: s.locationData,
             timestamp: s.signedAt,
           },
-        }))
+        })),
     ),
     blockchainForensics: await Promise.all(
       signatureRequest.signatories
@@ -1720,14 +1707,14 @@ const generateForensicReport = async (signatureRequest) => {
         .map(async (s) => ({
           signatory: s.userId.fullName,
           blockchainAnalysis: await verifyBlockchainSignature(s.blockchainProof.transactionId),
-        }))
+        })),
     ),
   };
 
   return {
     reportType: 'FORENSIC',
     generatedAt: new Date(),
-    forensicAnalysis: forensicAnalysis,
+    forensicAnalysis,
     conclusions: [
       'All signatures cryptographically valid',
       'Document integrity maintained',
@@ -1740,31 +1727,29 @@ const generateForensicReport = async (signatureRequest) => {
  * @function generateStandardReport
  * @description Generates standard signature report
  */
-const generateStandardReport = async (signatureRequest) => {
-  return {
-    reportType: 'STANDARD',
-    generatedAt: new Date(),
-    summary: {
-      document: signatureRequest.documentId.name,
-      status: signatureRequest.status,
-      signatories: signatureRequest.signatories.length,
-      signed: signatureRequest.signatories.filter((s) => s.signatureStatus === 'SIGNED').length,
-      signatureType: signatureRequest.signatureType,
-      jurisdiction: signatureRequest.jurisdiction,
-    },
-    timeline: {
-      created: signatureRequest.createdAt,
-      started: signatureRequest.signatories
-        .filter((s) => s.signedAt)
-        .map((s) => s.signedAt)
-        .sort()[0],
-      completed: signatureRequest.completedAt,
-      duration: signatureRequest.completedAt
-        ? `${(signatureRequest.completedAt - signatureRequest.createdAt) / (1000 * 60 * 60)} hours`
-        : 'IN_PROGRESS',
-    },
-  };
-};
+const generateStandardReport = async (signatureRequest) => ({
+  reportType: 'STANDARD',
+  generatedAt: new Date(),
+  summary: {
+    document: signatureRequest.documentId.name,
+    status: signatureRequest.status,
+    signatories: signatureRequest.signatories.length,
+    signed: signatureRequest.signatories.filter((s) => s.signatureStatus === 'SIGNED').length,
+    signatureType: signatureRequest.signatureType,
+    jurisdiction: signatureRequest.jurisdiction,
+  },
+  timeline: {
+    created: signatureRequest.createdAt,
+    started: signatureRequest.signatories
+      .filter((s) => s.signedAt)
+      .map((s) => s.signedAt)
+      .sort()[0],
+    completed: signatureRequest.completedAt,
+    duration: signatureRequest.completedAt
+      ? `${(signatureRequest.completedAt - signatureRequest.createdAt) / (1000 * 60 * 60)} hours`
+      : 'IN_PROGRESS',
+  },
+});
 
 // ==============================================================================================================
 // ERROR HANDLING MIDDLEWARE

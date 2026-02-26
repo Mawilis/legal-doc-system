@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict';
 
 // ============================================================================
 // QUANTUM POPIA REPORT GENERATOR: THE IMMUTABLE COMPLIANCE ORACLE
@@ -70,48 +69,42 @@ const crypto = require('crypto');
 const { subtle } = require('crypto').webcrypto || require('crypto');
 
 // QUANTUM DOCUMENT GENERATION: PDF, CSV, JSON, XML with digital signatures
-const PDFDocument = require('pdfkit');
-const { jsPDF } = require('jspdf');
 require('jspdf-autotable');
-const { Parser } = require('json2csv');
-const xml2js = require('xml2js');
-const ExcelJS = require('exceljs');
 
 // QUANTUM TEMPLATING: Mustache for dynamic report generation
-const mustache = require('mustache');
 
 // QUANTUM COMPRESSION: For large compliance reports
-const zlib = require('zlib');
 const util = require('util');
+const zlib = require('zlib');
+
 const gzip = util.promisify(zlib.gzip);
 const gunzip = util.promisify(zlib.gunzip);
 
 // QUANTUM STORAGE: S3 integration for encrypted report storage
 const AWS = require('aws-sdk');
+const ExcelJS = require('exceljs');
+
 const s3 = process.env.AWS_ACCESS_KEY_ID
   ? new AWS.S3({
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      region: process.env.AWS_REGION || 'af-south-1', // Cape Town region
-    })
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION || 'af-south-1', // Cape Town region
+  })
   : null;
 
 // QUANTUM BLOCKCHAIN: Hyperledger for immutable report anchoring
 const { Contract, Gateway } = require('fabric-network');
 const { Wallets } = require('fabric-network');
+const { Parser } = require('json2csv');
+const { jsPDF } = require('jspdf');
+const mustache = require('mustache');
+const PDFDocument = require('pdfkit');
 
 // QUANTUM DATABASE: Sequelize models for compliance data
 const { Sequelize, Op } = require('sequelize');
+const xml2js = require('xml2js');
 
 // QUANTUM COMPLIANCE IMPORTS
-const { createAuditLog } = require('./auditLogger');
-const {
-  encryptField,
-  decryptField,
-  generateQuantumSignature,
-  verifyQuantumSignature,
-  generateDigitalTimestamp,
-} = require('./cryptoQuantizer');
 
 // QUANTUM CONSTANTS: Compliance reporting constants
 const {
@@ -122,6 +115,14 @@ const {
   CCPA_REPORT_TYPES,
   AFRICAN_JURISDICTION_REPORTS,
 } = require('../constants/complianceConstants');
+const { createAuditLog } = require('./auditLogger');
+const {
+  encryptField,
+  decryptField,
+  generateQuantumSignature,
+  verifyQuantumSignature,
+  generateDigitalTimestamp,
+} = require('./cryptoQuantizer');
 
 // ============================================================================
 // QUANTUM ERROR HIERARCHY: REPORT GENERATION EXCEPTION TAXONOMY
@@ -145,7 +146,7 @@ class RegulatorReportError extends QuantumReportError {
       `Regulator report generation failed for ${reportType} to ${regulator}`,
       'REGULATOR_REPORT_ERROR',
       'HIGH',
-      'POPIA_SECTION_22'
+      'POPIA_SECTION_22',
     );
     this.reportType = reportType;
     this.regulator = regulator;
@@ -160,7 +161,7 @@ class DSARReportError extends QuantumReportError {
       `DSAR report generation failed for data subject ${dataSubjectId}`,
       'DSAR_REPORT_ERROR',
       'HIGH',
-      'POPIA_SECTION_23'
+      'POPIA_SECTION_23',
     );
     this.dataSubjectId = dataSubjectId;
     this.requestType = requestType;
@@ -175,7 +176,7 @@ class BreachReportError extends QuantumReportError {
       `Breach report generation failed for breach ${breachId}`,
       'BREACH_REPORT_ERROR',
       'CRITICAL',
-      'POPIA_SECTION_22'
+      'POPIA_SECTION_22',
     );
     this.breachId = breachId;
     this.notificationType = notificationType;
@@ -190,7 +191,7 @@ class ConsentReportError extends QuantumReportError {
       `Consent report generation failed for client ${clientId}`,
       'CONSENT_REPORT_ERROR',
       'MEDIUM',
-      'POPIA_SECTION_11'
+      'POPIA_SECTION_11',
     );
     this.clientId = clientId;
     this.consentType = consentType;
@@ -205,7 +206,7 @@ class CrossBorderReportError extends QuantumReportError {
       `Cross-border report generation failed for ${sourceJurisdiction}→${destinationJurisdiction}`,
       'CROSS_BORDER_REPORT_ERROR',
       'HIGH',
-      'POPIA_SECTION_72'
+      'POPIA_SECTION_72',
     );
     this.sourceJurisdiction = sourceJurisdiction;
     this.destinationJurisdiction = destinationJurisdiction;
@@ -322,7 +323,7 @@ class QuantumPOPIAReportGenerator {
     this.validateQuantumEnvironment();
 
     console.log(
-      '📄 Quantum POPIA Report Generator Initialized: Ready to transform compliance into competitive advantage'
+      '📄 Quantum POPIA Report Generator Initialized: Ready to transform compliance into competitive advantage',
     );
   }
 
@@ -552,7 +553,7 @@ class QuantumPOPIAReportGenerator {
       const gateway = new Gateway();
       await gateway.connect(JSON.parse(connectionProfile), {
         wallet,
-        identity: identity,
+        identity,
         discovery: { enabled: true, asLocalhost: false },
       });
 
@@ -584,7 +585,7 @@ class QuantumPOPIAReportGenerator {
       throw new QuantumReportError(
         `Quantum Configuration Breach: Missing env vars: ${missing.join(', ')}`,
         'ENV_CONFIG_ERROR',
-        'CRITICAL'
+        'CRITICAL',
       );
     }
 
@@ -594,15 +595,15 @@ class QuantumPOPIAReportGenerator {
       throw new QuantumReportError(
         'Invalid Information Officer email format',
         'INVALID_EMAIL_ERROR',
-        'HIGH'
+        'HIGH',
       );
     }
 
     // Validate company registration number format (South African)
     const regNumRegex = /^\d{4}\/\d{6}\/\d{2}$/;
     if (
-      process.env.COMPANY_REGISTRATION_NUMBER &&
-      !regNumRegex.test(process.env.COMPANY_REGISTRATION_NUMBER)
+      process.env.COMPANY_REGISTRATION_NUMBER
+      && !regNumRegex.test(process.env.COMPANY_REGISTRATION_NUMBER)
     ) {
       console.warn('⚠️  Company registration number format may be invalid');
     }
@@ -633,7 +634,7 @@ class QuantumPOPIAReportGenerator {
         throw new RegulatorReportError(
           reportType,
           this.regulatorAPIs[this.config.jurisdiction]?.name || 'Unknown',
-          new Date()
+          new Date(),
         );
       }
 
@@ -646,7 +647,7 @@ class QuantumPOPIAReportGenerator {
       const reportContent = await this.generateReportContent(
         jurisdictionData,
         template,
-        options.format
+        options.format,
       );
 
       // PHASE 4: APPLY DIGITAL SIGNATURE AND TIMESTAMP
@@ -702,7 +703,7 @@ class QuantumPOPIAReportGenerator {
           reportType,
           jurisdiction: template.jurisdiction,
           format: options.format || template.format,
-          digitalSignature: signaturePackage.digitalSignature.substring(0, 16) + '...',
+          digitalSignature: `${signaturePackage.digitalSignature.substring(0, 16)}...`,
           encryptionEnabled: !!encryptedContent,
           blockchainAnchored: !!blockchainAnchor,
           aiInsightsGenerated: !!aiInsights,
@@ -784,7 +785,7 @@ class QuantumPOPIAReportGenerator {
       throw new RegulatorReportError(
         reportType,
         this.regulatorAPIs[this.config.jurisdiction]?.name || 'Unknown',
-        new Date(Date.now() + 72 * 60 * 60 * 1000) // 72 hours from now
+        new Date(Date.now() + 72 * 60 * 60 * 1000), // 72 hours from now
       );
     }
   }
@@ -822,7 +823,7 @@ class QuantumPOPIAReportGenerator {
           complianceMetrics,
           discoverySummary,
           legalAnalysis,
-          format
+          format,
         );
       }
 
@@ -893,7 +894,7 @@ class QuantumPOPIAReportGenerator {
       throw new DSARReportError(
         dsarData?.dataSubjectId || 'UNKNOWN',
         dsarData?.requestType || 'UNKNOWN',
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       );
     }
   }
@@ -927,14 +928,14 @@ class QuantumPOPIAReportGenerator {
       const regulatorNotification = await this.prepareRegulatorNotification(
         breachData,
         impactAssessment,
-        regulatorDeadline
+        regulatorDeadline,
       );
 
       // PHASE 6: PREPARE DATA SUBJECT NOTIFICATION
       const subjectNotification = await this.prepareSubjectNotification(
         breachData,
         impactAssessment,
-        affectedSubjects
+        affectedSubjects,
       );
 
       // PHASE 7: GENERATE FORENSIC INVESTIGATION REPORT
@@ -1009,7 +1010,7 @@ class QuantumPOPIAReportGenerator {
       throw new BreachReportError(
         breachData?.breachId || 'UNKNOWN',
         'REGULATOR_NOTIFICATION',
-        regulatorDeadline
+        regulatorDeadline,
       );
     }
   }
@@ -1284,14 +1285,14 @@ class QuantumPOPIAReportGenerator {
           throw new QuantumReportError(
             `Unsupported report format: ${format}`,
             'UNSUPPORTED_FORMAT',
-            'MEDIUM'
+            'MEDIUM',
           );
       }
     } catch (error) {
       throw new QuantumReportError(
         `Report content generation failed: ${error.message}`,
         'CONTENT_GENERATION_ERROR',
-        'HIGH'
+        'HIGH',
       );
     }
   }
@@ -1304,7 +1305,9 @@ class QuantumPOPIAReportGenerator {
       try {
         const doc = new PDFDocument({
           size: 'A4',
-          margins: { top: 50, bottom: 50, left: 50, right: 50 },
+          margins: {
+            top: 50, bottom: 50, left: 50, right: 50,
+          },
           info: {
             Title: template.name,
             Author: this.config.companyName,
@@ -1341,8 +1344,8 @@ class QuantumPOPIAReportGenerator {
           new QuantumReportError(
             `PDF generation failed: ${error.message}`,
             'PDF_GENERATION_ERROR',
-            'HIGH'
-          )
+            'HIGH',
+          ),
         );
       }
     });
@@ -1363,7 +1366,7 @@ class QuantumPOPIAReportGenerator {
           throw new QuantumReportError(
             `JSON data validation failed: ${ajv.errorsText(validate.errors)}`,
             'JSON_VALIDATION_ERROR',
-            'HIGH'
+            'HIGH',
           );
         }
       }
@@ -1379,7 +1382,7 @@ class QuantumPOPIAReportGenerator {
           generator: 'Wilsy OS Quantum Report Generator v2.0',
           compliance: this.getComplianceMarkers(template),
         },
-        data: data,
+        data,
         hash: crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex'),
       };
 
@@ -1388,7 +1391,7 @@ class QuantumPOPIAReportGenerator {
       throw new QuantumReportError(
         `JSON generation failed: ${error.message}`,
         'JSON_GENERATION_ERROR',
-        'HIGH'
+        'HIGH',
       );
     }
   }
@@ -1434,7 +1437,7 @@ class QuantumPOPIAReportGenerator {
       throw new QuantumReportError(
         `XML generation failed: ${error.message}`,
         'XML_GENERATION_ERROR',
-        'HIGH'
+        'HIGH',
       );
     }
   }
@@ -1473,7 +1476,7 @@ class QuantumPOPIAReportGenerator {
       throw new QuantumReportError(
         `CSV generation failed: ${error.message}`,
         'CSV_GENERATION_ERROR',
-        'HIGH'
+        'HIGH',
       );
     }
   }
@@ -1496,7 +1499,7 @@ class QuantumPOPIAReportGenerator {
         throw new QuantumReportError(
           'Report signing private key not configured',
           'SIGNING_KEY_MISSING',
-          'HIGH'
+          'HIGH',
         );
       }
 
@@ -1514,14 +1517,14 @@ class QuantumPOPIAReportGenerator {
         contentHash,
         timestamp,
         algorithm: 'SHA256withRSA',
-        certificate: process.env.REPORT_SIGNING_CERTIFICATE?.substring(0, 100) + '...',
+        certificate: `${process.env.REPORT_SIGNING_CERTIFICATE?.substring(0, 100)}...`,
         verificationUrl: `${process.env.APP_URL}/verify/signature/${contentHash}`,
       };
     } catch (error) {
       throw new QuantumReportError(
         `Digital signature application failed: ${error.message}`,
         'SIGNATURE_ERROR',
-        'HIGH'
+        'HIGH',
       );
     }
   }
@@ -1569,7 +1572,7 @@ class QuantumPOPIAReportGenerator {
       throw new QuantumReportError(
         `Report encryption failed: ${error.message}`,
         'ENCRYPTION_ERROR',
-        'HIGH'
+        'HIGH',
       );
     }
   }
@@ -1594,7 +1597,7 @@ class QuantumPOPIAReportGenerator {
         reportHash,
         reportData.reportType,
         reportData.jurisdiction,
-        new Date().toISOString()
+        new Date().toISOString(),
       );
 
       return {
@@ -1634,7 +1637,7 @@ class QuantumPOPIAReportGenerator {
         `Missing required fields: ${missingFields.join(', ')}`,
         'VALIDATION_ERROR',
         'HIGH',
-        `POPIA_REQUIREMENT_${template.id}`
+        `POPIA_REQUIREMENT_${template.id}`,
       );
     }
 
@@ -1804,7 +1807,7 @@ class QuantumPOPIAReportGenerator {
       // Generate recommendations
       insights.recommendations = this.generateRecommendations(
         insights.riskScore,
-        insights.complianceGaps
+        insights.complianceGaps,
       );
 
       return insights;
@@ -1912,7 +1915,7 @@ class QuantumPOPIAReportGenerator {
   async storeQuantumReport(reportData) {
     // Store report with metadata
     return {
-      location: 's3://wilsy-compliance-reports/' + reportData.reportId,
+      location: `s3://wilsy-compliance-reports/${reportData.reportId}`,
       accessKey: crypto.randomBytes(16).toString('hex'),
       expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
       fileSize: reportData.content.length,
@@ -1923,7 +1926,7 @@ class QuantumPOPIAReportGenerator {
     // Submit report to regulator
     return {
       submitted: true,
-      submissionId: 'REG-SUB-' + Date.now(),
+      submissionId: `REG-SUB-${Date.now()}`,
       submittedAt: new Date(),
       regulator: this.regulatorAPIs[reportData.jurisdiction]?.name,
     };
@@ -1932,7 +1935,7 @@ class QuantumPOPIAReportGenerator {
   async generateReportQRCode(reportId) {
     // Generate QR code for report
     return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-      `${process.env.APP_URL}/report/${reportId}`
+      `${process.env.APP_URL}/report/${reportId}`,
     )}`;
   }
 

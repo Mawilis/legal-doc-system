@@ -183,7 +183,7 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
 
     test('Should reject invalid checksum', () => {
       const id = generateComplianceId('FICA_INDIVIDUAL');
-      const tamperedId = id.substring(0, id.length - 1) + '9'; // Change last digit
+      const tamperedId = `${id.substring(0, id.length - 1)}9`; // Change last digit
 
       expect(validateId(tamperedId, { checkChecksum: true })).toBe(false);
     });

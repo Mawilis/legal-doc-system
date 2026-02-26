@@ -3,8 +3,6 @@
  * STATUS: EPITOME | FINAL RELATIONAL ALIGNMENT | SINGLE-QUOTE ENFORCED
  */
 
-'use strict';
-
 const mongoose = require('mongoose');
 const AuditLog = require('../models/AuditLog');
 
@@ -18,8 +16,8 @@ const seedAudits = async (tenantId, userId) => {
 
     const auditEvents = [
       {
-        tenantId: tenantId,
-        userId: userId,
+        tenantId,
+        userId,
         userEmail: 'admin@wilsyos.com',
         // NESTED EVENT OBJECT (Required by AuditLog schema)
         event: {
@@ -37,7 +35,7 @@ const seedAudits = async (tenantId, userId) => {
     ];
 
     // 1. Clear existing for this tenant
-    await AuditLog.deleteMany({ tenantId: tenantId });
+    await AuditLog.deleteMany({ tenantId });
 
     // 2. Insert new logs
     await AuditLog.insertMany(auditEvents);

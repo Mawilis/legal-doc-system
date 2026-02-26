@@ -1,10 +1,9 @@
 /*
  * @jest-environment node
  */
-'use strict';
 
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 
 describe('Simple Model Test', () => {
   let mongoServer;

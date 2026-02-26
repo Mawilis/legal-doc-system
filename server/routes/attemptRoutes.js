@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; validates attempt sequencing (cannot have Attempt 2 without Attempt 1).
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -21,14 +19,15 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const attemptController = require('../controllers/attemptController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
 
 // 3. VALIDATION SCHEMAS (Joi)
@@ -91,7 +90,7 @@ router.post(
       err.code = 'ATTEMPT_LOG_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -117,7 +116,7 @@ router.get(
       err.code = 'ATTEMPT_HISTORY_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -148,7 +147,7 @@ router.delete(
       err.code = 'ATTEMPT_DELETE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

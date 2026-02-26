@@ -4,8 +4,8 @@
  * Forensic-grade test suite with POPIA compliance verification
  */
 
-const mockRedis = require('ioredis-mock');
 const { Worker } = require('bullmq');
+const mockRedis = require('ioredis-mock');
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs').promises;

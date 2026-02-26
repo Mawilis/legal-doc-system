@@ -1,8 +1,8 @@
-import express from 'express';
-import { createBullBoard } from '@bull-board/api';
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
-import { ExpressAdapter } from '@bull-board/express';
-import { embeddingQueue } from '../queues/embeddingQueue.js';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js';
+import { createBullBoard } from '@bull-board/api.js';
+import { ExpressAdapter } from '@bull-board/express.js';
+import express from 'express.js';
+import { embeddingQueue } from 'wilsy-os-server/queues/embeddingQueue.js.js';
 
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/admin/queues');

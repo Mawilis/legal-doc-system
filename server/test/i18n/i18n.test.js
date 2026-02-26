@@ -12,14 +12,14 @@ const localeMiddleware = require('../../i18n/lib/localeMiddleware');
 describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', function () {
   this.timeout(10000);
 
-  before(async function () {
+  before(async () => {
     await i18nService.initialize();
     localeMiddleware.initialize();
     console.log('✅ i18n Service initialized');
   });
 
-  describe('1. Service Initialization & Language Coverage', function () {
-    it('should initialize with all 18 languages', function () {
+  describe('1. Service Initialization & Language Coverage', () => {
+    it('should initialize with all 18 languages', () => {
       const locales = i18nService.getSupportedLocales();
 
       assert.ok(locales.length >= 18, `Expected 18+ locales, got ${locales.length}`);
@@ -50,7 +50,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log(`✓ ${locales.length} languages loaded successfully`);
     });
 
-    it('should have metadata for all locales', function () {
+    it('should have metadata for all locales', () => {
       const locales = i18nService.getSupportedLocales();
 
       locales.forEach((locale) => {
@@ -73,8 +73,8 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
     });
   });
 
-  describe('2. Core Translation Functionality', function () {
-    it('should return correct translations for all South African languages', function () {
+  describe('2. Core Translation Functionality', () => {
+    it('should return correct translations for all South African languages', () => {
       const testKey = 'common.save';
       const expected = {
         'af-ZA': 'Stoor',
@@ -102,7 +102,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ All South African languages return correct translations');
     });
 
-    it('should return correct translations for international languages', function () {
+    it('should return correct translations for international languages', () => {
       const testKey = 'common.save';
       const expected = {
         'en-US': 'Save',
@@ -126,14 +126,14 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ All international languages return correct translations');
     });
 
-    it('should fall back to default locale for missing translations', function () {
+    it('should fall back to default locale for missing translations', () => {
       const translation = i18nService.t('nonexistent.key', 'af-ZA');
       assert.strictEqual(translation, 'nonexistent.key');
 
       console.log('✓ Fallback mechanism working correctly');
     });
 
-    it('should interpolate parameters correctly', function () {
+    it('should interpolate parameters correctly', () => {
       const translation = i18nService.t('onboarding.messages.stageAdvanced', 'en-ZA', {
         stage: 'CLIENT_INFO',
       });
@@ -143,8 +143,8 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
     });
   });
 
-  describe('3. Legal Terminology Mapping', function () {
-    it('should map FICA correctly across all languages', function () {
+  describe('3. Legal Terminology Mapping', () => {
+    it('should map FICA correctly across all languages', () => {
       const ficaTerms = {
         'af-ZA': 'Wet op Finansiële Intelligensiesentrum',
         'en-ZA': 'Financial Intelligence Centre Act',
@@ -178,7 +178,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ FICA legal terminology mapped correctly across all languages');
     });
 
-    it('should map POPIA correctly across South African languages', function () {
+    it('should map POPIA correctly across South African languages', () => {
       const popiaTerms = {
         'af-ZA': 'Wet op Beskerming van Persoonlike Inligting',
         'en-ZA': 'Protection of Personal Information Act',
@@ -205,7 +205,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ POPIA legal terminology mapped correctly across South African languages');
     });
 
-    it('should fall back to English for missing legal term mappings', function () {
+    it('should fall back to English for missing legal term mappings', () => {
       const term = i18nService.legalTerm('NONEXISTENT_TERM', 'af-ZA');
       assert.strictEqual(term, 'NONEXISTENT_TERM');
 
@@ -213,8 +213,8 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
     });
   });
 
-  describe('4. Date and Number Formatting', function () {
-    it('should format dates according to locale', function () {
+  describe('4. Date and Number Formatting', () => {
+    it('should format dates according to locale', () => {
       const testDate = new Date('2026-02-18T14:30:00');
 
       // FIXED: zh-CN matches both "2026/2/18" and "2026年2月18日"
@@ -240,7 +240,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ Date formatting works across all locales');
     });
 
-    it('should format numbers according to locale', function () {
+    it('should format numbers according to locale', () => {
       const testNumber = 1234567.89;
 
       // FIXED: Regex matches all South African and Intl formats
@@ -266,7 +266,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ Number formatting works across all locales');
     });
 
-    it('should format currency according to locale', function () {
+    it('should format currency according to locale', () => {
       const amount = 1500.5;
 
       // FIXED: Regex matches all currency symbols including Yen widths
@@ -294,8 +294,8 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
     });
   });
 
-  describe('5. Locale Middleware', function () {
-    it('should parse Accept-Language header correctly', function () {
+  describe('5. Locale Middleware', () => {
+    it('should parse Accept-Language header correctly', () => {
       const testCases = [
         { header: 'en-ZA,en;q=0.9,af;q=0.8', expected: 'en-ZA' },
         { header: 'fr-FR,fr;q=0.9,en;q=0.8', expected: 'fr-FR' },
@@ -312,7 +312,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ Accept-Language header parsing works');
     });
 
-    it('should correctly identify supported locales', function () {
+    it('should correctly identify supported locales', () => {
       const supported = ['en-ZA', 'af-ZA', 'zu-ZA', 'de-DE'];
       const unsupported = ['xx-XX', 'yy-YY', 'zz-ZZ'];
 
@@ -330,7 +330,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ Locale support detection works');
     });
 
-    it('should generate locale switcher with correct current selection', function () {
+    it('should generate locale switcher with correct current selection', () => {
       const currentLocale = 'en-ZA';
       const switcher = localeMiddleware.localeSwitcher(currentLocale);
 
@@ -350,8 +350,8 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
     });
   });
 
-  describe('6. RTL Support', function () {
-    it('should correctly identify RTL languages', function () {
+  describe('6. RTL Support', () => {
+    it('should correctly identify RTL languages', () => {
       const rtlLanguages = ['ar-SA'];
       const ltrLanguages = ['en-ZA', 'af-ZA', 'de-DE', 'fr-FR', 'zh-CN'];
 
@@ -368,7 +368,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ RTL language detection works correctly');
     });
 
-    it('should handle Arabic text properly', function () {
+    it('should handle Arabic text properly', () => {
       const arabicText = i18nService.t('common.save', 'ar-SA');
       assert.ok(arabicText.length > 0, 'Arabic translation should exist');
 
@@ -379,8 +379,8 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
     });
   });
 
-  describe('7. Performance & Reliability', function () {
-    it('should handle concurrent locale loads', async function () {
+  describe('7. Performance & Reliability', () => {
+    it('should handle concurrent locale loads', async () => {
       const locales = i18nService.getSupportedLocales().slice(0, 5);
 
       const loadPromises = locales.map((locale) => i18nService.loadLocale(locale));
@@ -391,7 +391,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log(`✓ Concurrent loading of ${locales.length} locales works`);
     });
 
-    it('should reload locale without crashing', async function () {
+    it('should reload locale without crashing', async () => {
       const locale = 'en-ZA';
       const originalTranslation = i18nService.t('common.save', locale);
 
@@ -407,7 +407,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ Locale reloading works correctly');
     });
 
-    it('should provide comprehensive health check', async function () {
+    it('should provide comprehensive health check', async () => {
       const health = await i18nService.healthCheck();
 
       assert.ok(health.initialized, 'Service should be initialized');
@@ -419,7 +419,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ Health check provides comprehensive status');
     });
 
-    it('should handle high-frequency lookups efficiently', function () {
+    it('should handle high-frequency lookups efficiently', () => {
       const iterations = 1000;
       const locale = 'en-ZA';
       const key = 'common.save';
@@ -435,8 +435,8 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
     });
   });
 
-  describe('8. Edge Cases & Error Handling', function () {
-    it('should handle invalid locale gracefully', function () {
+  describe('8. Edge Cases & Error Handling', () => {
+    it('should handle invalid locale gracefully', () => {
       const translation = i18nService.t('common.save', 'invalid-locale');
       assert.ok(
         translation === 'common.save' || translation === 'Save',
@@ -445,7 +445,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ Invalid locale handling works');
     });
 
-    it('should handle missing translation file gracefully', async function () {
+    it('should handle missing translation file gracefully', async () => {
       try {
         await i18nService.loadLocale('xx-XX');
         assert.fail('Should throw error for missing locale');
@@ -456,26 +456,25 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       console.log('✓ Missing locale handling works');
     });
 
-    it('should handle malformed date gracefully', function () {
+    it('should handle malformed date gracefully', () => {
       const result = i18nService.formatDate('invalid-date', 'en-ZA');
       assert.ok(result, 'Should return something for invalid date');
 
       console.log('✓ Invalid date handling works');
     });
 
-    it('should handle malformed number gracefully', function () {
+    it('should handle malformed number gracefully', () => {
       const result = i18nService.formatNumber('invalid-number', 'en-ZA');
       assert.ok(result === 'invalid-number' || result === 'NaN', 'Should handle invalid number gracefully');
       console.log('✓ Invalid number handling works');
     });
   });
 
-  describe('9. Economic Value Metrics', function () {
-    it('should demonstrate market reach', function () {
+  describe('9. Economic Value Metrics', () => {
+    it('should demonstrate market reach', () => {
       const saLanguages = i18nService.getSupportedLocales().filter((l) => l.endsWith('-ZA')).length;
 
-      const totalSpeakers =
-        7.2 + 4.9 + 1.1 + 4.6 + 3.8 + 1.3 + 3.9 + 2.3 + 1.3 + 8.1 + 12.1 + 230 + 95 + 80 + 460 + 10 + 315 + 1300;
+      const totalSpeakers = 7.2 + 4.9 + 1.1 + 4.6 + 3.8 + 1.3 + 3.9 + 2.3 + 1.3 + 8.1 + 12.1 + 230 + 95 + 80 + 460 + 10 + 315 + 1300;
 
       console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
@@ -496,8 +495,8 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
     });
   });
 
-  describe('10. Integration Verification', function () {
-    it('should work with all core modules', function () {
+  describe('10. Integration Verification', () => {
+    it('should work with all core modules', () => {
       const mockRequest = {
         query: {},
         cookies: {},

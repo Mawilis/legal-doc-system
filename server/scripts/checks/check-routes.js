@@ -1,4 +1,5 @@
 const fs = require('fs');
+
 const routes = fs.readdirSync('./routes');
 
 const manifestRoutes = [

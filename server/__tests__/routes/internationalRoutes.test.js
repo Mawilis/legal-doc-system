@@ -4,13 +4,13 @@
   ║ 100% coverage | Premium endpoints | Global legal intelligence            ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import request from 'supertest';
-import express from 'express';
-import mongoose from 'mongoose';
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
-import { jest } from '@jest/globals';
+import request from 'supertest.js';
+import express from 'express.js';
+import mongoose from "mongoose";
+import crypto from "crypto";
+import fs from 'fs/promises.js';
+import path from "path";
+import { jest } from '@jest/globals.js';
 
 // Mock dependencies
 jest.mock('../../middleware/tenantGuard.js', () => ({
@@ -154,10 +154,10 @@ jest.mock('../../services/financial/currencyConverter.js', () => ({
 }));
 
 // Import after mocks
-import internationalRoutes from '../../routes/internationalRoutes.js';
-import { CrossJurisdictionAnalyzerFactory } from '../../services/comparative/CrossJurisdictionAnalyzer.js';
-import { QuantumLogger } from '../../utils/quantumLogger.js';
-import { BillingService } from '../../services/billing/billingService.js';
+import internationalRoutes from '../../routes/internationalRoutes.js.js';
+import { CrossJurisdictionAnalyzerFactory } from '../../services/comparative/CrossJurisdictionAnalyzer.js.js';
+import { QuantumLogger } from '../../utils/quantumLogger.js.js';
+import { BillingService } from '../../services/billing/billingService.js.js';
 
 describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
   let app;

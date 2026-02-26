@@ -11,18 +11,18 @@
  * • Compliance-ready audit trail of all incidents
  */
 
-import express from 'express';
-import { body, query, param, validationResult } from 'express-validator';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
+import express from 'express.js';
+import { body, query, param, validationResult } from 'express-validator.js';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
 
-import { authenticate, authorize } from '../middleware/auth.js';
-import { tenantGuard } from '../middleware/tenantGuard.js';
-import { rateLimiter } from '../middleware/rateLimiter.js';
-import { auditMiddleware } from '../middleware/audit.js';
-import alertService from '../services/alerting/AlertService.js';
-import { AppError } from '../utils/errorHandler.js';
-import logger from '../utils/logger.js';
+import { authenticate, authorize } from '../middleware/auth.js.js';
+import { tenantGuard } from '../middleware/tenantGuard.js.js';
+import { rateLimiter } from '../middleware/rateLimiter.js.js';
+import { auditMiddleware } from '../middleware/audit.js.js';
+import alertService from '../services/alerting/AlertService.js.js';
+import { AppError } from '../utils/errorHandler.js.js';
+import logger from '../utils/logger.js.js';
 
 const router = express.Router();
 

@@ -1,17 +1,15 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ FICA SCREENING SERVICE - INVESTOR-GRADE MODULE                              ║
   ║ FICA §22 compliant | Risk assessment | Forensic logging                     ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/ficaScreeningService.js
  * VERSION: 1.0.0 (production)
  */
 
-'use strict';
-
 const crypto = require('crypto');
-const auditLogger = require('../utils/auditLogger');
 const { getTenantContext } = require('../middleware/tenantContext');
+const auditLogger = require('../utils/auditLogger');
 
 class FICAScreeningService {
   async screenIndividual(idNumber, options = {}) {

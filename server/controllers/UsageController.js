@@ -63,25 +63,25 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ USAGE CONTROLLER - INVESTOR-GRADE MODULE - $1.2B+ TOTAL VALUE            ║
   ║ Upsell automation | Real-time monitoring | Investor intelligence         ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
 
 // WILSY OS CORE IMPORTS
-import usageService from '../services/monitoring/UsageService.js';
-import monitoringDashboard from '../services/monitoring/MonitoringDashboard.js';
-import { QuantumLogger } from '../utils/quantumLogger.js';
-import logger from '../utils/logger.js';
-import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js';
-import { AppError } from '../utils/errorHandler.js';
-import { redisClient } from '../cache/redisClient.js';
-import { tenantGuard } from '../middleware/tenantGuard.js';
-import { rateLimiter } from '../middleware/rateLimiter.js';
-import { cacheMiddleware } from '../middleware/cache.js';
+import { redisClient } from '../cache/redisClient.js.js';
+import { cacheMiddleware } from '../middleware/cache.js.js';
+import { rateLimiter } from '../middleware/rateLimiter.js.js';
+import { tenantGuard } from '../middleware/tenantGuard.js.js';
+import monitoringDashboard from '../services/monitoring/MonitoringDashboard.js.js';
+import usageService from '../services/monitoring/UsageService.js.js';
+import { AppError } from '../utils/errorHandler.js.js';
+import logger from '../utils/logger.js.js';
+import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js.js';
+import { QuantumLogger } from '../utils/quantumLogger.js.js';
 
 // =============================================================================
 // QUANTUM CONSTANTS
@@ -165,14 +165,13 @@ export const getUsageStats = async (req, res, next) => {
     }
 
     // Calculate days remaining at current rate
-    const daysRemaining =
-      stats.metrics?.averagePerHour > 0
-        ? Math.floor(stats.quota.remaining / (stats.metrics.averagePerHour * 24))
-        : null;
+    const daysRemaining = stats.metrics?.averagePerHour > 0
+      ? Math.floor(stats.quota.remaining / (stats.metrics.averagePerHour * 24))
+      : null;
 
     // Prepare insights
     const insights = {
-      usageRatio: (usageRatio * 100).toFixed(2) + '%',
+      usageRatio: `${(usageRatio * 100).toFixed(2)}%`,
       usageRatioRaw: usageRatio,
       upsellRecommended,
       status,
@@ -190,7 +189,7 @@ export const getUsageStats = async (req, res, next) => {
         insights.recommendations.push({
           type: 'UPSELL',
           message: `You've used ${(usageRatio * 100).toFixed(
-            1
+            1,
           )}% of your ${tier} tier quota. Consider upgrading to ${nextTier} for higher limits.`,
           currentTier: tier,
           recommendedTier: nextTier,
@@ -221,7 +220,7 @@ export const getUsageStats = async (req, res, next) => {
         usageRatio,
         status,
         upsellRecommended,
-      }
+      },
     );
 
     // Track metrics
@@ -536,7 +535,7 @@ export const getUpsellOpportunities = async (req, res, next) => {
               tenantId,
               tenantName: stats.tenantName,
               tier: stats.tier,
-              usageRatio: (usageRatio * 100).toFixed(2) + '%',
+              usageRatio: `${(usageRatio * 100).toFixed(2)}%`,
               currentUsage: stats.quota.used,
               quota: stats.quota.total,
               status: stats.quota.status,

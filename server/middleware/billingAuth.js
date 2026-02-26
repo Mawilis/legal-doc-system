@@ -19,13 +19,13 @@
 // ============================================================
 // QUANTUM DEPENDENCIES - PINNED & SECURE
 // ============================================================
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { promisify } = require('util');
-const winston = require('winston');
-const validator = require('validator');
+const jwt = require('jsonwebtoken');
 const { RateLimiterRedis } = require('rate-limiter-flexible');
 const redis = require('redis');
+const validator = require('validator');
+const winston = require('winston');
 
 // Load quantum environment variables
 require('dotenv').config();
@@ -65,7 +65,7 @@ const billingLogger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.json(),
-    winston.format.metadata()
+    winston.format.metadata(),
   ),
   transports: [
     new winston.transports.File({
@@ -83,7 +83,7 @@ if (process.env.NODE_ENV !== 'production') {
   billingLogger.add(
     new winston.transports.Console({
       format: winston.format.simple(),
-    })
+    }),
   );
 }
 
@@ -159,7 +159,9 @@ const validateBillingRequest = (request) => {
   const sanitizedData = {};
 
   // Quantum Shield: Validate and sanitize all input parameters
-  const { invoiceId, amount, currency, clientId, paymentMethod } = request.body;
+  const {
+    invoiceId, amount, currency, clientId, paymentMethod,
+  } = request.body;
 
   // Validate invoiceId (if provided)
   if (invoiceId && !validator.isAlphanumeric(invoiceId)) {
@@ -242,7 +244,7 @@ const verifyBillingToken = async (token) => {
         algorithms: ['HS256', 'RS256'],
         issuer: 'wilsy-os-billing',
         audience: ['billing-api', 'client-portal'],
-      }
+      },
     );
 
     // Quantum Validation: Check billing-specific claims
@@ -333,8 +335,8 @@ const validateBillingPermission = (userPermissions, requiredAction, resource = n
   if (requiredAction === ALLOWED_BILLING_ACTIONS.VIEW_INVOICE && resource?.clientId) {
     // Users can only view invoices for their own clients unless they have admin rights
     if (
-      resource.userRole !== BILLING_ROLES.BILLING_ADMIN &&
-      resource.userClientId !== resource.clientId
+      resource.userRole !== BILLING_ROLES.BILLING_ADMIN
+      && resource.userClientId !== resource.clientId
     ) {
       return {
         authorized: false,
@@ -468,255 +470,252 @@ const logBillingAudit = (auditData) => {
  * 5. Request Validation - Input sanitization
  * 6. Audit Logging - Immutable trail
  */
-const billingAuth = (requiredPermissions = [], _options = {}) => {
-  return async (req, res, next) => {
-    const startTime = Date.now();
-    const requestId = crypto.randomUUID();
+const billingAuth = (requiredPermissions = [], _options = {}) => async (req, res, next) => {
+  const startTime = Date.now();
+  const requestId = crypto.randomUUID();
 
-    try {
-      // ====================================================
-      // QUANTUM LAYER 1: RATE LIMITING DEFENSE
-      // ====================================================
-      if (rateLimiter) {
-        const clientIp = req.ip || req.connection.remoteAddress;
-        try {
-          await rateLimiter.consume(`ip_${clientIp}_${req.path}`);
-        } catch (rateLimitError) {
-          billingLogger.warn('Rate limit exceeded', {
-            requestId,
-            clientIp,
-            path: req.path,
-            timestamp: new Date().toISOString(),
-          });
-
-          return res.status(429).json({
-            success: false,
-            error: 'Rate limit exceeded. Please try again later.',
-            retryAfter: SECURITY_CONFIG.RATE_LIMIT.blockDuration,
-            compliance: 'PCI-DSS Requirement 6.6',
-          });
-        }
-      }
-
-      // ====================================================
-      // QUANTUM LAYER 2: TOKEN EXTRACTION & VALIDATION
-      // ====================================================
-      const authHeader = req.headers.authorization;
-
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        logBillingAudit({
+  try {
+    // ====================================================
+    // QUANTUM LAYER 1: RATE LIMITING DEFENSE
+    // ====================================================
+    if (rateLimiter) {
+      const clientIp = req.ip || req.connection.remoteAddress;
+      try {
+        await rateLimiter.consume(`ip_${clientIp}_${req.path}`);
+      } catch (rateLimitError) {
+        billingLogger.warn('Rate limit exceeded', {
           requestId,
-          event: 'AUTH_FAILURE_NO_TOKEN',
+          clientIp,
           path: req.path,
-          method: req.method,
-          clientIp: req.ip,
-          severity: 'HIGH',
+          timestamp: new Date().toISOString(),
         });
 
-        return res.status(401).json({
+        return res.status(429).json({
           success: false,
-          error: 'Authorization token required',
-          code: 'NO_AUTH_TOKEN',
-          compliance: 'POPIA Access Control',
+          error: 'Rate limit exceeded. Please try again later.',
+          retryAfter: SECURITY_CONFIG.RATE_LIMIT.blockDuration,
+          compliance: 'PCI-DSS Requirement 6.6',
         });
       }
+    }
 
-      const token = authHeader.substring(7);
-      const tokenVerification = await verifyBillingToken(token);
+    // ====================================================
+    // QUANTUM LAYER 2: TOKEN EXTRACTION & VALIDATION
+    // ====================================================
+    const authHeader = req.headers.authorization;
 
-      if (!tokenVerification.success) {
-        logBillingAudit({
-          requestId,
-          event: 'AUTH_FAILURE_INVALID_TOKEN',
-          path: req.path,
-          method: req.method,
-          clientIp: req.ip,
-          error: tokenVerification.error,
-          severity: 'HIGH',
-        });
-
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid or expired authorization token',
-          code: tokenVerification.code,
-          compliance: 'Quantum Security Protocol',
-        });
-      }
-
-      const { user, tokenId } = tokenVerification;
-
-      // ====================================================
-      // QUANTUM LAYER 3: REQUEST VALIDATION & SANITIZATION
-      // ====================================================
-      const validationResult = validateBillingRequest(req);
-
-      if (!validationResult.isValid) {
-        logBillingAudit({
-          requestId,
-          event: 'VALIDATION_FAILURE',
-          userId: user.userId,
-          path: req.path,
-          errors: validationResult.errors,
-          severity: 'MEDIUM',
-        });
-
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid request parameters',
-          details: validationResult.errors,
-          code: 'VALIDATION_ERROR',
-          sanitized: validationResult.sanitizedData,
-        });
-      }
-
-      // Apply sanitized data
-      Object.assign(req.body, validationResult.sanitizedData);
-
-      // ====================================================
-      // QUANTUM LAYER 4: PERMISSION VALIDATION
-      // ====================================================
-      if (requiredPermissions.length > 0) {
-        const permissionResults = [];
-
-        for (const requiredPermission of requiredPermissions) {
-          const permissionCheck = validateBillingPermission(
-            user.billingPermissions,
-            requiredPermission,
-            {
-              userRole: user.role,
-              userClientId: user.clientId,
-              clientId: req.body.clientId,
-              amount: req.body.amount,
-              ficaVerified: user.ficaVerified,
-            }
-          );
-
-          permissionResults.push(permissionCheck);
-
-          if (!permissionCheck.authorized) {
-            logBillingAudit({
-              requestId,
-              event: 'PERMISSION_DENIED',
-              userId: user.userId,
-              requiredPermission,
-              reason: permissionCheck.reason,
-              userPermissions: user.billingPermissions,
-              severity: 'HIGH',
-              compliance: permissionCheck.compliance,
-            });
-
-            return res.status(403).json({
-              success: false,
-              error: 'Insufficient permissions',
-              details: permissionCheck.reason,
-              requiredPermission,
-              userPermissions: user.billingPermissions,
-              code: 'PERMISSION_DENIED',
-            });
-          }
-        }
-
-        req.permissionValidation = permissionResults;
-      }
-
-      // ====================================================
-      // QUANTUM LAYER 5: COMPLIANCE ENFORCEMENT
-      // ====================================================
-      const complianceResult = enforceBillingCompliance(req, user);
-
-      if (!complianceResult.compliant) {
-        logBillingAudit({
-          requestId,
-          event: 'COMPLIANCE_VIOLATION',
-          userId: user.userId,
-          failedChecks: complianceResult.failedChecks,
-          severity: 'CRITICAL',
-          compliance: 'REGULATORY_BREACH',
-        });
-
-        return res.status(403).json({
-          success: false,
-          error: 'Compliance requirements not met',
-          details: 'Operation violates regulatory requirements',
-          failedChecks: complianceResult.failedChecks,
-          code: 'COMPLIANCE_VIOLATION',
-          action: 'REPORT_TO_COMPLIANCE_OFFICER',
-        });
-      }
-
-      req.complianceValidation = complianceResult;
-
-      // ====================================================
-      // QUANTUM LAYER 6: CONTEXT ENRICHMENT
-      // ====================================================
-      req.user = {
-        ...user,
-        tokenId,
-        sessionStart: new Date().toISOString(),
-      };
-
-      req.billingContext = {
-        requestId,
-        validationId: crypto.randomUUID(),
-        quantumSecurityLevel: 'PLATINUM',
-        jurisdiction: user.jurisdiction || 'ZA',
-        currency: req.body.currency || 'ZAR',
-      };
-
-      // ====================================================
-      // QUANTUM LAYER 7: AUDIT LOGGING
-      // ====================================================
-      const processingTime = Date.now() - startTime;
-
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       logBillingAudit({
         requestId,
-        event: 'AUTH_SUCCESS',
-        userId: user.userId,
-        userRole: user.role,
+        event: 'AUTH_FAILURE_NO_TOKEN',
         path: req.path,
         method: req.method,
-        permissionsUsed: requiredPermissions,
-        complianceChecks: complianceResult.checks,
-        processingTime,
         clientIp: req.ip,
-        userAgent: req.headers['user-agent'],
-        severity: 'LOW',
-        quantumMarker: 'BILLING_AUTH_VALIDATED',
+        severity: 'HIGH',
       });
 
-      // ====================================================
-      // QUANTUM SUCCESS: PROCEED TO PROTECTED ROUTE
-      // ====================================================
-      next();
-    } catch (error) {
-      // ====================================================
-      // QUANTUM ERROR HANDLING
-      // ====================================================
-      const errorId = crypto.randomUUID();
-
-      billingLogger.error('Billing Auth Critical Error', {
-        errorId,
-        requestId,
-        error: error.message,
-        stack: error.stack,
-        path: req.path,
-        timestamp: new Date().toISOString(),
-        severity: 'CRITICAL',
-      });
-
-      // Quantum Security: Do not expose internal errors
-      const safeError =
-        process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message;
-
-      res.status(500).json({
+      return res.status(401).json({
         success: false,
-        error: safeError,
-        errorId: process.env.NODE_ENV === 'production' ? errorId : undefined,
-        code: 'QUANTUM_AUTH_FAILURE',
-        compliance: 'Incident logged for security review',
+        error: 'Authorization token required',
+        code: 'NO_AUTH_TOKEN',
+        compliance: 'POPIA Access Control',
       });
     }
-  };
+
+    const token = authHeader.substring(7);
+    const tokenVerification = await verifyBillingToken(token);
+
+    if (!tokenVerification.success) {
+      logBillingAudit({
+        requestId,
+        event: 'AUTH_FAILURE_INVALID_TOKEN',
+        path: req.path,
+        method: req.method,
+        clientIp: req.ip,
+        error: tokenVerification.error,
+        severity: 'HIGH',
+      });
+
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired authorization token',
+        code: tokenVerification.code,
+        compliance: 'Quantum Security Protocol',
+      });
+    }
+
+    const { user, tokenId } = tokenVerification;
+
+    // ====================================================
+    // QUANTUM LAYER 3: REQUEST VALIDATION & SANITIZATION
+    // ====================================================
+    const validationResult = validateBillingRequest(req);
+
+    if (!validationResult.isValid) {
+      logBillingAudit({
+        requestId,
+        event: 'VALIDATION_FAILURE',
+        userId: user.userId,
+        path: req.path,
+        errors: validationResult.errors,
+        severity: 'MEDIUM',
+      });
+
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request parameters',
+        details: validationResult.errors,
+        code: 'VALIDATION_ERROR',
+        sanitized: validationResult.sanitizedData,
+      });
+    }
+
+    // Apply sanitized data
+    Object.assign(req.body, validationResult.sanitizedData);
+
+    // ====================================================
+    // QUANTUM LAYER 4: PERMISSION VALIDATION
+    // ====================================================
+    if (requiredPermissions.length > 0) {
+      const permissionResults = [];
+
+      for (const requiredPermission of requiredPermissions) {
+        const permissionCheck = validateBillingPermission(
+          user.billingPermissions,
+          requiredPermission,
+          {
+            userRole: user.role,
+            userClientId: user.clientId,
+            clientId: req.body.clientId,
+            amount: req.body.amount,
+            ficaVerified: user.ficaVerified,
+          },
+        );
+
+        permissionResults.push(permissionCheck);
+
+        if (!permissionCheck.authorized) {
+          logBillingAudit({
+            requestId,
+            event: 'PERMISSION_DENIED',
+            userId: user.userId,
+            requiredPermission,
+            reason: permissionCheck.reason,
+            userPermissions: user.billingPermissions,
+            severity: 'HIGH',
+            compliance: permissionCheck.compliance,
+          });
+
+          return res.status(403).json({
+            success: false,
+            error: 'Insufficient permissions',
+            details: permissionCheck.reason,
+            requiredPermission,
+            userPermissions: user.billingPermissions,
+            code: 'PERMISSION_DENIED',
+          });
+        }
+      }
+
+      req.permissionValidation = permissionResults;
+    }
+
+    // ====================================================
+    // QUANTUM LAYER 5: COMPLIANCE ENFORCEMENT
+    // ====================================================
+    const complianceResult = enforceBillingCompliance(req, user);
+
+    if (!complianceResult.compliant) {
+      logBillingAudit({
+        requestId,
+        event: 'COMPLIANCE_VIOLATION',
+        userId: user.userId,
+        failedChecks: complianceResult.failedChecks,
+        severity: 'CRITICAL',
+        compliance: 'REGULATORY_BREACH',
+      });
+
+      return res.status(403).json({
+        success: false,
+        error: 'Compliance requirements not met',
+        details: 'Operation violates regulatory requirements',
+        failedChecks: complianceResult.failedChecks,
+        code: 'COMPLIANCE_VIOLATION',
+        action: 'REPORT_TO_COMPLIANCE_OFFICER',
+      });
+    }
+
+    req.complianceValidation = complianceResult;
+
+    // ====================================================
+    // QUANTUM LAYER 6: CONTEXT ENRICHMENT
+    // ====================================================
+    req.user = {
+      ...user,
+      tokenId,
+      sessionStart: new Date().toISOString(),
+    };
+
+    req.billingContext = {
+      requestId,
+      validationId: crypto.randomUUID(),
+      quantumSecurityLevel: 'PLATINUM',
+      jurisdiction: user.jurisdiction || 'ZA',
+      currency: req.body.currency || 'ZAR',
+    };
+
+    // ====================================================
+    // QUANTUM LAYER 7: AUDIT LOGGING
+    // ====================================================
+    const processingTime = Date.now() - startTime;
+
+    logBillingAudit({
+      requestId,
+      event: 'AUTH_SUCCESS',
+      userId: user.userId,
+      userRole: user.role,
+      path: req.path,
+      method: req.method,
+      permissionsUsed: requiredPermissions,
+      complianceChecks: complianceResult.checks,
+      processingTime,
+      clientIp: req.ip,
+      userAgent: req.headers['user-agent'],
+      severity: 'LOW',
+      quantumMarker: 'BILLING_AUTH_VALIDATED',
+    });
+
+    // ====================================================
+    // QUANTUM SUCCESS: PROCEED TO PROTECTED ROUTE
+    // ====================================================
+    next();
+  } catch (error) {
+    // ====================================================
+    // QUANTUM ERROR HANDLING
+    // ====================================================
+    const errorId = crypto.randomUUID();
+
+    billingLogger.error('Billing Auth Critical Error', {
+      errorId,
+      requestId,
+      error: error.message,
+      stack: error.stack,
+      path: req.path,
+      timestamp: new Date().toISOString(),
+      severity: 'CRITICAL',
+    });
+
+    // Quantum Security: Do not expose internal errors
+    const safeError = process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message;
+
+    res.status(500).json({
+      success: false,
+      error: safeError,
+      errorId: process.env.NODE_ENV === 'production' ? errorId : undefined,
+      code: 'QUANTUM_AUTH_FAILURE',
+      compliance: 'Incident logged for security review',
+    });
+  }
 };
 
 // ============================================================
@@ -729,37 +728,35 @@ const billingAuth = (requiredPermissions = [], _options = {}) => {
  * @param {Array} allowedRoles - Array of allowed roles
  * @returns {Function} Express middleware function
  */
-billingAuth.roleCheck = (allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.user || !req.user.role) {
-      return res.status(401).json({
-        success: false,
-        error: 'User context not found',
-        code: 'NO_USER_CONTEXT',
-      });
-    }
+billingAuth.roleCheck = (allowedRoles) => (req, res, next) => {
+  if (!req.user || !req.user.role) {
+    return res.status(401).json({
+      success: false,
+      error: 'User context not found',
+      code: 'NO_USER_CONTEXT',
+    });
+  }
 
-    if (!allowedRoles.includes(req.user.role)) {
-      logBillingAudit({
-        event: 'ROLE_ACCESS_DENIED',
-        userId: req.user.userId,
-        userRole: req.user.role,
-        allowedRoles,
-        path: req.path,
-        severity: 'HIGH',
-      });
+  if (!allowedRoles.includes(req.user.role)) {
+    logBillingAudit({
+      event: 'ROLE_ACCESS_DENIED',
+      userId: req.user.userId,
+      userRole: req.user.role,
+      allowedRoles,
+      path: req.path,
+      severity: 'HIGH',
+    });
 
-      return res.status(403).json({
-        success: false,
-        error: 'Insufficient role privileges',
-        requiredRoles: allowedRoles,
-        userRole: req.user.role,
-        code: 'ROLE_ACCESS_DENIED',
-      });
-    }
+    return res.status(403).json({
+      success: false,
+      error: 'Insufficient role privileges',
+      requiredRoles: allowedRoles,
+      userRole: req.user.role,
+      code: 'ROLE_ACCESS_DENIED',
+    });
+  }
 
-    next();
-  };
+  next();
 };
 
 /*
@@ -767,24 +764,22 @@ billingAuth.roleCheck = (allowedRoles) => {
  * @description Enforces client data isolation and scope limitations
  * @returns {Function} Express middleware function
  */
-billingAuth.clientScope = () => {
-  return (req, res, next) => {
-    // Quantum Security: Client data isolation
-    if (req.user.role === BILLING_ROLES.CLIENT_ADMIN && req.body.clientId) {
-      if (req.user.clientId !== req.body.clientId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access restricted to own client data only',
-          userClientId: req.user.clientId,
-          requestedClientId: req.body.clientId,
-          code: 'CLIENT_SCOPE_VIOLATION',
-          compliance: 'POPIA Data Minimization',
-        });
-      }
+billingAuth.clientScope = () => (req, res, next) => {
+  // Quantum Security: Client data isolation
+  if (req.user.role === BILLING_ROLES.CLIENT_ADMIN && req.body.clientId) {
+    if (req.user.clientId !== req.body.clientId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access restricted to own client data only',
+        userClientId: req.user.clientId,
+        requestedClientId: req.body.clientId,
+        code: 'CLIENT_SCOPE_VIOLATION',
+        compliance: 'POPIA Data Minimization',
+      });
     }
+  }
 
-    next();
-  };
+  next();
 };
 
 // ============================================================

@@ -1,8 +1,7 @@
-/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ PROMETHEUS EXPORTER TESTS - INVESTOR DUE DILIGENCE            ║
   ║ 100% coverage | Enterprise monitoring | Real-time metrics     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/monitoring/prometheusExporter.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -11,13 +10,22 @@
  * • Confirms real-time metric collection
  */
 
-import request from 'supertest';
-import express from 'express';
-import promClient from 'prom-client';
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'fs/promises.js';
+import crypto from "crypto";
+import express from 'express.js';
+import os from 'os.js';
+import path from "path";
+import process from 'process.js';
+import promClient from 'prom-client.js';
+import request from 'supertest.js';
+import { fileURLToPath } from 'url.js';
+
+import AuditTrail from '../../models/AuditTrail.js';
+import BillingInvoice from '../../models/BillingInvoice.js';
+import TenantConfig from '../../models/TenantConfig.js';
+
+import * as prometheusExporter from '../../monitoring/prometheusExporter.js';
+import { getSystemHealth } from '../../services/system/HealthService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,15 +38,6 @@ jest.mock('../../models/BillingInvoice');
 jest.mock('../../models/AuditTrail');
 jest.mock('../../services/system/HealthService');
 
-import os from 'os';
-import process from 'process';
-import TenantConfig from '../../models/TenantConfig';
-import BillingInvoice from '../../models/BillingInvoice';
-import AuditTrail from '../../models/AuditTrail';
-import { getSystemHealth } from '../../services/system/HealthService';
-
-import * as prometheusExporter from '../../monitoring/prometheusExporter';
-
 describe('PrometheusExporter - Enterprise Monitoring Due Diligence', () => {
   let collector;
   let app;
@@ -50,7 +49,11 @@ describe('PrometheusExporter - Enterprise Monitoring Due Diligence', () => {
 
     // Mock system info
     os.hostname.mockReturnValue('test-host');
-    os.cpus.mockReturnValue([{ times: { user: 100, nice: 0, sys: 50, idle: 200, irq: 0 } }]);
+    os.cpus.mockReturnValue([{
+      times: {
+        user: 100, nice: 0, sys: 50, idle: 200, irq: 0,
+      },
+    }]);
     os.totalmem.mockReturnValue(16 * 1024 * 1024 * 1024); // 16GB
     os.freemem.mockReturnValue(8 * 1024 * 1024 * 1024); // 8GB
     os.loadavg.mockReturnValue([1.5, 1.2, 1.0]);

@@ -63,19 +63,20 @@ const path = require('path');
 const crypto = require('crypto');
 const stream = require('stream');
 const { promisify } = require('util');
+
 const pipeline = promisify(stream.pipeline);
 
 // Third-party Dependencies (install via npm install)
-const PDFDocument = require('pdfkit');
-const ExcelJS = require('exceljs');
-const { createObjectCsvWriter } = require('csv-writer');
 const Chart = require('chart.js');
+const { createObjectCsvWriter } = require('csv-writer');
+const ExcelJS = require('exceljs');
 const { sha256 } = require('js-sha256');
+const PDFDocument = require('pdfkit');
 
 // Internal Dependencies (based on existing Wilsy OS architecture)
 const { appLogger, auditLogger } = require('../config/loggingConfig');
-const { encryptData, decryptData } = require('./cryptoUtils');
 const ComplianceReportingService = require('../services/complianceReportingService');
+const { encryptData, decryptData } = require('./cryptoUtils');
 
 // ===================================================================================
 // QUANTUM REPORT GENERATOR CLASS
@@ -86,8 +87,7 @@ class QuantumReportGenerator {
     this.encryptionKey = process.env.REPORT_ENCRYPTION_KEY;
     this.tempPath = process.env.TEMP_REPORT_PATH || './temp/reports';
     this.maxSizeMB = parseInt(process.env.MAX_REPORT_SIZE_MB) || 50;
-    this.watermarkText =
-      process.env.REPORT_WATERMARK_TEXT || 'Wilsy OS Quantum Legal Report - CONFIDENTIAL';
+    this.watermarkText = process.env.REPORT_WATERMARK_TEXT || 'Wilsy OS Quantum Legal Report - CONFIDENTIAL';
 
     // Legal Compliance Constants
     this.LEGAL_FRAMEWORKS = {
@@ -191,7 +191,7 @@ class QuantumReportGenerator {
 
         if (now - stats.mtimeMs > oneDay) {
           await fs.unlink(filePath);
-          appLogger.debug('Cleaned old temp file', { file: file });
+          appLogger.debug('Cleaned old temp file', { file });
         }
       }
     } catch (error) {
@@ -215,7 +215,7 @@ class QuantumReportGenerator {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(this.encryptionKey, 'hex'),
-        iv
+        iv,
       );
 
       const data = Buffer.isBuffer(reportData) ? reportData : Buffer.from(reportData, 'utf8');
@@ -223,7 +223,7 @@ class QuantumReportGenerator {
       const tag = cipher.getAuthTag();
 
       const encryptionMetadata = {
-        reportId: reportId,
+        reportId,
         algorithm: 'aes-256-gcm',
         iv: iv.toString('hex'),
         tag: tag.toString('hex'),
@@ -234,13 +234,13 @@ class QuantumReportGenerator {
       };
 
       return {
-        encrypted: encrypted,
+        encrypted,
         metadata: encryptionMetadata,
         format: 'ENCRYPTED_REPORT_V1',
       };
     } catch (error) {
       appLogger.error('Report encryption failed', {
-        reportId: reportId,
+        reportId,
         error: error.message,
       });
       throw new Error(`Report encryption failed: ${error.message}`);
@@ -262,7 +262,7 @@ class QuantumReportGenerator {
       const decipher = crypto.createDecipheriv(
         'aes-256-gcm',
         Buffer.from(this.encryptionKey, 'hex'),
-        Buffer.from(metadata.iv, 'hex')
+        Buffer.from(metadata.iv, 'hex'),
       );
 
       decipher.setAuthTag(Buffer.from(metadata.tag, 'hex'));
@@ -301,9 +301,9 @@ class QuantumReportGenerator {
       const signature = crypto.createHmac('sha256', this.encryptionKey).update(hash).digest('hex');
 
       return {
-        signature: signature,
-        hash: hash,
-        timestamp: timestamp,
+        signature,
+        hash,
+        timestamp,
         algorithm: 'SHA256_HMAC',
         signatory: 'Wilsy OS Quantum Report Generator v3.0',
         legalValidity: 'ECT_Act_2002_Compliant',
@@ -331,8 +331,8 @@ class QuantumReportGenerator {
 
     try {
       appLogger.info('Generating PDF report', {
-        reportId: reportId,
-        reportType: reportType,
+        reportId,
+        reportType,
         dataSize: JSON.stringify(data).length,
       });
 
@@ -369,13 +369,13 @@ class QuantumReportGenerator {
             if (options.encrypt === true) {
               const encrypted = await this.encryptReport(pdfBuffer, reportId);
               finalBuffer = Buffer.concat([
-                Buffer.from(JSON.stringify(encrypted.metadata) + '\n\n'),
+                Buffer.from(`${JSON.stringify(encrypted.metadata)}\n\n`),
                 encrypted.encrypted,
               ]);
             }
 
             appLogger.info('PDF report generation complete', {
-              reportId: reportId,
+              reportId,
               generationTime: `${generationTime}ms`,
               size: `${(finalBuffer.length / 1024).toFixed(2)} KB`,
               encrypted: options.encrypt || false,
@@ -383,8 +383,8 @@ class QuantumReportGenerator {
 
             // Audit log the generation
             await auditLogger.info('PDF_REPORT_GENERATED', {
-              reportId: reportId,
-              reportType: reportType,
+              reportId,
+              reportType,
               sizeBytes: finalBuffer.length,
               generationTimeMs: generationTime,
               encrypted: options.encrypt || false,
@@ -406,7 +406,7 @@ class QuantumReportGenerator {
       });
     } catch (error) {
       appLogger.error('PDF report generation failed', {
-        reportId: reportId,
+        reportId,
         error: error.message,
         stack: error.stack,
       });
@@ -489,13 +489,14 @@ class QuantumReportGenerator {
       .text(
         `Generated: ${now.toLocaleDateString('en-ZA')} ${now.toLocaleTimeString('en-ZA')} SAST`,
         50,
-        190
+        190,
       )
       .text(`Report ID: ${crypto.randomBytes(6).toString('hex').toUpperCase()}`, 50, 205)
       .moveDown();
 
     // Separator line
-    doc.moveTo(50, 230).lineTo(550, 230).strokeColor('#1a237e').lineWidth(2).stroke();
+    doc.moveTo(50, 230).lineTo(550, 230).strokeColor('#1a237e').lineWidth(2)
+      .stroke();
 
     doc.moveDown(2);
   }
@@ -600,7 +601,7 @@ Governing Law: The laws of the Republic of South Africa.
       doc.text('Key Metrics:', 50, doc.y, { underline: true }).moveDown(0.5);
 
       Object.entries(summary.keyMetrics).forEach(([key, value], index) => {
-        const y = doc.y;
+        const { y } = doc;
         doc
           .text(`${key}:`, 60, y)
           .fillColor('#0d47a1')
@@ -852,7 +853,8 @@ Governing Law: The laws of the Republic of South Africa.
       doc.switchToPage(i);
 
       // Footer line
-      doc.moveTo(50, 800).lineTo(550, 800).strokeColor('#1a237e').lineWidth(0.5).stroke();
+      doc.moveTo(50, 800).lineTo(550, 800).strokeColor('#1a237e').lineWidth(0.5)
+        .stroke();
 
       // Footer text
       doc
@@ -936,8 +938,8 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
 
     try {
       appLogger.info('Generating Excel report', {
-        reportId: reportId,
-        reportType: reportType,
+        reportId,
+        reportType,
       });
 
       // Create workbook
@@ -966,7 +968,7 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
       };
 
       Object.entries(metadata).forEach(([key, value]) => {
-        metadataSheet.addRow({ property: key, value: value });
+        metadataSheet.addRow({ property: key, value });
       });
 
       // Add summary sheet
@@ -1067,7 +1069,7 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
       const generationTime = Date.now() - startTime;
 
       appLogger.info('Excel report generation complete', {
-        reportId: reportId,
+        reportId,
         generationTime: `${generationTime}ms`,
         size: `${(buffer.length / 1024).toFixed(2)} KB`,
         sheets: workbook.worksheets.length,
@@ -1078,15 +1080,15 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
       if (options.encrypt === true) {
         const encrypted = await this.encryptReport(finalBuffer, reportId);
         finalBuffer = Buffer.concat([
-          Buffer.from(JSON.stringify(encrypted.metadata) + '\n\n'),
+          Buffer.from(`${JSON.stringify(encrypted.metadata)}\n\n`),
           encrypted.encrypted,
         ]);
       }
 
       // Audit log
       await auditLogger.info('EXCEL_REPORT_GENERATED', {
-        reportId: reportId,
-        reportType: reportType,
+        reportId,
+        reportType,
         sizeBytes: finalBuffer.length,
         generationTimeMs: generationTime,
         sheetCount: workbook.worksheets.length,
@@ -1096,7 +1098,7 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
       return finalBuffer;
     } catch (error) {
       appLogger.error('Excel report generation failed', {
-        reportId: reportId,
+        reportId,
         error: error.message,
         stack: error.stack,
       });
@@ -1120,7 +1122,7 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
         ];
 
         metricsData.forEach(([key, value]) => {
-          chartSheet.addRow({ metric: key, value: value });
+          chartSheet.addRow({ metric: key, value });
         });
       }
 
@@ -1148,7 +1150,7 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
 
     try {
       appLogger.info('Generating CSV report', {
-        reportId: reportId,
+        reportId,
         recordCount: data.length,
       });
 
@@ -1168,7 +1170,7 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
       await fs.unlink(path.join(this.tempPath, `${reportId}.csv`));
 
       appLogger.info('CSV report generation complete', {
-        reportId: reportId,
+        reportId,
         size: `${(csvBuffer.length / 1024).toFixed(2)} KB`,
       });
 
@@ -1177,7 +1179,7 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
       if (options.encrypt === true) {
         const encrypted = await this.encryptReport(csvBuffer, reportId);
         finalBuffer = Buffer.concat([
-          Buffer.from(JSON.stringify(encrypted.metadata) + '\n\n'),
+          Buffer.from(`${JSON.stringify(encrypted.metadata)}\n\n`),
           encrypted.encrypted,
         ]);
       }
@@ -1185,7 +1187,7 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
       return finalBuffer;
     } catch (error) {
       appLogger.error('CSV report generation failed', {
-        reportId: reportId,
+        reportId,
         error: error.message,
       });
       throw new Error(`CSV generation failed: ${error.message}`);
@@ -1209,7 +1211,7 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
 
     // Structure data for reporting
     const reportData = {
-      reportId: reportId,
+      reportId,
       executiveSummary: {
         overview: 'POPIA Compliance Audit Report',
         keyMetrics: {
@@ -1234,17 +1236,17 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
     switch (format.toLowerCase()) {
       case 'pdf':
         return await this.generatePDFReport(reportData, 'POPIA', {
-          reportId: reportId,
+          reportId,
           encrypt: true,
         });
       case 'excel':
         return await this.generateExcelReport(reportData, 'POPIA', {
-          reportId: reportId,
+          reportId,
           encrypt: true,
         });
       case 'csv':
         return await this.generateCSVReport(auditData.rawData || [], auditData.headers || [], {
-          reportId: reportId,
+          reportId,
           encrypt: true,
         });
       default:
@@ -1264,7 +1266,7 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
       .toString('hex')}`;
 
     const reportData = {
-      reportId: reportId,
+      reportId,
       executiveSummary: {
         overview: 'Companies Act 2008 - Record Retention Compliance Report',
         keyMetrics: {
@@ -1290,12 +1292,12 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
     switch (format.toLowerCase()) {
       case 'pdf':
         return await this.generatePDFReport(reportData, 'COMPANIES_ACT', {
-          reportId: reportId,
+          reportId,
           encrypt: true,
         });
       case 'excel':
         return await this.generateExcelReport(reportData, 'COMPANIES_ACT', {
-          reportId: reportId,
+          reportId,
           encrypt: true,
         });
       default:
@@ -1319,9 +1321,9 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
 
     try {
       appLogger.info('Generating multi-format report', {
-        reportId: reportId,
-        reportType: reportType,
-        formats: formats,
+        reportId,
+        reportType,
+        formats,
       });
 
       const archiver = require('archiver');
@@ -1340,7 +1342,8 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
 
       // Generate each format and add to archive
       for (const format of formats) {
-        let buffer, filename;
+        let buffer; let
+          filename;
 
         switch (format) {
           case 'pdf':
@@ -1393,7 +1396,7 @@ For verification or questions, contact: compliance@wilsyos.co.za
         output.on('end', () => {
           const zipBuffer = Buffer.concat(chunks);
           appLogger.info('Multi-format report package created', {
-            reportId: reportId,
+            reportId,
             size: `${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB`,
             formats: formats.length,
           });
@@ -1404,7 +1407,7 @@ For verification or questions, contact: compliance@wilsyos.co.za
       });
     } catch (error) {
       appLogger.error('Multi-format report generation failed', {
-        reportId: reportId,
+        reportId,
         error: error.message,
       });
       throw new Error(`Multi-format generation failed: ${error.message}`);
@@ -1449,8 +1452,8 @@ For verification or questions, contact: compliance@wilsyos.co.za
 
     return {
       isValid: errors.length === 0,
-      errors: errors,
-      warnings: warnings,
+      errors,
+      warnings,
       dataSize: `${(dataSize / 1024).toFixed(2)} KB`,
       maxAllowed: `${this.maxSizeMB} MB`,
     };

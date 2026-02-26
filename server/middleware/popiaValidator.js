@@ -52,18 +52,20 @@
 
 // Core Quantum Modules
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
-const Joi = require('joi');
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
-const moment = require('moment');
-const { v4: uuidv4 } = require('uuid');
-const _ = require('lodash');
-const validator = require('validator');
-const { body, validationResult, query, param, header } = require('express-validator');
-const helmet = require('helmet');
-const { RateLimiterMemory } = require('rate-limiter-flexible');
-const NodeCache = require('node-cache');
 const bcrypt = require('bcrypt');
+const {
+  body, validationResult, query, param, header,
+} = require('express-validator');
+const helmet = require('helmet');
+const Joi = require('joi');
+const jwt = require('jsonwebtoken');
+const _ = require('lodash');
+const moment = require('moment');
+const NodeCache = require('node-cache');
+const { RateLimiterMemory } = require('rate-limiter-flexible');
+const { v4: uuidv4 } = require('uuid');
+const validator = require('validator');
 
 //  ===============================================================================================
 //  ENVIRONMENT VALIDATION - QUANTUM SECURITY CITADEL
@@ -96,7 +98,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(
-      `QUANTUM BREACH ALERT: Missing environment variable ${varName}. POPIA Validator cannot initialize.`
+      `QUANTUM BREACH ALERT: Missing environment variable ${varName}. POPIA Validator cannot initialize.`,
     );
   }
 });
@@ -323,7 +325,7 @@ class PIIDetectionService {
     if (fieldName.includes('id') && !fieldName.includes('guid')) {
       if (QUANTUM_CONFIG.PII_PATTERNS.SA_ID_NUMBER.test(value)) {
         return 'SA_ID_NUMBER';
-      } else if (QUANTUM_CONFIG.PII_PATTERNS.PASSPORT.test(value)) {
+      } if (QUANTUM_CONFIG.PII_PATTERNS.PASSPORT.test(value)) {
         return 'PASSPORT_NUMBER';
       }
     }
@@ -614,7 +616,7 @@ class POPIAEncryptionService {
         const start = new Date(1950, 0, 1);
         const end = new Date(2000, 0, 1);
         const randomDate = new Date(
-          start.getTime() + Math.random() * (end.getTime() - start.getTime())
+          start.getTime() + Math.random() * (end.getTime() - start.getTime()),
         );
         return randomDate.toISOString().split('T')[0];
       }
@@ -684,7 +686,8 @@ const POPIA_VALIDATION_SCHEMAS = {
         .max(100)
         .required()
         .description('Client first name - POPIA Condition 3: Purpose Specification'),
-      lastName: Joi.string().min(2).max(100).required().description('Client last name'),
+      lastName: Joi.string().min(2).max(100).required()
+        .description('Client last name'),
       idNumber: Joi.string()
         .pattern(QUANTUM_CONFIG.PII_PATTERNS.SA_ID_NUMBER)
         .required()
@@ -717,7 +720,7 @@ const POPIA_VALIDATION_SCHEMAS = {
             'Mpumalanga',
             'North West',
             'Northern Cape',
-            'Western Cape'
+            'Western Cape',
           )
           .required(),
       }).required(),
@@ -754,7 +757,7 @@ const POPIA_VALIDATION_SCHEMAS = {
           documentNumber: Joi.string().required(),
           issueDate: Joi.date().iso().required(),
           expiryDate: Joi.date().iso().greater(Joi.ref('issueDate')).optional(),
-        })
+        }),
       )
       .min(1)
       .optional(),
@@ -792,7 +795,7 @@ const POPIA_VALIDATION_SCHEMAS = {
           description: Joi.string().required(),
           containsPII: Joi.boolean().default(false),
           encryptionRequired: Joi.boolean().default(true),
-        })
+        }),
       )
       .optional(),
 
@@ -805,7 +808,8 @@ const POPIA_VALIDATION_SCHEMAS = {
     processingPurpose: Joi.string().max(500).required(),
 
     // Retention Period (POPIA Section 14)
-    retentionPeriodYears: Joi.number().integer().min(1).max(10).default(5),
+    retentionPeriodYears: Joi.number().integer().min(1).max(10)
+      .default(5),
   }),
 
   // Document Upload Schema
@@ -970,8 +974,7 @@ class POPIAValidatorMiddleware {
   static validateConsent(requiredPurpose = null) {
     return async (req, res, next) => {
       try {
-        const consentToken =
-          req.headers['x-popia-consent'] || req.body?.popiaConsentToken || req.query?.consentToken;
+        const consentToken = req.headers['x-popia-consent'] || req.body?.popiaConsentToken || req.query?.consentToken;
 
         if (!consentToken) {
           return res.status(403).json({
@@ -1150,8 +1153,7 @@ class POPIAValidatorMiddleware {
     return async (req, res, next) => {
       try {
         // Check if data is being transferred outside South Africa
-        const destination =
-          req.headers['x-data-destination'] || req.body?.dataDestination || req.query?.destination;
+        const destination = req.headers['x-data-destination'] || req.body?.dataDestination || req.query?.destination;
 
         if (destination && destination.toLowerCase() !== 'south africa') {
           // Validate adequacy decision or appropriate safeguards
@@ -1201,8 +1203,8 @@ class POPIAValidatorMiddleware {
     } catch (rateLimiterRes) {
       throw new Error(
         `Rate limit exceeded. Please try again in ${Math.ceil(
-          rateLimiterRes.msBeforeNext / 1000
-        )} seconds.`
+          rateLimiterRes.msBeforeNext / 1000,
+        )} seconds.`,
       );
     }
   }
@@ -1465,9 +1467,9 @@ class POPIAValidatorMiddleware {
   static _validateAccountability(req) {
     // Check if information officer is designated
     return !!(
-      req.headers['x-information-officer'] ||
-      req.body?.informationOfficer ||
-      process.env.INFORMATION_OFFICER_DEFAULT
+      req.headers['x-information-officer']
+      || req.body?.informationOfficer
+      || process.env.INFORMATION_OFFICER_DEFAULT
     );
   }
 
@@ -1503,8 +1505,7 @@ class POPIAValidatorMiddleware {
   }
 
   static _validatePurposeSpecification(req) {
-    const purpose =
-      req.headers['x-processing-purpose'] || req.body?.processingPurpose || req.query?.purpose;
+    const purpose = req.headers['x-processing-purpose'] || req.body?.processingPurpose || req.query?.purpose;
 
     if (!purpose) {
       return { valid: false, reason: 'Processing purpose not specified' };
@@ -1611,16 +1612,16 @@ class POPIAValidatorMiddleware {
 
           // Check phone format
           if (
-            (key.toLowerCase().includes('phone') || key.toLowerCase().includes('mobile')) &&
-            !QUANTUM_CONFIG.PII_PATTERNS.PHONE.test(value)
+            (key.toLowerCase().includes('phone') || key.toLowerCase().includes('mobile'))
+            && !QUANTUM_CONFIG.PII_PATTERNS.PHONE.test(value)
           ) {
             errors.push(`${currentPath}: Invalid South African phone number`);
           }
 
           // Check date format
           if (
-            (key.toLowerCase().includes('date') || key.toLowerCase().includes('dob')) &&
-            !moment(value, moment.ISO_8601, true).isValid()
+            (key.toLowerCase().includes('date') || key.toLowerCase().includes('dob'))
+            && !moment(value, moment.ISO_8601, true).isValid()
           ) {
             errors.push(`${currentPath}: Invalid date format`);
           }
@@ -1858,7 +1859,7 @@ class POPIAValidatorMiddleware {
     res.setHeader('X-POPIA-Compliance', 'ACT_4_OF_2013');
     res.setHeader(
       'X-Information-Officer',
-      process.env.INFORMATION_OFFICER_DEFAULT || 'not-designated'
+      process.env.INFORMATION_OFFICER_DEFAULT || 'not-designated',
     );
   }
 
@@ -1948,9 +1949,7 @@ class POPIAValidatorMiddleware {
     if (digits.length !== 13) return false;
 
     // Simple checksum validation (simplified)
-    const sum = digits.slice(0, 12).reduce((acc, digit, index) => {
-      return acc + digit * ((index % 2) + 1);
-    }, 0);
+    const sum = digits.slice(0, 12).reduce((acc, digit, index) => acc + digit * ((index % 2) + 1), 0);
 
     const checksum = (10 - (sum % 10)) % 10;
     return checksum === digits[12];
@@ -2286,7 +2285,7 @@ const popiaHelpers = {
     res.setHeader('X-POPIA-Compliance', 'ACT_4_OF_2013');
     res.setHeader(
       'X-Information-Officer',
-      process.env.INFORMATION_OFFICER_DEFAULT || 'not-designated@firm.com'
+      process.env.INFORMATION_OFFICER_DEFAULT || 'not-designated@firm.com',
     );
     res.setHeader('X-Data-Retention-Days', QUANTUM_CONFIG.AUDIT_RETENTION_DAYS);
     res.setHeader('X-DSAR-Response-Days', QUANTUM_CONFIG.DSAR_RESPONSE_DAYS);
@@ -2319,8 +2318,7 @@ const popiaHelpers = {
   // Validate Information Officer access
   validateInformationOfficer: (req, res, next) => {
     const isInformationOfficer = req.user && req.user.role === 'INFORMATION_OFFICER';
-    const hasInformationOfficerHeader =
-      req.headers['x-information-officer'] === process.env.INFORMATION_OFFICER_DEFAULT;
+    const hasInformationOfficerHeader = req.headers['x-information-officer'] === process.env.INFORMATION_OFFICER_DEFAULT;
 
     if (!isInformationOfficer && !hasInformationOfficerHeader) {
       return res.status(403).json({

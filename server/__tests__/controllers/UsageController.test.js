@@ -4,11 +4,11 @@
   ║ 100% coverage | Upsell automation | Executive intelligence               ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import request from 'supertest';
-import express from 'express';
-import { expect } from 'chai';
-import sinon from 'sinon';
-import { v4 as uuidv4 } from 'uuid';
+import request from 'supertest.js';
+import express from 'express.js';
+import { expect } from 'chai.js';
+import sinon from 'sinon.js';
+import { v4 as uuidv4 } from 'uuid.js';
 
 // Mock dependencies
 jest.mock('../../services/monitoring/UsageService.js', () => ({
@@ -125,10 +125,10 @@ jest.mock('../../middleware/tenantGuard.js', () => ({
 }));
 
 // Import after mocks
-import * as UsageController from '../../controllers/UsageController.js';
-import usageService from '../../services/monitoring/UsageService.js';
-import monitoringDashboard from '../../services/monitoring/MonitoringDashboard.js';
-import { QuantumLogger } from '../../utils/quantumLogger.js';
+import * as UsageController from '../../controllers/UsageController.js.js';
+import usageService from '../../services/monitoring/UsageService.js.js';
+import monitoringDashboard from '../../services/monitoring/MonitoringDashboard.js.js';
+import { QuantumLogger } from '../../utils/quantumLogger.js.js';
 
 describe('UsageController - Commercial Control Center Due Diligence', () => {
   let req;

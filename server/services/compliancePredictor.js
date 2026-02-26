@@ -57,24 +57,27 @@
 // QUANTUM IMPORTS: AI/ML Dependencies from the Eternal Forge
 // ============================================================================
 require('dotenv').config();
-const tf = require('@tensorflow/tfjs-node');
 const natural = require('natural');
-const compromise = require('compromise');
-const brain = require('brain.js');
 
 // Quantum Security: Cryptographic utilities for model encryption
 const crypto = require('crypto');
-const { createCipheriv, createDecipheriv, randomBytes, scryptSync } = crypto;
+const tf = require('@tensorflow/tfjs-node');
+const brain = require('brain.js');
+const compromise = require('compromise');
+
+const {
+  createCipheriv, createDecipheriv, randomBytes, scryptSync,
+} = crypto;
 
 // Internal quantum dependencies
-const AuditLogger = require('../utils/auditLogger');
+const mongoose = require('mongoose');
+const User = require('../models/User');
 const ComplianceEvent = require('../models/complianceEvent');
 const LegalDocument = require('../models/legalDocument');
-const User = require('../models/User');
 const Regulation = require('../models/regulation.js');
+const AuditLogger = require('../utils/auditLogger');
 
 // Database utilities
-const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
 
 // Quantum Shield: Validate environment variables
@@ -317,7 +320,7 @@ class CompliancePredictor {
       this.modelPerformance = JSON.parse(metricsData);
 
       console.log(
-        `📈 Model loaded: Accuracy ${(this.modelPerformance.accuracy * 100).toFixed(2)}%`
+        `📈 Model loaded: Accuracy ${(this.modelPerformance.accuracy * 100).toFixed(2)}%`,
       );
       return true;
     } catch (error) {
@@ -436,13 +439,13 @@ class CompliancePredictor {
               if (epoch % 10 === 0) {
                 console.log(
                   `Epoch ${epoch}: loss = ${logs.loss.toFixed(4)}, accuracy = ${logs.acc.toFixed(
-                    4
-                  )}`
+                    4,
+                  )}`,
                 );
               }
             },
           },
-        }
+        },
       );
 
       // Update performance metrics
@@ -458,7 +461,7 @@ class CompliancePredictor {
           history.history.precision
             ? history.history.precision[history.history.precision.length - 1]
             : 0,
-          history.history.recall ? history.history.recall[history.history.recall.length - 1] : 0
+          history.history.recall ? history.history.recall[history.history.recall.length - 1] : 0,
         ),
         lastUpdated: new Date(),
         trainingSamples: trainingData.samples,
@@ -469,8 +472,8 @@ class CompliancePredictor {
 
       console.log(
         `✅ Initial training complete: ${(this.modelPerformance.accuracy * 100).toFixed(
-          2
-        )}% accuracy`
+          2,
+        )}% accuracy`,
       );
 
       AuditLogger.log({
@@ -745,8 +748,7 @@ class CompliancePredictor {
       if (!recentChange) return 0;
 
       // Calculate recency: more recent = higher risk
-      const daysSinceChange =
-        (new Date() - new Date(recentChange.effectiveDate)) / (1000 * 60 * 60 * 24);
+      const daysSinceChange = (new Date() - new Date(recentChange.effectiveDate)) / (1000 * 60 * 60 * 24);
       return Math.max(0, 1 - daysSinceChange / 90); // 90-day window
     } catch (error) {
       return 0;
@@ -832,8 +834,8 @@ class CompliancePredictor {
 
       console.log(
         `🔮 Risk prediction: ${prediction.riskLevel} (${(prediction.confidence * 100).toFixed(
-          2
-        )}% confidence) in ${processingTime}ms`
+          2,
+        )}% confidence) in ${processingTime}ms`,
       );
 
       return prediction;
@@ -1420,7 +1422,7 @@ class CompliancePredictor {
           'HALT current action immediately',
           'Escalate to Information Officer for emergency review',
           'Document all actions taken for audit trail',
-          'Consult external legal counsel if penalty exceeds R1M'
+          'Consult external legal counsel if penalty exceeds R1M',
         );
         break;
       case 'HIGH':
@@ -1428,7 +1430,7 @@ class CompliancePredictor {
           'Pause action for compliance review',
           'Request additional documentation or approvals',
           'Schedule compliance training for involved staff',
-          'Update risk assessment procedures'
+          'Update risk assessment procedures',
         );
         break;
       case 'MEDIUM':
@@ -1436,7 +1438,7 @@ class CompliancePredictor {
           'Proceed with additional documentation',
           'Include compliance officer in approval chain',
           'Add disclaimer notices where appropriate',
-          'Schedule follow-up review in 30 days'
+          'Schedule follow-up review in 30 days',
         );
         break;
       case 'LOW':
@@ -1444,14 +1446,14 @@ class CompliancePredictor {
           'Proceed with standard procedures',
           'Document decision in compliance log',
           'Monitor for any changes in risk factors',
-          'Include in quarterly compliance review'
+          'Include in quarterly compliance review',
         );
         break;
       default:
         recommendations.push(
           'Proceed as planned',
           'Maintain standard documentation',
-          'Continue regular compliance monitoring'
+          'Continue regular compliance monitoring',
         );
     }
 
@@ -1634,7 +1636,7 @@ class CompliancePredictor {
       async () => {
         await this.checkAndRetrain();
       },
-      24 * 60 * 60 * 1000
+      24 * 60 * 60 * 1000,
     ); // 24 hours
 
     console.log('🔄 Background training scheduler started');
@@ -1659,8 +1661,8 @@ class CompliancePredictor {
       const performanceDrift = await this.checkPerformanceDrift();
 
       if (
-        this.modelPerformance.accuracy < AI_CONFIG.PERFORMANCE.RETRAINING_THRESHOLD ||
-        performanceDrift > 0.1
+        this.modelPerformance.accuracy < AI_CONFIG.PERFORMANCE.RETRAINING_THRESHOLD
+        || performanceDrift > 0.1
       ) {
         console.log('🎓 Retraining model due to performance degradation...');
         await this.retrainModel();
@@ -1790,7 +1792,7 @@ class CompliancePredictor {
           epochs: Math.floor(AI_CONFIG.TRAINING_EPOCHS * 0.5), // Half epochs for retraining
           batchSize: AI_CONFIG.BATCH_SIZE,
           validationSplit: AI_CONFIG.VALIDATION_SPLIT,
-        }
+        },
       );
 
       // Update performance metrics
@@ -1806,7 +1808,7 @@ class CompliancePredictor {
           history.history.precision
             ? history.history.precision[history.history.precision.length - 1]
             : 0,
-          history.history.recall ? history.history.recall[history.history.recall.length - 1] : 0
+          history.history.recall ? history.history.recall[history.history.recall.length - 1] : 0,
         ),
         lastUpdated: new Date(),
         trainingSamples: trainingData.samples + this.modelPerformance.trainingSamples,
@@ -1816,7 +1818,7 @@ class CompliancePredictor {
       await this.saveModels();
 
       console.log(
-        `✅ Retraining complete: Accuracy ${(this.modelPerformance.accuracy * 100).toFixed(2)}%`
+        `✅ Retraining complete: Accuracy ${(this.modelPerformance.accuracy * 100).toFixed(2)}%`,
       );
 
       AuditLogger.log({
@@ -1898,7 +1900,7 @@ class CompliancePredictor {
       return JSON.stringify({
         iv: iv.toString('hex'),
         encryptedData: encrypted,
-        authTag: authTag,
+        authTag,
         algorithm: AI_CONFIG.MODEL_ENCRYPTION_ALGORITHM,
         timestamp: new Date().toISOString(),
       });
@@ -1923,7 +1925,7 @@ class CompliancePredictor {
       const decipher = createDecipheriv(
         AI_CONFIG.MODEL_ENCRYPTION_ALGORITHM,
         this.encryptionKey,
-        iv
+        iv,
       );
       decipher.setAuthTag(authTag);
 
@@ -1946,7 +1948,7 @@ class CompliancePredictor {
       () => {
         this.monitorPredictionQuality();
       },
-      60 * 60 * 1000
+      60 * 60 * 1000,
     ); // Every hour
 
     // Clean old cache entries
@@ -1954,7 +1956,7 @@ class CompliancePredictor {
       () => {
         this.cleanPredictionCache();
       },
-      30 * 60 * 1000
+      30 * 60 * 1000,
     ); // Every 30 minutes
 
     console.log('📊 Model monitoring initialized');
@@ -1990,8 +1992,8 @@ class CompliancePredictor {
     const lowConfidenceRate = lowConfidenceCount / recentPredictions.length;
 
     console.log(
-      `📈 Prediction quality: Avg confidence ${(avgConfidence * 100).toFixed(2)}%, ` +
-        `Low confidence rate ${(lowConfidenceRate * 100).toFixed(2)}%`
+      `📈 Prediction quality: Avg confidence ${(avgConfidence * 100).toFixed(2)}%, `
+        + `Low confidence rate ${(lowConfidenceRate * 100).toFixed(2)}%`,
     );
 
     // Alert if quality degrades
@@ -2003,7 +2005,7 @@ class CompliancePredictor {
         timestamp: new Date(),
         metrics: {
           averageConfidence: avgConfidence,
-          lowConfidenceRate: lowConfidenceRate,
+          lowConfidenceRate,
           sampleSize: recentPredictions.length,
         },
         severity: 'MEDIUM',
@@ -2060,7 +2062,7 @@ class CompliancePredictor {
       const overallRisk = this.calculateOverallRiskScore(
         riskPrediction,
         contentAnalysis,
-        complianceCheck
+        complianceCheck,
       );
 
       const analysis = {
@@ -2074,7 +2076,7 @@ class CompliancePredictor {
           overallRisk,
           riskPrediction,
           contentAnalysis,
-          complianceCheck
+          complianceCheck,
         ),
         modelVersion: AI_CONFIG.MODEL_VERSION,
         processingId: crypto.randomBytes(16).toString('hex'),
@@ -2188,13 +2190,12 @@ class CompliancePredictor {
     const contentScore = (contentAnalysis.readability + contentAnalysis.completenessScore) / 2;
 
     // Compliance score
-    const complianceScore = complianceCheck.complianceScore;
+    const { complianceScore } = complianceCheck;
 
     // Calculate weighted score
-    const weightedScore =
-      aiScore * weights.aiPrediction +
-      contentScore * weights.contentQuality +
-      complianceScore * weights.complianceStatus;
+    const weightedScore = aiScore * weights.aiPrediction
+      + contentScore * weights.contentQuality
+      + complianceScore * weights.complianceStatus;
 
     // Convert to risk level
     const riskLevels = Object.keys(AI_CONFIG.RISK_LEVELS).reverse(); // Highest to lowest
@@ -2271,8 +2272,8 @@ class CompliancePredictor {
       const failedChecks = frameworkCheck.checks.filter((c) => !c.passed);
       if (failedChecks.length > 0) {
         recommendations.push(
-          `Address ${frameworkCheck.framework} compliance issues: ` +
-            failedChecks.map((c) => c.check).join(', ')
+          `Address ${frameworkCheck.framework} compliance issues: ${
+            failedChecks.map((c) => c.check).join(', ')}`,
         );
       }
     });
@@ -2612,7 +2613,7 @@ if (process.env.NODE_ENV === 'test') {
 
     console.log('✅ Basic prediction:', {
       riskLevel: prediction.riskLevel,
-      confidence: (prediction.confidence * 100).toFixed(2) + '%',
+      confidence: `${(prediction.confidence * 100).toFixed(2)}%`,
       hasJustification: !!prediction.justification,
       hasRecommendations: !!prediction.recommendations,
     });
@@ -2640,7 +2641,7 @@ if (process.env.NODE_ENV === 'test') {
     console.log('\n3️⃣ Testing Model Performance Monitoring...');
     const performance = predictor.getModelPerformance();
     console.log('✅ Model performance:', {
-      accuracy: (performance.accuracy * 100).toFixed(2) + '%',
+      accuracy: `${(performance.accuracy * 100).toFixed(2)}%`,
       trainingSamples: performance.trainingSamples,
       lastUpdated: performance.lastUpdated,
     });
@@ -2648,7 +2649,7 @@ if (process.env.NODE_ENV === 'test') {
     // Test 4: POPIA compliance checks
     console.log('\n4️⃣ Testing POPIA Compliance Checks...');
     const popiaCheck = predictor.checkDataMinimization(
-      'We collect all personal information including complete profiles'
+      'We collect all personal information including complete profiles',
     );
     console.log('✅ POPIA compliance check:', {
       dataMinimization: popiaCheck ? 'FAIL' : 'PASS',

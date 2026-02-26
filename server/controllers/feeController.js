@@ -8,19 +8,19 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
-const Fee = require('../models/Fee');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
+const Fee = require('../models/Fee');
 
 /*
  * @desc    REGISTER NEW FEE ITEM / TARIFF
  * @route   POST /api/v1/fees
  */
 exports.createFee = asyncHandler(async (req, res) => {
-  const { code, description, amount, type } = req.body;
+  const {
+    code, description, amount, type,
+  } = req.body;
 
   // 1. DATA INTEGRITY CHECK
   if (!code || !amount) {
@@ -29,7 +29,7 @@ exports.createFee = asyncHandler(async (req, res) => {
       res,
       400,
       'Fee code and amount are required for registry.',
-      'ERR_FEE_INPUT'
+      'ERR_FEE_INPUT',
     );
   }
 
@@ -45,7 +45,7 @@ exports.createFee = asyncHandler(async (req, res) => {
       res,
       400,
       `Fee code '${code}' already exists in your firm's registry.`,
-      'ERR_DUPLICATE_FEE'
+      'ERR_DUPLICATE_FEE',
     );
   }
 
@@ -75,7 +75,9 @@ exports.createFee = asyncHandler(async (req, res) => {
  * @route   GET /api/v1/fees
  */
 exports.getAllFees = asyncHandler(async (req, res) => {
-  const { type, search, page = 1, limit = 50 } = req.query;
+  const {
+    type, search, page = 1, limit = 50,
+  } = req.query;
 
   const query = { ...req.tenantFilter, active: true };
 
@@ -117,7 +119,7 @@ exports.getFee = asyncHandler(async (req, res) => {
       res,
       404,
       'Fee item not found in firm registry.',
-      'ERR_FEE_NOT_FOUND'
+      'ERR_FEE_NOT_FOUND',
     );
   }
 
@@ -172,7 +174,7 @@ exports.deleteFee = asyncHandler(async (req, res) => {
   const fee = await Fee.findOneAndUpdate(
     { _id: req.params.id, ...req.tenantFilter },
     { active: false },
-    { new: true }
+    { new: true },
   );
 
   if (!fee) {

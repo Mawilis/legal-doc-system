@@ -43,14 +43,12 @@ ROI: Automated health monitoring reduces compliance risks by 95% and ensures 99.
  * =========================================================================
  */
 
-'use strict';
-
 // Core dependencies
 const { MongoClient } = require('mongodb');
 const https = require('https');
 const fs = require('fs').promises;
-const path = require('path');
 const os = require('os');
+const path = require('path');
 
 // Configuration
 const CONFIG = {
@@ -139,8 +137,7 @@ async function validateTenantContext(result) {
 
   try {
     // Get tenant context from environment or request context
-    const tenantId =
-      process.env.TENANT_ID || process.env.TENANT_CONTEXT || process.env.HEALTH_CHECK_TENANT;
+    const tenantId = process.env.TENANT_ID || process.env.TENANT_CONTEXT || process.env.HEALTH_CHECK_TENANT;
 
     // Security: Fail-closed if tenant context is required but missing
     if (CONFIG.security.requireTenantContext && !tenantId) {
@@ -151,12 +148,11 @@ async function validateTenantContext(result) {
           securityLevel: 'CRITICAL',
         });
         return false;
-      } else {
-        result.addCheck(checkName, 'warning', {
-          warning: 'TENANT_CONTEXT_MISSING',
-          message: 'Tenant context missing but not required for this check',
-        });
       }
+      result.addCheck(checkName, 'warning', {
+        warning: 'TENANT_CONTEXT_MISSING',
+        message: 'Tenant context missing but not required for this check',
+      });
     }
 
     // Validate tenant ID format if present
@@ -165,7 +161,7 @@ async function validateTenantContext(result) {
       if (!tenantRegex.test(tenantId)) {
         result.addCheck(checkName, 'critical', {
           error: 'INVALID_TENANT_ID_FORMAT',
-          tenantId: tenantId,
+          tenantId,
           expectedFormat: '8-64 alphanumeric, dash, underscore',
           securityLevel: 'HIGH',
         });
@@ -560,13 +556,9 @@ async function checkComplianceRequirements(result) {
     const checkTime = Date.now() - startTime;
 
     // Determine overall compliance status
-    const failedChecks = complianceChecks.filter((check) =>
-      check.checks.some((c) => c.status === 'FAIL')
-    );
+    const failedChecks = complianceChecks.filter((check) => check.checks.some((c) => c.status === 'FAIL'));
 
-    const warningChecks = complianceChecks.filter((check) =>
-      check.checks.some((c) => c.status === 'WARNING')
-    );
+    const warningChecks = complianceChecks.filter((check) => check.checks.some((c) => c.status === 'WARNING'));
 
     if (failedChecks.length > 0) {
       result.addCheck(checkName, 'critical', {
@@ -680,8 +672,8 @@ async function main() {
           exitCode: 1,
         },
         null,
-        2
-      )
+        2,
+      ),
     );
 
     process.exit(1);

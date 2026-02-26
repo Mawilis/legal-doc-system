@@ -48,35 +48,37 @@
 require('dotenv').config(); // Quantum Env Vault Loading
 
 const express = require('express');
+
 const router = express.Router();
 
 // Quantum Security Stack
+const mongoSanitize = require('express-mongo-sanitize');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const Joi = require('joi');
+const xss = require('xss-clean');
+const crypto = require('crypto');
+const CryptoJS = require('crypto-js');
+const companiesController = require('../controllers/companiesController');
+const complianceController = require('../controllers/complianceController');
+const eSignController = require('../controllers/eSignController');
+const popiaController = require('../controllers/popiaController');
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const { validateRequest, validate } = require('../middleware/validationMiddleware');
 
 // Advanced Security Middleware
-const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
-const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
 
 // Cryptography & Encryption
-const crypto = require('crypto');
-const CryptoJS = require('crypto-js');
 
 // Compliance Controllers
-const complianceController = require('../controllers/complianceController');
-const popiaController = require('../controllers/popiaController');
-const eSignController = require('../controllers/eSignController');
-const companiesController = require('../controllers/companiesController');
 
 // SA Legal Services Integration
 const cipcService = require('../services/cipcService');
-const sarsService = require('../services/sarsService');
 const ficaScreening = require('../services/ficaScreeningService');
 const lpcService = require('../services/lpcService');
+const sarsService = require('../services/sarsService');
 
 // Quantum Utilities
 const { getQuantumAuditLogger } = require('../utils/auditUtils');
@@ -126,7 +128,7 @@ const requiredEnvVars = [
 requiredEnvVars.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(
-      `QUANTUM BREACH: ${envVar} missing from .env vault - Compliance system cannot initialize`
+      `QUANTUM BREACH: ${envVar} missing from .env vault - Compliance system cannot initialize`,
     );
   }
 });
@@ -190,7 +192,7 @@ router.use(
       preload: true,
     },
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  })
+  }),
 );
 
 router.use(mongoSanitize()); // Prevent NoSQL injection
@@ -200,8 +202,6 @@ router.use(complianceLimiter); // Apply rate limiting
 // ================================================================================
 // QUANTUM VALIDATION SCHEMAS WITH SA LEGAL COMPLIANCE
 // ================================================================================
-
-const Joi = require('joi');
 
 // Enhanced RSA ID Validator with Luhn algorithm and date validation
 Joi.extend((joi) => ({
@@ -232,9 +232,9 @@ Joi.extend((joi) => ({
         try {
           const date = new Date(fullYear, month - 1, day);
           if (
-            date.getFullYear() !== fullYear ||
-            date.getMonth() !== month - 1 ||
-            date.getDate() !== day
+            date.getFullYear() !== fullYear
+            || date.getMonth() !== month - 1
+            || date.getDate() !== day
           ) {
             return helpers.error('string.dobValid');
           }
@@ -280,7 +280,7 @@ const specialCategoryProcessingSchema = Joi.object({
       'HEALTH_INFORMATION',
       'SEXUAL_LIFE',
       'BIOMETRIC_DATA',
-      'CRIMINAL_BEHAVIOR'
+      'CRIMINAL_BEHAVIOR',
     )
     .required(),
   explicitConsent: Joi.object({
@@ -305,7 +305,7 @@ const eSignatureSchema = Joi.object({
       'WILL',
       'COURT_DOCUMENT',
       'FINANCIAL_INSTRUMENT',
-      'LEGAL_AGREEMENT'
+      'LEGAL_AGREEMENT',
     )
     .required(),
   signatureType: Joi.string().valid('SIMPLE', 'ADVANCED', 'QUALIFIED').required(),
@@ -334,7 +334,7 @@ const companyVerificationSchema = Joi.object({
       'PUBLIC_COMPANY',
       'NON_PROFIT_COMPANY',
       'CLOSE_CORPORATION',
-      'EXTERNAL_COMPANY'
+      'EXTERNAL_COMPANY',
     )
     .required(),
   verificationPurpose: Joi.string()
@@ -343,7 +343,7 @@ const companyVerificationSchema = Joi.object({
       'ANNUAL_COMPLIANCE',
       'TRANSACTION',
       'LEGAL_PROCEEDING',
-      'REGULATORY_REQUIREMENT'
+      'REGULATORY_REQUIREMENT',
     )
     .required(),
   directorConsent: Joi.boolean().required(),
@@ -406,12 +406,12 @@ router.post(
       // Quantum Shield: Encrypt special category data
       const encryptedData = CryptoJS.AES.encrypt(
         JSON.stringify(req.body),
-        process.env.PII_ENCRYPTION_KEY
+        process.env.PII_ENCRYPTION_KEY,
       ).toString();
 
       // Validate explicit consent
       const consentValid = await popiaController.validateExplicitConsent(
-        req.body.explicitConsent.consentId
+        req.body.explicitConsent.consentId,
       );
 
       if (!consentValid) {
@@ -443,7 +443,7 @@ router.post(
           timestamp: new Date().toISOString(),
           lawfulCondition: req.body.lawfulCondition,
         },
-        req.user.tenantId
+        req.user.tenantId,
       );
 
       await emitAudit(req, {
@@ -485,7 +485,7 @@ router.post(
       error.complianceViolation = true;
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -526,7 +526,7 @@ router.post(
       // Verify timestamp authority
       const timestampValid = await eSignController.verifyTimestampAuthority(
         req.body.timestampAuthority,
-        req.body.signatoryVerification.timestamp
+        req.body.signatoryVerification.timestamp,
       );
 
       // Record in blockchain for non-repudiation
@@ -535,11 +535,11 @@ router.post(
         {
           documentType: req.body.documentType,
           signatureType: req.body.signatureType,
-          validationResult: validationResult,
+          validationResult,
           timestamp: req.body.signatoryVerification.timestamp,
           signatoryHash: crypto.createHash('sha256').update(req.user.id).digest('hex'),
         },
-        req.user.tenantId
+        req.user.tenantId,
       );
 
       await emitAudit(req, {
@@ -575,7 +575,7 @@ router.post(
           section: '13',
           signatureStandard: 'ADVANCED_ELECTRONIC_SIGNATURE',
           nonRepudiation: 'GUARANTEED',
-          retentionPeriod: req.body.retentionPeriod + '_YEARS',
+          retentionPeriod: `${req.body.retentionPeriod}_YEARS`,
         },
       });
     } catch (error) {
@@ -583,7 +583,7 @@ router.post(
       error.legalImplication = true;
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -608,7 +608,7 @@ router.post(
           requestor: req.user.id,
           tenant: req.user.tenantId,
         }),
-        process.env.CIPC_API_KEY || process.env.ENCRYPTION_KEY
+        process.env.CIPC_API_KEY || process.env.ENCRYPTION_KEY,
       ).toString();
 
       // Perform CIPC verification
@@ -641,7 +641,7 @@ router.post(
           verificationPurpose: req.body.verificationPurpose,
           verifiedBy: req.user.id,
         },
-        req.user.tenantId
+        req.user.tenantId,
       );
 
       await emitAudit(req, {
@@ -665,7 +665,7 @@ router.post(
         data: {
           companyInfo: cipcResult.companyInfo,
           verificationStatus: cipcResult.status,
-          complianceCheck: complianceCheck,
+          complianceCheck,
           verificationId: cipcResult.verificationId,
           verificationDate: new Date().toISOString(),
           blockchainRecordId: complianceRecord.operationId,
@@ -683,7 +683,7 @@ router.post(
       error.regulatoryImpact = true;
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -716,7 +716,7 @@ router.post(
       if (req.body.efilingUserId) {
         efilingStatus = await sarsService.checkEfilingStatus(
           req.body.efilingUserId,
-          req.body.taxPeriod
+          req.body.taxPeriod,
         );
       }
 
@@ -732,7 +732,7 @@ router.post(
           validationDate: new Date().toISOString(),
           validatedBy: req.user.id,
         },
-        req.user.tenantId
+        req.user.tenantId,
       );
 
       await emitAudit(req, {
@@ -744,15 +744,15 @@ router.post(
         }`,
         metadata: {
           taxNumberHash: req.body.taxNumber
-            ? crypto
-                .createHash('sha256')
-                .update(req.body.taxNumber)
-                .digest('hex')
-                .substring(0, 12) + '...'
+            ? `${crypto
+              .createHash('sha256')
+              .update(req.body.taxNumber)
+              .digest('hex')
+              .substring(0, 12)}...`
             : null,
           vatRegistered: req.body.vatRegistered,
           complianceStatus: sarsValidation.complianceStatus,
-          efilingStatus: efilingStatus,
+          efilingStatus,
           blockchainAnchor: taxRecord.operationId,
           complianceRef: 'TAX_ADMINISTRATION_ACT_28_OF_2011',
         },
@@ -765,7 +765,7 @@ router.post(
           validationId: sarsValidation.validationId,
           taxCompliance: sarsValidation.complianceStatus,
           vatRegistration: req.body.vatRegistered,
-          efilingStatus: efilingStatus,
+          efilingStatus,
           validationDate: new Date().toISOString(),
           blockchainRecordId: taxRecord.operationId,
         },
@@ -782,7 +782,7 @@ router.post(
       error.taxImplication = true;
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -839,7 +839,7 @@ router.post(
           screeningDate: new Date().toISOString(),
           screenedBy: req.user.id,
         },
-        req.user.tenantId
+        req.user.tenantId,
       );
 
       await emitAudit(req, {
@@ -883,7 +883,7 @@ router.post(
       error.amlRisk = true;
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -920,9 +920,9 @@ router.get('/health', protect, authorize('admin', 'system_admin'), async (req, r
       healthChecks,
       complianceScore: allHealthy
         ? 100
-        : (Object.values(healthChecks).filter((c) => c.healthy).length /
-            Object.keys(healthChecks).length) *
-          100,
+        : (Object.values(healthChecks).filter((c) => c.healthy).length
+            / Object.keys(healthChecks).length)
+          * 100,
       quantumSignature: crypto
         .createHash('sha256')
         .update(`${status}-${Date.now()}-${req.user.tenantId}`)
@@ -973,7 +973,7 @@ router.get(
 
       // Verify blockchain integrity
       const blockchainVerified = await require('../utils/blockchainUtils').verifyAuditChain(
-        auditTrail.blockchainHashes
+        auditTrail.blockchainHashes,
       );
 
       await emitAudit(req, {
@@ -985,7 +985,7 @@ router.get(
           entityId: req.params.entityId,
           accessor: req.user.id,
           recordCount: auditTrail.records.length,
-          blockchainVerified: blockchainVerified,
+          blockchainVerified,
           complianceRef: 'POPIA_ARTICLE_23_ACCESS_RIGHT',
         },
       });
@@ -997,7 +997,7 @@ router.get(
           entityId: req.params.entityId,
           auditRecords: auditTrail.records,
           recordCount: auditTrail.records.length,
-          blockchainVerified: blockchainVerified,
+          blockchainVerified,
           retrievalDate: new Date().toISOString(),
           // Quantum Compliance: Include legal references
           legalReferences: [
@@ -1020,7 +1020,7 @@ router.get(
       error.securityImplication = true;
       next(error);
     }
-  }
+  },
 );
 
 // ================================================================================
@@ -1045,7 +1045,7 @@ router.post(
       trustAccountNumber: Joi.string().required(),
       verificationDate: Joi.date().max('now').required(),
     },
-    'body'
+    'body',
   ),
   async (req, res, next) => {
     try {
@@ -1071,7 +1071,7 @@ router.post(
           verificationDate: req.body.verificationDate,
           verifiedBy: req.user.id,
         },
-        req.user.tenantId
+        req.user.tenantId,
       );
 
       await emitAudit(req, {
@@ -1112,7 +1112,7 @@ router.post(
       error.legalImplication = true;
       next(error);
     }
-  }
+  },
 );
 
 // ================================================================================

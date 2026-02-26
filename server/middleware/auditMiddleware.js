@@ -1,7 +1,7 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ AUDIT MIDDLEWARE - INVESTOR-GRADE                                           ║
   ║ 99.99% tamper-proof | Real-time compliance | Forensic evidence             ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/auditMiddleware.js
  * INVESTOR VALUE PROPOSITION:
@@ -9,8 +9,6 @@
  * • Generates: R4.2M/year savings @ 85% margin
  * • Compliance: POPIA §19, ECT Act §15, Companies Act §28
  */
-
-'use strict';
 
 const crypto = require('crypto');
 const auditLogger = require('../utils/auditLogger');
@@ -81,7 +79,7 @@ module.exports = (req, res, next) => {
   // Store original end function
   const originalEnd = res.end;
   let responseBody = '';
-  let responseChunks = [];
+  const responseChunks = [];
 
   // Override write to capture response
   const originalWrite = res.write;
@@ -102,7 +100,7 @@ module.exports = (req, res, next) => {
     if (responseChunks.length) {
       try {
         const combined = Buffer.concat(
-          responseChunks.map((c) => (Buffer.isBuffer(c) ? c : Buffer.from(c)))
+          responseChunks.map((c) => (Buffer.isBuffer(c) ? c : Buffer.from(c))),
         );
         responseBody = combined.toString('utf8');
       } catch (err) {
@@ -168,7 +166,7 @@ module.exports = (req, res, next) => {
       // Response preview (limited size)
       responsePreview:
         responseBody.length > 1000
-          ? responseBody.substring(0, 1000) + '... [TRUNCATED]'
+          ? `${responseBody.substring(0, 1000)}... [TRUNCATED]`
           : responseBody,
 
       // Environment context
@@ -179,10 +177,9 @@ module.exports = (req, res, next) => {
     // Add request body for non-GET requests (with size limit)
     if (req.method !== 'GET' && req.body) {
       const bodySize = JSON.stringify(req.body).length;
-      auditEntry.requestBody =
-        bodySize > 10000
-          ? { _warning: 'Request body too large', size: bodySize }
-          : redactSensitiveData(req.body);
+      auditEntry.requestBody = bodySize > 10000
+        ? { _warning: 'Request body too large', size: bodySize }
+        : redactSensitiveData(req.body);
     }
 
     // Log to audit system (async, don't block)

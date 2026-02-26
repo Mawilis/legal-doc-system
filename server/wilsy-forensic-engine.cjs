@@ -530,8 +530,8 @@ if (require.main === module) {
   • Evidence: ${results.evidenceFile}
   • Hash: ${
     results.evidenceFile
-      ? JSON.parse(fs.readFileSync(results.evidenceFile, 'utf8')).forensicHash.substring(0, 16) +
-        '...'
+      ? `${JSON.parse(fs.readFileSync(results.evidenceFile, 'utf8')).forensicHash.substring(0, 16) 
+        }...`
       : 'N/A'
   }
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict';
 
 // ============================================================================
 // QUANTUM BILLING ORACLE: THE IMMUTABLE FINANCIAL GRAVITY ENGINE
@@ -63,23 +62,24 @@ const crypto = require('crypto');
 const { subtle } = require('crypto').webcrypto || require('crypto');
 
 // QUANTUM VALIDATION: Joi with custom financial schemas
+const { createHash } = require('crypto');
 const Joi = require('joi');
 Joi.objectId = require('joi-objectid')(Joi);
 
 // QUANTUM FINANCE: Decimal.js for exact financial calculations
 const Decimal = require('decimal.js');
+
 Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_EVEN });
 
 // QUANTUM CURRENCY: Exchange rate APIs and multi-currency support
 const axios = require('axios');
+const moment = require('moment');
 const NodeCache = require('node-cache');
 
 // QUANTUM DATABASE: Sequelize for financial records
 const { Sequelize, Op } = require('sequelize');
 
 // QUANTUM TAX: SARS VAT calculations and compliance
-const moment = require('moment');
-const { createHash } = require('crypto');
 
 // QUANTUM COMPLIANCE IMPORTS
 const { createAuditLog } = require('./auditLogger');
@@ -161,20 +161,48 @@ const SARS_CONSTANTS = {
 
 // AFRICAN CURRENCIES AND EXCHANGE RATE ENDPOINTS
 const AFRICAN_CURRENCIES = {
-  ZAR: { code: 'ZAR', name: 'South African Rand', country: 'ZA', symbol: 'R' },
-  NGN: { code: 'NGN', name: 'Nigerian Naira', country: 'NG', symbol: '₦' },
-  KES: { code: 'KES', name: 'Kenyan Shilling', country: 'KE', symbol: 'KSh' },
-  GHS: { code: 'GHS', name: 'Ghanaian Cedi', country: 'GH', symbol: 'GH₵' },
-  UGX: { code: 'UGX', name: 'Ugandan Shilling', country: 'UG', symbol: 'USh' },
-  TZS: { code: 'TZS', name: 'Tanzanian Shilling', country: 'TZ', symbol: 'TSh' },
-  MWK: { code: 'MWK', name: 'Malawian Kwacha', country: 'MW', symbol: 'MK' },
-  ZMW: { code: 'ZMW', name: 'Zambian Kwacha', country: 'ZM', symbol: 'ZK' },
-  BWP: { code: 'BWP', name: 'Botswana Pula', country: 'BW', symbol: 'P' },
-  MUR: { code: 'MUR', name: 'Mauritian Rupee', country: 'MU', symbol: '₨' },
-  NAD: { code: 'NAD', name: 'Namibian Dollar', country: 'NA', symbol: 'N$' },
-  USD: { code: 'USD', name: 'US Dollar', country: 'US', symbol: '$' },
-  EUR: { code: 'EUR', name: 'Euro', country: 'EU', symbol: '€' },
-  GBP: { code: 'GBP', name: 'British Pound', country: 'GB', symbol: '£' },
+  ZAR: {
+    code: 'ZAR', name: 'South African Rand', country: 'ZA', symbol: 'R',
+  },
+  NGN: {
+    code: 'NGN', name: 'Nigerian Naira', country: 'NG', symbol: '₦',
+  },
+  KES: {
+    code: 'KES', name: 'Kenyan Shilling', country: 'KE', symbol: 'KSh',
+  },
+  GHS: {
+    code: 'GHS', name: 'Ghanaian Cedi', country: 'GH', symbol: 'GH₵',
+  },
+  UGX: {
+    code: 'UGX', name: 'Ugandan Shilling', country: 'UG', symbol: 'USh',
+  },
+  TZS: {
+    code: 'TZS', name: 'Tanzanian Shilling', country: 'TZ', symbol: 'TSh',
+  },
+  MWK: {
+    code: 'MWK', name: 'Malawian Kwacha', country: 'MW', symbol: 'MK',
+  },
+  ZMW: {
+    code: 'ZMW', name: 'Zambian Kwacha', country: 'ZM', symbol: 'ZK',
+  },
+  BWP: {
+    code: 'BWP', name: 'Botswana Pula', country: 'BW', symbol: 'P',
+  },
+  MUR: {
+    code: 'MUR', name: 'Mauritian Rupee', country: 'MU', symbol: '₨',
+  },
+  NAD: {
+    code: 'NAD', name: 'Namibian Dollar', country: 'NA', symbol: 'N$',
+  },
+  USD: {
+    code: 'USD', name: 'US Dollar', country: 'US', symbol: '$',
+  },
+  EUR: {
+    code: 'EUR', name: 'Euro', country: 'EU', symbol: '€',
+  },
+  GBP: {
+    code: 'GBP', name: 'British Pound', country: 'GB', symbol: '£',
+  },
 };
 
 // TRUST ACCOUNT CONSTANTS (LPC Compliance)
@@ -225,7 +253,7 @@ class VATCalculationError extends QuantumBillingError {
       `VAT calculation failed for amount ${taxableAmount} at rate ${vatRate}`,
       'VAT_ERROR',
       'HIGH',
-      'SARS_VAT_ACT'
+      'SARS_VAT_ACT',
     );
     this.vatRate = vatRate;
     this.taxableAmount = taxableAmount;
@@ -239,7 +267,7 @@ class TrustAccountViolation extends QuantumBillingError {
       `Trust account violation for client ${clientId}: ${ruleViolated}`,
       'TRUST_VIOLATION',
       'CRITICAL',
-      'LPC_TRUST_RULES'
+      'LPC_TRUST_RULES',
     );
     this.clientId = clientId;
     this.amount = amount;
@@ -254,7 +282,7 @@ class CurrencyConversionError extends QuantumBillingError {
       `Currency conversion ${sourceCurrency}→${targetCurrency} failed for ${amount}`,
       'CURRENCY_ERROR',
       'MEDIUM',
-      'IFRS_CURRENCY'
+      'IFRS_CURRENCY',
     );
     this.sourceCurrency = sourceCurrency;
     this.targetCurrency = targetCurrency;
@@ -269,7 +297,7 @@ class TimeBillingError extends QuantumBillingError {
       `Time billing violation: ${violationType} for entry ${timeEntry.id}`,
       'TIME_BILLING_ERROR',
       'MEDIUM',
-      'LPC_FEE_GUIDELINES'
+      'LPC_FEE_GUIDELINES',
     );
     this.timeEntry = timeEntry;
     this.billingRule = billingRule;
@@ -283,7 +311,7 @@ class TaxInvoiceError extends QuantumBillingError {
       `Tax invoice ${invoiceNumber} violates SARS requirement: ${sarsRequirement}`,
       'TAX_INVOICE_ERROR',
       'HIGH',
-      'SARS_TAX_INVOICE'
+      'SARS_TAX_INVOICE',
     );
     this.invoiceNumber = invoiceNumber;
     this.sarsRequirement = sarsRequirement;
@@ -388,7 +416,7 @@ class QuantumBillingCalculations {
             'TRAVEL',
             'ADMINISTRATION',
             'REVIEW',
-            'NEGOTIATION'
+            'NEGOTIATION',
           )
           .required(),
         rateType: Joi.string().valid('HOURLY', 'FIXED', 'CONTINGENCY').required(),
@@ -412,7 +440,7 @@ class QuantumBillingCalculations {
             'POSTAGE',
             'EXPERT_WITNESS',
             'SEARCH_FEES',
-            'OTHER'
+            'OTHER',
           )
           .required(),
         vatInclusive: Joi.boolean().default(false),
@@ -447,7 +475,7 @@ class QuantumBillingCalculations {
               quantity: Joi.number().positive().required(),
               unitPrice: Joi.number().positive().required(),
               vatRate: Joi.number().min(0).max(1).required(),
-            })
+            }),
           )
           .min(1)
           .required(),
@@ -472,7 +500,7 @@ class QuantumBillingCalculations {
       throw new QuantumBillingError(
         `Quantum Configuration Breach: Missing env vars: ${missing.join(', ')}`,
         'ENV_CONFIG_ERROR',
-        'CRITICAL'
+        'CRITICAL',
       );
     }
 
@@ -482,7 +510,7 @@ class QuantumBillingCalculations {
       throw new QuantumBillingError(
         'Invalid VAT number format (expected 10 digits)',
         'INVALID_VAT_ERROR',
-        'HIGH'
+        'HIGH',
       );
     }
 
@@ -594,7 +622,7 @@ class QuantumBillingCalculations {
       throw new TimeBillingError(
         { id: 'UNKNOWN' },
         'LPC_FEE_GUIDELINES',
-        `Time billing calculation failed: ${error.message}`
+        `Time billing calculation failed: ${error.message}`,
       );
     }
   }
@@ -607,7 +635,7 @@ class QuantumBillingCalculations {
       throw new TimeBillingError(
         { id: 'VALIDATION' },
         'TIME_ENTRY_VALIDATION',
-        'No time entries provided'
+        'No time entries provided',
       );
     }
 
@@ -633,8 +661,7 @@ class QuantumBillingCalculations {
       }
 
       // Maximum 12 hours per entry (overnight work should be split)
-      const durationHours =
-        (new Date(entry.endTime) - new Date(entry.startTime)) / (1000 * 60 * 60);
+      const durationHours = (new Date(entry.endTime) - new Date(entry.startTime)) / (1000 * 60 * 60);
       if (durationHours > 12) {
         validationErrors.push({
           entryId: entry.id,
@@ -648,8 +675,8 @@ class QuantumBillingCalculations {
         { id: 'BATCH_VALIDATION' },
         'TIME_ENTRY_VALIDATION',
         `Validation failed for ${validationErrors.length} entries: ${JSON.stringify(
-          validationErrors
-        )}`
+          validationErrors,
+        )}`,
       );
     }
   }
@@ -687,7 +714,9 @@ class QuantumBillingCalculations {
    * Determine applicable billing rates based on LPC guidelines
    */
   async determineApplicableRates(matterDetails) {
-    const { matterType, attorneyRank, complexity, jurisdiction } = matterDetails;
+    const {
+      matterType, attorneyRank, complexity, jurisdiction,
+    } = matterDetails;
 
     // Base rate from LPC guidelines
     let baseRate = new Decimal(LPC_FEE_GUIDELINES[matterType]?.[attorneyRank] || 2500);
@@ -799,7 +828,8 @@ class QuantumBillingCalculations {
       }
 
       // Calculate VAT amount
-      let vatAmount, netAmount;
+      let vatAmount; let
+        netAmount;
 
       if (context.vatInclusive) {
         // Amount includes VAT, need to extract
@@ -840,7 +870,7 @@ class QuantumBillingCalculations {
       throw new VATCalculationError(
         context.vatRate || SARS_CONSTANTS.VAT_RATE.toNumber(),
         amount,
-        error
+        error,
       );
     }
   }
@@ -867,7 +897,7 @@ class QuantumBillingCalculations {
       throw new VATCalculationError(
         rate.toNumber(),
         context.amount,
-        new Error('VAT rate must be between 0 and 1')
+        new Error('VAT rate must be between 0 and 1'),
       );
     }
 
@@ -1023,7 +1053,7 @@ class QuantumBillingCalculations {
           provider,
           fromCurrency,
           toCurrency,
-          date
+          date,
         );
 
         // Cache the rate
@@ -1063,12 +1093,11 @@ class QuantumBillingCalculations {
           // SARB provides rates relative to ZAR
           if (fromCurrency === 'ZAR') {
             return new Decimal(zarRate);
-          } else {
-            // Need to convert through ZAR
-            const fromRate = response.data.rates[fromCurrency];
-            if (fromRate) {
-              return new Decimal(zarRate).dividedBy(fromRate);
-            }
+          }
+          // Need to convert through ZAR
+          const fromRate = response.data.rates[fromCurrency];
+          if (fromRate) {
+            return new Decimal(zarRate).dividedBy(fromRate);
           }
         }
       }
@@ -1093,13 +1122,12 @@ class QuantumBillingCalculations {
       if (response.data && response.data.rates) {
         if (fromCurrency === 'ZAR') {
           return new Decimal(response.data.rates[toCurrency] || 1);
-        } else {
-          // Convert through ZAR
-          const fromRate = response.data.rates[fromCurrency];
-          const toRate = response.data.rates[toCurrency];
-          if (fromRate && toRate) {
-            return new Decimal(toRate).dividedBy(fromRate);
-          }
+        }
+        // Convert through ZAR
+        const fromRate = response.data.rates[fromCurrency];
+        const toRate = response.data.rates[toCurrency];
+        if (fromRate && toRate) {
+          return new Decimal(toRate).dividedBy(fromRate);
         }
       }
     }
@@ -1129,7 +1157,7 @@ class QuantumBillingCalculations {
 
     if (fallbackRates[key]) {
       return new Decimal(fallbackRates[key]);
-    } else if (fallbackRates[reverseKey]) {
+    } if (fallbackRates[reverseKey]) {
       return new Decimal(1).dividedBy(fallbackRates[reverseKey]);
     }
 
@@ -1242,7 +1270,7 @@ class QuantumBillingCalculations {
       throw new TrustAccountViolation(
         clientDetails?.clientId || 'UNKNOWN',
         transactions?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0,
-        `Trust calculation failed: ${error.message}`
+        `Trust calculation failed: ${error.message}`,
       );
     }
   }
@@ -1289,7 +1317,7 @@ class QuantumBillingCalculations {
       throw new TrustAccountViolation(
         transactions[0]?.clientId || 'UNKNOWN',
         transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0),
-        `Trust transaction validation failed: ${JSON.stringify(violations)}`
+        `Trust transaction validation failed: ${JSON.stringify(violations)}`,
       );
     }
   }
@@ -1300,13 +1328,13 @@ class QuantumBillingCalculations {
   async calculateRunningBalance(transactions) {
     // Sort transactions by date
     const sortedTransactions = [...transactions].sort(
-      (a, b) => new Date(a.date) - new Date(b.date)
+      (a, b) => new Date(a.date) - new Date(b.date),
     );
 
     let runningBalance = new Decimal(0);
     let totalDeposits = new Decimal(0);
     let totalWithdrawals = new Decimal(0);
-    let dailyBalances = [];
+    const dailyBalances = [];
 
     const processedTransactions = sortedTransactions.map((transaction, index) => {
       const amount = new Decimal(transaction.amount);
@@ -1335,20 +1363,19 @@ class QuantumBillingCalculations {
     });
 
     // Calculate average daily balance
-    const averageBalance =
-      dailyBalances.length > 0
-        ? dailyBalances
-            .reduce((sum, day) => sum.plus(day.balance), new Decimal(0))
-            .dividedBy(dailyBalances.length)
-        : new Decimal(0);
+    const averageBalance = dailyBalances.length > 0
+      ? dailyBalances
+        .reduce((sum, day) => sum.plus(day.balance), new Decimal(0))
+        .dividedBy(dailyBalances.length)
+      : new Decimal(0);
 
     return {
       transactions: processedTransactions,
       openingBalance:
         sortedTransactions.length > 0
           ? new Decimal(sortedTransactions[0].amount).minus(
-              new Decimal(sortedTransactions[0].amount)
-            ) // Zero for first transaction
+            new Decimal(sortedTransactions[0].amount),
+          ) // Zero for first transaction
           : new Decimal(0),
       closingBalance: runningBalance,
       totalDeposits,
@@ -1409,7 +1436,7 @@ class QuantumBillingCalculations {
           vatAmount: totals.totalVAT.toNumber(),
           lineItemsCount: lineItems.length,
           sarsCompliant: true,
-          digitalSignature: digitalSignature.substring(0, 16) + '...',
+          digitalSignature: `${digitalSignature.substring(0, 16)}...`,
           quantumHash: crypto.randomBytes(32).toString('hex'),
         },
         compliance: ['SARS_TAX_INVOICE', 'VAT_ACT', 'ECT_ACT'],
@@ -1435,7 +1462,7 @@ class QuantumBillingCalculations {
           currency: invoiceData.currency,
         },
         sarsCompliance: sarsFields,
-        paymentTerms: paymentTerms,
+        paymentTerms,
         digitalSignature,
         qrCode: await this.generateInvoiceQRCode({
           invoiceId,
@@ -1467,7 +1494,7 @@ class QuantumBillingCalculations {
 
       throw new TaxInvoiceError(
         invoiceData?.invoiceNumber || 'UNKNOWN',
-        `Tax invoice generation failed: ${error.message}`
+        `Tax invoice generation failed: ${error.message}`,
       );
     }
   }
@@ -1595,15 +1622,14 @@ class QuantumBillingCalculations {
     if (parseInt(process.env.VAT_PERIOD) === 1) {
       // Monthly
       return `TAX-PERIOD-${year}-${month.toString().padStart(2, '0')}`;
-    } else if (parseInt(process.env.VAT_PERIOD) === 2) {
+    } if (parseInt(process.env.VAT_PERIOD) === 2) {
       // Bi-monthly
       const period = Math.ceil(month / 2);
       return `TAX-PERIOD-${year}-${period.toString().padStart(2, '0')}`;
-    } else {
-      // 6-monthly (default for most)
-      const period = month <= 6 ? '01' : '02';
-      return `TAX-PERIOD-${year}-${period}`;
     }
+    // 6-monthly (default for most)
+    const period = month <= 6 ? '01' : '02';
+    return `TAX-PERIOD-${year}-${period}`;
   }
 
   /*
@@ -1636,7 +1662,9 @@ class QuantumBillingCalculations {
 
   static async testQuantumSuite() {
     if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
-      const { describe, it, expect, beforeAll, afterAll, jest } = require('@jest/globals');
+      const {
+        describe, it, expect, beforeAll, afterAll, jest,
+      } = require('@jest/globals');
 
       describe('QUANTUM BILLING ORACLE TEST SUITE', () => {
         let billingCalculator;
@@ -1683,7 +1711,7 @@ class QuantumBillingCalculations {
             };
 
             await expect(
-              billingCalculator.validateTimeEntries([validEntry])
+              billingCalculator.validateTimeEntries([validEntry]),
             ).resolves.not.toThrow();
           });
 
@@ -1700,7 +1728,7 @@ class QuantumBillingCalculations {
             };
 
             await expect(billingCalculator.validateTimeEntries([invalidEntry])).rejects.toThrow(
-              TimeBillingError
+              TimeBillingError,
             );
           });
 
@@ -1795,7 +1823,7 @@ class QuantumBillingCalculations {
 
             // Should not throw for valid transaction
             await expect(
-              billingCalculator.validateTrustTransactions([validTransaction])
+              billingCalculator.validateTrustTransactions([validTransaction]),
             ).resolves.not.toThrow();
           });
 
@@ -1812,7 +1840,7 @@ class QuantumBillingCalculations {
             };
 
             await expect(
-              billingCalculator.validateTrustTransactions([invalidTransaction])
+              billingCalculator.validateTrustTransactions([invalidTransaction]),
             ).rejects.toThrow(TrustAccountViolation);
           });
         });
@@ -1921,7 +1949,7 @@ class QuantumBillingCalculations {
     if (error) {
       throw new TaxInvoiceError(
         invoiceData.invoiceNumber,
-        `Invoice validation failed: ${error.details.map((d) => d.message).join(', ')}`
+        `Invoice validation failed: ${error.details.map((d) => d.message).join(', ')}`,
       );
     }
   }

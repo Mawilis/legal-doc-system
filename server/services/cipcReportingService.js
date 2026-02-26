@@ -46,11 +46,11 @@
 
 // Core Quantum Modules
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
-const axios = require('axios');
 const crypto = require('crypto');
+const axios = require('axios');
 const jwt = require('jsonwebtoken');
-const NodeCache = require('node-cache');
 const moment = require('moment');
+const NodeCache = require('node-cache');
 const { v4: uuidv4 } = require('uuid');
 
 //  ===============================================================================================
@@ -81,7 +81,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(
-      `QUANTUM BREACH ALERT: Missing environment variable ${varName}. CIPC service cannot initialize.`
+      `QUANTUM BREACH ALERT: Missing environment variable ${varName}. CIPC service cannot initialize.`,
     );
   }
 });
@@ -141,7 +141,7 @@ class QuantumEncryptionService {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(QUANTUM_CONFIG.ENCRYPTION_KEY, 'hex'),
-        iv
+        iv,
       );
 
       let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
@@ -165,7 +165,7 @@ class QuantumEncryptionService {
       const decipher = crypto.createDecipheriv(
         'aes-256-gcm',
         Buffer.from(QUANTUM_CONFIG.ENCRYPTION_KEY, 'hex'),
-        Buffer.from(encryptedPackage.iv, 'hex')
+        Buffer.from(encryptedPackage.iv, 'hex'),
       );
 
       decipher.setAuthTag(Buffer.from(encryptedPackage.authTag, 'hex'));
@@ -212,7 +212,7 @@ class CIPCAPIClient {
       },
       (error) => {
         throw new Error(`CIPC API Request Configuration Error: ${error.message}`);
-      }
+      },
     );
 
     // Response interceptor for error handling and compliance
@@ -226,7 +226,7 @@ class CIPCAPIClient {
         // POPIA Quantum: Encrypt sensitive PII in response
         if (response.data.personalInformation) {
           response.data.encryptedPersonalInfo = QuantumEncryptionService.encryptSensitiveData(
-            response.data.personalInformation
+            response.data.personalInformation,
           );
           delete response.data.personalInformation;
         }
@@ -247,12 +247,12 @@ class CIPCAPIClient {
             case 429:
               // Rate limiting - implement exponential backoff
               if (
-                !originalRequest._retry &&
-                originalRequest._retryCount < QUANTUM_CONFIG.MAX_RETRIES
+                !originalRequest._retry
+                && originalRequest._retryCount < QUANTUM_CONFIG.MAX_RETRIES
               ) {
                 originalRequest._retry = true;
                 originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
-                const delay = QUANTUM_CONFIG.RETRY_DELAY * Math.pow(2, originalRequest._retryCount);
+                const delay = QUANTUM_CONFIG.RETRY_DELAY * 2 ** originalRequest._retryCount;
 
                 await new Promise((resolve) => setTimeout(resolve, delay));
                 return this.axiosInstance(originalRequest);
@@ -264,7 +264,7 @@ class CIPCAPIClient {
               throw new Error(
                 `CIPC API Error ${error.response.status}: ${
                   error.response.data?.message || 'Unknown error'
-                }`
+                }`,
               );
           }
         } else if (error.request) {
@@ -272,7 +272,7 @@ class CIPCAPIClient {
         } else {
           throw new Error(`CIPC API Configuration Error: ${error.message}`);
         }
-      }
+      },
     );
   }
 
@@ -338,7 +338,7 @@ class CIPCAPIClient {
 
     try {
       const response = await this.axiosInstance.get(
-        `/companies/${encodeURIComponent(companyRegNumber)}`
+        `/companies/${encodeURIComponent(companyRegNumber)}`,
       );
 
       // Enhanced data processing with compliance checks
@@ -367,7 +367,7 @@ class CIPCAPIClient {
     try {
       const response = await this.axiosInstance.post(
         `/companies/${encodeURIComponent(companyRegNumber)}/annual-returns`,
-        annualReturnData
+        annualReturnData,
       );
 
       // Compliance Quantum: Generate submission certificate
@@ -541,7 +541,7 @@ class CIPCAPIClient {
     const digitalCertificate = jwt.sign(
       certificatePayload,
       QUANTUM_CONFIG.JWT_SECRET,
-      { expiresIn: '10y' } // 10-year validity as per Companies Act retention
+      { expiresIn: '10y' }, // 10-year validity as per Companies Act retention
     );
 
     return {
@@ -619,16 +619,16 @@ class CIPCAPIClient {
 
     // Deduct for missing financial statements if required
     if (
-      (companyDetails.companyType === 'Public Company' || companyDetails.turnover > 5000000) &&
-      !filings.some((f) => f.type === 'Financial Statements')
+      (companyDetails.companyType === 'Public Company' || companyDetails.turnover > 5000000)
+      && !filings.some((f) => f.type === 'Financial Statements')
     ) {
       score -= 30;
     }
 
     // Deduct for non-compliant directors
     if (
-      companyDetails.directors &&
-      companyDetails.directors.some((d) => d.complianceStatus !== 'Compliant')
+      companyDetails.directors
+      && companyDetails.directors.some((d) => d.complianceStatus !== 'Compliant')
     ) {
       score -= 20;
     }
@@ -675,8 +675,8 @@ class CIPCAPIClient {
 
     // Check information officer designation for POPIA
     if (
-      (companyDetails.turnover > 5000000 || companyDetails.employsMoreThan50) &&
-      !companyDetails.informationOfficer
+      (companyDetails.turnover > 5000000 || companyDetails.employsMoreThan50)
+      && !companyDetails.informationOfficer
     ) {
       recommendations.push({
         priority: 'MEDIUM',
@@ -694,12 +694,10 @@ class CIPCAPIClient {
     // High risk factors
     if (!filings.some((f) => f.type === 'Annual Return')) riskScore += 3;
     if (
-      moment().diff(moment(companyDetails.incorporationDate), 'years') > 1 &&
-      !filings.some((f) => f.type === 'Financial Statements')
-    )
-      riskScore += 2;
-    if (directors.some((d) => d.disqualifications && d.disqualifications.length > 0))
-      riskScore += 2;
+      moment().diff(moment(companyDetails.incorporationDate), 'years') > 1
+      && !filings.some((f) => f.type === 'Financial Statements')
+    ) riskScore += 2;
+    if (directors.some((d) => d.disqualifications && d.disqualifications.length > 0)) riskScore += 2;
 
     // Medium risk factors
     if (companyDetails.companyStatus !== 'In Business') riskScore += 1;
@@ -758,7 +756,7 @@ class CIPCAPIClient {
   async getCompanyFilings(companyRegNumber) {
     try {
       const response = await this.axiosInstance.get(
-        `/companies/${encodeURIComponent(companyRegNumber)}/filings`
+        `/companies/${encodeURIComponent(companyRegNumber)}/filings`,
       );
       return response.data.filings || [];
     } catch (error) {
@@ -770,7 +768,7 @@ class CIPCAPIClient {
   async getCompanyDirectors(companyRegNumber) {
     try {
       const response = await this.axiosInstance.get(
-        `/companies/${encodeURIComponent(companyRegNumber)}/directors`
+        `/companies/${encodeURIComponent(companyRegNumber)}/directors`,
       );
       return response.data.directors || [];
     } catch (error) {
@@ -827,8 +825,8 @@ class CIPCAPIClient {
 
     // Validate share capital for certain company types
     if (
-      companyData.companyType === 'Public Company' &&
-      (!companyData.shareCapital || companyData.shareCapital < 100000)
+      companyData.companyType === 'Public Company'
+      && (!companyData.shareCapital || companyData.shareCapital < 100000)
     ) {
       throw new Error('Public companies require minimum share capital of R100,000');
     }
@@ -849,7 +847,7 @@ class CIPCAPIClient {
     const digitalCertificate = jwt.sign(
       certificatePayload,
       QUANTUM_CONFIG.JWT_SECRET,
-      { expiresIn: '99y' } // Company registration certificates don't expire
+      { expiresIn: '99y' }, // Company registration certificates don't expire
     );
 
     return {
@@ -934,9 +932,7 @@ module.exports = {
     return { cleared: true, timestamp: new Date().toISOString() };
   },
 
-  getCacheStats: () => {
-    return quantumCache.getStats();
-  },
+  getCacheStats: () => quantumCache.getStats(),
 };
 
 //  ===============================================================================================

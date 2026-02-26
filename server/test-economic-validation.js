@@ -29,13 +29,13 @@ if (eliminatedRisk >= 2400000) {
   console.log(
     `  Calculation: R${maxFine.toLocaleString()} max fine × ${
       breachLikelihood * 100
-    }% likelihood × ${riskReduction * 100}% reduction`
+    }% likelihood × ${riskReduction * 100}% reduction`,
   );
 } else {
   console.log(
     `✗ Risk Elimination: R${Math.round(
-      eliminatedRisk
-    ).toLocaleString()} (FAILED - Below R2.4M claim)`
+      eliminatedRisk,
+    ).toLocaleString()} (FAILED - Below R2.4M claim)`,
   );
   process.exit(1);
 }
@@ -74,7 +74,7 @@ const evidence = {
     coverage: '100% economic validation',
   },
   economicValidation: {
-    annualSavings: annualSavings,
+    annualSavings,
     riskElimination: eliminatedRisk,
     complianceVerified: true,
     roiCalculation: '10.9:1 (Every R1 eliminates R10.90 risk)',
@@ -84,6 +84,7 @@ const evidence = {
 // Save evidence
 const fs = require('fs');
 const path = require('path');
+
 const evidencePath = path.join(__dirname, '__tests__/controllers/evidence.json');
 fs.writeFileSync(evidencePath, JSON.stringify(evidence, null, 2));
 

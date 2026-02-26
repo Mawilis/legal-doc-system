@@ -1,6 +1,5 @@
-'use strict';
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 
 describe('Debug Model Registration', () => {
   let mongoServer;

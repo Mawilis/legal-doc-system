@@ -1,7 +1,7 @@
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT VAULT SERVICE - INVESTOR-GRADE MODULE                ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/vault/documentVaultService.js
  * INVESTOR VALUE PROPOSITION:
@@ -28,10 +28,10 @@ graph TD
     H[middleware/tenantContext] --> B
 */
 
-const auditLogger = require('../../utils/auditLogger');
-const logger = require('../../utils/logger');
-const cryptoUtils = require('../../utils/cryptoUtils');
 const Document = require('../../models/Document');
+const auditLogger = require('../../utils/auditLogger');
+const cryptoUtils = require('../../utils/cryptoUtils');
+const logger = require('../../utils/logger');
 
 // POPIA Redaction Fields (from utils/)
 const { redactSensitive } = require('../../utils/popiaUtils');
@@ -136,9 +136,9 @@ class DocumentVaultService {
           dataResidency,
           retentionStart: new Date().toISOString(),
           legalBasis:
-            this.retentionPolicies[retentionPolicy.toUpperCase()]?.legalReference ||
-            'CLIENT_CONTRACT',
-        }
+            this.retentionPolicies[retentionPolicy.toUpperCase()]?.legalReference
+            || 'CLIENT_CONTRACT',
+        },
       );
 
       logger.info(`Document stored: ${document._id} for tenant ${tenantId}`, {
@@ -199,7 +199,7 @@ class DocumentVaultService {
           retentionPolicy: 'audit_only',
           dataResidency: 'ZA',
           accessType: 'READ',
-        }
+        },
       );
 
       logger.info(`Document accessed: ${documentId} by ${requestedBy.userId}`, {
@@ -267,7 +267,7 @@ class DocumentVaultService {
               retentionPolicy: policy,
               dataResidency: 'ZA',
               archivedAt: new Date().toISOString(),
-            }
+            },
           );
 
           results.archived++;
@@ -324,8 +324,7 @@ class DocumentVaultService {
       // Analyze documents
       documents.forEach((doc) => {
         // Confidentiality distribution
-        report.byConfidentiality[doc.confidentiality] =
-          (report.byConfidentiality[doc.confidentiality] || 0) + 1;
+        report.byConfidentiality[doc.confidentiality] = (report.byConfidentiality[doc.confidentiality] || 0) + 1;
 
         // Simple retention compliance check
         const ageInYears = (Date.now() - doc.createdAt) / (1000 * 60 * 60 * 24 * 365);
@@ -356,7 +355,7 @@ class DocumentVaultService {
           retentionPolicy: 'audit_only',
           dataResidency: 'ZA',
           reportId: `report-${Date.now()}-${tenantId}`,
-        }
+        },
       );
 
       return report;

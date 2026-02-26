@@ -12,8 +12,6 @@
  * ENTERPRISE_CAPACITY: 1M+ concurrent users, 10K+ legal firms
  */
 
-'use strict';
-
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // REVENUE FOUNTAIN ARCHITECTURE
 // Each endpoint in this file processes approximately:
@@ -23,13 +21,13 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 const express = require('express');
+
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 
 const aiController = require('../controllers/aiController');
-const { validateRequest, validateSchema } = require('../middleware/validationMiddleware');
-const { authenticate, authorize } = require('../middleware/authMiddleware');
 const { auditTrail } = require('../middleware/auditMiddleware');
+const { authenticate, authorize } = require('../middleware/authMiddleware');
 const {
   tenantIsolation,
   enforceRBAC,
@@ -40,6 +38,7 @@ const {
   sanitizeInput,
   piiDetection,
 } = require('../middleware/securityMiddleware');
+const { validateRequest, validateSchema } = require('../middleware/validationMiddleware');
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ENTERPRISE RATE LIMITING
@@ -94,7 +93,7 @@ const analyzeSchema = {
       'contract_summary',
       'compliance_check',
       'negotiation_analysis',
-      'precedent_search'
+      'precedent_search',
     )
     .description('Type of AI analysis to perform'),
 
@@ -147,8 +146,8 @@ const redactSchema = {
           'ADDRESS',
           'NAME',
           'IBAN',
-          'SWIFT_CODE'
-        )
+          'SWIFT_CODE',
+        ),
     )
     .default(['RSA_ID', 'EMAIL', 'PHONE', 'NAME'])
     .description('PII types to detect and redact'),
@@ -178,7 +177,7 @@ const batchAnalysisSchema = {
   analysisPipeline: validateSchema
     .array()
     .items(
-      validateSchema.string().valid('clause_extraction', 'risk_assessment', 'compliance_check')
+      validateSchema.string().valid('clause_extraction', 'risk_assessment', 'compliance_check'),
     )
     .min(1)
     .max(5)
@@ -296,7 +295,7 @@ router.post(
 
       next(error);
     }
-  }
+  },
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -396,7 +395,7 @@ router.post(
 
       next(error);
     }
-  }
+  },
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -491,7 +490,7 @@ router.post(
 
       next(error);
     }
-  }
+  },
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -569,7 +568,7 @@ router.get(
 
       next(error);
     }
-  }
+  },
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -605,7 +604,7 @@ router.get(
         uptime: process.uptime(),
       },
     });
-  }
+  },
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

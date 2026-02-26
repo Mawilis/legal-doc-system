@@ -23,8 +23,8 @@ JURISDICTION: South Africa (POPIA/PAIA/ECT Act/LPC Rules) | GLOBAL: GDPR/CCPA/IS
 
                     ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ██╗ █████╗ ███╗   ██╗ ██████╗ ███████╗
                    ██╔════╝██╔═══██╗████╗ ████║██╔══██╗██║     ██║██╔══██╗████╗  ██║██╔════╝ ██╔════╝
-                   ██║     ██║   ██║██╔████╔██║██████╔╝██║     ██║███████║██╔██╗ ██║██║  ███╗█████╗  
-                   ██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██║     ██║██╔══██║██║╚██╗██║██║   ██║██╔══╝  
+                   ██║     ██║   ██║██╔████╔██║██████╔╝██║     ██║███████║██╔██╗ ██║██║  ███╗█████╗
+                   ██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██║     ██║██╔══██║██║╚██╗██║██║   ██║██╔══╝
                    ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║     ███████╗██║██║  ██║██║ ╚████║╚██████╔╝███████╗
                     ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚══════╝╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝
 
@@ -62,8 +62,8 @@ QUANTUM METRICS:
  * No npm packages required - keeps configuration lightweight and secure
  */
 
-const path = require('path');
 const crypto = require('crypto');
+const path = require('path');
 
 // Load environment configuration with quantum validation
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
@@ -628,7 +628,7 @@ const ComplianceConfig = {
           paye: 'Monthly employee tax deductions',
         },
         eFiling: {
-          integration: process.env.SARS_EFILING_API_KEY ? true : false,
+          integration: !!process.env.SARS_EFILING_API_KEY,
           deadlines: 'Strict deadlines with penalties for late filing',
         },
       },
@@ -1362,19 +1362,17 @@ module.exports = {
   isPOPIACompliant: () => {
     const validation = validateComplianceConfig();
     return (
-      validation.valid &&
-      ComplianceConfig.southAfrica.popia &&
-      ComplianceConfig.officers.informationOfficer.name
+      validation.valid
+      && ComplianceConfig.southAfrica.popia
+      && ComplianceConfig.officers.informationOfficer.name
     );
   },
 
-  getRetentionPeriod: (dataType) => {
-    return (
-      ComplianceConfig.validation.retention.schedules[dataType] ||
-      ComplianceConfig.validation.retention.schedules.default ||
-      2555
-    ); // Default 7 years
-  },
+  getRetentionPeriod: (dataType) => (
+    ComplianceConfig.validation.retention.schedules[dataType]
+      || ComplianceConfig.validation.retention.schedules.default
+      || 2555
+  ), // Default 7 years
 
   // System Information
   getSystemInfo: () => ({
@@ -1495,6 +1493,6 @@ if (!initialValidation.valid) {
 }
 
 console.log(
-  '✅ Compliance Configuration Nexus Initialized - Legal DNA Encoded for South African Digital Justice'
+  '✅ Compliance Configuration Nexus Initialized - Legal DNA Encoded for South African Digital Justice',
 );
 console.log(`🔗 Configuration Integrity: ${generateConfigIntegrityHash().substring(0, 16)}...`);

@@ -1,25 +1,25 @@
 /* eslint-env mocha, node */
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const assert = require('assert');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 
-describe('✅ Stage Advancement - FIXED', function () {
+describe('✅ Stage Advancement - FIXED', () => {
   let mongoServer;
   let OnboardingSession;
 
-  before(async function () {
+  before(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
     OnboardingSession = require('../models/OnboardingSession');
   });
 
-  after(async function () {
+  after(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
   });
 
-  it('OPTION 1: Use createSession (recommended)', async function () {
+  it('OPTION 1: Use createSession (recommended)', async () => {
     const session = await OnboardingSession.createSession('tenant-1', {
       clientType: 'INDIVIDUAL',
       identityType: 'SA_ID',
@@ -41,11 +41,11 @@ describe('✅ Stage Advancement - FIXED', function () {
     assert.strictEqual(session.stages.length, 2);
   });
 
-  it('OPTION 2: Add INITIATED stage manually', async function () {
+  it('OPTION 2: Add INITIATED stage manually', async () => {
     const sessionId = OnboardingSession.generateSessionId('INDIVIDUAL', 'tenant-1');
 
     const session = new OnboardingSession({
-      sessionId: sessionId,
+      sessionId,
       tenantId: 'tenant-1',
       clientType: 'INDIVIDUAL',
       identityType: 'SA_ID',

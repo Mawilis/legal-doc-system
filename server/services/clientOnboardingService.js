@@ -1,42 +1,40 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ CLIENT ONBOARDING SERVICE — INVESTOR-GRADE ● FORENSIC ● PRODUCTION           ║
   ║ FICA Compliant | POPIA Compliant | Multi-tenant | Circuit Breaker           ║
   ║ Version: 5.0.3 - Production - Fixed ID Validation                           ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
-'use strict';
-
-const mongoose = require('mongoose');
 const crypto = require('crypto');
-const { DateTime } = require('luxon');
 const { EventEmitter } = require('events');
+const { DateTime } = require('luxon');
+const mongoose = require('mongoose');
 const CircuitBreaker = require('opossum');
 
 // Core utilities
-const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
-const metrics = require('../utils/metrics');
 const tenantContext = require('../middleware/tenantContext');
+const auditLogger = require('../utils/auditLogger');
+const { generateFICARefNumber } = require('../utils/complianceIdGenerator');
 const {
   ValidationError,
   DatabaseError,
   FICAComplianceError,
   ResourceNotFoundError,
 } = require('../utils/errors');
+const logger = require('../utils/logger');
+const metrics = require('../utils/metrics');
 
 // External services
-const ficaService = require('./ficaScreeningService');
-const notificationService = require('./notificationService');
-const documentVerificationWorker = require('../workers/documentVerificationWorker');
-
-// Validators
 const {
   validateSAIDNumber,
   validateBusinessRegistration,
 } = require('../validators/saLegalValidators');
+const documentVerificationWorker = require('../workers/documentVerificationWorker');
+const ficaService = require('./ficaScreeningService');
+const notificationService = require('./notificationService');
+
+// Validators
 
 // ID Generators
-const { generateFICARefNumber } = require('../utils/complianceIdGenerator');
 
 require('dotenv').config();
 
@@ -273,39 +271,33 @@ class ClientOnboardingService extends EventEmitter {
     // Database operations circuit breaker
     this.circuitBreakers.set(
       'database',
-      new CircuitBreaker(async (operation) => {
-        return await operation();
-      }, options)
+      new CircuitBreaker(async (operation) => await operation(), options),
     );
 
     // FICA service circuit breaker
     this.circuitBreakers.set(
       'fica',
       new CircuitBreaker(
-        async (operation) => {
-          return await operation();
-        },
+        async (operation) => await operation(),
         {
           ...options,
           name: 'fica',
           timeout: 10000,
-        }
-      )
+        },
+      ),
     );
 
     // Document service circuit breaker
     this.circuitBreakers.set(
       'document',
       new CircuitBreaker(
-        async (operation) => {
-          return await operation();
-        },
+        async (operation) => await operation(),
         {
           ...options,
           name: 'document',
           timeout: 30000,
-        }
-      )
+        },
+      ),
     );
 
     // Event handlers for circuit breakers
@@ -471,16 +463,15 @@ class ClientOnboardingService extends EventEmitter {
   // ID GENERATION
   // =================================================================================================================
   _generateSessionId(clientType, tenantId) {
-    const prefix =
-      clientType === 'INDIVIDUAL'
-        ? 'IND'
-        : clientType === 'COMPANY'
-          ? 'BUS'
-          : clientType === 'TRUST'
-            ? 'TRU'
-            : clientType === 'NPO'
-              ? 'NPO'
-              : 'PAR';
+    const prefix = clientType === 'INDIVIDUAL'
+      ? 'IND'
+      : clientType === 'COMPANY'
+        ? 'BUS'
+        : clientType === 'TRUST'
+          ? 'TRU'
+          : clientType === 'NPO'
+            ? 'NPO'
+            : 'PAR';
 
     const timestamp = DateTime.now().toFormat('yyyyMMddHHmmss');
     const random = crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -623,9 +614,7 @@ class ClientOnboardingService extends EventEmitter {
       });
 
       // Save with circuit breaker
-      const savedSession = await this.circuitBreakers.get('database').fire(async () => {
-        return await session.save();
-      });
+      const savedSession = await this.circuitBreakers.get('database').fire(async () => await session.save());
 
       // Cache session
       this.sessionCache.set(actualSessionId, {
@@ -686,9 +675,9 @@ class ClientOnboardingService extends EventEmitter {
       });
 
       if (
-        error instanceof ValidationError ||
-        error instanceof DatabaseError ||
-        error instanceof FICAComplianceError
+        error instanceof ValidationError
+        || error instanceof DatabaseError
+        || error instanceof FICAComplianceError
       ) {
         throw error;
       }
@@ -717,13 +706,12 @@ class ClientOnboardingService extends EventEmitter {
             logger.debug('Session found in cache', { sessionId });
             metrics.increment('onboarding.session.get.cache_hit', 1);
             return cached.data;
-          } else {
-            logger.warn('Tenant mismatch in cache', {
-              sessionId,
-              cachedTenant: cached.data.tenantId,
-              requestedTenant: tenantId,
-            });
           }
+          logger.warn('Tenant mismatch in cache', {
+            sessionId,
+            cachedTenant: cached.data.tenantId,
+            requestedTenant: tenantId,
+          });
         }
       }
 
@@ -803,7 +791,9 @@ class ClientOnboardingService extends EventEmitter {
     const userId = performedBy || tenantContext.getCurrentUser() || 'system';
 
     try {
-      logger.info('Updating session', { sessionId, tenantId, stageId, correlationId, userId });
+      logger.info('Updating session', {
+        sessionId, tenantId, stageId, correlationId, userId,
+      });
 
       metrics.increment('onboarding.session.update.attempt', 1, { stageId });
 
@@ -823,32 +813,30 @@ class ClientOnboardingService extends EventEmitter {
       }
 
       // Update with circuit breaker
-      const session = await this.circuitBreakers.get('database').fire(async () => {
-        return await Session.findOneAndUpdate(
-          { sessionId, tenantId },
-          {
-            $push: {
-              stages: {
-                stage: stageId,
-                status: 'COMPLETED',
-                timestamp: new Date(),
-                data,
-                performedBy: userId,
-                correlationId,
-              },
-            },
-            $set: {
-              currentStage: stageId,
-              'metadata.updatedAt': new Date(),
-              'metadata.updatedBy': userId,
-              ...(stageId === ONBOARDING_STAGES.COMPLETED.id && {
-                status: ONBOARDING_STATUS.COMPLETED,
-              }),
+      const session = await this.circuitBreakers.get('database').fire(async () => await Session.findOneAndUpdate(
+        { sessionId, tenantId },
+        {
+          $push: {
+            stages: {
+              stage: stageId,
+              status: 'COMPLETED',
+              timestamp: new Date(),
+              data,
+              performedBy: userId,
+              correlationId,
             },
           },
-          { new: true, runValidators: true }
-        );
-      });
+          $set: {
+            currentStage: stageId,
+            'metadata.updatedAt': new Date(),
+            'metadata.updatedBy': userId,
+            ...(stageId === ONBOARDING_STAGES.COMPLETED.id && {
+              status: ONBOARDING_STATUS.COMPLETED,
+            }),
+          },
+        },
+        { new: true, runValidators: true },
+      ));
 
       if (!session) {
         throw new ResourceNotFoundError('Session not found', { sessionId, tenantId });
@@ -949,8 +937,8 @@ class ClientOnboardingService extends EventEmitter {
       }
 
       if (
-        session.status === ONBOARDING_STATUS.COMPLETED ||
-        session.status === ONBOARDING_STATUS.CANCELLED
+        session.status === ONBOARDING_STATUS.COMPLETED
+        || session.status === ONBOARDING_STATUS.CANCELLED
       ) {
         throw new ValidationError('Cannot upload documents to completed or cancelled session', {
           sessionStatus: session.status,
@@ -985,7 +973,7 @@ class ClientOnboardingService extends EventEmitter {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(process.env.ENCRYPTION_KEY || 'default-key-32-bytes-long!!', 'utf8'),
-        iv
+        iv,
       );
 
       const encryptedData = Buffer.concat([cipher.update(fileData), cipher.final()]);
@@ -1028,20 +1016,16 @@ class ClientOnboardingService extends EventEmitter {
       });
 
       // Save with circuit breaker
-      const savedDocument = await this.circuitBreakers.get('document').fire(async () => {
-        return await document.save();
-      });
+      const savedDocument = await this.circuitBreakers.get('document').fire(async () => await document.save());
 
       // Update session with document reference
-      await this.circuitBreakers.get('database').fire(async () => {
-        return await Session.updateOne(
-          { sessionId, tenantId },
-          {
-            $push: { documents: savedDocument._id },
-            $set: { 'metadata.updatedAt': new Date() },
-          }
-        );
-      });
+      await this.circuitBreakers.get('database').fire(async () => await Session.updateOne(
+        { sessionId, tenantId },
+        {
+          $push: { documents: savedDocument._id },
+          $set: { 'metadata.updatedAt': new Date() },
+        },
+      ));
 
       // Queue for async processing
       await documentVerificationWorker.queueForScanning(documentId, tenantId, {
@@ -1164,9 +1148,7 @@ class ClientOnboardingService extends EventEmitter {
         query.select('-fileData');
       }
 
-      const documents = await this.circuitBreakers.get('database').fire(async () => {
-        return await query.lean();
-      });
+      const documents = await this.circuitBreakers.get('database').fire(async () => await query.lean());
 
       const duration = Date.now() - startTime;
       metrics.recordTiming('onboarding.document.get', duration);
@@ -1214,14 +1196,10 @@ class ClientOnboardingService extends EventEmitter {
       }
 
       // Get session statistics
-      const sessionStats = await this.circuitBreakers.get('database').fire(async () => {
-        return await Session.getStatistics(tenantId, dateRange);
-      });
+      const sessionStats = await this.circuitBreakers.get('database').fire(async () => await Session.getStatistics(tenantId, dateRange));
 
       // Get document statistics
-      const documentStats = await this.circuitBreakers.get('database').fire(async () => {
-        return await Document.getStatistics(tenantId, dateRange);
-      });
+      const documentStats = await this.circuitBreakers.get('database').fire(async () => await Document.getStatistics(tenantId, dateRange));
 
       // Get completion metrics
       const completionMetrics = await this._getCompletionMetrics(tenantId, dateRange);
@@ -1297,9 +1275,7 @@ class ClientOnboardingService extends EventEmitter {
     try {
       logger.info('Triggering FICA screening', { sessionId, tenantId, userId });
 
-      const result = await this.circuitBreakers.get('fica').fire(async () => {
-        return await ficaService.screenClient(sessionId, tenantId, clientData, userId);
-      });
+      const result = await this.circuitBreakers.get('fica').fire(async () => await ficaService.screenClient(sessionId, tenantId, clientData, userId));
 
       if (result.status === 'APPROVED') {
         await this.updateSessionData(
@@ -1312,7 +1288,7 @@ class ClientOnboardingService extends EventEmitter {
             riskLevel: result.riskLevel,
             timestamp: new Date().toISOString(),
           },
-          userId
+          userId,
         );
 
         // Update session with FICA status
@@ -1328,7 +1304,7 @@ class ClientOnboardingService extends EventEmitter {
                 'compliance.ficaConsent': true,
                 'compliance.ficaConsentTimestamp': new Date(),
               },
-            }
+            },
           );
         }
 
@@ -1346,7 +1322,7 @@ class ClientOnboardingService extends EventEmitter {
             reason: result.reason,
             timestamp: new Date().toISOString(),
           },
-          userId
+          userId,
         );
 
         const { Session } = this._getModels();
@@ -1359,7 +1335,7 @@ class ClientOnboardingService extends EventEmitter {
                 ficaResults: result,
                 status: ONBOARDING_STATUS.FICA_REJECTED,
               },
-            }
+            },
           );
         }
 
@@ -1376,7 +1352,7 @@ class ClientOnboardingService extends EventEmitter {
                 ficaStatus: 'PENDING',
                 status: ONBOARDING_STATUS.PENDING_FICA,
               },
-            }
+            },
           );
         }
       }
@@ -1410,7 +1386,7 @@ class ClientOnboardingService extends EventEmitter {
         () => {
           this._triggerFICAScreening(sessionId, tenantId, clientData, userId);
         },
-        60000 * Math.pow(2, error.attempts || 0)
+        60000 * 2 ** (error.attempts || 0),
       ); // Exponential backoff
     }
   }
@@ -1481,17 +1457,15 @@ class ClientOnboardingService extends EventEmitter {
       .filter((s) => s && s.completedAt)
       .map((s) => new Date(s.completedAt) - new Date(s.createdAt));
 
-    const averageCompletionTime =
-      completionTimes.length > 0
-        ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length
-        : 0;
+    const averageCompletionTime = completionTimes.length > 0
+      ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length
+      : 0;
 
     // Calculate completion rate
     const completionRate = result.total > 0 ? (result.completed / result.total) * 100 : 0;
 
     // Calculate dropoff rate (cancelled + rejected)
-    const dropoffRate =
-      result.total > 0 ? ((result.cancelled + result.rejected) / result.total) * 100 : 0;
+    const dropoffRate = result.total > 0 ? ((result.cancelled + result.rejected) / result.total) * 100 : 0;
 
     return {
       averageCompletionTime,

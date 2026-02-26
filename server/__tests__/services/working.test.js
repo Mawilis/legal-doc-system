@@ -1,7 +1,6 @@
 /*
  * @jest-environment node
  */
-'use strict';
 
 // 1. FORBID JEST FROM MOCKING MONGOOSE
 jest.unmock('mongoose');
@@ -20,7 +19,7 @@ describe('Wilsy OS - Core Model Integrity', () => {
     });
 
     // Use a unique name to ensure a fresh compile
-    const ModelName = 'IntegrityTest_' + Date.now();
+    const ModelName = `IntegrityTest_${Date.now()}`;
     const TestModel = mongoose.model(ModelName, schema);
 
     console.log('INTERNAL TYPE CHECK:', typeof TestModel);

@@ -8,12 +8,10 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
-const nodemailer = require('nodemailer');
 const axios = require('axios');
-const logger = require('./logger');
+const nodemailer = require('nodemailer');
 const AlertLog = require('../models/AlertLog');
+const logger = require('./logger');
 
 /*
  * TRANSPORTER FACTORY
@@ -112,7 +110,7 @@ const sendEmail = async (options) => {
 
         if (options.alert) {
           await sendSlackAlert(
-            `🔥 *MAIL CRITICAL*: Failed to notify ${options.email} regarding ${options.subject}`
+            `🔥 *MAIL CRITICAL*: Failed to notify ${options.email} regarding ${options.subject}`,
           );
         }
 

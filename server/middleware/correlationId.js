@@ -16,8 +16,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const { v4: uuidv4 } = require('uuid');
 
 /*
@@ -28,10 +26,9 @@ const correlationIdMiddleware = (req, res, next) => {
   try {
     // 1. IDENTITY RESOLUTION
     // Check if an ID already exists (e.g., passed from a Load Balancer or Frontend)
-    const existingId =
-      req.headers['x-correlation-id'] ||
-      req.headers['x-request-id'] ||
-      req.headers['correlation-id'];
+    const existingId = req.headers['x-correlation-id']
+      || req.headers['x-request-id']
+      || req.headers['correlation-id'];
 
     // 2. GENERATION
     // If no ID is present, we generate a new UUID v4.

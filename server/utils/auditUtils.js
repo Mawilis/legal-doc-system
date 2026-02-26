@@ -36,9 +36,9 @@
 const crypto = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
-const zlib = require('zlib');
 const { promisify } = require('util');
+const zlib = require('zlib');
+const { v4: uuidv4 } = require('uuid');
 
 // Environment Configuration (Quantum Shield: Never hardcode)
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
@@ -154,7 +154,7 @@ class QuantumAuditLogger {
     this.batchQueue = [];
     this.batchSize = Math.min(
       parseInt(process.env.AUDIT_BATCH_SIZE) || 100,
-      AUDIT_CONFIG.SECURITY.MAX_BATCH_SIZE
+      AUDIT_CONFIG.SECURITY.MAX_BATCH_SIZE,
     );
     this.batchInterval = Math.max(parseInt(process.env.AUDIT_BATCH_INTERVAL) || 5000, 1000);
 
@@ -284,7 +284,7 @@ class QuantumAuditLogger {
         category: auditData.retentionCategory || AUDIT_CONFIG.CATEGORIES.SYSTEM_OPERATION,
         periodDays: auditData.retentionPeriod || AUDIT_CONFIG.RETENTION_PERIODS.DEFAULT,
         expiryDate: this._calculateExpiryDate(
-          auditData.retentionPeriod || AUDIT_CONFIG.RETENTION_PERIODS.DEFAULT
+          auditData.retentionPeriod || AUDIT_CONFIG.RETENTION_PERIODS.DEFAULT,
         ),
       },
     };
@@ -348,7 +348,7 @@ class QuantumAuditLogger {
         AUDIT_CONFIG.ENCRYPTION.SALT,
         AUDIT_CONFIG.ENCRYPTION.ITERATIONS,
         AUDIT_CONFIG.ENCRYPTION.KEY_LENGTH,
-        AUDIT_CONFIG.ENCRYPTION.DIGEST
+        AUDIT_CONFIG.ENCRYPTION.DIGEST,
       );
 
       const iv = crypto.randomBytes(AUDIT_CONFIG.ENCRYPTION.IV_LENGTH);
@@ -391,13 +391,13 @@ class QuantumAuditLogger {
         AUDIT_CONFIG.ENCRYPTION.SALT,
         AUDIT_CONFIG.ENCRYPTION.ITERATIONS,
         AUDIT_CONFIG.ENCRYPTION.KEY_LENGTH,
-        AUDIT_CONFIG.ENCRYPTION.DIGEST
+        AUDIT_CONFIG.ENCRYPTION.DIGEST,
       );
 
       const decipher = crypto.createDecipheriv(
         AUDIT_CONFIG.ENCRYPTION.ALGORITHM,
         key,
-        Buffer.from(encryptedData.iv, 'hex')
+        Buffer.from(encryptedData.iv, 'hex'),
       );
 
       decipher.setAuthTag(Buffer.from(encryptedData.authTag, 'hex'));
@@ -416,7 +416,7 @@ class QuantumAuditLogger {
    * PERSISTENCE NEXUS: Store audit entry with integrity proofs
    */
   async _persistAuditEntry(auditEntry, encryptedEntry) {
-    const category = auditEntry.retention.category;
+    const { category } = auditEntry.retention;
     const date = new Date().toISOString().split('T')[0];
 
     // Determine storage path
@@ -498,7 +498,7 @@ class QuantumAuditLogger {
       let previousHash = null;
       let foundEntry = null;
       let integrity = true;
-      let verificationReport = {
+      const verificationReport = {
         auditId,
         verified: false,
         chainIntegrity: true,
@@ -571,8 +571,9 @@ class QuantumAuditLogger {
    * COMPLIANCE EXPORT: Generate regulatory compliance reports
    */
   async generateComplianceReport(params) {
-    const { startDate, endDate, jurisdiction, complianceType, userId, entityType, requesterRole } =
-      params;
+    const {
+      startDate, endDate, jurisdiction, complianceType, userId, entityType, requesterRole,
+    } = params;
 
     // Validate parameters
     if (!startDate || !endDate) {
@@ -644,10 +645,8 @@ class QuantumAuditLogger {
 
               // Update summary counters
               report.summary.byCategory[category] = (report.summary.byCategory[category] || 0) + 1;
-              report.summary.byAction[entry.publicMetadata.action] =
-                (report.summary.byAction[entry.publicMetadata.action] || 0) + 1;
-              report.summary.byUser[entry.publicMetadata.userId] =
-                (report.summary.byUser[entry.publicMetadata.userId] || 0) + 1;
+              report.summary.byAction[entry.publicMetadata.action] = (report.summary.byAction[entry.publicMetadata.action] || 0) + 1;
+              report.summary.byUser[entry.publicMetadata.userId] = (report.summary.byUser[entry.publicMetadata.userId] || 0) + 1;
             }
           } catch (error) {
             // File doesn't exist for this date/category, skip
@@ -678,7 +677,7 @@ class QuantumAuditLogger {
     const today = new Date();
     let purgedCount = 0;
     let retainedCount = 0;
-    let errors = [];
+    const errors = [];
 
     try {
       // Walk through all audit directories
@@ -695,9 +694,8 @@ class QuantumAuditLogger {
 
               if (fileDate) {
                 const daysOld = Math.floor((today - fileDate) / (1000 * 60 * 60 * 24));
-                const retentionDays =
-                  AUDIT_CONFIG.RETENTION_PERIODS[category.toUpperCase()] ||
-                  AUDIT_CONFIG.RETENTION_PERIODS.DEFAULT;
+                const retentionDays = AUDIT_CONFIG.RETENTION_PERIODS[category.toUpperCase()]
+                  || AUDIT_CONFIG.RETENTION_PERIODS.DEFAULT;
 
                 if (daysOld > retentionDays) {
                   try {
@@ -992,11 +990,10 @@ class QuantumAuditLogger {
 
     // POPIA Compliance Checks
     const popiaEntries = report.entries.filter(
-      (entry) =>
-        entry.action.includes('consent') ||
-        entry.action.includes('data_access') ||
-        entry.action.includes('data_deletion') ||
-        entry.action.includes('privacy')
+      (entry) => entry.action.includes('consent')
+        || entry.action.includes('data_access')
+        || entry.action.includes('data_deletion')
+        || entry.action.includes('privacy'),
     );
 
     if (popiaEntries.length > 0) {
@@ -1026,11 +1023,10 @@ class QuantumAuditLogger {
 
     // Security Incident Detection
     const securityEntries = report.entries.filter(
-      (entry) =>
-        entry.action.includes('failed_login') ||
-        entry.action.includes('access_denied') ||
-        entry.action.includes('security_breach') ||
-        entry.action.includes('unauthorized')
+      (entry) => entry.action.includes('failed_login')
+        || entry.action.includes('access_denied')
+        || entry.action.includes('security_breach')
+        || entry.action.includes('unauthorized'),
     );
 
     if (securityEntries.length > 10) {
@@ -1046,10 +1042,9 @@ class QuantumAuditLogger {
 
     // Data Retention Compliance
     const retentionEntries = report.entries.filter(
-      (entry) =>
-        entry.action.includes('delete') ||
-        entry.action.includes('archive') ||
-        entry.action.includes('purge')
+      (entry) => entry.action.includes('delete')
+        || entry.action.includes('archive')
+        || entry.action.includes('purge'),
     );
 
     if (retentionEntries.length > 0) {
@@ -1273,8 +1268,7 @@ function _classifyActionType(req) {
 
 function _determineJurisdiction(req) {
   // Extract from headers or IP geolocation
-  const geoHeader =
-    req.get('CF-IPCountry') || req.get('X-Geo-Country') || req.get('X-Forwarded-For-Country');
+  const geoHeader = req.get('CF-IPCountry') || req.get('X-Geo-Country') || req.get('X-Forwarded-For-Country');
   if (geoHeader) {
     const country = geoHeader.toUpperCase();
     if (Object.values(AUDIT_CONFIG.JURISDICTIONS).includes(country)) {

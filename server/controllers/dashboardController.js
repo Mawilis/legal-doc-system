@@ -14,19 +14,16 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const Client = require('../models/Client');
 const Document = require('../models/Document');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
 
 /*
  * INTERNAL UTILITY: LOCALIZED CURRENCY FORMATTER (ZAR)
  * Ensures consistent financial presentation across the Wilsy Ecosystem.
  */
-const formatZAR = (amount) =>
-  new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount || 0);
+const formatZAR = (amount) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount || 0);
 
 /*
  * @desc    GET ROLE-BASED KPIs (MISSION CONTROL)
@@ -48,8 +45,12 @@ exports.getKpis = asyncHandler(async (req, res) => {
     ]);
 
     kpis = [
-      { label: 'Pending Service', value: pending, color: 'red', icon: 'map-pin' },
-      { label: 'Successful Returns', value: served, color: 'green', icon: 'check-circle' },
+      {
+        label: 'Pending Service', value: pending, color: 'red', icon: 'map-pin',
+      },
+      {
+        label: 'Successful Returns', value: served, color: 'green', icon: 'check-circle',
+      },
     ];
 
     // --- B. EXECUTIVE / ADMIN / PARTNER (Financial & Compliance Visibility) ---
@@ -72,10 +73,18 @@ exports.getKpis = asyncHandler(async (req, res) => {
     });
 
     kpis = [
-      { label: 'Revenue (MTD)', value: formatZAR(mtdRevenue), color: 'blue', icon: 'trending-up' },
-      { label: 'FICA Alerts', value: ficaPending, color: 'orange', icon: 'shield-alert' },
-      { label: 'Overdue Collections', value: overdueCount, color: 'red', icon: 'clock' },
-      { label: 'Trust Balance', value: formatZAR(0), color: 'teal', icon: 'account-balance' },
+      {
+        label: 'Revenue (MTD)', value: formatZAR(mtdRevenue), color: 'blue', icon: 'trending-up',
+      },
+      {
+        label: 'FICA Alerts', value: ficaPending, color: 'orange', icon: 'shield-alert',
+      },
+      {
+        label: 'Overdue Collections', value: overdueCount, color: 'red', icon: 'clock',
+      },
+      {
+        label: 'Trust Balance', value: formatZAR(0), color: 'teal', icon: 'account-balance',
+      },
     ];
 
     // --- C. STAFF / ASSOCIATE / LAWYER (Task & Workflow Visibility) ---
@@ -86,8 +95,12 @@ exports.getKpis = asyncHandler(async (req, res) => {
     ]);
 
     kpis = [
-      { label: 'My Matter Docs', value: myDocs, color: 'indigo', icon: 'folder' },
-      { label: 'Active Drafts', value: pendingReview, color: 'amber', icon: 'eye' },
+      {
+        label: 'My Matter Docs', value: myDocs, color: 'indigo', icon: 'folder',
+      },
+      {
+        label: 'Active Drafts', value: pendingReview, color: 'amber', icon: 'eye',
+      },
     ];
   }
 

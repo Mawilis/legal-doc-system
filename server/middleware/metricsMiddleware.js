@@ -14,8 +14,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const client = require('prom-client');
 
 // 1. REGISTRY & DEFAULT METRICS
@@ -39,9 +37,7 @@ const httpRequestDuration = new client.Histogram({
 
 // 3. PATH NORMALIZATION UTILITY
 // Prevents /cases/1 and /cases/2 from becoming two different metric lines.
-const normalizePath = (req) => {
-  return req.route ? req.route.path : req.originalUrl.split('?')[0];
-};
+const normalizePath = (req) => (req.route ? req.route.path : req.originalUrl.split('?')[0]);
 
 /*
  * METRICS MIDDLEWARE

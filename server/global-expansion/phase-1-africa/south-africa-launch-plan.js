@@ -1,7 +1,7 @@
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ SOUTH AFRICA LAUNCH PLAN - INVESTOR-GRADE MODULE             ║
   ║ [90% market capture | R50M revenue | 85% margins]            ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/global-expansion/phase-1-africa/south-africa-launch-plan.js
  * INVESTOR VALUE PROPOSITION:
@@ -18,8 +18,8 @@
 // }
 
 const auditLogger = require('../../utils/auditLogger');
-const logger = require('../../utils/logger');
 const cryptoUtils = require('../../utils/cryptoUtils');
+const logger = require('../../utils/logger');
 
 class SouthAfricaLaunchPlan {
   constructor() {
@@ -61,7 +61,7 @@ class SouthAfricaLaunchPlan {
           retentionPolicy: 'companies_act_10_years',
           dataResidency: 'ZA',
           regulatoryStatus: 'POPIA_COMPLIANT',
-        }
+        },
       );
 
       // Execute launch phases
@@ -80,7 +80,7 @@ class SouthAfricaLaunchPlan {
         await this.executePhase(phase, description, tenantId);
         results.phasesCompleted.push({ phase, description, completedAt: new Date().toISOString() });
 
-        logger.info(`SA Launch Phase Completed`, {
+        logger.info('SA Launch Phase Completed', {
           phase,
           tenantId,
           launchId,
@@ -104,7 +104,7 @@ class SouthAfricaLaunchPlan {
           retentionPolicy: 'companies_act_10_years',
           dataResidency: 'ZA',
           launchStatus: 'SUCCESS',
-        }
+        },
       );
 
       return results;
@@ -132,7 +132,7 @@ class SouthAfricaLaunchPlan {
       {
         retentionPolicy: 'companies_act_10_years',
         dataResidency: 'ZA',
-      }
+      },
     );
   }
 

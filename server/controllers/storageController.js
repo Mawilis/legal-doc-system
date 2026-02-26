@@ -6,12 +6,10 @@
  * SECURITY: Pre-signed URL Authorization. Multi-tenant Path Isolation.
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
+const { emitAudit } = require('../middleware/auditMiddleware');
 const Document = require('../models/Document'); // Metadata reference
 const Tenant = require('../models/Tenant'); // For quota checking
-const { emitAudit } = require('../middleware/auditMiddleware');
 
 /*
  * @desc    Request a Signed Upload URL (Secure Direct Upload)
@@ -19,7 +17,9 @@ const { emitAudit } = require('../middleware/auditMiddleware');
  * @access  Lawyer, Admin, Secretary
  */
 exports.getUploadUrl = asyncHandler(async (req, res) => {
-  const { fileName, fileType, fileSize, caseId } = req.body;
+  const {
+    fileName, fileType, fileSize, caseId,
+  } = req.body;
 
   // 1. Quota Validation
   const tenant = await Tenant.findById(req.user.tenantId);

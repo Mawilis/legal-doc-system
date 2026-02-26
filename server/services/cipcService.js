@@ -1,17 +1,16 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ CIPC SERVICE - INVESTOR-GRADE MODULE                                        ║
   ║ Companies Act compliance | Director validation | Annual returns             ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/cipcService.js
  * VERSION: 14.0.0 (FINAL - redactDirectorInfo returns validation structure)
  */
 
-'use strict';
-
 const crypto = require('crypto');
 const auditLogger = require('../utils/auditLogger');
 const redactUtils = require('../utils/redactUtils');
+
 const originalRedactDirectorInfo = redactUtils.redactDirectorInfo;
 const { getTenantContext } = require('../middleware/tenantContext');
 
@@ -24,12 +23,10 @@ class CIPCService {
    * Validate director information
    */
   async validateDirector(director, tenantId) {
-    const resolvedTenantId =
-      tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
+    const resolvedTenantId = tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
 
     const hasRequiredFields = !!(director && director.fullName && director.idNumber);
-    const idNumberValid =
-      director && director.idNumber ? /^\d{13}$/.test(director.idNumber) : false;
+    const idNumberValid = director && director.idNumber ? /^\d{13}$/.test(director.idNumber) : false;
     const valid = hasRequiredFields && idNumberValid;
 
     let compliance = valid ? 'COMPLIANT' : 'NON_COMPLIANT';
@@ -40,7 +37,9 @@ class CIPCService {
     const auditId = crypto.randomUUID();
     const evidenceHash = crypto
       .createHash('sha256')
-      .update(JSON.stringify({ director, valid, compliance, timestamp: Date.now() }))
+      .update(JSON.stringify({
+        director, valid, compliance, timestamp: Date.now(),
+      }))
       .digest('hex');
 
     const result = {
@@ -81,13 +80,11 @@ class CIPCService {
    * Validate company registration with tenant isolation
    */
   async validateCompanyRegistration(companyData, tenantId) {
-    const resolvedTenantId =
-      tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
+    const resolvedTenantId = tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
 
-    const isInvalid =
-      companyData?.registrationNumber === 'INVALID-REG' ||
-      companyData?.registrationNumber === 'INVALID-FORMAT' ||
-      !companyData?.registrationNumber;
+    const isInvalid = companyData?.registrationNumber === 'INVALID-REG'
+      || companyData?.registrationNumber === 'INVALID-FORMAT'
+      || !companyData?.registrationNumber;
 
     const cleanReg = companyData?.registrationNumber?.replace(/[\s/\\-]/g, '') || '';
     const isValidFormat = /^(19|20)\d{2}\d{6,7}\d{2}$/.test(cleanReg);
@@ -98,7 +95,9 @@ class CIPCService {
     const auditId = crypto.randomUUID();
     const evidenceHash = crypto
       .createHash('sha256')
-      .update(JSON.stringify({ companyData, valid, compliance, timestamp: Date.now() }))
+      .update(JSON.stringify({
+        companyData, valid, compliance, timestamp: Date.now(),
+      }))
       .digest('hex');
 
     const forensicEvidence = {
@@ -153,8 +152,7 @@ class CIPCService {
    * THIS IS WHAT THE TEST CALLS AT LINE 284
    */
   async redactDirectorInfo(director, tenantId) {
-    const resolvedTenantId =
-      tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
+    const resolvedTenantId = tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
 
     // Handle empty data case - this is what the test expects
     if (!director || Object.keys(director).length === 0) {
@@ -237,8 +235,7 @@ class CIPCService {
    * Check annual return compliance with Companies Act Section 33
    */
   async checkAnnualReturnCompliance(companyData, tenantId) {
-    const resolvedTenantId =
-      tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
+    const resolvedTenantId = tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
 
     const lastAnnualReturn = companyData.lastAnnualReturn || new Date().toISOString();
     const lastReturnDate = new Date(lastAnnualReturn);
@@ -260,7 +257,9 @@ class CIPCService {
     const auditId = crypto.randomUUID();
     const evidenceHash = crypto
       .createHash('sha256')
-      .update(JSON.stringify({ companyData, compliant, urgency, timestamp: Date.now() }))
+      .update(JSON.stringify({
+        companyData, compliant, urgency, timestamp: Date.now(),
+      }))
       .digest('hex');
 
     const result = {
@@ -299,8 +298,7 @@ class CIPCService {
    * Perform forensic health check with deterministic evidence
    */
   async healthCheck(tenantId) {
-    const resolvedTenantId =
-      tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
+    const resolvedTenantId = tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
 
     const auditId = crypto.randomUUID();
     const healthy = true;
@@ -377,8 +375,7 @@ class CIPCService {
    * Generate forensic reports for investor due diligence
    */
   async generateForensicReport(tenantId, period) {
-    const resolvedTenantId =
-      tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
+    const resolvedTenantId = tenantId || (getTenantContext ? getTenantContext()?.tenantId : null) || 'SYSTEM';
 
     const reportId = crypto.randomUUID();
     const reportHash = crypto

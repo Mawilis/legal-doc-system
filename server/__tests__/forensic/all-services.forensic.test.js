@@ -1,8 +1,8 @@
 /* eslint-env jest */
-/*╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ ALL SERVICES FORENSIC TEST SUITE V6 — INVESTOR-GRADE ● INTEGRATED ● COURT-ADMISSIBLE                           ║
   ║ R9.6M annual savings | R50M risk eliminated | 99.99% error reduction                                           ║
-  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/forensic/all-services.forensic.test.js
  * VERSION: 6.0.2 (eslint-fixed)
@@ -21,35 +21,35 @@ jest.mock('../../models/NotificationLog', () => ({}));
 jest.mock('../../models/AuditTrail', () => ({}));
 
 // Import all services
-const {
-  validateSAIDNumber,
-  validateBusinessRegistration,
-  verifyIdentityMultiFactor,
-} = require('../../validators/saLegalValidators');
+const { getTenantContext } = require('../../middleware/tenantContext');
+const clientOnboardingService = require('../../services/clientOnboardingService');
+const complianceEngine = require('../../services/complianceEngine');
+const encryptionService = require('../../services/encryptionService');
+const notificationService = require('../../services/notificationService'); // Used in cross-service test
+const auditLogger = require('../../utils/auditLogger');
 const {
   generateFICARefNumber,
   generateComplianceId,
   validateId,
   extractIdMetadata,
 } = require('../../utils/complianceIdGenerator');
-const encryptionService = require('../../services/encryptionService');
-const clientOnboardingService = require('../../services/clientOnboardingService');
-const notificationService = require('../../services/notificationService'); // Used in cross-service test
-const complianceEngine = require('../../services/complianceEngine');
 const { redactSensitive, REDACT_FIELDS } = require('../../utils/redactUtils');
-const auditLogger = require('../../utils/auditLogger');
+const {
+  validateSAIDNumber,
+  validateBusinessRegistration,
+  verifyIdentityMultiFactor,
+} = require('../../validators/saLegalValidators');
 
 // Mock tenant context
 jest.mock('../../middleware/tenantContext', () => ({
   getTenantContext: jest.fn(() => ({ tenantId: 'TEST_TENANT_001' })),
 }));
-const { getTenantContext } = require('../../middleware/tenantContext');
 
 describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => {
   let testRunId;
-  let evidenceEntries = [];
-  let serviceStatus = {};
-  let economicMetrics = {
+  const evidenceEntries = [];
+  const serviceStatus = {};
+  const economicMetrics = {
     totalAnnualSavingsPerFirmZAR: 9600000,
     totalPenaltyRiskEliminatedZAR: 50000000,
     fraudReductionPercent: 92,
@@ -136,20 +136,20 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
 ║                    ALL SERVICES - FORENSIC TEST SUMMARY                       ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  ✅ SA Legal Validators                    ${
-      serviceStatus['SA Legal Validators'] ? '✓' : '✗'
-    }                          
+  serviceStatus['SA Legal Validators'] ? '✓' : '✗'
+}                          
 ║  ✅ Compliance ID Generator                ${
-      serviceStatus['Compliance ID Generator'] ? '✓' : '✗'
-    }                          
+  serviceStatus['Compliance ID Generator'] ? '✓' : '✗'
+}                          
 ║  ✅ Encryption Service                     ${
-      serviceStatus['Encryption Service'] ? '✓' : '✗'
-    }                          
+  serviceStatus['Encryption Service'] ? '✓' : '✗'
+}                          
 ║  ✅ Client Onboarding Service              ${
-      serviceStatus['Client Onboarding Service'] ? '✓' : '✗'
-    }                          
+  serviceStatus['Client Onboarding Service'] ? '✓' : '✗'
+}                          
 ║  ✅ Notification Service                   ${
-      serviceStatus['Notification Service'] ? '✓' : '✗'
-    }                          
+  serviceStatus['Notification Service'] ? '✓' : '✗'
+}                          
 ║  ✅ Compliance Engine                      ${serviceStatus['Compliance Engine'] ? '✓' : '✗'}                          
 ║  ✅ Redaction Utils                        ${serviceStatus['Redaction Utils'] ? '✓' : '✗'}                          
 ║  ✅ Audit Logger                           ${serviceStatus['Audit Logger'] ? '✓' : '✗'}                          
@@ -334,7 +334,7 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
       const encrypted = encryptionService.encrypt(testData, 'TEST_TENANT_001');
 
       // Tamper with data
-      const tampered = encrypted.substring(0, encrypted.length - 10) + 'XX';
+      const tampered = `${encrypted.substring(0, encrypted.length - 10)}XX`;
 
       expect(() => {
         encryptionService.decrypt(tampered, 'TEST_TENANT_001');

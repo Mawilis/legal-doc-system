@@ -1,6 +1,6 @@
-/*=======================================================================================================================
+/*= ======================================================================================================================
 ╔═╗┌─┐┌┬┐┬─┐┌─┐┬  ┌─┐  ╦═╗┌─┐┌─┐┬ ┬┌─┐┬─┐  ╦═╗┌─┐┬─┐┌─┐┌─┐┌─┐┌┬┐┌─┐  ╔═╗┌─┐┬─┐┌─┐┌─┐┌─┐┌┬┐┌─┐
-║ ║├─┘ │ ├┬┘├┤ │  ├┤   ╠╦╝├┤ ├─┘│ │├┤ ├┬┘  ╠╦╝│ │├┬┘├┤ │  │ ││││├┤   ╠═╝├─┤├┬┘├┤ │  │ ││││├┤ 
+║ ║├─┘ │ ├┬┘├┤ │  ├┤   ╠╦╝├┤ ├─┘│ │├┤ ├┬┘  ╠╦╝│ │├┬┘├┤ │  │ ││││├┤   ╠═╝├─┤├┬┘├┤ │  │ ││││├┤
 ╚═╝┴   ┴ ┴└─└─┘┴─┘└─┘  ╩╚═└─┘┴  └─┘└─┘┴└─  ╩╚═└─┘┴└─└─┘└─┘└─┘┴ ┴└─┘  ╩  ┴ ┴┴└─└─┘└─┘└─┘┴ ┴└─┘
 
 ╦═╗┌─┐┬─┐┌─┐┌─┐┌─┐┌┬┐┌─┐  ╦═╗┌─┐┌┬┐┬┌┬┐┬┌┐┌┌─┐  ╔═╗┌┬┐┌─┐┬  ┌─┐┌─┐┌┬┐┬┌─┐┌┐┌
@@ -11,7 +11,7 @@
            The Quantum-Entangled Express Router for Wilsy OS Regulatory Compliance Sovereignty
             Orchestrating Secure API Endpoints for Legal Compliance, Monitoring, and Enforcement
               Quantum-Secured Route Architecture with Zero-Trust, RBAC, and POPIA Compliance
-===============================================================================================================================*/
+=============================================================================================================================== */
 
 // ================================================================================================================
 // QUANTUM IMPORTS - ENTERPRISE DEPENDENCIES
@@ -19,10 +19,12 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
 const express = require('express');
+
 const router = express.Router();
 
 // Quantum Controllers
 const { RegulatoryController } = require('../controllers/regulatoryController');
+
 const regulatoryController = new RegulatoryController();
 
 // Quantum Middleware
@@ -30,7 +32,9 @@ const {
   QuantumSecurityMiddleware,
   RegulatoryValidations,
 } = require('../controllers/regulatoryController');
-const { body, param, query, validationResult } = require('express-validator');
+const {
+  body, param, query, validationResult,
+} = require('express-validator');
 
 // ================================================================================================================
 // QUANTUM SECURITY CITADEL - ROUTE-LEVEL SECURITY MIDDLEWARE
@@ -43,22 +47,18 @@ const { body, param, query, validationResult } = require('express-validator');
 const enforceSecurity = function (req, res, next) {
   // Check if route is public (health/status)
   const publicRoutes = ['/health', '/status'];
-  const isPublicRoute = publicRoutes.some(function (route) {
-    return req.path.endsWith(route);
-  });
+  const isPublicRoute = publicRoutes.some((route) => req.path.endsWith(route));
 
   if (isPublicRoute) {
     return next();
   }
 
   // For authenticated routes, require either API Key or JWT
-  const hasApiKey =
-    req.headers['x-api-key'] ||
-    (req.headers['authorization'] && req.headers['authorization'].startsWith('Bearer '));
-  const hasJWT =
-    req.headers['authorization'] &&
-    req.headers['authorization'].startsWith('Bearer ') &&
-    req.headers['authorization'].length > 100;
+  const hasApiKey = req.headers['x-api-key']
+    || (req.headers.authorization && req.headers.authorization.startsWith('Bearer '));
+  const hasJWT = req.headers.authorization
+    && req.headers.authorization.startsWith('Bearer ')
+    && req.headers.authorization.length > 100;
 
   if (!hasApiKey && !hasJWT) {
     return res.status(401).json({
@@ -85,9 +85,7 @@ const enforceAdminRole = function (req, res, next) {
   }
 
   const adminRoles = ['ADMIN', 'SUPER_ADMIN', 'SYSTEM_ADMIN'];
-  const hasAdminRole = req.user.roles.some(function (role) {
-    return adminRoles.includes(role);
-  });
+  const hasAdminRole = req.user.roles.some((role) => adminRoles.includes(role));
 
   if (!hasAdminRole) {
     return res.status(403).json({
@@ -111,9 +109,7 @@ const validatePOPIAConsent = function (req, res, next) {
   const dataProcessingRoutes = ['/monitor/start', '/alerts', '/webhooks', '/compliance/scan'];
 
   if (dataProcessingMethods.includes(req.method)) {
-    const isDataProcessingRoute = dataProcessingRoutes.some(function (route) {
-      return req.path.includes(route);
-    });
+    const isDataProcessingRoute = dataProcessingRoutes.some((route) => req.path.includes(route));
 
     if (isDataProcessingRoute) {
       const consentHeader = req.headers['x-popia-consent'];
@@ -151,13 +147,11 @@ const handleValidationErrors = function (req, res, next) {
     return res.status(400).json({
       error: 'Validation failed',
       code: 'VALIDATION_ERROR',
-      details: errors.array().map(function (err) {
-        return {
-          field: err.param,
-          error: err.msg,
-          value: err.value,
-        };
-      }),
+      details: errors.array().map((err) => ({
+        field: err.param,
+        error: err.msg,
+        value: err.value,
+      })),
       timestamp: new Date().toISOString(),
     });
   }
@@ -179,7 +173,7 @@ const handleValidationErrors = function (req, res, next) {
  * @security None
  * @compliance Health monitoring for system reliability
  */
-router.get('/health', QuantumSecurityMiddleware.sanitizeInput, function (req, res, next) {
+router.get('/health', QuantumSecurityMiddleware.sanitizeInput, (req, res, next) => {
   regulatoryController.healthCheck(req, res).catch(next);
 });
 
@@ -190,7 +184,7 @@ router.get('/health', QuantumSecurityMiddleware.sanitizeInput, function (req, re
  * @security None
  * @compliance System transparency and monitoring
  */
-router.get('/status', QuantumSecurityMiddleware.sanitizeInput, function (req, res, next) {
+router.get('/status', QuantumSecurityMiddleware.sanitizeInput, (req, res, next) => {
   regulatoryController.getSystemStatus(req, res).catch(next);
 });
 
@@ -213,9 +207,9 @@ router.post(
   validatePOPIAConsent,
   RegulatoryValidations.startMonitoring,
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.startMonitoring(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -230,9 +224,9 @@ router.post(
   enforceSecurity,
   QuantumSecurityMiddleware.validateApiKey,
   QuantumSecurityMiddleware.sanitizeInput,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.stopMonitoring(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -247,9 +241,9 @@ router.get(
   enforceSecurity,
   QuantumSecurityMiddleware.validateApiKey,
   QuantumSecurityMiddleware.sanitizeInput,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.getMonitoringMetrics(req, res).catch(next);
-  }
+  },
 );
 
 // ============================================================================================================
@@ -270,9 +264,9 @@ router.get(
   QuantumSecurityMiddleware.sanitizeInput,
   RegulatoryValidations.dateRange,
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.getRegulatoryChanges(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -292,9 +286,9 @@ router.get(
     .isLength({ min: 10, max: 100 })
     .withMessage('Valid change ID required'),
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.getChangeById(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -315,9 +309,9 @@ router.get(
   query('limit').optional().isInt({ min: 1, max: 1000 }).withMessage('Limit must be 1-1000'),
   query('offset').optional().isInt({ min: 0 }).withMessage('Offset must be non-negative'),
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.getLegislation(req, res).catch(next);
-  }
+  },
 );
 
 // ============================================================================================================
@@ -338,9 +332,9 @@ router.get(
   QuantumSecurityMiddleware.sanitizeInput,
   RegulatoryValidations.alertQuery,
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.getAlerts(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -360,9 +354,9 @@ router.get(
     .isLength({ min: 10, max: 100 })
     .withMessage('Valid alert ID required'),
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.getAlertById(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -384,9 +378,9 @@ router.post(
     .withMessage('Valid alert ID required'),
   RegulatoryValidations.complianceAction,
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.handleAlertAction(req, res).catch(next);
-  }
+  },
 );
 
 // ============================================================================================================
@@ -411,9 +405,9 @@ router.get(
     .withMessage('Invalid period'),
   query('format').optional().isIn(['json', 'pdf', 'csv']).withMessage('Invalid format'),
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.generateComplianceReport(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -433,9 +427,9 @@ router.post(
   body('categories').optional().isArray().withMessage('Categories must be array'),
   body('categories.*').optional().isString().withMessage('Each category must be string'),
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.performComplianceScan(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -450,9 +444,9 @@ router.get(
   enforceSecurity,
   QuantumSecurityMiddleware.validateApiKey,
   QuantumSecurityMiddleware.sanitizeInput,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.getComplianceStatus(req, res).catch(next);
-  }
+  },
 );
 
 // ============================================================================================================
@@ -474,9 +468,9 @@ router.post(
   validatePOPIAConsent,
   RegulatoryValidations.webhookConfig,
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.configureWebhook(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -491,9 +485,9 @@ router.get(
   enforceSecurity,
   QuantumSecurityMiddleware.validateApiKey,
   QuantumSecurityMiddleware.sanitizeInput,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.getWebhooks(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -513,9 +507,9 @@ router.delete(
     .isLength({ min: 10, max: 100 })
     .withMessage('Valid webhook ID required'),
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.deleteWebhook(req, res).catch(next);
-  }
+  },
 );
 
 // ============================================================================================================
@@ -535,9 +529,9 @@ router.post(
   QuantumSecurityMiddleware.validateJWT,
   QuantumSecurityMiddleware.sanitizeInput,
   enforceAdminRole,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.adminShutdown(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -557,9 +551,9 @@ router.post(
     .isIn(['all', 'regulatory', 'alerts', 'compliance'])
     .withMessage('Valid cache type required'),
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.adminClearCache(req, res).catch(next);
-  }
+  },
 );
 
 /*
@@ -577,9 +571,9 @@ router.get(
   enforceAdminRole,
   RegulatoryValidations.dateRange,
   handleValidationErrors,
-  function (req, res, next) {
+  (req, res, next) => {
     regulatoryController.getAuditLog(req, res).catch(next);
-  }
+  },
 );
 
 // ============================================================================================================
@@ -598,7 +592,7 @@ router.get(
   enforceSecurity,
   QuantumSecurityMiddleware.validateJWT,
   QuantumSecurityMiddleware.sanitizeInput,
-  function (req, res, next) {
+  (req, res, next) => {
     // Quantum Sentinel: User dashboard endpoint
     if (!req.user || !req.user.roles || !req.user.roles.includes('REGULATORY_ACCESS')) {
       return res.status(403).json({
@@ -621,7 +615,7 @@ router.get(
       data: dashboardData,
       timestamp: new Date().toISOString(),
     });
-  }
+  },
 );
 
 /*
@@ -636,7 +630,7 @@ router.get(
   enforceSecurity,
   QuantumSecurityMiddleware.validateJWT,
   QuantumSecurityMiddleware.sanitizeInput,
-  function (req, res, next) {
+  (req, res, next) => {
     if (!req.user || !req.user.roles || !req.user.roles.includes('REGULATORY_ACCESS')) {
       return res.status(403).json({
         error: 'Regulatory access required',
@@ -658,7 +652,7 @@ router.get(
       data: subscriptions,
       timestamp: new Date().toISOString(),
     });
-  }
+  },
 );
 
 // ============================================================================================================
@@ -668,7 +662,7 @@ router.get(
 /*
  * Quantum Error: 404 Not Found Handler
  */
-router.use(function (req, res) {
+router.use((req, res) => {
   res.status(404).json({
     error: 'Quantum Endpoint Not Found',
     code: 'ENDPOINT_NOT_FOUND',
@@ -692,13 +686,13 @@ router.use(function (req, res) {
 /*
  * Quantum Error: Global Error Handler
  */
-router.use(function (err, req, res, next) {
+router.use((err, req, res, next) => {
   console.error('🚨 Quantum Route Error:', err);
 
   // Determine error type and status code
-  var statusCode = 500;
-  var errorCode = 'INTERNAL_SERVER_ERROR';
-  var errorMessage = 'An unexpected error occurred';
+  let statusCode = 500;
+  let errorCode = 'INTERNAL_SERVER_ERROR';
+  let errorMessage = 'An unexpected error occurred';
 
   if (err.name === 'ValidationError') {
     statusCode = 400;
@@ -769,7 +763,7 @@ const routeMetadata = {
  * Route Information Endpoint
  * Provides metadata and documentation for the regulatory routes
  */
-router.get('/info', function (req, res) {
+router.get('/info', (req, res) => {
   res.status(200).json({
     success: true,
     metadata: routeMetadata,
@@ -925,7 +919,6 @@ QUANTUM ROUTES TESTING REQUIREMENTS:
    ✓ Breach notification tests
    ✓ GDPR compliance tests
    ✓ FICA compliance tests
-
 
 // ================================================================================================================
 // QUANTUM LEGACY STATEMENT

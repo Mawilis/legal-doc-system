@@ -8,8 +8,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 /*
  * CUSTOM ERROR ARCHITECT
  * Extends the native Error object to support HTTP-aware exception handling.

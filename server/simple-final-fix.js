@@ -4,10 +4,10 @@
  * SIMPLE FINAL FIX - WILSY OS PRETTIER
  */
 
-const fs = require('fs');
-const path = require('path');
 const { execSync } = require('child_process');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 console.log('\n🔧 WILSY OS SIMPLE FINAL FIX');
 console.log('============================\n');
@@ -174,12 +174,11 @@ const evidenceId = `prettier-final-${timestamp}`;
 const evidenceFile = path.join(evidenceDir, `${evidenceId}.forensic.json`);
 
 // Count JS files
-const jsCount =
-  parseInt(
-    execSync('find . -name "*.js" -not -path "*/node_modules/*" | wc -l', {
-      encoding: 'utf8',
-    }).trim()
-  ) || 0;
+const jsCount = parseInt(
+  execSync('find . -name "*.js" -not -path "*/node_modules/*" | wc -l', {
+    encoding: 'utf8',
+  }).trim(),
+) || 0;
 
 const evidence = {
   evidenceId,
@@ -213,8 +212,8 @@ const hash = crypto
       evidence,
       Object.keys(evidence)
         .filter((k) => k !== 'forensicHash')
-        .sort()
-    )
+        .sort(),
+    ),
   )
   .digest('hex');
 
@@ -227,9 +226,9 @@ console.log(`\n✅ Forensic evidence generated: ${evidenceFile}`);
 console.log(`🔐 SHA256: ${hash}`);
 
 console.log('\n📍 INVESTOR SUMMARY:');
-console.log(`   • Annual Savings: R240,000`);
-console.log(`   • ROI: 9500%`);
-console.log(`   • Margin: 88%`);
+console.log('   • Annual Savings: R240,000');
+console.log('   • ROI: 9500%');
+console.log('   • Margin: 88%');
 console.log(`   • Files Fixed: ${fixedCount}`);
 console.log(`   • Evidence: ${evidenceFile}`);
 

@@ -1,43 +1,43 @@
-/*===========================================================================================================================
-                         _       _ _     _      _    _       _ _       _      _    _       _ _       
-                        /_\   __| (_)___| |_   /_\  | |_ ___| (_) __ _| | ___| |_ /_\   __| (_) ___  
-                       //_\\ / _` | / __| __| //_\\ | __/ _ \ | |/ _` | |/ _ \ __//_\\ / _` | |/ _ \ 
+/*= ==========================================================================================================================
+                         _       _ _     _      _    _       _ _       _      _    _       _ _
+                        /_\   __| (_)___| |_   /_\  | |_ ___| (_) __ _| | ___| |_ /_\   __| (_) ___
+                       //_\\ / _` | / __| __| //_\\ | __/ _ \ | |/ _` | |/ _ \ __//_\\ / _` | |/ _ \
                       /  _  \ (_| | \__ \ |_ /  _  \| ||  __/ | | (_| | |  __/ |_/  _  \ (_| | | (_) |
-                      \_/ \_/\__,_|_|___/\__\_/ \_/ \__\___|_|_|\__,_|_|\___|\__\_/ \_/\__,_|_|\___/ 
-                                                                                                     
-                       █████╗ ██╗   ██╗██████╗ ██╗████████╗    ████████╗██████╗  █████╗ ██╗██╗     
-                      ██╔══██╗██║   ██║██╔══██╗██║╚══██╔══╝    ╚══██╔══╝██╔══██╗██╔══██╗██║██║     
-                      ███████║██║   ██║██║  ██║██║   ██║          ██║   ██████╔╝███████║██║██║     
-                      ██╔══██║██║   ██║██║  ██║██║   ██║          ██║   ██╔══██╗██╔══██║██║██║     
+                      \_/ \_/\__,_|_|___/\__\_/ \_/ \__\___|_|_|\__,_|_|\___|\__\_/ \_/\__,_|_|\___/
+
+                       █████╗ ██╗   ██╗██████╗ ██╗████████╗    ████████╗██████╗  █████╗ ██╗██╗
+                      ██╔══██╗██║   ██║██╔══██╗██║╚══██╔══╝    ╚══██╔══╝██╔══██╗██╔══██╗██║██║
+                      ███████║██║   ██║██║  ██║██║   ██║          ██║   ██████╔╝███████║██║██║
+                      ██╔══██║██║   ██║██║  ██║██║   ██║          ██║   ██╔══██╗██╔══██║██║██║
                       ██║  ██║╚██████╔╝██████╔╝██║   ██║          ██║   ██║  ██║██║  ██║██║███████╗
                       ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝   ╚═╝          ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚══════╝
-                                                                                                     
+
                     ███████╗██████╗ ██╗   ██╗██╗ ██████╗███████╗    ███████╗██████╗ ██╗ ██████╗███████╗
                     ██╔════╝██╔══██╗██║   ██║██║██╔════╝██╔════╝    ██╔════╝██╔══██╗██║██╔════╝██╔════╝
-                    ███████╗██████╔╝██║   ██║██║██║     █████╗      █████╗  ██║  ██║██║██║     █████╗  
-                    ╚════██║██╔═══╝ ╚██╗ ██╔╝██║██║     ██╔══╝      ██╔══╝  ██║  ██║██║██║     ██╔══╝  
+                    ███████╗██████╔╝██║   ██║██║██║     █████╗      █████╗  ██║  ██║██║██║     █████╗
+                    ╚════██║██╔═══╝ ╚██╗ ██╔╝██║██║     ██╔══╝      ██╔══╝  ██║  ██║██║██║     ██╔══╝
                     ███████║██║      ╚████╔╝ ██║╚██████╗███████╗    ███████╗██████╔╝██║╚██████╗███████╗
                     ╚══════╝╚═╝       ╚═══╝  ╚═╝ ╚═════╝╚══════╝    ╚══════╝╚═════╝ ╚═╝ ╚═════╝╚══════╝
-                                                                                                        
-                          QUANTUM AUDIT TRAIL SERVICE - IMMUTABLE TRUTH LEDGER                          
+
+                          QUANTUM AUDIT TRAIL SERVICE - IMMUTABLE TRUTH LEDGER
                      Blockchain-Inspired, Cryptographically-Sealed Audit Trails with Quantum-Resilience
                     Ensuring POPIA, ECT Act, Companies Act, FICA, GDPR, NDPA, DPA, CCPA, LGPD Compliance
                     =======================================================================================
                     LEGEND:  [🔒] Quantum Security | [⚖️] Legal Compliance | [🚀] Performance | [🔍] Monitoring
                     =======================================================================================
-                    
-                    COSMIC MANDATE: This quantum nexus orchestrates legal symphonies, transmuting chaos into 
-                    eternal order—forging an unbreakable chain of truth that propels Wilsy OS to trillion-dollar 
-                    horizons. Every audit trail is a cryptographic monument to justice, embedded in the quantum 
+
+                    COSMIC MANDATE: This quantum nexus orchestrates legal symphonies, transmuting chaos into
+                    eternal order—forging an unbreakable chain of truth that propels Wilsy OS to trillion-dollar
+                    horizons. Every audit trail is a cryptographic monument to justice, embedded in the quantum
                     fabric of African legal renaissance.
-                    
+
                     QUANTUM ARCHITECT: Wilson Khanyezi, Chief Architect & Quantum Sentinel
                     LEGAL JURISDICTION: South Africa (POPIA/ECT/Companies Act) → Pan-African → Global
                     SECURITY CLASSIFICATION: LEVEL 9 - QUANTUM RESILIENT
                     COMPLIANCE MATRIX: POPIA, ECT Act, Companies Act 2008, FICA, GDPR, CCPA, LGPD, NDPA, DPA
                     CRYPTOGRAPHIC STANDARD: AES-256-GCM, SHA3-512, ECDSA-P521, Merkle Trees
                     PERFORMANCE TARGET: 10,000 audit events/sec with sub-10ms latency
-                    =======================================================================================*/
+                    ======================================================================================= */
 
 /*
  * @file /server/services/auditTrailService.js
@@ -77,16 +77,18 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 
 const crypto = require('crypto');
 const EventEmitter = require('events');
+const util = require('util');
+const zlib = require('zlib');
+const moment = require('moment');
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
-const moment = require('moment');
-const zlib = require('zlib');
-const util = require('util');
+
 const gzip = util.promisify(zlib.gzip);
 const gunzip = util.promisify(zlib.gunzip);
 
 // Optional dependencies with quantum fallbacks
-let Redis, BullMQ, winston, axios, Joi;
+let Redis; let BullMQ; let winston; let axios; let
+  Joi;
 try {
   Redis = require('ioredis');
   console.log('🔗 [🔒] Quantum Audit: Redis immutability cache enabled');
@@ -503,76 +505,77 @@ const AUDIT_VALIDATION_SCHEMAS = {
   // Quantum Shield: Validate audit input data
   auditLogSchema: Joi
     ? Joi.object({
-        userId: Joi.string()
-          .required()
-          .min(1)
-          .max(100)
-          .pattern(/^[a-zA-Z0-9_\-\\.@]+$/),
-        userType: Joi.string().valid('USER', 'SYSTEM', 'API', 'ADMIN', 'AUTOMATION', 'INTEGRATION'),
-        action: Joi.string()
-          .required()
-          .min(1)
-          .max(100)
-          .pattern(/^[A-Z_]+$/),
-        category: Joi.string().required().min(1).max(50),
-        entityType: Joi.string().required().min(1).max(50),
-        entityId: Joi.string().required().min(1).max(100),
-        details: Joi.object().max(10000), // 10KB limit
-        changes: Joi.object({
-          oldValue: Joi.any(),
-          newValue: Joi.any(),
-        }),
-        ipAddress: Joi.string().ip({
-          version: ['ipv4', 'ipv6'],
-          cidr: 'forbidden',
-        }),
-        userAgent: Joi.string().max(500),
-        sessionId: Joi.string().max(100),
-        legalReference: Joi.string().max(100),
-        severity: Joi.string().valid('CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'),
-        metadata: Joi.object(),
-      })
+      userId: Joi.string()
+        .required()
+        .min(1)
+        .max(100)
+        .pattern(/^[a-zA-Z0-9_\-\\.@]+$/),
+      userType: Joi.string().valid('USER', 'SYSTEM', 'API', 'ADMIN', 'AUTOMATION', 'INTEGRATION'),
+      action: Joi.string()
+        .required()
+        .min(1)
+        .max(100)
+        .pattern(/^[A-Z_]+$/),
+      category: Joi.string().required().min(1).max(50),
+      entityType: Joi.string().required().min(1).max(50),
+      entityId: Joi.string().required().min(1).max(100),
+      details: Joi.object().max(10000), // 10KB limit
+      changes: Joi.object({
+        oldValue: Joi.any(),
+        newValue: Joi.any(),
+      }),
+      ipAddress: Joi.string().ip({
+        version: ['ipv4', 'ipv6'],
+        cidr: 'forbidden',
+      }),
+      userAgent: Joi.string().max(500),
+      sessionId: Joi.string().max(100),
+      legalReference: Joi.string().max(100),
+      severity: Joi.string().valid('CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'),
+      metadata: Joi.object(),
+    })
     : null,
 
   // Quantum Shield: Validate audit query parameters
   auditQuerySchema: Joi
     ? Joi.object({
-        userId: Joi.string().max(100),
-        entityId: Joi.string().max(100),
-        entityType: Joi.string().max(50),
-        action: Joi.string().max(100),
-        category: Joi.string().max(50),
-        severity: Joi.string().valid('CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'),
-        startDate: Joi.date().iso(),
-        endDate: Joi.date().iso().min(Joi.ref('startDate')),
-        limit: Joi.number().integer().min(1).max(1000).default(100),
-        offset: Joi.number().integer().min(0).default(0),
-        search: Joi.string().max(200),
-        compliance: Joi.object({
-          popia: Joi.boolean(),
-          fica: Joi.boolean(),
-          gdpr: Joi.boolean(),
-          ectAct: Joi.boolean(),
-          companiesAct: Joi.boolean(),
-        }),
-        sortBy: Joi.string().valid('timestamp', 'severity', 'action', 'category'),
-        sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
-      })
+      userId: Joi.string().max(100),
+      entityId: Joi.string().max(100),
+      entityType: Joi.string().max(50),
+      action: Joi.string().max(100),
+      category: Joi.string().max(50),
+      severity: Joi.string().valid('CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'),
+      startDate: Joi.date().iso(),
+      endDate: Joi.date().iso().min(Joi.ref('startDate')),
+      limit: Joi.number().integer().min(1).max(1000)
+        .default(100),
+      offset: Joi.number().integer().min(0).default(0),
+      search: Joi.string().max(200),
+      compliance: Joi.object({
+        popia: Joi.boolean(),
+        fica: Joi.boolean(),
+        gdpr: Joi.boolean(),
+        ectAct: Joi.boolean(),
+        companiesAct: Joi.boolean(),
+      }),
+      sortBy: Joi.string().valid('timestamp', 'severity', 'action', 'category'),
+      sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
+    })
     : null,
 
   // Quantum Shield: Validate compliance report parameters
   complianceReportSchema: Joi
     ? Joi.object({
-        reportType: Joi.string()
-          .required()
-          .valid('POPIA', 'FICA', 'GDPR', 'ECT', 'COMPANIES_ACT', 'ALL'),
-        startDate: Joi.date().iso().required(),
-        endDate: Joi.date().iso().required().min(Joi.ref('startDate')),
-        format: Joi.string().valid('JSON', 'CSV', 'PDF', 'XML'),
-        includeDetails: Joi.boolean().default(false),
-        department: Joi.string().max(50),
-        jurisdiction: Joi.string().max(50),
-      })
+      reportType: Joi.string()
+        .required()
+        .valid('POPIA', 'FICA', 'GDPR', 'ECT', 'COMPANIES_ACT', 'ALL'),
+      startDate: Joi.date().iso().required(),
+      endDate: Joi.date().iso().required().min(Joi.ref('startDate')),
+      format: Joi.string().valid('JSON', 'CSV', 'PDF', 'XML'),
+      includeDetails: Joi.boolean().default(false),
+      department: Joi.string().max(50),
+      jurisdiction: Joi.string().max(50),
+    })
     : null,
 };
 
@@ -703,9 +706,9 @@ class AuditTrailService extends EventEmitter {
       this.logger.info(
         `🔗 Last Hash: ${
           this.serviceState.lastAuditHash
-            ? this.serviceState.lastAuditHash.substring(0, 16) + '...'
+            ? `${this.serviceState.lastAuditHash.substring(0, 16)}...`
             : 'Genesis'
-        }`
+        }`,
       );
       this.logger.info('🏛️  Compliance: POPIA ✓ | FICA ✓ | GDPR ✓ | Companies Act ✓ | ECT Act ✓');
 
@@ -729,7 +732,7 @@ class AuditTrailService extends EventEmitter {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         this.logger.info(
-          `📊 [🔄] Initializing Quantum Audit Database (Attempt ${attempt}/${maxRetries})...`
+          `📊 [🔄] Initializing Quantum Audit Database (Attempt ${attempt}/${maxRetries})...`,
         );
         await this.initializeDatabase();
         return;
@@ -747,7 +750,9 @@ class AuditTrailService extends EventEmitter {
    */
   createAuditLogger() {
     if (winston) {
-      const customFormat = winston.format.printf(({ timestamp, level, message, ...metadata }) => {
+      const customFormat = winston.format.printf(({
+        timestamp, level, message, ...metadata
+      }) => {
         let msg = `[${timestamp}] [${level}] [QUANTUM-AUDIT]: ${message}`;
         if (metadata && Object.keys(metadata).length > 0) {
           msg += ` ${JSON.stringify(metadata)}`;
@@ -761,7 +766,7 @@ class AuditTrailService extends EventEmitter {
           winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
           winston.format.errors({ stack: true }),
           winston.format.json(),
-          customFormat
+          customFormat,
         ),
         defaultMeta: {
           service: 'quantum-audit-trail',
@@ -792,7 +797,7 @@ class AuditTrailService extends EventEmitter {
           new winston.transports.Console({
             format: winston.format.combine(
               winston.format.colorize({ all: true }),
-              winston.format.simple()
+              winston.format.simple(),
             ),
           }),
         ],
@@ -808,16 +813,11 @@ class AuditTrailService extends EventEmitter {
 
     // Fallback console logger with enhanced features
     return {
-      info: (msg, meta) =>
-        console.log(`[${new Date().toISOString()}] [INFO] [QUANTUM-AUDIT] ${msg}`, meta || ''),
-      error: (msg, meta) =>
-        console.error(`[${new Date().toISOString()}] [ERROR] [QUANTUM-AUDIT] ${msg}`, meta || ''),
-      warn: (msg, meta) =>
-        console.warn(`[${new Date().toISOString()}] [WARN] [QUANTUM-AUDIT] ${msg}`, meta || ''),
-      debug: (msg, meta) =>
-        console.debug(`[${new Date().toISOString()}] [DEBUG] [QUANTUM-AUDIT] ${msg}`, meta || ''),
-      audit: (msg, meta) =>
-        console.log(`[${new Date().toISOString()}] [AUDIT] [QUANTUM-AUDIT] ${msg}`, meta || ''),
+      info: (msg, meta) => console.log(`[${new Date().toISOString()}] [INFO] [QUANTUM-AUDIT] ${msg}`, meta || ''),
+      error: (msg, meta) => console.error(`[${new Date().toISOString()}] [ERROR] [QUANTUM-AUDIT] ${msg}`, meta || ''),
+      warn: (msg, meta) => console.warn(`[${new Date().toISOString()}] [WARN] [QUANTUM-AUDIT] ${msg}`, meta || ''),
+      debug: (msg, meta) => console.debug(`[${new Date().toISOString()}] [DEBUG] [QUANTUM-AUDIT] ${msg}`, meta || ''),
+      audit: (msg, meta) => console.log(`[${new Date().toISOString()}] [AUDIT] [QUANTUM-AUDIT] ${msg}`, meta || ''),
     };
   }
 
@@ -938,11 +938,11 @@ class AuditTrailService extends EventEmitter {
           ipAddress: {
             type: String,
             validate: {
-              validator: function (v) {
+              validator(v) {
                 return (
-                  v === null ||
-                  /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(
-                    v
+                  v === null
+                  || /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(
+                    v,
                   )
                 );
               },
@@ -980,7 +980,7 @@ class AuditTrailService extends EventEmitter {
           details: {
             type: mongoose.Schema.Types.Mixed,
             validate: {
-              validator: function (v) {
+              validator(v) {
                 return JSON.stringify(v).length <= 10000; // 10KB limit
               },
               message: 'Details too large (max 10KB)',
@@ -1186,7 +1186,7 @@ class AuditTrailService extends EventEmitter {
           minimize: false,
           toJSON: { virtuals: true },
           toObject: { virtuals: true },
-        }
+        },
       );
 
       // Virtual Fields
@@ -1238,7 +1238,7 @@ class AuditTrailService extends EventEmitter {
             details: 1,
           },
           name: 'audit_fulltext_search',
-        }
+        },
       );
 
       // TTL Index for automatic purge
@@ -1248,7 +1248,7 @@ class AuditTrailService extends EventEmitter {
           {
             expireAfterSeconds: 0,
             partialFilterExpression: { archived: true },
-          }
+          },
         );
       }
 
@@ -1270,7 +1270,7 @@ class AuditTrailService extends EventEmitter {
       });
 
       // Post-save middleware for cache
-      auditTrailSchema.post('save', async function (doc) {
+      auditTrailSchema.post('save', async (doc) => {
         // Cache the document if cache is available
         // Implementation depends on your caching strategy
       });
@@ -1438,7 +1438,7 @@ class AuditTrailService extends EventEmitter {
           max: 100,
           duration: 1000,
         },
-      }
+      },
     );
 
     // Integrity Check Worker
@@ -1450,7 +1450,7 @@ class AuditTrailService extends EventEmitter {
       {
         connection: this.redisClient,
         concurrency: 1,
-      }
+      },
     );
 
     this.auditWorker.on('completed', (job) => {
@@ -1693,7 +1693,7 @@ class AuditTrailService extends EventEmitter {
       this.logger.info(
         `📊 [⚖️] Compliance Status: POPIA ${
           this.serviceState.compliance.popiaCompliant ? '✓' : '✗'
-        } | FICA ${this.serviceState.compliance.ficaCompliant ? '✓' : '✗'}`
+        } | FICA ${this.serviceState.compliance.ficaCompliant ? '✓' : '✗'}`,
       );
     } catch (error) {
       this.logger.error('❌ [⚖️] Failed to check compliance status:', error);
@@ -1887,7 +1887,7 @@ class AuditTrailService extends EventEmitter {
         complianceMarkers: this.determineComplianceMarkers(auditData.category, jurisdiction),
         retentionDate: this.calculateRetentionDate(categoryConfig, jurisdiction),
         sourceModule: this.getCallingModule(),
-        jurisdiction: jurisdiction,
+        jurisdiction,
         dataClassification: this.determineDataClassification(auditData),
         regulatoryRequirements: this.getRegulatoryRequirements(auditData.category, jurisdiction),
         anomalyScore: this.calculateInitialAnomalyScore(auditData),
@@ -2100,17 +2100,17 @@ class AuditTrailService extends EventEmitter {
 
     // Check for restricted data
     if (
-      auditData.category.includes('BREACH') ||
-      auditData.category.includes('AML') ||
-      auditData.severity === 'CRITICAL'
+      auditData.category.includes('BREACH')
+      || auditData.category.includes('AML')
+      || auditData.severity === 'CRITICAL'
     ) {
       classification = 'RESTRICTED';
     }
 
     // Check for secret data
     if (
-      auditData.category.includes('SECRET') ||
-      (auditData.details && auditData.details.classification === 'SECRET')
+      auditData.category.includes('SECRET')
+      || (auditData.details && auditData.details.classification === 'SECRET')
     ) {
       classification = 'SECRET';
     }
@@ -2181,7 +2181,7 @@ class AuditTrailService extends EventEmitter {
     }
 
     // Increase score for high-frequency users
-    const userId = auditData.userId;
+    const { userId } = auditData;
     if (userId) {
       const userAuditCount = this.getUserAuditCount(userId);
       if (userAuditCount > 100) {
@@ -2266,13 +2266,13 @@ class AuditTrailService extends EventEmitter {
       if (auditData.changes.oldValue) {
         auditData.changes.oldValue = this.redactSensitiveObject(
           auditData.changes.oldValue,
-          sensitivePatterns
+          sensitivePatterns,
         );
       }
       if (auditData.changes.newValue) {
         auditData.changes.newValue = this.redactSensitiveObject(
           auditData.changes.newValue,
-          sensitivePatterns
+          sensitivePatterns,
         );
       }
     }
@@ -2327,7 +2327,7 @@ class AuditTrailService extends EventEmitter {
     // Redact credit card numbers
     redacted = redacted.replace(
       /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,
-      '[CREDIT_CARD_REDACTED]'
+      '[CREDIT_CARD_REDACTED]',
     );
 
     // Redact South African ID numbers
@@ -2336,7 +2336,7 @@ class AuditTrailService extends EventEmitter {
     // Redact phone numbers
     redacted = redacted.replace(
       /\b(\+27|0)[\s-]?\d{2}[\s-]?\d{3}[\s-]?\d{4}\b/g,
-      '[PHONE_REDACTED]'
+      '[PHONE_REDACTED]',
     );
 
     // Redact email addresses (keep domain)
@@ -2413,32 +2413,30 @@ class AuditTrailService extends EventEmitter {
    */
   calculateRetentionDate(categoryConfig, jurisdiction) {
     // Get base retention from category config
-    let retentionDays =
-      categoryConfig.retentionDays ||
-      (categoryConfig.retentionYears ||
-        AUDIT_CONSTANTS.RETENTION_POLICIES.DEFAULT_RETENTION_YEARS) * 365;
+    let retentionDays = categoryConfig.retentionDays
+      || (categoryConfig.retentionYears
+        || AUDIT_CONSTANTS.RETENTION_POLICIES.DEFAULT_RETENTION_YEARS) * 365;
 
     // Apply jurisdiction-specific requirements
     if (
-      jurisdiction === 'ZA' &&
-      categoryConfig.legalReference &&
-      categoryConfig.legalReference.includes('POPIA')
+      jurisdiction === 'ZA'
+      && categoryConfig.legalReference
+      && categoryConfig.legalReference.includes('POPIA')
     ) {
       retentionDays = Math.max(retentionDays, 365);
     }
 
     if (
-      jurisdiction === 'EU' &&
-      categoryConfig.legalReference &&
-      categoryConfig.legalReference.includes('GDPR')
+      jurisdiction === 'EU'
+      && categoryConfig.legalReference
+      && categoryConfig.legalReference.includes('GDPR')
     ) {
       retentionDays = Math.max(retentionDays, 730);
     }
 
     // Apply severity multiplier
-    const severityMultiplier =
-      AUDIT_CONSTANTS.SEVERITY_LEVELS[categoryConfig.severity]?.retentionMultiplier || 1;
-    retentionDays = retentionDays * severityMultiplier;
+    const severityMultiplier = AUDIT_CONSTANTS.SEVERITY_LEVELS[categoryConfig.severity]?.retentionMultiplier || 1;
+    retentionDays *= severityMultiplier;
 
     // Calculate retention date
     const retentionDate = new Date();
@@ -2447,12 +2445,12 @@ class AuditTrailService extends EventEmitter {
     // Calculate archive and purge dates
     const archiveDate = new Date(retentionDate);
     archiveDate.setDate(
-      archiveDate.getDate() - AUDIT_CONSTANTS.RETENTION_POLICIES.ARCHIVE_AFTER_DAYS
+      archiveDate.getDate() - AUDIT_CONSTANTS.RETENTION_POLICIES.ARCHIVE_AFTER_DAYS,
     );
 
     const purgeDate = new Date(retentionDate);
     purgeDate.setFullYear(
-      purgeDate.getFullYear() + AUDIT_CONSTANTS.RETENTION_POLICIES.PURGE_AFTER_YEARS
+      purgeDate.getFullYear() + AUDIT_CONSTANTS.RETENTION_POLICIES.PURGE_AFTER_YEARS,
     );
 
     return {
@@ -2469,7 +2467,7 @@ class AuditTrailService extends EventEmitter {
    */
   getCallingModule() {
     try {
-      const stack = new Error().stack;
+      const { stack } = new Error();
       const stackLines = stack.split('\n');
 
       // Skip first line (Error:) and second line (this function)
@@ -2479,10 +2477,10 @@ class AuditTrailService extends EventEmitter {
 
         // Skip node_modules and internal calls
         if (
-          !line.includes('node_modules') &&
-          !line.includes('internal/') &&
-          !line.includes('async ') &&
-          line.includes('(')
+          !line.includes('node_modules')
+          && !line.includes('internal/')
+          && !line.includes('async ')
+          && line.includes('(')
         ) {
           // Extract function and file info
           const match = line.match(/at\s+(.+)\s+\((.+):(\d+):(\d+)\)/);
@@ -2532,7 +2530,7 @@ class AuditTrailService extends EventEmitter {
 
     try {
       this.logger.debug(
-        `🔄 [📦] Flushing audit buffer: ${bufferToProcess.length} records (${bufferSize} remaining)`
+        `🔄 [📦] Flushing audit buffer: ${bufferToProcess.length} records (${bufferSize} remaining)`,
       );
 
       // Process in batches for better performance
@@ -2569,13 +2567,11 @@ class AuditTrailService extends EventEmitter {
    * @private
    */
   async processAuditBatch(auditRecords) {
-    const promises = auditRecords.map((record) =>
-      this.processAuditRecord(record).catch((error) => {
-        // Log individual record failure but continue processing others
-        this.logger.error(`❌ [📝] Failed to process audit record ${record.auditId}:`, error);
-        return null;
-      })
-    );
+    const promises = auditRecords.map((record) => this.processAuditRecord(record).catch((error) => {
+      // Log individual record failure but continue processing others
+      this.logger.error(`❌ [📝] Failed to process audit record ${record.auditId}:`, error);
+      return null;
+    }));
 
     const results = await Promise.all(promises);
     return results.filter((result) => result !== null);
@@ -2864,7 +2860,7 @@ class AuditTrailService extends EventEmitter {
         await this.redisClient.sadd(`audit:user:${record.userId || 'system'}`, record.auditId);
         await this.redisClient.sadd(
           `audit:entity:${record.entityType}:${record.entityId}`,
-          record.auditId
+          record.auditId,
         );
 
         if (record.category) {
@@ -2952,7 +2948,7 @@ class AuditTrailService extends EventEmitter {
               merkleRoot: proof.merkleRoot,
               integrityHash: proof.leafHash,
             },
-          }
+          },
         );
       } catch (error) {
         this.logger.warn(`⚠️ [🌳] Failed to store Merkle proof for ${record.auditId}:`, error);
@@ -2984,7 +2980,7 @@ class AuditTrailService extends EventEmitter {
         // Try to find in database
         const storedProof = await this.AuditTrailModel.findOne(
           { currentHash: leafHash },
-          { merkleProof: 1, merkleRoot: 1 }
+          { merkleProof: 1, merkleRoot: 1 },
         );
 
         if (storedProof && storedProof.merkleProof) {
@@ -3081,8 +3077,7 @@ class AuditTrailService extends EventEmitter {
     let currentHash = leafHash;
 
     for (const proofNode of proofPath) {
-      const combined =
-        proofNode.position === 'left' ? proofNode.hash + currentHash : currentHash + proofNode.hash;
+      const combined = proofNode.position === 'left' ? proofNode.hash + currentHash : currentHash + proofNode.hash;
 
       currentHash = crypto.createHash('sha256').update(combined).digest('hex');
     }
@@ -3131,8 +3126,8 @@ class AuditTrailService extends EventEmitter {
         this.logger.debug(
           `✅ [🔗] Merkle root synced to external ledger: ${this.serviceState.merkleRoot.substring(
             0,
-            16
-          )}...`
+            16,
+          )}...`,
         );
 
         // Store sync confirmation
@@ -3147,7 +3142,7 @@ class AuditTrailService extends EventEmitter {
                 blockHeight: response.data.blockHeight,
               },
             },
-          }
+          },
         );
       }
     } catch (error) {
@@ -3185,13 +3180,12 @@ class AuditTrailService extends EventEmitter {
       const startTime = Date.now();
 
       // Perform comprehensive integrity checks
-      const [chainIntegrity, merkleIntegrity, databaseIntegrity, cacheIntegrity] =
-        await Promise.all([
-          this.verifyEnhancedChainIntegrity(),
-          this.verifyMerkleTreeIntegrity(),
-          this.verifyDatabaseIntegrity(),
-          this.verifyCacheIntegrity(),
-        ]);
+      const [chainIntegrity, merkleIntegrity, databaseIntegrity, cacheIntegrity] = await Promise.all([
+        this.verifyEnhancedChainIntegrity(),
+        this.verifyMerkleTreeIntegrity(),
+        this.verifyDatabaseIntegrity(),
+        this.verifyCacheIntegrity(),
+      ]);
 
       // Detect anomalies
       const anomalies = await this.detectEnhancedAnomalies();
@@ -3203,13 +3197,13 @@ class AuditTrailService extends EventEmitter {
         merkleIntegrity,
         databaseIntegrity,
         cacheIntegrity,
-        anomalies: anomalies,
+        anomalies,
         duration: Date.now() - startTime,
         status: this.determineIntegrityStatus(chainIntegrity, merkleIntegrity, anomalies),
         recommendations: this.generateIntegrityRecommendations(
           chainIntegrity,
           merkleIntegrity,
-          anomalies
+          anomalies,
         ),
       };
 
@@ -3226,7 +3220,7 @@ class AuditTrailService extends EventEmitter {
 
       // Log integrity status
       this.logger.info(
-        `✅ [🔐] Integrity check completed in ${integrityReport.duration}ms: ${integrityReport.status}`
+        `✅ [🔐] Integrity check completed in ${integrityReport.duration}ms: ${integrityReport.status}`,
       );
 
       // Take action based on integrity status
@@ -3324,7 +3318,7 @@ class AuditTrailService extends EventEmitter {
               warning: 'Timestamp out of order',
               previousTimestamp: prevRecord.timestamp,
               currentTimestamp: record.timestamp,
-              timeDiff: timeDiff,
+              timeDiff,
             });
           }
         }
@@ -3661,12 +3655,12 @@ class AuditTrailService extends EventEmitter {
             event: eventType,
             system: 'Wilsy OS Audit Service',
             timestamp: new Date().toISOString(),
-            data: data,
+            data,
             priority: data.severity || 'MEDIUM',
           },
           {
             timeout: 5000,
-          }
+          },
         );
       } catch (error) {
         this.logger.error('❌ [🔔] Failed to send notification:', error);
@@ -3921,7 +3915,7 @@ class AuditTrailService extends EventEmitter {
         description: `${duplicateHashes.length} duplicate cryptographic hashes detected`,
         details: {
           duplicates: duplicateHashes.map((d) => ({
-            hash: d._id.substring(0, 16) + '...',
+            hash: `${d._id.substring(0, 16)}...`,
             count: d.count,
             auditIds: d.auditIds.slice(0, 3), // First 3 audit IDs
           })),
@@ -3988,15 +3982,15 @@ class AuditTrailService extends EventEmitter {
           {
             $set: {
               anomalyScore: Math.min(1, anomalyScore),
-              anomalyFlags: anomalyFlags,
+              anomalyFlags,
             },
-          }
+          },
         );
 
         // Log high anomaly score
         if (anomalyScore > 0.7) {
           this.logger.warn(
-            `⚠️ [🔍] High anomaly score detected for audit ${auditRecord.auditId}: ${anomalyScore}`
+            `⚠️ [🔍] High anomaly score detected for audit ${auditRecord.auditId}: ${anomalyScore}`,
           );
 
           // Emit anomaly event
@@ -4052,7 +4046,7 @@ class AuditTrailService extends EventEmitter {
           duration: '1_HOUR',
         },
         auditCount: recentAudits.length,
-        analysis: analysis,
+        analysis,
         duration: Date.now() - startTime,
       };
 
@@ -4063,7 +4057,7 @@ class AuditTrailService extends EventEmitter {
       this.serviceState.security.lastAnomalyDetection = new Date().toISOString();
 
       this.logger.info(
-        `✅ [🤖] Anomaly detection completed: ${recentAudits.length} audits analyzed in ${anomalyReport.duration}ms`
+        `✅ [🤖] Anomaly detection completed: ${recentAudits.length} audits analyzed in ${anomalyReport.duration}ms`,
       );
 
       return anomalyReport;
@@ -4095,16 +4089,13 @@ class AuditTrailService extends EventEmitter {
       analysis.userActivity[userId] = (analysis.userActivity[userId] || 0) + 1;
 
       // Action distribution
-      analysis.actionDistribution[audit.action] =
-        (analysis.actionDistribution[audit.action] || 0) + 1;
+      analysis.actionDistribution[audit.action] = (analysis.actionDistribution[audit.action] || 0) + 1;
 
       // Category distribution
-      analysis.categoryDistribution[audit.category] =
-        (analysis.categoryDistribution[audit.category] || 0) + 1;
+      analysis.categoryDistribution[audit.category] = (analysis.categoryDistribution[audit.category] || 0) + 1;
 
       // Severity distribution
-      analysis.severityDistribution[audit.severity] =
-        (analysis.severityDistribution[audit.severity] || 0) + 1;
+      analysis.severityDistribution[audit.severity] = (analysis.severityDistribution[audit.severity] || 0) + 1;
 
       // Temporal patterns
       const hour = new Date(audit.timestamp).getHours();
@@ -4112,8 +4103,7 @@ class AuditTrailService extends EventEmitter {
 
       const minute = new Date(audit.timestamp).getMinutes();
       const minuteKey = `${hour}:${minute < 10 ? '0' : ''}${minute}`;
-      analysis.temporalPatterns.byMinute[minuteKey] =
-        (analysis.temporalPatterns.byMinute[minuteKey] || 0) + 1;
+      analysis.temporalPatterns.byMinute[minuteKey] = (analysis.temporalPatterns.byMinute[minuteKey] || 0) + 1;
     });
 
     // Identify anomaly candidates
@@ -4169,7 +4159,7 @@ class AuditTrailService extends EventEmitter {
           {
             $inc: { anomalyScore: 0.1 },
             $addToSet: { anomalyFlags: 'HIGH_ACTIVITY_USER' },
-          }
+          },
         );
       }
     }
@@ -4197,7 +4187,7 @@ class AuditTrailService extends EventEmitter {
 
         if (error) {
           throw new Error(
-            `Query validation failed: ${error.details.map((d) => d.message).join(', ')}`
+            `Query validation failed: ${error.details.map((d) => d.message).join(', ')}`,
           );
         }
 
@@ -4241,15 +4231,15 @@ class AuditTrailService extends EventEmitter {
           // Add metadata for UI
           processed._metadata = {
             requiresReview:
-              processed.severity === 'CRITICAL' ||
-              processed.severity === 'HIGH' ||
-              processed.anomalyScore > 0.7,
+              processed.severity === 'CRITICAL'
+              || processed.severity === 'HIGH'
+              || processed.anomalyScore > 0.7,
             daysUntilPurge: this.calculateDaysUntil(processed.purgeDate),
             isRecent: this.isRecentRecord(processed.timestamp),
           };
 
           return processed;
-        })
+        }),
       );
 
       const result = {
@@ -4536,12 +4526,12 @@ class AuditTrailService extends EventEmitter {
           {
             abortEarly: false,
             stripUnknown: true,
-          }
+          },
         );
 
         if (error) {
           throw new Error(
-            `Report validation failed: ${error.details.map((d) => d.message).join(', ')}`
+            `Report validation failed: ${error.details.map((d) => d.message).join(', ')}`,
           );
         }
 
@@ -4558,7 +4548,7 @@ class AuditTrailService extends EventEmitter {
       const startDate = dateRange.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const endDate = dateRange.endDate || new Date();
 
-      let query = {
+      const query = {
         timestamp: { $gte: startDate, $lte: endDate },
       };
 
@@ -4608,7 +4598,7 @@ class AuditTrailService extends EventEmitter {
       const recommendations = this.generateEnhancedComplianceRecommendations(
         stats,
         gaps,
-        assessment
+        assessment,
       );
 
       // Calculate compliance score
@@ -4634,7 +4624,7 @@ class AuditTrailService extends EventEmitter {
           breakdown: this.getComplianceScoreBreakdown(assessment),
         },
         complianceGaps: gaps,
-        recommendations: recommendations,
+        recommendations,
         regulatoryRequirements: this.getRegulatoryRequirementsForReport(reportType),
         exportOptions: {
           formats: process.env.AUDIT_EXPORT_FORMATS?.split(',') || ['JSON', 'CSV', 'PDF'],
@@ -4652,7 +4642,7 @@ class AuditTrailService extends EventEmitter {
       await this.cacheResult(cacheKey, report, 3600); // Cache for 1 hour
 
       this.logger.info(
-        `✅ [⚖️] ${reportType} compliance report generated: ${auditRecords.length} records analyzed, score: ${complianceScore}%`
+        `✅ [⚖️] ${reportType} compliance report generated: ${auditRecords.length} records analyzed, score: ${complianceScore}%`,
       );
 
       // Log report generation
@@ -4743,8 +4733,7 @@ class AuditTrailService extends EventEmitter {
 
       // Count by jurisdiction
       if (record.jurisdiction) {
-        stats.byJurisdiction[record.jurisdiction] =
-          (stats.byJurisdiction[record.jurisdiction] || 0) + 1;
+        stats.byJurisdiction[record.jurisdiction] = (stats.byJurisdiction[record.jurisdiction] || 0) + 1;
       }
 
       // Group by day for timeline
@@ -4759,10 +4748,8 @@ class AuditTrailService extends EventEmitter {
           stats.anomalyAnalysis.highRiskAnomalies++;
         }
 
-        const anomalyLevel =
-          record.anomalyScore > 0.7 ? 'HIGH' : record.anomalyScore > 0.5 ? 'MEDIUM' : 'LOW';
-        stats.anomalyAnalysis.anomalyDistribution[anomalyLevel] =
-          (stats.anomalyAnalysis.anomalyDistribution[anomalyLevel] || 0) + 1;
+        const anomalyLevel = record.anomalyScore > 0.7 ? 'HIGH' : record.anomalyScore > 0.5 ? 'MEDIUM' : 'LOW';
+        stats.anomalyAnalysis.anomalyDistribution[anomalyLevel] = (stats.anomalyAnalysis.anomalyDistribution[anomalyLevel] || 0) + 1;
       }
 
       // Retention analysis
@@ -4775,8 +4762,7 @@ class AuditTrailService extends EventEmitter {
 
     // Calculate retention compliance
     if (stats.totalRecords > 0) {
-      stats.retentionAnalysis.retentionCompliance =
-        ((stats.totalRecords - stats.retentionAnalysis.expiredRecords) / stats.totalRecords) * 100;
+      stats.retentionAnalysis.retentionCompliance = ((stats.totalRecords - stats.retentionAnalysis.expiredRecords) / stats.totalRecords) * 100;
     }
 
     // Calculate percentages
@@ -4809,7 +4795,7 @@ class AuditTrailService extends EventEmitter {
     if (rules.minimumRetention) {
       const retentionCompliance = this.assessRetentionCompliance(
         auditRecords,
-        rules.minimumRetention
+        rules.minimumRetention,
       );
       assessment.requirements.retention = retentionCompliance;
       assessment.findings.push(...retentionCompliance.findings);
@@ -4824,7 +4810,7 @@ class AuditTrailService extends EventEmitter {
     if (rules.validationRules) {
       const validationCompliance = this.assessValidationCompliance(
         auditRecords,
-        rules.validationRules
+        rules.validationRules,
       );
       assessment.requirements.validation = validationCompliance;
       assessment.findings.push(...validationCompliance.findings);
@@ -4844,7 +4830,7 @@ class AuditTrailService extends EventEmitter {
 
     // Determine overall compliance
     const nonCompliantFindings = assessment.findings.filter(
-      (f) => f.compliance === 'NON_COMPLIANT'
+      (f) => f.compliance === 'NON_COMPLIANT',
     );
     if (nonCompliantFindings.length > 0) {
       assessment.overallCompliance = 'NON_COMPLIANT';
@@ -4864,7 +4850,7 @@ class AuditTrailService extends EventEmitter {
     const cutoffDate = new Date(now.getTime() - requiredRetentionDays * 24 * 60 * 60 * 1000);
 
     const recordsInScope = auditRecords.filter(
-      (record) => new Date(record.timestamp) >= cutoffDate
+      (record) => new Date(record.timestamp) >= cutoffDate,
     );
 
     const compliance = {
@@ -4886,7 +4872,7 @@ class AuditTrailService extends EventEmitter {
         details: {
           required: requiredRetentionDays,
           actual: Math.floor(
-            (now.getTime() - new Date(auditRecords[0]?.timestamp).getTime()) / (1000 * 60 * 60 * 24)
+            (now.getTime() - new Date(auditRecords[0]?.timestamp).getTime()) / (1000 * 60 * 60 * 24),
           ),
           missingRecords: auditRecords.length - recordsInScope.length,
         },
@@ -4911,7 +4897,7 @@ class AuditTrailService extends EventEmitter {
 
     requiredFields.forEach((field) => {
       const recordsWithField = auditRecords.filter(
-        (record) => record[field] || (record.details && record.details[field])
+        (record) => record[field] || (record.details && record.details[field]),
       );
 
       const complianceRate = (recordsWithField.length / auditRecords.length) * 100;
@@ -4956,11 +4942,11 @@ class AuditTrailService extends EventEmitter {
     validationRules.forEach((rule) => {
       // This is a simplified implementation
       // In production, you would evaluate each rule condition
-      const compliantRecords = auditRecords.filter((record) => {
+      const compliantRecords = auditRecords.filter((record) =>
         // Evaluate rule condition
         // This would use a rules engine in production
-        return true; // Placeholder
-      });
+        true, // Placeholder
+      );
 
       const complianceRate = (compliantRecords.length / auditRecords.length) * 100;
       compliance.ruleCompliance[rule.condition] = {
@@ -5001,7 +4987,7 @@ class AuditTrailService extends EventEmitter {
         // Check for missing consent audits
         // eslint-disable-next-line no-case-declarations
         const consentAudits = auditRecords.filter(
-          (r) => r.category.includes('CONSENT') || (r.details && r.details.consentObtained)
+          (r) => r.category.includes('CONSENT') || (r.details && r.details.consentObtained),
         ).length;
 
         if (consentAudits === 0) {
@@ -5024,7 +5010,7 @@ class AuditTrailService extends EventEmitter {
         // Check for data breach reporting
         // eslint-disable-next-line no-case-declarations
         const breachAudits = auditRecords.filter(
-          (r) => r.category.includes('BREACH') && r.severity === 'CRITICAL'
+          (r) => r.category.includes('BREACH') && r.severity === 'CRITICAL',
         ).length;
 
         if (breachAudits === 0) {
@@ -5049,7 +5035,7 @@ class AuditTrailService extends EventEmitter {
         // Check for KYC verification audits
         // eslint-disable-next-line no-case-declarations
         const kycAudits = auditRecords.filter(
-          (r) => r.category.includes('VERIFICATION') || r.category.includes('FICA_VER')
+          (r) => r.category.includes('VERIFICATION') || r.category.includes('FICA_VER'),
         ).length;
 
         if (kycAudits === 0) {
@@ -5072,7 +5058,7 @@ class AuditTrailService extends EventEmitter {
         // Check for transaction monitoring
         // eslint-disable-next-line no-case-declarations
         const transactionAudits = auditRecords.filter(
-          (r) => r.category.includes('AML') || r.category.includes('TRANSACTION')
+          (r) => r.category.includes('AML') || r.category.includes('TRANSACTION'),
         ).length;
 
         if (transactionAudits === 0) {
@@ -5097,7 +5083,7 @@ class AuditTrailService extends EventEmitter {
         // Check for DSAR handling
         // eslint-disable-next-line no-case-declarations
         const dsarAudits = auditRecords.filter(
-          (r) => r.category.includes('DSAR') || r.action.includes('DATA_SUBJECT_REQUEST')
+          (r) => r.category.includes('DSAR') || r.action.includes('DATA_SUBJECT_REQUEST'),
         ).length;
 
         if (dsarAudits === 0) {
@@ -5179,7 +5165,7 @@ class AuditTrailService extends EventEmitter {
         priority: 'MEDIUM',
         action: 'Improve record retention compliance',
         rationale: `Retention compliance at ${stats.retentionAnalysis.retentionCompliance.toFixed(
-          1
+          1,
         )}%`,
         impact: 'Non-compliance with data retention regulations',
         responsibleParty: 'Compliance Officer, Data Protection Officer',
@@ -5236,13 +5222,13 @@ class AuditTrailService extends EventEmitter {
 
     // Deduct for non-compliant findings
     const nonCompliantFindings = assessment.findings.filter(
-      (f) => f.compliance === 'NON_COMPLIANT'
+      (f) => f.compliance === 'NON_COMPLIANT',
     );
     score -= nonCompliantFindings.length * 10; // 10 points per non-compliant finding
 
     // Deduct for partially compliant findings
     const partiallyCompliantFindings = assessment.findings.filter(
-      (f) => f.compliance === 'PARTIALLY_COMPLIANT'
+      (f) => f.compliance === 'PARTIALLY_COMPLIANT',
     );
     score -= partiallyCompliantFindings.length * 5; // 5 points per partially compliant finding
 
@@ -5316,7 +5302,7 @@ class AuditTrailService extends EventEmitter {
    */
   assessComplianceRisk(stats, gaps, complianceScore) {
     let riskLevel = 'LOW';
-    let riskFactors = [];
+    const riskFactors = [];
 
     if (stats.bySeverity.CRITICAL?.count > 10) {
       riskLevel = 'HIGH';
@@ -5544,7 +5530,7 @@ class AuditTrailService extends EventEmitter {
           await this.redisClient.setex(
             `audit:error:${errorAudit.auditId}`,
             86400, // 24 hours
-            JSON.stringify(errorAudit)
+            JSON.stringify(errorAudit),
           );
           this.logger.warn(`⚠️ [💥] Error audit saved to Redis: ${errorAudit.auditId}`);
         } else {
@@ -5578,8 +5564,7 @@ class AuditTrailService extends EventEmitter {
     if (success) {
       this.serviceState.performance.successfulLogs++;
       this.serviceState.performance.totalLogTime += duration;
-      this.serviceState.performance.averageLogTime =
-        this.serviceState.performance.totalLogTime / this.serviceState.performance.successfulLogs;
+      this.serviceState.performance.averageLogTime = this.serviceState.performance.totalLogTime / this.serviceState.performance.successfulLogs;
 
       // Reset error count on success
       if (this.serviceState.performance.consecutiveErrors > 0) {
@@ -5587,8 +5572,7 @@ class AuditTrailService extends EventEmitter {
       }
     } else {
       this.serviceState.performance.failedLogs++;
-      this.serviceState.performance.consecutiveErrors =
-        (this.serviceState.performance.consecutiveErrors || 0) + 1;
+      this.serviceState.performance.consecutiveErrors = (this.serviceState.performance.consecutiveErrors || 0) + 1;
 
       // Check if circuit breaker should trip
       if (this.serviceState.performance.consecutiveErrors > 10) {
@@ -5597,12 +5581,10 @@ class AuditTrailService extends EventEmitter {
     }
 
     // Calculate success rate
-    const totalAttempts =
-      this.serviceState.performance.successfulLogs + this.serviceState.performance.failedLogs;
+    const totalAttempts = this.serviceState.performance.successfulLogs + this.serviceState.performance.failedLogs;
 
     if (totalAttempts > 0) {
-      this.serviceState.performance.successRate =
-        (this.serviceState.performance.successfulLogs / totalAttempts) * 100;
+      this.serviceState.performance.successRate = (this.serviceState.performance.successfulLogs / totalAttempts) * 100;
     }
   }
 
@@ -5702,8 +5684,8 @@ class AuditTrailService extends EventEmitter {
       // More than 100ms average
       this.logger.warn(
         `⚠️ [📊] Performance degradation detected: Average log time = ${metrics.performance.averageLogTime.toFixed(
-          2
-        )}ms`
+          2,
+        )}ms`,
       );
     }
 
@@ -5712,15 +5694,15 @@ class AuditTrailService extends EventEmitter {
       // Less than 95% success rate
       this.logger.warn(
         `⚠️ [📊] Performance degradation detected: Success rate = ${metrics.performance.successRate.toFixed(
-          1
-        )}%`
+          1,
+        )}%`,
       );
     }
 
     // Check buffer size
     if (metrics.bufferSize > AUDIT_CONSTANTS.PERFORMANCE.BATCH_SIZE * 2) {
       this.logger.warn(
-        `⚠️ [📊] Performance degradation detected: Buffer size = ${metrics.bufferSize}`
+        `⚠️ [📊] Performance degradation detected: Buffer size = ${metrics.bufferSize}`,
       );
     }
   }
@@ -5766,7 +5748,7 @@ class AuditTrailService extends EventEmitter {
       health: {
         database: mongoose.connection.readyState === 1,
         cache: this.redisClient ? this.redisClient.status === 'ready' : false,
-        queues: this.auditQueue ? true : false,
+        queues: !!this.auditQueue,
         overall: this.calculateHealthScore(),
       },
       compliance: this.serviceState.compliance,
@@ -5831,20 +5813,18 @@ class AuditTrailService extends EventEmitter {
 
     const oneHourAgo = Date.now() - 3600000;
     const recentMetrics = this.serviceState.performanceHistory.filter(
-      (m) => new Date(m.timestamp).getTime() > oneHourAgo
+      (m) => new Date(m.timestamp).getTime() > oneHourAgo,
     );
 
     if (recentMetrics.length === 0) {
       return {};
     }
 
-    const avgLogTime =
-      recentMetrics.reduce((sum, m) => sum + (m.performance.averageLogTime || 0), 0) /
-      recentMetrics.length;
+    const avgLogTime = recentMetrics.reduce((sum, m) => sum + (m.performance.averageLogTime || 0), 0)
+      / recentMetrics.length;
 
-    const avgSuccessRate =
-      recentMetrics.reduce((sum, m) => sum + (m.performance.successRate || 100), 0) /
-      recentMetrics.length;
+    const avgSuccessRate = recentMetrics.reduce((sum, m) => sum + (m.performance.successRate || 100), 0)
+      / recentMetrics.length;
 
     const maxBufferSize = Math.max(...recentMetrics.map((m) => m.bufferSize || 0));
 
@@ -5867,7 +5847,7 @@ class AuditTrailService extends EventEmitter {
 
     const oneDayAgo = Date.now() - 86400000;
     const dailyMetrics = this.serviceState.performanceHistory.filter(
-      (m) => new Date(m.timestamp).getTime() > oneDayAgo
+      (m) => new Date(m.timestamp).getTime() > oneDayAgo,
     );
 
     if (dailyMetrics.length === 0) {
@@ -5878,7 +5858,7 @@ class AuditTrailService extends EventEmitter {
 
     const totalSuccess = dailyMetrics.reduce(
       (sum, m) => sum + (m.performance.successfulLogs || 0),
-      0
+      0,
     );
 
     const totalFailures = dailyMetrics.reduce((sum, m) => sum + (m.performance.failedLogs || 0), 0);
@@ -5904,13 +5884,12 @@ class AuditTrailService extends EventEmitter {
 
     if (days > 0) {
       return `${days}d ${hours % 24}h ${minutes % 60}m`;
-    } else if (hours > 0) {
+    } if (hours > 0) {
       return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
-    } else if (minutes > 0) {
+    } if (minutes > 0) {
       return `${minutes}m ${seconds % 60}s`;
-    } else {
-      return `${seconds}s`;
     }
+    return `${seconds}s`;
   }
 
   /*
@@ -6070,7 +6049,7 @@ class AuditTrailService extends EventEmitter {
       this.logger.info(
         `✅ [⚖️] Compliance monitoring completed: POPIA ${
           popiaStatus.compliant ? '✓' : '✗'
-        } | FICA ${ficaStatus.compliant ? '✓' : '✗'} | GDPR ${gdprStatus.compliant ? '✓' : '✗'}`
+        } | FICA ${ficaStatus.compliant ? '✓' : '✗'} | GDPR ${gdprStatus.compliant ? '✓' : '✗'}`,
       );
     } catch (error) {
       this.logger.error('❌ [⚖️] Compliance monitoring failed:', error);

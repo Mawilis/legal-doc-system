@@ -51,8 +51,6 @@
  * ============================================================================
  */
 
-'use strict';
-
 require('dotenv').config(); // ENV VAULT MANDATE: Non-negotiable
 
 // =============================================================================
@@ -138,7 +136,7 @@ class FinancialPerformanceMonitor {
     return {
       totalCalculations: Array.from(this.calculations.values()).reduce(
         (sum, stat) => sum + stat.count,
-        0
+        0,
       ),
       averagePerformance: Array.from(this.calculations.entries()).map(([name, stats]) => ({
         calculation: name,
@@ -162,7 +160,7 @@ const performanceMonitor = new FinancialPerformanceMonitor();
  */
 function calculateMRRFromAggregation(
   aggregationResults,
-  targetCurrency = QUANTUM_CONSTANTS.DEFAULT_CURRENCY
+  targetCurrency = QUANTUM_CONSTANTS.DEFAULT_CURRENCY,
 ) {
   const startTime = performance.now();
 
@@ -361,7 +359,7 @@ function calculateLTVFromAggregation(subscriptionStats = [], tenantStats = []) {
     const confidence = calculateLTVConfidenceInterval(
       arpuResult.value,
       adjustedLifespan,
-      arpuResult.activeUsers
+      arpuResult.activeUsers,
     );
 
     performanceMonitor.track('calculateLTVFromAggregation', startTime);
@@ -399,7 +397,7 @@ function calculateChurnRate(churnData = [], tenantStats = [], options = {}) {
 
   try {
     const validChurnData = churnData.filter(
-      (item) => item && typeof item === 'object' && typeof item.count === 'number' && item.count > 0
+      (item) => item && typeof item === 'object' && typeof item.count === 'number' && item.count > 0,
     );
 
     const totalChurned = validChurnData.reduce((sum, item) => sum + item.count, 0);
@@ -463,7 +461,7 @@ function calculateRecoveryValue(churnData = []) {
 
   try {
     const revenueChurnData = churnData.filter(
-      (item) => item && typeof item.lostRevenue === 'number' && item.lostRevenue > 0
+      (item) => item && typeof item.lostRevenue === 'number' && item.lostRevenue > 0,
     );
 
     if (revenueChurnData.length === 0) {
@@ -579,7 +577,9 @@ function aggregateChurnReasons(churnData = []) {
     });
 
     aggregatedReasons.sort((a, b) => {
-      const impactOrder = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+      const impactOrder = {
+        CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1,
+      };
       return impactOrder[b.impact] - impactOrder[a.impact] || b.impactScore - a.impactScore;
     });
 
@@ -710,13 +710,13 @@ function calculateMonthlyChurnBreakdown(churnData, periodDays) {
     churnRate:
       month.churnCount > 0
         ? financialRound(
-            month.churnCount /
-              Math.max(
+          month.churnCount
+              / Math.max(
                 churnData.reduce((sum, item) => sum + (item.count || 0), 0),
-                1
+                1,
               ),
-            4
-          )
+          4,
+        )
         : 0,
   }));
 }
@@ -1123,7 +1123,7 @@ function financialRound(value, decimals = QUANTUM_CONSTANTS.ROUNDING_DECIMALS) {
     return 0;
   }
 
-  const factor = Math.pow(10, decimals);
+  const factor = 10 ** decimals;
   const rounded = Math.round((value + Number.EPSILON) * factor) / factor;
   return parseFloat(rounded.toFixed(decimals));
 }
@@ -1191,7 +1191,7 @@ function calculateAverageCustomerLifespan(subscriptionStats, tenantStats) {
 
   try {
     const activeSubscriptions = subscriptionStats.filter(
-      (sub) => sub.status === 'ACTIVE' && sub.startDate
+      (sub) => sub.status === 'ACTIVE' && sub.startDate,
     );
 
     if (activeSubscriptions.length === 0) {
@@ -1222,7 +1222,7 @@ function calculatePresentValue(futureValue, discountRate, years) {
     return futureValue;
   }
 
-  return futureValue / Math.pow(1 + discountRate, years);
+  return futureValue / (1 + discountRate) ** years;
 }
 
 // =============================================================================

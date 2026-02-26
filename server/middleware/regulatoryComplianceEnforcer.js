@@ -1,14 +1,14 @@
-/*███████╗██╗    ██╗██╗██╗  ██╗███████╗██╗   ██╗    ██████╗ ███████╗ ██████╗ ██╗   ██╗██╗      █████╗ ████████╗ ██████╗ ██████╗ ██╗   ██╗    ███████╗███████╗███╗   ██╗███████╗ ██████╗ ██████╗  ██████╗ ███████╗██████╗ 
+/* ███████╗██╗    ██╗██╗██╗  ██╗███████╗██╗   ██╗    ██████╗ ███████╗ ██████╗ ██╗   ██╗██╗      █████╗ ████████╗ ██████╗ ██████╗ ██╗   ██╗    ███████╗███████╗███╗   ██╗███████╗ ██████╗ ██████╗  ██████╗ ███████╗██████╗
 ██╔════╝██║    ██║██║██║ ██╔╝██╔════╝╚██╗ ██╔╝    ██╔══██╗██╔════╝██╔════╝ ██║   ██║██║     ██╔══██╗╚══██╔══╝██╔═══██╗██╔══██╗╚██╗ ██╔╝    ██╔════╝██╔════╝████╗  ██║██╔════╝██╔═══██╗██╔══██╗██╔═══██╗██╔════╝██╔══██╗
 ███████╗██║ █╗ ██║██║█████╔╝ ███████╗ ╚████╔╝     ██████╔╝█████╗  ██║  ███╗██║   ██║██║     ███████║   ██║   ██║   ██║██║  ██║ ╚████╔╝     █████╗  █████╗  ██╔██╗ ██║█████╗  ██║   ██║██████╔╝██║   ██║█████╗  ██████╔╝
 ╚════██║██║███╗██║██║██╔═██╗ ╚════██║  ╚██╔╝      ██╔══██╗██╔══╝  ██║   ██║██║   ██║██║     ██╔══██║   ██║   ██║   ██║██║  ██║  ╚██╔╝      ██╔══╝  ██╔══╝  ██║╚██╗██║██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝  ██╔══██╗
 ███████║╚███╔███╔╝██║██║  ██╗███████║   ██║       ██████╔╝███████╗╚██████╔╝╚██████╔╝███████╗██║  ██║   ██║   ╚██████╔╝██████╔╝   ██║       ███████╗███████╗██║ ╚████║██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗██║  ██║
 ╚══════╝ ╚══╝╚══╝ ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝       ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═════╝    ╚═╝       ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
-                                                                                                                                                                                                                            
-                                  QUANTUM REGULATORY COMPLIANCE ENFORCER                                                                                     
-                         The Immutable Sentinel of Legal Conformity and Justice                                                                               
-                                Wilsy OS - Supreme Enforcement Dominion                                                                                       
-                                                                                                                                                              
+
+                                  QUANTUM REGULATORY COMPLIANCE ENFORCER
+                         The Immutable Sentinel of Legal Conformity and Justice
+                                Wilsy OS - Supreme Enforcement Dominion
+
 ===============================================================================================================================================================
  QUANTUM MANIFESTO:
  This immutable sentinel stands as the unbreachable gatekeeper of legal conformity, enforcing compliance
@@ -24,7 +24,7 @@
  AUTHOR: Wilson Khanyezi, Chief Architect & Quantum Sentinel
  VERSION: 2.0.0 | QUANTUM HASH: Qx8c6e4b1d3f2g7h5
  UPDATED: 2026-01-24 | QUANTUM FORENSIC FIX: 2026-01-24 17:30:00 UTC
-===============================================================================================================================================================*/
+=============================================================================================================================================================== */
 
 // ================================================================================================================
 // QUANTUM IMPORTS & ENVIRONMENT CONFIGURATION
@@ -55,7 +55,8 @@ const helmet = require('helmet');
 const { RateLimiterRedis } = require('rate-limiter-flexible');
 
 // Quantum Sentinel: Core dependencies with fallbacks
-let Redis, BullMQ;
+let Redis; let
+  BullMQ;
 try {
   Redis = require('ioredis');
 } catch (e) {
@@ -97,7 +98,7 @@ const REQUIRED_ENV_VARS = ['NODE_ENV', 'ENCRYPTION_KEY'];
 REQUIRED_ENV_VARS.forEach((varName) => {
   if (!process.env[varName] && process.env.NODE_ENV === 'production') {
     throw new Error(
-      `🚨 QUANTUM ENFORCER BREACH: Missing required environment variable: ${varName}`
+      `🚨 QUANTUM ENFORCER BREACH: Missing required environment variable: ${varName}`,
     );
   }
 });
@@ -281,7 +282,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
     this.enforcementState.lastEnforcement = new Date().toISOString();
 
     console.info(
-      '🛡️  QUANTUM REGULATORY COMPLIANCE ENFORCER INITIALIZED: Immutable Sentinel Activated'
+      '🛡️  QUANTUM REGULATORY COMPLIANCE ENFORCER INITIALIZED: Immutable Sentinel Activated',
     );
   }
 
@@ -324,14 +325,14 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
           req,
           context,
           requestData,
-          enforcementId
+          enforcementId,
         );
 
         // Step 6: Determine enforcement action
         const enforcementAction = await this.determineEnforcementAction(
           evaluationResult,
           context,
-          enforcementId
+          enforcementId,
         );
 
         // Step 7: Apply enforcement action
@@ -340,7 +341,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
           res,
           enforcementAction,
           evaluationResult,
-          enforcementId
+          enforcementId,
         );
 
         // Step 8: Update enforcement state
@@ -459,7 +460,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
           const evaluation = await this.ruleEngine.evaluateRule(
             rule.ruleId,
             context,
-            evaluationData
+            evaluationData,
           );
 
           ruleEvaluations.push(evaluation);
@@ -580,9 +581,8 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
       }
 
       // Determine violation level
-      const violationLevel =
-        evaluationResult.violationLevel ||
-        this.determineViolationLevelFromViolations(evaluationResult.violations);
+      const violationLevel = evaluationResult.violationLevel
+        || this.determineViolationLevelFromViolations(evaluationResult.violations);
 
       // Get enforcement configuration for violation level
       let enforcementConfig;
@@ -607,7 +607,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
       const contextualAction = await this.applyContextualOverrides(
         enforcementConfig.action,
         context,
-        evaluationResult
+        evaluationResult,
       );
 
       // Generate enforcement action
@@ -1115,9 +1115,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
 
       this.enforcementWorker = new BullMQ.Worker(
         'enforcement-processing',
-        async (job) => {
-          return await this.processEnforcementJob(job.data);
-        },
+        async (job) => await this.processEnforcementJob(job.data),
         {
           connection: this.redisClient,
           concurrency: 10,
@@ -1125,7 +1123,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
             max: 100,
             duration: 1000,
           },
-        }
+        },
       );
 
       // Alert queue
@@ -1169,19 +1167,18 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
 
     if (path.includes('/api/documents') && method === 'POST') {
       return ENFORCEMENT_CONSTANTS.ENFORCEMENT_CONTEXTS.DOCUMENT_UPLOAD;
-    } else if (path.includes('/api/signatures') && method === 'POST') {
+    } if (path.includes('/api/signatures') && method === 'POST') {
       return ENFORCEMENT_CONSTANTS.ENFORCEMENT_CONTEXTS.DOCUMENT_SIGNING;
-    } else if (path.includes('/api/payments') && method === 'POST') {
+    } if (path.includes('/api/payments') && method === 'POST') {
       return ENFORCEMENT_CONSTANTS.ENFORCEMENT_CONTEXTS.PAYMENT_PROCESSING;
-    } else if (path.includes('/api/users/register') && method === 'POST') {
+    } if (path.includes('/api/users/register') && method === 'POST') {
       return ENFORCEMENT_CONSTANTS.ENFORCEMENT_CONTEXTS.USER_REGISTRATION;
-    } else if (path.includes('/api/admin')) {
+    } if (path.includes('/api/admin')) {
       return ENFORCEMENT_CONSTANTS.ENFORCEMENT_CONTEXTS.ADMIN_OPERATION;
-    } else if (path.includes('/api/export')) {
+    } if (path.includes('/api/export')) {
       return ENFORCEMENT_CONSTANTS.ENFORCEMENT_CONTEXTS.DATA_EXPORT;
-    } else {
-      return ENFORCEMENT_CONSTANTS.ENFORCEMENT_CONTEXTS.API_REQUEST;
     }
+    return ENFORCEMENT_CONSTANTS.ENFORCEMENT_CONTEXTS.API_REQUEST;
   }
 
   /*
@@ -1430,8 +1427,8 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
 
       // Example: Quarantine instead of block for certain contexts
       if (
-        action === ENFORCEMENT_CONSTANTS.ENFORCEMENT_ACTIONS.BLOCK &&
-        context === ENFORCEMENT_CONSTANTS.ENFORCEMENT_CONTEXTS.USER_REGISTRATION
+        action === ENFORCEMENT_CONSTANTS.ENFORCEMENT_ACTIONS.BLOCK
+        && context === ENFORCEMENT_CONSTANTS.ENFORCEMENT_CONTEXTS.USER_REGISTRATION
       ) {
         return ENFORCEMENT_CONSTANTS.ENFORCEMENT_ACTIONS.QUARANTINE;
       }
@@ -1498,7 +1495,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
         await this.redisClient.setex(
           cacheKey,
           300, // 5 minutes in seconds
-          JSON.stringify(evaluationResult)
+          JSON.stringify(evaluationResult),
         );
       } catch (error) {
         console.warn('⚠️  Failed to cache evaluation result in Redis:', error.message);
@@ -1524,7 +1521,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
         await this.redisClient.setex(
           cacheKey,
           600, // 10 minutes in seconds
-          JSON.stringify(enforcementAction)
+          JSON.stringify(enforcementAction),
         );
       } catch (error) {
         console.warn('⚠️  Failed to cache enforcement action in Redis:', error.message);
@@ -1576,7 +1573,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
         await this.redisClient.setex(
           `alert:${alert.alertId}`,
           86400, // 24 hours
-          JSON.stringify(alert)
+          JSON.stringify(alert),
         );
       } catch (error) {
         console.warn('⚠️  Failed to store alert in Redis:', error.message);
@@ -1838,7 +1835,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
         await this.redisClient.setex(
           `quarantine:id:${quarantineId}`,
           259200, // 72 hours in seconds
-          JSON.stringify(quarantineData)
+          JSON.stringify(quarantineData),
         );
 
         // Index by IP
@@ -1846,7 +1843,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
           await this.redisClient.setex(
             `quarantine:ip:${req.ip}`,
             259200,
-            JSON.stringify(quarantineData)
+            JSON.stringify(quarantineData),
           );
         }
 
@@ -1855,7 +1852,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
           await this.redisClient.setex(
             `quarantine:user:${req.user.id}`,
             259200,
-            JSON.stringify(quarantineData)
+            JSON.stringify(quarantineData),
           );
         }
 
@@ -1864,7 +1861,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
           await this.redisClient.setex(
             `quarantine:session:${req.session.id}`,
             259200,
-            JSON.stringify(quarantineData)
+            JSON.stringify(quarantineData),
           );
         }
       } catch (error) {
@@ -2096,7 +2093,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
         await this.redisClient.setex(
           `action_log:${actionData.enforcementId}`,
           86400, // 24 hours
-          JSON.stringify(logEntry)
+          JSON.stringify(logEntry),
         );
       }
 
@@ -2131,7 +2128,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
         await this.redisClient.setex(
           eventKey,
           86400, // 24 hours
-          JSON.stringify(eventEntry)
+          JSON.stringify(eventEntry),
         );
       }
 
@@ -2200,7 +2197,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
             await this.redisClient.setex(
               auditKey,
               ENFORCEMENT_CONSTANTS.AUDIT.RETENTION_DAYS * 86400,
-              JSON.stringify(event)
+              JSON.stringify(event),
             );
           }
 
@@ -2520,11 +2517,11 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
         },
         requestsPerSecond: this.enforcementState.requestsEvaluated / (uptimeMs / 1000),
         violationRate:
-          this.enforcementState.violationsDetected /
-          Math.max(this.enforcementState.requestsEvaluated, 1),
+          this.enforcementState.violationsDetected
+          / Math.max(this.enforcementState.requestsEvaluated, 1),
         blockRate:
-          this.enforcementState.blocksEnforced /
-          Math.max(this.enforcementState.requestsEvaluated, 1),
+          this.enforcementState.blocksEnforced
+          / Math.max(this.enforcementState.requestsEvaluated, 1),
       },
       cache: {
         size: this.enforcementCache.size,
@@ -2608,7 +2605,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
       });
 
       console.log(
-        `✅ Enforcement diagnostics completed: Overall health - ${diagnostics.overallHealth}`
+        `✅ Enforcement diagnostics completed: Overall health - ${diagnostics.overallHealth}`,
       );
 
       return diagnostics;
@@ -2849,7 +2846,7 @@ class RegulatoryComplianceEnforcer extends EventEmitter {
    */
   calculateEnforcementHealth(checks) {
     const healthyChecks = checks.filter(
-      (check) => check.status === 'HEALTHY' || check.status === 'SKIPPED'
+      (check) => check.status === 'HEALTHY' || check.status === 'SKIPPED',
     ).length;
 
     const totalChecks = checks.length;

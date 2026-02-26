@@ -52,32 +52,30 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 // =============================================================================
 // CORE DEPENDENCIES - SOVEREIGN STACK
 // =============================================================================
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const speakeasy = require('speakeasy'); // For MFA
 
 // =============================================================================
 // DATA MODELS - GENERATIONAL PERSISTENCE
 // =============================================================================
-const User = require('../models/User');
-const Firm = require('../models/Firm');
+const rateLimiter = require('../middleware/rateLimiter');
 const AuditLog = require('../models/AuditLog');
-const Session = require('../models/Session');
+const Firm = require('../models/Firm');
 const SecurityEvent = require('../models/SecurityEvent');
+const Session = require('../models/Session');
+const User = require('../models/User');
 
 // =============================================================================
 // UTILITIES - BILLION-DOLLAR INFRASTRUCTURE
 // =============================================================================
-const logger = require('../utils/logger');
 const emailService = require('../services/emailService');
 const smsService = require('../services/smsService');
-const rateLimiter = require('../middleware/rateLimiter');
+const logger = require('../utils/logger');
 
 // =============================================================================
 // CONSTANTS - GENERATIONAL CONFIGURATION
@@ -1115,7 +1113,7 @@ exports.logout = async (req, res) => {
         isActive: false,
         loggedOutAt: new Date(),
         logoutReason: 'user_initiated',
-      }
+      },
     );
 
     // Clear refresh token
@@ -1236,7 +1234,7 @@ exports.refreshToken = async (req, res) => {
         refreshToken: newRefreshTokenData.hashedToken,
         lastActivity: new Date(),
         expiresAt: new Date(Date.now() + GENERATIONAL_CONFIG.SESSION_TIMEOUT),
-      }
+      },
     );
 
     // Audit

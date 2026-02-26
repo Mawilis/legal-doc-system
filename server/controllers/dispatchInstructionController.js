@@ -9,12 +9,10 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
-const DispatchInstruction = require('../models/DispatchInstruction');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
+const DispatchInstruction = require('../models/DispatchInstruction');
 
 /*
  * INTERNAL COMPLIANCE VALIDATOR
@@ -44,7 +42,7 @@ const validateLegalRequirements = (body) => {
 const calculateSLA = (instruction) => {
   const isUrgent = instruction.urgency === 'urgent';
   const isComplex = ['ejectment_eviction', 'writ_execution_immovables'].includes(
-    instruction.serviceType
+    instruction.serviceType,
   );
 
   return {
@@ -91,7 +89,7 @@ exports.createInstruction = asyncHandler(async (req, res) => {
     res,
     { instruction, sla },
     { message: 'Legal instruction successfully validated and issued.' },
-    201
+    201,
   );
 });
 
@@ -111,7 +109,7 @@ exports.getInstruction = asyncHandler(async (req, res) => {
       res,
       404,
       'Instruction not found or access denied.',
-      'ERR_INSTRUCTION_NOT_FOUND'
+      'ERR_INSTRUCTION_NOT_FOUND',
     );
   }
 

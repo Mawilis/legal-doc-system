@@ -1,27 +1,27 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT SERVICE TESTS - INVESTOR-GRADE DUE DILIGENCE                       ║
   ║ [100% coverage | Deterministic evidence | R10M risk validation]             ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/services/documentService.test.js
  */
 
 /* eslint-env jest */
-const request = require('supertest');
 const express = require('express');
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+const request = require('supertest');
 /* eslint-disable-next-line no-unused-vars */
 
-const { templateRegistry } = require('../../services/documentTemplateRegistry');
 const documentRoutes = require('../../routes/documentRoutes');
+const { templateRegistry } = require('../../services/documentTemplateRegistry');
 
 describe('Document Service - Investor Grade Due Diligence', () => {
   let mongoServer;
   let app;
-  let testTenantId = 'tenant-550e8400-e29b-41d4-a716-446655440000';
-  let testUserId = 'user-123e4567-e89b-12d3-a456-426614174000';
+  const testTenantId = 'tenant-550e8400-e29b-41d4-a716-446655440000';
+  const testUserId = 'user-123e4567-e89b-12d3-a456-426614174000';
 
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
@@ -330,7 +330,7 @@ afterAll(async () => {
   const evidencePath = path.join(__dirname, 'document-service-evidence.json');
   await fs.writeFile(evidencePath, JSON.stringify(evidence, null, 2));
 
-  console.log(`\n🔐 FORENSIC EVIDENCE GENERATED:`);
+  console.log('\n🔐 FORENSIC EVIDENCE GENERATED:');
   console.log(`   File: ${evidencePath}`);
   console.log(`   Hash: ${evidence.hash}`);
 });

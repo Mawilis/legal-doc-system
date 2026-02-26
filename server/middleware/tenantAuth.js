@@ -33,14 +33,12 @@
  * @release_date 2024
  */
 
-'use strict';
-
 // ============================================================================
 // QUANTUM IMPORTS - SECURE DEPENDENCIES
 // ============================================================================
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
-const crypto = require('crypto');
 const redis = require('redis');
 
 // Quantum Security: Load environment variables
@@ -49,15 +47,15 @@ require('dotenv').config({ path: '/server/.env' });
 // ============================================================================
 // WILSY OS CORE IMPORTS - FROM CHAT HISTORY
 // ============================================================================
-const User = require('../models/userModel');
-const Tenant = require('../models/tenantModel');
 const AuditEvent = require('../models/auditEventModel');
+const Tenant = require('../models/tenantModel');
+const User = require('../models/userModel');
 const CustomError = require('../utils/customError');
 
 // ============================================================================
 // QUANTUM CONSTANTS - SECURITY & COMPLIANCE
 // ============================================================================
-const JWT_SECRET = process.env.JWT_SECRET;
+const { JWT_SECRET } = process.env;
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
 const REDIS_TENANT_CACHE_TTL = parseInt(process.env.REDIS_TENANT_CACHE_TTL) || 3600; // 1 hour
 
@@ -252,7 +250,7 @@ function getTenantFromRequest(req) {
 
     // Strategy 3: From subdomain (for web interface)
     () => {
-      const host = req.headers.host;
+      const { host } = req.headers;
       if (host) {
         const parts = host.split('.');
         if (parts.length > 2) {
@@ -308,7 +306,7 @@ function validateTenantStatus(tenant) {
       case 'COMPLIANCE_HOLD':
         throw new CustomError(
           'Tenant account is under compliance review. Please contact support.',
-          403
+          403,
         );
       case 'PENDING':
         throw new CustomError('Tenant account is pending activation.', 403);
@@ -326,7 +324,7 @@ function validateTenantStatus(tenant) {
   if (tenant.complianceStatus && tenant.complianceStatus.overallScore < 70) {
     // Allow access but log warning
     console.warn(
-      `Tenant ${tenant._id} has low compliance score: ${tenant.complianceStatus.overallScore}%`
+      `Tenant ${tenant._id} has low compliance score: ${tenant.complianceStatus.overallScore}%`,
     );
     // In production, could trigger compliance alert
   }
@@ -352,7 +350,7 @@ async function validateUserTenantMembership(userId, tenantId) {
   // Query database
   const user = await User.findOne({
     _id: userId,
-    tenantId: tenantId,
+    tenantId,
     deletedAt: null,
   }).select('-password -inviteTokenHash -__v -refreshTokens');
 
@@ -518,9 +516,8 @@ function checkPermission(user, resource, action) {
     'export:create': 'exportData',
   };
 
-  const permissionKey =
-    permissionMap[`${resource}:${action}`] ||
-    `${resource}${action.charAt(0).toUpperCase() + action.slice(1)}`;
+  const permissionKey = permissionMap[`${resource}:${action}`]
+    || `${resource}${action.charAt(0).toUpperCase() + action.slice(1)}`;
 
   return permissions[permissionKey] === true;
 }
@@ -748,14 +745,12 @@ exports.protect = async (req, res, next) => {
  */
 exports.authorize = (...roles) => {
   // Capture resource and action if provided as additional arguments
-  const resource =
-    roles.length > 0 && typeof roles[roles.length - 2] === 'string'
-      ? roles[roles.length - 2]
-      : null;
-  const action =
-    roles.length > 0 && typeof roles[roles.length - 1] === 'string'
-      ? roles[roles.length - 1]
-      : null;
+  const resource = roles.length > 0 && typeof roles[roles.length - 2] === 'string'
+    ? roles[roles.length - 2]
+    : null;
+  const action = roles.length > 0 && typeof roles[roles.length - 1] === 'string'
+    ? roles[roles.length - 1]
+    : null;
 
   // If resource and action were provided, they're not roles
   const actualRoles = resource && action ? roles.slice(0, -2) : roles;
@@ -771,7 +766,7 @@ exports.authorize = (...roles) => {
       if (actualRoles.length > 0 && !actualRoles.includes(req.user.role)) {
         throw new CustomError(
           `Role ${req.user.role} is not authorized to access this resource`,
-          403
+          403,
         );
       }
 
@@ -816,42 +811,40 @@ exports.authorize = (...roles) => {
  * @param {string} action - Action type
  * @returns {Function} Express middleware
  */
-exports.requirePermission = (resource, action) => {
-  return (req, res, next) => {
-    try {
-      if (!req.user) {
-        throw new CustomError('User not authenticated', 401);
-      }
-
-      const hasPermission = checkPermission(req.user, resource, action);
-      if (!hasPermission) {
-        // Quantum Audit: Log permission denial
-        AuditEvent.create({
-          tenantId: req.tenantId,
-          actor: req.user._id,
-          eventType: 'PERMISSION_DENIED',
-          severity: 'MEDIUM',
-          summary: `Permission denied for ${action} on ${resource}`,
-          metadata: {
-            userId: req.user._id,
-            email: req.user.email,
-            role: req.user.role,
-            resource,
-            action,
-            path: req.path,
-            method: req.method,
-            timestamp: new Date(),
-          },
-        }).catch((err) => console.error('Audit log failed:', err.message));
-
-        throw new CustomError(`Insufficient permissions for ${action} on ${resource}`, 403);
-      }
-
-      next();
-    } catch (error) {
-      next(error);
+exports.requirePermission = (resource, action) => (req, res, next) => {
+  try {
+    if (!req.user) {
+      throw new CustomError('User not authenticated', 401);
     }
-  };
+
+    const hasPermission = checkPermission(req.user, resource, action);
+    if (!hasPermission) {
+      // Quantum Audit: Log permission denial
+      AuditEvent.create({
+        tenantId: req.tenantId,
+        actor: req.user._id,
+        eventType: 'PERMISSION_DENIED',
+        severity: 'MEDIUM',
+        summary: `Permission denied for ${action} on ${resource}`,
+        metadata: {
+          userId: req.user._id,
+          email: req.user.email,
+          role: req.user.role,
+          resource,
+          action,
+          path: req.path,
+          method: req.method,
+          timestamp: new Date(),
+        },
+      }).catch((err) => console.error('Audit log failed:', err.message));
+
+      throw new CustomError(`Insufficient permissions for ${action} on ${resource}`, 403);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 /*
@@ -862,31 +855,29 @@ exports.requirePermission = (resource, action) => {
  * @param {string} action - Required action permission
  * @returns {Function} Express middleware
  */
-exports.authorizeWithPermissions = (roles, resource, action) => {
-  return (req, res, next) => {
-    try {
-      if (!req.user) {
-        throw new CustomError('User not authenticated', 401);
-      }
-
-      // Check role
-      if (roles && roles.length > 0 && !roles.includes(req.user.role)) {
-        throw new CustomError(`Role ${req.user.role} is not authorized`, 403);
-      }
-
-      // Check permission
-      if (resource && action) {
-        const hasPermission = checkPermission(req.user, resource, action);
-        if (!hasPermission) {
-          throw new CustomError(`Insufficient permissions for ${action} on ${resource}`, 403);
-        }
-      }
-
-      next();
-    } catch (error) {
-      next(error);
+exports.authorizeWithPermissions = (roles, resource, action) => (req, res, next) => {
+  try {
+    if (!req.user) {
+      throw new CustomError('User not authenticated', 401);
     }
-  };
+
+    // Check role
+    if (roles && roles.length > 0 && !roles.includes(req.user.role)) {
+      throw new CustomError(`Role ${req.user.role} is not authorized`, 403);
+    }
+
+    // Check permission
+    if (resource && action) {
+      const hasPermission = checkPermission(req.user, resource, action);
+      if (!hasPermission) {
+        throw new CustomError(`Insufficient permissions for ${action} on ${resource}`, 403);
+      }
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 // ============================================================================
@@ -901,43 +892,40 @@ exports.authorizeWithPermissions = (roles, resource, action) => {
  * @param {string} tenantField - Field name for tenant ID in model (default: 'tenantId')
  * @returns {Function} Express middleware
  */
-exports.enforceTenantIsolation = (resourceParam, Model, tenantField = 'tenantId') => {
-  return async (req, res, next) => {
-    try {
-      const resourceId =
-        req.params[resourceParam] || req.body[resourceParam] || req.query[resourceParam];
+exports.enforceTenantIsolation = (resourceParam, Model, tenantField = 'tenantId') => async (req, res, next) => {
+  try {
+    const resourceId = req.params[resourceParam] || req.body[resourceParam] || req.query[resourceParam];
 
-      if (!resourceId) {
-        // No resource ID provided - continue (might be creating new resource)
-        return next();
-      }
-
-      if (!req.tenantId) {
-        throw new CustomError('Tenant identification required', 400);
-      }
-
-      // Validate resource exists and belongs to tenant
-      const resource = await Model.findOne({
-        _id: resourceId,
-        [tenantField]: req.tenantId,
-        deletedAt: null,
-      }).select(`_id ${tenantField}`);
-
-      if (!resource) {
-        throw new CustomError('Resource not found or access denied', 404);
-      }
-
-      // Verify tenant boundary
-      enforceTenantBoundary(req, resource[tenantField].toString());
-
-      // Attach resource to request for downstream use
-      req.resource = resource;
-
-      next();
-    } catch (error) {
-      next(error);
+    if (!resourceId) {
+      // No resource ID provided - continue (might be creating new resource)
+      return next();
     }
-  };
+
+    if (!req.tenantId) {
+      throw new CustomError('Tenant identification required', 400);
+    }
+
+    // Validate resource exists and belongs to tenant
+    const resource = await Model.findOne({
+      _id: resourceId,
+      [tenantField]: req.tenantId,
+      deletedAt: null,
+    }).select(`_id ${tenantField}`);
+
+    if (!resource) {
+      throw new CustomError('Resource not found or access denied', 404);
+    }
+
+    // Verify tenant boundary
+    enforceTenantBoundary(req, resource[tenantField].toString());
+
+    // Attach resource to request for downstream use
+    req.resource = resource;
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 /*
@@ -1000,49 +988,47 @@ exports.sanitizeTenantData = (req, res, next) => {
  * @param {Array} requirements - Array of compliance requirements to enforce
  * @returns {Function} Express middleware
  */
-exports.enforceCompliance = (requirements = []) => {
-  return async (req, res, next) => {
-    try {
-      if (!req.tenantId) {
-        throw new CustomError('Tenant identification required', 400);
-      }
-
-      const tenant = req.tenant || (await Tenant.findById(req.tenantId).select('complianceStatus'));
-
-      // Check each requirement
-      for (const requirement of requirements) {
-        switch (requirement) {
-          case 'POPIA':
-            if (!tenant.complianceStatus?.popiaCompliant) {
-              throw new CustomError('POPIA compliance required for this operation', 403);
-            }
-            break;
-
-          case 'FICA':
-            if (!tenant.complianceStatus?.ficaCompliant) {
-              throw new CustomError('FICA compliance required for this operation', 403);
-            }
-            break;
-
-          case 'LPC':
-            if (!tenant.complianceStatus?.lpcCompliant) {
-              throw new CustomError('LPC registration required for this operation', 403);
-            }
-            break;
-
-          case 'VAT':
-            if (tenant.billing?.vatRegistered && !tenant.complianceStatus?.vatCompliant) {
-              throw new CustomError('VAT compliance required for this operation', 403);
-            }
-            break;
-        }
-      }
-
-      next();
-    } catch (error) {
-      next(error);
+exports.enforceCompliance = (requirements = []) => async (req, res, next) => {
+  try {
+    if (!req.tenantId) {
+      throw new CustomError('Tenant identification required', 400);
     }
-  };
+
+    const tenant = req.tenant || (await Tenant.findById(req.tenantId).select('complianceStatus'));
+
+    // Check each requirement
+    for (const requirement of requirements) {
+      switch (requirement) {
+        case 'POPIA':
+          if (!tenant.complianceStatus?.popiaCompliant) {
+            throw new CustomError('POPIA compliance required for this operation', 403);
+          }
+          break;
+
+        case 'FICA':
+          if (!tenant.complianceStatus?.ficaCompliant) {
+            throw new CustomError('FICA compliance required for this operation', 403);
+          }
+          break;
+
+        case 'LPC':
+          if (!tenant.complianceStatus?.lpcCompliant) {
+            throw new CustomError('LPC registration required for this operation', 403);
+          }
+          break;
+
+        case 'VAT':
+          if (tenant.billing?.vatRegistered && !tenant.complianceStatus?.vatCompliant) {
+            throw new CustomError('VAT compliance required for this operation', 403);
+          }
+          break;
+      }
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 // ============================================================================

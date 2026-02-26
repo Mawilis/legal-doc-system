@@ -1,4 +1,4 @@
-/*                                                                                                                              
+/*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                                                              ║
 ║   ██████╗ ██╗███████╗██╗  ██╗    ██████╗  █████╗ ███████╗███████╗███████╗███████╗██████╗ ███╗   ███╗███████╗███╗   ██╗████████╗║
@@ -64,16 +64,16 @@
 └─────────────────────────────────────────────────────────────────────────────┘
 */
 
-const mongoose = require('mongoose');
-const asyncHandler = require('express-async-handler');
-const { v4: uuidv4 } = require('uuid');
-const moment = require('moment-timezone');
 const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const Joi = require('joi');
-const rateLimit = require('express-rate-limit');
 const path = require('path');
+const bcrypt = require('bcryptjs');
+const asyncHandler = require('express-async-handler');
+const rateLimit = require('express-rate-limit');
+const Joi = require('joi');
+const jwt = require('jsonwebtoken');
+const moment = require('moment-timezone');
+const mongoose = require('mongoose');
+const { v4: uuidv4 } = require('uuid');
 
 // ============================================================================
 // QUANTUM ENVIRONMENT CONFIGURATION - COMPLETE
@@ -99,7 +99,8 @@ REQUIRED_ENV_VARS.forEach((varName) => {
 // ============================================================================
 // QUANTUM MODEL IMPORTS - COMPLETE WITH FALLBACKS
 // ============================================================================
-let RiskAssessment, Client, User, AuditLog, ComplianceRecord, RiskMitigation;
+let RiskAssessment; let Client; let User; let AuditLog; let ComplianceRecord; let
+  RiskMitigation;
 
 try {
   RiskAssessment = require('../models/riskAssessmentModel');
@@ -220,7 +221,7 @@ try {
     {
       timestamps: true,
       versionKey: false,
-    }
+    },
   );
 
   RiskAssessment = mongoose.model('RiskAssessment', riskAssessmentSchema);
@@ -480,7 +481,7 @@ class QuantumEncryptionService {
     this.algorithm = 'aes-256-gcm';
     this.key = Buffer.from(
       process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex'),
-      'hex'
+      'hex',
     );
 
     if (this.key.length !== 32) {
@@ -498,7 +499,7 @@ class QuantumEncryptionService {
       const authTag = cipher.getAuthTag();
 
       return {
-        encrypted: encrypted,
+        encrypted,
         iv: iv.toString('hex'),
         authTag: authTag.toString('hex'),
         algorithm: this.algorithm,
@@ -516,7 +517,7 @@ class QuantumEncryptionService {
       const decipher = crypto.createDecipheriv(
         this.algorithm,
         this.key,
-        Buffer.from(encryptedData.iv, 'hex')
+        Buffer.from(encryptedData.iv, 'hex'),
       );
 
       decipher.setAuthTag(Buffer.from(encryptedData.authTag, 'hex'));
@@ -533,7 +534,7 @@ class QuantumEncryptionService {
 
   encryptSensitiveFields(
     data,
-    fieldsToEncrypt = ['clientDetails', 'financialInfo', 'personalData', 'confidentialNotes']
+    fieldsToEncrypt = ['clientDetails', 'financialInfo', 'personalData', 'confidentialNotes'],
   ) {
     const encrypted = { ...data };
 
@@ -577,7 +578,7 @@ class QuantumValidationService {
             'POPIA_COMPLIANCE_ASSESSMENT',
             'OPERATIONAL_RISK_ASSESSMENT',
             'CYBERSECURITY_ASSESSMENT',
-            'COMPREHENSIVE_LEGAL_RISK_ASSESSMENT'
+            'COMPREHENSIVE_LEGAL_RISK_ASSESSMENT',
           ),
         riskCategory: Joi.string()
           .required()
@@ -594,7 +595,7 @@ class QuantumValidationService {
               impact: Joi.number().min(1).max(5).required(),
               evidence: Joi.string().optional(),
               supportingDocuments: Joi.array().items(Joi.string()).optional(),
-            })
+            }),
           )
           .min(1)
           .required(),
@@ -609,7 +610,7 @@ class QuantumValidationService {
               'LEGAL_OBLIGATION',
               'VITAL_INTERESTS',
               'PUBLIC_TASK',
-              'LEGITIMATE_INTERESTS'
+              'LEGITIMATE_INTERESTS',
             )
             .required(),
           dataMinimizationApplied: Joi.boolean().default(true),
@@ -637,7 +638,7 @@ class QuantumValidationService {
               assignedTo: Joi.string().required(),
               dueDate: Joi.date().greater('now').required(),
               priority: Joi.string().valid('LOW', 'MEDIUM', 'HIGH', 'CRITICAL').required(),
-            })
+            }),
           )
           .optional(),
 
@@ -652,7 +653,7 @@ class QuantumValidationService {
                 .required(),
               size: Joi.number().max(RISK_CONSTANTS.VALIDATION.MAX_FILE_SIZE).required(),
               uploadedAt: Joi.date().default(Date.now),
-            })
+            }),
           )
           .max(RISK_CONSTANTS.VALIDATION.MAX_DOCUMENTS_PER_ASSESSMENT)
           .optional(),
@@ -677,7 +678,7 @@ class QuantumValidationService {
               likelihood: Joi.number().min(1).max(5).required(),
               impact: Joi.number().min(1).max(5).required(),
               evidence: Joi.string().optional(),
-            })
+            }),
           )
           .optional(),
 
@@ -691,7 +692,7 @@ class QuantumValidationService {
               completionDate: Joi.date().optional(),
               effectiveness: Joi.number().min(1).max(5).optional(),
               notes: Joi.string().max(RISK_CONSTANTS.VALIDATION.MAX_NOTES_LENGTH).optional(),
-            })
+            }),
           )
           .optional(),
 
@@ -710,7 +711,8 @@ class QuantumValidationService {
 
       queryParams: Joi.object({
         page: Joi.number().integer().min(1).default(1),
-        limit: Joi.number().integer().min(1).max(100).default(20),
+        limit: Joi.number().integer().min(1).max(100)
+          .default(20),
         sortBy: Joi.string()
           .valid('createdAt', 'updatedAt', 'riskLevel', 'assessmentDate')
           .default('createdAt'),
@@ -811,9 +813,7 @@ class QuantumValidationService {
       // Cannot modify certain fields once approved
       if (existingAssessment.status === 'ACTIVE' || existingAssessment.status === 'ARCHIVED') {
         const restrictedFields = ['clientId', 'assessmentType', 'assessmentDate'];
-        const attemptedRestricted = Object.keys(value).filter((key) =>
-          restrictedFields.includes(key)
-        );
+        const attemptedRestricted = Object.keys(value).filter((key) => restrictedFields.includes(key));
 
         if (attemptedRestricted.length > 0) {
           return {
@@ -892,9 +892,9 @@ class QuantumValidationService {
       if (assessment.accessControl) {
         const accessList = assessment.accessControl[requiredPermission] || [];
         if (
-          accessList.length > 0 &&
-          !accessList.includes(userId) &&
-          !accessList.includes(user.role)
+          accessList.length > 0
+          && !accessList.includes(userId)
+          && !accessList.includes(user.role)
         ) {
           return { hasAccess: false, reason: 'Not in access control list' };
         }
@@ -1112,7 +1112,8 @@ class QuantumAuditService {
       const skip = (page - 1) * limit;
 
       const [logs, total] = await Promise.all([
-        AuditLog.find(query).sort({ timestamp: -1 }).skip(skip).limit(limit).lean(),
+        AuditLog.find(query).sort({ timestamp: -1 }).skip(skip).limit(limit)
+          .lean(),
         AuditLog.countDocuments(query),
       ]);
 
@@ -1227,10 +1228,10 @@ class QuantumComplianceEngine {
 
     // Enhanced Due Diligence for high-risk clients
     if (
-      assessmentData.ficaCompliance.pepStatus ||
-      assessmentData.ficaCompliance.sanctionsCheck ||
-      assessmentData.riskLevel === 'HIGH' ||
-      assessmentData.riskLevel === 'CRITICAL'
+      assessmentData.ficaCompliance.pepStatus
+      || assessmentData.ficaCompliance.sanctionsCheck
+      || assessmentData.riskLevel === 'HIGH'
+      || assessmentData.riskLevel === 'CRITICAL'
     ) {
       compliance.enhancedDueDiligence = true;
 
@@ -1275,8 +1276,8 @@ class QuantumComplianceEngine {
 
     // Companies Act §24: Record keeping
     if (
-      !assessmentData.popiaCompliance?.retentionPeriod ||
-      assessmentData.popiaCompliance.retentionPeriod !== '7_YEARS'
+      !assessmentData.popiaCompliance?.retentionPeriod
+      || assessmentData.popiaCompliance.retentionPeriod !== '7_YEARS'
     ) {
       compliance.violations.push({
         section: 'Companies Act §24',
@@ -1303,8 +1304,7 @@ class QuantumComplianceEngine {
       this.validateCompaniesActCompliance(assessmentData),
     ]);
 
-    const allCompliant =
-      popiaCompliance.compliant && ficaCompliance.compliant && companiesActCompliance.compliant;
+    const allCompliant = popiaCompliance.compliant && ficaCompliance.compliant && companiesActCompliance.compliant;
 
     const allViolations = [
       ...popiaCompliance.violations,
@@ -1363,7 +1363,7 @@ class QuantumComplianceEngine {
       }
 
       // Decrypt assessment data if needed
-      let assessmentData = assessment.assessmentData;
+      let { assessmentData } = assessment;
       if (assessment.encryptedData) {
         assessmentData = encryptionService.decrypt(assessment.encryptedData);
       }
@@ -1405,7 +1405,7 @@ class QuantumComplianceEngine {
               ? 'COMPLIANT'
               : 'NON_COMPLIANT',
             score: this.calculateComplianceScore(
-              complianceCheck.frameworks.companiesAct.violations
+              complianceCheck.frameworks.companiesAct.violations,
             ),
             violations: complianceCheck.frameworks.companiesAct.violations,
             requirements: complianceCheck.frameworks.companiesAct.requirements,
@@ -1584,7 +1584,7 @@ class QuantumRiskCalculationEngine {
         heatmap.categories[category].count++;
         heatmap.categories[category].totalScore += riskScore;
         heatmap.categories[category].averageScore = Math.round(
-          heatmap.categories[category].totalScore / heatmap.categories[category].count
+          heatmap.categories[category].totalScore / heatmap.categories[category].count,
         );
 
         if (assessment.riskLevel === 'HIGH' || assessment.riskLevel === 'CRITICAL') {
@@ -1625,7 +1625,7 @@ class QuantumRiskCalculationEngine {
 
       assessments.forEach((assessment) => {
         const month = moment(assessment.assessmentDate).format('YYYY-MM');
-        const score = this.calculateRiskScore(assessment.riskFactors).score;
+        const { score } = this.calculateRiskScore(assessment.riskFactors);
 
         if (!monthlyTrends[month]) {
           monthlyTrends[month] = {
@@ -1685,10 +1685,10 @@ class QuantumRiskCalculationEngine {
 
     // Simple linear regression for prediction
     const n = trendData.length;
-    let sumX = 0,
-      sumY = 0,
-      sumXY = 0,
-      sumX2 = 0;
+    let sumX = 0;
+    let sumY = 0;
+    let sumXY = 0;
+    let sumX2 = 0;
 
     trendData.forEach((data, index) => {
       sumX += index;
@@ -1718,7 +1718,9 @@ class QuantumRiskCalculationEngine {
 class QuantumNotificationService {
   static async sendRiskAssessmentNotification(notificationData) {
     try {
-      const { type, assessmentId, userId, firmId, clientId, riskLevel, details } = notificationData;
+      const {
+        type, assessmentId, userId, firmId, clientId, riskLevel, details,
+      } = notificationData;
 
       const notification = {
         notificationId: uuidv4(),
@@ -1855,53 +1857,51 @@ class QuantumNotificationService {
 // ============================================================================
 // QUANTUM RATE LIMITERS - COMPLETE SET
 // ============================================================================
-const createRateLimiter = (windowMs, max, keyGenerator = (req) => req.ip) => {
-  return rateLimit({
-    windowMs,
-    max,
-    keyGenerator,
-    message: {
-      success: false,
-      error: 'RATE_LIMIT_EXCEEDED',
-      message: 'Too many requests from this IP, please try again later.',
-      retryAfter: `${Math.ceil(windowMs / 60000)} minutes`,
-      complianceCode: 'RATE_LIMIT_SA_LEGAL',
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-    skip: (req) => {
-      // Skip rate limiting for compliance officers and partners
-      const user = req.user;
-      return (
-        user &&
-        (user.role === 'COMPLIANCE_OFFICER' ||
-          user.role === 'PARTNER' ||
-          user.role === 'SYSTEM_ADMIN')
-      );
-    },
-  });
-};
+const createRateLimiter = (windowMs, max, keyGenerator = (req) => req.ip) => rateLimit({
+  windowMs,
+  max,
+  keyGenerator,
+  message: {
+    success: false,
+    error: 'RATE_LIMIT_EXCEEDED',
+    message: 'Too many requests from this IP, please try again later.',
+    retryAfter: `${Math.ceil(windowMs / 60000)} minutes`,
+    complianceCode: 'RATE_LIMIT_SA_LEGAL',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for compliance officers and partners
+    const { user } = req;
+    return (
+      user
+        && (user.role === 'COMPLIANCE_OFFICER'
+          || user.role === 'PARTNER'
+          || user.role === 'SYSTEM_ADMIN')
+    );
+  },
+});
 
 const rateLimiters = {
   createAssessment: createRateLimiter(
     RISK_CONSTANTS.RATE_LIMITS.CREATE_ASSESSMENT.windowMs,
-    RISK_CONSTANTS.RATE_LIMITS.CREATE_ASSESSMENT.max
+    RISK_CONSTANTS.RATE_LIMITS.CREATE_ASSESSMENT.max,
   ),
   viewAssessment: createRateLimiter(
     RISK_CONSTANTS.RATE_LIMITS.VIEW_ASSESSMENT.windowMs,
-    RISK_CONSTANTS.RATE_LIMITS.VIEW_ASSESSMENT.max
+    RISK_CONSTANTS.RATE_LIMITS.VIEW_ASSESSMENT.max,
   ),
   updateAssessment: createRateLimiter(
     RISK_CONSTANTS.RATE_LIMITS.UPDATE_ASSESSMENT.windowMs,
-    RISK_CONSTANTS.RATE_LIMITS.UPDATE_ASSESSMENT.max
+    RISK_CONSTANTS.RATE_LIMITS.UPDATE_ASSESSMENT.max,
   ),
   deleteAssessment: createRateLimiter(
     RISK_CONSTANTS.RATE_LIMITS.DELETE_ASSESSMENT.windowMs,
-    RISK_CONSTANTS.RATE_LIMITS.DELETE_ASSESSMENT.max
+    RISK_CONSTANTS.RATE_LIMITS.DELETE_ASSESSMENT.max,
   ),
   generateReport: createRateLimiter(
     RISK_CONSTANTS.RATE_LIMITS.GENERATE_REPORT.windowMs,
-    RISK_CONSTANTS.RATE_LIMITS.GENERATE_REPORT.max
+    RISK_CONSTANTS.RATE_LIMITS.GENERATE_REPORT.max,
   ),
 };
 
@@ -1964,12 +1964,11 @@ exports.createRiskAssessment = [
 
       // Calculate initial risk score
       const riskCalculation = QuantumRiskCalculationEngine.calculateRiskScore(
-        sanitizedData.riskFactors
+        sanitizedData.riskFactors,
       );
 
       // Perform compliance checks
-      const complianceCheck =
-        await QuantumComplianceEngine.performComprehensiveComplianceCheck(sanitizedData);
+      const complianceCheck = await QuantumComplianceEngine.performComprehensiveComplianceCheck(sanitizedData);
 
       // Encrypt sensitive data
       const encryptedData = encryptionService.encryptSensitiveFields(sanitizedData);
@@ -1981,7 +1980,7 @@ exports.createRiskAssessment = [
         clientId: sanitizedData.clientId,
         createdBy: userId,
         assessmentData: sanitizedData,
-        encryptedData: encryptedData,
+        encryptedData,
         riskLevel: riskCalculation.level,
         riskCategory: sanitizedData.riskCategory,
         riskFactors: sanitizedData.riskFactors,
@@ -2040,8 +2039,8 @@ exports.createRiskAssessment = [
 
       // Update client risk level if higher than current
       if (
-        RISK_CONSTANTS.RISK_LEVELS[riskCalculation.level].score >
-        RISK_CONSTANTS.RISK_LEVELS[client.riskLevel || 'LOW'].score
+        RISK_CONSTANTS.RISK_LEVELS[riskCalculation.level].score
+        > RISK_CONSTANTS.RISK_LEVELS[client.riskLevel || 'LOW'].score
       ) {
         client.riskLevel = riskCalculation.level;
         await client.save({ session });
@@ -2155,7 +2154,7 @@ exports.getRiskAssessment = [
       const accessValidation = await QuantumValidationService.validateUserAccess(
         userId,
         assessmentId,
-        'VIEW'
+        'VIEW',
       );
 
       if (!accessValidation.hasAccess) {
@@ -2168,7 +2167,7 @@ exports.getRiskAssessment = [
         });
       }
 
-      const assessment = accessValidation.assessment;
+      const { assessment } = accessValidation;
 
       // Check if assessment belongs to user's firm
       if (assessment.legalFirmId !== firmId) {
@@ -2192,7 +2191,7 @@ exports.getRiskAssessment = [
       });
 
       // Prepare response data based on user permissions
-      let responseData = {
+      const responseData = {
         assessmentId: assessment.assessmentId,
         clientId: assessment.clientId,
         riskLevel: assessment.riskLevel,
@@ -2222,24 +2221,24 @@ exports.getRiskAssessment = [
         // Access Information
         accessInfo: {
           canEdit:
-            accessValidation.user.role === 'COMPLIANCE_OFFICER' ||
-            accessValidation.user.role === 'PARTNER' ||
-            assessment.createdBy === userId,
+            accessValidation.user.role === 'COMPLIANCE_OFFICER'
+            || accessValidation.user.role === 'PARTNER'
+            || assessment.createdBy === userId,
           canApprove:
-            accessValidation.user.role === 'COMPLIANCE_OFFICER' ||
-            accessValidation.user.role === 'PARTNER',
+            accessValidation.user.role === 'COMPLIANCE_OFFICER'
+            || accessValidation.user.role === 'PARTNER',
           canDelete: accessValidation.user.role === 'PARTNER',
         },
       };
 
       // Add detailed data for authorized users
       if (
-        accessValidation.user.role === 'COMPLIANCE_OFFICER' ||
-        accessValidation.user.role === 'PARTNER' ||
-        accessValidation.user.role === 'RISK_MANAGER'
+        accessValidation.user.role === 'COMPLIANCE_OFFICER'
+        || accessValidation.user.role === 'PARTNER'
+        || accessValidation.user.role === 'RISK_MANAGER'
       ) {
         // Decrypt assessment data for authorized users
-        let assessmentData = assessment.assessmentData;
+        let { assessmentData } = assessment;
         if (assessment.encryptedData) {
           try {
             assessmentData = encryptionService.decrypt(assessment.encryptedData);
@@ -2309,11 +2308,13 @@ exports.getAllRiskAssessments = [
         });
       }
 
-      const { page, limit, sortBy, sortOrder, ...filters } = value;
+      const {
+        page, limit, sortBy, sortOrder, ...filters
+      } = value;
       const skip = (page - 1) * limit;
 
       // Build base query
-      let query = { legalFirmId: firmId };
+      const query = { legalFirmId: firmId };
 
       // Apply filters
       if (filters.status) {
@@ -2411,9 +2412,9 @@ exports.getAllRiskAssessments = [
       // Get risk heatmap for risk managers and above
       let heatmap = null;
       if (
-        userRole === 'RISK_MANAGER' ||
-        userRole === 'COMPLIANCE_OFFICER' ||
-        userRole === 'PARTNER'
+        userRole === 'RISK_MANAGER'
+        || userRole === 'COMPLIANCE_OFFICER'
+        || userRole === 'PARTNER'
       ) {
         const allAssessments = await RiskAssessment.find(query)
           .select('riskCategory riskLevel riskFactors')
@@ -2484,7 +2485,7 @@ exports.updateRiskAssessment = [
       const accessValidation = await QuantumValidationService.validateUserAccess(
         userId,
         assessmentId,
-        'EDIT'
+        'EDIT',
       );
 
       if (!accessValidation.hasAccess) {
@@ -2498,12 +2499,12 @@ exports.updateRiskAssessment = [
         });
       }
 
-      const assessment = accessValidation.assessment;
+      const { assessment } = accessValidation;
 
       // Validate update data
       const validation = await QuantumValidationService.validateUpdateAssessment(
         req.body,
-        assessment
+        assessment,
       );
 
       if (!validation.isValid) {
@@ -2541,21 +2542,20 @@ exports.updateRiskAssessment = [
       // If risk factors updated, recalculate risk score
       if (updateData.riskFactors) {
         const riskCalculation = QuantumRiskCalculationEngine.calculateRiskScore(
-          updateData.riskFactors
+          updateData.riskFactors,
         );
         updates.riskLevel = riskCalculation.level;
 
         // If risk level changed, update next review date based on new level
         if (riskCalculation.level !== assessment.riskLevel) {
-          const reviewFrequency = RISK_CONSTANTS.RISK_LEVELS[riskCalculation.level].reviewFrequency;
-          const reviewInterval =
-            reviewFrequency === 'MONTHLY'
-              ? 30
-              : reviewFrequency === 'QUARTERLY'
-                ? 90
-                : reviewFrequency === 'SEMI_ANNUAL'
-                  ? 180
-                  : 365;
+          const { reviewFrequency } = RISK_CONSTANTS.RISK_LEVELS[riskCalculation.level];
+          const reviewInterval = reviewFrequency === 'MONTHLY'
+            ? 30
+            : reviewFrequency === 'QUARTERLY'
+              ? 90
+              : reviewFrequency === 'SEMI_ANNUAL'
+                ? 180
+                : 365;
 
           updates.nextReviewDate = moment().add(reviewInterval, 'days').toDate();
         }
@@ -2564,21 +2564,20 @@ exports.updateRiskAssessment = [
       // If mitigation actions updated, check completion
       if (updateData.mitigationActions) {
         const completedActions = updateData.mitigationActions.filter(
-          (a) => a.status === 'COMPLETED'
+          (a) => a.status === 'COMPLETED',
         );
         if (completedActions.length > 0) {
           // Calculate residual risk
           const initialScore = QuantumRiskCalculationEngine.calculateRiskScore(
-            assessment.riskFactors
+            assessment.riskFactors,
           ).score;
-          const effectiveness =
-            completedActions.reduce((sum, action) => sum + (action.effectiveness || 3), 0) /
-            completedActions.length /
-            5;
+          const effectiveness = completedActions.reduce((sum, action) => sum + (action.effectiveness || 3), 0)
+            / completedActions.length
+            / 5;
 
           const residualRisk = QuantumRiskCalculationEngine.calculateResidualRisk(
             initialScore,
-            effectiveness
+            effectiveness,
           );
           updates.residualRisk = residualRisk;
         }
@@ -2618,7 +2617,7 @@ exports.updateRiskAssessment = [
           new: true,
           session,
           runValidators: true,
-        }
+        },
       ).select('-assessmentData -encryptedData');
 
       if (!updatedAssessment) {
@@ -2726,7 +2725,7 @@ exports.deleteRiskAssessment = [
       const accessValidation = await QuantumValidationService.validateUserAccess(
         userId,
         assessmentId,
-        'DELETE'
+        'DELETE',
       );
 
       if (!accessValidation.hasAccess) {
@@ -2741,7 +2740,7 @@ exports.deleteRiskAssessment = [
         });
       }
 
-      const assessment = accessValidation.assessment;
+      const { assessment } = accessValidation;
 
       // Check if assessment can be deleted
       if (assessment.status === 'ACTIVE' && !hardDelete) {
@@ -2783,8 +2782,8 @@ exports.deleteRiskAssessment = [
       if (hardDelete) {
         // Permanent deletion (only for system admins and partners)
         if (
-          accessValidation.user.role !== 'PARTNER' &&
-          accessValidation.user.role !== 'SYSTEM_ADMIN'
+          accessValidation.user.role !== 'PARTNER'
+          && accessValidation.user.role !== 'SYSTEM_ADMIN'
         ) {
           await session.abortTransaction();
           return res.status(403).json({
@@ -2842,7 +2841,7 @@ exports.deleteRiskAssessment = [
               },
             },
           },
-          { new: true, session }
+          { new: true, session },
         );
         deletionType = 'SOFT_DELETE_ARCHIVE';
       }
@@ -2932,7 +2931,7 @@ exports.generateRiskAssessmentReport = [
       const accessValidation = await QuantumValidationService.validateUserAccess(
         userId,
         assessmentId,
-        'VIEW'
+        'VIEW',
       );
 
       if (!accessValidation.hasAccess) {
@@ -2945,16 +2944,15 @@ exports.generateRiskAssessmentReport = [
         });
       }
 
-      const assessment = accessValidation.assessment;
+      const { assessment } = accessValidation;
 
       // Generate compliance report
       const complianceReport = await QuantumComplianceEngine.generateComplianceReport(assessmentId);
 
       // Calculate risk metrics
       const riskMetrics = QuantumRiskCalculationEngine.calculateRiskScore(assessment.riskFactors);
-      const residualRisk =
-        assessment.residualRisk ||
-        QuantumRiskCalculationEngine.calculateResidualRisk(riskMetrics.score, 0.5);
+      const residualRisk = assessment.residualRisk
+        || QuantumRiskCalculationEngine.calculateResidualRisk(riskMetrics.score, 0.5);
 
       // Prepare comprehensive report
       const report = {
@@ -3000,13 +2998,13 @@ exports.generateRiskAssessmentReport = [
             riskFactors: assessment.riskFactors?.length || 0,
             highRiskFactors:
               assessment.riskFactors?.filter(
-                (f) => f.severity === 'HIGH' || f.severity === 'CRITICAL'
+                (f) => f.severity === 'HIGH' || f.severity === 'CRITICAL',
               ).length || 0,
             pendingActions:
               assessment.mitigationActions?.filter((a) => a.status === 'PENDING').length || 0,
             overdueActions:
               assessment.mitigationActions?.filter(
-                (a) => a.status === 'PENDING' && a.dueDate && new Date(a.dueDate) < new Date()
+                (a) => a.status === 'PENDING' && a.dueDate && new Date(a.dueDate) < new Date(),
               ).length || 0,
           },
           recommendations: complianceReport.recommendations,
@@ -3075,18 +3073,18 @@ exports.generateRiskAssessmentReport = [
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="risk-assessment-${assessment.assessmentId}.pdf"`
+          `attachment; filename="risk-assessment-${assessment.assessmentId}.pdf"`,
         );
         // In production, generate actual PDF using pdfkit or similar
         res.status(200).send(JSON.stringify(report, null, 2));
       } else if (format === 'EXCEL') {
         res.setHeader(
           'Content-Type',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         );
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="risk-assessment-${assessment.assessmentId}.xlsx"`
+          `attachment; filename="risk-assessment-${assessment.assessmentId}.xlsx"`,
         );
         // In production, generate actual Excel file using xlsx
         res.status(200).send(JSON.stringify(report, null, 2));
@@ -3135,7 +3133,9 @@ exports.addMitigationAction = [
       const firmId = req.user.legalFirmId;
       const transactionId = uuidv4();
 
-      const { action, description, riskFactorId, assignedTo, dueDate, priority } = req.body;
+      const {
+        action, description, riskFactorId, assignedTo, dueDate, priority,
+      } = req.body;
 
       // Validate required fields
       if (!action || !description || !riskFactorId || !assignedTo || !dueDate) {
@@ -3152,7 +3152,7 @@ exports.addMitigationAction = [
       const accessValidation = await QuantumValidationService.validateUserAccess(
         userId,
         assessmentId,
-        'EDIT'
+        'EDIT',
       );
 
       if (!accessValidation.hasAccess) {
@@ -3166,7 +3166,7 @@ exports.addMitigationAction = [
         });
       }
 
-      const assessment = accessValidation.assessment;
+      const { assessment } = accessValidation;
 
       // Verify risk factor exists
       const riskFactor = assessment.riskFactors?.find((f) => f.factorId === riskFactorId);
@@ -3225,7 +3225,7 @@ exports.addMitigationAction = [
             },
           },
         },
-        { new: true, session }
+        { new: true, session },
       );
 
       // Create separate risk mitigation record
@@ -3346,7 +3346,7 @@ exports.getComplianceStatus = [
 
       // Get all assessments for the firm
       const assessments = await RiskAssessment.find({ legalFirmId: firmId }).select(
-        'assessmentId riskLevel status complianceMetadata assessmentDate nextReviewDate'
+        'assessmentId riskLevel status complianceMetadata assessmentDate nextReviewDate',
       );
 
       // Calculate compliance metrics
@@ -3406,9 +3406,9 @@ exports.getComplianceStatus = [
 
         // Overall compliance (all three must be compliant)
         if (
-          assessment.complianceMetadata?.popiaCompliant &&
-          assessment.complianceMetadata?.ficaCompliant &&
-          assessment.complianceMetadata?.companiesActCompliant
+          assessment.complianceMetadata?.popiaCompliant
+          && assessment.complianceMetadata?.ficaCompliant
+          && assessment.complianceMetadata?.companiesActCompliant
         ) {
           compliantAssessments++;
         } else {
@@ -3426,31 +3426,27 @@ exports.getComplianceStatus = [
       });
 
       // Calculate percentages
-      const complianceRate =
-        totalAssessments > 0 ? Math.round((compliantAssessments / totalAssessments) * 100) : 100;
+      const complianceRate = totalAssessments > 0 ? Math.round((compliantAssessments / totalAssessments) * 100) : 100;
 
-      const popiaComplianceRate =
-        complianceByFramework.POPIA.total > 0
-          ? Math.round(
-              (complianceByFramework.POPIA.compliant / complianceByFramework.POPIA.total) * 100
-            )
-          : 100;
+      const popiaComplianceRate = complianceByFramework.POPIA.total > 0
+        ? Math.round(
+          (complianceByFramework.POPIA.compliant / complianceByFramework.POPIA.total) * 100,
+        )
+        : 100;
 
-      const ficaComplianceRate =
-        complianceByFramework.FICA.total > 0
-          ? Math.round(
-              (complianceByFramework.FICA.compliant / complianceByFramework.FICA.total) * 100
-            )
-          : 100;
+      const ficaComplianceRate = complianceByFramework.FICA.total > 0
+        ? Math.round(
+          (complianceByFramework.FICA.compliant / complianceByFramework.FICA.total) * 100,
+        )
+        : 100;
 
-      const companiesActComplianceRate =
-        complianceByFramework.COMPANIES_ACT.total > 0
-          ? Math.round(
-              (complianceByFramework.COMPANIES_ACT.compliant /
-                complianceByFramework.COMPANIES_ACT.total) *
-                100
-            )
-          : 100;
+      const companiesActComplianceRate = complianceByFramework.COMPANIES_ACT.total > 0
+        ? Math.round(
+          (complianceByFramework.COMPANIES_ACT.compliant
+                / complianceByFramework.COMPANIES_ACT.total)
+                * 100,
+        )
+        : 100;
 
       // Determine overall compliance status
       let overallStatus = 'COMPLIANT';
@@ -3627,7 +3623,7 @@ exports.healthCheck = asyncHandler(async (req, res) => {
 
     // Check if all dependencies are healthy
     const allHealthy = Object.values(healthStatus.dependencies).every(
-      (dep) => dep === 'OPERATIONAL' || (typeof dep === 'object' && dep.status === 'HEALTHY')
+      (dep) => dep === 'OPERATIONAL' || (typeof dep === 'object' && dep.status === 'HEALTHY'),
     );
 
     healthStatus.overallHealth = allHealthy ? 'HEALTHY' : 'DEGRADED';
@@ -3686,12 +3682,11 @@ async function checkEncryptionService() {
         algorithm: 'AES-256-GCM',
         test: 'PASSED',
       };
-    } else {
-      return {
-        status: 'UNHEALTHY',
-        error: 'Encryption/decryption mismatch',
-      };
     }
+    return {
+      status: 'UNHEALTHY',
+      error: 'Encryption/decryption mismatch',
+    };
   } catch (error) {
     return {
       status: 'UNHEALTHY',

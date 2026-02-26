@@ -17,8 +17,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const { URL } = require('url');
 
 /*
@@ -41,9 +39,9 @@ function isSafeRedirect(target, originHost, allowlistHosts = []) {
   // 2) Disallow suspicious schemes outright
   const lower = t.toLowerCase();
   if (
-    lower.startsWith('javascript:') ||
-    lower.startsWith('data:') ||
-    lower.startsWith('vbscript:')
+    lower.startsWith('javascript:')
+    || lower.startsWith('data:')
+    || lower.startsWith('vbscript:')
   ) {
     return false;
   }
@@ -62,10 +60,9 @@ function isSafeRedirect(target, originHost, allowlistHosts = []) {
     // Allow if hostname matches originHost or is in allowlistHosts
     if (hostname === origin) return true;
     if (
-      Array.isArray(allowlistHosts) &&
-      allowlistHosts.map((h) => h.toLowerCase()).includes(hostname)
-    )
-      return true;
+      Array.isArray(allowlistHosts)
+      && allowlistHosts.map((h) => h.toLowerCase()).includes(hostname)
+    ) return true;
 
     return false;
   } catch (e) {
@@ -125,8 +122,7 @@ function expressRedirectGuard(paramName = 'redirect', opts = {}) {
       next();
     } catch (err) {
       // Fail-safe: set safe default and continue
-      if (req.query && typeof req.query === 'object')
-        req.query[paramName] = opts.safeDefault || '/';
+      if (req.query && typeof req.query === 'object') req.query[paramName] = opts.safeDefault || '/';
       if (req.body && typeof req.body === 'object') req.body[paramName] = opts.safeDefault || '/';
       req.context = req.context || {};
       req.context.sanitizedRedirect = opts.safeDefault || '/';

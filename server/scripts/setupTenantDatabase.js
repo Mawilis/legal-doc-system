@@ -17,15 +17,15 @@
 ╚███╔███╔╝██║███████╗███████║   ██║       ██████╔╝███████║███████║
  ╚══╝╚══╝ ╚═╝╚══════╝╚══════╝   ╚═╝       ╚═════╝ ╚══════╝╚══════╝
 
-This quantum bastion forges the foundational database architecture for Wilsy OS's 
-multi-tenant legal dominion. It orchestrates quantum-secure tenant isolation, 
-POPIA-compliant data residency enforcement, and South African legal entity 
-validation—transforming chaotic data into cosmic order. Each tenant becomes an 
-independent legal universe within our SaaS colossus, destined for trillion-dollar 
+This quantum bastion forges the foundational database architecture for Wilsy OS's
+multi-tenant legal dominion. It orchestrates quantum-secure tenant isolation,
+POPIA-compliant data residency enforcement, and South African legal entity
+validation—transforming chaotic data into cosmic order. Each tenant becomes an
+independent legal universe within our SaaS colossus, destined for trillion-dollar
 valuations across Africa's digital justice renaissance.
 
-🌀 QUANTUM MANDATE: This script establishes the immutable bedrock for Wilsy OS's 
-multi-tenancy, embedding SA legal compliance (POPIA, Companies Act, ECT Act) directly 
+🌀 QUANTUM MANDATE: This script establishes the immutable bedrock for Wilsy OS's
+multi-tenancy, embedding SA legal compliance (POPIA, Companies Act, ECT Act) directly
 into database architecture while preparing for pan-African expansion.
 
 👨‍💻 Chief Architect: Wilson Khanyezi | 🧠 Quantum Sentinel: Eternal Forger
@@ -37,8 +37,8 @@ into database architecture while preparing for pan-African expansion.
 // =============================================================================
 // 🧩 IMPORTS & DEPENDENCIES - PINNED FOR QUANTUM STABILITY
 // =============================================================================
-const mongoose = require('mongoose');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
@@ -72,12 +72,12 @@ require('dotenv').config();
   // Validate MongoDB URI format for security
   if (!process.env.MONGO_URI.includes('mongodb+srv://')) {
     console.warn(
-      '⚠️  SECURITY ADVISORY: Consider using MongoDB Atlas SRV connection for enhanced security'
+      '⚠️  SECURITY ADVISORY: Consider using MongoDB Atlas SRV connection for enhanced security',
     );
   }
 
   console.log('✅ Quantum Environment Validation: PASSED');
-})();
+}());
 
 // =============================================================================
 // 🔐 QUANTUM ENCRYPTION UTILITIES - ZERO-TRUST DATA PROTECTION
@@ -101,8 +101,8 @@ class QuantumEncryptionVault {
     return {
       encryptedData: encrypted,
       iv: iv.toString('hex'),
-      authTag: authTag,
-      algorithm: algorithm,
+      authTag,
+      algorithm,
     };
   }
 }
@@ -151,7 +151,7 @@ async function setupTenantDatabase() {
     // =====================================================================
     console.log('\n🏛️  Forging Tenants Collection with SA Legal Schema Validation...');
 
-    const db = connection.db;
+    const { db } = connection;
 
     // 🏢 POPIA Quantum: Data minimization and lawful processing baked into schema
     await db.createCollection('tenants', {
@@ -423,7 +423,7 @@ async function setupTenantDatabase() {
         unique: true,
         name: 'tenantId_unique',
         background: true,
-      }
+      },
     );
 
     await tenantsCollection.createIndex(
@@ -433,7 +433,7 @@ async function setupTenantDatabase() {
         unique: true,
         name: 'cipc_unique',
         background: true,
-      }
+      },
     );
 
     // 🏢 Business Operation Indexes
@@ -445,7 +445,7 @@ async function setupTenantDatabase() {
       {
         name: 'status_subscription_composite',
         background: true,
-      }
+      },
     );
 
     // 🔍 Full-Text Search for Legal Names
@@ -459,7 +459,7 @@ async function setupTenantDatabase() {
         name: 'tenant_legal_search',
         weights: { legalName: 10, name: 5, cipcRegistrationNumber: 8 },
         background: true,
-      }
+      },
     );
 
     // 📅 Temporal Indexes
@@ -468,7 +468,7 @@ async function setupTenantDatabase() {
       {
         name: 'created_at_desc',
         background: true,
-      }
+      },
     );
 
     await tenantsCollection.createIndex(
@@ -476,7 +476,7 @@ async function setupTenantDatabase() {
       {
         name: 'updated_at_desc',
         background: true,
-      }
+      },
     );
 
     // 🌍 Data Residency Indexes
@@ -485,7 +485,7 @@ async function setupTenantDatabase() {
       {
         name: 'data_residency_region',
         background: true,
-      }
+      },
     );
 
     // ⚖️ Compliance Indexes
@@ -494,7 +494,7 @@ async function setupTenantDatabase() {
       {
         name: 'popia_compliance_status',
         background: true,
-      }
+      },
     );
 
     await tenantsCollection.createIndex(
@@ -502,7 +502,7 @@ async function setupTenantDatabase() {
       {
         name: 'company_type_index',
         background: true,
-      }
+      },
     );
 
     // 💼 Subscription Analytics
@@ -514,7 +514,7 @@ async function setupTenantDatabase() {
       {
         name: 'subscription_analytics',
         background: true,
-      }
+      },
     );
 
     // 🔐 Security Indexes
@@ -523,7 +523,7 @@ async function setupTenantDatabase() {
       {
         name: 'mfa_enforcement',
         background: true,
-      }
+      },
     );
 
     console.log('✅ 11 quantum indexes created for optimal performance');
@@ -544,7 +544,7 @@ async function setupTenantDatabase() {
       JSON.stringify({
         phone: '+27 11 123 4567',
         address: '1 Justice Street, Sandton, 2196',
-      })
+      }),
     );
 
     const systemTenantData = {
@@ -570,7 +570,7 @@ async function setupTenantDatabase() {
         email: process.env.SYSTEM_ADMIN_EMAIL,
         appointmentDate: new Date(),
         contactNumber: '+27 11 123 4567',
-        encryptedContact: encryptedContact,
+        encryptedContact,
       },
       popiaComplianceStatus: 'COMPLIANT',
       popiaConsentObtained: true,
@@ -644,14 +644,14 @@ async function setupTenantDatabase() {
       console.log('   🔐 Encryption at Rest: ENABLED');
     } else {
       console.warn(
-        '   ⚠️  Encryption at Rest: NOT ENABLED - Consider enabling for POPIA compliance'
+        '   ⚠️  Encryption at Rest: NOT ENABLED - Consider enabling for POPIA compliance',
       );
     }
 
     // =====================================================================
     // 🎉 QUANTUM SETUP COMPLETE
     // =====================================================================
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${'='.repeat(60)}`);
     console.log('🎉 QUANTUM DATABASE FORGERY COMPLETE!');
     console.log('='.repeat(60));
     console.log('\n🚀 Wilsy OS Multi-Tenant Architecture Ready:');
@@ -671,7 +671,7 @@ async function setupTenantDatabase() {
     console.log('   2. Initialize audit trails: /server/scripts/setupAuditDatabase.js');
     console.log('   3. Seed legal templates: /server/scripts/seedLegalTemplates.js');
 
-    console.log('\n' + '⭐'.repeat(60));
+    console.log(`\n${'⭐'.repeat(60)}`);
     console.log("Wilsy OS: Forging Africa's Digital Justice Renaissance");
     console.log('⭐'.repeat(60));
 

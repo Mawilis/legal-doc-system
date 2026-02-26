@@ -1,6 +1,6 @@
 /* eslint-disable */
-import { DateTime } from 'luxon';
-import { EventEmitter } from 'node:events';
+import { DateTime } from 'luxon.js';
+import { EventEmitter } from 'node:events.js';
 
 export class RegulatoryCalendar extends EventEmitter {
   constructor() {

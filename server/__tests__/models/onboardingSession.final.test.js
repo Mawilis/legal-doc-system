@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 
 describe('Wilsy OS - OnboardingSession Integrity', () => {
   let mongoServer;
@@ -28,7 +28,7 @@ describe('Wilsy OS - OnboardingSession Integrity', () => {
 
     const session = new OnboardingSession({
       tenantId: 'ten_abc',
-      sessionId: 'ONB_' + Date.now(),
+      sessionId: `ONB_${Date.now()}`,
     });
 
     const saved = await session.save();

@@ -29,11 +29,6 @@ const Joi = require('joi');
 const { Sequelize, Op } = require('sequelize');
 
 // Quantum Security & Compliance Imports
-const { createAuditLog } = require('../utils/auditLogger');
-const { encryptField, decryptField } = require('../utils/cryptoQuantizer');
-const { validateFICAKYC, validatePOPIA } = require('../validators/complianceValidator');
-
-// Constants and Configurations
 const {
   SARS_VAT_RATE,
   CURRENCY_CODES,
@@ -42,9 +37,16 @@ const {
   COMPLIANCE_PENALTIES,
   POPIA_RETENTION_PERIODS,
 } = require('../constants/complianceConstants');
+const {
+  Payment, Invoice, Client, Matter, TrustAccount,
+} = require('../models');
+const { createAuditLog } = require('../utils/auditLogger');
+const { encryptField, decryptField } = require('../utils/cryptoQuantizer');
+const { validateFICAKYC, validatePOPIA } = require('../validators/complianceValidator');
+
+// Constants and Configurations
 
 // Database Models (will be injected)
-const { Payment, Invoice, Client, Matter, TrustAccount } = require('../models');
 
 // ============================================================================
 // QUANTUM BILLING SERVICE: CORE ORCHESTRATION
@@ -53,7 +55,9 @@ const { Payment, Invoice, Client, Matter, TrustAccount } = require('../models');
 class BillingService {
   constructor(models, redisClient) {
     // Dependency Injection
-    this.models = models || { Payment, Invoice, Client, Matter, TrustAccount };
+    this.models = models || {
+      Payment, Invoice, Client, Matter, TrustAccount,
+    };
     this.redis = redisClient;
 
     // Payment Gateway Configuration
@@ -104,7 +108,7 @@ class BillingService {
     const missing = requiredEnvVars.filter((varName) => !process.env[varName]);
     if (missing.length > 0) {
       throw new Error(
-        `Quantum Billing Configuration Breach: Missing env vars: ${missing.join(', ')}`
+        `Quantum Billing Configuration Breach: Missing env vars: ${missing.join(', ')}`,
       );
     }
 
@@ -307,7 +311,7 @@ class BillingService {
             unitPrice: Joi.number().positive().required(),
             vatRate: Joi.number().min(0).max(1).default(SARS_VAT_RATE),
             discount: Joi.number().min(0).max(100).default(0),
-          })
+          }),
         )
         .min(1)
         .required(),
@@ -325,7 +329,7 @@ class BillingService {
     const { error, value } = schema.validate(data, { abortEarly: false });
     if (error) {
       throw new Error(
-        `Invoice validation failed: ${error.details.map((d) => d.message).join(', ')}`
+        `Invoice validation failed: ${error.details.map((d) => d.message).join(', ')}`,
       );
     }
 
@@ -539,7 +543,7 @@ class BillingService {
     const { error } = schema.validate(paymentData, { abortEarly: false });
     if (error) {
       throw new Error(
-        `Payment validation failed: ${error.details.map((d) => d.message).join(', ')}`
+        `Payment validation failed: ${error.details.map((d) => d.message).join(', ')}`,
       );
     }
 
@@ -633,7 +637,7 @@ class BillingService {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           timeout: 30000,
-        }
+        },
       );
 
       return {
@@ -715,7 +719,7 @@ class BillingService {
         metadata: {
           trustAccountId: trustAccount.id,
           amount: paymentRecord.amount,
-          newBalance: newBalance,
+          newBalance,
           interestCalculated: newBalance >= LPC_TRUST_ACCOUNT_RULES.INTEREST_THRESHOLD,
         },
         compliance: ['LPC_RULE_54', 'COMPANIES_ACT'],
@@ -822,7 +826,7 @@ class BillingService {
         vendorDetails: {
           vatNumber: this.sarsConfig.companyVatNumber,
           tradingName: this.sarsConfig.companyName,
-          taxPeriod: taxPeriod,
+          taxPeriod,
         },
         vatCalculation: vatData,
         invoices: invoices.map((inv) => ({
@@ -1022,7 +1026,9 @@ class BillingService {
 
   static testSuite() {
     if (process.env.NODE_ENV === 'test') {
-      const { describe, it, expect, beforeAll, jest } = require('@jest/globals');
+      const {
+        describe, it, expect, beforeAll, jest,
+      } = require('@jest/globals');
 
       describe('BillingService Quantum Gates', () => {
         let billingService;
@@ -1058,8 +1064,12 @@ class BillingService {
         it('should calculate invoice totals correctly', () => {
           const invoiceData = {
             items: [
-              { quantity: 2, unitPrice: 100, vatRate: 0.15, discount: 0 },
-              { quantity: 1, unitPrice: 50, vatRate: 0.15, discount: 10 },
+              {
+                quantity: 2, unitPrice: 100, vatRate: 0.15, discount: 0,
+              },
+              {
+                quantity: 1, unitPrice: 50, vatRate: 0.15, discount: 10,
+              },
             ],
             currency: 'ZAR',
           };

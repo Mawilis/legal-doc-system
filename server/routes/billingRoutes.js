@@ -62,18 +62,18 @@
  * }
  */
 
-import express from 'express';
-import { body, query, param, validationResult } from 'express-validator';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
-import crypto from 'crypto';
+import express from 'express.js';
+import { body, query, param, validationResult } from 'express-validator.js';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import crypto from "crypto";
 
 // WILSY OS CORE IMPORTS
-import { tenantGuard } from '../middleware/tenantGuard.js';
-import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.js';
-import { rateLimiter, tieredRateLimiter } from '../middleware/rateLimiter.js';
-import { auditMiddleware } from '../middleware/audit.js';
-import { cacheMiddleware, invalidateCache } from '../middleware/cache.js';
+import { tenantGuard } from '../middleware/tenantGuard.js.js';
+import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.js.js';
+import { rateLimiter, tieredRateLimiter } from '../middleware/rateLimiter.js.js';
+import { auditMiddleware } from '../middleware/audit.js.js';
+import { cacheMiddleware, invalidateCache } from '../middleware/cache.js.js';
 
 // Billing Services
 import {
@@ -81,7 +81,7 @@ import {
   generateInvestorBillingSummary,
   generateRealTimeUsageReport,
   generateUpsellAnalysis,
-} from '../services/billing/BillingReportService.js';
+} from '../services/billing/BillingReportService.js.js';
 
 import {
   generateInvoice,
@@ -89,25 +89,25 @@ import {
   getInvoicesByTenant,
   verifyInvoiceHash,
   downloadInvoicePDF,
-} from '../services/billing/InvoiceGenerator.js';
+} from '../services/billing/InvoiceGenerator.js.js';
 
 import {
   analyzeUpsellOpportunities,
   calculateOptimalTier,
   generateUpgradeQuotes,
-} from '../services/billing/UpsellEngine.js';
+} from '../services/billing/UpsellEngine.js.js';
 
 // Models
-import BillingInvoice from '../models/BillingInvoice.js';
-import TenantConfig from '../models/TenantConfig.js';
+import BillingInvoice from '../models/BillingInvoice.js.js';
+import TenantConfig from '../models/TenantConfig.js.js';
 
 // Utils
-import auditLogger from '../utils/auditLogger.js';
-import logger from '../utils/logger.js';
-import quantumLogger from '../utils/quantumLogger.js';
-import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js';
-import { AppError } from '../utils/errorHandler.js';
-import { redactSensitive } from '../utils/cryptoUtils.js';
+import auditLogger from '../utils/auditLogger.js.js';
+import logger from '../utils/logger.js.js';
+import quantumLogger from '../utils/quantumLogger.js.js';
+import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js.js';
+import { AppError } from '../utils/errorHandler.js.js';
+import { redactSensitive } from '../utils/cryptoUtils.js.js';
 
 const router = express.Router();
 

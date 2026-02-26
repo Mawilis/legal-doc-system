@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-/* 
+/*
  * 🗄️  STORAGE SERVICE - MULTI-CLOUD ABSTRACTION LAYER
  * =============================================================================
  *
@@ -72,9 +72,9 @@
  */
 
 const { createHash } = require('crypto');
-const { v4: uuidv4 } = require('uuid');
-const pRetry = require('p-retry');
 const path = require('path');
+const pRetry = require('p-retry');
+const { v4: uuidv4 } = require('uuid');
 
 // Cloud provider clients (loaded conditionally)
 let s3Client = null;
@@ -206,7 +206,7 @@ function initializeAzureClient() {
     const { BlobServiceClient } = require('@azure/storage-blob');
 
     const blobServiceClient = BlobServiceClient.fromConnectionString(
-      STORAGE_CONFIG.AZURE_CONNECTION_STRING
+      STORAGE_CONFIG.AZURE_CONNECTION_STRING,
     );
 
     return {
@@ -262,7 +262,7 @@ class StorageService {
 
     if (providers.length === 0) {
       throw new Error(
-        'No storage providers configured. Please configure at least one cloud storage provider.'
+        'No storage providers configured. Please configure at least one cloud storage provider.',
       );
     }
 
@@ -306,7 +306,9 @@ class StorageService {
    * @returns {String} Storage key/path
    * @security Tenant isolation, organized storage structure
    */
-  buildStorageKey({ tenantId, caseId = 'nocase', filename = '', documentType = 'general' }) {
+  buildStorageKey({
+    tenantId, caseId = 'nocase', filename = '', documentType = 'general',
+  }) {
     if (!tenantId) {
       throw new Error('Tenant ID is required for storage key generation');
     }
@@ -342,7 +344,7 @@ class StorageService {
       maxTimeout: STORAGE_CONFIG.RETRY_MAX_TIMEOUT_MS,
       onFailedAttempt: (error) => {
         console.warn(
-          `Storage operation retry attempt ${error.attemptNumber} failed: ${error.message}`
+          `Storage operation retry attempt ${error.attemptNumber} failed: ${error.message}`,
         );
       },
     });
@@ -702,14 +704,12 @@ class StorageService {
       throw new Error('S3 client not initialized');
     }
 
-    return this.withRetry(() =>
-      s3Client
-        .deleteObject({
-          Bucket: STORAGE_CONFIG.S3_BUCKET,
-          Key: key,
-        })
-        .promise()
-    );
+    return this.withRetry(() => s3Client
+      .deleteObject({
+        Bucket: STORAGE_CONFIG.S3_BUCKET,
+        Key: key,
+      })
+      .promise());
   }
 
   /*
@@ -773,7 +773,7 @@ class StorageService {
       params.Fields['x-amz-server-side-encryption-aws-kms-key-id'] = STORAGE_CONFIG.S3_KMS_KEY_ID;
       params.Conditions.push(
         { 'x-amz-server-side-encryption': ENCRYPTION_METHODS.SSE_KMS },
-        { 'x-amz-server-side-encryption-aws-kms-key-id': STORAGE_CONFIG.S3_KMS_KEY_ID }
+        { 'x-amz-server-side-encryption-aws-kms-key-id': STORAGE_CONFIG.S3_KMS_KEY_ID },
       );
     } else {
       params.Fields['x-amz-server-side-encryption'] = ENCRYPTION_METHODS.SSE_S3;
@@ -811,7 +811,7 @@ class StorageService {
     const options = {
       metadata: {
         contentType: mimeType,
-        metadata: metadata,
+        metadata,
       },
     };
 
@@ -902,7 +902,7 @@ class StorageService {
       throw new Error('GCS client not initialized');
     }
 
-    const bucket = gcsClient.bucket;
+    const { bucket } = gcsClient;
     await bucket.file(sourceKey).copy(bucket.file(destinationKey));
 
     return {
@@ -960,7 +960,7 @@ class StorageService {
       blobHTTPHeaders: {
         blobContentType: mimeType,
       },
-      metadata: metadata,
+      metadata,
     };
 
     return this.withRetry(async () => {
@@ -1095,13 +1095,13 @@ if (process.env.NODE_ENV === 'test') {
       });
 
       expect(key).toMatch(
-        /^tenant-123\/contract\/\d{4}\/\d{2}\/\d{2}\/case-456\/[a-f0-9-]+_document\.pdf$/
+        /^tenant-123\/contract\/\d{4}\/\d{2}\/\d{2}\/case-456\/[a-f0-9-]+_document\.pdf$/,
       );
     });
 
     test('should throw error for missing tenant ID in upload', async () => {
       await expect(storageService.uploadFile(mockBuffer, {})).rejects.toThrow(
-        'Tenant ID is required'
+        'Tenant ID is required',
       );
     });
 
@@ -1110,7 +1110,7 @@ if (process.env.NODE_ENV === 'test') {
 
       // Should fail for wrong tenant
       await expect(storageService.getSignedUrl(key, { tenantId: 'tenant-456' })).rejects.toThrow(
-        'Tenant does not have access'
+        'Tenant does not have access',
       );
     });
 
@@ -1119,7 +1119,7 @@ if (process.env.NODE_ENV === 'test') {
         storageService.uploadFile(mockBuffer, {
           tenantId: 'test-tenant',
           provider: 'UNSUPPORTED',
-        })
+        }),
       ).rejects.toThrow('Unsupported storage provider');
     });
 

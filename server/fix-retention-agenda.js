@@ -22,15 +22,15 @@ if (lines[925] && lines[925].includes('const { _id, __v, createdAt, updatedAt'))
 // Also fix other unused variables
 content = content.replace(
   /const mermaidDiagram = .*;/,
-  '// const mermaidDiagram = generateDiagram(); // Unused variable'
+  '// const mermaidDiagram = generateDiagram(); // Unused variable',
 );
 content = content.replace(
   /const mongoose = require\('mongoose'\);/,
-  "// const mongoose = require('mongoose'); // Unused variable"
+  "// const mongoose = require('mongoose'); // Unused variable",
 );
 content = content.replace(
   /const Agenda = require\('agenda'\);/,
-  "// const Agenda = require('agenda'); // Unused variable"
+  "// const Agenda = require('agenda'); // Unused variable",
 );
 
 fs.writeFileSync(filePath, content);

@@ -1,7 +1,7 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ HEALTH ROUTES - INVESTOR-GRADE MODULE                                       ║
   ║ 99.99% uptime | Real-time monitoring | Dependency health checks             ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/health.js
  * INVESTOR VALUE PROPOSITION:
@@ -50,23 +50,22 @@
  */
 
 /* eslint-env node */
-'use strict';
 
-const express = require('express');
 const process = require('process');
-const logger = require('../utils/logger');
-const metrics = require('../utils/metrics');
-const auditLogger = require('../utils/auditLogger');
+const express = require('express');
 
 // Core configurations
 const database = require('../config/database');
-const redis = require('../config/redis');
 const queues = require('../config/queues');
+const redis = require('../config/redis');
 const security = require('../config/security');
 
 // Services
-const auditService = require('../services/auditService');
 const ClassificationService = require('../services/ClassificationService');
+const auditService = require('../services/auditService');
+const auditLogger = require('../utils/auditLogger');
+const logger = require('../utils/logger');
+const metrics = require('../utils/metrics');
 
 const router = express.Router();
 
@@ -103,19 +102,19 @@ async function getSystemMetrics() {
     uptime: {
       seconds: uptime,
       human: `${Math.floor(uptime / 86400)}d ${Math.floor((uptime % 86400) / 3600)}h ${Math.floor(
-        (uptime % 3600) / 60
+        (uptime % 3600) / 60,
       )}m`,
     },
     memory: {
-      rss: Math.round(memoryUsage.rss / 1024 / 1024) + 'MB',
-      heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB',
-      heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
-      external: Math.round(memoryUsage.external / 1024 / 1024) + 'MB',
-      arrayBuffers: Math.round(memoryUsage.arrayBuffers / 1024 / 1024) + 'MB',
+      rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
+      heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
+      heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
+      external: `${Math.round(memoryUsage.external / 1024 / 1024)}MB`,
+      arrayBuffers: `${Math.round(memoryUsage.arrayBuffers / 1024 / 1024)}MB`,
     },
     cpu: {
-      user: Math.round(cpuUsage.user / 1000) + 'ms',
-      system: Math.round(cpuUsage.system / 1000) + 'ms',
+      user: `${Math.round(cpuUsage.user / 1000)}ms`,
+      system: `${Math.round(cpuUsage.system / 1000)}ms`,
     },
     eventLoopLag: await getEventLoopLag(),
   };
@@ -256,7 +255,7 @@ router.get('/live', (req, res) => {
     uptime: {
       seconds: uptime,
       human: `${Math.floor(uptime / 86400)}d ${Math.floor((uptime % 86400) / 3600)}h ${Math.floor(
-        (uptime % 3600) / 60
+        (uptime % 3600) / 60,
       )}m`,
     },
   });
@@ -290,7 +289,7 @@ router.get('/ready', async (req, res) => {
     };
 
     const isReady = Object.values(dependencies).every(
-      (d) => d.status === 'healthy' || d.status === 'degraded'
+      (d) => d.status === 'healthy' || d.status === 'degraded',
     );
 
     metrics.recordTiming('health.readiness.check', Date.now() - startTime);
@@ -491,7 +490,7 @@ router.get('/metrics', async (req, res) => {
         '# HELP health_check_duration_seconds Health check duration in seconds',
         '# TYPE health_check_duration_seconds gauge',
         `health_check_duration_seconds ${(Date.now() - startTime) / 1000}`,
-      ].join('\n')
+      ].join('\n'),
     );
   } catch (error) {
     logger.error('Metrics endpoint failed', {

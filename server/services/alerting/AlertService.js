@@ -60,14 +60,14 @@
  * }
  */
 
-import nodemailer from 'nodemailer';
-import axios from 'axios';
-import twilio from 'twilio';
-import pagerduty from '@pagerduty/pdjs';
-import { createClient } from '@pagerduty/pdjs';
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
-import cron from 'node-cron';
+import nodemailer from 'nodemailer.js';
+import axios from 'axios.js';
+import twilio from 'twilio.js';
+import pagerduty from '@pagerduty/pdjs.js';
+import { createClient } from '@pagerduty/pdjs.js';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import cron from 'node-cron.js';
 
 // WILSY OS CORE IMPORTS
 import logger from '../../utils/logger.js';

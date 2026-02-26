@@ -4,12 +4,12 @@
   ║ 100% coverage | Real-time metrics | Investor-grade security               ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import request from 'supertest';
-import express from 'express';
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
-import { jest } from '@jest/globals';
+import request from 'supertest.js';
+import express from 'express.js';
+import crypto from "crypto";
+import fs from 'fs/promises.js';
+import path from "path";
+import { jest } from '@jest/globals.js';
 
 // Mock dependencies
 jest.mock('../../middleware/auth.js', () => ({
@@ -200,9 +200,9 @@ jest.mock('../../services/analytics/investorIntelligenceService.js', () => ({
 }));
 
 // Import after mocks
-import analyticsRoutes from '../../routes/analyticsRoutes.js';
-import investorIntelligenceService from '../../services/analytics/investorIntelligenceService.js';
-import { QuantumLogger } from '../../utils/quantumLogger.js';
+import analyticsRoutes from '../../routes/analyticsRoutes.js.js';
+import investorIntelligenceService from '../../services/analytics/investorIntelligenceService.js.js';
+import { QuantumLogger } from '../../utils/quantumLogger.js.js';
 
 describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
   let app;

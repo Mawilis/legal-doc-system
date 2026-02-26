@@ -1,210 +1,112 @@
 /* eslint-disable */
-/*╔══════════════════════════════════════════════════════════════════════════════╗
-  ║ TENANT CONTEXT - MULTI-TENANT ISOLATION FORTRESS                            ║
-  ║ [100% tenant isolation | R10M data leakage prevention]                      ║
-  ║ Standard: ES Module (Surgically Standardized)                               ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
-/*
- * ABSOLUTE PATH: server/middleware/tenantContext.js
- * VERSION: 2.1.0 (ESM Standardized)
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - TENANT CONTEXT MIDDLEWARE                                      ║
+ * ║ [Multi-Tenant Isolation | POPIA §19 | Forensic Traceability]              ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
+ * 
+ * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/tenantContext.js
+ * VERSION: 1.0.0
+ * CREATED: 2026-02-26
+ * 
+ * PURPOSE:
+ * • Extracts and validates tenant context from requests
+ * • Ensures multi-tenant isolation for all operations
+ * • Adds tenantId to request object for downstream use
+ * • Validates tenant ID format and access permissions
  */
 
 import logger from '../utils/logger.js';
 
-// Track current context for non-request environments (services, workers)
-let currentTenantContext = null;
-
-export class TenantContextError extends Error {
-  constructor(message, code = 'TENANT_CONTEXT_VIOLATION') {
-    super(message);
-    this.name = 'TenantContextError';
-    this.code = code;
-    this.statusCode = 401;
-    this.timestamp = new Date().toISOString();
-  }
-}
-
-export const TENANT_ID_PATTERN = /^[a-zA-Z0-9_-]{8,64}$/;
-export const RESERVED_TENANT_IDS = [
-  'SYSTEM',
-  'system',
-  'ADMIN',
-  'admin',
-  'ROOT',
-  'root',
-  'LPC',
-  'lpc',
-  'WILSYS',
-  'wilsy',
-];
-
-export const validateTenantId = (tenantId) => {
-  if (!tenantId) throw new TenantContextError('Tenant ID is required', 'TENANT_ID_REQUIRED');
-  if (typeof tenantId !== 'string')
-    throw new TenantContextError(
-      `Tenant ID must be string, received ${typeof tenantId}`,
-      'TENANT_ID_TYPE_ERROR'
-    );
-  if (tenantId.length < 8)
-    throw new TenantContextError(
-      `Tenant ID must be at least 8 characters (received ${tenantId.length})`,
-      'TENANT_ID_TOO_SHORT'
-    );
-  if (tenantId.length > 64)
-    throw new TenantContextError(
-      `Tenant ID must not exceed 64 characters (received ${tenantId.length})`,
-      'TENANT_ID_TOO_LONG'
-    );
-  if (!TENANT_ID_PATTERN.test(tenantId))
-    throw new TenantContextError(
-      'Tenant ID contains invalid characters. Allowed: a-z, A-Z, 0-9, _, -',
-      'TENANT_ID_INVALID_CHARS'
-    );
-  if (RESERVED_TENANT_IDS.includes(tenantId))
-    throw new TenantContextError(
-      `Tenant ID '${tenantId}' is reserved for system use`,
-      'TENANT_ID_RESERVED'
-    );
-  return true;
-};
-
-export const extractTenantId = (req) => {
-  let tenantId =
-    req.headers['x-tenant-id'] ||
-    req.headers['X-Tenant-ID'] ||
-    req.headers['tenant-id'] ||
-    req.headers['Tenant-ID'];
-  if (!tenantId && req.query?.tenantId) tenantId = req.query.tenantId;
-  if (!tenantId && req.subdomains?.length) tenantId = req.subdomains[0];
-  if (!tenantId && req.user?.tenantId) tenantId = req.user.tenantId;
-  return tenantId || null;
-};
-
-/*
- * Express middleware to extract and validate tenant context
+/**
+ * Tenant Context Middleware
+ * Extracts tenant information from headers and validates it
  */
-export const tenantContext = (req, res, next) => {
-  const startTime = Date.now();
-  const correlationId =
-    req.headers['x-correlation-id'] ||
-    `CORR-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-
+export const extractTenant = (req, res, next) => {
   try {
-    const tenantId = extractTenantId(req);
-    if (!tenantId)
-      throw new TenantContextError('No tenant identifier provided', 'TENANT_ID_MISSING');
+    // Extract tenant ID from various sources (header, query, user)
+    const tenantId = req.headers['x-tenant-id'] || 
+                     req.query.tenantId || 
+                     req.body?.tenantId ||
+                     req.user?.tenantId;
 
-    validateTenantId(tenantId);
-
-    // Set context for this request
-    req.tenant = {
-      id: tenantId,
-      validatedAt: new Date().toISOString(),
-      correlationId,
-      source: 'tenantContext.middleware',
-    };
-
-    // Set global context for services called during this request
-    currentTenantContext = { tenantId, correlationId };
-
-    logger.debug('Tenant context attached', {
-      component: 'tenantContext',
-      tenantId: tenantId.substring(0, 8) + '...',
-      correlationId,
-      durationMs: Date.now() - startTime,
-    });
-
-    // Clear context after response is sent
-    res.on('finish', () => {
-      currentTenantContext = null;
-    });
+    // Validate tenant ID format (if provided)
+    if (tenantId) {
+      const tenantIdRegex = /^[a-zA-Z0-9_-]{8,64}$/;
+      if (!tenantIdRegex.test(tenantId)) {
+        logger.warn('Invalid tenant ID format', { 
+          tenantId, 
+          path: req.path,
+          ip: req.ip 
+        });
+        
+        return res.status(400).json({
+          error: 'INVALID_TENANT_ID',
+          message: 'Tenant ID must be 8-64 alphanumeric characters'
+        });
+      }
+      
+      // Attach to request object
+      req.tenantContext = {
+        tenantId,
+        extractedFrom: tenantId === req.headers['x-tenant-id'] ? 'header' :
+                       tenantId === req.query.tenantId ? 'query' :
+                       tenantId === req.body?.tenantId ? 'body' : 'user'
+      };
+    }
 
     next();
   } catch (error) {
-    res.status(error.statusCode || 401).json({
-      success: false,
-      error: {
-        code: error.code || 'TENANT_CONTEXT_ERROR',
-        message: error.message,
-        timestamp: new Date().toISOString(),
-        correlationId,
-      },
-    });
+    logger.error('Tenant context extraction failed', { error: error.message });
+    next(error);
   }
 };
 
-/*
- * Middleware to require tenant context
+/**
+ * Validate tenant access middleware
+ * Ensures user has access to the requested tenant
  */
-export const requireTenantContext = () => (req, res, next) => {
-  if (!req.tenant?.id) {
-    return res.status(401).json({
-      success: false,
-      error: {
-        code: 'TENANT_CONTEXT_REQUIRED',
-        message: 'Tenant context required',
-        timestamp: new Date().toISOString(),
-      },
+export const validateTenantAccess = (req, res, next) => {
+  const userTenantId = req.user?.tenantId;
+  const requestTenantId = req.tenantContext?.tenantId;
+
+  // If no tenant context, skip validation
+  if (!requestTenantId) {
+    return next();
+  }
+
+  // If user is super admin (Wilson), allow all
+  if (req.user?.email?.includes('wilson') || req.user?.role === 'super_admin') {
+    return next();
+  }
+
+  // Check if user has access to this tenant
+  if (userTenantId && userTenantId !== requestTenantId) {
+    logger.warn('Tenant access violation', {
+      userTenantId,
+      requestTenantId,
+      userId: req.user?.id,
+      path: req.path
+    });
+
+    return res.status(403).json({
+      error: 'TENANT_ACCESS_DENIED',
+      message: 'You do not have access to this tenant'
     });
   }
+
   next();
 };
 
-/*
- * Get tenant ID from request object
+/**
+ * Get current tenant context
  */
-export const getTenantId = (req) => {
-  if (!req.tenant?.id)
-    throw new TenantContextError('No tenant context found', 'TENANT_CONTEXT_MISSING');
-  return req.tenant.id;
+export const getTenantContext = (req) => {
+  return req.tenantContext || null;
 };
 
-/*
- * Get current tenant context (for services, workers, background jobs)
- */
-export const getTenantContext = () => {
-  if (currentTenantContext) {
-    return currentTenantContext;
-  }
-  return { tenantId: 'SYSTEM', correlationId: `SYS-${Date.now()}` };
+export default {
+  extractTenant,
+  validateTenantAccess,
+  getTenantContext
 };
-
-/*
- * Set tenant context programmatically (for workers, background jobs)
- */
-export const setTenantContext = (tenantId, correlationId = null) => {
-  if (tenantId && tenantId !== 'SYSTEM') {
-    validateTenantId(tenantId);
-  }
-
-  currentTenantContext = {
-    tenantId: tenantId || 'SYSTEM',
-    correlationId:
-      correlationId || `CTX-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
-  };
-
-  return currentTenantContext;
-};
-
-/*
- * Clear tenant context
- */
-export const clearTenantContext = () => {
-  currentTenantContext = null;
-};
-
-/*
- * Run a function with a specific tenant context
- */
-export const withTenantContext = async (tenantId, fn, correlationId = null) => {
-  const previousContext = currentTenantContext;
-
-  try {
-    setTenantContext(tenantId, correlationId);
-    return await fn();
-  } finally {
-    currentTenantContext = previousContext;
-  }
-};
-
-export default tenantContext;

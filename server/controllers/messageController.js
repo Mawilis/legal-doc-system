@@ -8,21 +8,21 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
+const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
+const Case = require('../models/Case');
 const Message = require('../models/Message');
 const User = require('../models/User');
-const Case = require('../models/Case');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
-const { emitAudit } = require('../middleware/auditMiddleware');
 
 /*
  * @desc    DISPATCH SECURE MESSAGE
  * @route   POST /api/v1/messages
  */
 exports.sendMessage = asyncHandler(async (req, res) => {
-  const { recipientId, caseId, content, priority } = req.body;
+  const {
+    recipientId, caseId, content, priority,
+  } = req.body;
 
   // 1. RECIPIENT SCOPE VALIDATION
   const recipient = await User.findOne({ _id: recipientId, ...req.tenantFilter });
@@ -32,7 +32,7 @@ exports.sendMessage = asyncHandler(async (req, res) => {
       res,
       404,
       'Recipient not found within your firm scope.',
-      'ERR_USER_NOT_FOUND'
+      'ERR_USER_NOT_FOUND',
     );
   }
 
@@ -45,7 +45,7 @@ exports.sendMessage = asyncHandler(async (req, res) => {
         res,
         404,
         'The referenced case matter is invalid or inaccessible.',
-        'ERR_CASE_NOT_FOUND'
+        'ERR_CASE_NOT_FOUND',
       );
     }
   }
@@ -79,7 +79,9 @@ exports.sendMessage = asyncHandler(async (req, res) => {
  * @route   GET /api/v1/messages
  */
 exports.getMyMessages = asyncHandler(async (req, res) => {
-  const { folder, caseId, page = 1, limit = 20 } = req.query;
+  const {
+    folder, caseId, page = 1, limit = 20,
+  } = req.query;
 
   const query = { ...req.tenantFilter };
 
@@ -140,7 +142,7 @@ exports.readMessage = asyncHandler(async (req, res) => {
       res,
       403,
       'Unauthorized access to privileged communication.',
-      'ERR_RBAC_FORBIDDEN'
+      'ERR_RBAC_FORBIDDEN',
     );
   }
 

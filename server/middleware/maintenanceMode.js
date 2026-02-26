@@ -14,8 +14,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 // 1. DYNAMIC CONFIGURATION
 // Maintenance can be toggled via ENV or potentially a Redis flag for zero-restarts.
 const isMaintenance = process.env.MAINTENANCE_MODE === 'true';

@@ -383,11 +383,11 @@ class WilsyForensicEngineV2 {
         filesProcessed: this.stats.filesProcessed,
         successRate:
           this.stats.filesProcessed > 0
-            ? (
+            ? `${(
                 ((this.stats.filesProcessed - this.stats.filesWithIssues) /
                   this.stats.filesProcessed) *
                 100
-              ).toFixed(2) + '%'
+              ).toFixed(2)  }%`
             : '100%',
       },
       economicImpact: {
@@ -652,8 +652,8 @@ if (require.main === module) {
   • File: ${path.relative(__dirname, engine.evidenceFile)}
   • Hash: ${
     engine.evidenceFile
-      ? JSON.parse(fs.readFileSync(engine.evidenceFile, 'utf8')).forensicHash.substring(0, 16) +
-        '...'
+      ? `${JSON.parse(fs.readFileSync(engine.evidenceFile, 'utf8')).forensicHash.substring(0, 16) 
+        }...`
       : 'N/A'
   }
 

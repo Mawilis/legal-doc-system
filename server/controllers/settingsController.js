@@ -6,11 +6,9 @@
  * SECURITY: Strict Tenant Isolation. Audited Configuration Changes.
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
-const Tenant = require('../models/Tenant'); // Assuming settings live on Tenant or dedicated Settings model
 const { emitAudit } = require('../middleware/auditMiddleware');
+const Tenant = require('../models/Tenant'); // Assuming settings live on Tenant or dedicated Settings model
 
 /*
  * @desc    Get Firm/Tenant Settings

@@ -23,8 +23,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const fs = require('fs');
 const fsp = require('fs').promises;
 const path = require('path');
@@ -35,11 +33,11 @@ const { promisify } = require('util');
 const pipeline = promisify(stream.pipeline);
 
 // Models and services (assumed implemented)
+const AuditEvent = require('../models/auditEventModel');
 const FileModel = require('../models/fileModel');
 const JobModel = require('../models/jobModel');
-const AuditEvent = require('../models/auditEventModel');
-const JobService = require('./jobService'); // enqueue background jobs
 const logger = require('../utils/logger');
+const JobService = require('./jobService'); // enqueue background jobs
 
 // Optional helpers (implement or mock in tests)
 let StorageService = null;
@@ -87,7 +85,7 @@ async function computeSha256Stream(localPath) {
         hash.update(chunk);
         cb();
       },
-    })
+    }),
   );
 
   return { hash: hash.digest('hex'), sizeBytes: size };
@@ -184,9 +182,8 @@ async function ingestLocalUpload({
   if (!storageKey) throw new Error('storageKey is required');
 
   // Resolve local path vs storage service
-  const isLocalPath =
-    typeof storageKey === 'string' &&
-    (storageKey.startsWith('/') || storageKey.startsWith('./') || storageKey.match(/^[A-Za-z]:\\/));
+  const isLocalPath = typeof storageKey === 'string'
+    && (storageKey.startsWith('/') || storageKey.startsWith('./') || storageKey.match(/^[A-Za-z]:\\/));
   if (!isLocalPath && !StorageService) {
     throw new Error('Non-local storageKey provided but no StorageService is configured');
   }
@@ -241,7 +238,7 @@ async function ingestLocalUpload({
     if (existing) {
       // If exact same storageKey already present in versions, return existing doc
       const sameStorage = (existing.versions || []).some(
-        (v) => v.hash === hash && v.storageKey === storageKey
+        (v) => v.hash === hash && v.storageKey === storageKey,
       );
       if (sameStorage) {
         // Emit audit and return existing
@@ -280,7 +277,7 @@ async function ingestLocalUpload({
           },
           $push: { versions: versionEntry },
         },
-        { new: true }
+        { new: true },
       ).lean();
 
       await createAudit({
@@ -290,7 +287,9 @@ async function ingestLocalUpload({
         eventType: 'FILE_INGEST_VERSION_ADDED',
         severity: 'INFO',
         summary: 'Added new version to existing file (deduplicated by hash)',
-        metadata: { fileId: updated._id, version: newVersionNumber, hash, storageKey },
+        metadata: {
+          fileId: updated._id, version: newVersionNumber, hash, storageKey,
+        },
       });
 
       // Enqueue async scan/metadata extraction
@@ -298,7 +297,7 @@ async function ingestLocalUpload({
         await JobService.enqueue(
           'fileScan',
           { fileId: updated._id, version: newVersionNumber },
-          { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null }
+          { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null },
         );
       } catch (e) {
         logger.warn('ingestLocalUpload: failed to enqueue fileScan job', {
@@ -361,7 +360,9 @@ async function ingestLocalUpload({
     eventType: 'FILE_INGEST_CREATED',
     severity: 'INFO',
     summary: 'File document created',
-    metadata: { fileId: fileDoc._id, hash, storageKey, sizeBytes },
+    metadata: {
+      fileId: fileDoc._id, hash, storageKey, sizeBytes,
+    },
   });
 
   // Enqueue asynchronous tasks: virus scan, metadata extraction, thumbnailing, OCR
@@ -370,7 +371,7 @@ async function ingestLocalUpload({
     await JobService.enqueue(
       'fileScan',
       { fileId: fileDoc._id, version: 1 },
-      { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null }
+      { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null },
     );
   } catch (e) {
     logger.warn('ingestLocalUpload: failed to enqueue fileScan job', {
@@ -384,7 +385,7 @@ async function ingestLocalUpload({
       await JobService.enqueue(
         'fileMetadataExtract',
         { fileId: fileDoc._id, version: 1 },
-        { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null }
+        { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null },
       );
     }
   } catch (e) {

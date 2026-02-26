@@ -14,19 +14,19 @@ const redisConfig = require('../config/redis');
 describe('🔧 Queues Configuration Tests', function () {
   this.timeout(15000);
 
-  before(async function () {
+  before(async () => {
     // Ensure Redis is ready
     await redisConfig.createClient('bull');
     await queues.initialize();
   });
 
-  after(async function () {
+  after(async () => {
     await queues.shutdown();
     await redisConfig.disconnect();
   });
 
-  describe('1. Queue Creation', function () {
-    it('should have all queues created', function () {
+  describe('1. Queue Creation', () => {
+    it('should have all queues created', () => {
       const expectedQueues = [
         'document_processing',
         'fica_screening',
@@ -43,7 +43,7 @@ describe('🔧 Queues Configuration Tests', function () {
       console.log(`✅ ${expectedQueues.length} queues created successfully`);
     });
 
-    it('should get queue metrics', async function () {
+    it('should get queue metrics', async () => {
       const metrics = await queues.getQueueMetrics('document_processing');
 
       assert.ok(metrics.waiting !== undefined);
@@ -54,10 +54,10 @@ describe('🔧 Queues Configuration Tests', function () {
     });
   });
 
-  describe('2. Job Operations', function () {
+  describe('2. Job Operations', () => {
     let jobId;
 
-    it('should add job to queue', async function () {
+    it('should add job to queue', async () => {
       const job = await queues.addJob('document_processing', 'test-job', {
         documentId: 'doc-123',
         tenantId: 'tenant-1',
@@ -70,7 +70,7 @@ describe('🔧 Queues Configuration Tests', function () {
       console.log(`✅ Job added: ${jobId}`);
     });
 
-    it('should get job status', async function () {
+    it('should get job status', async () => {
       const status = await queues.getJobStatus('document_processing', jobId);
 
       assert.ok(status);
@@ -80,7 +80,7 @@ describe('🔧 Queues Configuration Tests', function () {
       console.log(`✅ Job status retrieved: ${status.state}`);
     });
 
-    it('should handle job with options', async function () {
+    it('should handle job with options', async () => {
       const job = await queues.addJob(
         'email_notification',
         'welcome-email',
@@ -102,8 +102,8 @@ describe('🔧 Queues Configuration Tests', function () {
     });
   });
 
-  describe('3. Queue Control', function () {
-    it('should pause and resume queue', async function () {
+  describe('3. Queue Control', () => {
+    it('should pause and resume queue', async () => {
       await queues.pauseQueue('document_processing');
 
       let metrics = await queues.getQueueMetrics('document_processing');
@@ -117,7 +117,7 @@ describe('🔧 Queues Configuration Tests', function () {
       console.log('✅ Queue pause/resume works');
     });
 
-    it('should clean queue', async function () {
+    it('should clean queue', async () => {
       // Add some jobs first
       for (let i = 0; i < 3; i++) {
         await queues.addJob('audit_cleanup', `clean-job-${i}`, { test: true });
@@ -130,8 +130,8 @@ describe('🔧 Queues Configuration Tests', function () {
     });
   });
 
-  describe('4. Health Check', function () {
-    it('should provide health status', async function () {
+  describe('4. Health Check', () => {
+    it('should provide health status', async () => {
       const health = await queues.healthCheck();
 
       assert.strictEqual(health.service, 'queues');
@@ -142,8 +142,8 @@ describe('🔧 Queues Configuration Tests', function () {
     });
   });
 
-  describe('5. Economic Value', function () {
-    it('should calculate efficiency savings', function () {
+  describe('5. Economic Value', () => {
+    it('should calculate efficiency savings', () => {
       const jobsPerDay = 10000;
       const manualTimePerJob = 300; // seconds
       const automatedTimePerJob = 30; // seconds
@@ -170,8 +170,8 @@ describe('🔧 Queues Configuration Tests', function () {
     });
   });
 
-  describe('6. Evidence Generation', function () {
-    it('should generate deterministic evidence', async function () {
+  describe('6. Evidence Generation', () => {
+    it('should generate deterministic evidence', async () => {
       const health = await queues.healthCheck();
 
       const evidence = {
@@ -179,7 +179,7 @@ describe('🔧 Queues Configuration Tests', function () {
           {
             action: 'QUEUES_TEST',
             timestamp: new Date().toISOString(),
-            health: health,
+            health,
           },
         ],
         hash: crypto.createHash('sha256').update(JSON.stringify(health)).digest('hex'),

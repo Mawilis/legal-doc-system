@@ -7,10 +7,10 @@
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
-import fs from 'fs';
-import path from 'fs';
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
+import { execSync } from 'child_process.js';
+import fs from "fs";
+import path from "fs";
+import { fileURLToPath } from 'url.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,7 +38,7 @@ filesToFix.forEach((filePath) => {
       content = content.replace(/\/\*\/\s*([\n\r])/g, '/* */$1');
       content = content.replace(
         /\}\s+catch\s*\(\s*e\s*\)\s*\{\s*\/\*\/\s*\}/g,
-        '} catch (e) { /* ignore */ }'
+        '} catch (e) { /* ignore */ }',
       );
       content = content.replace(/\/\*\/\s*\}/g, '/* */ }');
 

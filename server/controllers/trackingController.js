@@ -6,12 +6,10 @@
  * SECURITY: Strict Tenant Isolation. Real-time GPS Privacy.
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
-const DispatchInstruction = require('../models/DispatchInstruction');
-const Attempt = require('../models/Attempt');
 const { emitAudit } = require('../middleware/auditMiddleware');
+const Attempt = require('../models/Attempt');
+const DispatchInstruction = require('../models/DispatchInstruction');
 
 /*
  * @desc    Get Live Fleet Data (Real-time tracking of active jobs)
@@ -19,7 +17,7 @@ const { emitAudit } = require('../middleware/auditMiddleware');
  * @access  Admin, Lawyer, Dispatcher
  */
 exports.getLiveFleetData = asyncHandler(async (req, res) => {
-  const tenantId = req.user.tenantId;
+  const { tenantId } = req.user;
 
   // 1. Fetch active instructions scoped to Tenant
   const activeJobs = await DispatchInstruction.find({
@@ -48,7 +46,7 @@ exports.getLiveFleetData = asyncHandler(async (req, res) => {
         lastUpdate: lastAttempt ? lastAttempt.at : job.updatedAt,
         outcome: lastAttempt ? lastAttempt.outcome : 'En Route',
       };
-    })
+    }),
   );
 
   // 3. Audit access to live tracking data
@@ -73,7 +71,7 @@ exports.getLiveFleetData = asyncHandler(async (req, res) => {
  * @access  Admin, Partner
  */
 exports.getTaskStats = asyncHandler(async (req, res) => {
-  const tenantId = req.user.tenantId;
+  const { tenantId } = req.user;
 
   const stats = await DispatchInstruction.aggregate([
     { $match: { tenantId } },
@@ -103,7 +101,7 @@ exports.updateTaskPriority = asyncHandler(async (req, res) => {
   const task = await DispatchInstruction.findOneAndUpdate(
     { _id: req.params.id, tenantId: req.user.tenantId },
     { urgency },
-    { new: true }
+    { new: true },
   );
 
   if (!task) {

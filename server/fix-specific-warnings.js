@@ -35,8 +35,8 @@ const filesToFix = [
 
 filesToFix.forEach((fileInfo) => {
   if (fs.existsSync(fileInfo.path)) {
-    let content = fs.readFileSync(fileInfo.path, 'utf8');
-    let lines = content.split('\n');
+    const content = fs.readFileSync(fileInfo.path, 'utf8');
+    const lines = content.split('\n');
 
     fileInfo.fixes.forEach((fix) => {
       const lineIndex = fix.line - 1;

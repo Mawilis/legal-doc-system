@@ -40,8 +40,6 @@
  * compliance into competitive advantage and propelling African digital sovereignty.
  */
 
-'use strict';
-
 // ============================================================================
 // QUANTUM DEPENDENCIES: Importing Sovereignty Building Blocks
 // ============================================================================
@@ -49,14 +47,14 @@ require('dotenv').config(); // Env Vault Loading - MANDATORY FIRST LINE
 const crypto = require('crypto');
 const { DataTypes, Op } = require('sequelize');
 const sequelize = require('../config/database');
-const DataSubject = require('../models/DataSubject');
 const ConsentRecord = require('../models/ConsentRecord');
 const DSAR = require('../models/DSAR');
 const ProcessingRecord = require('../models/DataProcessingRecord');
+const DataSubject = require('../models/DataSubject');
+const { createAuditTrail } = require('../utils/auditUtils');
 const { encryptData, decryptData } = require('../utils/cryptoUtils');
 const { validateIdentityDocument } = require('../utils/identityVerification');
 const { sendSecureNotification } = require('../utils/notificationService');
-const { createAuditTrail } = require('../utils/auditUtils');
 
 // ============================================================================
 // QUANTUM CONSTANTS: POPIA Compliance Parameters
@@ -103,8 +101,7 @@ class DataSubjectController {
     this.cacheTTL = parseInt(process.env.DATA_SUBJECT_CACHE_TTL) || 300000; // 5 minutes
 
     // POPIA Compliance: Initialize Information Officer contact
-    this.informationOfficer =
-      process.env.DEFAULT_INFORMATION_OFFICER || 'information.officer@wilsyos.co.za';
+    this.informationOfficer = process.env.DEFAULT_INFORMATION_OFFICER || 'information.officer@wilsyos.co.za';
 
     // Quantum Performance: Initialize connection pooling
     this.maxRetries = parseInt(process.env.MAX_DB_RETRIES) || 3;
@@ -287,7 +284,7 @@ class DataSubjectController {
       // POPIA Section 23(4): Re-verify identity for each DSAR
       const identityVerified = await this.verifyIdentityForDSAR(
         dataSubjectId,
-        dsarData.identityDocuments
+        dsarData.identityDocuments,
       );
 
       if (!identityVerified) {
@@ -422,14 +419,14 @@ class DataSubjectController {
       const compiledData = await this.compileDSARResponse(
         dsar.requestType,
         dataSubject.id,
-        decryptedData
+        decryptedData,
       );
 
       // Generate secure delivery package
       const deliveryPackage = await this.createSecureDeliveryPackage(
         compiledData,
         dsar.preferredFormat,
-        dataSubject.reference
+        dataSubject.reference,
       );
 
       // Update DSAR status
@@ -540,7 +537,7 @@ class DataSubjectController {
       if (this.isSensitiveUpdate(updates) && identityDocuments) {
         const identityVerified = await this.verifyIdentityForUpdate(
           dataSubjectId,
-          identityDocuments
+          identityDocuments,
         );
         if (!identityVerified) {
           throw new Error('Identity verification failed for sensitive update');
@@ -714,7 +711,7 @@ class DataSubjectController {
         details: {
           deletionReason: deletionRequest.reason,
           deletionMethod: 'CRYPTOGRAPHIC_OVERWRITE',
-          retentionRequirements: retentionRequirements,
+          retentionRequirements,
           // Companies Act: Compliance status
           companiesActCompliant: retentionRequirements.companiesAct,
           timestamp: new Date().toISOString(),
@@ -909,7 +906,7 @@ class DataSubjectController {
       const portabilityPackage = await this.createPortabilityPackage(
         formattedData,
         format,
-        dataSubjectId
+        dataSubjectId,
       );
 
       // Audit portability access
@@ -1008,7 +1005,7 @@ class DataSubjectController {
           }
         } catch (docError) {
           console.warn(
-            `Identity document verification failed for ${doc.type}: ${docError.message}`
+            `Identity document verification failed for ${doc.type}: ${docError.message}`,
           );
         }
       }
@@ -1040,7 +1037,7 @@ class DataSubjectController {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(process.env.ENCRYPTION_KEY, 'base64'),
-        iv
+        iv,
       );
 
       // Encrypt the data
@@ -1053,7 +1050,7 @@ class DataSubjectController {
       // Combine IV, encrypted data, and auth tag
       const encryptedData = {
         iv: iv.toString('hex'),
-        encrypted: encrypted,
+        encrypted,
         authTag: authTag.toString('hex'),
         algorithm: 'AES-256-GCM',
         timestamp: new Date().toISOString(),
@@ -1080,14 +1077,14 @@ class DataSubjectController {
 
       // Extract components
       const iv = Buffer.from(encryptedData.iv, 'hex');
-      const encrypted = encryptedData.encrypted;
+      const { encrypted } = encryptedData;
       const authTag = Buffer.from(encryptedData.authTag, 'hex');
 
       // Create decipher
       const decipher = crypto.createDecipheriv(
         'aes-256-gcm',
         Buffer.from(process.env.ENCRYPTION_KEY, 'base64'),
-        iv
+        iv,
       );
 
       // Set authentication tag
@@ -1220,7 +1217,7 @@ class DataSubjectController {
         privacyEmail: 'privacy@wilsyos.co.za',
         supportPhone: process.env.SUPPORT_PHONE || '0800 123 456',
       },
-      reference: reference,
+      reference,
       authentication: 'MFA_REQUIRED',
     };
   }
@@ -1312,9 +1309,7 @@ class DataSubjectController {
 
     // Prevent updates to immutable fields
     const immutableFields = ['idNumber', 'dateOfBirth'];
-    const attemptedImmutableUpdates = Object.keys(updates).filter((field) =>
-      immutableFields.includes(field)
-    );
+    const attemptedImmutableUpdates = Object.keys(updates).filter((field) => immutableFields.includes(field));
 
     if (attemptedImmutableUpdates.length > 0) {
       throw new Error(`Cannot update immutable fields: ${attemptedImmutableUpdates.join(', ')}`);

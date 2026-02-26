@@ -1,29 +1,29 @@
 /* eslint-env mocha, node */
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const assert = require('assert');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 
-describe('🔍 Stage Advancement Debug', function () {
+describe('🔍 Stage Advancement Debug', () => {
   let mongoServer;
   let OnboardingSession;
 
-  before(async function () {
+  before(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
     OnboardingSession = require('../models/OnboardingSession');
   });
 
-  after(async function () {
+  after(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
   });
 
-  it('should show what happens during stage advancement', async function () {
+  it('should show what happens during stage advancement', async () => {
     const sessionId = OnboardingSession.generateSessionId('INDIVIDUAL', 'tenant-1');
 
     const session = new OnboardingSession({
-      sessionId: sessionId,
+      sessionId,
       tenantId: 'tenant-1',
       clientType: 'INDIVIDUAL',
       identityType: 'SA_ID',

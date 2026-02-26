@@ -20,9 +20,9 @@
 
 require('dotenv').config();
 const Joi = require('joi');
-const { createAuditLog } = require('../utils/auditLogger');
-const { Client } = require('../models/Client');
 const { redisClient } = require('../config/database');
+const { Client } = require('../models/Client');
+const { createAuditLog } = require('../utils/auditLogger');
 
 // ============================================================================
 // QUANTUM SCHEMAS: REGULATORY VALIDATION TEMPLATES
@@ -46,7 +46,7 @@ const POPIA_SCHEMA = Joi.object({
       'legal_obligation',
       'vital_interests',
       'public_task',
-      'legitimate_interests'
+      'legitimate_interests',
     )
     .required(),
 
@@ -163,7 +163,8 @@ const ECT_SCHEMA = Joi.object({
   documentHash: Joi.string()
     .pattern(/^[a-f0-9]{64}$/)
     .required(),
-  preservationPeriod: Joi.number().integer().min(5).max(10).required(), // 5-10 years
+  preservationPeriod: Joi.number().integer().min(5).max(10)
+    .required(), // 5-10 years
 
   nonRepudiation: Joi.boolean().required(),
   auditTrail: Joi.array()
@@ -173,7 +174,7 @@ const ECT_SCHEMA = Joi.object({
         timestamp: Joi.date().required(),
         actor: Joi.string().required(),
         ipAddress: Joi.string().ip().required(),
-      })
+      }),
     )
     .min(1)
     .required(),
@@ -218,7 +219,7 @@ async function validatePOPIA(data, userId) {
       const hasSpecialDataConsent = await checkSpecialDataConsent(userId, value.specialData);
       if (!hasSpecialDataConsent) {
         throw new Error(
-          'Special personal information requires explicit consent (POPIA Section 27)'
+          'Special personal information requires explicit consent (POPIA Section 27)',
         );
       }
     }
@@ -227,12 +228,12 @@ async function validatePOPIA(data, userId) {
     if (value.crossBorderTransfer) {
       const safeCountries = ['NA', 'BW', 'LS', 'SZ', 'ZM', 'ZW']; // SADC countries
       const unsafeTransfer = value.transferCountries?.some(
-        (country) => !safeCountries.includes(country)
+        (country) => !safeCountries.includes(country),
       );
 
       if (unsafeTransfer && !value.transferSafeguards) {
         throw new Error(
-          'Cross-border transfer to non-SADC country requires safeguards (POPIA Section 72)'
+          'Cross-border transfer to non-SADC country requires safeguards (POPIA Section 72)',
         );
       }
     }
@@ -365,14 +366,14 @@ async function validateECTAct(signatureData) {
 
     if (error) {
       throw new Error(
-        `ECT Act validation failed: ${error.details.map((d) => d.message).join(', ')}`
+        `ECT Act validation failed: ${error.details.map((d) => d.message).join(', ')}`,
       );
     }
 
     // Validate document integrity
     const documentIntegrity = await verifyDocumentIntegrity(
       value.documentHash,
-      value.signatureHash
+      value.signatureHash,
     );
 
     if (!documentIntegrity.valid) {
@@ -609,13 +610,13 @@ function redactSensitiveData(data) {
 
   // Redact identification numbers
   if (redacted.identificationNumber) {
-    redacted.identificationNumber = '*' + redacted.identificationNumber.slice(-4);
+    redacted.identificationNumber = `*${redacted.identificationNumber.slice(-4)}`;
   }
 
   // Redact email addresses
   if (redacted.email) {
     const [username, domain] = redacted.email.split('@');
-    redacted.email = username.charAt(0) + '*@' + domain;
+    redacted.email = `${username.charAt(0)}*@${domain}`;
   }
 
   // Remove sensitive fields
@@ -701,7 +702,9 @@ async function batchValidateCompliance(requirements, userId) {
 // ============================================================================
 
 if (process.env.NODE_ENV === 'test') {
-  const { describe, it, expect, beforeAll } = require('@jest/globals');
+  const {
+    describe, it, expect, beforeAll,
+  } = require('@jest/globals');
 
   describe('Compliance Validator Quantum Gates', () => {
     it('should validate POPIA schema correctly', async () => {

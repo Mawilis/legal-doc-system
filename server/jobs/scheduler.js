@@ -9,15 +9,13 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
-const cron = require('node-cron');
-const IORedis = require('ioredis');
 const { randomUUID } = require('crypto');
-const winston = require('winston');
+const IORedis = require('ioredis');
 const mongoose = require('mongoose');
-const User = require('../models/User');
+const cron = require('node-cron');
+const winston = require('winston');
 const Tenant = require('../models/Tenant');
+const User = require('../models/User');
 const { notificationQueue, bundleQueue } = require('./queue');
 
 // --- 1. INDUSTRIAL LOGGING ---
@@ -68,7 +66,7 @@ const scheduler = {
     cron.schedule('0 9 * * 1', async () => {
       logger.info('⏰ [CRON]: Dispatching Weekly Legal Briefings...');
       const users = await User.find({ role: { $in: ['admin', 'associate'] } }).select(
-        'email name tenantId'
+        'email name tenantId',
       );
 
       const jobs = users.map((u) => ({

@@ -50,21 +50,22 @@
 // QUANTUM IMPORTS: Dependencies from the Eternal Forge
 // ============================================================================
 require('dotenv').config();
-const { Server } = require('socket.io');
-const { createAdapter } = require('@socket.io/redis-adapter');
-const Redis = require('redis');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { createAdapter } = require('@socket.io/redis-adapter');
+const jwt = require('jsonwebtoken');
+const Redis = require('redis');
+const { Server } = require('socket.io');
+
 const { createHash, randomBytes } = crypto;
 
 // Internal quantum dependencies
-const AuditLogger = require('../utils/auditLogger');
-const CompliancePredictor = require('./compliancePredictor');
-const RegulationSyncEngine = require('./regulationSync');
 const BlockchainLedger = require('../integrations/blockchainCompliance');
-const NotificationService = require('./notificationService');
 const User = require('../models/User');
 const ComplianceEvent = require('../models/complianceEvent');
+const AuditLogger = require('../utils/auditLogger');
+const CompliancePredictor = require('./compliancePredictor');
+const NotificationService = require('./notificationService');
+const RegulationSyncEngine = require('./regulationSync');
 
 // Quantum Shield: Validate environment variables
 const REQUIRED_ENV_VARS = ['JWT_SECRET', 'MONGO_URI', 'NODE_ENV'];
@@ -774,20 +775,20 @@ class ComplianceDashboardService {
     switch (data.streamType) {
       case 'complianceScore':
         return (
-          !data.parameters ||
-          ((!data.parameters.framework || typeof data.parameters.framework === 'string') &&
-            (!data.parameters.interval ||
-              (typeof data.parameters.interval === 'number' && data.parameters.interval >= 1000)))
+          !data.parameters
+          || ((!data.parameters.framework || typeof data.parameters.framework === 'string')
+            && (!data.parameters.interval
+              || (typeof data.parameters.interval === 'number' && data.parameters.interval >= 1000)))
         );
       case 'liveAlerts':
         return (
-          !data.parameters ||
-          ((!data.parameters.severity ||
-            ['all', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(data.parameters.severity)) &&
-            (!data.parameters.maxAlerts ||
-              (typeof data.parameters.maxAlerts === 'number' &&
-                data.parameters.maxAlerts > 0 &&
-                data.parameters.maxAlerts <= 1000)))
+          !data.parameters
+          || ((!data.parameters.severity
+            || ['all', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(data.parameters.severity))
+            && (!data.parameters.maxAlerts
+              || (typeof data.parameters.maxAlerts === 'number'
+                && data.parameters.maxAlerts > 0
+                && data.parameters.maxAlerts <= 1000)))
         );
       default:
         return true;
@@ -813,9 +814,9 @@ class ComplianceDashboardService {
     // Check for specific dashboard permissions
     if (permissions && Array.isArray(permissions)) {
       return (
-        permissions.includes('dashboard:access') ||
-        permissions.includes('compliance:view') ||
-        permissions.includes('*')
+        permissions.includes('dashboard:access')
+        || permissions.includes('compliance:view')
+        || permissions.includes('*')
       );
     }
 
@@ -848,7 +849,9 @@ class ComplianceDashboardService {
    * Using Object.hasOwn() which is safe and doesn't access prototype chain
    */
   getAlertsBySeverity() {
-    const bySeverity = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+    const bySeverity = {
+      CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0,
+    };
 
     for (const alert of this.liveAlerts.values()) {
       // QUANTUM SECURITY FIX: Using Object.hasOwn() instead of bySeverity.hasOwnProperty()
@@ -1027,7 +1030,7 @@ class ComplianceDashboardService {
    */
   calculateDateRange(timeframe) {
     const now = new Date();
-    let startDate = new Date();
+    const startDate = new Date();
 
     switch (timeframe) {
       case '7d':
@@ -1264,7 +1267,7 @@ class ComplianceDashboardService {
       streaming: {
         activeStreams: Array.from(this.dashboardMetrics.values()).reduce(
           (sum, metrics) => sum + (metrics.streamsActive ? metrics.streamsActive.size : 0),
-          0
+          0,
         ),
         intervals: Array.from(this.streamingIntervals.keys()),
         totalDataStreamed: this.calculateTotalDataStreamed(),

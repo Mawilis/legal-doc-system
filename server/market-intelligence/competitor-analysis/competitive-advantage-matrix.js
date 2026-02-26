@@ -1,6 +1,6 @@
-const logger = require('../../utils/logger');
 const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
+const logger = require('../../utils/logger');
 
 class CompetitiveAdvantageMatrix {
   constructor() {

@@ -1,14 +1,13 @@
 /*
  * @jest-environment node
  */
-'use strict';
 
 // Force Jest to give us the raw module
 jest.deepUnmock('mongoose');
 jest.deepUnmock('../../models/OnboardingSession');
 
-const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 const OnboardingSession = require('../../models/OnboardingSession');
 
 describe('🏛️ SOVEREIGN SHIELD - Model Validation', () => {

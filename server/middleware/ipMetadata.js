@@ -14,10 +14,8 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
-const geoip = require('geoip-lite');
 const crypto = require('crypto');
+const geoip = require('geoip-lite');
 
 /*
  * PRIVACY UTILITY:
@@ -38,9 +36,7 @@ const hashIp = (ip) => {
  * PROXY DETECTOR:
  * Identifies if the request is coming from a local or private network.
  */
-const isPrivateIp = (ip) => {
-  return /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(ip);
-};
+const isPrivateIp = (ip) => /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(ip);
 
 const ipMetadata = (req, res, next) => {
   try {

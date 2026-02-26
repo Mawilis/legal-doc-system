@@ -1,13 +1,11 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ i18n SERVICE - INVESTOR-GRADE MODULE                                        ║
   ║ Multi-lingual legal compliance | 99.9% translation coverage                 ║
   ║ R100M international expansion enabler | 95% margin                          ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/i18n/lib/i18nService.js
  */
-
-'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -291,7 +289,7 @@ class I18nService {
       // Use Intl.NumberFormat for proper currency formatting
       const formatter = new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency: currency,
+        currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
@@ -329,9 +327,7 @@ class I18nService {
   interpolate(str, params) {
     if (!str || typeof str !== 'string') return str;
 
-    return str.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-      return params[key] !== undefined ? params[key] : match;
-    });
+    return str.replace(/\{\{(\w+)\}\}/g, (match, key) => (params[key] !== undefined ? params[key] : match));
   }
 
   /*

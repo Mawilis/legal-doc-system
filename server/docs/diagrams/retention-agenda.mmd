@@ -1,0 +1,24 @@
+graph TD
+  A[Agenda Scheduler] --> B{RetentionAgenda.initialize()}
+  B --> C[Define Jobs: retention.cleanup]
+  B --> D[Define Jobs: retention.notify]
+  B --> E[Define Jobs: retention.archive]
+  C --> F[Process Matter Records]
+  F --> G{Tenant Isolation}
+  G --> H[Tenant A Policies]
+  G --> I[Tenant B Policies]
+  H --> J[Apply Retention Rules]
+  I --> J
+  J --> K{Age > Policy?}
+  K -->|Yes| L[Schedule Cleanup]
+  K -->|No| M[Extend Retention]
+  L --> N[Audit Logger]
+  M --> N
+  N --> O[Evidence Generation]
+  O --> P[(Audit Trail DB)]
+  O --> Q[evidence.json]
+  
+  style A fill:#f9f,stroke:#333,stroke-width:2px
+  style N fill:#bbf,stroke:#333,stroke-width:2px
+  style O fill:#bfb,stroke:#333,stroke-width:2px
+  style P fill:#fbb,stroke:#333,stroke-width:2px

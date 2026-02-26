@@ -1,7 +1,7 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ERROR HANDLER - INVESTOR-GRADE                                              ║
   ║ 99.99% error capture | Forensic debugging | Zero data leak                 ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/errorHandler.js
  * INVESTOR VALUE PROPOSITION:
@@ -10,11 +10,9 @@
  * • Compliance: POPIA §19 - Error logging without PII exposure
  */
 
-'use strict';
-
+const auditLogger = require('../utils/auditLogger');
 const logger = require('../utils/logger');
 const metrics = require('../utils/metrics');
-const auditLogger = require('../utils/auditLogger');
 
 // Error codes mapping
 const ERROR_CODES = {

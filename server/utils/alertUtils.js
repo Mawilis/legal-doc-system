@@ -9,8 +9,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const nodemailer = require('nodemailer');
 const twilio = require('twilio');
 const logger = require('./logger');

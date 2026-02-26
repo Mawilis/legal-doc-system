@@ -8,8 +8,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const twilio = require('twilio');
 const logger = require('./logger');
 
@@ -38,7 +36,7 @@ if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN) {
 const formatToE164 = (number) => {
   let cleaned = number.replace(/\D/g, ''); // Remove non-digits
   if (cleaned.startsWith('0')) {
-    cleaned = '27' + cleaned.substring(1);
+    cleaned = `27${cleaned.substring(1)}`;
   }
   return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
 };

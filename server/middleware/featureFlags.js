@@ -11,8 +11,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const { emitAudit } = require('./auditMiddleware');
 
 const features = {
@@ -52,7 +50,7 @@ function evaluateFlag(flagName, tenant = {}) {
     if (!Number.isNaN(pct) && pct > 0) {
       const hash = [...String(tenant._id || tenant.name || '')].reduce(
         (a, c) => a + c.charCodeAt(0),
-        0
+        0,
       );
       return hash % 100 < pct;
     }
@@ -65,57 +63,55 @@ function evaluateFlag(flagName, tenant = {}) {
  * Middleware factory to check if a feature is enabled.
  * @param {string} flagName - The key from the features object.
  */
-const checkFeature = (flagName) => {
-  return async (req, res, next) => {
-    const tenant = req.tenant || req.user?.tenant || {};
-    const enabled = evaluateFlag(flagName, tenant);
+const checkFeature = (flagName) => async (req, res, next) => {
+  const tenant = req.tenant || req.user?.tenant || {};
+  const enabled = evaluateFlag(flagName, tenant);
 
-    if (enabled) {
-      await emitAudit(req, {
-        resource: 'feature_flag',
-        action: 'granted',
-        severity: 'info',
-        metadata: {
-          feature: flagName,
-          tenantId: tenant._id,
-          tenantName: tenant.name,
-          path: req.originalUrl,
-          method: req.method,
-        },
-      });
-      return next();
-    }
-
-    // Sales intelligence logging
-    console.warn(
-      `💰 [Upsell Opportunity] Tenant '${
-        tenant.name || tenant._id
-      }' attempted to access locked feature: ${flagName}`
-    );
-
+  if (enabled) {
     await emitAudit(req, {
       resource: 'feature_flag',
-      action: 'denied',
-      severity: 'warning',
+      action: 'granted',
+      severity: 'info',
       metadata: {
         feature: flagName,
         tenantId: tenant._id,
         tenantName: tenant.name,
-        reason: 'Plan Upgrade Required',
         path: req.originalUrl,
         method: req.method,
       },
     });
+    return next();
+  }
 
-    return res.status(403).json({
-      success: false,
-      status: 'error',
-      code: 'FEATURE_LOCKED',
-      message: `Feature '${flagName}' is not enabled for your subscription plan. Contact sales to upgrade.`,
-      upgradeUrl: '/billing/upgrade',
-      correlationId: req.correlationId || req.context?.correlationId,
-    });
-  };
+  // Sales intelligence logging
+  console.warn(
+    `💰 [Upsell Opportunity] Tenant '${
+      tenant.name || tenant._id
+    }' attempted to access locked feature: ${flagName}`,
+  );
+
+  await emitAudit(req, {
+    resource: 'feature_flag',
+    action: 'denied',
+    severity: 'warning',
+    metadata: {
+      feature: flagName,
+      tenantId: tenant._id,
+      tenantName: tenant.name,
+      reason: 'Plan Upgrade Required',
+      path: req.originalUrl,
+      method: req.method,
+    },
+  });
+
+  return res.status(403).json({
+    success: false,
+    status: 'error',
+    code: 'FEATURE_LOCKED',
+    message: `Feature '${flagName}' is not enabled for your subscription plan. Contact sales to upgrade.`,
+    upgradeUrl: '/billing/upgrade',
+    correlationId: req.correlationId || req.context?.correlationId,
+  });
 };
 
 module.exports = { features, checkFeature, evaluateFlag };

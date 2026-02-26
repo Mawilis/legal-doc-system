@@ -1,19 +1,17 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ PAIA SERVICE - INVESTOR-GRADE MODULE                                        ║
   ║ 95% cost reduction | R12M risk elimination | 88% margins                   ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/paiaService.js
  * VERSION: 1.0.4 (FIXED - ensures all data is saved)
  */
 
-'use strict';
-
+const crypto = require('crypto');
+const { getTenantContext } = require('../middleware/tenantContext');
 const Case = require('../models/Case');
 const auditLogger = require('../utils/auditLogger');
-const { getTenantContext } = require('../middleware/tenantContext');
 const { redactSensitive } = require('../utils/redactUtils');
-const crypto = require('crypto');
 
 class PaiaService {
   constructor() {
@@ -46,10 +44,9 @@ class PaiaService {
 
     // 2. Check for duplicate pending requests
     const existingPending = caseDoc.paiaRequests?.some(
-      (req) =>
-        req &&
-        req.status === 'PENDING' &&
-        req.requesterDetails?.email === requestData.requesterDetails?.email
+      (req) => req
+        && req.status === 'PENDING'
+        && req.requesterDetails?.email === requestData.requesterDetails?.email,
     );
 
     if (existingPending) {
@@ -144,7 +141,7 @@ class PaiaService {
           tenantId: resolvedTenantId,
           deadline: deadline.toISOString(),
           timestamp: new Date().toISOString(),
-        })
+        }),
       )
       .digest('hex');
 
@@ -260,7 +257,7 @@ class PaiaService {
       if (caseDoc.paiaTracking) {
         caseDoc.paiaTracking.pendingRequests = Math.max(
           0,
-          (caseDoc.paiaTracking.pendingRequests || 1) - 1
+          (caseDoc.paiaTracking.pendingRequests || 1) - 1,
         );
       }
     }
@@ -280,7 +277,7 @@ class PaiaService {
 
     if (['GRANTED', 'DENIED', 'PARTIALLY_GRANTED'].includes(updateData.status)) {
       const responseTimeDays = Math.round(
-        (new Date() - new Date(request.requestDate)) / (1000 * 60 * 60 * 24)
+        (new Date() - new Date(request.requestDate)) / (1000 * 60 * 60 * 24),
       );
       result.responseTimeDays = responseTimeDays;
     }
@@ -347,10 +344,9 @@ class PaiaService {
 
     for (const caseDoc of cases) {
       const urgentRequests = (caseDoc.paiaRequests || []).filter(
-        (req) =>
-          req &&
-          (req.status === 'PENDING' || req.status === 'IN_REVIEW') &&
-          req.statutoryDeadline <= thresholdDate
+        (req) => req
+          && (req.status === 'PENDING' || req.status === 'IN_REVIEW')
+          && req.statutoryDeadline <= thresholdDate,
       );
 
       for (const req of urgentRequests) {

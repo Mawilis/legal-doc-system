@@ -7,9 +7,9 @@
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,42 +27,42 @@ const filesToFix = [
   'scripts/fix-double-asterisks-permanent.js',
   'controllers/popiaController.js',
   'routes/legal/index.js',
-  'services/storageService.js'
+  'services/storageService.js',
 ];
 
 let fixedCount = 0;
 
-filesToFix.forEach(relativePath => {
+filesToFix.forEach((relativePath) => {
   const fullPath = path.join(rootDir, relativePath);
-  
+
   if (!fs.existsSync(fullPath)) {
     console.log(`⚠️  File not found: ${relativePath}`);
     return;
   }
-  
+
   try {
     let content = fs.readFileSync(fullPath, 'utf8');
     const original = content;
-    
+
     // Fix 1: JSDoc comments with double asterisks
     content = content.replace(/\/\*\*([\s\S]*?)\*\*\//g, '/*$1*/');
-    
+
     // Fix 2: @param with double asterisks
     content = content.replace(/@param\s*\{[^}]+\}\s*(\[?\w+\]?)\s*-\s*(.*?)\*\*/g, '@param {$1} - $2');
-    
+
     // Fix 3: @returns with double asterisks
     content = content.replace(/@returns?\s*\{[^}]+\}\s*-\s*(.*?)\*\*/g, '@returns $1');
-    
+
     // Fix 4: Any remaining double asterisks in comments
     content = content.replace(/(\/\*[\s\S]*?)\*\*([\s\S]*?\*\/)/g, '$1*$2');
     content = content.replace(/(\/\/.*?)\*\*/g, '$1');
-    
+
     // Fix 5: Specific pattern for asyncHandler.js
     content = content.replace(/catch\s*\(\s*error\s*\)\s*\{\s*\/\*\/\s*\}/g, 'catch (error) { /* ignore */ }');
-    
+
     // Fix 6: Specific pattern for caseFileModel.js
-    content = content.replace(/\/\*\*[\s\S]*?@description[\s\S]*?\*\*\//g, match => match.replace(/\*\*/g, '*'));
-    
+    content = content.replace(/\/\*\*[\s\S]*?@description[\s\S]*?\*\*\//g, (match) => match.replace(/\*\*/g, '*'));
+
     if (content !== original) {
       fs.writeFileSync(fullPath, content, 'utf8');
       console.log(`✅ Fixed: ${relativePath}`);
@@ -75,14 +75,14 @@ filesToFix.forEach(relativePath => {
   }
 });
 
-console.log(`\n📊 SUMMARY:`);
+console.log('\n📊 SUMMARY:');
 console.log(`   • Files attempted: ${filesToFix.length}`);
 console.log(`   • Files fixed: ${fixedCount}`);
 console.log(`   • Remaining issues: ${filesToFix.length - fixedCount}`);
 
 // Now verify
 console.log('\n🔍 VERIFYING...');
-const verifyCmd = `find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
+const verifyCmd = 'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
   -not -path "*/node_modules/*" \
   -not -path "*/coverage/*" \
   -not -path "*/dist/*" \
@@ -90,7 +90,7 @@ const verifyCmd = `find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.
   -not -path "*/.git/*" \
   -not -name "*.bak" \
   -not -name "*.backup*" \
-  -not -path "*/tests_legacy_backup/*" 2>/dev/null | xargs grep -l "\\*\\*" 2>/dev/null | wc -l`;
+  -not -path "*/tests_legacy_backup/*" 2>/dev/null | xargs grep -l "\\*\\*" 2>/dev/null | wc -l';
 
 const { execSync } = await import('child_process');
 const remaining = parseInt(execSync(verifyCmd, { encoding: 'utf8' }).trim()) || 0;

@@ -76,9 +76,9 @@
   ║ Executive metrics | Real-time insights | Strategic intelligence          ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import { performance } from 'perf_hooks';
-import { v4 as uuidv4 } from 'uuid';
-import os from 'os';
+import { performance } from 'perf_hooks.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import os from 'os.js';
 
 // WILSY OS CORE IMPORTS
 import { redisClient } from '../../cache/redisClient.js';

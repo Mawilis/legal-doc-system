@@ -96,12 +96,12 @@
  * of Wilsy OS's AI capabilities.
  */
 
-import { Queue, QueueEvents, QueueScheduler } from 'bullmq';
-import Redis from 'ioredis';
-import { performance } from 'perf_hooks';
-import crypto from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
-import promClient from 'prom-client';
+import { Queue, QueueEvents, QueueScheduler } from 'bullmq.js';
+import Redis from 'ioredis.js';
+import { performance } from 'perf_hooks.js';
+import crypto from "crypto";
+import { v4 as uuidv4 } from 'uuid.js';
+import promClient from 'prom-client.js';
 
 // QUANTUM CONSTANTS
 const QUEUE_NAME = 'embedding-queue';

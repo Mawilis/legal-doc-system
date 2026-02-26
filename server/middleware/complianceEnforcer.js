@@ -1,8 +1,8 @@
 /* eslint-env node */
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ QUANTUM COMPLIANCE ENFORCER - INVESTOR-GRADE MODULE                         ║
   ║ 99.99% uptime | SA Legal Framework | Zero-trust enforcement                 ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/complianceEnforcer.js
  * INVESTOR VALUE PROPOSITION:
@@ -96,21 +96,21 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
 // QUANTUM IMPORT MANIFEST - PINNED, SECURE, AUDITED
 const crypto = require('crypto'); // ^Node.js core - Cryptographic operations
-const { v4: uuidv4, v5: uuidv5 } = require('uuid'); // ^9.0.0 - Deterministic UUIDs for audit
+const { createHash } = require('crypto');
 const { EventEmitter } = require('events');
-const { RateLimiterRedis } = require('rate-limiter-flexible'); // ^7.0.1
 const Bull = require('bull'); // ^4.11.5 - For distributed enforcement queues
 const MerkleTree = require('merkle-tree-stream'); // ^4.0.0 - For immutable audit chains
-const { createHash } = require('crypto');
+const { RateLimiterRedis } = require('rate-limiter-flexible'); // ^7.0.1
+const { v4: uuidv4, v5: uuidv5 } = require('uuid'); // ^9.0.0 - Deterministic UUIDs for audit
 
 // INTERNAL IMPORTS - VERIFIED FROM YOUR STRUCTURE
-const redisClient = require('../utils/redisClient');
+const threatDetectionService = require('../services/threatDetectionService');
 const auditLogger = require('../utils/auditLogger');
 const auditUtils = require('../utils/auditUtils');
 const complianceIntelligence = require('../utils/complianceIntelligence');
 const encryptionEngine = require('../utils/encryptionEngine');
 const logger = require('../utils/logger');
-const threatDetectionService = require('../services/threatDetectionService');
+const redisClient = require('../utils/redisClient');
 
 // QUANTUM SECURITY: ENVIRONMENT VALIDATION - NON-NEGOTIABLE
 const REQUIRED_ENV_VARS = [
@@ -125,7 +125,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(
-      `[QUANTUM FAILURE] Missing ${envVar} in .env vault. Compliance enforcement cannot ensure legal sanctity.`
+      `[QUANTUM FAILURE] Missing ${envVar} in .env vault. Compliance enforcement cannot ensure legal sanctity.`,
     );
   }
 });
@@ -404,7 +404,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       // 2. Initialize Bull queue for distributed enforcement
       this.blockedRequestsQueue = new Bull(
         process.env.ENFORCEMENT_QUEUE_NAME || 'compliance-enforcement',
-        process.env.REDIS_URL
+        process.env.REDIS_URL,
       );
 
       // 3. Initialize encryption engine
@@ -412,9 +412,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
 
       // 4. Initialize Merkle Tree for immutable audit trail
       this.merkleTree = new MerkleTree({
-        leaf: (leaf, _roots) => {
-          return createHash('sha256').update(JSON.stringify(leaf)).digest();
-        },
+        leaf: (leaf, _roots) => createHash('sha256').update(JSON.stringify(leaf)).digest(),
       });
 
       // 5. Initialize rate limiter
@@ -488,7 +486,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
         enabled: process.env.ENFORCE_COMPANIES_ACT === 'true',
         retentionPeriod: 7, // years
         autoArchive: process.env.COMPANIES_ACT_AUTO_ARCHIVE === 'true',
-        cipcIntegration: process.env.CIPC_API_KEY ? true : false,
+        cipcIntegration: !!process.env.CIPC_API_KEY,
       },
 
       // ECT Act - Electronic Communications and Transactions Act
@@ -519,7 +517,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       SARS: {
         enabled: process.env.ENFORCE_SARS === 'true',
         vatInvoicing: true,
-        eFilingIntegration: process.env.SARS_EFILING_API_KEY ? true : false,
+        eFilingIntegration: !!process.env.SARS_EFILING_API_KEY,
         recordKeeping: 5, // years for tax records
       },
 
@@ -595,8 +593,8 @@ class QuantumComplianceEnforcer extends EventEmitter {
     if (this.circuitState === 'OPEN') {
       const now = Date.now();
       if (
-        this.lastFailureTime &&
-        now - this.lastFailureTime > ENFORCEMENT_CONFIG.TIMEOUTS.CIRCUIT_BREAKER_RESET
+        this.lastFailureTime
+        && now - this.lastFailureTime > ENFORCEMENT_CONFIG.TIMEOUTS.CIRCUIT_BREAKER_RESET
       ) {
         this.circuitState = 'HALF_OPEN';
       } else {
@@ -637,7 +635,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       const enforcementActions = await this._determineEnhancedEnforcementActions(
         complianceData,
         req,
-        threatAssessment
+        threatAssessment,
       );
 
       // Execute enforcement with distributed processing
@@ -645,7 +643,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
         enforcementActions,
         req,
         res,
-        enforcementId
+        enforcementId,
       );
 
       // Apply modifications if any
@@ -706,7 +704,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
           const statuteActions = await this._getEnhancedStatuteEnforcementActions(
             statute,
             validation,
-            req
+            req,
           );
           actions.push(...statuteActions);
         }
@@ -781,7 +779,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       case 'COMPANIES_ACT': {
         const companiesActions = await this._getEnhancedCompaniesActEnforcementActions(
           validation,
-          req
+          req,
         );
         actions.push(...companiesActions);
         break;
@@ -799,7 +797,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       case 'CYBERCRIMES_ACT': {
         const cyberActions = await this._getEnhancedCybercrimesActEnforcementActions(
           validation,
-          req
+          req,
         );
         actions.push(...cyberActions);
         break;
@@ -972,8 +970,8 @@ class QuantumComplianceEnforcer extends EventEmitter {
 
     // KYC verification
     if (
-      !details.kycVerified &&
-      details.transactionAmount > this.enforcementRules.FICA.kycThreshold
+      !details.kycVerified
+      && details.transactionAmount > this.enforcementRules.FICA.kycThreshold
     ) {
       actions.push({
         type: ENFORCEMENT_LEVELS.BLOCK,
@@ -1002,8 +1000,8 @@ class QuantumComplianceEnforcer extends EventEmitter {
 
     // Suspicious transaction reporting
     if (
-      details.suspiciousActivity &&
-      details.transactionAmount > this.enforcementRules.FICA.reportingThreshold
+      details.suspiciousActivity
+      && details.transactionAmount > this.enforcementRules.FICA.reportingThreshold
     ) {
       actions.push({
         type: ENFORCEMENT_LEVELS.ESCALATE,
@@ -1115,8 +1113,8 @@ class QuantumComplianceEnforcer extends EventEmitter {
 
     // Cooling-off period
     if (
-      details.directMarketing &&
-      details.coolingOffPeriod < this.enforcementRules.CPA.coolingOffPeriod
+      details.directMarketing
+      && details.coolingOffPeriod < this.enforcementRules.CPA.coolingOffPeriod
     ) {
       actions.push({
         type: ENFORCEMENT_LEVELS.MODIFY,
@@ -1303,7 +1301,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       blockedReason: null,
       enforcementLevel: null,
       modifiedRequest: false,
-      enforcementId: enforcementId,
+      enforcementId,
     };
 
     // Process actions with distributed queuing for high volume
@@ -1321,7 +1319,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
           {
             jobId: `${enforcementId}_${action.action}`,
             timeout: ENFORCEMENT_CONFIG.TIMEOUTS.MODIFICATION_TIMEOUT,
-          }
+          },
         );
 
         // Process action with timeout protection
@@ -1390,11 +1388,11 @@ class QuantumComplianceEnforcer extends EventEmitter {
     res.status(responseCode).json({
       success: false,
       error: 'Request blocked for compliance violation',
-      enforcementId: enforcementId,
+      enforcementId,
       blockedAt: new Date().toISOString(),
       reason: enforcementResult.blockedReason,
       statute: enforcementResult.statute,
-      legalCitation: legalCitation,
+      legalCitation,
       appealProcess: {
         contact: 'compliance@wilsyos.com',
         timeframe: '30 days',
@@ -1463,7 +1461,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       // Create leaf node for Merkle Tree
       const leafData = {
         id: auditData.enforcementId,
-        deterministicId: deterministicId,
+        deterministicId,
         timestamp: auditData.timestamp,
         action: auditData.enforcementResult.blocked ? 'BLOCK' : 'ALLOW',
         statute: auditData.enforcementResult.statute,
@@ -1490,7 +1488,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
         changes: auditData.enforcementActions,
         metadata: {
           enforcementId: auditData.enforcementId,
-          deterministicId: deterministicId,
+          deterministicId,
           processingTime: auditData.processingTime,
           blocked: auditData.enforcementResult.blocked,
           modified: auditData.enforcementResult.modified,
@@ -1501,16 +1499,16 @@ class QuantumComplianceEnforcer extends EventEmitter {
         },
         // Comprehensive compliance tagging
         complianceTags: {
-          popia: auditData.complianceData?.statuteValidations?.POPIA ? true : false,
-          paia: auditData.complianceData?.statuteValidations?.PAIA ? true : false,
-          fica: auditData.complianceData?.statuteValidations?.FICA ? true : false,
-          companies_act: auditData.complianceData?.statuteValidations?.COMPANIES_ACT ? true : false,
-          ect_act: auditData.complianceData?.statuteValidations?.ECT_ACT ? true : false,
-          cpa: auditData.complianceData?.statuteValidations?.CPA ? true : false,
-          cybercrimes: auditData.complianceData?.statuteValidations?.CYBERCRIMES_ACT ? true : false,
-          sars: auditData.complianceData?.statuteValidations?.SARS_COMPLIANCE ? true : false,
-          pepuda: auditData.complianceData?.statuteValidations?.PEPUDA ? true : false,
-          gdpr: auditData.complianceData?.statuteValidations?.GDPR ? true : false,
+          popia: !!auditData.complianceData?.statuteValidations?.POPIA,
+          paia: !!auditData.complianceData?.statuteValidations?.PAIA,
+          fica: !!auditData.complianceData?.statuteValidations?.FICA,
+          companies_act: !!auditData.complianceData?.statuteValidations?.COMPANIES_ACT,
+          ect_act: !!auditData.complianceData?.statuteValidations?.ECT_ACT,
+          cpa: !!auditData.complianceData?.statuteValidations?.CPA,
+          cybercrimes: !!auditData.complianceData?.statuteValidations?.CYBERCRIMES_ACT,
+          sars: !!auditData.complianceData?.statuteValidations?.SARS_COMPLIANCE,
+          pepuda: !!auditData.complianceData?.statuteValidations?.PEPUDA,
+          gdpr: !!auditData.complianceData?.statuteValidations?.GDPR,
         },
         retentionCategory: 'enforcement_event',
         retentionPeriod: 365 * 7, // 7 years for legal compliance
@@ -1531,7 +1529,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
 
       logger.info('[IMMUTABLE AUDIT] Created', {
         enforcementId: auditData.enforcementId,
-        deterministicId: deterministicId,
+        deterministicId,
         merkleRoot: rootHash.toString('hex').substring(0, 16),
         action: auditData.enforcementResult.blocked ? 'BLOCKED' : 'ALLOWED',
       });
@@ -2066,19 +2064,17 @@ function getEnhancedEnforcementStats() {
     jurisdiction: enforcerInstance.enforcementRules.GLOBAL.jurisdiction,
     dataResidency: enforcerInstance.enforcementRules.GLOBAL.dataResidency,
     // SA Legal Framework Status
-    saStatutes: Object.keys(enforcerInstance.enforcementRules).filter((k) =>
-      [
-        'POPIA',
-        'PAIA',
-        'FICA',
-        'COMPANIES_ACT',
-        'ECT_ACT',
-        'CPA',
-        'CYBERCRIMES_ACT',
-        'SARS',
-        'PEPUDA',
-      ].includes(k)
-    ),
+    saStatutes: Object.keys(enforcerInstance.enforcementRules).filter((k) => [
+      'POPIA',
+      'PAIA',
+      'FICA',
+      'COMPANIES_ACT',
+      'ECT_ACT',
+      'CPA',
+      'CYBERCRIMES_ACT',
+      'SARS',
+      'PEPUDA',
+    ].includes(k)),
     // Pan-African readiness
     panAfricanReady: Object.keys(ENFORCEMENT_CONFIG.COMPLIANCE.PAN_AFRICAN_MODES),
     timestamp: new Date().toISOString(),
@@ -2096,7 +2092,7 @@ function enhancedEnforcementHealthCheck() {
         service: 'Quantum Compliance Enforcer',
         version: '3.0.0',
         status: stats.status,
-        stats: stats,
+        stats,
         legalFramework: {
           jurisdiction: 'South Africa',
           statutes: stats.saStatutes,
@@ -2272,7 +2268,7 @@ if (process.env.NODE_ENV === 'test') {
             { id: 'test-req' },
             { set: () => {}, status: () => ({ json: () => {} }) },
             () => {},
-            'test-enf-id'
+            'test-enf-id',
           );
         }
 

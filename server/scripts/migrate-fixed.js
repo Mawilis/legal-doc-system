@@ -42,7 +42,7 @@ class FixedMigrationManager {
         updates.push('adding unique constraint');
         // Note: Cannot change existing index to unique if it has duplicates
         // We need to drop and recreate
-        console.log(`   ⚠️  Cannot convert existing index to unique (may have duplicates)`);
+        console.log('   ⚠️  Cannot convert existing index to unique (may have duplicates)');
         return false;
       }
 
@@ -102,7 +102,7 @@ class FixedMigrationManager {
     await this.checkOrCreateIndex(
       'cases',
       { caseNumber: 1 },
-      { unique: true, name: 'caseNumber_unique' }
+      { unique: true, name: 'caseNumber_unique' },
     );
     await this.checkOrCreateIndex('cases', { clientId: 1 }, { name: 'clientId_idx' });
     await this.checkOrCreateIndex('cases', { status: 1 }, { name: 'status_idx' });
@@ -113,7 +113,7 @@ class FixedMigrationManager {
     await this.checkOrCreateIndex(
       'documents',
       { documentId: 1 },
-      { unique: true, name: 'documentId_unique' }
+      { unique: true, name: 'documentId_unique' },
     );
     await this.checkOrCreateIndex('documents', { caseId: 1 }, { name: 'caseId_idx' });
     await this.checkOrCreateIndex('documents', { uploadedAt: -1 }, { name: 'uploadedAt_desc' });

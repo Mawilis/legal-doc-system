@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; tests conflict detection and recurring event logic.
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -22,14 +20,15 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const eventController = require('../controllers/eventController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
 
 // 3. VALIDATION SCHEMAS (Joi)
@@ -96,7 +95,7 @@ router.post(
       err.code = 'EVENT_CREATE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -117,7 +116,7 @@ router.get(
       err.code = 'EVENT_LIST_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -153,7 +152,7 @@ router.patch(
       err.code = 'EVENT_RESCHEDULE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -183,7 +182,7 @@ router.delete(
       err.code = 'EVENT_DELETE_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

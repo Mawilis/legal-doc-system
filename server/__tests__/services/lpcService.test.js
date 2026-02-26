@@ -1,7 +1,7 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ LPC SERVICE TESTS - INVESTOR-GRADE DUE DILIGENCE              ║
   ║ [100% coverage | Deterministic evidence | R10M risk validation] ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
 /* eslint-env jest */
 
@@ -30,14 +30,14 @@ jest.mock('../../models/ComplianceAudit');
 jest.mock('../../models/FidelityFund');
 
 // Now import the modules
+const mongoose = require('mongoose');
 const { createLpcService, LPC_STATUTORY_LIMITS, LPC_RETENTION_POLICIES } = require('../../services/lpcService');
 const auditLogger = require('../../utils/auditLogger');
-const mongoose = require('mongoose');
 
 describe('LPC Service', () => {
   let lpcService;
-  let testTenantId = 'test-firm-2026-abc123';
-  let testAttorneyId = 'LPC-12345678';
+  const testTenantId = 'test-firm-2026-abc123';
+  const testAttorneyId = 'LPC-12345678';
   let testConfig;
 
   beforeEach(() => {
@@ -250,7 +250,7 @@ describe('LPC Service', () => {
     expect(result.retentionPolicy).toBe(LPC_RETENTION_POLICIES.FIDELITY_CERTIFICATES);
     expect(result.retentionStart).toBeDefined();
 
-    console.log('✓ Fidelity Contribution: R' + result.finalContribution);
+    console.log(`✓ Fidelity Contribution: R${result.finalContribution}`);
   });
 
   // ===================================================================
@@ -275,7 +275,7 @@ describe('LPC Service', () => {
     expect(result.retentionPolicy).toBe(LPC_RETENTION_POLICIES.COMPLIANCE_AUDITS);
     expect(result.retentionStart).toBeDefined();
 
-    console.log('✓ Health Check Completed: ' + result.overallStatus);
+    console.log(`✓ Health Check Completed: ${result.overallStatus}`);
   });
 
   // ===================================================================

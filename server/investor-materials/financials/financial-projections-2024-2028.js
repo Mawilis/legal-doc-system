@@ -1,7 +1,7 @@
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ FINANCIAL PROJECTIONS 2024-2028 - INVESTOR-GRADE MODULE      ║
   ║ [90% accuracy | $1B revenue projection | 85% margins]        ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/investor-materials/financials/financial-projections-2024-2028.js
  * INVESTOR VALUE PROPOSITION:
@@ -18,8 +18,8 @@
 // }
 
 const auditLogger = require('../../utils/auditLogger');
-const logger = require('../../utils/logger');
 const cryptoUtils = require('../../utils/cryptoUtils');
+const logger = require('../../utils/logger');
 
 class FinancialProjections {
   constructor() {
@@ -49,12 +49,12 @@ class FinancialProjections {
       const currentYear = this.baseYear + year;
       projections.incomeStatement[currentYear] = this.projectIncomeStatement(
         currentYear,
-        assumptions
+        assumptions,
       );
       projections.balanceSheet[currentYear] = this.projectBalanceSheet(currentYear, assumptions);
       projections.cashFlow[currentYear] = this.projectCashFlow(currentYear, assumptions);
       projections.keyMetrics[currentYear] = this.calculateKeyMetrics(
-        projections.incomeStatement[currentYear]
+        projections.incomeStatement[currentYear],
       );
     }
 
@@ -71,7 +71,7 @@ class FinancialProjections {
         retentionPolicy: 'companies_act_10_years',
         dataResidency: 'Global',
         financialStandard: 'GAAP',
-      }
+      },
     );
 
     logger.info('Financial projections generated', {
@@ -95,8 +95,7 @@ class FinancialProjections {
   }
 
   projectIncomeStatement(year, assumptions) {
-    const baseCustomers =
-      year === 2024 ? 50 : Math.pow(1 + assumptions.customerGrowthRate, year - 2024) * 50;
+    const baseCustomers = year === 2024 ? 50 : (1 + assumptions.customerGrowthRate) ** (year - 2024) * 50;
     const customers = Math.round(baseCustomers);
 
     return {
@@ -104,28 +103,27 @@ class FinancialProjections {
       cogs: customers * assumptions.averageRevenuePerCustomer * (1 - assumptions.grossMargin),
       grossProfit: customers * assumptions.averageRevenuePerCustomer * assumptions.grossMargin,
       operatingExpenses: {
-        rnd: 2000000 * Math.pow(1.3, year - 2024),
-        salesMarketing: 1500000 * Math.pow(1.4, year - 2024),
-        gna: 1000000 * Math.pow(1.2, year - 2024),
+        rnd: 2000000 * 1.3 ** (year - 2024),
+        salesMarketing: 1500000 * 1.4 ** (year - 2024),
+        gna: 1000000 * 1.2 ** (year - 2024),
       },
-      netIncome: function () {
-        const totalExpenses =
-          this.operatingExpenses.rnd +
-          this.operatingExpenses.salesMarketing +
-          this.operatingExpenses.gna;
+      netIncome() {
+        const totalExpenses = this.operatingExpenses.rnd
+          + this.operatingExpenses.salesMarketing
+          + this.operatingExpenses.gna;
         return this.grossProfit - totalExpenses;
       },
     };
   }
 
   projectBalanceSheet(year, assumptions) {
-    const revenue = this.projectIncomeStatement(year, assumptions).revenue;
+    const { revenue } = this.projectIncomeStatement(year, assumptions);
 
     return {
       assets: {
         cash: revenue * 0.3,
         accountsReceivable: revenue * 0.15,
-        propertyEquipment: 5000000 * Math.pow(1.1, year - 2024),
+        propertyEquipment: 5000000 * 1.1 ** (year - 2024),
       },
       liabilities: {
         accountsPayable: revenue * 0.1,
@@ -144,9 +142,9 @@ class FinancialProjections {
 
     return {
       operating: income.netIncome() * 0.8,
-      investing: -2000000 * Math.pow(1.2, year - 2024), // Capital expenditures
+      investing: -2000000 * 1.2 ** (year - 2024), // Capital expenditures
       financing: year === 2024 ? 50000000 : 0, // Series B in 2024
-      netChange: function () {
+      netChange() {
         return this.operating + this.investing + this.financing;
       },
     };
@@ -156,11 +154,11 @@ class FinancialProjections {
     return {
       grossMargin: incomeStatement.grossProfit / incomeStatement.revenue,
       operatingMargin:
-        (incomeStatement.grossProfit -
-          (incomeStatement.operatingExpenses.rnd +
-            incomeStatement.operatingExpenses.salesMarketing +
-            incomeStatement.operatingExpenses.gna)) /
-        incomeStatement.revenue,
+        (incomeStatement.grossProfit
+          - (incomeStatement.operatingExpenses.rnd
+            + incomeStatement.operatingExpenses.salesMarketing
+            + incomeStatement.operatingExpenses.gna))
+        / incomeStatement.revenue,
       netMargin: incomeStatement.netIncome() / incomeStatement.revenue,
       revenueGrowth: 0, // Will be calculated year-over-year
       ruleOf40: 0, // Will be calculated

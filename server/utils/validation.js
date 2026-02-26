@@ -1,7 +1,6 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ VALIDATION UTILS - INPUT VALIDATION UTILITIES                               ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
-'use strict';
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
 const validationUtils = {
   isValidEmail: (email) => {
@@ -14,9 +13,7 @@ const validationUtils = {
     return re.test(phone);
   },
 
-  isRequired: (value) => {
-    return value !== undefined && value !== null && value !== '';
-  },
+  isRequired: (value) => value !== undefined && value !== null && value !== '',
 };
 
 module.exports = validationUtils;

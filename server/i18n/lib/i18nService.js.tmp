@@ -1,0 +1,8 @@
+
+    // Ensure nr-ZA mappings exist
+    if (!this.legalTermMappings.FICA['nr-ZA']) {
+      this.legalTermMappings.FICA['nr-ZA'] = 'Umthetho we-FICA';
+    }
+    if (!this.legalTermMappings.POPIA['nr-ZA']) {
+      this.legalTermMappings.POPIA['nr-ZA'] = 'Umthetho woKuvikelwa kweMininingwane yoBuqu';
+    }

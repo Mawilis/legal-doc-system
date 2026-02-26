@@ -13,23 +13,21 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 
 * QUANTUM MANDATE: This celestial intelligence engine transmutes raw legal data into quantum
-* enlightenment, generating forensically-audited reports that comply with 12+ South African 
-* statutes. As the divine synthesizer of financial truth, operational wisdom, and compliance 
-* sanctity, it forges unbreakable audit trails while propelling Wilsy OS to trillion-dollar 
+* enlightenment, generating forensically-audited reports that comply with 12+ South African
+* statutes. As the divine synthesizer of financial truth, operational wisdom, and compliance
+* sanctity, it forges unbreakable audit trails while propelling Wilsy OS to trillion-dollar
 * valuations through data-driven legal transcendence.
-* 
+*
 * COLLABORATION QUANTA:
 * - Chief Architect: Wilson Khanyezi (Legal Intelligence Visionary)
 * - Quantum Sentinel: Omniscient Quantum Forger
 * - Regulatory Oracles: SARS, CIPC, Law Society of South Africa
-* 
+*
 * EVOLUTION VECTORS:
 * - Quantum Leap 3.2.0: Real-time AI-driven anomaly detection in financial reports
 * - Horizon Expansion: Blockchain-anchored report immutability via Hyperledger
 * - Eternal Extension: Predictive analytics for legal trend forecasting
 */
-
-'use strict';
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 // ║                                    QUANTUM DEPENDENCY IMPORTS                                        ║
@@ -38,29 +36,31 @@
 // Dependencies Installation: npm install express-rate-limit helmet pdfkit exceljs csv-writer crypto-js bull
 
 const express = require('express');
+
 const router = express.Router();
 
 // Core Reporting Orchestrator
-const reportController = require('../controllers/reportController');
-
-// Quantum Security Stack
-const { protect } = require('../middleware/authMiddleware');
-const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
-const validate = require('../middleware/validationMiddleware');
-
-// Advanced Security & Performance
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const crypto = require('crypto-js');
+const Bull = require('bull');
+const reportController = require('../controllers/reportController');
+
+// Quantum Security Stack
+const { emitAudit } = require('../middleware/auditMiddleware');
+const { protect } = require('../middleware/authMiddleware');
+const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
+const validate = require('../middleware/validationMiddleware');
+
+// Advanced Security & Performance
 
 // SA Legal Compliance Integrations
-const sarsCompliance = require('../services/sarsComplianceService');
 const cipcReporting = require('../services/cipcReportingService');
 const lpcTrustAudit = require('../services/lpcTrustAuditService');
+const sarsCompliance = require('../services/sarsComplianceService');
 
 // Queue Management for Async Processing
-const Bull = require('bull');
+
 const reportQueue = new Bull('report-generation', {
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
@@ -111,7 +111,7 @@ router.use(
     },
     crossOriginEmbedderPolicy: true,
     crossOriginResourcePolicy: { policy: 'same-site' },
-  })
+  }),
 );
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -170,7 +170,7 @@ const generateReportSchema = {
       'FICA_KYC_REPORT', // New: FICA compliance
       'SARS_VAT_REPORT', // New: SARS compliance
       'CIPC_ANNUAL_RETURN', // New: Companies Act compliance
-      'LEGAL_AID_STATISTICS' // New: Social impact reporting
+      'LEGAL_AID_STATISTICS', // New: Social impact reporting
     )
     .required(),
   format: Joi.string().valid('PDF', 'CSV', 'EXCEL', 'JSON').default('PDF'),
@@ -224,7 +224,8 @@ const idSchema = {
 
 const reportHistorySchema = {
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(100)
+    .default(20),
   type: Joi.string().valid(...generateReportSchema.type._valids._values),
   dateFrom: Joi.date().iso(),
   dateTo: Joi.date().iso().min(Joi.ref('dateFrom')),
@@ -263,7 +264,7 @@ router.post(
       if (req.body.encryptedParams) {
         const bytes = crypto.AES.decrypt(
           req.body.encryptedParams,
-          process.env.REPORT_PARAM_ENCRYPTION_KEY
+          process.env.REPORT_PARAM_ENCRYPTION_KEY,
         );
         decryptedParams = JSON.parse(bytes.toString(crypto.enc.Utf8));
         req.body.decryptedParams = decryptedParams;
@@ -272,7 +273,7 @@ router.post(
       // POPIA Quantum: Apply data minimization
       const minimizedData = await popiaDataMinimization.minimizeReportData(
         req.body,
-        req.user.tenantId
+        req.user.tenantId,
       );
 
       // Queue report generation for async processing
@@ -289,7 +290,7 @@ router.post(
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
           timeout: 300000, // 5 minutes timeout
-        }
+        },
       );
 
       // Immediate response with job tracking
@@ -311,7 +312,7 @@ router.post(
           req.user.tenantId,
           req.body.startDate,
           req.body.endDate,
-          'VAT201'
+          'VAT201',
         );
       }
 
@@ -350,7 +351,7 @@ router.post(
       err.complianceViolation = true;
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -372,7 +373,7 @@ router.get(
       const report = await reportController.verifyDownloadPermission(
         req.params.id,
         req.user.id,
-        req.user.tenantId
+        req.user.tenantId,
       );
 
       if (!report) {
@@ -386,7 +387,7 @@ router.get(
           userId: req.user.id,
           expiresAt: new Date(Date.now() + 300000), // 5 minutes
         }),
-        process.env.REPORT_DOWNLOAD_KEY
+        process.env.REPORT_DOWNLOAD_KEY,
       ).toString();
 
       // Set security headers for download
@@ -423,7 +424,7 @@ router.get(
       err.securityAlert = true;
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -453,7 +454,7 @@ router.get(
         // Add compliance markers
         complianceStatus: 'POPIA_COMPLIANT',
         retentionExpiry: new Date(
-          new Date(report.createdAt).setFullYear(new Date(report.createdAt).getFullYear() + 7)
+          new Date(report.createdAt).setFullYear(new Date(report.createdAt).getFullYear() + 7),
         ).toISOString(),
       }));
 
@@ -488,7 +489,7 @@ router.get(
       err.code = 'REPORT_HISTORY_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -512,7 +513,7 @@ router.post(
       auditorName: Joi.string().required(),
       auditorRegNumber: Joi.string().required(),
     },
-    'body'
+    'body',
   ),
   async (req, res, next) => {
     try {
@@ -520,7 +521,7 @@ router.post(
       const trustReport = await lpcTrustAudit.generateTrustAccountReport(
         req.user.tenantId,
         req.body.financialYear,
-        req.body.lawFirmRegistration
+        req.body.lawFirmRegistration,
       );
 
       // Add auditor information and digital signatures
@@ -544,7 +545,7 @@ router.post(
         pdfBuffer,
         'LPC_TRUST_AUDIT',
         req.user.tenantId,
-        { encrypt: true, blockchainAnchor: true }
+        { encrypt: true, blockchainAnchor: true },
       );
 
       // Critical audit for LPC compliance
@@ -586,7 +587,7 @@ router.post(
       err.requiresLegalReview = true;
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -604,7 +605,7 @@ router.post(
       reportUrl: Joi.string().uri().optional(),
       error: Joi.string().optional(),
     },
-    'body'
+    'body',
   ),
   async (req, res, next) => {
     try {
@@ -622,7 +623,7 @@ router.post(
         req.params.jobId,
         req.body.status,
         req.body.reportUrl,
-        req.body.error
+        req.body.error,
       );
 
       res.status(200).json({ status: 'acknowledged' });
@@ -630,7 +631,7 @@ router.post(
       err.code = 'WEBHOOK_VALIDATION_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -727,12 +728,12 @@ QUANTUM IMPACT METRICS:
 - Data storage optimization: 70% reduction through minimization
 - Legal compliance coverage: 12+ SA statutes automatically enforced
 
-INSPIRATIONAL QUANTUM: 
-"In the book of law, every page is a mirror that reflects the truth of justice." 
+INSPIRATIONAL QUANTUM:
+"In the book of law, every page is a mirror that reflects the truth of justice."
 - South African Legal Proverb
 
-This quantum nexus transforms raw data into legal enlightenment, forging Africa's 
-judicial renaissance through data-driven justice. Each report becomes an immutable 
+This quantum nexus transforms raw data into legal enlightenment, forging Africa's
+judicial renaissance through data-driven justice. Each report becomes an immutable
 testament to transparency, propelling Wilsy OS to trillion-dollar horizons.
 
 Wilsy Touching Lives Eternally through Legal Intelligence Ascension.

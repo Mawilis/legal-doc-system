@@ -1,15 +1,13 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ LOCALE MIDDLEWARE - INVESTOR-GRADE MODULE                                   ║
   ║ Automatic locale detection | Tenant-specific defaults                       ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/i18n/lib/localeMiddleware.js
  */
 
-'use strict';
-
-const i18nService = require('./i18nService');
 const logger = require('../../utils/logger');
+const i18nService = require('./i18nService');
 
 class LocaleMiddleware {
   constructor() {
@@ -41,8 +39,7 @@ class LocaleMiddleware {
           legalTerm: (term) => i18nService.legalTerm(term, locale),
           formatDate: (date, options) => i18nService.formatDate(date, locale, options),
           formatNumber: (num, options) => i18nService.formatNumber(num, locale, options),
-          formatCurrency: (amount, currency) =>
-            i18nService.formatCurrency(amount, currency, locale),
+          formatCurrency: (amount, currency) => i18nService.formatCurrency(amount, currency, locale),
           direction: i18nService.getDirection(locale),
           isRTL: i18nService.isRTL(locale),
         };
@@ -173,14 +170,14 @@ class LocaleMiddleware {
 <div class="locale-switcher">
     <select onchange="window.location.href=this.value">
         ${locales
-          .map(
-            (l) => `
+    .map(
+      (l) => `
             <option value="?lang=${l.code}" ${l.current ? 'selected' : ''}>
                 ${l.flag} ${l.name}
             </option>
-        `
-          )
-          .join('')}
+        `,
+    )
+    .join('')}
     </select>
 </div>
         `.trim();

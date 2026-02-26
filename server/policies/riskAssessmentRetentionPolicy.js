@@ -29,17 +29,17 @@
 // ============================================================================
 // QUANTUM DEPENDENCIES - SECURELY PINNED FOR PRODUCTION
 // ============================================================================
+const moment = require('moment@^2.29.4');
 const mongoose = require('mongoose@^7.0.0');
-const RiskAssessment = require('../models/riskAssessmentModel');
-const RiskAssessmentArchive = require('../models/riskAssessmentArchiveModel');
+const { v4: uuidv4 } = require('uuid@^9.0.0');
+const redis = require('../config/redisClient');
 const RetentionAuditLog = require('../models/retentionAuditLogModel');
+const RiskAssessmentArchive = require('../models/riskAssessmentArchiveModel');
+const RiskAssessment = require('../models/riskAssessmentModel');
+const EncryptionService = require('../services/encryptionService');
 const LegalComplianceEngine = require('../services/legalComplianceEngine');
 const NotificationService = require('../services/notificationService');
-const EncryptionService = require('../services/encryptionService');
 const logger = require('../utils/quantumLogger.js');
-const redis = require('../config/redisClient');
-const moment = require('moment@^2.29.4');
-const { v4: uuidv4 } = require('uuid@^9.0.0');
 require('dotenv').config({ path: '/server/.env' });
 
 // ============================================================================
@@ -80,7 +80,7 @@ const validateRetentionPolicy = () => {
   if (RETENTION_POLICY.COMPANIES_ACT_YEARS < 5) {
     logger.quantumAlert('CRITICAL', 'Retention period below Companies Act 2008 minimum of 5 years');
     throw new Error(
-      'Illegal retention period: Must be at least 5 years per Companies Act 2008 §24'
+      'Illegal retention period: Must be at least 5 years per Companies Act 2008 §24',
     );
   }
 
@@ -142,7 +142,7 @@ class RetentionQuantumClassifier {
       if (await this.hasFinancialCrimeRisk(assessment)) {
         classification.baseRetentionYears = Math.max(
           classification.baseRetentionYears,
-          RETENTION_POLICY.LEGAL_HOLD_YEARS
+          RETENTION_POLICY.LEGAL_HOLD_YEARS,
         );
         classification.applicableStatutes.push(this.legalStatutes.FINANCIAL_INTELLIGENCE_ACT);
         classification.specialConditions.push('FICA_COMPLIANCE_REQUIRED');
@@ -152,7 +152,7 @@ class RetentionQuantumClassifier {
       if (await this.hasTaxImplications(assessment)) {
         classification.baseRetentionYears = Math.max(
           classification.baseRetentionYears,
-          5 // SARS minimum
+          5, // SARS minimum
         );
         classification.applicableStatutes.push(this.legalStatutes.TAX_ADMINISTRATION_ACT);
         classification.specialConditions.push('TAX_RECORD_REQUIRED');
@@ -162,18 +162,18 @@ class RetentionQuantumClassifier {
       const creationDate = new Date(assessment.createdAt || assessment.assessmentDate);
       classification.retentionEndDate = new Date(creationDate);
       classification.retentionEndDate.setFullYear(
-        classification.retentionEndDate.getFullYear() + classification.baseRetentionYears
+        classification.retentionEndDate.getFullYear() + classification.baseRetentionYears,
       );
 
       // POPIA Quantum: Add data minimization date
       classification.anonymizationDate = new Date(creationDate);
       classification.anonymizationDate.setDate(
-        classification.anonymizationDate.getDate() + RETENTION_POLICY.ANONYMIZATION_THRESHOLD
+        classification.anonymizationDate.getDate() + RETENTION_POLICY.ANONYMIZATION_THRESHOLD,
       );
 
       logger.quantumInfo('RETENTION_CLASSIFICATION_COMPLETE', {
         assessmentId: assessment.assessmentId,
-        classification: classification,
+        classification,
       });
 
       return classification;
@@ -258,7 +258,7 @@ class RetentionQuantumEnforcer {
     if (!process.env.RETENTION_POLICY_ENFORCEMENT_ENABLED) {
       logger.quantumInfo(
         'ENFORCEMENT_DISABLED',
-        'Retention policy enforcement is disabled via environment'
+        'Retention policy enforcement is disabled via environment',
       );
       return { status: 'disabled' };
     }
@@ -342,7 +342,7 @@ class RetentionQuantumEnforcer {
       // Query 1: Assessments eligible for archival
       const archiveThreshold = new Date();
       archiveThreshold.setFullYear(
-        archiveThreshold.getFullYear() - RETENTION_POLICY.COMPANIES_ACT_YEARS
+        archiveThreshold.getFullYear() - RETENTION_POLICY.COMPANIES_ACT_YEARS,
       );
 
       const archiveCandidates = await RiskAssessment.find({
@@ -357,7 +357,7 @@ class RetentionQuantumEnforcer {
       // Query 2: Assessments in quarantine for final deletion
       const quarantineThreshold = new Date();
       quarantineThreshold.setDate(
-        quarantineThreshold.getDate() - RETENTION_POLICY.QUARANTINE_PERIOD_DAYS
+        quarantineThreshold.getDate() - RETENTION_POLICY.QUARANTINE_PERIOD_DAYS,
       );
 
       const quarantineCandidates = await RiskAssessment.find({
@@ -525,7 +525,7 @@ class RetentionQuantumEnforcer {
           },
         },
       },
-      { session }
+      { session },
     );
 
     // Create audit trail
@@ -577,7 +577,7 @@ class RetentionQuantumEnforcer {
           confidentialNotes: 1,
         },
       },
-      { session }
+      { session },
     );
 
     // Create audit trail
@@ -616,7 +616,7 @@ class RetentionQuantumEnforcer {
           },
         },
       },
-      { session }
+      { session },
     );
 
     await this.createActionAuditLog(assessment, 'LEGAL_HOLD_APPLIED', classification, session);
@@ -760,7 +760,7 @@ class RetentionQuantumEnforcer {
           secureDeletionDate: new Date(),
         },
       },
-      { session }
+      { session },
     );
   }
 
@@ -829,7 +829,7 @@ class RetentionQuantumEnforcer {
         assessmentDate: assessment.assessmentDate,
         clientId: assessment.clientId,
         firmId: assessment.legalFirmId,
-        classification: classification,
+        classification,
         legalBasis: classification?.applicableStatutes || [],
       },
       complianceTags: ['RETENTION_MANAGEMENT', 'POPIA_COMPLIANCE'],
@@ -850,7 +850,7 @@ class RetentionQuantumEnforcer {
         JSON.stringify({
           timestamp: new Date(),
           metrics: this.metrics,
-        })
+        }),
       );
 
       // Update system health metrics

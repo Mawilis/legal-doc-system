@@ -8,16 +8,14 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const fs = require('fs');
 const path = require('path');
-const PDFDocument = require('pdfkit');
 const asyncHandler = require('express-async-handler');
+const PDFDocument = require('pdfkit');
+const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const Attempt = require('../models/Attempt');
 const DispatchInstruction = require('../models/DispatchInstruction');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
-const { emitAudit } = require('../middleware/auditMiddleware');
 
 /*
  * INTERNAL PDF ARCHITECT: RENDER ENGINE
@@ -59,7 +57,7 @@ const buildForensicPdf = (doc, instruction, attempts) => {
       .font('Helvetica')
       .fontSize(9)
       .text(
-        `Time: ${new Date(a.at).toLocaleString('en-ZA')} | Lat/Long: ${a.gps.lat}, ${a.gps.lng}`
+        `Time: ${new Date(a.at).toLocaleString('en-ZA')} | Lat/Long: ${a.gps.lat}, ${a.gps.lng}`,
       );
     doc.fillColor('#718096').text(`Forensic Fingerprint: ${a.hash}`);
     doc.fillColor('black').moveDown(2);
@@ -72,7 +70,7 @@ const buildForensicPdf = (doc, instruction, attempts) => {
     .font('Helvetica')
     .fontSize(9)
     .text(
-      'I, the undersigned, hereby certify that the above is a true and accurate record of service. GPS data and timestamps were captured natively at the time of the event and are sealed with cryptographic integrity.'
+      'I, the undersigned, hereby certify that the above is a true and accurate record of service. GPS data and timestamps were captured natively at the time of the event and are sealed with cryptographic integrity.',
     );
 };
 
@@ -96,7 +94,7 @@ exports.generateReturns = asyncHandler(async (req, res) => {
       res,
       400,
       'Non-compliance: Cannot generate return without recorded service attempts.',
-      'ERR_EVIDENCE_MISSING'
+      'ERR_EVIDENCE_MISSING',
     );
   }
 
@@ -117,9 +115,7 @@ exports.generateReturns = asyncHandler(async (req, res) => {
 
   // 3. UPDATE LOGISTICS STATE
   stream.on('finish', async () => {
-    const wasServed = attempts.some((a) =>
-      ['served', 'domicile_served'].includes(a.outcome.toLowerCase())
-    );
+    const wasServed = attempts.some((a) => ['served', 'domicile_served'].includes(a.outcome.toLowerCase()));
 
     instruction.returnOfServicePdfUrl = publicUrl;
     instruction.status = wasServed ? 'RETURNED_SERVED' : 'RETURNED_NON_SERVICE';
@@ -140,7 +136,7 @@ exports.generateReturns = asyncHandler(async (req, res) => {
         url: publicUrl,
         status: instruction.status,
       },
-      { message: 'Forensic Return of Service successfully generated.' }
+      { message: 'Forensic Return of Service successfully generated.' },
     );
   });
 

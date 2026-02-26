@@ -45,14 +45,17 @@
 // ============================================================================
 require('dotenv').config(); // Env Vault Loading - MANDATORY
 const express = require('express');
+
 const router = express.Router();
-const { body, param, query, validationResult, checkSchema } = require('express-validator');
-const DataProcessingRecordController = require('../controllers/dataProcessingRecordController');
-const authMiddleware = require('../middleware/authMiddleware');
 const rateLimit = require('express-rate-limit');
+const {
+  body, param, query, validationResult, checkSchema,
+} = require('express-validator');
 const helmet = require('helmet');
 const cors = require('cors');
 const crypto = require('crypto');
+const DataProcessingRecordController = require('../controllers/dataProcessingRecordController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // ============================================================================
 // QUANTUM SECURITY: Rate Limiting & Protection
@@ -74,10 +77,10 @@ const processingRecordLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipFailedRequests: true,
-  keyGenerator: (req) => {
+  keyGenerator: (req) =>
     // Quantum Key: Combine IP with user ID if authenticated
-    return req.user ? `${req.user.id}:${req.ip}` : req.ip;
-  },
+    (req.user ? `${req.user.id}:${req.ip}` : req.ip)
+  ,
 });
 
 // Quantum Rate Limiter: Jurisdiction-specific operations
@@ -112,10 +115,10 @@ const dsarLimiter = rateLimit({
     section: 'POPIA Section 23(4)',
     timestamp: new Date().toISOString(),
   },
-  keyGenerator: (req) => {
+  keyGenerator: (req) =>
     // Quantum Key: User-specific DSAR limit
-    return req.user ? `dsar:${req.user.id}` : `dsar:ip:${req.ip}`;
-  },
+    (req.user ? `dsar:${req.user.id}` : `dsar:ip:${req.ip}`)
+  ,
 });
 
 // ============================================================================
@@ -239,14 +242,14 @@ const createProcessingRecordSchema = {
         const [, num, unit] = match;
         let years = parseInt(num);
 
-        if (unit.toLowerCase().includes('month')) years = years / 12;
-        if (unit.toLowerCase().includes('day')) years = years / 365;
+        if (unit.toLowerCase().includes('month')) years /= 12;
+        if (unit.toLowerCase().includes('day')) years /= 365;
 
         // Companies Act minimum: 7 years
         // POPIA maximum: 10 years (unless justified)
         if (years < 7 || years > 10) {
           throw new Error(
-            'Retention period must be 7-10 years to comply with Companies Act and POPIA'
+            'Retention period must be 7-10 years to comply with Companies Act and POPIA',
           );
         }
 
@@ -263,13 +266,11 @@ const createProcessingRecordSchema = {
         if (!Array.isArray(value)) return true;
 
         const requiredMeasures = ['ENCRYPTION', 'ACCESS_CONTROL'];
-        const hasRequired = requiredMeasures.some((measure) =>
-          value.some((v) => v.includes(measure))
-        );
+        const hasRequired = requiredMeasures.some((measure) => value.some((v) => v.includes(measure)));
 
         if (!hasRequired) {
           throw new Error(
-            'Security measures must include encryption and access control per POPIA Section 19'
+            'Security measures must include encryption and access control per POPIA Section 19',
           );
         }
 
@@ -362,8 +363,7 @@ const reportGenerationSchema = {
         // Maximum report period: 1 year
         const start = new Date(req.body.startDate);
         const end = new Date(value);
-        const diffMonths =
-          (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+        const diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
 
         if (diffMonths > 12) {
           throw new Error('Report period cannot exceed 12 months per POPIA Section 17');
@@ -483,7 +483,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -519,7 +519,8 @@ router.get(
     jurisdictionLimiter,
 
     // Quantum Validation: Query parameters
-    query('page').optional().isInt({ min: 1 }).toInt().withMessage('Page must be positive integer'),
+    query('page').optional().isInt({ min: 1 }).toInt()
+      .withMessage('Page must be positive integer'),
     query('limit')
       .optional()
       .isInt({ min: 1, max: 100 })
@@ -602,7 +603,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -671,7 +672,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -709,7 +710,8 @@ router.put(
     processingRecordLimiter,
 
     // Quantum Validation: UUID and schema
-    param('id').isUUID(4).withMessage('Invalid UUID v4 format').trim().escape(),
+    param('id').isUUID(4).withMessage('Invalid UUID v4 format').trim()
+      .escape(),
 
     // Quantum Validation: Update schema
     checkSchema(updateProcessingRecordSchema),
@@ -743,7 +745,7 @@ router.put(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -812,7 +814,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -897,7 +899,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -962,7 +964,7 @@ router.get(
         timestamp: new Date().toISOString(),
       });
     }
-  }
+  },
 );
 
 /*
@@ -1035,7 +1037,7 @@ router.post(
         timestamp: new Date().toISOString(),
       });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -1101,7 +1103,7 @@ router.get(
         },
       });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -1190,7 +1192,7 @@ router.use((err, req, res, next) => {
   if (process.env.NODE_ENV === 'production') {
     // Integration with audit logger would go here
     console.log(
-      `[QUANTUM_AUDIT] Error logged: ${errorResponse.error} - ${errorResponse.complianceCode}`
+      `[QUANTUM_AUDIT] Error logged: ${errorResponse.error} - ${errorResponse.complianceCode}`,
     );
   }
 

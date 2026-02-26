@@ -11,9 +11,8 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const fs = require('fs');
+
 const fsp = fs.promises;
 const os = require('os');
 const path = require('path');
@@ -31,7 +30,7 @@ let behavior = {
  * Configure mock behavior for tests.
  */
 function setBehavior(opts = {}) {
-  behavior = Object.assign({}, behavior, opts);
+  behavior = { ...behavior, ...opts };
 }
 
 /*
@@ -120,7 +119,7 @@ async function streamToTemp(storageKey) {
 
   // Otherwise, treat storageKey as "remote" but for tests we require mapping
   const err = new Error(
-    `No mapping for remote storageKey: ${storageKey}. Add behavior.mapping for tests.`
+    `No mapping for remote storageKey: ${storageKey}. Add behavior.mapping for tests.`,
   );
   err.code = 'NO_MAPPING';
   throw err;
@@ -209,7 +208,7 @@ async function cleanupTemp(p) {
  * Expose current mapping for assertions in tests.
  */
 function listMapping() {
-  return Object.assign({}, behavior.mapping);
+  return { ...behavior.mapping };
 }
 
 /* Export API */
@@ -222,5 +221,5 @@ module.exports = {
   setBehavior,
   resetBehavior,
   listMapping,
-  _behavior: () => Object.assign({}, behavior),
+  _behavior: () => ({ ...behavior }),
 };

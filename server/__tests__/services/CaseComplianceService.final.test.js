@@ -1,8 +1,8 @@
 /* eslint-env jest */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE COMPLIANCE SERVICE - INVESTOR GRADE TEST SUITE          ║
   ║ [Validates R180K/year savings proposition]                   ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 
 const crypto = require('crypto');
 
@@ -185,13 +185,12 @@ describe('Service Method Validation (Static Tests)', () => {
   test('TC-METHOD-003: Data Residency Calculation', () => {
     const calculateDisposalDate = (startDate, policyRule) => {
       const disposalDate = new Date(startDate);
-      const yearIncrement =
-        {
-          COMPANIES_ACT_7YR: 7,
-          LPC_6YR: 6,
-          PAIA_5YR: 5,
-          PERMANENT: 100,
-        }[policyRule] || 7;
+      const yearIncrement = {
+        COMPANIES_ACT_7YR: 7,
+        LPC_6YR: 6,
+        PAIA_5YR: 5,
+        PERMANENT: 100,
+      }[policyRule] || 7;
 
       disposalDate.setFullYear(disposalDate.getFullYear() + yearIncrement);
       return disposalDate;

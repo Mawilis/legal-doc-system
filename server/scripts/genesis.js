@@ -9,8 +9,8 @@
  */
 
 require('dotenv').config();
-const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 
 // --- SCHEMAS (Simplified for Seeding) ---
@@ -111,7 +111,7 @@ const seed = async () => {
     },
   ];
 
-  let tenantDocs = [];
+  const tenantDocs = [];
 
   for (const t of tenants) {
     let tenant = await Tenant.findOne({ domain: t.domain });
@@ -166,15 +166,21 @@ const seed = async () => {
 
   // Create Tenant Admins
   const userMap = [
-    { name: 'John Smith', email: 'john@smith.law', role: 'TENANT_ADMIN', tenantIdx: 1 },
-    { name: 'Sarah Eagle', email: 'sarah@legaleagles.co.za', role: 'TENANT_ADMIN', tenantIdx: 2 },
-    { name: 'Advocate Zulu', email: 'zulu@ppd.gov.za', role: 'LAWYER', tenantIdx: 3 },
+    {
+      name: 'John Smith', email: 'john@smith.law', role: 'TENANT_ADMIN', tenantIdx: 1,
+    },
+    {
+      name: 'Sarah Eagle', email: 'sarah@legaleagles.co.za', role: 'TENANT_ADMIN', tenantIdx: 2,
+    },
+    {
+      name: 'Advocate Zulu', email: 'zulu@ppd.gov.za', role: 'LAWYER', tenantIdx: 3,
+    },
   ];
 
   for (const u of userMap) {
     if (!tenantDocs[u.tenantIdx]) continue; // Skip if tenant creation failed
 
-    let user = await User.findOne({ email: u.email });
+    const user = await User.findOne({ email: u.email });
     if (!user) {
       await User.create({
         name: u.name,
@@ -210,7 +216,7 @@ const seed = async () => {
       });
     }
     await Document.insertMany(docs);
-    console.log(`✅ 50 Documents Created`);
+    console.log('✅ 50 Documents Created');
   } else {
     console.log(`ℹ️  Documents already seeded (${docCount})`);
   }

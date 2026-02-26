@@ -9,13 +9,11 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
+const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const DispatchInstruction = require('../models/DispatchInstruction');
 const Sheriff = require('../models/Sheriff');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
-const { emitAudit } = require('../middleware/auditMiddleware');
 
 /*
  * @desc    UPDATE SERVICE STATUS (Field Action)

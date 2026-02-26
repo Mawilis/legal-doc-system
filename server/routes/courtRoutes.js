@@ -8,8 +8,6 @@
  * TESTS: mocha@9.x + chai@4.x; validates court date scheduling conflicts and roll lookups.
  */
 
-'use strict';
-
 // 1. USAGE COMMENTS
 // -----------------------------------------------------------------------------
 // Usage:
@@ -22,14 +20,15 @@
 // -----------------------------------------------------------------------------
 
 const express = require('express');
+
 const router = express.Router();
 
 const courtController = require('../controllers/courtController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
+const { emitAudit } = require('../middleware/auditMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const validate = require('../middleware/validationMiddleware');
 
 // 3. VALIDATION SCHEMAS (Joi)
@@ -73,7 +72,7 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -109,7 +108,7 @@ router.post(
       err.code = 'COURT_FILING_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -140,7 +139,7 @@ router.get(
       err.code = 'COURT_ROLL_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 /*
@@ -162,7 +161,7 @@ router.get(
       err.code = 'FILING_STATUS_FAILED';
       next(err);
     }
-  }
+  },
 );
 
 module.exports = router;

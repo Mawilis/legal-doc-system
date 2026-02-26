@@ -15,8 +15,6 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const { emitAudit } = require('./auditMiddleware');
 
 // 24-character hex string (Standard MongoDB ObjectId)
@@ -26,39 +24,37 @@ const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
  * OBJECT ID VALIDATOR FACTORY
  * @param {string} paramName - The name of the parameter to validate (default: 'id')
  */
-const validateObjectId = (paramName = 'id') => {
-  return async (req, res, next) => {
-    const candidate = req.params[paramName];
+const validateObjectId = (paramName = 'id') => async (req, res, next) => {
+  const candidate = req.params[paramName];
 
-    // 1. FORMAT VALIDATION
-    if (!candidate || !OBJECT_ID_REGEX.test(candidate)) {
-      // 2. FORENSIC AUDIT (Log as a warning: Malformed IDs are suspicious)
-      if (req.logAudit) {
-        await req.logAudit('INVALID_ID_REJECTED', {
-          paramName,
-          value: candidate,
-          path: req.originalUrl,
-        });
-      }
-
-      return res.status(400).json({
-        success: false,
-        status: 'error',
-        code: 'ERR_INVALID_IDENTIFIER',
-        message: `The identifier provided for '${paramName}' is not a valid 24-character hex string.`,
-        correlationId: req.correlationId,
+  // 1. FORMAT VALIDATION
+  if (!candidate || !OBJECT_ID_REGEX.test(candidate)) {
+    // 2. FORENSIC AUDIT (Log as a warning: Malformed IDs are suspicious)
+    if (req.logAudit) {
+      await req.logAudit('INVALID_ID_REJECTED', {
+        paramName,
+        value: candidate,
+        path: req.originalUrl,
       });
     }
 
-    // 3. ATTACH TO CONTEXT
-    // We ensure the ID is easily accessible for downstream queries
-    req.context = {
-      ...req.context,
-      validatedId: candidate,
-    };
+    return res.status(400).json({
+      success: false,
+      status: 'error',
+      code: 'ERR_INVALID_IDENTIFIER',
+      message: `The identifier provided for '${paramName}' is not a valid 24-character hex string.`,
+      correlationId: req.correlationId,
+    });
+  }
 
-    next();
+  // 3. ATTACH TO CONTEXT
+  // We ensure the ID is easily accessible for downstream queries
+  req.context = {
+    ...req.context,
+    validatedId: candidate,
   };
+
+  next();
 };
 
 module.exports = validateObjectId;

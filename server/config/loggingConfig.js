@@ -65,7 +65,6 @@ if (!process.env.MONGO_URI) {
 }
 
 // Core Dependencies
-const winston = require('winston');
 require('winston-daily-rotate-file');
 require('winston-mongodb');
 const crypto = require('crypto');
@@ -75,8 +74,9 @@ const { createHash } = require('crypto');
 
 // Third-party Dependencies (install via npm install)
 const CryptoJS = require('crypto-js');
-const helmet = require('helmet');
 const expressWinston = require('express-winston');
+const helmet = require('helmet');
+const winston = require('winston');
 
 // ===================================================================================
 // QUANTUM LOGGING CONSTANTS - LEGAL COMPLIANCE FRAMEWORK
@@ -151,7 +151,7 @@ class QuantumLogEncryptor {
           const cipher = crypto.createCipheriv(
             this.algorithm,
             Buffer.from(this.encryptionKey, 'hex'),
-            iv
+            iv,
           );
 
           let encryptedValue = cipher.update(encrypted[field], 'utf8', 'hex');
@@ -163,7 +163,7 @@ class QuantumLogEncryptor {
             iv: iv.toString('hex'),
             tag: tag.toString('hex'),
             algorithm: this.algorithm,
-            field: field,
+            field,
             timestamp: new Date().toISOString(),
           };
         } catch (error) {
@@ -194,8 +194,8 @@ class QuantumLogEncryptor {
       ...logData,
       _forensic: {
         hash: currentHash,
-        previousHash: previousHash,
-        timestamp: timestamp,
+        previousHash,
+        timestamp,
         algorithm: 'SHA-256',
         chainIndex: previousHash ? 'linked' : 'genesis',
       },
@@ -234,7 +234,7 @@ const quantumFormats = winston.format.combine(
     return info;
   })(),
 
-  winston.format.json()
+  winston.format.json(),
 );
 
 // ===================================================================================
@@ -250,13 +250,13 @@ const createTransports = (serviceName = 'wilsy-os') => {
         level: process.env.LOG_LEVEL || 'debug',
         format: winston.format.combine(
           winston.format.colorize(),
-          winston.format.printf(({ timestamp, level, message, service, ...meta }) => {
-            return `[${timestamp}] ${level.toUpperCase()} [${service || 'WilsyOS'}]: ${message} ${
-              Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ''
-            }`;
-          })
+          winston.format.printf(({
+            timestamp, level, message, service, ...meta
+          }) => `[${timestamp}] ${level.toUpperCase()} [${service || 'WilsyOS'}]: ${message} ${
+            Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ''
+          }`),
         ),
-      })
+      }),
     );
   }
 
@@ -276,7 +276,7 @@ const createTransports = (serviceName = 'wilsy-os') => {
       createSymlink: true,
       symlinkName: `${serviceName}-current.log`,
       options: { flags: 'a' }, // Append mode for integrity
-    })
+    }),
   );
 
   // 3. MONGODB TRANSPORT (Immutable audit trail)
@@ -306,17 +306,17 @@ const createTransports = (serviceName = 'wilsy-os') => {
             info.chainId = `log-${hash.substring(0, 16)}`;
             return info;
           })(),
-          winston.format.json()
+          winston.format.json(),
         ),
-      })
+      }),
     );
   }
 
   // 4. CYBERCRIMES ACT TRANSPORT (Secure, encrypted logs for law enforcement)
   const cybercrimesTransport = new winston.transports.File({
     filename:
-      process.env.CYBERCRIME_LOG_DESTINATION ||
-      path.join(__dirname, '../logs/cybercrimes/secure.log'),
+      process.env.CYBERCRIME_LOG_DESTINATION
+      || path.join(__dirname, '../logs/cybercrimes/secure.log'),
     level: 'warn',
     format: winston.format.combine(
       winston.format.timestamp(),
@@ -333,7 +333,7 @@ const createTransports = (serviceName = 'wilsy-os') => {
         const encryptor = new QuantumLogEncryptor();
         return encryptor.encryptPII(info);
       })(),
-      winston.format.json()
+      winston.format.json(),
     ),
   });
 
@@ -408,11 +408,10 @@ const auditLogger = winston.createLogger({
   },
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format((info) => {
+    winston.format((info) =>
       // Create chain of evidence for audit logs
-      return encryptor.createChainOfEvidence(info, global.lastAuditHash);
-    })(),
-    winston.format.json()
+      encryptor.createChainOfEvidence(info, global.lastAuditHash))(),
+    winston.format.json(),
   ),
   transports: [
     new winston.transports.DailyRotateFile({
@@ -455,7 +454,7 @@ const securityLogger = winston.createLogger({
       info.authorities = ['SAPS', 'Information-Regulator'];
       return encryptor.encryptPII(info);
     })(),
-    winston.format.json()
+    winston.format.json(),
   ),
   transports: [
     new winston.transports.File({
@@ -464,8 +463,8 @@ const securityLogger = winston.createLogger({
     }),
     new winston.transports.File({
       filename:
-        process.env.CYBERCRIME_LOG_DESTINATION ||
-        path.join(__dirname, '../logs/security/cybercrimes.log'),
+        process.env.CYBERCRIME_LOG_DESTINATION
+        || path.join(__dirname, '../logs/security/cybercrimes.log'),
       format: winston.format.json(),
     }),
   ],
@@ -481,7 +480,7 @@ const performanceLogger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp'] }),
-    winston.format.json()
+    winston.format.json(),
   ),
   transports: [
     new winston.transports.DailyRotateFile({
@@ -498,52 +497,50 @@ const performanceLogger = winston.createLogger({
 // ===================================================================================
 // EXPRESS MIDDLEWARE FOR FORENSIC REQUEST LOGGING
 // ===================================================================================
-const createExpressLogger = () => {
-  return expressWinston.logger({
-    winstonInstance: appLogger,
-    meta: true,
-    msg: 'HTTP {{req.method}} {{req.url}} {{res.statusCode}} {{res.responseTime}}ms',
-    expressFormat: false,
-    colorize: process.env.NODE_ENV !== 'production',
-    dynamicMeta: (req, res) => {
-      // POPIA Compliance: Anonymize user data
-      const userInfo = req.user
-        ? {
-            userId: req.user._id,
-            role: req.user.role,
-            // Don't log PII unless absolutely necessary
-            emailHash: req.user.email
-              ? createHash('sha256').update(req.user.email).digest('hex').substring(0, 16)
-              : null,
-          }
-        : null;
-
-      return {
-        requestId: req.id || `req-${crypto.randomBytes(8).toString('hex')}`,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-        user: userInfo,
-        compliance: {
-          popia: true,
-          dataMinimized: true,
-        },
-      };
-    },
-    requestFilter: (req, propName) => {
-      // Filter out sensitive request data
-      const sensitiveFields = ['password', 'token', 'authorization', 'creditCard', 'cvv'];
-      if (sensitiveFields.includes(propName)) {
-        return '[REDACTED]';
+const createExpressLogger = () => expressWinston.logger({
+  winstonInstance: appLogger,
+  meta: true,
+  msg: 'HTTP {{req.method}} {{req.url}} {{res.statusCode}} {{res.responseTime}}ms',
+  expressFormat: false,
+  colorize: process.env.NODE_ENV !== 'production',
+  dynamicMeta: (req, res) => {
+    // POPIA Compliance: Anonymize user data
+    const userInfo = req.user
+      ? {
+        userId: req.user._id,
+        role: req.user.role,
+        // Don't log PII unless absolutely necessary
+        emailHash: req.user.email
+          ? createHash('sha256').update(req.user.email).digest('hex').substring(0, 16)
+          : null,
       }
-      return req[propName];
-    },
-    headerBlacklist: ['authorization', 'cookie'],
-    ignoreRoute: (req, res) => {
-      // Don't log health checks
-      return req.url === '/health' || req.url === '/status';
-    },
-  });
-};
+      : null;
+
+    return {
+      requestId: req.id || `req-${crypto.randomBytes(8).toString('hex')}`,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+      user: userInfo,
+      compliance: {
+        popia: true,
+        dataMinimized: true,
+      },
+    };
+  },
+  requestFilter: (req, propName) => {
+    // Filter out sensitive request data
+    const sensitiveFields = ['password', 'token', 'authorization', 'creditCard', 'cvv'];
+    if (sensitiveFields.includes(propName)) {
+      return '[REDACTED]';
+    }
+    return req[propName];
+  },
+  headerBlacklist: ['authorization', 'cookie'],
+  ignoreRoute: (req, res) =>
+  // Don't log health checks
+    req.url === '/health' || req.url === '/status'
+  ,
+});
 
 // ===================================================================================
 // LEGAL COMPLIANCE LOGGING UTILITIES
@@ -684,9 +681,9 @@ class LogRetentionManager {
         if (ageInDays > maxAge) {
           await fs.unlink(filePath);
           appLogger.info('Log retention enforcement', {
-            file: file,
+            file,
             ageInDays: Math.floor(ageInDays),
-            maxAge: maxAge,
+            maxAge,
             action: 'DELETED',
             compliance: 'RETENTION_POLICY_ENFORCED',
           });
@@ -723,35 +720,31 @@ module.exports = {
   LEGAL_COMPLIANCE,
 
   // Helper Functions
-  createLogger: (serviceName) => {
-    return winston.createLogger({
-      level: process.env.LOG_LEVEL || 'info',
-      defaultMeta: { service: serviceName },
-      format: quantumFormats,
-      transports: createTransports(serviceName),
-    });
-  },
+  createLogger: (serviceName) => winston.createLogger({
+    level: process.env.LOG_LEVEL || 'info',
+    defaultMeta: { service: serviceName },
+    format: quantumFormats,
+    transports: createTransports(serviceName),
+  }),
 
   // Health Check
-  checkLoggingHealth: () => {
-    return {
-      status: 'OPERATIONAL',
-      loggers: {
-        app: appLogger.transports.length > 0,
-        audit: auditLogger.transports.length > 0,
-        security: securityLogger.transports.length > 0,
-        performance: performanceLogger.transports.length > 0,
-      },
-      retentionPolicies: LEGAL_COMPLIANCE,
-      encryption: process.env.POPIA_LOG_ENCRYPTION === 'true',
-      compliance: {
-        popia: true,
-        companiesAct: true,
-        cybercrimesAct: true,
-        ectAct: true,
-      },
-    };
-  },
+  checkLoggingHealth: () => ({
+    status: 'OPERATIONAL',
+    loggers: {
+      app: appLogger.transports.length > 0,
+      audit: auditLogger.transports.length > 0,
+      security: securityLogger.transports.length > 0,
+      performance: performanceLogger.transports.length > 0,
+    },
+    retentionPolicies: LEGAL_COMPLIANCE,
+    encryption: process.env.POPIA_LOG_ENCRYPTION === 'true',
+    compliance: {
+      popia: true,
+      companiesAct: true,
+      cybercrimesAct: true,
+      ectAct: true,
+    },
+  }),
 };
 
 // ===================================================================================

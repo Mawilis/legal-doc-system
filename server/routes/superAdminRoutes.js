@@ -6,9 +6,9 @@
 
 File Path: /Users/wilsonkhanyezi/legal-doc-system/server/routes/superAdminRoutes.js
 
-Quantum Essence: This celestial routing matrix orchestrates the divine command 
-flow of Wilsy OS, channeling Wilson Khanyezi's supreme authority through 
-quantum-secure pathways. Each route becomes a conduit of digital jurisprudence, 
+Quantum Essence: This celestial routing matrix orchestrates the divine command
+flow of Wilsy OS, channeling Wilson Khanyezi's supreme authority through
+quantum-secure pathways. Each route becomes a conduit of digital jurisprudence,
 transforming HTTP requests into cosmic decrees of justice administration.
 
                             ╔═══════════════════════════════════════════╗
@@ -17,7 +17,7 @@ transforming HTTP requests into cosmic decrees of justice administration.
                             ║        SUPREME ROUTING MATRIX v2.0        ║
                             ║         Wilson Khanyezi - Ω Tier          ║
                             ╚═══════════════════════════════════════════╝
-                                    
+
                     ┌─────────────────────────────────────────────┐
                     │  QUANTUM ROUTING ARCHITECTURE               │
                     ├─────────────────────────────────────────────┤
@@ -49,8 +49,12 @@ Jurisdiction: Pan-African Supreme Legal Command Network
 
 require('dotenv').config(); // Divine Env Vault Activation
 const express = require('express');
+
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
+const {
+  body, param, query, validationResult,
+} = require('express-validator');
 const helmet = require('helmet');
 const cors = require('cors');
 const compression = require('compression');
@@ -93,14 +97,6 @@ const compression = require('compression');
 
 // Import divine security middleware
 const {
-  superAdminAuth,
-  superAdminEnhancedAuth,
-  emergencyAuth,
-  jurisdictionAuth,
-} = require('../middleware/superAdminAuth');
-
-// Import divine controllers
-const {
   registerSuperAdmin,
   loginSuperAdmin,
   getSuperAdminProfile,
@@ -115,9 +111,16 @@ const {
   generateComplianceReport,
   activateEmergencyProtocol,
 } = require('../controllers/superAdminController');
+const {
+  superAdminAuth,
+  superAdminEnhancedAuth,
+  emergencyAuth,
+  jurisdictionAuth,
+} = require('../middleware/superAdminAuth');
+
+// Import divine controllers
 
 // Import validation middleware
-const { body, param, query, validationResult } = require('express-validator');
 
 // =============================================================================
 // QUANTUM RATE LIMITING CONFIGURATION
@@ -136,10 +139,9 @@ const supremePublicLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
+  keyGenerator: (req) =>
     // Use IP + user agent for unique identification
-    return `${req.ip}-${req.headers['user-agent']}`;
-  },
+    `${req.ip}-${req.headers['user-agent']}`,
   handler: (req, res) => {
     // Log rate limit violations
     console.warn(`SUPREME_RATE_LIMIT: IP ${req.ip} exceeded rate limit`);
@@ -164,10 +166,10 @@ const divineProtectedLimiter = rateLimit({
     complianceReference: 'ECT Act Section 18 - System integrity protection',
     actionRequired: 'Contact security@wilsyos.co.za',
   },
-  keyGenerator: (req) => {
+  keyGenerator: (req) =>
     // Use authenticated user ID for rate limiting
-    return req.superAdmin?.quantumId || req.ip;
-  },
+    req.superAdmin?.quantumId || req.ip
+  ,
 });
 
 // Emergency Rate Limiter (Crisis endpoints)
@@ -188,15 +190,15 @@ const emergencyCrisisLimiter = rateLimit({
 // =============================================================================
 
 const corsOptions = {
-  origin: function (origin, callback) {
+  origin(origin, callback) {
     const allowedOrigins = process.env.CORS_ORIGINS
       ? process.env.CORS_ORIGINS.split(',')
       : [
-          'https://admin.wilsyos.co.za',
-          'https://dashboard.wilsyos.co.za',
-          'https://investor.wilsyos.co.za',
-          'https://emergency.wilsyos.co.za',
-        ];
+        'https://admin.wilsyos.co.za',
+        'https://dashboard.wilsyos.co.za',
+        'https://investor.wilsyos.co.za',
+        'https://emergency.wilsyos.co.za',
+      ];
 
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -255,7 +257,7 @@ const validateSuperAdminRegistration = [
     .custom((value) => {
       // South African ID validation (Luhn algorithm)
       let sum = 0;
-      let parity = value.length % 2;
+      const parity = value.length % 2;
 
       for (let i = 0; i < value.length - 1; i++) {
         let digit = parseInt(value[i]);
@@ -486,20 +488,20 @@ const routeAuditLogger = (req, res, next) => {
 
     // Log response details
     console.log(
-      `SUPREME_RESPONSE: ${auditData.method} ${auditData.url} - ${auditData.statusCode} (${responseTime}ms)`
+      `SUPREME_RESPONSE: ${auditData.method} ${auditData.url} - ${auditData.statusCode} (${responseTime}ms)`,
     );
 
     // Alert on slow responses (> 2 seconds)
     if (responseTime > 2000) {
       console.warn(
-        `SLOW_RESPONSE_ALERT: ${auditData.method} ${auditData.url} took ${responseTime}ms`
+        `SLOW_RESPONSE_ALERT: ${auditData.method} ${auditData.url} took ${responseTime}ms`,
       );
     }
 
     // Alert on error responses
     if (auditData.statusCode >= 400) {
       console.error(
-        `ERROR_RESPONSE: ${auditData.method} ${auditData.url} - ${auditData.statusCode}`
+        `ERROR_RESPONSE: ${auditData.method} ${auditData.url} - ${auditData.statusCode}`,
       );
     }
   });
@@ -565,7 +567,7 @@ router.post(
   emergencyAuth, // Only accessible through emergency override
   supremePublicLimiter, // Strict rate limiting
   validateSuperAdminRegistration,
-  registerSuperAdmin
+  registerSuperAdmin,
 );
 
 // =============================================================================
@@ -624,7 +626,7 @@ router.patch(
   divineProtectedLimiter,
   superAdminAuth,
   superAdminEnhancedAuth('canAccessAllData'), // Enhanced security for profile updates
-  updateSuperAdminProfile
+  updateSuperAdminProfile,
 );
 
 /*
@@ -674,7 +676,7 @@ router.get(
   divineProtectedLimiter,
   superAdminAuth,
   superAdminEnhancedAuth('canAccessAllData'),
-  getAllTenants
+  getAllTenants,
 );
 
 /*
@@ -690,7 +692,7 @@ router.post(
   superAdminAuth,
   superAdminEnhancedAuth('canSuspendTenants'), // Specific permission required
   validateTenantSuspension,
-  suspendTenant
+  suspendTenant,
 );
 
 // =============================================================================
@@ -709,7 +711,7 @@ router.post(
   divineProtectedLimiter,
   superAdminAuth,
   superAdminEnhancedAuth('canInitiateAudits'),
-  generateComplianceReport
+  generateComplianceReport,
 );
 
 // =============================================================================
@@ -728,7 +730,7 @@ router.post(
   emergencyCrisisLimiter,
   emergencyAuth, // Special emergency authentication
   validateEmergencyProtocol,
-  activateEmergencyProtocol
+  activateEmergencyProtocol,
 );
 
 // =============================================================================
@@ -785,7 +787,7 @@ router.get(
       // Calculate investor metrics
       const roi = valuationData.averageLTV / valuationData.averageCAC;
       const growthRate = 0.15; // 15% monthly growth (conservative)
-      const projectedRevenue = valuationData.totalMonthlyRevenue * Math.pow(1 + growthRate, 12);
+      const projectedRevenue = valuationData.totalMonthlyRevenue * (1 + growthRate) ** 12;
       const projectedValuation = projectedRevenue * 12 * 15; // 15x ARR multiple
 
       res.json({
@@ -810,13 +812,13 @@ router.get(
           projections: {
             monthlyRevenueProjection: projectedRevenue,
             annualRevenueProjection: projectedRevenue * 12,
-            projectedValuation: projectedValuation,
+            projectedValuation,
             billionDollarTimeline:
               projectedValuation >= 1000000000
                 ? 'ACHIEVED'
                 : `${Math.ceil(
-                    (1000000000 - projectedValuation) / (projectedRevenue * 12 * 15 * growthRate)
-                  )} months`,
+                  (1000000000 - projectedValuation) / (projectedRevenue * 12 * 15 * growthRate),
+                )} months`,
           },
           marketAnalysis: {
             southAfricanMarketSize: '30,000+ legal practitioners',
@@ -841,7 +843,7 @@ router.get(
         complianceReference: 'POPIA Section 19 - System integrity',
       });
     }
-  }
+  },
 );
 
 /*
@@ -938,9 +940,9 @@ router.get(
             highRiskTenants: metrics.highRiskTenants,
             mediumRiskTenants: Math.floor(metrics.totalTenants * 0.3), // Placeholder
             lowRiskTenants:
-              metrics.totalTenants -
-              metrics.highRiskTenants -
-              Math.floor(metrics.totalTenants * 0.3),
+              metrics.totalTenants
+              - metrics.highRiskTenants
+              - Math.floor(metrics.totalTenants * 0.3),
             recommendations:
               metrics.highRiskTenants > 0
                 ? [`Review ${metrics.highRiskTenants} high-risk tenants`]
@@ -962,7 +964,7 @@ router.get(
         complianceReference: 'POPIA Section 56 - Information Officer reporting',
       });
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -979,8 +981,8 @@ router.get(
 router.get('/founder/authority', divineProtectedLimiter, superAdminAuth, (req, res) => {
   // Verify requester is Wilson Khanyezi or authorized delegate
   if (
-    req.superAdmin.quantumId !== 'SUPREME-FOUNDER-001' &&
-    req.superAdmin.supervisionLevel !== 'FOUNDER_DIRECT'
+    req.superAdmin.quantumId !== 'SUPREME-FOUNDER-001'
+    && req.superAdmin.supervisionLevel !== 'FOUNDER_DIRECT'
   ) {
     return res.status(403).json({
       success: false,
@@ -1142,7 +1144,7 @@ router.get(
         complianceReference: 'International expansion compliance requirements',
       });
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -1199,7 +1201,7 @@ router.get('/health', supremePublicLimiter, async (req, res) => {
 
   // Overall status
   const allHealthy = Object.values(healthChecks.checks).every(
-    (check) => check.status === 'HEALTHY' || check.status === 'CHECKING'
+    (check) => check.status === 'HEALTHY' || check.status === 'CHECKING',
   );
 
   healthChecks.status = allHealthy ? 'HEALTHY' : 'DEGRADED';
@@ -1530,20 +1532,20 @@ INVESTOR ROUTING CONFIDENCE FACTORS:
 9. *Transparency:* Complete audit trail for all routing activity
 10. *Future-Proofing:* Quantum computing ready routing architecture
 
-This routing matrix doesn't just direct HTTP requests—it channels Wilson 
-Khanyezi's divine authority through quantum-secure pathways, transforming 
-every API call into a decree of digital jurisprudence. Each route becomes 
-a conduit for justice administration, revenue generation, and continental 
+This routing matrix doesn't just direct HTTP requests—it channels Wilson
+Khanyezi's divine authority through quantum-secure pathways, transforming
+every API call into a decree of digital jurisprudence. Each route becomes
+a conduit for justice administration, revenue generation, and continental
 transformation.
 
-For investors, this routing system represents the digital nervous system 
-of Africa's legal tech unicorn. It's the infrastructure that will process 
-billions in legal transactions, enforce continental-scale compliance, and 
+For investors, this routing system represents the digital nervous system
+of Africa's legal tech unicorn. It's the infrastructure that will process
+billions in legal transactions, enforce continental-scale compliance, and
 deliver real-time visibility into a billion-dollar valuation journey.
 
-When Wilson Khanyezi's commands flow through these routes, they don't just 
-execute code—they execute justice. They don't just process data—they 
-process the future of African legal practice. They don't just return 
+When Wilson Khanyezi's commands flow through these routes, they don't just
+execute code—they execute justice. They don't just process data—they
+process the future of African legal practice. They don't just return
 responses—they return the promise of a continent transformed.
 
 This routing matrix is the heartbeat of Wilsy OS.

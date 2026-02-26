@@ -37,7 +37,7 @@ exports.decrypt = (ciphertext, secretKey) => {
   const decipher = crypto.createDecipheriv(
     ALGORITHM,
     Buffer.from(secretKey, 'hex'),
-    Buffer.from(ivHex, 'hex')
+    Buffer.from(ivHex, 'hex'),
   );
 
   decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));

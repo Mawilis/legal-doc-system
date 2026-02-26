@@ -86,29 +86,27 @@
  * ============================================================================
  */
 
-'use strict';
-
-const axios = require('axios');
 const crypto = require('crypto');
+const axios = require('axios');
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 
 // ============================================================================
 // WILSY OS CORE IMPORTS
 // ============================================================================
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const Tenant = require('../models/tenantModel');
-const CustomError = require('../utils/customError');
 const AIService = require('../services/aiService');
-const RateLimitService = require('../services/rateLimitService');
 const ComplianceService = require('../services/complianceService');
+const RateLimitService = require('../services/rateLimitService');
+const CustomError = require('../utils/customError');
 
 // ============================================================================
 // AI SOVEREIGNTY CONSTANTS
 // ============================================================================
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://ai.wilsyos.com';
-const AI_SERVICE_SECRET = process.env.AI_SERVICE_SECRET;
+const { AI_SERVICE_SECRET } = process.env;
 const AI_REQUEST_TIMEOUT = parseInt(process.env.AI_REQUEST_TIMEOUT) || 30000;
 const AI_MAX_RETRIES = parseInt(process.env.AI_MAX_RETRIES) || 3;
 
@@ -182,9 +180,7 @@ class AISovereigntyClient {
 
         return config;
       },
-      (error) => {
-        return Promise.reject(error);
-      }
+      (error) => Promise.reject(error),
     );
 
     // Response interceptor for error handling
@@ -194,33 +190,33 @@ class AISovereigntyClient {
         console.log(
           `🤖 [AI_SUCCESS] ${response.config.method?.toUpperCase()} ${response.config.url} - ${
             response.status
-          }`
+          }`,
         );
         return response;
       },
       async (error) => {
-        const config = error.config;
+        const { config } = error;
 
         // Check if we should retry
         if (
-          error.response?.status >= 500 &&
-          (!config._retryCount || config._retryCount < AI_MAX_RETRIES)
+          error.response?.status >= 500
+          && (!config._retryCount || config._retryCount < AI_MAX_RETRIES)
         ) {
           config._retryCount = (config._retryCount || 0) + 1;
 
           console.log(
-            `🔄 [AI_RETRY] Attempt ${config._retryCount}/${AI_MAX_RETRIES} for ${config.url}`
+            `🔄 [AI_RETRY] Attempt ${config._retryCount}/${AI_MAX_RETRIES} for ${config.url}`,
           );
 
           // Exponential backoff
-          const delay = Math.pow(2, config._retryCount) * 1000;
+          const delay = 2 ** config._retryCount * 1000;
           await new Promise((resolve) => setTimeout(resolve, delay));
 
           return this.client(config);
         }
 
         return Promise.reject(error);
-      }
+      },
     );
   }
 
@@ -247,7 +243,7 @@ class AISovereigntyClient {
     if (missingFields.length > 0) {
       throw new CustomError(
         `Missing required fields for AI capability: ${missingFields.join(', ')}`,
-        400
+        400,
       );
     }
 
@@ -418,7 +414,9 @@ const aiSovereigntyClient = new AISovereigntyClient();
  * 4. Integrates with SA Police Service data and municipal records
  */
 exports.getSafetyRiskAssessment = asyncHandler(async (req, res) => {
-  const { address, coordinates, propertyType, insuranceRequired, clientRiskProfile } = req.body;
+  const {
+    address, coordinates, propertyType, insuranceRequired, clientRiskProfile,
+  } = req.body;
   const { tenantId, _id: userId } = req.user;
 
   // Validate input
@@ -428,7 +426,7 @@ exports.getSafetyRiskAssessment = asyncHandler(async (req, res) => {
       res,
       400,
       'Address or coordinates required for risk assessment',
-      'ERR_AI_RISK_INPUT_INVALID'
+      'ERR_AI_RISK_INPUT_INVALID',
     );
   }
 
@@ -447,7 +445,7 @@ exports.getSafetyRiskAssessment = asyncHandler(async (req, res) => {
         res,
         403,
         `AI processing not allowed: ${complianceCheck.reason}`,
-        'ERR_AI_COMPLIANCE_VIOLATION'
+        'ERR_AI_COMPLIANCE_VIOLATION',
       );
     }
 
@@ -464,7 +462,7 @@ exports.getSafetyRiskAssessment = asyncHandler(async (req, res) => {
         analysisDepth: 'COMPREHENSIVE',
       },
       tenantId,
-      userId
+      userId,
     );
 
     // Record audit with risk level severity
@@ -526,7 +524,7 @@ exports.getSafetyRiskAssessment = asyncHandler(async (req, res) => {
       res,
       500,
       'AI risk assessment service temporarily unavailable',
-      'ERR_AI_RISK_SERVICE_UNAVAILABLE'
+      'ERR_AI_RISK_SERVICE_UNAVAILABLE',
     );
   }
 });
@@ -546,7 +544,9 @@ exports.getSafetyRiskAssessment = asyncHandler(async (req, res) => {
  * 5. Generates executive summaries and actionable insights
  */
 exports.analyzeLegalDocument = asyncHandler(async (req, res) => {
-  const { documentId, documentType, analysisType = 'COMPREHENSIVE', language = 'en' } = req.body;
+  const {
+    documentId, documentType, analysisType = 'COMPREHENSIVE', language = 'en',
+  } = req.body;
   const { tenantId, _id: userId } = req.user;
 
   // Validate input
@@ -556,7 +556,7 @@ exports.analyzeLegalDocument = asyncHandler(async (req, res) => {
       res,
       400,
       'Document ID required for analysis',
-      'ERR_AI_DOCUMENT_INPUT_INVALID'
+      'ERR_AI_DOCUMENT_INPUT_INVALID',
     );
   }
 
@@ -579,7 +579,7 @@ exports.analyzeLegalDocument = asyncHandler(async (req, res) => {
       res,
       400,
       `Invalid document type. Must be one of: ${validDocumentTypes.join(', ')}`,
-      'ERR_AI_DOCUMENT_TYPE_INVALID'
+      'ERR_AI_DOCUMENT_TYPE_INVALID',
     );
   }
 
@@ -598,7 +598,7 @@ exports.analyzeLegalDocument = asyncHandler(async (req, res) => {
         res,
         403,
         `Document access denied: ${documentAccess.reason}`,
-        'ERR_AI_DOCUMENT_ACCESS_DENIED'
+        'ERR_AI_DOCUMENT_ACCESS_DENIED',
       );
     }
 
@@ -612,7 +612,7 @@ exports.analyzeLegalDocument = asyncHandler(async (req, res) => {
         res,
         404,
         'Document not found or inaccessible',
-        'ERR_AI_DOCUMENT_NOT_FOUND'
+        'ERR_AI_DOCUMENT_NOT_FOUND',
       );
     }
 
@@ -630,7 +630,7 @@ exports.analyzeLegalDocument = asyncHandler(async (req, res) => {
         legalContext: document.legalContext || {},
       },
       tenantId,
-      userId
+      userId,
     );
 
     // Record audit with document insights
@@ -709,7 +709,7 @@ exports.analyzeLegalDocument = asyncHandler(async (req, res) => {
       res,
       500,
       'AI document analysis service temporarily unavailable',
-      'ERR_AI_DOCUMENT_SERVICE_UNAVAILABLE'
+      'ERR_AI_DOCUMENT_SERVICE_UNAVAILABLE',
     );
   }
 });
@@ -747,7 +747,7 @@ exports.searchLegalPrecedent = asyncHandler(async (req, res) => {
       res,
       400,
       'Search query must be at least 3 characters',
-      'ERR_AI_PRECEDENT_QUERY_INVALID'
+      'ERR_AI_PRECEDENT_QUERY_INVALID',
     );
   }
 
@@ -759,7 +759,7 @@ exports.searchLegalPrecedent = asyncHandler(async (req, res) => {
       res,
       400,
       `Invalid jurisdiction. Must be one of: ${validJurisdictions.join(', ')}`,
-      'ERR_AI_PRECEDENT_JURISDICTION_INVALID'
+      'ERR_AI_PRECEDENT_JURISDICTION_INVALID',
     );
   }
 
@@ -774,7 +774,7 @@ exports.searchLegalPrecedent = asyncHandler(async (req, res) => {
         res,
         403,
         'Legal precedent search requires Professional plan or higher',
-        'ERR_AI_PRECEDENT_ACCESS_DENIED'
+        'ERR_AI_PRECEDENT_ACCESS_DENIED',
       );
     }
 
@@ -794,7 +794,7 @@ exports.searchLegalPrecedent = asyncHandler(async (req, res) => {
         },
       },
       tenantId,
-      userId
+      userId,
     );
 
     // Record audit with search insights
@@ -852,7 +852,7 @@ exports.searchLegalPrecedent = asyncHandler(async (req, res) => {
       res,
       500,
       'AI precedent search service temporarily unavailable',
-      'ERR_AI_PRECEDENT_SERVICE_UNAVAILABLE'
+      'ERR_AI_PRECEDENT_SERVICE_UNAVAILABLE',
     );
   }
 });
@@ -888,7 +888,7 @@ exports.reviewContractAI = asyncHandler(async (req, res) => {
       res,
       400,
       'Contract ID required for review',
-      'ERR_AI_CONTRACT_INPUT_INVALID'
+      'ERR_AI_CONTRACT_INPUT_INVALID',
     );
   }
 
@@ -900,7 +900,7 @@ exports.reviewContractAI = asyncHandler(async (req, res) => {
       res,
       400,
       `Invalid review type. Must be one of: ${validReviewTypes.join(', ')}`,
-      'ERR_AI_CONTRACT_REVIEW_TYPE_INVALID'
+      'ERR_AI_CONTRACT_REVIEW_TYPE_INVALID',
     );
   }
 
@@ -915,7 +915,7 @@ exports.reviewContractAI = asyncHandler(async (req, res) => {
         res,
         404,
         'Contract not found or inaccessible',
-        'ERR_AI_CONTRACT_NOT_FOUND'
+        'ERR_AI_CONTRACT_NOT_FOUND',
       );
     }
 
@@ -929,7 +929,7 @@ exports.reviewContractAI = asyncHandler(async (req, res) => {
         res,
         403,
         'AI contract review requires Enterprise plan or higher',
-        'ERR_AI_CONTRACT_REVIEW_ACCESS_DENIED'
+        'ERR_AI_CONTRACT_REVIEW_ACCESS_DENIED',
       );
     }
 
@@ -948,7 +948,7 @@ exports.reviewContractAI = asyncHandler(async (req, res) => {
         legalStandards: contract.legalStandards || [],
       },
       tenantId,
-      userId
+      userId,
     );
 
     // Record audit with contract review insights
@@ -1035,7 +1035,7 @@ exports.reviewContractAI = asyncHandler(async (req, res) => {
       res,
       500,
       'AI contract review service temporarily unavailable',
-      'ERR_AI_CONTRACT_REVIEW_UNAVAILABLE'
+      'ERR_AI_CONTRACT_REVIEW_UNAVAILABLE',
     );
   }
 });
@@ -1071,7 +1071,7 @@ exports.analyzeClientIntelligence = asyncHandler(async (req, res) => {
       res,
       400,
       'Client ID required for analysis',
-      'ERR_AI_CLIENT_INPUT_INVALID'
+      'ERR_AI_CLIENT_INPUT_INVALID',
     );
   }
 
@@ -1083,7 +1083,7 @@ exports.analyzeClientIntelligence = asyncHandler(async (req, res) => {
       res,
       400,
       `Invalid analysis depth. Must be one of: ${validAnalysisDepths.join(', ')}`,
-      'ERR_AI_CLIENT_ANALYSIS_DEPTH_INVALID'
+      'ERR_AI_CLIENT_ANALYSIS_DEPTH_INVALID',
     );
   }
 
@@ -1098,7 +1098,7 @@ exports.analyzeClientIntelligence = asyncHandler(async (req, res) => {
         res,
         404,
         'Client not found or inaccessible',
-        'ERR_AI_CLIENT_NOT_FOUND'
+        'ERR_AI_CLIENT_NOT_FOUND',
       );
     }
 
@@ -1112,7 +1112,7 @@ exports.analyzeClientIntelligence = asyncHandler(async (req, res) => {
         res,
         403,
         'AI client intelligence requires Sovereign plan',
-        'ERR_AI_CLIENT_INTEL_ACCESS_DENIED'
+        'ERR_AI_CLIENT_INTEL_ACCESS_DENIED',
       );
     }
 
@@ -1139,7 +1139,7 @@ exports.analyzeClientIntelligence = asyncHandler(async (req, res) => {
         },
       },
       tenantId,
-      userId
+      userId,
     );
 
     // Record audit with client intelligence insights
@@ -1219,7 +1219,7 @@ exports.analyzeClientIntelligence = asyncHandler(async (req, res) => {
       res,
       500,
       'AI client intelligence service temporarily unavailable',
-      'ERR_AI_CLIENT_INTEL_UNAVAILABLE'
+      'ERR_AI_CLIENT_INTEL_UNAVAILABLE',
     );
   }
 });
@@ -1255,7 +1255,7 @@ exports.checkComplianceAI = asyncHandler(async (req, res) => {
       res,
       400,
       'Document ID required for compliance check',
-      'ERR_AI_COMPLIANCE_INPUT_INVALID'
+      'ERR_AI_COMPLIANCE_INPUT_INVALID',
     );
   }
 
@@ -1269,9 +1269,9 @@ exports.checkComplianceAI = asyncHandler(async (req, res) => {
       res,
       400,
       `Invalid regulations: ${invalidRegulations.join(', ')}. Valid: ${validRegulations.join(
-        ', '
+        ', ',
       )}`,
-      'ERR_AI_COMPLIANCE_REGULATIONS_INVALID'
+      'ERR_AI_COMPLIANCE_REGULATIONS_INVALID',
     );
   }
 
@@ -1286,7 +1286,7 @@ exports.checkComplianceAI = asyncHandler(async (req, res) => {
         res,
         404,
         'Document not found or inaccessible',
-        'ERR_AI_COMPLIANCE_DOCUMENT_NOT_FOUND'
+        'ERR_AI_COMPLIANCE_DOCUMENT_NOT_FOUND',
       );
     }
 
@@ -1300,7 +1300,7 @@ exports.checkComplianceAI = asyncHandler(async (req, res) => {
         res,
         403,
         'AI compliance analysis requires Enterprise plan or higher',
-        'ERR_AI_COMPLIANCE_ACCESS_DENIED'
+        'ERR_AI_COMPLIANCE_ACCESS_DENIED',
       );
     }
 
@@ -1322,7 +1322,7 @@ exports.checkComplianceAI = asyncHandler(async (req, res) => {
         },
       },
       tenantId,
-      userId
+      userId,
     );
 
     // Record audit with compliance insights
@@ -1409,7 +1409,7 @@ exports.checkComplianceAI = asyncHandler(async (req, res) => {
       res,
       500,
       'AI compliance check service temporarily unavailable',
-      'ERR_AI_COMPLIANCE_UNAVAILABLE'
+      'ERR_AI_COMPLIANCE_UNAVAILABLE',
     );
   }
 });
@@ -1484,7 +1484,7 @@ exports.getAICapabilities = asyncHandler(async (req, res) => {
       res,
       500,
       'Failed to retrieve AI capabilities',
-      'ERR_AI_CAPABILITIES_UNAVAILABLE'
+      'ERR_AI_CAPABILITIES_UNAVAILABLE',
     );
   }
 });
@@ -1506,7 +1506,7 @@ exports.getAIUsage = asyncHandler(async (req, res) => {
       res,
       403,
       'Admin access required for AI usage statistics',
-      'ERR_AI_USAGE_ACCESS_DENIED'
+      'ERR_AI_USAGE_ACCESS_DENIED',
     );
   }
 
@@ -1598,7 +1598,7 @@ exports.getAIUsage = asyncHandler(async (req, res) => {
       res,
       500,
       'Failed to retrieve AI usage statistics',
-      'ERR_AI_USAGE_UNAVAILABLE'
+      'ERR_AI_USAGE_UNAVAILABLE',
     );
   }
 });

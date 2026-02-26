@@ -1,7 +1,7 @@
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ QUEUES CONFIGURATION - INVESTOR-GRADE MODULE                                ║
   ║ 100% job reliability | Zero data loss | High-throughput processing          ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/queues.js
  * INVESTOR VALUE PROPOSITION:
@@ -34,13 +34,11 @@
  *   F -->|audit| G[Audit Logger]
  */
 
-'use strict';
-
-const Queue = require('bullmq').Queue;
-const Worker = require('bullmq').Worker;
-const metrics = require('../utils/metrics');
-const logger = require('../utils/logger');
+const { Queue } = require('bullmq');
+const { Worker } = require('bullmq');
 const auditLogger = require('../utils/auditLogger');
+const logger = require('../utils/logger');
+const metrics = require('../utils/metrics');
 const redisConfig = require('./redis');
 
 // Queue definitions

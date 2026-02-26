@@ -24,14 +24,13 @@
  * Biblical worth billions no child's place. Wilsy OS to the World.
  */
 
-'use strict';
-
-const mongoose = require('mongoose');
 const archiver = require('archiver'); // For generating discovery bundles
+const mongoose = require('mongoose');
 const { emitAudit } = require('../middleware/security');
 
 // --- SOVEREIGN MODEL INJECTION ---
-let CaseFile, User, AuditLog;
+let CaseFile; let User; let
+  AuditLog;
 try {
   CaseFile = require('../models/caseFileModel');
   User = require('../models/userModel');
@@ -51,7 +50,9 @@ try {
 exports.createCase = async (req, res) => {
   const traceId = req.headers['x-request-id'];
   try {
-    const { caseNumber, title, clientName, practiceArea, description } = req.body;
+    const {
+      caseNumber, title, clientName, practiceArea, description,
+    } = req.body;
 
     // Injected via tenantScope: req.tenantFilter = { tenantId: '...' }
     const newCase = await CaseFile.create({
@@ -195,8 +196,15 @@ exports.transitionCaseStatus = async (req, res) => {
     const { status, reason } = req.body;
     const caseFile = await CaseFile.findOneAndUpdate(
       { _id: req.params.id, ...req.tenantFilter },
-      { status, $push: { timeline: { status, reason, date: new Date(), actor: req.user.id } } },
-      { new: true }
+      {
+        status,
+        $push: {
+          timeline: {
+            status, reason, date: new Date(), actor: req.user.id,
+          },
+        },
+      },
+      { new: true },
     );
 
     await emitAudit(req, {
@@ -219,7 +227,7 @@ exports.archiveCase = async (req, res) => {
   try {
     await CaseFile.findOneAndUpdate(
       { _id: req.params.id, ...req.tenantFilter },
-      { status: 'archived', archivedAt: new Date() }
+      { status: 'archived', archivedAt: new Date() },
     );
 
     await emitAudit(req, {

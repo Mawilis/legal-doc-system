@@ -12,7 +12,7 @@ const database = require('../config/database');
 describe('🔧 Database Configuration Tests', function () {
   this.timeout(10000);
 
-  before(async function () {
+  before(async () => {
     // Mock environment variables for testing
     process.env.NODE_ENV = 'test';
     process.env.DB_HOST = 'localhost';
@@ -20,22 +20,22 @@ describe('🔧 Database Configuration Tests', function () {
     process.env.DB_NAME = 'test-wilsyos';
   });
 
-  after(async function () {
+  after(async () => {
     // Clean up
     if (mongoose.connection.readyState === 1) {
       await database.disconnect();
     }
   });
 
-  describe('1. Connection Management', function () {
-    it('should build connection string correctly', function () {
+  describe('1. Connection Management', () => {
+    it('should build connection string correctly', () => {
       // This is a private method test - we can test it by checking the config
       const status = database.getStatus();
       assert.ok(status.poolSize > 0);
       console.log('✅ Connection configuration valid');
     });
 
-    it('should connect to database', async function () {
+    it('should connect to database', async () => {
       await database.connect();
 
       const status = database.getStatus();
@@ -45,7 +45,7 @@ describe('🔧 Database Configuration Tests', function () {
       console.log(`✅ Connected to ${status.host}/${status.name}`);
     });
 
-    it('should disconnect gracefully', async function () {
+    it('should disconnect gracefully', async () => {
       await database.disconnect();
 
       const status = database.getStatus();
@@ -54,7 +54,7 @@ describe('🔧 Database Configuration Tests', function () {
       console.log('✅ Disconnected gracefully');
     });
 
-    it('should handle reconnection', async function () {
+    it('should handle reconnection', async () => {
       await database.connect();
       await database.disconnect();
       await database.connect();
@@ -66,8 +66,8 @@ describe('🔧 Database Configuration Tests', function () {
     });
   });
 
-  describe('2. Health Check', function () {
-    it('should provide health status', async function () {
+  describe('2. Health Check', () => {
+    it('should provide health status', async () => {
       await database.connect();
 
       const health = await database.healthCheck();
@@ -80,8 +80,8 @@ describe('🔧 Database Configuration Tests', function () {
     });
   });
 
-  describe('3. Economic Value', function () {
-    it('should calculate uptime value', function () {
+  describe('3. Economic Value', () => {
+    it('should calculate uptime value', () => {
       const uptime = 99.99;
       const annualRevenue = 5000000;
       const downtimeCost = annualRevenue * ((100 - uptime) / 100);

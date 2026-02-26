@@ -23,11 +23,9 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
+const { v4: uuidv4 } = require('uuid');
 const SystemConfig = require('../models/systemConfigModel');
 const logger = require('../utils/logger');
-const { v4: uuidv4 } = require('uuid');
 
 let ipaddr;
 try {
@@ -70,9 +68,7 @@ function ipInCidrs(ip, cidrs = []) {
           const [range, bits] = c.split('/');
           const parsedRange = ipaddr.parse(range);
           if (addr.match(parsedRange, parseInt(bits, 10))) return true;
-        } else {
-          if (addr.toString() === ipaddr.parse(c).toString()) return true;
-        }
+        } else if (addr.toString() === ipaddr.parse(c).toString()) return true;
       } catch (e) {
         // ignore malformed CIDR entries
         continue;
@@ -177,8 +173,7 @@ module.exports = function maintenanceMiddleware(options = {}) {
       // 4) Bypass header (set by infra/WAF) - must be protected by infra
       if (req.headers && req.headers[bypassHeader]) {
         logger.info('Maintenance bypass header present; allowing request', { correlationId });
-        if (metricsClient && typeof metricsClient.increment === 'function')
-          metricsClient.increment('maintenance.bypass.header');
+        if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('maintenance.bypass.header');
         return next();
       }
 
@@ -196,8 +191,7 @@ module.exports = function maintenanceMiddleware(options = {}) {
             correlationId,
             userId: req.user._id || req.user.id,
           });
-          if (metricsClient && typeof metricsClient.increment === 'function')
-            metricsClient.increment('maintenance.bypass.role');
+          if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('maintenance.bypass.role');
           return next();
         }
       }
@@ -216,8 +210,8 @@ module.exports = function maintenanceMiddleware(options = {}) {
               const decoded = jwt.verify(token, secret, { ignoreExpiration: true });
               const role = (decoded && (decoded.role || decoded.roles || decoded.userRole)) || null;
               if (
-                role &&
-                allowRoles
+                role
+                && allowRoles
                   .map(String)
                   .map((r) => r.toUpperCase())
                   .includes(String(role).toUpperCase())
@@ -227,8 +221,7 @@ module.exports = function maintenanceMiddleware(options = {}) {
                   correlationId,
                   sub: decoded && (decoded.id || decoded.sub),
                 });
-                if (metricsClient && typeof metricsClient.increment === 'function')
-                  metricsClient.increment('maintenance.bypass.token');
+                if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('maintenance.bypass.token');
                 return next();
               }
             }
@@ -243,8 +236,7 @@ module.exports = function maintenanceMiddleware(options = {}) {
       }
 
       // 7) Deny all other requests with maintenance message
-      if (metricsClient && typeof metricsClient.increment === 'function')
-        metricsClient.increment('maintenance.blocked');
+      if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('maintenance.blocked');
       return res.status(503).json({
         status: 'maintenance',
         message: cfg.maintenanceMessage || 'Service temporarily unavailable for maintenance.',
@@ -256,8 +248,7 @@ module.exports = function maintenanceMiddleware(options = {}) {
         err: err && err.message ? err.message : err,
         correlationId,
       });
-      if (metricsClient && typeof metricsClient.increment === 'function')
-        metricsClient.increment('maintenance.error');
+      if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('maintenance.error');
       if (failClosed) {
         return res.status(503).json({
           status: 'maintenance',

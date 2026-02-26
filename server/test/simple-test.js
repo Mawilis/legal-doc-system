@@ -1,29 +1,29 @@
 /* eslint-env mocha, node */
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const assert = require('assert');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 
-describe('Simple Test', function () {
+describe('Simple Test', () => {
   let mongoServer;
   let OnboardingSession;
 
-  before(async function () {
+  before(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
     OnboardingSession = require('../models/OnboardingSession');
   });
 
-  after(async function () {
+  after(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
   });
 
-  it('should load model as function', function () {
+  it('should load model as function', () => {
     assert.strictEqual(typeof OnboardingSession, 'function');
   });
 
-  it('should create instance', function () {
+  it('should create instance', () => {
     const session = new OnboardingSession({
       sessionId: 'ONB_IND_TEST_001',
       tenantId: 'tenant-1',

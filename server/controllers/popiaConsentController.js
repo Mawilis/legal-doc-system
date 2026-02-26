@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict';
 
 // ============================================================================
 // QUANTUM POPIA CONSENT CONTROLLER: THE DIGNITY ORCHESTRATOR
@@ -28,14 +27,14 @@
 require('dotenv').config();
 
 // QUANTUM DEPENDENCIES
+const { Op } = require('sequelize');
 const POPIAConsent = require('../models/POPIAConsent');
 const { createAuditLog } = require('../utils/auditLogger');
+const { encryptField, generateQuantumSignature } = require('../utils/cryptoQuantizer');
 const {
   validateConsentRequest,
   validateWithdrawalRequest,
 } = require('../validators/popiaConsentValidator');
-const { encryptField, generateQuantumSignature } = require('../utils/cryptoQuantizer');
-const { Op } = require('sequelize');
 
 // QUANTUM ERROR HANDLING
 class ConsentControllerError extends Error {
@@ -134,8 +133,8 @@ class PopiaConsentController {
         new ConsentControllerError(
           `Consent creation failed: ${error.message}`,
           400,
-          'CONSENT_CREATION_ERROR'
-        )
+          'CONSENT_CREATION_ERROR',
+        ),
       );
     }
   }
@@ -221,7 +220,9 @@ class PopiaConsentController {
 
     try {
       // QUANTUM VALIDATION: Validate query parameters
-      const { page = 1, limit = 20, status, consentType, userId } = req.query;
+      const {
+        page = 1, limit = 20, status, consentType, userId,
+      } = req.query;
 
       // QUANTUM AUTHORIZATION: Build query based on permissions
       const query = await this.buildConsentQuery(req.user, {
@@ -242,7 +243,7 @@ class PopiaConsentController {
 
       // QUANTUM DECRYPTION: Decrypt sensitive data
       const decryptedConsents = await Promise.all(
-        rows.map((consent) => this.decryptConsentData(consent))
+        rows.map((consent) => this.decryptConsentData(consent)),
       );
 
       // QUANTUM AUDIT
@@ -388,8 +389,8 @@ class PopiaConsentController {
         new ConsentControllerError(
           `Consent withdrawal failed: ${error.message}`,
           400,
-          'WITHDRAWAL_ERROR'
-        )
+          'WITHDRAWAL_ERROR',
+        ),
       );
     }
   }
@@ -445,10 +446,10 @@ class PopiaConsentController {
           quantumHash: consent.quantumHash,
           blockchainProof: consent.blockchainTransactionId
             ? {
-                transactionId: consent.blockchainTransactionId,
-                blockNumber: consent.blockchainBlockNumber,
-                timestamp: consent.blockchainAnchorTimestamp,
-              }
+              transactionId: consent.blockchainTransactionId,
+              blockNumber: consent.blockchainBlockNumber,
+              timestamp: consent.blockchainAnchorTimestamp,
+            }
             : null,
         },
         metadata: {
@@ -513,7 +514,7 @@ class PopiaConsentController {
         success: true,
         data: {
           statistics: stats,
-          compliance: compliance,
+          compliance,
           timestamps: {
             generatedAt: new Date(),
             periodStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
@@ -557,14 +558,14 @@ class PopiaConsentController {
       throw new ConsentControllerError(
         'Cannot create consent for another user',
         403,
-        'AUTHORIZATION_ERROR'
+        'AUTHORIZATION_ERROR',
       );
     }
 
     // Check for special information requirements
     if (
       consentData.dataCategories?.some(
-        (cat) => cat.includes('HEALTH') || cat.includes('BIOMETRIC') || cat.includes('CRIMINAL')
+        (cat) => cat.includes('HEALTH') || cat.includes('BIOMETRIC') || cat.includes('CRIMINAL'),
       )
     ) {
       // Verify user has permission to process special information
@@ -572,7 +573,7 @@ class PopiaConsentController {
         throw new ConsentControllerError(
           'Unauthorized to process special personal information',
           403,
-          'SPECIAL_INFO_UNAUTHORIZED'
+          'SPECIAL_INFO_UNAUTHORIZED',
         );
       }
     }
@@ -608,7 +609,7 @@ class PopiaConsentController {
         throw new ConsentControllerError(
           'Unauthorized to access this consent',
           403,
-          'ACCESS_DENIED'
+          'ACCESS_DENIED',
         );
       }
     }
@@ -633,7 +634,7 @@ class PopiaConsentController {
     throw new ConsentControllerError(
       'Unauthorized to withdraw this consent',
       403,
-      'WITHDRAWAL_UNAUTHORIZED'
+      'WITHDRAWAL_UNAUTHORIZED',
     );
   }
 
@@ -688,16 +689,16 @@ class PopiaConsentController {
         const homomorphic = require('../utils/homomorphicEncryption');
         decrypted.purposes = JSON.parse(await homomorphic.decrypt(consent.encryptedPurposes));
         decrypted.dataCategories = JSON.parse(
-          await homomorphic.decrypt(consent.encryptedDataCategories)
+          await homomorphic.decrypt(consent.encryptedDataCategories),
         );
         decrypted.processingActivities = JSON.parse(
-          await homomorphic.decrypt(consent.encryptedProcessingActivities)
+          await homomorphic.decrypt(consent.encryptedProcessingActivities),
         );
       } else {
         decrypted.purposes = JSON.parse(await decryptField(consent.encryptedPurposes));
         decrypted.dataCategories = JSON.parse(await decryptField(consent.encryptedDataCategories));
         decrypted.processingActivities = JSON.parse(
-          await decryptField(consent.encryptedProcessingActivities)
+          await decryptField(consent.encryptedProcessingActivities),
         );
       }
 
@@ -728,7 +729,7 @@ class PopiaConsentController {
       }
 
       if (sanitized.metadata.deviceFingerprint) {
-        sanitized.metadata.deviceFingerprint = '*' + sanitized.metadata.deviceFingerprint.slice(-4);
+        sanitized.metadata.deviceFingerprint = `*${sanitized.metadata.deviceFingerprint.slice(-4)}`;
       }
     }
 
@@ -801,7 +802,7 @@ class PopiaConsentController {
           const result = await contract.evaluateTransaction(
             'verifyConsentRecord',
             consent.id,
-            consent.quantumHash
+            consent.quantumHash,
           );
 
           verifications.blockchain = JSON.parse(result.toString()).verified;
@@ -826,7 +827,7 @@ class PopiaConsentController {
           verifications.digitalSignature = await verifyQuantumSignature(
             cert.digitalSignature,
             consent.id + consent.quantumHash,
-            process.env.CONSENT_CERTIFICATE_PUBLIC_KEY
+            process.env.CONSENT_CERTIFICATE_PUBLIC_KEY,
           );
         }
       } catch (error) {
@@ -862,7 +863,7 @@ class PopiaConsentController {
       throw new ConsentControllerError(
         'Unauthorized to access consent statistics',
         403,
-        'STATS_UNAUTHORIZED'
+        'STATS_UNAUTHORIZED',
       );
     }
 
@@ -1000,8 +1001,7 @@ class PopiaConsentController {
       where: { 'metadata.specialInfoDetected': true },
     });
 
-    compliance.specialInfoComplianceRate =
-      totalSpecialInfo > 0 ? (specialInfoConsents / totalSpecialInfo) * 100 : 0;
+    compliance.specialInfoComplianceRate = totalSpecialInfo > 0 ? (specialInfoConsents / totalSpecialInfo) * 100 : 0;
 
     // Retention compliance
     const expiredNotArchived = await POPIAConsent.count({
@@ -1011,23 +1011,21 @@ class PopiaConsentController {
       },
     });
 
-    compliance.retentionComplianceRate =
-      totalConsents > 0 ? ((totalConsents - expiredNotArchived) / totalConsents) * 100 : 0;
+    compliance.retentionComplianceRate = totalConsents > 0 ? ((totalConsents - expiredNotArchived) / totalConsents) * 100 : 0;
 
     // Blockchain anchoring rate
     const blockchainAnchored = await POPIAConsent.count({
       where: { blockchainTransactionId: { [Op.ne]: null } },
     });
 
-    compliance.blockchainAnchoringRate =
-      totalConsents > 0 ? (blockchainAnchored / totalConsents) * 100 : 0;
+    compliance.blockchainAnchoringRate = totalConsents > 0 ? (blockchainAnchored / totalConsents) * 100 : 0;
 
     // Overall compliance score (weighted average)
     compliance.overallScore = Math.round(
-      compliance.popiaComplianceRate * 0.4 +
-        compliance.specialInfoComplianceRate * 0.3 +
-        compliance.retentionComplianceRate * 0.2 +
-        compliance.blockchainAnchoringRate * 0.1
+      compliance.popiaComplianceRate * 0.4
+        + compliance.specialInfoComplianceRate * 0.3
+        + compliance.retentionComplianceRate * 0.2
+        + compliance.blockchainAnchoringRate * 0.1,
     );
 
     return compliance;

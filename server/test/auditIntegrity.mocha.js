@@ -1,16 +1,16 @@
 /* eslint-env mocha, node */
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const assert = require('assert');
 const crypto = require('crypto');
-const AuditService = require('../services/auditService');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
 const OnboardingSession = require('../models/OnboardingSession');
+const AuditService = require('../services/auditService');
 
-describe('🔐 TC-010: Audit Trail Tamper Detection (MOCHA)', function () {
+describe('🔐 TC-010: Audit Trail Tamper Detection (MOCHA)', () => {
   let mongoServer;
   let session;
 
-  before(async function () {
+  before(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
@@ -19,12 +19,12 @@ describe('🔐 TC-010: Audit Trail Tamper Detection (MOCHA)', function () {
     console.log('✅ Has createSession:', typeof OnboardingSession.createSession === 'function');
   });
 
-  after(async function () {
+  after(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
   });
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     await OnboardingSession.deleteMany({});
 
     session = await OnboardingSession.createSession('tenant-1', {
@@ -43,7 +43,7 @@ describe('🔐 TC-010: Audit Trail Tamper Detection (MOCHA)', function () {
     await session.advanceStage('CLIENT_INFO', { test: 'data' }, 'tester');
   });
 
-  it('TC-010.1: Should generate valid cryptographic hashes', function () {
+  it('TC-010.1: Should generate valid cryptographic hashes', () => {
     assert.ok(session.auditTrail);
     assert.strictEqual(session.auditTrail.length, 2);
 
@@ -60,13 +60,13 @@ describe('🔐 TC-010: Audit Trail Tamper Detection (MOCHA)', function () {
     console.log('✓ Annual Savings/Client: R2,500,000 (audit verification automation)');
   });
 
-  it('TC-010.2: verifyAuditIntegrity should return true for valid trail', function () {
+  it('TC-010.2: verifyAuditIntegrity should return true for valid trail', () => {
     const integrity = session.verifyAuditIntegrity();
     assert.strictEqual(integrity.isValid, true);
     assert.strictEqual(integrity.brokenAt, null);
   });
 
-  it('TC-010.3: Should detect tampering in audit entry', function () {
+  it('TC-010.3: Should detect tampering in audit entry', () => {
     // Store the original hash for debugging
     const originalHash = session.auditTrail[1].hash;
 
@@ -82,10 +82,9 @@ describe('🔐 TC-010: Audit Trail Tamper Detection (MOCHA)', function () {
     console.log(`   Broken at entry: ${integrity.brokenAt}`);
   });
 
-  it('TC-010.4: Should detect broken hash chain', function () {
+  it('TC-010.4: Should detect broken hash chain', () => {
     const originalPreviousHash = session.auditTrail[1].previousHash;
-    session.auditTrail[1].previousHash =
-      '0000000000000000000000000000000000000000000000000000000000000000';
+    session.auditTrail[1].previousHash = '0000000000000000000000000000000000000000000000000000000000000000';
 
     const integrity = session.verifyAuditIntegrity();
     assert.strictEqual(integrity.isValid, false);
@@ -94,7 +93,7 @@ describe('🔐 TC-010: Audit Trail Tamper Detection (MOCHA)', function () {
     console.log('✅ Chain break detection working');
   });
 
-  it('TC-010.5: AuditService.verifyChain works independently', function () {
+  it('TC-010.5: AuditService.verifyChain works independently', () => {
     const result = AuditService.verifyChain(session.auditTrail, session.tenantId);
     assert.strictEqual(result.isValid, true);
 
@@ -107,7 +106,7 @@ describe('🔐 TC-010: Audit Trail Tamper Detection (MOCHA)', function () {
     console.log('✅ AuditService.verifyChain working');
   });
 
-  it('TC-010.6: Should generate deterministic forensic evidence', function () {
+  it('TC-010.6: Should generate deterministic forensic evidence', () => {
     const evidence = {
       auditEntries: session.auditTrail.map((entry) => ({
         action: entry.action,

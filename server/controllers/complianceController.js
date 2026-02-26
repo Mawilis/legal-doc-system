@@ -47,25 +47,24 @@
 // ============================================================================
 // QUANTUM IMPORTS: Dependencies from the Eternal Forge
 // ============================================================================
-'use strict';
 
 require('dotenv').config(); // Load quantum secrets from .env vault
+const crypto = require('crypto');
+const axios = require('axios');
 const asyncHandler = require('express-async-handler');
 const Joi = require('joi');
-const crypto = require('crypto');
-const redis = require('redis');
-const axios = require('axios');
 const mongoose = require('mongoose'); // Env Addition: MONGODB_POOL_SIZE for connection pooling
+const redis = require('redis');
 
 // Internal quantum dependencies
-const ComplianceRecord = require('../models/ComplianceRecord');
+const { getMultiLingualCompliance } = require('../i18n/complianceMessages');
+const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const Client = require('../models/Client');
+const ComplianceRecord = require('../models/ComplianceRecord');
 const { ComplianceEvent } = require('../models/complianceEvent');
 const { getComplianceOrchestrator } = require('../services/complianceOrchestrator');
-const { getMultiLingualCompliance } = require('../i18n/complianceMessages');
 const AuditLogger = require('../utils/auditLogger');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
-const { emitAudit } = require('../middleware/auditMiddleware');
 const { generateEventHash } = require('../utils/eventHashGenerator'); // Quantum Enhancement: Event hashing
 
 // ============================================================================
@@ -172,13 +171,13 @@ const COMPLIANCE_RISK_LEVELS = Object.freeze({
 
 // SA Government API Integration Endpoints
 const GOVERNMENT_API_ENDPOINTS = Object.freeze({
-  DHA_ID_VERIFICATION: process.env.DHA_API_URL + '/id-verification',
-  CIPC_COMPANY_SEARCH: process.env.CIPC_API_URL + '/company/search',
-  SARS_TAX_STATUS: process.env.SARS_API_URL + '/tax-compliance',
-  FIC_STR_SUBMISSION: process.env.FIC_API_URL + '/str/submit',
-  SANCTIONS_LIST: process.env.NATIONAL_TREASURY_URL + '/sanctions/list',
-  PEP_DATABASE: process.env.PEP_DATABASE_URL + '/check',
-  INFORMATION_REGULATOR_BREACH: process.env.INFORMATION_REGULATOR_URL + '/breach-report', // Quantum Enhancement: POPIA breach reporting
+  DHA_ID_VERIFICATION: `${process.env.DHA_API_URL}/id-verification`,
+  CIPC_COMPANY_SEARCH: `${process.env.CIPC_API_URL}/company/search`,
+  SARS_TAX_STATUS: `${process.env.SARS_API_URL}/tax-compliance`,
+  FIC_STR_SUBMISSION: `${process.env.FIC_API_URL}/str/submit`,
+  SANCTIONS_LIST: `${process.env.NATIONAL_TREASURY_URL}/sanctions/list`,
+  PEP_DATABASE: `${process.env.PEP_DATABASE_URL}/check`,
+  INFORMATION_REGULATOR_BREACH: `${process.env.INFORMATION_REGULATOR_URL}/breach-report`, // Quantum Enhancement: POPIA breach reporting
 });
 
 // ============================================================================
@@ -193,10 +192,12 @@ const GOVERNMENT_API_ENDPOINTS = Object.freeze({
 const complianceValidationSchemas = {
   // Schema for FICA/KYC verification
   createCheck: Joi.object({
-    clientId: Joi.string().hex().length(24).required().label('Client ID').messages({
-      'string.hex': 'Client ID must be a valid MongoDB ObjectId',
-      'string.length': 'Client ID must be exactly 24 hex characters',
-    }),
+    clientId: Joi.string().hex().length(24).required()
+      .label('Client ID')
+      .messages({
+        'string.hex': 'Client ID must be a valid MongoDB ObjectId',
+        'string.length': 'Client ID must be exactly 24 hex characters',
+      }),
 
     documentsProvided: Joi.array()
       .items(Joi.string().valid(...Object.keys(FICA_DOCUMENT_TYPES)))
@@ -242,7 +243,7 @@ const complianceValidationSchemas = {
         'BUSINESS_INCOME',
         'INVESTMENT',
         'INHERITANCE',
-        'OTHER'
+        'OTHER',
       ),
       expectedTransactionVolume: Joi.number().min(0),
       expectedTransactionFrequency: Joi.string().valid(
@@ -250,7 +251,7 @@ const complianceValidationSchemas = {
         'WEEKLY',
         'MONTHLY',
         'QUARTERLY',
-        'ANNUAL'
+        'ANNUAL',
       ),
       pepDeclaration: Joi.boolean().default(false),
       pepDetails: Joi.string().when('pepDeclaration', {
@@ -285,12 +286,13 @@ const complianceValidationSchemas = {
         'ADDITIONAL_INFORMATION',
         'MANAGER_DISCRETION',
         'REGULATORY_CHANGE',
-        'OTHER'
+        'OTHER',
       )
       .required()
       .label('Override Reason'),
 
-    reviewerId: Joi.string().hex().length(24).required().label('Reviewer ID'),
+    reviewerId: Joi.string().hex().length(24).required()
+      .label('Reviewer ID'),
 
     // Compliance event metadata
     complianceEvent: Joi.object({
@@ -305,7 +307,8 @@ const complianceValidationSchemas = {
     status: Joi.string().valid('PENDING', 'VERIFIED', 'REJECTED', 'SUSPENDED', 'EXPIRED'),
     riskLevel: Joi.string().valid(...Object.keys(COMPLIANCE_RISK_LEVELS)),
     page: Joi.number().integer().min(1).default(1),
-    limit: Joi.number().integer().min(1).max(100).default(50),
+    limit: Joi.number().integer().min(1).max(100)
+      .default(50),
     dateFrom: Joi.date().iso(),
     dateTo: Joi.date().iso().min(Joi.ref('dateFrom')),
     documentType: Joi.string().valid(...Object.keys(FICA_DOCUMENT_TYPES)),
@@ -553,7 +556,7 @@ class GovernmentAPIService {
       // Check cache first
       const cacheKey = `dha_${idNumber}`;
       const cached = await complianceCache.get(
-        complianceCache.cacheConfig.keys.GOVERNMENT_VERIFICATION(cacheKey)
+        complianceCache.cacheConfig.keys.GOVERNMENT_VERIFICATION(cacheKey),
       );
 
       if (cached) {
@@ -575,7 +578,7 @@ class GovernmentAPIService {
           surname: encryptedSurname,
           requestId: `DHA_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
         },
-        this.config
+        this.config,
       );
 
       // Quantum Shield: Validate response integrity
@@ -586,7 +589,7 @@ class GovernmentAPIService {
         await complianceCache.set(
           complianceCache.cacheConfig.keys.GOVERNMENT_VERIFICATION(cacheKey),
           result,
-          complianceCache.cacheConfig.TTL.GOVERNMENT_API
+          complianceCache.cacheConfig.TTL.GOVERNMENT_API,
         );
       }
 
@@ -623,12 +626,12 @@ class GovernmentAPIService {
     try {
       // Validate required breach information per POPIA Section 22
       if (
-        !breachData.breachDescription ||
-        !breachData.affectedRecords ||
-        !breachData.contactPerson
+        !breachData.breachDescription
+        || !breachData.affectedRecords
+        || !breachData.contactPerson
       ) {
         throw new Error(
-          'POPIA breach report requires breachDescription, affectedRecords, and contactPerson'
+          'POPIA breach report requires breachDescription, affectedRecords, and contactPerson',
         );
       }
 
@@ -678,7 +681,7 @@ class GovernmentAPIService {
             'X-API-Key': process.env.INFORMATION_REGULATOR_KEY,
           },
           timeout: 15000,
-        }
+        },
       );
 
       return {
@@ -715,8 +718,7 @@ class GovernmentAPIService {
    */
   encryptPII(data) {
     // Env Addition: Add GOVERNMENT_API_ENCRYPTION_KEY to .env
-    const encryptionKey =
-      process.env.GOVERNMENT_API_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+    const encryptionKey = process.env.GOVERNMENT_API_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
 
     const algorithm = 'aes-256-gcm';
     const key = crypto.scryptSync(encryptionKey, 'salt', 32);
@@ -791,7 +793,7 @@ class ComplianceEncryptionService {
     const key = crypto.scryptSync(
       this.encryptionKey || crypto.randomBytes(32).toString('hex'),
       tenantId,
-      32
+      32,
     );
 
     const iv = crypto.randomBytes(16);
@@ -867,7 +869,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
       res,
       400,
       `Validation failed: ${error.details.map((d) => d.message).join(', ')}`,
-      'ERR_VALIDATION_FAILED'
+      'ERR_VALIDATION_FAILED',
     );
   }
 
@@ -910,7 +912,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
           'not_found',
           language,
           'client',
-          { context: 'compliance verification' }
+          { context: 'compliance verification' },
         );
 
         return errorResponse(req, res, 404, errorMessage, 'ERR_CLIENT_NOT_FOUND');
@@ -942,7 +944,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
         documentMetadata?.idNumber || documentMetadata?.passportNumber || 'unknown'
       }`;
       const cachedVerification = await complianceCache.get(
-        complianceCache.cacheConfig.keys.GOVERNMENT_VERIFICATION(docCacheKey)
+        complianceCache.cacheConfig.keys.GOVERNMENT_VERIFICATION(docCacheKey),
       );
 
       if (cachedVerification) {
@@ -954,20 +956,20 @@ exports.createCheck = asyncHandler(async (req, res) => {
           verificationResult = await governmentAPIService.verifySAID(
             documentMetadata.idNumber,
             client.firstName,
-            client.surname
+            client.surname,
           );
         } else if (
-          docConfig.verificationMethod === 'CIPC_API' &&
-          documentMetadata?.companyRegNumber
+          docConfig.verificationMethod === 'CIPC_API'
+          && documentMetadata?.companyRegNumber
         ) {
           verificationResult = await governmentAPIService.verifyCompany(
             documentMetadata.companyRegNumber,
-            client.companyName
+            client.companyName,
           );
         } else if (docConfig.verificationMethod === 'SARS_API' && documentMetadata?.taxNumber) {
           verificationResult = await governmentAPIService.verifyTaxStatus(
             documentMetadata.taxNumber,
-            documentMetadata.idNumber
+            documentMetadata.idNumber,
           );
         } else {
           // Manual verification
@@ -985,7 +987,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
           await complianceCache.set(
             complianceCache.cacheConfig.keys.GOVERNMENT_VERIFICATION(docCacheKey),
             verificationResult,
-            complianceCache.cacheConfig.TTL.GOVERNMENT_API
+            complianceCache.cacheConfig.TTL.GOVERNMENT_API,
           );
         }
       }
@@ -1019,7 +1021,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
         documentMetadata?.idNumber || documentMetadata?.passportNumber || 'unknown'
       }`;
       const cachedSanctions = await complianceCache.get(
-        complianceCache.cacheConfig.keys.GOVERNMENT_VERIFICATION(sanctionsCacheKey)
+        complianceCache.cacheConfig.keys.GOVERNMENT_VERIFICATION(sanctionsCacheKey),
       );
 
       if (cachedSanctions) {
@@ -1038,7 +1040,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
         await complianceCache.set(
           complianceCache.cacheConfig.keys.GOVERNMENT_VERIFICATION(sanctionsCacheKey),
           sanctionsCheck,
-          complianceCache.cacheConfig.TTL.SANCTIONS_LIST
+          complianceCache.cacheConfig.TTL.SANCTIONS_LIST,
         );
       }
 
@@ -1056,12 +1058,10 @@ exports.createCheck = asyncHandler(async (req, res) => {
 
     if (riskOverride) {
       finalRiskLevel = riskOverride;
-    } else {
-      if (automaticRiskScore >= 80) finalRiskLevel = 'PROHIBITED';
-      else if (automaticRiskScore >= 60) finalRiskLevel = 'HIGH';
-      else if (automaticRiskScore >= 40) finalRiskLevel = 'MEDIUM';
-      else finalRiskLevel = 'LOW';
-    }
+    } else if (automaticRiskScore >= 80) finalRiskLevel = 'PROHIBITED';
+    else if (automaticRiskScore >= 60) finalRiskLevel = 'HIGH';
+    else if (automaticRiskScore >= 40) finalRiskLevel = 'MEDIUM';
+    else finalRiskLevel = 'LOW';
 
     // Determine verification status
     const requiredDocs = ['SA_ID', 'PROOF_OF_RESIDENCE'];
@@ -1091,7 +1091,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
       {
         salt: process.env.COMPLIANCE_EVENT_SALT,
         includeTimestamp: true,
-      }
+      },
     );
 
     // Quantum Shield: Encrypt sensitive document metadata
@@ -1149,7 +1149,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
           complianceRecordId: complianceRecord._id,
         },
       },
-      { new: true, lean: true }
+      { new: true, lean: true },
     );
 
     // Invalidate client cache
@@ -1212,7 +1212,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
     const multiLingualService = getMultiLingualCompliance();
     const successMessage = await multiLingualService.getSuccessMessage(
       language,
-      'KYC verification completed'
+      'KYC verification completed',
     );
 
     const complianceMessage = await multiLingualService.getFICAVerificationMessage(language, {
@@ -1260,7 +1260,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
         message: `Advanced FICA/KYC verification completed. Risk level: ${finalRiskLevel}`,
         constitutionalNote: 'Complies with FICA Regulation 3 & POPIA Section 14',
       },
-      201
+      201,
     );
   } catch (error) {
     console.error('FICA verification failed:', error);
@@ -1285,7 +1285,7 @@ exports.createCheck = asyncHandler(async (req, res) => {
       res,
       500,
       'FICA verification failed. Please try again or contact compliance support.',
-      'ERR_VERIFICATION_FAILED'
+      'ERR_VERIFICATION_FAILED',
     );
   }
 });
@@ -1306,11 +1306,13 @@ exports.generateReport = asyncHandler(async (req, res) => {
       res,
       400,
       `Invalid report request: ${error.details.map((d) => d.message).join(', ')}`,
-      'ERR_INVALID_REPORT_REQUEST'
+      'ERR_INVALID_REPORT_REQUEST',
     );
   }
 
-  const { reportType, dateRange, format, includeAppendices, regulatorSubmission } = value;
+  const {
+    reportType, dateRange, format, includeAppendices, regulatorSubmission,
+  } = value;
 
   try {
     // ========================================================================
@@ -1326,7 +1328,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
           res,
           403,
           'Unauthorized for regulator submissions. Senior compliance manager authorization required.',
-          'ERR_REGULATOR_SUBMISSION_UNAUTHORIZED'
+          'ERR_REGULATOR_SUBMISSION_UNAUTHORIZED',
         );
       }
     }
@@ -1359,7 +1361,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
       regulatorResponse = await this.submitToRegulator(
         reportType,
         encryptedReport,
-        digitalSignature
+        digitalSignature,
       );
     }
 
@@ -1423,15 +1425,15 @@ exports.generateReport = asyncHandler(async (req, res) => {
       },
       regulator: regulatorResponse
         ? {
-            submitted: true,
-            referenceId: regulatorResponse.referenceId,
-            submittedAt: regulatorResponse.submittedAt,
-            status: regulatorResponse.status,
-          }
+          submitted: true,
+          referenceId: regulatorResponse.referenceId,
+          submittedAt: regulatorResponse.submittedAt,
+          status: regulatorResponse.status,
+        }
         : {
-            submitted: false,
-            note: 'Report stored internally. Regulator submission not requested.',
-          },
+          submitted: false,
+          note: 'Report stored internally. Regulator submission not requested.',
+        },
     };
 
     return successResponse(
@@ -1443,7 +1445,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
         constitutionalNote:
           'Report complies with all relevant South African regulatory requirements',
       },
-      201
+      201,
     );
   } catch (error) {
     console.error('Report generation failed:', error);
@@ -1453,7 +1455,7 @@ exports.generateReport = asyncHandler(async (req, res) => {
       res,
       500,
       'Failed to generate compliance report. Please try again.',
-      'ERR_REPORT_GENERATION_FAILED'
+      'ERR_REPORT_GENERATION_FAILED',
     );
   }
 });

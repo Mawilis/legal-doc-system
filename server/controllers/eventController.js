@@ -8,20 +8,20 @@
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
-
 const asyncHandler = require('express-async-handler');
-const Event = require('../models/Event');
-const Case = require('../models/Case');
-const { successResponse, errorResponse } = require('../middleware/responseHandler');
 const { emitAudit } = require('../middleware/auditMiddleware');
+const { successResponse, errorResponse } = require('../middleware/responseHandler');
+const Case = require('../models/Case');
+const Event = require('../models/Event');
 
 /*
  * @desc    SCHEDULE NEW EVENT / DEADLINE
  * @route   POST /api/v1/events
  */
 exports.createEvent = asyncHandler(async (req, res) => {
-  const { title, start, end, caseId, type } = req.body;
+  const {
+    title, start, end, caseId, type,
+  } = req.body;
 
   // 1. DATE INTEGRITY VALIDATION
   if (new Date(end) <= new Date(start)) {
@@ -30,7 +30,7 @@ exports.createEvent = asyncHandler(async (req, res) => {
       res,
       400,
       'Temporal Logic Failure: End time must occur after start time.',
-      'ERR_INVALID_DATES'
+      'ERR_INVALID_DATES',
     );
   }
 
@@ -43,7 +43,7 @@ exports.createEvent = asyncHandler(async (req, res) => {
         res,
         404,
         'The associated case matter was not found.',
-        'ERR_CASE_NOT_FOUND'
+        'ERR_CASE_NOT_FOUND',
       );
     }
   }
@@ -69,7 +69,7 @@ exports.createEvent = asyncHandler(async (req, res) => {
     res,
     event,
     { message: 'Calendar event successfully registered.' },
-    201
+    201,
   );
 });
 
@@ -78,7 +78,9 @@ exports.createEvent = asyncHandler(async (req, res) => {
  * @route   GET /api/v1/events
  */
 exports.getAllEvents = asyncHandler(async (req, res) => {
-  const { start, end, caseId, type } = req.query;
+  const {
+    start, end, caseId, type,
+  } = req.query;
 
   const query = { ...req.tenantFilter };
 

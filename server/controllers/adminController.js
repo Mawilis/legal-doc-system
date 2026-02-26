@@ -88,29 +88,29 @@
  */
 
 const crypto = require('crypto');
-const validator = require('validator');
 const geoip = require('geoip-lite');
 const { v4: uuidv4 } = require('uuid');
+const validator = require('validator');
 
 // Import the newly created services
-const saLegalServices = require('../services/saLegalServices');
-const threatDetectionService = require('../services/threatDetectionService');
-const cryptoService = require('../services/cryptoService');
-const complianceService = require('../services/complianceService');
 
 // Complete model imports with verified existence
-const User = require('../models/User');
-const Firm = require('../models/Firm');
 const AuditLog = require('../models/AuditLog');
-const Session = require('../models/Session.js');
-const SecurityEvent = require('../models/SecurityEvent');
-const CaseFile = require('../models/CaseFile');
 const BillingRecord = require('../models/BillingRecord');
+const CaseFile = require('../models/CaseFile');
 const ComplianceRecord = require('../models/ComplianceRecord');
-const SystemHealth = require('../models/SystemHealth');
-const POPIARecord = require('../models/POPIARecord');
+const Firm = require('../models/Firm');
 const GenerationalLedger = require('../models/GenerationalLedger');
 const LegalPrecedent = require('../models/LegalPrecedent');
+const POPIARecord = require('../models/POPIARecord');
+const SecurityEvent = require('../models/SecurityEvent');
+const Session = require('../models/Session.js');
+const SystemHealth = require('../models/SystemHealth');
+const User = require('../models/User');
+const complianceService = require('../services/complianceService');
+const cryptoService = require('../services/cryptoService');
+const saLegalServices = require('../services/saLegalServices');
+const threatDetectionService = require('../services/threatDetectionService');
 
 /*
  * ================================================================================================
@@ -157,16 +157,16 @@ class EmailService {
                                 <h2>Role Change Notification</h2>
                                 <div class="changes">
                                     <p><strong>Previous Role:</strong> ${
-                                      data.oldRole || 'Not specified'
-                                    }</p>
+  data.oldRole || 'Not specified'
+}</p>
                                     <p><strong>New Role:</strong> ${data.newRole}</p>
                                     <p><strong>Updated By:</strong> ${data.updatedBy}</p>
                                     <p><strong>Reason:</strong> ${
-                                      data.reason || 'Administrative adjustment'
-                                    }</p>
+  data.reason || 'Administrative adjustment'
+}</p>
                                     <p><strong>Effective:</strong> ${new Date().toLocaleDateString(
-                                      'en-ZA'
-                                    )}</p>
+    'en-ZA',
+  )}</p>
                                 </div>
                                 <p>This change affects your access permissions and administrative capabilities within the Wilsy OS ecosystem.</p>
                                 <a href="https://admin.wilsyos.legal" class="button">Access Your Dashboard</a>
@@ -210,23 +210,23 @@ class EmailService {
                                     <h3>Emergency Action Required</h3>
                                     <div class="details">
                                         <p><strong>Event ID:</strong> ${
-                                          data.data.lockdownId || 'N/A'
-                                        }</p>
+  data.data.lockdownId || 'N/A'
+}</p>
                                         <p><strong>Initiated By:</strong> ${
-                                          data.data.initiatedBy || 'System Administrator'
-                                        }</p>
+  data.data.initiatedBy || 'System Administrator'
+}</p>
                                         <p><strong>Reason:</strong> ${
-                                          data.data.reason || 'Security emergency'
-                                        }</p>
+  data.data.reason || 'Security emergency'
+}</p>
                                         <p><strong>Scope:</strong> ${
-                                          data.data.scope || 'Platform-wide'
-                                        }</p>
+  data.data.scope || 'Platform-wide'
+}</p>
                                         <p><strong>Duration:</strong> ${
-                                          data.data.duration || 'Until further notice'
-                                        }</p>
+  data.data.duration || 'Until further notice'
+}</p>
                                         <p><strong>Trace ID:</strong> ${
-                                          data.data.traceId || 'N/A'
-                                        }</p>
+  data.data.traceId || 'N/A'
+}</p>
                                     </div>
                                 </div>
                                 <p><strong>Required Action:</strong> Please review the emergency and take appropriate action immediately.</p>
@@ -294,7 +294,7 @@ class CryptoService {
       const cipher = crypto.createCipheriv(
         this.algorithms.symmetric,
         Buffer.from(masterKey, 'hex'),
-        iv
+        iv,
       );
 
       let encrypted = cipher.update(data, 'utf8', 'hex');
@@ -345,7 +345,9 @@ class CryptoService {
 class ComplianceService {
   constructor() {
     this.jurisdictions = {
-      ZA: { popia: true, paia: true, fica: true, lpc: true, companiesAct: true, ectAct: true },
+      ZA: {
+        popia: true, paia: true, fica: true, lpc: true, companiesAct: true, ectAct: true,
+      },
       KE: { dataProtectionAct: true, rbaRegulations: true },
       NG: { ndpa: true, cbnRegulations: true },
       GH: { dataProtectionAct: true },
@@ -374,7 +376,7 @@ class ComplianceService {
               ? 'PARTIALLY_COMPLIANT'
               : 'NON_COMPLIANT',
         score: (passed / total) * 100,
-        checks: checks,
+        checks,
         lastAudit: new Date(),
         informationOfficer: process.env.POPIA_IO_NAME || 'Wilson Khanyezi',
       };
@@ -400,7 +402,7 @@ class ComplianceService {
       return {
         status: passed === checks.length ? 'COMPLIANT' : 'NON_COMPLIANT',
         score: (passed / checks.length) * 100,
-        checks: checks,
+        checks,
         lastAudit: new Date(),
         riskCategory: 'MEDIUM',
       };
@@ -426,7 +428,7 @@ class ComplianceService {
       return {
         status: passed === checks.length ? 'COMPLIANT' : 'NON_COMPLIANT',
         score: (passed / checks.length) * 100,
-        checks: checks,
+        checks,
         lastAudit: new Date(),
         registrationStatus: 'ACTIVE',
       };
@@ -570,10 +572,9 @@ const GENERATIONAL_ADMIN = {
  * SA Legal: POPIA Section 11 - Processing limitation for geo data
  */
 const generateSovereignTrace = (req) => {
-  const traceId =
-    req.headers['x-correlation-id'] ||
-    req.headers['x-request-id'] ||
-    `trace-${uuidv4()}-${Date.now()}`;
+  const traceId = req.headers['x-correlation-id']
+    || req.headers['x-request-id']
+    || `trace-${uuidv4()}-${Date.now()}`;
   const ip = req.ip || req.connection.remoteAddress;
   const geo = geoip.lookup(ip);
   const userAgent = req.headers['user-agent'] || '';
@@ -840,7 +841,7 @@ const validateAdminInput = (req, res, next) => {
           }
         }
 
-        let sanitizedValue = validator.escape(value);
+        const sanitizedValue = validator.escape(value);
 
         // SA Legal: Validate SA-specific formats
         if (key.toLowerCase().includes('idnumber') && value) {
@@ -970,8 +971,8 @@ const createSovereignResponse = (res, status, data, meta = {}) => {
     status: status >= 200 && status < 300 ? 'success' : 'error',
     code: meta.code || `ADMIN_${status}`,
     message:
-      meta.message ||
-      (status >= 200 && status < 300 ? 'Operation completed successfully' : 'Operation failed'),
+      meta.message
+      || (status >= 200 && status < 300 ? 'Operation completed successfully' : 'Operation failed'),
     timestamp: new Date().toISOString(),
     generation: GENERATIONAL_ADMIN.SOVEREIGN_IDENTITY_GENERATION,
     covenant: GENERATIONAL_ADMIN.COVENANT,
@@ -1131,8 +1132,7 @@ const calculateEngagementMetrics = async (period = '30days') => {
     ]);
 
     const dauValues = activeUsers.map((a) => a.dailyActiveUsers);
-    const avgDAU =
-      dauValues.length > 0 ? dauValues.reduce((a, b) => a + b, 0) / dauValues.length : 0;
+    const avgDAU = dauValues.length > 0 ? dauValues.reduce((a, b) => a + b, 0) / dauValues.length : 0;
 
     return {
       period,
@@ -1197,8 +1197,7 @@ const calculateFirmGrowthRate = async () => {
     const lastMonth = firmGrowth[firmGrowth.length - 1];
 
     const absoluteGrowth = lastMonth.newFirms - firstMonth.newFirms;
-    const percentageGrowth =
-      firstMonth.newFirms > 0 ? (absoluteGrowth / firstMonth.newFirms) * 100 : 100;
+    const percentageGrowth = firstMonth.newFirms > 0 ? (absoluteGrowth / firstMonth.newFirms) * 100 : 100;
 
     return {
       analysisPeriod: `${firmGrowth.length} months`,
@@ -1360,8 +1359,7 @@ const assessSecurityRisk = async () => {
       });
     }
 
-    const riskLevel =
-      riskScore >= 70 ? 'CRITICAL' : riskScore >= 50 ? 'HIGH' : riskScore >= 30 ? 'MEDIUM' : 'LOW';
+    const riskLevel = riskScore >= 70 ? 'CRITICAL' : riskScore >= 50 ? 'HIGH' : riskScore >= 30 ? 'MEDIUM' : 'LOW';
 
     return {
       assessmentId: `risk-${Date.now()}`,
@@ -1481,9 +1479,9 @@ exports.getDashboardStats = async (req, res) => {
       caseValue: totalActiveCases * 5000, // R5,000 per active case
       monthlyRecurring: monthlyRevenue * 12, // Annualized
       totalProtectedValue:
-        totalUsers * GENERATIONAL_ADMIN.USER_VALUE +
-        totalFirms * GENERATIONAL_ADMIN.FIRM_VALUE +
-        totalActiveCases * 5000,
+        totalUsers * GENERATIONAL_ADMIN.USER_VALUE
+        + totalFirms * GENERATIONAL_ADMIN.FIRM_VALUE
+        + totalActiveCases * 5000,
     };
 
     // Compile dashboard data
@@ -1504,7 +1502,7 @@ exports.getDashboardStats = async (req, res) => {
         vatCollected: financialStats[0]?.vatCollected || 0,
         dailyTarget: GENERATIONAL_ADMIN.DAILY_TARGET,
         monthlyTarget: GENERATIONAL_ADMIN.MONTHLY_TARGET,
-        achievement: ((monthlyRevenue / GENERATIONAL_ADMIN.MONTHLY_TARGET) * 100).toFixed(2) + '%',
+        achievement: `${((monthlyRevenue / GENERATIONAL_ADMIN.MONTHLY_TARGET) * 100).toFixed(2)}%`,
       },
       security: {
         riskLevel: securityStats.riskLevel,
@@ -1529,9 +1527,9 @@ exports.getDashboardStats = async (req, res) => {
         businessValue,
         targetValuation: GENERATIONAL_ADMIN.VALUATION_TARGET,
         progress:
-          ((businessValue.totalProtectedValue / GENERATIONAL_ADMIN.VALUATION_TARGET) * 100).toFixed(
-            2
-          ) + '%',
+          `${((businessValue.totalProtectedValue / GENERATIONAL_ADMIN.VALUATION_TARGET) * 100).toFixed(
+            2,
+          )}%`,
         wealthCreated: `R${businessValue.totalProtectedValue.toLocaleString()}`,
       },
       generational: {
@@ -1539,7 +1537,7 @@ exports.getDashboardStats = async (req, res) => {
         lineage: GENERATIONAL_ADMIN.LINEAGE,
         covenant: GENERATIONAL_ADMIN.COVENANT,
         daysSinceGenesis: Math.floor(
-          (Date.now() - new Date('2024-01-01').getTime()) / (1000 * 60 * 60 * 24)
+          (Date.now() - new Date('2024-01-01').getTime()) / (1000 * 60 * 60 * 24),
         ),
       },
     };
@@ -1591,7 +1589,9 @@ exports.getUserManagement = async (req, res) => {
   const startTime = Date.now();
 
   try {
-    const { page = 1, limit = 50, role, status, firm } = req.query;
+    const {
+      page = 1, limit = 50, role, status, firm,
+    } = req.query;
     const skip = (page - 1) * limit;
 
     // Build query with POPIA compliance
@@ -1624,7 +1624,9 @@ exports.getUserManagement = async (req, res) => {
 
     await createForensicAudit('USER_MANAGEMENT_ACCESS', req.user.id, req.user.firmId, {
       ipAddress: req.ip,
-      query: { page, limit, role, status, firm },
+      query: {
+        page, limit, role, status, firm,
+      },
       usersAccessed: maskedUsers.length,
       responseTime,
       traceId,
@@ -1643,7 +1645,7 @@ exports.getUserManagement = async (req, res) => {
         },
         filters: { role, status, firm },
       },
-      { traceId, responseTime }
+      { traceId, responseTime },
     );
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -1765,9 +1767,9 @@ exports.updateUserRole = async (req, res) => {
         responseTime,
         message: `User role updated from ${oldRole} to ${newRole}`,
         businessValue: `R${calculateBusinessValue(
-          'USER ROLE UPDATE'
+          'USER ROLE UPDATE',
         ).finalValue.toLocaleString()} protected`,
-      }
+      },
     );
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -1792,7 +1794,9 @@ exports.getFirmManagement = async (req, res) => {
   const startTime = Date.now();
 
   try {
-    const { page = 1, limit = 50, jurisdiction, status, plan } = req.query;
+    const {
+      page = 1, limit = 50, jurisdiction, status, plan,
+    } = req.query;
     const skip = (page - 1) * limit;
 
     const query = {};
@@ -1832,14 +1836,16 @@ exports.getFirmManagement = async (req, res) => {
             lpc: !!firm.lpcNumber,
           },
         };
-      })
+      }),
     );
 
     const responseTime = Date.now() - startTime;
 
     await createForensicAudit('FIRM_MANAGEMENT_ACCESS', req.user.id, req.user.firmId, {
       ipAddress: req.ip,
-      query: { page, limit, jurisdiction, status, plan },
+      query: {
+        page, limit, jurisdiction, status, plan,
+      },
       firmsAccessed: enhancedFirms.length,
       responseTime,
       traceId,
@@ -1864,7 +1870,7 @@ exports.getFirmManagement = async (req, res) => {
           byPlan: await Firm.aggregate([{ $group: { _id: '$plan', count: { $sum: 1 } } }]),
         },
       },
-      { traceId, responseTime }
+      { traceId, responseTime },
     );
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -1905,7 +1911,7 @@ exports.emergencyLockdown = async (req, res) => {
     // 1. Suspend non-admin authentication
     await Session.updateMany(
       { userRole: { $nin: ['SUPER_ADMIN', 'SECURITY_ADMIN'] } },
-      { $set: { isActive: false, destroyedAt: new Date(), destroyedReason: 'Emergency lockdown' } }
+      { $set: { isActive: false, destroyedAt: new Date(), destroyedReason: 'Emergency lockdown' } },
     );
 
     // 2. Disable external integrations
@@ -1967,9 +1973,9 @@ exports.emergencyLockdown = async (req, res) => {
         message: 'Emergency lockdown protocol activated successfully',
         mfaVerified: true,
         businessValue: `R${calculateBusinessValue(
-          'EMERGENCY LOCKDOWN'
+          'EMERGENCY LOCKDOWN',
         ).finalValue.toLocaleString()} risk mitigated`,
-      }
+      },
     );
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -2039,9 +2045,9 @@ exports.rotateCryptoKeys = async (req, res) => {
         message: `Cryptographic keys rotated to Generation ${generation}`,
         mfaVerified: true,
         businessValue: `R${calculateBusinessValue(
-          'KEY ROTATION'
+          'KEY ROTATION',
         ).finalValue.toLocaleString()} in quantum security`,
-      }
+      },
     );
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -2125,24 +2131,24 @@ exports.getComplianceDashboard = async (req, res) => {
         regulatory: {
           recentUpdates: regulatoryUpdates,
           highImpactChanges: regulatoryUpdates.filter(
-            (u) => u.title.toLowerCase().includes('amendment') || u.status === 'ASSENTED'
+            (u) => u.title.toLowerCase().includes('amendment') || u.status === 'ASSENTED',
           ).length,
           nextDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Example
         },
         recommendations:
           popiaCompliance.score < 90
             ? [
-                'Increase data minimization efforts',
-                'Review consent management workflow',
-                'Schedule POPIA refresher training',
-              ]
+              'Increase data minimization efforts',
+              'Review consent management workflow',
+              'Schedule POPIA refresher training',
+            ]
             : [
-                'Maintain current compliance protocols',
-                'Continue quarterly audits',
-                'Monitor regulatory updates',
-              ],
+              'Maintain current compliance protocols',
+              'Continue quarterly audits',
+              'Monitor regulatory updates',
+            ],
       },
-      { traceId, responseTime }
+      { traceId, responseTime },
     );
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -2169,70 +2175,69 @@ exports.getSecurityDashboard = async (req, res) => {
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    const [threatLevel, recentEvents, topThreats, userRiskProfiles, systemVulnerabilities] =
-      await Promise.all([
-        threatDetectionService.getCurrentThreatLevel(),
-        SecurityEvent.find({
-          timestamp: { $gte: twentyFourHoursAgo },
-          severity: { $in: ['HIGH', 'CRITICAL'] },
-        })
-          .sort({ timestamp: -1 })
-          .limit(10),
-        SecurityEvent.aggregate([
-          {
-            $match: {
-              timestamp: { $gte: twentyFourHoursAgo },
-            },
+    const [threatLevel, recentEvents, topThreats, userRiskProfiles, systemVulnerabilities] = await Promise.all([
+      threatDetectionService.getCurrentThreatLevel(),
+      SecurityEvent.find({
+        timestamp: { $gte: twentyFourHoursAgo },
+        severity: { $in: ['HIGH', 'CRITICAL'] },
+      })
+        .sort({ timestamp: -1 })
+        .limit(10),
+      SecurityEvent.aggregate([
+        {
+          $match: {
+            timestamp: { $gte: twentyFourHoursAgo },
           },
-          {
-            $group: {
-              _id: '$type',
-              count: { $sum: 1 },
-              avgSeverity: {
-                $avg: {
-                  $switch: {
-                    branches: [
-                      { case: { $eq: ['$severity', 'CRITICAL'] }, then: 4 },
-                      { case: { $eq: ['$severity', 'HIGH'] }, then: 3 },
-                      { case: { $eq: ['$severity', 'MEDIUM'] }, then: 2 },
-                    ],
-                    default: 1,
-                  },
+        },
+        {
+          $group: {
+            _id: '$type',
+            count: { $sum: 1 },
+            avgSeverity: {
+              $avg: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ['$severity', 'CRITICAL'] }, then: 4 },
+                    { case: { $eq: ['$severity', 'HIGH'] }, then: 3 },
+                    { case: { $eq: ['$severity', 'MEDIUM'] }, then: 2 },
+                  ],
+                  default: 1,
                 },
               },
             },
           },
-          { $sort: { count: -1 } },
-          { $limit: 5 },
-        ]),
-        User.aggregate([
-          {
-            $lookup: {
-              from: 'securityevents',
-              localField: '_id',
-              foreignField: 'user',
-              as: 'securityEvents',
-            },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 5 },
+      ]),
+      User.aggregate([
+        {
+          $lookup: {
+            from: 'securityevents',
+            localField: '_id',
+            foreignField: 'user',
+            as: 'securityEvents',
           },
-          {
-            $project: {
-              email: 1,
-              role: 1,
-              lastLogin: 1,
-              mfaEnabled: 1,
-              threatScore: { $size: '$securityEvents' },
-              lastCriticalEvent: { $max: '$securityEvents.timestamp' },
-            },
+        },
+        {
+          $project: {
+            email: 1,
+            role: 1,
+            lastLogin: 1,
+            mfaEnabled: 1,
+            threatScore: { $size: '$securityEvents' },
+            lastCriticalEvent: { $max: '$securityEvents.timestamp' },
           },
-          { $match: { threatScore: { $gt: 0 } } },
-          { $sort: { threatScore: -1 } },
-          { $limit: 10 },
-        ]),
-        SystemHealth.find({
-          status: { $ne: 'HEALTHY' },
-          timestamp: { $gte: twentyFourHoursAgo },
-        }).sort({ timestamp: -1 }),
-      ]);
+        },
+        { $match: { threatScore: { $gt: 0 } } },
+        { $sort: { threatScore: -1 } },
+        { $limit: 10 },
+      ]),
+      SystemHealth.find({
+        status: { $ne: 'HEALTHY' },
+        timestamp: { $gte: twentyFourHoursAgo },
+      }).sort({ timestamp: -1 }),
+    ]);
 
     const responseTime = Date.now() - startTime;
 
@@ -2263,8 +2268,8 @@ exports.getSecurityDashboard = async (req, res) => {
           highRiskUsers: userRiskProfiles.filter((u) => u.threatScore > 3).length,
           topRiskyUsers: userRiskProfiles,
           mfaAdoption:
-            ((await User.countDocuments({ mfaEnabled: true })) / (await User.countDocuments())) *
-            100,
+            ((await User.countDocuments({ mfaEnabled: true })) / (await User.countDocuments()))
+            * 100,
         },
         vulnerabilities: {
           system: systemVulnerabilities,
@@ -2274,17 +2279,17 @@ exports.getSecurityDashboard = async (req, res) => {
         recommendations:
           threatLevel === 'HIGH' || threatLevel === 'CRITICAL'
             ? [
-                'Activate enhanced monitoring',
-                'Review user access logs',
-                'Consider temporary access restrictions',
-              ]
+              'Activate enhanced monitoring',
+              'Review user access logs',
+              'Consider temporary access restrictions',
+            ]
             : [
-                'Continue standard monitoring',
-                'Schedule security training',
-                'Review incident response plan',
-              ],
+              'Continue standard monitoring',
+              'Schedule security training',
+              'Review incident response plan',
+            ],
       },
-      { traceId, responseTime }
+      { traceId, responseTime },
     );
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -2403,7 +2408,7 @@ const calculateBusinessValue = (action, metadata = {}) => {
     multiplier,
     finalValue,
     calculation: `${baseValue.toLocaleString()} × ${multiplier.toFixed(
-      2
+      2,
     )} = R${finalValue.toLocaleString()}`,
   };
 };

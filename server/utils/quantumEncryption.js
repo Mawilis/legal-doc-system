@@ -16,19 +16,17 @@
 * key management, and data protection across Africa's legal ecosystem. As the divine guardian
 * of digital justice, it implements NIST-approved algorithms with quantum-resistant extensions,
 * propelling Wilsy OS to trillion-dollar valuations through unbreakable data sanctity.
-* 
+*
 * COLLABORATION QUANTA:
 * - Chief Architect: Wilson Khanyezi (Cryptographic Sovereignty Visionary)
 * - Quantum Sentinel: Omniscient Quantum Forger
 * - Security Oracles: NIST, NSA Suite B, South African National Cybersecurity Hub
-* 
+*
 * EVOLUTION VECTORS:
 * - Quantum Leap 1.1.0: Post-quantum cryptography via NIST PQC algorithms
 * - Horizon Expansion: Homomorphic encryption for confidential computation
 * - Eternal Extension: Quantum key distribution simulation
 */
-
-'use strict';
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 // ║                                    QUANTUM DEPENDENCY IMPORTS                                        ║
@@ -37,11 +35,11 @@
 // Dependencies Installation: npm install crypto-js bcryptjs node-cache uuid@8 jsrsasign@10
 
 const crypto = require('crypto');
-const CryptoJS = require('crypto-js');
 const bcrypt = require('bcryptjs');
+const CryptoJS = require('crypto-js');
+const jsrsasign = require('jsrsasign');
 const NodeCache = require('node-cache');
 const { v4: uuidv4 } = require('uuid');
-const jsrsasign = require('jsrsasign');
 
 // Load environment variables
 require('dotenv').config();
@@ -181,7 +179,7 @@ class QuantumKeyManager {
       Buffer.concat([salt, Buffer.from(process.env.KEY_DERIVATION_SALT, 'hex')]),
       QUANTUM_CONFIG.keyManagement.keyDerivationIterations,
       keySize,
-      'sha256'
+      'sha256',
     );
 
     // Encrypt key material with master quantum key
@@ -194,7 +192,7 @@ class QuantumKeyManager {
       algorithm: QUANTUM_CONFIG.algorithms.symmetric.aes256gcm,
       created: new Date().toISOString(),
       expires: new Date(
-        Date.now() + QUANTUM_CONFIG.keyManagement.keyRotationDays * 24 * 60 * 60 * 1000
+        Date.now() + QUANTUM_CONFIG.keyManagement.keyRotationDays * 24 * 60 * 60 * 1000,
       ).toISOString(),
       version: this.keyVersion++,
       metadata: {
@@ -236,7 +234,7 @@ class QuantumKeyManager {
     const cipher = crypto.createCipheriv(
       QUANTUM_CONFIG.algorithms.symmetric.aes256gcm,
       masterKey,
-      iv
+      iv,
     );
 
     const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
@@ -266,7 +264,7 @@ class QuantumKeyManager {
     const decipher = crypto.createDecipheriv(
       data.algorithm,
       masterKey,
-      Buffer.from(data.iv, 'hex')
+      Buffer.from(data.iv, 'hex'),
     );
 
     decipher.setAuthTag(Buffer.from(data.authTag, 'hex'));
@@ -292,8 +290,8 @@ class QuantumKeyManager {
     try {
       const keysToRotate = keyType
         ? Array.from(this.activeKeys.entries()).filter(
-            ([_, key]) => key.metadata.keyType === keyType
-          )
+          ([_, key]) => key.metadata.keyType === keyType,
+        )
         : Array.from(this.activeKeys.entries());
 
       const rotationResults = {
@@ -307,7 +305,7 @@ class QuantumKeyManager {
           // Generate new key
           const newKey = this.generateSymmetricKey(
             keyData.metadata.keyType,
-            keyData.metadata.keySize
+            keyData.metadata.keySize,
           );
 
           // Move old key to rotated store
@@ -427,7 +425,7 @@ class QuantumEncryptionEngine {
 
     // Generate or retrieve encryption key
     const keyResult = this.keyManager.generateSymmetricKey(keyType);
-    const keyId = keyResult.keyId;
+    const { keyId } = keyResult;
 
     // Derive context-specific key
     const contextKey = this.deriveContextKey(keyId, context);
@@ -439,7 +437,7 @@ class QuantumEncryptionEngine {
     const cipher = crypto.createCipheriv(
       QUANTUM_CONFIG.algorithms.symmetric.aes256gcm,
       contextKey,
-      iv
+      iv,
     );
 
     // Encrypt data
@@ -506,7 +504,7 @@ class QuantumEncryptionEngine {
     const decipher = crypto.createDecipheriv(
       encryptedPackage.algorithm,
       contextKey,
-      Buffer.from(encryptedPackage.iv, 'hex')
+      Buffer.from(encryptedPackage.iv, 'hex'),
     );
 
     decipher.setAuthTag(Buffer.from(encryptedPackage.authTag, 'hex'));
@@ -574,7 +572,7 @@ class QuantumEncryptionEngine {
       baseKeyMaterial,
       salt,
       info,
-      QUANTUM_CONFIG.keyManagement.keyLength.aes256
+      QUANTUM_CONFIG.keyManagement.keyLength.aes256,
     );
 
     // Cache derived key
@@ -783,7 +781,7 @@ class QuantumEncryptionEngine {
         padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
         saltLength: 32,
       },
-      Buffer.from(signaturePackage.signature, 'base64')
+      Buffer.from(signaturePackage.signature, 'base64'),
     );
 
     return {
@@ -866,7 +864,7 @@ class QuantumEncryptionEngine {
     const cipher = crypto.createCipheriv(
       QUANTUM_CONFIG.algorithms.symmetric.aes256gcm,
       contextKey,
-      iv
+      iv,
     );
 
     // Create transform stream
@@ -968,10 +966,9 @@ const encryptField = (value, fieldType = 'GENERAL') => {
   if (!value || typeof value !== 'string') return value;
 
   // Use appropriate key based on field type
-  const key =
-    fieldType === 'PII'
-      ? Buffer.from(process.env.PII_ENCRYPTION_KEY, 'hex')
-      : Buffer.from(process.env.QUANTUM_ENCRYPTION_KEY, 'hex');
+  const key = fieldType === 'PII'
+    ? Buffer.from(process.env.PII_ENCRYPTION_KEY, 'hex')
+    : Buffer.from(process.env.QUANTUM_ENCRYPTION_KEY, 'hex');
 
   const iv = crypto.randomBytes(QUANTUM_CONFIG.keyManagement.ivLength);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
@@ -1005,10 +1002,9 @@ const decryptField = (encryptedValue) => {
     const data = JSON.parse(encryptedValue);
 
     // Use appropriate key based on field type
-    const key =
-      data.f === 'PII'
-        ? Buffer.from(process.env.PII_ENCRYPTION_KEY, 'hex')
-        : Buffer.from(process.env.QUANTUM_ENCRYPTION_KEY, 'hex');
+    const key = data.f === 'PII'
+      ? Buffer.from(process.env.PII_ENCRYPTION_KEY, 'hex')
+      : Buffer.from(process.env.QUANTUM_ENCRYPTION_KEY, 'hex');
 
     const decipher = crypto.createDecipheriv(data.a, key, Buffer.from(data.i, 'hex'));
     decipher.setAuthTag(Buffer.from(data.t, 'hex'));
@@ -1217,7 +1213,7 @@ QUANTUM IMPACT METRICS:
 - Audit trail: Complete cryptographic operation logging
 - Key recovery: Zero data loss in key rotation scenarios
 
-INSPIRATIONAL QUANTUM: 
+INSPIRATIONAL QUANTUM:
 "In the realm of digital justice, encryption is not merely a tool but the very fabric
 of trust that weaves together the tapestry of legal sanctity."
 - Wilson Khanyezi, Architect of Africa's Cryptographic Renaissance

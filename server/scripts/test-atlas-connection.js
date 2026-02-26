@@ -12,7 +12,7 @@ async function testAtlasConnection() {
     console.log(`🔗 Attempting to connect to: ${maskedUri}`);
 
     // Try connection without SSL first to diagnose
-    const testUri = uri + '&ssl=false';
+    const testUri = `${uri}&ssl=false`;
     console.log('\n🔄 Testing connection (diagnostic mode)...');
 
     const conn = await mongoose.connect(testUri, {
@@ -55,7 +55,7 @@ async function testAtlasConnection() {
       console.log('4. Wait 2 minutes and retry');
       console.log(
         '\n📱 Your IP is likely:',
-        require('child_process').execSync('curl -s ifconfig.me').toString().trim()
+        require('child_process').execSync('curl -s ifconfig.me').toString().trim(),
       );
     }
 

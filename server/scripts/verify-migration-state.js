@@ -25,8 +25,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 */
 
-const mongoose = require('mongoose');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const fs = require('fs').promises;
 const path = require('path');
 const { execSync } = require('child_process');
@@ -86,7 +86,9 @@ class MigrationVerifier {
    */
   static generateDocumentHash(doc) {
     // Remove MongoDB-specific fields for consistent hashing
-    const { _id, __v, createdAt, updatedAt, ...cleanDoc } = doc;
+    const {
+      _id, __v, createdAt, updatedAt, ...cleanDoc
+    } = doc;
 
     // Sort keys for deterministic JSON stringification
     const sortedDoc = Object.keys(cleanDoc)
@@ -132,7 +134,7 @@ class MigrationVerifier {
         .asPromise();
 
       console.log(
-        `✅ Connected to source: ${this.sourceUri.split('@')[1]?.split('/')[0] || 'source'}`
+        `✅ Connected to source: ${this.sourceUri.split('@')[1]?.split('/')[0] || 'source'}`,
       );
 
       // Connect to target database
@@ -145,7 +147,7 @@ class MigrationVerifier {
         .asPromise();
 
       console.log(
-        `✅ Connected to target: ${this.targetUri.split('@')[1]?.split('/')[0] || 'target'}`
+        `✅ Connected to target: ${this.targetUri.split('@')[1]?.split('/')[0] || 'target'}`,
       );
     } catch (error) {
       throw new Error(`Database connection failed: ${error.message}`);
@@ -161,7 +163,7 @@ class MigrationVerifier {
       throw new Error('Source connection not established');
     }
 
-    const db = this.sourceConn.db;
+    const { db } = this.sourceConn;
     const collections = await db.listCollections().toArray();
 
     // Filter collections that contain tenant data
@@ -183,12 +185,12 @@ class MigrationVerifier {
     const sourceModel = this.sourceConn.model(
       collectionName,
       new mongoose.Schema({}, { strict: false }),
-      collectionName
+      collectionName,
     );
     const targetModel = this.targetConn.model(
       collectionName,
       new mongoose.Schema({}, { strict: false }),
-      collectionName
+      collectionName,
     );
 
     // Query tenant-specific documents
@@ -200,7 +202,7 @@ class MigrationVerifier {
       const sampleDoc = await sourceModel.findOne().lean();
       if (!sampleDoc || !sampleDoc.tenantId) {
         console.log(
-          `⚠️  Collection ${collectionName} doesn't use tenantId, verifying all documents`
+          `⚠️  Collection ${collectionName} doesn't use tenantId, verifying all documents`,
         );
         sourceQuery = {};
         targetQuery = {};
@@ -282,15 +284,15 @@ class MigrationVerifier {
     this.verificationResults.summary.totalCollections++;
     this.verificationResults.summary.totalDocuments += sourceDocs.length;
     this.verificationResults.summary.verifiedDocuments += verification.matches.length;
-    this.verificationResults.summary.failedDocuments +=
-      verification.mismatches.length +
-      verification.missingInTarget.length +
-      verification.missingInSource.length;
+    this.verificationResults.summary.failedDocuments
+      += verification.mismatches.length
+      + verification.missingInTarget.length
+      + verification.missingInSource.length;
 
     if (
-      verification.mismatches.length === 0 &&
-      verification.missingInTarget.length === 0 &&
-      verification.missingInSource.length === 0
+      verification.mismatches.length === 0
+      && verification.missingInTarget.length === 0
+      && verification.missingInSource.length === 0
     ) {
       this.verificationResults.summary.verifiedCollections++;
     }
@@ -341,8 +343,7 @@ class MigrationVerifier {
 
     // Update results
     this.verificationResults.endTime = new Date();
-    this.verificationResults.duration =
-      this.verificationResults.endTime - this.verificationResults.startTime;
+    this.verificationResults.duration = this.verificationResults.endTime - this.verificationResults.startTime;
 
     // Generate report hash
     const reportString = JSON.stringify(this.verificationResults, null, 2);
@@ -359,7 +360,7 @@ class MigrationVerifier {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportFile = path.join(
       this.reportPath,
-      `migration-verification-${this.tenantId}-${timestamp}.json`
+      `migration-verification-${this.tenantId}-${timestamp}.json`,
     );
 
     await fs.writeFile(reportFile, JSON.stringify(this.verificationResults, null, 2));
@@ -383,10 +384,9 @@ class MigrationVerifier {
    */
   generateSummaryText() {
     const { summary } = this.verificationResults;
-    const successRate =
-      summary.totalDocuments > 0
-        ? ((summary.verifiedDocuments / summary.totalDocuments) * 100).toFixed(2)
-        : 0;
+    const successRate = summary.totalDocuments > 0
+      ? ((summary.verifiedDocuments / summary.totalDocuments) * 100).toFixed(2)
+      : 0;
 
     return `MIGRATION VERIFICATION REPORT
 ========================================
@@ -403,8 +403,8 @@ Success Rate: ${successRate}%
 DETAILED RESULTS
 ----------------
 ${Object.entries(this.verificationResults.collections)
-  .map(
-    ([colName, col]) => `
+    .map(
+      ([colName, col]) => `
 ${colName}:
   Source: ${col.sourceCount} documents
   Target: ${col.targetCount} documents
@@ -412,9 +412,9 @@ ${colName}:
   ❌ Mismatches: ${col.mismatches.length}
   📭 Missing in target: ${col.missingInTarget.length}
   📭 Missing in source: ${col.missingInSource.length}
-`
-  )
-  .join('')}
+`,
+    )
+    .join('')}
 
 REPORT HASH: ${this.verificationResults.reportHash}
 ${
@@ -450,22 +450,20 @@ Chief Architect: Wilson Khanyezi — wilsy.wk@gmail.com | +27 69 046 5710
       const report = await this.saveReport();
 
       // Print summary
-      console.log('\n' + this.generateSummaryText());
+      console.log(`\n${this.generateSummaryText()}`);
 
       // Return success/failure
       const { summary } = this.verificationResults;
-      const successRate =
-        summary.totalDocuments > 0
-          ? (summary.verifiedDocuments / summary.totalDocuments) * 100
-          : 100;
+      const successRate = summary.totalDocuments > 0
+        ? (summary.verifiedDocuments / summary.totalDocuments) * 100
+        : 100;
 
       if (successRate === 100) {
         console.log('🎉 Migration verification PASSED');
         return { success: true, report };
-      } else {
-        console.log('⚠️  Migration verification PARTIAL SUCCESS');
-        return { success: false, report, successRate };
       }
+      console.log('⚠️  Migration verification PARTIAL SUCCESS');
+      return { success: false, report, successRate };
     } catch (error) {
       console.error(`❌ Verification failed: ${error.message}`);
       this.verificationResults.errors.push(error.message);
@@ -501,7 +499,7 @@ async function main() {
   if (!options.tenantId) {
     console.error('❌ Error: --tenantId is required');
     console.error(
-      'Usage: node verify-migration-state.js --tenantId=TENANT_ID [--sourceUri=URI] [--targetUri=URI]'
+      'Usage: node verify-migration-state.js --tenantId=TENANT_ID [--sourceUri=URI] [--targetUri=URI]',
     );
     process.exit(1);
   }
@@ -517,7 +515,7 @@ async function main() {
   // Verify environment variables are set
   if (!options.sourceUri && !process.env.MONGO_URI) {
     console.error(
-      '❌ Error: Source database URI not provided. Set MONGO_URI environment variable or use --sourceUri'
+      '❌ Error: Source database URI not provided. Set MONGO_URI environment variable or use --sourceUri',
     );
     process.exit(1);
   }
@@ -643,7 +641,7 @@ if (process.env.NODE_ENV === 'test') {
 
   describe('MigrationVerifier Tests', () => {
     let testVerifier;
-    const testTenantId = 'test-tenant-' + Date.now();
+    const testTenantId = `test-tenant-${Date.now()}`;
 
     beforeAll(async () => {
       // Use test database for both source and target

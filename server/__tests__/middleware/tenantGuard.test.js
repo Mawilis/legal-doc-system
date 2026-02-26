@@ -4,12 +4,12 @@
   ║ 100% coverage | Quantum-grade security | Forensic isolation              ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import request from 'supertest';
-import express from 'express';
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
-import { jest } from '@jest/globals';
+import request from 'supertest.js';
+import express from 'express.js';
+import crypto from "crypto";
+import fs from 'fs/promises.js';
+import path from "path";
+import { jest } from '@jest/globals.js';
 
 // Mock dependencies
 jest.mock('../../models/TenantConfig.js', () => ({
@@ -47,11 +47,11 @@ jest.mock('../../utils/metricsCollector.js', () => ({
 }));
 
 // Import after mocks
-import { tenantGuard, getTenantGuardMetrics, clearTenantCache } from '../../middleware/tenantGuard.js';
-import { TenantConfig } from '../../models/TenantConfig.js';
-import { AuditLogger } from '../../utils/auditLogger.js';
-import { QuantumLogger } from '../../utils/quantumLogger.js';
-import { redisClient } from '../../cache/redisClient.js';
+import { tenantGuard, getTenantGuardMetrics, clearTenantCache } from '../../middleware/tenantGuard.js.js';
+import { TenantConfig } from '../../models/TenantConfig.js.js';
+import { AuditLogger } from '../../utils/auditLogger.js.js';
+import { QuantumLogger } from '../../utils/quantumLogger.js.js';
+import { redisClient } from '../../cache/redisClient.js.js';
 
 describe('TenantGuard - Fortress Isolation Due Diligence', () => {
   let app;
