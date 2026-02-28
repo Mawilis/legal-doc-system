@@ -1,5 +1,5 @@
 /* Simple mock for AuditTrail model */
-module.exports = {
+export default {
   find: jest.fn().mockResolvedValue([]),
   logDocumentAccess: jest.fn().mockResolvedValue(true),
   getDocumentAccessHistory: jest.fn().mockResolvedValue([]),

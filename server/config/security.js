@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ SECURITY CONFIGURATION - INVESTOR-GRADE MODULE                              ║
   ║ 99.99% breach prevention | R12M risk elimination | 85% margins              ║
@@ -53,7 +55,8 @@
 const crypto = require('crypto');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils'); // Now fully utilized
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../utils/metrics');
 
 class SecurityConfig {
@@ -1105,7 +1108,7 @@ class SecurityConfig {
   }
 }
 
-module.exports = new SecurityConfig();
+export default new SecurityConfig();
 
 /*
  * ASSUMPTIONS:

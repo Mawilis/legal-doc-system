@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/services/__mocks__/storageService.js
  * STATUS: PRODUCTION-READY | TEST MOCK | EPITOME
@@ -212,7 +214,7 @@ function listMapping() {
 }
 
 /* Export API */
-module.exports = {
+export default {
   streamToTemp,
   uploadFromLocal,
   isTempPath,

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ EMBEDDING QUEUE TESTS - INVESTOR DUE DILIGENCE - $500M INFRASTRUCTURE    ║
@@ -17,9 +19,9 @@
 
 import { jest } from '@jest/globals.js';
 import Redis from 'ioredis-mock.js';
-import { performance } from 'perf_hooks.js';
+import { performance } from 'perf_hooks';
 import crypto from "crypto";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
 
 // Mock Redis
@@ -76,16 +78,15 @@ jest.mock('bullmq', () => {
     QueueEvents: jest.fn().mockImplementation(() => ({
       on: jest.fn(),
       close: jest.fn().mockResolvedValue(),
-    })),
-    QueueScheduler: jest.fn().mockImplementation(() => ({
+    })): jest.fn().mockImplementation(() => ({
       close: jest.fn().mockResolvedValue(),
     })),
   };
 });
 
 // Import after mocks
-import * as embeddingQueue from '../../queues/embeddingQueue.js.js';
-import { embeddingQueue as queueInstance } from '../../queues/embeddingQueue.js.js';
+import * as embeddingQueue from '../../queues/embeddingQueue.js';
+import { embeddingQueue as queueInstance } from '../../queues/embeddingQueue.js';
 
 describe('EmbeddingQueue - Hyper-scale Infrastructure Due Diligence', () => {
   let mockPrecedentId;

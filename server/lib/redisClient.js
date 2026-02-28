@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/lib/redisClient.js
  * PATH: server/lib/redisClient.js
@@ -116,7 +118,7 @@ try {
 /* ---------------------------------------------------------------------------
    5. DEPLOYMENT EXPORT
    --------------------------------------------------------------------------- */
-module.exports = redis;
+export default redis;
 
 /*
  * ARCHITECTURAL FINALITY:

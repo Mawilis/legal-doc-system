@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ ██████╗ █████╗ ████████╗ █████╗     ██████╗ ██████╗ ███╗   ██╗████████╗██████╗  ██████╗ ██╗     ███████╗██╗  ██╗    ██████╗ ██████╗  ██████╗ ██████╗ ███████╗ ██████╗ ██████╗ ║
@@ -1295,7 +1297,7 @@ class DataProcessingRecordController {
 // ============================================================================
 // QUANTUM EXPORT
 // ============================================================================
-module.exports = DataProcessingRecordController;
+export default DataProcessingRecordController;
 
 /*
  * Wilsy Touching Lives Eternally.

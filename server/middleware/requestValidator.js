@@ -63,11 +63,12 @@
  */
 
 import { createHash } from "crypto";
-import validator from 'validator.js';
-import xss from 'xss.js';
-import logger from '../utils/logger.js.js';
-import auditLogger from '../utils/auditLogger.js.js';
-import { redactSensitive } from '../utils/redactSensitive.js.js';
+import validator from "validator";
+import xss from "xss";
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import auditLogger from '../utils/auditLogger.js';
+import { redactSensitive } from '../utils/redactSensitive.js';
 
 // INTEGRATION_HINT: Used by all routes for request validation, no side effects
 

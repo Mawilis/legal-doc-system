@@ -16,4 +16,4 @@ const validationUtils = {
   isRequired: (value) => value !== undefined && value !== null && value !== '',
 };
 
-module.exports = validationUtils;
+export default validationUtils;

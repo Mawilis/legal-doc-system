@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ====================================================================================
  * QUANTUM DATA SANCTIFICATION NEXUS V2.0: Wilsy OS Anonymization & Pseudonymization Engine
@@ -2206,7 +2208,7 @@ function getQuantumAnonymizationService() {
  * One Quantum-Protected Data Point at a Time.
  */
 
-module.exports = {
+export default {
   DataAnonymizationService,
   getQuantumAnonymizationService,
   ANONYMIZATION_TECHNIQUES,

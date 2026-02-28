@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT EMBEDDING SERVICE TESTS - INVESTOR DUE DILIGENCE - $2B TARGET  ║

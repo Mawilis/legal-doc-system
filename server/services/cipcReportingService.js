@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔══════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  ██████╗ ██╗██████╗  ██████╗     ██████╗ ███████╗██████╗  ██████╗ ██████╗ ████████╗██╗███╗   ██╗ ██████╗     ║
@@ -910,7 +912,7 @@ if (process.env.NODE_ENV === 'test') {
 //  ===============================================================================================
 //  QUANTUM EXPORT - ETERNAL SERVICE MANIFESTATION
 //  ===============================================================================================
-module.exports = {
+export default {
   CIPCReportingService: CIPCAPIClient,
   QuantumEncryptionService,
   QUANTUM_CONFIG,

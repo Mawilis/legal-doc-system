@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-env jest */
 /*
  * FORENSIC TEST SUITE: SA Legal Validators V6

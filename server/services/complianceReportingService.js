@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ===================================================================================
  * QUANTUM COMPLIANCE ORACLE SERVICE - Wilsy OS Compliance Reporting Engine
@@ -83,7 +85,8 @@ const Document = require('../models/documentModel');
 const DSARRequest = require('../models/dsarRequestModel');
 const User = require('../models/userModel');
 const { encryptData, decryptData } = require('../utils/cryptoUtils');
-const logger = require('../utils/quantumLogger');
+const loggerRaw = require('../utils/quantumLogger');
+const logger = loggerRaw.default || loggerRaw;
 const { validatePOPIACompliance } = require('../validators/popiaValidator');
 const { sendEmail } = require('./emailService');
 
@@ -1192,7 +1195,7 @@ class ComplianceReportingService {
 // QUANTUM EXPORT AND SINGLETON PATTERN
 // ===================================================================================
 
-module.exports = new ComplianceReportingService();
+export default new ComplianceReportingService();
 
 // ===================================================================================
 // QUANTUM FOOTER: ETERNAL IMPACT METRICS

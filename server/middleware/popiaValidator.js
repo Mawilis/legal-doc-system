@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔══════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  ██████╗  ██████╗ ██████╗ ██╗ █████╗     ██╗   ██╗ █████╗ ██╗     ██████╗ ██╗██████╗  █████╗ ████████╗ ██████╗ ██████╗    ║
@@ -2436,7 +2438,7 @@ if (process.env.NODE_ENV === 'test') {
 //  ===============================================================================================
 //  QUANTUM EXPORT - ETERNAL MIDDLEWARE MANIFESTATION (FIXED VERSION)
 //  ===============================================================================================
-module.exports = {
+export default {
   // Main Validator Class
   POPIAValidator: POPIAValidatorMiddleware,
 

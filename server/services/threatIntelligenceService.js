@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ================================================================================
 QUANTUM SCROLL OF THREAT INTELLIGENCE: AI-POWERED THREAT DETECTION SERVICE
@@ -2607,7 +2609,7 @@ const getThreatIntelligenceService = async () => {
   return threatIntelligenceServiceInstance;
 };
 
-module.exports = {
+export default {
   ThreatIntelligenceService,
   getThreatIntelligenceService,
   ThreatIntelligence, // Export model for direct use

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/compression.js
  * STATUS: PRODUCTION-READY | PERFORMANCE & EFFICIENCY GRADE
@@ -62,4 +64,4 @@ const compressionMiddleware = compression({
  * in the controller is set correctly to 'text/event-stream' to bypass this.
  */
 
-module.exports = compressionMiddleware;
+export default compressionMiddleware;

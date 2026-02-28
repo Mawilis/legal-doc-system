@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 // ============================================================================
@@ -1376,7 +1378,7 @@ POPIAConsent.testQuantumSuite = async function () {
 // QUANTUM EXPORT NEXUS
 // ============================================================================
 
-module.exports = POPIAConsent;
+export default POPIAConsent;
 
 // ============================================================================
 // QUANTUM INVOCATION: WILSY TOUCHING LIVES ETERNALLY

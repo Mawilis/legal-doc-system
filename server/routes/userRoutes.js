@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/userRoutes.js
  * PATH: server/routes/userRoutes.js
@@ -180,7 +182,7 @@ router.get('/me', protect, userController.getMe);
 /* ---------------------------------------------------------------------------
    SOVEREIGN EXPORT
    --------------------------------------------------------------------------- */
-module.exports = router;
+export default router;
 
 /*
  * ARCHITECTURAL FINALITY:

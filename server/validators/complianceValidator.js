@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 // /Users/wilsonkhanyezi/legal-doc-system/server/validators/complianceValidator.js
 
 // ============================================================================
@@ -704,7 +706,7 @@ async function batchValidateCompliance(requirements, userId) {
 if (process.env.NODE_ENV === 'test') {
   const {
     describe, it, expect, beforeAll,
-  } = require('@jest/globals');
+// FORENSIC FIX: Purged rogue IDE auto-import for @jest/globals
 
   describe('Compliance Validator Quantum Gates', () => {
     it('should validate POPIA schema correctly', async () => {
@@ -743,7 +745,7 @@ if (process.env.NODE_ENV === 'test') {
 // EXPORTS
 // ============================================================================
 
-module.exports = {
+export default {
   // Core Validators
   validatePOPIA,
   validateFICAKYC,

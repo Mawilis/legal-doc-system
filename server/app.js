@@ -58,7 +58,7 @@ import express from 'express.js';
 import cors from 'cors.js';
 import helmet from 'helmet.js';
 import compression from 'compression.js';
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 import { dirname, join } from "path";
 import { createServer } from "http";
 import { createRequire } from 'module.js';
@@ -520,47 +520,47 @@ app.get('/metrics', async (req, res) => {
 });
 
 // API routes
-import apiRoutes from './routes/api.js.js';
+import apiRoutes from './routes/api.js';
 app.use('/api', apiRoutes);
 
 // Legal-specific routes
-import legalRoutes from './routes/legal/index.js.js';
+import legalRoutes from './routes/legal/index.js';
 app.use('/legal', legalRoutes);
 
 // Compliance routes
-import complianceRoutes from './routes/complianceRoutes.js.js';
+import complianceRoutes from './routes/complianceRoutes.js';
 app.use('/compliance', complianceRoutes);
 
 // Audit routes
-import auditRoutes from './routes/auditRoutes.js.js';
+import auditRoutes from './routes/auditRoutes.js';
 app.use('/audit', auditRoutes);
 
 // Tenant routes
-import tenantRoutes from './routes/tenantRoutes.js.js';
+import tenantRoutes from './routes/tenantRoutes.js';
 app.use('/tenants', tenantRoutes);
 
 // Document routes
-import documentRoutes from './routes/documentRoutes.js.js';
+import documentRoutes from './routes/documentRoutes.js';
 app.use('/documents', documentRoutes);
 
 // User routes
-import userRoutes from './routes/userRoutes.js.js';
+import userRoutes from './routes/userRoutes.js';
 app.use('/users', userRoutes);
 
 // Client routes
-import clientRoutes from './routes/clientRoutes.js.js';
+import clientRoutes from './routes/clientRoutes.js';
 app.use('/clients', clientRoutes);
 
 // Billing routes
-import billingRoutes from './routes/billingRoutes.js.js';
+import billingRoutes from './routes/billingRoutes.js';
 app.use('/billing', billingRoutes);
 
 // Admin routes (protected)
-import adminRoutes from './routes/adminRoutes.js.js';
+import adminRoutes from './routes/adminRoutes.js';
 app.use('/admin', adminRoutes);
 
 // Super admin routes (highly protected)
-import superAdminRoutes from './routes/superAdminRoutes.js.js';
+import superAdminRoutes from './routes/superAdminRoutes.js';
 app.use('/superadmin', superAdminRoutes);
 
 // ============================================================================

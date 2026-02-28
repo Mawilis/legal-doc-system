@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ █████╗ ██╗   ██╗██████╗ ██╗████████╗    ██╗      ██████╗  ██████╗  ██████╗ ███████╗██████╗                     ║
@@ -536,7 +538,7 @@ class AuditLogger {
 // ====================================================================================
 
 // The main middleware export
-module.exports = AuditLogger.logRequest;
+export default AuditLogger.logRequest;
 
 // Attach helper methods to the exported function for direct access
 module.exports.logComplianceEvent = AuditLogger.logComplianceEvent;
@@ -654,3 +656,84 @@ if (process.env.NODE_ENV === 'test') {
  *
  * Wilsy Touching Lives Eternally.
  */
+
+// Audit middleware factory
+export const auditMiddleware = (options = {}) => {
+  return (req, res, next) => {
+    const auditData = {
+      action: options.action || 'API_ACCESS',
+      tenantId: req.tenantId || req.headers['x-tenant-id'],
+      userId: req.user?.id || req.apiKey?.keyId,
+      correlationId: req.correlationId,
+      metadata: {
+        path: req.path,
+        method: req.method,
+        ip: req.ip,
+        userAgent: req.headers['user-agent']
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    // Log asynchronously (don't await)
+    AuditLogger.log('api-access', auditData).catch(err => 
+      logger.error('Audit log failed', { error: err.message })
+    );
+    
+    next();
+  };
+};
+
+// ============================================================================
+// AUDIT MIDDLEWARE EXPORTS
+// ============================================================================
+
+/**
+ * Audit middleware factory - logs all API requests
+ */
+export const auditMiddleware = (options = {}) => {
+  return (req, res, next) => {
+    const startTime = Date.now();
+    
+    // Capture response finish event
+    res.on('finish', () => {
+      const duration = Date.now() - startTime;
+      
+      const auditData = {
+        action: options.action || 'API_ACCESS',
+        tenantId: req.tenantId || req.headers['x-tenant-id'] || 'unknown',
+        userId: req.user?.id || req.apiKey?.keyId || 'anonymous',
+        correlationId: req.correlationId || req.headers['x-correlation-id'],
+        resourceType: options.resourceType || 'api',
+        metadata: {
+          path: req.originalUrl || req.url,
+          method: req.method,
+          statusCode: res.statusCode,
+          duration,
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+          ...options.metadata
+        },
+        retentionPolicy: options.retentionPolicy || 'companies_act_10_years',
+        dataResidency: process.env.DEFAULT_DATA_RESIDENCY || 'ZA',
+        timestamp: new Date().toISOString()
+      };
+
+      // Log to audit trail (async, don't block)
+      import('./auditLogger.js').then(module => {
+        module.AuditLogger.log('api-middleware', auditData).catch(err => 
+          console.error('Audit log failed:', err)
+        );
+      }).catch(err => {
+        console.error('Failed to load audit logger:', err);
+      });
+    });
+
+    next();
+  };
+};
+
+// Also export as default for backward compatibility
+export default {
+  auditMiddleware,
+  AuditLogger
+};

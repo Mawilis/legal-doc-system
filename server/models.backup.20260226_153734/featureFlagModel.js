@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE: /server/models/featureFlagModel.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/featureFlagModel.js
@@ -1313,7 +1315,7 @@ const FeatureFlag = mongoose.model('FeatureFlag', featureFlagSchema);
 // QUANTUM EXPORT
 // -----------------------------------------------------------------------------
 
-module.exports = FeatureFlag;
+export default FeatureFlag;
 
 /* -----------------------------------------------------------------------------
  * THE INNOVATION COVENANT: ROI & AFRICAN EVOLUTION

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║  ██████╗ ██╗   ██╗ █████╗ ███╗   ██╗████████╗██╗   ██╗███╗   ███╗    ███████╗███╗   ██╗ ██████╗██████╗  ║
@@ -1115,7 +1117,7 @@ const validateDataToken = (token) => {
 const quantumEncryption = new QuantumEncryptionEngine();
 
 // Export engine instance and utility functions
-module.exports = {
+export default {
   quantumEncryption,
   QuantumEncryptionEngine,
   QuantumKeyManager,

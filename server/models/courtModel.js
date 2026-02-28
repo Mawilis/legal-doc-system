@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE: /server/models/courtModel.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/courtModel.js
@@ -688,7 +690,7 @@ courtSchema.statics.generateDemoForInvestors = async function () {
 
 const Court = mongoose.model('Court', courtSchema);
 
-module.exports = Court;
+export default Court;
 
 /* -----------------------------------------------------------------------------
    CLOSING ARGUMENT TO INVESTORS:

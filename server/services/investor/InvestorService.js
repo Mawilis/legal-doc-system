@@ -66,7 +66,8 @@
 import SecurityLog from '../../models/securityLogModel.js';
 import Valuation from '../../models/Valuation.js';
 import Company from '../../models/Company.js';
-import logger from '../../utils/logger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../../utils/auditLogger.js';
 import crypto from "crypto";
 

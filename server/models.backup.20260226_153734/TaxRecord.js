@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ====================================================================
  * TAX RECORD MODEL - SARS eFILING INTEGRATION
@@ -488,4 +490,4 @@ TaxRecordSchema.statics.getEconomicMetrics = async function (tenantId) {
 // EXPORT MODEL
 // ====================================================================
 const TaxRecord = mongoose.model('TaxRecord', TaxRecordSchema);
-module.exports = TaxRecord;
+export default TaxRecord;

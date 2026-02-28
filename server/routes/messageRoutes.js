@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/messageRoutes.js
  * STATUS: PRODUCTION-READY
@@ -144,7 +146,7 @@ router.get('/unread-count', protect, requireSameTenant, async (req, res, next) =
   }
 });
 
-module.exports = router;
+export default router;
 
 // 4. USAGE EXAMPLE
 // -----------------------------------------------------------------------------

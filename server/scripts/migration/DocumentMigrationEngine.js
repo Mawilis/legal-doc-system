@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 /*
@@ -670,7 +672,7 @@ class DocumentMigrationEngine {
   }
 }
 
-module.exports = {
+export default {
   DocumentMigrationEngine,
   TENANT_MAPPING_STRATEGIES,
   CONFIG,

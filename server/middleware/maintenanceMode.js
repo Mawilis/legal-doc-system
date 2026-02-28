@@ -72,4 +72,4 @@ const maintenanceMode = async (req, res, next) => {
   }
 };
 
-module.exports = maintenanceMode;
+export default maintenanceMode;

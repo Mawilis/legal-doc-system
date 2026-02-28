@@ -54,4 +54,4 @@ const changeStatus = async (doc, toStatus, userId, reason) => {
   return await doc.save();
 };
 
-module.exports = { changeStatus };
+export default { changeStatus };

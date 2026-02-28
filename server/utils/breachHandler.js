@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/utils/breachHandler.js
  * STATUS: PRODUCTION-READY | OPERATIONAL SECURITY GRADE
@@ -11,7 +13,8 @@
 const GeofenceBreach = require('../models/GeofenceBreach');
 const User = require('../models/User');
 const { sendEmail, sendSMS } = require('./alertUtils');
-const logger = require('./logger');
+const loggerRaw = require('./logger');
+const logger = loggerRaw.default || loggerRaw;
 
 /*
  * HANDLE GEOFENCE VIOLATION
@@ -73,4 +76,4 @@ const handleGeofenceBreach = async (io, actor, location, zoneName) => {
   }
 };
 
-module.exports = { handleGeofenceBreach };
+export default { handleGeofenceBreach };

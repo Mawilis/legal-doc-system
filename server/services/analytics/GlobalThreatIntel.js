@@ -31,7 +31,8 @@ import { AuditLedger } from '../../models/AuditLedger.js';
 import SecurityLog from '../../models/securityLogModel.js';
 import Deal from '../../models/Deal.js';
 import Tenant from '../../models/Tenant.js';
-import logger from '../../utils/logger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import crypto from "crypto";
 import { EventEmitter } from "events";
 

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║                                                                                                ║
   ║ ███╗   ███╗███████╗███████╗███████╗ █████╗  ██████╗ ███████╗    ███╗   ███╗ ██████╗ ██████╗ ███████╗██╗      ║
@@ -1735,7 +1737,7 @@ Message.CLASSIFICATIONS = MESSAGE_CLASSIFICATIONS;
 Message.ENCRYPTION_CONFIG = ENCRYPTION_CONFIG;
 Message.LEGAL_DISCLAIMERS = LEGAL_DISCLAIMERS;
 
-module.exports = Message;
+export default Message;
 
 // ============================================================================
 // ENVIRONMENT VARIABLES GUIDE

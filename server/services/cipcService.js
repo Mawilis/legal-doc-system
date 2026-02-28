@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ CIPC SERVICE - INVESTOR-GRADE MODULE                                        ║
   ║ Companies Act compliance | Director validation | Annual returns             ║
@@ -437,4 +439,4 @@ class CIPCService {
   }
 }
 
-module.exports = new CIPCService();
+export default new CIPCService();

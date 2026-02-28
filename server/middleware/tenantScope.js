@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ⚡ TENANT SOVEREIGNTY SCOPE MIDDLEWARE v11.1.0
  * File: server/middleware/tenantScope.js
@@ -797,7 +799,7 @@ function validateTenantAccess(req, targetTenantId) {
 // ============================================================================
 // MODULE EXPORTS (SOVEREIGNTY INTERFACE)
 // ============================================================================
-module.exports = {
+export default {
   // Main sovereignty middleware
   tenantScope,
 

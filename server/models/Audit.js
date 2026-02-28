@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/Audit.js
  * STATUS: PRODUCTION-READY (WILSY OS V2.0)
@@ -1940,7 +1942,7 @@ if (!Audit.redis) {
 }
 
 // Export both the Model and the Watcher Class
-module.exports = {
+export default {
   Audit, // Mongoose Model for database operations
   AuditModel, // Watcher Class for forensic accountability
 };

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*!
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ ██╗   ██╗███████╗██████╗ ██╗███████╗██╗   ██╗                               ║
@@ -618,7 +620,7 @@ if (require.main === module) {
   main().catch(console.error);
 } else {
   // Export for use as module
-  module.exports = MigrationVerifier;
+  export default MigrationVerifier;
 }
 
 // ===================== JEST TESTS =====================

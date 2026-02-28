@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 // Run with: node scripts/create-dsar-indexes.js
 const mongoose = require('mongoose');
 const DSARRequest = require('./models/DSARRequest');

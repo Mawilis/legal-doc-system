@@ -20,16 +20,17 @@
  * ]
  */
 
-import express from 'express.js';
-import { performance } from 'perf_hooks.js';
+import express from "express";
+import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 
 // WILSY OS CORE IMPORTS
-import { getSystemHealth } from '../services/system/HealthService.js.js';
-import logger from '../utils/logger.js.js';
-import quantumLogger from '../utils/quantumLogger.js.js';
-import { rateLimiter } from '../middleware/rateLimiter.js.js';
-import { metrics } from '../utils/metricsCollector.js.js';
+import { getSystemHealth } from '../services/system/HealthService.js';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import quantumLogger from '../utils/quantumLogger.js';
+import { rateLimiter } from '../middleware/rateLimiter.js';
+import { metrics } from '../utils/metricsCollector.js';
 
 const router = express.Router();
 

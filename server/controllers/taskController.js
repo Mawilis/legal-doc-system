@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/controllers/taskController.js
  * STATUS: PRODUCTION-READY | WORKFLOW OPERATIONAL GRADE

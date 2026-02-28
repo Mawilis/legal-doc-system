@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * @file billingAuth.js
  * @module BillingAuthorizationMiddleware
@@ -830,7 +832,7 @@ if (process.env.NODE_ENV === 'test') {
 // ============================================================
 // QUANTUM EXPORT
 // ============================================================
-module.exports = billingAuth;
+export default billingAuth;
 
 // ============================================================
 // VALUATION QUANTUM FOOTER

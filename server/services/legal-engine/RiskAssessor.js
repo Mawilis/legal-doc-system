@@ -1,4 +1,7 @@
-const logger = require('../../utils/logger');
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 class RiskAssessor {
   constructor(options = {}) {
@@ -92,4 +95,4 @@ class RiskAssessor {
   }
 }
 
-module.exports = { RiskAssessor };
+export default { RiskAssessor };

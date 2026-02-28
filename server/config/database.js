@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ DATABASE CONFIGURATION - INVESTOR-GRADE MODULE                              ║
   ║ 99.99% uptime | Multi-tenant isolation | Connection pooling                 ║
@@ -24,7 +26,8 @@
  */
 
 const mongoose = require('mongoose');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../utils/metrics');
 
 // Connection states
@@ -272,4 +275,4 @@ class DatabaseConfig {
   }
 }
 
-module.exports = new DatabaseConfig();
+export default new DatabaseConfig();

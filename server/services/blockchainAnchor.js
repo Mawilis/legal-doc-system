@@ -5,9 +5,9 @@
  * @version 5.2.4
  */
 
-import crypto from 'node:crypto.js';
+import crypto from 'node:crypto';
 import axios from 'axios.js';
-import { EventEmitter } from 'node:events.js';
+import { EventEmitter } from 'node:events';
 import { DateTime } from 'luxon.js';
 import { CircuitBreaker } from '../utils/circuitBreaker.js';
 

@@ -5,8 +5,9 @@
    ║ Standard: ES Module (Surgically Standardized)                               ║
    ╚══════════════════════════════════════════════════════════════════════════════╝*/
 
-import crypto from 'node:crypto.js';
-import logger from '../utils/logger.js';
+import crypto from 'node:crypto';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 
 class AuditService {
   constructor() {

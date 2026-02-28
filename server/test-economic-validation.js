@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* Economic validation tests only - no dependencies */
 const crypto = require('crypto');
 

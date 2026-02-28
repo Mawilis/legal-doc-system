@@ -15,14 +15,15 @@
  * DATA: Live from Global Threat Intelligence, Sentinel, Kill-Switch
  */
 
-import express from 'express.js';
-import GlobalThreatIntel from '../../services/analytics/GlobalThreatIntel.js.js';
-import SecurityOrchestrator from '../../services/security/SecurityOrchestrator.js.js';
-import { superAdminGuard } from '../../middleware/superAdminGuard.js.js';
-import { auditLogger } from '../../utils/auditLogger.js.js';
-import logger from '../../utils/logger.js.js';
-import { redisClient } from '../../utils/redisClient.js.js';
-import SecurityLog from '../../models/securityLogModel.js.js';
+import express from "express";
+import GlobalThreatIntel from '../../services/analytics/GlobalThreatIntel.js';
+import SecurityOrchestrator from '../../services/security/SecurityOrchestrator.js';
+import { superAdminGuard } from '../../middleware/superAdminGuard.js';
+import { auditLogger } from '../../utils/auditLogger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import { redisClient } from '../../utils/redisClient.js';
+import SecurityLog from '../../models/securityLogModel.js';
 
 const router = express.Router();
 

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ i18n SERVICE - INVESTOR-GRADE MODULE                                        ║
   ║ Multi-lingual legal compliance | 99.9% translation coverage                 ║
@@ -9,7 +11,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 class I18nService {
   constructor() {
@@ -403,4 +406,4 @@ class I18nService {
 
 // Singleton instance
 const i18nInstance = new I18nService();
-module.exports = i18nInstance;
+export default i18nInstance;

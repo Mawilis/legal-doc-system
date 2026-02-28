@@ -5,7 +5,7 @@
  */
 
 import { DataTypes } from 'sequelize.js';
-import { sequelize } from '../config/database.js.js';
+import { sequelize } from '../config/database.js';
 
 export const UsageHistory = sequelize.define(
   'UsageHistory',

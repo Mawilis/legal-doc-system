@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 const mongoose = require('mongoose');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
@@ -225,4 +227,4 @@ documentSchema.statics.getAIStatistics = async function () {
   return stats;
 };
 
-module.exports = mongoose.model('Document', documentSchema);
+export default mongoose.model('Document', documentSchema);

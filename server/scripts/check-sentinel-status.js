@@ -5,8 +5,8 @@
  * Displays current sentinel metrics and quarantined tenants
  */
 
-import { getQuarantinedTenants } from 'wilsy-os-server/middleware/emergencyKillSwitch.js.js';
-import RecoverySentinel from './RecoverySentinel.js.js';
+import { getQuarantinedTenants } from 'wilsy-os-server/middleware/emergencyKillSwitch.js';
+import RecoverySentinel from './RecoverySentinel.js';
 
 async function checkStatus() {
   console.log(`\n${'='.repeat(70)}`);

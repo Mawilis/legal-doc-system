@@ -10,7 +10,7 @@
  */
 
 import mongoose from "mongoose";
-import crypto from 'node:crypto.js';
+import crypto from 'node:crypto';
 
 const AuditEntrySchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now, required: true, index: true },

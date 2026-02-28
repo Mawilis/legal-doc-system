@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ LEGAL RESEARCH SERVICE - INVESTOR-GRADE MODULE                                                           ║
@@ -63,7 +65,8 @@
 
 const { tenantContext } = require('../../middleware/tenantContext');
 const auditLogger = require('../../utils/auditLogger');
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const cryptoUtils = require('../../utils/cryptoUtils');
 const { redactSensitive, REDACT_FIELDS } = require('../../utils/popiaUtils');
 const ResearchQuery = require('../models/ResearchQuery');
@@ -854,7 +857,7 @@ const createLegalResearchService = (redisClient) => {
 // EXPORTS
 // ============================================================================
 
-module.exports = {
+export default {
   LegalResearchService,
   createLegalResearchService,
   RETENTION_POLICIES,

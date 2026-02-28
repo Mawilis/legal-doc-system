@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ LEGAL PRECEDENT - INVESTOR-GRADE MODULE                                     ║
   ║ 85% cost reduction | R2.97M savings | 99.99% legal certainty                ║
@@ -60,7 +62,8 @@ const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../utils/metrics');
 const redactUtils = require('../utils/redactUtils');
 const validationUtils = require('../utils/validationUtils');
@@ -1358,7 +1361,7 @@ legalPrecedentSchema.statics.getInvestorDashboard = async function () {
 
 const LegalPrecedent = mongoose.model('LegalPrecedent', legalPrecedentSchema);
 
-module.exports = LegalPrecedent;
+export default LegalPrecedent;
 
 /*
  * INVESTOR VALUE SUMMARY:

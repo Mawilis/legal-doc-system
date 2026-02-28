@@ -1038,7 +1038,7 @@ class DocumentTemplateRegistry {
  */
 const templateRegistry = new DocumentTemplateRegistry();
 
-module.exports = {
+export default {
   templateRegistry,
   DOCUMENT_TYPES,
   DOCUMENT_CATEGORIES,

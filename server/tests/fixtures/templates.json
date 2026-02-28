@@ -1,0 +1,80 @@
+{
+  "contracts": [
+    {
+      "name": "Standard Employment Contract",
+      "templateType": "contract",
+      "practiceArea": "labour",
+      "content": {
+        "raw": "EMPLOYMENT CONTRACT\n\nBetween:\n{{employerName}} (hereinafter referred to as \"the Employer\")\nand\n{{employeeName}} (hereinafter referred to as \"the Employee\")\n\n1. COMMENCEMENT DATE\nThis contract shall commence on {{startDate}}.\n\n2. POSITION\nThe Employee is employed as {{position}}.\n\n3. REMUNERATION\nThe Employee shall receive a monthly salary of {{salary}}.\n\n4. WORKING HOURS\nNormal working hours are {{workingHours}} per week.\n\n5. LEAVE\n{{leaveDays}} days annual leave per year.\n\n6. NOTICE PERIOD\n{{noticePeriod}} notice period applies.\n\nSigned at {{place}} on this {{day}} day of {{month}} {{year}}.\n\n_____________________\n{{employerName}}\n\n_____________________\n{{employeeName}}",
+        "format": "handlebars"
+      },
+      "variables": [
+        {"name": "employerName", "type": "name", "required": true},
+        {"name": "employeeName", "type": "name", "required": true},
+        {"name": "startDate", "type": "date", "required": true},
+        {"name": "position", "type": "string", "required": true},
+        {"name": "salary", "type": "currency", "required": true},
+        {"name": "workingHours", "type": "string", "required": true},
+        {"name": "leaveDays", "type": "number", "required": true},
+        {"name": "noticePeriod", "type": "string", "required": true},
+        {"name": "place", "type": "string", "required": true},
+        {"name": "day", "type": "number", "required": true},
+        {"name": "month", "type": "string", "required": true},
+        {"name": "year", "type": "number", "required": true}
+      ]
+    },
+    {
+      "name": "Property Sale Agreement",
+      "templateType": "contract",
+      "practiceArea": "property",
+      "content": {
+        "raw": "AGREEMENT OF SALE OF IMMOVABLE PROPERTY\n\n1. PARTIES\n\n1.1 The Seller:\n{{sellerName}} (ID: {{sellerId}})\n\n1.2 The Purchaser:\n{{purchaserName}} (ID: {{purchaserId}})\n\n2. PROPERTY\nErf {{erfNumber}} {{suburb}}, {{city}}\n\n3. PURCHASE PRICE\n{{purchasePrice}} ({{purchasePriceWords}})\n\n4. DEPOSIT\n{{deposit}} payable on {{depositDate}}\n\n5. OCCUPATION DATE\n{{occupationDate}}\n\n6. CONDITIONS\n{{conditions}}\n\n7. TRANSFER\nTransfer to be effected by {{conveyancer}}.\n\nSIGNATURES:\n\n_____________________\nSeller\n\n_____________________\nPurchaser",
+        "format": "handlebars"
+      },
+      "variables": [
+        {"name": "sellerName", "type": "name", "required": true},
+        {"name": "sellerId", "type": "id_number", "required": true},
+        {"name": "purchaserName", "type": "name", "required": true},
+        {"name": "purchaserId", "type": "id_number", "required": true},
+        {"name": "erfNumber", "type": "string", "required": true},
+        {"name": "suburb", "type": "string", "required": true},
+        {"name": "city", "type": "string", "required": true},
+        {"name": "purchasePrice", "type": "currency", "required": true},
+        {"name": "purchasePriceWords", "type": "string", "required": true},
+        {"name": "deposit", "type": "currency", "required": true},
+        {"name": "depositDate", "type": "date", "required": true},
+        {"name": "occupationDate", "type": "date", "required": true},
+        {"name": "conditions", "type": "textarea", "required": false},
+        {"name": "conveyancer", "type": "name", "required": true}
+      ]
+    }
+  ],
+  "pleadings": [
+    {
+      "name": "Simple Summons",
+      "templateType": "pleading",
+      "practiceArea": "litigation",
+      "content": {
+        "raw": "IN THE {{court}} COURT\nHELD AT {{location}}\n\nCase No: {{caseNumber}}\n\nIn the matter between:\n\n{{plaintiffName}}                                                         Plaintiff\n\nand\n\n{{defendantName}}                                                       Defendant\n\n__________________________________________________\n                SIMPLE SUMMONS\n__________________________________________________\n\nTO: The Sheriff or his Deputy\nAND TO: {{defendantName}}\n{{defendantAddress}}\n\nTAKE NOTICE that the Plaintiff hereby institutes action against you for:\n\n1. Payment of the sum of {{claimAmount}};\n2. Interest on the said amount at the rate of {{interestRate}}% per annum;\n3. Costs of suit.\n\n__________________________________________________\nPARTICULARS OF CLAIM\n__________________________________________________\n\n{{particularsOfClaim}}\n\nDATED at {{place}} on this {{day}} day of {{month}} {{year}}.\n\n_____________________\nPlaintiff's Attorney\n{{attorneyName}}\n{{attorneyReference}}",
+        "format": "handlebars"
+      },
+      "variables": [
+        {"name": "court", "type": "string", "required": true},
+        {"name": "location", "type": "string", "required": true},
+        {"name": "caseNumber", "type": "string", "required": true},
+        {"name": "plaintiffName", "type": "name", "required": true},
+        {"name": "defendantName", "type": "name", "required": true},
+        {"name": "defendantAddress", "type": "address", "required": true},
+        {"name": "claimAmount", "type": "currency", "required": true},
+        {"name": "interestRate", "type": "number", "required": true},
+        {"name": "particularsOfClaim", "type": "textarea", "required": true},
+        {"name": "place", "type": "string", "required": true},
+        {"name": "day", "type": "number", "required": true},
+        {"name": "month", "type": "string", "required": true},
+        {"name": "year", "type": "number", "required": true},
+        {"name": "attorneyName", "type": "name", "required": true},
+        {"name": "attorneyReference", "type": "string", "required": true}
+      ]
+    }
+  ]
+}

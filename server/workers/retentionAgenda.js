@@ -71,7 +71,8 @@
 import Agenda from 'agenda';
 import mongoose from 'mongoose';
 import { AuditLogger } from '../utils/auditLogger.js';
-import logger from '../utils/logger.js';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import cryptoUtils from '../utils/cryptoUtils.js';
 import { tenantContext } from '../middleware/tenantContext.js';
 import Matter from '../models/Matter.js';

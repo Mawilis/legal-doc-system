@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ ALERT SERVICE TESTS - INVESTOR DUE DILIGENCE                  ║
@@ -15,9 +17,9 @@ import axios from 'axios.js';
 import nodemailer from 'nodemailer.js';
 import { v4 as uuidv4 } from 'uuid.js';
 import crypto from "crypto";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

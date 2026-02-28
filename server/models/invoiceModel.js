@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║                                                                                                ║
   ║ ██╗███╗   ██╗██╗   ██╗ ██████╗ ██╗   ██╗███████╗    ███╗   ███╗ ██████╗ ██████╗ ███████╗██╗      ║
@@ -1853,7 +1855,7 @@ try {
   Invoice = mongoose.model('Invoice', InvoiceSchema);
 }
 
-module.exports = Invoice;
+export default Invoice;
 
 // ============================================================================
 // ENVIRONMENT VARIABLES GUIDE

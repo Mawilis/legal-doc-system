@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/utils/redirectSanitizer.js
  * PATH: server/utils/redirectSanitizer.js
@@ -131,7 +133,7 @@ function expressRedirectGuard(paramName = 'redirect', opts = {}) {
   };
 }
 
-module.exports = {
+export default {
   isSafeRedirect,
   sanitizeRedirect,
   expressRedirectGuard,

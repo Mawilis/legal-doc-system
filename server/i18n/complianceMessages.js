@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ COMPLIANCE MESSAGES - INVESTOR-GRADE ● FORENSIC ● PRODUCTION                ║
   ║ FICA Compliant | POPIA Compliant | Multi-lingual | Legal Grade             ║
@@ -6,7 +8,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 class ComplianceMessages {
   constructor() {
@@ -548,4 +551,4 @@ class ComplianceMessages {
 }
 
 // Singleton instance
-module.exports = new ComplianceMessages();
+export default new ComplianceMessages();

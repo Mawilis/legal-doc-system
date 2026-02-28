@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ███████╗██╗ ██████╗ █████╗    ██╗   ██╗███████╗██████╗ ██╗██████╗ ██╗ █████╗ ██████╗ ██╗ █████╗     ║
@@ -1349,7 +1351,7 @@ class FicaVerificationService {
 const ficaVerificationService = new FicaVerificationService();
 
 // Export service instance and utility classes
-module.exports = {
+export default {
   ficaVerificationService,
   SAIDValidator,
   FICA_CONFIG,

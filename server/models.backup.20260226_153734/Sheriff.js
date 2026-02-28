@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * =============================================================================
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/Sheriff.js
@@ -959,7 +961,7 @@ sheriffSchema.methods.decryptBadgeForVerification = async function (requesterId,
 // =============================================================================
 // QUANTUM EXPORT - ETERNAL SINGLETON PATTERN
 // =============================================================================
-module.exports = mongoose.models.Sheriff || mongoose.model('Sheriff', sheriffSchema);
+export default mongoose.models.Sheriff || mongoose.model('Sheriff', sheriffSchema);
 
 // =============================================================================
 // QUANTUM VALUATION FOOTER

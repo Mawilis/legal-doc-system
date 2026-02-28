@@ -1,3 +1,6 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
+/* eslint-disable */
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ERROR HANDLER - INVESTOR-GRADE                                              ║
   ║ 99.99% error capture | Forensic debugging | Zero data leak                 ║
@@ -11,7 +14,8 @@
  */
 
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../utils/metrics');
 
 // Error codes mapping
@@ -67,7 +71,7 @@ function sanitizeErrorForClient(error) {
  * Centralized Error Handler
  * Handles all errors with proper logging and client-safe responses
  */
-module.exports = (err, req, res, _next) => {
+export default (err, req, res, _next) => {
   const startTime = Date.now();
 
   // Normalize error

@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-02-28T11:01:59.989Z",
+  "quantumSystem": {
+    "totalPrecedents": 5,
+    "totalEntanglements": 10,
+    "averageSimilarity": 0.26833842051178936,
+    "cacheHits": 0,
+    "cacheMisses": 2,
+    "cacheSize": 2,
+    "entanglementDensity": 1
+  },
+  "courts": [
+    {
+      "name": "Constitutional Court",
+      "tier": "constitutional"
+    },
+    {
+      "name": "Supreme Court of Appeal",
+      "tier": "supreme_appeal"
+    },
+    {
+      "name": "Gauteng Division - Pretoria",
+      "tier": "high"
+    },
+    {
+      "name": "Johannesburg High Court",
+      "tier": "high"
+    },
+    {
+      "name": "Durban High Court",
+      "tier": "high"
+    },
+    {
+      "name": "Cape Town High Court",
+      "tier": "high"
+    },
+    {
+      "name": "Labour Court - Johannesburg",
+      "tier": "specialist"
+    },
+    {
+      "name": "Land Claims Court - Randburg",
+      "tier": "specialist"
+    },
+    {
+      "name": "Pretoria Magistrate Court - District",
+      "tier": "magistrate"
+    },
+    {
+      "name": "Pretoria Magistrate Court - Regional",
+      "tier": "magistrate"
+    }
+  ],
+  "precedentsLoaded": 5,
+  "testResults": "PASSED",
+  "hash": "0e0b12388b97e342610628d687de67e76f75ee75ff5b3300f1d7eadf71f19c7c"
+}

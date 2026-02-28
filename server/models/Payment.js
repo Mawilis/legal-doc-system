@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ====================================================================================
  * WILSY OS - THE SUPREME LEGAL TECHNOLOGY FORTRESS
@@ -1848,7 +1850,7 @@ Payment.decryptSensitiveData = decryptSensitiveData;
 Payment.generatePaymentHash = generatePaymentHash;
 Payment.maskCardNumber = maskCardNumber;
 
-module.exports = Payment;
+export default Payment;
 
 // ============================================================================
 // QUANTUM TESTING SUITE - DIVINE VERIFICATION

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ===================================================================================
  * QUANTUM SUPREME ADMIN AUTHENTICATION CITADEL - Wilsy OS Divine Access Guardian
@@ -1197,7 +1199,7 @@ const jurisdictionAuth = (requiredJurisdictions) => async (req, res, next) => {
 // ===================================================================================
 // QUANTUM EXPORT AND SINGLETON PATTERN
 // ===================================================================================
-module.exports = {
+export default {
   superAdminAuth,
   superAdminEnhancedAuth,
   emergencyAuth,

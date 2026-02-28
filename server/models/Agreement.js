@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ██████╗ ██████╗ ██████╗ ███████╗██████╗
  * ██║    ██║██║██║     ██╔════╝╚██╗ ██╔╝   ██╔════╝██╔═══██╗██╔══██╗██╔════╝██╔══██╗
@@ -819,4 +821,4 @@ const Agreement = mongoose.model('Agreement', agreementSchema);
  * QUANTUM INVOCATION
  * Wilsy Touching Lives Eternally.
  */
-module.exports = Agreement;
+export default Agreement;

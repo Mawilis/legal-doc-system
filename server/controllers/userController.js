@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/controllers/userController.js
  * PATH: server/controllers/userController.js
@@ -450,7 +452,7 @@ exports.getMe = asyncHandler(async (req, res) => {
 /* ---------------------------------------------------------------------------
    SOVEREIGN EXPORTS (Handshake Synchronization)
    --------------------------------------------------------------------------- */
-module.exports = {
+export default {
   register: exports.register,
   login: exports.login,
   refreshToken: exports.refreshToken,

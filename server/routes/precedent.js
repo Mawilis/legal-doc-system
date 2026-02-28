@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/routes/precedent.js
@@ -180,7 +182,8 @@ const { auditMiddleware } = require('../middleware/audit');
 const { metricsMiddleware } = require('../middleware/metrics');
 
 // QUANTUM UTILITIES
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../utils/auditLogger');
 const quantumLogger = require('../utils/quantumLogger');
 const { AppError, errorHandler } = require('../utils/errorHandler');
@@ -2466,7 +2469,7 @@ router.use((err, req, res, next) => {
    QUANTUM EXPORTS
    --------------------------------------------------------------------------- */
 
-module.exports = router;
+export default router;
 
 /* ---------------------------------------------------------------------------
    ENV ADDITIONS REQUIRED - Enterprise API Configuration

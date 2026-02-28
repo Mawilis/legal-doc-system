@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/caseFileRoutes.js
  * PATH: server/routes/caseFileRoutes.js
@@ -115,4 +117,4 @@ router.delete('/:id', requireRole('OWNER', 'SUPER_ADMIN'), caseFileController.de
 /* ---------------------------------------------------------------------------
    EXPORTS
    --------------------------------------------------------------------------- */
-module.exports = router;
+export default router;

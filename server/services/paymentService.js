@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * @file paymentService.js
  * @module PaymentService
@@ -1726,7 +1728,7 @@ if (process.env.NODE_ENV === 'test') {
 // ============================================================
 // QUANTUM EXPORT
 // ============================================================
-module.exports = {
+export default {
   getPaymentService,
   QuantumPaymentService,
   QuantumEncryptionService,

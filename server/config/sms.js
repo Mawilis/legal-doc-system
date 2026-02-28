@@ -25,4 +25,4 @@ const smsConfig = {
   },
 };
 
-module.exports = smsConfig;
+export default smsConfig;

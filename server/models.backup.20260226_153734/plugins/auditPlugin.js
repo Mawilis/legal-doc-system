@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ AUDIT PLUGIN - INVESTOR-GRADE ● FORENSIC ● PRODUCTION                       ║
   ║ Blockchain-ready audit trails | Tamper-proof logging                        ║
@@ -10,7 +12,7 @@ const crypto = require('crypto');
  * Audit plugin for Mongoose schemas
  * Provides comprehensive audit trail with cryptographic verification
  */
-module.exports = function auditPlugin(schema, options = {}) {
+export default function auditPlugin(schema, options = {}) {
   const trackedFields = options.trackedFields || [];
   const excludeFields = options.excludeFields || ['__v', '_id'];
 

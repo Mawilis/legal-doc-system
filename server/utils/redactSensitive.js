@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ REDACT SENSITIVE - POPIA COMPLIANCE BRIDGE UTILITY                                    ║
@@ -54,12 +56,13 @@
  * 
  *   subgraph "Backward Compatibility"
  *     O[Original API] -->|function(data, replacement)| P[Same Signature]
- *     Q[Default Export] -->|object| R[module.exports = redactSensitive]
+ *     Q[Default Export] -->|object| R[export default redactSensitive]
  *   end
  */
 
 import { redactSensitive as popiaRedactSensitive, REDACT_FIELDS } from './popiaUtils.js';
-import logger from './logger.js';
+import loggerRaw from './logger.js';
+const logger = loggerRaw.default || loggerRaw;
 
 // INTEGRATION_HINT: This is a bridge module that re-exports from popiaUtils.js for backward compatibility
 
@@ -353,9 +356,9 @@ export default redactSensitive;
 export { REDACT_FIELDS } from './popiaUtils.js';
 
 // For very old code that does `const redact = require('./redactSensitive')`
-// This ensures module.exports = redactSensitive works
+// This ensures export default redactSensitive works
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = redactSensitive;
+  export default redactSensitive;
   module.exports.redactSensitive = redactSensitive;
   module.exports.containsSensitive = containsSensitive;
   module.exports.getRedactionPatterns = getRedactionPatterns;

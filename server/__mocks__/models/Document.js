@@ -1,5 +1,5 @@
 /* Simple mock for Document model */
-module.exports = class Document {
+export default class Document {
   constructor(data) {
     Object.assign(this, data);
     this._id = data._id || 'mock_document_id';

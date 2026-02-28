@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ⚛️ QUANTUM TENANT ORCHESTRATION CONTROLLER v32.0.0
  * File: /server/controllers/tenantController.js

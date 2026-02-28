@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ LOCALE MIDDLEWARE - INVESTOR-GRADE MODULE                                   ║
   ║ Automatic locale detection | Tenant-specific defaults                       ║
@@ -6,7 +8,8 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/i18n/lib/localeMiddleware.js
  */
 
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const i18nService = require('./i18nService');
 
 class LocaleMiddleware {
@@ -184,4 +187,4 @@ class LocaleMiddleware {
   }
 }
 
-module.exports = new LocaleMiddleware();
+export default new LocaleMiddleware();

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ EXCEL GENERATOR - INVESTOR-GRADE DATA EXPORT ENGINE                                   ║
   ║ R1.8M/year manual data compilation eliminated | Zero financial reporting errors       ║
@@ -49,8 +51,8 @@
  *   B -->|encrypted export| K[S3 Storage]
  */
 
-import fs from 'fs/promises.js';
-import { pipeline } from 'stream/promises.js';
+import fs from 'fs/promises';
+import { pipeline } from 'stream/promises';
 import { createHash, randomBytes } from "crypto";
 import path from "path";
 import { Readable } from "stream";

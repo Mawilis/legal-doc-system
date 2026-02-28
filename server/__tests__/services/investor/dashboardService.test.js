@@ -19,9 +19,9 @@
 
 import mongoose from "mongoose";
 import { createHash } from "crypto";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,19 +34,20 @@ import {
   DASHBOARD_SECTIONS_CONST,
   PERIODS_CONST,
   JSE_MATERIALITY_THRESHOLD_CONST
-} from '../../../services/investor/dashboardService.js.js';
+} from '../../../services/investor/dashboardService.js';
 
 // Import models for mocking
-import Company from '../../../models/Company.js.js';
-import Valuation from '../../../models/Valuation.js.js';
-import Comparable from '../../../models/Comparable.js.js';
-import User from '../../../models/User.js.js';
+import Company from '../../../models/Company.js';
+import Valuation from '../../../models/Valuation.js';
+import Comparable from '../../../models/Comparable.js';
+import User from '../../../models/User.js';
 
 // Import utilities for mocking
-import logger from '../../../utils/logger.js.js';
-import auditLogger from '../../../utils/auditLogger.js.js';
-import cryptoUtils from '../../../utils/cryptoUtils.js.js';
-import tenantContext from '../../../middleware/tenantContext.js.js';
+import loggerRaw from '../../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import auditLogger from '../../../utils/auditLogger.js';
+import cryptoUtils from '../../../utils/cryptoUtils.js';
+import tenantContext from '../../../middleware/tenantContext.js';
 
 // ============================================================================
 // MOCK SETUP

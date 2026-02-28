@@ -6,8 +6,8 @@
  */
 
 import mongoose from "mongoose";
-import { redisClient } from 'wilsy-os-server/utils/redisClient.js.js';
-import RecoverySentinel from './RecoverySentinel.js.js';
+import { redisClient } from 'wilsy-os-server/utils/redisClient.js';
+import RecoverySentinel from './RecoverySentinel.js';
 
 async function checkHealth() {
   console.log('🔍 Checking Wilsy OS Sentinel Health...');

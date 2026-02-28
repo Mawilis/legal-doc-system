@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* Final economic validation with corrected risk calculation */
 const crypto = require('crypto');
 const fs = require('fs');

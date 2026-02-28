@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * ⚠️ RISK ASSESSMENT SERVICE QUANTUM SCROLL: AI-POWERED LEGAL RISK ORACLE ⚠️
@@ -1621,7 +1623,7 @@ RiskAssessmentService.prototype.generateAssessmentHash = function (assessment) {
  * 🚀 Pan-African regulatory risk framework ready
  */
 
-module.exports = riskAssessmentService;
+export default riskAssessmentService;
 
 /*
  * ============================================================================

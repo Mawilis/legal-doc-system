@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM SENTINEL: TENANT MODEL - MULTI-TENANT SOVEREIGNTY FORTRESS V18.0.0
@@ -2214,7 +2216,7 @@ if (process.env.NODE_ENV === 'test') {
   testTenant().catch(console.error);
 }
 
-module.exports = Tenant;
+export default Tenant;
 
 // ============================================================================
 // QUANTUM FOOTER: Eternal Multi-Tenant Legacy

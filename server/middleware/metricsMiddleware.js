@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/metricsMiddleware.js
  * STATUS: PRODUCTION-READY | OBSERVABILITY & SCALE GRADE
@@ -84,7 +86,7 @@ const metricsEndpoint = async (req, res) => {
   res.end(await register.metrics());
 };
 
-module.exports = {
+export default {
   metricsMiddleware,
   metricsEndpoint,
 };

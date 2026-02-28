@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/utils/sendMail.js
  * STATUS: PRODUCTION-READY | MULTI-PROVIDER COMMUNICATION ENGINE
@@ -11,7 +13,8 @@
 const axios = require('axios');
 const nodemailer = require('nodemailer');
 const AlertLog = require('../models/AlertLog');
-const logger = require('./logger');
+const loggerRaw = require('./logger');
+const logger = loggerRaw.default || loggerRaw;
 
 /*
  * TRANSPORTER FACTORY
@@ -122,4 +125,4 @@ const sendEmail = async (options) => {
   }
 };
 
-module.exports = sendEmail;
+export default sendEmail;

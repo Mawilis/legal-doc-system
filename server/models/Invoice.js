@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ====================================================================================
  * 🏛️📜 INVOICE QUANTUM MODEL: THE SACRED LEDGER V25.0 🏛️📜
@@ -1622,7 +1624,7 @@ const generateSARSFields = (vatData) =>
 
 const Invoice = mongoose.model('Invoice', invoiceSchema);
 
-module.exports = Invoice;
+export default Invoice;
 
 // =============================================================================
 // ENVIRONMENT VARIABLES SETUP GUIDE

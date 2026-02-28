@@ -1,75 +1,48 @@
-/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
-  ║ DEAL FLOW ROUTES - QUANTUM M&A PIPELINE API ENDPOINTS                                 ║
-  ║ [R1.2B/year Deal Flow | JSE Compliant | Competition Act Ready]                        ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
-
-import express from 'express.js';
+import express from 'express';
 import {
   identifyTargets,
+  createDeal,
   calculateSynergy,
-  generateFairnessOpinion,
+  assessRegulatory,
   simulateIntegration,
-  generateCompetitionFiling,
-  predictDealSuccess,
-} from '../controllers/dealFlowController.js.js';
-import { authenticate } from '../middleware/auth.js.js';
-import { rateLimiter } from '../middleware/rateLimiter.js.js';
-import { validateRequest } from '../middleware/requestValidator.js.js';
-import { extractTenant } from '../middleware/tenantContext.js.js';
+  getDeal,
+  listDeals,
+  updateDealStage,
+  getPipelineAnalytics,
+  getTargets,
+  getDealStats
+} from '../controllers/dealFlowController.js';
+import { authenticate } from '../middleware/auth.js';
+import { extractTenant } from '../middleware/tenantContext.js';
+import { rateLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
+// Apply common middleware to all routes
 router.use(extractTenant);
+router.use(authenticate({ required: true }));
 
-// Target identification (quantum matching)
-router.post(
-  '/targets/identify',
-  authenticate({ required: true, roles: ['deal_team', 'admin'] }),
-  rateLimiter({ mode: 'standard' }),
-  validateRequest({ schema: 'target_identification' }),
-  identifyTargets,
-);
+// Rate limiting
+const standardLimiter = rateLimiter({ mode: 'standard' });
+const strictLimiter = rateLimiter({ mode: 'strict' });
 
-// Synergy calculation
-router.post(
-  '/synergy/:acquirerId/:targetId',
-  authenticate({ required: true, roles: ['deal_team', 'analyst', 'admin'] }),
-  rateLimiter({ mode: 'standard' }),
-  validateRequest({ schema: 'synergy_calculation' }),
-  calculateSynergy,
-);
+// Target identification
+router.post('/targets/identify', standardLimiter, identifyTargets);
+router.get('/targets', standardLimiter, getTargets);
 
-// Fairness opinion generation
-router.post(
-  '/fairness/:dealId',
-  authenticate({ required: true, roles: ['admin', 'director'] }),
-  rateLimiter({ mode: 'strict' }),
-  generateFairnessOpinion,
-);
+// Deal management
+router.post('/', standardLimiter, createDeal);
+router.get('/', standardLimiter, listDeals);
+router.get('/:dealId', standardLimiter, getDeal);
+router.patch('/:dealId/stage', standardLimiter, updateDealStage);
 
-// Integration simulation
-router.post(
-  '/simulate/:dealId',
-  authenticate({ required: true, roles: ['deal_team', 'admin'] }),
-  rateLimiter({ mode: 'standard' }),
-  validateRequest({ schema: 'integration_simulation' }),
-  simulateIntegration,
-);
+// Synergy & analysis
+router.post('/synergy/:acquirerId/:targetId', strictLimiter, calculateSynergy);
+router.post('/:dealId/regulatory-assessment', strictLimiter, assessRegulatory);
+router.post('/:dealId/simulate-integration', strictLimiter, simulateIntegration);
 
-// Competition filing generation
-router.post(
-  '/filing/:dealId/:jurisdiction',
-  authenticate({ required: true, roles: ['admin', 'legal'] }),
-  rateLimiter({ mode: 'strict' }),
-  generateCompetitionFiling,
-);
-
-// Deal success prediction
-router.get(
-  '/predict/:dealId',
-  authenticate({ required: true, roles: ['deal_team', 'admin', 'investor'] }),
-  rateLimiter({ mode: 'standard' }),
-  predictDealSuccess,
-);
+// Analytics
+router.get('/analytics', standardLimiter, getPipelineAnalytics);
+router.get('/stats', standardLimiter, getDealStats);
 
 export default router;

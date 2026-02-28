@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║                                                                                                ║
   ║ ███████╗███████╗███████╗    ███████╗ █████╗ ███████╗███████╗    ███╗   ███╗ ██████╗ ██████╗ ███████╗██╗      ║
@@ -1423,7 +1425,7 @@ try {
   Fee = mongoose.model('Fee', feeSchema);
 }
 
-module.exports = Fee;
+export default Fee;
 
 // ============================================================================
 // TESTING QUANTUM - VALIDATION ARMORY

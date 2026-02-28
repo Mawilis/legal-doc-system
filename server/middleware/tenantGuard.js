@@ -21,13 +21,13 @@
  * ============================================================================
  */
 
-import { performance } from 'perf_hooks.js';
+import { performance } from 'perf_hooks';
 import crypto from "crypto";
-import { TenantConfig } from '../models/TenantConfig.js.js';
-import { AuditLogger } from '../utils/auditLogger.js.js';
-import { QuantumLogger } from '../utils/quantumLogger.js.js';
-import { redisClient } from '../cache/redisClient.js.js';
-import { metricsCollector } from '../utils/metricsCollector.js.js';
+import { TenantConfig } from '../models/TenantConfig.js';
+import { AuditLogger } from '../utils/auditLogger.js';
+import { QuantumLogger } from '../utils/quantumLogger.js';
+import { redisClient } from '../cache/redisClient.js';
+import { metricsCollector } from '../utils/metricsCollector.js';
 
 // QUANTUM CONSTANTS
 const TENANT_CACHE_TTL = 300; // 5 minutes

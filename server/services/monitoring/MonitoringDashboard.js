@@ -76,14 +76,15 @@
   ║ Executive metrics | Real-time insights | Strategic intelligence          ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import { performance } from 'perf_hooks.js';
+import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
-import os from 'os.js';
+import os from 'os';
 
 // WILSY OS CORE IMPORTS
 import { redisClient } from '../../cache/redisClient.js';
 import { QuantumLogger } from '../../utils/quantumLogger.js';
-import logger from '../../utils/logger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import { metrics } from '../../utils/metricsCollector.js';
 import { AuditLedger } from '../../models/AuditLedger.js';
 import { TenantConfig } from '../../models/TenantConfig.js';

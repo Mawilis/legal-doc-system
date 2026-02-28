@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                                                                                      ║
@@ -1700,7 +1702,7 @@ class EmailService {
 // SECTION 8: MODULE EXPORT
 // =============================================================================
 
-module.exports = {
+export default {
   // Main service
   EmailService,
 

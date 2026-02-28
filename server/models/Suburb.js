@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 // ============================================================================
 // QUANTUM SUBURB NEXUS: IMMUTABLE JURISDICTION LEDGER
 // ============================================================================
@@ -2285,6 +2287,6 @@ const Suburb = mongoose.models && mongoose.models.Suburb
   ? mongoose.model('Suburb')
   : mongoose.model('Suburb', SuburbSchema);
 
-module.exports = Suburb;
+export default Suburb;
 
 // Wilsy Touching Lives Eternally

@@ -1,4 +1,4 @@
-module.exports = [
+export default [
   {
     regex: /personal information.*without consent/i,
     violation: 'CONSENT_VIOLATION',

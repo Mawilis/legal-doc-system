@@ -23,4 +23,4 @@ const pushConfig = {
   },
 };
 
-module.exports = pushConfig;
+export default pushConfig;

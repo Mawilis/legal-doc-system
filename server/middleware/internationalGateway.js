@@ -85,13 +85,13 @@
   ║ Tiered rate limiting | Dynamic pricing | Forensic logging                 ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import { performance } from 'perf_hooks.js';
+import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
-import { redisClient } from '../cache/redisClient.js.js';
-import { QuantumLogger } from '../utils/quantumLogger.js.js';
-import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js.js';
-import { AppError } from '../utils/errorHandler.js.js';
-import { GATEWAY_CONFIG } from '../config/gatewayConfig.js.js';
+import { redisClient } from '../cache/redisClient.js';
+import { QuantumLogger } from '../utils/quantumLogger.js';
+import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js';
+import { AppError } from '../utils/errorHandler.js';
+import { GATEWAY_CONFIG } from '../config/gatewayConfig.js';
 
 // =============================================================================
 // QUANTUM CONSTANTS - Gateway Configuration

@@ -23,9 +23,9 @@
 import request from 'supertest.js';
 import mongoose from "mongoose";
 import crypto from "crypto";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 // Import the actual server (not mocked - real integration tests)
 import app, {
@@ -35,7 +35,7 @@ import app, {
   generationalLogger,
   FINANCIAL_TARGETS,
   GENERATIONS,
-} from '../server.js.js';
+} from '../server.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

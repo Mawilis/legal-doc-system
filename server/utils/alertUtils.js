@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/utils/alertUtils.js
  * STATUS: PRODUCTION-READY | RESILIENT COMMUNICATIONS
@@ -11,7 +13,8 @@
 
 const nodemailer = require('nodemailer');
 const twilio = require('twilio');
-const logger = require('./logger');
+const loggerRaw = require('./logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // --- 1. INDUSTRIAL GATEWAY CONFIGURATION ---
 

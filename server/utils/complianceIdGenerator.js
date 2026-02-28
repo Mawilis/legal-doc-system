@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ COMPLIANCE ID GENERATOR V6 — FORENSIC INVESTOR-GRADE ● REGULATOR-READY ● COURT-ADMISSIBLE                      ║
   ║ 94% error reduction | R2.8M penalty elimination | Multi-entity embedded                                        ║
@@ -620,7 +622,7 @@ function extractIdMetadata(id) {
   return metadata;
 }
 
-module.exports = {
+export default {
   generateFICARefNumber,
   generateComplianceId,
   batchGenerateComplianceIds,

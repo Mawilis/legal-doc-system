@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSYS OS — LPC RULE 17.3 FORENSIC COMPLIANCE SUITE ● INVESTOR-GRADE ● COURT-ADMISSIBLE EVIDENCE              ║
   ║ [97% COST REDUCTION | R5.2M RISK ELIMINATION | 91% MARGINS | R630M TAM]                                      ║

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ====================================================================================
  * WILSY OS - THE SUPREME LEGAL TECHNOLOGY FORTRESS
@@ -2122,7 +2124,7 @@ Notification.encryptSensitiveData = encryptSensitiveData;
 Notification.decryptSensitiveData = decryptSensitiveData;
 Notification.generateContentHash = generateContentHash;
 
-module.exports = Notification;
+export default Notification;
 
 // ============================================================================
 // QUANTUM TESTING SUITE - DIVINE VERIFICATION

@@ -94,4 +94,4 @@ const sanitizeBody = (fields = []) => async (req, res, next) => {
   }
 };
 
-module.exports = { sanitizeBody };
+export default { sanitizeBody };

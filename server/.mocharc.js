@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   timeout: 30000,
   exit: true,
   recursive: true,

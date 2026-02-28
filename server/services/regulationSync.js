@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM SENTINEL: REGULATION SYNCHRONIZATION ENGINE
@@ -2207,7 +2209,7 @@ function getRegulationSyncEngine() {
   return syncEngineInstance;
 }
 
-module.exports = {
+export default {
   RegulationSyncEngine,
   getRegulationSyncEngine,
   REGULATION_SOURCES,

@@ -85,7 +85,7 @@
   ║ 95% fraud prevention | Real-time detection | AI-powered                  ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import { performance } from 'perf_hooks.js';
+import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 import EventEmitter from "events";
 import * as tf from '@tensorflow/tfjs-node.js';

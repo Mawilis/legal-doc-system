@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ================================================================================================
  * FILE: server/services/cryptoService.js
@@ -666,7 +668,7 @@ class CryptoService {
 
 // Create and export singleton instance
 const cryptoService = new CryptoService();
-module.exports = cryptoService;
+export default cryptoService;
 
 /*
  * ================================================================================================

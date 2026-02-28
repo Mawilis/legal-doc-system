@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/jobs/workerEntry.js
  * STATUS: PRODUCTION-READY | INDUSTRIAL FLEET GRADE

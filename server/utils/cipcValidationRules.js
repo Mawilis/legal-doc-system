@@ -94,4 +94,4 @@ class CIPCValidationRules {
   }
 }
 
-module.exports = new CIPCValidationRules();
+export default new CIPCValidationRules();

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ BILLING CONTROLLER TESTS - INVESTOR DUE DILIGENCE             ║
@@ -18,7 +20,7 @@ import request from 'supertest.js';
 import express from 'express.js';
 import mongoose from "mongoose";
 import crypto from "crypto";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
 import { v4 as uuidv4 } from 'uuid.js';
 
@@ -41,11 +43,11 @@ jest.mock('../../services/pdf/InvoicePdfService');
 jest.mock('../../services/email/EmailService');
 
 import axios from 'axios.js';
-import * as billingController from '../../controllers/billingController.js.js';
-import BillingInvoice from '../../models/BillingInvoice.js.js';
-import PaymentTransaction from '../../models/PaymentTransaction.js.js';
-import { screenForAML } from '../../services/compliance/FICAScreeningService.js.js';
-import { generateFinancialHash } from '../../utils/cryptoUtils.js.js';
+import * as billingController from '../../controllers/billingController.js';
+import BillingInvoice from '../../models/BillingInvoice.js';
+import PaymentTransaction from '../../models/PaymentTransaction.js';
+import { screenForAML } from '../../services/compliance/FICAScreeningService.js';
+import { generateFinancialHash } from '../../utils/cryptoUtils.js';
 
 describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
   let app;

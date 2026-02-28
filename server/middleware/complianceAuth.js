@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * ⚖️ COMPLIANCE AUTH QUANTUM SCROLL: LEGAL AUTHORIZATION ORACLE ⚖️
@@ -1389,7 +1391,7 @@ const generateComplianceAuditHash = (auditData, previousHash = '') => {
  * 🚀 Pan-African compliance framework ready for expansion
  */
 
-module.exports = {
+export default {
   // Main authorization middleware
   complianceAuthorize,
 

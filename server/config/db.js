@@ -1,6 +1,9 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 // server/config/db.js
 const mongoose = require('mongoose');
-const logger = require('../utils/logger'); // Assuming you have a logger utility
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw; // Assuming you have a logger utility
 
 const connectDB = async () => {
   try {
@@ -19,4 +22,4 @@ const connectDB = async () => {
   }
 };
 
-module.exports = connectDB;
+export default connectDB;

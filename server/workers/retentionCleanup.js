@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 import Agenda from 'agenda.js';
 import mongoose from "mongoose";
 /* ╔════════════════════════════════════════════════════════════════╗
@@ -18,7 +20,8 @@ const Case = require('../models/Case');
 const Document = require('../models/Document');
 const RetentionPolicy = require('../models/RetentionPolicy');
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 /*
  * ASSUMPTIONS:
@@ -814,4 +817,4 @@ class RetentionCleanupWorker {
 }
 
 // Export singleton instance
-module.exports = new RetentionCleanupWorker();
+export default new RetentionCleanupWorker();

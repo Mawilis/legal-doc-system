@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-env jest */
 
 const crypto = require('crypto');
@@ -86,7 +88,8 @@ const notificationService = require('../../services/notificationService');
 const auditLogger = require('../../utils/auditLogger');
 const { generateFICARefNumber } = require('../../utils/complianceIdGenerator');
 const cryptoUtils = require('../../utils/cryptoUtils');
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const { validateSAIDNumber } = require('../../validators/saLegalValidators');
 const documentWorker = require('../../workers/documentVerificationWorker');
 

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/services/ai/PrecedentEmbeddingService.js
@@ -162,7 +164,8 @@ const LRU = require('lru-cache');
 const { Worker } = require('worker_threads');
 
 // QUANTUM UTILITIES
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../../utils/auditLogger');
 const quantumLogger = require('../../utils/quantumLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
@@ -1635,7 +1638,7 @@ if (require.main === module) {
    QUANTUM EXPORTS
    --------------------------------------------------------------------------- */
 
-module.exports = {
+export default {
   // Core embedding generation
   generateEmbedding,
   generateEmbeddings,

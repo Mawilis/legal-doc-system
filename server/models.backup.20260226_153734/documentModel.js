@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE: /server/models/documentModel.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/documentModel.js
@@ -1357,7 +1359,7 @@ const Document = mongoose.model('Document', documentSchema);
 // IMMORTAL EXPORT
 // -----------------------------------------------------------------------------
 
-module.exports = Document;
+export default Document;
 
 /* -----------------------------------------------------------------------------
  * THE ETERNAL COVENANT: ROI & AFRICAN IMMORTALITY

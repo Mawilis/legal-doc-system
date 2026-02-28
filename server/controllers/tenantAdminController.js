@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ⚛️ QUANTUM TENANT ADMINISTRATION CONTROLLER v2.2.0 - FULLY FIXED EDITION
  * File: /server/controllers/tenantAdminController.js
@@ -2584,7 +2586,7 @@ function calculateProductivityMetrics(teamStats, documentStats) {
 // MODULE EXPORTS
 // ============================================================================
 
-module.exports = {
+export default {
   // Firm Dashboard
   getFirmDashboard: exports.getFirmDashboard,
   getFirmSettings: exports.getFirmSettings,

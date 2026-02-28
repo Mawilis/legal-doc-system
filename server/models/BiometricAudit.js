@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ================================================================================
     QUANTUM BIOMETRIC AUDIT CITADEL - Wilsy OS Immutable Digital Trust Ledger
@@ -1652,4 +1654,4 @@ const BiometricAudit = mongoose.model('BiometricAudit', biometricAuditSchema);
  * Wilsy Touching Lives Eternally. 🔐⚖️👤
  */
 
-module.exports = BiometricAudit;
+export default BiometricAudit;

@@ -1,3 +1,6 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
+/* eslint-disable */
 /*
  * File: server/middleware/correlationId.js
  * STATUS: PRODUCTION-READY | FORENSIC TRACEABILITY GRADE
@@ -61,4 +64,4 @@ const correlationIdMiddleware = (req, res, next) => {
  * 'X-Correlation-Id': req.correlationId in your request headers.
  */
 
-module.exports = correlationIdMiddleware;
+export default correlationIdMiddleware;

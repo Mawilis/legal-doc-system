@@ -1,4 +1,4 @@
-module.exports = [
+export default [
   {
     regex: /process.*personal data.*without.*lawful basis/i,
     violation: 'LAWFUL_BASIS_VIOLATION',

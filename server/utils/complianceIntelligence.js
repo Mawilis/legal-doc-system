@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ###############################################################################
 ################################################################################
 #                                                                              #
@@ -1342,7 +1344,7 @@ function getComplianceIntelligenceInstance() {
 }
 
 // Export both class and singleton
-module.exports = {
+export default {
   ComplianceIntelligence,
   getComplianceIntelligenceInstance,
   COMPLIANCE_CONSTANTS,

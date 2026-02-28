@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*= ==========================================================================
   WILSY OS - SUPREME ARCHITECT GENERATED FILE
   ===========================================================================
@@ -724,7 +726,7 @@ function generateCertificateHash(certificate) {
 // Create and export the model
 const DisposalCertificate = mongoose.model('DisposalCertificate', disposalCertificateSchema);
 
-module.exports = DisposalCertificate;
+export default DisposalCertificate;
 
 /*
  * ACCEPTANCE CHECKLIST

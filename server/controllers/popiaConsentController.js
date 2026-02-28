@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 // ============================================================================
@@ -1036,7 +1038,7 @@ class PopiaConsentController {
 // QUANTUM EXPORT NEXUS
 // ============================================================================
 
-module.exports = PopiaConsentController;
+export default PopiaConsentController;
 module.exports.ConsentControllerError = ConsentControllerError;
 
 // ============================================================================

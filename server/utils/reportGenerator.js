@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ===================================================================================
  * QUANTUM REPORT GENERATOR - Wilsy OS Forensic Document Generation Engine
@@ -1463,7 +1465,7 @@ For verification or questions, contact: compliance@wilsyos.co.za
 // ===================================================================================
 // QUANTUM EXPORT AND SINGLETON PATTERN
 // ===================================================================================
-module.exports = new QuantumReportGenerator();
+export default new QuantumReportGenerator();
 
 // ===================================================================================
 // QUANTUM FOOTER: ETERNAL DOCUMENTATION MASTERY

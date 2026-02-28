@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/seed/seedAudits.js
  * STATUS: EPITOME | FINAL RELATIONAL ALIGNMENT | SINGLE-QUOTE ENFORCED
@@ -50,4 +52,4 @@ const seedAudits = async (tenantId, userId) => {
   }
 };
 
-module.exports = seedAudits;
+export default seedAudits;

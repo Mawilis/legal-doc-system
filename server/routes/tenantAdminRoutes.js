@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ⚡ TENANT SOVEREIGNTY GATEWAY v3.0
  * File: server/routes/tenantAdminRoutes.js
@@ -584,4 +586,4 @@ router.use('/quantum-wealth', require('./quantumWealthRoutes'));
  * We build not for quarterly earnings, but for eternal impact.
  */
 
-module.exports = router;
+export default router;

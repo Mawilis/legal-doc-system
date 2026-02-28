@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * Wilsy OS - Multi-Tenant Document Service
  * =========================================
@@ -1872,7 +1874,7 @@ class MultiTenantDocumentService {
 // =================================================================================
 // EXPORT WITH HEALTH CHECK
 // =================================================================================
-module.exports = {
+export default {
   MultiTenantDocumentService,
   DocumentMetadata,
   TenantQuota,

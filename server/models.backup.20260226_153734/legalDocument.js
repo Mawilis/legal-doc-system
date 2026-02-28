@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ███████╗ ██████╗ ██████╗ ███████╗███╗   ██╗███████╗
  * ██╔════╝██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝
@@ -464,7 +466,7 @@ LegalDocumentSchema.statics.encryptField = function (plainText) {
 // ====================================================================================
 const LegalDocument = model('LegalDocument', LegalDocumentSchema);
 
-module.exports = LegalDocument;
+export default LegalDocument;
 
 // ====================================================================================
 // VII. VALUATION QUANTUM FOOTER & INVOCATION

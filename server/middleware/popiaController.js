@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ POPIA QUANTUM CONTROLLER - INVESTOR-GRADE MODULE              ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
@@ -31,7 +33,8 @@ graph TD
 */
 
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const quantumCrypto = require('../utils/quantumCryptoEngine');
 
 // Assumptions based on routes/complianceRoutes.js references:
@@ -275,4 +278,4 @@ class PopiaController {
 }
 
 // Export as singleton with no top-level side effects
-module.exports = new PopiaController();
+export default new PopiaController();

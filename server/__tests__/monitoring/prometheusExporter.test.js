@@ -10,15 +10,15 @@
  * • Confirms real-time metric collection
  */
 
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import crypto from "crypto";
 import express from 'express.js';
-import os from 'os.js';
+import os from 'os';
 import path from "path";
-import process from 'process.js';
+import process from 'process';
 import promClient from 'prom-client.js';
 import request from 'supertest.js';
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 import AuditTrail from '../../models/AuditTrail.js';
 import BillingInvoice from '../../models/BillingInvoice.js';

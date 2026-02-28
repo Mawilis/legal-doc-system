@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 // WILSY OS - MongoDB Atlas Configuration Fix
 const { execSync } = require('child_process');

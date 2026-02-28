@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/controllers/feeController.js
  * STATUS: PRODUCTION-READY | FINANCIAL REFERENCE GRADE

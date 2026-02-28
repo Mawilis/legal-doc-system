@@ -14,10 +14,10 @@
  * 5. Converts CommonJS exports to ES modules
  */
 
-import { execSync } from 'child_process.js';
+import { execSync } from 'child_process';
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,7 +93,8 @@ const fixes = {
   // Add logger import if needed
   addLoggerImport: (content) => {
     if (content.includes('logger.') && !content.includes('import logger from')) {
-      return `import logger from '../utils/logger.js.js';\n${content}`;
+      return `import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;\n${content}`;
     }
     return content;
   },

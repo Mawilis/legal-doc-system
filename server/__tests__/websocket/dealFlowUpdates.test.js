@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /* eslint-env jest */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
@@ -12,9 +14,9 @@ import jwt from 'jsonwebtoken.js';
 import { v4 as uuidv4 } from 'uuid.js';
 import Redis from 'ioredis-mock.js';
 
-import { createDealFlowWebSocket, getDealFlowWebSocket } from '../../websocket/dealFlowUpdates.js.js';
-import Deal from '../../models/Deal.js.js';
-import SecurityLog from '../../models/securityLogModel.js.js';
+import { createDealFlowWebSocket, getDealFlowWebSocket } from '../../websocket/dealFlowUpdates.js';
+import Deal from '../../models/Deal.js';
+import SecurityLog from '../../models/securityLogModel.js';
 
 // Mock dependencies
 jest.mock('../../models/Deal.js');

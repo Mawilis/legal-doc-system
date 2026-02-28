@@ -5,7 +5,7 @@
  * Compliance: LPC RULE 21.1 · FICA §28 · SARB GN6
  */
 
-import crypto from 'node:crypto.js';
+import crypto from 'node:crypto';
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from 'uuid.js';
 import { DateTime } from 'luxon.js';

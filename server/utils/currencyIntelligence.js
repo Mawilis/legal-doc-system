@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * 🔷💰 QUANTUM CURRENCY INTELLIGENCE ENGINE: FORGING AFRICA'S FINANCIAL SPHERE 💰🔷
@@ -777,7 +779,7 @@ async function selfTest() {
 // =============================================================================
 // EXPORT FUNCTIONS
 // =============================================================================
-module.exports = {
+export default {
   // Core Functions
   getDominantCurrency,
   fetchExchangeRates,

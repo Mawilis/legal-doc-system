@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ██████╗  ██████╗ ██████╗ ██╗ █████╗
  * ██╔══██╗██╔═══██╗██╔══██╗██║██╔══██╗
@@ -1366,5 +1368,5 @@ function assessBreachSeverity(breachData) {
 // ============================================================================
 // QUANTUM INVOCATION
 // ============================================================================
-module.exports = router;
+export default router;
 // Wilsy Touching Lives Eternally.

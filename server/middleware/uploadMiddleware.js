@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/uploadMiddleware.js
  * STATUS: PRODUCTION-READY | FORENSIC DOCUMENT INTEGRITY GRADE

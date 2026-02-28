@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/tenantRoutes.js
  * PATH: server/routes/tenantRoutes.js
@@ -212,7 +214,7 @@ router.patch(
 /* ---------------------------------------------------------------------------
    SOVEREIGN EXPORT
    --------------------------------------------------------------------------- */
-module.exports = router;
+export default router;
 
 /*
  * ARCHITECTURAL FINALITY:

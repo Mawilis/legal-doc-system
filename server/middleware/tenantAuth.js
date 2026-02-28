@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ⚛️ QUANTUM TENANT AUTHENTICATION & ISOLATION MIDDLEWARE v1.0 - FIXED EDITION
  * File: /server/middleware/tenantAuth.js
@@ -1105,7 +1107,7 @@ exports.tenantRateLimit = (options = {}) => {
 // EXPORT ALL MIDDLEWARE FUNCTIONS
 // ============================================================================
 
-module.exports = {
+export default {
   // Tenant Identification
   identifyTenant: exports.identifyTenant,
 

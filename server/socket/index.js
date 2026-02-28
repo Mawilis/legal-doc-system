@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/socket/index.js
  * -----------------------------------------------------------------------------
@@ -13,7 +15,7 @@
 const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');
 
-module.exports = (httpServer) => {
+export default (httpServer) => {
   // 1. CONFIGURATION
   const allowedOrigins = process.env.CLIENT_URL
     ? [process.env.CLIENT_URL]

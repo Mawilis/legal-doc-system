@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ====================================================================================
  * WILSY OS - GENERATIONAL LEGAL DOCUMENT MANAGEMENT PLATFORM
@@ -2224,7 +2226,7 @@ LitigationCase.COURT_STATUS = COURT_INTEGRATION_STATUS;
 LitigationCase.encryptSensitiveData = encryptSensitiveData;
 LitigationCase.decryptSensitiveData = decryptSensitiveData;
 
-module.exports = LitigationCase;
+export default LitigationCase;
 
 // ============================================================================
 // QUANTUM TESTING SUITE - DIVINE VERIFICATION

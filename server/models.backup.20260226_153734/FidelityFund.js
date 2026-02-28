@@ -6,7 +6,7 @@
  */
 
 import mongoose from "mongoose";
-import crypto from 'node:crypto.js';
+import crypto from 'node:crypto';
 
 const { Schema } = mongoose;
 const CERTIFICATE_STATUS = {

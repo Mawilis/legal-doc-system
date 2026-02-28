@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ================================================================================
     COMPLIANCE EXPORT CITADEL - Wilsy OS Legal Data Sovereignty Gateway
@@ -2015,4 +2017,4 @@ router.get('/health', (_req, res) => {
  *
  * Wilsy Touching Lives Eternally. 🔐⚖️📦
  */
-module.exports = router;
+export default router;

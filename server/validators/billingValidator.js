@@ -1,4 +1,7 @@
-import logger from '../utils/logger.js.js';
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 /*
  * ████████████████████████████████████████████████████████████████████████████████
  * ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -1520,5 +1523,5 @@ describe('Quantum Billing Validator Tests', () => {
  */
 
 // QUANTUM INVOCATION: Eternal Legacy Manifestation
-module.exports = new BillingValidator();
+export default new BillingValidator();
 logger.info('Wilsy Touching Lives Eternally - Billing Quantum Validator Activated');

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/returnRoutes.js
  * STATUS: PRODUCTION-READY
@@ -187,7 +189,7 @@ router.patch(
   },
 );
 
-module.exports = router;
+export default router;
 
 // 4. USAGE EXAMPLE
 // -----------------------------------------------------------------------------

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * 🔷🔄 QUANTUM CACHE ORCHESTRATOR: HYPER-DIMENSIONAL VELOCITY ENGINE 🔄🔷
@@ -1397,7 +1399,7 @@ async function runQuantumCacheTests() {
 // EXPORT QUANTUM CACHE MODULE
 // =============================================================================
 
-module.exports = {
+export default {
   QuantumCacheOrchestrator,
   getQuantumCache,
   runQuantumCacheTests,

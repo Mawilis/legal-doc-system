@@ -5,10 +5,10 @@
  * ============================================================================
  */
 
-import fs from 'fs/promises.js';
-import { execSync } from 'child_process.js';
+import fs from 'fs/promises';
+import { execSync } from 'child_process';
 import { dirname, join } from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

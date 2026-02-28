@@ -19,9 +19,9 @@
 
 import mongoose from "mongoose";
 import { createHash } from "crypto";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,12 +32,12 @@ import {
   getForensicReport,
   verifyTenantChain,
   anchorToBlockchain
-} from '../../../services/investor/InvestorService.js.js';
+} from '../../../services/investor/InvestorService.js';
 
 // Import models for mocking
-import SecurityLog from '../../../models/securityLogModel.js.js';
-import Valuation from '../../../models/Valuation.js.js';
-import Company from '../../../models/Company.js.js';
+import SecurityLog from '../../../models/securityLogModel.js';
+import Valuation from '../../../models/Valuation.js';
+import Company from '../../../models/Company.js';
 
 // Mock dependencies
 jest.mock('../../../models/securityLogModel.js');
@@ -46,8 +46,9 @@ jest.mock('../../../models/Company.js');
 jest.mock('../../../utils/logger.js');
 jest.mock('../../../utils/auditLogger.js');
 
-import logger from '../../../utils/logger.js.js';
-import auditLogger from '../../../utils/auditLogger.js.js';
+import loggerRaw from '../../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import auditLogger from '../../../utils/auditLogger.js';
 
 // ============================================================================
 // TEST CONSTANTS

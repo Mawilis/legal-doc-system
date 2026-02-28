@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ PATENT PORTFOLIO ROADMAP - INVESTOR-GRADE MODULE             ║
   ║ [90% protection coverage | $100M defensive value | 85% margins]║
@@ -18,7 +20,8 @@
 // }
 
 const auditLogger = require('../../utils/auditLogger');
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 class PatentPortfolioRoadmap {
   constructor() {
@@ -154,4 +157,4 @@ class PatentPortfolioRoadmap {
   }
 }
 
-module.exports = PatentPortfolioRoadmap;
+export default PatentPortfolioRoadmap;

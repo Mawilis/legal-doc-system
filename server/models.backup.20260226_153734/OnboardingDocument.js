@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ONBOARDING DOCUMENT MODEL - INVESTOR-GRADE ● FORENSIC ● PRODUCTION          ║
   ║ FICA Compliant | POPIA Compliant | Chain of Custody | Forensic Tracking    ║
@@ -1010,4 +1012,4 @@ onboardingDocumentSchema.pre(/^find/, function (next) {
 // =================================================================================================================
 // EXPORT
 // =================================================================================================================
-module.exports = mongoose.model('OnboardingDocument', onboardingDocumentSchema);
+export default mongoose.model('OnboardingDocument', onboardingDocumentSchema);

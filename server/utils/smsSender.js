@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/utils/smsSender.js
  * STATUS: PRODUCTION-READY | RAPID DISPATCH GRADE
@@ -9,7 +11,8 @@
  */
 
 const twilio = require('twilio');
-const logger = require('./logger');
+const loggerRaw = require('./logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // --- 1. CONFIGURATION & INITIALIZATION ---
 const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER } = process.env;
@@ -74,4 +77,4 @@ const sendSMS = async (to, body) => {
   }
 };
 
-module.exports = { sendSMS };
+export default { sendSMS };

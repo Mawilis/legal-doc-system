@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/AIUsageModel.js
  * STATUS: PRODUCTION-READY (WILSY OS V2.0)
@@ -1733,7 +1735,7 @@ class AIUsageModel {
 const AIUsage = mongoose.model('AIUsage', AIUsageSchema);
 
 // Export both the Model and the Treasurer Class
-module.exports = {
+export default {
   AIUsage, // Mongoose Model for database operations
   AIUsageModel, // Treasurer Class for revenue intelligence
 };

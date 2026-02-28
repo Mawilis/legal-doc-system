@@ -8,7 +8,8 @@
 
 import mongoose from "mongoose";
 import crypto from "crypto";
-import logger from '../utils/logger.js';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import cryptoUtils from '../utils/cryptoUtils.js';
 
 // ============================================================================

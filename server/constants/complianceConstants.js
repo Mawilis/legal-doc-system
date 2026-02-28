@@ -2028,7 +2028,7 @@ function getJurisdictionConfig(jurisdictionCode = 'ZA') {
 // EXPORT ALL CONSTANTS AND UTILITY FUNCTIONS
 // ============================================================================
 
-module.exports = {
+export default {
   // Quantum Security Constants
   ENCRYPTION_STANDARDS,
   API_SECURITY_CONSTANTS,

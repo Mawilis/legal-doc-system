@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 // ============================================================================
 // QUANTUM SESSION NEXUS: IMMUTABLE AUTHENTICATION LEDGER v2.0
 // ============================================================================
@@ -2367,6 +2369,6 @@ if (process.env.NODE_ENV === 'test') {
 // Create and export the Enhanced Quantum Session Model
 const Session = mongoose.model('Session', SessionSchema);
 
-module.exports = Session;
+export default Session;
 
 // Wilsy Touching Lives Eternally

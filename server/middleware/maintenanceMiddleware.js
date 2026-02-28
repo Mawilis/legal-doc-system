@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/maintenanceMiddleware.js
  * STATUS: PRODUCTION-READY | EPITOME | MAINTENANCE GUARD
@@ -25,7 +27,8 @@
 
 const { v4: uuidv4 } = require('uuid');
 const SystemConfig = require('../models/systemConfigModel');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 let ipaddr;
 try {
@@ -123,7 +126,7 @@ function invalidateConfigCache() {
  *  - failClosed: boolean - if true, middleware will block on errors (default false -> fail open)
  *  - metricsClient: optional object with .increment(name) for metrics
  */
-module.exports = function maintenanceMiddleware(options = {}) {
+export default function maintenanceMiddleware(options = {}) {
   const {
     allowPaths = ['/health', '/api/public/status'],
     bypassHeader = 'x-wilsy-bypass-maintenance',

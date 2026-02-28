@@ -9,7 +9,8 @@
  * CREATED: 2026-02-25
  */
 
-import logger from '../../utils/logger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 
 /**
  * Generate investor presentation

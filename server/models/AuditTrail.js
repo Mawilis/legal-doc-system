@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/bin/bash
 /* eslint-disable no-console, max-len */
 /*

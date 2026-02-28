@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM SENTINEL: COMPLIANCE DASHBOARD SERVICE - SECURITY ENHANCED EDITION
@@ -1574,7 +1576,7 @@ if (process.env.NODE_ENV === 'test') {
  *    - Validate record-keeping requirements
  */
 
-module.exports = {
+export default {
   ComplianceDashboardService,
   getComplianceDashboardService,
   DASHBOARD_CONFIG,

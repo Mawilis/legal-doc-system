@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/ipMetadata.js
  * STATUS: PRODUCTION-READY | FORENSIC INTELLIGENCE GRADE
@@ -88,4 +90,4 @@ const ipMetadata = (req, res, next) => {
   }
 };
 
-module.exports = { ipMetadata };
+export default { ipMetadata };

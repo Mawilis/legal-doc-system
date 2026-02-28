@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ███████ ██ ██       ██████  ██ ███████ ██    ██     ██████  ███████ ██████  ██████   ██████  ██████  ███████
  * ██      ██ ██      ██    ██ ██ ██       ██  ██      ██   ██ ██      ██   ██ ██   ██ ██    ██ ██   ██ ██
@@ -1878,7 +1880,7 @@ complianceRecordSchema.virtual('regulatoryStatus').get(function () {
 
 const ComplianceRecord = mongoose.model('ComplianceRecord', complianceRecordSchema);
 
-module.exports = ComplianceRecord;
+export default ComplianceRecord;
 
 // ==============================================================================================================
 // INVESTMENT QUANTUM: THE TRILLION-DOLLAR COMPLIANCE EMPIRE

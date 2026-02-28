@@ -15,8 +15,9 @@
  */
 
 import jwt from 'jsonwebtoken.js';
-import { redisClient } from '../utils/redisClient.js.js';
-import logger from '../utils/logger.js.js';
+import { redisClient } from '../utils/redisClient.js';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import crypto from "crypto";
 
 const SUPER_ADMIN_EMAILS = [

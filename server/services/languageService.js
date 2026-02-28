@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 // ============================================================================
 // QUANTUM ORACLE OF LINGUISTIC JUSTICE: WILSY OS LANGUAGE SERVICE
 // ============================================================================
@@ -813,6 +815,6 @@ class LanguageService {
 // accuracy—propelling Wilsy to unicorn status in 8 quarters.
 // ============================================================================
 
-module.exports = new LanguageService();
+export default new LanguageService();
 
 // Wilsy Touching Lives Eternally

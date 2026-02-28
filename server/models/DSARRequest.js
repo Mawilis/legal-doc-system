@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * @file /Users/wilsonkhanyezi/legal-doc-system/server/models/DSARRequest.js
  * @module DSARRequest
@@ -970,7 +972,7 @@ DSARRequestSchema.query.withSLAStatus = function (slaStatus) {
 };
 
 // ==================== EXPORT ====================
-module.exports = mongoose.model('DSARRequest', DSARRequestSchema);
+export default mongoose.model('DSARRequest', DSARRequestSchema);
 
 // ==================== MIGRATION NOTES ====================
 /*

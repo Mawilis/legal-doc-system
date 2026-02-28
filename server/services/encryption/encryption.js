@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                                                                                      ║
@@ -1174,7 +1176,7 @@ class EncryptionHealthMonitor {
 // SECTION 8: MODULE EXPORT
 // =============================================================================
 
-module.exports = {
+export default {
   // Configuration
   ENCRYPTION_CONFIG,
 

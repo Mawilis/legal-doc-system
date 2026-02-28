@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM SENTINEL: REGULATION MODEL - JURISPRUDENCE DNA ENCAPSULATION
@@ -1864,7 +1866,7 @@ if (process.env.NODE_ENV === 'test') {
  *    - Verify refusal grounds documentation
  */
 
-module.exports = Regulation;
+export default Regulation;
 
 // ============================================================================
 // QUANTUM FOOTER: Eternal Jurisprudence Legacy

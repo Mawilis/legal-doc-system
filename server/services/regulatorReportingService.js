@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                                                              ║
@@ -3400,7 +3402,7 @@ async function shutdownQuantumReportingService() {
 // ============================================================================
 // EXPORT MODULE
 // ============================================================================
-module.exports = {
+export default {
   QuantumRegulatorReportingService,
   QuantumRegulatorReportGenerator,
   QuantumRegulatorSubmissionService,

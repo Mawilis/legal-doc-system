@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE COMPLIANCE SERVICE - INVESTOR-GRADE MODULE              ║
   ║ [90% PAIA compliance cost reduction | R5M risk elimination]  ║
@@ -18,7 +20,8 @@
 // }
 
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 class CaseComplianceService {
   constructor() {
@@ -401,4 +404,4 @@ class CaseComplianceService {
   }
 }
 
-module.exports = new CaseComplianceService();
+export default new CaseComplianceService();

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ================================================================================
  * ██████╗ ██╗ ██████╗ ███╗   ███╗███████╗████████╗████████╗██████╗ ██╗ ██████╗
@@ -1704,7 +1706,7 @@ class BiometricService {
 // MODULE EXPORTS
 // ================================================================================
 
-module.exports = {
+export default {
   // Main service
   BiometricService,
 

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ⚡ WILSY AI SOVEREIGNTY CONTROLLER v2026.1.20
  * File: server/controllers/aiController.js
@@ -1638,7 +1640,7 @@ function calculateAICost(capability, metrics) {
 // ============================================================================
 // MODULE EXPORTS
 // ============================================================================
-module.exports = {
+export default {
   // Main AI Controllers
   getSafetyRiskAssessment: exports.getSafetyRiskAssessment,
   analyzeLegalDocument: exports.analyzeLegalDocument,

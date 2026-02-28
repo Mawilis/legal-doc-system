@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * =================================================================================
  * QUANTUM CONSENT ORCHESTRATION NEXUS - IMMORTAL LEGAL SOVEREIGNTY
@@ -2304,7 +2306,7 @@ ConsentManagementService.runQuantumTests = async () => {
 // EXPORT AND INITIALIZATION
 // =================================================================================
 
-module.exports = {
+export default {
   ConsentManagementService,
   CONSENT_TYPES,
   JURISDICTIONS,

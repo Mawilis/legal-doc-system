@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*! =======================================================================================
  *  ╔═══════════════════════════════════════════════════════════════════════╗
  *  ║                                                                       ║
@@ -1456,4 +1458,4 @@ const User = mongoose.model('User', UserSchema);
  * across Africa's legal landscape.
  */
 
-module.exports = User;
+export default User;

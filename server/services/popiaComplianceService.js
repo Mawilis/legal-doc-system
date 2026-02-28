@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 // ============================================================================
@@ -74,7 +76,7 @@ const { Sequelize, Op, Transaction } = require('sequelize');
 const Redis = require('ioredis');
 
 // QUANTUM QUEUING: BullMQ for distributed compliance processing
-const { Queue, Worker, QueueScheduler } = require('bullmq');
+const { Queue, Worker } = require('bullmq');
 
 // QUANTUM AI: TensorFlow.js for privacy impact assessment
 const tf = require('@tensorflow/tfjs-node');
@@ -2986,7 +2988,7 @@ class PopiaComplianceService {
 // QUANTUM EXPORT NEXUS
 // ============================================================================
 
-module.exports = PopiaComplianceService;
+export default PopiaComplianceService;
 module.exports.QuantumPOPIAError = QuantumPOPIAError;
 module.exports.ConsentValidationError = ConsentValidationError;
 module.exports.DSARProcessingError = DSARProcessingError;

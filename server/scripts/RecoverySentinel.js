@@ -25,7 +25,7 @@
  * • Prometheus metrics export for investor dashboards
  */
 
-import { exec } from 'child_process.js';
+import { exec } from 'child_process';
 import { createHash } from "crypto";
 import { EventEmitter } from "events";
 import Redis from 'ioredis.js';
@@ -33,10 +33,11 @@ import mongoose from "mongoose";
 import { promisify } from "util";
 
 // Internal imports
-import SecurityOrchestrator from 'wilsy-os-server/services/security/SecurityOrchestrator.js.js';
-import { AuditLogger } from 'wilsy-os-server/utils/auditLogger.js.js';
-import logger from 'wilsy-os-server/utils/logger.js.js';
-import { redisClient } from 'wilsy-os-server/utils/redisClient.js.js';
+import SecurityOrchestrator from 'wilsy-os-server/services/security/SecurityOrchestrator.js';
+import { AuditLogger } from 'wilsy-os-server/utils/auditLogger.js';
+import loggerRaw from 'wilsy-os-server/utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import { redisClient } from 'wilsy-os-server/utils/redisClient.js';
 
 const execAsync = promisify(exec);
 

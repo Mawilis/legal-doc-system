@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions */
@@ -211,7 +213,7 @@ function compliantFunction(param1, param2) {
   }
 }
 
-module.exports = { compliantFunction };
+export default { compliantFunction };
 `;
 
       fs.writeFileSync(testFile, compliantCode);

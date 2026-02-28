@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-02-28T06:19:59.810Z",
+  "stats": {
+    "filesScanned": 957,
+    "filesModified": 28,
+    "importsFixed": 30,
+    "errors": 0,
+    "brokenSymlinks": 1
+  },
+  "fixedFiles": [
+    "__tests__/controllers/billingController.test.js",
+    "__tests__/middleware/requestValidator.test.js",
+    "__tests__/middleware/tenantGuard.test.js",
+    "__tests__/monitoring/prometheusExporter.test.js",
+    "__tests__/queues/embeddingQueue.test.js",
+    "__tests__/real-world.test.js",
+    "__tests__/routes/analyticsRoutes.test.js",
+    "__tests__/routes/api.test.js",
+    "__tests__/routes/internationalRoutes.test.js",
+    "__tests__/scripts/recovery-sentinel.test.js",
+    "__tests__/services/alerting/AlertService.test.js",
+    "__tests__/services/billing/BillingReportService.test.js",
+    "__tests__/services/investor/InvestorService.test.js",
+    "__tests__/services/investor/dashboardService.test.js",
+    "__tests__/utils/pdfGenerator.test.js",
+    "cron/monthlyDispatchCron.js",
+    "diagnose-errors.js",
+    "scripts/quantum-import-fixer-v2.js",
+    "scripts/quantum-import-fixer-v3.js",
+    "scripts/quantum-import-fixer.js",
+    "scripts/recovery-sentinel.js",
+    "services/system/HealthService.js",
+    "shutdown-forensic-engine.js",
+    "start-forensic-engine.js",
+    "status-forensic-engine.js",
+    "utils/auditLogger.js",
+    "utils/excelGenerator.js",
+    "utils/pdfGenerator.js"
+  ],
+  "system": {
+    "nodeVersion": "v20.20.0",
+    "platform": "darwin"
+  },
+  "hash": "2cf42fe9c4c82b08b548cefd87855dc84dee17c973efbc5a963a18a066a0ba70"
+}

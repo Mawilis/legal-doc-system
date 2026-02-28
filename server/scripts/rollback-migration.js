@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*= ==========================================================================
   WILSY OS - SUPREME ARCHITECT GENERATED FILE
   ===========================================================================
@@ -368,4 +370,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = MigrationRollbackManager;
+export default MigrationRollbackManager;

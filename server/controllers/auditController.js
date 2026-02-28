@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/auditController.js
@@ -140,7 +142,8 @@ const RedisStore = require('rate-limit-redis');
 const ValidationAudit = require('../models/ValidationAudit.js');
 
 // QUANTUM UTILITIES: Logging and cryptography
-const logger = require('../utils/logger.js');
+const loggerRaw = require('../utils/logger.js');
+const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../utils/auditLogger.js');
 const cryptoUtils = require('../utils/cryptoUtils.js');
 const quantumLogger = require('../utils/quantumLogger.js');
@@ -2017,7 +2020,7 @@ const mapLegacyAction = (legacyAction) => {
    QUANTUM EXPORTS
    --------------------------------------------------------------------------- */
 
-module.exports = {
+export default {
   router,
   logValidation,
   getAuditTrail,

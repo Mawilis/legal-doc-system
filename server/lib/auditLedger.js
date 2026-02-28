@@ -11,7 +11,7 @@ async function readAuditTrail(params) {
   return { entries: [], total: 0 };
 }
 
-module.exports = {
+export default {
   appendAuditEntry,
   readAuditTrail,
 };

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 // ============================================================================
@@ -2068,7 +2070,7 @@ class QuantumBillingCalculations {
 // QUANTUM EXPORT NEXUS
 // ============================================================================
 
-module.exports = QuantumBillingCalculations;
+export default QuantumBillingCalculations;
 module.exports.QuantumBillingError = QuantumBillingError;
 module.exports.VATCalculationError = VATCalculationError;
 module.exports.TrustAccountViolation = TrustAccountViolation;

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ EVIDENCE GENERATOR - INVESTOR-GRADE MODULE                                  ║
   ║ SHA256 forensic evidence | Deterministic audit trails                       ║
@@ -111,4 +113,4 @@ class EvidenceGenerator {
   }
 }
 
-module.exports = new EvidenceGenerator();
+export default new EvidenceGenerator();

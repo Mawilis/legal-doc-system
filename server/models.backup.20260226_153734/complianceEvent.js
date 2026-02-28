@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM NEXUS: IMMUTABLE COMPLIANCE EVENT LEDGER
@@ -844,7 +846,7 @@ const ComplianceEvent = mongoose.model('ComplianceEvent', complianceEventSchema)
 // QUANTUM EXPORT: Celestial Artifact Revelation
 // ============================================================================
 
-module.exports = {
+export default {
   ComplianceEvent,
   complianceEventJoiSchema,
   COMPLIANCE_CATEGORIES,

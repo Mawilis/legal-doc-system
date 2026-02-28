@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/scripts/genesis.js
  * STATUS: EPITOME | DATA SEEDING | V2 (FIXED SLUGS)

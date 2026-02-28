@@ -16,7 +16,8 @@
  * • Validates tenant ID format and access permissions
  */
 
-import logger from '../utils/logger.js';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 
 /**
  * Tenant Context Middleware

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * =============================================================================
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/SecurityEvent.js
@@ -659,7 +661,7 @@ securityEventSchema.methods.calculateCVSS = function () {
  * Quantum Singleton: Prevent OverwriteModelError in hot-reload environments
  * Ensures single instance across the quantum architecture
  */
-module.exports = mongoose.models.SecurityEvent || mongoose.model('SecurityEvent', securityEventSchema);
+export default mongoose.models.SecurityEvent || mongoose.model('SecurityEvent', securityEventSchema);
 
 // =============================================================================
 // QUANTUM VALUATION FOOTER

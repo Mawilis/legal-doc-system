@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-env jest */
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ ENCRYPTION SERVICE TEST V6 — FORENSIC INTEGRITY ● POPIA §19 ● COURT-ADMISSIBLE                                 ║

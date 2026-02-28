@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * =================================================================================
  * ⚖️ QUANTUM COMPLIANCE SENTINEL NEXUS - IMMUTABLE LEGAL VALIDATION FORGER ⚖️
@@ -1407,7 +1409,7 @@ function quantumComplianceHealthCheck() {
 // QUANTUM EXPORTS & INITIALIZATION
 // ================================================================================
 
-module.exports = {
+export default {
   QuantumComplianceSentinel,
   quantumComplianceMiddleware,
   quantumComplianceHealthCheck,

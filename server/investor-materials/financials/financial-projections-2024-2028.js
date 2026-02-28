@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ FINANCIAL PROJECTIONS 2024-2028 - INVESTOR-GRADE MODULE      ║
   ║ [90% accuracy | $1B revenue projection | 85% margins]        ║
@@ -19,7 +21,8 @@
 
 const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 class FinancialProjections {
   constructor() {
@@ -166,4 +169,4 @@ class FinancialProjections {
   }
 }
 
-module.exports = FinancialProjections;
+export default FinancialProjections;

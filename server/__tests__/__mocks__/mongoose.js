@@ -52,4 +52,4 @@ mongoose.Types = {
   },
 };
 
-module.exports = mongoose;
+export default mongoose;

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * /Users/wilsonkhanyezi/legal-doc-system/server/validators/passwordValidator.js
  *
@@ -77,7 +79,7 @@ const tokenRules = (path = 'params.resettoken') => {
   return [rule];
 };
 
-module.exports = {
+export default {
   emailRules,
   passwordRules,
   tokenRules,

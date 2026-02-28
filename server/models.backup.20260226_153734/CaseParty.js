@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ CASE PARTY MODEL - INVESTOR-GRADE MODULE                       ║
@@ -63,7 +65,8 @@
 
 const mongoose = require('mongoose');
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const cryptoUtils = require('../utils/cryptoUtils');
 const quantumLogger = require('../utils/quantumLogger');
 const biometricUtils = require('../utils/biometricUtils');
@@ -1319,7 +1322,7 @@ const RETENTION_POLICIES = {
   PERMANENT_RECORD: 'permanent_record',
 };
 
-module.exports = CaseParty;
+export default CaseParty;
 module.exports.PARTY_TYPES = PARTY_TYPES;
 module.exports.REPRESENTATION_ROLES = REPRESENTATION_ROLES;
 module.exports.PARTY_STATUSES = PARTY_STATUSES;

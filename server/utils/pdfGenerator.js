@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ PDF GENERATOR - INVESTOR-GRADE DOCUMENT ENGINE                                        ║
@@ -51,8 +53,8 @@
 import { createHash, randomBytes } from "crypto";
 import { Readable } from "stream";
 import { promisify } from "util";
-import { pipeline } from 'stream/promises.js';
-import fs from 'fs/promises.js';
+import { pipeline } from 'stream/promises';
+import fs from 'fs/promises';
 import path from "path";
 
 // Internal imports with defensive error handling

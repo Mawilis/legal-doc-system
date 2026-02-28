@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT VAULT SERVICE - INVESTOR-GRADE MODULE                ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
@@ -31,7 +33,8 @@ graph TD
 const Document = require('../../models/Document');
 const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // POPIA Redaction Fields (from utils/)
 const { redactSensitive } = require('../../utils/popiaUtils');
@@ -407,4 +410,4 @@ class DocumentVaultService {
 }
 
 // Export singleton instance
-module.exports = new DocumentVaultService();
+export default new DocumentVaultService();

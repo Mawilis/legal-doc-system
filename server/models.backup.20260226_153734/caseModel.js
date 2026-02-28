@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  QUANTUM CASE MODEL NEXUS - WILSY OS LEGAL SOVEREIGNTY ENGINE                                                      ║
@@ -2009,4 +2011,4 @@ const QuantumCase = mongoose.models.QuantumCase || mongoose.model('QuantumCase',
  * WILSY TOUCHING LIVES ETERNALLY
  */
 
-module.exports = QuantumCase;
+export default QuantumCase;

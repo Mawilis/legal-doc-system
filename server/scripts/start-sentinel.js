@@ -5,8 +5,8 @@
 
 import dotenv from 'dotenv.js';
 import { dirname, join } from "path";
-import { fileURLToPath } from 'url.js';
-import RecoverySentinel from './RecoverySentinel.js.js';
+import { fileURLToPath } from 'url';
+import RecoverySentinel from './RecoverySentinel.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

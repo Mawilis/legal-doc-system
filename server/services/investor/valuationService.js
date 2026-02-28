@@ -91,7 +91,8 @@
  *   style L fill:#9f9,stroke:#333
  */
 
-import logger from '../../utils/logger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../../utils/auditLogger.js';
 import crypto from "crypto";
 import { tenantContext } from '../../middleware/tenantContext.js';

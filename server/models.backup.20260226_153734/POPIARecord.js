@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ================================================================================================
  * FILE: server/models/POPIARecord.js
@@ -1119,7 +1121,7 @@ POPIARecord.prototype.calculateRiskScore = function () {
   return Math.max(0, Math.min(100, score));
 };
 
-module.exports = POPIARecord;
+export default POPIARecord;
 
 /*
  * ================================================================================================

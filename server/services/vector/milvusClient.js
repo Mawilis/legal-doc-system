@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * WILSY OS: MILVUS CLIENT - QUANTUM VECTOR DATABASE CONNECTOR
@@ -1101,7 +1103,7 @@ class MilvusClientFactory {
 // EXPORTS - Public Interface
 // =============================================================================
 
-module.exports = {
+export default {
   MilvusClientWrapper,
   MilvusClientFactory,
   MILVUS_CONSTANTS,

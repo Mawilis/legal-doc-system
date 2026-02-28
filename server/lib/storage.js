@@ -5,10 +5,11 @@
  * Compliance: POPIA §19 · ECT Act §13 · Data Residency (ZA)
  */
 
-import crypto from 'node:crypto.js';
-import fs from 'node:fs.js';
-import path from 'node:path.js';
-import logger from '../utils/logger.js.js';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 
 // If you use AWS SDK or MinIO, import them here
 // import { S3Client } from '@aws-sdk/client-s3.js';

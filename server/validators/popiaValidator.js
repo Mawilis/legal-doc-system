@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ===========================================================================================================
  *  ██████╗  ██████╗ ██████╗ ██╗ █████╗     ██╗   ██╗ █████╗ ██╗     ███████╗ █████╗ ██████╗ ███████╗
@@ -3110,5 +3112,5 @@ class QuantumPOPIAValidator {
 // ===========================================================================================================
 // EXPORT AND INITIALIZATION
 // ===========================================================================================================
-module.exports = new QuantumPOPIAValidator();
+export default new QuantumPOPIAValidator();
 logger.info('Wilsy Touching Lives Eternally - Quantum POPIA Validator Activated');

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ PDF GENERATOR TESTS - INVESTOR DUE DILIGENCE SUITE                                    ║
@@ -15,7 +17,7 @@
  * • Economic metric: Each test run prints verified annual savings per client
  */
 
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
 import { createHash } from "crypto";
 import createPDFGenerator, { 
@@ -23,7 +25,7 @@ import createPDFGenerator, {
   RETENTION_POLICIES_CONST,
   REDACT_FIELDS_CONST,
   DEFAULT_CONFIG 
-} from '../utils/pdfGenerator.js.js';
+} from '../utils/pdfGenerator.js';
 
 // Mock dependencies
 jest.mock('../utils/auditLogger', () => ({

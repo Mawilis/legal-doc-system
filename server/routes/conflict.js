@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -931,4 +933,4 @@ router.use((error, req, res, next) => {
 });
 
 // ==================== EXPORT ====================
-module.exports = router;
+export default router;

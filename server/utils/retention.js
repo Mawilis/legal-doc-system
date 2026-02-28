@@ -89,4 +89,4 @@ class RetentionManager {
   }
 }
 
-module.exports = { RetentionManager };
+export default { RetentionManager };

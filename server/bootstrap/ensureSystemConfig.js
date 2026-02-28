@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/bootstrap/ensureSystemConfig.js
  * STATUS: PRODUCTION-READY | EPITOME | SYSTEM BOOTSTRAP
@@ -25,7 +27,8 @@
 const { v4: uuidv4 } = require('uuid');
 const AuditEvent = require('../models/auditEventModel');
 const SystemConfig = require('../models/systemConfigModel');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 /*
  * Default options
@@ -167,7 +170,7 @@ function invalidateSystemConfigCache() {
   }
 }
 
-module.exports = {
+export default {
   ensureSystemConfig,
   invalidateSystemConfigCache,
 };

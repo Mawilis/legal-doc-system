@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ CASE ANALYSIS SERVICE TESTS - INVESTOR DUE DILIGENCE          ║

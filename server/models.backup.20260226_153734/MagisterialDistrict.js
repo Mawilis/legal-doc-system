@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * =============================================================================
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/MagisterialDistrict.js
@@ -978,7 +980,7 @@ magisterialDistrictSchema.methods.generateJurisdictionalReport = function () {
 // =============================================================================
 // QUANTUM EXPORT - ETERNAL SINGLETON PATTERN
 // =============================================================================
-module.exports = mongoose.models.MagisterialDistrict
+export default mongoose.models.MagisterialDistrict
   || mongoose.model('MagisterialDistrict', magisterialDistrictSchema);
 
 // =============================================================================

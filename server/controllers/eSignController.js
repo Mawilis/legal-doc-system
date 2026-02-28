@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ███████ ███████ ██████  ██ ███    ██  █████  ████████  ██████  ██████  ███████
  * ██      ██      ██   ██ ██ ████   ██ ██   ██    ██    ██    ██ ██   ██ ██
@@ -1797,7 +1799,7 @@ const eSignErrorHandler = (err, req, res, next) => {
 // EXPORT QUANTUM CONTROLLER
 // ==============================================================================================================
 
-module.exports = {
+export default {
   // Core controllers
   initiateSignature,
   signDocument,

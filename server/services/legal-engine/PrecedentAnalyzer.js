@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/services/legal-engine/PrecedentAnalyzer.js
@@ -183,7 +185,8 @@ const Jurisdiction = require('../../models/Jurisdiction');
 const Tenant = require('../../models/Tenant');
 
 // QUANTUM UTILITIES
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../../utils/auditLogger');
 const quantumLogger = require('../../utils/quantumLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
@@ -2741,7 +2744,7 @@ const getMetrics = async () => {
    QUANTUM EXPORTS - Enterprise API
    --------------------------------------------------------------------------- */
 
-module.exports = {
+export default {
   // Core analysis
   analyzePrecedents,
 

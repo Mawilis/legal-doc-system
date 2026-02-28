@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*!
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ ╔═╗┌─┐┌┬┐┬─┐┌─┐┬  ┬┌─┐┌─┐  ╔═╗┌┐┌┌─┐┬ ┬┌─┐┬─┐┌┬┐┌─┐┌┐┌┌─┐┌─┐               │
@@ -892,7 +894,7 @@ flowchart TD
 `;
 
 // Export the class
-module.exports = ContractAnalyzer;
+export default ContractAnalyzer;
 
 // ===================== JEST TESTS =====================
 /* eslint-disable no-undef */

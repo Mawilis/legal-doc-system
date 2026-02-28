@@ -1,4 +1,7 @@
-import logger from '../utils/logger.js';
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 /*
  * File: server/utils/redisClient.js
  * STATUS: PRODUCTION-READY | RESILIENT CACHE GRADE

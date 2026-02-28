@@ -90,4 +90,4 @@ class LegalHoldManager {
   }
 }
 
-module.exports = { LegalHoldManager };
+export default { LegalHoldManager };

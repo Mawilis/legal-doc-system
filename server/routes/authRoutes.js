@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE: server/routes/authRoutes.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/authRoutes.js
@@ -100,7 +102,8 @@ const {
   validatePasswordReset, // Password reset validation
   validateMFARequest, // MFA request validation
 } = require('../middleware/validation');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // =============================================================================
 // GENERATIONAL CONFIGURATION - 10-GENERATION PARAMETERS
@@ -558,7 +561,7 @@ router.use('*', (req, res) => {
 // =============================================================================
 // MODULE EXPORT - SOVEREIGN GATEWAY
 // =============================================================================
-module.exports = router;
+export default router;
 
 /*
  * -----------------------------------------------------------------------------

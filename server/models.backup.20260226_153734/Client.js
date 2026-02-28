@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ CLIENT MODEL - INVESTOR-GRADE MODULE                                        ║
   ║ FICA compliant | POPIA compliant | Forensic tracking                        ║
@@ -9,7 +11,8 @@
 
 const crypto = require('crypto');
 const mongoose = require('mongoose');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const AuditLedger = require('./AuditLedger');
 
 // Environment Validation
@@ -766,4 +769,4 @@ ClientSchema.statics.findExpiringFICAClients = async function (tenantId, daysThr
 // Create the model
 const Client = mongoose.model('Client', ClientSchema);
 
-module.exports = Client;
+export default Client;

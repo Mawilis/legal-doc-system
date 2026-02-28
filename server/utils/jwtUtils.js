@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ JWT UTILS - INVESTOR-GRADE JWT UTILITIES (TEST VERSION)                     ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -30,4 +32,4 @@ const jwtUtils = {
   },
 };
 
-module.exports = jwtUtils;
+export default jwtUtils;

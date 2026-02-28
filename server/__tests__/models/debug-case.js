@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 const Case = require('../../models/Case');
 
 console.log('Case type:', typeof Case);

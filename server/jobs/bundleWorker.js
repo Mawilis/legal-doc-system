@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/jobs/bundleWorker.js
  * STATUS: PRODUCTION-READY | EPITOME | FORENSIC STITCHING
@@ -39,7 +41,8 @@ const Document = require('../models/Document');
 const AuditEvent = require('../models/auditEventModel');
 const JobModel = require('../models/jobModel');
 const JobService = require('../services/jobService');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // Optional services; provide implementations in production
 let StorageService = null;
@@ -392,7 +395,7 @@ function registerBullMQWorker({ queueName = 'bundleQueue', connection, concurren
    Exports
    ------------------------- */
 
-module.exports = {
+export default {
   generateCourtBundle,
   bundleProcessor,
   registerWithJobService,

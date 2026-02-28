@@ -26,9 +26,10 @@
  */
 
 import crypto from "crypto";
-import { AuditLogger } from '../utils/auditLogger.js.js';
-import logger from '../utils/logger.js.js';
-import { redisClient } from '../utils/redisClient.js.js';
+import { AuditLogger } from '../utils/auditLogger.js';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import { redisClient } from '../utils/redisClient.js';
 
 // ============================================================================
 // CONSTANTS - KILL-SWITCH CONFIGURATION

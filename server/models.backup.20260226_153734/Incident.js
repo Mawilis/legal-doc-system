@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { DataTypes } from 'sequelize.js';
-import { sequelize } from '../config/database.js.js';
+import { sequelize } from '../config/database.js';
 
 const Incident = sequelize.define(
   'Incident',

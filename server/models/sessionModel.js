@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
  *  🌀 QUANTUM SESSION NEXUS V5.0: IMMORTAL AUTHENTICATION CITADEL FOR WILSY OS 🌀
  *  Path: /server/models/sessionModel.js
@@ -1649,4 +1651,4 @@ SESSION_CLEANUP_BATCH_SIZE=1000        # Batch size for expired session cleanup
 
 // 🌍 WILSY TOUCHING LIVES ETERNALLY
 
-module.exports = mongoose.model('Session', sessionSchema);
+export default mongoose.model('Session', sessionSchema);

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * WILSY OS: QUANTUM GPU MANAGER - PARALLEL PROCESSING ORCHESTRATOR
@@ -1169,7 +1171,7 @@ class GPUManagerFactory {
 // EXPORTS - Public Interface
 // =============================================================================
 
-module.exports = {
+export default {
   GPUManager,
   GPUManagerFactory,
   GPUDevice,

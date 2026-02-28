@@ -41,7 +41,8 @@
  */
 
 import crypto from "crypto";
-import logger from './logger.js';
+import loggerRaw from './logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import auditLogger from './auditLogger.js';
 
 /**

@@ -1,5 +1,5 @@
 // Enterprise-grade Jest configuration for Wilsy OS
-module.exports = {
+export default {
   testEnvironment: 'node',
   setupFilesAfterEnv: [
     '<rootDir>/tests/setup/global-setup.js',

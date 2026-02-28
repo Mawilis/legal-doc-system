@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ REQUEST ID MIDDLEWARE - INVESTOR-GRADE                                      ║
   ║ 99.99% traceability | Distributed tracing | Forensic audit support         ║
@@ -11,7 +13,8 @@
  */
 
 const { v4: uuidv4, validate: uuidValidate } = require('uuid');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../utils/metrics');
 
 /*
@@ -23,7 +26,7 @@ const metrics = require('../utils/metrics');
  * - W3C Trace-Context
  * - Custom tenant request IDs
  */
-module.exports = (req, res, next) => {
+export default (req, res, next) => {
   const startTime = Date.now();
 
   try {

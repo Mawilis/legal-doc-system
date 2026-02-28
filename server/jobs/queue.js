@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/jobs/queue.js
  * STATUS: PRODUCTION-READY | INDUSTRIAL EVENT BUS
@@ -91,7 +93,7 @@ const bundleQueue = createQueue('DOC_ARCHITECT');
  */
 const sheriffQueue = createQueue('LOG_TRACKER');
 
-module.exports = {
+export default {
   notificationQueue,
   invoiceQueue,
   bundleQueue,

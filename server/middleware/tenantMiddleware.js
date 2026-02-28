@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ======================================================================
  * QUANTUM TENANT ISOLATION MIDDLEWARE - ETERNAL MULTI-TENANT BOUNDARY
@@ -1045,7 +1047,7 @@ const logCrossTenantEvent = (event, data) => {
  *
  * Export all middleware functions for use in routes
  */
-module.exports = {
+export default {
   // 🎯  Tenant Access Validation
   validateTenantAccess,
 

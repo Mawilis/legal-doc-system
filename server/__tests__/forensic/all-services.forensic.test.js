@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-env jest */
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ ALL SERVICES FORENSIC TEST SUITE V6 — INVESTOR-GRADE ● INTEGRATED ● COURT-ADMISSIBLE                           ║

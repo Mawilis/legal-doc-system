@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * TEST ADAPTER - Loads the model properly before running tests
  * Use this to wrap your existing test

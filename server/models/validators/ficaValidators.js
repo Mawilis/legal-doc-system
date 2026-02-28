@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ FICA VALIDATORS - INVESTOR-GRADE ● FORENSIC ● PRODUCTION                    ║
   ║ Financial Intelligence Centre Act 38 of 2001 Compliant                      ║

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ███████╗ █████╗ ██████╗ ███████╗    ██████╗ ██████╗ ███╗   ███╈█████╗███╗   ██╗██████╗ ██╗     ███████╗ ║
@@ -1201,7 +1203,7 @@ class SarsComplianceService {
 const sarsComplianceService = new SarsComplianceService();
 
 // Export service instance and utilities
-module.exports = {
+export default {
   sarsComplianceService,
   validateVATNumber,
   SARS_CONFIG,

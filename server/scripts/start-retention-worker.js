@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 const { startRetentionWorker } = require('../workers/retentionAgenda');
 
 async function main() {
@@ -15,4 +17,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = main;
+export default main;

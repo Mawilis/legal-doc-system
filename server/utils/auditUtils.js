@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM AUDIT NEXUS: IMMUTABLE LEGAL CHRONICLE FORGER
@@ -1393,7 +1395,7 @@ console.log(`
 // ============================================================================
 // QUANTUM EXPORTS
 // ============================================================================
-module.exports = {
+export default {
   QuantumAuditLogger,
   getQuantumAuditLogger,
   auditMiddleware,

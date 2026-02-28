@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ====================================================================================
  * WILSY OS - THE DIVINE LEGAL TECHNOLOGY FORTRESS
@@ -854,7 +856,7 @@ const activityLogger = (options = {}) => {
  * EXPORT THE DIVINE CHRONICLE
  * @description Exports the activity logger with utilities for external use
  */
-module.exports = activityLogger;
+export default activityLogger;
 
 // Export utilities for testing and external use
 module.exports.maskSensitiveData = maskSensitiveData;

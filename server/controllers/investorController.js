@@ -36,9 +36,10 @@
  * }
  */
 
-import { getInvestorDashboardData, getForensicReport } from '../services/investor/InvestorService.js.js';
-import logger from '../utils/logger.js.js';
-import auditLogger from '../utils/auditLogger.js.js';
+import { getInvestorDashboardData, getForensicReport } from '../services/investor/InvestorService.js';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import auditLogger from '../utils/auditLogger.js';
 import crypto from "crypto";
 
 // ============================================================================

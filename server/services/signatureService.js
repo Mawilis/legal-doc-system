@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                                      ║
@@ -455,7 +457,7 @@ class SignatureProvider {
   }
 }
 
-module.exports = {
+export default {
   SignatureProvider,
   QuantumCertificateAuthority,
   QUANTUM_CONSTANTS,

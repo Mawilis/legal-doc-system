@@ -35,4 +35,4 @@ async function withRetry(fn, options = {}) {
   throw lastError;
 }
 
-module.exports = { withRetry };
+export default { withRetry };

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE: server/routes/clientRoutes.js
  * PATH: /server/routes/clientRoutes.js
@@ -338,7 +340,7 @@ router.post(
 // QUANTUM EXPORTS
 // ============================================================================
 
-module.exports = router;
+export default router;
 
 // ============================================================================
 // QUANTUM FOOTER: ETERNAL LEGACY

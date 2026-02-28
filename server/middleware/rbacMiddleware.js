@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/rbacMiddleware.js
  * STATUS: PRODUCTION-READY (WILSY OS V2.0)
@@ -2213,7 +2215,7 @@ exports.getRBACHealth = async () => {
 // Everything needed to enforce legal hierarchy and access control
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-module.exports = {
+export default {
   // Configuration
   RBAC_CONFIG,
 

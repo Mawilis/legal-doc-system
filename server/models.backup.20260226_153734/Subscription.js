@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * 🌌💰 SUBSCRIPTION QUANTUM MODEL: RECURRING REVENUE COLOSSUS V25.0 🌌💰
@@ -1597,7 +1599,7 @@ subscriptionSchema.methods.changePlan = function (newPlanName, newAmount, userId
 
 const Subscription = mongoose.model('Subscription', subscriptionSchema);
 
-module.exports = Subscription;
+export default Subscription;
 
 // =============================================================================
 // ENVIRONMENT VARIABLES SETUP GUIDE

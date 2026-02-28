@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT SERVICE ROUTES - BACKEND CONTRACT                                  ║
   ║ [OpenAPI 3.0 | 100% type safety | Parallel frontend/backend dev]           ║
@@ -672,4 +674,4 @@ router.use((error, req, res) => {
   });
 });
 
-module.exports = router;
+export default router;

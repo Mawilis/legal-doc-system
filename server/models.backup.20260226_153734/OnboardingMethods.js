@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ONBOARDING METHODS - LEGAL GRADE ● FORENSIC ● PRODUCTION                    ║
   ║ FICA Compliant | POPIA Compliant | Multi-tenant | Blockchain Ready         ║

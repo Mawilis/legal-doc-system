@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/workers/EmbeddingWorker.js
@@ -163,7 +165,8 @@ let gpuManager = null;
 let precedentModel = null;
 
 // QUANTUM UTILITIES
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../../utils/auditLogger');
 const quantumLogger = require('../../utils/quantumLogger');
 const metricsCollector = require('../../utils/metricsCollector');
@@ -1059,7 +1062,7 @@ initialize().catch((error) => {
    QUANTUM EXPORTS
    --------------------------------------------------------------------------- */
 
-module.exports = {
+export default {
   worker,
   getWorkerHealth,
   gpuManager,

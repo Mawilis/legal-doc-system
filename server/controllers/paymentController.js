@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File Path: /server/controllers/paymentController.js
  *
@@ -1474,7 +1476,7 @@ function getPaymentController() {
   return paymentControllerInstance;
 }
 
-module.exports = {
+export default {
   PaymentController,
   getPaymentController,
 };

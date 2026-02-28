@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-env node */
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ QUANTUM COMPLIANCE ENFORCER - INVESTOR-GRADE MODULE                         ║
@@ -109,7 +111,8 @@ const auditLogger = require('../utils/auditLogger');
 const auditUtils = require('../utils/auditUtils');
 const complianceIntelligence = require('../utils/complianceIntelligence');
 const encryptionEngine = require('../utils/encryptionEngine');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const redisClient = require('../utils/redisClient');
 
 // QUANTUM SECURITY: ENVIRONMENT VALIDATION - NON-NEGOTIABLE
@@ -2119,7 +2122,7 @@ function enhancedEnforcementHealthCheck() {
 // ============================================================================
 // QUANTUM EXPORTS - ENHANCED
 // ============================================================================
-module.exports = {
+export default {
   QuantumComplianceEnforcer,
   complianceEnforcer,
   getEnforcementStats: getEnhancedEnforcementStats,

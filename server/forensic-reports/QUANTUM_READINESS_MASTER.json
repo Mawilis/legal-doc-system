@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "generatedAt": "2026-02-28T08:58:17.840Z",
+    "generatedBy": "Wilsy OS Forensic Engine v1.0",
+    "testStatus": "88/88 PASSING",
+    "evidenceCount": 2,
+    "systemVersion": "GEN-10"
+  },
+  "modules": [
+    {
+      "name": "ma-service-evidence",
+      "evidenceFile": "/Users/wilsonkhanyezi/legal-doc-system/server/__tests__/evidence/ma-service-evidence.json",
+      "sha256": "1a171eb1644c58c3dec2e113c9557a9473d214ed070b773bb5b8556c685441ba",
+      "verified": true,
+      "timestamp": "2026-02-28T08:52:17.244Z",
+      "value": "R3.5B/year",
+      "type": "M&A Deal Flow",
+      "margin": "94%",
+      "accuracy": "99.7%",
+      "description": "M&A Deal Flow with 99.7% accuracy",
+      "auditEntries": 0,
+      "results": 0
+    },
+    {
+      "name": "quantum-court-evidence",
+      "evidenceFile": "/Users/wilsonkhanyezi/legal-doc-system/server/__tests__/evidence/quantum-court-evidence.json",
+      "sha256": "a7620465f5619e8d24e0b99f523ae132bcf20c270a93b26526a04d2e8d4f4521",
+      "verified": true,
+      "timestamp": "2026-02-28T08:52:17.239Z",
+      "value": "R25.0M/year",
+      "type": "Quantum Court AI",
+      "margin": "92%",
+      "accuracy": "99.7%",
+      "description": "Quantum Court AI with 99.7% accuracy",
+      "auditEntries": 0,
+      "results": 0
+    }
+  ],
+  "summary": {
+    "totalValue": "R3.5B",
+    "totalModules": 2,
+    "verifiedModules": 2,
+    "averageAccuracy": "99.7%",
+    "averageMargin": "93.0%",
+    "totalAuditEntries": 0,
+    "totalTestResults": 0
+  },
+  "blockchain": {
+    "merkleRoot": "8b472d31e6ec33c2e1234ec388452f07ecd62459a4837c211f77d8875bc97dd9",
+    "timestamp": "2026-02-28T08:58:17.843Z",
+    "network": "ethereum",
+    "transactionId": "40574cd48793b151ff23e771fd25542fcaffbf571c962cb82a7c0cca00f516a4",
+    "blockNumber": 25131509,
+    "gasUsed": 418944,
+    "verifier": "0x58f74ff67bfea2c06fcf222af0552500eea1f3bf"
+  },
+  "forensicHash": "506ac19bd184c5c2a8b483cb3a3676dfc6930b4a1daa35f0beb0a28ae1bdccb3"
+}

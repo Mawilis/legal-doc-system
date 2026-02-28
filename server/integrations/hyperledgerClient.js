@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  HYPERLEDGER FABRIC QUANTUM CLIENT - IMMUTABLE AUDIT TRAIL NEXUS                        ║
@@ -1010,7 +1012,7 @@ const logToBlockchain = async (data) => await hyperledgerClient.submitTransactio
 });
 
 // Export comprehensive API
-module.exports = {
+export default {
   hyperledgerClient,
   logToBlockchain,
   HyperledgerClient,

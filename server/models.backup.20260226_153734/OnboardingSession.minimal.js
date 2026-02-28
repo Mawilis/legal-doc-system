@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 const mongoose = require('mongoose');
 
 const onboardingSessionSchema = new mongoose.Schema({
@@ -13,4 +15,4 @@ const onboardingSessionSchema = new mongoose.Schema({
 
 // Force export as constructor
 const Model = mongoose.model('OnboardingSessionMinimal', onboardingSessionSchema);
-module.exports = Model;
+export default Model;

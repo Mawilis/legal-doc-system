@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /* eslint-env jest */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
@@ -14,10 +16,10 @@ import Redis from 'ioredis-mock.js';
 import { createHash } from "crypto";
 
 // Import all security components
-import RecoverySentinel from '../../scripts/RecoverySentinel.js.js';
-import SecurityOrchestrator from '../../services/security/SecurityOrchestrator.js.js';
-import emergencyKillSwitch, { quarantineTenant, isTenantQuarantined } from '../../middleware/emergencyKillSwitch.js.js';
-import { AuditLogger } from '../../utils/auditLogger.js.js';
+import RecoverySentinel from '../../scripts/RecoverySentinel.js';
+import SecurityOrchestrator from '../../services/security/SecurityOrchestrator.js';
+import emergencyKillSwitch, { quarantineTenant, isTenantQuarantined } from '../../middleware/emergencyKillSwitch.js';
+import { AuditLogger } from '../../utils/auditLogger.js';
 
 // Mock dependencies
 jest.mock('../../utils/redisClient.js', () => {

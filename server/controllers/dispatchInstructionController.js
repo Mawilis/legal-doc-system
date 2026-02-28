@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/controllers/dispatchInstructionController.js
  * STATUS: PRODUCTION-READY | LEGAL COMPLIANCE GRADE

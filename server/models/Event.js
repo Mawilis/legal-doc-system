@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE: /server/models/Event.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Event.js
@@ -1213,7 +1215,7 @@ const Event = mongoose.model('Event', eventSchema);
 // QUANTUM EXPORT
 // -----------------------------------------------------------------------------
 
-module.exports = Event;
+export default Event;
 
 /* -----------------------------------------------------------------------------
  * THE TEMPORAL COVENANT: ROI & AFRICAN CHRONOLOGY

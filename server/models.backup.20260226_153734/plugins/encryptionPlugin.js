@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ENCRYPTION PLUGIN - INVESTOR-GRADE ● FORENSIC ● PRODUCTION                  ║
   ║ AES-256-GCM | Field-level encryption | Key management                       ║
@@ -10,7 +12,7 @@ const crypto = require('crypto');
  * Encryption plugin for Mongoose schemas
  * Provides field-level encryption for sensitive data
  */
-module.exports = function encryptionPlugin(schema, options = {}) {
+export default function encryptionPlugin(schema, options = {}) {
   const fields = options.fields || [];
   const algorithm = options.algorithm || 'aes-256-gcm';
   const keyId = options.keyId || process.env.ENCRYPTION_KEY_ID || 'default-key';

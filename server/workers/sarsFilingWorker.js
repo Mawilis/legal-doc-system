@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ====================================================================
  * SARS eFILING BACKGROUND WORKER - AUTOMATED FILING PROCESSING
@@ -31,7 +33,8 @@ const tenantContext = require('../middleware/tenantContext');
 const TaxRecord = require('../models/TaxRecord');
 const { createSarsService } = require('../services/sarsService');
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // ====================================================================
 // CONSTANTS
@@ -635,7 +638,7 @@ function createSarsFilingWorker(config = {}) {
   return instance;
 }
 
-module.exports = {
+export default {
   createSarsFilingWorker,
   SarsFilingWorker,
   QUEUE_NAMES,

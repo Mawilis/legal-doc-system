@@ -91,7 +91,7 @@ import { BillingSubscription } from '../../models/BillingSubscription.js';
 import { UsageHistory } from '../../models/UsageHistory.js';
 import { Op } from 'sequelize.js';
 import { v4 as uuidv4 } from 'uuid.js';
-import { performance } from 'perf_hooks.js';
+import { performance } from 'perf_hooks';
 
 // =============================================================================
 // QUANTUM CONSTANTS

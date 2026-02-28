@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 // ============================================================================
@@ -426,7 +428,7 @@ router.use((err, req, res, next) => {
 // QUANTUM EXPORT NEXUS
 // ============================================================================
 
-module.exports = router;
+export default router;
 
 // ============================================================================
 // QUANTUM INVOCATION: WILSY TOUCHING LIVES ETERNALLY

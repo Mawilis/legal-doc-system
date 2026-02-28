@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔══════════════════════════════════════════════════════════════════════════╗
  * ║                WILSY OS - QUANTUM KYC COMPLIANCE FORTRESS               ║
@@ -2252,7 +2254,7 @@ const KYCVerification = mongoose.models.KYCVerification || mongoose.model('KYCVe
 // SECTION 10: QUANTUM EXPORT - THE COMPLIANCE FORTRESS
 // =============================================================================
 
-module.exports = KYCVerification;
+export default KYCVerification;
 
 // =============================================================================
 // SECTION 11: FORENSIC VALIDATION TESTS - REGULATORY COMPLIANCE

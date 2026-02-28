@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/aiRoutes.js
  * STATUS: PRODUCTION-READY (WILSY OS V1.2)
@@ -612,7 +614,7 @@ router.get(
 // This module serves 10,000+ legal firms across Africa
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-module.exports = router;
+export default router;
 
 /*
  * REVENUE & SCALABILITY METRICS:

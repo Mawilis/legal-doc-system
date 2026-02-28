@@ -26,7 +26,8 @@
 
 import { redisClient } from '../../utils/redisClient.js';
 import { AuditLogger } from '../../utils/auditLogger.js';
-import logger from '../../utils/logger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import { 
   quarantineTenant, 
   resetTenantQuarantine,

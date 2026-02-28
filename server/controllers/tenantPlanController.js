@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ⚡ TENANT PLAN ORCHESTRATION CONTROLLER v15.1.0
  * File: server/controllers/tenantPlanController.js
@@ -1327,7 +1329,7 @@ function calculateAverageUtilization(tenants) {
 // ============================================================================
 // MODULE EXPORTS
 // ============================================================================
-module.exports = {
+export default {
   // Plan Management
   getPlan: exports.getPlan,
   upsertPlanOverride: exports.upsertPlanOverride,

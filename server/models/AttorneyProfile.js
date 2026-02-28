@@ -7,7 +7,7 @@
  */
 
 import mongoose from "mongoose";
-import crypto from 'node:crypto.js';
+import crypto from 'node:crypto';
 import { redactSensitiveData } from '../utils/popiaRedaction.js';
 
 const { Schema } = mongoose;

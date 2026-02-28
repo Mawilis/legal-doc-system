@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  QUANTUM AI LEGAL PREDICTOR SERVICE - JURISPRUDENCE INTELLIGENCE ENGINE                                            ║
@@ -1797,7 +1799,7 @@ aiLegalPredictor.initialize().catch((error) => {
 });
 
 // Export the singleton and class
-module.exports = {
+export default {
   AILegalPredictorService,
   aiLegalPredictor,
   AI_CONSTANTS,

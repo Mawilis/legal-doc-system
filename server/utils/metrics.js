@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔══════════════════════════════════════════════════════════════════════════════╗
   ║ METRICS - INVESTOR-GRADE PERFORMANCE MONITORING                            ║
@@ -207,4 +209,4 @@ class MetricsSingleton {
   }
 }
 
-module.exports = new MetricsSingleton().getInstance();
+export default new MetricsSingleton().getInstance();

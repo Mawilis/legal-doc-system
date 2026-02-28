@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*= ==========================================================================
   WILSY OS - SUPREME ARCHITECT GENERATED FILE
   ===========================================================================
@@ -917,7 +919,7 @@ class LegalEngine {
 }
 
 // Export the LegalEngine class
-module.exports = { LegalEngine };
+export default { LegalEngine };
 
 /*
  * ACCEPTANCE CHECKLIST

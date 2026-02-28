@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * ⚡️🧠 QUANTUM CACHE ENGINE: REDIS-POWERED INTELLIGENCE ACCELERATOR ⚡️🧠
@@ -204,7 +206,7 @@ class QuantumCache {
 // Singleton instance
 const quantumCache = new QuantumCache();
 
-module.exports = {
+export default {
   quantumCache,
   CACHE_KEYS,
   cacheGet: (key) => quantumCache.get(key),

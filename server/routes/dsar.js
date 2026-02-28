@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * @file /Users/wilsonkhanyezi/legal-doc-system/server/routes/dsar.js
@@ -1185,7 +1187,7 @@ router.use((err, req, res, next) => {
 });
 
 // ==================== EXPORT ====================
-module.exports = router;
+export default router;
 
 // ==================== MIGRATION NOTES ====================
 /*

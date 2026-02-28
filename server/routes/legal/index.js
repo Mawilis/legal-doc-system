@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 /*
@@ -854,7 +856,7 @@ if (process.env.NODE_ENV === 'test') {
 // MODULE EXPORT
 // ============================================================================
 
-module.exports = router;
+export default router;
 
 // ============================================================================
 // RUNBOOK SNIPPET

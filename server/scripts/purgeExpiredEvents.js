@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 /* eslint-disable no-inner-declarations */
 /*
@@ -1407,7 +1409,7 @@ simulateStressTest().catch(console.error);
  */
 
 // Export for testing and programmatic use
-module.exports = {
+export default {
   PurgeOperationManager,
   DatabaseManager,
   RETENTION_CONFIG,

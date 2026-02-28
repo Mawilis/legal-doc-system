@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ PAIA SERVICE - INVESTOR-GRADE MODULE                                        ║
   ║ 95% cost reduction | R12M risk elimination | 88% margins                   ║
@@ -398,4 +400,4 @@ class PaiaService {
   }
 }
 
-module.exports = new PaiaService();
+export default new PaiaService();

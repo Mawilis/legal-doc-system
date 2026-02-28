@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /* eslint-env jest */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
@@ -8,7 +10,7 @@
 import { JSDOM } from 'jsdom.js';
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

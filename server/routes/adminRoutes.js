@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE: server/routes/adminRoutes.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/adminRoutes.js
@@ -1105,7 +1107,7 @@ router.use('*', (req, res) => {
 // =============================================================================
 // MODULE EXPORT - SOVEREIGN CONTROL PLANE
 // =============================================================================
-module.exports = router;
+export default router;
 
 /*
  * -----------------------------------------------------------------------------

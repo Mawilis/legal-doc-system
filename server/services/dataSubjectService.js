@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
  * ╔══════════════════════════════════════════════════════════════════════╗
@@ -46,7 +48,8 @@ const { ComplianceRule } = require('../models/complianceRule');
 const { DataSubjectRequest } = require('../models/dataSubjectRequest');
 const { encryptData, decryptData } = require('../utils/cryptoEngine');
 const { sendSecureNotification } = require('../utils/notificationService');
-const logger = require('../utils/quantumLogger.js');
+const loggerRaw = require('../utils/quantumLogger.js');
+const logger = loggerRaw.default || loggerRaw;
 const { generateDSARReport } = require('../utils/reportGenerator');
 const { validatePOPIAConsent } = require('../validators/popiaValidator');
 
@@ -764,5 +767,5 @@ describe('Quantum DataSubjectService Tests', () => {
  */
 
 // QUANTUM INVOCATION: Eternal Legacy Manifestation
-module.exports = new DataSubjectService();
+export default new DataSubjectService();
 console.log('Wilsy Touching Lives Eternally - Data Subject Quantum Nexus Activated');

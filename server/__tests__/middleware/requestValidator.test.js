@@ -18,9 +18,9 @@
  */
 
 import { createHash } from "crypto";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,7 +33,7 @@ import {
   schemas,
   DATA_TYPES,
   VALIDATION_MODES
-} from '../../middleware/requestValidator.js.js';
+} from '../../middleware/requestValidator.js';
 
 // Mock dependencies
 jest.mock('../../utils/logger.js', () => ({
@@ -51,8 +51,9 @@ jest.mock('../../utils/redactSensitive.js', () => ({
   redactSensitive: (data) => data
 }));
 
-import logger from '../../utils/logger.js.js';
-import auditLogger from '../../utils/auditLogger.js.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import auditLogger from '../../utils/auditLogger.js';
 
 // ============================================================================
 // TEST CONSTANTS

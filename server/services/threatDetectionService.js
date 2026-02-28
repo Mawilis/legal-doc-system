@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM COMPLIANCE ENFORCER: IMMUTABLE LEGAL POLICY EXECUTOR
@@ -56,7 +58,8 @@ const auditLogger = require('../utils/auditLogger');
 const auditUtils = require('../utils/auditUtils');
 const complianceIntelligence = require('../utils/complianceIntelligence');
 const encryptionEngine = require('../utils/encryptionEngine');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const redisClient = require('../utils/redisClient');
 const threatDetectionService = require('./threatDetectionService');
 
@@ -1409,7 +1412,7 @@ function enhancedEnforcementHealthCheck() {
 // ============================================================================
 // QUANTUM EXPORTS - ENHANCED
 // ============================================================================
-module.exports = {
+export default {
   QuantumComplianceEnforcer,
   complianceEnforcer,
   getEnforcementStats: getEnhancedEnforcementStats,

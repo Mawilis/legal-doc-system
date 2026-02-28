@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 // /Users/wilsonkhanyezi/legal-doc-system/server/utils/cryptoQuantizer.js
 
 // ============================================================================
@@ -638,7 +640,7 @@ if (process.env.NODE_ENV === 'test') {
 // EXPORTS
 // ============================================================================
 
-module.exports = {
+export default {
   // Core Encryption/Decryption
   encryptField,
   decryptField,

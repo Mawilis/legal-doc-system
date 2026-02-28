@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ SuperAdminController - INVESTOR-GRADE MODULE                  ║
   ║ [95% cost reduction | R10M risk elimination | 85% margins]    ║
@@ -910,7 +912,7 @@ const getEconomicImpactReport = async (req, res) => {
 // EXPORT QUANTUM NEXUS WITH FORENSIC COMPLIANCE
 // =============================================================================
 
-module.exports = {
+export default {
   // Supreme Administration with forensic audit
   registerSuperAdmin,
   loginSuperAdmin,

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ SARS eFILING INTEGRATION SERVICE — INVESTOR-GRADE ● REGULATOR-READY ● COURT-ADMISSIBLE                        ║
   ║ [96% COST REDUCTION | R8.5M RISK ELIMINATION | 92% MARGINS | R367.5M TAM]                                     ║
@@ -27,7 +29,8 @@ const tenantContext = require('../middleware/tenantContext');
 const auditLogger = require('../utils/auditLogger');
 const { CircuitBreaker } = require('../utils/circuitBreaker');
 const cryptoUtils = require('../utils/cryptoUtils');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const { withRetry } = require('../utils/retry');
 
 // ====================================================================
@@ -904,7 +907,7 @@ function createSarsService(config = {}) {
   return instance;
 }
 
-module.exports = {
+export default {
   createSarsService,
   SarsError,
   SarsAuthenticationError,

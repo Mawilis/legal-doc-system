@@ -68,20 +68,21 @@
   ║ Upsell automation | Real-time monitoring | Investor intelligence         ║
   ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
-import { performance } from 'perf_hooks.js';
+import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 
 // WILSY OS CORE IMPORTS
-import { redisClient } from '../cache/redisClient.js.js';
-import { cacheMiddleware } from '../middleware/cache.js.js';
-import { rateLimiter } from '../middleware/rateLimiter.js.js';
-import { tenantGuard } from '../middleware/tenantGuard.js.js';
-import monitoringDashboard from '../services/monitoring/MonitoringDashboard.js.js';
-import usageService from '../services/monitoring/UsageService.js.js';
-import { AppError } from '../utils/errorHandler.js.js';
-import logger from '../utils/logger.js.js';
-import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js.js';
-import { QuantumLogger } from '../utils/quantumLogger.js.js';
+import { redisClient } from '../cache/redisClient.js';
+import { cacheMiddleware } from '../middleware/cache.js';
+import { rateLimiter } from '../middleware/rateLimiter.js';
+import { tenantGuard } from '../middleware/tenantGuard.js';
+import monitoringDashboard from '../services/monitoring/MonitoringDashboard.js';
+import usageService from '../services/monitoring/UsageService.js';
+import { AppError } from '../utils/errorHandler.js';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js';
+import { QuantumLogger } from '../utils/quantumLogger.js';
 
 // =============================================================================
 // QUANTUM CONSTANTS

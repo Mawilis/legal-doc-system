@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 // /Users/wilsonkhanyezi/legal-doc-system/server/services/billingService.js
 
 // ============================================================================
@@ -1104,6 +1106,6 @@ class BillingService {
 // QUANTUM EXPORTS
 // ============================================================================
 
-module.exports = BillingService;
+export default BillingService;
 
 // Wilsy Touching Lives Eternally

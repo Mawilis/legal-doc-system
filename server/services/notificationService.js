@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ NOTIFICATION SERVICE — INVESTOR-GRADE ● REGULATOR-READY ● COURT-ADMISSIBLE                                     ║
   ║ [R25M RISK ELIMINATION | 99.99% DELIVERY RATE | REAL-TIME ALERTS | FULL AUDIT TRAIL]                          ║
@@ -86,7 +88,8 @@ const tenantContext = require('../middleware/tenantContext');
 const NotificationLog = require('../models/NotificationLog');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // =================================================================================================================
 // ENVIRONMENT VALIDATION — QUANTUM SHIELD
@@ -1653,4 +1656,4 @@ const notificationService = new NotificationService();
 // =================================================================================================================
 // EXPORT MODULE — NO SIDE EFFECTS
 // =================================================================================================================
-module.exports = notificationService;
+export default notificationService;

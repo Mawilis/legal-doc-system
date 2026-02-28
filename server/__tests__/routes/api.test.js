@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /* eslint-env jest */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
@@ -21,15 +23,15 @@ import request from 'supertest.js';
 import express from 'express.js';
 import mongoose from "mongoose";
 import { createHash } from "crypto";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Import routes
-import apiRouter, { API_ROUTES } from '../../routes/api.js.js';
+import apiRouter, { API_ROUTES } from '../../routes/api.js';
 
 // Mock dependencies
 jest.mock('../../models/Company.js');
@@ -45,11 +47,12 @@ jest.mock('../../middleware/auditLogger.js');
 jest.mock('../../middleware/requestValidator.js');
 
 // Import mocked modules for assertions
-import { authenticate } from '../../middleware/auth.js.js';
-import { extractTenant } from '../../middleware/tenantContext.js.js';
-import { rateLimiter } from '../../middleware/rateLimiter.js.js';
-import auditLogger from '../../utils/auditLogger.js.js';
-import logger from '../../utils/logger.js.js';
+import { authenticate } from '../../middleware/auth.js';
+import { extractTenant } from '../../middleware/tenantContext.js';
+import { rateLimiter } from '../../middleware/rateLimiter.js';
+import auditLogger from '../../utils/auditLogger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // TEST CONSTANTS

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*!
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ ██████╗ ███████╗████████╗███████╗███╗   ██╗████████╗██╗ ██████╗ ███╗   ██╗   ║
@@ -457,7 +459,7 @@ flowchart TD
 // Export the model
 const RetentionLogger = mongoose.models.RetentionLogger || mongoose.model('RetentionLogger', RetentionLoggerSchema);
 
-module.exports = RetentionLogger;
+export default RetentionLogger;
 
 // ===================== JEST TESTS =====================
 /* eslint-disable no-undef */

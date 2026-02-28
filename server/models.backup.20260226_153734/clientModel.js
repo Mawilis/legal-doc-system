@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*= ==========================================================================================================================
     ╔═╗╦  ╦╔═╗╔╦╗╔═╗╦  ╦╔═╗╔╗╔╔╦╗╦╔═╗╔═╗  ╔═╗╦  ╔╦╗╔═╗╦═╗╔╦╗╔═╗
     ╠═╝╚╗╔╝╠═╣║║║╠═╣║  ║║╣ ║║║ ║ ║║ ║╚═╗  ║ ║║   ║ ╠═╣╠╦╝ ║║╚═╗
@@ -2282,7 +2284,7 @@ ClientSchema.index(
 
 const Client = mongoose.model('Client', ClientSchema);
 
-module.exports = Client;
+export default Client;
 
 // ================================================================================================================
 // QUANTUM INVOCATION - SOVEREIGN IDENTITY LEGACY

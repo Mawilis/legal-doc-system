@@ -58,17 +58,18 @@
 import { redisClient } from '../../cache/redisClient.js';
 import mongoose from "mongoose";
 import cron from 'node-cron.js';
-import os from 'os.js';
-import { performance } from 'perf_hooks.js';
+import os from 'os';
+import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
-import { exec } from 'child_process.js';
+import { exec } from 'child_process';
 import { promisify } from "util";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 
 // WILSY OS CORE IMPORTS
-import logger from '../../utils/logger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../../utils/quantumLogger.js';
 import auditLogger from '../../utils/auditLogger.js';
 import { metrics, trackError } from '../../utils/metricsCollector.js';

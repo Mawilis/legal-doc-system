@@ -1,3 +1,4 @@
+/* eslint-disable */
 /*
  * ============================================================================
  * QUANTUM COMPLIANCE ORACLE: SOUTH AFRICAN LEGAL VALIDATION ENGINE
@@ -1059,7 +1060,7 @@ const assessProductRisk = (services) => ({ score: 0 });
 // QUANTUM MODULE EXPORTS
 // ============================================================================
 
-module.exports = {
+export default {
   // Core Compliance Validators
   validatePOPIACompliance,
   validateECTActCompliance,

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/storageRoutes.js
  * STATUS: PRODUCTION-READY
@@ -165,7 +167,7 @@ router.get(
   },
 );
 
-module.exports = router;
+export default router;
 
 // 4. USAGE EXAMPLE
 // -----------------------------------------------------------------------------

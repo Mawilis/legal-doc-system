@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*!
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ ╔═╗┌─┐┌┬┐┬┌┬┐┬┌┐┌┌─┐  ╔═╗┌─┐┌┬┐┌─┐┬─┐┌─┐┬┌─┐┌─┐┬┌─┌─┐┬ ┬                   │
@@ -1220,7 +1222,7 @@ flowchart TD
 `;
 
 // Export the class
-module.exports = ComplianceChecker;
+export default ComplianceChecker;
 
 // ===================== JEST TESTS =====================
 /* eslint-disable no-undef */

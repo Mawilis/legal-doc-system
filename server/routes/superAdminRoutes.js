@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable no-irregular-whitespace */
 /*
 ================================================================================
@@ -1556,6 +1558,6 @@ This is the digital pulse of Africa's legal renaissance.
 // FINAL QUANTUM INVOCATION
 // =============================================================================
 
-module.exports = router;
+export default router;
 
 // Wilsy Touching Lives Eternally.

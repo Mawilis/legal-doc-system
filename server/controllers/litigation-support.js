@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/litigation-support.js
@@ -148,7 +150,8 @@ let judgeAnalyzer = null;
 let opponentProfiler = null;
 
 // QUANTUM UTILITIES
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../utils/auditLogger');
 const quantumLogger = require('../utils/quantumLogger');
 const { AppError } = require('../utils/errorHandler');
@@ -1858,7 +1861,7 @@ const findSupportingPrecedents = async (argument, caseId, tenantId) => {
    QUANTUM EXPORTS
    --------------------------------------------------------------------------- */
 
-module.exports = {
+export default {
   // Case intelligence
   getCaseIntelligence,
   getCaseStrategy,

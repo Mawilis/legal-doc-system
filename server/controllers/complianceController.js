@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔═══════════════════════════════════════════════════════════════════════════════╗
  * ║  ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ██╗ █████╗ ███╗   ██╗███████╗    ║
@@ -1727,4 +1729,4 @@ exports.submitToRegulator = async function (reportType, encryptedReport, digital
  * Wilsy Touching Lives Eternally.
  */
 
-module.exports = exports;
+export default exports;

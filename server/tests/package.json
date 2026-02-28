@@ -1,0 +1,33 @@
+{
+  "name": "document-generation-tests",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Tests for Document Generation Engine",
+  "scripts": {
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern=unit --coverage",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern=integration --runInBand",    "test:all": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --runInBand",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": ["./setup.js"],
+    "transform": {},
+    "extensionsToTreatAsEsm": [".js", ".jsx", ".ts", ".tsx"],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/tests/fixtures/"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  }
+}

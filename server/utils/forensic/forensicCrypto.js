@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ FORENSIC CRYPTO UTILITIES — PRODUCTION GRADE ● NO CONFLICTS                                                    ║
   ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
@@ -136,7 +138,7 @@ function calculateHMAC(data, key) {
   return hmac.digest('hex');
 }
 
-module.exports = {
+export default {
   REDACT_FIELDS,
   generateHash,
   createDigitalSignature,

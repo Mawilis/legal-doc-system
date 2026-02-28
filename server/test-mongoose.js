@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 const mongoose = require('mongoose');
 
 console.log('Mongoose version:', mongoose.version);

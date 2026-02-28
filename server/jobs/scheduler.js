@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/jobs/scheduler.js
  * STATUS: PRODUCTION-READY | DISTRIBUTED MASTER CLOCK
@@ -106,4 +108,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = scheduler;
+export default scheduler;

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/services/integrationService.js
  * STATUS: PRODUCTION-READY | EPITOME | INTEGRATION ORCHESTRATOR
@@ -25,7 +27,8 @@
 const { v4: uuidv4 } = require('uuid');
 const AuditEvent = require('../models/auditEventModel');
 const Integration = require('../models/integrationModel');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // Optional KMS resolver. Provide a concrete implementation in production.
 // Expected API: resolveSecret(reference) => Promise<string|null>
@@ -293,7 +296,7 @@ async function emitIntegrationAudit({
    Exports
    ------------------------- */
 
-module.exports = {
+export default {
   getProviderConfig,
   listProviders,
   healthCheck,

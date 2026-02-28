@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 console.log('Loading models...');
 try {
   const session = require('./models/OnboardingSession');

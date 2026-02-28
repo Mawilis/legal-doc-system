@@ -31,13 +31,13 @@
  *   G & H & I & J & K & L & M --> N[Generational Wealth Engine]
  */
 
-import { spawn } from 'child_process.js';
-import { fileURLToPath } from 'url.js';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
 import { dirname, join } from "path";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import crypto from "crypto";
-import os from 'os.js';
-import cluster from 'cluster.js';
+import os from 'os';
+import cluster from 'cluster';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

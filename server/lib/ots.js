@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * OpenTimestamps Shim - Placeholder for blockchain timestamping
  * This is a temporary shim until full OTS integration is implemented
@@ -18,7 +20,7 @@ async function createTimestamp(hash, tenantId) {
   };
 }
 
-module.exports = {
+export default {
   generateDocumentHash,
   createTimestamp,
 };

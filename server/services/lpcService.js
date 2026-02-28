@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * 🏛️ WILSYS OS - LPC SERVICE v5.2.2
@@ -25,7 +27,7 @@ import {
   RegulatoryDeadlineError,
 } from '../utils/errors.js';
 
-import crypto from 'node:crypto.js';
+import crypto from 'node:crypto';
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from 'uuid.js';
 import axios from 'axios.js';

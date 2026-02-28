@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/validateObjectId.js
  * STATUS: PRODUCTION-READY | DATABASE INTEGRITY GRADE
@@ -57,4 +59,4 @@ const validateObjectId = (paramName = 'id') => async (req, res, next) => {
   next();
 };
 
-module.exports = validateObjectId;
+export default validateObjectId;

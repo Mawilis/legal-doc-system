@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-env jest */
 /* eslint-disable no-redeclare, no-undef */
 
@@ -110,7 +112,8 @@ const {
 const auditLogger = require('../../utils/auditLogger');
 const { CircuitBreaker } = require('../../utils/circuitBreaker');
 const cryptoUtils = require('../../utils/cryptoUtils');
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const { withRetry } = require('../../utils/retry');
 
 // ====================================================================

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/featureFlagMiddleware.js
  * STATUS: PRODUCTION-READY | EPITOME | FEATURE GATEKEEPER
@@ -18,7 +20,8 @@
 
 const { v4: uuidv4 } = require('uuid');
 const featureFlagService = require('../services/featureFlagService');
-const logger = require('../utils/logger'); // structured logger expected (info/warn/error)
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw; // structured logger expected (info/warn/error)
 
 /*
  * Factory: featureFlag
@@ -30,7 +33,7 @@ const logger = require('../utils/logger'); // structured logger expected (info/w
  *   - hide404: boolean - if true return 404 when disabled (default true)
  *   - metricsClient: optional metrics client with .increment(name, tags)
  */
-module.exports = function featureFlag(key, opts = {}) {
+export default function featureFlag(key, opts = {}) {
   if (!key || typeof key !== 'string') {
     throw new Error('featureFlag middleware requires a feature key string');
   }

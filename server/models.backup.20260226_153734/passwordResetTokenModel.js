@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
  *  🔐 QUANTUM PASSWORD RESET CITADEL: ETERNAL CREDENTIAL RENAISSANCE ENGINE 🔐
  *  Path: /server/models/passwordResetTokenModel.js
@@ -871,4 +873,4 @@ MULTI_TENANT_SALT=your_unique_salt_per_tenant_deployment
 
 // 🌍 WILSY TOUCHING LIVES ETERNALLY
 
-module.exports = mongoose.model('PasswordResetToken', passwordResetTokenSchema);
+export default mongoose.model('PasswordResetToken', passwordResetTokenSchema);

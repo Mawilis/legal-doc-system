@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE: /server/controllers/clientController.js
  * PATH: server/controllers/clientController.js
@@ -1132,7 +1134,7 @@ const calculateMatchStrength = (client, query) => {
 // QUANTUM EXPORTS
 // ============================================================================
 
-module.exports = {
+export default {
   createClient: exports.createClient,
   getAllClients: exports.getAllClients,
   verifyFica: exports.verifyFica,

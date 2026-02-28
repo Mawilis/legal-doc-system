@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/worker-bootstrap/fileWorkers.js
  * STATUS: PRODUCTION-READY | EPITOME | WORKER BOOTSTRAP
@@ -29,7 +31,8 @@ const { promisify } = require('util');
 const setTimeoutAsync = promisify(setTimeout);
 
 const JobService = require('../services/jobService');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // Worker modules (each should export a register(...) helper)
 const fileScanWorker = require('../workers/fileScanWorker');
@@ -262,4 +265,4 @@ if (require.main === module) {
 }
 
 /* Export start for test harnesses */
-module.exports = { start, gracefulShutdown };
+export default { start, gracefulShutdown };

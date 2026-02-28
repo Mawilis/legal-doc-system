@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * 🏛️ WILSYS OS - COMPLIANCE ENGINE
@@ -6,8 +8,8 @@
  * @version 5.2.4
  */
 
-import crypto from 'node:crypto.js';
-import { EventEmitter } from 'node:events.js';
+import crypto from 'node:crypto';
+import { EventEmitter } from 'node:events';
 import { DateTime } from 'luxon.js';
 
 // Dependency Services

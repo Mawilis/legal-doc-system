@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ RETENTION POLICY ENFORCER - INVESTOR-GRADE MODULE             ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
@@ -44,7 +46,8 @@ flowchart TD
 
 const auditLogger = require('../utils/auditLogger');
 const { REDACT_FIELDS, redactSensitive } = require('../utils/auditUtils');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // Retention policies aligned with South African law
 const RETENTION_POLICIES = {
@@ -319,7 +322,7 @@ function validateRetentionCompliance(record, tenantId) {
   };
 }
 
-module.exports = {
+export default {
   calculateDisposalSchedule,
   identifyDisposalCandidates,
   generateDisposalCertificate,

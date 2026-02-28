@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/routes/auditRoutes.js
  * PATH: /server/routes/auditRoutes.js
@@ -947,7 +949,7 @@ router.get('/_documentation', (req, res) => {
    QUANTUM ROUTER EXPORT
    --------------------------------------------------------------------------- */
 
-module.exports = router;
+export default router;
 
 /* ---------------------------------------------------------------------------
    ENV ADDITIONS REQUIRED

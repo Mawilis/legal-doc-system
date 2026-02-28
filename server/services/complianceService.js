@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM SENTINEL: COMPLIANCE SERVICE - SOVEREIGN REGULATORY OMNISCIENCE V19.0.0
@@ -1681,7 +1683,7 @@ const getComplianceService = () => {
   return complianceServiceInstance;
 };
 
-module.exports = getComplianceService();
+export default getComplianceService();
 
 // ============================================================================
 // QUANTUM FOOTER: Eternal Regulatory Omniscience

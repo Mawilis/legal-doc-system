@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-env jest */
 /* eslint-disable no-redeclare, no-undef */
 
@@ -86,7 +88,8 @@ const tenantContext = require('../../middleware/tenantContext');
 const TaxRecord = require('../../models/TaxRecord');
 const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // Service under test - create a mock version since we don't have the actual file yet
 const COMPLIANCE_REPORT_TYPES = {

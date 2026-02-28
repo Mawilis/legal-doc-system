@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ██████╗ ███████╗██████╗  ██████╗ ██████╗ ████████╗    ██████╗ ███████╗███████╗███╗   ██╗████████╗  ║
@@ -739,4 +741,4 @@ testament to transparency, propelling Wilsy OS to trillion-dollar horizons.
 Wilsy Touching Lives Eternally through Legal Intelligence Ascension.
 */
 
-module.exports = router;
+export default router;

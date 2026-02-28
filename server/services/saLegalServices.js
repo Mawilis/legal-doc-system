@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ================================================================================================
  * FILE: server/services/saLegalServices.js
@@ -1233,7 +1235,7 @@ class SALegalServices {
 
 // Create and export singleton instance
 const saLegalServices = new SALegalServices();
-module.exports = saLegalServices;
+export default saLegalServices;
 
 /*
  * ================================================================================================

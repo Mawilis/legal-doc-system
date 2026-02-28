@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 // ============================================================================
@@ -593,7 +595,7 @@ function sanitizeConsentResponse(consent) {
 // QUANTUM EXPORT NEXUS
 // ============================================================================
 
-module.exports = {
+export default {
   // Schemas
   consentSchema,
   withdrawalSchema,

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/controllers/serviceController.js
  * STATUS: PRODUCTION-READY | SERVICE OF PROCESS GRADE

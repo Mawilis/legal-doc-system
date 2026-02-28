@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/roles.js
  * PATH: server/middleware/roles.js
@@ -145,7 +147,7 @@ exports.hasRole = (req, roles = []) => {
 /* ---------------------------------------------------------------------------
    SOVEREIGN EXPORTS
    --------------------------------------------------------------------------- */
-module.exports = {
+export default {
   requireRole: exports.requireRole,
   hasRole: exports.hasRole,
   ROLES,

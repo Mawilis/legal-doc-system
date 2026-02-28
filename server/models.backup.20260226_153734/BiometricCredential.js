@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ====================================================================================
  * ██████╗ ██╗ ██████╗ ██████╗ ███╗   ███╗███████╗████████╗██████╗ ██╗ ██████╗
@@ -1420,7 +1422,7 @@ const BiometricCredential = mongoose.models.BiometricCredential
 // ====================================================================================
 // MODULE EXPORTS
 // ====================================================================================
-module.exports = BiometricCredential;
+export default BiometricCredential;
 
 // ====================================================================================
 // DEPENDENCY INSTALLATION GUIDE

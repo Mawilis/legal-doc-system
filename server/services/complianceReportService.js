@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ███████╗ ██████╗ ██████╗ ███╗   ██╗███╗   ██╗███████╗ ██████╗ █████╗ ████████╗███████╗    ██████╗ ███████╗██████╗  ║
@@ -1964,7 +1966,7 @@ With every legal standard met, we forge Africa's digital destiny.
 Wilsy Touching Lives Eternally."
 */
 
-module.exports = {
+export default {
   ComplianceReportService,
   QuantumEncryptionNexus,
   QuantumAuditTrailNexus,

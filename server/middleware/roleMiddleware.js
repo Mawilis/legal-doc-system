@@ -82,7 +82,7 @@ const sheriffOnly = allowRoles('sheriff'); // Inherits admin
 const financeOnly = allowRoles('finance'); // Inherits sheriff, admin
 const staffOnly = allowRoles('associate'); // Inherits finance, sheriff, admin
 
-module.exports = {
+export default {
   allowRoles,
   adminOnly,
   sheriffOnly,

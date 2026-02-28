@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 // ============================================================================
@@ -1989,7 +1991,7 @@ class QuantumPOPIAReportGenerator {
 // QUANTUM EXPORT NEXUS
 // ============================================================================
 
-module.exports = QuantumPOPIAReportGenerator;
+export default QuantumPOPIAReportGenerator;
 module.exports.QuantumReportError = QuantumReportError;
 module.exports.RegulatorReportError = RegulatorReportError;
 module.exports.DSARReportError = DSARReportError;

@@ -1,4 +1,7 @@
-import logger from './logger.js';
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
+import loggerRaw from './logger.js';
+const logger = loggerRaw.default || loggerRaw;
 /* eslint-disable */
 /*
 ================================================================================
@@ -1405,7 +1408,7 @@ class QuantumLoggerFactory {
 const globalLogger = QuantumLoggerFactory.getLogger();
 
 // Export both factory and global instance
-module.exports = {
+export default {
   QuantumLogger,
   QuantumLoggerFactory,
   globalLogger,

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗
  * ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║
@@ -361,4 +363,4 @@ class SystemController {
 // SECTION 3: EXPORT - THE SOVEREIGN COMMAND CENTER
 // =============================================================================
 
-module.exports = SystemController;
+export default SystemController;

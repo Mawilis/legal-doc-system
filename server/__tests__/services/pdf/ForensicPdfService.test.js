@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ FORENSIC PDF SERVICE TESTS - INVESTOR DUE DILIGENCE           ║
@@ -14,7 +16,7 @@
 import PDFDocument from 'pdfkit.js';
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from 'url.js';
+import { fileURLToPath } from 'url';
 import { Readable } from "stream";
 
 // Mock dependencies
@@ -34,9 +36,9 @@ import {
   generateImpactPdf,
   generateCompliancePdf,
   generateInvestorPdf,
-} from '../../../services/pdf/ForensicPdfService.js.js';
-import { generateMonthlyBillingReport } from '../../../services/billing/BillingReportService.js.js';
-import auditLogger from '../../../utils/auditLogger.js.js';
+} from '../../../services/pdf/ForensicPdfService.js';
+import { generateMonthlyBillingReport } from '../../../services/billing/BillingReportService.js';
+import auditLogger from '../../../utils/auditLogger.js';
 
 describe('ForensicPdfService - PDF Generation Due Diligence', () => {
   let mockReq;

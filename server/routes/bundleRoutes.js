@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/bundleRoutes.js
  * STATUS: PRODUCTION-READY
@@ -183,7 +185,7 @@ router.delete(
   },
 );
 
-module.exports = router;
+export default router;
 
 // 4. USAGE EXAMPLE
 // -----------------------------------------------------------------------------

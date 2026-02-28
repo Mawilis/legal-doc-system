@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/uploadRoutes.js
  * -----------------------------------------------------------------------------
@@ -93,4 +95,4 @@ router.post(
   },
 );
 
-module.exports = router;
+export default router;

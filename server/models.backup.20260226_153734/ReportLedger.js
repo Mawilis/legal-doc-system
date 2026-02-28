@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * 📊 REPORT LEDGER QUANTUM SCROLL v2.0: IMMUTABLE AUDIT CHRONICLE 📊
@@ -1805,4 +1807,4 @@ console.log(`
 
 // Wilsy Touching Lives Eternally.
 
-module.exports = mongoose.model('ReportLedger', ReportLedgerSchema);
+export default mongoose.model('ReportLedger', ReportLedgerSchema);

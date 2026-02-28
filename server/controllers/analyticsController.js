@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * 🧠⚡️ QUANTUM ANALYTICS CORTEX: NEURAL INTELLIGENCE ORACLE ⚡️🧠
@@ -1028,4 +1030,4 @@ exports.errorHandler = (err, req, res, next) => {
  *
  * Wilsy Touching Lives Eternally.
  */
-module.exports = exports;
+export default exports;

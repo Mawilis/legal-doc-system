@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM FORENSIC LEDGER: IMMUTABLE ASSET INTEGRITY VAULT
@@ -1653,7 +1655,7 @@ uploadSchema.statics.calculateStorageUsage = async function (tenantId) {
  */
 const Upload = mongoose.models.Upload || mongoose.model('Upload', uploadSchema);
 
-module.exports = Upload;
+export default Upload;
 
 // ============================================================================
 // QUANTUM TEST SUITE: Forensic Validation Armory

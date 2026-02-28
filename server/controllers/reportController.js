@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ██████╗ ███████╗██████╗  ██████╗ ██████╗ ████████╗    ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ███████╗██╗  ██╗  ║
@@ -2710,7 +2712,7 @@ class QuantumReportController {
 const quantumReportController = new QuantumReportController();
 
 // Export methods wrapped with asyncHandler for Express error handling
-module.exports = {
+export default {
   getFinancialReport: asyncHandler(quantumReportController.getFinancialReport),
   getComplianceReport: asyncHandler(quantumReportController.getComplianceReport),
   getLogisticsReport: asyncHandler(quantumReportController.getLogisticsReport),

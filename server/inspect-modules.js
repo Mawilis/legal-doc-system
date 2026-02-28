@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 const database = require('./config/database');
 const queues = require('./config/queues');
 const redis = require('./config/redis');

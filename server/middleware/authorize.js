@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/authorize.js
  * STATUS: PRODUCTION-READY | RBAC SECURITY GRADE
@@ -69,4 +71,4 @@ const authorize = (...roles) => async (req, res, next) => {
  * router.delete('/:id', protect, authorize('admin', 'lawyer'), deleteController);
  */
 
-module.exports = { authorize };
+export default { authorize };

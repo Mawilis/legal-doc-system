@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ SUPERADMIN MODEL - INVESTOR-GRADE QUANTUM SOVEREIGN           ║
   ║ [95% error elimination | R500K risk mitigation | 90% margins] ║
@@ -724,5 +726,5 @@ superAdminSchema.statics.generateComplianceReport = async function () {
 // =============================================================================
 // FINAL QUANTUM INVOCATION
 // =============================================================================
-module.exports = mongoose.model('SuperAdmin', superAdminSchema);
+export default mongoose.model('SuperAdmin', superAdminSchema);
 // Wilsy Touching Lives Eternally.

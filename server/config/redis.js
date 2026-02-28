@@ -1,3 +1,5 @@
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 /* eslint-disable */
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ REDIS CONFIGURATION - INVESTOR-GRADE MODULE                                 ║
@@ -37,8 +39,9 @@ const crypto = require('crypto'); // Used for generating secure IDs and hashes
 const Redis = require('ioredis');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
-const logger = require('../utils/logger');
-const metrics = require('../utils/metrics');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
+import metrics from '../utils/metrics.js';
 
 class RedisConfig {
   constructor() {
@@ -1090,7 +1093,7 @@ class RedisConfig {
 }
 
 // Export singleton instance
-module.exports = new RedisConfig();
+export default new RedisConfig();
 
 /*
  * ASSUMPTIONS:

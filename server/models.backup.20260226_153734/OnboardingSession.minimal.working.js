@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 const mongoose = require('mongoose');
 
 // Ultra-minimal schema
@@ -24,4 +26,4 @@ onboardingSessionSchema.statics.createSession = async function (tenantId, data) 
 
 // Create and export model
 const OnboardingSession = mongoose.model('OnboardingSessionMinimal', onboardingSessionSchema);
-module.exports = OnboardingSession;
+export default OnboardingSession;

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM SENTINEL: COMPLIANCE PREDICTOR SERVICE - AI-POWERED JURISPRUDENCE ENGINE
@@ -2761,7 +2763,7 @@ if (process.env.NODE_ENV === 'test') {
  *    - Human oversight requirements
  */
 
-module.exports = {
+export default {
   CompliancePredictor,
   getCompliancePredictor,
   AI_CONFIG,

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/invoiceRoutes.js
  * PATH: server/routes/invoiceRoutes.js
@@ -133,4 +135,4 @@ router.delete(
 /* ---------------------------------------------------------------------------
    EXPORT GATEWAY
    --------------------------------------------------------------------------- */
-module.exports = router;
+export default router;

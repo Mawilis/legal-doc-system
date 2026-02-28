@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ EMERGENCY KILL-SWITCH TESTS - $2.75B NUCLEAR SAFETY PROTOCOL VERIFICATION             ║
@@ -17,7 +19,7 @@ import emergencyKillSwitch, {
   isTenantQuarantined,
   getQuarantinedTenants,
   QUARANTINE_REASONS
-} from '../../middleware/emergencyKillSwitch.js.js';
+} from '../../middleware/emergencyKillSwitch.js';
 
 // Mock dependencies
 jest.mock('../../utils/redisClient.js', () => {
@@ -37,8 +39,8 @@ jest.mock('../../utils/logger.js', () => ({
   debug: jest.fn()
 }));
 
-import { redisClient } from '../../utils/redisClient.js.js';
-import { AuditLogger } from '../../utils/auditLogger.js.js';
+import { redisClient } from '../../utils/redisClient.js';
+import { AuditLogger } from '../../utils/auditLogger.js';
 
 // ============================================================================
 // TEST CONSTANTS

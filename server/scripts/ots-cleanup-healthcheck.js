@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 /*
@@ -686,7 +688,7 @@ if (require.main === module) {
 }
 
 // Export for testing
-module.exports = {
+export default {
   HealthCheckResult,
   validateTenantContext,
   checkDatabaseConnectivity,

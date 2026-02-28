@@ -61,13 +61,14 @@
  *   J --> M[Upsell Automation]
  */
 
-import { performance } from 'perf_hooks.js';
+import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 import { createHash } from "crypto";
 
 // WILSY OS CORE IMPORTS
 import auditLogger from '../../utils/auditLogger.js';
-import logger from '../../utils/logger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../../utils/quantumLogger.js';
 import cryptoUtils from '../../utils/cryptoUtils.js';
 import { redactSensitive } from '../../utils/cryptoUtils.js';

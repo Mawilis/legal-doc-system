@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  ███████╗██╗   ██╗███████╗███╗   ██╗████████╗    ██╗  ██╗ █████╗ ███████╗██╗  ██╗                       ║
@@ -619,7 +621,7 @@ function generateAuditTrailId(eventType, jurisdiction = 'ZA') {
 // ====================================================================================
 // VII. QUANTUM MODULE EXPORT
 // ====================================================================================
-module.exports = {
+export default {
   // Core hashing functions
   generateEventHash,
   generateHashChain,

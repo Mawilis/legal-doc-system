@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/systemRoutes.js
  * STATUS: PRODUCTION-READY | SOVEREIGN GOD-MODE ROUTES
@@ -148,4 +150,4 @@ router.get('/logs', SystemController.getSystemLogs);
  */
 router.post('/maintenance', SystemController.toggleMaintenance);
 
-module.exports = router;
+export default router;

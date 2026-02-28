@@ -7,7 +7,7 @@
 import { expect } from 'chai.js';
 import sinon from 'sinon.js';
 import { v4 as uuidv4 } from 'uuid.js';
-import usageService from '../../../services/monitoring/UsageService.js.js';
+import usageService from '../../../services/monitoring/UsageService.js';
 
 describe('UsageService - Gateway Quota Dashboard Due Diligence', () => {
   let clock;

@@ -96,9 +96,9 @@
  * of Wilsy OS's AI capabilities.
  */
 
-import { Queue, QueueEvents, QueueScheduler } from 'bullmq.js';
+import { Queue, QueueEvents } from 'bullmq.js';
 import Redis from 'ioredis.js';
-import { performance } from 'perf_hooks.js';
+import { performance } from 'perf_hooks';
 import crypto from "crypto";
 import { v4 as uuidv4 } from 'uuid.js';
 import promClient from 'prom-client.js';
@@ -230,7 +230,7 @@ export const embeddingQueue = new Queue(QUEUE_NAME, {
 export const queueEvents = new QueueEvents(QUEUE_NAME, { connection });
 
 // Create QueueScheduler for delayed jobs
-export const queueScheduler = new QueueScheduler(QUEUE_NAME, { connection });
+// FORENSIC FIX: QueueScheduler removed (Natively handled in BullMQ v3+)
 
 // Queue event handlers
 queueEvents.on('added', ({ jobId, name }) => {

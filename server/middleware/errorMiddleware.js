@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ERROR MIDDLEWARE - INVESTOR-GRADE GLOBAL RESILIENCE SHIELD                  ║
   ║ 99.99% error capture | Zero stack leakage | Forensic-grade logging          ║
@@ -60,7 +62,8 @@
 
 const crypto = require('crypto');
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../utils/metrics');
 
 // ============================================================================
@@ -1473,7 +1476,7 @@ const createGDPRError = (code, details = {}) => {
 // EXPORTS
 // ============================================================================
 
-module.exports = {
+export default {
   errorHandler,
   createBusinessError,
   createValidationError,

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 const mongoose = require('mongoose');
 
 const { Schema } = mongoose;
@@ -126,4 +128,4 @@ onboardingSessionSchema.statics.findByTenant = function (tenantId) {
   return this.find({ tenantId });
 };
 
-module.exports = mongoose.models.OnboardingSession || mongoose.model('OnboardingSession', onboardingSessionSchema);
+export default mongoose.models.OnboardingSession || mongoose.model('OnboardingSession', onboardingSessionSchema);

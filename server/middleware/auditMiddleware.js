@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ AUDIT MIDDLEWARE - INVESTOR-GRADE                                           ║
   ║ 99.99% tamper-proof | Real-time compliance | Forensic evidence             ║
@@ -12,7 +14,8 @@
 
 const crypto = require('crypto');
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../utils/metrics');
 
 // Sensitive fields that must be redacted from audit logs
@@ -72,7 +75,7 @@ function redactSensitiveData(data, fields = SENSITIVE_FIELDS) {
  * Audit Middleware
  * Logs all requests with forensic-grade detail
  */
-module.exports = (req, res, next) => {
+export default (req, res, next) => {
   const startTime = Date.now();
   const auditId = crypto.randomBytes(16).toString('hex');
 

@@ -5,13 +5,14 @@ import { Queue, Worker } from 'bullmq.js';
 import crypto from "crypto";
 import natural from 'natural.js';
 import stopword from 'stopword.js';
-import { redisConfig } from '../config/redis.js.js';
-import Case from '../models/Case.js.js';
-import Citation from '../models/Citation.js.js';
-import Precedent from '../models/Precedent.js.js';
-import { AuditLogger } from '../utils/auditLogger.js.js';
-import logger from '../utils/logger.js.js';
-import QuantumLogger from '../utils/quantumLogger.js.js';
+import { redisConfig } from '../config/redis.js';
+import Case from '../models/Case.js';
+import Citation from '../models/Citation.js';
+import Precedent from '../models/Precedent.js';
+import { AuditLogger } from '../utils/auditLogger.js';
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import QuantumLogger from '../utils/quantumLogger.js';
 
 // Rest of your code with proper error handling
 // ... (preserve all existing functionality)

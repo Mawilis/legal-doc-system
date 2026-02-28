@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ===================================================================================
  * QUANTUM LOGGING CITADEL - Wilsy OS Forensic Logging Configuration
@@ -701,7 +703,7 @@ class LogRetentionManager {
 // ===================================================================================
 // EXPORT QUANTUM LOGGING INFRASTRUCTURE
 // ===================================================================================
-module.exports = {
+export default {
   // Logger Instances
   appLogger,
   auditLogger,

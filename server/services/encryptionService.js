@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                    QUANTUM ENCRYPTION NEXUS - THE CRYPTOGRAPHIC HEART               ║
@@ -55,7 +57,8 @@ const crypto = require('crypto'); // Native Quantum Cryptography
 const fs = require('fs').promises; // Quantum Secure File Operations
 const path = require('path'); // Quantum Path Resolution
 const AuditTrail = require('../models/AuditTrail'); // Immutable Quantum Ledger
-const logger = require('../utils/logger'); // Quantum Sentinel Logging
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw; // Quantum Sentinel Logging
 
 // Dependencies Installation Path:
 // Run in terminal from /legal-doc-system/server/:
@@ -2698,7 +2701,7 @@ SECURITY CONSIDERATIONS:
 const encryptionServiceInstance = new EncryptionService();
 
 // Export the service instance and class for testing
-module.exports = {
+export default {
   EncryptionService,
   encryptionService: encryptionServiceInstance,
   QUANTUM_ENCRYPTION_STANDARDS,

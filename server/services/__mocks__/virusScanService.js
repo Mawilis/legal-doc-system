@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/services/__mocks__/virusScanService.js
  * STATUS: PRODUCTION-READY | TEST MOCK | EPITOME
@@ -165,7 +167,7 @@ async function scanFile(localPath) {
 }
 
 /* Export the mock API */
-module.exports = {
+export default {
   scanFile,
   // Test helpers
   setBehavior,

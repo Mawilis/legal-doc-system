@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                     QUANTUM DATA PROCESSING RECORD NEXUS                            ║
@@ -1470,7 +1472,7 @@ PRODUCTION CONSIDERATIONS:
 // QUANTUM EXPORT & INVOCATION
 // ============================================================================
 
-module.exports = DataProcessingRecord;
+export default DataProcessingRecord;
 
 // FINAL QUANTUM INVOCATION
 console.log(

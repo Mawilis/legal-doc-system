@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * KMS Shim - Placeholder for Vault Key Management Service
  * This is a temporary shim until full KMS integration is implemented
@@ -16,7 +18,7 @@ async function unwrapKey(wrappedKey, keyId) {
   return parts[2] || 'default-key';
 }
 
-module.exports = {
+export default {
   wrapKey,
   unwrapKey,
 };

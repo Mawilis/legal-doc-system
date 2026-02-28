@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * 🧬 BIOMETRIC CONTROLLER QUANTUM SCROLL: WEB AUTHN ORACLE 🧬

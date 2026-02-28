@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * =================================================================================
  * ⚖️ QUANTUM COMPLIANCE GATEWAY NEXUS v3.1 - PAN-AFRICAN REGULATORY ORCHESTRATION ⚖️
@@ -1229,4 +1231,4 @@ console.log(`
 
 // Wilsy Touching Lives Eternally.
 
-module.exports = router;
+export default router;

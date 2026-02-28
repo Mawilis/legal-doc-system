@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                                                              ║
@@ -1514,4 +1516,4 @@ router.use((err, req, res, next) => {
 // ============================================================================
 // QUANTUM ROUTE EXPORT
 // ============================================================================
-module.exports = router;
+export default router;

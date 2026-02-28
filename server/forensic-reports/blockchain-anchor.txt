@@ -1,0 +1,9 @@
+{
+  "merkleRoot": "8b472d31e6ec33c2e1234ec388452f07ecd62459a4837c211f77d8875bc97dd9",
+  "timestamp": "2026-02-28T08:58:17.843Z",
+  "network": "ethereum",
+  "transactionId": "40574cd48793b151ff23e771fd25542fcaffbf571c962cb82a7c0cca00f516a4",
+  "blockNumber": 25131509,
+  "gasUsed": 418944,
+  "verifier": "0x58f74ff67bfea2c06fcf222af0552500eea1f3bf"
+}

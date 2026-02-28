@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/services/jobService.js
  * STATUS: PRODUCTION-READY | JOB ORCHESTRATION | EPITOME
@@ -30,7 +32,8 @@
 const { v4: uuidv4 } = require('uuid');
 const AuditEvent = require('../models/auditEventModel');
 const JobModel = require('../models/jobModel');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 const DEFAULT_QUEUE_PREFIX = process.env.JOB_QUEUE_PREFIX || 'wilsy_jobs';
@@ -566,7 +569,7 @@ async function shutdown() {
    Exports
    ------------------------- */
 
-module.exports = {
+export default {
   enqueue,
   getJob,
   registerWorker,

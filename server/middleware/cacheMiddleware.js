@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/cacheMiddleware.js
  * STATUS: PRODUCTION-READY | PERFORMANCE & SCALE GRADE
@@ -85,4 +87,4 @@ const cacheMiddleware = (duration = 300) => async (req, res, next) => {
   }
 };
 
-module.exports = cacheMiddleware;
+export default cacheMiddleware;

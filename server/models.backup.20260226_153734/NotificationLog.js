@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ NOTIFICATION LOG MODEL V6 — FORENSIC INVESTOR-GRADE ● POPIA COMPLIANT ● COURT-ADMISSIBLE                       ║
   ║ 78% penalty reduction | R1.2M annual savings | 92% audit readiness                                             ║
@@ -800,7 +802,7 @@ notificationLogSchema.statics = {
 const NotificationLog = mongoose.model('NotificationLog', notificationLogSchema);
 
 // Export everything
-module.exports = NotificationLog;
+export default NotificationLog;
 module.exports.NOTIFICATION_CHANNELS = NOTIFICATION_CHANNELS;
 module.exports.NOTIFICATION_TYPES = NOTIFICATION_TYPES;
 module.exports.NOTIFICATION_STATUS = NOTIFICATION_STATUS;

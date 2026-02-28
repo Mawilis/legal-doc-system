@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 /*
@@ -1141,7 +1143,7 @@ if (process.env.NODE_ENV === 'test') {
 // MODULE EXPORT
 // ============================================================================
 
-module.exports = new StorageService();
+export default new StorageService();
 
 // ============================================================================
 // RUNBOOK SNIPPET

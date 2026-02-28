@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * 🚀💰 QUANTUM FINANCIAL ENGINE: COMPLETE REVENUE INTELLIGENCE NEXUS 💰🚀
@@ -1229,7 +1231,7 @@ function calculatePresentValue(futureValue, discountRate, years) {
 // EXPORT COMPLETE FINANCIAL ENGINE
 // =============================================================================
 
-module.exports = {
+export default {
   // Core Financial Calculations (7 Main Functions)
   calculateMRRFromAggregation,
   calculateARRFromMRR,

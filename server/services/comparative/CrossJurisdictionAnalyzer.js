@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * WILSY OS: CROSS-JURISDICTION ANALYZER - GLOBAL LEGAL INTELLIGENCE
@@ -1322,7 +1324,7 @@ class CrossJurisdictionAnalyzerFactory {
 // EXPORTS - Public Interface
 // =============================================================================
 
-module.exports = {
+export default {
   CrossJurisdictionAnalyzer,
   CrossJurisdictionAnalyzerFactory,
   CROSS_JURISDICTION_CONSTANTS,

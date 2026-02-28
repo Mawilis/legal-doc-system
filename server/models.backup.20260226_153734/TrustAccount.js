@@ -7,7 +7,7 @@
  */
 
 import mongoose from "mongoose";
-import crypto from 'node:crypto.js';
+import crypto from 'node:crypto';
 import { v4 as uuidv4 } from 'uuid.js';
 
 const { Schema } = mongoose;

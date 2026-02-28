@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/services/fileIngestionService.js
  * STATUS: PRODUCTION-READY | EPITOME | FILE INGESTION ENGINE
@@ -36,7 +38,8 @@ const pipeline = promisify(stream.pipeline);
 const AuditEvent = require('../models/auditEventModel');
 const FileModel = require('../models/fileModel');
 const JobModel = require('../models/jobModel');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const JobService = require('./jobService'); // enqueue background jobs
 
 // Optional helpers (implement or mock in tests)
@@ -402,6 +405,6 @@ async function ingestLocalUpload({
    Exports
    ------------------------- */
 
-module.exports = {
+export default {
   ingestLocalUpload,
 };

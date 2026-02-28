@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * =================================================================================
  * ⚡ QUANTUM BLOCKCHAIN IMMUTABLE AUDIT LEDGER NEXUS ⚡
@@ -784,7 +786,7 @@ function runBlockchainTests() {
 // ================================================================================
 
 // Export quantum blockchain utilities
-module.exports = {
+export default {
   QuantumBlock,
   QuantumBlockchain,
   createLegalOperation,

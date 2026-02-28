@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ================================================================================================
  * FILE: server/models/BillingRecord.js
@@ -872,7 +874,7 @@ BillingRecord.prototype.generateReceipt = function () {
   return receipt;
 };
 
-module.exports = BillingRecord;
+export default BillingRecord;
 
 /*
  * ================================================================================================

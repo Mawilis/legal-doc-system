@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/AIModel.js
  * STATUS: PRODUCTION-READY (WILSY OS V2.0)
@@ -858,7 +860,7 @@ class AIModel {
 const AIIntelligence = mongoose.model('AIIntelligence', AIIntelligenceSchema);
 
 // Export both the Model and the Prophet Class
-module.exports = {
+export default {
   AIIntelligence, // Mongoose Model for database operations
   AIModel, // Prophet Class for AI intelligence
 };

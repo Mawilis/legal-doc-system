@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ CITATION MODEL - INVESTOR-GRADE MODULE                         ║
@@ -44,7 +46,8 @@
 
 const mongoose = require('mongoose');
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const cryptoUtils = require('../utils/cryptoUtils');
 
 /*
@@ -395,6 +398,6 @@ const AUTHORITY_TYPES = {
   OVERRULED: 'overruled',
 };
 
-module.exports = Citation;
+export default Citation;
 module.exports.RETENTION_POLICIES = RETENTION_POLICIES;
 module.exports.AUTHORITY_TYPES = AUTHORITY_TYPES;

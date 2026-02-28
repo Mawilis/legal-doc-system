@@ -10,14 +10,14 @@
  * • Confirms $1.5B valuation premium enablement
  */
 
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import axios from 'axios.js';
-import { exec } from 'child_process.js';
+import { exec } from 'child_process';
 import crypto from "crypto";
 import path from "path";
 import { promisify } from "util";
 
-import * as recoverySentinel from 'wilsy-os-sentinel/recovery-sentinel.js.js';
+import * as recoverySentinel from 'wilsy-os-sentinel/recovery-sentinel.js';
 
 // Mock dependencies
 jest.mock('axios');

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/models/systemConfigModel.js
  * PATH: server/models/systemConfigModel.js
@@ -65,4 +67,4 @@ const SystemConfig = mongoose.models && mongoose.models.SystemConfig
   ? mongoose.model('SystemConfig')
   : mongoose.model('SystemConfig', SystemConfigSchema);
 
-module.exports = SystemConfig;
+export default SystemConfig;

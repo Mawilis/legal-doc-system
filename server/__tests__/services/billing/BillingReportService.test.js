@@ -15,7 +15,7 @@
 
 import mongoose from "mongoose";
 import crypto from "crypto";
-import fs from 'fs/promises.js';
+import fs from 'fs/promises';
 import path from "path";
 
 // Mock dependencies
@@ -27,16 +27,17 @@ jest.mock('../../../utils/logger.js');
 jest.mock('../../../utils/quantumLogger.js');
 jest.mock('../../../utils/cryptoUtils.js');
 
-import TenantConfig from '../../../models/TenantConfig.js.js';
-import UsageHistory from '../../../models/UsageHistory.js.js';
-import BillingInvoice from '../../../models/BillingInvoice.js.js';
-import auditLogger from '../../../utils/auditLogger.js.js';
-import logger from '../../../utils/logger.js.js';
-import quantumLogger from '../../../utils/quantumLogger.js.js';
+import TenantConfig from '../../../models/TenantConfig.js';
+import UsageHistory from '../../../models/UsageHistory.js';
+import BillingInvoice from '../../../models/BillingInvoice.js';
+import auditLogger from '../../../utils/auditLogger.js';
+import loggerRaw from '../../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
+import quantumLogger from '../../../utils/quantumLogger.js';
 import {
   generateMonthlyBillingReport,
   generateInvestorBillingSummary,
-} from '../../../services/billing/BillingReportService.js.js';
+} from '../../../services/billing/BillingReportService.js';
 
 describe('BillingReportService - Forensic Billing Due Diligence', () => {
   let mockTenantId;

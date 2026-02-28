@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                     QUANTUM SECURITY INCIDENT NEXUS                                 ║
@@ -46,7 +48,8 @@
 require('dotenv').config(); // Quantum Env Vault Loading
 const crypto = require('crypto'); // Native Quantum Cryptography
 const mongoose = require('mongoose@^7.0.0'); // Quantum ODM
-const logger = require('../utils/logger'); // Quantum Sentinel Logging
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw; // Quantum Sentinel Logging
 
 // Dependencies Installation Path:
 // Run in terminal from /legal-doc-system/server/:
@@ -2043,7 +2046,7 @@ PRODUCTION CONSIDERATIONS:
 // QUANTUM EXPORT & INVOCATION
 // ============================================================================
 
-module.exports = SecurityIncident;
+export default SecurityIncident;
 
 // FINAL QUANTUM INVOCATION
 console.log(

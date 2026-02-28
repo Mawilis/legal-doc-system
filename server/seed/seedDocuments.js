@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/seed/seedDocuments.js
  * STATUS: PRODUCTION-READY | FORENSIC ALIGNMENT
@@ -93,4 +95,4 @@ const seedDocuments = async (tenantId, clientIds) => {
   }
 };
 
-module.exports = seedDocuments;
+export default seedDocuments;

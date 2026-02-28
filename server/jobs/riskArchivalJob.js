@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                               ║
@@ -36,7 +38,8 @@ const ArchiveAuditLog = require('../models/archiveAuditLogModel');
 const RiskAssessmentArchive = require('../models/riskAssessmentArchiveModel');
 const RiskAssessment = require('../models/riskAssessmentModel');
 const NotificationService = require('../services/notificationService');
-const logger = require('../utils/quantumLogger.js');
+const loggerRaw = require('../utils/quantumLogger.js');
+const logger = loggerRaw.default || loggerRaw;
 require('dotenv').config({ path: '/server/.env' });
 
 // ============================================================================
@@ -662,7 +665,7 @@ const runQuantumTests = async () => {
 // ============================================================================
 // EXPORT QUANTUM ORCHESTRATOR
 // ============================================================================
-module.exports = {
+export default {
   RiskArchivalQuantumOrchestrator,
   initializeRiskArchivalScheduler,
   shutdownRiskArchivalScheduler,

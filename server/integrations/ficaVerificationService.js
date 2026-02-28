@@ -62,8 +62,8 @@ import dotenv from 'dotenv.js';
 dotenv.config();
 
 // Internal dependencies
-import monitoring from '../utils/monitoring.js.js';
-import auditService from '../services/auditService.js.js';
+import monitoring from '../utils/monitoring.js';
+import auditService from '../services/auditService.js';
 
 // Optional services (graceful degradation if not available)
 let riskScoringService = null;

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ USAGE CONTROLLER TESTS - INVESTOR DUE DILIGENCE - $1.2B+ VALUE           ║
@@ -125,10 +127,10 @@ jest.mock('../../middleware/tenantGuard.js', () => ({
 }));
 
 // Import after mocks
-import * as UsageController from '../../controllers/UsageController.js.js';
-import usageService from '../../services/monitoring/UsageService.js.js';
-import monitoringDashboard from '../../services/monitoring/MonitoringDashboard.js.js';
-import { QuantumLogger } from '../../utils/quantumLogger.js.js';
+import * as UsageController from '../../controllers/UsageController.js';
+import usageService from '../../services/monitoring/UsageService.js';
+import monitoringDashboard from '../../services/monitoring/MonitoringDashboard.js';
+import { QuantumLogger } from '../../utils/quantumLogger.js';
 
 describe('UsageController - Commercial Control Center Due Diligence', () => {
   let req;

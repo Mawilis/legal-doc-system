@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ EMAIL CONFIGURATION - INVESTOR-GRADE MODULE                                 ║
   ║ Multi-provider support | POPIA compliant | Forensic logging                 ║
@@ -227,7 +229,7 @@ const loggingConfig = {
   includeBody: false,
 };
 
-module.exports = {
+export default {
   emailConfig,
   emailTemplates,
   getPopiaFooter,

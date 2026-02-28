@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ SOVEREIGN DOCUMENT CONTROLLER - INVESTOR-GRADE MODULE         ║
   ║ [90% manual effort reduction | R10M risk elimination | 85% margin]║
@@ -38,7 +40,8 @@ const AuditTrail = require('../models/AuditTrail');
 const Document = require('../models/Document');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 // Note: redactSensitive and REDACT_FIELDS are referenced in JSDoc for documentation
 // but not directly used to avoid unused variable warnings
 
@@ -1605,4 +1608,4 @@ class DocumentController {
 
 // ==================== MODULE EXPORTS ====================
 
-module.exports = new DocumentController();
+export default new DocumentController();

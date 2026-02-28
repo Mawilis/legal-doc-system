@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 /*
  * Wilsy OS - OTS Cache Cleanup Script
@@ -18,7 +20,8 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
-const logger = require('../config/logger');
+const loggerRaw = require('../config/logger');
+const logger = loggerRaw.default || loggerRaw;
 const { AuditLedger } = require('../models/AuditLedger');
 
 // Configuration
@@ -430,7 +433,7 @@ Example:
  *     style E fill:#f8d7da
  */
 
-module.exports = {
+export default {
   cleanCacheDirectory,
   cleanTrashDirectory,
   parseCacheFilename,

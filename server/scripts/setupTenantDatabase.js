@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ================================================================================
 ⚡ QUANTUM DATABASE ARCHITECTURE FORGERY: MULTI-TENANT LEGAL ORACLE NEXUS ⚡

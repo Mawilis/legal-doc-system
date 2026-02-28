@@ -1,4 +1,7 @@
-import logger from '../utils/logger.js';
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
+import loggerRaw from '../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 /*╔════════════════════════════════════════════════════════════════╗
   ║ QUANTUM CRYPTO ENGINE - INVESTOR-GRADE MODULE                 ║
   ║ [95% faster encryption | R5M risk elimination | 90% margins]  ║
@@ -265,4 +268,4 @@ class QuantumCryptoEngine {
 }
 
 // Export singleton instance
-module.exports = new QuantumCryptoEngine();
+export default new QuantumCryptoEngine();

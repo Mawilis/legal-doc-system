@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 #!/usr/bin/env node
 
 /*
@@ -171,7 +173,7 @@ class MigrationLogger {
   }
 }
 
-module.exports = {
+export default {
   MigrationLogger,
   MIGRATION_PHASES,
   CONFIG,

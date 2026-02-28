@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/caseRoutes.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/caseRoutes.js
@@ -278,7 +280,7 @@ router.post(
 /* ---------------------------------------------------------------------------
    EXPORT: Quantum Gateway Manifestation
    --------------------------------------------------------------------------- */
-module.exports = router;
+export default router;
 
 /*
  * QUANTUM VALIDATION TEST SUITE (Embedded for Sentinel Reference):

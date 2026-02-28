@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/index.js
  * STATUS: PRODUCTION-READY | ARCHITECTURAL COMMAND CENTER
@@ -48,7 +50,7 @@ const { userAgentRequired } = require('./userAgentMiddleware');
 const validateObjectId = require('./validateObjectId');
 const validate = require('./validationMiddleware');
 
-module.exports = {
+export default {
   // Identity & Protection
   protect,
   authorize,

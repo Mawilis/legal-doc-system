@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ SOUTH AFRICA LAUNCH PLAN - INVESTOR-GRADE MODULE             ║
   ║ [90% market capture | R50M revenue | 85% margins]            ║
@@ -19,7 +21,8 @@
 
 const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 class SouthAfricaLaunchPlan {
   constructor() {
@@ -148,4 +151,4 @@ class SouthAfricaLaunchPlan {
   }
 }
 
-module.exports = SouthAfricaLaunchPlan;
+export default SouthAfricaLaunchPlan;

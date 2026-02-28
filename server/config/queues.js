@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ QUEUES CONFIGURATION - INVESTOR-GRADE MODULE                                ║
   ║ 100% job reliability | Zero data loss | High-throughput processing          ║
@@ -37,7 +39,8 @@
 const { Queue } = require('bullmq');
 const { Worker } = require('bullmq');
 const auditLogger = require('../utils/auditLogger');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../utils/metrics');
 const redisConfig = require('./redis');
 
@@ -691,4 +694,4 @@ class QueueConfig {
   }
 }
 
-module.exports = new QueueConfig();
+export default new QueueConfig();

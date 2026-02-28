@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * 🔷⏰ QUANTUM TIME ORCHESTRATOR: CHRONOSPHERE OF LEGAL CERTAINTY ⏰🔷
@@ -1615,7 +1617,7 @@ async function runQuantumTimeTests() {
 // EXPORT QUANTUM TIME MODULE
 // =============================================================================
 
-module.exports = {
+export default {
   QuantumTimeOrchestrator,
   getQuantumTime,
   calculateCompaniesActRetention,

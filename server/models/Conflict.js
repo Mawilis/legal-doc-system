@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -642,4 +644,4 @@ ConflictSchema.index({ 'audit.createdAt': -1 });
 ConflictSchema.index({ conflictReference: 1 }, { unique: true });
 
 // ==================== EXPORT ====================
-module.exports = mongoose.model('Conflict', ConflictSchema);
+export default mongoose.model('Conflict', ConflictSchema);

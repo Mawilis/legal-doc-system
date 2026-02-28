@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM ENCRYPTION NEXUS: AES-256-GCM CRYPTOGRAPHIC BASTION
@@ -515,7 +517,7 @@ const generateTestVectors = () => {
 // QUANTUM MODULE EXPORTS
 // ============================================================================
 
-module.exports = {
+export default {
   // Core Encryption Functions
   encryptData,
   decryptData,

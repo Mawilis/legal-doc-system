@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ E-SIGNATURE QUANTUM CONTROLLER - INVESTOR-GRADE MODULE        ║
   ║ [95% validation accuracy | R3M risk elimination | 90% margins]║
@@ -33,7 +35,8 @@ graph TD
 
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const quantumCrypto = require('../utils/quantumCryptoEngine');
 
 // Assumptions based on ECT Act Section 13 requirements:
@@ -598,4 +601,4 @@ class ESignController {
 }
 
 // Export singleton instance with no top-level side effects
-module.exports = new ESignController();
+export default new ESignController();

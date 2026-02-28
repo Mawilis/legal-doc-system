@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
  * ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
@@ -80,7 +82,8 @@ const { validatePOPIAConsent } = require('../utils/complianceUtils');
 const { encryptData, decryptData, generateKeyPair } = require('../utils/cryptoUtils');
 
 // 📜 Logger
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // 🔧 QUANTUM BLOCKCHAIN CONFIGURATION
@@ -1335,7 +1338,7 @@ class BlockchainService {
 // 📦 MODULE EXPORTS
 // ============================================================================
 
-module.exports = new BlockchainService();
+export default new BlockchainService();
 
 // ============================================================================
 // 📋 DEPENDENCIES & INSTALLATION GUIDE
@@ -1476,7 +1479,7 @@ module.exports = new BlockchainService();
  * blockchainTransactionSchema.index({ documentHash: 1, status: 1 });
  * blockchainTransactionSchema.index({ 'blockchainData.transactionHash': 1 }, { unique: true, sparse: true });
  *
- * module.exports = mongoose.model('BlockchainTransaction', blockchainTransactionSchema);
+ * export default mongoose.model('BlockchainTransaction', blockchainTransactionSchema);
  */
 
 // ============================================================================

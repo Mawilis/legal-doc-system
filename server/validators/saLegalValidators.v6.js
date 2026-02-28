@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ SA LEGAL VALIDATORS — INVESTOR-GRADE ● REGULATOR-READY ● COURT-ADMISSIBLE                                      ║
   ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
@@ -190,7 +192,7 @@ function validateBusinessRegistration(regNumber) {
   return result;
 }
 
-module.exports = {
+export default {
   validateSAIDNumber,
   validateBusinessRegistration,
   VALIDATION_CODES,

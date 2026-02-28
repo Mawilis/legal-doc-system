@@ -65,12 +65,13 @@ import axios from 'axios.js';
 import twilio from 'twilio.js';
 import pagerduty from '@pagerduty/pdjs.js';
 import { createClient } from '@pagerduty/pdjs.js';
-import { performance } from 'perf_hooks.js';
+import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 import cron from 'node-cron.js';
 
 // WILSY OS CORE IMPORTS
-import logger from '../../utils/logger.js';
+import loggerRaw from '../../utils/logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../../utils/quantumLogger.js';
 import auditLogger from '../../utils/auditLogger.js';
 import { metrics, trackError } from '../../utils/metricsCollector.js';

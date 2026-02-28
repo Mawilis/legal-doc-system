@@ -44,4 +44,4 @@ const auditLogger = {
   }),
 };
 
-module.exports = auditLogger;
+export default auditLogger;

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * =================================================================================
  * QUANTUM BIOMETRIC CREDENTIAL NEXUS - IMMORTAL AUTHENTICATION FORTRESS
@@ -1206,7 +1208,7 @@ class BiometricCredentialService {
 // EXPORT
 // =================================================================================
 
-module.exports = {
+export default {
   BiometricCredentialService,
   BIOMETRIC_TYPES,
   CREDENTIAL_STATUS,

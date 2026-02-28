@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ================================================================================
 QUANTUM SCROLL OF DIVINE VALIDATION: SUPER ADMIN VALIDATOR
@@ -1183,7 +1185,7 @@ if (process.env.NODE_ENV === 'test') {
 // =============================================================================
 // QUANTUM EXPORT: DIVINE VALIDATOR MANIFEST
 // =============================================================================
-module.exports = {
+export default {
   // Core Validation Functions
   validateSuperAdminCreation,
   validateSuperAdminUpdate,

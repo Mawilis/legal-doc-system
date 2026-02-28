@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/routes/notificationRoutes.js
  * STATUS: PRODUCTION-READY
@@ -190,7 +192,7 @@ router.post(
   },
 );
 
-module.exports = router;
+export default router;
 
 // 4. USAGE EXAMPLE
 // -----------------------------------------------------------------------------

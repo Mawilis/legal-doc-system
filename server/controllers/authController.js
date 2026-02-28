@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE: server/controllers/authController.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/authController.js
@@ -75,7 +77,8 @@ const User = require('../models/User');
 // =============================================================================
 const emailService = require('../services/emailService');
 const smsService = require('../services/smsService');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // =============================================================================
 // CONSTANTS - GENERATIONAL CONFIGURATION
@@ -1544,7 +1547,7 @@ exports.revokeSession = async (req, res) => {
 // =============================================================================
 // MODULE EXPORT - SOVEREIGN IDENTITY ENGINE
 // =============================================================================
-module.exports = exports;
+export default exports;
 
 /*
  * -----------------------------------------------------------------------------

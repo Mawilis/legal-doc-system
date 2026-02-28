@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                                      ║
@@ -39,7 +41,8 @@ const RiskAssessment = require('../models/riskAssessmentModel');
 const EncryptionService = require('../services/encryptionService');
 const LegalComplianceEngine = require('../services/legalComplianceEngine');
 const NotificationService = require('../services/notificationService');
-const logger = require('../utils/quantumLogger.js');
+const loggerRaw = require('../utils/quantumLogger.js');
+const logger = loggerRaw.default || loggerRaw;
 require('dotenv').config({ path: '/server/.env' });
 
 // ============================================================================
@@ -961,7 +964,7 @@ exports.runQuantumTests = async () => {
 // ============================================================================
 // QUANTUM POLICY EXPORTS
 // ============================================================================
-module.exports = {
+export default {
   RetentionQuantumEnforcer,
   RetentionQuantumClassifier,
   RETENTION_POLICY,

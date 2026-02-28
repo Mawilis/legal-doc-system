@@ -1,5 +1,5 @@
 /* Simple mock for logger */
-module.exports = {
+export default {
   error: jest.fn(),
   warn: jest.fn(),
   info: jest.fn(),

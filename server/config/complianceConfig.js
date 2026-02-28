@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ================================================================================
     COMPLIANCE CONFIGURATION CITADEL - Wilsy OS Legal Digital Governance Nexus
@@ -1340,7 +1342,7 @@ const getConfigSummary = () => {
 // CONFIGURATION EXPORT WITH ENHANCED METHODS
 // =============================================================================
 
-module.exports = {
+export default {
   // Main Configuration Export
   config: ComplianceConfig,
 

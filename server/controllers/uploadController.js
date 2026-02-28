@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/controllers/uploadController.js
  * PATH: server/controllers/uploadController.js
@@ -311,4 +313,4 @@ router.post(
 /* -------------------------
    Export router
    ------------------------- */
-module.exports = router;
+export default router;

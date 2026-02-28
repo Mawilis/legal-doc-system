@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-env jest */
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ HEALTH ROUTES TESTS - INVESTOR-GRADE                          ║
@@ -74,7 +76,8 @@ const express = require('express');
 const request = require('supertest');
 const healthRoutes = require('../../routes/health');
 const auditLogger = require('../../utils/auditLogger');
-const logger = require('../../utils/logger');
+const loggerRaw = require('../../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../../utils/metrics');
 
 describe('Health Routes - Investor Grade Tests', () => {

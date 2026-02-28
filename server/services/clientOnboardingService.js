@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ CLIENT ONBOARDING SERVICE — INVESTOR-GRADE ● FORENSIC ● PRODUCTION           ║
   ║ FICA Compliant | POPIA Compliant | Multi-tenant | Circuit Breaker           ║
@@ -20,7 +22,8 @@ const {
   FICAComplianceError,
   ResourceNotFoundError,
 } = require('../utils/errors');
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../utils/metrics');
 
 // External services
@@ -1678,4 +1681,4 @@ class ClientOnboardingService extends EventEmitter {
 }
 
 // Export singleton instance
-module.exports = new ClientOnboardingService();
+export default new ClientOnboardingService();

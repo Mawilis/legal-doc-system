@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * 🧬 BIOMETRIC ROUTES QUANTUM SCROLL: WEB AUTHN API ORCHESTRATION 🧬
@@ -796,7 +798,7 @@ router.use((err, req, res, next) => {
  * 5. Obtain POPIA compliance certification
  */
 
-module.exports = router;
+export default router;
 
 /*
  * ============================================================================

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * WILSY OS: QUANTUM METRICS COLLECTOR - OBSERVABILITY NEXUS
@@ -941,7 +943,7 @@ const metrics = MetricsCollectorFactory.getCollector();
 // EXPORTS - Public Interface
 // =============================================================================
 
-module.exports = {
+export default {
   // Core class
   MetricsCollector,
   MetricsCollectorFactory,

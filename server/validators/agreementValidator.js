@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 =============================================================================================================
 QUANTUM AGREEMENT VALIDATION FORTRESS - ETERNAL SANCTITY OF LEGAL CONTRACT INTEGRITY
@@ -1028,7 +1030,7 @@ const validateSALegalCompliance = (agreementData) => {
 // ============================================
 // QUANTUM MODULE EXPORTS
 // ============================================
-module.exports = {
+export default {
   // Schemas
   createAgreementSchema,
   updateAgreementSchema,

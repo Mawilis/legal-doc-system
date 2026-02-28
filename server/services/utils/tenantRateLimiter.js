@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * WILSY OS: TENANT RATE LIMITER - INTELLIGENT TRAFFIC CONTROLLER
@@ -566,7 +568,7 @@ tenantRateLimiter.getMetrics = async function () {
 };
 
 // Export the main function (CommonJS style)
-module.exports = tenantRateLimiter;
+export default tenantRateLimiter;
 module.exports.default = tenantRateLimiter;
 
 // Also export as named exports for ES modules

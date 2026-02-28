@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid.js';
 import AnomalyDetectionService, {
   AnomalyDetectionServiceFactory,
   ANOMALY_CONSTANTS,
-} from '../../services/anomalyDetectionService.js.js';
+} from '../../services/anomalyDetectionService.js';
 
 describe('AnomalyDetectionService - Legal Fraud Sentinel Due Diligence', () => {
   let service;

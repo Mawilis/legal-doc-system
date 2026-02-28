@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -1042,4 +1044,4 @@ PrecedentSchema.index({ 'aiAnalysis.citationNetwork.citedByCount': -1 });
  */
 
 // ==================== EXPORT ====================
-module.exports = mongoose.model('Precedent', PrecedentSchema);
+export default mongoose.model('Precedent', PrecedentSchema);

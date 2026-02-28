@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE: /server/models/Dispatch.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Dispatch.js
@@ -951,7 +953,7 @@ const Dispatch = mongoose.model('Dispatch', dispatchSchema);
 // DIVINE EXPORT
 // -----------------------------------------------------------------------------
 
-module.exports = Dispatch;
+export default Dispatch;
 
 /* -----------------------------------------------------------------------------
  * THE COVENANT: ROI & AFRICAN TRANSFORMATION

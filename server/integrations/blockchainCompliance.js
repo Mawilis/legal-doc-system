@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * QUANTUM SENTINEL: BLOCKCHAIN COMPLIANCE IMMUTABLE LEDGER
@@ -1158,7 +1160,7 @@ function getBlockchainLedger() {
   return ledgerInstance;
 }
 
-module.exports = {
+export default {
   BlockchainComplianceLedger,
   getBlockchainLedger,
   BLOCKCHAIN_NETWORKS,

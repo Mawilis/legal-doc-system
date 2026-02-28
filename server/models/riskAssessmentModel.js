@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ============================================================================
  * ⚠️ RISK ASSESSMENT MODEL QUANTUM SCROLL: IMMUTABLE RISK CHRONICLE ⚠️
@@ -1959,7 +1961,7 @@ riskAssessmentSchema.index({ archivalDate: 1, status: 1 });
  * 🚀 Pan-African regulatory risk framework ready
  */
 
-module.exports = mongoose.model('RiskAssessment', riskAssessmentSchema);
+export default mongoose.model('RiskAssessment', riskAssessmentSchema);
 
 // Export constants for use in other files
 module.exports.RISK_CATEGORIES = RISK_CATEGORIES;

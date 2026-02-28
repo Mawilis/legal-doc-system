@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ===================================================================================================================
  *  ╔═╗╔═╗╔═╗╦  ╦╔═╗╔╦╗╔═╗╦═╗╦ ╦╔═╗╔╦╗╔═╗╔═╗╔═╗╦ ╦╔═╗╦═╗╔═╗
@@ -2702,5 +2704,5 @@ class QuantumComplianceReportGenerator {
 // ===================================================================================================================
 // EXPORT AND INITIALIZATION
 // ===================================================================================================================
-module.exports = new QuantumComplianceReportGenerator();
+export default new QuantumComplianceReportGenerator();
 console.log('Wilsy Touching Lives Eternally - Quantum Compliance Report Generator Activated');

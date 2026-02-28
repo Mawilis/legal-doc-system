@@ -7,7 +7,7 @@
  * -----------------------------------------------------------------------------
  */
 
-module.exports = {
+export default {
   // Model configuration
   model: {
     default: process.env.DEFAULT_EMBEDDING_MODEL || 'legal-bert',

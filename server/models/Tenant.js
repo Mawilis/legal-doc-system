@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable no-irregular-whitespace */
 /*
 ================================================================================
@@ -1620,7 +1622,7 @@ This is the genesis of Africa's legal digital destiny.
 // FINAL QUANTUM INVOCATION
 // =============================================================================
 
-module.exports = mongoose.model('Tenant', tenantSchema);
+export default mongoose.model('Tenant', tenantSchema);
 module.exports.TENANT_CONSTANTS = TENANT_CONSTANTS;
 
 // Wilsy Touching Lives Eternally.

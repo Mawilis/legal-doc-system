@@ -62,7 +62,8 @@ import { v4 as uuidv4 } from 'uuid.js';
 // ============================================================================
 import { tenantContext } from '../middleware/tenantContext.js';
 import auditLogger from './auditLogger.js';
-import logger from './logger.js';
+import loggerRaw from './logger.js';
+const logger = loggerRaw.default || loggerRaw;
 import cryptoUtils from './cryptoUtils.js';
 import { redactPII, REDACTION_PATTERNS } from './popiaRedaction.js';
 

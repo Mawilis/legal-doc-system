@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ================================================================================
 QUANTUM SCROLL OF IMMUTABLE EVIDENCE: SUPREME AUDIT LOG
@@ -2649,7 +2651,7 @@ const SupremeAuditLog = mongoose.models.SupremeAuditLog
   || mongoose.models.AuditLog
   || mongoose.model('SupremeAuditLog', SupremeAuditLogSchema);
 
-module.exports = SupremeAuditLog;
+export default SupremeAuditLog;
 
 // =============================================================================
 // ENVIRONMENT VARIABLES SETUP GUIDE

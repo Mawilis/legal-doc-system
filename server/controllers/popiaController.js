@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * ╔══════════════════════════════════════════════════════════════════════════╗
  * ║                                                                          ║
@@ -3208,7 +3210,7 @@ popiaController.checkEncryptionHealth = async () => {
 // SECTION 11: EXPORT MODULE
 // =============================================================================
 
-module.exports = popiaController;
+export default popiaController;
 
 // =============================================================================
 // SECTION 12: INITIALIZATION MESSAGE

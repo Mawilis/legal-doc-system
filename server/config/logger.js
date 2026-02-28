@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗    ███████╗██╗      █████╗ ██████╗ ║
@@ -581,7 +583,7 @@ function createEmergencyLogger() {
   };
 }
 
-module.exports = {
+export default {
   createTenantLogger,
   createDSARLogger,
   createAuditLogger,

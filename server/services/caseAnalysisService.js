@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/services/caseAnalysisService.js
@@ -128,7 +130,8 @@ const Citation = require('../models/Citation');
 const CaseParty = require('../models/CaseParty');
 
 // QUANTUM UTILITIES
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
 const quantumLogger = require('../utils/quantumLogger');
@@ -1471,7 +1474,7 @@ const cacheAnalysisResults = async (analysisId, analysis) => {
    QUANTUM EXPORTS
    --------------------------------------------------------------------------- */
 
-module.exports = {
+export default {
   analyzeCase,
   ANALYSIS_TYPES,
   OUTCOME_TYPES,

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
 =============================================================================================================
 QUANTUM BIOMETRIC AUDIT LOG CITADEL - IMMUTABLE CHRONICLE OF DIGITAL IDENTITY SANCTITY
@@ -1017,7 +1019,7 @@ BiometricAuditLogSchema.methods.releaseLegalHold = function (releasedBy, release
 const BiometricAuditLog = mongoose.model('BiometricAuditLog', BiometricAuditLogSchema);
 
 // Export event types for use throughout the application
-module.exports = {
+export default {
   BiometricAuditLog,
   BIOMETRIC_EVENT_TYPES,
 };

@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/userAgentMiddleware.js
  * STATUS: PRODUCTION-READY | SECURITY TELEMETRY GRADE
@@ -78,4 +80,4 @@ const userAgentRequired = async (req, res, next) => {
   }
 };
 
-module.exports = { userAgentRequired };
+export default { userAgentRequired };

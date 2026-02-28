@@ -4,7 +4,7 @@
  * Self-healing cluster configuration with auto-restart
  */
 
-module.exports = {
+export default {
   apps: [
     {
       name: 'wilsy-server',

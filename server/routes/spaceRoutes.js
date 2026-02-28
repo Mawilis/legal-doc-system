@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * FILE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/spaceRoutes.js
  * QUANTUM STATUS: OMNIVERSE SPATIAL NEXUS | LEGAL-TECH SPACE ORCHESTRATION ENGINE
@@ -79,7 +81,8 @@ const SpatialAnalyticsService = require('../services/spatialAnalyticsService');
 const VirtualCourtService = require('../services/virtualCourtService');
 
 // Monitoring & Logging Quantum
-const logger = require('../utils/logger');
+const loggerRaw = require('../utils/logger');
+const logger = loggerRaw.default || loggerRaw;
 
 // =============================================================================
 // QUANTUM MIDDLEWARE: SPATIAL ACCESS CONTROL & VALIDATION
@@ -1711,7 +1714,7 @@ function classifySpatialError(error) {
 // QUANTUM MODULE EXPORT
 // =============================================================================
 
-module.exports = router;
+export default router;
 
 // =============================================================================
 // QUANTUM LEGACY FOOTER: SPATIAL REVOLUTION MANIFESTO

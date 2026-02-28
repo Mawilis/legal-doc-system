@@ -107,4 +107,4 @@ class ClassificationService {
   }
 }
 
-module.exports = ClassificationService;
+export default ClassificationService;

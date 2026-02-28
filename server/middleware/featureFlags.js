@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * File: server/middleware/featureFlags.js
  * -----------------------------------------------------------------------------
@@ -114,4 +116,4 @@ const checkFeature = (flagName) => async (req, res, next) => {
   });
 };
 
-module.exports = { features, checkFeature, evaluateFlag };
+export default { features, checkFeature, evaluateFlag };

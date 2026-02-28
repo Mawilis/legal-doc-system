@@ -1,3 +1,5 @@
+import { createRequire as _createRequire } from 'module';
+const require = _createRequire(import.meta.url);
 /*
  * =====================================================================================
  * ██████╗ ██████╗ ███╗   ██╗███████╗███████╗███╗   ██╗████████╗    ██████╗ ███████╗
@@ -1564,7 +1566,7 @@ const ConsentRecord = mongoose.models.ConsentRecord || mongoose.model('ConsentRe
 // =====================================================================================
 // MODULE EXPORTS
 // =====================================================================================
-module.exports = ConsentRecord;
+export default ConsentRecord;
 
 // =====================================================================================
 // DEPENDENCY INSTALLATION GUIDE
