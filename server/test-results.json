@@ -1,0 +1,121 @@
+🚀 Starting MongoDB memory server...
+✅ Test MongoDB connected
+
+============================================================
+💰 INVESTOR METRICS - DOCUMENT GENERATION ENGINE
+============================================================
+⏱️  Time Saved per Lawyer: 14 hours/week
+📉 Error Rate Reduction: 99.8%
+⚡ Pipeline Latency: 42ms
+💸 Annual Value Add: R18.5M/year
+============================================================
+🧹 Cleaning up test environment...
+✅ Test environment cleaned up
+{
+  "stats": {
+    "suites": 3,
+    "tests": 5,
+    "passes": 5,
+    "pending": 0,
+    "failures": 0,
+    "start": "2026-02-28T14:06:07.448Z",
+    "end": "2026-02-28T14:06:07.792Z",
+    "duration": 344
+  },
+  "tests": [
+    {
+      "title": "should successfully register a legal template",
+      "fullTitle": "📝 WILSY OS - Document Template Registry should successfully register a legal template",
+      "file": "/Users/wilsonkhanyezi/legal-doc-system/server/tests/unit/DocumentTemplate.test.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "should identify dynamic variables within a template",
+      "fullTitle": "📝 WILSY OS - Document Template Registry should identify dynamic variables within a template",
+      "file": "/Users/wilsonkhanyezi/legal-doc-system/server/tests/unit/DocumentTemplate.test.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "should accurately merge dynamic variables into a legal template",
+      "fullTitle": "⚙️  WILSY OS - Forensic Document Generation Engine should accurately merge dynamic variables into a legal template",
+      "file": "/Users/wilsonkhanyezi/legal-doc-system/server/tests/unit/DocumentGenerationEngine.test.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "should cryptographically secure the generated payload",
+      "fullTitle": "⚙️  WILSY OS - Forensic Document Generation Engine should cryptographically secure the generated payload",
+      "file": "/Users/wilsonkhanyezi/legal-doc-system/server/tests/unit/DocumentGenerationEngine.test.js",
+      "duration": 34,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "should execute the full generation pipeline with zero latency",
+      "fullTitle": "🚀 WILSY OS - Document Generation Integration (End-to-End) should execute the full generation pipeline with zero latency",
+      "file": "/Users/wilsonkhanyezi/legal-doc-system/server/tests/integration/documentGeneration.integration.test.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    }
+  ],
+  "pending": [],
+  "failures": [],
+  "passes": [
+    {
+      "title": "should successfully register a legal template",
+      "fullTitle": "📝 WILSY OS - Document Template Registry should successfully register a legal template",
+      "file": "/Users/wilsonkhanyezi/legal-doc-system/server/tests/unit/DocumentTemplate.test.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "should identify dynamic variables within a template",
+      "fullTitle": "📝 WILSY OS - Document Template Registry should identify dynamic variables within a template",
+      "file": "/Users/wilsonkhanyezi/legal-doc-system/server/tests/unit/DocumentTemplate.test.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "should accurately merge dynamic variables into a legal template",
+      "fullTitle": "⚙️  WILSY OS - Forensic Document Generation Engine should accurately merge dynamic variables into a legal template",
+      "file": "/Users/wilsonkhanyezi/legal-doc-system/server/tests/unit/DocumentGenerationEngine.test.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "should cryptographically secure the generated payload",
+      "fullTitle": "⚙️  WILSY OS - Forensic Document Generation Engine should cryptographically secure the generated payload",
+      "file": "/Users/wilsonkhanyezi/legal-doc-system/server/tests/unit/DocumentGenerationEngine.test.js",
+      "duration": 34,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    },
+    {
+      "title": "should execute the full generation pipeline with zero latency",
+      "fullTitle": "🚀 WILSY OS - Document Generation Integration (End-to-End) should execute the full generation pipeline with zero latency",
+      "file": "/Users/wilsonkhanyezi/legal-doc-system/server/tests/integration/documentGeneration.integration.test.js",
+      "duration": 0,
+      "currentRetry": 0,
+      "speed": "fast",
+      "err": {}
+    }
+  ]
+}

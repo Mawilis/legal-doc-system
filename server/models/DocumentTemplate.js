@@ -675,7 +675,7 @@ documentTemplateSchema.virtual('needsApproval').get(function() {
 // EXPORTS
 // ============================================================================
 
-const DocumentTemplate = mongoose.model('DocumentTemplate', documentTemplateSchema);
+const DocumentTemplate = mongoose.models.DocumentTemplate || mongoose.model('DocumentTemplate', documentTemplateSchema);
 
 export {
   DocumentTemplate,
