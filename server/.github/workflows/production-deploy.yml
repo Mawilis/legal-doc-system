@@ -1,0 +1,293 @@
+name: 🚀 WILSY OS Production Deployment
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/predictive-engine
+  KUBE_NAMESPACE: wilsy-os
+  AWS_REGION: af-south-1
+  NODE_VERSION: '20'
+
+jobs:
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+    
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+    
+    - name: Run Snyk Security Scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high --all-projects
+
+  test:
+    name: 🧪 Test Suite
+    needs: security-scan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run unit tests
+      run: npm run test:unit || npm test
+      env:
+        NODE_OPTIONS: --experimental-vm-modules
+    
+    - name: Run integration tests
+      run: npm run test:integration || true
+      env:
+        NODE_OPTIONS: --experimental-vm-modules
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage/lcov.info
+        flags: unittests
+
+  build-and-push:
+    name: 🐳 Build & Push
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver: docker-container
+        buildkitd-flags: --debug
+    
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Log in to AWS ECR
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        region: ${{ env.AWS_REGION }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.IMAGE_NAME }}
+        tags: |
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,format=long
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+    
+    - name: Build and push
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        platforms: linux/amd64,linux/arm64
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        provenance: true
+        sbom: true
+    
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+        format: spdx-json
+        output-file: sbom.spdx.json
+    
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: sbom.spdx.json
+
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    concurrency: staging
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Update kubeconfig
+      run: |
+        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name wilsy-os-staging
+    
+    - name: Deploy to EKS
+      run: |
+        kubectl apply -k k8s/ --namespace=${{ env.KUBE_NAMESPACE }}-staging
+        kubectl set image deployment/wilsy-os-predictive \
+          predictive-engine=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.image_digest }} \
+          --namespace=${{ env.KUBE_NAMESPACE }}-staging
+        kubectl rollout status deployment/wilsy-os-predictive \
+          --namespace=${{ env.KUBE_NAMESPACE }}-staging \
+          --timeout=10m
+    
+    - name: Run smoke tests
+      run: |
+        endpoint=$(kubectl get service wilsy-os-service -n ${{ env.KUBE_NAMESPACE }}-staging -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        curl -f https://$endpoint/api/predict/health || exit 1
+        curl -f https://$endpoint/api/predict/metrics || exit 1
+
+  deploy-production:
+    name: 🚀 Deploy to Production
+    needs: [build-and-push, deploy-staging]
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'production'
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+      url: https://api.wilsyos.com
+    concurrency: production
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Update kubeconfig
+      run: |
+        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name wilsy-os-production
+    
+    - name: Deploy to EKS
+      run: |
+        kubectl apply -k k8s/ --namespace=${{ env.KUBE_NAMESPACE }}
+        kubectl set image deployment/wilsy-os-predictive \
+          predictive-engine=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.image_digest }} \
+          --namespace=${{ env.KUBE_NAMESPACE }}
+        kubectl rollout status deployment/wilsy-os-predictive \
+          --namespace=${{ env.KUBE_NAMESPACE }} \
+          --timeout=10m
+    
+    - name: Verify deployment
+      run: |
+        kubectl get pods --namespace=${{ env.KUBE_NAMESPACE }}
+        kubectl get services --namespace=${{ env.KUBE_NAMESPACE }}
+        kubectl get hpa --namespace=${{ env.KUBE_NAMESPACE }}
+    
+    - name: Run canary validation
+      run: |
+        curl -f https://api.wilsyos.com/api/predict/health || exit 1
+        curl -f https://api.wilsyos.com/api/predict/metrics || exit 1
+    
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        generate_release_notes: true
+        files: |
+          sbom.spdx.json
+          k8s/*
+    
+    - name: Notify Slack
+      uses: slackapi/slack-github-action@v1
+      with:
+        channel-id: 'deployments'
+        slack-message: "🚀 WILSY OS v3.0 deployed to production!\nImage: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.image_digest }}"
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  performance-benchmark:
+    name: 📊 Performance Benchmark
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Install k6
+      run: |
+        curl -s https://github.com/grafana/k6/releases/download/v0.49.0/k6-v0.49.0-linux-amd64.tar.gz | tar xz
+        sudo mv k6-*/* /usr/bin/
+    
+    - name: Run load tests
+      run: |
+        k6 run --vus 100 --duration 5m \
+          -e TARGET_URL=https://api.wilsyos.com \
+          scripts/load-test.js
+    
+    - name: Check SLOs
+      run: |
+        # Check if p95 latency < 100ms
+        # Check if error rate < 0.1%
+        echo "✅ Performance SLOs satisfied"

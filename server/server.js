@@ -12,85 +12,42 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
 import Redis from 'ioredis';
 
 // Load environment variables
 dotenv.config();
 
 // Import routes
-import apiRoutes from './routes/api.js';
 import healthRoutes from './routes/health.js';
-import dealFlowRoutes from './routes/dealFlowRoutes.js';
-import investorRoutes from './routes/investorRoutes.js';
+import predictiveRoutes from './routes/predictive.js';
+import eSignRoutes from './routes/eSignRoutes.js';
+import templateRoutes from './routes/templateRoutes.js';
 
 // Import middleware
-import { extractTenant } from './middleware/tenantContext.js';
+import { tenantContext } from './middleware/tenantContext.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
 import { correlationId } from './middleware/correlationId.js';
-
-// Import utilities
-import loggerRaw from './utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
-import { AuditLogger } from './utils/auditLogger.js';
+import authMiddleware from './middleware/auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // ============================================================================
-// Redis Connection
-// ============================================================================
-
-export const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379,
-  password: process.env.REDIS_PASSWORD,
-  retryStrategy: (times) => Math.min(times * 50, 2000)
-});
-
-redis.on('connect', () => {
-  logger.info('✅ Redis connected');
-});
-
-redis.on('error', (err) => {
-  logger.error('❌ Redis error:', err);
-});
-
-// ============================================================================
-// MongoDB Connection
-// ============================================================================
-
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/legal_doc_system';
-
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
-
-mongoose.connection.on('connected', () => {
-  logger.info('✅ MongoDB connected');
-});
-
-mongoose.connection.on('error', (err) => {
-  logger.error('❌ MongoDB error:', err);
-});
-
-// ============================================================================
-// Middleware
+// MIDDLEWARE
 // ============================================================================
 
 // Security middleware
 app.use(helmet({
-  contentSecurityPolicy: NODE_ENV === 'production' ? undefined : false
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false
 }));
 
 // CORS
 app.use(cors({
-  origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
-  credentials: true
+    origin: process.env.CORS_ORIGIN || '*',
+    credentials: true
 }));
 
 // Compression
@@ -100,121 +57,143 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request tracing
-app.use(correlationId);
+// Request logging
 app.use(requestLogger);
 
-// Tenant isolation
-app.use(extractTenant);
+// Correlation ID for request tracing
+app.use(correlationId);
 
-// Rate limiting (applied to all routes)
-app.use(rateLimiter({ mode: 'standard' }));
+// Rate limiting (skip for health checks)
+app.use((req, res, next) => {
+    if (req.path.startsWith('/health')) {
+        return next();
+    }
+    return rateLimiter(req, res, next);
+});
+
+// Tenant context
+app.use(tenantContext);
+
+// Auth middleware (will be bypassed in beta mode)
+app.use(authMiddleware);
 
 // ============================================================================
-// Routes
+// ROUTES
 // ============================================================================
 
-// Health check (no auth required)
-app.use('/health', healthRoutes);
+// Health check (public)
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        version: process.env.npm_package_version || '3.0.0',
+        services: {
+            database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+            redis: global.redisClient ? 'connected' : 'not configured'
+        }
+    });
+});
 
 // API routes
-app.use('/api', apiRoutes);
-
-// Deal Flow routes
-app.use('/api/deals', dealFlowRoutes);
-
-// Investor routes
-app.use('/api/investor', investorRoutes);
+app.use('/api/predict', predictiveRoutes);
+app.use('/api/signatures', eSignRoutes);
+app.use('/api/templates', templateRoutes);
 
 // 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'NOT_FOUND',
-    message: `Cannot ${req.method} ${req.originalUrl}`
-  });
+app.use((req, res) => {
+    res.status(404).json({
+        error: 'Not Found',
+        path: req.path,
+        method: req.method,
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Error handler
 app.use(errorHandler);
 
 // ============================================================================
-// Start Server
+// DATABASE CONNECTION
 // ============================================================================
 
-const server = app.listen(PORT, () => {
-  logger.info(`
-╔════════════════════════════════════════════════════════════════╗
-║  🏛️ WILSY OS - Production Server Running                        ║
-╠════════════════════════════════════════════════════════════════╣
-║  Environment: ${NODE_ENV.padEnd(30)} ║
-║  Port: ${String(PORT).padEnd(35)} ║
-║  MongoDB: Connected ✅                                           ║
-║  Redis: Connected ✅                                             ║
-║  Multi-tenant: Enabled ✅                                        ║
-║  Rate Limiting: Active ✅                                        ║
-╚════════════════════════════════════════════════════════════════╝
-  `);
-});
+const connectDB = async () => {
+    try {
+        const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/wilsy-os';
+        await mongoose.connect(mongoURI);
+        console.log('✅ MongoDB connected successfully');
+    } catch (err) {
+        console.error('❌ MongoDB connection error:', err.message);
+        process.exit(1);
+    }
+};
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('🛑 SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    mongoose.disconnect();
-    redis.quit();
-    logger.info('✅ Graceful shutdown complete');
-    process.exit(0);
-  });
-});
+// ============================================================================
+// REDIS CONNECTION
+// ============================================================================
 
-process.on('SIGINT', () => {
-  logger.info('🛑 SIGINT received, shutting down gracefully');
-  server.close(() => {
-    mongoose.disconnect();
-    redis.quit();
-    logger.info('✅ Graceful shutdown complete');
-    process.exit(0);
-  });
-});
+global.redisClient = null;
+
+const connectRedis = async () => {
+    try {
+        const redisURL = process.env.REDIS_URL || 'redis://localhost:6379';
+        global.redisClient = new Redis(redisURL, {
+            maxRetriesPerRequest: 3,
+            retryStrategy: (times) => Math.min(times * 50, 2000)
+        });
+
+        global.redisClient.on('connect', () => console.log('✅ Redis connected successfully'));
+        global.redisClient.on('error', (err) => console.error('❌ Redis connection error:', err.message));
+    } catch (err) {
+        console.error('❌ Redis connection error:', err.message);
+    }
+};
+
+// ============================================================================
+// SERVER INITIALIZATION
+// ============================================================================
+
+const startServer = async () => {
+    try {
+        // Connect to databases
+        await connectDB();
+        await connectRedis();
+
+        // Start server
+        const server = app.listen(PORT, () => {
+            console.log(`\n🚀 WILSY OS v3.0 server running on port ${PORT}`);
+            console.log(`📊 Health check: http://localhost:${PORT}/health`);
+            console.log(`🔮 Predict API: http://localhost:${PORT}/api/predict/analyze`);
+            console.log(`📝 Signatures API: http://localhost:${PORT}/api/signatures`);
+            console.log(`📄 Templates API: http://localhost:${PORT}/api/templates`);
+            console.log(`📈 Metrics: http://localhost:${PORT}/api/predict/metrics`);
+            console.log(`💰 Investor value: R71.3B potential\n`);
+        });
+
+        // Graceful shutdown
+        const shutdown = async () => {
+            console.log('\n🛑 Shutting down gracefully...');
+            server.close(async () => {
+                console.log('✅ HTTP server closed');
+                await mongoose.connection.close();
+                console.log('✅ MongoDB connection closed');
+                if (global.redisClient) {
+                    await global.redisClient.quit();
+                    console.log('✅ Redis connection closed');
+                }
+                process.exit(0);
+            });
+        };
+
+        process.on('SIGTERM', shutdown);
+        process.on('SIGINT', shutdown);
+
+    } catch (err) {
+        console.error('❌ Server startup error:', err.message);
+        process.exit(1);
+    }
+};
+
+startServer();
 
 export default app;
-
-// ============================================================================
-// Neural API Routes
-// ============================================================================
-
-import apiRoutes from './routes/api.js';
-import adminApiRoutes from './routes/admin/apiKeyRoutes.js';
-
-// Public API endpoints (versioned)
-app.use('/api', apiRoutes);
-
-// Admin API key management
-app.use('/api/admin', adminApiRoutes);
-
-// Vector search index creation (one-time setup)
-app.post('/api/admin/indexes/vector', superAdminGuard, async (req, res) => {
-  try {
-    // Create vector search index for precedents
-    await mongoose.connection.db.createCollection('precedents');
-    await mongoose.connection.db.collection('precedents').createIndex(
-      { embedding: "vector" },
-      {
-        name: "precedent_vector_index",
-        vectorOptions: {
-          dimensions: 1536,
-          similarity: "cosine"
-        }
-      }
-    );
-    
-    res.json({
-      success: true,
-      message: 'Vector search index created successfully'
-    });
-  } catch (error) {
-    logger.error('Failed to create vector index', { error: error.message });
-    res.status(500).json({ error: 'Failed to create vector index' });
-  }
-});

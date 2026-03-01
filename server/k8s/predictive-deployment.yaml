@@ -1,0 +1,167 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: predictive
+  labels:
+    name: predictive
+    environment: production
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: predictive-config
+  namespace: predictive
+data:
+  PORT: "4000"
+  LOG_LEVEL: "info"
+  NODE_ENV: "production"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: predictive-secrets
+  namespace: predictive
+type: Opaque
+data:
+  # Base64 encoded values - replace with actual secrets
+  # echo -n "your-api-key" | base64
+  API_KEY: "cHJvZHVjdGlvbi1hcGkta2V5Cg=="
+  DATABASE_URL: "cG9zdGdyZXNxbDovL3VzZXI6cGFzc0Bsb2NhbGhvc3Q6NTQzMi9wcmVkaWN0aXZlCg=="
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: predictive-engine
+  namespace: predictive
+  labels:
+    app: predictive-engine
+    version: v3.0.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: predictive-engine
+  template:
+    metadata:
+      labels:
+        app: predictive-engine
+        version: v3.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4000"
+        prometheus.io/path: "/api/predict/metrics"
+    spec:
+      containers:
+      - name: predictive-engine
+        image: ghcr.io/wilsy-os/predictive-engine:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 4000
+          name: http
+        envFrom:
+        - configMapRef:
+            name: predictive-config
+        - secretRef:
+            name: predictive-secrets
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+        readinessProbe:
+          httpGet:
+            path: /api/predict/health
+            port: 4000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /api/predict/health
+            port: 4000
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: snapshots
+          mountPath: /usr/src/app/snapshots
+      volumes:
+      - name: snapshots
+        persistentVolumeClaim:
+          claimName: predictive-snapshots-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: predictive-snapshots-pvc
+  namespace: predictive
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: predictive-service
+  namespace: predictive
+  labels:
+    app: predictive-engine
+spec:
+  selector:
+    app: predictive-engine
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 4000
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: predictive-hpa
+  namespace: predictive
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: predictive-engine
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: predictive-pdb
+  namespace: predictive
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: predictive-engine

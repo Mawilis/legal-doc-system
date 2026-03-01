@@ -1,16 +1,68 @@
-import jwt from 'jsonwebtoken';
+/* eslint-disable */
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║ WILSY OS - BETA AUTH MIDDLEWARE                                           ║
+  ║ Temporary bypass for beta testing - REMOVE BEFORE PRODUCTION             ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-export const authenticate = (options = {}) => {
-  return (req, res, next) => {
-    // For development, allow all requests
-    // In production, this would validate JWT tokens
+// BETA MODE: Allow all requests for testing
+export const authMiddleware = (req, res, next) => {
+    // For beta testing, attach a mock user
     req.user = {
-      id: 'dev-user-123',
-      tenantId: req.headers['x-tenant-id'] || 'dev-tenant-123',
-      roles: ['admin']
+        id: 'beta-user',
+        email: 'beta@wilsyos.com',
+        roles: ['admin'],
+        tenantId: req.headers['x-tenant-id'] || 'default'
     };
     next();
-  };
 };
 
-export default authenticate;
+export const optionalAuthMiddleware = (req, res, next) => {
+    req.user = {
+        id: 'beta-user',
+        email: 'beta@wilsyos.com',
+        roles: ['admin'],
+        tenantId: req.headers['x-tenant-id'] || 'default'
+    };
+    next();
+};
+
+export const requireRoles = (allowedRoles) => {
+    return (req, res, next) => {
+        next();
+    };
+};
+
+export const requirePermissions = (requiredPermissions) => {
+    return (req, res, next) => {
+        next();
+    };
+};
+
+export const requireMFA = (req, res, next) => {
+    next();
+};
+
+export const refreshToken = (req, res) => {
+    res.json({
+        accessToken: 'beta-token',
+        refreshToken: 'beta-refresh',
+        tokenType: 'Bearer',
+        expiresIn: 3600
+    });
+};
+
+export const logout = (req, res) => {
+    res.json({
+        message: 'Logged out successfully',
+        timestamp: new Date().toISOString()
+    });
+};
+
+export const authServiceInstance = {
+    generateTokens: () => ({
+        accessToken: 'beta-token',
+        refreshToken: 'beta-refresh'
+    })
+};
+
+export default authMiddleware;

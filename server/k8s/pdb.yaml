@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: wilsy-os-pdb
+  namespace: wilsy-os
+  labels:
+    app: wilsy-os
+    component: predictive-engine
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: wilsy-os
+      component: predictive-engine

@@ -1,2 +1,13 @@
 # Old dashboard location - DO NOT USE
 /dashboard/
+# Secrets
+.env.production
+.env.staging
+.env.*
+k8s/secrets.yaml
+k8s/*-backup-*.yaml
+secrets-backup-*.yaml
+*.secret
+*.key
+*.crt
+*.pem

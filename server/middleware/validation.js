@@ -1,95 +1,104 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env node */
-const errorHandler = require('./errorHandler');
+/* eslint-disable */
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║ VALIDATION MIDDLEWARE - INVESTOR-GRADE MODULE                             ║
+  ║ Input validation | POPIA compliance | XSS prevention                     ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-/*
- * Validation middleware for document upload
+/**
+ * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/validation.js
+ * VERSION: 1.0.0-PRODUCTION
+ * CREATED: 2026-03-01
  */
-exports.validateDocumentUpload = (req, res, next) => {
-  const { documentType, fileName, fileSize } = req.body;
-  const errors = {};
 
-  if (!documentType) {
-    errors.documentType = 'Document type is required';
-  }
+import { body, validationResult } from 'express-validator';
+import { redactSensitive } from '../utils/redactSensitive.js';
+import logger from '../utils/logger.js';
 
-  if (!fileName) {
-    errors.fileName = 'File name is required';
-  }
+// ============================================================================
+// VALIDATION RULES
+// ============================================================================
 
-  if (fileSize && fileSize > 100 * 1024 * 1024) {
-    // 100MB
-    errors.fileSize = 'File size exceeds 100MB limit';
-  }
+export const validateSignatureRequest = [
+  body('documentId')
+    .notEmpty()
+    .withMessage('Document ID is required')
+    .isString()
+    .withMessage('Document ID must be a string')
+    .trim()
+    .escape(),
 
-  if (Object.keys(errors).length > 0) {
-    return next(errorHandler.validationError('Validation failed', errors));
-  }
+  body('signers')
+    .isArray({ min: 1 })
+    .withMessage('At least one signer is required')
+    .custom((signers) => {
+      for (const signer of signers) {
+        if (!signer.email) {
+          throw new Error('Each signer must have an email');
+        }
+        if (!signer.name) {
+          throw new Error('Each signer must have a name');
+        }
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(signer.email)) {
+          throw new Error(`Invalid email format: ${signer.email}`);
+        }
+      }
+      return true;
+    }),
 
-  next();
-};
+  body('options.signatureType')
+    .optional()
+    .isIn(['electronic', 'digital', 'advanced', 'qualified', 'biometric'])
+    .withMessage('Invalid signature type'),
 
-/*
- * Validate document ID parameter
- */
-exports.validateDocumentId = (req, res, next) => {
-  const { documentId } = req.params;
+  body('options.provider')
+    .optional()
+    .isIn(['docusign', 'hellosign', 'adobe_sign', 'za_sign', 'custom'])
+    .withMessage('Invalid signature provider'),
 
-  if (!documentId || !documentId.match(/^[a-f0-9]{32}$/)) {
-    return next(errorHandler.validationError('Invalid document ID'));
-  }
+  body('options.verificationLevel')
+    .optional()
+    .isIn(['basic', 'standard', 'advanced', 'qualified'])
+    .withMessage('Invalid verification level'),
 
-  next();
-};
+  body('options.expiresAt')
+    .optional()
+    .isISO8601()
+    .withMessage('Invalid expiration date')
+    .toDate(),
 
-/*
- * Validate classification request
- */
-exports.validateClassification = (req, res, next) => {
-  const { text, claimedType } = req.body;
-  const errors = {};
+  // Handle validation errors
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const redactedErrors = redactSensitive(errors.array(), ['email']);
+      
+      logger.warn('Validation failed', {
+        path: req.path,
+        errors: redactedErrors,
+        correlationId: req.correlationId
+      });
 
-  if (!text || text.length < 10) {
-    errors.text = 'Text must be at least 10 characters';
-  }
-
-  const validTypes = ['ID_DOCUMENT', 'PROOF_OF_ADDRESS', 'COMPANY_REGISTRATION', 'PROOF_OF_INCOME'];
-  if (!claimedType || !validTypes.includes(claimedType)) {
-    errors.claimedType = `Claimed type must be one of: ${validTypes.join(', ')}`;
-  }
-
-  if (Object.keys(errors).length > 0) {
-    return next(errorHandler.validationError('Classification validation failed', errors));
-  }
-
-  next();
-};
-
-/*
- * Validate pagination parameters
- */
-exports.validatePagination = (req, res, next) => {
-  const { limit, offset } = req.query;
-  const errors = {};
-
-  if (limit) {
-    const numLimit = parseInt(limit);
-    if (isNaN(numLimit) || numLimit < 1 || numLimit > 1000) {
-      errors.limit = 'Limit must be between 1 and 1000';
+      return res.status(422).json({
+        error: 'Validation failed',
+        code: 'VALIDATION_ERROR',
+        details: redactedErrors,
+        correlationId: req.correlationId
+      });
     }
+    next();
   }
+];
 
-  if (offset) {
-    const numOffset = parseInt(offset);
-    if (isNaN(numOffset) || numOffset < 0) {
-      errors.offset = 'Offset must be a non-negative number';
-    }
+export const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+export const sanitizeInput = (input) => {
+  if (typeof input === 'string') {
+    return input.trim().replace(/[<>]/g, '');
   }
-
-  if (Object.keys(errors).length > 0) {
-    return next(errorHandler.validationError('Pagination validation failed', errors));
-  }
-
-  next();
+  return input;
 };

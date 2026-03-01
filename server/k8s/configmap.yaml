@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wilsy-os-config
+  namespace: wilsy-os
+  labels:
+    app: wilsy-os
+    component: predictive-engine
+data:
+  # Application Configuration
+  NODE_ENV: "production"
+  PORT: "4000"
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  
+  # Feature Flags
+  ENABLE_METRICS: "true"
+  ENABLE_TRACING: "true"
+  ENABLE_PROFILING: "false"
+  
+  # Performance Tuning
+  CPU_CORES: "4"
+  MEMORY_LIMIT: "4Gi"
+  GC_INTERVAL: "30000"
+  
+  # Timeouts
+  API_TIMEOUT: "30000"
+  ANALYSIS_TIMEOUT: "60000"
+  
+  # Rate Limiting
+  RATE_LIMIT_WINDOW: "900000"
+  RATE_LIMIT_MAX: "1000"
+  
+  # Feature Configuration
+  MAX_PREDICTION_AGE_DAYS: "30"
+  SNAPSHOT_RETENTION_DAYS: "90"
+  CACHE_TTL_SECONDS: "3600"

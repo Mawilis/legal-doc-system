@@ -1,50 +1,49 @@
+/* eslint-disable */
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║ WILSY OS - HEALTH CHECK ENDPOINT                                          ║
+  ║ Always accessible, no auth required                                       ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
 import express from 'express';
 import mongoose from 'mongoose';
-import { redis } from '../server.js';
 
 const router = express.Router();
 
+// Simple health check - NO AUTH REQUIRED
 router.get('/', (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    services: {
-      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      redis: redis.status === 'ready' ? 'connected' : 'disconnected'
-    },
-    uptime: process.uptime()
-  });
+    const healthcheck = {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        version: process.env.npm_package_version || '3.0.0',
+        services: {
+            database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+            server: 'running'
+        }
+    };
+    
+    res.status(200).json(healthcheck);
 });
 
-router.get('/detailed', async (req, res) => {
-  const mongoStatus = mongoose.connection.readyState === 1;
-  const redisStatus = redis.status === 'ready';
-  
-  let redisPing = null;
-  if (redisStatus) {
-    try {
-      redisPing = await redis.ping();
-    } catch (e) {
-      redisPing = 'error';
-    }
-  }
-
-  res.json({
-    status: mongoStatus && redisStatus ? 'healthy' : 'degraded',
-    timestamp: new Date().toISOString(),
-    services: {
-      mongodb: {
-        status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-        state: mongoose.connection.readyState
-      },
-      redis: {
-        status: redis.status,
-        ping: redisPing
-      }
-    },
-    memory: process.memoryUsage(),
-    uptime: process.uptime()
-  });
+// Detailed health for Kubernetes probes
+router.get('/detailed', (req, res) => {
+    const healthcheck = {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        version: process.env.npm_package_version || '3.0.0',
+        memory: process.memoryUsage(),
+        cpu: process.cpuUsage(),
+        services: {
+            database: {
+                status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+                state: mongoose.STATES[mongoose.connection.readyState]
+            },
+            redis: global.redisClient ? 'connected' : 'not configured'
+        }
+    };
+    
+    res.status(200).json(healthcheck);
 });
 
 export default router;
