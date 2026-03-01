@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /*
  * FORENSIC TEST SUITE: SA Legal Validators V6
  * Investor-grade deterministic tests with economic metrics
@@ -75,7 +73,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
           action: 'ID_VALIDATION_SUCCESS',
           tenantId: 'ACME_CORP',
           status: 'VALID',
-        }),
+        })
       );
 
       // Assert details extracted
@@ -99,7 +97,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
         expect.objectContaining({
           action: 'ID_VALIDATION_FAILED',
           status: 'FORMAT_ERROR',
-        }),
+        })
       );
     });
 
@@ -125,7 +123,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
           metadata: expect.objectContaining({
             fraudIndicator: 'POTENTIAL_FRAUD',
           }),
-        }),
+        })
       );
     });
 
@@ -179,7 +177,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
         expect.objectContaining({
           action: 'CIPC_VALIDATION_SUCCESS',
           tenantId: 'FIN_TECH_LTD',
-        }),
+        })
       );
     });
 
@@ -229,7 +227,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
           metadata: expect.objectContaining({
             confidenceScore: expect.any(Number),
           }),
-        }),
+        })
       );
     });
 

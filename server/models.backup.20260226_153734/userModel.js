@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*! =======================================================================================
+#!/*! =======================================================================================
  *  ╔═══════════════════════════════════════════════════════════════════════╗
  *  ║                                                                       ║
  *  ║  ██╗   ██╗██╗██╗     ███████╗██╗   ██╗    ███████╗███████╗████████╗  ║
@@ -326,7 +324,7 @@ const RefreshTokenSchema = new Schema(
     isRevoked: { type: Boolean, default: false },
     tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true },
   },
-  { _id: false, timestamps: true },
+  { _id: false, timestamps: true }
 );
 
 const ConsentSchema = new Schema(
@@ -344,7 +342,7 @@ const ConsentSchema = new Schema(
     withdrawnAt: Date,
     tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true },
   },
-  { _id: false },
+  { _id: false }
 );
 
 // Main User Schema with Enhanced Encryption
@@ -518,12 +516,12 @@ const UserSchema = new Schema(
             const hasNoSpaces = !/\s/.test(password);
 
             return (
-              password.length >= minLength
-              && hasUpperCase
-              && hasLowerCase
-              && hasNumbers
-              && hasSpecialChar
-              && hasNoSpaces
+              password.length >= minLength &&
+              hasUpperCase &&
+              hasLowerCase &&
+              hasNumbers &&
+              hasSpecialChar &&
+              hasNoSpaces
             );
           },
           message:
@@ -543,7 +541,7 @@ const UserSchema = new Schema(
               if (this.parent().parent().tenantId) {
                 const encrypted = encryptPIITenant(
                   JSON.stringify(value),
-                  this.parent().parent().tenantId.toString(),
+                  this.parent().parent().tenantId.toString()
                 );
                 return encrypted;
               }
@@ -553,7 +551,7 @@ const UserSchema = new Schema(
               if (value && typeof value === 'object' && value.ciphertext) {
                 try {
                   return JSON.parse(
-                    decryptPIITenant(value, this.parent().parent().tenantId.toString()),
+                    decryptPIITenant(value, this.parent().parent().tenantId.toString())
                   );
                 } catch (error) {
                   return {};
@@ -607,7 +605,7 @@ const UserSchema = new Schema(
                 if (this.parent().parent().parent().tenantId) {
                   const encrypted = encryptPIITenant(
                     value,
-                    this.parent().parent().parent().tenantId.toString(),
+                    this.parent().parent().parent().tenantId.toString()
                   );
                   return encrypted;
                 }
@@ -618,7 +616,7 @@ const UserSchema = new Schema(
                 try {
                   return decryptPIITenant(
                     value,
-                    this.parent().parent().parent().tenantId.toString(),
+                    this.parent().parent().parent().tenantId.toString()
                   );
                 } catch (error) {
                   return null;
@@ -661,7 +659,7 @@ const UserSchema = new Schema(
           if (this.parent().tenantId) {
             const encrypted = encryptPIITenant(
               JSON.stringify(value),
-              this.parent().tenantId.toString(),
+              this.parent().tenantId.toString()
             );
             return encrypted;
           }
@@ -702,7 +700,7 @@ const UserSchema = new Schema(
               if (this.parent().parent().tenantId) {
                 const encrypted = encryptPIITenant(
                   JSON.stringify(value),
-                  this.parent().parent().tenantId.toString(),
+                  this.parent().parent().tenantId.toString()
                 );
                 return encrypted;
               }
@@ -718,7 +716,7 @@ const UserSchema = new Schema(
               }
               try {
                 return JSON.parse(
-                  decryptPIITenant(value, this.parent().parent().tenantId.toString()),
+                  decryptPIITenant(value, this.parent().parent().tenantId.toString())
                 );
               } catch (error) {
                 return {};
@@ -764,7 +762,7 @@ const UserSchema = new Schema(
               if (this.parent().parent().tenantId) {
                 const encrypted = encryptPIITenant(
                   value,
-                  this.parent().parent().tenantId.toString(),
+                  this.parent().parent().tenantId.toString()
                 );
                 return encrypted;
               }
@@ -786,7 +784,7 @@ const UserSchema = new Schema(
               if (this.parent().parent().tenantId) {
                 const encrypted = encryptPIITenant(
                   value,
-                  this.parent().parent().tenantId.toString(),
+                  this.parent().parent().tenantId.toString()
                 );
                 return encrypted;
               }
@@ -819,7 +817,7 @@ const UserSchema = new Schema(
           if (this.parent().tenantId) {
             const encrypted = encryptPIITenant(
               JSON.stringify(value),
-              this.parent().tenantId.toString(),
+              this.parent().tenantId.toString()
             );
             return encrypted;
           }
@@ -860,7 +858,7 @@ const UserSchema = new Schema(
       },
     },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // ============================================================================
@@ -873,7 +871,7 @@ UserSchema.index(
   {
     unique: true,
     name: 'tenant_email_unique',
-  },
+  }
 );
 
 UserSchema.index(
@@ -881,7 +879,7 @@ UserSchema.index(
   {
     unique: true,
     name: 'tenant_sovereign_unique',
-  },
+  }
 );
 
 // Performance indexes
@@ -897,7 +895,7 @@ UserSchema.index(
   {
     expireAfterSeconds: 0,
     partialFilterExpression: { 'security.sessions.activeSessions.expiresAt': { $exists: true } },
-  },
+  }
 );
 
 // ============================================================================
@@ -1011,7 +1009,7 @@ UserSchema.pre('save', async function (next) {
       user.credentials.password = newHash;
       user.credentials.passwordPolicy.lastChanged = new Date();
       user.credentials.passwordPolicy.expiresAt = new Date(
-        Date.now() + IDENTITY_CONFIG.PASSWORD_MAX_AGE_DAYS * 24 * 60 * 60 * 1000,
+        Date.now() + IDENTITY_CONFIG.PASSWORD_MAX_AGE_DAYS * 24 * 60 * 60 * 1000
       );
 
       // Reset security counters
@@ -1218,7 +1216,7 @@ UserSchema.statics.findByTenant = function (tenantId, options = {}) {
 
   return this.find(query)
     .select(
-      'sovereignId persona.firstName persona.lastName persona.email authority.role security.status metadata.lastActive',
+      'sovereignId persona.firstName persona.lastName persona.email authority.role security.status metadata.lastActive'
     )
     .sort({ 'metadata.lastActive': -1 })
     .lean();
@@ -1307,7 +1305,7 @@ UserSchema.statics.findPasswordExpiring = function (tenantId, daysThreshold = 7)
     },
   })
     .select(
-      'sovereignId persona.firstName persona.lastName persona.email credentials.passwordPolicy.expiresAt',
+      'sovereignId persona.firstName persona.lastName persona.email credentials.passwordPolicy.expiresAt'
     )
     .lean();
 };

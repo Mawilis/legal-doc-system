@@ -1,4 +1,4 @@
-/* eslint-env mocha */
+#!/* eslint-env mocha */
 /* eslint-disable no-undef, no-unused-expressions */
 
 import mongoose from 'mongoose';

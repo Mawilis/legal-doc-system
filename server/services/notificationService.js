@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ NOTIFICATION SERVICE — INVESTOR-GRADE ● REGULATOR-READY ● COURT-ADMISSIBLE                                     ║
   ║ [R25M RISK ELIMINATION | 99.99% DELIVERY RATE | REAL-TIME ALERTS | FULL AUDIT TRAIL]                          ║
   ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
@@ -343,7 +341,7 @@ class NotificationError extends Error {
     this.metadata = metadata;
     this.timestamp = new Date().toISOString();
     this.forensicHash = cryptoUtils.generateForensicHash(
-      `${message}:${code}:${JSON.stringify(metadata)}`,
+      `${message}:${code}:${JSON.stringify(metadata)}`
     );
   }
 }
@@ -438,7 +436,7 @@ class NotificationService {
       webpush.setVapidDetails(
         process.env.VAPID_SUBJECT,
         process.env.VAPID_PUBLIC_KEY,
-        process.env.VAPID_PRIVATE_KEY,
+        process.env.VAPID_PRIVATE_KEY
       );
 
       // Start queue processors
@@ -554,7 +552,9 @@ class NotificationService {
       const channels = notification.channels || notificationType.channels;
 
       // Step 4: Send via each channel
-      const channelPromises = channels.map((channel) => this._sendViaChannel(channel, notification, notificationId, correlationId, tenantId));
+      const channelPromises = channels.map((channel) =>
+        this._sendViaChannel(channel, notification, notificationId, correlationId, tenantId)
+      );
 
       const channelResults = await Promise.allSettled(channelPromises);
 
@@ -623,7 +623,7 @@ class NotificationService {
     });
 
     const results = await Promise.allSettled(
-      notifications.map((notification) => this.sendNotification(notification)),
+      notifications.map((notification) => this.sendNotification(notification))
     );
 
     const summary = {
@@ -705,9 +705,10 @@ class NotificationService {
 
     // Check if all channels delivered
     const allDelivered = log.channelResults.every(
-      (r) => r.deliveryStatus === DELIVERY_STATUS.DELIVERED
-        || r.deliveryStatus === DELIVERY_STATUS.READ
-        || r.deliveryStatus === DELIVERY_STATUS.CLICKED,
+      (r) =>
+        r.deliveryStatus === DELIVERY_STATUS.DELIVERED ||
+        r.deliveryStatus === DELIVERY_STATUS.READ ||
+        r.deliveryStatus === DELIVERY_STATUS.CLICKED
     );
 
     if (allDelivered && log.status === NOTIFICATION_STATUS.SENT) {
@@ -840,7 +841,8 @@ class NotificationService {
     try {
       await this._checkRateLimit('PUSH', tenantId);
 
-      const pushSubscription = notification.recipients?.pushSubscription || notification.data.pushSubscription;
+      const pushSubscription =
+        notification.recipients?.pushSubscription || notification.data.pushSubscription;
 
       const payload = JSON.stringify({
         notification: {
@@ -964,7 +966,7 @@ class NotificationService {
             'Content-Type': 'application/json',
           },
           timeout: 10000,
-        },
+        }
       );
 
       this._updateChannelStats('WEBHOOK', Date.now() - startTime, true);
@@ -1010,7 +1012,7 @@ class NotificationService {
           text: this._formatSlackText(notification),
           blocks: this._formatSlackBlocks(notification),
           attachments: notification.attachments,
-        },
+        }
       );
 
       this._updateChannelStats('SLACK', Date.now() - startTime, true);
@@ -1170,7 +1172,7 @@ class NotificationService {
         },
         notificationId,
         correlationId,
-        log.tenantId,
+        log.tenantId
       );
 
       // Update channel result
@@ -1209,7 +1211,7 @@ class NotificationService {
       async () => {
         await this._checkConfirmation(notificationId, priority);
       },
-      escalationTime * 60 * 1000,
+      escalationTime * 60 * 1000
     );
   }
 
@@ -1223,9 +1225,10 @@ class NotificationService {
     if (!log) return;
 
     const allConfirmed = log.channelResults.every(
-      (r) => r.deliveryStatus === DELIVERY_STATUS.DELIVERED
-        || r.deliveryStatus === DELIVERY_STATUS.READ
-        || r.deliveryStatus === DELIVERY_STATUS.CLICKED,
+      (r) =>
+        r.deliveryStatus === DELIVERY_STATUS.DELIVERED ||
+        r.deliveryStatus === DELIVERY_STATUS.READ ||
+        r.deliveryStatus === DELIVERY_STATUS.CLICKED
     );
 
     if (!allConfirmed && !this.pendingConfirmations.get(notificationId)?.escalated) {
@@ -1426,8 +1429,8 @@ class NotificationService {
         </div>
         
         ${
-  notification.data.actionUrl
-    ? `
+          notification.data.actionUrl
+            ? `
         <div style="text-align: center; margin: 20px 0;">
             <a href="${notification.data.actionUrl}" 
                style="background-color: #0f3460; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
@@ -1435,8 +1438,8 @@ class NotificationService {
             </a>
         </div>
         `
-    : ''
-}
+            : ''
+        }
         
         <div style="font-size: 12px; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
             <p style="margin: 5px 0;">This is an automated compliance notification from Wilsy OS.</p>
@@ -1580,10 +1583,10 @@ class NotificationService {
       rateLimiters: this.rateLimiters.size,
       queueStatus: this.notificationQueue
         ? {
-          active: this.notificationQueue.active,
-          waiting: this.notificationQueue.waiting,
-          failed: this.notificationQueue.failed,
-        }
+            active: this.notificationQueue.active,
+            waiting: this.notificationQueue.waiting,
+            failed: this.notificationQueue.failed,
+          }
         : null,
     };
   }

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -31,7 +31,7 @@ const INDEXES = {
     { key: { tenantId: 1, materiality: 1 }, name: 'tenant_materiality' },
     { key: { 'timeline.dropDeadDate': 1 }, name: 'drop_dead_date', sparse: true },
     { key: { forensicHash: 1 }, name: 'forensic_hash', unique: true },
-    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 }
+    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 },
   ],
 
   // Target collection indexes
@@ -42,17 +42,21 @@ const INDEXES = {
     { key: { registrationNumber: 1 }, name: 'reg_number', unique: true },
     { key: { 'synergyScores.score': -1 }, name: 'synergy_scores', sparse: true },
     { key: { forensicHash: 1 }, name: 'forensic_hash', unique: true },
-    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 }
+    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 },
   ],
 
   // SynergyScore collection indexes
   synergyScores: [
-    { key: { tenantId: 1, acquirerId: 1, targetId: 1 }, name: 'tenant_acquirer_target', unique: true },
+    {
+      key: { tenantId: 1, acquirerId: 1, targetId: 1 },
+      name: 'tenant_acquirer_target',
+      unique: true,
+    },
     { key: { tenantId: 1, totalSynergy: -1 }, name: 'tenant_synergy' },
     { key: { dealId: 1 }, name: 'deal_id', sparse: true },
     { key: { calculatedAt: -1 }, name: 'calculated_at' },
     { key: { forensicHash: 1 }, name: 'forensic_hash', unique: true },
-    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 }
+    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 },
   ],
 
   // RegulatoryFiling collection indexes
@@ -62,7 +66,7 @@ const INDEXES = {
     { key: { 'review.targetDecisionDate': 1 }, name: 'decision_date', sparse: true },
     { key: { 'filing.submissionDate': -1 }, name: 'submission_date' },
     { key: { forensicHash: 1 }, name: 'forensic_hash', unique: true },
-    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 }
+    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 },
   ],
 
   // IntegrationSimulation collection indexes
@@ -71,7 +75,7 @@ const INDEXES = {
     { key: { 'results.successProbability.overall': -1 }, name: 'success_probability' },
     { key: { generatedAt: -1 }, name: 'generated_at' },
     { key: { forensicHash: 1 }, name: 'forensic_hash', unique: true },
-    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 }
+    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 },
   ],
 
   // Case collection indexes
@@ -80,21 +84,21 @@ const INDEXES = {
     { key: { tenantId: 1, court: 1 }, name: 'tenant_court' },
     { key: { caseNumber: 1 }, name: 'case_number', unique: true },
     { key: { 'paiaRequests.status': 1 }, name: 'paia_status', sparse: true },
-    { key: { forensicHash: 1 }, name: 'forensic_hash', unique: true }
+    { key: { forensicHash: 1 }, name: 'forensic_hash', unique: true },
   ],
 
   // Tenant collection indexes
   tenants: [
     { key: { tenantId: 1 }, name: 'tenant_id', unique: true },
     { key: { status: 1 }, name: 'status' },
-    { key: { 'subscription.plan': 1 }, name: 'subscription_plan' }
+    { key: { 'subscription.plan': 1 }, name: 'subscription_plan' },
   ],
 
   // User collection indexes
   users: [
     { key: { tenantId: 1, email: 1 }, name: 'tenant_email', unique: true },
     { key: { tenantId: 1, role: 1 }, name: 'tenant_role' },
-    { key: { lastLogin: -1 }, name: 'last_login', sparse: true }
+    { key: { lastLogin: -1 }, name: 'last_login', sparse: true },
   ],
 
   // AuditLog collection indexes
@@ -102,8 +106,8 @@ const INDEXES = {
     { key: { tenantId: 1, timestamp: -1 }, name: 'tenant_time' },
     { key: { tenantId: 1, action: 1 }, name: 'tenant_action' },
     { key: { tenantId: 1, userId: 1 }, name: 'tenant_user' },
-    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 }
-  ]
+    { key: { retentionEnd: 1 }, name: 'retention_end', expireAfterSeconds: 0 },
+  ],
 };
 
 async function createIndexes() {
@@ -118,7 +122,7 @@ async function createIndexes() {
 
     const db = mongoose.connection.db;
     const collections = await db.listCollections().toArray();
-    const collectionNames = collections.map(c => c.name);
+    const collectionNames = collections.map((c) => c.name);
 
     let totalIndexes = 0;
     let createdIndexes = 0;
@@ -129,19 +133,21 @@ async function createIndexes() {
       console.log(`\n📁 Processing collection: ${collectionName}`);
 
       if (!collectionNames.includes(collectionName)) {
-        console.log(`   ⚠️  Collection does not exist yet - will be created when first document inserted`);
+        console.log(
+          `   ⚠️  Collection does not exist yet - will be created when first document inserted`
+        );
         skippedIndexes += indexes.length;
         continue;
       }
 
       const collection = db.collection(collectionName);
-      
+
       for (const indexSpec of indexes) {
         totalIndexes++;
         try {
           // Check if index already exists
           const existingIndexes = await collection.indexExists(indexSpec.name);
-          
+
           if (existingIndexes) {
             console.log(`   ⏭️  Index already exists: ${indexSpec.name}`);
             skippedIndexes++;
@@ -151,7 +157,7 @@ async function createIndexes() {
               name: indexSpec.name,
               unique: indexSpec.unique || false,
               sparse: indexSpec.sparse || false,
-              expireAfterSeconds: indexSpec.expireAfterSeconds
+              expireAfterSeconds: indexSpec.expireAfterSeconds,
             });
             console.log(`   ✅ Created index: ${indexSpec.name}`);
             createdIndexes++;
@@ -173,12 +179,12 @@ async function createIndexes() {
     // List all indexes for verification
     console.log('🔍 Current Indexes by Collection:');
     console.log('==========================================');
-    
+
     for (const collectionName of Object.keys(INDEXES)) {
       if (collectionNames.includes(collectionName)) {
         const indexes = await db.collection(collectionName).indexes();
         console.log(`\n📁 ${collectionName}: ${indexes.length} indexes`);
-        indexes.forEach(idx => {
+        indexes.forEach((idx) => {
           const options = [];
           if (idx.unique) options.push('unique');
           if (idx.sparse) options.push('sparse');
@@ -190,7 +196,6 @@ async function createIndexes() {
         console.log(`\n📁 ${collectionName}: collection not yet created`);
       }
     }
-
   } catch (error) {
     console.error('\n❌ Fatal error:', error);
     process.exit(1);

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════╗
   ║ FINANCIAL PROJECTIONS 2024-2028 - INVESTOR-GRADE MODULE      ║
   ║ [90% accuracy | $1B revenue projection | 85% margins]        ║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -52,12 +50,12 @@ class FinancialProjections {
       const currentYear = this.baseYear + year;
       projections.incomeStatement[currentYear] = this.projectIncomeStatement(
         currentYear,
-        assumptions,
+        assumptions
       );
       projections.balanceSheet[currentYear] = this.projectBalanceSheet(currentYear, assumptions);
       projections.cashFlow[currentYear] = this.projectCashFlow(currentYear, assumptions);
       projections.keyMetrics[currentYear] = this.calculateKeyMetrics(
-        projections.incomeStatement[currentYear],
+        projections.incomeStatement[currentYear]
       );
     }
 
@@ -74,7 +72,7 @@ class FinancialProjections {
         retentionPolicy: 'companies_act_10_years',
         dataResidency: 'Global',
         financialStandard: 'GAAP',
-      },
+      }
     );
 
     logger.info('Financial projections generated', {
@@ -98,7 +96,8 @@ class FinancialProjections {
   }
 
   projectIncomeStatement(year, assumptions) {
-    const baseCustomers = year === 2024 ? 50 : (1 + assumptions.customerGrowthRate) ** (year - 2024) * 50;
+    const baseCustomers =
+      year === 2024 ? 50 : (1 + assumptions.customerGrowthRate) ** (year - 2024) * 50;
     const customers = Math.round(baseCustomers);
 
     return {
@@ -111,9 +110,10 @@ class FinancialProjections {
         gna: 1000000 * 1.2 ** (year - 2024),
       },
       netIncome() {
-        const totalExpenses = this.operatingExpenses.rnd
-          + this.operatingExpenses.salesMarketing
-          + this.operatingExpenses.gna;
+        const totalExpenses =
+          this.operatingExpenses.rnd +
+          this.operatingExpenses.salesMarketing +
+          this.operatingExpenses.gna;
         return this.grossProfit - totalExpenses;
       },
     };
@@ -157,11 +157,11 @@ class FinancialProjections {
     return {
       grossMargin: incomeStatement.grossProfit / incomeStatement.revenue,
       operatingMargin:
-        (incomeStatement.grossProfit
-          - (incomeStatement.operatingExpenses.rnd
-            + incomeStatement.operatingExpenses.salesMarketing
-            + incomeStatement.operatingExpenses.gna))
-        / incomeStatement.revenue,
+        (incomeStatement.grossProfit -
+          (incomeStatement.operatingExpenses.rnd +
+            incomeStatement.operatingExpenses.salesMarketing +
+            incomeStatement.operatingExpenses.gna)) /
+        incomeStatement.revenue,
       netMargin: incomeStatement.netIncome() / incomeStatement.revenue,
       revenueGrowth: 0, // Will be calculated year-over-year
       ruleOf40: 0, // Will be calculated

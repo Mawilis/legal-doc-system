@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /*
  * FORENSIC TEST SUITE: Compliance ID Generator V6
  * Investor-grade deterministic tests with economic metrics
@@ -78,7 +76,9 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
       });
 
       expect(id).toBeDefined();
-      expect(id).toMatch(/^FICA-IND_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/);
+      expect(id).toMatch(
+        /^FICA-IND_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/
+      );
 
       // Validate format
       expect(validateId(id)).toBe(true);
@@ -99,7 +99,7 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
           action: 'COMPLIANCE_ID_GENERATED',
           tenantId: 'ACME_CORP',
           type: 'FICA_INDIVIDUAL',
-        }),
+        })
       );
     });
 
@@ -123,7 +123,9 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
     test('Should generate POPIA request ID with tenant context', () => {
       const id = generateComplianceId('POPIA_REQUEST');
 
-      expect(id).toMatch(/^POP-REQ_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/);
+      expect(id).toMatch(
+        /^POP-REQ_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/
+      );
       expect(getTenantContext).toHaveBeenCalled();
 
       const metadata = extractIdMetadata(id);
@@ -213,7 +215,7 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
       expect(auditLogger.audit).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'LEGACY_ID_GENERATED',
-        }),
+        })
       );
     });
 
@@ -289,7 +291,7 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
             successful: 4,
             failed: 0,
           }),
-        }),
+        })
       );
     });
 
@@ -327,7 +329,9 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
       expect(RETENTION_POLICIES.FICA_5_YEARS.legalReference).toMatch(/FICA/);
       expect(RETENTION_POLICIES.COMPANIES_ACT_7_YEARS.legalReference).toMatch(/Companies Act/);
       expect(RETENTION_POLICIES.POPIA_1_YEAR.legalReference).toMatch(/POPIA/);
-      expect(RETENTION_POLICIES.TRUST_PERPETUAL.legalReference).toMatch(/Trust Property Control Act/);
+      expect(RETENTION_POLICIES.TRUST_PERPETUAL.legalReference).toMatch(
+        /Trust Property Control Act/
+      );
     });
   });
 

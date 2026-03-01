@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ██████╗ ███████╗██████╗  ██████╗ ██████╗ ████████╗    ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ███████╗██╗  ██╗  ║
 ║ ██╔══██╗██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝   ██╔════╝██╔═══██╗████╗ ████║██╔══██╗██║     ██╔════╝██║  ██║  ║
@@ -89,7 +87,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(
-      `❌ QUANTUM BREACH: Missing ${envVar} in .env vault. Report generation cannot be guaranteed.`,
+      `❌ QUANTUM BREACH: Missing ${envVar} in .env vault. Report generation cannot be guaranteed.`
     );
   }
 });
@@ -117,11 +115,8 @@ const rateLimiter = new RateLimiterRedis({
 const ReportValidationSchemas = {
   // Financial Report Schema - SARS Compliance Focus
   financialReport: Joi.object({
-    startDate: Joi.date().iso().required().max('now')
-      .label('Start Date'),
-    endDate: Joi.date().iso().required().greater(Joi.ref('startDate'))
-      .max('now')
-      .label('End Date'),
+    startDate: Joi.date().iso().required().max('now').label('Start Date'),
+    endDate: Joi.date().iso().required().greater(Joi.ref('startDate')).max('now').label('End Date'),
     currency: Joi.string().valid('ZAR', 'USD', 'EUR', 'GBP').default('ZAR'),
     vatInclusive: Joi.boolean().default(true),
     format: Joi.string().valid('json', 'pdf', 'csv', 'excel').default('json'),
@@ -131,7 +126,7 @@ const ReportValidationSchemas = {
       const { startDate, endDate } = helpers.state.ancestors[0];
       const maxDays = parseInt(process.env.MAX_REPORT_RANGE_DAYS) || 365;
       const dayDifference = Math.ceil(
-        (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24),
+        (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)
       );
 
       if (dayDifference > maxDays) {
@@ -176,8 +171,7 @@ const ReportValidationSchemas = {
     documentType: Joi.string()
       .valid('ALL', 'FINANCIAL', 'LEGAL', 'CONTRACT', 'CORRESPONDENCE', 'MINUTES', 'RESOLUTION')
       .default('ALL'),
-    years: Joi.number().integer().min(1).max(10)
-      .default(7),
+    years: Joi.number().integer().min(1).max(10).default(7),
     retentionStatus: Joi.string()
       .valid('ACTIVE', 'ARCHIVED', 'OVERDUE', 'DESTROYED', 'ALL')
       .default('ALL'),
@@ -384,7 +378,7 @@ class ReportCacheNexus {
       // Encrypt sensitive data before caching
       const encryptedReport = ReportEncryptionNexus.encryptReportData(
         reportData,
-        cacheKey.split(':')[1], // Extract report type
+        cacheKey.split(':')[1] // Extract report type
       );
 
       await this.redis.setex(cacheKey, ttl, JSON.stringify(encryptedReport));
@@ -475,13 +469,11 @@ class QuantumReportController {
           res,
           400,
           `Validation failed: ${error.details[0].message}`,
-          'ERR_VALIDATION_FAILED',
+          'ERR_VALIDATION_FAILED'
         );
       }
 
-      const {
-        startDate, endDate, currency, vatInclusive, format, includeVATReport,
-      } = value;
+      const { startDate, endDate, currency, vatInclusive, format, includeVATReport } = value;
       const { userId, firmId, userRole } = req.user;
 
       // QUANTUM ACCESS CONTROL: RBAC+ABAC validation
@@ -499,7 +491,7 @@ class QuantumReportController {
           res,
           403,
           'Insufficient permissions to access financial reports',
-          'ERR_ACCESS_DENIED',
+          'ERR_ACCESS_DENIED'
         );
       }
 
@@ -629,14 +621,15 @@ class QuantumReportController {
         },
       ]);
 
-      const reportData = financialAggregation[0] || this.getEmptyFinancialReport(startDate, endDate, currency);
+      const reportData =
+        financialAggregation[0] || this.getEmptyFinancialReport(startDate, endDate, currency);
 
       // 2. SARS VAT COMPLIANCE REPORT (If requested)
       if (includeVATReport) {
         reportData.sarsCompliance = await this.generateSARSComplianceReport(
           startDate,
           endDate,
-          firmId,
+          firmId
         );
       }
 
@@ -678,7 +671,7 @@ class QuantumReportController {
         res,
         500,
         `Financial report generation failed: ${error.message}`,
-        'ERR_REPORT_GENERATION_FAILED',
+        'ERR_REPORT_GENERATION_FAILED'
       );
     }
   }
@@ -702,7 +695,7 @@ class QuantumReportController {
           res,
           400,
           `Validation failed: ${error.details[0].message}`,
-          'ERR_VALIDATION_FAILED',
+          'ERR_VALIDATION_FAILED'
         );
       }
 
@@ -735,7 +728,7 @@ class QuantumReportController {
           res,
           403,
           'Insufficient permissions to access compliance reports',
-          'ERR_ACCESS_DENIED',
+          'ERR_ACCESS_DENIED'
         );
       }
 
@@ -767,7 +760,7 @@ class QuantumReportController {
           startDate,
           endDate,
           firmId,
-          anonymizePII,
+          anonymizePII
         );
       }
 
@@ -777,7 +770,7 @@ class QuantumReportController {
           startDate,
           endDate,
           firmId,
-          riskLevel,
+          riskLevel
         );
       }
 
@@ -844,7 +837,7 @@ class QuantumReportController {
         res,
         500,
         `Compliance report generation failed: ${error.message}`,
-        'ERR_COMPLIANCE_REPORT_FAILED',
+        'ERR_COMPLIANCE_REPORT_FAILED'
       );
     }
   }
@@ -866,13 +859,11 @@ class QuantumReportController {
           res,
           400,
           `Validation failed: ${error.details[0].message}`,
-          'ERR_VALIDATION_FAILED',
+          'ERR_VALIDATION_FAILED'
         );
       }
 
-      const {
-        startDate, endDate, sheriffId, region, status, metrics, format,
-      } = value;
+      const { startDate, endDate, sheriffId, region, status, metrics, format } = value;
       const { userId, firmId, userRole } = req.user;
 
       const hasAccess = await validateRBAC({
@@ -889,7 +880,7 @@ class QuantumReportController {
           res,
           403,
           'Insufficient permissions to access logistics reports',
-          'ERR_ACCESS_DENIED',
+          'ERR_ACCESS_DENIED'
         );
       }
 
@@ -1071,7 +1062,7 @@ class QuantumReportController {
         res,
         500,
         `Logistics report generation failed: ${error.message}`,
-        'ERR_LOGISTICS_REPORT_FAILED',
+        'ERR_LOGISTICS_REPORT_FAILED'
       );
     }
   }
@@ -1092,13 +1083,11 @@ class QuantumReportController {
           res,
           400,
           `Validation failed: ${error.details[0].message}`,
-          'ERR_VALIDATION_FAILED',
+          'ERR_VALIDATION_FAILED'
         );
       }
 
-      const {
-        documentType, years, retentionStatus, format,
-      } = value;
+      const { documentType, years, retentionStatus, format } = value;
       const { userId, firmId, userRole } = req.user;
 
       const hasAccess = await validateRBAC({
@@ -1115,7 +1104,7 @@ class QuantumReportController {
           res,
           403,
           'Insufficient permissions to access document retention reports',
-          'ERR_ACCESS_DENIED',
+          'ERR_ACCESS_DENIED'
         );
       }
 
@@ -1242,7 +1231,7 @@ class QuantumReportController {
         res,
         500,
         `Retention report generation failed: ${error.message}`,
-        'ERR_RETENTION_REPORT_FAILED',
+        'ERR_RETENTION_REPORT_FAILED'
       );
     }
   }
@@ -1263,13 +1252,11 @@ class QuantumReportController {
           res,
           400,
           `Validation failed: ${error.details[0].message}`,
-          'ERR_VALIDATION_FAILED',
+          'ERR_VALIDATION_FAILED'
         );
       }
 
-      const {
-        startDate, endDate, requestType, responseStatus, format, includeExemptions,
-      } = value;
+      const { startDate, endDate, requestType, responseStatus, format, includeExemptions } = value;
       const { userId, firmId, userRole } = req.user;
 
       // Only Information Officer and above can access PAIA reports
@@ -1290,7 +1277,7 @@ class QuantumReportController {
           res,
           403,
           'Only Information Officers can access PAIA reports',
-          'ERR_PAIA_ACCESS_DENIED',
+          'ERR_PAIA_ACCESS_DENIED'
         );
       }
 
@@ -1421,26 +1408,26 @@ class QuantumReportController {
             },
             exemptionsAnalysis: includeExemptions
               ? {
-                totalApplied: { $size: '$exemptions' },
-                uniqueExemptions: { $setUnion: ['$exemptions', []] },
-                exemptionRate: {
-                  $cond: [
-                    { $eq: ['$totalRequests', 0] },
-                    0,
-                    {
-                      $round: [
-                        {
-                          $multiply: [
-                            { $divide: [{ $size: '$exemptions' }, '$totalRequests'] },
-                            100,
-                          ],
-                        },
-                        2,
-                      ],
-                    },
-                  ],
-                },
-              }
+                  totalApplied: { $size: '$exemptions' },
+                  uniqueExemptions: { $setUnion: ['$exemptions', []] },
+                  exemptionRate: {
+                    $cond: [
+                      { $eq: ['$totalRequests', 0] },
+                      0,
+                      {
+                        $round: [
+                          {
+                            $multiply: [
+                              { $divide: [{ $size: '$exemptions' }, '$totalRequests'] },
+                              100,
+                            ],
+                          },
+                          2,
+                        ],
+                      },
+                    ],
+                  },
+                }
               : undefined,
             legalRequirement: 'PAIA_30_DAY_DEADLINE',
             informationOfficer: process.env.PAIA_INFORMATION_OFFICER,
@@ -1480,7 +1467,7 @@ class QuantumReportController {
         res,
         500,
         `PAIA report generation failed: ${error.message}`,
-        'ERR_PAIA_REPORT_FAILED',
+        'ERR_PAIA_REPORT_FAILED'
       );
     }
   }
@@ -1511,7 +1498,7 @@ class QuantumReportController {
           res,
           403,
           'Custom report creation requires analytics license',
-          'ERR_CUSTOM_REPORT_ACCESS_DENIED',
+          'ERR_CUSTOM_REPORT_ACCESS_DENIED'
         );
       }
 
@@ -1525,7 +1512,7 @@ class QuantumReportController {
           .required(),
         filters: Joi.object().pattern(
           Joi.string(),
-          Joi.alternatives().try(Joi.string(), Joi.number(), Joi.date(), Joi.boolean(), Joi.array()),
+          Joi.alternatives().try(Joi.string(), Joi.number(), Joi.date(), Joi.boolean(), Joi.array())
         ),
         aggregations: Joi.array().items(
           Joi.object({
@@ -1534,7 +1521,7 @@ class QuantumReportController {
               .valid('SUM', 'AVG', 'COUNT', 'MIN', 'MAX', 'GROUP_BY')
               .required(),
             alias: Joi.string(),
-          }),
+          })
         ),
         format: Joi.string().valid('json', 'csv', 'excel', 'pdf').default('json'),
         schedule: Joi.object({
@@ -1551,7 +1538,7 @@ class QuantumReportController {
           res,
           400,
           `Custom report validation failed: ${error.details[0].message}`,
-          'ERR_CUSTOM_REPORT_VALIDATION',
+          'ERR_CUSTOM_REPORT_VALIDATION'
         );
       }
 
@@ -1618,7 +1605,7 @@ class QuantumReportController {
         res,
         500,
         `Custom report creation failed: ${error.message}`,
-        'ERR_CUSTOM_REPORT_CREATION',
+        'ERR_CUSTOM_REPORT_CREATION'
       );
     }
   }
@@ -1647,7 +1634,7 @@ class QuantumReportController {
           res,
           403,
           'Access denied to this report',
-          'ERR_REPORT_ACCESS_DENIED',
+          'ERR_REPORT_ACCESS_DENIED'
         );
       }
 
@@ -1662,7 +1649,7 @@ class QuantumReportController {
           res,
           404,
           'Report expired or not available',
-          'ERR_REPORT_EXPIRED',
+          'ERR_REPORT_EXPIRED'
         );
       }
 
@@ -1703,7 +1690,7 @@ class QuantumReportController {
         res,
         500,
         `Report streaming failed: ${error.message}`,
-        'ERR_REPORT_STREAM_FAILED',
+        'ERR_REPORT_STREAM_FAILED'
       );
     }
   }
@@ -1905,7 +1892,8 @@ class QuantumReportController {
       }),
     ]);
 
-    const retentionCompliance = companyDocs > 0 ? ((companyDocs - overdueDocs) / companyDocs) * 100 : 100;
+    const retentionCompliance =
+      companyDocs > 0 ? ((companyDocs - overdueDocs) / companyDocs) * 100 : 100;
 
     return {
       totalDocuments: companyDocs,
@@ -2183,7 +2171,7 @@ class QuantumReportController {
     const totalDeliveries = logisticsStats.reduce((sum, stat) => sum + stat.totals.volume, 0);
     const totalSuccessful = logisticsStats.reduce(
       (sum, stat) => sum + (stat.totals.successRate * stat.totals.volume) / 100,
-      0,
+      0
     );
     const totalCost = logisticsStats.reduce((sum, stat) => sum + stat.totals.cost, 0);
     const totalDistance = logisticsStats.reduce((sum, stat) => sum + stat.totals.distance, 0);
@@ -2210,13 +2198,14 @@ class QuantumReportController {
 
     // Find lowest performing sheriff
     const lowestPerformer = logisticsStats.reduce(
-      (lowest, current) => (current.totals.successRate < lowest.totals.successRate ? current : lowest),
-      logisticsStats[0],
+      (lowest, current) =>
+        current.totals.successRate < lowest.totals.successRate ? current : lowest,
+      logisticsStats[0]
     );
 
     if (lowestPerformer.totals.successRate < 80) {
       recommendations.push(
-        `Provide additional training for sheriff ${lowestPerformer.sheriffId} (Success rate: ${lowestPerformer.totals.successRate}%)`,
+        `Provide additional training for sheriff ${lowestPerformer.sheriffId} (Success rate: ${lowestPerformer.totals.successRate}%)`
       );
     }
 
@@ -2224,7 +2213,7 @@ class QuantumReportController {
     const highCostSheriffs = logisticsStats.filter((stat) => stat.totals.costPerKm > 5);
     if (highCostSheriffs.length > 0) {
       recommendations.push(
-        `Review routing efficiency for ${highCostSheriffs.length} sheriff(s) with cost per km > R5`,
+        `Review routing efficiency for ${highCostSheriffs.length} sheriff(s) with cost per km > R5`
       );
     }
 
@@ -2246,20 +2235,22 @@ class QuantumReportController {
     const totalDocuments = retentionAnalysis.reduce((sum, item) => sum + item.totals.count, 0);
     const totalCompliant = retentionAnalysis.reduce(
       (sum, item) => sum + (item.totals.complianceScore * item.totals.count) / 100,
-      0,
+      0
     );
-    const overallComplianceRate = totalDocuments > 0 ? Math.round((totalCompliant / totalDocuments) * 100) : 100;
+    const overallComplianceRate =
+      totalDocuments > 0 ? Math.round((totalCompliant / totalDocuments) * 100) : 100;
 
     return {
       totalDocuments,
       complianceRate: overallComplianceRate,
       status: overallComplianceRate >= 95 ? 'COMPLIANT' : 'NON_COMPLIANT',
       overdueCount: retentionAnalysis.reduce(
-        (sum, item) => sum
-          + (item.byStatus
+        (sum, item) =>
+          sum +
+          (item.byStatus
             ?.filter((s) => s.status === 'OVERDUE')
             .reduce((sSum, s) => sSum + s.count, 0) || 0),
-        0,
+        0
       ),
     };
   }
@@ -2276,7 +2267,8 @@ class QuantumReportController {
         grade: 'A',
         description: 'Document retention fully complies with Companies Act 7-year rule',
       };
-    } if (summary.complianceRate >= 85) {
+    }
+    if (summary.complianceRate >= 85) {
       return {
         status: 'MINOR_NON_COMPLIANCE',
         grade: 'B',
@@ -2306,11 +2298,13 @@ class QuantumReportController {
     const totalRequests = paiaAnalysis.reduce((sum, item) => sum + item.totals.requests, 0);
     const totalWithinDeadline = paiaAnalysis.reduce(
       (sum, item) => sum + (item.totals.deadlineCompliance * item.totals.requests) / 100,
-      0,
+      0
     );
-    const overallDeadlineCompliance = totalRequests > 0 ? Math.round((totalWithinDeadline / totalRequests) * 100) : 100;
-    const averageResponseDays = paiaAnalysis.reduce((sum, item) => sum + item.totals.avgResponseDays, 0)
-      / paiaAnalysis.length;
+    const overallDeadlineCompliance =
+      totalRequests > 0 ? Math.round((totalWithinDeadline / totalRequests) * 100) : 100;
+    const averageResponseDays =
+      paiaAnalysis.reduce((sum, item) => sum + item.totals.avgResponseDays, 0) /
+      paiaAnalysis.length;
 
     return {
       totalRequests,
@@ -2333,7 +2327,8 @@ class QuantumReportController {
         grade: 'A',
         description: 'PAIA requests processed within statutory deadlines',
       };
-    } if (summary.deadlineCompliance >= 80) {
+    }
+    if (summary.deadlineCompliance >= 80) {
       return {
         status: 'MINOR_NON_COMPLIANCE',
         grade: 'B',
@@ -2372,10 +2367,14 @@ class QuantumReportController {
   calculateOverallComplianceScore(complianceReport) {
     const scores = [];
 
-    if (complianceReport.popia?.complianceScore) scores.push(complianceReport.popia.complianceScore);
-    if (complianceReport.fica?.verificationRate) scores.push(complianceReport.fica.verificationRate);
-    if (complianceReport.companiesAct?.retentionCompliance) scores.push(complianceReport.companiesAct.retentionCompliance);
-    if (complianceReport.paia?.summary?.deadlineCompliance) scores.push(complianceReport.paia.summary.deadlineCompliance);
+    if (complianceReport.popia?.complianceScore)
+      scores.push(complianceReport.popia.complianceScore);
+    if (complianceReport.fica?.verificationRate)
+      scores.push(complianceReport.fica.verificationRate);
+    if (complianceReport.companiesAct?.retentionCompliance)
+      scores.push(complianceReport.companiesAct.retentionCompliance);
+    if (complianceReport.paia?.summary?.deadlineCompliance)
+      scores.push(complianceReport.paia.summary.deadlineCompliance);
 
     if (scores.length === 0) return 0;
 
@@ -2391,7 +2390,7 @@ class QuantumReportController {
     // POPIA Recommendations
     if (complianceReport.popia && complianceReport.popia.complianceScore < 85) {
       recommendations.push(
-        `Improve POPIA compliance (Current: ${complianceReport.popia.complianceScore}%)`,
+        `Improve POPIA compliance (Current: ${complianceReport.popia.complianceScore}%)`
       );
     }
 
@@ -2400,21 +2399,21 @@ class QuantumReportController {
       recommendations.push(
         `Complete FICA verification for remaining ${
           100 - complianceReport.fica.verificationRate
-        }% of clients`,
+        }% of clients`
       );
     }
 
     // Companies Act Recommendations
     if (complianceReport.companiesAct && complianceReport.companiesAct.retentionCompliance < 95) {
       recommendations.push(
-        `Archive ${complianceReport.companiesAct.overdueForArchive} overdue documents for Companies Act compliance`,
+        `Archive ${complianceReport.companiesAct.overdueForArchive} overdue documents for Companies Act compliance`
       );
     }
 
     // PAIA Recommendations
     if (complianceReport.paia && complianceReport.paia.summary?.deadlineCompliance < 90) {
       recommendations.push(
-        `Improve PAIA response times (Current compliance: ${complianceReport.paia.summary.deadlineCompliance}%)`,
+        `Improve PAIA response times (Current compliance: ${complianceReport.paia.summary.deadlineCompliance}%)`
       );
     }
 
@@ -2583,7 +2582,7 @@ class QuantumReportController {
   streamExcelReport(res, reportData, reportName) {
     res.setHeader(
       'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
     res.setHeader('Content-Disposition', `attachment; filename="${reportName}.xlsx"`);
 
@@ -2692,7 +2691,8 @@ class QuantumReportController {
       documentType: { $in: ['CONTRACT', 'AGREEMENT', 'AFFIDAVIT'] },
     });
 
-    const digitalSignatureRate = totalDocuments > 0 ? (signedDocuments / totalDocuments) * 100 : 100;
+    const digitalSignatureRate =
+      totalDocuments > 0 ? (signedDocuments / totalDocuments) * 100 : 100;
 
     return {
       totalDocuments,

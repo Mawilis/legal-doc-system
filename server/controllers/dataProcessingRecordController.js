@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ ██████╗ █████╗ ████████╗ █████╗     ██████╗ ██████╗ ███╗   ██╗████████╗██████╗  ██████╗ ██╗     ███████╗██╗  ██╗    ██████╗ ██████╗  ██████╗ ██████╗ ███████╗ ██████╗ ██████╗ ║
  * ║ ██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗   ██╔════╝██╔═══██╗████╗  ██║╚══██╔══╝██╔══██╗██╔═══██╗██║     ██╔════╝██║  ██║    ██╔══██╗██╔══██╗██╔═══██╗██╔══██╗██╔════╝██╔═══██╗██╔══██╗║
@@ -257,10 +255,10 @@ class DataProcessingRecordController {
             : 'Internal quantum processing error',
         details: isValidationError
           ? error.errors.map((e) => ({
-            field: e.path,
-            message: e.message,
-            type: e.type,
-          }))
+              field: e.path,
+              message: e.message,
+              type: e.type,
+            }))
           : undefined,
         complianceCode: isValidationError
           ? 'POPIA-VALID-002'
@@ -339,7 +337,7 @@ class DataProcessingRecordController {
       const hasAccess = await DataProcessingRecordController._validateAccess(
         req.user,
         record.jurisdiction,
-        record.informationOfficer,
+        record.informationOfficer
       );
 
       if (!hasAccess) {
@@ -483,7 +481,7 @@ class DataProcessingRecordController {
 
       // Quantum Cache: Generate cache key from query and user context
       const cacheKey = `dpr:list:${req.user.id}:${JSON.stringify(
-        whereClause,
+        whereClause
       )}:${pageNum}:${limitNum}`;
       const cached = await redis.get(cacheKey);
 
@@ -508,8 +506,10 @@ class DataProcessingRecordController {
       });
 
       // Quantum Compliance: Generate jurisdiction summary
-      const jurisdictionSummary = await DataProcessingRecordController._getJurisdictionSummary(whereClause);
-      const lawfulBasisSummary = await DataProcessingRecordController._getLawfulBasisSummary(whereClause);
+      const jurisdictionSummary =
+        await DataProcessingRecordController._getJurisdictionSummary(whereClause);
+      const lawfulBasisSummary =
+        await DataProcessingRecordController._getLawfulBasisSummary(whereClause);
 
       // Quantum Response: Format for compliance dashboard
       const responseData = {
@@ -525,7 +525,9 @@ class DataProcessingRecordController {
           totalActive: count,
           byJurisdiction: jurisdictionSummary,
           byLawfulBasis: lawfulBasisSummary,
-          retentionCompliance: rows.filter((r) => DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod)).length,
+          retentionCompliance: rows.filter((r) =>
+            DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod)
+          ).length,
           securityCompliance: rows.filter((r) => r.securityMeasures.length >= 3).length,
         },
         filters: {
@@ -630,8 +632,8 @@ class DataProcessingRecordController {
 
       // Quantum Access: Verify Information Officer authorization
       if (
-        record.informationOfficer !== req.user.email
-        && !req.user.roles.includes('SYSTEM_ADMIN')
+        record.informationOfficer !== req.user.email &&
+        !req.user.roles.includes('SYSTEM_ADMIN')
       ) {
         // Quantum Audit: Log unauthorized update attempt
         await auditLogger.logAuditTrail({
@@ -659,7 +661,9 @@ class DataProcessingRecordController {
 
       // Quantum Validation: Check for immutable fields
       const immutableFields = ['processingActivityHash', 'createdAt', 'createdBy', 'id'];
-      const attemptedImmutableChanges = Object.keys(req.body).filter((key) => immutableFields.includes(key));
+      const attemptedImmutableChanges = Object.keys(req.body).filter((key) =>
+        immutableFields.includes(key)
+      );
 
       if (attemptedImmutableChanges.length > 0) {
         return res.status(400).json({
@@ -702,7 +706,7 @@ class DataProcessingRecordController {
         'retentionPeriod',
       ];
       const hasSignificantChanges = significantFields.some(
-        (field) => req.body[field] !== undefined && req.body[field] !== record[field],
+        (field) => req.body[field] !== undefined && req.body[field] !== record[field]
       );
 
       if (hasSignificantChanges) {
@@ -816,9 +820,7 @@ class DataProcessingRecordController {
         });
       }
 
-      const {
-        startDate, endDate, jurisdiction, reportType = 'FULL',
-      } = req.body;
+      const { startDate, endDate, jurisdiction, reportType = 'FULL' } = req.body;
 
       // Quantum Validation: Date range validation
       const start = new Date(startDate);
@@ -972,7 +974,7 @@ class DataProcessingRecordController {
       // Quantum Retrieval: Get records for data subject
       const records = await DataProcessingRecord.findByDataSubject(
         decryptedSubjectId,
-        jurisdiction || req.user.jurisdiction,
+        jurisdiction || req.user.jurisdiction
       );
 
       // Quantum Redaction: Remove sensitive internal fields for DSAR response
@@ -1018,8 +1020,9 @@ class DataProcessingRecordController {
           }, {}),
           activeProcessing: records.filter((r) => r.isActive).length,
           needsAttention: records.filter(
-            (r) => r.nextReviewDate < new Date()
-              || !DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod),
+            (r) =>
+              r.nextReviewDate < new Date() ||
+              !DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod)
           ).length,
         };
       }
@@ -1056,7 +1059,9 @@ class DataProcessingRecordController {
                 ? Math.max(...records.map((r) => new Date(r.createdAt).getTime()))
                 : null,
           },
-          retentionCompliance: records.filter((r) => DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod)).length,
+          retentionCompliance: records.filter((r) =>
+            DataProcessingRecord.validateRetentionPeriod(r.retentionPeriod)
+          ).length,
           internationalTransfers: records.filter((r) => r.internationalTransfers.length > 0).length,
         },
         complianceMarkers: {
@@ -1127,7 +1132,7 @@ class DataProcessingRecordController {
         DataProcessingRecordController._setNestedValue(
           encrypted,
           field,
-          await encryptData(JSON.stringify(fieldValue), ENCRYPTION_KEY),
+          await encryptData(JSON.stringify(fieldValue), ENCRYPTION_KEY)
         );
       }
     }
@@ -1148,7 +1153,7 @@ class DataProcessingRecordController {
     if (report.riskAssessment) {
       encryptedReport.riskAssessment = await encryptData(
         JSON.stringify(report.riskAssessment),
-        ENCRYPTION_KEY,
+        ENCRYPTION_KEY
       );
     }
 

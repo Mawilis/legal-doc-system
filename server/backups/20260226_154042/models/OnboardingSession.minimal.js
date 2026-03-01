@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+#!const mongoose = require('mongoose');
 
 const onboardingSessionSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, unique: true },

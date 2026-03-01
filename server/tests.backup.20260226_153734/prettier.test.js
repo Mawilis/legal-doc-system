@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions */
 
@@ -70,7 +68,11 @@ describe('Prettier Configuration - Wilsy OS Formatting Standards', function () {
       assert.strictEqual(config.trailingComma, 'es5', 'Trailing commas for cleaner diffs');
       assert.strictEqual(config.printWidth, 100, '100 char limit for code review efficiency');
       assert.strictEqual(config.arrowParens, 'always', 'Always include parens for clarity');
-      assert.strictEqual(config.endOfLine, 'lf', 'Unix line endings for cross-platform consistency');
+      assert.strictEqual(
+        config.endOfLine,
+        'lf',
+        'Unix line endings for cross-platform consistency'
+      );
     });
 
     it('should have valid .prettierignore file', function () {
@@ -274,12 +276,16 @@ export default { compliantFunction };
             savedEvidence,
             Object.keys(savedEvidence)
               .filter((k) => k !== 'hash' && k !== 'hashAlgorithm')
-              .sort(),
-          ),
+              .sort()
+          )
         )
         .digest('hex');
 
-      assert.strictEqual(verifyHash, savedEvidence.hash, 'Evidence hash mismatch - possible tampering');
+      assert.strictEqual(
+        verifyHash,
+        savedEvidence.hash,
+        'Evidence hash mismatch - possible tampering'
+      );
 
       console.log(`✓ Evidence generated: ${evidencePath}`);
       console.log(`✓ Evidence hash: ${savedEvidence.hash}`);
@@ -295,7 +301,9 @@ export default { compliantFunction };
       // Create a large test file
       const largeContent = Array(1000)
         .fill()
-        .map((_, i) => `const variable${i} = { id: ${i}, name: 'test${i}', active: ${i % 2 === 0} };`)
+        .map(
+          (_, i) => `const variable${i} = { id: ${i}, name: 'test${i}', active: ${i % 2 === 0} };`
+        )
         .join('\n');
 
       fs.writeFileSync(testFile, largeContent);

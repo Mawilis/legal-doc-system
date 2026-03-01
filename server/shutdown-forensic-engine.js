@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /*
  * WILSY OS: QUANTUM FORENSIC ENGINE SHUTDOWN (ES Module Version)
@@ -7,7 +7,7 @@
 
 import fs from 'fs/promises';
 import { execSync } from 'child_process';
-import { dirname, join } from "path";
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,15 +25,15 @@ const colors = {
 
 console.log('');
 console.log(
-  `${colors.blue
-  }═══════════════════════════════════════════════════════════════════════════════${
-    colors.reset}`,
+  `${colors.blue}═══════════════════════════════════════════════════════════════════════════════${
+    colors.reset
+  }`
 );
 console.log(`${colors.yellow}                 SHUTTING DOWN WILSY OS${colors.reset}`);
 console.log(
-  `${colors.blue
-  }═══════════════════════════════════════════════════════════════════════════════${
-    colors.reset}`,
+  `${colors.blue}═══════════════════════════════════════════════════════════════════════════════${
+    colors.reset
+  }`
 );
 console.log('');
 
@@ -71,7 +71,7 @@ async function main() {
   // Final cleanup
   try {
     execSync(
-      'pkill -f "node.*(server|precedentVectorizer|MonitoringDashboard)" 2>/dev/null || true',
+      'pkill -f "node.*(server|precedentVectorizer|MonitoringDashboard)" 2>/dev/null || true'
     );
   } catch (error) {
     // Ignore

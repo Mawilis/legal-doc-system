@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 console.log('🚀 WILSY OS - Production Migration System');
 console.log('💰 INVESTOR-READY MIGRATION MANAGER');

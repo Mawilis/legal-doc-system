@@ -1,4 +1,4 @@
-import fs from 'fs';
+#!import fs from 'fs';
 
 // Read the current model file
 const modelPath = './models/DocumentTemplate.js';
@@ -20,7 +20,7 @@ if (forensicHashRegex.test(content)) {
 const preSaveRegex = /pre\('save', async function\(next\) {/;
 if (preSaveRegex.test(content)) {
   console.log('  - Found pre-save hook, checking if it generates forensicHash...');
-  
+
   // Check if forensicHash is being set in pre-save
   if (!content.includes('this.forensicHash =')) {
     console.log('  - WARNING: pre-save hook does not set forensicHash');

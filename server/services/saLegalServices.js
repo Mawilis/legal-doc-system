@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ================================================================================================
  * FILE: server/services/saLegalServices.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/saLegalServices.js
@@ -129,7 +127,7 @@ class SALegalServices {
       // Filter, deduplicate, and sort
       const uniqueUpdates = this.deduplicateLegislationUpdates(allUpdates);
       const recentUpdates = uniqueUpdates.filter(
-        (update) => new Date(update.publicationDate || update.date) >= cutoffDate,
+        (update) => new Date(update.publicationDate || update.date) >= cutoffDate
       );
 
       // Enhance with compliance impact analysis
@@ -169,7 +167,7 @@ class SALegalServices {
       });
 
       console.log(
-        `[SA LEGAL] Legislation updates fetched: ${enhancedUpdates.length} updates in ${processingTime}ms`,
+        `[SA LEGAL] Legislation updates fetched: ${enhancedUpdates.length} updates in ${processingTime}ms`
       );
       return result;
     } catch (error) {
@@ -197,8 +195,7 @@ class SALegalServices {
 
       // Parse the legislation page (adjust selectors based on actual page structure)
       $('.legislation-item, .act-item, .update-item').each((index, element) => {
-        const title = $(element).find('h3, .title, a').first().text()
-          .trim();
+        const title = $(element).find('h3, .title, a').first().text().trim();
         const link = $(element).find('a').first().attr('href');
         const dateText = $(element).find('.date, .published-date, time').text().trim();
 
@@ -281,7 +278,7 @@ class SALegalServices {
         'https://www.gpwonline.co.za/Gazettes/Pages/PublishedGazettes.aspx',
         {
           timeout: 10000,
-        },
+        }
       );
 
       const $ = cheerio.load(response.data);
@@ -548,9 +545,9 @@ class SALegalServices {
     const isMajorAct = majorActs.some((act) => cleaned.toUpperCase().includes(act));
 
     if (
-      isMajorAct
-      && !cleaned.toUpperCase().includes('ACT')
-      && !cleaned.toUpperCase().includes('BILL')
+      isMajorAct &&
+      !cleaned.toUpperCase().includes('ACT') &&
+      !cleaned.toUpperCase().includes('BILL')
     ) {
       cleaned += ' Act';
     }
@@ -680,7 +677,8 @@ class SALegalServices {
         timeframe: 'WITHIN_7_DAYS',
         actions: ['Review legislation', 'Update compliance protocols', 'Notify stakeholders'],
       };
-    } if (impact.level === 'MEDIUM') {
+    }
+    if (impact.level === 'MEDIUM') {
       return {
         required: true,
         priority: 'MEDIUM',
@@ -702,7 +700,8 @@ class SALegalServices {
 
     if (impact.level === 'HIGH') {
       return new Date(publicationDate.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    } if (impact.level === 'MEDIUM') {
+    }
+    if (impact.level === 'MEDIUM') {
       return new Date(publicationDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
     }
     return new Date(publicationDate.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days
@@ -950,11 +949,14 @@ class SALegalServices {
     if (keywords && keywords.length > 0) {
       const searchTerms = keywords.toLowerCase().split(' ');
       return precedents
-        .filter((precedent) => searchTerms.some(
-          (term) => precedent.title.toLowerCase().includes(term)
-              || precedent.summary.toLowerCase().includes(term)
-              || precedent.keywords.some((kw) => kw.includes(term)),
-        ))
+        .filter((precedent) =>
+          searchTerms.some(
+            (term) =>
+              precedent.title.toLowerCase().includes(term) ||
+              precedent.summary.toLowerCase().includes(term) ||
+              precedent.keywords.some((kw) => kw.includes(term))
+          )
+        )
         .slice(0, limit);
     }
 

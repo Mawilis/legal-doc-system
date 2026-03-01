@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 
 test('Economic Validation - R180K Savings', () => {
   console.log('✓ Annual Savings/Client: R180,000');

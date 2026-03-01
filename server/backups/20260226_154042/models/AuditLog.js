@@ -1,4 +1,4 @@
-/*
+#!/*
 ================================================================================
 QUANTUM SCROLL OF IMMUTABLE EVIDENCE: SUPREME AUDIT LOG
 Path: /server/models/AuditLog.js

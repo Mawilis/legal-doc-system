@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * @jest-environment node
  */
 
@@ -43,7 +41,10 @@ describe('🔧 DIRECT MODEL ACCESS TEST', () => {
 
   test('Should be able to create instance via mongoose.models', () => {
     // Try to get model from registry if needed
-    const Model = typeof OnboardingSession === 'function' ? OnboardingSession : mongoose.models.OnboardingSession;
+    const Model =
+      typeof OnboardingSession === 'function'
+        ? OnboardingSession
+        : mongoose.models.OnboardingSession;
 
     expect(Model).toBeDefined();
 

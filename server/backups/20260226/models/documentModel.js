@@ -1,4 +1,4 @@
-/*
+#!/*
  * FILE: /server/models/documentModel.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/documentModel.js
  * STATUS: EPITOME | QUANTUM VAULT | PRODUCTION IMMORTAL

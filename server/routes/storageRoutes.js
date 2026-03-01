@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/storageRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Storage Gateway (Tenant-Scoped). Abstracts underlying storage (S3/Local). Manages secure uploads, downloads, and temporary access links.
@@ -86,7 +84,7 @@ router.post(
       err.code = 'STORAGE_UPLOAD_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -111,7 +109,7 @@ router.get(
       err.code = 'STORAGE_URL_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -143,7 +141,7 @@ router.delete(
       err.code = 'STORAGE_DELETE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -164,7 +162,7 @@ router.get(
       err.code = 'STORAGE_META_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

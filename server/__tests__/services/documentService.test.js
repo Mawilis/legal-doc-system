@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT SERVICE TESTS - INVESTOR-GRADE DUE DILIGENCE                       ║
   ║ [100% coverage | Deterministic evidence | R10M risk validation]             ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */

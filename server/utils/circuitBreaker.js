@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ CIRCUIT BREAKER - FAULT TOLERANCE                                         ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
@@ -10,12 +10,12 @@ class CircuitBreaker {
     this.successCount = 0;
     this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
     this.nextAttempt = Date.now();
-    
+
     this.options = {
       timeout: options.timeout || 30000,
       errorThresholdPercentage: options.errorThresholdPercentage || 50,
       resetTimeout: options.resetTimeout || 30000,
-      ...options
+      ...options,
     };
   }
 
@@ -31,11 +31,11 @@ class CircuitBreaker {
     try {
       const result = await Promise.race([
         fn(),
-        new Promise((_, reject) => 
+        new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Timeout')), this.options.timeout)
-        )
+        ),
       ]);
-      
+
       this.onSuccess();
       return result;
     } catch (error) {
@@ -47,7 +47,7 @@ class CircuitBreaker {
   onSuccess() {
     this.failureCount = 0;
     this.successCount++;
-    
+
     if (this.state === 'HALF_OPEN') {
       this.state = 'CLOSED';
     }
@@ -55,9 +55,9 @@ class CircuitBreaker {
 
   onFailure() {
     this.failureCount++;
-    
+
     const errorRate = (this.failureCount / (this.failureCount + this.successCount)) * 100;
-    
+
     if (errorRate >= this.options.errorThresholdPercentage || this.state === 'HALF_OPEN') {
       this.state = 'OPEN';
       this.nextAttempt = Date.now() + this.options.resetTimeout;
@@ -70,7 +70,7 @@ class CircuitBreaker {
       state: this.state,
       failureCount: this.failureCount,
       successCount: this.successCount,
-      nextAttempt: this.nextAttempt
+      nextAttempt: this.nextAttempt,
     };
   }
 }

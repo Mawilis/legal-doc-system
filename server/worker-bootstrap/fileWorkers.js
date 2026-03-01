@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/worker-bootstrap/fileWorkers.js
  * STATUS: PRODUCTION-READY | EPITOME | WORKER BOOTSTRAP
  * -----------------------------------------------------------------------------
@@ -151,15 +149,15 @@ async function start() {
     // Register fileScan worker
     const fileScanHandle = fileScanWorker.register
       ? fileScanWorker.register({
-        queueName: DEFAULTS.queueName,
-        concurrency: DEFAULTS.fileScanConcurrency,
-        metricsClient: null,
-      })
-      : fileScanWorker.registerWithJobService
-        ? fileScanWorker.registerWithJobService({
           queueName: DEFAULTS.queueName,
           concurrency: DEFAULTS.fileScanConcurrency,
+          metricsClient: null,
         })
+      : fileScanWorker.registerWithJobService
+        ? fileScanWorker.registerWithJobService({
+            queueName: DEFAULTS.queueName,
+            concurrency: DEFAULTS.fileScanConcurrency,
+          })
         : null;
 
     if (fileScanHandle) {
@@ -169,7 +167,7 @@ async function start() {
       });
     } else {
       logger.warn(
-        'worker-bootstrap: fileScan worker did not return a handle; ensure register() exists',
+        'worker-bootstrap: fileScan worker did not return a handle; ensure register() exists'
       );
     }
 
@@ -177,15 +175,15 @@ async function start() {
     if (metadataWorker && (metadataWorker.register || metadataWorker.registerWithJobService)) {
       const metadataHandle = metadataWorker.register
         ? metadataWorker.register({
-          queueName: DEFAULTS.queueName,
-          concurrency: DEFAULTS.metadataConcurrency,
-          metricsClient: null,
-        })
-        : metadataWorker.registerWithJobService
-          ? metadataWorker.registerWithJobService({
             queueName: DEFAULTS.queueName,
             concurrency: DEFAULTS.metadataConcurrency,
+            metricsClient: null,
           })
+        : metadataWorker.registerWithJobService
+          ? metadataWorker.registerWithJobService({
+              queueName: DEFAULTS.queueName,
+              concurrency: DEFAULTS.metadataConcurrency,
+            })
           : null;
 
       if (metadataHandle) {

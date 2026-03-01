@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ REGULATORY FILING MODEL - COMPETITION ACT & JSE COMPLIANCE ENGINE                     ║
   ║ [Production Grade | 18 Jurisdictions | Automated Section 10 | Forensic Traceability]  ║

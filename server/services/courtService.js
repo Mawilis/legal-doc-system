@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ COURT SERVICE - COMPLETE SA JUDICIAL MANAGEMENT SYSTEM                    ║
   ║ WITH QUANTUM PRECEDENT MATCHING                                           ║
@@ -23,7 +23,7 @@ export const COURT_TIERS = {
   SPECIALIST: 'specialist',
   MAGISTRATE: 'magistrate',
   TRADITIONAL: 'traditional',
-  TRIBUNAL: 'tribunal'
+  TRIBUNAL: 'tribunal',
 };
 
 export const COURT_CATEGORIES = {
@@ -53,7 +53,7 @@ export const COURT_CATEGORIES = {
   REGIONAL_MAGISTRATE: 'regional_magistrate',
   TRADITIONAL_LEADERSHIP_COURT: 'traditional_leadership_court',
   CCMA: 'ccma',
-  BARGAINING_COUNCIL: 'bargaining_council'
+  BARGAINING_COUNCIL: 'bargaining_council',
 };
 
 const COURT_ACTIONS = {
@@ -64,20 +64,20 @@ const COURT_ACTIONS = {
   JUDICIAL_OFFICER_ADDED: 'judicial_officer_added',
   PRACTICE_DIRECTIVE_ADDED: 'practice_directive_added',
   COURT_HIERARCHY_QUERIED: 'court_hierarchy_queried',
-  QUANTUM_PREDICTION: 'quantum_prediction'
+  QUANTUM_PREDICTION: 'quantum_prediction',
 };
 
 const RETENTION_POLICIES = {
   COURT_RECORDS: {
     name: 'court_records_10_years',
     legalReference: 'Superior Courts Act 10 of 2013 §12',
-    retentionYears: 10
+    retentionYears: 10,
   },
   JUDICIAL_OFFICER_RECORDS: {
     name: 'judicial_officer_records_20_years',
     legalReference: 'Judicial Service Commission Act 9 of 1994',
-    retentionYears: 20
-  }
+    retentionYears: 20,
+  },
 };
 
 // ============================================================================
@@ -96,7 +96,7 @@ const applyRetentionPolicy = (auditEntry, policyKey = 'COURT_RECORDS') => {
     retentionPeriod: policy.retentionYears * 365,
     legalReference: policy.legalReference,
     retentionStart: new Date().toISOString(),
-    dataResidency: process.env.DEFAULT_DATA_RESIDENCY || 'ZA'
+    dataResidency: process.env.DEFAULT_DATA_RESIDENCY || 'ZA',
   };
 };
 
@@ -123,11 +123,11 @@ export class CourtService {
     } catch (error) {
       logger.debug('Tenant context not available', { error: error.message });
     }
-    
+
     if (this.tenantId) {
       return { tenantId: this.tenantId, region: this.region };
     }
-    
+
     throw new Error('No tenant context available');
   }
 
@@ -143,7 +143,7 @@ export class CourtService {
       logger.info('Creating new court', {
         correlationId,
         tenantId,
-        courtName: courtData.name
+        courtName: courtData.name,
       });
 
       if (!courtData.category || !Object.values(COURT_CATEGORIES).includes(courtData.category)) {
@@ -155,12 +155,12 @@ export class CourtService {
         tenantId,
         audit: {
           createdBy: userId,
-          createdAt: new Date()
+          createdAt: new Date(),
         },
         metadata: {
           correlationId,
-          source: 'api'
-        }
+          source: 'api',
+        },
       });
 
       const savedCourt = await court.save();
@@ -174,7 +174,7 @@ export class CourtService {
         courtName: savedCourt.name,
         courtTier: savedCourt.tier,
         processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       await AuditLogger.log('court-service', auditEntry);
@@ -182,16 +182,15 @@ export class CourtService {
       logger.info('Court created successfully', {
         correlationId,
         courtId: savedCourt.courtId,
-        processingTimeMs: Date.now() - startTime
+        processingTimeMs: Date.now() - startTime,
       });
 
       return savedCourt;
-
     } catch (error) {
       logger.error('Court creation failed', {
         correlationId,
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       throw new Error(`COURT_CREATION_FAILED: ${error.message}`);
     }
@@ -202,7 +201,7 @@ export class CourtService {
    */
   async getCourt(courtId) {
     const { tenantId } = this.getTenantContext();
-    
+
     const court = await Court.findOne({ courtId, tenantId })
       .populate('hierarchy.parentCourt', 'name tier category')
       .populate('hierarchy.appealTo', 'name tier category')
@@ -225,7 +224,7 @@ export class CourtService {
 
     try {
       const court = await Court.findOne({ courtId, tenantId });
-      
+
       if (!court) {
         throw new Error('Court not found');
       }
@@ -245,17 +244,16 @@ export class CourtService {
         courtId: updatedCourt.courtId,
         updatedFields: Object.keys(updates),
         processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       await AuditLogger.log('court-service', auditEntry);
 
       return updatedCourt;
-
     } catch (error) {
       logger.error('Court update failed', {
         correlationId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -266,7 +264,7 @@ export class CourtService {
    */
   async listCourts(filters = {}, pagination = {}) {
     const { tenantId } = this.getTenantContext();
-    
+
     const query = { tenantId, ...filters };
     const limit = pagination.limit || 50;
     const skip = pagination.offset || 0;
@@ -285,8 +283,8 @@ export class CourtService {
         total,
         limit,
         offset: skip,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -302,11 +300,11 @@ export class CourtService {
       logger.info('Checking jurisdiction', {
         correlationId,
         tenantId,
-        caseType: caseData.type
+        caseType: caseData.type,
       });
 
       const courts = await Court.find({ tenantId, status: 'active' }).lean();
-      
+
       const eligibleCourts = [];
       const ineligibleCourts = [];
 
@@ -318,13 +316,13 @@ export class CourtService {
             name: court.name,
             tier: court.tier,
             appealTo: court.hierarchy?.appealTo,
-            confidence: this.calculateJurisdictionConfidence(court, caseData)
+            confidence: this.calculateJurisdictionConfidence(court, caseData),
           });
         } else {
           ineligibleCourts.push({
             courtId: court.courtId,
             name: court.name,
-            reason: this.getIneligibilityReason(court, caseData)
+            reason: this.getIneligibilityReason(court, caseData),
           });
         }
       }
@@ -336,7 +334,7 @@ export class CourtService {
         eligibleCourts: eligibleCourts.slice(0, 5),
         alternativeCourts: ineligibleCourts.slice(0, 5),
         recommendedCourt: eligibleCourts[0] || null,
-        requiresAppeal: false
+        requiresAppeal: false,
       };
 
       if (caseData.isAppeal && caseData.fromCourt) {
@@ -344,10 +342,12 @@ export class CourtService {
         if (fromCourt && fromCourt.hierarchy?.appealTo) {
           const appealCourt = await Court.findById(fromCourt.hierarchy.appealTo);
           result.requiresAppeal = true;
-          result.appealCourt = appealCourt ? {
-            courtId: appealCourt.courtId,
-            name: appealCourt.name
-          } : null;
+          result.appealCourt = appealCourt
+            ? {
+                courtId: appealCourt.courtId,
+                name: appealCourt.name,
+              }
+            : null;
         }
       }
 
@@ -360,17 +360,16 @@ export class CourtService {
         eligibleCount: eligibleCourts.length,
         recommendedCourt: result.recommendedCourt?.courtId,
         processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       await AuditLogger.log('court-service', auditEntry);
 
       return result;
-
     } catch (error) {
       logger.error('Jurisdiction check failed', {
         correlationId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -423,7 +422,10 @@ export class CourtService {
       case 'criminal':
         if (court.jurisdiction.criminal?.hasJurisdiction) {
           score += 20;
-          if (caseData.offence && court.jurisdiction.criminal.offences?.includes(caseData.offence)) {
+          if (
+            caseData.offence &&
+            court.jurisdiction.criminal.offences?.includes(caseData.offence)
+          ) {
             score += 15;
           }
         }
@@ -476,18 +478,18 @@ export class CourtService {
 
       const route = [];
       let currentCourt = court;
-      
+
       while (currentCourt.hierarchy?.appealTo) {
         const nextCourt = await Court.findById(currentCourt.hierarchy.appealTo);
         if (!nextCourt) break;
-        
+
         route.push({
           fromCourt: currentCourt.name,
           toCourt: nextCourt.name,
           level: route.length + 1,
-          leaveRequired: currentCourt.jurisdiction?.appeal?.leaveRequired || false
+          leaveRequired: currentCourt.jurisdiction?.appeal?.leaveRequired || false,
         });
-        
+
         currentCourt = nextCourt;
       }
 
@@ -499,7 +501,7 @@ export class CourtService {
         courtId: court.courtId,
         appealSteps: route.length,
         processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       await AuditLogger.log('court-service', auditEntry);
@@ -508,13 +510,12 @@ export class CourtService {
         courtId: court.courtId,
         courtName: court.name,
         appealRoute: route,
-        finalCourt: route.length > 0 ? route[route.length - 1].toCourt : court.name
+        finalCourt: route.length > 0 ? route[route.length - 1].toCourt : court.name,
       };
-
     } catch (error) {
       logger.error('Appeal route calculation failed', {
         correlationId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -537,7 +538,7 @@ export class CourtService {
       const officer = {
         officerId: `JUD-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
         ...officerData,
-        active: true
+        active: true,
       };
 
       court.judicialOfficers.push(officer);
@@ -546,26 +547,28 @@ export class CourtService {
 
       await court.save();
 
-      const auditEntry = applyRetentionPolicy({
-        action: COURT_ACTIONS.JUDICIAL_OFFICER_ADDED,
-        tenantId,
-        userId,
-        correlationId,
-        courtId: court.courtId,
-        officerName: officer.name,
-        officerTitle: officer.title,
-        processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
-      }, 'JUDICIAL_OFFICER_RECORDS');
+      const auditEntry = applyRetentionPolicy(
+        {
+          action: COURT_ACTIONS.JUDICIAL_OFFICER_ADDED,
+          tenantId,
+          userId,
+          correlationId,
+          courtId: court.courtId,
+          officerName: officer.name,
+          officerTitle: officer.title,
+          processingTimeMs: Date.now() - startTime,
+          timestamp: new Date().toISOString(),
+        },
+        'JUDICIAL_OFFICER_RECORDS'
+      );
 
       await AuditLogger.log('court-service', auditEntry);
 
       return officer;
-
     } catch (error) {
       logger.error('Add judicial officer failed', {
         correlationId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -580,18 +583,17 @@ export class CourtService {
 
     try {
       const hierarchy = await Court.getHierarchy(tenantId);
-      
+
       logger.info('Court hierarchy retrieved', {
         correlationId,
-        tenantId
+        tenantId,
       });
 
       return hierarchy;
-
     } catch (error) {
       logger.error('Get hierarchy failed', {
         correlationId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -602,9 +604,9 @@ export class CourtService {
    */
   async getStats() {
     const { tenantId } = this.getTenantContext();
-    
+
     const stats = await Court.getStats(tenantId);
-    
+
     return stats;
   }
 
@@ -625,7 +627,7 @@ export class CourtService {
         ...directive,
         directiveNumber: `DIR-${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
         issuedDate: new Date(),
-        active: true
+        active: true,
       };
 
       court.practiceDirectives.push(newDirective);
@@ -635,11 +637,10 @@ export class CourtService {
       await court.save();
 
       return newDirective;
-
     } catch (error) {
       logger.error('Add practice directive failed', {
         correlationId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -657,7 +658,7 @@ export class CourtService {
       logger.info('Finding similar precedents with quantum matching', {
         correlationId,
         tenantId,
-        query
+        query,
       });
 
       const results = await this.quantumMatcher.findSimilar(query, options);
@@ -670,17 +671,16 @@ export class CourtService {
         query,
         resultsCount: results.length,
         processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       await AuditLogger.log('court-service', auditEntry);
 
       return results;
-
     } catch (error) {
       logger.error('Quantum matching failed', {
         correlationId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -698,7 +698,7 @@ export class CourtService {
       logger.info('Predicting outcome with quantum superposition', {
         correlationId,
         tenantId,
-        caseData
+        caseData,
       });
 
       const prediction = await this.quantumMatcher.predictOutcome(caseData);
@@ -711,17 +711,16 @@ export class CourtService {
         caseData,
         prediction: JSON.parse(JSON.stringify(prediction)),
         processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       await AuditLogger.log('court-service', auditEntry);
 
       return prediction;
-
     } catch (error) {
       logger.error('Outcome prediction failed', {
         correlationId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }

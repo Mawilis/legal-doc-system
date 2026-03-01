@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * QUANTUM ENCRYPTION NEXUS: AES-256-GCM CRYPTOGRAPHIC BASTION
  * ============================================================================
@@ -62,7 +60,7 @@ const validateEnvVariables = () => {
 
   if (missingVars.length > 0) {
     throw new Error(
-      `QUANTUM ENCRYPTION FAILURE: Missing environment variables: ${missingVars.join(', ')}`,
+      `QUANTUM ENCRYPTION FAILURE: Missing environment variables: ${missingVars.join(', ')}`
     );
   }
 
@@ -120,15 +118,15 @@ const deriveTenantEncryptionKey = (tenantId, masterKey = process.env.ENCRYPTION_
     tenantSpecificSalt,
     ENCRYPTION_CONSTANTS.ITERATIONS,
     ENCRYPTION_CONSTANTS.KEY_LENGTH,
-    ENCRYPTION_CONSTANTS.DIGEST,
+    ENCRYPTION_CONSTANTS.DIGEST
   );
 
   // Quantum Audit: Log key derivation (without exposing key)
   console.log(
     `🔐 QUANTUM KEY DERIVATION: Generated tenant-specific key for tenant ${tenantId.substring(
       0,
-      8,
-    )}...`,
+      8
+    )}...`
   );
 
   return derivedKey;
@@ -148,7 +146,7 @@ const rotateEncryptionKey = (tenantId, oldKey) => {
   // Combine with old key for smooth transition
   const transitionKey = Buffer.concat([oldKey, newMasterComponent]).slice(
     0,
-    ENCRYPTION_CONSTANTS.KEY_LENGTH,
+    ENCRYPTION_CONSTANTS.KEY_LENGTH
   );
 
   // Quantum Audit Trail
@@ -161,7 +159,7 @@ const rotateEncryptionKey = (tenantId, oldKey) => {
   };
 
   console.log(
-    `🔄 QUANTUM KEY ROTATION: Rotated encryption key for tenant ${tenantId.substring(0, 8)}...`,
+    `🔄 QUANTUM KEY ROTATION: Rotated encryption key for tenant ${tenantId.substring(0, 8)}...`
   );
 
   return {
@@ -220,8 +218,8 @@ const encryptData = (data, tenantId, options = {}) => {
     console.log(
       `🔒 QUANTUM ENCRYPTION: Encrypted ${dataBuffer.length} bytes for tenant ${tenantId.substring(
         0,
-        8,
-      )}...`,
+        8
+      )}...`
     );
   }
 
@@ -254,12 +252,12 @@ const decryptData = (encryptedData, tenantId, options = {}) => {
     // Extract auth tag (next 16 bytes)
     const authTag = combined.slice(
       ENCRYPTION_CONSTANTS.IV_LENGTH,
-      ENCRYPTION_CONSTANTS.IV_LENGTH + ENCRYPTION_CONSTANTS.TAG_LENGTH,
+      ENCRYPTION_CONSTANTS.IV_LENGTH + ENCRYPTION_CONSTANTS.TAG_LENGTH
     );
 
     // Extract encrypted data (remaining bytes)
     const encrypted = combined.slice(
-      ENCRYPTION_CONSTANTS.IV_LENGTH + ENCRYPTION_CONSTANTS.TAG_LENGTH,
+      ENCRYPTION_CONSTANTS.IV_LENGTH + ENCRYPTION_CONSTANTS.TAG_LENGTH
     );
 
     // Create decipher
@@ -282,7 +280,7 @@ const decryptData = (encryptedData, tenantId, options = {}) => {
     // Quantum Audit: Log successful decryption
     if (process.env.NODE_ENV === 'development') {
       console.log(
-        `🔓 QUANTUM DECRYPTION: Decrypted data for tenant ${tenantId.substring(0, 8)}...`,
+        `🔓 QUANTUM DECRYPTION: Decrypted data for tenant ${tenantId.substring(0, 8)}...`
       );
     }
 
@@ -340,7 +338,7 @@ const encryptPII = (piiData, tenantId) => {
   console.log(
     `🛡️ QUANTUM PII ENCRYPTION: Encrypted ${
       encryptionMetadata.encryptedFields.length
-    } PII fields for tenant ${tenantId.substring(0, 8)}...`,
+    } PII fields for tenant ${tenantId.substring(0, 8)}...`
   );
 
   return encryptedPII;
@@ -361,10 +359,12 @@ const maskSensitiveData = (data, type = 'generic') => {
     passportNumber: (str) => str.replace(/([A-Z])(\d{6})/, '$1*'),
     taxNumber: (str) => str.replace(/(\d{3})\d{6}(\d{1})/, '$1*$2'),
     phone: (str) => str.replace(/(\+\d{2})(\d{2})\d{6}(\d{2})/, '$1$2*$3'),
-    email: (str) => str.replace(/(.{2})(.*)(@.*)/, (match, p1, p2, p3) => p1 + '*'.repeat(p2.length) + p3),
-    generic: (str) => (str.length > 4
-      ? str.substring(0, 2) + '*'.repeat(str.length - 4) + str.substring(str.length - 2)
-      : '*'),
+    email: (str) =>
+      str.replace(/(.{2})(.*)(@.*)/, (match, p1, p2, p3) => p1 + '*'.repeat(p2.length) + p3),
+    generic: (str) =>
+      str.length > 4
+        ? str.substring(0, 2) + '*'.repeat(str.length - 4) + str.substring(str.length - 2)
+        : '*',
   };
 
   return maskingStrategies[type] ? maskingStrategies[type](data) : maskingStrategies.generic(data);
@@ -445,7 +445,7 @@ const verifyIntegrity = (data, signature, tenantId) => {
   const calculatedSignature = generateHMAC(data, tenantId);
   return crypto.timingSafeEqual(
     Buffer.from(calculatedSignature, 'hex'),
-    Buffer.from(signature, 'hex'),
+    Buffer.from(signature, 'hex')
   );
 };
 
@@ -460,26 +460,28 @@ const verifyIntegrity = (data, signature, tenantId) => {
  * @param {Array} fieldsToEncrypt - Fields to automatically encrypt
  * @returns {Function} Express middleware function
  */
-const createEncryptionMiddleware = (tenantId, fieldsToEncrypt = []) => (req, res, next) => {
-  // Encrypt request body fields
-  if (req.body && fieldsToEncrypt.length > 0) {
-    fieldsToEncrypt.forEach((field) => {
-      if (req.body[field]) {
-        req.body[field] = encryptData(req.body[field], tenantId);
-      }
-    });
-  }
+const createEncryptionMiddleware =
+  (tenantId, fieldsToEncrypt = []) =>
+  (req, res, next) => {
+    // Encrypt request body fields
+    if (req.body && fieldsToEncrypt.length > 0) {
+      fieldsToEncrypt.forEach((field) => {
+        if (req.body[field]) {
+          req.body[field] = encryptData(req.body[field], tenantId);
+        }
+      });
+    }
 
-  // Decrypt response data (if needed)
-  const originalSend = res.send;
-  res.send = function (data) {
-    // Implement decryption logic for response if needed
-    // This would require storing encryption metadata
-    originalSend.call(this, data);
+    // Decrypt response data (if needed)
+    const originalSend = res.send;
+    res.send = function (data) {
+      // Implement decryption logic for response if needed
+      // This would require storing encryption metadata
+      originalSend.call(this, data);
+    };
+
+    next();
   };
-
-  next();
-};
 
 // ============================================================================
 // QUANTUM TEST UTILITIES

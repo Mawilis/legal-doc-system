@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - CPD RECORD MODEL
  * LEGAL PRACTICE COUNCIL · CONTINUING PROFESSIONAL DEVELOPMENT
@@ -6,7 +6,7 @@
  * @version 5.0.1
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import crypto from 'node:crypto';
 import { v4 as uuidv4 } from 'uuid.js';
 

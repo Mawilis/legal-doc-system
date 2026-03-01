@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/caseFileRoutes.js
  * PATH: server/routes/caseFileRoutes.js
  * STATUS: PRODUCTION-READY | SOVEREIGN GATEWAY | EPITOME
@@ -82,7 +80,7 @@ router.get('/:id', caseFileController.getCaseDetails);
 router.get(
   '/:id/discovery-bundle',
   requireRole('LAWYER', 'ADMIN', 'OWNER'),
-  caseFileController.generateDiscoveryBundle,
+  caseFileController.generateDiscoveryBundle
 );
 
 /* ---------------------------------------------------------------------------
@@ -97,7 +95,7 @@ router.get(
 router.patch(
   '/:id/status',
   requireRole('LAWYER', 'ADMIN', 'OWNER'),
-  caseFileController.transitionCaseStatus,
+  caseFileController.transitionCaseStatus
 );
 
 /*

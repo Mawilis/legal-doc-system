@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ██████╗ ██╗ ██████╗  ██████╗ ███╗   ███╗███████╗████████╗██████╗ ██╗ ██████╗     ██╗   ██╗████████╗██╗██╗     ██╗████████╗██╗███████╗███████╗
  * ██╔══██╗██║██╔═══██╗██╔════╝ ████╗ ████║██╔════╝╚══██╔══╝██╔══██╗██║██╔════╝     ██╔══██╗╚══██╔══╝██║██║     ██║╚══██╔══╝██║██╔════╝██╔════╝
  * ██████╔╝██║██║   ██║██║  ███╗██╔████╔██║█████╗     ██║   ██████╔╝██║██║          ███████║   ██║   ██║██║     ██║   ██║   ██║█████╗  ███████╗
@@ -35,17 +33,17 @@ require('dotenv').config({ path: '/server/.env' });
 // Immediate environment validation - production deployment critical
 if (!process.env.BIOMETRIC_ENCRYPTION_KEY) {
   throw new Error(
-    'QUANTUM BIOMETRIC BREACH: BIOMETRIC_ENCRYPTION_KEY not found in .env - Required for biometric template protection',
+    'QUANTUM BIOMETRIC BREACH: BIOMETRIC_ENCRYPTION_KEY not found in .env - Required for biometric template protection'
   );
 }
 if (!process.env.BIOMETRIC_HMAC_KEY) {
   throw new Error(
-    'QUANTUM BIOMETRIC BREACH: BIOMETRIC_HMAC_KEY not found in .env - Required for biometric integrity verification',
+    'QUANTUM BIOMETRIC BREACH: BIOMETRIC_HMAC_KEY not found in .env - Required for biometric integrity verification'
   );
 }
 if (!process.env.BIOMETRIC_SALT) {
   throw new Error(
-    'QUANTUM BIOMETRIC BREACH: BIOMETRIC_SALT not found in .env - Required for biometric template salting',
+    'QUANTUM BIOMETRIC BREACH: BIOMETRIC_SALT not found in .env - Required for biometric template salting'
   );
 }
 
@@ -53,7 +51,7 @@ if (!process.env.BIOMETRIC_SALT) {
 const biometricKey = Buffer.from(process.env.BIOMETRIC_ENCRYPTION_KEY, 'hex');
 if (biometricKey.length !== 32) {
   throw new Error(
-    `QUANTUM BIOMETRIC ERROR: BIOMETRIC_ENCRYPTION_KEY must be 32 bytes (64 hex chars), got ${biometricKey.length} bytes`,
+    `QUANTUM BIOMETRIC ERROR: BIOMETRIC_ENCRYPTION_KEY must be 32 bytes (64 hex chars), got ${biometricKey.length} bytes`
   );
 }
 
@@ -67,14 +65,14 @@ const fs = require('fs').promises;
 const path = require('path');
 
 // Production dependencies - Install with: npm install sharp@^0.33.2 jpeg-js@^0.4.4
-let sharp; let
-  jpeg;
+let sharp;
+let jpeg;
 try {
   sharp = require('sharp@^0.33.2'); // For image processing and liveness detection
   jpeg = require('jpeg-js@^0.4.4'); // For JPEG biometric image validation
 } catch (error) {
   console.warn(
-    'QUANTUM DEPENDENCY WARNING: Image processing libraries not installed. Run: npm install sharp@^0.33.2 jpeg-js@^0.4.4',
+    'QUANTUM DEPENDENCY WARNING: Image processing libraries not installed. Run: npm install sharp@^0.33.2 jpeg-js@^0.4.4'
   );
 }
 
@@ -180,7 +178,7 @@ class BiometricEncryptionEngine {
       salt,
       BIOMETRIC_CONSTANTS.SECURITY.KEY_DERIVATION_ITERATIONS,
       32,
-      'sha512',
+      'sha512'
     );
   }
 
@@ -352,7 +350,7 @@ class FingerprintProcessor {
       // Validate minutiae count
       if (minutiae.length < BIOMETRIC_CONSTANTS.FINGERPRINT.MIN_MINUTIAE_COUNT) {
         throw new Error(
-          `Insufficient minutiae points: ${minutiae.length}. Minimum required: ${BIOMETRIC_CONSTANTS.FINGERPRINT.MIN_MINUTIAE_COUNT}`,
+          `Insufficient minutiae points: ${minutiae.length}. Minimum required: ${BIOMETRIC_CONSTANTS.FINGERPRINT.MIN_MINUTIAE_COUNT}`
         );
       }
 
@@ -396,17 +394,17 @@ class FingerprintProcessor {
     // Check resolution
     if (metadata.density < BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_RESOLUTION) {
       throw new Error(
-        `Insufficient image resolution: ${metadata.density} DPI. Minimum required: ${BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_RESOLUTION} DPI`,
+        `Insufficient image resolution: ${metadata.density} DPI. Minimum required: ${BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_RESOLUTION} DPI`
       );
     }
 
     // Check image dimensions
     if (
-      metadata.width < BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_SIZE.width
-      || metadata.height < BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_SIZE.height
+      metadata.width < BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_SIZE.width ||
+      metadata.height < BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_SIZE.height
     ) {
       throw new Error(
-        `Insufficient image dimensions: ${metadata.width}x${metadata.height}. Minimum required: ${BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_SIZE.width}x${BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_SIZE.height}`,
+        `Insufficient image dimensions: ${metadata.width}x${metadata.height}. Minimum required: ${BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_SIZE.width}x${BIOMETRIC_CONSTANTS.FINGERPRINT.IMAGE_SIZE.height}`
       );
     }
 
@@ -494,7 +492,7 @@ class FingerprintProcessor {
     // Score based on minutiae count
     const countScore = Math.min(
       minutiae.length / BIOMETRIC_CONSTANTS.FINGERPRINT.MAX_MINUTIAE_COUNT,
-      1,
+      1
     );
     qualityScore += countScore * 0.3;
 
@@ -759,8 +757,8 @@ class FaceRecognitionProcessor {
 
     // Check image dimensions
     if (
-      metadata.width < BIOMETRIC_CONSTANTS.FACE.IMAGE_RESOLUTION.width
-      || metadata.height < BIOMETRIC_CONSTANTS.FACE.IMAGE_RESOLUTION.height
+      metadata.width < BIOMETRIC_CONSTANTS.FACE.IMAGE_RESOLUTION.width ||
+      metadata.height < BIOMETRIC_CONSTANTS.FACE.IMAGE_RESOLUTION.height
     ) {
       throw new Error(`Insufficient image dimensions: ${metadata.width}x${metadata.height}`);
     }
@@ -776,8 +774,8 @@ class FaceRecognitionProcessor {
 
     return {
       valid:
-        livenessResult.passed
-        && qualityMetrics.overall >= BIOMETRIC_CONSTANTS.FACE.LIVENESS_THRESHOLD,
+        livenessResult.passed &&
+        qualityMetrics.overall >= BIOMETRIC_CONSTANTS.FACE.LIVENESS_THRESHOLD,
       dimensions: { width: metadata.width, height: metadata.height },
       format: metadata.format,
       quality: qualityMetrics,
@@ -1104,7 +1102,7 @@ class BiometricManager {
     // Validate POPIA Section 26 explicit consent
     if (!this.validateConsent(consent, biometricType)) {
       throw new Error(
-        'POPIA SECTION 26 VIOLATION: Explicit consent required for biometric processing',
+        'POPIA SECTION 26 VIOLATION: Explicit consent required for biometric processing'
       );
     }
 
@@ -1124,7 +1122,7 @@ class BiometricManager {
         case 'FINGERPRINT': {
           extractionResult = await this.fingerprintProcessor.extractMinutiae(
             biometricData.image,
-            biometricData.fingerPosition,
+            biometricData.fingerPosition
           );
           break;
         }
@@ -1132,7 +1130,7 @@ class BiometricManager {
         case 'FACE': {
           extractionResult = await this.faceProcessor.extractFaceTemplate(
             biometricData.image,
-            biometricData.options,
+            biometricData.options
           );
           break;
         }
@@ -1149,7 +1147,7 @@ class BiometricManager {
       // Validate quality threshold
       if (extractionResult.qualityScore < BIOMETRIC_CONSTANTS.MIN_TEMPLATE_QUALITY) {
         throw new Error(
-          `Biometric quality insufficient: ${extractionResult.qualityScore}. Minimum required: ${BIOMETRIC_CONSTANTS.MIN_TEMPLATE_QUALITY}`,
+          `Biometric quality insufficient: ${extractionResult.qualityScore}. Minimum required: ${BIOMETRIC_CONSTANTS.MIN_TEMPLATE_QUALITY}`
         );
       }
 
@@ -1160,7 +1158,7 @@ class BiometricManager {
       const encryptedTemplate = this.encryptionEngine.encryptTemplate(
         template,
         userId,
-        biometricType,
+        biometricType
       );
 
       // Generate zero-knowledge proof
@@ -1177,7 +1175,7 @@ class BiometricManager {
         consent,
         registeredAt: new Date().toISOString(),
         expiresAt: new Date(
-          Date.now() + BIOMETRIC_CONSTANTS.MAX_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+          Date.now() + BIOMETRIC_CONSTANTS.MAX_RETENTION_DAYS * 24 * 60 * 60 * 1000
         ).toISOString(),
         version: BIOMETRIC_CONSTANTS.SECURITY.TEMPLATE_VERSION,
         compliance: {
@@ -1262,14 +1260,14 @@ class BiometricManager {
       // Decrypt stored template
       const decryptedTemplate = this.encryptionEngine.decryptTemplate(
         storedTemplate.encryptedTemplate,
-        userId,
+        userId
       );
 
       // Verify zero-knowledge proof
       const zkpValid = this.encryptionEngine.verifyZeroKnowledgeProof(
         storedTemplate.zeroKnowledgeProof,
         decryptedTemplate,
-        userId,
+        userId
       );
 
       if (!zkpValid) {
@@ -1285,7 +1283,7 @@ class BiometricManager {
         case 'FINGERPRINT': {
           const fpResult = await this.fingerprintProcessor.extractMinutiae(
             verificationData.image,
-            verificationData.fingerPosition,
+            verificationData.fingerPosition
           );
 
           if (!fpResult.success) {
@@ -1295,7 +1293,7 @@ class BiometricManager {
           verificationTemplate = fpResult.template;
           matchingResult = this.fingerprintProcessor.matchTemplates(
             decryptedTemplate,
-            verificationTemplate,
+            verificationTemplate
           );
           break;
         }
@@ -1303,7 +1301,7 @@ class BiometricManager {
         case 'FACE': {
           const faceResult = await this.faceProcessor.extractFaceTemplate(
             verificationData.image,
-            verificationData.options,
+            verificationData.options
           );
 
           if (!faceResult.success) {
@@ -1318,7 +1316,7 @@ class BiometricManager {
           verificationTemplate = faceResult.template;
           matchingResult = this.faceProcessor.matchTemplates(
             decryptedTemplate,
-            verificationTemplate,
+            verificationTemplate
           );
           break;
         }
@@ -1438,7 +1436,7 @@ class BiometricManager {
     // Check that consent is not expired
     const consentDate = new Date(consent.timestamp);
     const expirationDate = new Date(
-      consentDate.getTime() + (consent.duration || 365) * 24 * 60 * 60 * 1000,
+      consentDate.getTime() + (consent.duration || 365) * 24 * 60 * 60 * 1000
     );
 
     if (expirationDate < new Date()) {
@@ -1640,7 +1638,7 @@ class BiometricManager {
         retention: {
           maxDays: BIOMETRIC_CONSTANTS.MAX_RETENTION_DAYS,
           daysRemaining: Math.ceil(
-            (new Date(storedTemplate.expiresAt) - new Date()) / (1000 * 60 * 60 * 24),
+            (new Date(storedTemplate.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)
           ),
         },
 
@@ -1765,7 +1763,7 @@ function generatePOPIAConsent(
   userId,
   biometricType,
   purpose = 'IDENTITY_VERIFICATION',
-  durationDays = 365,
+  durationDays = 365
 ) {
   const timestamp = new Date().toISOString();
   const consent = {
@@ -1793,7 +1791,7 @@ function generatePOPIAConsent(
     .update(
       `${userId}:${biometricType}:${purpose}:${timestamp}:${
         process.env.CONSENT_SIGNING_SECRET || 'wilsy-consent-2026'
-      }`,
+      }`
     )
     .digest('hex');
 
@@ -1829,18 +1827,20 @@ async function validateBiometricImage(imageBuffer, biometricType) {
     // Type-specific validation
     switch (biometricType.toUpperCase()) {
       case 'FINGERPRINT': {
-        validation.valid = validation.valid
-          && metadata.width >= 256
-          && metadata.height >= 256
-          && metadata.format === 'jpeg';
+        validation.valid =
+          validation.valid &&
+          metadata.width >= 256 &&
+          metadata.height >= 256 &&
+          metadata.format === 'jpeg';
         break;
       }
 
       case 'FACE': {
-        validation.valid = validation.valid
-          && metadata.width >= 640
-          && metadata.height >= 480
-          && ['jpeg', 'png'].includes(metadata.format);
+        validation.valid =
+          validation.valid &&
+          metadata.width >= 640 &&
+          metadata.height >= 480 &&
+          ['jpeg', 'png'].includes(metadata.format);
         break;
       }
 

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/auditController.js
  * PATH: /server/controllers/auditController.js
@@ -116,7 +114,7 @@ const require = _createRequire(import.meta.url);
  * }
  */
 
-'use strict';
+('use strict');
 
 // QUANTUM IMPORTS: Secure, Pinned Dependencies
 const express = require('express');

@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
+#!/* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
  *  🔐 QUANTUM PASSWORD RESET CITADEL: ETERNAL CREDENTIAL RENAISSANCE ENGINE 🔐
  *  Path: /server/models/passwordResetTokenModel.js
  *  Creator: Supreme Architect Wilson Khanyezi (wilsy.wk@gmail.com | +27 69 046 5710)

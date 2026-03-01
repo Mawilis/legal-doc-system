@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT API TESTS - INVESTOR DUE DILIGENCE - $500M ARR TARGET          ║
   ║ 100% coverage | Enterprise API | Multi-tenant | Global Scale             ║
@@ -217,7 +215,9 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
 
   describe('4. Trending Endpoint', () => {
     it('should return trending precedents', async () => {
-      const response = await request(app).get('/api/precedent/trending?days=30&limit=10').expect(200);
+      const response = await request(app)
+        .get('/api/precedent/trending?days=30&limit=10')
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.trending).toBeInstanceOf(Array);
@@ -263,7 +263,10 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
       const analyzer = require('../../services/legal-engine/PrecedentAnalyzer');
       analyzer.analyzePrecedents.mockRejectedValueOnce(new Error('Search failed'));
 
-      const response = await request(app).post('/api/precedent/search').send({ q: 'test' }).expect(500);
+      const response = await request(app)
+        .post('/api/precedent/search')
+        .send({ q: 'test' })
+        .expect(500);
 
       expect(response.body.error.code).toBe('SEARCH_FAILED');
     });
@@ -328,7 +331,9 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
     });
 
     it('should return GraphML format when requested', async () => {
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}/network?format=graphml`).expect(200);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}/network?format=graphml`)
+        .expect(200);
 
       expect(response.headers['content-type']).toBe('application/xml');
       expect(response.headers['content-disposition']).toContain('.graphml');
@@ -336,7 +341,9 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
     });
 
     it('should return Cypher format when requested', async () => {
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}/network?format=cypher`).expect(200);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}/network?format=cypher`)
+        .expect(200);
 
       expect(response.headers['content-type']).toBe('text/plain');
       expect(response.text).toContain('CREATE');
@@ -355,7 +362,9 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
         holdings: [{ text: 'Holding', weight: 100 }],
       });
 
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}/analysis?depth=DEEP`).expect(200);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}/analysis?depth=DEEP`)
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.analysis).toBeDefined();
@@ -373,7 +382,9 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
         next();
       };
 
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}/analysis`).expect(403);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}/analysis`)
+        .expect(403);
 
       expect(response.body.error.code).toBe('TIER_UPGRADE_REQUIRED');
 
@@ -476,7 +487,10 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
         next();
       };
 
-      const response = await request(app).post('/api/precedent/batch').send({ operations: [] }).expect(403);
+      const response = await request(app)
+        .post('/api/precedent/batch')
+        .send({ operations: [] })
+        .expect(403);
 
       expect(response.body.error.code).toBe('TIER_UPGRADE_REQUIRED');
 
@@ -489,7 +503,9 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
 
     it('should rollback transaction on error', async () => {
       const Precedent = require('../../models/Precedent');
-      Precedent.findOne.mockResolvedValueOnce({ _id: 'prec1' }).mockRejectedValueOnce(new Error('Database error'));
+      Precedent.findOne
+        .mockResolvedValueOnce({ _id: 'prec1' })
+        .mockRejectedValueOnce(new Error('Database error'));
 
       const response = await request(app)
         .post('/api/precedent/batch')
@@ -517,7 +533,9 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
       ]);
 
       const response = await request(app)
-        .get('/api/precedent/export?format=json&ids[]=prec1&fields[]=citation&fields[]=court&fields[]=date')
+        .get(
+          '/api/precedent/export?format=json&ids[]=prec1&fields[]=citation&fields[]=court&fields[]=date'
+        )
         .expect(200);
 
       expect(response.headers['content-type']).toBe('application/json');
@@ -707,7 +725,10 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'precedent-api-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'precedent-api-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'precedent-api-evidence.json'))
@@ -716,7 +737,10 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'precedent-api-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'precedent-api-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

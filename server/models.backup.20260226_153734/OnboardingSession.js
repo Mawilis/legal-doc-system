@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const mongoose = require('mongoose');
+#!const mongoose = require('mongoose');
 
 const { Schema } = mongoose;
 
@@ -35,7 +33,7 @@ const onboardingSessionSchema = new Schema(
   {
     timestamps: true,
     collection: 'onboardingsessions',
-  },
+  }
 );
 
 // ============================================================================
@@ -58,7 +56,7 @@ onboardingSessionSchema.methods.advanceStage = async function (stageId, data = {
 onboardingSessionSchema.methods.processDocumentWithAI = async function (
   documentId,
   textContent,
-  claimedType,
+  claimedType
 ) {
   // In a real app, this would call ClassificationService.classify()
   // For this integration test, we simulate the logic based on text content
@@ -87,7 +85,10 @@ onboardingSessionSchema.methods.processDocumentWithAI = async function (
   this.auditLog.push({
     status: 'AI_CLASSIFICATION',
     data: {
-      documentId, detectedType, confidence, status,
+      documentId,
+      detectedType,
+      confidence,
+      status,
     },
     performedBy: 'SYSTEM_AI',
   });
@@ -128,4 +129,5 @@ onboardingSessionSchema.statics.findByTenant = function (tenantId) {
   return this.find({ tenantId });
 };
 
-export default mongoose.models.OnboardingSession || mongoose.model('OnboardingSession', onboardingSessionSchema);
+export default mongoose.models.OnboardingSession ||
+  mongoose.model('OnboardingSession', onboardingSessionSchema);

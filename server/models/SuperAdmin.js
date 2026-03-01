@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════╗
   ║ SUPERADMIN MODEL - INVESTOR-GRADE QUANTUM SOVEREIGN           ║
   ║ [95% error elimination | R500K risk mitigation | 90% margins] ║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -271,7 +269,7 @@ const superAdminSchema = new Schema(
   {
     timestamps: true,
     strict: true,
-  },
+  }
 );
 
 // =============================================================================
@@ -291,19 +289,23 @@ superAdminSchema.virtual('passwordExpiryDays').get(function () {
  * Virtual: Total financial oversight amount
  * Financial Quantum: Combined trust funds under management
  */
-superAdminSchema.virtual('totalOversightValue').get(() =>
-  // This would be calculated from tenant trust accounts
-  // Placeholder for aggregation - would integrate with financial models
-  0);
+superAdminSchema.virtual('totalOversightValue').get(
+  () =>
+    // This would be calculated from tenant trust accounts
+    // Placeholder for aggregation - would integrate with financial models
+    0
+);
 
 /*
  * Virtual: Compliance score across managed tenants
  * Compliance Quantum: Aggregate POPIA/FICA compliance status
  */
-superAdminSchema.virtual('complianceScore').get(() =>
-  // Would calculate from tenant compliance audits
-  // Placeholder for compliance engine integration
-  100);
+superAdminSchema.virtual('complianceScore').get(
+  () =>
+    // Would calculate from tenant compliance audits
+    // Placeholder for compliance engine integration
+    100
+);
 
 /*
  * Virtual: Emergency activation required
@@ -311,9 +313,9 @@ superAdminSchema.virtual('complianceScore').get(() =>
  */
 superAdminSchema.virtual('requiresEmergencyActivation').get(function () {
   return (
-    this.status === 'LEGALLY_RESTRICTED'
-    || this.passwordExpiryDays < 0
-    || (this.managedTenants && this.managedTenants.some((t) => t.status === 'SUSPENDED'))
+    this.status === 'LEGALLY_RESTRICTED' ||
+    this.passwordExpiryDays < 0 ||
+    (this.managedTenants && this.managedTenants.some((t) => t.status === 'SUSPENDED'))
   );
 });
 
@@ -406,7 +408,7 @@ superAdminSchema.pre('save', async function (next) {
  */
 superAdminSchema.pre('remove', () => {
   throw new Error(
-    'SUPREME_ENTITY_DELETION_FORBIDDEN: SuperAdmin records must be archived, not deleted. Use status change to "EMERITUS".',
+    'SUPREME_ENTITY_DELETION_FORBIDDEN: SuperAdmin records must be archived, not deleted. Use status change to "EMERITUS".'
   );
 });
 
@@ -424,7 +426,7 @@ superAdminSchema.methods.encryptData = function (data) {
   const key = crypto.scryptSync(
     process.env.SUPERADMIN_MASTER_KEY,
     process.env.ENCRYPTION_KEY_SALT,
-    32,
+    32
   );
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -447,7 +449,7 @@ superAdminSchema.methods.decryptData = function (encryptedData) {
   const key = crypto.scryptSync(
     process.env.SUPERADMIN_MASTER_KEY,
     process.env.ENCRYPTION_KEY_SALT,
-    32,
+    32
   );
   const iv = Buffer.from(ivHex, 'hex');
   const authTag = Buffer.from(authTagHex, 'hex');
@@ -607,7 +609,7 @@ superAdminSchema.methods.suspendTenant = async function (tenantId, reason, statu
  */
 superAdminSchema.statics.findByCredentials = async function (email, password) {
   const admin = await this.findOne({ officialEmail: email }).select(
-    '+password +loginHistory +mfaSecret',
+    '+password +loginHistory +mfaSecret'
   );
 
   if (!admin) {
@@ -668,21 +670,22 @@ superAdminSchema.statics.generateComplianceReport = async function () {
       legalAppointmentsValid: admins.filter((a) => a.legalAppointments.every((app) => app.verified))
         .length,
       professionalIndemnityValid: admins.filter(
-        (a) => a.professionalIndemnity && new Date(a.professionalIndemnity.expiryDate) > new Date(),
+        (a) => a.professionalIndemnity && new Date(a.professionalIndemnity.expiryDate) > new Date()
       ).length,
     },
     activitySummary: {
       totalLogins: admins.reduce((sum, a) => sum + a.loginHistory.length, 0),
       last30Days: admins.reduce(
-        (sum, a) => sum
-          + a.loginHistory.filter(
-            (l) => new Date(l.timestamp) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        (sum, a) =>
+          sum +
+          a.loginHistory.filter(
+            (l) => new Date(l.timestamp) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
           ).length,
-        0,
+        0
       ),
       failedAttempts: admins.reduce(
         (sum, a) => sum + a.loginHistory.filter((l) => !l.successful).length,
-        0,
+        0
       ),
     },
     recommendations: [],

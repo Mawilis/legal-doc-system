@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ====================================================================================
  * ██████╗ ██╗ ██████╗ ██████╗ ███╗   ███╗███████╗████████╗██████╗ ██╗ ██████╗
  * ██╔══██╗██║██╔═══██╗██╔══██╗████╗ ████║██╔════╝╚══██╔══╝██╔══██╗██║██╔═══██╗
@@ -123,7 +121,7 @@ class BiometricEncryptionService {
     this.algorithm = 'aes-256-gcm';
     this.key = Buffer.from(
       process.env.BIOMETRIC_ENCRYPTION_KEY.padEnd(32, '0').slice(0, 32),
-      'utf-8',
+      'utf-8'
     );
     this.ivLength = 16;
     this.authTagLength = 16;
@@ -255,7 +253,7 @@ const BiometricCredentialSchema = new mongoose.Schema(
       default() {
         return biometricEncryption.generateCredentialId(
           this.userId?.toString(),
-          this.deviceInfo?.deviceId || 'unknown',
+          this.deviceInfo?.deviceId || 'unknown'
         );
       },
     },
@@ -898,7 +896,7 @@ const BiometricCredentialSchema = new mongoose.Schema(
     minimize: false,
     collection: 'biometric_credentials',
     strict: 'throw',
-  },
+  }
 );
 
 // ====================================================================================
@@ -929,7 +927,7 @@ BiometricCredentialSchema.index(
       'deviceInfo.deviceModel': 3,
     },
     name: 'biometric_credential_search_index',
-  },
+  }
 );
 
 // Geo-spatial index for location data
@@ -960,9 +958,10 @@ BiometricCredentialSchema.pre('save', function (next) {
 
   // Update compliance flags
   if (this.isModified('status') || this.isModified('consent') || this.isModified('retention')) {
-    this.compliance.popiaCompliant = this.consent?.consentId
-      && this.consent?.informationOfficerApproval?.approved
-      && this.retention?.expiresAt > new Date();
+    this.compliance.popiaCompliant =
+      this.consent?.consentId &&
+      this.consent?.informationOfficerApproval?.approved &&
+      this.retention?.expiresAt > new Date();
 
     this.compliance.ectActCompliant = this.algorithm === 'ES256' || this.algorithm === 'RS256';
     this.compliance.fido2Certified = this.aaguid && this.attestationType !== 'NONE';
@@ -979,9 +978,9 @@ BiometricCredentialSchema.pre('save', function (next) {
 
   // Check for expiry
   if (
-    this.retention?.expiresAt
-    && new Date() > this.retention.expiresAt
-    && this.status === 'ACTIVE'
+    this.retention?.expiresAt &&
+    new Date() > this.retention.expiresAt &&
+    this.status === 'ACTIVE'
   ) {
     this.status = 'EXPIRED';
     this.auditTrail.push({
@@ -1013,7 +1012,7 @@ BiometricCredentialSchema.pre('save', function (next) {
   // Validate retention period (POPIA Section 14)
   if (this.retention?.retentionPeriodDays > 1095) {
     return next(
-      new Error('Biometric data retention cannot exceed 3 years without special authorization'),
+      new Error('Biometric data retention cannot exceed 3 years without special authorization')
     );
   }
 
@@ -1416,8 +1415,9 @@ BiometricCredentialSchema.virtual('requiresReview').get(function () {
 // ====================================================================================
 // QUANTUM MODEL REGISTRATION
 // ====================================================================================
-const BiometricCredential = mongoose.models.BiometricCredential
-  || mongoose.model('BiometricCredential', BiometricCredentialSchema);
+const BiometricCredential =
+  mongoose.models.BiometricCredential ||
+  mongoose.model('BiometricCredential', BiometricCredentialSchema);
 
 // ====================================================================================
 // MODULE EXPORTS

@@ -1,4 +1,4 @@
-/*
+#!/*
  * FILE: /server/models/Dispatch.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Dispatch.js
  * STATUS: EPITOME | PRODUCTION READY | GENERATIONAL ARCHITECTURE

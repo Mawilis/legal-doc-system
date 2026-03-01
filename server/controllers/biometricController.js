@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * 🧬 BIOMETRIC CONTROLLER QUANTUM SCROLL: WEB AUTHN ORACLE 🧬
  * ============================================================================
@@ -105,8 +103,8 @@ exports.generateRegistrationOptions = asyncHandler(async (req, res, next) => {
     return next(
       new ApiError(
         'POPIA Compliance: Explicit biometric consent required. Please provide consent in user settings.',
-        403,
-      ),
+        403
+      )
     );
   }
 
@@ -119,7 +117,7 @@ exports.generateRegistrationOptions = asyncHandler(async (req, res, next) => {
   // 🛡️ SECURITY QUANTUM: Limit number of biometric credentials per user
   if (existingCredentials.length >= 3) {
     return next(
-      new ApiError('Security Policy: Maximum of 3 biometric credentials allowed per user', 400),
+      new ApiError('Security Policy: Maximum of 3 biometric credentials allowed per user', 400)
     );
   }
 
@@ -234,7 +232,7 @@ exports.verifyRegistration = asyncHandler(async (req, res, next) => {
   const encryptionKey = process.env.ENCRYPTION_KEY;
   const encryptedPrivateKey = CryptoJS.AES.encrypt(
     JSON.stringify(registrationInfo.credentialPrivateKey),
-    encryptionKey,
+    encryptionKey
   ).toString();
 
   // 🗃️ Create biometric credential record
@@ -353,8 +351,8 @@ exports.generateAuthenticationOptions = asyncHandler(async (req, res, next) => {
     return next(
       new ApiError(
         'POPIA Compliance: Biometric consent expired or revoked. Please renew consent.',
-        403,
-      ),
+        403
+      )
     );
   }
 
@@ -722,7 +720,7 @@ exports.updateBiometricConsent = asyncHandler(async (req, res, next) => {
         isActive: false,
         revokedAt: new Date(),
         revokedReason: 'Consent revoked by user',
-      },
+      }
     );
   }
 

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * =====================================================================================
  * ██████╗ ██████╗ ███╗   ██╗███████╗███████╗███╗   ██╗████████╗    ██████╗ ███████╗
  * ██╔════╝██╔═══██╗████╗  ██║██╔════╝██╔════╝████╗  ██║╚══██╔══╝    ██╔══██╗██╔════╝
@@ -125,7 +123,7 @@ class ConsentEncryptionService {
     this.algorithm = 'aes-256-gcm';
     this.key = Buffer.from(
       process.env.CONSENT_ENCRYPTION_KEY.padEnd(32, '0').slice(0, 32),
-      'utf-8',
+      'utf-8'
     );
     this.ivLength = 16;
     this.authTagLength = 16;
@@ -944,7 +942,7 @@ const ConsentRecordSchema = new mongoose.Schema(
     minimize: false,
     collection: 'consent_records',
     strict: 'throw',
-  },
+  }
 );
 
 // =====================================================================================
@@ -959,7 +957,7 @@ ConsentRecordSchema.index(
     userId: 1,
     legalFirmId: 1,
   },
-  { unique: true },
+  { unique: true }
 );
 
 // Compliance indexes
@@ -985,7 +983,7 @@ ConsentRecordSchema.index(
       legalBasis: 3,
     },
     name: 'consent_search_index',
-  },
+  }
 );
 
 // Geo-spatial index for location data
@@ -1091,8 +1089,8 @@ ConsentRecordSchema.pre('save', function (next) {
 
   // Validate GDPR compliance for EU jurisdiction
   if (
-    this.legalBasisDetails?.jurisdiction === 'EU'
-    || this.legalBasisDetails?.jurisdiction === 'UK'
+    this.legalBasisDetails?.jurisdiction === 'EU' ||
+    this.legalBasisDetails?.jurisdiction === 'UK'
   ) {
     const gdprRequirements = {
       CONSENT: ['Freely given', 'Specific', 'Informed', 'Unambiguous'],
@@ -1106,9 +1104,9 @@ ConsentRecordSchema.pre('save', function (next) {
 
   // Validate ECT Act compliance for electronic consent
   if (
-    this.captureMethod.includes('ELECTRONIC')
-    || this.captureMethod.includes('DIGITAL')
-    || this.captureMethod.includes('BIOMETRIC')
+    this.captureMethod.includes('ELECTRONIC') ||
+    this.captureMethod.includes('DIGITAL') ||
+    this.captureMethod.includes('BIOMETRIC')
   ) {
     this.complianceFlags.ectActCompliant = true;
   }
@@ -1509,7 +1507,7 @@ ConsentRecordSchema.statics.bulkRevokeConsents = async function (consentIds, rev
           },
         },
       },
-    },
+    }
   );
 
   return {
@@ -1561,7 +1559,8 @@ ConsentRecordSchema.virtual('requiresRenewal').get(function () {
 // =====================================================================================
 // QUANTUM MODEL REGISTRATION
 // =====================================================================================
-const ConsentRecord = mongoose.models.ConsentRecord || mongoose.model('ConsentRecord', ConsentRecordSchema);
+const ConsentRecord =
+  mongoose.models.ConsentRecord || mongoose.model('ConsentRecord', ConsentRecordSchema);
 
 // =====================================================================================
 // MODULE EXPORTS

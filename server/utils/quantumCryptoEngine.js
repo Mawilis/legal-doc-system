@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-import loggerRaw from '../utils/logger.js';
+#!import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 /*╔════════════════════════════════════════════════════════════════╗
   ║ QUANTUM CRYPTO ENGINE - INVESTOR-GRADE MODULE                 ║

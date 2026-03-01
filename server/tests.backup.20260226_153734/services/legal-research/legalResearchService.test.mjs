@@ -364,7 +364,7 @@ describe('LegalResearchService - Investor Grade Suite', () => {
         mockResearchQuery.findOne.calledWith({
           _id: 'research-123',
           tenantId: mockTenantId,
-        }),
+        })
       ).to.be.true;
     });
 

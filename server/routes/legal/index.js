@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /*
  * ⚖️  LEGAL ROUTES INDEX - MULTI-TENANT LEGAL SERVICE GATEWAY

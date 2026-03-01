@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: MULTI-TENANT GUARD ENGINE - QUANTUM FORTRESS v2.0
  * ============================================================================
@@ -22,7 +22,7 @@
  */
 
 import { performance } from 'perf_hooks';
-import crypto from "crypto";
+import crypto from 'crypto';
 import { TenantConfig } from '../models/TenantConfig.js';
 import { AuditLogger } from '../utils/auditLogger.js';
 import { QuantumLogger } from '../utils/quantumLogger.js';

@@ -1,4 +1,4 @@
-/*
+#!/*
  * @file /Users/wilsonkhanyezi/legal-doc-system/server/models/DSARRequest.js
  * @module DSARRequest
  * @description Data Subject Access Request model for POPIA/GDPR compliance

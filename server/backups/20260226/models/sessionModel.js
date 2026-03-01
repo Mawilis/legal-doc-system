@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
+#!/* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
  *  🌀 QUANTUM SESSION NEXUS V5.0: IMMORTAL AUTHENTICATION CITADEL FOR WILSY OS 🌀
  *  Path: /server/models/sessionModel.js
  *  Supreme Architect: Wilson Khanyezi (wilsy.wk@gmail.com | +27 69 046 5710)

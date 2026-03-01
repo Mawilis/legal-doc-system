@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*= ======================================================================================================================
+#!/*= ======================================================================================================================
 ╔═╗┬─┐┌─┐┌─┐┌┬┐┌─┐┬─┐┌┬┐  ╔═╗┌─┐┌┬┐┌─┐┌─┐┬─┐┌─┐┌┬┐┌─┐┌┐┌┌┬┐
 ║  ├┬┘├─┤├─┤ │ ├┤ ├┬┘ ││  ╠═╝├─┤ ││├─┤│ │├┬┘├─┤│││├┤ │││ │
 ╚═╝┴└─┴ ┴┴ ┴ ┴ └─┘┴└──┴┘  ╩  ┴ ┴─┴┘┴ ┴└─┘┴└─┴ ┴┴ ┴└─┘┘└┘ ┴
@@ -23,9 +21,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const crypto = require('crypto');
 const { Router } = require('express');
 const rateLimit = require('express-rate-limit');
-const {
-  body, param, query, validationResult,
-} = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
 const helmet = require('helmet');
 const jwt = require('jsonwebtoken');
 
@@ -55,9 +51,7 @@ class QuantumSecurityMiddleware {
         .createHash('sha256')
         .update(req.ip || 'unknown')
         .digest('hex');
-      console.warn(
-        `🚨 UNAUTHORIZED_API_ACCESS: Encrypted IP: ${encryptedIp.substring(0, 16)}...`,
-      );
+      console.warn(`🚨 UNAUTHORIZED_API_ACCESS: Encrypted IP: ${encryptedIp.substring(0, 16)}...`);
 
       return res.status(401).json({
         error: 'Unauthorized access',
@@ -179,9 +173,7 @@ class QuantumSecurityMiddleware {
 
           sqlPatterns.forEach((pattern) => {
             if (pattern.test(obj[key])) {
-              console.warn(
-                `🚨 SQL_INJECTION_ATTEMPT: ${key}="${obj[key].substring(0, 50)}..."`,
-              );
+              console.warn(`🚨 SQL_INJECTION_ATTEMPT: ${key}="${obj[key].substring(0, 50)}..."`);
               obj[key] = obj[key].replace(pattern, '[SANITIZED]');
             }
           });
@@ -349,7 +341,7 @@ class RegulatoryController {
           includeSubDomains: true,
           preload: true,
         },
-      }),
+      })
     );
 
     this.router.use(QuantumSecurityMiddleware.createRateLimiter());
@@ -380,7 +372,7 @@ class RegulatoryController {
     apiKeyRoutes.post(
       '/monitor/start',
       RegulatoryValidations.startMonitoring,
-      this.startMonitoring.bind(this),
+      this.startMonitoring.bind(this)
     );
 
     apiKeyRoutes.post('/monitor/stop', this.stopMonitoring.bind(this));
@@ -393,13 +385,13 @@ class RegulatoryController {
     apiKeyRoutes.get(
       '/changes',
       RegulatoryValidations.dateRange,
-      this.getRegulatoryChanges.bind(this),
+      this.getRegulatoryChanges.bind(this)
     );
 
     apiKeyRoutes.get(
       '/changes/:changeId',
       param('changeId').isString().isLength({ min: 10, max: 100 }),
-      this.getChangeById.bind(this),
+      this.getChangeById.bind(this)
     );
 
     apiKeyRoutes.get(
@@ -407,7 +399,7 @@ class RegulatoryController {
       query('jurisdiction').optional().isString(),
       query('category').optional().isString(),
       query('status').optional().isIn(['ACTIVE', 'AMENDED', 'REPEALED']),
-      this.getLegislation.bind(this),
+      this.getLegislation.bind(this)
     );
 
     // ========================================================================================================
@@ -418,14 +410,14 @@ class RegulatoryController {
     apiKeyRoutes.get(
       '/alerts/:alertId',
       param('alertId').isString().isLength({ min: 10, max: 100 }),
-      this.getAlertById.bind(this),
+      this.getAlertById.bind(this)
     );
 
     apiKeyRoutes.post(
       '/alerts/:alertId/action',
       param('alertId').isString().isLength({ min: 10, max: 100 }),
       RegulatoryValidations.complianceAction,
-      this.handleAlertAction.bind(this),
+      this.handleAlertAction.bind(this)
     );
 
     // ========================================================================================================
@@ -435,14 +427,14 @@ class RegulatoryController {
       '/compliance/report',
       query('period').optional().isIn(['daily', 'weekly', 'monthly', 'quarterly', 'annual']),
       query('format').optional().isIn(['json', 'pdf', 'csv']),
-      this.generateComplianceReport.bind(this),
+      this.generateComplianceReport.bind(this)
     );
 
     apiKeyRoutes.post(
       '/compliance/scan',
       body('jurisdiction').optional().isString(),
       body('categories').optional().isArray(),
-      this.performComplianceScan.bind(this),
+      this.performComplianceScan.bind(this)
     );
 
     apiKeyRoutes.get('/compliance/status', this.getComplianceStatus.bind(this));
@@ -453,7 +445,7 @@ class RegulatoryController {
     apiKeyRoutes.post(
       '/webhooks',
       RegulatoryValidations.webhookConfig,
-      this.configureWebhook.bind(this),
+      this.configureWebhook.bind(this)
     );
 
     apiKeyRoutes.get('/webhooks', this.getWebhooks.bind(this));
@@ -461,7 +453,7 @@ class RegulatoryController {
     apiKeyRoutes.delete(
       '/webhooks/:webhookId',
       param('webhookId').isString().isLength({ min: 10, max: 100 }),
-      this.deleteWebhook.bind(this),
+      this.deleteWebhook.bind(this)
     );
 
     // ========================================================================================================
@@ -485,7 +477,7 @@ class RegulatoryController {
     adminRoutes.post(
       '/admin/clear-cache',
       query('cacheType').isIn(['all', 'regulatory', 'alerts', 'compliance']),
-      this.adminClearCache.bind(this),
+      this.adminClearCache.bind(this)
     );
 
     adminRoutes.get('/admin/audit', RegulatoryValidations.dateRange, this.getAuditLog.bind(this));
@@ -804,7 +796,7 @@ class RegulatoryController {
       // Apply pagination
       const paginatedChanges = filteredChanges.slice(
         filters.offset,
-        filters.offset + filters.limit,
+        filters.offset + filters.limit
       );
 
       res.status(200).json({
@@ -984,7 +976,7 @@ class RegulatoryController {
       // Apply pagination
       const paginatedAlerts = filteredAlerts.slice(
         parseInt(offset),
-        parseInt(offset) + parseInt(limit),
+        parseInt(offset) + parseInt(limit)
       );
 
       // Quantum Analytics: Alert statistics
@@ -1187,20 +1179,21 @@ class RegulatoryController {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="compliance-report-${period}-${Date.now()}.pdf"`,
+          `attachment; filename="compliance-report-${period}-${Date.now()}.pdf"`
         );
 
         // Placeholder for PDF generation
         const pdfBuffer = Buffer.from(
-          `Compliance Report - ${period} - ${new Date().toISOString()}`,
+          `Compliance Report - ${period} - ${new Date().toISOString()}`
         );
         return res.status(200).send(pdfBuffer);
-      } if (format === 'csv') {
+      }
+      if (format === 'csv') {
         // Generate CSV
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="compliance-report-${period}-${Date.now()}.csv"`,
+          `attachment; filename="compliance-report-${period}-${Date.now()}.csv"`
         );
 
         const csvData = this.convertReportToCSV(report);
@@ -1713,9 +1706,7 @@ class RegulatoryController {
       ],
     ];
 
-    return [headers, ...rows]
-      .map((row) => row.join(','))
-      .join('\n');
+    return [headers, ...rows].map((row) => row.join(',')).join('\n');
   }
 
   isValidWebhookUrl(url) {

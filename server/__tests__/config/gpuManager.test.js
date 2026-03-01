@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ GPU MANAGER TESTS - INVESTOR DUE DILIGENCE - $100M ANNUAL VALUE          ║
   ║ 100% coverage | GPU orchestration | Parallel processing                  ║
@@ -9,7 +7,12 @@ const require = _createRequire(import.meta.url);
 const { expect } = require('chai');
 const sinon = require('sinon');
 const os = require('os');
-const { GPUManager, GPUManagerFactory, GPUDevice, GPU_CONSTANTS } = require('../../config/gpuManager');
+const {
+  GPUManager,
+  GPUManagerFactory,
+  GPUDevice,
+  GPU_CONSTANTS,
+} = require('../../config/gpuManager');
 
 describe('GPUManager - Quantum Orchestrator Due Diligence', () => {
   let manager;
@@ -20,7 +23,8 @@ describe('GPUManager - Quantum Orchestrator Due Diligence', () => {
     sinon.stub(require('child_process'), 'exec').callsFake((cmd, callback) => {
       if (cmd.includes('nvidia-smi')) {
         callback(null, {
-          stdout: '0, NVIDIA A100, 40960, 10240, 65, 250, 85\n1, NVIDIA A100, 40960, 20480, 60, 200, 45\n',
+          stdout:
+            '0, NVIDIA A100, 40960, 10240, 65, 250, 85\n1, NVIDIA A100, 40960, 20480, 60, 200, 45\n',
         });
       } else {
         callback(new Error('Command not found'));

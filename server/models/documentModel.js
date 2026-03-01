@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * FILE: /server/models/documentModel.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/documentModel.js
  * STATUS: EPITOME | QUANTUM VAULT | PRODUCTION IMMORTAL
@@ -843,7 +841,7 @@ const documentSchema = new Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 // -----------------------------------------------------------------------------
@@ -906,7 +904,7 @@ documentSchema.pre('save', async function (next) {
     ];
 
     const hasUnauthorizedChange = this.modifiedPaths().some(
-      (path) => !allowedPaths.some((allowed) => path.startsWith(allowed)),
+      (path) => !allowedPaths.some((allowed) => path.startsWith(allowed))
     );
 
     if (hasUnauthorizedChange) {
@@ -1185,7 +1183,7 @@ documentSchema.methods.initiateAIConscienceAnalysis = async function () {
  */
 documentSchema.methods.achieveImmortality = async function (
   userId,
-  reason = 'Historical Significance',
+  reason = 'Historical Significance'
 ) {
   // Verify all immortality requirements
   const verification = await this.verifyImmortalityRequirements();
@@ -1280,9 +1278,9 @@ documentSchema.methods.calculateImmortalityScore = async function () {
 
 documentSchema.virtual('isEternallyAccessible').get(function () {
   return (
-    this.quantumMetrics.immortalityScore >= 80
-    && this.immortality.storageGenerations.length >= 2
-    && this.quantumIntegrity.blockchainSoul.length > 0
+    this.quantumMetrics.immortalityScore >= 80 &&
+    this.immortality.storageGenerations.length >= 2 &&
+    this.quantumIntegrity.blockchainSoul.length > 0
   );
 });
 

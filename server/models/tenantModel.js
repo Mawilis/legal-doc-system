@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * QUANTUM SENTINEL: TENANT MODEL - MULTI-TENANT SOVEREIGNTY FORTRESS V18.0.0
  * ============================================================================
@@ -345,7 +343,7 @@ const BillingSchema = new Schema(
       lastInvoiceId: String,
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
 /*
@@ -486,7 +484,7 @@ const ComplianceSchema = new Schema(
       },
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
 /*
@@ -616,7 +614,7 @@ const SecuritySchema = new Schema(
       ],
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
 /*
@@ -706,7 +704,7 @@ const BrandingSchema = new Schema(
       },
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
 /*
@@ -835,7 +833,7 @@ const MetricsSchema = new Schema(
       },
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
 // ============================================================================
@@ -1485,7 +1483,7 @@ const TenantSchema = new Schema(
     toObject: {
       virtuals: true,
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1534,7 +1532,7 @@ TenantSchema.index(
       'contact.address.city': 4,
     },
     default_language: 'english',
-  },
+  }
 );
 
 // Compound Indexes for Common Queries
@@ -1621,9 +1619,9 @@ TenantSchema.virtual('daysRemainingInTrial').get(function () {
  */
 TenantSchema.virtual('isInTrial').get(function () {
   return (
-    this.subscription.plan === 'TRIAL'
-    && this.subscription.details?.trialEndsAt
-    && new Date(this.subscription.details.trialEndsAt) > new Date()
+    this.subscription.plan === 'TRIAL' &&
+    this.subscription.details?.trialEndsAt &&
+    new Date(this.subscription.details.trialEndsAt) > new Date()
   );
 });
 
@@ -1634,8 +1632,8 @@ TenantSchema.virtual('isInTrial').get(function () {
 TenantSchema.virtual('requiresVATRegistration').get(function () {
   // Firms on ENTERPRISE or SOVEREIGN plans likely exceed R1M turnover
   return (
-    ['ENTERPRISE', 'SOVEREIGN'].includes(this.subscription.plan)
-    && (!this.subscription.billing?.vatRegistered || !this.subscription.billing?.vatNumber)
+    ['ENTERPRISE', 'SOVEREIGN'].includes(this.subscription.plan) &&
+    (!this.subscription.billing?.vatRegistered || !this.subscription.billing?.vatNumber)
   );
 });
 
@@ -1807,7 +1805,7 @@ TenantSchema.statics.findByPracticeArea = function (practiceAreas) {
   const areas = Array.isArray(practiceAreas) ? practiceAreas : [practiceAreas];
 
   const invalidAreas = areas.filter(
-    (area) => !TENANT_CONFIG.LPC_PRACTICE_AREAS.includes(area.toUpperCase()),
+    (area) => !TENANT_CONFIG.LPC_PRACTICE_AREAS.includes(area.toUpperCase())
   );
 
   if (invalidAreas.length > 0) {
@@ -1909,7 +1907,7 @@ TenantSchema.statics.findWithExpiringTrials = function (daysThreshold = 7) {
     'sovereignty.isActive': true,
     'sovereignty.status': { $ne: 'TRIAL_EXPIRED' },
   }).select(
-    'sovereignId legalIdentity.name legalIdentity.slug subscription.details.trialEndsAt contact.primary.email',
+    'sovereignId legalIdentity.name legalIdentity.slug subscription.details.trialEndsAt contact.primary.email'
   );
 };
 
@@ -1939,9 +1937,7 @@ TenantSchema.statics.findByBBBEELevel = function (bbbeeLevel) {
  * @returns {Promise<Tenant>} Updated tenant
  */
 TenantSchema.methods.suspend = async function (options) {
-  const {
-    reason, suspendedBy, durationDays, reasonDetails,
-  } = options;
+  const { reason, suspendedBy, durationDays, reasonDetails } = options;
 
   if (!reason || !suspendedBy) {
     throw new Error('Suspension reason and suspendedBy are required');
@@ -2129,9 +2125,10 @@ TenantSchema.methods.getComplianceReport = function () {
  * @extends mongoose.Model
  * @description Quantum model for sovereign law firm tenants
  */
-const Tenant = mongoose.models && mongoose.models.Tenant
-  ? mongoose.model('Tenant')
-  : mongoose.model('Tenant', TenantSchema);
+const Tenant =
+  mongoose.models && mongoose.models.Tenant
+    ? mongoose.model('Tenant')
+    : mongoose.model('Tenant', TenantSchema);
 
 // ============================================================================
 // QUANTUM TEST SUITE: Multi-Tenant Sovereignty Validation

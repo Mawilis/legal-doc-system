@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /* ╔══════════════════════════════════════════════════════════════════════════╗
   ║           WILSY OS - FORENSIC ENGINE STATUS - 10TH GENERATION           ║
@@ -6,7 +6,7 @@
  */
 
 import { readdir, readFile } from 'fs/promises';
-import { join, dirname } from "path";
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -51,14 +51,14 @@ async function status() {
         try {
           process.kill(pid, 0);
           console.log(
-            `${colors.green
-            }✅ ${pidFile.replace('.pid', '')} (PID: ${pid}) - RUNNING${
-              colors.reset}`,
+            `${colors.green}✅ ${pidFile.replace('.pid', '')} (PID: ${pid}) - RUNNING${
+              colors.reset
+            }`
           );
           running++;
         } catch (e) {
           console.log(
-            `${colors.red}❌ ${pidFile.replace('.pid', '')} (PID: ${pid}) - STOPPED${colors.reset}`,
+            `${colors.red}❌ ${pidFile.replace('.pid', '')} (PID: ${pid}) - STOPPED${colors.reset}`
           );
           stopped++;
         }
@@ -68,7 +68,7 @@ async function status() {
     }
 
     console.log(
-      `${colors.cyan}\n📈 Summary: ${running} running, ${stopped} stopped${colors.reset}`,
+      `${colors.cyan}\n📈 Summary: ${running} running, ${stopped} stopped${colors.reset}`
     );
 
     // Check recent logs

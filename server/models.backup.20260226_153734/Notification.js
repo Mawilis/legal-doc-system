@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ====================================================================================
  * WILSY OS - THE SUPREME LEGAL TECHNOLOGY FORTRESS
  * ====================================================================================
@@ -111,7 +109,7 @@ const decryptSensitiveData = (encryptedObj) => {
   const decipher = crypto.createDecipheriv(
     'aes-256-gcm',
     Buffer.from(encryptionKey, 'hex'),
-    Buffer.from(iv, 'hex'),
+    Buffer.from(iv, 'hex')
   );
   decipher.setAuthTag(Buffer.from(authTag, 'hex'));
   let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
@@ -124,7 +122,8 @@ const decryptSensitiveData = (encryptedObj) => {
  * @description SHA3-512 hash for content integrity verification
  * @security Quantum-resistant hashing for tamper detection
  */
-const generateContentHash = (content) => crypto.createHash('sha3-512').update(content).digest('hex');
+const generateContentHash = (content) =>
+  crypto.createHash('sha3-512').update(content).digest('hex');
 
 /*
  * @enum NOTIFICATION_CATEGORIES
@@ -421,9 +420,11 @@ const NotificationSchema = new Schema(
           // Allow both string (plaintext) and object (encrypted)
           if (typeof v === 'string') {
             // Plaintext validation
-            const maliciousPatterns = /<script|javascript:|onclick=|onload=|eval\(|union select|drop table/i;
+            const maliciousPatterns =
+              /<script|javascript:|onclick=|onload=|eval\(|union select|drop table/i;
             return !maliciousPatterns.test(v) && v.length >= 10 && v.length <= 5000;
-          } if (v && typeof v === 'object') {
+          }
+          if (v && typeof v === 'object') {
             // Encrypted object validation
             return v.encryptedData && v.iv && v.authTag && v.algorithm;
           }
@@ -1141,7 +1142,7 @@ const NotificationSchema = new Schema(
       virtuals: true,
       getters: true,
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1236,10 +1237,10 @@ NotificationSchema.virtual('complianceStatus').get(function () {
       ? 'REPORTING_REQUIRED'
       : 'NOT_REQUIRED',
     overall: this.complianceRequirements
-      ? this.complianceRequirements.popia?.consentRequired
-        || this.complianceRequirements.ecta?.signatureRequired
-        || this.complianceRequirements.cpa?.disclosureRequired
-        || this.complianceRequirements.cybercrimesAct?.mandatoryReporting
+      ? this.complianceRequirements.popia?.consentRequired ||
+        this.complianceRequirements.ecta?.signatureRequired ||
+        this.complianceRequirements.cpa?.disclosureRequired ||
+        this.complianceRequirements.cybercrimesAct?.mandatoryReporting
         ? 'COMPLIANCE_REQUIRED'
         : 'COMPLIANCE_NOT_REQUIRED'
       : 'UNKNOWN',
@@ -1265,7 +1266,7 @@ NotificationSchema.pre('validate', function (next) {
   if (this.urgency === 'LEGAL_EMERGENCY' && !this.deliverySchedule.deliverImmediately) {
     this.invalidate(
       'deliverySchedule.deliverImmediately',
-      'Legal emergencies must be delivered immediately',
+      'Legal emergencies must be delivered immediately'
     );
   }
 
@@ -1278,7 +1279,7 @@ NotificationSchema.pre('validate', function (next) {
     if (!isBusinessHour && this.deliverySchedule.scheduledFor <= now) {
       this.invalidate(
         'deliverySchedule.scheduledFor',
-        'Non-urgent notifications can only be delivered during SA business hours (8am-5pm, Mon-Fri)',
+        'Non-urgent notifications can only be delivered during SA business hours (8am-5pm, Mon-Fri)'
       );
     }
   }
@@ -1287,7 +1288,7 @@ NotificationSchema.pre('validate', function (next) {
   if (this.type.includes('POPIA') && !this.complianceRequirements.popia.consentRequired) {
     this.invalidate(
       'complianceRequirements.popia.consentRequired',
-      'POPIA notifications require consent tracking',
+      'POPIA notifications require consent tracking'
     );
   }
 
@@ -1295,7 +1296,7 @@ NotificationSchema.pre('validate', function (next) {
   if (this.type.includes('E_SIGNATURE') && !this.complianceRequirements.ecta.signatureRequired) {
     this.invalidate(
       'complianceRequirements.ecta.signatureRequired',
-      'E-signature notifications require ECTA compliance',
+      'E-signature notifications require ECTA compliance'
     );
   }
 
@@ -1339,7 +1340,7 @@ NotificationSchema.pre('save', function (next) {
 
     // Calculate expiration date
     this.expiresAt = new Date(
-      Date.now() + this.retentionPolicy.retentionPeriod * 24 * 60 * 60 * 1000,
+      Date.now() + this.retentionPolicy.retentionPeriod * 24 * 60 * 60 * 1000
     );
   }
 
@@ -1363,7 +1364,7 @@ NotificationSchema.pre('save', function (next) {
   // Add audit trail entry for modifications
   if (this.isModified() && this.auditTrail) {
     const modifiedPaths = this.modifiedPaths().filter(
-      (path) => !['__v', 'updatedAt', 'auditTrail', 'deliveryLog'].includes(path),
+      (path) => !['__v', 'updatedAt', 'auditTrail', 'deliveryLog'].includes(path)
     );
 
     if (modifiedPaths.length > 0) {
@@ -1514,7 +1515,7 @@ NotificationSchema.methods.markAsRead = async function (userId, context = {}) {
 NotificationSchema.methods.acknowledge = async function (
   userId,
   acknowledgmentType = 'ACTION_TAKEN',
-  notes = '',
+  notes = ''
 ) {
   // Validate user is recipient
   if (this.recipient.toString() !== userId.toString()) {
@@ -1546,7 +1547,7 @@ NotificationSchema.methods.acknowledge = async function (
         acknowledgmentType,
         acknowledgedAt: this.acknowledgedAt,
       },
-    },
+    }
   );
 
   return this.save();
@@ -1605,7 +1606,7 @@ NotificationSchema.methods.addDeliveryAttempt = async function (channel, status,
         attemptNumber,
         error: details.error,
       },
-    },
+    }
   );
 
   return this.save();
@@ -1622,7 +1623,7 @@ NotificationSchema.methods.addDeliveryAttempt = async function (channel, status,
 NotificationSchema.methods.applyLegalHold = async function (
   reason,
   userId,
-  expectedRelease = null,
+  expectedRelease = null
 ) {
   if (this.retentionPolicy?.legalHold?.active) {
     throw new Error('Legal hold already active');
@@ -1662,7 +1663,7 @@ NotificationSchema.methods.recordPOPIAConsent = async function (userId, lawfulBa
   await this.addAuditEntry(
     'POPIA_CONSENT_RECORDED',
     `POPIA consent recorded. Lawful basis: ${lawfulBasis}`,
-    userId,
+    userId
   );
 
   return this.save();
@@ -1678,7 +1679,8 @@ NotificationSchema.methods.recordPOPIAConsent = async function (userId, lawfulBa
  * @returns {Promise<Notification>} Updated divine notification
  */
 NotificationSchema.methods.addAuditEntry = async function (action, details, userId, context = {}) {
-  const previousHash = this.auditTrail.length > 0 ? this.auditTrail[this.auditTrail.length - 1].hash : null;
+  const previousHash =
+    this.auditTrail.length > 0 ? this.auditTrail[this.auditTrail.length - 1].hash : null;
 
   const auditEntry = {
     action,
@@ -1947,7 +1949,10 @@ NotificationSchema.statics.getNotificationMetrics = async function (tenantId, st
           },
           {
             $sort: {
-              '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.hour': 1,
+              '_id.year': 1,
+              '_id.month': 1,
+              '_id.day': 1,
+              '_id.hour': 1,
             },
           },
           { $limit: 168 }, // Last 7 days hourly
@@ -2020,7 +2025,7 @@ NotificationSchema.statics.cleanupExpiredNotifications = async function () {
         status: 'ARCHIVED',
         archivedAt: new Date(),
       },
-    },
+    }
   );
 
   return {
@@ -2075,7 +2080,10 @@ NotificationSchema.statics.rotateEncryptionKeys = async function (tenantId, user
 
 // Divine notification indexes for optimal performance
 NotificationSchema.index({
-  tenantId: 1, recipient: 1, isRead: 1, createdAt: -1,
+  tenantId: 1,
+  recipient: 1,
+  isRead: 1,
+  createdAt: -1,
 }); // User inbox
 NotificationSchema.index({ tenantId: 1, status: 1, urgency: -1 }); // System monitoring
 NotificationSchema.index({ tenantId: 1, category: 1, type: 1 }); // Category queries
@@ -2090,7 +2098,10 @@ NotificationSchema.index({ 'retentionPolicy.legalHold.active': 1 }); // Legal ho
 
 // Compound indexes for complex notification queries
 NotificationSchema.index({
-  tenantId: 1, createdAt: -1, status: 1, urgency: -1,
+  tenantId: 1,
+  createdAt: -1,
+  status: 1,
+  urgency: -1,
 });
 NotificationSchema.index({
   tenantId: 1,
@@ -2149,7 +2160,7 @@ if (process.env.NODE_ENV === 'test') {
 
     console.assert(
       testContent === decrypted,
-      'AES-256-GCM notification encryption/decryption failed',
+      'AES-256-GCM notification encryption/decryption failed'
     );
 
     // Test 2: SHA3-512 Content Hash
@@ -2172,7 +2183,7 @@ if (process.env.NODE_ENV === 'test') {
     ];
     console.assert(
       validJurisdictions.includes(testJurisdiction),
-      'South African jurisdiction validation failed',
+      'South African jurisdiction validation failed'
     );
 
     // Test 4: Legal Emergency Delivery Constraints
@@ -2188,7 +2199,8 @@ if (process.env.NODE_ENV === 'test') {
       type: 'POPIA_CONSENT_REQUIRED',
       complianceRequirements: { popia: { consentRequired: true } },
     };
-    const isPopiaCompliant = popiaNotification.complianceRequirements.popia.consentRequired === true;
+    const isPopiaCompliant =
+      popiaNotification.complianceRequirements.popia.consentRequired === true;
     console.assert(isPopiaCompliant, 'POPIA compliance validation failed');
 
     // Test 6: ECTA Signature Requirement

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ VALIDATION MIDDLEWARE - INVESTOR-GRADE MODULE                             ║
   ║ Input validation | POPIA compliance | XSS prevention                     ║
@@ -62,33 +62,29 @@ export const validateSignatureRequest = [
     .isIn(['basic', 'standard', 'advanced', 'qualified'])
     .withMessage('Invalid verification level'),
 
-  body('options.expiresAt')
-    .optional()
-    .isISO8601()
-    .withMessage('Invalid expiration date')
-    .toDate(),
+  body('options.expiresAt').optional().isISO8601().withMessage('Invalid expiration date').toDate(),
 
   // Handle validation errors
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       const redactedErrors = redactSensitive(errors.array(), ['email']);
-      
+
       logger.warn('Validation failed', {
         path: req.path,
         errors: redactedErrors,
-        correlationId: req.correlationId
+        correlationId: req.correlationId,
       });
 
       return res.status(422).json({
         error: 'Validation failed',
         code: 'VALIDATION_ERROR',
         details: redactedErrors,
-        correlationId: req.correlationId
+        correlationId: req.correlationId,
       });
     }
     next();
-  }
+  },
 ];
 
 export const validateEmail = (email) => {

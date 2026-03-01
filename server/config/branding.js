@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: BRANDING CONFIGURATION - QUANTUM FORTRESS VISUAL IDENTITY
  *

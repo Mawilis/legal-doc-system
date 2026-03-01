@@ -1,4 +1,4 @@
-/*
+#!/*
  * FILE: /server/models/Event.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Event.js
  * STATUS: EPITOME | QUANTUM CALENDAR | PROFESSIONAL IMMORTAL

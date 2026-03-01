@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * 🔷🔄 QUANTUM CACHE ORCHESTRATOR: HYPER-DIMENSIONAL VELOCITY ENGINE 🔄🔷
  * ============================================================================
@@ -82,7 +80,7 @@ const REQUIRED_CACHE_ENV_VARS = [
 REQUIRED_CACHE_ENV_VARS.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(
-      `QUANTUM BREACH: Missing critical cache environment variable: ${varName}. Add to /server/.env`,
+      `QUANTUM BREACH: Missing critical cache environment variable: ${varName}. Add to /server/.env`
     );
   }
 });
@@ -278,7 +276,7 @@ class QuantumCacheOrchestrator {
     } catch (error) {
       console.warn(
         '⚠️ QUANTUM CACHE: Could not configure Redis server (might be cloud managed):',
-        error.message,
+        error.message
       );
     }
   }
@@ -302,7 +300,7 @@ class QuantumCacheOrchestrator {
       const cipher = crypto.createCipheriv(
         CACHE_QUANTUM.ENCRYPTION.algorithm,
         CACHE_QUANTUM.ENCRYPTION.key,
-        iv,
+        iv
       );
 
       // Encrypt data
@@ -315,7 +313,7 @@ class QuantumCacheOrchestrator {
       // Create HMAC for integrity verification
       const hmac = crypto.createHmac(
         CACHE_QUANTUM.ENCRYPTION.hmacAlgorithm,
-        CACHE_QUANTUM.ENCRYPTION.key,
+        CACHE_QUANTUM.ENCRYPTION.key
       );
 
       hmac.update(encrypted);
@@ -348,7 +346,7 @@ class QuantumCacheOrchestrator {
       // Verify HMAC integrity first
       const hmac = crypto.createHmac(
         CACHE_QUANTUM.ENCRYPTION.hmacAlgorithm,
-        CACHE_QUANTUM.ENCRYPTION.key,
+        CACHE_QUANTUM.ENCRYPTION.key
       );
 
       hmac.update(encryptedData.encrypted);
@@ -362,7 +360,7 @@ class QuantumCacheOrchestrator {
       const decipher = crypto.createDecipheriv(
         encryptedData.algorithm || CACHE_QUANTUM.ENCRYPTION.algorithm,
         CACHE_QUANTUM.ENCRYPTION.key,
-        Buffer.from(encryptedData.iv, 'hex'),
+        Buffer.from(encryptedData.iv, 'hex')
       );
 
       // Set authentication tag
@@ -907,9 +905,9 @@ class QuantumCacheOrchestrator {
 
     // Check for compliance metadata
     return (
-      data._complianceFlags
-      && Array.isArray(data._complianceFlags)
-      && data._complianceFlags.includes('LEGAL_DOCUMENT')
+      data._complianceFlags &&
+      Array.isArray(data._complianceFlags) &&
+      data._complianceFlags.includes('LEGAL_DOCUMENT')
     );
   }
 

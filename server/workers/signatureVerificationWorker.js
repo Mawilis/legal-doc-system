@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ SIGNATURE VERIFICATION WORKER - INVESTOR-GRADE MODULE                     ║
   ║ Automated signature verification | Cryptographic proof | 100% integrity  ║
@@ -9,13 +9,13 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/workers/signatureVerificationWorker.js
  * VERSION: 1.0.0-PRODUCTION
  * CREATED: 2026-03-01
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R3.2M/year in manual signature verification
  * • Generates: R5.1M/year through automated validation
  * • Risk elimination: R8.7M in signature fraud
  * • Compliance: POPIA §19, ECT Act §15, Companies Act §15(2)(b)
- * 
+ *
  * INTEGRATION_MAP:
  * {
  *   "expectedConsumers": [
@@ -37,11 +37,11 @@
 import { Worker } from 'bullmq';
 import crypto from 'crypto';
 import { randomBytes, createHash, verify } from 'crypto';
-import ElectronicSignature, { 
-  SIGNATURE_STATUS, 
+import ElectronicSignature, {
+  SIGNATURE_STATUS,
   SIGNATURE_TYPES,
   VERIFICATION_LEVELS,
-  AUDIT_EVENTS 
+  AUDIT_EVENTS,
 } from '../models/ElectronicSignature.js';
 import auditLogger from '../utils/auditLogger.js';
 import logger from '../utils/logger.js';
@@ -58,7 +58,7 @@ const VERIFICATION_STATUS = {
   IN_PROGRESS: 'in_progress',
   VERIFIED: 'verified',
   FAILED: 'failed',
-  INCONCLUSIVE: 'inconclusive'
+  INCONCLUSIVE: 'inconclusive',
 };
 
 const VERIFICATION_METHODS = {
@@ -68,22 +68,22 @@ const VERIFICATION_METHODS = {
   CHAIN_OF_CUSTODY: 'chain_of_custody',
   BIOMETRIC_MATCH: 'biometric_match',
   PROVIDER_VERIFICATION: 'provider_verification',
-  BLOCKCHAIN_ANCHOR: 'blockchain_anchor'
+  BLOCKCHAIN_ANCHOR: 'blockchain_anchor',
 };
 
 const VERIFICATION_LEVEL_THRESHOLDS = {
   [VERIFICATION_LEVELS.BASIC]: 0.7,
   [VERIFICATION_LEVELS.STANDARD]: 0.85,
   [VERIFICATION_LEVELS.ADVANCED]: 0.95,
-  [VERIFICATION_LEVELS.QUALIFIED]: 0.99
+  [VERIFICATION_LEVELS.QUALIFIED]: 0.99,
 };
 
 const VERIFICATION_SCORE_WEIGHTS = {
   [VERIFICATION_METHODS.HASH_MATCH]: 0.35,
   [VERIFICATION_METHODS.CERTIFICATE_VALIDATION]: 0.25,
   [VERIFICATION_METHODS.TIMESTAMP_VERIFICATION]: 0.15,
-  [VERIFICATION_METHODS.CHAIN_OF_CUSTODY]: 0.10,
-  [VERIFICATION_METHODS.PROVIDER_VERIFICATION]: 0.15
+  [VERIFICATION_METHODS.CHAIN_OF_CUSTODY]: 0.1,
+  [VERIFICATION_METHODS.PROVIDER_VERIFICATION]: 0.15,
 };
 
 const MAX_RETRIES = 3;
@@ -110,8 +110,8 @@ class CertificateValidator {
       chain: [
         { cn: 'WILSY OS Root CA', valid: true },
         { cn: 'WILSY OS Intermediate CA', valid: true },
-        { cn: certificate?.subject || 'End Entity', valid: true }
-      ]
+        { cn: certificate?.subject || 'End Entity', valid: true },
+      ],
     };
 
     return validationResult;
@@ -123,7 +123,7 @@ class CertificateValidator {
       revoked: false,
       revocationDate: null,
       revocationReason: null,
-      source: 'OCSP'
+      source: 'OCSP',
     };
   }
 }
@@ -141,7 +141,7 @@ class TimestampVerifier {
       timeSource: 'RFC 3161 compliant TSA',
       accuracy: '+/- 1 second',
       signatureValid: true,
-      certificateValid: true
+      certificateValid: true,
     };
 
     return verificationResult;
@@ -152,7 +152,7 @@ class TimestampVerifier {
     return {
       timestamp: new Date().toISOString(),
       serialNumber: randomBytes(8).toString('hex'),
-      hash: createHash('sha256').update(JSON.stringify(data)).digest('hex')
+      hash: createHash('sha256').update(JSON.stringify(data)).digest('hex'),
     };
   }
 }
@@ -171,7 +171,7 @@ class BlockchainVerifier {
       timestamp: new Date().toISOString(),
       network: 'Ethereum',
       confirmations: 12,
-      dataHash: createHash('sha256').update(JSON.stringify(data)).digest('hex')
+      dataHash: createHash('sha256').update(JSON.stringify(data)).digest('hex'),
     };
   }
 
@@ -181,7 +181,7 @@ class BlockchainVerifier {
       txId: `0x${randomBytes(32).toString('hex')}`,
       blockNumber: Math.floor(Math.random() * 1000000),
       timestamp: new Date().toISOString(),
-      network: 'Ethereum'
+      network: 'Ethereum',
     };
   }
 }
@@ -198,60 +198,64 @@ class SignatureVerificationWorker {
     this.blockchainVerifier = new BlockchainVerifier();
     this.verificationQueue = [];
     this.results = new Map();
-    
+
     this.initialize();
     logger.info('✅ SignatureVerificationWorker initialized');
   }
 
   initialize() {
-    this.worker = new Worker('signature-processing', async job => {
-      const { signatureId } = job.data;
-      
-      switch(job.name) {
-        case 'verify-signature':
-          return await this.verifySignature(signatureId, job);
-        case 'batch-verify':
-          return await this.batchVerify(job.data.signatureIds, job);
-        case 'reverify-expired':
-          return await this.reverifyExpired(job);
-        default:
-          throw new Error(`Unknown job type: ${job.name}`);
+    this.worker = new Worker(
+      'signature-processing',
+      async (job) => {
+        const { signatureId } = job.data;
+
+        switch (job.name) {
+          case 'verify-signature':
+            return await this.verifySignature(signatureId, job);
+          case 'batch-verify':
+            return await this.batchVerify(job.data.signatureIds, job);
+          case 'reverify-expired':
+            return await this.reverifyExpired(job);
+          default:
+            throw new Error(`Unknown job type: ${job.name}`);
+        }
+      },
+      {
+        connection: redisConfig.connection,
+        concurrency: 5,
+        limiter: {
+          max: 100,
+          duration: 1000,
+        },
       }
-    }, {
-      connection: redisConfig.connection,
-      concurrency: 5,
-      limiter: {
-        max: 100,
-        duration: 1000
-      }
-    });
+    );
 
     this.setupEventHandlers();
   }
 
   setupEventHandlers() {
-    this.worker.on('completed', job => {
+    this.worker.on('completed', (job) => {
       logger.info(`Verification job ${job.id} completed`, {
         signatureId: job.data.signatureId,
-        duration: job.finishedOn - job.processedOn
+        duration: job.finishedOn - job.processedOn,
       });
     });
 
     this.worker.on('failed', (job, err) => {
       logger.error(`Verification job ${job.id} failed`, {
         signatureId: job.data.signatureId,
-        error: err.message
+        error: err.message,
       });
 
       auditLogger.log({
         action: 'VERIFICATION_JOB_FAILED',
         jobId: job.id,
         signatureId: job.data.signatureId,
-        error: err.message
+        error: err.message,
       });
     });
 
-    this.worker.on('stalled', jobId => {
+    this.worker.on('stalled', (jobId) => {
       logger.warn(`Verification job ${jobId} stalled`);
     });
   }
@@ -263,13 +267,13 @@ class SignatureVerificationWorker {
     logger.info('Starting signature verification', {
       correlationId,
       signatureId,
-      jobId: job.id
+      jobId: job.id,
     });
 
     try {
       // Get signature from database
       const signature = await ElectronicSignature.findOne({ signatureId });
-      
+
       if (!signature) {
         throw new Error(`Signature not found: ${signatureId}`);
       }
@@ -283,7 +287,7 @@ class SignatureVerificationWorker {
 
       // Calculate overall verification score
       const score = this.calculateVerificationScore(verificationResults);
-      
+
       // Determine if verification passed required threshold
       const requiredThreshold = VERIFICATION_LEVEL_THRESHOLDS[signature.verificationLevel] || 0.85;
       const verified = score >= requiredThreshold;
@@ -295,7 +299,7 @@ class SignatureVerificationWorker {
         requiredThreshold,
         verified,
         verifiedAt: new Date().toISOString(),
-        correlationId
+        correlationId,
       };
 
       if (verified) {
@@ -320,14 +324,14 @@ class SignatureVerificationWorker {
         score,
         verified,
         threshold: requiredThreshold,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       // Store result
       this.results.set(signatureId, {
         verified,
         score,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       logger.info('Signature verification completed', {
@@ -335,7 +339,7 @@ class SignatureVerificationWorker {
         signatureId,
         score,
         verified,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       return {
@@ -343,21 +347,20 @@ class SignatureVerificationWorker {
         verified,
         score,
         verificationResults,
-        correlationId
+        correlationId,
       };
-
     } catch (error) {
       logger.error('Signature verification failed', {
         correlationId,
         signatureId,
-        error: error.message
+        error: error.message,
       });
 
       await ElectronicSignature.updateOne(
         { signatureId },
         {
           verificationStatus: VERIFICATION_STATUS.FAILED,
-          verificationError: error.message
+          verificationError: error.message,
         }
       );
 
@@ -373,7 +376,8 @@ class SignatureVerificationWorker {
 
     // 2. Certificate validation (if applicable)
     if (signature.signatureProof?.certificate) {
-      results[VERIFICATION_METHODS.CERTIFICATE_VALIDATION] = await this.verifyCertificate(signature);
+      results[VERIFICATION_METHODS.CERTIFICATE_VALIDATION] =
+        await this.verifyCertificate(signature);
     }
 
     // 3. Timestamp verification
@@ -383,7 +387,8 @@ class SignatureVerificationWorker {
 
     // 4. Provider verification
     if (signature.provider !== 'custom') {
-      results[VERIFICATION_METHODS.PROVIDER_VERIFICATION] = await this.verifyWithProvider(signature);
+      results[VERIFICATION_METHODS.PROVIDER_VERIFICATION] =
+        await this.verifyWithProvider(signature);
     }
 
     // 5. Chain of custody verification
@@ -391,7 +396,8 @@ class SignatureVerificationWorker {
 
     // 6. Blockchain anchor verification (if anchored)
     if (signature.blockchainAnchor) {
-      results[VERIFICATION_METHODS.BLOCKCHAIN_ANCHOR] = await this.verifyBlockchainAnchor(signature);
+      results[VERIFICATION_METHODS.BLOCKCHAIN_ANCHOR] =
+        await this.verifyBlockchainAnchor(signature);
     }
 
     return results;
@@ -403,18 +409,20 @@ class SignatureVerificationWorker {
         return {
           passed: false,
           score: 0,
-          details: 'No signature hash found'
+          details: 'No signature hash found',
         };
       }
 
       // Recompute hash from signature data
       const recomputedHash = createHash('sha256')
-        .update(JSON.stringify({
-          signatureId: signature.signatureId,
-          signerEmail: signature.signedBy,
-          signedAt: signature.signedAt,
-          documentId: signature.documentId
-        }))
+        .update(
+          JSON.stringify({
+            signatureId: signature.signatureId,
+            signerEmail: signature.signedBy,
+            signedAt: signature.signedAt,
+            documentId: signature.documentId,
+          })
+        )
         .digest('hex');
 
       const passed = recomputedHash === signature.signatureProof.hash;
@@ -424,15 +432,14 @@ class SignatureVerificationWorker {
         score: passed ? 1 : 0,
         details: passed ? 'Hash matches' : 'Hash mismatch - possible tampering',
         computedHash: recomputedHash,
-        storedHash: signature.signatureProof.hash
+        storedHash: signature.signatureProof.hash,
       };
-
     } catch (error) {
       logger.error('Hash verification failed', { error: error.message });
       return {
         passed: false,
         score: 0,
-        details: `Hash verification error: ${error.message}`
+        details: `Hash verification error: ${error.message}`,
       };
     }
   }
@@ -440,19 +447,16 @@ class SignatureVerificationWorker {
   async verifyCertificate(signature) {
     try {
       const certificate = signature.signatureProof?.certificate;
-      
+
       if (!certificate) {
         return {
           passed: false,
           score: 0,
-          details: 'No certificate found'
+          details: 'No certificate found',
         };
       }
 
-      const validation = await this.certValidator.validate(
-        certificate,
-        signature.signatureProof
-      );
+      const validation = await this.certValidator.validate(certificate, signature.signatureProof);
 
       const revocation = await this.certValidator.checkRevocation(certificate);
 
@@ -463,15 +467,14 @@ class SignatureVerificationWorker {
         score: passed ? 1 : 0,
         details: passed ? 'Certificate valid and not revoked' : 'Certificate invalid or revoked',
         validation,
-        revocation
+        revocation,
       };
-
     } catch (error) {
       logger.error('Certificate verification failed', { error: error.message });
       return {
         passed: false,
         score: 0,
-        details: `Certificate verification error: ${error.message}`
+        details: `Certificate verification error: ${error.message}`,
       };
     }
   }
@@ -485,7 +488,7 @@ class SignatureVerificationWorker {
         return {
           passed: false,
           score: 0,
-          details: 'No timestamp found'
+          details: 'No timestamp found',
         };
       }
 
@@ -495,15 +498,14 @@ class SignatureVerificationWorker {
         passed: verification.verified,
         score: verification.verified ? 1 : 0,
         details: verification.verified ? 'Timestamp valid' : 'Timestamp invalid',
-        verification
+        verification,
       };
-
     } catch (error) {
       logger.error('Timestamp verification failed', { error: error.message });
       return {
         passed: false,
         score: 0,
-        details: `Timestamp verification error: ${error.message}`
+        details: `Timestamp verification error: ${error.message}`,
       };
     }
   }
@@ -517,15 +519,14 @@ class SignatureVerificationWorker {
         score: 0.9,
         details: 'Provider verification successful',
         provider: signature.provider,
-        providerStatus: 'verified'
+        providerStatus: 'verified',
       };
-
     } catch (error) {
       logger.error('Provider verification failed', { error: error.message });
       return {
         passed: false,
         score: 0,
-        details: `Provider verification error: ${error.message}`
+        details: `Provider verification error: ${error.message}`,
       };
     }
   }
@@ -534,19 +535,19 @@ class SignatureVerificationWorker {
     try {
       // Verify the audit trail
       const auditEvents = signature.audit?.events || [];
-      
+
       if (auditEvents.length === 0) {
         return {
           passed: false,
           score: 0,
-          details: 'No audit trail found'
+          details: 'No audit trail found',
         };
       }
 
       // Check for chronological order
       let chronological = true;
       for (let i = 1; i < auditEvents.length; i++) {
-        if (auditEvents[i].timestamp < auditEvents[i-1].timestamp) {
+        if (auditEvents[i].timestamp < auditEvents[i - 1].timestamp) {
           chronological = false;
           break;
         }
@@ -554,8 +555,8 @@ class SignatureVerificationWorker {
 
       // Check for missing events
       const requiredEvents = ['created', 'sent', 'viewed', 'signed'];
-      const hasRequired = requiredEvents.every(event =>
-        auditEvents.some(e => e.event.includes(event))
+      const hasRequired = requiredEvents.every((event) =>
+        auditEvents.some((e) => e.event.includes(event))
       );
 
       const passed = chronological && hasRequired;
@@ -566,15 +567,14 @@ class SignatureVerificationWorker {
         details: passed ? 'Chain of custody intact' : 'Chain of custody issues detected',
         eventCount: auditEvents.length,
         chronological,
-        hasRequired
+        hasRequired,
       };
-
     } catch (error) {
       logger.error('Chain of custody verification failed', { error: error.message });
       return {
         passed: false,
         score: 0,
-        details: `Chain of custody error: ${error.message}`
+        details: `Chain of custody error: ${error.message}`,
       };
     }
   }
@@ -582,33 +582,31 @@ class SignatureVerificationWorker {
   async verifyBlockchainAnchor(signature) {
     try {
       const anchor = signature.blockchainAnchor;
-      
+
       if (!anchor) {
         return {
           passed: false,
           score: 0,
-          details: 'No blockchain anchor found'
+          details: 'No blockchain anchor found',
         };
       }
 
-      const verification = await this.blockchainVerifier.verifyAnchor(
-        anchor.txId,
-        { signatureId: signature.signatureId }
-      );
+      const verification = await this.blockchainVerifier.verifyAnchor(anchor.txId, {
+        signatureId: signature.signatureId,
+      });
 
       return {
         passed: verification.verified,
         score: verification.verified ? 1 : 0,
         details: verification.verified ? 'Blockchain anchor verified' : 'Blockchain anchor invalid',
-        verification
+        verification,
       };
-
     } catch (error) {
       logger.error('Blockchain verification failed', { error: error.message });
       return {
         passed: false,
         score: 0,
-        details: `Blockchain verification error: ${error.message}`
+        details: `Blockchain verification error: ${error.message}`,
       };
     }
   }
@@ -625,7 +623,7 @@ class SignatureVerificationWorker {
 
     // Normalize score
     const normalizedScore = totalWeight > 0 ? totalScore / totalWeight : 0;
-    
+
     return Math.min(1, Math.max(0, normalizedScore));
   }
 
@@ -634,7 +632,7 @@ class SignatureVerificationWorker {
       const anchor = await this.blockchainVerifier.anchorData({
         signatureId: signature.signatureId,
         hash: signature.forensicHash,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       await ElectronicSignature.updateOne(
@@ -644,20 +642,19 @@ class SignatureVerificationWorker {
 
       logger.info('Signature anchored to blockchain', {
         signatureId: signature.signatureId,
-        txId: anchor.txId
+        txId: anchor.txId,
       });
-
     } catch (error) {
       logger.error('Failed to anchor to blockchain', {
         signatureId: signature.signatureId,
-        error: error.message
+        error: error.message,
       });
     }
   }
 
   async batchVerify(signatureIds, job) {
     const results = [];
-    
+
     for (const signatureId of signatureIds) {
       try {
         const result = await this.verifySignature(signatureId, job);
@@ -666,16 +663,16 @@ class SignatureVerificationWorker {
         results.push({
           signatureId,
           verified: false,
-          error: error.message
+          error: error.message,
         });
       }
     }
 
     return {
       total: signatureIds.length,
-      verified: results.filter(r => r.verified).length,
-      failed: results.filter(r => !r.verified).length,
-      results
+      verified: results.filter((r) => r.verified).length,
+      failed: results.filter((r) => !r.verified).length,
+      results,
     };
   }
 
@@ -685,11 +682,11 @@ class SignatureVerificationWorker {
 
     const expiredVerifications = await ElectronicSignature.find({
       'verificationResults.verifiedAt': { $lt: thirtyDaysAgo },
-      status: SIGNATURE_STATUS.VERIFIED
+      status: SIGNATURE_STATUS.VERIFIED,
     }).limit(BATCH_SIZE);
 
     const results = [];
-    
+
     for (const signature of expiredVerifications) {
       try {
         const result = await this.verifySignature(signature.signatureId, job);
@@ -698,30 +695,32 @@ class SignatureVerificationWorker {
         results.push({
           signatureId: signature.signatureId,
           verified: false,
-          error: error.message
+          error: error.message,
         });
       }
     }
 
     return {
       processed: expiredVerifications.length,
-      results
+      results,
     };
   }
 
   async getStats() {
     const jobCounts = await this.worker.getJobCounts();
-    
+
     return {
       worker: {
         isRunning: this.worker.isRunning(),
         concurrency: this.worker.concurrency,
-        jobCounts
+        jobCounts,
       },
-      recentResults: Array.from(this.results.entries()).slice(-10).map(([id, data]) => ({
-        signatureId: id,
-        ...data
-      }))
+      recentResults: Array.from(this.results.entries())
+        .slice(-10)
+        .map(([id, data]) => ({
+          signatureId: id,
+          ...data,
+        })),
     };
   }
 
@@ -758,7 +757,7 @@ export {
   SignatureVerificationWorker,
   VERIFICATION_STATUS,
   VERIFICATION_METHODS,
-  VERIFICATION_LEVEL_THRESHOLDS
+  VERIFICATION_LEVEL_THRESHOLDS,
 };
 
 export default SignatureVerificationWorker;

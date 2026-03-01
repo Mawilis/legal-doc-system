@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 /* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ HEALTH CHECK UTILITY - For k8s probes                                     ║
@@ -11,16 +11,16 @@ const options = {
   port: process.env.PORT || 4000,
   path: '/api/predict/health',
   method: 'GET',
-  timeout: 5000
+  timeout: 5000,
 };
 
 const req = http.request(options, (res) => {
   let data = '';
-  
+
   res.on('data', (chunk) => {
     data += chunk;
   });
-  
+
   res.on('end', () => {
     if (res.statusCode === 200) {
       try {

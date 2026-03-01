@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ TEMPLATE ROUTES - INVESTOR-GRADE MODULE                                   ║
   ║ Document template management for e-signature system                      ║
@@ -33,8 +33,8 @@ router.post('/', async (req, res, next) => {
       tenantId,
       audit: {
         createdBy: userId,
-        createdAt: new Date()
-      }
+        createdAt: new Date(),
+      },
     });
 
     await template.save();
@@ -42,7 +42,7 @@ router.post('/', async (req, res, next) => {
     logger.info('Template created', {
       templateId: template.templateId,
       tenantId,
-      userId
+      userId,
     });
 
     res.status(201).json(template);

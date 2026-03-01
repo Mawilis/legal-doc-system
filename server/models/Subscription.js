@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * 🌌💰 SUBSCRIPTION QUANTUM MODEL: RECURRING REVENUE COLOSSUS V25.0 🌌💰
  * ============================================================================
@@ -932,7 +930,7 @@ const subscriptionSchema = new Schema(
     },
     optimisticConcurrency: true,
     autoCreate: true,
-  },
+  }
 );
 
 // =============================================================================
@@ -959,7 +957,7 @@ subscriptionSchema.index({
 // TTL Index for expired subscriptions (cleanup after retention period)
 subscriptionSchema.index(
   { 'compliance.coolingOffPeriodEnd': 1 },
-  { expireAfterSeconds: 0, partialFilterExpression: { status: 'CANCELLED' } },
+  { expireAfterSeconds: 0, partialFilterExpression: { status: 'CANCELLED' } }
 );
 
 // =============================================================================
@@ -1062,7 +1060,7 @@ subscriptionSchema.virtual('arrContribution').get(function () {
       KES: 0.13, // Approximate ZAR/KES
       GHS: 1.5, // Approximate ZAR/GHS
     };
-    amount *= (exchangeRates[this.currency] || 1);
+    amount *= exchangeRates[this.currency] || 1;
   }
 
   return Math.round(amount * multiplier * 100) / 100;
@@ -1125,14 +1123,15 @@ subscriptionSchema.pre('save', function (next) {
 
   // Calculate total amount if base amount or VAT changed
   if (
-    this.isModified('baseAmount')
-    || this.isModified('vatRate')
-    || this.isModified('discountAmount')
-    || this.isModified('discountPercentage')
+    this.isModified('baseAmount') ||
+    this.isModified('vatRate') ||
+    this.isModified('discountAmount') ||
+    this.isModified('discountPercentage')
   ) {
     // Calculate discount if percentage is set
     if (this.discountPercentage > 0 && this.discountAmount === 0) {
-      this.discountAmount = Math.round(((this.baseAmount * this.discountPercentage) / 100) * 100) / 100;
+      this.discountAmount =
+        Math.round(((this.baseAmount * this.discountPercentage) / 100) * 100) / 100;
     }
 
     const discountedAmount = this.baseAmount - this.discountAmount;
@@ -1302,12 +1301,12 @@ subscriptionSchema.statics.calculateMRR = async function (tenantId = null) {
   return result.length > 0
     ? result[0]
     : {
-      totalMRR: 0,
-      totalARR: 0,
-      activeSubscriptions: 0,
-      totalRevenue: 0,
-      averageMRRPerSub: 0,
-    };
+        totalMRR: 0,
+        totalARR: 0,
+        activeSubscriptions: 0,
+        totalRevenue: 0,
+        averageMRRPerSub: 0,
+      };
 };
 
 /*
@@ -1389,7 +1388,7 @@ subscriptionSchema.methods.cancel = function (
   reason,
   userId,
   ipAddress = 'SYSTEM',
-  userAgent = 'SYSTEM',
+  userAgent = 'SYSTEM'
 ) {
   const oldStatus = this.status;
 

@@ -3,9 +3,9 @@
   "timestamp": "2026-02-24T08:30:00Z",
   "module": "PRETTIER_FORENSIC_FIX",
   "metrics": {
-    "totalJsFiles":      749,
+    "totalJsFiles": 749,
     "errorsFixed": 16,
-    "filesProcessed":      749
+    "filesProcessed": 749
   },
   "economicImpact": {
     "annualSavingsZAR": 240000,

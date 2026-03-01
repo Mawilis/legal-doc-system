@@ -1,4 +1,4 @@
-/*
+#!/*
  * WILSY OS: USAGE CONTROLLER - COMMERCIAL CONTROL CENTER
  * ============================================================================
  *
@@ -166,9 +166,10 @@ export const getUsageStats = async (req, res, next) => {
     }
 
     // Calculate days remaining at current rate
-    const daysRemaining = stats.metrics?.averagePerHour > 0
-      ? Math.floor(stats.quota.remaining / (stats.metrics.averagePerHour * 24))
-      : null;
+    const daysRemaining =
+      stats.metrics?.averagePerHour > 0
+        ? Math.floor(stats.quota.remaining / (stats.metrics.averagePerHour * 24))
+        : null;
 
     // Prepare insights
     const insights = {
@@ -190,7 +191,7 @@ export const getUsageStats = async (req, res, next) => {
         insights.recommendations.push({
           type: 'UPSELL',
           message: `You've used ${(usageRatio * 100).toFixed(
-            1,
+            1
           )}% of your ${tier} tier quota. Consider upgrading to ${nextTier} for higher limits.`,
           currentTier: tier,
           recommendedTier: nextTier,
@@ -221,7 +222,7 @@ export const getUsageStats = async (req, res, next) => {
         usageRatio,
         status,
         upsellRecommended,
-      },
+      }
     );
 
     // Track metrics

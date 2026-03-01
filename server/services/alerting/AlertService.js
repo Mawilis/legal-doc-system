@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ ALERT SERVICE - INVESTOR-GRADE MODULE                          ║
   ║ 94% cost reduction | R45M risk elimination | 96% margins       ║

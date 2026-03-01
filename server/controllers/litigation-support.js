@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/litigation-support.js
  * PATH: /server/controllers/litigation-support.js
@@ -123,7 +121,7 @@ const require = _createRequire(import.meta.url);
  * }
  */
 
-'use strict';
+('use strict');
 
 // QUANTUM IMPORTS: Core dependencies
 const mongoose = require('mongoose');

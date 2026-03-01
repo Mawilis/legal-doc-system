@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * FILE: /server/controllers/clientController.js
  * PATH: server/controllers/clientController.js
  * STATUS: PRODUCTION | QUANTUM-SECURE | FICA-COMPLIANT
@@ -96,15 +94,14 @@ exports.createClient = async (req, res, next) => {
     }
 
     const sanitizedData = sanitizeData(req.body);
-    const {
-      name, email, entityType, registrationNumber, phone, address, popiaConsent,
-    } = sanitizedData;
+    const { name, email, entityType, registrationNumber, phone, address, popiaConsent } =
+      sanitizedData;
 
     // SECURITY QUANTUM: Verify POPIA Consent
     if (!popiaConsent || popiaConsent !== 'EXPLICIT') {
       throw new CustomError(
         'POPIA Compliance Violation: Explicit consent required for client data processing.',
-        403,
+        403
       );
     }
 
@@ -126,7 +123,7 @@ exports.createClient = async (req, res, next) => {
 
       throw new CustomError(
         'A client with this identity already exists in your registry. Consider merging records.',
-        409,
+        409
       );
     }
 
@@ -209,7 +206,7 @@ exports.createClient = async (req, res, next) => {
         try {
           await require('../services/notificationService').sendFICADocumentRequest(
             savedClient._id,
-            req.user.tenantId,
+            req.user.tenantId
           );
         } catch (notificationError) {
           console.error('FICA document request notification failed:', notificationError);
@@ -295,8 +292,8 @@ exports.getAllClients = async (req, res, next) => {
     }
 
     if (
-      ficaStatus
-      && ['PENDING', 'VERIFIED', 'EXPIRED', 'PENDING_DOCUMENTS'].includes(ficaStatus)
+      ficaStatus &&
+      ['PENDING', 'VERIFIED', 'EXPIRED', 'PENDING_DOCUMENTS'].includes(ficaStatus)
     ) {
       query.ficaStatus = ficaStatus;
     }
@@ -311,7 +308,7 @@ exports.getAllClients = async (req, res, next) => {
 
     const clients = await Client.find(query)
       .select(
-        'name email entityType ficaStatus trustBalance currency createdAt lastActivity matterCount',
+        'name email entityType ficaStatus trustBalance currency createdAt lastActivity matterCount'
       )
       .sort({ [sortBy]: sortDirection })
       .limit(parseInt(limit))
@@ -358,7 +355,7 @@ exports.getAllClients = async (req, res, next) => {
         ...response,
         cacheHit: true,
         cachedAt: new Date().toISOString(),
-      }),
+      })
     );
 
     res.status(200).json(response);
@@ -378,9 +375,7 @@ exports.getAllClients = async (req, res, next) => {
 exports.verifyFica = async (req, res, next) => {
   try {
     const clientId = req.params.id;
-    const {
-      documents, verificationMethod, notes, riskLevel, approvalType = 'SINGLE',
-    } = req.body;
+    const { documents, verificationMethod, notes, riskLevel, approvalType = 'SINGLE' } = req.body;
 
     // SECURITY QUANTUM: Input validation
     if (!documents || !Array.isArray(documents) || documents.length === 0) {
@@ -408,7 +403,7 @@ exports.verifyFica = async (req, res, next) => {
     if (!documentValidation.isValid) {
       throw new CustomError(
         `FICA document validation failed: ${documentValidation.errors.join(', ')}`,
-        400,
+        400
       );
     }
 
@@ -487,7 +482,7 @@ exports.verifyFica = async (req, res, next) => {
           await require('../services/notificationService').sendFICAVerificationComplete(
             client.assignedLawyer,
             client.name,
-            client._id,
+            client._id
           );
         } catch (notificationError) {
           console.error('FICA verification notification failed:', notificationError);
@@ -553,14 +548,14 @@ exports.adjustTrustBalance = async (req, res, next) => {
     if (Math.abs(amountInCents) < TRUST_ADJUSTMENT_MIN) {
       throw new CustomError(
         `Transaction amount below minimum of ${TRUST_ADJUSTMENT_MIN / 100}.`,
-        400,
+        400
       );
     }
 
     if (Math.abs(amountInCents) > TRUST_ADJUSTMENT_MAX) {
       throw new CustomError(
         `Transaction amount exceeds maximum limit of ${TRUST_ADJUSTMENT_MAX / 100}.`,
-        400,
+        400
       );
     }
 
@@ -578,7 +573,7 @@ exports.adjustTrustBalance = async (req, res, next) => {
 
       throw new CustomError(
         'Financial Authority Violation: Only Partner, Finance, or Admin roles can adjust Trust balances.',
-        403,
+        403
       );
     }
 
@@ -610,14 +605,14 @@ exports.adjustTrustBalance = async (req, res, next) => {
             clientId,
             timestamp: new Date(),
             approvalToken,
-          }),
+          })
         );
 
         await require('../services/notificationService').requestTrustApproval(
           clientId,
           amountInCents,
           req.user._id,
-          approvalToken,
+          approvalToken
         );
 
         return res.status(202).json({
@@ -719,7 +714,7 @@ exports.adjustTrustBalance = async (req, res, next) => {
       try {
         await require('../services/reconciliationService').reconcileTrustAccount(
           client._id,
-          req.user.tenantId,
+          req.user.tenantId
         );
       } catch (reconciliationError) {
         console.error('Trust reconciliation failed:', reconciliationError);
@@ -794,14 +789,15 @@ exports.getClientProfile = async (req, res, next) => {
     if (!client) {
       throw new CustomError(
         'Access Denied: Client not found in firm scope or insufficient permissions.',
-        404,
+        404
       );
     }
 
     // AUTHORIZATION QUANTUM: Verify user has access
-    const isAssignedLawyer = client.assignedLawyer && client.assignedLawyer._id.toString() === req.user._id.toString();
+    const isAssignedLawyer =
+      client.assignedLawyer && client.assignedLawyer._id.toString() === req.user._id.toString();
     const isAuthorizedRole = ['PARTNER', 'TENANT_ADMIN', 'SUPER_ADMIN', 'FINANCE'].includes(
-      req.user.role,
+      req.user.role
     );
 
     if (!isAssignedLawyer && !isAuthorizedRole) {
@@ -888,18 +884,18 @@ exports.getClientProfile = async (req, res, next) => {
       fica:
         client.ficaStatus === 'VERIFIED'
           ? {
-            status: 'COMPLIANT',
-            verifiedOn: client.ficaLastVerified,
-            nextVerificationDue: client.ficaNextVerificationDue,
-            riskRating: client.ficaRiskRating,
-          }
+              status: 'COMPLIANT',
+              verifiedOn: client.ficaLastVerified,
+              nextVerificationDue: client.ficaNextVerificationDue,
+              riskRating: client.ficaRiskRating,
+            }
           : {
-            status: 'NON_COMPLIANT',
-            requiredActions:
+              status: 'NON_COMPLIANT',
+              requiredActions:
                 client.ficaStatus === 'PENDING_DOCUMENTS'
                   ? ['UPLOAD_ID_DOCUMENT', 'UPLOAD_PROOF_OF_ADDRESS']
                   : ['COMPLETE_VERIFICATION'],
-          },
+            },
       popia: client.popiaConsent?.status === 'EXPLICIT' ? 'COMPLIANT' : 'NON_COMPLIANT',
       dataRetention:
         new Date(client.createdAt) > new Date(Date.now() - 7 * 365 * 24 * 60 * 60 * 1000)
@@ -933,7 +929,7 @@ exports.getClientProfile = async (req, res, next) => {
           canEdit: isAssignedLawyer || isAuthorizedRole,
           canAdjustTrust: isAuthorizedRole,
           canVerifyFICA: ['PARTNER', 'TENANT_ADMIN', 'SUPER_ADMIN', 'COMPLIANCE'].includes(
-            req.user.role,
+            req.user.role
           ),
         },
       },
@@ -948,7 +944,7 @@ exports.getClientProfile = async (req, res, next) => {
         ...clientProfile,
         cacheHit: true,
         cachedAt: new Date().toISOString(),
-      }),
+      })
     );
 
     res.status(200).json(clientProfile);
@@ -991,7 +987,7 @@ exports.searchClients = async (req, res, next) => {
       searchConditions.$or.push(
         { name: { $regex: sanitizedQuery, $options: 'i' } },
         { email: { $regex: sanitizedQuery, $options: 'i' } },
-        { registrationNumber: { $regex: sanitizedQuery, $options: 'i' } },
+        { registrationNumber: { $regex: sanitizedQuery, $options: 'i' } }
       );
     }
 
@@ -1009,8 +1005,9 @@ exports.searchClients = async (req, res, next) => {
       userId: req.user._id,
       timestamp: new Date(),
       isPersonalData: results.some(
-        (r) => r.name.toLowerCase().includes(sanitizedQuery.toLowerCase())
-          || r.email.toLowerCase().includes(sanitizedQuery.toLowerCase()),
+        (r) =>
+          r.name.toLowerCase().includes(sanitizedQuery.toLowerCase()) ||
+          r.email.toLowerCase().includes(sanitizedQuery.toLowerCase())
       ),
     });
 
@@ -1054,8 +1051,8 @@ exports.exportClientData = async (req, res, next) => {
 
     // SECURITY QUANTUM: Sensitive data export requires elevated privileges
     if (
-      includeSensitive
-      && !['PARTNER', 'TENANT_ADMIN', 'SUPER_ADMIN', 'COMPLIANCE'].includes(req.user.role)
+      includeSensitive &&
+      !['PARTNER', 'TENANT_ADMIN', 'SUPER_ADMIN', 'COMPLIANCE'].includes(req.user.role)
     ) {
       throw new CustomError('Export of sensitive data requires Partner or Compliance role.', 403);
     }

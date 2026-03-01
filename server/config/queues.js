@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ QUEUES CONFIGURATION - INVESTOR-GRADE MODULE                                ║
   ║ 100% job reliability | Zero data loss | High-throughput processing          ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */

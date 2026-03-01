@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*!
+#!/*!
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ ██████╗ ███████╗████████╗███████╗███╗   ██╗████████╗██╗ ██████╗ ███╗   ██╗   ║
 ║ ██╔══██╗██╔════╝╚══██╔══╝██╔════╝████╗  ██║╚══██╔══╝██║██╔═══██╗████╗  ██║   ║
@@ -174,7 +172,8 @@ const RetentionLoggerSchema = new mongoose.Schema(
       type: [String],
       required: false,
       default: [],
-      description: 'References to specific compliance requirements (e.g., "POPIA §14", "Companies Act §24")',
+      description:
+        'References to specific compliance requirements (e.g., "POPIA §14", "Companies Act §24")',
     },
 
     informationOfficerNotified: {
@@ -204,7 +203,7 @@ const RetentionLoggerSchema = new mongoose.Schema(
     strict: true, // Reject fields not defined in schema
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // ===================== COMPOUND INDEXES =====================
@@ -284,7 +283,11 @@ RetentionLoggerSchema.statics.generateCertificateHash = function (disposalRecord
  * @param {Date} endDate - End date for range
  * @returns {Promise<Array>} Array of disposal records
  */
-RetentionLoggerSchema.statics.findByTenantAndDateRange = async function (tenantId, startDate, endDate) {
+RetentionLoggerSchema.statics.findByTenantAndDateRange = async function (
+  tenantId,
+  startDate,
+  endDate
+) {
   if (!tenantId || !startDate || !endDate) {
     throw new Error('tenantId, startDate, and endDate are required');
   }
@@ -379,14 +382,18 @@ RetentionLoggerSchema.pre('save', function (next) {
  * These records MUST be immutable for legal defensibility
  */
 RetentionLoggerSchema.pre('remove', (next) => {
-  next(new Error('RetentionLogger records cannot be deleted. They are immutable for legal compliance.'));
+  next(
+    new Error('RetentionLogger records cannot be deleted. They are immutable for legal compliance.')
+  );
 });
 
 /*
  * Pre-update middleware: Prevent updates to existing records
  */
 RetentionLoggerSchema.pre('findOneAndUpdate', (next) => {
-  next(new Error('RetentionLogger records cannot be updated. They are immutable for legal compliance.'));
+  next(
+    new Error('RetentionLogger records cannot be updated. They are immutable for legal compliance.')
+  );
 });
 
 // ===================== MERMAID DIAGRAM =====================
@@ -448,7 +455,8 @@ flowchart TD
 `;
 
 // Export the model
-const RetentionLogger = mongoose.models.RetentionLogger || mongoose.model('RetentionLogger', RetentionLoggerSchema);
+const RetentionLogger =
+  mongoose.models.RetentionLogger || mongoose.model('RetentionLogger', RetentionLoggerSchema);
 
 export default RetentionLogger;
 
@@ -555,16 +563,20 @@ if (process.env.NODE_ENV === 'test') {
 
       await log.save();
 
-      await expect(RetentionLogger.findByIdAndUpdate(log._id, { action: 'MODIFIED' })).rejects.toThrow(
-        /cannot be updated/,
-      );
+      await expect(
+        RetentionLogger.findByIdAndUpdate(log._id, { action: 'MODIFIED' })
+      ).rejects.toThrow(/cannot be updated/);
     });
 
     test('should find records by tenant and date range', async () => {
       const startDate = new Date('2024-01-01');
       const endDate = new Date('2024-12-31');
 
-      const records = await RetentionLogger.findByTenantAndDateRange(testTenantId, startDate, endDate);
+      const records = await RetentionLogger.findByTenantAndDateRange(
+        testTenantId,
+        startDate,
+        endDate
+      );
 
       expect(Array.isArray(records)).toBe(true);
     });

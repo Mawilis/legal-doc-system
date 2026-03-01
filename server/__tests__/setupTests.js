@@ -1,4 +1,4 @@
-/* eslint-env jest */
+#!/* eslint-env jest */
 
 // Global setup for Jest tests
 beforeAll(() => {

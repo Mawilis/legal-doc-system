@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ NEURAL PRECEDENT API ROUTES - QUANTUM LEGAL SEARCH GATEWAY                ║
   ║ R25M/year revenue | Rate limited | Tiered access | Forensic audit         ║
@@ -10,7 +10,7 @@ import {
   searchPrecedents,
   getPrecedentById,
   getSimilarPrecedents,
-  getSearchStats
+  getSearchStats,
 } from '../../controllers/api/precedentApiController.js';
 import { validateApiKey, requireTier } from '../../middleware/api/authMiddleware.js';
 import { validateRequest } from '../../middleware/requestValidator.js';
@@ -35,16 +35,16 @@ const apiLimiter = rateLimit({
       error: 'RATE_LIMIT_EXCEEDED',
       message: 'Rate limit exceeded. Please upgrade your plan for higher limits.',
       retryAfter: Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000),
-      correlationId: req.correlationId
+      correlationId: req.correlationId,
     });
-  }
+  },
 });
 
 // Strict limiter for expensive operations
 const strictLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 20,
-  keyGenerator: (req) => req.apiKey?.key || req.ip
+  keyGenerator: (req) => req.apiKey?.key || req.ip,
 });
 
 // ============================================================================
@@ -56,14 +56,14 @@ const searchSchema = {
     query: { type: 'string', required: true, minLength: 3, maxLength: 500 },
     limit: { type: 'number', min: 1, max: 100, optional: true },
     mode: { type: 'string', enum: ['semantic', 'keyword', 'hybrid'], optional: true },
-    filters: { type: 'object', optional: true }
-  }
+    filters: { type: 'object', optional: true },
+  },
 };
 
 const similarSchema = {
   body: {
-    limit: { type: 'number', min: 1, max: 20, optional: true }
-  }
+    limit: { type: 'number', min: 1, max: 20, optional: true },
+  },
 };
 
 // ============================================================================

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ METRICS COLLECTOR - PRODUCTION MONITORING                                 ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
@@ -9,7 +9,7 @@ class MetricsCollector {
       documentGenerations: [],
       templateCompilations: [],
       errors: [],
-      performance: {}
+      performance: {},
     };
   }
 
@@ -23,9 +23,9 @@ class MetricsCollector {
   recordDocumentGeneration(data) {
     this.metrics.documentGenerations.push({
       ...data,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
+
     // Keep only last 1000 records
     if (this.metrics.documentGenerations.length > 1000) {
       this.metrics.documentGenerations.shift();
@@ -36,7 +36,7 @@ class MetricsCollector {
     this.metrics.errors.push({
       message: error.message,
       code: error.code,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -45,7 +45,7 @@ class MetricsCollector {
       totalGenerations: this.metrics.documentGenerations.length,
       totalErrors: this.metrics.errors.length,
       recentGenerations: this.metrics.documentGenerations.slice(-10),
-      recentErrors: this.metrics.errors.slice(-10)
+      recentErrors: this.metrics.errors.slice(-10),
     };
   }
 
@@ -54,7 +54,7 @@ class MetricsCollector {
       documentGenerations: [],
       templateCompilations: [],
       errors: [],
-      performance: {}
+      performance: {},
     };
   }
 }

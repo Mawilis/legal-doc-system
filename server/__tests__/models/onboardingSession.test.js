@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * @jest-environment node
  */
 
@@ -362,7 +360,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
             nationality: 'South African',
           },
         },
-        { createdBy: 'test' },
+        { createdBy: 'test' }
       );
 
       await session.advanceStage('CLIENT_INFO', { test: 'data' }, 'tester');
@@ -388,7 +386,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
             nationality: 'South African',
           },
         },
-        { createdBy: 'test' },
+        { createdBy: 'test' }
       );
 
       await session.addDocument({
@@ -421,7 +419,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
             nationality: 'South African',
           },
         },
-        { createdBy: 'test' },
+        { createdBy: 'test' }
       );
 
       await session.updateFICAStatus(
@@ -430,7 +428,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
           riskScore: 25,
           notes: 'All good',
         },
-        'compliance',
+        'compliance'
       );
 
       expect(session.fica.status).toBe('APPROVED');
@@ -454,7 +452,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
             nationality: 'South African',
           },
         },
-        { createdBy: 'test' },
+        { createdBy: 'test' }
       );
 
       await session.updateRiskAssessment(
@@ -462,7 +460,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
           score: 85,
           factors: [{ factor: 'PEP', score: 40 }],
         },
-        'analyst',
+        'analyst'
       );
 
       expect(session.risk.score).toBe(85);
@@ -486,7 +484,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
             nationality: 'South African',
           },
         },
-        { createdBy: 'test' },
+        { createdBy: 'test' }
       );
 
       const compliance = session.checkCompliance();
@@ -512,7 +510,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
             nationality: 'South African',
           },
         },
-        { createdBy: 'test' },
+        { createdBy: 'test' }
       );
 
       await session.placeOnLegalHold('Court order #123', 'legal', {
@@ -542,7 +540,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
             nationality: 'South African',
           },
         },
-        { createdBy: 'test' },
+        { createdBy: 'test' }
       );
 
       await session.advanceStage('CLIENT_INFO', {}, 'user1');
@@ -571,7 +569,7 @@ describe('🏛️ OnboardingSession Model - STRING-LITERAL SHIELD Test Suite', (
             taxNumber: '1234567890',
           },
         },
-        { createdBy: 'test' },
+        { createdBy: 'test' }
       );
 
       const exported = session.exportForDiscovery();

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* Final economic validation with corrected risk calculation */
+#!/* Final economic validation with corrected risk calculation */
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -17,10 +15,10 @@ const investorTarget = 200000; // R200K/year minimum
 
 if (annualSavings >= investorTarget) {
   console.log(
-    `✓ Annual Savings/Client: R${annualSavings.toLocaleString()} (Target: R${investorTarget.toLocaleString()})`,
+    `✓ Annual Savings/Client: R${annualSavings.toLocaleString()} (Target: R${investorTarget.toLocaleString()})`
   );
   console.log(
-    `  Margin: 85% → Net Profit: R${Math.round(annualSavings * 0.85).toLocaleString()}/year`,
+    `  Margin: 85% → Net Profit: R${Math.round(annualSavings * 0.85).toLocaleString()}/year`
   );
 } else {
   console.log(`✗ Annual Savings/Client: R${annualSavings} (FAILED - Below target)`);
@@ -46,8 +44,8 @@ if (eliminatedRisk >= 2400000) {
 } else {
   console.log(
     `✗ Risk Elimination: R${Math.round(
-      eliminatedRisk,
-    ).toLocaleString()} (FAILED - Below R2.4M claim)`,
+      eliminatedRisk
+    ).toLocaleString()} (FAILED - Below R2.4M claim)`
   );
   process.exit(1);
 }

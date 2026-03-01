@@ -1,11 +1,11 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS - Audit Chain Verifier
  *
  * Usage: node scripts/verify-audit-chains.js
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import ValidationAudit from '../models/ValidationAudit.js';
 import TenantConfig from '../models/TenantConfig.js';
 import dotenv from 'dotenv.js';

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-// ============================================================================
+#!// ============================================================================
 // QUANTUM SUBURB NEXUS: IMMUTABLE JURISDICTION LEDGER
 // ============================================================================
 // File: /server/models/Suburb.js
@@ -129,7 +127,7 @@ const CoordinateSchema = new Schema(
       enum: ['SURVEYOR_GENERAL', 'MUNICIPAL_GIS', 'GOOGLE_MAPS', 'OPEN_STREET_MAP'],
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
 /*
@@ -169,7 +167,7 @@ const BoundarySchema = new Schema(
     gazetteNumber: { type: String }, // Government Gazette number
     effectiveDate: { type: Date, default: Date.now },
   },
-  { _id: false },
+  { _id: false }
 );
 
 /*
@@ -207,7 +205,7 @@ const LegalJurisdictionSchema = new Schema(
       },
     }, // Municipal account number pattern
   },
-  { _id: false },
+  { _id: false }
 );
 
 /*
@@ -244,7 +242,7 @@ const PostalInformationSchema = new Schema(
       default: 'PENDING',
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
 // ============================================================================
@@ -561,9 +559,9 @@ const SuburbSchema = new Schema(
       type: Boolean,
       default() {
         return (
-          this.sensitivityLevel === 'CONFIDENTIAL'
-          || this.sensitivityLevel === 'RESTRICTED'
-          || this.sensitivityLevel === 'SECRET'
+          this.sensitivityLevel === 'CONFIDENTIAL' ||
+          this.sensitivityLevel === 'RESTRICTED' ||
+          this.sensitivityLevel === 'SECRET'
         );
       },
     },
@@ -593,7 +591,10 @@ const SuburbSchema = new Schema(
     ficaCompliance: {
       verifiedAddresses: { type: Number, default: 0 },
       verificationSuccessRate: {
-        type: Number, min: 0, max: 100, default: 0,
+        type: Number,
+        min: 0,
+        max: 100,
+        default: 0,
       },
       lastVerificationAudit: { type: Date },
       riskCategory: {
@@ -736,7 +737,10 @@ const SuburbSchema = new Schema(
       },
       freshness: { type: Number, default: 0 }, // Days since last update
       completeness: {
-        type: Number, min: 0, max: 100, default: 0,
+        type: Number,
+        min: 0,
+        max: 100,
+        default: 0,
       },
       lastHealthCheck: { type: Date, default: Date.now },
     },
@@ -869,7 +873,7 @@ const SuburbSchema = new Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -986,7 +990,7 @@ SuburbSchema.index(
     unique: true,
     background: true,
     name: 'idx_suburb_code_active',
-  },
+  }
 );
 
 // Index for province and municipality queries
@@ -999,7 +1003,7 @@ SuburbSchema.index(
   {
     background: true,
     name: 'idx_suburb_province_municipality',
-  },
+  }
 );
 
 // Index for postal code searches
@@ -1011,7 +1015,7 @@ SuburbSchema.index(
   {
     background: true,
     name: 'idx_suburb_postal_code',
-  },
+  }
 );
 
 // Geospatial index for location-based queries
@@ -1022,7 +1026,7 @@ SuburbSchema.index(
   {
     background: true,
     name: 'idx_suburb_geospatial',
-  },
+  }
 );
 
 // Index for court jurisdiction queries
@@ -1034,7 +1038,7 @@ SuburbSchema.index(
   {
     background: true,
     name: 'idx_suburb_court_jurisdiction',
-  },
+  }
 );
 
 // Index for FICA compliance monitoring
@@ -1046,7 +1050,7 @@ SuburbSchema.index(
   {
     background: true,
     name: 'idx_suburb_fica_compliance',
-  },
+  }
 );
 
 // Text index for suburb name searches
@@ -1069,7 +1073,7 @@ SuburbSchema.index(
       'name.localLanguage.afrikaans': 3,
     },
     default_language: 'english',
-  },
+  }
 );
 
 // ============================================================================
@@ -1323,7 +1327,7 @@ SuburbSchema.statics.findByCoordinates = async function (latitude, longitude, op
         latitude,
         longitude,
         suburb.centroid.latitude,
-        suburb.centroid.longitude,
+        suburb.centroid.longitude
       );
 
       suburbObj.distanceFromPoint = distance;
@@ -1508,7 +1512,7 @@ SuburbSchema.statics.bulkImportMunicipalData = async function (data, options = {
 
     // Log import results
     console.log(
-      `🏘️ MUNICIPAL DATA IMPORT: ${results.imported} imported, ${results.updated} updated, ${results.failed} failed`,
+      `🏘️ MUNICIPAL DATA IMPORT: ${results.imported} imported, ${results.updated} updated, ${results.failed} failed`
     );
 
     return results;
@@ -1536,7 +1540,7 @@ SuburbSchema.statics.generateFICAReport = async function (provinceCode = null, o
 
     const suburbs = await this.find(query)
       .select(
-        'suburbCode name.official province municipality legalJurisdiction ficaCompliance healthStatus',
+        'suburbCode name.official province municipality legalJurisdiction ficaCompliance healthStatus'
       )
       .sort({ 'ficaCompliance.verificationSuccessRate': -1 });
 
@@ -1734,10 +1738,10 @@ SuburbSchema.methods.validateBoundary = async function () {
       const bbox = this.boundary.boundingBox;
       if (bbox) {
         if (
-          this.centroid.latitude < bbox.minLat
-          || this.centroid.latitude > bbox.maxLat
-          || this.centroid.longitude < bbox.minLng
-          || this.centroid.longitude > bbox.maxLng
+          this.centroid.latitude < bbox.minLat ||
+          this.centroid.latitude > bbox.maxLat ||
+          this.centroid.longitude < bbox.minLng ||
+          this.centroid.longitude > bbox.maxLng
         ) {
           result.warnings.push('Centroid appears outside bounding box');
         }
@@ -1921,8 +1925,9 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
 
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-    + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c * 1000; // Convert to meters
@@ -1940,9 +1945,7 @@ function toRad(degrees) {
  * Quantum Test Suite: Embedded validation for CI/CD
  */
 if (process.env.NODE_ENV === 'test') {
-  const {
-    describe, it, expect, beforeAll, afterAll, beforeEach,
-  } = require('@jest/globals');
+  const { describe, it, expect, beforeAll, afterAll, beforeEach } = require('@jest/globals');
   const mongoose = require('mongoose');
 
   describe('Quantum Suburb Model', () => {
@@ -2283,9 +2286,10 @@ if (process.env.NODE_ENV === 'test') {
 // ============================================================================
 
 // Create and export the Quantum Suburb Model
-const Suburb = mongoose.models && mongoose.models.Suburb
-  ? mongoose.model('Suburb')
-  : mongoose.model('Suburb', SuburbSchema);
+const Suburb =
+  mongoose.models && mongoose.models.Suburb
+    ? mongoose.model('Suburb')
+    : mongoose.model('Suburb', SuburbSchema);
 
 export default Suburb;
 

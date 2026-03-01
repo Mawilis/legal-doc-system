@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-// ============================================================================
+#!// ============================================================================
 // QUANTUM ORACLE OF LINGUISTIC JUSTICE: WILSY OS LANGUAGE SERVICE
 // ============================================================================
 // This quantum nexus transmutes linguistic chaos into harmonic compliance,
@@ -35,12 +33,8 @@ const { createHash } = require('crypto');
 
 // Core i18n libraries - lightweight and battle-tested
 const axios = require('axios');
-const {
-  format, formatDistance, formatRelative, parseISO,
-} = require('date-fns');
-const {
-  enZA, af, zu, xh, nso, tn, ts, ss, ve, nr, fr, pt, ar,
-} = require('date-fns/locale');
+const { format, formatDistance, formatRelative, parseISO } = require('date-fns');
+const { enZA, af, zu, xh, nso, tn, ts, ss, ve, nr, fr, pt, ar } = require('date-fns/locale');
 const rateLimit = require('express-rate-limit');
 const i18next = require('i18next');
 const i18nextFsBackend = require('i18next-fs-backend');
@@ -154,12 +148,24 @@ class LanguageService {
           dateLocale: nso,
         },
       ],
-      ['tn-ZA', {
-        name: 'Setswana', nativeName: 'Setswana', direction: 'ltr', dateLocale: tn,
-      }],
-      ['ts-ZA', {
-        name: 'Xitsonga', nativeName: 'Xitsonga', direction: 'ltr', dateLocale: ts,
-      }],
+      [
+        'tn-ZA',
+        {
+          name: 'Setswana',
+          nativeName: 'Setswana',
+          direction: 'ltr',
+          dateLocale: tn,
+        },
+      ],
+      [
+        'ts-ZA',
+        {
+          name: 'Xitsonga',
+          nativeName: 'Xitsonga',
+          direction: 'ltr',
+          dateLocale: ts,
+        },
+      ],
       // Pan-African expansion
       [
         'fr-FR',
@@ -171,12 +177,24 @@ class LanguageService {
           compliance: 'GDPR',
         },
       ],
-      ['pt-PT', {
-        name: 'Portuguese', nativeName: 'Português', direction: 'ltr', dateLocale: pt,
-      }],
-      ['ar-SA', {
-        name: 'Arabic', nativeName: 'العربية', direction: 'rtl', dateLocale: ar,
-      }],
+      [
+        'pt-PT',
+        {
+          name: 'Portuguese',
+          nativeName: 'Português',
+          direction: 'ltr',
+          dateLocale: pt,
+        },
+      ],
+      [
+        'ar-SA',
+        {
+          name: 'Arabic',
+          nativeName: 'العربية',
+          direction: 'rtl',
+          dateLocale: ar,
+        },
+      ],
     ]);
   }
 
@@ -370,9 +388,7 @@ class LanguageService {
    */
   async decryptTranslationFile(encryptedData, filePath) {
     try {
-      const {
-        iv, encrypted, authTag, algorithm,
-      } = JSON.parse(encryptedData);
+      const { iv, encrypted, authTag, algorithm } = JSON.parse(encryptedData);
       const key = Buffer.from(process.env.TRANSLATION_ENCRYPTION_KEY, 'hex');
 
       const decipher = crypto.createDecipheriv(algorithm, key, Buffer.from(iv, 'hex'));
@@ -479,7 +495,7 @@ class LanguageService {
           httpsAgent: new (require('https').Agent)({
             rejectUnauthorized: true,
           }),
-        },
+        }
       );
 
       // Security Quantum: Sanitize AI output
@@ -566,8 +582,7 @@ class LanguageService {
       i18n: {
         t: (key, options) =>
           // Simple fallback with basic English
-          fallbackTranslations[key] || key
-        ,
+          fallbackTranslations[key] || key,
       },
       middleware: (req, res, next) => {
         req.i18n = { language: 'en-ZA' };

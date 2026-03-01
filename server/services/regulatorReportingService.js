@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                                                              ║
 ║  ██████╗ ███████╗ ██████╗ ██╗   ██╗██╗      █████╗ ████████╗ ██████╗ ██████╗ ██████╗ ███████╗██████╗                        ║
@@ -59,7 +57,7 @@ const quantumLogger = winston.createLogger({
       format: 'YYYY-MM-DD HH:mm:ss.SSS',
     }),
     winston.format.errors({ stack: true }),
-    winston.format.json(),
+    winston.format.json()
   ),
   defaultMeta: {
     service: 'regulator-reporting-service',
@@ -86,11 +84,12 @@ const quantumLogger = winston.createLogger({
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.printf(({
-          timestamp, level, message, ...meta
-        }) => `[${timestamp}] [${level}] ${message} ${
-          Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ''
-        }`),
+        winston.format.printf(
+          ({ timestamp, level, message, ...meta }) =>
+            `[${timestamp}] [${level}] ${message} ${
+              Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ''
+            }`
+        )
       ),
     }),
   ],
@@ -268,7 +267,7 @@ const QUANTUM_VALIDATION = Object.freeze({
         'Mpumalanga',
         'North West',
         'Northern Cape',
-        'Western Cape',
+        'Western Cape'
       )
       .required(),
     postalCode: Joi.string()
@@ -350,7 +349,7 @@ class QuantumRegulatorReportGenerator {
     const transactionId = options.transactionId || uuidv4();
     const reportId = `RPT-${regulatorCode}-${moment().format('YYYYMMDD')}-${uuidv4().substring(
       0,
-      8,
+      8
     )}`;
     const startTime = Date.now();
 
@@ -372,7 +371,7 @@ class QuantumRegulatorReportGenerator {
         regulatorCode,
         reportType,
         entityData,
-        reportData,
+        reportData
       );
 
       const encryptedData = await this.encryptReportData(transformedData, {
@@ -385,7 +384,7 @@ class QuantumRegulatorReportGenerator {
         regulatorCode,
         reportType,
         transformedData,
-        options,
+        options
       );
 
       const signatures = await this.applyDigitalSignatures(generatedFormats, {
@@ -453,7 +452,7 @@ class QuantumRegulatorReportGenerator {
 
     if (!validationResult.valid) {
       throw new Error(
-        `Companies Act compliance violations: ${JSON.stringify(validationResult.errors)}`,
+        `Companies Act compliance violations: ${JSON.stringify(validationResult.errors)}`
       );
     }
 
@@ -475,10 +474,10 @@ class QuantumRegulatorReportGenerator {
         addresses: {
           registeredAddress: this.formatAddressForSA(companyData.registeredAddress),
           postalAddress: this.formatAddressForSA(
-            companyData.postalAddress || companyData.registeredAddress,
+            companyData.postalAddress || companyData.registeredAddress
           ),
           physicalAddress: this.formatAddressForSA(
-            companyData.physicalAddress || companyData.registeredAddress,
+            companyData.physicalAddress || companyData.registeredAddress
           ),
         },
         contact: {
@@ -494,7 +493,7 @@ class QuantumRegulatorReportGenerator {
           endDate: financialData.financialYearEnd,
           months: moment(financialData.financialYearEnd).diff(
             moment(financialData.financialYearStart),
-            'months',
+            'months'
           ),
         },
         statements: {
@@ -505,10 +504,10 @@ class QuantumRegulatorReportGenerator {
         },
         auditor: financialData.auditor
           ? {
-            name: financialData.auditor.name,
-            registrationNumber: financialData.auditor.registrationNumber,
-            firm: financialData.auditor.firm,
-          }
+              name: financialData.auditor.name,
+              registrationNumber: financialData.auditor.registrationNumber,
+              firm: financialData.auditor.firm,
+            }
           : null,
       },
       shareCapital: this.processShareCapital(companyData.shareCapital || {}),
@@ -547,8 +546,8 @@ class QuantumRegulatorReportGenerator {
         submissionType: 'ORIGINAL',
         taxPeriod: {
           start:
-            vatData.periodStart
-            || moment(vatData.periodEnd).subtract(2, 'months').format('YYYY-MM-DD'),
+            vatData.periodStart ||
+            moment(vatData.periodEnd).subtract(2, 'months').format('YYYY-MM-DD'),
           end: vatData.periodEnd,
           frequency: 'BI_MONTHLY',
         },
@@ -595,15 +594,15 @@ class QuantumRegulatorReportGenerator {
         netVAT: {
           vatPayable: Math.max(
             0,
-            (vatData.outputTax?.standardRate || 0)
-              + (vatData.outputTax?.zeroRated || 0)
-              - ((vatData.inputTax?.standardRate || 0) + (vatData.inputTax?.capitalGoods || 0)),
+            (vatData.outputTax?.standardRate || 0) +
+              (vatData.outputTax?.zeroRated || 0) -
+              ((vatData.inputTax?.standardRate || 0) + (vatData.inputTax?.capitalGoods || 0))
           ),
           vatRefundable: Math.max(
             0,
-            (vatData.inputTax?.standardRate || 0)
-              + (vatData.inputTax?.capitalGoods || 0)
-              - ((vatData.outputTax?.standardRate || 0) + (vatData.outputTax?.zeroRated || 0)),
+            (vatData.inputTax?.standardRate || 0) +
+              (vatData.inputTax?.capitalGoods || 0) -
+              ((vatData.outputTax?.standardRate || 0) + (vatData.outputTax?.zeroRated || 0))
           ),
           dueDate: moment(vatData.periodEnd).add(25, 'days').format('YYYY-MM-DD'),
         },
@@ -814,8 +813,8 @@ class QuantumRegulatorReportGenerator {
     const errors = [];
 
     if (
-      !companyData.companyRegNumber
-      || !companyData.companyRegNumber.match(/^\d{4}\/\d{6}\/\d{2}$/)
+      !companyData.companyRegNumber ||
+      !companyData.companyRegNumber.match(/^\d{4}\/\d{6}\/\d{2}$/)
     ) {
       errors.push({
         code: 'CIPC001',
@@ -875,7 +874,7 @@ class QuantumRegulatorReportGenerator {
 
     if (dataSize > maxSize) {
       throw new Error(
-        `Entity data exceeds maximum size of ${QUANTUM_CONSTANTS.TECHNICAL.MAX_REPORT_SIZE_MB}MB for POPIA compliance`,
+        `Entity data exceeds maximum size of ${QUANTUM_CONSTANTS.TECHNICAL.MAX_REPORT_SIZE_MB}MB for POPIA compliance`
       );
     }
 
@@ -926,7 +925,7 @@ class QuantumRegulatorReportGenerator {
       const cipher = crypto.createCipheriv(
         QUANTUM_CONSTANTS.SECURITY.ENCRYPTION_ALGORITHM,
         encryptionKey,
-        iv,
+        iv
       );
 
       let encrypted = cipher.update(dataString, 'utf8', 'base64');
@@ -1050,8 +1049,8 @@ class QuantumRegulatorReportGenerator {
     if (!accountNumber) return '*';
     const visibleDigits = 4;
     return (
-      '*'.repeat(accountNumber.length - visibleDigits)
-      + accountNumber.substring(accountNumber.length - visibleDigits)
+      '*'.repeat(accountNumber.length - visibleDigits) +
+      accountNumber.substring(accountNumber.length - visibleDigits)
     );
   }
 
@@ -1531,7 +1530,10 @@ class QuantumRegulatorReportGenerator {
         const doc = new PDFDocument({
           size: 'A4',
           margins: {
-            top: 50, bottom: 50, left: 50, right: 50,
+            top: 50,
+            bottom: 50,
+            left: 50,
+            right: 50,
           },
           info: {
             Title: `${options.regulator} Report`,
@@ -1559,7 +1561,7 @@ class QuantumRegulatorReportGenerator {
           .fontSize(10)
           .font('Helvetica')
           .text(
-            `Generated: ${new Date().toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}`,
+            `Generated: ${new Date().toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}`
           )
           .text(`Report ID: ${data.reportId || 'N/A'}`)
           .text('Software: Wilsy OS Quantum v4.0.0')
@@ -1573,7 +1575,7 @@ class QuantumRegulatorReportGenerator {
             {
               align: 'center',
               color: '#666666',
-            },
+            }
           )
           .moveDown();
 
@@ -1585,19 +1587,22 @@ class QuantumRegulatorReportGenerator {
   }
 
   async generateCSVFormat(data, options) {
-    const flattenObject = (obj, prefix = '') => Object.keys(obj).reduce((acc, key) => {
-      const pre = prefix.length ? `${prefix}.` : '';
-      if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-        Object.assign(acc, flattenObject(obj[key], pre + key));
-      } else {
-        acc[pre + key] = obj[key];
-      }
-      return acc;
-    }, {});
+    const flattenObject = (obj, prefix = '') =>
+      Object.keys(obj).reduce((acc, key) => {
+        const pre = prefix.length ? `${prefix}.` : '';
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+          Object.assign(acc, flattenObject(obj[key], pre + key));
+        } else {
+          acc[pre + key] = obj[key];
+        }
+        return acc;
+      }, {});
 
     const flatData = flattenObject(data);
     const headers = Object.keys(flatData);
-    const values = Object.values(flatData).map((v) => (typeof v === 'string' ? `"${v.replace(/"/g, '""')}"` : v));
+    const values = Object.values(flatData).map((v) =>
+      typeof v === 'string' ? `"${v.replace(/"/g, '""')}"` : v
+    );
 
     return `${headers.join(',')}\n${values.join(',')}`;
   }
@@ -1770,21 +1775,21 @@ class QuantumRegulatorReportGenerator {
         standards.push(
           'COMPANIES_ACT_2008',
           'INTERNATIONAL_FINANCIAL_REPORTING_STANDARDS',
-          'SOUTH_AFRICAN_COMPANIES_REGULATIONS',
+          'SOUTH_AFRICAN_COMPANIES_REGULATIONS'
         );
         break;
       case 'SARS':
         standards.push(
           'TAX_ADMINISTRATION_ACT_2011',
           'VALUE_ADDED_TAX_ACT_1991',
-          'INCOME_TAX_ACT_1962',
+          'INCOME_TAX_ACT_1962'
         );
         break;
       case 'FIC':
         standards.push(
           'FINANCIAL_INTELLIGENCE_CENTRE_ACT_2001',
           'FIC_DIRECTIVE_7_2023',
-          'AML_CFT_REGULATIONS',
+          'AML_CFT_REGULATIONS'
         );
         break;
       case 'LPC':
@@ -1838,7 +1843,7 @@ class QuantumRegulatorSubmissionService {
             'X-CIPC-Client-ID': options.clientId || 'WILSYCIPC001',
             'X-CIPC-Transaction-ID': submissionId,
           },
-        },
+        }
       );
 
       const submissionResult = this.processCIPCResponse(response);
@@ -1890,7 +1895,7 @@ class QuantumRegulatorSubmissionService {
             'X-SARS-Client': 'WILSYSARS001',
             'X-SARS-Transaction-ID': submissionId,
           },
-        },
+        }
       );
 
       const submissionResult = this.processSARSResponse(response);
@@ -1941,7 +1946,7 @@ class QuantumRegulatorSubmissionService {
             'X-FIC-Client-ID': options.clientId || 'WILSYFIC001',
             'X-FIC-Transaction-ID': submissionId,
           },
-        },
+        }
       );
 
       const submissionResult = this.processFICResponse(response);
@@ -1990,7 +1995,7 @@ class QuantumRegulatorSubmissionService {
             ...formData.getHeaders(),
             'X-LPC-Submission-ID': submissionId,
           },
-        },
+        }
       );
 
       const submissionResult = this.processLPCResponse(response);
@@ -2029,7 +2034,7 @@ class QuantumRegulatorSubmissionService {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
-        },
+        }
       );
 
       return response.data.access_token;
@@ -2144,7 +2149,7 @@ class QuantumRegulatorSubmissionService {
         submissionDate: moment().toISOString(),
         submissionId: options.submissionId || uuidv4(),
         softwareVendor: 'Wilsy OS Quantum',
-      }),
+      })
     );
 
     return formData;
@@ -2383,7 +2388,7 @@ class QuantumComplianceMonitoringService {
     for (let month = 1; month <= 12; month += 2) {
       const deadlineDate = moment(
         `${currentYear}-${month.toString().padStart(2, '0')}-21`,
-        'YYYY-MM-DD',
+        'YYYY-MM-DD'
       ).tz('Africa/Johannesburg');
 
       deadlines.push({
@@ -2623,7 +2628,7 @@ class QuantumRegulatorReportingService {
         reportType,
         entityData,
         reportData,
-        { ...options, transactionId },
+        { ...options, transactionId }
       );
 
       let submissionResult;
@@ -3272,7 +3277,7 @@ class QuantumRegulatorReportingTestSuite {
             financialYearStart: '2023-01-01',
             financialYearEnd: '2023-12-31',
           },
-          {},
+          {}
         );
       }
 
@@ -3370,7 +3375,7 @@ async function generateAndSubmitReport(
   reportType,
   entityData,
   reportData,
-  options = {},
+  options = {}
 ) {
   const service = await getQuantumRegulatorReportingService();
   return await service.generateAndSubmitReport(
@@ -3378,7 +3383,7 @@ async function generateAndSubmitReport(
     reportType,
     entityData,
     reportData,
-    options,
+    options
   );
 }
 

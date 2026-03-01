@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ ALL SERVICES FORENSIC TEST SUITE V6 — INVESTOR-GRADE ● INTEGRATED ● COURT-ADMISSIBLE                           ║
   ║ R9.6M annual savings | R50M risk eliminated | 99.99% error reduction                                           ║
@@ -114,14 +112,23 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
       economicMetrics,
       testEntries: evidenceEntries,
       hashChain: {
-        entriesHash: crypto.createHash('sha256').update(JSON.stringify(evidenceEntries)).digest('hex'),
-        metricsHash: crypto.createHash('sha256').update(JSON.stringify(economicMetrics)).digest('hex'),
+        entriesHash: crypto
+          .createHash('sha256')
+          .update(JSON.stringify(evidenceEntries))
+          .digest('hex'),
+        metricsHash: crypto
+          .createHash('sha256')
+          .update(JSON.stringify(economicMetrics))
+          .digest('hex'),
         finalHash: null,
       },
     };
 
     // Generate final hash of entire evidence
-    evidence.hashChain.finalHash = crypto.createHash('sha256').update(JSON.stringify(evidence)).digest('hex');
+    evidence.hashChain.finalHash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(evidence))
+      .digest('hex');
 
     const evidenceFile = path.join(evidenceDir, `all-services-${testRunId}.forensic.json`);
     fs.writeFileSync(evidenceFile, JSON.stringify(evidence, null, 2));
@@ -138,20 +145,20 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
 ║                    ALL SERVICES - FORENSIC TEST SUMMARY                       ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  ✅ SA Legal Validators                    ${
-  serviceStatus['SA Legal Validators'] ? '✓' : '✗'
-}                          
+      serviceStatus['SA Legal Validators'] ? '✓' : '✗'
+    }                          
 ║  ✅ Compliance ID Generator                ${
-  serviceStatus['Compliance ID Generator'] ? '✓' : '✗'
-}                          
+      serviceStatus['Compliance ID Generator'] ? '✓' : '✗'
+    }                          
 ║  ✅ Encryption Service                     ${
-  serviceStatus['Encryption Service'] ? '✓' : '✗'
-}                          
+      serviceStatus['Encryption Service'] ? '✓' : '✗'
+    }                          
 ║  ✅ Client Onboarding Service              ${
-  serviceStatus['Client Onboarding Service'] ? '✓' : '✗'
-}                          
+      serviceStatus['Client Onboarding Service'] ? '✓' : '✗'
+    }                          
 ║  ✅ Notification Service                   ${
-  serviceStatus['Notification Service'] ? '✓' : '✗'
-}                          
+      serviceStatus['Notification Service'] ? '✓' : '✗'
+    }                          
 ║  ✅ Compliance Engine                      ${serviceStatus['Compliance Engine'] ? '✓' : '✗'}                          
 ║  ✅ Redaction Utils                        ${serviceStatus['Redaction Utils'] ? '✓' : '✗'}                          
 ║  ✅ Audit Logger                           ${serviceStatus['Audit Logger'] ? '✓' : '✗'}                          
@@ -256,7 +263,9 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
         includeChecksum: true,
       });
 
-      expect(id).toMatch(/^FICA-IND_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/);
+      expect(id).toMatch(
+        /^FICA-IND_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/
+      );
       expect(validateId(id)).toBe(true);
 
       serviceStatus['Compliance ID Generator'] = true;
@@ -655,7 +664,8 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
       // Notification Service value
       const notificationValue = 400000;
 
-      const totalValue = validatorValue + idGenValue + encryptionValue + onboardingValue + notificationValue;
+      const totalValue =
+        validatorValue + idGenValue + encryptionValue + onboardingValue + notificationValue;
 
       expect(totalValue).toBe(9600000);
       expect(totalValue).toBe(economicMetrics.totalAnnualSavingsPerFirmZAR);
@@ -681,7 +691,9 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
       expect(totalRiskEliminated).toBe(50000000);
       expect(totalRiskEliminated).toBe(economicMetrics.totalPenaltyRiskEliminatedZAR);
 
-      console.log(`  ✅ Economic Impact: Total risk eliminated R${totalRiskEliminated.toLocaleString()}`);
+      console.log(
+        `  ✅ Economic Impact: Total risk eliminated R${totalRiskEliminated.toLocaleString()}`
+      );
     });
 
     test('should calculate implementation ROI', () => {

@@ -1,4 +1,4 @@
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ AUDIT PLUGIN - INVESTOR-GRADE ● FORENSIC ● PRODUCTION                       ║
   ║ Blockchain-ready audit trails | Tamper-proof logging                        ║
   ║ Version: 1.0.0 - PRODUCTION                                                 ║

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/userRoutes.js
  * PATH: server/routes/userRoutes.js
  * STATUS: GOD-TIER | EPITOME | PRODUCTION-READY
@@ -51,7 +49,8 @@ requiredHandlers.forEach((handler) => {
     console.error(`[CRITICAL] Identity Handshake Failure: Missing ${handler} in userController.`);
     // We do not throw here to allow the server to report its status,
     // but we assign a placeholder to prevent the 'undefined' TypeError.
-    userController[handler] = (req, res) => res.status(501).json({ error: 'Endpoint under construction' });
+    userController[handler] = (req, res) =>
+      res.status(501).json({ error: 'Endpoint under construction' });
   }
 });
 
@@ -108,7 +107,7 @@ router.post(
     body('password').isLength({ min: 8 }).withMessage('Security requires 8+ character password'),
   ],
   handleValidation,
-  userController.register,
+  userController.register
 );
 
 /*
@@ -123,7 +122,7 @@ router.post(
     body('password').notEmpty().withMessage('Password required'),
   ],
   handleValidation,
-  userController.login,
+  userController.login
 );
 
 /*
@@ -135,7 +134,7 @@ router.post(
   otpLimiter,
   body('email').isEmail().withMessage('Email required for OTP'),
   handleValidation,
-  userController.requestOtp,
+  userController.requestOtp
 );
 
 // Alias for legacy enterprise systems
@@ -144,7 +143,7 @@ router.post(
   otpLimiter,
   body('email').isEmail(),
   handleValidation,
-  userController.requestOtp,
+  userController.requestOtp
 );
 
 /*
@@ -159,7 +158,7 @@ router.post(
     body('email').optional().isEmail().withMessage('Valid email required'),
   ],
   handleValidation,
-  userController.verifyOtp,
+  userController.verifyOtp
 );
 
 /* ---------------------------------------------------------------------------

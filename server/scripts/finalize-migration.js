@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const { MongoClient } = require('mongodb');
+#!const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
 async function finalizeMigrations() {
@@ -50,7 +48,7 @@ async function finalizeMigrations() {
     await registry.updateOne(
       { migrationId: 'wilsy_os_production_ready' },
       { $set: finalMigration },
-      { upsert: true },
+      { upsert: true }
     );
 
     console.log('✅ Created final migration record');

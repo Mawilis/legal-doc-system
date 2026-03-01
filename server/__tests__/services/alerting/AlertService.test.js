@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ ALERT SERVICE TESTS - INVESTOR DUE DILIGENCE                  ║
   ║ 100% coverage | Incident management | Multi-channel           ║
@@ -16,9 +14,9 @@ const require = _createRequire(import.meta.url);
 import axios from 'axios.js';
 import nodemailer from 'nodemailer.js';
 import { v4 as uuidv4 } from 'uuid.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 import fs from 'fs/promises';
-import path from "path";
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -288,7 +286,9 @@ describe('AlertService - Incident Management Due Diligence', () => {
     it('should validate required fields', async () => {
       const invalidAlert = { severity: 'critical' };
 
-      await expect(AlertService.sendAlert(invalidAlert)).rejects.toThrow('Alert must have title and message');
+      await expect(AlertService.sendAlert(invalidAlert)).rejects.toThrow(
+        'Alert must have title and message'
+      );
     });
 
     it('should handle missing optional fields', async () => {
@@ -324,7 +324,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
               ]),
             }),
           ]),
-        }),
+        })
       );
     });
 
@@ -337,7 +337,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           to: expect.stringContaining('ops@wilsy.os'),
           subject: '[CRITICAL] Test Critical Alert',
           html: expect.stringContaining('Test Critical Alert'),
-        }),
+        })
       );
     });
 
@@ -352,7 +352,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           body: '[WILSY OS CRITICAL] Test Critical Alert',
           from: '+1234567890',
           to: '+1234567890',
-        }),
+        })
       );
     });
 
@@ -388,7 +388,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
             class: 'test-class',
             custom_details: mockAlert.details,
           }),
-        }),
+        })
       );
     });
 
@@ -416,7 +416,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
             'X-Wilsy-Signature': expect.any(String),
           }),
           timeout: 5000,
-        }),
+        })
       );
     });
 
@@ -632,7 +632,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           title: 'Test Critical Alert',
           severity: 'critical',
           alertId: expect.any(String),
-        }),
+        })
       );
     });
 
@@ -645,7 +645,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
       expect(Incident.create).toHaveBeenCalledWith(
         expect.objectContaining({
           severity: 'error',
-        }),
+        })
       );
     });
 
@@ -727,7 +727,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           event: 'ALERT_ACKNOWLEDGED',
           alertId: 'test-alert-id',
           userId: 'test-user',
-        }),
+        })
       );
     });
 
@@ -743,7 +743,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           event: 'ALERT_RESOLVED',
           alertId: 'test-alert-id',
           resolution: 'Fixed the issue',
-        }),
+        })
       );
     });
 
@@ -751,7 +751,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
       Alert.findOne.mockResolvedValueOnce(null);
 
       await expect(AlertService.acknowledgeAlert('non-existent', 'test-user')).rejects.toThrow(
-        'Alert not found: non-existent',
+        'Alert not found: non-existent'
       );
     });
 
@@ -781,7 +781,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           limit: 10,
           offset: 0,
           order: [['createdAt', 'DESC']],
-        }),
+        })
       );
     });
 
@@ -802,7 +802,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
               $lte: new Date(endDate),
             }),
           }),
-        }),
+        })
       );
     });
 
@@ -919,7 +919,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
             createdAt: expect.any(Object),
             status: expect.arrayContaining(['resolved', 'expired']),
           }),
-        }),
+        })
       );
 
       jest.restoreAllMocks();
@@ -1009,7 +1009,10 @@ describe('AlertService - Incident Management Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'alert-service-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'alert-service-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'alert-service-evidence.json'))
@@ -1018,7 +1021,10 @@ describe('AlertService - Incident Management Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'alert-service-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'alert-service-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

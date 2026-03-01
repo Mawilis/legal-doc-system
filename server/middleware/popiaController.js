@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════╗
   ║ POPIA QUANTUM CONTROLLER - INVESTOR-GRADE MODULE              ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
   ╚════════════════════════════════════════════════════════════════╝ */

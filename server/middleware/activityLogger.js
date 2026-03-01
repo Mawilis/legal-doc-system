@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ====================================================================================
  * WILSY OS - THE DIVINE LEGAL TECHNOLOGY FORTRESS
  * ====================================================================================
@@ -511,7 +509,7 @@ const encryptForTransmission = (payload) => {
   const key = crypto.scryptSync(
     process.env.TRANSMISSION_KEY || 'default_transmission_key',
     'salt',
-    32,
+    32
   );
   const iv = crypto.randomBytes(16);
 
@@ -588,16 +586,19 @@ const activityLogger = (options = {}) => {
     const startTime = process.hrtime();
 
     // 1. CORRELATION IDENTITY & TRACEABILITY
-    const correlationId = req.headers['x-correlation-id']
-      || req.headers['x-request-id']
-      || `corr_${uuidv4()}_${Date.now().toString(36)}`;
+    const correlationId =
+      req.headers['x-correlation-id'] ||
+      req.headers['x-request-id'] ||
+      `corr_${uuidv4()}_${Date.now().toString(36)}`;
 
     req.correlationId = correlationId;
     res.setHeader('X-Correlation-Id', correlationId);
     res.setHeader('X-Trace-Id', `trace_${crypto.randomBytes(8).toString('hex')}`);
 
     // 2. REQUEST CLASSIFICATION & ENRICHMENT
-    const isLegalOperation = LEGAL_OPERATION_PATTERNS.some((pattern) => pattern.test(req.originalUrl));
+    const isLegalOperation = LEGAL_OPERATION_PATTERNS.some((pattern) =>
+      pattern.test(req.originalUrl)
+    );
 
     const requestClassification = {
       isLegalOperation,
@@ -738,10 +739,10 @@ const activityLogger = (options = {}) => {
             // Error context
             error: res.locals.error
               ? {
-                message: res.locals.error.message,
-                code: res.locals.error.code,
-                stack: process.env.NODE_ENV === 'production' ? undefined : res.locals.error.stack,
-              }
+                  message: res.locals.error.message,
+                  code: res.locals.error.code,
+                  stack: process.env.NODE_ENV === 'production' ? undefined : res.locals.error.stack,
+                }
               : undefined,
           },
 
@@ -892,7 +893,7 @@ if (process.env.NODE_ENV === 'test') {
 
     console.assert(
       anonymized.startsWith('anon_') && anonymized.length === 29,
-      'SHA3-512 anonymization failed',
+      'SHA3-512 anonymization failed'
     );
 
     // Test PII masking
@@ -906,7 +907,7 @@ if (process.env.NODE_ENV === 'test') {
 
     console.assert(
       masked.password.masked === true && masked.password.hash.startsWith('sha3-512:'),
-      'PII masking failed',
+      'PII masking failed'
     );
 
     // Test legal compliance classification
@@ -921,7 +922,7 @@ if (process.env.NODE_ENV === 'test') {
 
     console.assert(
       classifications.some((c) => c.category === 'ECTA'),
-      'ECTA compliance classification failed',
+      'ECTA compliance classification failed'
     );
 
     // Test threat detection

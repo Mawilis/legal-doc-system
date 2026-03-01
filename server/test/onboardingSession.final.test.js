@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env mocha, node */
+#!/* eslint-env mocha, node */
 const assert = require('assert');
 const crypto = require('crypto');
 const { MongoMemoryServer } = require('mongodb-memory-server');

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ====================================================================
  * SARS eFILING BACKGROUND WORKER - AUTOMATED FILING PROCESSING
  * ====================================================================
@@ -230,7 +228,7 @@ class SarsFilingWorker {
           }
         });
       },
-      { connection: this.connection },
+      { connection: this.connection }
     );
 
     worker.on('completed', (_job) => {
@@ -299,7 +297,7 @@ class SarsFilingWorker {
           }
         });
       },
-      { connection: this.connection },
+      { connection: this.connection }
     );
 
     this.workers.push(worker);
@@ -352,7 +350,7 @@ class SarsFilingWorker {
           }
         });
       },
-      { connection: this.connection },
+      { connection: this.connection }
     );
 
     this.workers.push(worker);
@@ -366,9 +364,7 @@ class SarsFilingWorker {
     const worker = new Worker(
       QUEUE_NAMES.PAYMENT_PROCESSING,
       async (_job) => {
-        const {
-          submissionId, amount, tenantId, correlationId,
-        } = job.data;
+        const { submissionId, amount, tenantId, correlationId } = job.data;
 
         tenantContext.runWithTenant(tenantId, async () => {
           logger.info('Processing payment', {
@@ -407,7 +403,7 @@ class SarsFilingWorker {
           }
         });
       },
-      { connection: this.connection },
+      { connection: this.connection }
     );
 
     this.workers.push(worker);
@@ -486,7 +482,7 @@ class SarsFilingWorker {
           }
         });
       },
-      { connection: this.connection },
+      { connection: this.connection }
     );
 
     this.workers.push(worker);
@@ -506,7 +502,7 @@ class SarsFilingWorker {
       {
         priority: JOB_PRIORITIES.HIGH,
         ...options,
-      },
+      }
     );
   }
 
@@ -553,7 +549,7 @@ class SarsFilingWorker {
           pattern: '0 0 * * *', // Daily at midnight
         },
         ...options,
-      },
+      }
     );
   }
 

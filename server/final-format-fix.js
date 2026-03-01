@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /*
  * ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -8,9 +8,9 @@
  */
 
 import { execSync } from 'child_process';
-import { createHash } from "crypto";
-import fs from "fs";
-import path from "path";
+import { createHash } from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -107,9 +107,10 @@ projectDirs.forEach((dir) => {
 const rootFiles = fs
   .readdirSync(rootDir)
   .filter(
-    (f) => (f.endsWith('.js') || f.endsWith('.cjs') || f.endsWith('.mjs'))
-      && !f.includes('node_modules')
-      && fs.statSync(path.join(rootDir, f)).isFile(),
+    (f) =>
+      (f.endsWith('.js') || f.endsWith('.cjs') || f.endsWith('.mjs')) &&
+      !f.includes('node_modules') &&
+      fs.statSync(path.join(rootDir, f)).isFile()
   );
 
 rootFiles.forEach((file) => {
@@ -171,11 +172,12 @@ const evidenceId = `prettier-final-${timestamp}-${createHash('md5')
 const evidenceFile = path.join(evidenceDir, `${evidenceId}.forensic.json`);
 
 // Count JS files
-const jsCount = parseInt(
-  execSync('find . -name "*.js" -not -path "*/node_modules/*" | wc -l', {
-    encoding: 'utf8',
-  }).trim(),
-) || 0;
+const jsCount =
+  parseInt(
+    execSync('find . -name "*.js" -not -path "*/node_modules/*" | wc -l', {
+      encoding: 'utf8',
+    }).trim()
+  ) || 0;
 
 const evidence = {
   evidenceId,
@@ -209,8 +211,8 @@ const hash = createHash('sha256')
       evidence,
       Object.keys(evidence)
         .filter((k) => k !== 'forensicHash')
-        .sort(),
-    ),
+        .sort()
+    )
   )
   .digest('hex');
 

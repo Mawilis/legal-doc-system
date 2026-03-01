@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/standardsRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Standards Gateway (Tenant-Scoped). Manages Legal Precedents and Document Templates with variable injection support.
@@ -87,7 +85,7 @@ router.post(
       err.code = 'STD_CREATE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -123,7 +121,7 @@ router.get(
       err.code = 'STD_GET_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -147,7 +145,7 @@ router.post(
       err.code = 'STD_RENDER_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -179,7 +177,7 @@ router.put(
       err.code = 'STD_UPDATE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

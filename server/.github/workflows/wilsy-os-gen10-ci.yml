@@ -8,12 +8,12 @@ name: 🏛️ WILSY OS GEN 10 - FORENSIC PIPELINE
 
 on:
   push:
-    branches: [ main, master, production, release/* ]
-    tags: [ 'v*' ]
+    branches: [main, master, production, release/*]
+    tags: ['v*']
   pull_request:
-    branches: [ main, master, production ]
+    branches: [main, master, production]
   release:
-    types: [ published ]
+    types: [published]
   schedule:
     # Daily security scan at 03:00 UTC
     - cron: '0 3 * * *'
@@ -87,12 +87,12 @@ jobs:
           # Calculate security score (0-100)
           HIGH_VULN=$(jq '.vulnerabilities | map(select(.severity == "high")) | length' security-audit.json 2>/dev/null || echo "0")
           CRITICAL_VULN=$(jq '.vulnerabilities | map(select(.severity == "critical")) | length' security-audit.json 2>/dev/null || echo "0")
-          
+
           SECURITY_SCORE=$((100 - (HIGH_VULN * 5) - (CRITICAL_VULN * 10)))
           if [ $SECURITY_SCORE -lt 0 ]; then SECURITY_SCORE=0; fi
-          
+
           echo "security_score=$SECURITY_SCORE" >> $GITHUB_OUTPUT
-          
+
           # Generate forensic report
           echo "## 🔐 Quantum Security Audit Report" > security-report.md
           echo "| Metric | Value |" >> security-report.md
@@ -152,7 +152,7 @@ jobs:
             ERRORS=0
             WARNINGS=0
           fi
-          
+
           echo "## 🔬 Forensic Linting Report" > linting-report.md
           echo "| Metric | Value |" >> linting-report.md
           echo "|--------|-------|" >> linting-report.md

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ EMBEDDING QUEUE TESTS - INVESTOR DUE DILIGENCE - $500M INFRASTRUCTURE    ║
   ║ 100% coverage | Hyper-scale | Distributed | Production-ready             ║

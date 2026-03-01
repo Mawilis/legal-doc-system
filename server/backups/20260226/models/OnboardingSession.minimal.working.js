@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+#!const mongoose = require('mongoose');
 
 // Ultra-minimal schema
 const onboardingSessionSchema = new mongoose.Schema({

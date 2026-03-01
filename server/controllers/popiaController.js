@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════╗
  * ║                                                                          ║
  * ║  ██████╗  ██████╗ ██████╗ ██╗ █████╗    ███████╗██╗   ██╗██████╗ ███████╗║
@@ -129,11 +127,11 @@ const QuantumCryptoEngine = require('../utils/quantumCryptoEngine');
  * @compliance POPIA Section 19: Security measures on personal information
  */
 if (
-  !process.env.POPIA_ENCRYPTION_KEY
-  || Buffer.from(process.env.POPIA_ENCRYPTION_KEY, 'base64').length < 32
+  !process.env.POPIA_ENCRYPTION_KEY ||
+  Buffer.from(process.env.POPIA_ENCRYPTION_KEY, 'base64').length < 32
 ) {
   throw new Error(
-    'QUANTUM CRISIS: POPIA_ENCRYPTION_KEY missing/insecure. Required: 32-byte base64 key',
+    'QUANTUM CRISIS: POPIA_ENCRYPTION_KEY missing/insecure. Required: 32-byte base64 key'
   );
 }
 
@@ -143,7 +141,7 @@ if (!process.env.POPIA_REGULATOR_API_KEY) {
 
 if (!process.env.INFORMATION_OFFICER_EMAIL) {
   throw new Error(
-    'QUANTUM CRISIS: INFORMATION_OFFICER_EMAIL missing - POPIA Section 17 requirement',
+    'QUANTUM CRISIS: INFORMATION_OFFICER_EMAIL missing - POPIA Section 17 requirement'
   );
 }
 
@@ -154,7 +152,7 @@ const quantumLogger = winston.createLogger({
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
     winston.format.errors({ stack: true }),
     winston.format.json(),
-    winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] }),
+    winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] })
   ),
   defaultMeta: {
     service: 'popia-quantum-controller',
@@ -178,9 +176,10 @@ const quantumLogger = winston.createLogger({
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.printf(({
-          timestamp, level, message, metadata,
-        }) => `[${timestamp}] ${level}: ${message} ${JSON.stringify(metadata)}`),
+        winston.format.printf(
+          ({ timestamp, level, message, metadata }) =>
+            `[${timestamp}] ${level}: ${message} ${JSON.stringify(metadata)}`
+        )
       ),
     }),
   ],
@@ -375,14 +374,13 @@ const QuantumValidation = {
           'HEALTH',
           'BIOMETRIC',
           'LOCATION',
-          'BEHAVIORAL',
-        ),
+          'BEHAVIORAL'
+        )
       )
       .min(1)
       .max(20)
       .required(),
-    retentionPeriod: Joi.number().integer().min(1).max(3650)
-      .required(), // Days
+    retentionPeriod: Joi.number().integer().min(1).max(3650).required(), // Days
     thirdPartySharing: Joi.array()
       .items(
         Joi.object({
@@ -390,7 +388,7 @@ const QuantumValidation = {
           purpose: Joi.string().required(),
           country: Joi.string().required(),
           safeguards: Joi.string().required(),
-        }),
+        })
       )
       .max(50),
     withdrawalMechanism: Joi.string().required().valid('EMAIL', 'SMS', 'DASHBOARD', 'API'),
@@ -469,12 +467,10 @@ const QuantumValidation = {
         'PHYSICAL_THEFT',
         'ACCIDENTAL_DISCLOSURE',
         'SYSTEM_FAILURE',
-        'UNKNOWN',
+        'UNKNOWN'
       ),
-    dataCategories: Joi.array().items(Joi.string()).min(1).max(20)
-      .required(),
-    affectedSubjects: Joi.number().integer().min(1).max(1000000000)
-      .required(),
+    dataCategories: Joi.array().items(Joi.string()).min(1).max(20).required(),
+    affectedSubjects: Joi.number().integer().min(1).max(1000000000).required(),
     riskLevel: Joi.string().required().valid('LOW', 'MEDIUM', 'HIGH', 'SEVERE'),
     containmentStatus: Joi.string().required().valid('IN_PROGRESS', 'CONTAINED', 'RESOLVED'),
     notificationStatus: Joi.object({
@@ -490,7 +486,7 @@ const QuantumValidation = {
           responsible: Joi.string().required(),
           deadline: Joi.date().iso().min('now'),
           status: Joi.string().valid('PENDING', 'IN_PROGRESS', 'COMPLETED'),
-        }),
+        })
       )
       .min(1)
       .max(50),
@@ -517,7 +513,7 @@ const QuantumValidation = {
           legalBasis: Joi.string().required(),
           dataCategories: Joi.array().items(Joi.string()).min(1),
           dataSubjects: Joi.number().integer().min(1),
-        }),
+        })
       )
       .min(1)
       .max(50)
@@ -534,7 +530,7 @@ const QuantumValidation = {
           likelihood: Joi.string().valid('RARE', 'UNLIKELY', 'POSSIBLE', 'LIKELY', 'CERTAIN'),
           impact: Joi.string().valid('NEGLIGIBLE', 'MINOR', 'MODERATE', 'MAJOR', 'CATASTROPHIC'),
           mitigation: Joi.string().required(),
-        }),
+        })
       )
       .min(1)
       .max(100)
@@ -741,7 +737,7 @@ class QuantumConsentEngine {
           consentId,
           status: 'ACTIVE',
           timestamp: new Date().toISOString(),
-        }),
+        })
       );
 
       // 🚀 STEP 8: AUDIT LOG
@@ -874,7 +870,7 @@ class QuantumConsentEngine {
 
       const transactionId = await this.blockchainClient.submitTransaction(
         'anchorConsentRecord',
-        JSON.stringify(blockchainPayload),
+        JSON.stringify(blockchainPayload)
       );
 
       consentRecord.blockchainAnchor = {
@@ -1299,7 +1295,10 @@ class QuantumDSAREngine {
         const doc = new PDFDocument({
           size: 'A4',
           margins: {
-            top: 50, bottom: 50, left: 50, right: 50,
+            top: 50,
+            bottom: 50,
+            left: 50,
+            right: 50,
           },
           info: {
             Title: 'Data Subject Access Request Report',
@@ -1338,7 +1337,7 @@ class QuantumDSAREngine {
           .fontSize(8)
           .text(
             'This document is digitally signed and cryptographically sealed for legal admissibility.',
-            { align: 'center' },
+            { align: 'center' }
           );
 
         doc.end();
@@ -1367,8 +1366,8 @@ class QuantumDSAREngine {
         Collected Data Summary:
         - Active Consents: ${collectedData.find((d) => d.type === 'CONSENTS')?.count || 0}
         - Processing Records: ${
-  collectedData.find((d) => d.type === 'PROCESSING_RECORDS')?.count || 0
-}
+          collectedData.find((d) => d.type === 'PROCESSING_RECORDS')?.count || 0
+        }
         
         Please provide:
         1. Acknowledgment of receipt
@@ -1460,8 +1459,9 @@ class QuantumBreachEngine {
    */
   async processBreach(breachData, request) {
     const startTime = performance.now();
-    const breachId = breachData.incidentId
-      || `BREACH-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    const breachId =
+      breachData.incidentId ||
+      `BREACH-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
     try {
       // 🚀 STEP 1: VALIDATION
@@ -1517,7 +1517,7 @@ class QuantumBreachEngine {
         severity: impactAssessment.riskLevel === 'SEVERE' ? 'CRITICAL' : 'ERROR',
         summary: `Data breach reported: ${breachId} - ${breachData.description.substring(
           0,
-          100,
+          100
         )}...`,
         metadata: {
           breachId,
@@ -1588,13 +1588,14 @@ class QuantumBreachEngine {
       containment: breachData.containmentStatus === 'CONTAINED' ? 0.2 : 0.8,
     };
 
-    const riskScore = riskFactors.dataSensitivity * 0.4
-      + riskFactors.affectedCount * 0.3
-      + riskFactors.causeSeverity * 0.2
-      + riskFactors.containment * 0.1;
+    const riskScore =
+      riskFactors.dataSensitivity * 0.4 +
+      riskFactors.affectedCount * 0.3 +
+      riskFactors.causeSeverity * 0.2 +
+      riskFactors.containment * 0.1;
 
-    let riskLevel; let
-      notificationRequired;
+    let riskLevel;
+    let notificationRequired;
     if (riskScore >= 0.7) {
       riskLevel = 'SEVERE';
       notificationRequired = true;
@@ -1782,7 +1783,10 @@ class QuantumBreachEngine {
       BEHAVIORAL: 0.5,
     };
 
-    const maxSensitivity = categories.reduce((max, category) => Math.max(max, sensitivityMap[category] || 0.5), 0);
+    const maxSensitivity = categories.reduce(
+      (max, category) => Math.max(max, sensitivityMap[category] || 0.5),
+      0
+    );
 
     return maxSensitivity;
   }
@@ -2006,7 +2010,7 @@ const popiaController = {
         await quantumConsentEngine.redis.setex(
           `consent:${consentId}`,
           300, // 5 minutes
-          JSON.stringify(consent),
+          JSON.stringify(consent)
         );
 
         // 🚀 AUDIT: Log access
@@ -2147,13 +2151,14 @@ const popiaController = {
         const { timeframe = '30d', jurisdiction = 'ZA' } = req.query;
 
         // 🚀 PARALLEL: Fetch all dashboard data concurrently
-        const [consentStats, dsarStats, breachStats, processingStats, complianceScore] = await Promise.all([
-          this.getConsentStats(timeframe, jurisdiction),
-          this.getDSARStats(timeframe, jurisdiction),
-          this.getBreachStats(timeframe, jurisdiction),
-          this.getProcessingStats(timeframe, jurisdiction),
-          this.calculateComplianceScore(jurisdiction),
-        ]);
+        const [consentStats, dsarStats, breachStats, processingStats, complianceScore] =
+          await Promise.all([
+            this.getConsentStats(timeframe, jurisdiction),
+            this.getDSARStats(timeframe, jurisdiction),
+            this.getBreachStats(timeframe, jurisdiction),
+            this.getProcessingStats(timeframe, jurisdiction),
+            this.calculateComplianceScore(jurisdiction),
+          ]);
 
         const dashboard = {
           timeframe,
@@ -2406,9 +2411,15 @@ const popiaController = {
       },
     ]);
 
-    return stats[0] || {
-      total: 0, active: 0, withdrawn: 0, expired: 0, uniqueSubjectCount: 0,
-    };
+    return (
+      stats[0] || {
+        total: 0,
+        active: 0,
+        withdrawn: 0,
+        expired: 0,
+        uniqueSubjectCount: 0,
+      }
+    );
   },
 
   /*
@@ -2568,7 +2579,10 @@ const popiaController = {
       training: 0.1,
     };
 
-    const overall = Object.keys(scores).reduce((total, key) => total + scores[key] * weights[key], 0);
+    const overall = Object.keys(scores).reduce(
+      (total, key) => total + scores[key] * weights[key],
+      0
+    );
 
     return {
       overall: Math.round(overall),
@@ -2784,7 +2798,10 @@ const popiaController = {
         const doc = new PDFDocument({
           size: 'A4',
           margins: {
-            top: 50, bottom: 50, left: 50, right: 50,
+            top: 50,
+            bottom: 50,
+            left: 50,
+            right: 50,
           },
           info: {
             Title: 'Wilsy OS Compliance Report',
@@ -2829,13 +2846,16 @@ const popiaController = {
   formatExportData(data, type, format) {
     if (format === 'JSON') {
       return { data, count: data.length, type };
-    } if (format === 'CSV') {
+    }
+    if (format === 'CSV') {
       // Simplified CSV conversion
       const headers = Object.keys(data[0] || {}).join(',');
       const rows = data
-        .map((item) => Object.values(item)
-          .map((val) => (typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val))
-          .join(','))
+        .map((item) =>
+          Object.values(item)
+            .map((val) => (typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val))
+            .join(',')
+        )
         .join('\n');
 
       return {
@@ -3275,7 +3295,7 @@ if (process.env.NODE_ENV === 'production') {
               quantumLogger.warn('Periodic Health Check', data.data);
             }
           },
-        },
+        }
       );
     } catch (error) {
       quantumLogger.error('Periodic Health Check Failed', { error: error.message });

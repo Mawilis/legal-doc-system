@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT ANALYZER TESTS - INVESTOR DUE DILIGENCE             ║
   ║ 100% coverage | AI-Powered | Legal Reasoning Engine           ║
@@ -64,7 +62,7 @@ jest.mock(
       { id: 'prec2', score: 0.85 },
     ]),
   }),
-  { virtual: true },
+  { virtual: true }
 );
 
 jest.mock(
@@ -72,7 +70,7 @@ jest.mock(
   () => ({
     extractLegalConcepts: jest.fn().mockResolvedValue(['negligence', 'duty of care', 'damages']),
   }),
-  { virtual: true },
+  { virtual: true }
 );
 
 // Import after mocks
@@ -199,7 +197,8 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
 
   describe('1. Core Analysis Functionality', () => {
     it('should analyze precedents for a legal query', async () => {
-      const query = 'What is the principle of legality and how does it apply to administrative action?';
+      const query =
+        'What is the principle of legality and how does it apply to administrative action?';
       const context = {
         jurisdiction: 'ZA',
         court: 'High Court',
@@ -210,7 +209,7 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
         query,
         context,
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
+        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
       );
 
       expect(result).toBeDefined();
@@ -231,7 +230,11 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
         lean: jest.fn().mockResolvedValue([]),
       }));
 
-      const result = await PrecedentAnalyzer.analyzePrecedents('obscure legal question', {}, mockTenantId);
+      const result = await PrecedentAnalyzer.analyzePrecedents(
+        'obscure legal question',
+        {},
+        mockTenantId
+      );
 
       expect(result.foundPrecedents).toBe(false);
       expect(result.suggestions).toBeInstanceOf(Array);
@@ -239,9 +242,9 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
     });
 
     it('should throw error for short query', async () => {
-      await expect(PrecedentAnalyzer.analyzePrecedents('too short', {}, mockTenantId)).rejects.toThrow(
-        'Query too short',
-      );
+      await expect(
+        PrecedentAnalyzer.analyzePrecedents('too short', {}, mockTenantId)
+      ).rejects.toThrow('Query too short');
     });
   });
 
@@ -250,7 +253,8 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
       // Access private function for testing
       const extractLegalConcepts = PrecedentAnalyzer.__get__('extractLegalConcepts');
 
-      const query = 'The defendant was negligent in failing to exercise reasonable care, breaching their duty of care';
+      const query =
+        'The defendant was negligent in failing to exercise reasonable care, breaching their duty of care';
       const concepts = await extractLegalConcepts(query);
 
       expect(concepts).toBeInstanceOf(Array);
@@ -324,7 +328,7 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
         precedent,
         query,
         concepts,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE,
+        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE
       );
 
       expect(analysis.ratio).toBeDefined();
@@ -348,7 +352,7 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
         incompletePrecedent,
         'test query',
         [],
-        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
+        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
       );
 
       expect(analysis).toBeDefined();
@@ -601,9 +605,9 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
         throw new Error('Database connection failed');
       });
 
-      await expect(PrecedentAnalyzer.analyzePrecedents('test query', {}, mockTenantId)).rejects.toThrow(
-        'Precedent analysis failed',
-      );
+      await expect(
+        PrecedentAnalyzer.analyzePrecedents('test query', {}, mockTenantId)
+      ).rejects.toThrow('Precedent analysis failed');
     });
 
     it('should handle partial AI service failures', async () => {
@@ -616,7 +620,7 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
         'test query with some length to ensure it passes validation',
         {},
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
+        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
       );
 
       expect(result).toBeDefined();
@@ -633,7 +637,7 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
         query,
         context,
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
+        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
       );
 
       // Generate evidence entry
@@ -663,7 +667,10 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'precedent-analyzer-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'precedent-analyzer-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'precedent-analyzer-evidence.json'))
@@ -672,7 +679,10 @@ describe('PrecedentAnalyzer - Legal Reasoning Engine Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'precedent-analyzer-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'precedent-analyzer-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ HEALTH SERVICE - INVESTOR-GRADE MODULE                         ║
   ║ 99.99% uptime enablement | R12.5B risk elimination            ║
@@ -56,15 +56,15 @@
  */
 
 import { redisClient } from '../../cache/redisClient.js';
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import cron from 'node-cron.js';
 import os from 'os';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 import { exec } from 'child_process';
-import { promisify } from "util";
+import { promisify } from 'util';
 import fs from 'fs/promises';
-import path from "path";
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 // WILSY OS CORE IMPORTS

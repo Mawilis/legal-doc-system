@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - PERFORMANCE MONITORING ENGINE
  * Standard: ES Module (Surgically Standardized)

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/settingsRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Settings Gateway (Tenant-Scoped). Manages firm-wide configurations: Branding, Security, Billing defaults, and Notification rules.
@@ -115,7 +113,7 @@ router.patch(
       err.code = 'SETTINGS_UPDATE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

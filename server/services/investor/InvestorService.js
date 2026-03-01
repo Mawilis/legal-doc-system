@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR SERVICE - FORENSIC WORKER WITH 100-YEAR EVIDENCE CHAIN                       ║
   ║ R240M Revenue Protection | x-correlation-id Tracing | POPIA §19-22 Compliant          ║
@@ -9,7 +9,7 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/investor/InvestorService.js
  * VERSION: 1.0.0-FORENSIC-INVESTOR
  * CREATED: 2026-02-25
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Forensic logging for R240M annual revenue platform
  * • Every investor action permanently recorded with 100-year chain
@@ -17,7 +17,7 @@
  * • POPIA §19-22 compliance built into every query
  * • SHA256 hashing for court-admissible evidence
  * • Real-time breach detection and notification
- * 
+ *
  * INTEGRATION_MAP:
  * {
  *   "consumers": [
@@ -40,7 +40,7 @@
  *     "breachNotification": "automated"
  *   }
  * }
- * 
+ *
  * MERMAID_INTEGRATION:
  * graph TD
  *   A[Investor Request] -->|x-correlation-id| B[InvestorService]
@@ -51,12 +51,12 @@
  *   B -->|step 4: compile metrics| G[Dashboard Builder]
  *   B -->|step 5: forensicLog complete| C
  *   B -->|return| H[Client]
- *   
+ *
  *   subgraph "Forensic Chain"
  *     I[Previous Log] -->|previousHash| J[Current Log]
  *     J -->|forensicHash| K[Next Log]
  *   end
- *   
+ *
  *   subgraph "Breach Detection"
  *     L[Critical Event] -->|requiresBreachNotification| M[Info Regulator]
  *     M -->|notificationSentTo| N[Audit Trail]
@@ -69,7 +69,7 @@ import Company from '../../models/Company.js';
 import loggerRaw from '../../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../../utils/auditLogger.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 
 // ============================================================================
 // CONSTANTS
@@ -80,7 +80,7 @@ const SEVERITY_LEVELS = {
   WARNING: 'warning',
   ERROR: 'error',
   CRITICAL: 'critical',
-  BREACH: 'breach'
+  BREACH: 'breach',
 };
 
 const INVESTOR_EVENTS = {
@@ -91,13 +91,13 @@ const INVESTOR_EVENTS = {
   DATA_EXPORT: 'investor_data_export',
   COMPARABLE_ANALYSIS: 'comparable_analysis',
   MATERIALITY_CHECK: 'materiality_check',
-  FORENSIC_AUDIT: 'forensic_audit'
+  FORENSIC_AUDIT: 'forensic_audit',
 };
 
 const PERFORMANCE_THRESHOLDS = {
   DASHBOARD_GENERATION_MS: 500, // Warning if >500ms
-  DATA_AGGREGATION_MS: 200,      // Warning if >200ms
-  FORENSIC_LOGGING_MS: 50        // Warning if >50ms
+  DATA_AGGREGATION_MS: 200, // Warning if >200ms
+  FORENSIC_LOGGING_MS: 50, // Warning if >50ms
 };
 
 // ============================================================================
@@ -116,14 +116,14 @@ async function measureTime(fn, operation) {
     const result = await fn();
     const end = process.hrtime.bigint();
     const durationMs = Number(end - start) / 1_000_000;
-    
+
     if (durationMs > PERFORMANCE_THRESHOLDS[operation] && PERFORMANCE_THRESHOLDS[operation]) {
       logger.warn(`Performance threshold exceeded for ${operation}`, {
         durationMs,
-        threshold: PERFORMANCE_THRESHOLDS[operation]
+        threshold: PERFORMANCE_THRESHOLDS[operation],
       });
     }
-    
+
     return [result, durationMs];
   } catch (error) {
     const end = process.hrtime.bigint();
@@ -140,11 +140,7 @@ async function measureTime(fn, operation) {
 function generateCacheKey(params) {
   const { tenantId, period, sections, userId } = params;
   const data = { tenantId, period, sections, userId };
-  return crypto
-    .createHash('sha256')
-    .update(JSON.stringify(data))
-    .digest('hex')
-    .substring(0, 32);
+  return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex').substring(0, 32);
 }
 
 // ============================================================================
@@ -154,7 +150,7 @@ function generateCacheKey(params) {
 /**
  * WILSY OS: INVESTOR METRICS WORKER
  * Performs high-velocity data aggregation with 100-year forensic logging.
- * 
+ *
  * @param {Object} params - Request parameters
  * @param {string} params.tenantId - Tenant ID for isolation
  * @param {string} params.period - Time period (7d, 30d, 90d, 1y)
@@ -166,12 +162,12 @@ function generateCacheKey(params) {
 export const getInvestorDashboardData = async (params, correlationId) => {
   const { tenantId, period = '30d', sections = [], userId } = params;
   const startTime = Date.now();
-  
+
   logger.info('InvestorService.getInvestorDashboardData started', {
     tenantId,
     correlationId,
     period,
-    sections
+    sections,
   });
 
   try {
@@ -179,31 +175,34 @@ export const getInvestorDashboardData = async (params, correlationId) => {
     // STEP 1: FORENSIC LOGGING - Record Access with Hash Chain
     // ========================================================================
     const [accessLog, logDuration] = await measureTime(async () => {
-      return await SecurityLog.forensicLog({
-        eventType: INVESTOR_EVENTS.DASHBOARD_ACCESS,
-        severity: SEVERITY_LEVELS.INFO,
-        tenantId,
-        userId: userId || 'anonymous',
-        correlationId,
-        requestId: correlationId, // Using correlationId as requestId for simplicity
-        ipAddress: params.ipAddress,
-        userAgent: params.userAgent,
-        endpoint: '/api/investor/dashboard',
-        method: 'GET',
-        details: {
-          period,
-          requestedSections: sections,
-          params: {
-            ...params,
-            // Remove sensitive data
-            ipAddress: undefined,
-            userAgent: undefined
-          }
+      return await SecurityLog.forensicLog(
+        {
+          eventType: INVESTOR_EVENTS.DASHBOARD_ACCESS,
+          severity: SEVERITY_LEVELS.INFO,
+          tenantId,
+          userId: userId || 'anonymous',
+          correlationId,
+          requestId: correlationId, // Using correlationId as requestId for simplicity
+          ipAddress: params.ipAddress,
+          userAgent: params.userAgent,
+          endpoint: '/api/investor/dashboard',
+          method: 'GET',
+          details: {
+            period,
+            requestedSections: sections,
+            params: {
+              ...params,
+              // Remove sensitive data
+              ipAddress: undefined,
+              userAgent: undefined,
+            },
+          },
+          requiresBreachNotification: false,
+          dataSubjectsAffected: 0,
+          tags: ['investor', 'dashboard', `tenant:${tenantId}`],
         },
-        requiresBreachNotification: false,
-        dataSubjectsAffected: 0,
-        tags: ['investor', 'dashboard', `tenant:${tenantId}`]
-      }, correlationId);
+        correlationId
+      );
     }, 'FORENSIC_LOGGING_MS');
 
     logger.debug('Forensic access log created', {
@@ -211,7 +210,7 @@ export const getInvestorDashboardData = async (params, correlationId) => {
       forensicHash: accessLog.forensicHash,
       chainPosition: accessLog.chainPosition,
       durationMs: logDuration,
-      correlationId
+      correlationId,
     });
 
     // ========================================================================
@@ -221,7 +220,7 @@ export const getInvestorDashboardData = async (params, correlationId) => {
       // Calculate date range based on period
       const endDate = new Date();
       const startDate = new Date();
-      
+
       switch (period) {
         case '7d':
           startDate.setDate(startDate.getDate() - 7);
@@ -241,11 +240,11 @@ export const getInvestorDashboardData = async (params, correlationId) => {
 
       // Fetch valuation summary with aggregation
       const valuationSummary = await Valuation.aggregate([
-        { 
-          $match: { 
+        {
+          $match: {
             tenantId,
-            createdAt: { $gte: startDate, $lte: endDate }
-          } 
+            createdAt: { $gte: startDate, $lte: endDate },
+          },
         },
         {
           $facet: {
@@ -255,23 +254,23 @@ export const getInvestorDashboardData = async (params, correlationId) => {
                   _id: {
                     year: { $year: '$createdAt' },
                     month: { $month: '$createdAt' },
-                    day: { $dayOfMonth: '$createdAt' }
+                    day: { $dayOfMonth: '$createdAt' },
                   },
                   count: { $sum: 1 },
                   averageValue: { $avg: '$finalValuation.weightedAverage' },
-                  totalValue: { $sum: '$finalValuation.weightedAverage' }
-                }
+                  totalValue: { $sum: '$finalValuation.weightedAverage' },
+                },
               },
-              { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+              { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
             ],
             byMethod: [
               {
                 $group: {
                   _id: '$valuationMethod',
                   count: { $sum: 1 },
-                  avgValue: { $avg: '$finalValuation.weightedAverage' }
-                }
-              }
+                  avgValue: { $avg: '$finalValuation.weightedAverage' },
+                },
+              },
             ],
             summary: [
               {
@@ -281,43 +280,48 @@ export const getInvestorDashboardData = async (params, correlationId) => {
                   averageValue: { $avg: '$finalValuation.weightedAverage' },
                   totalValue: { $sum: '$finalValuation.weightedAverage' },
                   maxValue: { $max: '$finalValuation.weightedAverage' },
-                  minValue: { $min: '$finalValuation.weightedAverage' }
-                }
-              }
-            ]
-          }
-        }
+                  minValue: { $min: '$finalValuation.weightedAverage' },
+                },
+              },
+            ],
+          },
+        },
       ]);
 
-      return valuationSummary[0] || {
-        trends: [],
-        byMethod: [],
-        summary: {
-          totalValuations: 0,
-          averageValue: 0,
-          totalValue: 0
+      return (
+        valuationSummary[0] || {
+          trends: [],
+          byMethod: [],
+          summary: {
+            totalValuations: 0,
+            averageValue: 0,
+            totalValue: 0,
+          },
         }
-      };
+      );
     }, 'DATA_AGGREGATION_MS');
 
     // Log valuation access for forensic chain
     if (sections.includes('valuations') && valuationData.summary?.totalValuations > 0) {
-      await SecurityLog.forensicLog({
-        eventType: INVESTOR_EVENTS.VALUATION_VIEWED,
-        severity: SEVERITY_LEVELS.INFO,
-        tenantId,
-        userId: userId || 'anonymous',
-        correlationId,
-        requestId: correlationId,
-        details: {
-          valuationCount: valuationData.summary.totalValuations,
-          averageValue: valuationData.summary.averageValue,
-          totalValue: valuationData.summary.totalValue,
-          period
+      await SecurityLog.forensicLog(
+        {
+          eventType: INVESTOR_EVENTS.VALUATION_VIEWED,
+          severity: SEVERITY_LEVELS.INFO,
+          tenantId,
+          userId: userId || 'anonymous',
+          correlationId,
+          requestId: correlationId,
+          details: {
+            valuationCount: valuationData.summary.totalValuations,
+            averageValue: valuationData.summary.averageValue,
+            totalValue: valuationData.summary.totalValue,
+            period,
+          },
+          requiresBreachNotification: false,
+          tags: ['investor', 'valuations', `tenant:${tenantId}`],
         },
-        requiresBreachNotification: false,
-        tags: ['investor', 'valuations', `tenant:${tenantId}`]
-      }, `${correlationId}-valuations`);
+        `${correlationId}-valuations`
+      );
     }
 
     // ========================================================================
@@ -333,15 +337,15 @@ export const getInvestorDashboardData = async (params, correlationId) => {
         total: companies.length,
         byIndustry: {},
         withValuations: 0,
-        averageValue: 0
+        averageValue: 0,
       };
 
       let totalValue = 0;
-      companies.forEach(company => {
+      companies.forEach((company) => {
         // Count by industry
         const industry = company.industry || 'unknown';
         stats.byIndustry[industry] = (stats.byIndustry[industry] || 0) + 1;
-        
+
         // Count companies with valuations
         if (company.valuations?.count > 0) {
           stats.withValuations++;
@@ -349,33 +353,34 @@ export const getInvestorDashboardData = async (params, correlationId) => {
         }
       });
 
-      stats.averageValue = stats.withValuations > 0 
-        ? totalValue / stats.withValuations 
-        : 0;
+      stats.averageValue = stats.withValuations > 0 ? totalValue / stats.withValuations : 0;
 
       return {
         companies: companies.slice(0, 10), // Recent 10
-        stats
+        stats,
       };
     }, 'DATA_AGGREGATION_MS');
 
     // Log company data access
     if (sections.includes('overview') || sections.includes('industry')) {
-      await SecurityLog.forensicLog({
-        eventType: INVESTOR_EVENTS.COMPANY_DATA_ACCESSED,
-        severity: SEVERITY_LEVELS.INFO,
-        tenantId,
-        userId: userId || 'anonymous',
-        correlationId,
-        requestId: correlationId,
-        details: {
-          companyCount: companyData.stats.total,
-          withValuations: companyData.stats.withValuations,
-          industries: Object.keys(companyData.stats.byIndustry)
+      await SecurityLog.forensicLog(
+        {
+          eventType: INVESTOR_EVENTS.COMPANY_DATA_ACCESSED,
+          severity: SEVERITY_LEVELS.INFO,
+          tenantId,
+          userId: userId || 'anonymous',
+          correlationId,
+          requestId: correlationId,
+          details: {
+            companyCount: companyData.stats.total,
+            withValuations: companyData.stats.withValuations,
+            industries: Object.keys(companyData.stats.byIndustry),
+          },
+          requiresBreachNotification: false,
+          tags: ['investor', 'companies', `tenant:${tenantId}`],
         },
-        requiresBreachNotification: false,
-        tags: ['investor', 'companies', `tenant:${tenantId}`]
-      }, `${correlationId}-companies`);
+        `${correlationId}-companies`
+      );
     }
 
     // ========================================================================
@@ -384,10 +389,10 @@ export const getInvestorDashboardData = async (params, correlationId) => {
     let materialityData = null;
     if (sections.includes('jse-compliance')) {
       const JSE_MATERIALITY_THRESHOLD = 50000000; // R50M
-      
+
       const materialValuations = await Valuation.find({
         tenantId,
-        'finalValuation.weightedAverage': { $gte: JSE_MATERIALITY_THRESHOLD }
+        'finalValuation.weightedAverage': { $gte: JSE_MATERIALITY_THRESHOLD },
       })
         .populate('companyId', 'name registrationNumber')
         .sort({ 'finalValuation.weightedAverage': -1 })
@@ -397,34 +402,37 @@ export const getInvestorDashboardData = async (params, correlationId) => {
       materialityData = {
         threshold: JSE_MATERIALITY_THRESHOLD,
         count: materialValuations.length,
-        valuations: materialValuations.map(v => ({
+        valuations: materialValuations.map((v) => ({
           companyName: v.companyId?.name,
           value: v.finalValuation?.weightedAverage,
           date: v.createdAt,
-          requiresDisclosure: true
-        }))
+          requiresDisclosure: true,
+        })),
       };
 
       // Log materiality check
-      await SecurityLog.forensicLog({
-        eventType: INVESTOR_EVENTS.MATERIALITY_CHECK,
-        severity: materialityData.count > 0 ? SEVERITY_LEVELS.WARNING : SEVERITY_LEVELS.INFO,
-        tenantId,
-        userId: userId || 'anonymous',
-        correlationId,
-        requestId: correlationId,
-        details: materialityData,
-        requiresBreachNotification: materialityData.count > 2, // Notify if multiple material events
-        dataSubjectsAffected: materialityData.count,
-        tags: ['investor', 'jse', 'materiality', `tenant:${tenantId}`]
-      }, `${correlationId}-jse`);
+      await SecurityLog.forensicLog(
+        {
+          eventType: INVESTOR_EVENTS.MATERIALITY_CHECK,
+          severity: materialityData.count > 0 ? SEVERITY_LEVELS.WARNING : SEVERITY_LEVELS.INFO,
+          tenantId,
+          userId: userId || 'anonymous',
+          correlationId,
+          requestId: correlationId,
+          details: materialityData,
+          requiresBreachNotification: materialityData.count > 2, // Notify if multiple material events
+          dataSubjectsAffected: materialityData.count,
+          tags: ['investor', 'jse', 'materiality', `tenant:${tenantId}`],
+        },
+        `${correlationId}-jse`
+      );
     }
 
     // ========================================================================
     // STEP 5: COMPILE DASHBOARD
     // ========================================================================
     const cacheKey = generateCacheKey({ tenantId, period, sections, userId });
-    
+
     const dashboard = {
       metadata: {
         tenantId,
@@ -435,7 +443,7 @@ export const getInvestorDashboardData = async (params, correlationId) => {
         cacheKey,
         forensicHash: accessLog.forensicHash,
         chainPosition: accessLog.chainPosition,
-        sections: []
+        sections: [],
       },
       summary: {
         totalValuations: valuationData.summary?.totalValuations || 0,
@@ -443,15 +451,15 @@ export const getInvestorDashboardData = async (params, correlationId) => {
         companiesWithValuations: companyData.stats.withValuations,
         averageValuation: valuationData.summary?.averageValue || 0,
         totalValuationValue: valuationData.summary?.totalValue || 0,
-        period
+        period,
       },
       performance: {
         totalMs: Date.now() - startTime,
         forensicLoggingMs: logDuration,
         valuationQueryMs: valuationDuration,
         companyQueryMs: companyDuration,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
 
     // Add requested sections
@@ -482,24 +490,27 @@ export const getInvestorDashboardData = async (params, correlationId) => {
     // STEP 6: FINAL FORENSIC LOG - COMPLETION
     // ========================================================================
     const [completionLog] = await measureTime(async () => {
-      return await SecurityLog.forensicLog({
-        eventType: INVESTOR_EVENTS.DASHBOARD_ACCESS + '_complete',
-        severity: SEVERITY_LEVELS.INFO,
-        tenantId,
-        userId: userId || 'anonymous',
-        correlationId,
-        requestId: correlationId,
-        details: {
-          generationTimeMs: Date.now() - startTime,
-          sectionsReturned: dashboard.metadata.sections,
-          totalValuations: dashboard.summary.totalValuations,
-          totalCompanies: dashboard.summary.totalCompanies,
-          cacheKey
+      return await SecurityLog.forensicLog(
+        {
+          eventType: INVESTOR_EVENTS.DASHBOARD_ACCESS + '_complete',
+          severity: SEVERITY_LEVELS.INFO,
+          tenantId,
+          userId: userId || 'anonymous',
+          correlationId,
+          requestId: correlationId,
+          details: {
+            generationTimeMs: Date.now() - startTime,
+            sectionsReturned: dashboard.metadata.sections,
+            totalValuations: dashboard.summary.totalValuations,
+            totalCompanies: dashboard.summary.totalCompanies,
+            cacheKey,
+          },
+          requiresBreachNotification: false,
+          previousCorrelationId: correlationId, // Link to start log
+          tags: ['investor', 'dashboard', 'complete', `tenant:${tenantId}`],
         },
-        requiresBreachNotification: false,
-        previousCorrelationId: correlationId, // Link to start log
-        tags: ['investor', 'dashboard', 'complete', `tenant:${tenantId}`]
-      }, `${correlationId}-complete`);
+        `${correlationId}-complete`
+      );
     }, 'FORENSIC_LOGGING_MS');
 
     // Update dashboard with completion hash
@@ -510,47 +521,53 @@ export const getInvestorDashboardData = async (params, correlationId) => {
     // STEP 7: PERFORMANCE MONITORING & BREACH DETECTION
     // ========================================================================
     const totalTime = Date.now() - startTime;
-    
+
     // Check for performance anomalies (potential DoS)
     if (totalTime > PERFORMANCE_THRESHOLDS.DASHBOARD_GENERATION_MS * 3) {
-      await SecurityLog.forensicLog({
-        eventType: 'performance_anomaly',
-        severity: SEVERITY_LEVELS.WARNING,
-        tenantId,
-        userId: userId || 'anonymous',
-        correlationId,
-        requestId: correlationId,
-        details: {
-          totalTime,
-          threshold: PERFORMANCE_THRESHOLDS.DASHBOARD_GENERATION_MS,
-          components: {
-            forensicLogging: logDuration,
-            valuationQuery: valuationDuration,
-            companyQuery: companyDuration
-          }
+      await SecurityLog.forensicLog(
+        {
+          eventType: 'performance_anomaly',
+          severity: SEVERITY_LEVELS.WARNING,
+          tenantId,
+          userId: userId || 'anonymous',
+          correlationId,
+          requestId: correlationId,
+          details: {
+            totalTime,
+            threshold: PERFORMANCE_THRESHOLDS.DASHBOARD_GENERATION_MS,
+            components: {
+              forensicLogging: logDuration,
+              valuationQuery: valuationDuration,
+              companyQuery: companyDuration,
+            },
+          },
+          requiresBreachNotification: false,
+          tags: ['investor', 'performance', 'anomaly', `tenant:${tenantId}`],
         },
-        requiresBreachNotification: false,
-        tags: ['investor', 'performance', 'anomaly', `tenant:${tenantId}`]
-      }, `${correlationId}-performance`);
+        `${correlationId}-performance`
+      );
     }
 
     // Check for potential data breach indicators
     if (companyData.stats.total > 1000 || valuationData.summary?.totalValuations > 1000) {
-      await SecurityLog.forensicLog({
-        eventType: 'bulk_data_access',
-        severity: SEVERITY_LEVELS.WARNING,
-        tenantId,
-        userId: userId || 'anonymous',
-        correlationId,
-        requestId: correlationId,
-        details: {
-          companyCount: companyData.stats.total,
-          valuationCount: valuationData.summary?.totalValuations,
-          reason: 'Large data volume accessed - verify authorization'
+      await SecurityLog.forensicLog(
+        {
+          eventType: 'bulk_data_access',
+          severity: SEVERITY_LEVELS.WARNING,
+          tenantId,
+          userId: userId || 'anonymous',
+          correlationId,
+          requestId: correlationId,
+          details: {
+            companyCount: companyData.stats.total,
+            valuationCount: valuationData.summary?.totalValuations,
+            reason: 'Large data volume accessed - verify authorization',
+          },
+          requiresBreachNotification: false,
+          tags: ['investor', 'security', 'bulk-access', `tenant:${tenantId}`],
         },
-        requiresBreachNotification: false,
-        tags: ['investor', 'security', 'bulk-access', `tenant:${tenantId}`]
-      }, `${correlationId}-bulk`);
+        `${correlationId}-bulk`
+      );
     }
 
     // ========================================================================
@@ -565,7 +582,7 @@ export const getInvestorDashboardData = async (params, correlationId) => {
       completionHash: completionLog.forensicHash,
       duration: totalTime,
       sections: dashboard.metadata.sections,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     logger.info('InvestorService.getInvestorDashboardData completed', {
@@ -573,11 +590,10 @@ export const getInvestorDashboardData = async (params, correlationId) => {
       correlationId,
       durationMs: totalTime,
       sections: dashboard.metadata.sections,
-      forensicChain: `${accessLog.chainPosition} → ${completionLog.chainPosition}`
+      forensicChain: `${accessLog.chainPosition} → ${completionLog.chainPosition}`,
     });
 
     return dashboard;
-
   } catch (error) {
     // ========================================================================
     // ERROR HANDLING - Log forensic failure
@@ -586,37 +602,40 @@ export const getInvestorDashboardData = async (params, correlationId) => {
       tenantId,
       correlationId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     try {
       // Log error to forensic chain
-      await SecurityLog.forensicLog({
-        eventType: 'investor_service_error',
-        severity: SEVERITY_LEVELS.ERROR,
-        tenantId,
-        userId: params.userId || 'anonymous',
-        correlationId,
-        requestId: correlationId,
-        details: {
-          error: error.message,
-          stack: error.stack?.split('\n').slice(0, 3),
-          params: {
-            period,
-            sections,
-            ...params
-          }
+      await SecurityLog.forensicLog(
+        {
+          eventType: 'investor_service_error',
+          severity: SEVERITY_LEVELS.ERROR,
+          tenantId,
+          userId: params.userId || 'anonymous',
+          correlationId,
+          requestId: correlationId,
+          details: {
+            error: error.message,
+            stack: error.stack?.split('\n').slice(0, 3),
+            params: {
+              period,
+              sections,
+              ...params,
+            },
+          },
+          requiresBreachNotification:
+            error.message.includes('breach') || error.message.includes('unauthorized'),
+          dataSubjectsAffected: error.message.includes('breach') ? 1 : 0,
+          tags: ['investor', 'error', `tenant:${tenantId}`],
         },
-        requiresBreachNotification: error.message.includes('breach') || 
-                                   error.message.includes('unauthorized'),
-        dataSubjectsAffected: error.message.includes('breach') ? 1 : 0,
-        tags: ['investor', 'error', `tenant:${tenantId}`]
-      }, `${correlationId}-error`);
+        `${correlationId}-error`
+      );
     } catch (logError) {
       logger.error('Failed to log error to forensic chain', {
         error: logError.message,
         originalError: error.message,
-        correlationId
+        correlationId,
       });
     }
 
@@ -633,21 +652,18 @@ export const getForensicReport = async (correlationId) => {
   try {
     // Find all logs in the chain
     const logs = await SecurityLog.findByCorrelationChain(correlationId);
-    
+
     if (logs.length === 0) {
       return {
         found: false,
         correlationId,
-        message: 'No logs found for this correlation ID'
+        message: 'No logs found for this correlation ID',
       };
     }
 
     // Verify chain integrity
     const tenantId = logs[0].tenantId;
-    const chainVerification = await SecurityLog.verifyHashChain(
-      tenantId,
-      logs[0].timestamp
-    );
+    const chainVerification = await SecurityLog.verifyHashChain(tenantId, logs[0].timestamp);
 
     return {
       found: true,
@@ -656,20 +672,20 @@ export const getForensicReport = async (correlationId) => {
       firstLog: logs[0].timestamp,
       lastLog: logs[logs.length - 1].timestamp,
       chainVerification,
-      logs: logs.map(log => ({
+      logs: logs.map((log) => ({
         eventType: log.eventType,
         severity: log.severity,
         timestamp: log.timestamp,
         forensicHash: log.forensicHash,
         previousHash: log.previousHash,
         chainPosition: log.chainPosition,
-        details: log.details
-      }))
+        details: log.details,
+      })),
     };
   } catch (error) {
     logger.error('Forensic report generation failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
     throw error;
   }
@@ -701,5 +717,5 @@ export default {
   getInvestorDashboardData,
   getForensicReport,
   verifyTenantChain,
-  anchorToBlockchain
+  anchorToBlockchain,
 };

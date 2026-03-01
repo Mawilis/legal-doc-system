@@ -1,4 +1,4 @@
-/*
+#!/*
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  QUANTUM CASE MODEL NEXUS - WILSY OS LEGAL SOVEREIGNTY ENGINE                                                      ║
  * ║  Cosmic Purpose: Transform legal matter management into quantum-entangled jurisprudence scripture,                 ║

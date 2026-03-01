@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ CASE PARTY MODEL TESTS - INVESTOR DUE DILIGENCE               ║
   ║ 100% coverage | Quantum-safe | Forensic evidence              ║
@@ -242,7 +240,7 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
         expect.objectContaining({
           event: 'APPEARANCE_VERIFIED',
           partyId: testParty.partyId,
-        }),
+        })
       );
     });
 
@@ -535,7 +533,7 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
       // Canonicalize
       const canonicalized = JSON.stringify(
         auditEntries.sort((a, b) => a.partyId.localeCompare(b.partyId)),
-        Object.keys(auditEntries[0]).sort(),
+        Object.keys(auditEntries[0]).sort()
       );
 
       const hash = crypto.createHash('sha256').update(canonicalized).digest('hex');
@@ -553,7 +551,10 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'caseparty-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'caseparty-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       // Verify evidence
       const fileExists = await fs
@@ -563,7 +564,10 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'caseparty-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'caseparty-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 
@@ -579,7 +583,9 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
       console.log('✓ Relationship Count:', 2);
       console.log(
         '✓ Data Quality Score:',
-        Math.round(parsed.auditEntries.reduce((acc, e) => acc + (e.dataQuality || 0), 0) / parties.length),
+        Math.round(
+          parsed.auditEntries.reduce((acc, e) => acc + (e.dataQuality || 0), 0) / parties.length
+        )
       );
     });
   });
@@ -599,7 +605,9 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
       expect(CaseParty.CONSENT_LEVELS.FULL_PROCESSING).toBe('FULL_PROCESSING');
 
       expect(CaseParty.RETENTION_POLICIES).toBeDefined();
-      expect(CaseParty.RETENTION_POLICIES.LITIGATION_COMPLETE_5_YEARS).toBe('litigation_complete_5_years');
+      expect(CaseParty.RETENTION_POLICIES.LITIGATION_COMPLETE_5_YEARS).toBe(
+        'litigation_complete_5_years'
+      );
     });
   });
 });

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /*
  * PRECEDENT VECTORIZER - INVESTOR DUE DILIGENCE TESTS
  * Forensic-grade test suite with POPIA compliance verification
@@ -246,7 +244,7 @@ describe('Precedent Vectorizer - Investor Due Diligence', () => {
       vectorizer.processJob({
         id: 'job-invalid-tenant',
         data: jobData,
-      }),
+      })
     ).rejects.toThrow('Invalid or inactive tenant');
 
     // Verify no precedent was saved

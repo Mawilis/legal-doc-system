@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const { MongoMemoryServer } = require('mongodb-memory-server');
+#!const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
 const { registerModels } = require('../helpers/registerModels');
 
@@ -83,14 +81,19 @@ describe('Client Onboarding Service', () => {
   });
 
   test('should create session', async () => {
-    const session = await clientOnboardingService.createSession('test-001', 'tenant-1', 'INDIVIDUAL', {
-      firstName: 'John',
-      lastName: 'Doe',
-      idNumber: '9001011234567',
-      dateOfBirth: '1990-01-01',
-      nationality: 'South African',
-      popiaConsent: true,
-    });
+    const session = await clientOnboardingService.createSession(
+      'test-001',
+      'tenant-1',
+      'INDIVIDUAL',
+      {
+        firstName: 'John',
+        lastName: 'Doe',
+        idNumber: '9001011234567',
+        dateOfBirth: '1990-01-01',
+        nationality: 'South African',
+        popiaConsent: true,
+      }
+    );
 
     expect(session).toBeDefined();
     expect(session.sessionId).toBe('test-001');

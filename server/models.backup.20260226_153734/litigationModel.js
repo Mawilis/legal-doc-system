@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ====================================================================================
  * WILSY OS - GENERATIONAL LEGAL DOCUMENT MANAGEMENT PLATFORM
  * ====================================================================================
@@ -1189,7 +1187,7 @@ const LitigationCaseSchema = new Schema(
       virtuals: true,
       getters: true,
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1236,7 +1234,7 @@ LitigationCaseSchema.virtual('upcomingDeadlines').get(function () {
 
   return this.deadlines
     .filter(
-      (d) => !d.completed && new Date(d.dueDate) > now && new Date(d.dueDate) <= sevenDaysFromNow,
+      (d) => !d.completed && new Date(d.dueDate) > now && new Date(d.dueDate) <= sevenDaysFromNow
     )
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 });
@@ -1368,8 +1366,8 @@ LitigationCaseSchema.pre('validate', function (next) {
 
   // POPIA Compliance: Validate consent for sensitive cases
   if (
-    this.isModified('caseType')
-    && ['CIVIL_FAMILY', 'CRIMINAL_SERIOUS', 'CONSTITUTIONAL'].includes(this.caseType)
+    this.isModified('caseType') &&
+    ['CIVIL_FAMILY', 'CRIMINAL_SERIOUS', 'CONSTITUTIONAL'].includes(this.caseType)
   ) {
     if (!this.securityContext?.compliance?.popia?.consentObtained) {
       this.invalidate('caseType', 'POPIA consent required for sensitive case types');
@@ -1451,7 +1449,7 @@ LitigationCaseSchema.pre('save', function (next) {
   // Add audit trail entry for modifications
   if (this.isModified() && this.auditTrail) {
     const modifiedPaths = this.modifiedPaths().filter(
-      (path) => !['__v', 'updatedAt', 'auditTrail', 'phaseHistory'].includes(path),
+      (path) => !['__v', 'updatedAt', 'auditTrail', 'phaseHistory'].includes(path)
     );
 
     if (modifiedPaths.length > 0) {
@@ -1593,7 +1591,7 @@ LitigationCaseSchema.methods.addCourtDate = async function (dateData, userId) {
   await this.addAuditEntry(
     'COURT_DATE_SET',
     `Court date added: ${dateData.dateType} on ${dateData.scheduledDate}`,
-    userId,
+    userId
   );
 
   return this.save();
@@ -1612,7 +1610,7 @@ LitigationCaseSchema.methods.addDeadline = async function (deadlineData, userId)
   await this.addAuditEntry(
     'DEADLINE_SET',
     `Deadline added: ${deadlineData.description} due ${deadlineData.dueDate}`,
-    userId,
+    userId
   );
 
   return this.save();
@@ -1643,7 +1641,7 @@ LitigationCaseSchema.methods.addEvidence = async function (evidenceData, userId)
     'EVIDENCE_DISCOVERED',
     `Evidence added: ${evidenceData.description} (Document: ${evidenceData.documentId})`,
     userId,
-    { systemContext: { custodyHash: evidenceHash } },
+    { systemContext: { custodyHash: evidenceHash } }
   );
 
   return this.save();
@@ -1680,7 +1678,7 @@ LitigationCaseSchema.methods.advancePhase = async function (nextPhase, userId, n
   await this.addAuditEntry(
     'PHASE_CHANGED',
     `Case advanced from ${LITIGATION_PHASES[currentIndex]} to ${nextPhase}. ${notes}`,
-    userId,
+    userId
   );
 
   return this.save();
@@ -1706,7 +1704,7 @@ LitigationCaseSchema.methods.getPhasePrerequisites = function (phase) {
   }
 
   const missing = prerequisites[phase].filter(
-    (req) => !this.phaseHistory.some((entry) => entry.phase === req),
+    (req) => !this.phaseHistory.some((entry) => entry.phase === req)
   );
 
   return {
@@ -1728,9 +1726,10 @@ LitigationCaseSchema.methods.addAuditEntry = async function (
   action,
   details,
   userId,
-  context = {},
+  context = {}
 ) {
-  const previousHash = this.auditTrail.length > 0 ? this.auditTrail[this.auditTrail.length - 1].hash : null;
+  const previousHash =
+    this.auditTrail.length > 0 ? this.auditTrail[this.auditTrail.length - 1].hash : null;
 
   const auditEntry = {
     action,
@@ -1769,7 +1768,7 @@ LitigationCaseSchema.methods.addAuditEntry = async function (
  */
 LitigationCaseSchema.methods.recordPOPIAConsent = async function (
   userId,
-  consentType = 'CASE_PROCESSING',
+  consentType = 'CASE_PROCESSING'
 ) {
   this.securityContext.compliance.popia.consentObtained = true;
   this.securityContext.compliance.popia.consentDate = new Date();
@@ -1935,11 +1934,12 @@ LitigationCaseSchema.statics.calculateInitialAnalytics = function (caseType, jur
   const baseComplexity = complexityScores[caseType] || 5;
 
   // Adjust based on jurisdiction
-  const jurisdictionAdjustment = jurisdiction.includes('SUPREME_COURT') || jurisdiction.includes('CONSTITUTIONAL')
-    ? 2
-    : jurisdiction.includes('HIGH_COURT')
-      ? 1
-      : 0;
+  const jurisdictionAdjustment =
+    jurisdiction.includes('SUPREME_COURT') || jurisdiction.includes('CONSTITUTIONAL')
+      ? 2
+      : jurisdiction.includes('HIGH_COURT')
+        ? 1
+        : 0;
 
   return {
     complexityScore: Math.min(10, baseComplexity + jurisdictionAdjustment),
@@ -2256,7 +2256,7 @@ if (process.env.NODE_ENV === 'test') {
     const caseNumberPattern = /^\d{4}\/[A-Z]{2,5}\/\d{1,6}$/;
     console.assert(
       caseNumberPattern.test(testCaseNumber),
-      'RSA court case number format validation failed',
+      'RSA court case number format validation failed'
     );
 
     // Test 3: RSA ID Validation

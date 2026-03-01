@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/searchController.js
  * STATUS: PRODUCTION-READY | UNIVERSAL DISCOVERY GRADE
  * -----------------------------------------------------------------------------

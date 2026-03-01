@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
    ║ AUDIT LEDGER MODEL - INVESTOR-GRADE MODULE                                  ║
    ║ Immutable audit trail | SHA256 hashed | Multi-tenant isolation              ║

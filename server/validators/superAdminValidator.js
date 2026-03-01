@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ================================================================================
 QUANTUM SCROLL OF DIVINE VALIDATION: SUPER ADMIN VALIDATOR
 Path: /server/validators/superAdminValidator.js
@@ -275,7 +273,7 @@ const validateLegalEmail = (email) => {
 
   // Check if domain is in legal domains (for professional validation)
   const isLegalDomain = legalDomains.some(
-    (legalDomain) => domain === legalDomain || domain.endsWith(`.${legalDomain}`),
+    (legalDomain) => domain === legalDomain || domain.endsWith(`.${legalDomain}`)
   );
 
   return {
@@ -534,10 +532,9 @@ const superAdminUpdateSchema = Joi.object({
  * Validates login attempts with rate limiting and breach detection
  */
 const superAdminLoginSchema = Joi.object({
-  email: Joi.string().email().lowercase().required()
-    .messages({
-      'any.required': 'Email is required for authentication',
-    }),
+  email: Joi.string().email().lowercase().required().messages({
+    'any.required': 'Email is required for authentication',
+  }),
 
   password: Joi.string().required().messages({
     'any.required': 'Password is required for authentication',
@@ -572,11 +569,10 @@ const superAdminLoginSchema = Joi.object({
  * Validates deactivation with legal compliance and audit requirements
  */
 const superAdminDeactivationSchema = Joi.object({
-  deactivationReason: Joi.string().min(20).max(1000).required()
-    .messages({
-      'any.required': 'Deactivation reason required (Companies Act Section 28)',
-      'string.min': 'Reason must be at least 20 characters for audit purposes',
-    }),
+  deactivationReason: Joi.string().min(20).max(1000).required().messages({
+    'any.required': 'Deactivation reason required (Companies Act Section 28)',
+    'string.min': 'Reason must be at least 20 characters for audit purposes',
+  }),
 
   legalTransferTarget: Joi.string().email().required().messages({
     'any.required': 'Legal transfer target required for data continuity',
@@ -761,7 +757,7 @@ const validateSuperAdminUpdate = async (data, context = {}) => {
     if (value.newPassword && context.currentAdmin) {
       const passwordValid = await securityUtils.verifyPassword(
         value.currentPassword,
-        context.currentAdmin.passwordHash,
+        context.currentAdmin.passwordHash
       );
 
       if (!passwordValid) {
@@ -842,7 +838,7 @@ const validateSuperAdminLogin = async (credentials, context = {}) => {
       {
         abortEarly: false,
         stripUnknown: true,
-      },
+      }
     );
 
     if (error) {
@@ -1105,9 +1101,7 @@ const getLegalRequirement = (field) => {
 const checkEmailExists = async (email) =>
   // Implementation would query database
   // For now, return false (assuming no duplicates)
-  false
-;
-
+  false;
 /*
  * Mock: Check if ID number exists in system
  * @param {string} idNumber - ID number to check
@@ -1115,9 +1109,7 @@ const checkEmailExists = async (email) =>
  */
 const checkIdNumberExists = async (idNumber) =>
   // Implementation would query database
-  false
-;
-
+  false;
 /*
  * Mock: Validate legal entity registration
  * @param {string} entityId - Legal entity ID
@@ -1126,9 +1118,7 @@ const checkIdNumberExists = async (idNumber) =>
 const validateLegalEntity = async (entityId) =>
   // Would integrate with CIPC API for validation
   // For now, validate format
-  /^[A-Z0-9]{10}$/.test(entityId)
-;
-
+  /^[A-Z0-9]{10}$/.test(entityId);
 /*
  * Mock: Validate divine authorization token
  * @param {string} token - Authorization token
@@ -1137,9 +1127,7 @@ const validateLegalEntity = async (entityId) =>
 const validateDivineAuthorization = async (token) =>
   // In production, this would validate against a secure authorization service
   // For SuperAdmin creation, this would be a one-time divine token
-  token.startsWith('divine_') && token.length === 71
-;
-
+  token.startsWith('divine_') && token.length === 71;
 // =============================================================================
 // QUANTUM TEST SUITE: VALIDATION VERIFICATION
 // =============================================================================

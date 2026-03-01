@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* ╔════════════════════════════════════════════════════════════════╗
    ║ POPIA REDACTION - SECTION 19 COMPLIANCE FORTRESS              ║
    ║ [100% PII redaction | R10M penalty elimination]              ║

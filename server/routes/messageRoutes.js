@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/messageRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Secure Messaging Gateway (Tenant-Scoped). Manages encrypted communication between Staff and Clients (Attorney-Client Privilege).
@@ -83,7 +81,7 @@ router.post(
       err.code = 'MSG_SEND_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -107,7 +105,7 @@ router.get(
       err.code = 'MSG_THREAD_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -128,7 +126,7 @@ router.patch(
       err.code = 'MSG_READ_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ i18n SERVICE - INVESTOR-GRADE MODULE                                        ║
   ║ Multi-lingual legal compliance | 99.9% translation coverage                 ║
   ║ R100M international expansion enabler | 95% margin                          ║
@@ -330,7 +328,9 @@ class I18nService {
   interpolate(str, params) {
     if (!str || typeof str !== 'string') return str;
 
-    return str.replace(/\{\{(\w+)\}\}/g, (match, key) => (params[key] !== undefined ? params[key] : match));
+    return str.replace(/\{\{(\w+)\}\}/g, (match, key) =>
+      params[key] !== undefined ? params[key] : match
+    );
   }
 
   /*

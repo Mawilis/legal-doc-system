@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ QUANTUM ANNEALING - QUANTUM-INSPIRED OPTIMIZATION FOR DEAL MATCHING                   ║
   ║ [94% Accuracy | 127 Dimensions | O(n log n) | Production Grade]                       ║
@@ -24,37 +24,37 @@ export class quantumAnnealing {
     let currentSolution = this.initializeRandom(featureVectors.length);
     let currentEnergy = this.calculateEnergy(currentSolution, featureVectors, weights);
     let temperature = this.temperature;
-    
+
     const history = [];
-    
+
     for (let i = 0; i < this.maxIterations; i++) {
       // Generate neighbor solution (quantum tunneling)
       const neighbor = this.generateNeighbor(currentSolution, temperature);
       const neighborEnergy = this.calculateEnergy(neighbor, featureVectors, weights);
-      
+
       // Accept with probability based on Metropolis criterion
       if (this.acceptanceProbability(currentEnergy, neighborEnergy, temperature) > Math.random()) {
         currentSolution = neighbor;
         currentEnergy = neighborEnergy;
       }
-      
+
       // Track convergence
       history.push(currentEnergy);
-      
+
       // Check convergence
-      if (i > 100 && Math.abs(history[i] - history[i-100]) < this.convergenceThreshold) {
+      if (i > 100 && Math.abs(history[i] - history[i - 100]) < this.convergenceThreshold) {
         break;
       }
-      
+
       // Cool system
       temperature *= this.coolingRate;
     }
-    
+
     return {
       solution: currentSolution,
       energy: currentEnergy,
       iterations: history.length,
-      convergence: history[history.length - 1]
+      convergence: history[history.length - 1],
     };
   }
 
@@ -73,7 +73,7 @@ export class quantumAnnealing {
    */
   calculateEnergy(solution, vectors, weights) {
     let energy = 0;
-    
+
     for (let i = 0; i < solution.length; i++) {
       if (solution[i] === 1) {
         for (let j = i + 1; j < solution.length; j++) {
@@ -87,7 +87,7 @@ export class quantumAnnealing {
         energy += weights.value * vectors[i].magnitude;
       }
     }
-    
+
     return energy;
   }
 
@@ -98,7 +98,7 @@ export class quantumAnnealing {
     let dotProduct = 0;
     let normA = 0;
     let normB = 0;
-    
+
     const flattenVector = (obj) => {
       if (typeof obj === 'object') {
         return Object.values(obj).reduce((acc, val) => {
@@ -110,18 +110,18 @@ export class quantumAnnealing {
       }
       return [obj];
     };
-    
+
     const flatA = flattenVector(vecA);
     const flatB = flattenVector(vecB);
-    
+
     for (let i = 0; i < Math.min(flatA.length, flatB.length); i++) {
       dotProduct += flatA[i] * flatB[i];
       normA += flatA[i] * flatA[i];
       normB += flatB[i] * flatB[i];
     }
-    
+
     if (normA === 0 || normB === 0) return 0;
-    
+
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 
@@ -129,7 +129,9 @@ export class quantumAnnealing {
    * Initialize random solution
    */
   initializeRandom(size) {
-    return Array(size).fill(0).map(() => Math.random() > 0.5 ? 1 : 0);
+    return Array(size)
+      .fill(0)
+      .map(() => (Math.random() > 0.5 ? 1 : 0));
   }
 
   /**
@@ -137,15 +139,15 @@ export class quantumAnnealing {
    */
   generateNeighbor(solution, temperature) {
     const neighbor = [...solution];
-    
+
     // Quantum tunneling effect - multiple flips at high temperature
     const numFlips = Math.max(1, Math.floor(temperature * 3));
-    
+
     for (let i = 0; i < numFlips; i++) {
       const index = Math.floor(Math.random() * neighbor.length);
       neighbor[index] = 1 - neighbor[index];
     }
-    
+
     return neighbor;
   }
 
@@ -156,11 +158,11 @@ export class quantumAnnealing {
     // Quantum-inspired probability calculation
     const flattened = this.flattenFeatures(features);
     const magnitude = Math.sqrt(flattened.reduce((sum, f) => sum + f * f, 0));
-    
+
     // Normalize and apply sigmoid
-    const normalized = flattened.map(f => f / magnitude);
+    const normalized = flattened.map((f) => f / magnitude);
     const weightedSum = normalized.reduce((sum, f, i) => sum + f * (1 / (i + 1)), 0);
-    
+
     return 1 / (1 + Math.exp(-weightedSum));
   }
 
@@ -169,7 +171,7 @@ export class quantumAnnealing {
    */
   flattenFeatures(features, prefix = '') {
     let result = [];
-    
+
     for (const [key, value] of Object.entries(features)) {
       if (typeof value === 'object') {
         result = result.concat(this.flattenFeatures(value, `${prefix}${key}.`));
@@ -177,7 +179,7 @@ export class quantumAnnealing {
         result.push(value);
       }
     }
-    
+
     return result;
   }
 }

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ MILVUS CLIENT TESTS - INVESTOR DUE DILIGENCE - $2.3B+ TOTAL VALUE        ║
   ║ 100% coverage | Vector database | Semantic search                        ║

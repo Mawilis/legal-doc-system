@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║                                                                                                ║
   ║ ███████╗███████╗███████╗    ███████╗ █████╗ ███████╗███████╗    ███╗   ███╗ ██████╗ ██████╗ ███████╗██╗      ║
   ║ ██╔════╝██╔════╝██╔════╝    ██╔════╝██╔══██╗██╔════╝██╔════╝    ████╗ ████║██╔═══██╗██╔══██╗██╔════╝██║      ║
@@ -118,10 +116,18 @@ const UNIT_TYPES = Object.freeze([
     description: 'Billable hours (15-min increments)',
   },
   {
-    code: 'PAGE', precision: 0, min: 1, max: 10000, description: 'Document pages',
+    code: 'PAGE',
+    precision: 0,
+    min: 1,
+    max: 10000,
+    description: 'Document pages',
   },
   {
-    code: 'ITEM', precision: 0, min: 1, max: 1000000, description: 'Discrete items or matters',
+    code: 'ITEM',
+    precision: 0,
+    min: 1,
+    max: 1000000,
+    description: 'Discrete items or matters',
   },
   {
     code: 'KILOMETER',
@@ -145,10 +151,18 @@ const UNIT_TYPES = Object.freeze([
     description: 'Contingency or percentage-based',
   },
   {
-    code: 'WORD', precision: 0, min: 1, max: 1000000, description: 'Document word count',
+    code: 'WORD',
+    precision: 0,
+    min: 1,
+    max: 1000000,
+    description: 'Document word count',
   },
   {
-    code: 'DAY', precision: 1, min: 0.1, max: 365, description: 'Daily rates for counsel',
+    code: 'DAY',
+    precision: 1,
+    min: 0.1,
+    max: 365,
+    description: 'Daily rates for counsel',
   },
 ]);
 
@@ -597,7 +611,7 @@ const feeSchema = new Schema(
     minimize: false,
     // Enable MongoDB Change Streams for real-time updates
     capped: false, // Set to true with size limit for audit collections
-  },
+  }
 );
 
 // ============================================================================
@@ -616,20 +630,23 @@ feeSchema.index(
     name: 'idx_fee_tenant_code_unique',
     background: true,
     sparse: true,
-  },
+  }
 );
 
 // PERFORMANCE INDEX: Active rates with temporal validity
 feeSchema.index(
   {
-    tenantId: 1, isActive: 1, effectiveDate: -1, expiryDate: 1,
+    tenantId: 1,
+    isActive: 1,
+    effectiveDate: -1,
+    expiryDate: 1,
   },
   {
     name: 'idx_fee_active_temporal',
     background: true,
     // Include frequently accessed fields
     weights: { code: 1, category: 1, amount: 1 },
-  },
+  }
 );
 
 // REPORTING INDEX: Category-based queries
@@ -639,18 +656,21 @@ feeSchema.index(
     name: 'idx_fee_category_reporting',
     background: true,
     partialFilterExpression: { isActive: true },
-  },
+  }
 );
 
 // COMPOUND INDEX: For financial dashboard queries
 feeSchema.index(
   {
-    tenantId: 1, currency: 1, isTaxable: 1, createdAt: -1,
+    tenantId: 1,
+    currency: 1,
+    isTaxable: 1,
+    createdAt: -1,
   },
   {
     name: 'idx_fee_financial_dashboard',
     background: true,
-  },
+  }
 );
 
 // TTL INDEX: Auto-archive expired fees after 7 years (Companies Act requirement)
@@ -660,7 +680,7 @@ feeSchema.index(
     name: 'idx_fee_expiry_ttl',
     expireAfterSeconds: 220752000, // 7 years in seconds
     partialFilterExpression: { expiryDate: { $ne: null } },
-  },
+  }
 );
 
 // TEXT INDEX: For search functionality
@@ -674,7 +694,7 @@ feeSchema.index(
     },
     default_language: 'english',
     language_override: 'language',
-  },
+  }
 );
 
 // ============================================================================
@@ -776,7 +796,7 @@ feeSchema.virtual('statutoryReference').get(function statutoryReference() {
 feeSchema.methods.calculateTotal = function calculateTotal(
   quantity = 1,
   tenantVatRate = TAX_CONFIG.STANDARD_VAT_RATE,
-  options = {},
+  options = {}
 ) {
   // QUANTUM VALIDATION: Input sanitization
   const safeQty = new Decimal(quantity || 1);
@@ -801,11 +821,12 @@ feeSchema.methods.calculateTotal = function calculateTotal(
   const subtotal = unitPrice.times(safeQty);
 
   // Determine applicable VAT rate
-  const vatRate = this.taxRateOverride !== null
-    ? new Decimal(this.taxRateOverride)
-    : this.isTaxable
-      ? new Decimal(tenantVatRate)
-      : new Decimal(0);
+  const vatRate =
+    this.taxRateOverride !== null
+      ? new Decimal(this.taxRateOverride)
+      : this.isTaxable
+        ? new Decimal(tenantVatRate)
+        : new Decimal(0);
 
   // Calculate tax and total
   const taxAmount = subtotal.times(vatRate);
@@ -853,7 +874,7 @@ feeSchema.methods.calculateTotal = function calculateTotal(
  */
 feeSchema.methods.convertCurrency = async function convertCurrency(
   targetCurrency,
-  rateDate = new Date(),
+  rateDate = new Date()
 ) {
   // Validate target currency
   const validCurrencies = ['ZAR', 'USD', 'EUR', 'GBP'];
@@ -915,7 +936,7 @@ feeSchema.methods.addAuditEntry = async function addAuditEntry(
   action,
   userId,
   details = {},
-  context = {},
+  context = {}
 ) {
   // Validate action
   const validActions = ['CREATE', 'UPDATE', 'DEACTIVATE', 'REACTIVATE', 'APPROVE', 'REJECT'];
@@ -968,7 +989,7 @@ feeSchema.methods.addAuditEntry = async function addAuditEntry(
         code: this.code,
         amount: this.amount ? this.amount.toString() : '0',
         lastAudit: auditEntry,
-      }),
+      })
     )
     .digest('hex');
 
@@ -993,7 +1014,7 @@ feeSchema.statics.findApplicableRate = async function findApplicableRate(
   tenantId,
   code,
   asOfDate = new Date(),
-  options = {},
+  options = {}
 ) {
   const date = new Date(asOfDate);
 
@@ -1064,7 +1085,7 @@ feeSchema.statics.findApplicableRate = async function findApplicableRate(
 feeSchema.statics.bulkUpdateRates = async function bulkUpdateRates(
   updates,
   performedBy,
-  reason = 'System Update',
+  reason = 'System Update'
 ) {
   // Validate input
   if (!Array.isArray(updates) || updates.length === 0) {
@@ -1160,7 +1181,7 @@ feeSchema.statics.bulkUpdateRates = async function bulkUpdateRates(
 feeSchema.statics.generateTariffReport = async function generateTariffReport(
   tenantId,
   startDate,
-  endDate,
+  endDate
 ) {
   const matchStage = {
     $match: {
@@ -1199,7 +1220,8 @@ feeSchema.statics.generateTariffReport = async function generateTariffReport(
 
   report.forEach((item) => {
     // Currency distribution
-    stats.currencyDistribution[item._id.currency] = (stats.currencyDistribution[item._id.currency] || 0) + item.count;
+    stats.currencyDistribution[item._id.currency] =
+      (stats.currencyDistribution[item._id.currency] || 0) + item.count;
 
     // Taxable distribution
     if (item._id.isTaxable) {
@@ -1245,7 +1267,7 @@ feeSchema.pre('save', async function (next) {
       const cipher = crypto.createCipheriv(
         ENCRYPTED_FIELDS.algorithm,
         Buffer.from(process.env.ENCRYPTION_KEY, 'hex'),
-        crypto.randomBytes(ENCRYPTED_FIELDS.ivLength),
+        crypto.randomBytes(ENCRYPTED_FIELDS.ivLength)
       );
 
       let encrypted = cipher.update(this.encryptedCode, 'utf8', 'hex');
@@ -1292,7 +1314,7 @@ feeSchema.pre('save', async function (next) {
           modifiedFields: this.modifiedPaths(),
           modificationReason: auditContext.reason || 'System Update',
         },
-        auditContext,
+        auditContext
       );
     } catch (error) {
       // Log but don't block save for audit failures
@@ -1310,7 +1332,7 @@ feeSchema.pre('save', async function (next) {
         currency: this.currency,
         effectiveDate: this.effectiveDate,
         updatedAt: new Date(),
-      }),
+      })
     )
     .digest('hex');
 
@@ -1357,8 +1379,8 @@ feeSchema.pre('remove', async function (next) {
   if (invoiceCount > 0 || matterCount > 0) {
     return next(
       new Error(
-        `Cannot delete fee referenced in ${invoiceCount} invoices and ${matterCount} matters`,
-      ),
+        `Cannot delete fee referenced in ${invoiceCount} invoices and ${matterCount} matters`
+      )
     );
   }
 
@@ -1648,5 +1670,5 @@ describe('Fee Model Quantum Tests', () => {
  */
 
 console.log(
-  '⚡ FEE MODEL QUANTUM: Financial integrity nexus activated. Ready to transmute legal services into immutable value.',
+  '⚡ FEE MODEL QUANTUM: Financial integrity nexus activated. Ready to transmute legal services into immutable value.'
 );

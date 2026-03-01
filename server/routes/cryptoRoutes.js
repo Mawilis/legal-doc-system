@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/cryptoRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Crypto Gateway (Tenant-Scoped). Manages crypto wallets, smart contract interactions (Escrow), and blockchain payments.
@@ -91,7 +89,7 @@ router.post(
       err.code = 'WALLET_GEN_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -127,7 +125,7 @@ router.post(
       err.code = 'WITHDRAWAL_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -149,7 +147,7 @@ router.get(
       err.code = 'TX_CHECK_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

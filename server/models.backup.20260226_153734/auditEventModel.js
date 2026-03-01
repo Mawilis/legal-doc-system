@@ -1,4 +1,4 @@
-/**
+#!/**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - AUDIT EVENT MODEL v1.0                                         ║
  * ║ [Production Grade | POPIA §19-22 | Forensic Event Trail]                 ║
@@ -36,8 +36,8 @@
  * }
  */
 
-import crypto from "crypto";
-import mongoose from "mongoose";
+import crypto from 'crypto';
+import mongoose from 'mongoose';
 
 /**
  * Event Categories Enum
@@ -143,359 +143,370 @@ const EVENT_STATUS = {
  * Audit Event Schema
  * Tracks all significant system events for compliance
  */
-const auditEventSchema = new mongoose.Schema({
-  /**
-   * Core Fields
-   */
-  eventId: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true,
-    default: () => `evt-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
-  },
-
-  timestamp: {
-    type: Date,
-    default: Date.now,
-    required: true,
-    index: true,
-    immutable: true,
-  },
-
-  eventCategory: {
-    type: String,
-    required: true,
-    enum: Object.values(EVENT_CATEGORIES),
-    index: true,
-  },
-
-  eventType: {
-    type: String,
-    required: true,
-    index: true,
-  },
-
-  severity: {
-    type: String,
-    required: true,
-    enum: Object.values(EVENT_SEVERITY),
-    default: EVENT_SEVERITY.INFO,
-    index: true,
-  },
-
-  status: {
-    type: String,
-    required: true,
-    enum: Object.values(EVENT_STATUS),
-    default: EVENT_STATUS.SUCCESS,
-    index: true,
-  },
-
-  /**
-   * Identity & Context
-   */
-  tenantId: {
-    type: String,
-    required: true,
-    index: true,
-    validate: {
-      validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v),
-      message: 'tenantId must be 8-64 alphanumeric characters',
-    },
-  },
-
-  userId: {
-    type: String,
-    index: true,
-    sparse: true,
-  },
-
-  sessionId: {
-    type: String,
-    index: true,
-    sparse: true,
-  },
-
-  requestId: {
-    type: String,
-    required: true,
-    index: true,
-    validate: {
-      validator: (v) => /^[a-f0-9]{16,32}$/i.test(v),
-      message: 'requestId must be a valid hexadecimal string',
-    },
-  },
-
-  correlationId: {
-    type: String,
-    index: true,
-    sparse: true,
-  },
-
-  /**
-   * Source Information
-   */
-  source: {
-    ipAddress: {
-      type: String,
-      validate: {
-        validator: (v) => !v || /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([a-f0-9:]+)$/i.test(v),
-        message: 'Invalid IP address format',
-      },
-    },
-    userAgent: {
-      type: String,
-      maxlength: 500,
-    },
-    referer: String,
-    endpoint: String,
-    method: {
-      type: String,
-      enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
-    },
-    platform: String,
-    browser: String,
-    device: String,
-  },
-
-  /**
-   * Target Information
-   */
-  target: {
-    type: {
-      type: String,
-      enum: ['user', 'tenant', 'document', 'case', 'payment', 'config', 'system'],
-    },
-    id: String,
-    name: String,
-    version: Number,
-    previousState: mongoose.Schema.Types.Mixed,
-  },
-
-  /**
-   * Event Data
-   */
-  data: {
-    input: mongoose.Schema.Types.Mixed,
-    output: mongoose.Schema.Types.Mixed,
-    changes: [{
-      field: String,
-      oldValue: mongoose.Schema.Types.Mixed,
-      newValue: mongoose.Schema.Types.Mixed,
-    }],
-    metadata: mongoose.Schema.Types.Mixed,
-  },
-
-  /**
-   * PII Redaction Tracking
-   */
-  piiFields: [{
-    field: String,
-    redacted: Boolean,
-    category: {
-      type: String,
-      enum: ['personal', 'financial', 'biometric', 'health', 'criminal'],
-    },
-  }],
-
-  containsPII: {
-    type: Boolean,
-    default: false,
-  },
-
-  redactionApplied: {
-    type: Boolean,
-    default: false,
-  },
-
-  /**
-   * Performance Metrics
-   */
-  performance: {
-    duration: Number, // milliseconds
-    memoryUsed: Number, // bytes
-    cpuTime: Number, // milliseconds
-    databaseQueries: Number,
-    apiCalls: Number,
-  },
-
-  /**
-   * Compliance Tracking
-   */
-  compliance: {
-    frameworks: [{
-      name: {
-        type: String,
-        enum: ['POPIA', 'ECT', 'COMPANIES_ACT', 'FICA', 'LPC', 'GDPR'],
-      },
-      sections: [String],
-      requirements: [String],
-      verified: Boolean,
-      verifiedAt: Date,
-    }],
-
-    retentionCategory: {
-      type: String,
-      enum: [
-        'audit_trail',
-        'financial_record',
-        'legal_document',
-        'user_data',
-        'system_log',
-        'compliance_report',
-      ],
-      required: true,
-    },
-
-    legalHold: {
-      active: { type: Boolean, default: false },
-      reason: String,
-      initiatedBy: String,
-      initiatedAt: Date,
-      expiresAt: Date,
-    },
-  },
-
-  /**
-   * Data Retention (POPIA §14, Companies Act §28)
-   */
-  retention: {
-    policy: {
-      type: String,
-      enum: {
-        values: [
-          'companies_act_10_years',
-          'popia_1_year',
-          'tax_act_5_years',
-          'lpc_7_years',
-          'forensic_permanent',
-        ],
-      },
-      default: 'companies_act_10_years',
-      required: true,
-    },
-
-    dataResidency: {
-      type: String,
-      enum: ['ZA', 'US', 'EU', 'GB', 'AU', 'CA'],
-      default: 'ZA',
-      required: true,
-    },
-
-    retentionStart: {
-      type: Date,
-      default: Date.now,
-      required: true,
-    },
-
-    retentionEnd: {
-      type: Date,
-      default() {
-        const endDate = new Date(this.retention.retentionStart);
-        switch (this.retention.policy) {
-          case 'companies_act_10_years':
-            endDate.setFullYear(endDate.getFullYear() + 10);
-            break;
-          case 'popia_1_year':
-            endDate.setFullYear(endDate.getFullYear() + 1);
-            break;
-          case 'tax_act_5_years':
-            endDate.setFullYear(endDate.getFullYear() + 5);
-            break;
-          case 'lpc_7_years':
-            endDate.setFullYear(endDate.getFullYear() + 7);
-            break;
-          case 'forensic_permanent':
-            endDate.setFullYear(endDate.getFullYear() + 100);
-            break;
-        }
-        return endDate;
-      },
-    },
-
-    archivalDate: Date,
-    archivalLocation: String,
-    destroyedAt: Date,
-    destructionCertificate: String,
-  },
-
-  /**
-   * Forensic Integrity
-   */
-  forensic: {
-    hash: {
+const auditEventSchema = new mongoose.Schema(
+  {
+    /**
+     * Core Fields
+     */
+    eventId: {
       type: String,
       required: true,
       unique: true,
-    },
-    previousHash: {
-      type: String,
-      default: null,
       index: true,
+      default: () => `evt-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
     },
-    signature: String,
-    signedBy: String,
-    signedAt: Date,
-    blockchainAnchor: {
-      transactionId: String,
-      blockNumber: Number,
-      network: String,
-      timestamp: Date,
-    },
-  },
 
-  /**
-   * Notifications
-   */
-  notifications: [{
-    channel: {
-      type: String,
-      enum: ['email', 'slack', 'webhook', 'sms', 'in_app'],
-    },
-    sent: Boolean,
-    sentAt: Date,
-    recipients: [String],
-    status: String,
-    error: String,
-  }],
-
-  /**
-   * Metadata
-   */
-  metadata: {
-    createdAt: {
+    timestamp: {
       type: Date,
       default: Date.now,
+      required: true,
+      index: true,
       immutable: true,
+    },
+
+    eventCategory: {
+      type: String,
+      required: true,
+      enum: Object.values(EVENT_CATEGORIES),
       index: true,
     },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
-    createdBy: {
+
+    eventType: {
       type: String,
-      default: 'system',
+      required: true,
+      index: true,
     },
-    version: {
-      type: Number,
-      default: 1,
-    },
-    tags: [String],
-    notes: String,
-    environment: {
+
+    severity: {
       type: String,
-      enum: ['development', 'staging', 'production'],
-      default: process.env.NODE_ENV || 'development',
+      required: true,
+      enum: Object.values(EVENT_SEVERITY),
+      default: EVENT_SEVERITY.INFO,
+      index: true,
+    },
+
+    status: {
+      type: String,
+      required: true,
+      enum: Object.values(EVENT_STATUS),
+      default: EVENT_STATUS.SUCCESS,
+      index: true,
+    },
+
+    /**
+     * Identity & Context
+     */
+    tenantId: {
+      type: String,
+      required: true,
+      index: true,
+      validate: {
+        validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v),
+        message: 'tenantId must be 8-64 alphanumeric characters',
+      },
+    },
+
+    userId: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
+
+    sessionId: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
+
+    requestId: {
+      type: String,
+      required: true,
+      index: true,
+      validate: {
+        validator: (v) => /^[a-f0-9]{16,32}$/i.test(v),
+        message: 'requestId must be a valid hexadecimal string',
+      },
+    },
+
+    correlationId: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
+
+    /**
+     * Source Information
+     */
+    source: {
+      ipAddress: {
+        type: String,
+        validate: {
+          validator: (v) => !v || /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([a-f0-9:]+)$/i.test(v),
+          message: 'Invalid IP address format',
+        },
+      },
+      userAgent: {
+        type: String,
+        maxlength: 500,
+      },
+      referer: String,
+      endpoint: String,
+      method: {
+        type: String,
+        enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
+      },
+      platform: String,
+      browser: String,
+      device: String,
+    },
+
+    /**
+     * Target Information
+     */
+    target: {
+      type: {
+        type: String,
+        enum: ['user', 'tenant', 'document', 'case', 'payment', 'config', 'system'],
+      },
+      id: String,
+      name: String,
+      version: Number,
+      previousState: mongoose.Schema.Types.Mixed,
+    },
+
+    /**
+     * Event Data
+     */
+    data: {
+      input: mongoose.Schema.Types.Mixed,
+      output: mongoose.Schema.Types.Mixed,
+      changes: [
+        {
+          field: String,
+          oldValue: mongoose.Schema.Types.Mixed,
+          newValue: mongoose.Schema.Types.Mixed,
+        },
+      ],
+      metadata: mongoose.Schema.Types.Mixed,
+    },
+
+    /**
+     * PII Redaction Tracking
+     */
+    piiFields: [
+      {
+        field: String,
+        redacted: Boolean,
+        category: {
+          type: String,
+          enum: ['personal', 'financial', 'biometric', 'health', 'criminal'],
+        },
+      },
+    ],
+
+    containsPII: {
+      type: Boolean,
+      default: false,
+    },
+
+    redactionApplied: {
+      type: Boolean,
+      default: false,
+    },
+
+    /**
+     * Performance Metrics
+     */
+    performance: {
+      duration: Number, // milliseconds
+      memoryUsed: Number, // bytes
+      cpuTime: Number, // milliseconds
+      databaseQueries: Number,
+      apiCalls: Number,
+    },
+
+    /**
+     * Compliance Tracking
+     */
+    compliance: {
+      frameworks: [
+        {
+          name: {
+            type: String,
+            enum: ['POPIA', 'ECT', 'COMPANIES_ACT', 'FICA', 'LPC', 'GDPR'],
+          },
+          sections: [String],
+          requirements: [String],
+          verified: Boolean,
+          verifiedAt: Date,
+        },
+      ],
+
+      retentionCategory: {
+        type: String,
+        enum: [
+          'audit_trail',
+          'financial_record',
+          'legal_document',
+          'user_data',
+          'system_log',
+          'compliance_report',
+        ],
+        required: true,
+      },
+
+      legalHold: {
+        active: { type: Boolean, default: false },
+        reason: String,
+        initiatedBy: String,
+        initiatedAt: Date,
+        expiresAt: Date,
+      },
+    },
+
+    /**
+     * Data Retention (POPIA §14, Companies Act §28)
+     */
+    retention: {
+      policy: {
+        type: String,
+        enum: {
+          values: [
+            'companies_act_10_years',
+            'popia_1_year',
+            'tax_act_5_years',
+            'lpc_7_years',
+            'forensic_permanent',
+          ],
+        },
+        default: 'companies_act_10_years',
+        required: true,
+      },
+
+      dataResidency: {
+        type: String,
+        enum: ['ZA', 'US', 'EU', 'GB', 'AU', 'CA'],
+        default: 'ZA',
+        required: true,
+      },
+
+      retentionStart: {
+        type: Date,
+        default: Date.now,
+        required: true,
+      },
+
+      retentionEnd: {
+        type: Date,
+        default() {
+          const endDate = new Date(this.retention.retentionStart);
+          switch (this.retention.policy) {
+            case 'companies_act_10_years':
+              endDate.setFullYear(endDate.getFullYear() + 10);
+              break;
+            case 'popia_1_year':
+              endDate.setFullYear(endDate.getFullYear() + 1);
+              break;
+            case 'tax_act_5_years':
+              endDate.setFullYear(endDate.getFullYear() + 5);
+              break;
+            case 'lpc_7_years':
+              endDate.setFullYear(endDate.getFullYear() + 7);
+              break;
+            case 'forensic_permanent':
+              endDate.setFullYear(endDate.getFullYear() + 100);
+              break;
+          }
+          return endDate;
+        },
+      },
+
+      archivalDate: Date,
+      archivalLocation: String,
+      destroyedAt: Date,
+      destructionCertificate: String,
+    },
+
+    /**
+     * Forensic Integrity
+     */
+    forensic: {
+      hash: {
+        type: String,
+        required: true,
+        unique: true,
+      },
+      previousHash: {
+        type: String,
+        default: null,
+        index: true,
+      },
+      signature: String,
+      signedBy: String,
+      signedAt: Date,
+      blockchainAnchor: {
+        transactionId: String,
+        blockNumber: Number,
+        network: String,
+        timestamp: Date,
+      },
+    },
+
+    /**
+     * Notifications
+     */
+    notifications: [
+      {
+        channel: {
+          type: String,
+          enum: ['email', 'slack', 'webhook', 'sms', 'in_app'],
+        },
+        sent: Boolean,
+        sentAt: Date,
+        recipients: [String],
+        status: String,
+        error: String,
+      },
+    ],
+
+    /**
+     * Metadata
+     */
+    metadata: {
+      createdAt: {
+        type: Date,
+        default: Date.now,
+        immutable: true,
+        index: true,
+      },
+      updatedAt: {
+        type: Date,
+        default: Date.now,
+      },
+      createdBy: {
+        type: String,
+        default: 'system',
+      },
+      version: {
+        type: Number,
+        default: 1,
+      },
+      tags: [String],
+      notes: String,
+      environment: {
+        type: String,
+        enum: ['development', 'staging', 'production'],
+        default: process.env.NODE_ENV || 'development',
+      },
     },
   },
-}, {
-  timestamps: true,
-  collection: 'audit_events',
-  strict: true,
-  minimize: false,
-});
+  {
+    timestamps: true,
+    collection: 'audit_events',
+    strict: true,
+    minimize: false,
+  }
+);
 
 /**
  * Indexes for query performance
@@ -523,7 +534,7 @@ auditEventSchema.pre('save', async function (next) {
     const lastEvent = await this.constructor.findOne(
       { tenantId: this.tenantId },
       { 'forensic.hash': 1 },
-      { sort: { 'metadata.createdAt': -1 } },
+      { sort: { 'metadata.createdAt': -1 } }
     );
 
     if (lastEvent) {
@@ -531,28 +542,28 @@ auditEventSchema.pre('save', async function (next) {
     }
 
     // Create canonical string for hashing (deterministic order)
-    const canonicalData = JSON.stringify({
-      eventId: this.eventId,
-      timestamp: this.timestamp,
-      eventCategory: this.eventCategory,
-      eventType: this.eventType,
-      severity: this.severity,
-      status: this.status,
-      tenantId: this.tenantId,
-      userId: this.userId,
-      requestId: this.requestId,
-      target: this.target,
-      data: this.data,
-      compliance: this.compliance,
-      retention: this.retention,
-      previousHash: this.forensic.previousHash,
-    }, Object.keys.sort());
+    const canonicalData = JSON.stringify(
+      {
+        eventId: this.eventId,
+        timestamp: this.timestamp,
+        eventCategory: this.eventCategory,
+        eventType: this.eventType,
+        severity: this.severity,
+        status: this.status,
+        tenantId: this.tenantId,
+        userId: this.userId,
+        requestId: this.requestId,
+        target: this.target,
+        data: this.data,
+        compliance: this.compliance,
+        retention: this.retention,
+        previousHash: this.forensic.previousHash,
+      },
+      Object.keys.sort()
+    );
 
     // Generate SHA256 hash (court-admissible)
-    this.forensic.hash = crypto
-      .createHash('sha256')
-      .update(canonicalData)
-      .digest('hex');
+    this.forensic.hash = crypto.createHash('sha256').update(canonicalData).digest('hex');
 
     next();
   } catch (error) {
@@ -574,7 +585,7 @@ auditEventSchema.statics.getEntityAuditTrail = function (
   targetType,
   targetId,
   limit = 100,
-  fromDate = null,
+  fromDate = null
 ) {
   const query = {
     'target.type': targetType,
@@ -585,10 +596,7 @@ auditEventSchema.statics.getEntityAuditTrail = function (
     query['metadata.createdAt'] = { $gte: fromDate };
   }
 
-  return this.find(query)
-    .sort({ 'metadata.createdAt': -1 })
-    .limit(limit)
-    .lean();
+  return this.find(query).sort({ 'metadata.createdAt': -1 }).limit(limit).lean();
 };
 
 /**
@@ -599,7 +607,7 @@ auditEventSchema.statics.getTenantEvents = function (
   startDate,
   endDate,
   categories = null,
-  limit = 1000,
+  limit = 1000
 ) {
   const query = {
     tenantId,
@@ -613,20 +621,14 @@ auditEventSchema.statics.getTenantEvents = function (
     query.eventCategory = { $in: categories };
   }
 
-  return this.find(query)
-    .sort({ 'metadata.createdAt': -1 })
-    .limit(limit)
-    .lean();
+  return this.find(query).sort({ 'metadata.createdAt': -1 }).limit(limit).lean();
 };
 
 /**
  * Static method: Get events by user
  */
 auditEventSchema.statics.getUserEvents = function (userId, limit = 100) {
-  return this.find({ userId })
-    .sort({ 'metadata.createdAt': -1 })
-    .limit(limit)
-    .lean();
+  return this.find({ userId }).sort({ 'metadata.createdAt': -1 }).limit(limit).lean();
 };
 
 /**
@@ -636,7 +638,7 @@ auditEventSchema.statics.getComplianceReport = async function (
   tenantId,
   startDate,
   endDate,
-  frameworks = null,
+  frameworks = null
 ) {
   const match = {
     tenantId,
@@ -675,9 +677,7 @@ auditEventSchema.statics.verifyHashChain = async function (tenantId, fromDate = 
     query['metadata.createdAt'] = { $gte: fromDate };
   }
 
-  const events = await this.find(query)
-    .sort({ 'metadata.createdAt': 1 })
-    .lean();
+  const events = await this.find(query).sort({ 'metadata.createdAt': 1 }).lean();
 
   const brokenLinks = [];
 

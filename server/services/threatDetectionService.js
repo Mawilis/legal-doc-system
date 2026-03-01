@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * QUANTUM COMPLIANCE ENFORCER: IMMUTABLE LEGAL POLICY EXECUTOR
  * ============================================================================
@@ -76,7 +74,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(
-      `[QUANTUM FAILURE] Missing ${envVar} in .env vault. Compliance enforcement cannot ensure legal sanctity.`,
+      `[QUANTUM FAILURE] Missing ${envVar} in .env vault. Compliance enforcement cannot ensure legal sanctity.`
     );
   }
 });
@@ -355,7 +353,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       // 2. Initialize Bull queue for distributed enforcement
       this.blockedRequestsQueue = new Bull(
         process.env.ENFORCEMENT_QUEUE_NAME || 'compliance-enforcement',
-        process.env.REDIS_URL,
+        process.env.REDIS_URL
       );
 
       // 3. Initialize encryption engine
@@ -544,8 +542,8 @@ class QuantumComplianceEnforcer extends EventEmitter {
     if (this.circuitState === 'OPEN') {
       const now = Date.now();
       if (
-        this.lastFailureTime
-        && now - this.lastFailureTime > ENFORCEMENT_CONFIG.TIMEOUTS.CIRCUIT_BREAKER_RESET
+        this.lastFailureTime &&
+        now - this.lastFailureTime > ENFORCEMENT_CONFIG.TIMEOUTS.CIRCUIT_BREAKER_RESET
       ) {
         this.circuitState = 'HALF_OPEN';
       } else {
@@ -586,7 +584,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       const enforcementActions = await this._determineEnhancedEnforcementActions(
         complianceData,
         req,
-        threatAssessment,
+        threatAssessment
       );
 
       // Execute enforcement with distributed processing
@@ -594,7 +592,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
         enforcementActions,
         req,
         res,
-        enforcementId,
+        enforcementId
       );
 
       // Apply modifications if any
@@ -655,7 +653,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
           const statuteActions = await this._getEnhancedStatuteEnforcementActions(
             statute,
             validation,
-            req,
+            req
           );
           actions.push(...statuteActions);
         }
@@ -980,7 +978,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
           {
             jobId: `${enforcementId}_${action.action}`,
             timeout: ENFORCEMENT_CONFIG.TIMEOUTS.MODIFICATION_TIMEOUT,
-          },
+          }
         );
 
         // Process action with timeout protection
@@ -1357,17 +1355,19 @@ function getEnhancedEnforcementStats() {
     jurisdiction: enforcerInstance.enforcementRules.GLOBAL.jurisdiction,
     dataResidency: enforcerInstance.enforcementRules.GLOBAL.dataResidency,
     // SA Legal Framework Status
-    saStatutes: Object.keys(enforcerInstance.enforcementRules).filter((k) => [
-      'POPIA',
-      'PAIA',
-      'FICA',
-      'COMPANIES_ACT',
-      'ECT_ACT',
-      'CPA',
-      'CYBERCRIMES_ACT',
-      'SARS',
-      'PEPUDA',
-    ].includes(k)),
+    saStatutes: Object.keys(enforcerInstance.enforcementRules).filter((k) =>
+      [
+        'POPIA',
+        'PAIA',
+        'FICA',
+        'COMPANIES_ACT',
+        'ECT_ACT',
+        'CPA',
+        'CYBERCRIMES_ACT',
+        'SARS',
+        'PEPUDA',
+      ].includes(k)
+    ),
     // Pan-African readiness
     panAfricanReady: Object.keys(ENFORCEMENT_CONFIG.COMPLIANCE.PAN_AFRICAN_MODES),
     timestamp: new Date().toISOString(),
@@ -1497,9 +1497,7 @@ console.log(`
 
 // VALIDATION ARMORY - INTEGRATED TEST QUANTA
 if (process.env.NODE_ENV === 'test') {
-  const {
-    describe, it, before, after,
-  } = require('node:test');
+  const { describe, it, before, after } = require('node:test');
   const assert = require('node:assert');
 
   describe('Enhanced ComplianceEnforcer - SA Legal Validation', () => {
@@ -1563,7 +1561,7 @@ if (process.env.NODE_ENV === 'test') {
             { id: 'test-req' },
             { set: () => {}, status: () => ({ json: () => {} }) },
             () => {},
-            'test-enf-id',
+            'test-enf-id'
           );
         }
 

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════╗
   ║ SOVEREIGN DOCUMENT CONTROLLER - INVESTOR-GRADE MODULE         ║
   ║ [90% manual effort reduction | R10M risk elimination | 85% margin]║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -103,7 +101,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context is required for document operations',
-          auditId,
+          auditId
         );
       }
 
@@ -133,7 +131,7 @@ class DocumentController {
           403,
           'UNAUTHORIZED',
           'User not authorized to upload documents',
-          auditId,
+          auditId
         );
       }
 
@@ -143,9 +141,7 @@ class DocumentController {
         return this._sendError(res, 400, 'VALIDATION_ERROR', validation.message, auditId);
       }
 
-      const {
-        title, documentType, classification, retentionPolicy, caseId, tags,
-      } = req.body;
+      const { title, documentType, classification, retentionPolicy, caseId, tags } = req.body;
       const { file } = req;
 
       // 4. ENCRYPT DOCUMENT (FIPS-140 Compliant)
@@ -162,7 +158,7 @@ class DocumentController {
           500,
           'ENCRYPTION_FAILED',
           'Failed to encrypt document',
-          auditId,
+          auditId
         );
       }
 
@@ -321,7 +317,7 @@ class DocumentController {
         500,
         'UPLOAD_FAILED',
         'Failed to upload document with forensic audit',
-        auditId,
+        auditId
       );
     }
   }
@@ -346,7 +342,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId,
+          auditId
         );
       }
 
@@ -359,7 +355,7 @@ class DocumentController {
           403,
           'UNAUTHORIZED',
           'Not authorized to view document',
-          auditId,
+          auditId
         );
       }
 
@@ -394,7 +390,7 @@ class DocumentController {
           404,
           'DOCUMENT_NOT_FOUND',
           'Document not found or deleted',
-          auditId,
+          auditId
         );
       }
 
@@ -421,7 +417,9 @@ class DocumentController {
       });
 
       // 5. UPDATE ACCESS STATISTICS (Async)
-      this._updateAccessStats(id, tenantId, 'VIEW', true).catch((err) => logger.error('Failed to update access stats', { documentId: id, error: err.message }));
+      this._updateAccessStats(id, tenantId, 'VIEW', true).catch((err) =>
+        logger.error('Failed to update access stats', { documentId: id, error: err.message })
+      );
 
       // 6. RETURN REDACTED METADATA
       return res.status(200).json({
@@ -492,7 +490,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId,
+          auditId
         );
       }
 
@@ -520,7 +518,7 @@ class DocumentController {
         document.storage.encryptionKeyId,
         document.storage.iv,
         document.storage.authTag,
-        tenantId,
+        tenantId
       );
 
       if (!decryptionResult.success) {
@@ -554,7 +552,7 @@ class DocumentController {
           500,
           'DECRYPTION_FAILED',
           'Failed to decrypt document',
-          auditId,
+          auditId
         );
       }
 
@@ -606,7 +604,7 @@ class DocumentController {
       res.setHeader('Content-Length', finalContent.length);
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="${encodeURIComponent(document.metadata.originalFileName)}"`,
+        `attachment; filename="${encodeURIComponent(document.metadata.originalFileName)}"`
       );
       res.setHeader('X-Document-Id', id);
       res.setHeader('X-Classification', document.classification);
@@ -616,7 +614,7 @@ class DocumentController {
       res.setHeader('X-Audit-Id', auditId);
       res.setHeader(
         'X-Retention-Policy',
-        document.retentionPolicy?.rule || 'companies_act_10_years',
+        document.retentionPolicy?.rule || 'companies_act_10_years'
       );
 
       return res.send(finalContent);
@@ -652,7 +650,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId,
+          auditId
         );
       }
 
@@ -692,7 +690,7 @@ class DocumentController {
           400,
           'NO_VALID_UPDATES',
           'No valid fields provided for update',
-          auditId,
+          auditId
         );
       }
 
@@ -703,7 +701,7 @@ class DocumentController {
           423,
           'LEGAL_HOLD_ACTIVE',
           'Cannot modify retention policy while under legal hold',
-          auditId,
+          auditId
         );
       }
 
@@ -716,8 +714,8 @@ class DocumentController {
             rule: updates.retentionPolicy,
             disposalDate: this._calculateDisposalDate(updates.retentionPolicy),
             legalReference:
-              this.RETENTION_POLICIES[updates.retentionPolicy]?.legalReference
-              || 'Companies Act 71 of 2008',
+              this.RETENTION_POLICIES[updates.retentionPolicy]?.legalReference ||
+              'Companies Act 71 of 2008',
           };
         } else {
           document[key] = updates[key];
@@ -800,7 +798,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId,
+          auditId
         );
       }
 
@@ -814,7 +812,7 @@ class DocumentController {
           403,
           'UNAUTHORIZED',
           `Not authorized to ${permanent ? 'permanently ' : ''}delete`,
-          auditId,
+          auditId
         );
       }
 
@@ -835,12 +833,12 @@ class DocumentController {
           423,
           'LEGAL_HOLD_ACTIVE',
           'Document is under legal hold and cannot be deleted',
-          auditId,
+          auditId
         );
       }
 
-      let deletionMethod; let
-        deletionDetails;
+      let deletionMethod;
+      let deletionDetails;
 
       if (permanent) {
         // 4A. PERMANENT DELETION (Compliance Officer only)
@@ -956,7 +954,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId,
+          auditId
         );
       }
 
@@ -969,7 +967,7 @@ class DocumentController {
           403,
           'UNAUTHORIZED',
           'Not authorized to search documents',
-          auditId,
+          auditId
         );
       }
 
@@ -1119,7 +1117,7 @@ class DocumentController {
           403,
           'MISSING_TENANT_CONTEXT',
           'Tenant context required',
-          auditId,
+          auditId
         );
       }
 
@@ -1132,7 +1130,7 @@ class DocumentController {
           403,
           'UNAUTHORIZED',
           'Not authorized to view audit history',
-          auditId,
+          auditId
         );
       }
 
@@ -1426,7 +1424,8 @@ class DocumentController {
    * @private
    */
   _calculateDisposalDate(retentionPolicy) {
-    const policy = this.RETENTION_POLICIES[retentionPolicy] || this.RETENTION_POLICIES.COMPANIES_ACT_7YR;
+    const policy =
+      this.RETENTION_POLICIES[retentionPolicy] || this.RETENTION_POLICIES.COMPANIES_ACT_7YR;
     if (policy.years === 0) return null; // Legal hold
 
     const date = new Date();

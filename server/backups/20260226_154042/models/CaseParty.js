@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ CASE PARTY MODEL - INVESTOR-GRADE MODULE                       ║
   ║ 92% cost reduction | R12.5M risk elimination | 94% margins     ║

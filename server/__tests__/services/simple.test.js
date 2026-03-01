@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const mongoose = require('mongoose');
+#!const mongoose = require('mongoose');
 
 test('mongoose works', () => {
   const schema = new mongoose.Schema({ name: String });

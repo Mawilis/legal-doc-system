@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const { MongoClient } = require('mongodb');
+#!const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
 async function testConnection() {

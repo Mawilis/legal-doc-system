@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ CLIENT ONBOARDING SERVICE TEST V6 — FORENSIC ● FICA COMPLIANT ● POPIA READY                                    ║
   ║ 94% faster KYC | R3.1M annual savings | 82% cost reduction                                                     ║
@@ -101,7 +99,8 @@ const clientOnboardingService = {
               .toString()
               .padStart(2, '0')}`;
             result.details.gender = parseInt(cleanId[6]) >= 5 ? 'MALE' : 'FEMALE';
-            result.details.citizenship = parseInt(cleanId[10]) === 0 ? 'SA CITIZEN' : 'PERMANENT RESIDENT';
+            result.details.citizenship =
+              parseInt(cleanId[10]) === 0 ? 'SA CITIZEN' : 'PERMANENT RESIDENT';
           }
         }
       }
@@ -329,7 +328,10 @@ const clientOnboardingService = {
         tenantId: result.forensicMetadata.tenantId,
       });
 
-      result.forensicMetadata.evidenceHash = crypto.createHash('sha256').update(evidenceString).digest('hex');
+      result.forensicMetadata.evidenceHash = crypto
+        .createHash('sha256')
+        .update(evidenceString)
+        .digest('hex');
 
       // Audit log
       clientOnboardingService._auditLog.push({
@@ -366,7 +368,9 @@ const clientOnboardingService = {
         totalClients: clients.length,
         totalAuditEntries: auditLog.length,
         averageOnboardingTimeMs: 250, // simulated
-        duplicateRate: auditLog.filter((l) => l.action === 'DUPLICATE_DETECTED').length / Math.max(1, clients.length),
+        duplicateRate:
+          auditLog.filter((l) => l.action === 'DUPLICATE_DETECTED').length /
+          Math.max(1, clients.length),
       },
       economicImpact: {
         annualSavings: 3100000,
@@ -570,7 +574,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
           idNumber: '8001015009087',
           email: 'existing@example.com',
         },
-        { tenantId: testTenant },
+        { tenantId: testTenant }
       );
     });
 
@@ -645,7 +649,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
           idNumber: '8001015009087',
           email: 'john.smith@example.com',
         },
-        { tenantId: testTenant },
+        { tenantId: testTenant }
       );
 
       await clientOnboardingService.createClient(
@@ -654,7 +658,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
           idNumber: '9001015009087',
           email: 'jane.doe@example.com',
         },
-        { tenantId: testTenant },
+        { tenantId: testTenant }
       );
     });
 
@@ -770,7 +774,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
           idNumber: '8001015009087',
           email: 'tenant1@example.com',
         },
-        { tenantId: tenant1 },
+        { tenantId: tenant1 }
       );
 
       // Create client in tenant 2
@@ -780,7 +784,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
           idNumber: '9001015009087',
           email: 'tenant2@example.com',
         },
-        { tenantId: tenant2 },
+        { tenantId: tenant2 }
       );
 
       // Search in tenant 1 should only find tenant 1 client
@@ -824,7 +828,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
             idNumber: `8001015009${i.toString().padStart(3, '0')}`, // Generate different IDs
             email: `client${i}@example.com`,
           },
-          { tenantId: testTenant },
+          { tenantId: testTenant }
         );
       }
 
@@ -850,7 +854,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
             idNumber: `8001015009${i.toString().padStart(3, '0')}`,
             email: `evidence${i}@example.com`,
           },
-          { tenantId: 'INVESTOR_DEMO' },
+          { tenantId: 'INVESTOR_DEMO' }
         );
       }
 

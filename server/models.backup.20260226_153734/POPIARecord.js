@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ================================================================================================
  * FILE: server/models/POPIARecord.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/POPIARecord.js
@@ -101,7 +99,7 @@ class POPIARecord extends Model {
 
     if (!lawfulConditions.includes(condition)) {
       throw new Error(
-        `Invalid lawful condition: ${condition}. Must be one of: ${lawfulConditions.join(', ')}`,
+        `Invalid lawful condition: ${condition}. Must be one of: ${lawfulConditions.join(', ')}`
       );
     }
 
@@ -240,7 +238,7 @@ POPIARecord.init(
         'RETENTION_RECORD',
         'CROSS_BORDER_TRANSFER',
         'COMPLAINT_RECORD',
-        'AUDIT_TRAIL',
+        'AUDIT_TRAIL'
       ),
       allowNull: false,
       validate: {
@@ -270,7 +268,7 @@ POPIARecord.init(
         'EXPERT',
         'CONTRACTOR',
         'VISITOR',
-        'OTHER',
+        'OTHER'
       ),
       allowNull: true,
       comment: 'Type of data subject',
@@ -337,7 +335,7 @@ POPIARecord.init(
         'LEGAL_OBLIGATION',
         'VITAL_INTERESTS',
         'PUBLIC_TASK',
-        'LEGITIMATE_INTERESTS',
+        'LEGITIMATE_INTERESTS'
       ),
       allowNull: false,
       validate: {
@@ -401,7 +399,7 @@ POPIARecord.init(
         'RESTRICTION',
         'OBJECTION',
         'DATA_PORTABILITY',
-        'WITHDRAW_CONSENT',
+        'WITHDRAW_CONSENT'
       ),
       allowNull: true,
       comment: 'Type of Data Subject Access Request',
@@ -580,7 +578,7 @@ POPIARecord.init(
         'BREACHED',
         'IN_REVIEW',
         'ESCALATED',
-        'ARCHIVED',
+        'ARCHIVED'
       ),
       allowNull: false,
       defaultValue: 'ACTIVE',
@@ -740,12 +738,12 @@ POPIARecord.init(
 
         // Calculate retention expiry date
         if (
-          record.retentionStartDate
-          && record.retentionPeriodYears
-          && !record.retentionExpiryDate
+          record.retentionStartDate &&
+          record.retentionPeriodYears &&
+          !record.retentionExpiryDate
         ) {
           record.retentionExpiryDate = POPIARecord.calculateRetentionExpiry(
-            record.retentionPeriodYears,
+            record.retentionPeriodYears
           );
         }
 
@@ -759,19 +757,19 @@ POPIARecord.init(
         if (record.dsarType && !record.dsarResponse) {
           record.dsarResponse = POPIARecord.generateDSARResponse(
             record.dataSubjectId,
-            record.dsarType,
+            record.dsarType
           );
         }
 
         // Check if breach notification is required
         if (
-          record.recordType === 'BREACH_NOTIFICATION'
-          && record.breachSeverity
-          && record.dataSubjectsAffected
+          record.recordType === 'BREACH_NOTIFICATION' &&
+          record.breachSeverity &&
+          record.dataSubjectsAffected
         ) {
           const notificationRequired = POPIARecord.isBreachNotificationRequired(
             record.breachSeverity,
-            record.dataSubjectsAffected,
+            record.dataSubjectsAffected
           );
 
           if (notificationRequired && !record.breachNotificationDate) {
@@ -787,7 +785,7 @@ POPIARecord.init(
               recordType: record.recordType,
               dataSubjectId: record.dataSubjectId,
               timestamp: new Date().toISOString(),
-            }),
+            })
           );
         }
 
@@ -832,7 +830,7 @@ POPIARecord.init(
         // Check for overdue DSAR responses (30-day limit)
         if (record.dsarType && record.dsarReceivedDate && !record.dsarResponseDate) {
           const daysSinceRequest = Math.ceil(
-            (new Date() - new Date(record.dsarReceivedDate)) / (1000 * 60 * 60 * 24),
+            (new Date() - new Date(record.dsarReceivedDate)) / (1000 * 60 * 60 * 24)
           );
           if (daysSinceRequest > 30) {
             record.status = 'ESCALATED';
@@ -934,7 +932,7 @@ POPIARecord.init(
         where: { crossBorderTransfer: true },
       },
     },
-  },
+  }
 );
 
 // =================================================================

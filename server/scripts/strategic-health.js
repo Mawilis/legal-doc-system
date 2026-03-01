@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -8,8 +8,8 @@
  */
 
 import { execSync } from 'child_process';
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,7 +44,8 @@ console.log(`\n📊 Health Score: ${passed}/${checks.length}`);
 // Check for double asterisks in production code (excluding tools)
 console.log('\n🔍 Scanning production code for double asterisks...');
 
-const findCmd = 'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
+const findCmd =
+  'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
   -not -path "*/node_modules/*" \
   -not -path "*/coverage/*" \
   -not -path "*/dist/*" \

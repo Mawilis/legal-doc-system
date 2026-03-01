@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                    QUANTUM ENCRYPTION NEXUS - THE CRYPTOGRAPHIC HEART               ║
  * ║  This celestial bastion stands as the unbreakable cryptographic core of Wilsy OS,   ║
@@ -255,7 +253,7 @@ class EncryptionService {
 
     if (missingVars.length > 0) {
       const errorMsg = `Quantum Configuration Breach: Missing encryption environment variables: ${missingVars.join(
-        ', ',
+        ', '
       )}`;
       logger.error(errorMsg, {
         missingVars,
@@ -267,7 +265,8 @@ class EncryptionService {
     // Validate encryption master key format
     const masterKey = process.env.ENCRYPTION_MASTER_KEY;
     if (masterKey.length < 64) {
-      const errorMsg = 'Quantum Security Breach: ENCRYPTION_MASTER_KEY must be at least 64 characters';
+      const errorMsg =
+        'Quantum Security Breach: ENCRYPTION_MASTER_KEY must be at least 64 characters';
       logger.error(errorMsg, {
         keyLength: masterKey.length,
         requiredLength: 64,
@@ -307,7 +306,7 @@ class EncryptionService {
 
     if (missingCiphers.length > 0 || missingHashes.length > 0) {
       const errorMsg = `Quantum Crypto Capability Breach: Missing required algorithms - Ciphers: ${missingCiphers.join(
-        ', ',
+        ', '
       )}, Hashes: ${missingHashes.join(', ')}`;
       logger.error(errorMsg, {
         missingCiphers,
@@ -319,7 +318,8 @@ class EncryptionService {
 
     // Verify AES-256-GCM is available (critical for POPIA compliance)
     if (!availableCiphers.includes('aes-256-gcm')) {
-      const errorMsg = 'Quantum Security Breach: AES-256-GCM not available - Required for POPIA compliance';
+      const errorMsg =
+        'Quantum Security Breach: AES-256-GCM not available - Required for POPIA compliance';
       logger.error(errorMsg, {
         availableCiphers: availableCiphers.filter((c) => c.includes('aes')),
         compliance: 'POPIA Section 19',
@@ -385,7 +385,7 @@ class EncryptionService {
         salt,
         QUANTUM_ENCRYPTION_STANDARDS.AES.ITERATIONS,
         QUANTUM_ENCRYPTION_STANDARDS.AES.KEY_LENGTH,
-        QUANTUM_ENCRYPTION_STANDARDS.AES.DIGEST,
+        QUANTUM_ENCRYPTION_STANDARDS.AES.DIGEST
       );
 
       // Store derived key in memory (encrypted in production)
@@ -497,7 +497,7 @@ class EncryptionService {
         QUANTUM_ENCRYPTION_STANDARDS.AES.ALGORITHM,
         encryptionKey.key,
         iv,
-        { authTagLength: QUANTUM_ENCRYPTION_STANDARDS.AES.AUTH_TAG_LENGTH },
+        { authTagLength: QUANTUM_ENCRYPTION_STANDARDS.AES.AUTH_TAG_LENGTH }
       );
 
       // Encrypt data
@@ -647,7 +647,7 @@ class EncryptionService {
         encryptedPackage.algorithm || QUANTUM_ENCRYPTION_STANDARDS.AES.ALGORITHM,
         encryptionKey.key,
         iv,
-        { authTagLength: QUANTUM_ENCRYPTION_STANDARDS.AES.AUTH_TAG_LENGTH },
+        { authTagLength: QUANTUM_ENCRYPTION_STANDARDS.AES.AUTH_TAG_LENGTH }
       );
 
       // Set authentication tag for integrity verification
@@ -769,7 +769,7 @@ class EncryptionService {
         keySalt,
         1, // Single iteration since keyMaterial is already random
         QUANTUM_ENCRYPTION_STANDARDS.AES.KEY_LENGTH,
-        QUANTUM_ENCRYPTION_STANDARDS.AES.DIGEST,
+        QUANTUM_ENCRYPTION_STANDARDS.AES.DIGEST
       );
 
       // Create key version identifier
@@ -1032,7 +1032,7 @@ class EncryptionService {
     const dataSize = this.calculateDataSize(data);
     if (dataSize > QUANTUM_ENCRYPTION_STANDARDS.PERFORMANCE.MAX_ENCRYPTION_SIZE) {
       throw new Error(
-        `Data size ${dataSize} bytes exceeds maximum encryption size of ${QUANTUM_ENCRYPTION_STANDARDS.PERFORMANCE.MAX_ENCRYPTION_SIZE} bytes`,
+        `Data size ${dataSize} bytes exceeds maximum encryption size of ${QUANTUM_ENCRYPTION_STANDARDS.PERFORMANCE.MAX_ENCRYPTION_SIZE} bytes`
       );
     }
 
@@ -1047,7 +1047,7 @@ class EncryptionService {
     // POPIA: Special category data requires additional validation
     if (options.dataClassification === 'SECRET' && !options.userId) {
       throw new Error(
-        'User ID required for encrypting secret/special category data (POPIA compliance)',
+        'User ID required for encrypting secret/special category data (POPIA compliance)'
       );
     }
   }
@@ -1208,7 +1208,8 @@ class EncryptionService {
     // Update average operation time (exponential moving average)
     if (operationTime > 0) {
       const alpha = 0.1; // Smoothing factor
-      metrics.averageOperationTime = alpha * operationTime + (1 - alpha) * metrics.averageOperationTime;
+      metrics.averageOperationTime =
+        alpha * operationTime + (1 - alpha) * metrics.averageOperationTime;
     }
   }
 
@@ -1280,8 +1281,9 @@ class EncryptionService {
    */
   calculateKeyExpiry() {
     const expiryDate = new Date();
-    const rotationDays = parseInt(process.env.ENCRYPTION_KEY_ROTATION_DAYS)
-      || QUANTUM_ENCRYPTION_STANDARDS.KEY_MANAGEMENT.ROTATION_DAYS;
+    const rotationDays =
+      parseInt(process.env.ENCRYPTION_KEY_ROTATION_DAYS) ||
+      QUANTUM_ENCRYPTION_STANDARDS.KEY_MANAGEMENT.ROTATION_DAYS;
     expiryDate.setDate(expiryDate.getDate() + rotationDays);
     return expiryDate.toISOString();
   }
@@ -1412,7 +1414,8 @@ class EncryptionService {
    * @private
    */
   generateAuditHash(data) {
-    const dataString = JSON.stringify(data) + Date.now().toString() + crypto.randomBytes(16).toString('hex');
+    const dataString =
+      JSON.stringify(data) + Date.now().toString() + crypto.randomBytes(16).toString('hex');
     return crypto.createHash('sha512').update(dataString).digest('hex');
   }
 
@@ -1451,7 +1454,7 @@ class EncryptionService {
           });
         });
       },
-      24 * 60 * 60 * 1000,
+      24 * 60 * 60 * 1000
     ); // 24 hours
 
     // Initial compliance check
@@ -1502,7 +1505,7 @@ class EncryptionService {
         allPassed,
         duration: `${duration}ms`,
         details: Object.keys(checks).map(
-          (key) => `${key}: ${checks[key].passed ? 'PASS' : 'FAIL'}`,
+          (key) => `${key}: ${checks[key].passed ? 'PASS' : 'FAIL'}`
         ),
       });
 
@@ -1957,7 +1960,7 @@ class EncryptionService {
 
     // Check 2: Active key count
     const activeKeys = Array.from(this.encryptionState.keyRing.values()).filter(
-      (k) => k.status === 'ACTIVE',
+      (k) => k.status === 'ACTIVE'
     ).length;
     checks.push({
       check: 'ACTIVE_KEY_COUNT',
@@ -2074,9 +2077,11 @@ class EncryptionService {
         activeKeyVersion: this.encryptionState.activeKeyVersion,
         totalKeys: this.encryptionState.keyRing.size,
         activeKeys: Array.from(this.encryptionState.keyRing.values()).filter(
-          (k) => k.status === 'ACTIVE',
+          (k) => k.status === 'ACTIVE'
         ).length,
-        expiredKeys: Array.from(this.encryptionState.keyRing.values()).filter((k) => this.isKeyExpired(k.version)).length,
+        expiredKeys: Array.from(this.encryptionState.keyRing.values()).filter((k) =>
+          this.isKeyExpired(k.version)
+        ).length,
       },
       performance: this.encryptionState.performanceMetrics,
       compliance: this.encryptionState.complianceStatus,
@@ -2149,9 +2154,9 @@ class EncryptionService {
         status: this.masterKey ? 'HEALTHY' : 'UNHEALTHY',
         details: this.masterKey
           ? {
-            version: this.masterKey.version,
-            fingerprint: this.masterKey.fingerprint,
-          }
+              version: this.masterKey.version,
+              fingerprint: this.masterKey.fingerprint,
+            }
           : null,
       });
 
@@ -2164,10 +2169,10 @@ class EncryptionService {
         status: activeKey ? 'HEALTHY' : 'UNHEALTHY',
         details: activeKey
           ? {
-            version: activeKey.version,
-            expiresAt: activeKey.expiresAt,
-            status: activeKey.status,
-          }
+              version: activeKey.version,
+              expiresAt: activeKey.expiresAt,
+              status: activeKey.status,
+            }
           : null,
       });
 
@@ -2291,7 +2296,7 @@ class EncryptionService {
     const verificationResult = await this.hsmSimulation.keyOperations.verify(
       dataBuffer,
       signaturePackage.signature,
-      signaturePackage.keyId,
+      signaturePackage.keyId
     );
 
     // Additional integrity check: verify data hash matches
@@ -2710,10 +2715,10 @@ export default {
 
 // FINAL QUANTUM INVOCATION
 console.log(
-  '🔐 Quantum Encryption Service Activated: Weaving unbreakable cryptographic fabrics for African legal sovereignty.',
+  '🔐 Quantum Encryption Service Activated: Weaving unbreakable cryptographic fabrics for African legal sovereignty.'
 );
 console.log(
-  '🛡️  Wilsy Touching Lives Eternally through mathematically certain data protection and digital justice preservation.',
+  '🛡️  Wilsy Touching Lives Eternally through mathematically certain data protection and digital justice preservation.'
 );
 
 /*

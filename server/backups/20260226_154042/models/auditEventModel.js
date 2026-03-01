@@ -1,4 +1,4 @@
-/**
+#!/**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - AUDIT EVENT MODEL v1.0                                         ║
  * ║ [Production Grade | POPIA §19-22 | Forensic Event Trail]                 ║

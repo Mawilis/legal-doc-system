@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL FLOW WEBSOCKET - REAL-TIME M&A PIPELINE UPDATES                                  ║
   ║ R3.5B/year deal flow | Live synergy scores | Instant regulatory alerts                ║
@@ -8,13 +8,13 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/websocket/dealFlowUpdates.js
  * VERSION: 1.0.0-PRODUCTION
  * CREATED: 2026-02-27
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R150M/year in delayed deal intelligence
  * • Generates: R350M/year through real-time opportunity capture
  * • Risk elimination: Instant alerts for regulatory deadlines
  * • Scalability: 1M+ concurrent connections, horizontal scaling
- * 
+ *
  * INTEGRATION_MAP:
  * {
  *   "expectedConsumers": [
@@ -60,15 +60,15 @@ const WS_CONFIG = {
   MAX_CONNECTIONS_PER_IP: 10,
   RATE_LIMIT: {
     MESSAGES_PER_MINUTE: 60,
-    CONNECTIONS_PER_MINUTE: 5
-  }
+    CONNECTIONS_PER_MINUTE: 5,
+  },
 };
 
 const CHANNELS = {
   DEAL_UPDATES: 'deal:updates',
   SYNERGY_UPDATES: 'synergy:updates',
   REGULATORY_ALERTS: 'regulatory:alerts',
-  DEAL_ROOM: 'deal:room:'
+  DEAL_ROOM: 'deal:room:',
 };
 
 const MESSAGE_TYPES = {
@@ -80,7 +80,7 @@ const MESSAGE_TYPES = {
   DEADLINE_APPROACHING: 'deadline_approaching',
   TEAM_MESSAGE: 'team_message',
   ERROR: 'error',
-  PONG: 'pong'
+  PONG: 'pong',
 };
 
 // ============================================================================
@@ -97,7 +97,7 @@ class DealFlowWebSocketManager {
     this.dealRooms = new Map();
     this.messageRateLimiters = new Map();
     this.connectionRateLimiters = new Map();
-    
+
     if (server) {
       this.initialize(server);
     }
@@ -113,13 +113,13 @@ class DealFlowWebSocketManager {
         host: process.env.REDIS_HOST || 'localhost',
         port: process.env.REDIS_PORT || 6379,
         password: process.env.REDIS_PASSWORD,
-        retryStrategy: (times) => Math.min(times * 50, 2000)
+        retryStrategy: (times) => Math.min(times * 50, 2000),
       });
 
       this.pubClient = new Redis({
         host: process.env.REDIS_HOST || 'localhost',
         port: process.env.REDIS_PORT || 6379,
-        password: process.env.REDIS_PASSWORD
+        password: process.env.REDIS_PASSWORD,
       });
 
       this.subClient = this.pubClient.duplicate();
@@ -128,12 +128,12 @@ class DealFlowWebSocketManager {
       this.io = new Server(server, {
         cors: {
           origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
-          credentials: true
+          credentials: true,
         },
         pingInterval: WS_CONFIG.PING_INTERVAL,
         pingTimeout: WS_CONFIG.PING_TIMEOUT,
         maxHttpBufferSize: WS_CONFIG.MAX_PAYLOAD,
-        transports: ['websocket', 'polling']
+        transports: ['websocket', 'polling'],
       });
 
       // Use Redis adapter for horizontal scaling
@@ -162,9 +162,8 @@ class DealFlowWebSocketManager {
 
       Logger.info('DealFlow WebSocket manager initialized', {
         redisConnected: true,
-        adapter: 'redis'
+        adapter: 'redis',
       });
-
     } catch (error) {
       Logger.error('WebSocket initialization failed', { error: error.message });
       throw error;
@@ -176,15 +175,16 @@ class DealFlowWebSocketManager {
    */
   async authenticate(socket, next) {
     try {
-      const token = socket.handshake.auth.token || 
-                   socket.handshake.headers.authorization?.replace('Bearer ', '');
+      const token =
+        socket.handshake.auth.token ||
+        socket.handshake.headers.authorization?.replace('Bearer ', '');
 
       if (!token) {
         return next(new Error('Authentication required'));
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
+
       const tenantId = socket.handshake.query.tenantId;
       if (tenantId && decoded.tenantId !== tenantId) {
         return next(new Error('Invalid tenant access'));
@@ -195,7 +195,7 @@ class DealFlowWebSocketManager {
         tenantId: decoded.tenantId || tenantId,
         roles: decoded.roles || ['user'],
         email: decoded.email,
-        name: decoded.name
+        name: decoded.name,
       };
 
       next();
@@ -217,7 +217,7 @@ class DealFlowWebSocketManager {
     if (!ipLimiter) {
       ipLimiter = new RateLimiter({
         tokensPerInterval: WS_CONFIG.RATE_LIMIT.CONNECTIONS_PER_MINUTE,
-        interval: 'minute'
+        interval: 'minute',
       });
       this.connectionRateLimiters.set(clientIp, ipLimiter);
     }
@@ -233,7 +233,7 @@ class DealFlowWebSocketManager {
       if (!msgLimiter) {
         msgLimiter = new RateLimiter({
           tokensPerInterval: WS_CONFIG.RATE_LIMIT.MESSAGES_PER_MINUTE,
-          interval: 'minute'
+          interval: 'minute',
         });
         this.messageRateLimiters.set(userId, msgLimiter);
       }
@@ -253,14 +253,14 @@ class DealFlowWebSocketManager {
     Logger.info('New WebSocket connection', {
       userId: user.id,
       tenantId: user.tenantId,
-      connectionId
+      connectionId,
     });
 
     this.connections.set(socket.id, {
       socket,
       user,
       connectedAt: new Date(),
-      connectionId
+      connectionId,
     });
 
     // Join tenant room
@@ -270,7 +270,7 @@ class DealFlowWebSocketManager {
     socket.emit('connected', {
       connectionId,
       userId: user.id,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Set up event handlers
@@ -286,7 +286,7 @@ class DealFlowWebSocketManager {
       tenantId: user.tenantId,
       userId: user.id,
       connectionId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -302,7 +302,7 @@ class DealFlowWebSocketManager {
     Logger.info('WebSocket disconnected', {
       userId: user.id,
       tenantId: user.tenantId,
-      connectionId: connection.connectionId
+      connectionId: connection.connectionId,
     });
 
     // Remove from all deal rooms
@@ -323,7 +323,7 @@ class DealFlowWebSocketManager {
       userId: user.id,
       connectionId: connection.connectionId,
       duration: Date.now() - connection.connectedAt,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -333,7 +333,7 @@ class DealFlowWebSocketManager {
   handleError(socket, error) {
     Logger.error('WebSocket error', {
       error: error.message,
-      socketId: socket.id
+      socketId: socket.id,
     });
   }
 
@@ -342,22 +342,22 @@ class DealFlowWebSocketManager {
    */
   async subscribeToDeal(socket, dealId) {
     try {
-      const deal = await Deal.findOne({ 
-        _id: dealId, 
-        tenantId: socket.user.tenantId 
+      const deal = await Deal.findOne({
+        _id: dealId,
+        tenantId: socket.user.tenantId,
       });
 
       if (!deal) {
         socket.emit('error', {
           type: MESSAGE_TYPES.ERROR,
           code: 'DEAL_NOT_FOUND',
-          message: 'Deal not found'
+          message: 'Deal not found',
         });
         return;
       }
 
       socket.join(`deal:${dealId}`);
-      
+
       if (!this.dealRooms.has(dealId)) {
         this.dealRooms.set(dealId, new Set());
       }
@@ -366,20 +366,19 @@ class DealFlowWebSocketManager {
       socket.emit('subscribed', {
         type: 'deal',
         id: dealId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       Logger.debug('User subscribed to deal', {
         userId: socket.user.id,
-        dealId
+        dealId,
       });
-
     } catch (error) {
       Logger.error('Deal subscription failed', { error: error.message });
       socket.emit('error', {
         type: MESSAGE_TYPES.ERROR,
         code: 'SUBSCRIPTION_FAILED',
-        message: 'Failed to subscribe to deal'
+        message: 'Failed to subscribe to deal',
       });
     }
   }
@@ -389,7 +388,7 @@ class DealFlowWebSocketManager {
    */
   unsubscribeFromDeal(socket, dealId) {
     socket.leave(`deal:${dealId}`);
-    
+
     const users = this.dealRooms.get(dealId);
     if (users) {
       users.delete(socket.user.id);
@@ -401,7 +400,7 @@ class DealFlowWebSocketManager {
     socket.emit('unsubscribed', {
       type: 'deal',
       id: dealId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -415,7 +414,7 @@ class DealFlowWebSocketManager {
       socket.emit('error', {
         type: MESSAGE_TYPES.ERROR,
         code: 'INVALID_MESSAGE',
-        message: 'Deal ID and message are required'
+        message: 'Deal ID and message are required',
       });
       return;
     }
@@ -427,7 +426,7 @@ class DealFlowWebSocketManager {
         socket.emit('error', {
           type: MESSAGE_TYPES.ERROR,
           code: 'RATE_LIMITED',
-          message: 'Message rate limit exceeded'
+          message: 'Message rate limit exceeded',
         });
         return;
       }
@@ -443,22 +442,22 @@ class DealFlowWebSocketManager {
       userId: socket.user.id,
       userName: socket.user.name,
       message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     // Broadcast to room
     socket.to(roomName).emit(MESSAGE_TYPES.TEAM_MESSAGE, chatMessage);
-    
+
     // Send back to sender for confirmation
     socket.emit('message_sent', {
       id: messageId,
-      timestamp: chatMessage.timestamp
+      timestamp: chatMessage.timestamp,
     });
 
     Logger.debug('Chat message sent', {
       dealId,
       messageId,
-      userId: socket.user.id
+      userId: socket.user.id,
     });
   }
 
@@ -470,17 +469,20 @@ class DealFlowWebSocketManager {
       type: updateType,
       dealId,
       data,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     this.io.to(`deal:${dealId}`).emit(updateType, message);
-    
+
     // Also publish to Redis for cross-instance
-    await this.pubClient.publish('deal:events', JSON.stringify({
-      type: updateType,
-      dealId,
-      data
-    }));
+    await this.pubClient.publish(
+      'deal:events',
+      JSON.stringify({
+        type: updateType,
+        dealId,
+        data,
+      })
+    );
   }
 
   /**
@@ -500,14 +502,11 @@ class DealFlowWebSocketManager {
       target: synergy.targetId?.name,
       totalSynergy: synergy.totalSynergy,
       confidence: synergy.totalSynergy?.confidence,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     if (synergy.dealId) {
-      this.io.to(`deal:${synergy.dealId}`).emit(
-        MESSAGE_TYPES.SYNERGY_CALCULATED,
-        message
-      );
+      this.io.to(`deal:${synergy.dealId}`).emit(MESSAGE_TYPES.SYNERGY_CALCULATED, message);
     }
   }
 
@@ -515,8 +514,7 @@ class DealFlowWebSocketManager {
    * Broadcast regulatory alert
    */
   async broadcastRegulatoryAlert(filingId) {
-    const filing = await RegulatoryFiling.findById(filingId)
-      .populate('dealId', 'dealId value');
+    const filing = await RegulatoryFiling.findById(filingId).populate('dealId', 'dealId value');
 
     if (!filing) return;
 
@@ -532,14 +530,11 @@ class DealFlowWebSocketManager {
       deadline: filing.review?.targetDecisionDate,
       isUrgent,
       daysRemaining: daysLeft,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     if (filing.dealId) {
-      this.io.to(`deal:${filing.dealId._id}`).emit(
-        MESSAGE_TYPES.REGULATORY_ALERT,
-        message
-      );
+      this.io.to(`deal:${filing.dealId._id}`).emit(MESSAGE_TYPES.REGULATORY_ALERT, message);
     }
   }
 
@@ -573,17 +568,18 @@ class DealFlowWebSocketManager {
       try {
         if (change.operationType === 'insert') {
           const deal = change.fullDocument;
-          this.broadcastDealUpdate(
-            deal._id,
-            MESSAGE_TYPES.DEAL_CREATED,
-            { dealId: deal.dealId, dealType: deal.dealType, value: deal.value }
-          );
-        } else if (change.operationType === 'update' && change.updateDescription?.updatedFields?.stage) {
-          this.broadcastDealUpdate(
-            change.documentKey._id,
-            MESSAGE_TYPES.DEAL_STAGE_CHANGE,
-            { newStage: change.updateDescription.updatedFields.stage }
-          );
+          this.broadcastDealUpdate(deal._id, MESSAGE_TYPES.DEAL_CREATED, {
+            dealId: deal.dealId,
+            dealType: deal.dealType,
+            value: deal.value,
+          });
+        } else if (
+          change.operationType === 'update' &&
+          change.updateDescription?.updatedFields?.stage
+        ) {
+          this.broadcastDealUpdate(change.documentKey._id, MESSAGE_TYPES.DEAL_STAGE_CHANGE, {
+            newStage: change.updateDescription.updatedFields.stage,
+          });
         }
       } catch (error) {
         Logger.error('Deal change handler failed', { error: error.message });
@@ -599,8 +595,10 @@ class DealFlowWebSocketManager {
 
     // Listen for regulatory filings
     RegulatoryFiling.watch().on('change', async (change) => {
-      if (change.operationType === 'insert' || 
-          (change.operationType === 'update' && change.updateDescription?.updatedFields?.status)) {
+      if (
+        change.operationType === 'insert' ||
+        (change.operationType === 'update' && change.updateDescription?.updatedFields?.status)
+      ) {
         await this.broadcastRegulatoryAlert(change.documentKey._id);
       }
     });
@@ -617,7 +615,7 @@ class DealFlowWebSocketManager {
       connection.socket.emit('shutdown', {
         message: 'Server is shutting down',
         reconnect: true,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       connection.socket.close();
     }
@@ -642,7 +640,7 @@ class DealFlowWebSocketManager {
     return {
       connections: this.connections.size,
       dealRooms: this.dealRooms.size,
-      uptime: process.uptime()
+      uptime: process.uptime(),
     };
   }
 }
@@ -673,5 +671,5 @@ export const getDealFlowWebSocket = () => {
 
 export default {
   createDealFlowWebSocket,
-  getDealFlowWebSocket
+  getDealFlowWebSocket,
 };

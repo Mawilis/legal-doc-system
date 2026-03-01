@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ NEURAL PRECEDENT API CONTROLLER - QUANTUM LEGAL SEARCH ENGINE             ║
   ║ 1536-dim vectors | Semantic search | 99.7% accuracy | R25M/year           ║
@@ -21,7 +21,7 @@ import { REDACT_FIELDS, redactSensitive } from '../../utils/redactSensitive.js';
 const SEARCH_MODES = {
   SEMANTIC: 'semantic',
   KEYWORD: 'keyword',
-  HYBRID: 'hybrid'
+  HYBRID: 'hybrid',
 };
 
 const DEFAULT_RESULTS_LIMIT = 10;
@@ -36,8 +36,10 @@ const MIN_CONFIDENCE = 0.5;
  * Generate correlation ID
  */
 const generateCorrelationId = (req) => {
-  return req.headers['x-correlation-id'] || 
-         `neural-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+  return (
+    req.headers['x-correlation-id'] ||
+    `neural-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+  );
 };
 
 /**
@@ -51,8 +53,8 @@ const formatSuccess = (data, correlationId, metadata = {}) => {
     data,
     metadata: {
       ...metadata,
-      apiVersion: 'v1'
-    }
+      apiVersion: 'v1',
+    },
   };
 };
 
@@ -67,8 +69,8 @@ const formatError = (error, correlationId, statusCode = 500) => {
     error: {
       code: error.code || 'NEURAL_SEARCH_ERROR',
       message: error.message || 'An unexpected error occurred',
-      statusCode
-    }
+      statusCode,
+    },
   };
 };
 
@@ -76,7 +78,7 @@ const formatError = (error, correlationId, statusCode = 500) => {
  * Apply tier-based result enhancements
  */
 const enhanceResultsForTier = (results, tier) => {
-  const enhanced = results.map(r => ({
+  const enhanced = results.map((r) => ({
     id: r.quantumId || r._id,
     title: r.title,
     citation: r.citation,
@@ -84,14 +86,14 @@ const enhanceResultsForTier = (results, tier) => {
     judgmentDate: r.judgmentDate,
     summary: r.summary?.substring(0, tier === 'PREMIUM' ? 1000 : 200),
     confidence: r.score || r.similarity || 0.95,
-    matchType: r.score ? 'semantic' : 'keyword'
+    matchType: r.score ? 'semantic' : 'keyword',
   }));
-  
+
   // PREMIUM and ENTERPRISE get full text
   if (tier === 'PREMIUM' || tier === 'ENTERPRISE') {
     return enhanced;
   }
-  
+
   // BASIC and FREE get limited results
   return enhanced.slice(0, 5);
 };
@@ -107,19 +109,28 @@ const enhanceResultsForTier = (results, tier) => {
 export const searchPrecedents = async (req, res) => {
   const startTime = Date.now();
   const correlationId = generateCorrelationId(req);
-  
+
   // Extract request data
-  const { query, limit = DEFAULT_RESULTS_LIMIT, mode = SEARCH_MODES.SEMANTIC, filters = {} } = req.body;
+  const {
+    query,
+    limit = DEFAULT_RESULTS_LIMIT,
+    mode = SEARCH_MODES.SEMANTIC,
+    filters = {},
+  } = req.body;
   const { tenantId, tier } = req; // From auth middleware
   const apiKey = req.apiKey;
 
   // Validate input
   if (!query || typeof query !== 'string') {
-    return res.status(400).json(formatError(
-      new Error('Query parameter is required and must be a string'),
-      correlationId,
-      400
-    ));
+    return res
+      .status(400)
+      .json(
+        formatError(
+          new Error('Query parameter is required and must be a string'),
+          correlationId,
+          400
+        )
+      );
   }
 
   const resultLimit = Math.min(parseInt(limit) || DEFAULT_RESULTS_LIMIT, MAX_RESULTS_LIMIT);
@@ -130,7 +141,7 @@ export const searchPrecedents = async (req, res) => {
       tenantId,
       tier,
       queryLength: query.length,
-      mode
+      mode,
     });
 
     // Log search to audit trail (start)
@@ -144,11 +155,11 @@ export const searchPrecedents = async (req, res) => {
         queryLength: query.length,
         mode,
         limit: resultLimit,
-        filters: redactSensitive(filters)
+        filters: redactSensitive(filters),
       },
       retentionPolicy: 'companies_act_10_years',
       dataResidency: 'ZA',
-      retentionStart: new Date()
+      retentionStart: new Date(),
     });
 
     let results = [];
@@ -158,17 +169,17 @@ export const searchPrecedents = async (req, res) => {
     if (mode === SEARCH_MODES.SEMANTIC || mode === SEARCH_MODES.HYBRID) {
       // Generate query embedding
       const queryVector = await getEmbedding(query, { useLegalModel: true });
-      
+
       // Perform vector search
       const vectorResults = await Precedent.aggregate([
         {
           $vectorSearch: {
-            index: "precedent_vector_index",
-            path: "embedding",
+            index: 'precedent_vector_index',
+            path: 'embedding',
             queryVector: queryVector,
             numCandidates: Math.min(resultLimit * 10, 100),
-            limit: resultLimit
-          }
+            limit: resultLimit,
+          },
         },
         {
           $project: {
@@ -180,31 +191,35 @@ export const searchPrecedents = async (req, res) => {
             judgmentDate: 1,
             summary: 1,
             practiceArea: 1,
-            score: { $meta: "vectorSearchScore" }
-          }
-        }
+            score: { $meta: 'vectorSearchScore' },
+          },
+        },
       ]);
 
       results = vectorResults;
       searchMetadata.semanticResults = vectorResults.length;
     }
 
-    if (mode === SEARCH_MODES.KEYWORD || (mode === SEARCH_MODES.HYBRID && results.length < resultLimit)) {
+    if (
+      mode === SEARCH_MODES.KEYWORD ||
+      (mode === SEARCH_MODES.HYBRID && results.length < resultLimit)
+    ) {
       // Fallback to keyword search
       const remaining = mode === SEARCH_MODES.HYBRID ? resultLimit - results.length : resultLimit;
-      
+
       if (remaining > 0) {
         const keywordResults = await Precedent.find(
           {
             $text: { $search: query },
-            ...(mode === SEARCH_MODES.HYBRID && results.length > 0 ? 
-                { _id: { $nin: results.map(r => r._id) } } : {})
+            ...(mode === SEARCH_MODES.HYBRID && results.length > 0
+              ? { _id: { $nin: results.map((r) => r._id) } }
+              : {}),
           },
           {
-            score: { $meta: "textScore" }
+            score: { $meta: 'textScore' },
           }
         )
-          .sort({ score: { $meta: "textScore" } })
+          .sort({ score: { $meta: 'textScore' } })
           .limit(remaining)
           .lean();
 
@@ -233,11 +248,11 @@ export const searchPrecedents = async (req, res) => {
         responseTime,
         mode,
         semanticResults: searchMetadata.semanticResults || 0,
-        keywordResults: searchMetadata.keywordResults || 0
+        keywordResults: searchMetadata.keywordResults || 0,
       },
       retentionPolicy: 'companies_act_10_years',
       dataResidency: 'ZA',
-      retentionStart: new Date()
+      retentionStart: new Date(),
     });
 
     // Update API key usage
@@ -250,20 +265,21 @@ export const searchPrecedents = async (req, res) => {
     res.setHeader('X-Rate-Limit-Remaining', Math.max(0, 100 - (apiKey?.usageCount || 0)));
 
     // Send response
-    res.status(200).json(formatSuccess(enhancedResults, correlationId, {
-      totalResults: results.length,
-      returnedResults: enhancedResults.length,
-      responseTimeMs: responseTime,
-      tier,
-      mode
-    }));
-
+    res.status(200).json(
+      formatSuccess(enhancedResults, correlationId, {
+        totalResults: results.length,
+        returnedResults: enhancedResults.length,
+        responseTimeMs: responseTime,
+        tier,
+        mode,
+      })
+    );
   } catch (error) {
     logger.error('Neural search failed', {
       correlationId,
       tenantId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     // Log error to audit trail
@@ -276,11 +292,11 @@ export const searchPrecedents = async (req, res) => {
       details: {
         error: error.message,
         queryLength: query?.length || 0,
-        mode
+        mode,
       },
       retentionPolicy: 'companies_act_10_years',
       dataResidency: 'ZA',
-      retentionStart: new Date()
+      retentionStart: new Date(),
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -297,20 +313,14 @@ export const getPrecedentById = async (req, res) => {
   const { tenantId, tier } = req;
 
   try {
-    const precedent = await Precedent.findOne({ 
-      $or: [
-        { quantumId: id },
-        { _id: id },
-        { citation: id }
-      ]
+    const precedent = await Precedent.findOne({
+      $or: [{ quantumId: id }, { _id: id }, { citation: id }],
     }).lean();
 
     if (!precedent) {
-      return res.status(404).json(formatError(
-        new Error('Precedent not found'),
-        correlationId,
-        404
-      ));
+      return res
+        .status(404)
+        .json(formatError(new Error('Precedent not found'), correlationId, 404));
     }
 
     // Redact based on tier
@@ -321,16 +331,19 @@ export const getPrecedentById = async (req, res) => {
       court: precedent.court,
       judgmentDate: precedent.judgmentDate,
       judges: precedent.judges,
-      summary: tier === 'PREMIUM' || tier === 'ENTERPRISE' ? precedent.summary : precedent.summary?.substring(0, 500),
+      summary:
+        tier === 'PREMIUM' || tier === 'ENTERPRISE'
+          ? precedent.summary
+          : precedent.summary?.substring(0, 500),
       keyPrinciples: precedent.keyPrinciples,
-      ratioDecidendi: tier === 'PREMIUM' || tier === 'ENTERPRISE' ? precedent.ratioDecidendi : undefined,
+      ratioDecidendi:
+        tier === 'PREMIUM' || tier === 'ENTERPRISE' ? precedent.ratioDecidendi : undefined,
       citationCount: precedent.citationCount,
       status: precedent.status,
-      practiceArea: precedent.practiceArea
+      practiceArea: precedent.practiceArea,
     };
 
     res.status(200).json(formatSuccess(response, correlationId));
-
   } catch (error) {
     logger.error('Get precedent failed', { error: error.message, correlationId });
     res.status(500).json(formatError(error, correlationId));
@@ -348,42 +361,35 @@ export const getSimilarPrecedents = async (req, res) => {
   const { tenantId } = req;
 
   try {
-    const precedent = await Precedent.findOne({ 
-      $or: [
-        { quantumId: id },
-        { _id: id }
-      ]
+    const precedent = await Precedent.findOne({
+      $or: [{ quantumId: id }, { _id: id }],
     });
 
     if (!precedent) {
-      return res.status(404).json(formatError(
-        new Error('Precedent not found'),
-        correlationId,
-        404
-      ));
+      return res
+        .status(404)
+        .json(formatError(new Error('Precedent not found'), correlationId, 404));
     }
 
     if (!precedent.embedding) {
-      return res.status(400).json(formatError(
-        new Error('Precedent has no embedding vector'),
-        correlationId,
-        400
-      ));
+      return res
+        .status(400)
+        .json(formatError(new Error('Precedent has no embedding vector'), correlationId, 400));
     }
 
     // Find similar using vector search
     const similar = await Precedent.aggregate([
       {
         $vectorSearch: {
-          index: "precedent_vector_index",
-          path: "embedding",
+          index: 'precedent_vector_index',
+          path: 'embedding',
           queryVector: precedent.embedding,
           numCandidates: 50,
-          limit: Math.min(limit, 20)
-        }
+          limit: Math.min(limit, 20),
+        },
       },
       {
-        $match: { _id: { $ne: precedent._id } }
+        $match: { _id: { $ne: precedent._id } },
       },
       {
         $project: {
@@ -394,15 +400,16 @@ export const getSimilarPrecedents = async (req, res) => {
           court: 1,
           judgmentDate: 1,
           summary: 1,
-          score: { $meta: "vectorSearchScore" }
-        }
-      }
+          score: { $meta: 'vectorSearchScore' },
+        },
+      },
     ]);
 
-    res.status(200).json(formatSuccess(similar, correlationId, {
-      basedOn: precedent.citation
-    }));
-
+    res.status(200).json(
+      formatSuccess(similar, correlationId, {
+        basedOn: precedent.citation,
+      })
+    );
   } catch (error) {
     logger.error('Get similar precedents failed', { error: error.message, correlationId });
     res.status(500).json(formatError(error, correlationId));
@@ -419,15 +426,19 @@ export const getSearchStats = async (req, res) => {
 
   try {
     const stats = await Precedent.getStats(tenantId);
-    
+
     // Get usage stats for this tenant
     const usageStats = await ApiKey.getUsageStats(tenantId, 30);
 
-    res.status(200).json(formatSuccess({
-      precedents: stats,
-      usage: usageStats
-    }, correlationId));
-
+    res.status(200).json(
+      formatSuccess(
+        {
+          precedents: stats,
+          usage: usageStats,
+        },
+        correlationId
+      )
+    );
   } catch (error) {
     logger.error('Get search stats failed', { error: error.message, correlationId });
     res.status(500).json(formatError(error, correlationId));
@@ -438,5 +449,5 @@ export default {
   searchPrecedents,
   getPrecedentById,
   getSimilarPrecedents,
-  getSearchStats
+  getSearchStats,
 };

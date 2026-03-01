@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/dashboardController.js
  * STATUS: EPITOME | EXECUTIVE BI GRADE
  * -----------------------------------------------------------------------------
@@ -25,7 +23,8 @@ const Document = require('../models/Document');
  * INTERNAL UTILITY: LOCALIZED CURRENCY FORMATTER (ZAR)
  * Ensures consistent financial presentation across the Wilsy Ecosystem.
  */
-const formatZAR = (amount) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount || 0);
+const formatZAR = (amount) =>
+  new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount || 0);
 
 /*
  * @desc    GET ROLE-BASED KPIs (MISSION CONTROL)
@@ -48,10 +47,16 @@ exports.getKpis = asyncHandler(async (req, res) => {
 
     kpis = [
       {
-        label: 'Pending Service', value: pending, color: 'red', icon: 'map-pin',
+        label: 'Pending Service',
+        value: pending,
+        color: 'red',
+        icon: 'map-pin',
       },
       {
-        label: 'Successful Returns', value: served, color: 'green', icon: 'check-circle',
+        label: 'Successful Returns',
+        value: served,
+        color: 'green',
+        icon: 'check-circle',
       },
     ];
 
@@ -76,16 +81,28 @@ exports.getKpis = asyncHandler(async (req, res) => {
 
     kpis = [
       {
-        label: 'Revenue (MTD)', value: formatZAR(mtdRevenue), color: 'blue', icon: 'trending-up',
+        label: 'Revenue (MTD)',
+        value: formatZAR(mtdRevenue),
+        color: 'blue',
+        icon: 'trending-up',
       },
       {
-        label: 'FICA Alerts', value: ficaPending, color: 'orange', icon: 'shield-alert',
+        label: 'FICA Alerts',
+        value: ficaPending,
+        color: 'orange',
+        icon: 'shield-alert',
       },
       {
-        label: 'Overdue Collections', value: overdueCount, color: 'red', icon: 'clock',
+        label: 'Overdue Collections',
+        value: overdueCount,
+        color: 'red',
+        icon: 'clock',
       },
       {
-        label: 'Trust Balance', value: formatZAR(0), color: 'teal', icon: 'account-balance',
+        label: 'Trust Balance',
+        value: formatZAR(0),
+        color: 'teal',
+        icon: 'account-balance',
       },
     ];
 
@@ -98,10 +115,16 @@ exports.getKpis = asyncHandler(async (req, res) => {
 
     kpis = [
       {
-        label: 'My Matter Docs', value: myDocs, color: 'indigo', icon: 'folder',
+        label: 'My Matter Docs',
+        value: myDocs,
+        color: 'indigo',
+        icon: 'folder',
       },
       {
-        label: 'Active Drafts', value: pendingReview, color: 'amber', icon: 'eye',
+        label: 'Active Drafts',
+        value: pendingReview,
+        color: 'amber',
+        icon: 'eye',
       },
     ];
   }

@@ -1,4 +1,4 @@
-export default [
+#!export default [
   {
     regex: /retention.*less than \d+ years/i,
     violation: 'INADEQUATE_RETENTION',

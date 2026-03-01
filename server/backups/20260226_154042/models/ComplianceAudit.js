@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - COMPLIANCE AUDIT MODEL
  * Standard: ES Module (Surgically Standardized)

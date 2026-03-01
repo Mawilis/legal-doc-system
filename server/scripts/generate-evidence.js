@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ EVIDENCE GENERATOR - FORENSIC AUDIT PROOF                     ║
   ╚════════════════════════════════════════════════════════════════╝*/
@@ -22,21 +22,21 @@ const evidence = {
         mattersProcessed: 1250,
         mattersDeleted: 342,
         mattersRetained: 908,
-        complianceRate: '100%'
+        complianceRate: '100%',
       },
       popiaVerification: {
         section14: 'RETENTION_LIMITS_ENFORCED',
         section18: 'NOTIFICATION_SENT',
         section19: 'SECURITY_MEASURES_APPLIED',
-        section21: 'DATA_MINIMIZATION_VERIFIED'
+        section21: 'DATA_MINIMIZATION_VERIFIED',
       },
       legalBasis: [
         'Companies Act No. 71 of 2008 - Section 24',
         'POPIA Section 14 - Retention Restrictions',
-        'ECT Act Section 15 - Data Integrity'
+        'ECT Act Section 15 - Data Integrity',
       ],
       dataResidency: 'ZA',
-      retentionPolicy: 'companies_act_7_years'
+      retentionPolicy: 'companies_act_7_years',
     },
     {
       timestamp: new Date().toISOString(),
@@ -47,12 +47,12 @@ const evidence = {
         compliantMatters: 1250,
         nonCompliantMatters: 0,
         deletionProofsGenerated: 342,
-        notificationSent: 342
+        notificationSent: 342,
       },
       cryptographicProofs: {
         evidenceChain: crypto.randomBytes(32).toString('hex'),
-        merkleRoot: crypto.createHash('sha256').update('retention-audit-chain').digest('hex')
-      }
+        merkleRoot: crypto.createHash('sha256').update('retention-audit-chain').digest('hex'),
+      },
     },
     {
       timestamp: new Date().toISOString(),
@@ -63,24 +63,27 @@ const evidence = {
         hoursSavedPerMonth: 495,
         riskReduction: 2100000,
         marginContribution: '85%',
-        roi: '320%'
-      }
-    }
+        roi: '320%',
+      },
+    },
   ],
   timestamp: new Date().toISOString(),
-  hash: ''
+  hash: '',
 };
 
 // Canonicalize entries (sort keys for deterministic hash)
-evidence.auditEntries = evidence.auditEntries.map(entry => {
-  return Object.keys(entry).sort().reduce((obj, key) => {
-    obj[key] = entry[key];
-    return obj;
-  }, {});
+evidence.auditEntries = evidence.auditEntries.map((entry) => {
+  return Object.keys(entry)
+    .sort()
+    .reduce((obj, key) => {
+      obj[key] = entry[key];
+      return obj;
+    }, {});
 });
 
 // Generate SHA256 hash of canonicalized entries
-const entriesHash = crypto.createHash('sha256')
+const entriesHash = crypto
+  .createHash('sha256')
   .update(JSON.stringify(evidence.auditEntries))
   .digest('hex');
 
@@ -106,7 +109,8 @@ console.log(`✅ POPIA Compliance: Sections 14, 18, 19, 21 Verified`);
 // Verify hash
 const fileContent = fs.readFileSync(evidencePath, 'utf8');
 const parsedEvidence = JSON.parse(fileContent);
-const verifyHash = crypto.createHash('sha256')
+const verifyHash = crypto
+  .createHash('sha256')
   .update(JSON.stringify(parsedEvidence.auditEntries))
   .digest('hex');
 

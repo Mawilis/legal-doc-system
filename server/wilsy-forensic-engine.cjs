@@ -173,7 +173,7 @@ class WilsyForensicEngine {
             // JSDoc annotations
             content = content.replace(
               /@(param|returns?|type|property|example|throws|see|link)\s+(\{[^}]+\})\s+(\S+)\s+-\s+(.*?)\*\*/g,
-              '@$1 $2 $3 - $4*',
+              '@$1 $2 $3 - $4*'
             );
 
             if (content !== original) {
@@ -282,7 +282,7 @@ class WilsyForensicEngine {
           execSync('find . -name "*.js" -not -path "*/node_modules/*" | wc -l', {
             cwd: this.rootDir,
             encoding: 'utf8',
-          }).trim(),
+          }).trim()
         ) || 0;
     } catch (_e) {
       jsCount = 750; // Estimate
@@ -349,8 +349,8 @@ class WilsyForensicEngine {
         evidence,
         Object.keys(evidence)
           .filter((_k) => k !== 'forensicHash')
-          .sort(),
-      ),
+          .sort()
+      )
     );
     const hash = crypto
       .createHash('sha256')
@@ -395,8 +395,8 @@ class WilsyForensicEngine {
         -not -path "*/dist/*" \
         -not -path "*/build/*" 2>/dev/null | xargs grep -l "\\*\\*" 2>/dev/null | wc -l
       `,
-            { cwd: this.rootDir, encoding: 'utf8' },
-          ).trim(),
+            { cwd: this.rootDir, encoding: 'utf8' }
+          ).trim()
         ) || 0;
 
       if (doubleAsteriskCount === 0) {
@@ -419,8 +419,8 @@ class WilsyForensicEngine {
             evidence,
             Object.keys(evidence)
               .filter((_k) => k !== 'forensicHash' && k !== 'hashAlgorithm')
-              .sort(),
-          ),
+              .sort()
+          )
         )
         .digest('hex');
 
@@ -530,8 +530,10 @@ if (require.main === module) {
   • Evidence: ${results.evidenceFile}
   • Hash: ${
     results.evidenceFile
-      ? `${JSON.parse(fs.readFileSync(results.evidenceFile, 'utf8')).forensicHash.substring(0, 16) 
-        }...`
+      ? `${JSON.parse(fs.readFileSync(results.evidenceFile, 'utf8')).forensicHash.substring(
+          0,
+          16
+        )}...`
       : 'N/A'
   }
 

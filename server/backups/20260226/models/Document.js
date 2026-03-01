@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+#!const mongoose = require('mongoose');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
 

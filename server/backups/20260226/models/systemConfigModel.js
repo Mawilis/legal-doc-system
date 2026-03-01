@@ -1,4 +1,4 @@
-/*
+#!/*
  * File: server/models/systemConfigModel.js
  * PATH: server/models/systemConfigModel.js
  * VERSION: 2026-01-19

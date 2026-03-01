@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
    ║                              WILSY OS - SOVEREIGN LEGAL OPERATING SYSTEM                                                               ║
    ║                         TENANT CONFIGURATION MODEL - MULTI-TENANT v3.0                                                                 ║
@@ -6,8 +6,8 @@
    ║                              "Isolation without compromise - each tenant a sovereign entity"                                          ║
    ╚═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 import cryptoUtils from '../utils/cryptoUtils.js';

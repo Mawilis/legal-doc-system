@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/services/__mocks__/storageService.js
  * STATUS: PRODUCTION-READY | TEST MOCK | EPITOME
  * -----------------------------------------------------------------------------
@@ -121,7 +119,7 @@ async function streamToTemp(storageKey) {
 
   // Otherwise, treat storageKey as "remote" but for tests we require mapping
   const err = new Error(
-    `No mapping for remote storageKey: ${storageKey}. Add behavior.mapping for tests.`,
+    `No mapping for remote storageKey: ${storageKey}. Add behavior.mapping for tests.`
   );
   err.code = 'NO_MAPPING';
   throw err;

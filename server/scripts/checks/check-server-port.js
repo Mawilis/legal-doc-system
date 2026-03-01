@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const fs = require('fs');
+#!const fs = require('fs');
 
 console.log('🔍 Checking server configuration...');
 

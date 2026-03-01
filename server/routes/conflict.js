@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
@@ -190,9 +188,9 @@ router.post('/', authMiddleware.authorize('conflict', 'create'), (req, res, next
   });
 
   if (
-    conflictData.parties
-    && conflictData.parties.primaryParty
-    && conflictData.parties.primaryParty.entityId
+    conflictData.parties &&
+    conflictData.parties.primaryParty &&
+    conflictData.parties.primaryParty.entityId
   ) {
     checkExisting = checkExisting
       .where('parties.primaryParty.entityId')
@@ -276,7 +274,8 @@ router.put('/:id', authMiddleware.authorize('conflict', 'update'), (req, res, ne
 
       // Prevent updates to resolved conflicts without special permission
       if (conflict.status === 'resolved') {
-        const hasOverride = req.user.permissions && req.user.permissions.includes('conflict:override');
+        const hasOverride =
+          req.user.permissions && req.user.permissions.includes('conflict:override');
         if (!hasOverride) {
           return res.status(403).json({
             success: false,
@@ -431,53 +430,49 @@ router.delete('/:id', authMiddleware.authorize('conflict', 'delete'), (req, res,
  * @body    {String} reason - Reason for escalation
  * @returns {Object} Updated conflict
  */
-router.post(
-  '/:id/escalate',
-  authMiddleware.authorize('conflict', 'escalate'),
-  (req, res, next) => {
-    const { tenantId } = req.tenantContext;
-    const userId = req.user.id;
-    const conflictId = req.params.id;
-    const { newSeverity } = req.body;
-    const { reason } = req.body;
+router.post('/:id/escalate', authMiddleware.authorize('conflict', 'escalate'), (req, res, next) => {
+  const { tenantId } = req.tenantContext;
+  const userId = req.user.id;
+  const conflictId = req.params.id;
+  const { newSeverity } = req.body;
+  const { reason } = req.body;
 
-    if (!newSeverity || ['medium', 'high', 'critical'].indexOf(newSeverity) === -1) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid severity. Must be medium, high, or critical',
-      });
-    }
+  if (!newSeverity || ['medium', 'high', 'critical'].indexOf(newSeverity) === -1) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid severity. Must be medium, high, or critical',
+    });
+  }
 
-    Conflict.findOne({
-      _id: conflictId,
-      tenantId,
-    })
-      .then((conflict) => {
-        if (!conflict) {
-          return res.status(404).json({
-            success: false,
-            error: `Conflict not found with id ${conflictId}`,
-          });
-        }
-
-        return conflict.escalate(newSeverity, reason || 'Escalated via API', userId);
-      })
-      .then((updatedConflict) => {
-        if (!updatedConflict || updatedConflict.status === 404) {
-          return;
-        }
-
-        res.status(200).json({
-          success: true,
-          data: updatedConflict,
-          message: `Conflict escalated to ${newSeverity}`,
+  Conflict.findOne({
+    _id: conflictId,
+    tenantId,
+  })
+    .then((conflict) => {
+      if (!conflict) {
+        return res.status(404).json({
+          success: false,
+          error: `Conflict not found with id ${conflictId}`,
         });
-      })
-      .catch((error) => {
-        next(error);
+      }
+
+      return conflict.escalate(newSeverity, reason || 'Escalated via API', userId);
+    })
+    .then((updatedConflict) => {
+      if (!updatedConflict || updatedConflict.status === 404) {
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: updatedConflict,
+        message: `Conflict escalated to ${newSeverity}`,
       });
-  },
-);
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
 
 /*
  * @route   POST /api/v1/conflicts/:id/resolve
@@ -488,53 +483,49 @@ router.post(
  * @body    {String} details - Resolution details
  * @returns {Object} Resolved conflict
  */
-router.post(
-  '/:id/resolve',
-  authMiddleware.authorize('conflict', 'resolve'),
-  (req, res, next) => {
-    const { tenantId } = req.tenantContext;
-    const userId = req.user.id;
-    const conflictId = req.params.id;
-    const { resolutionType } = req.body;
-    const { details } = req.body;
+router.post('/:id/resolve', authMiddleware.authorize('conflict', 'resolve'), (req, res, next) => {
+  const { tenantId } = req.tenantContext;
+  const userId = req.user.id;
+  const conflictId = req.params.id;
+  const { resolutionType } = req.body;
+  const { details } = req.body;
 
-    if (!resolutionType || !details) {
-      return res.status(400).json({
-        success: false,
-        error: 'resolutionType and details are required',
-      });
-    }
+  if (!resolutionType || !details) {
+    return res.status(400).json({
+      success: false,
+      error: 'resolutionType and details are required',
+    });
+  }
 
-    Conflict.findOne({
-      _id: conflictId,
-      tenantId,
-    })
-      .then((conflict) => {
-        if (!conflict) {
-          return res.status(404).json({
-            success: false,
-            error: `Conflict not found with id ${conflictId}`,
-          });
-        }
-
-        return conflict.resolve(resolutionType, details, userId);
-      })
-      .then((resolvedConflict) => {
-        if (!resolvedConflict || resolvedConflict.status === 404) {
-          return;
-        }
-
-        res.status(200).json({
-          success: true,
-          data: resolvedConflict,
-          message: 'Conflict resolved successfully',
+  Conflict.findOne({
+    _id: conflictId,
+    tenantId,
+  })
+    .then((conflict) => {
+      if (!conflict) {
+        return res.status(404).json({
+          success: false,
+          error: `Conflict not found with id ${conflictId}`,
         });
-      })
-      .catch((error) => {
-        next(error);
+      }
+
+      return conflict.resolve(resolutionType, details, userId);
+    })
+    .then((resolvedConflict) => {
+      if (!resolvedConflict || resolvedConflict.status === 404) {
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: resolvedConflict,
+        message: 'Conflict resolved successfully',
       });
-  },
-);
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
 
 /*
  * @route   POST /api/v1/conflicts/:id/ethical-wall
@@ -590,7 +581,7 @@ router.post(
       .catch((error) => {
         next(error);
       });
-  },
+  }
 );
 
 // ==================== CONFLICT SCREENING & ANALYTICS ====================
@@ -624,16 +615,18 @@ router.post('/screen', authMiddleware.authorize('conflict', 'screen'), (req, res
       // Filter by matter type if provided
       let filteredMatches = matches;
       if (matterType) {
-        filteredMatches = matches.filter((conflict) => (
-          !conflict.matter
-            || !conflict.matter.matterType
-            || conflict.matter.matterType === matterType
-        ));
+        filteredMatches = matches.filter(
+          (conflict) =>
+            !conflict.matter ||
+            !conflict.matter.matterType ||
+            conflict.matter.matterType === matterType
+        );
       }
 
-      const message = filteredMatches.length > 0
-        ? 'Potential conflicts found'
-        : 'No potential conflicts detected';
+      const message =
+        filteredMatches.length > 0
+          ? 'Potential conflicts found'
+          : 'No potential conflicts detected';
 
       res.status(200).json({
         success: true,
@@ -732,90 +725,87 @@ router.get('/search', authMiddleware.authorize('conflict', 'read'), (req, res, n
  * @param   {String} id - Conflict ID
  * @returns {Object} Compliance status
  */
-router.get(
-  '/:id/compliance',
-  authMiddleware.authorize('conflict', 'read'),
-  (req, res, next) => {
-    const { tenantId } = req.tenantContext;
-    const conflictId = req.params.id;
+router.get('/:id/compliance', authMiddleware.authorize('conflict', 'read'), (req, res, next) => {
+  const { tenantId } = req.tenantContext;
+  const conflictId = req.params.id;
 
-    Conflict.findOne({
-      _id: conflictId,
-      tenantId,
-    })
-      .select('compliance audit.metadata')
-      .then((conflict) => {
-        if (!conflict) {
-          return res.status(404).json({
-            success: false,
-            error: `Conflict not found with id ${conflictId}`,
-          });
-        }
-
-        const complianceStatus = {
-          popia: {
-            compliant: conflict.popiaCompliant || false,
-            consentObtained:
-              (conflict.compliance
-                && conflict.compliance.popia
-                && conflict.compliance.popia.dataSubjectConsent
-                && conflict.compliance.popia.dataSubjectConsent.obtained)
-              || false,
-            officerNotified:
-              (conflict.compliance
-                && conflict.compliance.popia
-                && conflict.compliance.popia.informationOfficerNotified)
-              || false,
-          },
-          lpc: {
-            rule7_1:
-              (conflict.compliance
-                && conflict.compliance.lpcRules
-                && conflict.compliance.lpcRules.rule7_1)
-              || false,
-            rule7_2:
-              (conflict.compliance
-                && conflict.compliance.lpcRules
-                && conflict.compliance.lpcRules.rule7_2)
-              || false,
-            ethicalClearanceRequired:
-              (conflict.compliance
-                && conflict.compliance.lpcRules
-                && conflict.compliance.lpcRules.ethicalClearanceRequired)
-              || false,
-          },
-          companiesAct: {
-            directorDutiesDeclared:
-              (conflict.compliance
-                && conflict.compliance.companiesAct
-                && conflict.compliance.companiesAct.directorDuties
-                && conflict.compliance.companiesAct.directorDuties.declarationFiled)
-              || false,
-            boardApproval:
-              (conflict.compliance
-                && conflict.compliance.companiesAct
-                && conflict.compliance.companiesAct.directorDuties
-                && conflict.compliance.companiesAct.directorDuties.boardApproval)
-              || false,
-          },
-        };
-
-        // Calculate overall compliance
-        complianceStatus.overallCompliant = complianceStatus.popia.compliant
-          && complianceStatus.lpc.rule7_1
-          && complianceStatus.companiesAct.directorDutiesDeclared;
-
-        res.status(200).json({
-          success: true,
-          data: complianceStatus,
-          message: 'Compliance status retrieved',
+  Conflict.findOne({
+    _id: conflictId,
+    tenantId,
+  })
+    .select('compliance audit.metadata')
+    .then((conflict) => {
+      if (!conflict) {
+        return res.status(404).json({
+          success: false,
+          error: `Conflict not found with id ${conflictId}`,
         });
-      })
-      .catch((error) => {
-        next(error);
+      }
+
+      const complianceStatus = {
+        popia: {
+          compliant: conflict.popiaCompliant || false,
+          consentObtained:
+            (conflict.compliance &&
+              conflict.compliance.popia &&
+              conflict.compliance.popia.dataSubjectConsent &&
+              conflict.compliance.popia.dataSubjectConsent.obtained) ||
+            false,
+          officerNotified:
+            (conflict.compliance &&
+              conflict.compliance.popia &&
+              conflict.compliance.popia.informationOfficerNotified) ||
+            false,
+        },
+        lpc: {
+          rule7_1:
+            (conflict.compliance &&
+              conflict.compliance.lpcRules &&
+              conflict.compliance.lpcRules.rule7_1) ||
+            false,
+          rule7_2:
+            (conflict.compliance &&
+              conflict.compliance.lpcRules &&
+              conflict.compliance.lpcRules.rule7_2) ||
+            false,
+          ethicalClearanceRequired:
+            (conflict.compliance &&
+              conflict.compliance.lpcRules &&
+              conflict.compliance.lpcRules.ethicalClearanceRequired) ||
+            false,
+        },
+        companiesAct: {
+          directorDutiesDeclared:
+            (conflict.compliance &&
+              conflict.compliance.companiesAct &&
+              conflict.compliance.companiesAct.directorDuties &&
+              conflict.compliance.companiesAct.directorDuties.declarationFiled) ||
+            false,
+          boardApproval:
+            (conflict.compliance &&
+              conflict.compliance.companiesAct &&
+              conflict.compliance.companiesAct.directorDuties &&
+              conflict.compliance.companiesAct.directorDuties.boardApproval) ||
+            false,
+        },
+      };
+
+      // Calculate overall compliance
+      complianceStatus.overallCompliant =
+        complianceStatus.popia.compliant &&
+        complianceStatus.lpc.rule7_1 &&
+        complianceStatus.companiesAct.directorDutiesDeclared;
+
+      res.status(200).json({
+        success: true,
+        data: complianceStatus,
+        message: 'Compliance status retrieved',
       });
-  },
-);
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
 
 /*
  * @route   POST /api/v1/conflicts/:id/compliance/popia-consent
@@ -881,7 +871,7 @@ router.post(
       .catch((error) => {
         next(error);
       });
-  },
+  }
 );
 
 // ==================== ERROR HANDLING MIDDLEWARE ====================

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 // Production Readiness Validator for Wilsy OS
 const crypto = require('crypto');
 const fs = require('fs');

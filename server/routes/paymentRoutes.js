@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/paymentRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Payment Processing Gateway (Tenant-Scoped). Manages card processing, checkout sessions, and secure Webhook handling (PayFast/Stripe).
@@ -83,7 +81,7 @@ router.post(
       err.code = 'PAYMENT_INIT_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -118,7 +116,7 @@ router.post(
       err.code = 'WEBHOOK_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -150,7 +148,7 @@ router.post(
       err.code = 'REFUND_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*

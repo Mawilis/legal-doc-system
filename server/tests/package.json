@@ -5,15 +5,23 @@
   "description": "Tests for Document Generation Engine",
   "scripts": {
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern=unit --coverage",
-    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern=integration --runInBand",    "test:all": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --runInBand",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern=integration --runInBand",
+    "test:all": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --runInBand",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },
   "jest": {
     "testEnvironment": "node",
-    "setupFilesAfterEnv": ["./setup.js"],
+    "setupFilesAfterEnv": [
+      "./setup.js"
+    ],
     "transform": {},
-    "extensionsToTreatAsEsm": [".js", ".jsx", ".ts", ".tsx"],
+    "extensionsToTreatAsEsm": [
+      ".js",
+      ".jsx",
+      ".ts",
+      ".tsx"
+    ],
     "moduleNameMapper": {
       "^(\\.{1,2}/.*)\\.js$": "$1"
     },

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - CASE ANALYSIS SERVICE                                          ║
@@ -19,7 +19,7 @@ export const caseAnalysisService = {
   async analyzeCase(caseId, tenantId) {
     try {
       const case_ = await Case.findOne({ _id: caseId, tenantId });
-      
+
       if (!case_) {
         throw new Error('Case not found');
       }
@@ -30,7 +30,7 @@ export const caseAnalysisService = {
         keyIssues: ['Citizenship', 'Constitutional Rights', 'Administrative Justice'],
         relevantPrecedents: ['S v Makwanyane 1995 (3) SA 391 (CC)'],
         predictedOutcome: 'Likely in favor of applicant',
-        confidence: 0.85
+        confidence: 0.85,
       };
     } catch (error) {
       logger.error('Case analysis failed', { error: error.message, caseId });
@@ -49,14 +49,14 @@ export const caseAnalysisService = {
           caseName: 'S v Zuma',
           citation: '1995 (2) SA 642 (CC)',
           court: 'CONSTITUTIONAL_COURT',
-          similarity: 0.92
+          similarity: 0.92,
         },
         {
           caseName: 'S v Makwanyane',
           citation: '1995 (3) SA 391 (CC)',
           court: 'CONSTITUTIONAL_COURT',
-          similarity: 0.87
-        }
+          similarity: 0.87,
+        },
       ];
     } catch (error) {
       logger.error('Precedent search failed', { error: error.message });
@@ -74,13 +74,13 @@ export const caseAnalysisService = {
         complexity: 70,
         cost: 60,
         duration: 55,
-        precedent: 75
+        precedent: 75,
       },
       recommendations: [
         'Consider early settlement',
         'Gather additional evidence',
-        'Consult with senior counsel'
-      ]
+        'Consult with senior counsel',
+      ],
     };
   },
 
@@ -94,11 +94,11 @@ export const caseAnalysisService = {
         legalFees: 150000,
         courtCosts: 50000,
         expertWitnesses: 40000,
-        miscellaneous: 10000
+        miscellaneous: 10000,
       },
-      confidence: 0.85
+      confidence: 0.85,
     };
-  }
+  },
 };
 
 export default caseAnalysisService;

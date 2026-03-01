@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/uploadRoutes.js
  * -----------------------------------------------------------------------------
  * STATUS: EPITOME | Upload Gateway (Tenant-Scoped, Auditable, Investor-Grade)
@@ -92,7 +90,7 @@ router.post(
       err.code = 'UPLOAD_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

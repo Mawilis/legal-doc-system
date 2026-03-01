@@ -1,5 +1,5 @@
-/* eslint-disable */
-import { Router } from "express";
+#!/* eslint-disable */
+import { Router } from 'express';
 import { validateLegalPayload } from '../middleware/validationMiddleware.js';
 
 const router = Router();

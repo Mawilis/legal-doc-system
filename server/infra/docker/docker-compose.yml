@@ -12,10 +12,10 @@ services:
     container_name: wilsy-server
     restart: unless-stopped
     ports:
-      - "3000:3000"
-      - "9090:9090"
-      - "9095:9095"
-      - "9096:9096"
+      - '3000:3000'
+      - '9090:9090'
+      - '9095:9095'
+      - '9096:9096'
     environment:
       - NODE_ENV=production
       - REDIS_HOST=redis
@@ -34,14 +34,14 @@ services:
     networks:
       - wilsy-network
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
-    
+        max-size: '10m'
+        max-file: '3'
+
     # Self-healing healthcheck
     healthcheck:
-      test: ["CMD", "node", "scripts/recovery-sentinel.js", "docker-healthcheck"]
+      test: ['CMD', 'node', 'scripts/recovery-sentinel.js', 'docker-healthcheck']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -62,14 +62,14 @@ services:
     container_name: wilsy-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
     networks:
       - wilsy-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -79,7 +79,7 @@ services:
     container_name: wilsy-mongodb
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongodb-data:/data/db
     environment:
@@ -99,8 +99,8 @@ services:
     container_name: wilsy-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./ssl:/etc/nginx/ssl
@@ -110,7 +110,7 @@ services:
     networks:
       - wilsy-network
     healthcheck:
-      test: ["CMD", "nginx", "-t"]
+      test: ['CMD', 'nginx', '-t']
       interval: 30s
       timeout: 5s
       retries: 3
@@ -135,17 +135,17 @@ services:
     networks:
       - wilsy-network
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   prometheus:
     image: prom/prometheus:latest
     container_name: wilsy-prometheus
     restart: unless-stopped
     ports:
-      - "9091:9090"
+      - '9091:9090'
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
@@ -163,7 +163,7 @@ services:
     container_name: wilsy-grafana
     restart: unless-stopped
     ports:
-      - "3001:3000"
+      - '3001:3000'
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_INSTALL_PLUGINS=grafana-piechart-panel

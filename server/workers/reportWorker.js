@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * /Users/wilsonkhanyezi/legal-doc-system/server/workers/reportWorker.js
  *
  * Report Worker

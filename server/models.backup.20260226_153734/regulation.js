@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * QUANTUM SENTINEL: REGULATION MODEL - JURISPRUDENCE DNA ENCAPSULATION
  * ============================================================================
@@ -1052,7 +1050,7 @@ const RegulationSchema = new Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1067,9 +1065,9 @@ const RegulationSchema = new Schema(
 RegulationSchema.virtual('isActive').get(function () {
   const now = new Date();
   return (
-    this.status === 'ACTIVE'
-    && this.effectiveDate <= now
-    && (!this.sunsetDate || this.sunsetDate > now)
+    this.status === 'ACTIVE' &&
+    this.effectiveDate <= now &&
+    (!this.sunsetDate || this.sunsetDate > now)
   );
 });
 
@@ -1105,7 +1103,10 @@ RegulationSchema.virtual('ageInDays').get(function () {
  */
 RegulationSchema.virtual('totalSections').get(function () {
   if (!this.structure || !this.structure.chapters) return 0;
-  return this.structure.chapters.reduce((total, chapter) => total + (chapter.sections ? chapter.sections.length : 0), 0);
+  return this.structure.chapters.reduce(
+    (total, chapter) => total + (chapter.sections ? chapter.sections.length : 0),
+    0
+  );
 });
 
 /*
@@ -1167,7 +1168,7 @@ RegulationSchema.index(
       'structure.chapters.sections.content': 3,
     },
     default_language: 'english',
-  },
+  }
 );
 
 // ============================================================================
@@ -1520,12 +1521,14 @@ RegulationSchema.statics.advancedSearch = function (filters = {}) {
 
   // Electronic signatures filter
   if (hasElectronicSignatures !== undefined) {
-    searchQuery['structure.chapters.sections.relatesToElectronicSignatures'] = hasElectronicSignatures;
+    searchQuery['structure.chapters.sections.relatesToElectronicSignatures'] =
+      hasElectronicSignatures;
   }
 
   // Compliance requirement filter
   if (complianceRequirement) {
-    searchQuery[`complianceMapping.${complianceRequirement.type}.condition`] = complianceRequirement.value;
+    searchQuery[`complianceMapping.${complianceRequirement.type}.condition`] =
+      complianceRequirement.value;
   }
 
   return this.find(searchQuery)
@@ -1583,7 +1586,9 @@ RegulationSchema.methods.getComplianceSummary = function () {
     summary.complianceAreas.push({
       framework: 'POPIA',
       count: popiaCount,
-      completed: this.complianceMapping.lawfulProcessingConditions.filter((c) => c.automatedChecks?.some((check) => check.implementationStatus === 'IMPLEMENTED')).length,
+      completed: this.complianceMapping.lawfulProcessingConditions.filter((c) =>
+        c.automatedChecks?.some((check) => check.implementationStatus === 'IMPLEMENTED')
+      ).length,
     });
   }
 

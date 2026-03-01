@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 import { DateTime } from 'luxon.js';
 import { EventEmitter } from 'node:events';
 

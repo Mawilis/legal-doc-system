@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/aiRoutes.js
  * STATUS: PRODUCTION-READY (WILSY OS V1.2)
  * PURPOSE: AI Intelligence Gateway - The $500M/year Revenue Engine
@@ -95,7 +93,7 @@ const analyzeSchema = {
       'contract_summary',
       'compliance_check',
       'negotiation_analysis',
-      'precedent_search',
+      'precedent_search'
     )
     .description('Type of AI analysis to perform'),
 
@@ -148,8 +146,8 @@ const redactSchema = {
           'ADDRESS',
           'NAME',
           'IBAN',
-          'SWIFT_CODE',
-        ),
+          'SWIFT_CODE'
+        )
     )
     .default(['RSA_ID', 'EMAIL', 'PHONE', 'NAME'])
     .description('PII types to detect and redact'),
@@ -179,7 +177,7 @@ const batchAnalysisSchema = {
   analysisPipeline: validateSchema
     .array()
     .items(
-      validateSchema.string().valid('clause_extraction', 'risk_assessment', 'compliance_check'),
+      validateSchema.string().valid('clause_extraction', 'risk_assessment', 'compliance_check')
     )
     .min(1)
     .max(5)
@@ -297,7 +295,7 @@ router.post(
 
       next(error);
     }
-  },
+  }
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -397,7 +395,7 @@ router.post(
 
       next(error);
     }
-  },
+  }
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -492,7 +490,7 @@ router.post(
 
       next(error);
     }
-  },
+  }
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -570,7 +568,7 @@ router.get(
 
       next(error);
     }
-  },
+  }
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -606,7 +604,7 @@ router.get(
         uptime: process.uptime(),
       },
     });
-  },
+  }
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 console.log('🏥 WILSY OS - System Health Check');
 console.log('💰 INVESTOR-GRADE HEALTH VERIFICATION');

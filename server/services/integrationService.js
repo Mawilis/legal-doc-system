@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/services/integrationService.js
  * STATUS: PRODUCTION-READY | EPITOME | INTEGRATION ORCHESTRATOR
  * -----------------------------------------------------------------------------
@@ -116,7 +114,8 @@ async function mergeCredentials(baseCreds = {}, provider) {
       credsObj = {};
       for (const entry of baseCreds) {
         if (Array.isArray(entry) && entry.length >= 2) credsObj[String(entry[0])] = entry[1];
-        else if (entry && typeof entry === 'object' && entry.key) credsObj[String(entry.key)] = entry.value;
+        else if (entry && typeof entry === 'object' && entry.key)
+          credsObj[String(entry.key)] = entry.value;
       }
     }
   } else if (baseCreds && typeof baseCreds === 'object') {
@@ -128,7 +127,7 @@ async function mergeCredentials(baseCreds = {}, provider) {
 
   // Known credential keys to check for env overrides
   const knownKeys = new Set(
-    Object.keys(credsObj).concat(['API_KEY', 'API_SECRET', 'TOKEN', 'CLIENT_ID', 'CLIENT_SECRET']),
+    Object.keys(credsObj).concat(['API_KEY', 'API_SECRET', 'TOKEN', 'CLIENT_ID', 'CLIENT_SECRET'])
   );
 
   // Resolve each credential: env -> KMS ref -> DB value (only if non-secret)
@@ -143,7 +142,8 @@ async function mergeCredentials(baseCreds = {}, provider) {
     if (dbVal && typeof dbVal === 'object' && dbVal.secretRef) secretRef = dbVal.secretRef;
     else if (dbVal && typeof dbVal === 'string' && dbVal.startsWith('kms://')) secretRef = dbVal;
 
-    const final = (await safeResolveSecret(envVal, secretRef)) || (typeof dbVal === 'string' ? dbVal : null);
+    const final =
+      (await safeResolveSecret(envVal, secretRef)) || (typeof dbVal === 'string' ? dbVal : null);
     if (final !== null) resolved[key] = final;
   }
 
@@ -163,7 +163,8 @@ function buildConfigObject(rawConfig) {
       const out = {};
       for (const entry of rawConfig) {
         if (Array.isArray(entry) && entry.length >= 2) out[String(entry[0])] = entry[1];
-        else if (entry && typeof entry === 'object' && entry.key) out[String(entry.key)] = entry.value;
+        else if (entry && typeof entry === 'object' && entry.key)
+          out[String(entry.key)] = entry.value;
       }
       return out;
     }

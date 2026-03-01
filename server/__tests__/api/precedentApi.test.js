@@ -1,14 +1,14 @@
-import { expect } from 'chai';
+#!import { expect } from 'chai';
 // DEDUPLICATED IMPORTS
 import * as auditService from '../../services/audit/auditService.js';
 
 describe('🚀 WILSY OS - REVENUE & API VALIDATION', () => {
   describe('💰 INVESTOR METRICS: REVENUE PROJECTIONS', () => {
     it('should validate the R25M/year revenue roadmap', () => {
-      const basicTier = 100 * 15000 * 12;      // 100 Small Firms
-      const premiumTier = 20 * 50000 * 12;     // 20 Mid-tier Firms
-      const enterpriseTier = 5 * 150000 * 12;  // 5 Big Law Firms
-      
+      const basicTier = 100 * 15000 * 12; // 100 Small Firms
+      const premiumTier = 20 * 50000 * 12; // 20 Mid-tier Firms
+      const enterpriseTier = 5 * 150000 * 12; // 5 Big Law Firms
+
       const totalRevenue = basicTier + premiumTier + enterpriseTier;
 
       console.log('\n  💰 QUANTUM M&A ENGINE - REVENUE MODEL:');

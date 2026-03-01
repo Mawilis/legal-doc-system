@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ POPIA UTILS - COMPLIANCE REDACTION MODULE                     ║
   ║ [POPIA §19 Compliant | ECT Act §15 Verified | Production]     ║
@@ -8,12 +8,12 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/popiaUtils.js
  * VERSION: 2.0.0 (ES Module)
  * CREATED: 2026-02-24
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R500K/year manual PII redaction
  * • Generates: R50K/year revenue @ 85% margin
  * • Compliance: POPIA §19, ECT Act §15 Verified
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "expectedConsumers": [
@@ -27,7 +27,7 @@
  *     "crypto"
  *   ]
  * }
- * 
+ *
  * MERMAID INTEGRATION:
  * graph TD
  *   A[Input Data] --> B{PII Detection}
@@ -45,7 +45,7 @@
  *   style H fill:#9f9,stroke:#333
  */
 
-import crypto from "crypto";
+import crypto from 'crypto';
 
 /**
  * Fields that should always be redacted from logs and outputs
@@ -75,22 +75,22 @@ export const REDACT_FIELDS = [
 export const PII_PATTERNS = {
   /** South African ID: 13 digits */
   SA_ID: /\b\d{13}\b/g,
-  
+
   /** Email addresses (RFC 5322 compliant pattern) */
   EMAIL: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-  
+
   /** South African phone numbers: +27XXXXXXXXX or 0XXXXXXXXX */
   PHONE: /(?:\+27|0)(?:\s?\(0\)|\s?)?\d{2}(?:\s?\d{3}\s?\d{4}|\d{7})/g,
-  
+
   /** Passport numbers: 2 letters + 7 digits */
   PASSPORT: /\b[A-Z]{2}\d{7}\b/g,
-  
+
   /** Bank account numbers: 10-12 digits */
   BANK_ACCOUNT: /\b\d{10,12}\b/g,
-  
+
   /** Credit card numbers (basic pattern) */
   CREDIT_CARD: /\b(?:\d[ -]*?){13,16}\b/g,
-  
+
   /** South African tax number: 10 digits */
   TAX_NUMBER: /\b\d{10}\b/g,
 };
@@ -194,8 +194,8 @@ export function redactArrayObjects(arr, fields = REDACT_FIELDS) {
   if (!Array.isArray(arr)) {
     return arr;
   }
-  
-  return arr.map(item => redactObjectFields(item, fields));
+
+  return arr.map((item) => redactObjectFields(item, fields));
 }
 
 /**
@@ -322,15 +322,15 @@ export function createLogRedactor() {
  */
 export function maskEmail(email) {
   if (!email || typeof email !== 'string') return '';
-  
+
   const parts = email.split('@');
   if (parts.length !== 2) return redactSensitive(email);
-  
+
   const [local, domain] = parts;
   if (local.length <= 2) {
     return `${'*'.repeat(local.length)}@${domain}`;
   }
-  
+
   return `${local.substring(0, 2)}${'*'.repeat(local.length - 2)}@${domain}`;
 }
 
@@ -341,14 +341,14 @@ export function maskEmail(email) {
  */
 export function maskPhone(phone) {
   if (!phone || typeof phone !== 'string') return '';
-  
+
   const digits = phone.replace(/\D/g, '');
   if (digits.length < 8) return redactSensitive(phone);
-  
+
   // Show last 4 digits, mask the rest
   const last4 = digits.slice(-4);
   const masked = '*'.repeat(digits.length - 4) + last4;
-  
+
   // Preserve original formatting if possible
   if (phone.includes('+')) {
     return '+' + masked;
@@ -363,10 +363,10 @@ export function maskPhone(phone) {
  */
 export function maskIDNumber(idNumber) {
   if (!idNumber || typeof idNumber !== 'string') return '';
-  
+
   const digits = idNumber.replace(/\D/g, '');
   if (digits.length !== 13) return redactSensitive(idNumber);
-  
+
   // Show first 6 (birth date) and last 1 (check digit), mask middle 6
   return `${digits.substring(0, 6)}******${digits.substring(12)}`;
 }

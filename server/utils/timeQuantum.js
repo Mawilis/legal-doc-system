@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * 🔷⏰ QUANTUM TIME ORCHESTRATOR: CHRONOSPHERE OF LEGAL CERTAINTY ⏰🔷
  * ============================================================================
@@ -118,7 +116,7 @@ const REQUIRED_TEMPORAL_ENV_VARS = [
 REQUIRED_TEMPORAL_ENV_VARS.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(
-      `QUANTUM TEMPORAL BREACH: Missing critical environment variable: ${varName}. Add to /server/.env`,
+      `QUANTUM TEMPORAL BREACH: Missing critical environment variable: ${varName}. Add to /server/.env`
     );
   }
 });
@@ -1239,11 +1237,13 @@ class QuantumTimeOrchestrator {
 
     if (days > 0) {
       return `${days} day${days !== 1 ? 's' : ''} ${hours % 24} hour${hours % 24 !== 1 ? 's' : ''}`;
-    } if (hours > 0) {
+    }
+    if (hours > 0) {
       return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes % 60} minute${
         minutes % 60 !== 1 ? 's' : ''
       }`;
-    } if (minutes > 0) {
+    }
+    if (minutes > 0) {
       return `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds % 60} second${
         seconds % 60 !== 1 ? 's' : ''
       }`;
@@ -1274,10 +1274,10 @@ class QuantumTimeOrchestrator {
 
     // Quarter ends
     if (
-      (month === 3 && day === 31)
-      || (month === 6 && day === 30)
-      || (month === 9 && day === 30)
-      || (month === 12 && day === 31)
+      (month === 3 && day === 31) ||
+      (month === 6 && day === 30) ||
+      (month === 9 && day === 30) ||
+      (month === 12 && day === 31)
     ) {
       return 'Quarter-end financial reporting';
     }

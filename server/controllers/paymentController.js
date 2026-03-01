@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File Path: /server/controllers/paymentController.js
  *
  * ██████╗  █████╗ ██╗   ██╗███╗   ███╗███████╗███╗   ██╗████████╗
@@ -653,7 +651,7 @@ class PaymentController {
       const reconciliation = await this.createReconciliationRecord(
         reconciliationData,
         reconciliationResult,
-        discrepancies,
+        discrepancies
       );
 
       // Create audit trail
@@ -763,7 +761,7 @@ class PaymentController {
       const reportRecord = await this.createTaxReportRecord(
         taxReport,
         digitalSignature,
-        reportParams,
+        reportParams
       );
 
       // Create audit trail
@@ -1092,11 +1090,12 @@ class PaymentController {
         paymentData,
         clientData,
         suspiciousPatterns,
-        sanctionCheck,
+        sanctionCheck
       );
 
       // Determine if reporting required
-      const reportingRequired = riskLevel === 'HIGH' || paymentData.amount >= SUSPICIOUS_TRANSACTION_THRESHOLD;
+      const reportingRequired =
+        riskLevel === 'HIGH' || paymentData.amount >= SUSPICIOUS_TRANSACTION_THRESHOLD;
 
       return {
         screened: true,
@@ -1348,9 +1347,9 @@ class PaymentController {
       },
       consumer: clientData
         ? {
-          name: clientData.name,
-          contact: clientData.contactEmail || 'Not provided',
-        }
+            name: clientData.name,
+            contact: clientData.contactEmail || 'Not provided',
+          }
         : null,
       // CPA Consumer rights
       consumerRights: {

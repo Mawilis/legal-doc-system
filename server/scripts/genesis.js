@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/scripts/genesis.js
  * STATUS: EPITOME | DATA SEEDING | V2 (FIXED SLUGS)
  * -----------------------------------------------------------------------------
@@ -169,13 +167,22 @@ const seed = async () => {
   // Create Tenant Admins
   const userMap = [
     {
-      name: 'John Smith', email: 'john@smith.law', role: 'TENANT_ADMIN', tenantIdx: 1,
+      name: 'John Smith',
+      email: 'john@smith.law',
+      role: 'TENANT_ADMIN',
+      tenantIdx: 1,
     },
     {
-      name: 'Sarah Eagle', email: 'sarah@legaleagles.co.za', role: 'TENANT_ADMIN', tenantIdx: 2,
+      name: 'Sarah Eagle',
+      email: 'sarah@legaleagles.co.za',
+      role: 'TENANT_ADMIN',
+      tenantIdx: 2,
     },
     {
-      name: 'Advocate Zulu', email: 'zulu@ppd.gov.za', role: 'LAWYER', tenantIdx: 3,
+      name: 'Advocate Zulu',
+      email: 'zulu@ppd.gov.za',
+      role: 'LAWYER',
+      tenantIdx: 3,
     },
   ];
 

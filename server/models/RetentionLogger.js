@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*!
+#!/*!
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ ██████╗ ███████╗████████╗███████╗███╗   ██╗████████╗██╗ ██████╗ ███╗   ██╗   ║
 ║ ██╔══██╗██╔════╝╚══██╔══╝██╔════╝████╗  ██║╚══██╔══╝██║██╔═══██╗████╗  ██║   ║
@@ -205,7 +203,7 @@ const RetentionLoggerSchema = new mongoose.Schema(
     strict: true, // Reject fields not defined in schema
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // ===================== COMPOUND INDEXES =====================
@@ -288,7 +286,7 @@ RetentionLoggerSchema.statics.generateCertificateHash = function (disposalRecord
 RetentionLoggerSchema.statics.findByTenantAndDateRange = async function (
   tenantId,
   startDate,
-  endDate,
+  endDate
 ) {
   if (!tenantId || !startDate || !endDate) {
     throw new Error('tenantId, startDate, and endDate are required');
@@ -385,7 +383,7 @@ RetentionLoggerSchema.pre('save', function (next) {
  */
 RetentionLoggerSchema.pre('remove', (next) => {
   next(
-    new Error('RetentionLogger records cannot be deleted. They are immutable for legal compliance.'),
+    new Error('RetentionLogger records cannot be deleted. They are immutable for legal compliance.')
   );
 });
 
@@ -394,7 +392,7 @@ RetentionLoggerSchema.pre('remove', (next) => {
  */
 RetentionLoggerSchema.pre('findOneAndUpdate', (next) => {
   next(
-    new Error('RetentionLogger records cannot be updated. They are immutable for legal compliance.'),
+    new Error('RetentionLogger records cannot be updated. They are immutable for legal compliance.')
   );
 });
 
@@ -457,7 +455,8 @@ flowchart TD
 `;
 
 // Export the model
-const RetentionLogger = mongoose.models.RetentionLogger || mongoose.model('RetentionLogger', RetentionLoggerSchema);
+const RetentionLogger =
+  mongoose.models.RetentionLogger || mongoose.model('RetentionLogger', RetentionLoggerSchema);
 
 export default RetentionLogger;
 
@@ -565,7 +564,7 @@ if (process.env.NODE_ENV === 'test') {
       await log.save();
 
       await expect(
-        RetentionLogger.findByIdAndUpdate(log._id, { action: 'MODIFIED' }),
+        RetentionLogger.findByIdAndUpdate(log._id, { action: 'MODIFIED' })
       ).rejects.toThrow(/cannot be updated/);
     });
 
@@ -576,7 +575,7 @@ if (process.env.NODE_ENV === 'test') {
       const records = await RetentionLogger.findByTenantAndDateRange(
         testTenantId,
         startDate,
-        endDate,
+        endDate
       );
 
       expect(Array.isArray(records)).toBe(true);

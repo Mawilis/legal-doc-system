@@ -1,4 +1,4 @@
-/*
+#!/*
  * ================================================================================================
  * FILE: server/models/BillingRecord.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/BillingRecord.js

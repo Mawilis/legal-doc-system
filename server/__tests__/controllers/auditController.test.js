@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ AUDIT CONTROLLER TESTS - INVESTOR DUE DILIGENCE               ║
   ║ 100% coverage | Quantum-safe | Forensic evidence              ║
@@ -71,7 +69,9 @@ jest.mock('../../models/ValidationAudit', () => {
     timestamp: new Date(),
     userIp: '192.168.1.1',
     userAgent: 'test-agent',
-    calculateHash: jest.fn().mockReturnValue('abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'),
+    calculateHash: jest
+      .fn()
+      .mockReturnValue('abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'),
     toObject: jest.fn().mockReturnValue({
       auditId: 'AUDIT-1234567890-abcdef1234567890',
       action: 'CREATE',
@@ -375,7 +375,7 @@ describe('AuditController - Quantum Forensic Due Diligence', () => {
             $lte: new Date('2024-12-31'),
           },
         }),
-        expect.anything(),
+        expect.anything()
       );
     });
   });
@@ -539,7 +539,7 @@ describe('AuditController - Quantum Forensic Due Diligence', () => {
       // Generate evidence
       const canonicalized = JSON.stringify(
         auditEntries.sort((a, b) => a.chainPosition - b.chainPosition),
-        Object.keys(auditEntries[0]).sort(),
+        Object.keys(auditEntries[0]).sort()
       );
 
       const hash = crypto.createHash('sha256').update(canonicalized).digest('hex');
@@ -555,7 +555,10 @@ describe('AuditController - Quantum Forensic Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'audit-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'audit-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       // Verify evidence
       const fileExists = await fs

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* eslint-env mocha */
 /* eslint-disable import/extensions, no-unused-expressions, max-len */
 

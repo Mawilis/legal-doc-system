@@ -1,4 +1,4 @@
-/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - SECURITY LOG MODEL v4.0.0 - 100-YEAR FORENSIC LEDGER                      ║
   ║ [Production Grade | POPIA §19-22 | SHA256 Hash Chain | Court-Admissible Evidence]    ║
   ║ R240M Annual Revenue Protection | Immutable | Multi-Tenant | x-correlation-id        ║
@@ -78,8 +78,8 @@
  *   end
  */
 
-import crypto from "crypto";
-import mongoose from "mongoose";
+import crypto from 'crypto';
+import mongoose from 'mongoose';
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -190,403 +190,414 @@ const BLOCKCHAIN_NETWORKS = {
 // SCHEMA DEFINITION
 // ============================================================================
 
-const securityLogSchema = new mongoose.Schema({
-  /**
-   * Core Fields - Forensic Identity
-   */
-  timestamp: {
-    type: Date,
-    default: Date.now,
-    required: [true, 'Timestamp is required for forensic audit'],
-    index: true,
-    immutable: true,
-    description: 'Exact time of event (nanosecond precision via Date)',
-  },
-
-  eventType: {
-    type: String,
-    required: [true, 'Event type is required for classification'],
-    enum: {
-      values: Object.values(EVENT_TYPES),
-      message: '{VALUE} is not a valid security event type',
-    },
-    index: true,
-    description: 'Classification of the security event',
-  },
-
-  severity: {
-    type: String,
-    required: [true, 'Severity level is required for prioritization'],
-    enum: {
-      values: Object.values(SEVERITY_LEVELS),
-      message: '{VALUE} is not a valid severity level',
-    },
-    default: SEVERITY_LEVELS.WARNING,
-    index: true,
-    description: 'Impact level for triage and notification',
-  },
-
-  /**
-   * Traceability - x-correlation-id Chain
-   */
-  correlationId: {
-    type: String,
-    required: [true, 'correlationId is required for request tracing'],
-    index: true,
-    validate: {
-      validator(v) {
-        return /^[a-f0-9]{16,32}$/i.test(v);
-      },
-      message: 'correlationId must be a valid hexadecimal string (16-32 chars)',
-    },
-    description: 'x-correlation-id from headers - traces entire request flow',
-  },
-
-  previousCorrelationId: {
-    type: String,
-    sparse: true,
-    index: true,
-    validate: {
-      validator(v) {
-        return !v || /^[a-f0-9]{16,32}$/i.test(v);
-      },
-      message: 'previousCorrelationId must be a valid hexadecimal string',
-    },
-    description: 'Links to previous request in chain (for workflows)',
-  },
-
-  sessionId: {
-    type: String,
-    sparse: true,
-    index: true,
-    description: 'User session identifier for behavioral analysis',
-  },
-
-  /**
-   * Multi-tenant Isolation
-   */
-  tenantId: {
-    type: String,
-    required: [true, 'tenantId is required for multi-tenant isolation'],
-    index: true,
-    validate: {
-      validator(v) {
-        return /^[a-zA-Z0-9_-]{8,64}$/.test(v);
-      },
-      message: 'tenantId must be 8-64 alphanumeric characters',
-    },
-    description: 'Isolates logs by tenant (POPIA §19)',
-  },
-
-  userId: {
-    type: String,
-    index: true,
-    sparse: true,
-    validate: {
-      validator(v) {
-        return !v || /^[a-zA-Z0-9_-]{8,64}$/.test(v);
-      },
-      message: 'userId must be 8-64 alphanumeric characters when provided',
-    },
-    description: 'User who performed the action (if authenticated)',
-  },
-
-  /**
-   * Request Context
-   */
-  requestId: {
-    type: String,
-    required: [true, 'requestId is required for request tracing'],
-    index: true,
-    description: 'Short-lived request identifier (different from correlationId)',
-  },
-
-  ipAddress: {
-    type: String,
-    validate: {
-      validator(v) {
-        return !v || /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([a-f0-9:]+)$/i.test(v);
-      },
-      message: 'Invalid IP address format',
-    },
-    description: 'Source IP (hashed for GDPR compliance)',
-  },
-
-  ipAddressHash: {
-    type: String,
-    sparse: true,
-    description: 'SHA256 hash of IP for GDPR-compliant analytics',
-  },
-
-  userAgent: {
-    type: String,
-    maxlength: [500, 'userAgent cannot exceed 500 characters'],
-    trim: true,
-    description: 'Client user agent string',
-  },
-
-  endpoint: {
-    type: String,
-    maxlength: [200, 'endpoint cannot exceed 200 characters'],
-    trim: true,
-    description: 'API endpoint accessed',
-  },
-
-  method: {
-    type: String,
-    enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
-    description: 'HTTP method',
-  },
-
-  responseTime: {
-    type: Number,
-    min: 0,
-    description: 'Response time in milliseconds',
-  },
-
-  statusCode: {
-    type: Number,
-    min: 100,
-    max: 599,
-    description: 'HTTP status code returned',
-  },
-
-  /**
-   * Event Details (flexible schema for different event types)
-   */
-  details: {
-    type: mongoose.Schema.Types.Mixed,
-    required: [true, 'Event details are required for forensic analysis'],
-    validate: {
-      validator(v) {
-        return v && typeof v === 'object';
-      },
-      message: 'details must be a valid object',
-    },
-    description: 'Event-specific data (schema varies by eventType)',
-  },
-
-  /**
-   * POPIA Compliance (Sections 19-22)
-   */
-  requiresBreachNotification: {
-    type: Boolean,
-    default: false,
-    index: true,
-    description: 'Whether this event requires POPIA breach notification',
-  },
-
-  breachNotifiedAt: {
-    type: Date,
-    sparse: true,
-    index: true,
-    description: 'When breach notification was sent',
-  },
-
-  dataSubjectsAffected: {
-    type: Number,
-    min: [0, 'dataSubjectsAffected cannot be negative'],
-    default: 0,
-    description: 'Number of data subjects impacted (for breach assessment)',
-  },
-
-  dataSubjectIds: [{
-    type: String,
-    description: 'IDs of affected data subjects (for DSAR tracking)',
-  }],
-
-  notificationSentTo: [{
-    authority: {
-      type: String,
-      enum: Object.values(NOTIFICATION_AUTHORITIES),
-    },
-    sentAt: {
-      type: Date,
-      default: Date.now,
-    },
-    reference: {
-      type: String,
-      description: 'Notification reference number',
-    },
-    method: {
-      type: String,
-      enum: ['email', 'api', 'manual', 'regulatory_portal'],
-    },
-    response: mongoose.Schema.Types.Mixed,
-  }],
-
-  consentId: {
-    type: String,
-    sparse: true,
-    description: 'Related consent record ID (for consent events)',
-  },
-
-  dsarId: {
-    type: String,
-    sparse: true,
-    description: 'Related DSAR request ID',
-  },
-
-  /**
-   * Data Retention (POPIA Section 14)
-   */
-  retentionPolicy: {
-    type: String,
-    enum: {
-      values: Object.values(RETENTION_POLICIES).map((p) => p.name),
-      message: '{VALUE} is not a valid retention policy',
-    },
-    default: RETENTION_POLICIES.COMPANIES_ACT_10_YEARS.name,
-    required: true,
-    description: 'Legal basis for retention period',
-  },
-
-  retentionLegalReference: {
-    type: String,
-    description: 'Specific legal section justifying retention',
-  },
-
-  dataResidency: {
-    type: String,
-    enum: {
-      values: Object.values(DATA_RESIDENCY),
-      message: '{VALUE} is not a valid data residency location',
-    },
-    default: DATA_RESIDENCY.ZA,
-    required: true,
-    description: 'Geographic location of data storage (POPIA §19)',
-  },
-
-  retentionStart: {
-    type: Date,
-    default: Date.now,
-    required: true,
-    description: 'When retention period begins',
-  },
-
-  retentionEnd: {
-    type: Date,
-    required: true,
-    description: 'When log can be purged (auto-delete via TTL index)',
-  },
-
-  /**
-   * Forensic Integrity - SHA256 Hash Chain (100-Year Evidence)
-   */
-  forensicHash: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true,
-    description: 'SHA256 hash of this record + previous hash',
-  },
-
-  previousHash: {
-    type: String,
-    default: null,
-    index: true,
-    description: 'Hash of previous log in chain (for tamper detection)',
-  },
-
-  merkleRoot: {
-    type: String,
-    sparse: true,
-    description: 'Merkle root for this batch (for blockchain anchoring)',
-  },
-
-  chainPosition: {
-    type: Number,
-    default: 1,
-    description: 'Position in tenant-specific hash chain',
-  },
-
-  /**
-   * Blockchain Anchoring (Optional - for maximum forensic integrity)
-   */
-  blockchainAnchor: {
-    transactionId: {
-      type: String,
-      sparse: true,
-      description: 'Blockchain transaction ID',
-    },
-    blockNumber: {
-      type: Number,
-      sparse: true,
-      description: 'Block number where anchored',
-    },
+const securityLogSchema = new mongoose.Schema(
+  {
+    /**
+     * Core Fields - Forensic Identity
+     */
     timestamp: {
       type: Date,
-      sparse: true,
-      description: 'When anchored to blockchain',
+      default: Date.now,
+      required: [true, 'Timestamp is required for forensic audit'],
+      index: true,
+      immutable: true,
+      description: 'Exact time of event (nanosecond precision via Date)',
     },
-    network: {
+
+    eventType: {
       type: String,
-      enum: Object.values(BLOCKCHAIN_NETWORKS),
-      default: BLOCKCHAIN_NETWORKS.NONE,
-      description: 'Blockchain network used',
+      required: [true, 'Event type is required for classification'],
+      enum: {
+        values: Object.values(EVENT_TYPES),
+        message: '{VALUE} is not a valid security event type',
+      },
+      index: true,
+      description: 'Classification of the security event',
     },
-    merkleProof: {
+
+    severity: {
+      type: String,
+      required: [true, 'Severity level is required for prioritization'],
+      enum: {
+        values: Object.values(SEVERITY_LEVELS),
+        message: '{VALUE} is not a valid severity level',
+      },
+      default: SEVERITY_LEVELS.WARNING,
+      index: true,
+      description: 'Impact level for triage and notification',
+    },
+
+    /**
+     * Traceability - x-correlation-id Chain
+     */
+    correlationId: {
+      type: String,
+      required: [true, 'correlationId is required for request tracing'],
+      index: true,
+      validate: {
+        validator(v) {
+          return /^[a-f0-9]{16,32}$/i.test(v);
+        },
+        message: 'correlationId must be a valid hexadecimal string (16-32 chars)',
+      },
+      description: 'x-correlation-id from headers - traces entire request flow',
+    },
+
+    previousCorrelationId: {
+      type: String,
+      sparse: true,
+      index: true,
+      validate: {
+        validator(v) {
+          return !v || /^[a-f0-9]{16,32}$/i.test(v);
+        },
+        message: 'previousCorrelationId must be a valid hexadecimal string',
+      },
+      description: 'Links to previous request in chain (for workflows)',
+    },
+
+    sessionId: {
+      type: String,
+      sparse: true,
+      index: true,
+      description: 'User session identifier for behavioral analysis',
+    },
+
+    /**
+     * Multi-tenant Isolation
+     */
+    tenantId: {
+      type: String,
+      required: [true, 'tenantId is required for multi-tenant isolation'],
+      index: true,
+      validate: {
+        validator(v) {
+          return /^[a-zA-Z0-9_-]{8,64}$/.test(v);
+        },
+        message: 'tenantId must be 8-64 alphanumeric characters',
+      },
+      description: 'Isolates logs by tenant (POPIA §19)',
+    },
+
+    userId: {
+      type: String,
+      index: true,
+      sparse: true,
+      validate: {
+        validator(v) {
+          return !v || /^[a-zA-Z0-9_-]{8,64}$/.test(v);
+        },
+        message: 'userId must be 8-64 alphanumeric characters when provided',
+      },
+      description: 'User who performed the action (if authenticated)',
+    },
+
+    /**
+     * Request Context
+     */
+    requestId: {
+      type: String,
+      required: [true, 'requestId is required for request tracing'],
+      index: true,
+      description: 'Short-lived request identifier (different from correlationId)',
+    },
+
+    ipAddress: {
+      type: String,
+      validate: {
+        validator(v) {
+          return !v || /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([a-f0-9:]+)$/i.test(v);
+        },
+        message: 'Invalid IP address format',
+      },
+      description: 'Source IP (hashed for GDPR compliance)',
+    },
+
+    ipAddressHash: {
+      type: String,
+      sparse: true,
+      description: 'SHA256 hash of IP for GDPR-compliant analytics',
+    },
+
+    userAgent: {
+      type: String,
+      maxlength: [500, 'userAgent cannot exceed 500 characters'],
+      trim: true,
+      description: 'Client user agent string',
+    },
+
+    endpoint: {
+      type: String,
+      maxlength: [200, 'endpoint cannot exceed 200 characters'],
+      trim: true,
+      description: 'API endpoint accessed',
+    },
+
+    method: {
+      type: String,
+      enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
+      description: 'HTTP method',
+    },
+
+    responseTime: {
+      type: Number,
+      min: 0,
+      description: 'Response time in milliseconds',
+    },
+
+    statusCode: {
+      type: Number,
+      min: 100,
+      max: 599,
+      description: 'HTTP status code returned',
+    },
+
+    /**
+     * Event Details (flexible schema for different event types)
+     */
+    details: {
       type: mongoose.Schema.Types.Mixed,
-      description: 'Merkle proof for verification',
+      required: [true, 'Event details are required for forensic analysis'],
+      validate: {
+        validator(v) {
+          return v && typeof v === 'object';
+        },
+        message: 'details must be a valid object',
+      },
+      description: 'Event-specific data (schema varies by eventType)',
     },
-  },
 
-  /**
-   * Audit Metadata
-   */
-  createdAt: {
-    type: Date,
-    default: Date.now,
-    immutable: true,
-    index: true,
-    description: 'Record creation timestamp (immutable)',
-  },
-
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-    description: 'Last update timestamp',
-  },
-
-  createdBy: {
-    type: String,
-    default: 'system',
-    description: 'System component that created this record',
-  },
-
-  version: {
-    type: Number,
-    default: 1,
-    description: 'Schema version for migrations',
-  },
-
-  tags: [{
-    type: String,
-    description: 'Searchable tags for filtering',
-  }],
-
-  /**
-   * Regulatory Reporting
-   */
-  regulatoryReports: [{
-    reportId: String,
-    reportType: String,
-    generatedAt: Date,
-    includedInReport: Boolean,
-    authority: String,
-  }],
-}, {
-  timestamps: true,
-  collection: 'security_logs',
-  strict: true,
-  minimize: false,
-  toJSON: {
-    transform(doc, ret) {
-      delete ret.__v;
-      return ret;
+    /**
+     * POPIA Compliance (Sections 19-22)
+     */
+    requiresBreachNotification: {
+      type: Boolean,
+      default: false,
+      index: true,
+      description: 'Whether this event requires POPIA breach notification',
     },
+
+    breachNotifiedAt: {
+      type: Date,
+      sparse: true,
+      index: true,
+      description: 'When breach notification was sent',
+    },
+
+    dataSubjectsAffected: {
+      type: Number,
+      min: [0, 'dataSubjectsAffected cannot be negative'],
+      default: 0,
+      description: 'Number of data subjects impacted (for breach assessment)',
+    },
+
+    dataSubjectIds: [
+      {
+        type: String,
+        description: 'IDs of affected data subjects (for DSAR tracking)',
+      },
+    ],
+
+    notificationSentTo: [
+      {
+        authority: {
+          type: String,
+          enum: Object.values(NOTIFICATION_AUTHORITIES),
+        },
+        sentAt: {
+          type: Date,
+          default: Date.now,
+        },
+        reference: {
+          type: String,
+          description: 'Notification reference number',
+        },
+        method: {
+          type: String,
+          enum: ['email', 'api', 'manual', 'regulatory_portal'],
+        },
+        response: mongoose.Schema.Types.Mixed,
+      },
+    ],
+
+    consentId: {
+      type: String,
+      sparse: true,
+      description: 'Related consent record ID (for consent events)',
+    },
+
+    dsarId: {
+      type: String,
+      sparse: true,
+      description: 'Related DSAR request ID',
+    },
+
+    /**
+     * Data Retention (POPIA Section 14)
+     */
+    retentionPolicy: {
+      type: String,
+      enum: {
+        values: Object.values(RETENTION_POLICIES).map((p) => p.name),
+        message: '{VALUE} is not a valid retention policy',
+      },
+      default: RETENTION_POLICIES.COMPANIES_ACT_10_YEARS.name,
+      required: true,
+      description: 'Legal basis for retention period',
+    },
+
+    retentionLegalReference: {
+      type: String,
+      description: 'Specific legal section justifying retention',
+    },
+
+    dataResidency: {
+      type: String,
+      enum: {
+        values: Object.values(DATA_RESIDENCY),
+        message: '{VALUE} is not a valid data residency location',
+      },
+      default: DATA_RESIDENCY.ZA,
+      required: true,
+      description: 'Geographic location of data storage (POPIA §19)',
+    },
+
+    retentionStart: {
+      type: Date,
+      default: Date.now,
+      required: true,
+      description: 'When retention period begins',
+    },
+
+    retentionEnd: {
+      type: Date,
+      required: true,
+      description: 'When log can be purged (auto-delete via TTL index)',
+    },
+
+    /**
+     * Forensic Integrity - SHA256 Hash Chain (100-Year Evidence)
+     */
+    forensicHash: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      description: 'SHA256 hash of this record + previous hash',
+    },
+
+    previousHash: {
+      type: String,
+      default: null,
+      index: true,
+      description: 'Hash of previous log in chain (for tamper detection)',
+    },
+
+    merkleRoot: {
+      type: String,
+      sparse: true,
+      description: 'Merkle root for this batch (for blockchain anchoring)',
+    },
+
+    chainPosition: {
+      type: Number,
+      default: 1,
+      description: 'Position in tenant-specific hash chain',
+    },
+
+    /**
+     * Blockchain Anchoring (Optional - for maximum forensic integrity)
+     */
+    blockchainAnchor: {
+      transactionId: {
+        type: String,
+        sparse: true,
+        description: 'Blockchain transaction ID',
+      },
+      blockNumber: {
+        type: Number,
+        sparse: true,
+        description: 'Block number where anchored',
+      },
+      timestamp: {
+        type: Date,
+        sparse: true,
+        description: 'When anchored to blockchain',
+      },
+      network: {
+        type: String,
+        enum: Object.values(BLOCKCHAIN_NETWORKS),
+        default: BLOCKCHAIN_NETWORKS.NONE,
+        description: 'Blockchain network used',
+      },
+      merkleProof: {
+        type: mongoose.Schema.Types.Mixed,
+        description: 'Merkle proof for verification',
+      },
+    },
+
+    /**
+     * Audit Metadata
+     */
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      immutable: true,
+      index: true,
+      description: 'Record creation timestamp (immutable)',
+    },
+
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+      description: 'Last update timestamp',
+    },
+
+    createdBy: {
+      type: String,
+      default: 'system',
+      description: 'System component that created this record',
+    },
+
+    version: {
+      type: Number,
+      default: 1,
+      description: 'Schema version for migrations',
+    },
+
+    tags: [
+      {
+        type: String,
+        description: 'Searchable tags for filtering',
+      },
+    ],
+
+    /**
+     * Regulatory Reporting
+     */
+    regulatoryReports: [
+      {
+        reportId: String,
+        reportType: String,
+        generatedAt: Date,
+        includedInReport: Boolean,
+        authority: String,
+      },
+    ],
   },
-});
+  {
+    timestamps: true,
+    collection: 'security_logs',
+    strict: true,
+    minimize: false,
+    toJSON: {
+      transform(doc, ret) {
+        delete ret.__v;
+        return ret;
+      },
+    },
+  }
+);
 
 // ============================================================================
 // INDEXES (Performance Optimized)
@@ -648,7 +659,7 @@ securityLogSchema.pre('save', async function (next) {
     const lastLog = await this.constructor.findOne(
       { tenantId: this.tenantId },
       { forensicHash: 1, chainPosition: 1 },
-      { sort: { chainPosition: -1, timestamp: -1 } },
+      { sort: { chainPosition: -1, timestamp: -1 } }
     );
 
     if (lastLog) {
@@ -660,56 +671,56 @@ securityLogSchema.pre('save', async function (next) {
 
     // Create canonical string for hashing (deterministic order)
     // This ensures the same data always produces the same hash
-    const canonicalData = JSON.stringify({
-      // Core fields (sorted alphabetically for determinism)
-      chainPosition: this.chainPosition,
-      correlationId: this.correlationId,
-      createdAt: this.createdAt.toISOString(),
-      dataResidency: this.dataResidency,
-      dataSubjectsAffected: this.dataSubjectsAffected,
-      details: this.details,
-      endpoint: this.endpoint,
-      eventType: this.eventType,
-      ipAddressHash: this.ipAddressHash,
-      method: this.method,
-      previousHash: this.previousHash,
-      requestId: this.requestId,
-      requiresBreachNotification: this.requiresBreachNotification,
-      retentionPolicy: this.retentionPolicy,
-      retentionStart: this.retentionStart.toISOString(),
-      severity: this.severity,
-      statusCode: this.statusCode,
-      tenantId: this.tenantId,
-      timestamp: this.timestamp.toISOString(),
-      userId: this.userId || null,
-    }, Object.keys({
-      chainPosition: null,
-      correlationId: null,
-      createdAt: null,
-      dataResidency: null,
-      dataSubjectsAffected: null,
-      details: null,
-      endpoint: null,
-      eventType: null,
-      ipAddressHash: null,
-      method: null,
-      previousHash: null,
-      requestId: null,
-      requiresBreachNotification: null,
-      retentionPolicy: null,
-      retentionStart: null,
-      severity: null,
-      statusCode: null,
-      tenantId: null,
-      timestamp: null,
-      userId: null,
-    }).sort()); // Sort keys for deterministic order
+    const canonicalData = JSON.stringify(
+      {
+        // Core fields (sorted alphabetically for determinism)
+        chainPosition: this.chainPosition,
+        correlationId: this.correlationId,
+        createdAt: this.createdAt.toISOString(),
+        dataResidency: this.dataResidency,
+        dataSubjectsAffected: this.dataSubjectsAffected,
+        details: this.details,
+        endpoint: this.endpoint,
+        eventType: this.eventType,
+        ipAddressHash: this.ipAddressHash,
+        method: this.method,
+        previousHash: this.previousHash,
+        requestId: this.requestId,
+        requiresBreachNotification: this.requiresBreachNotification,
+        retentionPolicy: this.retentionPolicy,
+        retentionStart: this.retentionStart.toISOString(),
+        severity: this.severity,
+        statusCode: this.statusCode,
+        tenantId: this.tenantId,
+        timestamp: this.timestamp.toISOString(),
+        userId: this.userId || null,
+      },
+      Object.keys({
+        chainPosition: null,
+        correlationId: null,
+        createdAt: null,
+        dataResidency: null,
+        dataSubjectsAffected: null,
+        details: null,
+        endpoint: null,
+        eventType: null,
+        ipAddressHash: null,
+        method: null,
+        previousHash: null,
+        requestId: null,
+        requiresBreachNotification: null,
+        retentionPolicy: null,
+        retentionStart: null,
+        severity: null,
+        statusCode: null,
+        tenantId: null,
+        timestamp: null,
+        userId: null,
+      }).sort()
+    ); // Sort keys for deterministic order
 
     // Generate SHA256 hash (court-admissible under ECT Act §15)
-    this.forensicHash = crypto
-      .createHash('sha256')
-      .update(canonicalData)
-      .digest('hex');
+    this.forensicHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
 
     // Auto-tag based on event type
     if (!this.tags || this.tags.length === 0) {
@@ -760,11 +771,12 @@ securityLogSchema.statics.forensicLog = async function (data, correlationId) {
 
     // Auto-set retention policy based on event type
     if (!logData.retentionPolicy) {
-      if (logData.severity === SEVERITY_LEVELS.BREACH
-          || logData.eventType === EVENT_TYPES.DATA_BREACH) {
+      if (
+        logData.severity === SEVERITY_LEVELS.BREACH ||
+        logData.eventType === EVENT_TYPES.DATA_BREACH
+      ) {
         logData.retentionPolicy = RETENTION_POLICIES.FORENSIC_PERMANENT.name;
-      } else if (logData.eventType?.includes('dsar')
-                 || logData.eventType?.includes('consent')) {
+      } else if (logData.eventType?.includes('dsar') || logData.eventType?.includes('consent')) {
         logData.retentionPolicy = RETENTION_POLICIES.POPIA_1_YEAR.name;
       } else if (logData.details?.transactionValue) {
         logData.retentionPolicy = RETENTION_POLICIES.TAX_ACT_5_YEARS.name;
@@ -851,9 +863,7 @@ securityLogSchema.statics.verifyHashChain = async function (tenantId, fromDate =
     query.timestamp = { $gte: fromDate };
   }
 
-  const logs = await this.find(query)
-    .sort({ chainPosition: 1, timestamp: 1 })
-    .lean();
+  const logs = await this.find(query).sort({ chainPosition: 1, timestamp: 1 }).lean();
 
   const brokenLinks = [];
   const verifiedHashes = [];
@@ -881,10 +891,7 @@ securityLogSchema.statics.verifyHashChain = async function (tenantId, fromDate =
   let merkleRoot = null;
   if (logs.length > 0) {
     const allHashes = logs.map((l) => l.forensicHash).sort();
-    merkleRoot = crypto
-      .createHash('sha256')
-      .update(allHashes.join(''))
-      .digest('hex');
+    merkleRoot = crypto.createHash('sha256').update(allHashes.join('')).digest('hex');
   }
 
   return {
@@ -931,21 +938,23 @@ securityLogSchema.statics.markBreachNotified = async function (
   logIds,
   authority,
   reference,
-  method = 'api',
+  method = 'api'
 ) {
   return this.updateMany(
     { _id: { $in: logIds } },
     {
       $set: {
         breachNotifiedAt: new Date(),
-        notificationSentTo: [{
-          authority,
-          sentAt: new Date(),
-          reference,
-          method,
-        }],
+        notificationSentTo: [
+          {
+            authority,
+            sentAt: new Date(),
+            reference,
+            method,
+          },
+        ],
       },
-    },
+    }
   );
 };
 
@@ -973,10 +982,7 @@ securityLogSchema.statics.anchorToBlockchain = async function (tenantId, date = 
 
   // Calculate merkle root
   const hashes = logs.map((l) => l.forensicHash).sort();
-  const merkleRoot = crypto
-    .createHash('sha256')
-    .update(hashes.join(''))
-    .digest('hex');
+  const merkleRoot = crypto.createHash('sha256').update(hashes.join('')).digest('hex');
 
   // In production, this would submit to Ethereum/Hyperledger
   const anchor = {
@@ -1000,18 +1006,21 @@ securityLogSchema.statics.anchorToBlockchain = async function (tenantId, date = 
         merkleRoot,
         blockchainAnchor: anchor,
       },
-    },
+    }
   );
 
   // Create anchor log
-  await this.forensicLog({
-    eventType: EVENT_TYPES.BLOCKCHAIN_ANCHORED,
-    severity: SEVERITY_LEVELS.INFO,
-    tenantId,
-    details: anchor,
-    requiresBreachNotification: false,
-    retentionPolicy: RETENTION_POLICIES.FORENSIC_PERMANENT.name,
-  }, `anchor-${merkleRoot.substring(0, 16)}`);
+  await this.forensicLog(
+    {
+      eventType: EVENT_TYPES.BLOCKCHAIN_ANCHORED,
+      severity: SEVERITY_LEVELS.INFO,
+      tenantId,
+      details: anchor,
+      requiresBreachNotification: false,
+      retentionPolicy: RETENTION_POLICIES.FORENSIC_PERMANENT.name,
+    },
+    `anchor-${merkleRoot.substring(0, 16)}`
+  );
 
   return anchor;
 };
@@ -1048,54 +1057,54 @@ securityLogSchema.methods.generateForensicReport = function () {
  * @returns {boolean} Whether hash is valid
  */
 securityLogSchema.methods.verifyHashIntegrity = function () {
-  const canonicalData = JSON.stringify({
-    chainPosition: this.chainPosition,
-    correlationId: this.correlationId,
-    createdAt: this.createdAt.toISOString(),
-    dataResidency: this.dataResidency,
-    dataSubjectsAffected: this.dataSubjectsAffected,
-    details: this.details,
-    endpoint: this.endpoint,
-    eventType: this.eventType,
-    ipAddressHash: this.ipAddressHash,
-    method: this.method,
-    previousHash: this.previousHash,
-    requestId: this.requestId,
-    requiresBreachNotification: this.requiresBreachNotification,
-    retentionPolicy: this.retentionPolicy,
-    retentionStart: this.retentionStart.toISOString(),
-    severity: this.severity,
-    statusCode: this.statusCode,
-    tenantId: this.tenantId,
-    timestamp: this.timestamp.toISOString(),
-    userId: this.userId || null,
-  }, Object.keys({
-    chainPosition: null,
-    correlationId: null,
-    createdAt: null,
-    dataResidency: null,
-    dataSubjectsAffected: null,
-    details: null,
-    endpoint: null,
-    eventType: null,
-    ipAddressHash: null,
-    method: null,
-    previousHash: null,
-    requestId: null,
-    requiresBreachNotification: null,
-    retentionPolicy: null,
-    retentionStart: null,
-    severity: null,
-    statusCode: null,
-    tenantId: null,
-    timestamp: null,
-    userId: null,
-  }).sort());
+  const canonicalData = JSON.stringify(
+    {
+      chainPosition: this.chainPosition,
+      correlationId: this.correlationId,
+      createdAt: this.createdAt.toISOString(),
+      dataResidency: this.dataResidency,
+      dataSubjectsAffected: this.dataSubjectsAffected,
+      details: this.details,
+      endpoint: this.endpoint,
+      eventType: this.eventType,
+      ipAddressHash: this.ipAddressHash,
+      method: this.method,
+      previousHash: this.previousHash,
+      requestId: this.requestId,
+      requiresBreachNotification: this.requiresBreachNotification,
+      retentionPolicy: this.retentionPolicy,
+      retentionStart: this.retentionStart.toISOString(),
+      severity: this.severity,
+      statusCode: this.statusCode,
+      tenantId: this.tenantId,
+      timestamp: this.timestamp.toISOString(),
+      userId: this.userId || null,
+    },
+    Object.keys({
+      chainPosition: null,
+      correlationId: null,
+      createdAt: null,
+      dataResidency: null,
+      dataSubjectsAffected: null,
+      details: null,
+      endpoint: null,
+      eventType: null,
+      ipAddressHash: null,
+      method: null,
+      previousHash: null,
+      requestId: null,
+      requiresBreachNotification: null,
+      retentionPolicy: null,
+      retentionStart: null,
+      severity: null,
+      statusCode: null,
+      tenantId: null,
+      timestamp: null,
+      userId: null,
+    }).sort()
+  );
 
-  const calculatedHash = crypto
-    .createHash('sha256')
-    .update(canonicalData)
-    .digest('hex');
+  const calculatedHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
 
   return calculatedHash === this.forensicHash;
 };
@@ -1105,10 +1114,12 @@ securityLogSchema.methods.verifyHashIntegrity = function () {
  * @returns {Promise<Object>} Next log
  */
 securityLogSchema.methods.getNextInChain = async function () {
-  return await this.constructor.findOne({
-    tenantId: this.tenantId,
-    chainPosition: this.chainPosition + 1,
-  }).lean();
+  return await this.constructor
+    .findOne({
+      tenantId: this.tenantId,
+      chainPosition: this.chainPosition + 1,
+    })
+    .lean();
 };
 
 /**
@@ -1118,9 +1129,11 @@ securityLogSchema.methods.getNextInChain = async function () {
 securityLogSchema.methods.getPreviousInChain = async function () {
   if (!this.previousHash) return null;
 
-  return await this.constructor.findOne({
-    forensicHash: this.previousHash,
-  }).lean();
+  return await this.constructor
+    .findOne({
+      forensicHash: this.previousHash,
+    })
+    .lean();
 };
 
 // ============================================================================
@@ -1128,8 +1141,7 @@ securityLogSchema.methods.getPreviousInChain = async function () {
 // ============================================================================
 
 securityLogSchema.virtual('isBreach').get(function () {
-  return this.severity === SEVERITY_LEVELS.BREACH
-         || this.eventType === EVENT_TYPES.DATA_BREACH;
+  return this.severity === SEVERITY_LEVELS.BREACH || this.eventType === EVENT_TYPES.DATA_BREACH;
 });
 
 securityLogSchema.virtual('notificationStatus').get(function () {

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ENCRYPTION PLUGIN - INVESTOR-GRADE ● FORENSIC ● PRODUCTION                  ║
   ║ AES-256-GCM | Field-level encryption | Key management                       ║
   ║ Version: 1.0.0 - PRODUCTION                                                 ║
@@ -68,7 +66,7 @@ export default function encryptionPlugin(schema, options = {}) {
                 doc._encryption[field].iv,
                 doc._encryption[field].authTag,
                 doc._encryption[field].algorithm,
-                doc._encryption[field].keyId,
+                doc._encryption[field].keyId
               );
             } catch (error) {
               // Log error but don't throw
@@ -91,7 +89,7 @@ export default function encryptionPlugin(schema, options = {}) {
             doc._encryption[field].iv,
             doc._encryption[field].authTag,
             doc._encryption[field].algorithm,
-            doc._encryption[field].keyId,
+            doc._encryption[field].keyId
           );
         } catch (error) {
           console.error(`Failed to decrypt field ${field}:`, error.message);
@@ -111,7 +109,7 @@ export default function encryptionPlugin(schema, options = {}) {
       this._encryption[fieldName].iv,
       this._encryption[fieldName].authTag,
       this._encryption[fieldName].algorithm,
-      this._encryption[fieldName].keyId,
+      this._encryption[fieldName].keyId
     );
   };
 
@@ -131,7 +129,7 @@ export default function encryptionPlugin(schema, options = {}) {
 
     return this;
   };
-};
+}
 
 /*
  * Encrypt a field value
@@ -173,9 +171,10 @@ function decryptField(encryptedData, ivHex, authTagHex, algorithm, keyId) {
  */
 function getEncryptionKey(keyId) {
   // In production, this would fetch from KMS
-  const key = process.env[`ENCRYPTION_KEY_${keyId}`]
-    || process.env.ENCRYPTION_KEY
-    || crypto.scryptSync('default-key', 'salt', 32);
+  const key =
+    process.env[`ENCRYPTION_KEY_${keyId}`] ||
+    process.env.ENCRYPTION_KEY ||
+    crypto.scryptSync('default-key', 'salt', 32);
 
   return typeof key === 'string' ? Buffer.from(key, 'hex') : key;
 }

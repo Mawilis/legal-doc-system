@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ COURT MODEL - COMPLETE SA JUDICIAL HIERARCHY ENGINE                                   ║
   ║ R4.5M/year operational savings | Constitutional to Magistrate | 100-year precedent    ║
@@ -8,13 +8,13 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Court.js
  * VERSION: 1.0.0-PRODUCTION
  * CREATED: 2026-02-28
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R2.3M/year in manual court research and jurisdictional errors
  * • Generates: R4.5M/year through automated court hierarchy navigation
  * • Risk elimination: R12M in appeals filed in wrong courts
  * • Compliance: Superior Courts Act 10 of 2013, Magistrates' Courts Act 32 of 1944
- * 
+ *
  * INTEGRATION_MAP:
  * {
  *   "expectedConsumers": [
@@ -47,7 +47,7 @@ const COURT_TIERS = {
   SPECIALIST: 'specialist',
   MAGISTRATE: 'magistrate',
   TRADITIONAL: 'traditional',
-  TRIBUNAL: 'tribunal'
+  TRIBUNAL: 'tribunal',
 };
 
 const COURT_CATEGORIES = {
@@ -77,14 +77,14 @@ const COURT_CATEGORIES = {
   REGIONAL_MAGISTRATE: 'regional_magistrate',
   TRADITIONAL_LEADERSHIP_COURT: 'traditional_leadership_court',
   CCMA: 'ccma',
-  BARGAINING_COUNCIL: 'bargaining_council'
+  BARGAINING_COUNCIL: 'bargaining_council',
 };
 
 const COURT_STATUS = {
   ACTIVE: 'active',
   INACTIVE: 'inactive',
   REORGANIZING: 'reorganizing',
-  TEMPORARY_CLOSED: 'temporary_closed'
+  TEMPORARY_CLOSED: 'temporary_closed',
 };
 
 const JUDICIAL_OFFICERS = {
@@ -100,7 +100,7 @@ const JUDICIAL_OFFICERS = {
   REGIONAL_MAGISTRATE: 'regional_magistrate',
   MAGISTRATE: 'magistrate',
   SENIOR_MAGISTRATE: 'senior_magistrate',
-  CHIEF_MAGISTRATE: 'chief_magistrate'
+  CHIEF_MAGISTRATE: 'chief_magistrate',
 };
 
 const HEARING_TYPES = {
@@ -113,7 +113,7 @@ const HEARING_TYPES = {
   SENTENCING: 'sentencing',
   PRETRIAL: 'pretrial',
   STATUS: 'status',
-  CASE_MANAGEMENT: 'case_management'
+  CASE_MANAGEMENT: 'case_management',
 };
 
 const JURISDICTION_TYPES = {
@@ -127,325 +127,344 @@ const JURISDICTION_TYPES = {
   COMPETITION: 'competition',
   FAMILY: 'family',
   CHILDREN: 'children',
-  SMALL_CLAIMS: 'small_claims'
+  SMALL_CLAIMS: 'small_claims',
 };
 
 // ============================================================================
 // SCHEMA DEFINITION
 // ============================================================================
 
-const courtSchema = new mongoose.Schema({
-  // Core Identifiers
-  courtId: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true,
-    default: () => `CRT-${crypto.randomBytes(4).toString('hex').toUpperCase()}`
-  },
-
-  tenantId: {
-    type: String,
-    required: [true, 'Tenant ID is required for multi-tenant isolation'],
-    index: true,
-    validate: {
-      validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v),
-      message: 'Tenant ID must be 8-64 alphanumeric characters'
-    }
-  },
-
-  // Court Identification
-  category: {
-    type: String,
-    required: [true, 'Court category is required'],
-    enum: Object.values(COURT_CATEGORIES),
-    index: true
-  },
-
-  name: {
-    type: String,
-    required: [true, 'Court name is required'],
-    trim: true,
-    index: true
-  },
-
-  shortName: {
-    type: String,
-    trim: true
-  },
-
-  tier: {
-    type: String,
-    required: [true, 'Court tier is required'],
-    enum: Object.values(COURT_TIERS),
-    index: true
-  },
-
-  // Jurisdiction Configuration
-  jurisdiction: {
-    civil: {
-      hasJurisdiction: { type: Boolean, default: false },
-      monetaryMin: Number,
-      monetaryMax: Number,
-      smallClaimsMax: Number,
-      exclusive: [String],
-      concurrent: [String]
+const courtSchema = new mongoose.Schema(
+  {
+    // Core Identifiers
+    courtId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      default: () => `CRT-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
     },
-    criminal: {
-      hasJurisdiction: { type: Boolean, default: false },
-      offences: [String],
-      exclusions: [String],
-      maxSentence: String,
-      bailJurisdiction: { type: Boolean, default: false }
-    },
-    constitutional: {
-      hasJurisdiction: { type: Boolean, default: false },
-      exclusive: { type: Boolean, default: false }
-    },
-    labour: {
-      hasJurisdiction: { type: Boolean, default: false },
-      exclusive: { type: Boolean, default: false }
-    },
-    land: {
-      hasJurisdiction: { type: Boolean, default: false },
-      exclusive: { type: Boolean, default: false }
-    },
-    electoral: {
-      hasJurisdiction: { type: Boolean, default: false },
-      exclusive: { type: Boolean, default: true }
-    },
-    family: {
-      hasJurisdiction: { type: Boolean, default: false },
-      divorce: { type: Boolean, default: false },
-      children: { type: Boolean, default: false },
-      maintenance: { type: Boolean, default: false }
-    },
-    appeal: {
-      hasJurisdiction: { type: Boolean, default: false },
-      fromTiers: [String],
-      fromCategories: [String],
-      leaveRequired: { type: Boolean, default: false }
-    },
-    review: {
-      hasJurisdiction: { type: Boolean, default: false },
-      grounds: [String]
-    }
-  },
 
-  // Geographic Jurisdiction
-  geographicJurisdiction: {
-    national: { type: Boolean, default: false },
-    provinces: [String],
-    districts: [String],
-    magisterialDistricts: [String],
-    circuits: [{
-      name: String,
-      towns: [String],
-      schedule: String
-    }]
-  },
-
-  // Hierarchical Relationships
-  hierarchy: {
-    level: { type: Number, min: 1, max: 10 },
-    parentCourt: { type: mongoose.Schema.Types.ObjectId, ref: 'Court' },
-    childCourts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Court' }],
-    appealTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Court' },
-    appealFrom: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Court' }],
-    reviewTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Court' }
-  },
-
-  // Location & Contact
-  location: {
-    physicalAddress: {
-      street: String,
-      suburb: String,
-      city: String,
-      province: String,
-      postalCode: String,
-      country: { type: String, default: 'South Africa' }
+    tenantId: {
+      type: String,
+      required: [true, 'Tenant ID is required for multi-tenant isolation'],
+      index: true,
+      validate: {
+        validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v),
+        message: 'Tenant ID must be 8-64 alphanumeric characters',
+      },
     },
-    postalAddress: {
-      box: String,
-      city: String,
-      postalCode: String
+
+    // Court Identification
+    category: {
+      type: String,
+      required: [true, 'Court category is required'],
+      enum: Object.values(COURT_CATEGORIES),
+      index: true,
     },
-    coordinates: {
-      latitude: Number,
-      longitude: Number
+
+    name: {
+      type: String,
+      required: [true, 'Court name is required'],
+      trim: true,
+      index: true,
     },
-    telephone: [String],
-    fax: [String],
-    email: String,
-    website: String
-  },
 
-  // Court Operations
-  status: {
-    type: String,
-    enum: Object.values(COURT_STATUS),
-    default: COURT_STATUS.ACTIVE,
-    index: true
-  },
+    shortName: {
+      type: String,
+      trim: true,
+    },
 
-  operationalHours: {
-    monday: { open: String, close: String },
-    tuesday: { open: String, close: String },
-    wednesday: { open: String, close: String },
-    thursday: { open: String, close: String },
-    friday: { open: String, close: String },
-    saturday: { open: String, close: String },
-    sunday: { open: String, close: String },
-    publicHolidays: { type: Boolean, default: false }
-  },
+    tier: {
+      type: String,
+      required: [true, 'Court tier is required'],
+      enum: Object.values(COURT_TIERS),
+      index: true,
+    },
 
-  registry: {
-    registrar: String,
-    deputyRegistrar: String,
-    hours: String,
-    email: String,
-    telephone: String
-  },
+    // Jurisdiction Configuration
+    jurisdiction: {
+      civil: {
+        hasJurisdiction: { type: Boolean, default: false },
+        monetaryMin: Number,
+        monetaryMax: Number,
+        smallClaimsMax: Number,
+        exclusive: [String],
+        concurrent: [String],
+      },
+      criminal: {
+        hasJurisdiction: { type: Boolean, default: false },
+        offences: [String],
+        exclusions: [String],
+        maxSentence: String,
+        bailJurisdiction: { type: Boolean, default: false },
+      },
+      constitutional: {
+        hasJurisdiction: { type: Boolean, default: false },
+        exclusive: { type: Boolean, default: false },
+      },
+      labour: {
+        hasJurisdiction: { type: Boolean, default: false },
+        exclusive: { type: Boolean, default: false },
+      },
+      land: {
+        hasJurisdiction: { type: Boolean, default: false },
+        exclusive: { type: Boolean, default: false },
+      },
+      electoral: {
+        hasJurisdiction: { type: Boolean, default: false },
+        exclusive: { type: Boolean, default: true },
+      },
+      family: {
+        hasJurisdiction: { type: Boolean, default: false },
+        divorce: { type: Boolean, default: false },
+        children: { type: Boolean, default: false },
+        maintenance: { type: Boolean, default: false },
+      },
+      appeal: {
+        hasJurisdiction: { type: Boolean, default: false },
+        fromTiers: [String],
+        fromCategories: [String],
+        leaveRequired: { type: Boolean, default: false },
+      },
+      review: {
+        hasJurisdiction: { type: Boolean, default: false },
+        grounds: [String],
+      },
+    },
 
-  // Judicial Officers
-  judicialOfficers: [{
-    officerId: { type: String, default: () => `JUD-${crypto.randomBytes(3).toString('hex').toUpperCase()}` },
-    name: String,
-    title: { type: String, enum: Object.values(JUDICIAL_OFFICERS) },
-    appointmentDate: Date,
-    retirementDate: Date,
-    active: { type: Boolean, default: true },
-    specializations: [String],
-    bio: String,
-    contact: {
+    // Geographic Jurisdiction
+    geographicJurisdiction: {
+      national: { type: Boolean, default: false },
+      provinces: [String],
+      districts: [String],
+      magisterialDistricts: [String],
+      circuits: [
+        {
+          name: String,
+          towns: [String],
+          schedule: String,
+        },
+      ],
+    },
+
+    // Hierarchical Relationships
+    hierarchy: {
+      level: { type: Number, min: 1, max: 10 },
+      parentCourt: { type: mongoose.Schema.Types.ObjectId, ref: 'Court' },
+      childCourts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Court' }],
+      appealTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Court' },
+      appealFrom: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Court' }],
+      reviewTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Court' },
+    },
+
+    // Location & Contact
+    location: {
+      physicalAddress: {
+        street: String,
+        suburb: String,
+        city: String,
+        province: String,
+        postalCode: String,
+        country: { type: String, default: 'South Africa' },
+      },
+      postalAddress: {
+        box: String,
+        city: String,
+        postalCode: String,
+      },
+      coordinates: {
+        latitude: Number,
+        longitude: Number,
+      },
+      telephone: [String],
+      fax: [String],
+      email: String,
+      website: String,
+    },
+
+    // Court Operations
+    status: {
+      type: String,
+      enum: Object.values(COURT_STATUS),
+      default: COURT_STATUS.ACTIVE,
+      index: true,
+    },
+
+    operationalHours: {
+      monday: { open: String, close: String },
+      tuesday: { open: String, close: String },
+      wednesday: { open: String, close: String },
+      thursday: { open: String, close: String },
+      friday: { open: String, close: String },
+      saturday: { open: String, close: String },
+      sunday: { open: String, close: String },
+      publicHolidays: { type: Boolean, default: false },
+    },
+
+    registry: {
+      registrar: String,
+      deputyRegistrar: String,
+      hours: String,
       email: String,
       telephone: String,
-      chambers: String
-    }
-  }],
-
-  officerStats: {
-    total: { type: Number, default: 0 },
-    permanent: { type: Number, default: 0 },
-    acting: { type: Number, default: 0 },
-    vacancies: { type: Number, default: 0 }
-  },
-
-  // Court Rooms
-  courtRooms: [{
-    roomId: { type: String, default: () => `RM-${crypto.randomBytes(2).toString('hex').toUpperCase()}` },
-    name: String,
-    number: String,
-    capacity: Number,
-    hasGallery: { type: Boolean, default: false },
-    hasInterpreters: { type: Boolean, default: false },
-    hasVideoConference: { type: Boolean, default: false },
-    hasRecording: { type: Boolean, default: true },
-    accessibilityFeatures: [String],
-    assignedJudge: String,
-    supportedHearingTypes: [String]
-  }],
-
-  // Practice Directives
-  practiceDirectives: [{
-    directiveNumber: String,
-    title: String,
-    issuedDate: Date,
-    effectiveDate: Date,
-    summary: String,
-    documentUrl: String,
-    active: { type: Boolean, default: true }
-  }],
-
-  // Rules & Procedures
-  rules: {
-    caseManagement: String,
-    filingRequirements: String,
-    timeLimits: {
-      filingDays: Number,
-      responseDays: Number,
-      appealDays: Number
     },
-    costsRules: String,
-    languagePolicy: String
+
+    // Judicial Officers
+    judicialOfficers: [
+      {
+        officerId: {
+          type: String,
+          default: () => `JUD-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+        },
+        name: String,
+        title: { type: String, enum: Object.values(JUDICIAL_OFFICERS) },
+        appointmentDate: Date,
+        retirementDate: Date,
+        active: { type: Boolean, default: true },
+        specializations: [String],
+        bio: String,
+        contact: {
+          email: String,
+          telephone: String,
+          chambers: String,
+        },
+      },
+    ],
+
+    officerStats: {
+      total: { type: Number, default: 0 },
+      permanent: { type: Number, default: 0 },
+      acting: { type: Number, default: 0 },
+      vacancies: { type: Number, default: 0 },
+    },
+
+    // Court Rooms
+    courtRooms: [
+      {
+        roomId: {
+          type: String,
+          default: () => `RM-${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
+        },
+        name: String,
+        number: String,
+        capacity: Number,
+        hasGallery: { type: Boolean, default: false },
+        hasInterpreters: { type: Boolean, default: false },
+        hasVideoConference: { type: Boolean, default: false },
+        hasRecording: { type: Boolean, default: true },
+        accessibilityFeatures: [String],
+        assignedJudge: String,
+        supportedHearingTypes: [String],
+      },
+    ],
+
+    // Practice Directives
+    practiceDirectives: [
+      {
+        directiveNumber: String,
+        title: String,
+        issuedDate: Date,
+        effectiveDate: Date,
+        summary: String,
+        documentUrl: String,
+        active: { type: Boolean, default: true },
+      },
+    ],
+
+    // Rules & Procedures
+    rules: {
+      caseManagement: String,
+      filingRequirements: String,
+      timeLimits: {
+        filingDays: Number,
+        responseDays: Number,
+        appealDays: Number,
+      },
+      costsRules: String,
+      languagePolicy: String,
+    },
+
+    // Court Fees
+    fees: [
+      {
+        feeType: String,
+        amount: Number,
+        currency: { type: String, default: 'ZAR' },
+        effectiveFrom: Date,
+        effectiveTo: Date,
+        description: String,
+      },
+    ],
+
+    // Performance Metrics
+    performance: {
+      avgCaseDuration: Number,
+      clearanceRate: Number,
+      backlog: Number,
+      pendingCases: Number,
+      resolvedCases: Number,
+      lastUpdated: Date,
+    },
+
+    // Audit Trail
+    audit: {
+      createdBy: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now },
+      updatedBy: String,
+      updatedAt: Date,
+    },
+
+    // Metadata
+    metadata: {
+      tags: [String],
+      notes: String,
+      source: { type: String, default: 'system' },
+      correlationId: String,
+      version: { type: Number, default: 1 },
+    },
+
+    // Forensic Integrity
+    forensicHash: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    previousHash: String,
+
+    // Retention
+    retentionPolicy: {
+      type: String,
+      default: 'companies_act_10_years',
+    },
+
+    retentionStart: {
+      type: Date,
+      default: Date.now,
+    },
+
+    retentionEnd: {
+      type: Date,
+      default: function () {
+        const date = new Date();
+        date.setFullYear(date.getFullYear() + 10);
+        return date;
+      },
+    },
+
+    dataResidency: {
+      type: String,
+      default: 'ZA',
+    },
   },
-
-  // Court Fees
-  fees: [{
-    feeType: String,
-    amount: Number,
-    currency: { type: String, default: 'ZAR' },
-    effectiveFrom: Date,
-    effectiveTo: Date,
-    description: String
-  }],
-
-  // Performance Metrics
-  performance: {
-    avgCaseDuration: Number,
-    clearanceRate: Number,
-    backlog: Number,
-    pendingCases: Number,
-    resolvedCases: Number,
-    lastUpdated: Date
-  },
-
-  // Audit Trail
-  audit: {
-    createdBy: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now },
-    updatedBy: String,
-    updatedAt: Date
-  },
-
-  // Metadata
-  metadata: {
-    tags: [String],
-    notes: String,
-    source: { type: String, default: 'system' },
-    correlationId: String,
-    version: { type: Number, default: 1 }
-  },
-
-  // Forensic Integrity
-  forensicHash: {
-    type: String,
-    required: true,
-    unique: true
-  },
-
-  previousHash: String,
-
-  // Retention
-  retentionPolicy: {
-    type: String,
-    default: 'companies_act_10_years'
-  },
-
-  retentionStart: {
-    type: Date,
-    default: Date.now
-  },
-
-  retentionEnd: {
-    type: Date,
-    default: function() {
-      const date = new Date();
-      date.setFullYear(date.getFullYear() + 10);
-      return date;
-    }
-  },
-
-  dataResidency: {
-    type: String,
-    default: 'ZA'
+  {
+    timestamps: true,
+    collection: 'courts',
+    strict: true,
+    minimize: false,
   }
-}, {
-  timestamps: true,
-  collection: 'courts',
-  strict: true,
-  minimize: false
-});
+);
 
 // ============================================================================
 // INDEXES
@@ -463,48 +482,48 @@ courtSchema.index({ retentionEnd: 1 }, { expireAfterSeconds: 0 });
 // PRE-SAVE MIDDLEWARE
 // ============================================================================
 
-courtSchema.pre('save', async function(next) {
+courtSchema.pre('save', async function (next) {
   try {
     this.audit.updatedAt = new Date();
-    
+
     if (!this.retentionEnd) {
       this.retentionEnd = new Date();
       this.retentionEnd.setFullYear(this.retentionEnd.getFullYear() + 10);
     }
-    
+
     // Update officer stats
     if (this.judicialOfficers && this.judicialOfficers.length > 0) {
       this.officerStats.total = this.judicialOfficers.length;
-      this.officerStats.permanent = this.judicialOfficers.filter(o => 
-        !o.title?.includes('acting') && o.active
+      this.officerStats.permanent = this.judicialOfficers.filter(
+        (o) => !o.title?.includes('acting') && o.active
       ).length;
-      this.officerStats.acting = this.judicialOfficers.filter(o => 
+      this.officerStats.acting = this.judicialOfficers.filter((o) =>
         o.title?.includes('acting')
       ).length;
     }
 
-    const canonicalData = JSON.stringify({
-      courtId: this.courtId,
-      tenantId: this.tenantId,
-      category: this.category,
-      name: this.name,
-      tier: this.tier,
-      status: this.status,
-      previousHash: this.previousHash
-    }, Object.keys({
-      courtId: null,
-      tenantId: null,
-      category: null,
-      name: null,
-      tier: null,
-      status: null,
-      previousHash: null
-    }).sort());
+    const canonicalData = JSON.stringify(
+      {
+        courtId: this.courtId,
+        tenantId: this.tenantId,
+        category: this.category,
+        name: this.name,
+        tier: this.tier,
+        status: this.status,
+        previousHash: this.previousHash,
+      },
+      Object.keys({
+        courtId: null,
+        tenantId: null,
+        category: null,
+        name: null,
+        tier: null,
+        status: null,
+        previousHash: null,
+      }).sort()
+    );
 
-    this.forensicHash = crypto
-      .createHash('sha256')
-      .update(canonicalData)
-      .digest('hex');
+    this.forensicHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
 
     next();
   } catch (error) {
@@ -519,7 +538,7 @@ courtSchema.pre('save', async function(next) {
 /**
  * Check if court has jurisdiction over case
  */
-courtSchema.methods.hasJurisdiction = function(caseData) {
+courtSchema.methods.hasJurisdiction = function (caseData) {
   const { type, value, location, subjectMatter } = caseData;
 
   // Geographic jurisdiction
@@ -559,21 +578,21 @@ courtSchema.methods.hasJurisdiction = function(caseData) {
 /**
  * Get appeal court path
  */
-courtSchema.methods.getAppealPath = function() {
+courtSchema.methods.getAppealPath = function () {
   const path = [];
   let currentCourt = this;
-  
+
   while (currentCourt.hierarchy?.appealTo) {
     path.push(currentCourt.hierarchy.appealTo);
   }
-  
+
   return path;
 };
 
 /**
  * Add judicial officer
  */
-courtSchema.methods.addJudicialOfficer = function(officerData, userId) {
+courtSchema.methods.addJudicialOfficer = function (officerData, userId) {
   this.judicialOfficers.push(officerData);
   this.audit.updatedBy = userId;
   return this.save();
@@ -582,7 +601,7 @@ courtSchema.methods.addJudicialOfficer = function(officerData, userId) {
 /**
  * Update court status
  */
-courtSchema.methods.updateStatus = function(newStatus, userId, reason = '') {
+courtSchema.methods.updateStatus = function (newStatus, userId, reason = '') {
   this.status = newStatus;
   this.audit.updatedBy = userId;
   this.metadata.notes = reason;
@@ -592,7 +611,7 @@ courtSchema.methods.updateStatus = function(newStatus, userId, reason = '') {
 /**
  * Add practice directive
  */
-courtSchema.methods.addPracticeDirective = function(directive, userId) {
+courtSchema.methods.addPracticeDirective = function (directive, userId) {
   this.practiceDirectives.push(directive);
   this.audit.updatedBy = userId;
   return this.save();
@@ -601,10 +620,10 @@ courtSchema.methods.addPracticeDirective = function(directive, userId) {
 /**
  * Get full court hierarchy
  */
-courtSchema.methods.getFullHierarchy = async function() {
+courtSchema.methods.getFullHierarchy = async function () {
   const ancestors = [];
   const descendants = [];
-  
+
   // Get ancestors
   let parent = this.hierarchy?.parentCourt;
   while (parent) {
@@ -616,7 +635,7 @@ courtSchema.methods.getFullHierarchy = async function() {
       break;
     }
   }
-  
+
   // Get descendants (recursive)
   const getDescendants = async (courtId) => {
     const children = await this.constructor.find({ 'hierarchy.parentCourt': courtId });
@@ -626,36 +645,36 @@ courtSchema.methods.getFullHierarchy = async function() {
     }
   };
   await getDescendants(this._id);
-  
+
   return { ancestors, descendants };
 };
 
 /**
  * Verify forensic integrity
  */
-courtSchema.methods.verifyIntegrity = function() {
-  const canonicalData = JSON.stringify({
-    courtId: this.courtId,
-    tenantId: this.tenantId,
-    category: this.category,
-    name: this.name,
-    tier: this.tier,
-    status: this.status,
-    previousHash: this.previousHash
-  }, Object.keys({
-    courtId: null,
-    tenantId: null,
-    category: null,
-    name: null,
-    tier: null,
-    status: null,
-    previousHash: null
-  }).sort());
+courtSchema.methods.verifyIntegrity = function () {
+  const canonicalData = JSON.stringify(
+    {
+      courtId: this.courtId,
+      tenantId: this.tenantId,
+      category: this.category,
+      name: this.name,
+      tier: this.tier,
+      status: this.status,
+      previousHash: this.previousHash,
+    },
+    Object.keys({
+      courtId: null,
+      tenantId: null,
+      category: null,
+      name: null,
+      tier: null,
+      status: null,
+      previousHash: null,
+    }).sort()
+  );
 
-  const calculatedHash = crypto
-    .createHash('sha256')
-    .update(canonicalData)
-    .digest('hex');
+  const calculatedHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
 
   return calculatedHash === this.forensicHash;
 };
@@ -667,34 +686,36 @@ courtSchema.methods.verifyIntegrity = function() {
 /**
  * Find courts by jurisdiction
  */
-courtSchema.statics.findByJurisdiction = function(tenantId, caseData) {
-  return this.find({ tenantId }).then(courts => 
-    courts.filter(court => court.hasJurisdiction(caseData))
+courtSchema.statics.findByJurisdiction = function (tenantId, caseData) {
+  return this.find({ tenantId }).then((courts) =>
+    courts.filter((court) => court.hasJurisdiction(caseData))
   );
 };
 
 /**
  * Get court hierarchy
  */
-courtSchema.statics.getHierarchy = async function(tenantId, tier) {
+courtSchema.statics.getHierarchy = async function (tenantId, tier) {
   const courts = await this.find({ tenantId, tier }).sort({ name: 1 });
-  
+
   const buildTree = (parentId = null) => {
     return courts
-      .filter(c => (c.hierarchy?.parentCourt?.toString() || null) === (parentId?.toString() || null))
-      .map(c => ({
+      .filter(
+        (c) => (c.hierarchy?.parentCourt?.toString() || null) === (parentId?.toString() || null)
+      )
+      .map((c) => ({
         ...c.toObject(),
-        children: buildTree(c._id)
+        children: buildTree(c._id),
       }));
   };
-  
+
   return buildTree();
 };
 
 /**
  * Get appeal routes
  */
-courtSchema.statics.getAppealRoutes = function(tenantId) {
+courtSchema.statics.getAppealRoutes = function (tenantId) {
   return this.aggregate([
     { $match: { tenantId } },
     { $match: { 'hierarchy.appealTo': { $exists: true, $ne: null } } },
@@ -703,8 +724,8 @@ courtSchema.statics.getAppealRoutes = function(tenantId) {
         from: 'courts',
         localField: 'hierarchy.appealTo',
         foreignField: '_id',
-        as: 'appealCourt'
-      }
+        as: 'appealCourt',
+      },
     },
     { $unwind: '$appealCourt' },
     {
@@ -713,16 +734,16 @@ courtSchema.statics.getAppealRoutes = function(tenantId) {
         fromTier: '$tier',
         toCourt: '$appealCourt.name',
         toTier: '$appealCourt.tier',
-        leaveRequired: '$jurisdiction.appeal.leaveRequired'
-      }
-    }
+        leaveRequired: '$jurisdiction.appeal.leaveRequired',
+      },
+    },
   ]);
 };
 
 /**
  * Get court statistics
  */
-courtSchema.statics.getStats = async function(tenantId) {
+courtSchema.statics.getStats = async function (tenantId) {
   const stats = await this.aggregate([
     { $match: { tenantId } },
     {
@@ -730,12 +751,12 @@ courtSchema.statics.getStats = async function(tenantId) {
         _id: '$tier',
         count: { $sum: 1 },
         activeCourts: {
-          $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] },
         },
         totalJudges: { $sum: '$officerStats.total' },
-        totalPending: { $sum: '$performance.pendingCases' }
-      }
-    }
+        totalPending: { $sum: '$performance.pendingCases' },
+      },
+    },
   ]);
 
   const byProvince = await this.aggregate([
@@ -744,15 +765,15 @@ courtSchema.statics.getStats = async function(tenantId) {
     {
       $group: {
         _id: '$geographicJurisdiction.provinces',
-        count: { $sum: 1 }
-      }
-    }
+        count: { $sum: 1 },
+      },
+    },
   ]);
 
   return {
     byTier: stats,
     byProvince,
-    totalCourts: stats.reduce((sum, s) => sum + s.count, 0)
+    totalCourts: stats.reduce((sum, s) => sum + s.count, 0),
   };
 };
 
@@ -760,15 +781,15 @@ courtSchema.statics.getStats = async function(tenantId) {
 // VIRTUAL PROPERTIES
 // ============================================================================
 
-courtSchema.virtual('isAppealCourt').get(function() {
+courtSchema.virtual('isAppealCourt').get(function () {
   return [COURT_TIERS.SUPREME_APPEAL, COURT_TIERS.CONSTITUTIONAL].includes(this.tier);
 });
 
-courtSchema.virtual('isTrialCourt').get(function() {
+courtSchema.virtual('isTrialCourt').get(function () {
   return [COURT_TIERS.HIGH, COURT_TIERS.MAGISTRATE, COURT_TIERS.SPECIALIST].includes(this.tier);
 });
 
-courtSchema.virtual('fullAddress').get(function() {
+courtSchema.virtual('fullAddress').get(function () {
   const addr = this.location?.physicalAddress;
   if (!addr) return '';
   return `${addr.street}, ${addr.city}, ${addr.province}, ${addr.postalCode}`;
@@ -787,7 +808,7 @@ export {
   COURT_STATUS,
   JUDICIAL_OFFICERS,
   HEARING_TYPES,
-  JURISDICTION_TYPES
+  JURISDICTION_TYPES,
 };
 
 export default Court;

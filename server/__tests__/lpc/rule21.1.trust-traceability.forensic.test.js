@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /* eslint-disable no-unused-vars */
 
 const crypto = require('crypto');
@@ -21,7 +19,8 @@ const INVESTOR_METRICS = {
 // ====================================================================
 // LPC TRUST ACCOUNT FORMAT VALIDATION - CASE SENSITIVE
 // ====================================================================
-const TRUST_ACCOUNT_PATTERN = /^TRUST-[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$/;
+const TRUST_ACCOUNT_PATTERN =
+  /^TRUST-[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$/;
 
 const VALID_ACCOUNTS = [
   'TRUST-A1B2C3D4-E5F6-4A7B-8C9D-0E1F2A3B4C5D',
@@ -56,7 +55,7 @@ describe('LPC RULE 21.1 — TRUST ACCOUNT TRACEABILITY', () => {
     testRunId = crypto.randomUUID().substring(0, 8);
     console.log(`\n🔬 TEST RUN: ${testRunId}`);
     console.log(
-      `💰 Investor Value: R${INVESTOR_METRICS.annualSavingsPerFirmZAR.toLocaleString()} annual savings per firm`,
+      `💰 Investor Value: R${INVESTOR_METRICS.annualSavingsPerFirmZAR.toLocaleString()} annual savings per firm`
     );
   });
 
@@ -93,7 +92,7 @@ describe('LPC RULE 21.1 — TRUST ACCOUNT TRACEABILITY', () => {
     });
 
     console.log(
-      `\n  ✅ Format Validation Complete: ${VALID_ACCOUNTS.length} valid, ${INVALID_ACCOUNTS.length} invalid`,
+      `\n  ✅ Format Validation Complete: ${VALID_ACCOUNTS.length} valid, ${INVALID_ACCOUNTS.length} invalid`
     );
   });
 
@@ -109,8 +108,12 @@ describe('LPC RULE 21.1 — TRUST ACCOUNT TRACEABILITY', () => {
     expect(INVESTOR_METRICS.tamZAR).toBe(1820000000);
     expect(INVESTOR_METRICS.paybackPeriodMonths).toBe(3);
 
-    console.log(`    ✅ Annual Savings per Firm: R${INVESTOR_METRICS.annualSavingsPerFirmZAR.toLocaleString()}`);
-    console.log(`    ✅ Penalty Risk Eliminated: R${INVESTOR_METRICS.penaltyRiskEliminatedZAR.toLocaleString()}`);
+    console.log(
+      `    ✅ Annual Savings per Firm: R${INVESTOR_METRICS.annualSavingsPerFirmZAR.toLocaleString()}`
+    );
+    console.log(
+      `    ✅ Penalty Risk Eliminated: R${INVESTOR_METRICS.penaltyRiskEliminatedZAR.toLocaleString()}`
+    );
     console.log(`    ✅ Error Reduction: ${INVESTOR_METRICS.errorReductionPercentage}%`);
     console.log(`    ✅ Total Addressable Market: R${INVESTOR_METRICS.tamZAR.toLocaleString()}`);
     console.log(`    ✅ Payback Period: ${INVESTOR_METRICS.paybackPeriodMonths} months`);
@@ -202,8 +205,12 @@ describe('LPC RULE 21.1 — TRUST ACCOUNT TRACEABILITY', () => {
     const authorizedRoles = ['ATTORNEY', 'COMPLIANCE_OFFICER', 'AUDITOR'];
     const unauthorizedRoles = ['PARALEGAL', 'SECRETARY', 'IT_ADMIN', 'HR_MANAGER', 'INTERN'];
 
-    console.log(`    ✅ Authorized Roles (${authorizedRoles.length}): ${authorizedRoles.join(', ')}`);
-    console.log(`    ❌ Unauthorized Roles (${unauthorizedRoles.length}): ${unauthorizedRoles.join(', ')}`);
+    console.log(
+      `    ✅ Authorized Roles (${authorizedRoles.length}): ${authorizedRoles.join(', ')}`
+    );
+    console.log(
+      `    ❌ Unauthorized Roles (${unauthorizedRoles.length}): ${unauthorizedRoles.join(', ')}`
+    );
 
     for (const role of authorizedRoles) {
       expect(authorizedRoles.includes(role)).toBe(true);

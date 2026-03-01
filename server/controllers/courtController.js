@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ COURT CONTROLLER - COMPLETE SA JUDICIAL MANAGEMENT API                                ║
   ║ R4.5M/year operational savings | Jurisdiction AI | Appeal Routing                     ║
@@ -21,8 +21,10 @@ import crypto from 'crypto';
 // ============================================================================
 
 const generateCorrelationId = (req) => {
-  return req.headers['x-correlation-id'] || 
-         `court-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+  return (
+    req.headers['x-correlation-id'] ||
+    `court-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+  );
 };
 
 const formatSuccess = (data, correlationId, metadata = {}) => {
@@ -31,7 +33,7 @@ const formatSuccess = (data, correlationId, metadata = {}) => {
     correlationId,
     timestamp: new Date().toISOString(),
     data,
-    metadata
+    metadata,
   };
 };
 
@@ -43,8 +45,8 @@ const formatError = (error, correlationId, statusCode = 500) => {
     error: {
       code: error.code || 'INTERNAL_ERROR',
       message: error.message || 'An unexpected error occurred',
-      statusCode
-    }
+      statusCode,
+    },
   };
 };
 
@@ -58,11 +60,11 @@ export const createCourt = async (req, res) => {
 
   try {
     const { tenantId, userId } = tenantContext.get();
-    
+
     Logger.info('courtController.createCourt', {
       correlationId,
       tenantId,
-      courtName: req.body.name
+      courtName: req.body.name,
     });
 
     const service = new CourtService({ tenantId });
@@ -70,14 +72,15 @@ export const createCourt = async (req, res) => {
 
     const responseTime = Date.now() - startTime;
 
-    res.status(201).json(formatSuccess(court, correlationId, {
-      responseTimeMs: responseTime
-    }));
-
+    res.status(201).json(
+      formatSuccess(court, correlationId, {
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('courtController.createCourt failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     const statusCode = error.message.includes('validation') ? 400 : 500;
@@ -91,22 +94,21 @@ export const getCourt = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     Logger.info('courtController.getCourt', {
       correlationId,
       tenantId,
-      courtId
+      courtId,
     });
 
     const service = new CourtService({ tenantId });
     const court = await service.getCourt(courtId);
 
     res.status(200).json(formatSuccess(court, correlationId));
-
   } catch (error) {
     Logger.error('courtController.getCourt failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     const statusCode = error.message.includes('not found') ? 404 : 500;
@@ -121,11 +123,11 @@ export const updateCourt = async (req, res) => {
 
   try {
     const { tenantId, userId } = tenantContext.get();
-    
+
     Logger.info('courtController.updateCourt', {
       correlationId,
       tenantId,
-      courtId
+      courtId,
     });
 
     const service = new CourtService({ tenantId });
@@ -133,14 +135,15 @@ export const updateCourt = async (req, res) => {
 
     const responseTime = Date.now() - startTime;
 
-    res.status(200).json(formatSuccess(court, correlationId, {
-      responseTimeMs: responseTime
-    }));
-
+    res.status(200).json(
+      formatSuccess(court, correlationId, {
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('courtController.updateCourt failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     const statusCode = error.message.includes('not found') ? 404 : 500;
@@ -154,7 +157,7 @@ export const listCourts = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     const filters = {};
     if (req.query.tier) filters.tier = req.query.tier;
     if (req.query.status) filters.status = req.query.status;
@@ -162,14 +165,14 @@ export const listCourts = async (req, res) => {
 
     const pagination = {
       limit: parseInt(req.query.limit) || 50,
-      offset: parseInt(req.query.offset) || 0
+      offset: parseInt(req.query.offset) || 0,
     };
 
     Logger.info('courtController.listCourts', {
       correlationId,
       tenantId,
       filters,
-      pagination
+      pagination,
     });
 
     const service = new CourtService({ tenantId });
@@ -177,15 +180,16 @@ export const listCourts = async (req, res) => {
 
     const responseTime = Date.now() - startTime;
 
-    res.status(200).json(formatSuccess(result.courts, correlationId, {
-      pagination: result.pagination,
-      responseTimeMs: responseTime
-    }));
-
+    res.status(200).json(
+      formatSuccess(result.courts, correlationId, {
+        pagination: result.pagination,
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('courtController.listCourts failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -198,11 +202,11 @@ export const checkJurisdiction = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     Logger.info('courtController.checkJurisdiction', {
       correlationId,
       tenantId,
-      caseData: req.body
+      caseData: req.body,
     });
 
     const service = new CourtService({ tenantId });
@@ -210,14 +214,15 @@ export const checkJurisdiction = async (req, res) => {
 
     const responseTime = Date.now() - startTime;
 
-    res.status(200).json(formatSuccess(result, correlationId, {
-      responseTimeMs: responseTime
-    }));
-
+    res.status(200).json(
+      formatSuccess(result, correlationId, {
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('courtController.checkJurisdiction failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -230,22 +235,21 @@ export const getAppealRoute = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     Logger.info('courtController.getAppealRoute', {
       correlationId,
       tenantId,
-      courtId
+      courtId,
     });
 
     const service = new CourtService({ tenantId });
     const route = await service.getAppealRoute(courtId);
 
     res.status(200).json(formatSuccess(route, correlationId));
-
   } catch (error) {
     Logger.error('courtController.getAppealRoute failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -259,12 +263,12 @@ export const addJudicialOfficer = async (req, res) => {
 
   try {
     const { tenantId, userId } = tenantContext.get();
-    
+
     Logger.info('courtController.addJudicialOfficer', {
       correlationId,
       tenantId,
       courtId,
-      officerName: req.body.name
+      officerName: req.body.name,
     });
 
     const service = new CourtService({ tenantId });
@@ -272,14 +276,15 @@ export const addJudicialOfficer = async (req, res) => {
 
     const responseTime = Date.now() - startTime;
 
-    res.status(201).json(formatSuccess(officer, correlationId, {
-      responseTimeMs: responseTime
-    }));
-
+    res.status(201).json(
+      formatSuccess(officer, correlationId, {
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('courtController.addJudicialOfficer failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     const statusCode = error.message.includes('not found') ? 404 : 500;
@@ -292,21 +297,20 @@ export const getHierarchy = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     Logger.info('courtController.getHierarchy', {
       correlationId,
-      tenantId
+      tenantId,
     });
 
     const service = new CourtService({ tenantId });
     const hierarchy = await service.getHierarchy();
 
     res.status(200).json(formatSuccess(hierarchy, correlationId));
-
   } catch (error) {
     Logger.error('courtController.getHierarchy failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -318,21 +322,20 @@ export const getCourtStats = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     Logger.info('courtController.getCourtStats', {
       correlationId,
-      tenantId
+      tenantId,
     });
 
     const service = new CourtService({ tenantId });
     const stats = await service.getStats();
 
     res.status(200).json(formatSuccess(stats, correlationId));
-
   } catch (error) {
     Logger.error('courtController.getCourtStats failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -346,12 +349,12 @@ export const addPracticeDirective = async (req, res) => {
 
   try {
     const { tenantId, userId } = tenantContext.get();
-    
+
     Logger.info('courtController.addPracticeDirective', {
       correlationId,
       tenantId,
       courtId,
-      directiveTitle: req.body.title
+      directiveTitle: req.body.title,
     });
 
     const service = new CourtService({ tenantId });
@@ -359,14 +362,15 @@ export const addPracticeDirective = async (req, res) => {
 
     const responseTime = Date.now() - startTime;
 
-    res.status(201).json(formatSuccess(directive, correlationId, {
-      responseTimeMs: responseTime
-    }));
-
+    res.status(201).json(
+      formatSuccess(directive, correlationId, {
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('courtController.addPracticeDirective failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -387,5 +391,5 @@ export default {
   addJudicialOfficer,
   getHierarchy,
   getCourtStats,
-  addPracticeDirective
+  addPracticeDirective,
 };

@@ -40,7 +40,7 @@ filesToFix.forEach((filePath) => {
       // Fix 1: Corrupted comment pattern: } catch (e) { /*/ }
       content = content.replace(
         /\}\s*catch\s*\(\s*e\s*\)\s*\{\s*\/\*\/\s*\}/g,
-        '} catch (e) { /* ignore */ }',
+        '} catch (e) { /* ignore */ }'
       );
 
       // Fix 2: Any /*/ pattern (unterminated comment)
@@ -53,7 +53,7 @@ filesToFix.forEach((filePath) => {
       // Fix 4: Specific pattern in is-callable
       content = content.replace(
         /}\s+catch\s*\(\s*e\s*\)\s*{\s*\/\*\/\s*}/g,
-        '} catch (e) { /* ignore */ }',
+        '} catch (e) { /* ignore */ }'
       );
 
       if (content !== original) {

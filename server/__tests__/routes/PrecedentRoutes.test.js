@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT ROUTES TESTS - INVESTOR DUE DILIGENCE - $7.5B ARR TARGET       ║
   ║ 100% coverage | Enterprise API | Hyper-scale | Production-ready          ║
@@ -59,7 +57,9 @@ jest.mock('../../controllers/PrecedentController', () => ({
     count: 2,
     data: [{ citation: '[2023] ZACC 15' }],
   }),
-  getTrendingPrecedents: jest.fn().mockResolvedValue([{ id: 'prec1', citation: '[2023] ZACC 15', trend: 25 }]),
+  getTrendingPrecedents: jest
+    .fn()
+    .mockResolvedValue([{ id: 'prec1', citation: '[2023] ZACC 15', trend: 25 }]),
 }));
 
 jest.mock('../../middleware/auth', () => ({
@@ -239,7 +239,9 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
 
   describe('4. Trending', () => {
     it('should return trending precedents', async () => {
-      const response = await request(app).get('/api/precedent/trending?days=30&limit=10').expect(200);
+      const response = await request(app)
+        .get('/api/precedent/trending?days=30&limit=10')
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.period).toBe('30 days');
@@ -294,7 +296,9 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
     });
 
     it('should handle different formats', async () => {
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}?format=text`).expect(200);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}?format=text`)
+        .expect(200);
 
       expect(response.headers['content-type']).toContain('text/plain');
     });
@@ -311,7 +315,9 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
 
   describe('7. Citation Network', () => {
     it('should return citation network', async () => {
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}/network?depth=2`).expect(200);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}/network?depth=2`)
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.nodes).toBeDefined();
@@ -319,7 +325,9 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
     });
 
     it('should handle different formats', async () => {
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}/network?format=graphml`).expect(200);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}/network?format=graphml`)
+        .expect(200);
 
       expect(response.headers['content-type']).toBe('application/xml');
     });
@@ -332,7 +340,9 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
         next();
       };
 
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}/network`).expect(403);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}/network`)
+        .expect(403);
 
       expect(response.body.error.code).toBe('TIER_UPGRADE_REQUIRED');
 
@@ -346,7 +356,9 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
 
   describe('8. Deep Analysis', () => {
     it('should return deep analysis', async () => {
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}/analysis?depth=DEEP`).expect(200);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}/analysis?depth=DEEP`)
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.analysis).toBeDefined();
@@ -354,7 +366,9 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
     });
 
     it('should handle HTML format', async () => {
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}/analysis?format=html`).expect(200);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}/analysis?format=html`)
+        .expect(200);
 
       expect(response.headers['content-type']).toContain('text/html');
     });
@@ -366,7 +380,9 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
         next();
       };
 
-      const response = await request(app).get(`/api/precedent/${mockPrecedentId}/analysis`).expect(403);
+      const response = await request(app)
+        .get(`/api/precedent/${mockPrecedentId}/analysis`)
+        .expect(403);
 
       expect(response.body.error.code).toBe('TIER_UPGRADE_REQUIRED');
 
@@ -438,7 +454,10 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
         next();
       };
 
-      const response = await request(app).post('/api/precedent/batch').send({ operations: [] }).expect(403);
+      const response = await request(app)
+        .post('/api/precedent/batch')
+        .send({ operations: [] })
+        .expect(403);
 
       expect(response.body.error.code).toBe('TIER_UPGRADE_REQUIRED');
 
@@ -451,7 +470,9 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
 
   describe('11. Export', () => {
     it('should export as JSON', async () => {
-      const response = await request(app).get(`/api/precedent/export?format=json&ids[]=${mockPrecedentId}`).expect(200);
+      const response = await request(app)
+        .get(`/api/precedent/export?format=json&ids[]=${mockPrecedentId}`)
+        .expect(200);
 
       expect(response.headers['content-type']).toBe('application/json');
       expect(response.headers['content-disposition']).toContain('.json');
@@ -459,7 +480,9 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
     });
 
     it('should export as CSV', async () => {
-      const response = await request(app).get(`/api/precedent/export?format=csv&ids[]=${mockPrecedentId}`).expect(200);
+      const response = await request(app)
+        .get(`/api/precedent/export?format=csv&ids[]=${mockPrecedentId}`)
+        .expect(200);
 
       expect(response.headers['content-type']).toBe('text/csv');
       expect(response.headers['content-disposition']).toContain('.csv');
@@ -653,7 +676,10 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'precedent-routes-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'precedent-routes-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'precedent-routes-evidence.json'))
@@ -662,7 +688,10 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'precedent-routes-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'precedent-routes-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

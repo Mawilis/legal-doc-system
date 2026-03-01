@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-import loggerRaw from './logger.js';
+#!import loggerRaw from './logger.js';
 const logger = loggerRaw.default || loggerRaw;
 /* eslint-disable */
 /*

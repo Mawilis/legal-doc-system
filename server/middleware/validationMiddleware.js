@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 import * as validation from '../utils/validationUtils.js';
 
 /*

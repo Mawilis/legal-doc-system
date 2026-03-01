@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * QUANTUM SENTINEL: COMPLIANCE SERVICE - SOVEREIGN REGULATORY OMNISCIENCE V19.0.0
  * ============================================================================
@@ -267,7 +265,7 @@ class ComplianceService {
           verificationId,
           'INVALID_FORMAT',
           'LPC number format is invalid',
-          { lpcNumber, firmName },
+          { lpcNumber, firmName }
         );
       }
 
@@ -286,7 +284,7 @@ class ComplianceService {
           verificationId,
           'BASIC_VERIFICATION_FAILED',
           basicVerification.reason,
-          { lpcNumber, firmName, details: basicVerification },
+          { lpcNumber, firmName, details: basicVerification }
         );
       }
 
@@ -341,7 +339,7 @@ class ComplianceService {
                 lpcNumber,
                 firmName,
                 verificationDate: new Date().toISOString(),
-              }),
+              })
             )
             .digest('hex'),
         },
@@ -367,7 +365,7 @@ class ComplianceService {
         'VERIFICATION_FAILED',
         `LPC verification failed: ${error.message}`,
         { lpcNumber, firmName, error: error.message },
-        true,
+        true
       );
     }
   }
@@ -566,7 +564,7 @@ class ComplianceService {
           validationId,
           'INVALID_FORMAT',
           formatValidation.reason,
-          { vatNumber, companyName },
+          { vatNumber, companyName }
         );
       }
 
@@ -577,7 +575,7 @@ class ComplianceService {
           validationId,
           'INVALID_CHECK_DIGIT',
           checkDigitValidation.reason,
-          { vatNumber, companyName },
+          { vatNumber, companyName }
         );
       }
 
@@ -629,7 +627,7 @@ class ComplianceService {
                 vatNumber,
                 companyName,
                 validationDate: new Date().toISOString(),
-              }),
+              })
             )
             .digest('hex'),
         },
@@ -656,7 +654,7 @@ class ComplianceService {
         'VALIDATION_FAILED',
         `VAT validation failed: ${error.message}`,
         { vatNumber, companyName, error: error.message },
-        true,
+        true
       );
     }
   }
@@ -791,7 +789,7 @@ class ComplianceService {
     const verificationId = `BBBEE-VERIFY-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
 
     console.log(
-      `🔍 [BBBEE VERIFICATION] Starting verification: ${certificateNumber} - ${companyName}`,
+      `🔍 [BBBEE VERIFICATION] Starting verification: ${certificateNumber} - ${companyName}`
     );
 
     try {
@@ -802,7 +800,7 @@ class ComplianceService {
           verificationId,
           'INVALID_FORMAT',
           formatValidation.reason,
-          { certificateNumber, companyName },
+          { certificateNumber, companyName }
         );
       }
 
@@ -857,7 +855,7 @@ class ComplianceService {
                 certificateNumber,
                 companyName,
                 verificationDate: new Date().toISOString(),
-              }),
+              })
             )
             .digest('hex'),
         },
@@ -884,7 +882,7 @@ class ComplianceService {
         'VERIFICATION_FAILED',
         `BBBEE verification failed: ${error.message}`,
         { certificateNumber, companyName, error: error.message },
-        true,
+        true
       );
     }
   }
@@ -955,7 +953,7 @@ class ComplianceService {
                 tenantId,
                 auditDate: new Date().toISOString(),
                 score: complianceScore,
-              }),
+              })
             )
             .digest('hex'),
         },
@@ -974,7 +972,7 @@ class ComplianceService {
       await this._logComplianceEvent('POPIA_AUDIT', auditReport, tenantId);
 
       console.log(
-        `✅ [POPIA AUDIT] Completed audit for tenant ${tenantId}: Score ${complianceScore}%`,
+        `✅ [POPIA AUDIT] Completed audit for tenant ${tenantId}: Score ${complianceScore}%`
       );
 
       return auditReport;
@@ -986,7 +984,7 @@ class ComplianceService {
         'AUDIT_FAILED',
         `POPIA audit failed: ${error.message}`,
         { tenantId, error: error.message },
-        true,
+        true
       );
     }
   }
@@ -1021,10 +1019,10 @@ class ComplianceService {
         score: compliant ? 100 : 0,
         recommendations: !compliant
           ? [
-            'Designate Information Officer',
-            'Create and publish privacy policy',
-            'Maintain processing register',
-          ]
+              'Designate Information Officer',
+              'Create and publish privacy policy',
+              'Maintain processing register',
+            ]
           : [],
         evidenceRequired: ['IO Appointment Letter', 'Privacy Policy', 'Processing Register'],
       };
@@ -1154,10 +1152,10 @@ class ComplianceService {
       fallback: isFallback,
       recommendations: isFallback
         ? [
-          'Verify LPC registration manually with Legal Practice Council',
-          'Check LPC number format: LPC/YYYY/XXXXX',
-          'Contact LPC for registration status',
-        ]
+            'Verify LPC registration manually with Legal Practice Council',
+            'Check LPC number format: LPC/YYYY/XXXXX',
+            'Contact LPC for registration status',
+          ]
         : ['Contact LPC for verification'],
       regulatoryReference: {
         body: 'Legal Practice Council',
@@ -1181,10 +1179,10 @@ class ComplianceService {
       fallback: isFallback,
       recommendations: isFallback
         ? [
-          'Verify VAT registration manually with SARS',
-          'Check VAT number format: 10 digits',
-          'Contact SARS eFiling support',
-        ]
+            'Verify VAT registration manually with SARS',
+            'Check VAT number format: 10 digits',
+            'Contact SARS eFiling support',
+          ]
         : ['Contact SARS for verification'],
       regulatoryReference: {
         body: 'South African Revenue Service',
@@ -1208,10 +1206,10 @@ class ComplianceService {
       fallback: isFallback,
       recommendations: isFallback
         ? [
-          'Verify BBBEE certificate manually with SANAS',
-          'Check certificate number format',
-          'Contact accredited verification agency',
-        ]
+            'Verify BBBEE certificate manually with SANAS',
+            'Check certificate number format',
+            'Contact accredited verification agency',
+          ]
         : ['Contact SANAS for verification'],
       regulatoryReference: {
         body: 'South African National Accreditation System',
@@ -1235,10 +1233,10 @@ class ComplianceService {
       fallback: isFallback,
       recommendations: isFallback
         ? [
-          'Conduct manual POPIA compliance review',
-          'Designate Information Officer',
-          'Implement 8 conditions for lawful processing',
-        ]
+            'Conduct manual POPIA compliance review',
+            'Designate Information Officer',
+            'Implement 8 conditions for lawful processing',
+          ]
         : ['Contact Information Regulator for guidance'],
       regulatoryReference: {
         body: 'Information Regulator of South Africa',
@@ -1318,14 +1316,16 @@ class ComplianceService {
         description: 'High risk of disciplinary action',
         actions: ['Immediate remediation required', 'Notify LPC', 'Engage compliance officer'],
       };
-    } if (failedChecks >= 2) {
+    }
+    if (failedChecks >= 2) {
       return {
         level: 'HIGH',
         color: COMPLIANCE_CONFIG.RISK_CATEGORIES.HIGH.color,
         description: 'Significant compliance gaps',
         actions: ['Remediate within 30 days', 'Update compliance documentation'],
       };
-    } if (failedChecks >= 1) {
+    }
+    if (failedChecks >= 1) {
       return {
         level: 'MEDIUM',
         color: COMPLIANCE_CONFIG.RISK_CATEGORIES.MEDIUM.color,
@@ -1408,12 +1408,12 @@ class ComplianceService {
       const [lpcVerification, vatValidation, bbbeeVerification, popiaAudit] = await Promise.all([
         this.verifyLPCRegistration(
           tenant.compliance?.lpc?.registrationNumber,
-          tenant.legalIdentity?.name,
+          tenant.legalIdentity?.name
         ),
         this.validateVATNumber(tenant.subscription?.billing?.vatNumber, tenant.legalIdentity?.name),
         this.verifyBBBEECertification(
           tenant.compliance?.bbbee?.certificateNumber,
-          tenant.legalIdentity?.name,
+          tenant.legalIdentity?.name
         ),
         this.performPOPIAComplianceAudit(tenantId),
       ]);
@@ -1485,7 +1485,7 @@ class ComplianceService {
                 tenantId,
                 generationDate: new Date().toISOString(),
                 overallScore,
-              }),
+              })
             )
             .digest('hex'),
         },
@@ -1498,7 +1498,7 @@ class ComplianceService {
       await this._logComplianceEvent('DASHBOARD_GENERATED', dashboard, tenantId);
 
       console.log(
-        `✅ [COMPLIANCE DASHBOARD] Generated dashboard for tenant ${tenantId}: Score ${overallScore}%`,
+        `✅ [COMPLIANCE DASHBOARD] Generated dashboard for tenant ${tenantId}: Score ${overallScore}%`
       );
 
       return dashboard;
@@ -1547,14 +1547,16 @@ class ComplianceService {
           'Notify regulators if required',
         ],
       };
-    } if (riskLevels.includes('HIGH')) {
+    }
+    if (riskLevels.includes('HIGH')) {
       return {
         level: 'HIGH',
         color: '#EF4444',
         description: 'High compliance risks present',
         actions: ['Address high-risk items within 30 days', 'Schedule compliance review'],
       };
-    } if (riskLevels.includes('MEDIUM')) {
+    }
+    if (riskLevels.includes('MEDIUM')) {
       return {
         level: 'MEDIUM',
         color: '#F59E0B',
@@ -1650,7 +1652,7 @@ class ComplianceService {
       };
 
       console.log(
-        `🎉 [COMPLIANCE TEST] Completed: ${testResults.summary.passedTests}/${testResults.summary.totalTests} tests passed`,
+        `🎉 [COMPLIANCE TEST] Completed: ${testResults.summary.passedTests}/${testResults.summary.totalTests} tests passed`
       );
 
       return testResults;

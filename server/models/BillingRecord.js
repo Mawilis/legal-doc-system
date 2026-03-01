@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ================================================================================================
  * FILE: server/models/BillingRecord.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/BillingRecord.js
@@ -113,9 +111,10 @@ class BillingRecord extends Model {
    * Quantum: Secure payment gateway integration
    */
   async generatePaymentLink() {
-    const baseUrl = process.env.PAYFAST_SANDBOX === 'true'
-      ? 'https://sandbox.payfast.co.za'
-      : 'https://www.payfast.co.za';
+    const baseUrl =
+      process.env.PAYFAST_SANDBOX === 'true'
+        ? 'https://sandbox.payfast.co.za'
+        : 'https://www.payfast.co.za';
 
     // Generate secure payment signature
     const paymentData = {
@@ -134,7 +133,7 @@ class BillingRecord extends Model {
     // Generate signature (PayFast-specific logic)
     // Note: In production, implement proper PayFast signature generation
     const signature = cryptoService.generateHash(
-      Object.values(paymentData).join('') + process.env.PAYFAST_PASSPHRASE,
+      Object.values(paymentData).join('') + process.env.PAYFAST_PASSPHRASE
     );
 
     return {
@@ -325,7 +324,7 @@ BillingRecord.init(
         'OVERDUE',
         'CANCELLED',
         'REFUNDED',
-        'IN_DISPUTE',
+        'IN_DISPUTE'
       ),
       allowNull: false,
       defaultValue: 'DRAFT',
@@ -342,7 +341,7 @@ BillingRecord.init(
         'BANK_TRANSFER',
         'TRUST_ACCOUNT',
         'CONTINGENCY',
-        'PRO_BONO',
+        'PRO_BONO'
       ),
       allowNull: true,
       comment: 'Payment method used',
@@ -657,7 +656,7 @@ BillingRecord.init(
               vatAmount: record.vatAmount,
               totalAmount: record.totalAmount,
               timestamp: new Date().toISOString(),
-            }),
+            })
           );
         }
       },
@@ -688,7 +687,7 @@ BillingRecord.init(
           // Calculate penalty interest
           if (record.penaltyInterestRate) {
             const daysLate = Math.ceil(
-              (new Date() - new Date(record.dueDate)) / (1000 * 60 * 60 * 24),
+              (new Date() - new Date(record.dueDate)) / (1000 * 60 * 60 * 24)
             );
             const dailyRate = record.penaltyInterestRate / 365 / 100;
             record.penaltyAmount = parseFloat(record.outstandingAmount) * dailyRate * daysLate;
@@ -770,7 +769,7 @@ BillingRecord.init(
         where: { isTrustAccount: true },
       },
     },
-  },
+  }
 );
 
 // =================================================================

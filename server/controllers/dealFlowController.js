@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL FLOW CONTROLLER - INVESTOR-GRADE M&A API ENDPOINTS                               ║
   ║ R3.5B/year deal flow | Real-time synergy scoring | Regulatory compliance              ║
@@ -8,7 +8,7 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/dealFlowController.js
  * VERSION: 1.0.0-PRODUCTION
  * CREATED: 2026-02-27
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R450M/year in manual deal tracking and missed opportunities
  * • Generates: R1.2B/year deal flow through automated pipeline
@@ -29,8 +29,9 @@ import crypto from 'crypto';
 // ============================================================================
 
 const generateCorrelationId = (req) => {
-  return req.headers['x-correlation-id'] || 
-         `deal-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+  return (
+    req.headers['x-correlation-id'] || `deal-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+  );
 };
 
 const formatSuccess = (data, correlationId, metadata = {}) => {
@@ -39,7 +40,7 @@ const formatSuccess = (data, correlationId, metadata = {}) => {
     correlationId,
     timestamp: new Date().toISOString(),
     data,
-    metadata
+    metadata,
   };
 };
 
@@ -51,8 +52,8 @@ const formatError = (error, correlationId, statusCode = 500) => {
     error: {
       code: error.code || 'INTERNAL_ERROR',
       message: error.message || 'An unexpected error occurred',
-      statusCode
-    }
+      statusCode,
+    },
   };
 };
 
@@ -66,17 +67,17 @@ export const identifyTargets = async (req, res) => {
 
   try {
     const { tenantId, userId } = tenantContext.get();
-    
+
     Logger.info('dealFlowController.identifyTargets', {
       correlationId,
       tenantId,
-      criteria: req.body
+      criteria: req.body,
     });
 
     const service = new MergerAcquisitionService({ tenantId });
     const targets = await service.identifyTargets(req.body, {
       correlationId,
-      source: 'api'
+      source: 'api',
     });
 
     const responseTime = Date.now() - startTime;
@@ -89,19 +90,20 @@ export const identifyTargets = async (req, res) => {
       criteria: req.body,
       targetsFound: targets.length,
       responseTimeMs: responseTime,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    res.status(200).json(formatSuccess(targets, correlationId, {
-      count: targets.length,
-      responseTimeMs: responseTime
-    }));
-
+    res.status(200).json(
+      formatSuccess(targets, correlationId, {
+        count: targets.length,
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('dealFlowController.identifyTargets failed', {
       correlationId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     const statusCode = error.message.includes('validation') ? 400 : 500;
@@ -115,18 +117,18 @@ export const createDeal = async (req, res) => {
 
   try {
     const { tenantId, userId } = tenantContext.get();
-    
+
     Logger.info('dealFlowController.createDeal', {
       correlationId,
       tenantId,
-      dealData: req.body
+      dealData: req.body,
     });
 
     const service = new MergerAcquisitionService({ tenantId });
     const deal = await service.createDeal(req.body, {
       correlationId,
       source: 'api',
-      userId
+      userId,
     });
 
     const responseTime = Date.now() - startTime;
@@ -140,18 +142,19 @@ export const createDeal = async (req, res) => {
       dealType: deal.dealType,
       value: deal.value,
       responseTimeMs: responseTime,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    res.status(201).json(formatSuccess(deal, correlationId, {
-      responseTimeMs: responseTime
-    }));
-
+    res.status(201).json(
+      formatSuccess(deal, correlationId, {
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('dealFlowController.createDeal failed', {
       correlationId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     const statusCode = error.message.includes('required') ? 400 : 500;
@@ -166,19 +169,19 @@ export const calculateSynergy = async (req, res) => {
 
   try {
     const { tenantId, userId } = tenantContext.get();
-    
+
     Logger.info('dealFlowController.calculateSynergy', {
       correlationId,
       tenantId,
       acquirerId,
-      targetId
+      targetId,
     });
 
     const service = new MergerAcquisitionService({ tenantId });
     const synergy = await service.calculateSynergy(acquirerId, targetId, {
       correlationId,
       userId,
-      ...req.body
+      ...req.body,
     });
 
     const responseTime = Date.now() - startTime;
@@ -193,18 +196,19 @@ export const calculateSynergy = async (req, res) => {
       synergyScore: synergy.totalSynergy,
       confidence: synergy.confidence,
       responseTimeMs: responseTime,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    res.status(200).json(formatSuccess(synergy, correlationId, {
-      responseTimeMs: responseTime
-    }));
-
+    res.status(200).json(
+      formatSuccess(synergy, correlationId, {
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('dealFlowController.calculateSynergy failed', {
       correlationId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -219,12 +223,12 @@ export const assessRegulatory = async (req, res) => {
 
   try {
     const { tenantId, userId } = tenantContext.get();
-    
+
     Logger.info('dealFlowController.assessRegulatory', {
       correlationId,
       tenantId,
       dealId,
-      jurisdictions
+      jurisdictions,
     });
 
     const service = new MergerAcquisitionService({ tenantId });
@@ -239,20 +243,21 @@ export const assessRegulatory = async (req, res) => {
       correlationId,
       dealId,
       jurisdictions,
-      filingsRequired: assessments.filter(a => a.filingRequired).length,
+      filingsRequired: assessments.filter((a) => a.filingRequired).length,
       responseTimeMs: responseTime,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    res.status(200).json(formatSuccess(assessments, correlationId, {
-      responseTimeMs: responseTime
-    }));
-
+    res.status(200).json(
+      formatSuccess(assessments, correlationId, {
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('dealFlowController.assessRegulatory failed', {
       correlationId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -266,19 +271,19 @@ export const simulateIntegration = async (req, res) => {
 
   try {
     const { tenantId, userId } = tenantContext.get();
-    
+
     Logger.info('dealFlowController.simulateIntegration', {
       correlationId,
       tenantId,
       dealId,
-      options: req.body
+      options: req.body,
     });
 
     const service = new MergerAcquisitionService({ tenantId });
     const simulation = await service.simulateIntegration(dealId, {
       ...req.body,
       correlationId,
-      userId
+      userId,
     });
 
     const responseTime = Date.now() - startTime;
@@ -292,18 +297,19 @@ export const simulateIntegration = async (req, res) => {
       iterations: simulation.iterations,
       successProbability: simulation.results?.successProbability?.overall,
       responseTimeMs: responseTime,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    res.status(200).json(formatSuccess(simulation, correlationId, {
-      responseTimeMs: responseTime
-    }));
-
+    res.status(200).json(
+      formatSuccess(simulation, correlationId, {
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('dealFlowController.simulateIntegration failed', {
       correlationId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -316,22 +322,21 @@ export const getDeal = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     Logger.info('dealFlowController.getDeal', {
       correlationId,
       tenantId,
-      dealId
+      dealId,
     });
 
     const service = new MergerAcquisitionService({ tenantId });
     const deal = await service.getDeal(dealId);
 
     res.status(200).json(formatSuccess(deal, correlationId));
-
   } catch (error) {
     Logger.error('dealFlowController.getDeal failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     const statusCode = error.message.includes('not found') ? 404 : 500;
@@ -345,7 +350,7 @@ export const listDeals = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     const filters = {};
     if (req.query.stage) filters.stage = req.query.stage;
     if (req.query.dealType) filters.dealType = req.query.dealType;
@@ -354,14 +359,14 @@ export const listDeals = async (req, res) => {
 
     const pagination = {
       limit: parseInt(req.query.limit) || 20,
-      offset: parseInt(req.query.offset) || 0
+      offset: parseInt(req.query.offset) || 0,
     };
 
     Logger.info('dealFlowController.listDeals', {
       correlationId,
       tenantId,
       filters,
-      pagination
+      pagination,
     });
 
     const service = new MergerAcquisitionService({ tenantId });
@@ -369,15 +374,16 @@ export const listDeals = async (req, res) => {
 
     const responseTime = Date.now() - startTime;
 
-    res.status(200).json(formatSuccess(result.deals, correlationId, {
-      pagination: result.pagination,
-      responseTimeMs: responseTime
-    }));
-
+    res.status(200).json(
+      formatSuccess(result.deals, correlationId, {
+        pagination: result.pagination,
+        responseTimeMs: responseTime,
+      })
+    );
   } catch (error) {
     Logger.error('dealFlowController.listDeals failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -391,12 +397,12 @@ export const updateDealStage = async (req, res) => {
 
   try {
     const { tenantId, userId } = tenantContext.get();
-    
+
     Logger.info('dealFlowController.updateDealStage', {
       correlationId,
       tenantId,
       dealId,
-      newStage: stage
+      newStage: stage,
     });
 
     const service = new MergerAcquisitionService({ tenantId });
@@ -409,15 +415,14 @@ export const updateDealStage = async (req, res) => {
       correlationId,
       dealId,
       newStage: stage,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     res.status(200).json(formatSuccess(deal, correlationId));
-
   } catch (error) {
     Logger.error('dealFlowController.updateDealStage failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     const statusCode = error.message.includes('not found') ? 404 : 500;
@@ -430,21 +435,20 @@ export const getPipelineAnalytics = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     Logger.info('dealFlowController.getPipelineAnalytics', {
       correlationId,
-      tenantId
+      tenantId,
     });
 
     const service = new MergerAcquisitionService({ tenantId });
     const analytics = await service.getPipelineAnalytics();
 
     res.status(200).json(formatSuccess(analytics, correlationId));
-
   } catch (error) {
     Logger.error('dealFlowController.getPipelineAnalytics failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -456,24 +460,25 @@ export const getTargets = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     const filters = {};
     if (req.query.industry) filters.industry = req.query.industry;
     if (req.query.status) filters.status = req.query.status;
 
     const targets = await Target.findByTenant(tenantId, filters, {
       limit: parseInt(req.query.limit) || 50,
-      offset: parseInt(req.query.offset) || 0
+      offset: parseInt(req.query.offset) || 0,
     });
 
-    res.status(200).json(formatSuccess(targets, correlationId, {
-      count: targets.length
-    }));
-
+    res.status(200).json(
+      formatSuccess(targets, correlationId, {
+        count: targets.length,
+      })
+    );
   } catch (error) {
     Logger.error('dealFlowController.getTargets failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -485,15 +490,14 @@ export const getDealStats = async (req, res) => {
 
   try {
     const { tenantId } = tenantContext.get();
-    
+
     const stats = await Deal.getStats(tenantId);
 
     res.status(200).json(formatSuccess(stats, correlationId));
-
   } catch (error) {
     Logger.error('dealFlowController.getDealStats failed', {
       correlationId,
-      error: error.message
+      error: error.message,
     });
 
     res.status(500).json(formatError(error, correlationId));
@@ -511,5 +515,5 @@ export default {
   updateDealStage,
   getPipelineAnalytics,
   getTargets,
-  getDealStats
+  getDealStats,
 };

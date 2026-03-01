@@ -1,4 +1,4 @@
-/* eslint-disable no-irregular-whitespace */
+#!/* eslint-disable no-irregular-whitespace */
 /*
 ================================================================================
                            QUANTUM TENANT SOVEREIGNTY

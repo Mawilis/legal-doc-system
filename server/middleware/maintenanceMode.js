@@ -1,4 +1,4 @@
-/*
+#!/*
  * File: server/middleware/maintenanceMode.js
  * STATUS: PRODUCTION-READY | OPERATIONAL EXCELLENCE GRADE
  * -----------------------------------------------------------------------------

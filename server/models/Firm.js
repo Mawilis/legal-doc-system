@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ██╗    ██╗██╗██╗     ███████╗██╗   ██╗     ██████╗ ███████╗    ████████╗ ██████╗ ██╗   ██╗ ██████╗██╗  ██╗██╗███╗   ██╗ ██████╗     ███████╗██╗██████╗ ███╗   ███╗
  * ██║    ██║██║██║     ██╔════╝╚██╗ ██╔╝    ██╔═══██╗██╔════╝    ╚══██╔══╝██╔═══██╗██║   ██║██╔════╝██║  ██║██║████╗  ██║██╔════╝     ██╔════╝██║██╔══██╗████╗ ████║
  * ██║ █╗ ██║██║██║     ███████╗ ╚████╔╝     ██║   ██║███████╗       ██║   ██║   ██║██║   ██║██║     ███████║██║██╔██╗ ██║██║  ███╗    ███████╗██║██████╔╝██╔████╔██║
@@ -50,17 +48,17 @@ const mongoose = require('mongoose');
 // Immediate environment validation - production deployment critical
 if (!process.env.ENCRYPTION_KEY) {
   throw new Error(
-    'QUANTUM SECURITY BREACH: ENCRYPTION_KEY not found in .env - Required for AES-256-GCM firm data protection',
+    'QUANTUM SECURITY BREACH: ENCRYPTION_KEY not found in .env - Required for AES-256-GCM firm data protection'
   );
 }
 if (!process.env.ENCRYPTION_IV) {
   throw new Error(
-    'QUANTUM SECURITY BREACH: ENCRYPTION_IV not found in .env - Required for authenticated encryption',
+    'QUANTUM SECURITY BREACH: ENCRYPTION_IV not found in .env - Required for authenticated encryption'
   );
 }
 if (!process.env.MONGO_URI) {
   throw new Error(
-    'DATABASE CONNECTION FAILURE: MONGO_URI not configured in .env - Required for production deployment',
+    'DATABASE CONNECTION FAILURE: MONGO_URI not configured in .env - Required for production deployment'
   );
 }
 
@@ -68,7 +66,7 @@ if (!process.env.MONGO_URI) {
 const encryptionKey = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
 if (encryptionKey.length !== 32) {
   throw new Error(
-    `QUANTUM ENCRYPTION ERROR: ENCRYPTION_KEY must be 32 bytes (64 hex chars), got ${encryptionKey.length} bytes`,
+    `QUANTUM ENCRYPTION ERROR: ENCRYPTION_KEY must be 32 bytes (64 hex chars), got ${encryptionKey.length} bytes`
   );
 }
 
@@ -77,7 +75,7 @@ const encryptionIV = Buffer.from(process.env.ENCRYPTION_IV, 'hex');
 if (encryptionIV.length !== 12) {
   // GCM recommends 12 bytes for optimal performance
   throw new Error(
-    `QUANTUM ENCRYPTION ERROR: ENCRYPTION_IV must be 12 bytes (24 hex chars) for AES-GCM, got ${encryptionIV.length} bytes`,
+    `QUANTUM ENCRYPTION ERROR: ENCRYPTION_IV must be 12 bytes (24 hex chars) for AES-GCM, got ${encryptionIV.length} bytes`
   );
 }
 
@@ -145,8 +143,9 @@ const QuantumEncryption = {
       const parts = ciphertext.split(':');
 
       // Support both old format (encrypted:tag) and new format (iv:encrypted:tag)
-      let iv; let encrypted; let
-        authTag;
+      let iv;
+      let encrypted;
+      let authTag;
 
       if (parts.length === 2) {
         // Old format: encrypted:tag (using static IV)
@@ -226,7 +225,7 @@ const FirmSchema = new mongoose.Schema(
         validator(v) {
           // Enhanced validation for South African legal entity names
           return /^[A-Za-zÀ-ÿ0-9\s&.,'"()-]+(?:\s+(Inc|Pty|Ltd|LLP|Attorneys|Law|Legal|Advocates|Associates))?$/i.test(
-            v,
+            v
           );
         },
         message: 'Practice name must be a valid South African legal entity name',
@@ -275,10 +274,10 @@ const FirmSchema = new mongoose.Schema(
         validator(v) {
           // Enhanced validation for various South African legal registration formats
           return (
-            /^(LPC|CPA)\/[A-Z]{2}\/[0-9]{6}\/[0-9]{2}$/.test(v) // LPC/CPT/123456/21
-            || /^[A-Z]{2}[0-9]{6}$/.test(v) // CPT123456
-            || /^[0-9]{4}\/[0-9]{6}$/.test(v) // 2021/123456 (Companies Act)
-            || /^CK[0-9]{2}[0-9]{6}$/.test(v)
+            /^(LPC|CPA)\/[A-Z]{2}\/[0-9]{6}\/[0-9]{2}$/.test(v) || // LPC/CPT/123456/21
+            /^[A-Z]{2}[0-9]{6}$/.test(v) || // CPT123456
+            /^[0-9]{4}\/[0-9]{6}$/.test(v) || // 2021/123456 (Companies Act)
+            /^CK[0-9]{2}[0-9]{6}$/.test(v)
           ); // CK20123456 (Close Corporation)
         },
         message:
@@ -688,36 +687,60 @@ const FirmSchema = new mongoose.Schema(
       pendingMatters: { type: Number, default: 0, min: 0 },
       averageMatterDuration: { type: Number, default: 0, min: 0 }, // in days
       clientRetentionRate: {
-        type: Number, default: 0, min: 0, max: 100,
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
       },
       matterSuccessRate: {
-        type: Number, default: 0, min: 0, max: 100,
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
       },
       revenueThisMonth: { type: Number, default: 0, min: 0 },
       revenueLastMonth: { type: Number, default: 0, min: 0 },
       outstandingDebtors: { type: Number, default: 0, min: 0 },
       averageCollectionPeriod: { type: Number, default: 0, min: 0 }, // in days
       staffUtilizationRate: {
-        type: Number, default: 0, min: 0, max: 100,
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
       },
       lastUpdated: { type: Date, default: Date.now },
     },
 
     intelligence: {
       clientSatisfactionScore: {
-        type: Number, default: 0, min: 0, max: 100,
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
       },
       riskAssessmentScore: {
-        type: Number, default: 0, min: 0, max: 100,
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
       },
       complianceScore: {
-        type: Number, default: 0, min: 0, max: 100,
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
       },
       financialHealthScore: {
-        type: Number, default: 0, min: 0, max: 100,
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
       },
       growthPotential: {
-        type: Number, default: 0, min: 0, max: 100,
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
       },
       aiRecommendations: [
         {
@@ -1099,7 +1122,10 @@ const FirmSchema = new mongoose.Schema(
           },
         },
         latePaymentPenalty: {
-          type: Number, default: 0, min: 0, max: 100,
+          type: Number,
+          default: 0,
+          min: 0,
+          max: 100,
         }, // Percentage
         dynamicPricing: {
           isEnabled: { type: Boolean, default: false },
@@ -1125,13 +1151,22 @@ const FirmSchema = new mongoose.Schema(
         },
         discountPolicy: {
           newClientDiscount: {
-            type: Number, default: 0, min: 0, max: 100,
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100,
           },
           volumeDiscount: {
-            type: Number, default: 0, min: 0, max: 100,
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100,
           },
           referralDiscount: {
-            type: Number, default: 0, min: 0, max: 100,
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100,
           },
         },
       },
@@ -1139,7 +1174,10 @@ const FirmSchema = new mongoose.Schema(
       annualRevenue: { type: Number, default: 0, min: 0 },
       projectedRevenue: { type: Number, default: 0, min: 0 },
       profitMargin: {
-        type: Number, default: 0, min: -100, max: 100,
+        type: Number,
+        default: 0,
+        min: -100,
+        max: 100,
       },
       financialYearEnd: { type: String, default: 'FEBRUARY' },
       lastFinancialStatement: Date,
@@ -1170,8 +1208,8 @@ const FirmSchema = new mongoose.Schema(
           validate: {
             validator(v) {
               return (
-                /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?:\/[0-9]{1,2})?$/.test(v)
-                || /^([a-f0-9:]+:+)+[a-f0-9]+$/.test(v)
+                /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?:\/[0-9]{1,2})?$/.test(v) ||
+                /^([a-f0-9:]+:+)+[a-f0-9]+$/.test(v)
               );
             },
             message: 'Invalid IP address format',
@@ -1280,7 +1318,10 @@ const FirmSchema = new mongoose.Schema(
           dataSubjects: [String],
           thirdParties: [String],
           retentionPeriod: {
-            type: Number, required: true, min: 1, max: 120,
+            type: Number,
+            required: true,
+            min: 1,
+            max: 120,
           }, // in months
           securityMeasures: [String],
           lastReview: Date,
@@ -1295,13 +1336,19 @@ const FirmSchema = new mongoose.Schema(
       dsarWorkflow: {
         enabled: { type: Boolean, default: true },
         averageResponseTime: {
-          type: Number, default: 30, min: 1, max: 45,
+          type: Number,
+          default: 30,
+          min: 1,
+          max: 45,
         }, // days
         lastRequest: Date,
         pendingRequests: { type: Number, default: 0, min: 0 },
         completedRequests: { type: Number, default: 0, min: 0 },
         slaCompliance: {
-          type: Number, default: 100, min: 0, max: 100,
+          type: Number,
+          default: 100,
+          min: 0,
+          max: 100,
         }, // percentage
       },
       dataBreachProtocol: {
@@ -1344,7 +1391,10 @@ const FirmSchema = new mongoose.Schema(
         lastVerification: Date,
         verificationId: String,
         confidenceScore: {
-          type: Number, min: 0, max: 100, default: 0,
+          type: Number,
+          min: 0,
+          max: 100,
+          default: 0,
         },
         apiKeyReference: String,
       },
@@ -1639,7 +1689,7 @@ const FirmSchema = new mongoose.Schema(
     collection: 'sovereign_firms',
     autoIndex: process.env.NODE_ENV !== 'production',
     optimisticConcurrency: true,
-  },
+  }
 );
 
 // =============================================================================
@@ -1687,7 +1737,7 @@ FirmSchema.index(
       'practiceAreas.category': 2,
     },
     name: 'firm_search_index',
-  },
+  }
 );
 
 // =============================================================================
@@ -1731,16 +1781,16 @@ FirmSchema.pre('save', function (next) {
       this.addComplianceEvent(
         'COMPLIANCE_CHECK',
         `Accreditation level updated from ${this.accreditationLevel} to ${newLevel} based on performance metrics`,
-        { oldLevel: this.accreditationLevel, newLevel },
+        { oldLevel: this.accreditationLevel, newLevel }
       );
     }
   }
 
   // Validate trust account compliance for law firms
   if (
-    this.legalEntityType !== 'SOLE_PRACTITIONER'
-    && this.legalEntityType !== 'LEGAL_AID_CLINIC'
-    && this.legalEntityType !== 'UNIVERSITY_LAW_CLINIC'
+    this.legalEntityType !== 'SOLE_PRACTITIONER' &&
+    this.legalEntityType !== 'LEGAL_AID_CLINIC' &&
+    this.legalEntityType !== 'UNIVERSITY_LAW_CLINIC'
   ) {
     if (!this.financials?.trustAccount?.accountNumber) {
       this.compliance = this.compliance || {};
@@ -1748,7 +1798,7 @@ FirmSchema.pre('save', function (next) {
       this.addComplianceEvent(
         'COMPLIANCE_VIOLATION',
         'Trust account not configured for law firm - LPC Rule 35 violation',
-        { entityType: this.legalEntityType },
+        { entityType: this.legalEntityType }
       );
     }
   }
@@ -1791,7 +1841,7 @@ FirmSchema.pre('save', function (next) {
       this.addComplianceEvent(
         'COMPLIANCE_CHECK',
         'Email domain does not match firm name - potential impersonation risk',
-        { email: this.contactDetails.primaryEmail, firmName: tradingName },
+        { email: this.contactDetails.primaryEmail, firmName: tradingName }
       );
     }
   }
@@ -1816,7 +1866,7 @@ FirmSchema.post('save', async function (doc) {
               $set: { 'profile.firmId': doc._id, 'profile.firmRole': 'PARTNER' },
             });
           }
-        }),
+        })
       );
     }
 
@@ -1825,7 +1875,7 @@ FirmSchema.post('save', async function (doc) {
       doc.addComplianceEvent(
         'COMPLIANCE_CHECK',
         `Firm status changed from ${this.$__.originalStatus} to ${doc.status}`,
-        { previousStatus: this.$__.originalStatus, newStatus: doc.status },
+        { previousStatus: this.$__.originalStatus, newStatus: doc.status }
       );
     }
   } catch (error) {
@@ -1859,7 +1909,7 @@ FirmSchema.statics.findFirmsRequiringComplianceReview = async function () {
     ],
   })
     .select(
-      'name registrationNumber status accreditationLevel compliance popiaCompliance ficaCompliance financials.trustAccount intelligence.complianceScore',
+      'name registrationNumber status accreditationLevel compliance popiaCompliance ficaCompliance financials.trustAccount intelligence.complianceScore'
     )
     .limit(100);
 
@@ -2017,7 +2067,7 @@ FirmSchema.statics.findByPracticeArea = async function (practiceArea, filters = 
 
   return this.find(query)
     .select(
-      'name registrationNumber accreditationLevel practiceAreas metrics.revenueThisMonth intelligence.clientSatisfactionScore registeredAddress.city',
+      'name registrationNumber accreditationLevel practiceAreas metrics.revenueThisMonth intelligence.clientSatisfactionScore registeredAddress.city'
     )
     .sort({ 'intelligence.clientSatisfactionScore': -1, 'metrics.revenueThisMonth': -1 })
     .limit(50);
@@ -2109,7 +2159,7 @@ FirmSchema.methods.addComplianceEvent = function (
   eventType,
   description,
   metadata = {},
-  userInfo = {},
+  userInfo = {}
 ) {
   if (!this.complianceAuditTrail) {
     this.complianceAuditTrail = [];
@@ -2138,7 +2188,7 @@ FirmSchema.methods.addComplianceEvent = function (
         description: event.description,
         userId: event.userId,
         metadata: event.metadata,
-      }),
+      })
     )
     .digest('hex');
 
@@ -2264,8 +2314,8 @@ FirmSchema.methods.generateComplianceCertificate = function () {
       },
       fica: {
         compliant:
-          this.ficaCompliance?.riskCategory === 'LOW'
-          || this.ficaCompliance?.riskCategory === 'MEDIUM',
+          this.ficaCompliance?.riskCategory === 'LOW' ||
+          this.ficaCompliance?.riskCategory === 'MEDIUM',
         riskCategory: this.ficaCompliance?.riskCategory,
         lastAssessment: this.ficaCompliance?.lastRiskAssessment,
       },
@@ -2281,8 +2331,8 @@ FirmSchema.methods.generateComplianceCertificate = function () {
       },
       tax: {
         compliant:
-          this.financials?.taxCompliance?.incomeTax?.status === 'COMPLIANT'
-          && this.financials?.taxCompliance?.vat?.status === 'COMPLIANT',
+          this.financials?.taxCompliance?.incomeTax?.status === 'COMPLIANT' &&
+          this.financials?.taxCompliance?.vat?.status === 'COMPLIANT',
         incomeTaxStatus: this.financials?.taxCompliance?.incomeTax?.status,
         vatStatus: this.financials?.taxCompliance?.vat?.status,
       },
@@ -2293,10 +2343,10 @@ FirmSchema.methods.generateComplianceCertificate = function () {
       compliance: this.complianceScore,
       clientSatisfaction: this.intelligence?.clientSatisfactionScore || 0,
       overall: Math.round(
-        (this.calculateFinancialHealthScore()
-          + this.complianceScore
-          + (this.intelligence?.clientSatisfactionScore || 0))
-          / 3,
+        (this.calculateFinancialHealthScore() +
+          this.complianceScore +
+          (this.intelligence?.clientSatisfactionScore || 0)) /
+          3
       ),
     },
 
@@ -2367,7 +2417,7 @@ FirmSchema.methods.validateComplianceStatus = function () {
   if (!validation.requirements.popia.informationOfficer) {
     validation.issues.push('POPIA Information Officer not appointed');
     validation.recommendations.push(
-      'Appoint an Information Officer as required by POPIA Section 17',
+      'Appoint an Information Officer as required by POPIA Section 17'
     );
   }
 
@@ -2387,8 +2437,8 @@ FirmSchema.methods.validateComplianceStatus = function () {
   };
 
   if (
-    (!validation.requirements.lpc.trustAccount && this.legalEntityType.includes('LAW_FIRM'))
-    || this.legalEntityType.includes('ATTORNEY')
+    (!validation.requirements.lpc.trustAccount && this.legalEntityType.includes('LAW_FIRM')) ||
+    this.legalEntityType.includes('ATTORNEY')
   ) {
     validation.issues.push('Trust account not compliant with LPC rules');
     validation.recommendations.push('Configure trust account and ensure monthly reconciliation');
@@ -2397,8 +2447,8 @@ FirmSchema.methods.validateComplianceStatus = function () {
   // Financial Validation
   validation.requirements.financial = {
     taxCompliant:
-      this.financials?.taxCompliance?.incomeTax?.status === 'COMPLIANT'
-      && this.financials?.taxCompliance?.vat?.status === 'COMPLIANT',
+      this.financials?.taxCompliance?.incomeTax?.status === 'COMPLIANT' &&
+      this.financials?.taxCompliance?.vat?.status === 'COMPLIANT',
     bankingDetails: !!this.financials?.bankingDetails?.accountNumber,
     vatNumber: !!this.financials?.vatNumber,
   };
@@ -2409,7 +2459,8 @@ FirmSchema.methods.validateComplianceStatus = function () {
     .flat()
     .filter((req) => req === true).length;
 
-  const compliancePercentage = totalRequirements > 0 ? (metRequirements / totalRequirements) * 100 : 0;
+  const compliancePercentage =
+    totalRequirements > 0 ? (metRequirements / totalRequirements) * 100 : 0;
 
   if (compliancePercentage >= 90) validation.overallStatus = 'COMPLIANT';
   else if (compliancePercentage >= 70) validation.overallStatus = 'PARTIALLY_COMPLIANT';

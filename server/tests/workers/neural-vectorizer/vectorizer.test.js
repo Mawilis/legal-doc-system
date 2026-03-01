@@ -1,12 +1,15 @@
-/* eslint-env mocha */
+#!/* eslint-env mocha */
 /* eslint-disable */
 
 import { expect } from 'chai';
-import { NeuralPrecedentVectorizer, VECTOR_DIMENSIONS } from '../../../workers/neural-vectorizer/vectorizer.js';
+import {
+  NeuralPrecedentVectorizer,
+  VECTOR_DIMENSIONS,
+} from '../../../workers/neural-vectorizer/vectorizer.js';
 
-describe('🧠 Neural Precedent Vectorizer', function() {
+describe('🧠 Neural Precedent Vectorizer', function () {
   this.timeout(10000);
-  
+
   let vectorizer;
 
   before(async () => {
@@ -23,11 +26,11 @@ describe('🧠 Neural Precedent Vectorizer', function() {
         judgmentDate: '1995-06-06',
         summary: 'The death penalty was declared unconstitutional.',
         keyPrinciples: ['Right to life', 'Human dignity', 'Cruel punishment'],
-        fullText: 'The Constitutional Court considered whether the death penalty...'
+        fullText: 'The Constitutional Court considered whether the death penalty...',
       };
 
       const embedding = await vectorizer.generateEmbedding(testPrecedent);
-      
+
       expect(embedding).to.be.an('array');
       expect(embedding.length).to.equal(VECTOR_DIMENSIONS);
       expect(embedding[0]).to.be.a('number');
@@ -36,26 +39,26 @@ describe('🧠 Neural Precedent Vectorizer', function() {
 
     it('should generate consistent embeddings for same text', async () => {
       const text = 'This is a test precedent for consistency checking.';
-      
+
       const embedding1 = await vectorizer.model.predict(text);
       const embedding2 = await vectorizer.model.predict(text);
-      
+
       // Calculate cosine similarity
       const dotProduct = embedding1.reduce((sum, val, i) => sum + val * embedding2[i], 0);
       const norm1 = Math.sqrt(embedding1.reduce((sum, val) => sum + val * val, 0));
       const norm2 = Math.sqrt(embedding2.reduce((sum, val) => sum + val * val, 0));
       const similarity = dotProduct / (norm1 * norm2);
-      
+
       expect(similarity).to.be.closeTo(1, 0.0001);
     });
 
     it('should handle different text lengths', async () => {
       const shortText = 'Short precedent.';
       const longText = 'A'.repeat(1000);
-      
+
       const shortEmbedding = await vectorizer.model.predict(shortText);
       const longEmbedding = await vectorizer.model.predict(longText);
-      
+
       expect(shortEmbedding.length).to.equal(VECTOR_DIMENSIONS);
       expect(longEmbedding.length).to.equal(VECTOR_DIMENSIONS);
     });
@@ -65,7 +68,7 @@ describe('🧠 Neural Precedent Vectorizer', function() {
     it('should remove legal citations', () => {
       const text = 'This is a test with citation 2023 JDR 1234 and SA citation 2023 (2) SA 456.';
       const processed = vectorizer.preprocessLegalText(text);
-      
+
       expect(processed).to.not.include('2023 JDR 1234');
       expect(processed).to.not.include('2023 (2) SA 456');
     });
@@ -73,7 +76,7 @@ describe('🧠 Neural Precedent Vectorizer', function() {
     it('should normalize whitespace', () => {
       const text = 'This   has   multiple    spaces.';
       const processed = vectorizer.preprocessLegalText(text);
-      
+
       expect(processed).to.equal('This has multiple spaces.');
     });
   });
@@ -82,7 +85,7 @@ describe('🧠 Neural Precedent Vectorizer', function() {
     it('should chunk long texts', () => {
       const longText = Array(1000).fill('word').join(' ');
       const chunks = vectorizer.tokenizeLegalText(longText, 100);
-      
+
       expect(chunks.length).to.be.at.least(10);
     });
   });
@@ -93,11 +96,11 @@ describe('🧠 Neural Precedent Vectorizer', function() {
       const embedding = new Array(VECTOR_DIMENSIONS).fill(0.5);
       const metadata = {
         caseName: 'S v Makwanyane',
-        court: 'Constitutional Court'
+        court: 'Constitutional Court',
       };
-      
+
       const embeddingId = await vectorizer.saveEmbedding(citation, embedding, metadata);
-      
+
       expect(embeddingId).to.be.a('string');
       expect(embeddingId.length).to.equal(64);
     });
@@ -106,7 +109,7 @@ describe('🧠 Neural Precedent Vectorizer', function() {
   describe('📈 Investor Metrics', () => {
     it('should demonstrate R15M/year value', () => {
       const annualSavings = 15000000;
-      
+
       console.log('\n💰 INVESTOR METRICS - NEURAL PRECEDENT VECTORIZER:');
       console.log('═══════════════════════════════════════════════════');
       console.log('🧠 CAPABILITIES:');

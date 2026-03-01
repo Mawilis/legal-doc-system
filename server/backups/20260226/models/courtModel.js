@@ -1,4 +1,4 @@
-/*
+#!/*
  * FILE: /server/models/courtModel.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/courtModel.js
  * STATUS: INVESTMENT GRADE | PITCH READY | SCALE TO 100M USERS

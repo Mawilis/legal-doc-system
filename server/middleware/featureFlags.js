@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/middleware/featureFlags.js
  * -----------------------------------------------------------------------------
  * STATUS: EPITOME | Progressive Delivery & Upsell Intelligence
@@ -52,7 +50,7 @@ function evaluateFlag(flagName, tenant = {}) {
     if (!Number.isNaN(pct) && pct > 0) {
       const hash = [...String(tenant._id || tenant.name || '')].reduce(
         (a, c) => a + c.charCodeAt(0),
-        0,
+        0
       );
       return hash % 100 < pct;
     }
@@ -89,7 +87,7 @@ const checkFeature = (flagName) => async (req, res, next) => {
   console.warn(
     `💰 [Upsell Opportunity] Tenant '${
       tenant.name || tenant._id
-    }' attempted to access locked feature: ${flagName}`,
+    }' attempted to access locked feature: ${flagName}`
   );
 
   await emitAudit(req, {

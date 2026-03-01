@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ ANOMALY DETECTION SERVICE TESTS - INVESTOR DUE DILIGENCE - $4B+ VALUE    ║
   ║ 100% coverage | AI-powered | Real-time fraud prevention                  ║
@@ -194,7 +194,7 @@ describe('AnomalyDetectionService - Legal Fraud Sentinel Due Diligence', () => {
           tenantId,
           Array(128)
             .fill(0)
-            .map(() => Math.random() * 0.1),
+            .map(() => Math.random() * 0.1)
         );
       }
 
@@ -206,7 +206,7 @@ describe('AnomalyDetectionService - Legal Fraud Sentinel Due Diligence', () => {
         tenantId,
         Array(128)
           .fill(0)
-          .map(() => Math.random() * 2),
+          .map(() => Math.random() * 2)
       );
 
       expect(result).to.have.property('isAnomaly');
@@ -411,7 +411,13 @@ describe('AnomalyDetectionService - Legal Fraud Sentinel Due Diligence', () => {
 
       expect(health.status).to.equal('healthy');
       expect(health.service).to.equal('anomaly-detection');
-      expect(health.models).to.have.all.keys('statistical', 'isolationForest', 'autoencoder', 'behavioral', 'ensemble');
+      expect(health.models).to.have.all.keys(
+        'statistical',
+        'isolationForest',
+        'autoencoder',
+        'behavioral',
+        'ensemble'
+      );
     });
   });
 

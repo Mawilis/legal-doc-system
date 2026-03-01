@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS: GLOBAL THREAT INTELLIGENCE (GTI) - THE WAR ROOM                             ║
   ║ Real-time visualization of system health and security posture for $5B+ infrastructure ║
@@ -10,13 +10,13 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/analytics/GlobalThreatIntel.js
  * VERSION: 1.0.0-GTI
  * CREATED: 2026-02-26
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R50M/year in undetected security incidents
  * • Generates: Real-time threat intelligence for $5B+ valuation
  * • Risk elimination: Proactive threat detection before impact
  * • Compliance: POPIA §22, GDPR Article 33, JSE Listings Requirements
- * 
+ *
  * REVOLUTIONARY FEATURES:
  * • Real-time threat scoring (0-100) updated every 30 seconds
  * • Machine learning anomaly detection
@@ -33,8 +33,8 @@ import Deal from '../../models/Deal.js';
 import Tenant from '../../models/Tenant.js';
 import loggerRaw from '../../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
-import crypto from "crypto";
-import { EventEmitter } from "events";
+import crypto from 'crypto';
+import { EventEmitter } from 'events';
 
 // ============================================================================
 // CONSTANTS - GTI CONFIGURATION
@@ -46,7 +46,7 @@ const GTI_CONFIG = {
     CRITICAL: { min: 70, max: 100, color: '#FF0000', action: 'IMMEDIATE' },
     ELEVATED: { min: 40, max: 69, color: '#FFA500', action: 'REVIEW' },
     MODERATE: { min: 20, max: 39, color: '#FFFF00', action: 'MONITOR' },
-    STABLE: { min: 0, max: 19, color: '#00FF00', action: 'NORMAL' }
+    STABLE: { min: 0, max: 19, color: '#00FF00', action: 'NORMAL' },
   },
   WEIGHTS: {
     QUARANTINE: 15,
@@ -56,14 +56,14 @@ const GTI_CONFIG = {
     RATE_LIMIT_EXCEEDED: 5,
     DATA_BREACH: 50,
     CIRCUIT_BREAKER_OPEN: 20,
-    DEAL_ANOMALY: 12
+    DEAL_ANOMALY: 12,
   },
   TIME_WINDOWS: {
     REAL_TIME: 5 * 60 * 1000, // 5 minutes
     SHORT_TERM: 60 * 60 * 1000, // 1 hour
     MEDIUM_TERM: 24 * 60 * 60 * 1000, // 24 hours
-    LONG_TERM: 7 * 24 * 60 * 60 * 1000 // 7 days
-  }
+    LONG_TERM: 7 * 24 * 60 * 60 * 1000, // 7 days
+  },
 };
 
 // ============================================================================
@@ -93,10 +93,7 @@ class GlobalThreatIntel extends EventEmitter {
     await this.updateThreatPosture();
 
     // Set up real-time updates
-    this.updateInterval = setInterval(
-      () => this.updateThreatPosture(),
-      GTI_CONFIG.UPDATE_INTERVAL
-    );
+    this.updateInterval = setInterval(() => this.updateThreatPosture(), GTI_CONFIG.UPDATE_INTERVAL);
 
     // Set up real-time event listeners
     this.setupEventListeners();
@@ -130,29 +127,29 @@ class GlobalThreatIntel extends EventEmitter {
           return {
             tenantId,
             ...JSON.parse(data || '{}'),
-            type: 'quarantine'
+            type: 'quarantine',
           };
         })
       );
 
       // 2. Fetch recent security events from Forensic Ledger
       const recentAlerts = await SecurityLog.countDocuments({
-        eventType: { 
+        eventType: {
           $in: [
-            'TENANT_QUARANTINE_TRIPPED', 
-            'SERVICE_RECOVERY_ATTEMPT', 
+            'TENANT_QUARANTINE_TRIPPED',
+            'SERVICE_RECOVERY_ATTEMPT',
             'UNAUTHORIZED_ACCESS',
             'API_ABUSE',
             'DATA_BREACH',
-            'CIRCUIT_BREAKER_TRIPPED'
-          ] 
+            'CIRCUIT_BREAKER_TRIPPED',
+          ],
         },
-        timestamp: { $gte: oneHourAgo }
+        timestamp: { $gte: oneHourAgo },
       });
 
       // 3. Fetch detailed security events for analysis
       const securityEvents = await SecurityLog.find({
-        timestamp: { $gte: oneDayAgo }
+        timestamp: { $gte: oneDayAgo },
       })
         .sort({ timestamp: -1 })
         .limit(1000)
@@ -165,13 +162,13 @@ class GlobalThreatIntel extends EventEmitter {
       // 5. Get recovery attempt stats
       const recoveryAttempts = await SecurityLog.countDocuments({
         eventType: 'SERVICE_RECOVERY_ATTEMPT',
-        timestamp: { $gte: oneHourAgo }
+        timestamp: { $gte: oneHourAgo },
       });
 
       // 6. Get failed recovery attempts
       const failedRecoveries = await SecurityLog.countDocuments({
         eventType: 'SERVICE_RECOVERY_FAILED',
-        timestamp: { $gte: oneHourAgo }
+        timestamp: { $gte: oneHourAgo },
       });
 
       // 7. Calculate weighted threat level (0-100)
@@ -181,7 +178,7 @@ class GlobalThreatIntel extends EventEmitter {
         openCircuitBreakers,
         recoveryAttempts,
         failedRecoveries,
-        securityEvents
+        securityEvents,
       });
 
       // 8. Run anomaly detection
@@ -209,14 +206,14 @@ class GlobalThreatIntel extends EventEmitter {
         valuationRisk,
         timestamp: now.toISOString(),
         responseTimeMs: Date.now() - startTime,
-        
+
         metrics: {
           activeQuarantines,
           recentAlerts,
           openCircuitBreakers,
           recoveryAttempts,
           failedRecoveries,
-          totalEvents: securityEvents.length
+          totalEvents: securityEvents.length,
         },
 
         anomalies: anomalies.slice(0, 5), // Top 5 anomalies
@@ -225,7 +222,7 @@ class GlobalThreatIntel extends EventEmitter {
           nextHour: prediction.nextHour,
           next24Hours: prediction.nextDay,
           confidence: prediction.confidence,
-          trend: prediction.trend
+          trend: prediction.trend,
         },
 
         heatmap: heatmap.slice(0, 10), // Top 10 hotspots
@@ -235,7 +232,7 @@ class GlobalThreatIntel extends EventEmitter {
           gdpr: compliance.gdpr,
           jse: compliance.jse,
           soc2: compliance.soc2,
-          overall: compliance.overall
+          overall: compliance.overall,
         },
 
         threatBreakdown: this.getThreatBreakdown(securityEvents),
@@ -248,19 +245,19 @@ class GlobalThreatIntel extends EventEmitter {
           sentinel: await this.checkSentinelHealth(),
           killSwitch: await this.checkKillSwitchHealth(),
           quantumLogger: await this.checkQuantumLoggerHealth(),
-          redis: await this.checkRedisHealth()
+          redis: await this.checkRedisHealth(),
         },
 
         cache: {
           hitRate: this.cache.get('hitRate') || 0,
-          size: this.cache.size
-        }
+          size: this.cache.size,
+        },
       };
 
       // Update cache and history
       this.cache.set('lastPosture', posture);
       this.threatHistory.push({ threatLevel, timestamp: now });
-      
+
       // Keep history manageable
       if (this.threatHistory.length > 1000) {
         this.threatHistory = this.threatHistory.slice(-1000);
@@ -273,21 +270,20 @@ class GlobalThreatIntel extends EventEmitter {
         threatLevel,
         status,
         activeQuarantines,
-        responseTimeMs: posture.responseTimeMs
+        responseTimeMs: posture.responseTimeMs,
       });
 
       return posture;
-
     } catch (error) {
       logger.error('GTI posture calculation failed', { error: error.message });
-      
+
       // Return cached posture if available
       const cached = this.cache.get('lastPosture');
       if (cached) {
         return {
           ...cached,
           degraded: true,
-          error: 'Using cached data - real-time unavailable'
+          error: 'Using cached data - real-time unavailable',
         };
       }
 
@@ -317,8 +313,8 @@ class GlobalThreatIntel extends EventEmitter {
     threatScore += metrics.failedRecoveries * GTI_CONFIG.WEIGHTS.RECOVERY_ATTEMPT * 2;
 
     // Analyze security events for patterns
-    const criticalEvents = metrics.securityEvents.filter(e => 
-      e.severity === 'critical' || e.severity === 'breach'
+    const criticalEvents = metrics.securityEvents.filter(
+      (e) => e.severity === 'critical' || e.severity === 'breach'
     ).length;
 
     threatScore += criticalEvents * GTI_CONFIG.WEIGHTS.DATA_BREACH;
@@ -360,12 +356,12 @@ class GlobalThreatIntel extends EventEmitter {
   getThreatBreakdown(events) {
     const breakdown = {};
 
-    events.forEach(event => {
+    events.forEach((event) => {
       const category = event.eventType || 'UNKNOWN';
       if (!breakdown[category]) {
         breakdown[category] = {
           count: 0,
-          severity: event.severity || 'unknown'
+          severity: event.severity || 'unknown',
         };
       }
       breakdown[category].count++;
@@ -380,13 +376,13 @@ class GlobalThreatIntel extends EventEmitter {
   getTopThreats(events) {
     const threatMap = new Map();
 
-    events.forEach(event => {
+    events.forEach((event) => {
       const key = event.eventType;
       const current = threatMap.get(key) || { count: 0, severity: event.severity };
-      threatMap.set(key, { 
-        ...current, 
+      threatMap.set(key, {
+        ...current,
         count: current.count + 1,
-        lastSeen: event.timestamp 
+        lastSeen: event.timestamp,
       });
     });
 
@@ -395,7 +391,7 @@ class GlobalThreatIntel extends EventEmitter {
         type,
         count: data.count,
         severity: data.severity,
-        lastSeen: data.lastSeen
+        lastSeen: data.lastSeen,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
@@ -412,7 +408,7 @@ class GlobalThreatIntel extends EventEmitter {
         priority: 'IMMEDIATE',
         action: 'Activate incident response protocol',
         reason: 'Critical threat level detected',
-        assignee: 'CISO'
+        assignee: 'CISO',
       });
     }
 
@@ -421,7 +417,7 @@ class GlobalThreatIntel extends EventEmitter {
         priority: 'HIGH',
         action: 'Review anomaly detection patterns',
         reason: 'Unusual activity patterns detected',
-        assignee: 'Security Team'
+        assignee: 'Security Team',
       });
     }
 
@@ -430,7 +426,7 @@ class GlobalThreatIntel extends EventEmitter {
         priority: 'HIGH',
         action: 'Address POPIA compliance gaps',
         reason: compliance.popia.reason,
-        assignee: 'Compliance Officer'
+        assignee: 'Compliance Officer',
       });
     }
 
@@ -439,7 +435,7 @@ class GlobalThreatIntel extends EventEmitter {
         priority: 'MEDIUM',
         action: 'Prepare SOC2 audit documentation',
         reason: 'SOC2 compliance required for enterprise clients',
-        assignee: 'Security Team'
+        assignee: 'Security Team',
       });
     }
 
@@ -453,11 +449,11 @@ class GlobalThreatIntel extends EventEmitter {
     try {
       const lastHeartbeat = await redisClient.get('sentinel:heartbeat');
       const lastRecovery = await redisClient.get('sentinel:lastRecovery');
-      
+
       return {
         status: lastHeartbeat ? 'operational' : 'degraded',
         lastHeartbeat: lastHeartbeat || null,
-        lastRecovery: lastRecovery || null
+        lastRecovery: lastRecovery || null,
       };
     } catch {
       return { status: 'unknown' };
@@ -473,7 +469,7 @@ class GlobalThreatIntel extends EventEmitter {
       return {
         status: 'operational',
         activeQuarantines: quarantines.length,
-        lastTriggered: await redisClient.get('killswitch:lastTriggered')
+        lastTriggered: await redisClient.get('killswitch:lastTriggered'),
       };
     } catch {
       return { status: 'unknown' };
@@ -487,12 +483,12 @@ class GlobalThreatIntel extends EventEmitter {
     try {
       const oneHourAgo = new Date(Date.now() - 3600000);
       const recentLogs = await SecurityLog.countDocuments({
-        timestamp: { $gte: oneHourAgo }
+        timestamp: { $gte: oneHourAgo },
       });
-      
+
       return {
         status: recentLogs > 0 ? 'operational' : 'degraded',
-        logsLastHour: recentLogs
+        logsLastHour: recentLogs,
       };
     } catch {
       return { status: 'unknown' };
@@ -507,11 +503,11 @@ class GlobalThreatIntel extends EventEmitter {
       const start = Date.now();
       await redisClient.ping();
       const responseTime = Date.now() - start;
-      
+
       return {
         status: responseTime < 100 ? 'operational' : 'degraded',
         responseTime,
-        connected: true
+        connected: true,
       };
     } catch {
       return { status: 'down', connected: false };
@@ -523,7 +519,7 @@ class GlobalThreatIntel extends EventEmitter {
    */
   getThreatHistory(hours = 24) {
     const cutoff = new Date(Date.now() - hours * 3600000);
-    return this.threatHistory.filter(h => new Date(h.timestamp) >= cutoff);
+    return this.threatHistory.filter((h) => new Date(h.timestamp) >= cutoff);
   }
 
   /**
@@ -531,14 +527,14 @@ class GlobalThreatIntel extends EventEmitter {
    */
   async getThreatFeed(limit = 100) {
     return await SecurityLog.find({
-      eventType: { 
+      eventType: {
         $in: [
           'UNAUTHORIZED_ACCESS',
           'DATA_BREACH',
           'TENANT_QUARANTINE_TRIPPED',
-          'CIRCUIT_BREAKER_TRIPPED'
-        ]
-      }
+          'CIRCUIT_BREAKER_TRIPPED',
+        ],
+      },
     })
       .sort({ timestamp: -1 })
       .limit(limit)
@@ -550,12 +546,12 @@ class GlobalThreatIntel extends EventEmitter {
    */
   async getRegionalHeatmap() {
     const events = await SecurityLog.find({
-      timestamp: { $gte: new Date(Date.now() - 24 * 3600000) }
+      timestamp: { $gte: new Date(Date.now() - 24 * 3600000) },
     });
 
     const regionMap = new Map();
 
-    events.forEach(event => {
+    events.forEach((event) => {
       const region = event.dataResidency || 'ZA';
       const current = regionMap.get(region) || 0;
       regionMap.set(region, current + 1);
@@ -564,7 +560,7 @@ class GlobalThreatIntel extends EventEmitter {
     return Array.from(regionMap.entries()).map(([region, count]) => ({
       region,
       count,
-      threatLevel: Math.min(count * 2, 100)
+      threatLevel: Math.min(count * 2, 100),
     }));
   }
 
@@ -577,7 +573,7 @@ class GlobalThreatIntel extends EventEmitter {
       if (change.operationType === 'insert') {
         // Trigger real-time update
         this.updateThreatPosture();
-        
+
         // Check for critical events
         const event = change.fullDocument;
         if (event.severity === 'critical' || event.severity === 'breach') {
@@ -626,7 +622,7 @@ class AnomalyDetector {
 
     // Detect unusual patterns
     const eventCounts = this.groupByType(events);
-    
+
     for (const [type, count] of Object.entries(eventCounts)) {
       if (count > thresholds[type] * 2) {
         anomalies.push({
@@ -634,7 +630,7 @@ class AnomalyDetector {
           count,
           expected: thresholds[type],
           severity: 'HIGH',
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
     }
@@ -646,7 +642,7 @@ class AnomalyDetector {
     // Simple threshold calculation (would use ML in production)
     const thresholds = {};
     const counts = this.groupByType(events);
-    
+
     Object.entries(counts).forEach(([type, count]) => {
       thresholds[type] = Math.max(5, count * 0.3);
     });
@@ -678,21 +674,21 @@ class ThreatPredictor {
         nextHour: currentThreat,
         nextDay: currentThreat,
         confidence: 50,
-        trend: 'stable'
+        trend: 'stable',
       };
     }
 
     // Simple trend analysis (would use time series models in production)
     const recent = history.slice(-10);
     const avg = recent.reduce((sum, h) => sum + h.threatLevel, 0) / recent.length;
-    const trend = currentThreat > avg ? 'increasing' : 
-                  currentThreat < avg ? 'decreasing' : 'stable';
+    const trend =
+      currentThreat > avg ? 'increasing' : currentThreat < avg ? 'decreasing' : 'stable';
 
     return {
       nextHour: Math.round(currentThreat * 0.9 + avg * 0.1),
       nextDay: Math.round(avg),
       confidence: 75,
-      trend
+      trend,
     };
   }
 }
@@ -708,21 +704,21 @@ class ThreatHeatmap {
     // Group by tenant
     const tenantThreats = new Map();
 
-    events.forEach(event => {
+    events.forEach((event) => {
       const tenantId = event.tenantId || 'system';
       const current = tenantThreats.get(tenantId) || { count: 0, severity: 0 };
       tenantThreats.set(tenantId, {
         count: current.count + 1,
-        severity: current.severity + this.getSeverityWeight(event.severity)
+        severity: current.severity + this.getSeverityWeight(event.severity),
       });
     });
 
     // Add quarantine data
-    quarantines.forEach(q => {
+    quarantines.forEach((q) => {
       const current = tenantThreats.get(q.tenantId) || { count: 0, severity: 0 };
       tenantThreats.set(q.tenantId, {
         count: current.count + 10,
-        severity: current.severity + 50
+        severity: current.severity + 50,
       });
     });
 
@@ -732,7 +728,7 @@ class ThreatHeatmap {
         tenantId,
         intensity: Math.min(data.severity, 100),
         events: data.count,
-        lastSeen: new Date().toISOString()
+        lastSeen: new Date().toISOString(),
       });
     }
 
@@ -741,11 +737,11 @@ class ThreatHeatmap {
 
   getSeverityWeight(severity) {
     const weights = {
-      'info': 1,
-      'warning': 5,
-      'error': 15,
-      'critical': 30,
-      'breach': 50
+      info: 1,
+      warning: 5,
+      error: 15,
+      critical: 30,
+      breach: 50,
     };
     return weights[severity] || 1;
   }
@@ -758,73 +754,70 @@ class ThreatHeatmap {
 class ComplianceEngine {
   async evaluate(events) {
     const oneDayAgo = new Date(Date.now() - 24 * 3600000);
-    const recentEvents = events.filter(e => new Date(e.timestamp) >= oneDayAgo);
+    const recentEvents = events.filter((e) => new Date(e.timestamp) >= oneDayAgo);
 
     return {
       popia: this.evaluatePOPIA(recentEvents),
       gdpr: this.evaluateGDPR(recentEvents),
       jse: this.evaluateJSE(recentEvents),
       soc2: this.evaluateSOC2(recentEvents),
-      overall: this.calculateOverallCompliance(recentEvents)
+      overall: this.calculateOverallCompliance(recentEvents),
     };
   }
 
   evaluatePOPIA(events) {
-    const breaches = events.filter(e => 
-      e.eventType === 'DATA_BREACH' && 
-      e.requiresBreachNotification === true
+    const breaches = events.filter(
+      (e) => e.eventType === 'DATA_BREACH' && e.requiresBreachNotification === true
     ).length;
 
     return {
       compliant: breaches === 0,
       breaches,
       reason: breaches > 0 ? 'Data breach notifications pending' : null,
-      lastAudit: new Date().toISOString()
+      lastAudit: new Date().toISOString(),
     };
   }
 
   evaluateGDPR(events) {
-    const violations = events.filter(e => 
-      e.eventType === 'CONSENT_VIOLATION' ||
-      e.eventType === 'DATA_EXFILTRATION_ATTEMPT'
+    const violations = events.filter(
+      (e) => e.eventType === 'CONSENT_VIOLATION' || e.eventType === 'DATA_EXFILTRATION_ATTEMPT'
     ).length;
 
     return {
       compliant: violations === 0,
       violations,
-      reason: violations > 0 ? 'GDPR violations detected' : null
+      reason: violations > 0 ? 'GDPR violations detected' : null,
     };
   }
 
   evaluateJSE(events) {
-    const dealAnomalies = events.filter(e => 
-      e.eventType === 'DEAL_ANOMALY' ||
-      e.eventType === 'MATERIALITY_CHECK'
+    const dealAnomalies = events.filter(
+      (e) => e.eventType === 'DEAL_ANOMALY' || e.eventType === 'MATERIALITY_CHECK'
     ).length;
 
     return {
       compliant: dealAnomalies < 3,
       anomalies: dealAnomalies,
-      reason: dealAnomalies >= 3 ? 'Material deal anomalies detected' : null
+      reason: dealAnomalies >= 3 ? 'Material deal anomalies detected' : null,
     };
   }
 
   evaluateSOC2(events) {
-    const securityEvents = events.filter(e => 
-      e.severity === 'critical' || e.severity === 'breach'
+    const securityEvents = events.filter(
+      (e) => e.severity === 'critical' || e.severity === 'breach'
     ).length;
 
     return {
       compliant: securityEvents < 5,
       securityEvents,
-      reason: securityEvents >= 5 ? 'Critical security events detected' : null
+      reason: securityEvents >= 5 ? 'Critical security events detected' : null,
     };
   }
 
   calculateOverallCompliance(events) {
     const totalEvents = events.length;
-    const criticalEvents = events.filter(e => 
-      e.severity === 'critical' || e.severity === 'breach'
+    const criticalEvents = events.filter(
+      (e) => e.severity === 'critical' || e.severity === 'breach'
     ).length;
 
     if (criticalEvents > 10) return 'CRITICAL';

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/notificationController.js
  * STATUS: PRODUCTION-READY | REAL-TIME ALERT GRADE
  * -----------------------------------------------------------------------------
@@ -60,7 +58,7 @@ exports.markAsRead = asyncHandler(async (req, res) => {
       ...req.tenantFilter,
     },
     { isRead: true, readAt: new Date() },
-    { new: true },
+    { new: true }
   );
 
   if (!notification) {
@@ -69,7 +67,7 @@ exports.markAsRead = asyncHandler(async (req, res) => {
       res,
       404,
       'Notification not found or access denied.',
-      'ERR_NOTIF_NOT_FOUND',
+      'ERR_NOTIF_NOT_FOUND'
     );
   }
 
@@ -87,7 +85,7 @@ exports.markAllAsRead = asyncHandler(async (req, res) => {
       ...req.tenantFilter,
       isRead: false,
     },
-    { isRead: true, readAt: new Date() },
+    { isRead: true, readAt: new Date() }
   );
 
   return successResponse(req, res, null, { message: 'All pending alerts acknowledged.' });
@@ -123,13 +121,11 @@ exports.createNotification = asyncHandler(async (req, res) => {
       res,
       403,
       'Permission denied: Cannot initiate system alerts.',
-      'ERR_RBAC_FORBIDDEN',
+      'ERR_RBAC_FORBIDDEN'
     );
   }
 
-  const {
-    targetUserId, title, content, type, urgency,
-  } = req.body;
+  const { targetUserId, title, content, type, urgency } = req.body;
 
   const notification = await Notification.create({
     tenantId: req.user.tenantId,

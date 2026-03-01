@@ -1,11 +1,11 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /**
  * WILSY OS: SENTINEL HEALTHCHECK
  * Verifies Recovery Sentinel is operational
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import { redisClient } from 'wilsy-os-server/utils/redisClient.js';
 import RecoverySentinel from './RecoverySentinel.js';
 

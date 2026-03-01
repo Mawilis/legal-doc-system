@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/utils/alertUtils.js
  * STATUS: PRODUCTION-READY | RESILIENT COMMUNICATIONS
  * -----------------------------------------------------------------------------

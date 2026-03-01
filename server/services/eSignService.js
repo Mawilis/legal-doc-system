@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ E-SIGNATURE SERVICE - INVESTOR-GRADE MODULE                               ║
   ║ 94% cost reduction | R8.2M risk elimination | 85% margins                ║
@@ -17,7 +17,7 @@ import ElectronicSignature, {
   SIGNATURE_PROVIDERS,
   VERIFICATION_LEVELS,
   RETENTION_POLICIES,
-  DATA_RESIDENCY
+  DATA_RESIDENCY,
 } from '../models/ElectronicSignature.js';
 import { DocumentTemplate } from '../models/DocumentTemplate.js';
 import { Queue } from 'bullmq';
@@ -28,7 +28,7 @@ const NOTIFICATION_TYPES = {
   SIGNATURE_COMPLETE: 'signature_complete',
   SIGNATURE_EXPIRING: 'signature_expiring',
   SIGNATURE_VIEWED: 'signature_viewed',
-  SIGNATURE_DECLINED: 'signature_declined'
+  SIGNATURE_DECLINED: 'signature_declined',
 };
 
 class SignatureQueue {
@@ -37,40 +37,52 @@ class SignatureQueue {
       connection: {
         host: process.env.REDIS_HOST || 'localhost',
         port: process.env.REDIS_PORT || 6379,
-        password: process.env.REDIS_PASSWORD
+        password: process.env.REDIS_PASSWORD,
       },
       defaultJobOptions: {
         attempts: 3,
         backoff: { type: 'exponential', delay: 2000 },
         removeOnComplete: 100,
-        removeOnFail: 500
-      }
+        removeOnFail: 500,
+      },
     });
     logger.info('✅ Signature queue initialized');
   }
 
   async addVerificationJob(signatureId, options = {}) {
-    return this.queue.add('verify-signature', { signatureId }, {
-      priority: options.priority || 2,
-      delay: options.delay || 0,
-      jobId: `verify-${signatureId}-${Date.now()}`
-    });
+    return this.queue.add(
+      'verify-signature',
+      { signatureId },
+      {
+        priority: options.priority || 2,
+        delay: options.delay || 0,
+        jobId: `verify-${signatureId}-${Date.now()}`,
+      }
+    );
   }
 
   async addNotificationJob(signatureId, notificationType, options = {}) {
-    return this.queue.add('send-notification', { signatureId, notificationType }, {
-      priority: options.priority || 3,
-      delay: options.delay || 0,
-      jobId: `notify-${signatureId}-${notificationType}-${Date.now()}`
-    });
+    return this.queue.add(
+      'send-notification',
+      { signatureId, notificationType },
+      {
+        priority: options.priority || 3,
+        delay: options.delay || 0,
+        jobId: `notify-${signatureId}-${notificationType}-${Date.now()}`,
+      }
+    );
   }
 
   async addExpiryCheckJob(signatureId, options = {}) {
-    return this.queue.add('check-expiry', { signatureId }, {
-      priority: options.priority || 4,
-      delay: options.delay || 0,
-      jobId: `expiry-${signatureId}-${Date.now()}`
-    });
+    return this.queue.add(
+      'check-expiry',
+      { signatureId },
+      {
+        priority: options.priority || 4,
+        delay: options.delay || 0,
+        jobId: `expiry-${signatureId}-${Date.now()}`,
+      }
+    );
   }
 }
 
@@ -81,7 +93,7 @@ class DocuSignProvider {
       success: true,
       signatureId,
       signingUrl: `https://demo.docusign.net/signing/${signatureId}`,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     };
   }
 
@@ -115,7 +127,7 @@ class ZASignProvider {
       signatureId,
       documentId: document.templateId,
       otpHash,
-      popiaCompliant: true
+      popiaCompliant: true,
     });
 
     return {
@@ -123,7 +135,7 @@ class ZASignProvider {
       signatureId,
       otpRequired: true,
       otpLength: 6,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     };
   }
 
@@ -138,7 +150,7 @@ class CustomProvider {
     return {
       signatureId: `custom-${uuidv4()}`,
       signingUrl: `/sign/${document.templateId}`,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     };
   }
 
@@ -168,15 +180,15 @@ class ESignService {
       String(tenantId).trim(),
       String(documentId).trim(),
       String(signerEmail).trim(),
-      String(timestamp).trim()
+      String(timestamp).trim(),
     ];
-    
+
     const rawString = parts.join('|');
-    
+
     if (process.env.NODE_ENV !== 'production') {
       console.log(`🔐 ATOMIC SEAL: ${rawString}`);
     }
-    
+
     return crypto.createHash('sha256').update(rawString).digest('hex').toLowerCase();
   }
 
@@ -190,16 +202,18 @@ class ESignService {
       if (!documentId) throw new Error('Document ID is required');
       if (!signers?.length) throw new Error('At least one signer is required');
 
-      console.log(`🔍 Looking for document with templateId: ${documentId} and tenantId: ${tenantId}`);
-      
+      console.log(
+        `🔍 Looking for document with templateId: ${documentId} and tenantId: ${tenantId}`
+      );
+
       // IMPORTANT: Use the correct field name - templateId, not documentId
-      const document = await DocumentTemplate.findOne({ 
-        templateId: documentId, 
-        tenantId: tenantId 
+      const document = await DocumentTemplate.findOne({
+        templateId: documentId,
+        tenantId: tenantId,
       });
-      
+
       console.log(`📄 Document found:`, document ? 'YES' : 'NO');
-      
+
       if (!document) {
         throw new Error(`Document not found: ${documentId}`);
       }
@@ -211,10 +225,14 @@ class ESignService {
       const signatureProvider = this.providers.get(provider);
       if (!signatureProvider) throw new Error(`Unsupported provider: ${provider}`);
 
-      const providerResponse = await signatureProvider.createSignatureRequest(document, signers, options);
+      const providerResponse = await signatureProvider.createSignatureRequest(
+        document,
+        signers,
+        options
+      );
 
       const signatureId = `sig-${uuidv4()}`;
-      
+
       const forensicHash = this._generateSeal(
         SIGNATURE_STATUS.PENDING,
         signatureId,
@@ -227,11 +245,11 @@ class ESignService {
         tenantId,
         documentId,
         userId,
-        signers: signers.map(s => ({
+        signers: signers.map((s) => ({
           email: s.email,
           name: s.name,
           role: s.role || 'signer',
-          order: s.order || 1
+          order: s.order || 1,
         })),
         signatureType: options.signatureType || SIGNATURE_TYPES.ELECTRONIC,
         provider,
@@ -243,7 +261,7 @@ class ESignService {
         audit: { createdBy: userId, createdAt: new Date() },
         retentionPolicy: options.retentionPolicy || RETENTION_POLICIES.ECT_ACT_5_YEARS,
         dataResidency: DATA_RESIDENCY.ZA,
-        forensicHash
+        forensicHash,
       });
 
       await signature.save();
@@ -252,7 +270,10 @@ class ESignService {
       await this.queue.addExpiryCheckJob(signature.signatureId);
 
       if (options.sendNotification !== false) {
-        await this.queue.addNotificationJob(signature.signatureId, NOTIFICATION_TYPES.SIGNATURE_REQUEST);
+        await this.queue.addNotificationJob(
+          signature.signatureId,
+          NOTIFICATION_TYPES.SIGNATURE_REQUEST
+        );
       }
 
       await auditLogger.log({
@@ -264,7 +285,7 @@ class ESignService {
         userId,
         provider,
         signerCount: signers.length,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       return {
@@ -274,9 +295,8 @@ class ESignService {
         expiresAt: signature.expiresAt,
         status: signature.status,
         provider: signature.provider,
-        correlationId
+        correlationId,
       };
-
     } catch (error) {
       logger.error('Signature request failed', { correlationId, error: error.message });
       throw error;
@@ -293,22 +313,22 @@ class ESignService {
       status: signature.status,
       signedAt: signature.signedAt,
       expiresAt: signature.expiresAt,
-      provider: signature.provider
+      provider: signature.provider,
     };
   }
 
   async signDocument(signatureId, signerData, options = {}) {
     const startTime = Date.now();
     const tenantId = getCurrentTenant();
-    
+
     const signature = await ElectronicSignature.findOne({ signatureId, tenantId });
     if (!signature) throw new Error(`Signature not found: ${signatureId}`);
 
-    const signer = signature.signers.find(s => s.email === signerData.email);
+    const signer = signature.signers.find((s) => s.email === signerData.email);
     if (!signer) throw new Error(`Signer not found: ${signerData.email}`);
 
     const timestamp = Date.now();
-    
+
     const newSeal = this._generateSeal(
       SIGNATURE_STATUS.SIGNED,
       signature.signatureId,
@@ -317,18 +337,18 @@ class ESignService {
       signerData.email,
       timestamp
     );
-    
+
     const updated = await ElectronicSignature.findOneAndUpdate(
       { signatureId, tenantId },
-      { 
-        $set: { 
+      {
+        $set: {
           status: SIGNATURE_STATUS.SIGNED,
           signedAt: new Date(timestamp),
           signedBy: signerData.email,
           forensicHash: newSeal,
           'audit.updatedAt': new Date(),
-          'audit.updatedBy': getCurrentUser()
-        } 
+          'audit.updatedBy': getCurrentUser(),
+        },
       },
       { new: true }
     );
@@ -343,20 +363,20 @@ class ESignService {
       signatureId,
       tenantId,
       signerEmail: redactSensitive(signerData.email, ['email']),
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     });
 
     return {
       success: true,
       signatureId: updated.signatureId,
       signedAt: updated.signedAt,
-      status: updated.status
+      status: updated.status,
     };
   }
 
   async verifySignature(signatureId) {
     const tenantId = getCurrentTenant();
-    
+
     const signature = await ElectronicSignature.findOne({ signatureId, tenantId }).lean();
     if (!signature) throw new Error(`Signature not found: ${signatureId}`);
 
@@ -387,25 +407,25 @@ class ESignService {
       {
         check: 'Signature exists',
         passed: !!signature.signedAt,
-        details: signature.signedAt ? 'Signature found' : 'No signature'
+        details: signature.signedAt ? 'Signature found' : 'No signature',
       },
       {
         check: 'Hash integrity',
         passed: hashValid,
-        details: hashValid ? 'Hash matches' : 'Hash mismatch'
-      }
+        details: hashValid ? 'Hash matches' : 'Hash mismatch',
+      },
     ];
 
-    const verified = verificationChecks.every(c => c.passed);
-    
+    const verified = verificationChecks.every((c) => c.passed);
+
     if (verified && signature.status !== SIGNATURE_STATUS.VERIFIED) {
       await ElectronicSignature.updateOne(
         { _id: signature._id },
-        { 
-          $set: { 
+        {
+          $set: {
             status: SIGNATURE_STATUS.VERIFIED,
-            verifiedAt: new Date()
-          }
+            verifiedAt: new Date(),
+          },
         }
       );
     }
@@ -414,14 +434,14 @@ class ESignService {
       action: 'SIGNATURE_VERIFIED',
       signatureId,
       tenantId,
-      verified
+      verified,
     });
 
     return {
       signatureId,
       verified,
       verificationChecks,
-      verifiedAt: signature.verifiedAt
+      verifiedAt: signature.verifiedAt,
     };
   }
 
@@ -431,7 +451,7 @@ class ESignService {
     if (!signature) throw new Error(`Signature not found: ${signatureId}`);
 
     const history = [
-      { event: 'CREATED', timestamp: signature.audit.createdAt, actor: signature.audit.createdBy }
+      { event: 'CREATED', timestamp: signature.audit.createdAt, actor: signature.audit.createdBy },
     ];
 
     if (signature.signedAt) {
@@ -445,7 +465,7 @@ class ESignService {
     return {
       signatureId,
       currentStatus: signature.status,
-      history
+      history,
     };
   }
 
@@ -477,7 +497,7 @@ class ESignService {
       success: true,
       signatureId,
       status: signature.status,
-      revokedAt: signature.revokedAt
+      revokedAt: signature.revokedAt,
     };
   }
 
@@ -486,7 +506,11 @@ class ESignService {
     const signature = await ElectronicSignature.findOne({ signatureId, tenantId });
     if (!signature) throw new Error(`Signature not found: ${signatureId}`);
 
-    if (![SIGNATURE_STATUS.PENDING, SIGNATURE_STATUS.SENT, SIGNATURE_STATUS.VIEWED].includes(signature.status)) {
+    if (
+      ![SIGNATURE_STATUS.PENDING, SIGNATURE_STATUS.SENT, SIGNATURE_STATUS.VIEWED].includes(
+        signature.status
+      )
+    ) {
       throw new Error(`Cannot send reminder for signature in ${signature.status} status`);
     }
 
@@ -500,7 +524,7 @@ class ESignService {
       action: 'SIGNATURE_REMINDER_SENT',
       signatureId,
       tenantId,
-      signerEmail: signerEmail ? redactSensitive(signerEmail, ['email']) : 'all'
+      signerEmail: signerEmail ? redactSensitive(signerEmail, ['email']) : 'all',
     });
 
     return { success: true, signatureId, reminderSent: true, sentAt: new Date().toISOString() };
@@ -533,19 +557,19 @@ class ESignService {
           pending: { $sum: { $cond: [{ $eq: ['$status', SIGNATURE_STATUS.PENDING] }, 1, 0] } },
           signed: { $sum: { $cond: [{ $eq: ['$status', SIGNATURE_STATUS.SIGNED] }, 1, 0] } },
           verified: { $sum: { $cond: [{ $eq: ['$status', SIGNATURE_STATUS.VERIFIED] }, 1, 0] } },
-          expired: { $sum: { $cond: [{ $eq: ['$status', SIGNATURE_STATUS.EXPIRED] }, 1, 0] } }
-        }
-      }
+          expired: { $sum: { $cond: [{ $eq: ['$status', SIGNATURE_STATUS.EXPIRED] }, 1, 0] } },
+        },
+      },
     ]);
 
     const byProvider = await ElectronicSignature.aggregate([
       { $match: { tenantId: queryTenant } },
-      { $group: { _id: '$provider', count: { $sum: 1 } } }
+      { $group: { _id: '$provider', count: { $sum: 1 } } },
     ]);
 
     return {
       summary: stats[0] || { total: 0, pending: 0, signed: 0, verified: 0, expired: 0 },
-      byProvider
+      byProvider,
     };
   }
 
@@ -554,7 +578,7 @@ class ESignService {
       status: 'healthy',
       service: 'ESignService',
       providers: Array.from(this.providers.keys()),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 }
@@ -567,7 +591,7 @@ export {
   VERIFICATION_LEVELS,
   RETENTION_POLICIES,
   DATA_RESIDENCY,
-  NOTIFICATION_TYPES
+  NOTIFICATION_TYPES,
 };
 
 export default ESignService;

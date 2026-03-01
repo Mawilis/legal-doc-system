@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /* eslint-env jest */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL FLOW WEBSOCKET TESTS - REAL-TIME M&A PIPELINE VERIFICATION                       ║
@@ -8,7 +6,7 @@ const require = _createRequire(import.meta.url);
   ║ R350M/year value validation | Video Conferencing | Presence Testing                   ║
   ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
 
-import { createServer } from "http";
+import { createServer } from 'http';
 import { io as Client } from 'socket.io-client.js';
 import jwt from 'jsonwebtoken.js';
 import { v4 as uuidv4 } from 'uuid.js';
@@ -46,7 +44,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
       tenantId: 'test-tenant-12345678',
       roles: ['deal_team'],
       name: 'Test User',
-      email: 'test@example.com'
+      email: 'test@example.com',
     };
 
     testToken = jwt.sign(testUser, 'test-secret');
@@ -71,7 +69,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
         auth: { token: customToken },
         query: { tenantId: testUser.tenantId },
         transports: ['websocket'],
-        forceNew: true
+        forceNew: true,
       });
 
       socket.on('connect', () => resolve(socket));
@@ -82,7 +80,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
   test('should authenticate valid JWT token', async () => {
     clientSocket = await connectClient();
     expect(clientSocket.connected).toBe(true);
-    
+
     // Should receive connection confirmation
     await new Promise((resolve) => {
       clientSocket.on('connected', (data) => {
@@ -94,7 +92,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
 
   test('should reject invalid JWT token', async () => {
     const invalidToken = jwt.sign({ ...testUser }, 'wrong-secret');
-    
+
     await expect(connectClient(invalidToken)).rejects.toThrow();
   });
 
@@ -117,11 +115,11 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
 
   test('should subscribe to deal updates', async () => {
     const dealId = uuidv4();
-    
+
     // Mock deal existence check
     Deal.findById.mockResolvedValue({
       _id: dealId,
-      tenantId: testUser.tenantId
+      tenantId: testUser.tenantId,
     });
 
     clientSocket = await connectClient();
@@ -143,11 +141,11 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
 
   test('should reject deal subscription without access', async () => {
     const dealId = uuidv4();
-    
+
     // Mock deal with different tenant
     Deal.findById.mockResolvedValue({
       _id: dealId,
-      tenantId: 'different-tenant'
+      tenantId: 'different-tenant',
     });
 
     clientSocket = await connectClient();
@@ -166,7 +164,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
 
   test('should handle chat messages in deal room', async () => {
     const dealId = uuidv4();
-    
+
     clientSocket = await connectClient();
 
     // Join deal room
@@ -186,7 +184,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
     const testMessage = {
       dealId,
       message: 'Test message',
-      attachments: null
+      attachments: null,
     };
 
     clientSocket.emit('send_message', testMessage);
@@ -198,7 +196,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
 
   test('should handle typing indicators', async () => {
     const dealId = uuidv4();
-    
+
     clientSocket = await connectClient();
     clientSocket.emit('join_deal_room', dealId);
 
@@ -220,7 +218,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
   test('should handle video signals for WebRTC', async () => {
     const dealId = uuidv4();
     const targetUserId = uuidv4();
-    
+
     clientSocket = await connectClient();
     clientSocket.emit('join_deal_room', dealId);
 
@@ -235,7 +233,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
     clientSocket.emit('video_signal', {
       dealId,
       targetUserId,
-      signal: { sdp: 'test-sdp' }
+      signal: { sdp: 'test-sdp' },
     });
 
     const signal = await signalPromise;
@@ -264,7 +262,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
 
   test('should handle document updates', async () => {
     const dealId = uuidv4();
-    
+
     clientSocket = await connectClient();
     clientSocket.emit('join_deal_room', dealId);
 
@@ -278,7 +276,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
       dealId,
       documentId: uuidv4(),
       action: 'upload',
-      version: 1
+      version: 1,
     });
 
     const doc = await docPromise;
@@ -288,7 +286,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
 
   test('should broadcast deal stage changes', async () => {
     const dealId = uuidv4();
-    
+
     clientSocket = await connectClient();
     clientSocket.emit('subscribe_deal', dealId);
 
@@ -299,12 +297,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
     });
 
     // Simulate deal stage change
-    await wsManager.broadcastDealStageChange(
-      dealId,
-      'identification',
-      'screening',
-      testUser.id
-    );
+    await wsManager.broadcastDealStageChange(dealId, 'identification', 'screening', testUser.id);
 
     const update = await updatePromise;
     expect(update.dealId).toBe(dealId);
@@ -327,7 +320,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
 
   test('should handle disconnection gracefully', async () => {
     clientSocket = await connectClient();
-    
+
     const disconnectPromise = new Promise((resolve) => {
       clientSocket.on('disconnect', resolve);
     });
@@ -335,7 +328,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
     clientSocket.disconnect();
 
     await disconnectPromise;
-    
+
     // Should mark user as offline
     const stats = wsManager.getStats();
     expect(stats.connections).toBe(0);
@@ -359,7 +352,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
 
   test('should handle concurrent connections within limits', async () => {
     const connections = [];
-    
+
     // Create multiple connections
     for (let i = 0; i < 5; i++) {
       const socket = await connectClient();
@@ -370,12 +363,12 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
     expect(stats.connections).toBe(5);
 
     // Clean up
-    connections.forEach(s => s.disconnect());
+    connections.forEach((s) => s.disconnect());
   });
 
   test('should provide server statistics', () => {
     const stats = wsManager.getStats();
-    
+
     expect(stats).toHaveProperty('connections');
     expect(stats).toHaveProperty('dealRooms');
     expect(stats).toHaveProperty('userPresence');
@@ -394,7 +387,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
     wsManager.broadcastMarketUpdate({
       type: 'index',
       value: 75000,
-      change: 0.5
+      change: 0.5,
     });
 
     const update = await updatePromise;
@@ -413,7 +406,7 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
 
     await wsManager.sendUserNotification(testUser.id, {
       title: 'Test Notification',
-      body: 'This is a test'
+      body: 'This is a test',
     });
 
     const notification = await notificationPromise;
@@ -458,7 +451,7 @@ describe('WebSocket Manager Singleton', () => {
     const server = createServer();
     const instance1 = createDealFlowWebSocket(server);
     const instance2 = createDealFlowWebSocket(server);
-    
+
     expect(instance1).toBe(instance2);
   });
 

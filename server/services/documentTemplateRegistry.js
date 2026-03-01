@@ -1,4 +1,4 @@
-/*
+#!/*
  * Wilsy OS - Document Template Registry
  * =======================================
  * FORENSIC-GRADE DOCUMENT ONTOLOGY ENGINE
@@ -841,9 +841,9 @@ class DocumentTemplateRegistry {
 
           // Min items validation (arrays)
           if (
-            rules.minItems !== undefined
-            && Array.isArray(value)
-            && value.length < rules.minItems
+            rules.minItems !== undefined &&
+            Array.isArray(value) &&
+            value.length < rules.minItems
           ) {
             errors.push({
               field,
@@ -948,10 +948,11 @@ class DocumentTemplateRegistry {
     const lowercaseQuery = query.toLowerCase();
     return Object.entries(this._templates)
       .filter(
-        ([id, template]) => id.toLowerCase().includes(lowercaseQuery)
-          || template.category.toLowerCase().includes(lowercaseQuery)
-          || (template.compliance
-            && template.compliance.some((c) => c.toLowerCase().includes(lowercaseQuery))),
+        ([id, template]) =>
+          id.toLowerCase().includes(lowercaseQuery) ||
+          template.category.toLowerCase().includes(lowercaseQuery) ||
+          (template.compliance &&
+            template.compliance.some((c) => c.toLowerCase().includes(lowercaseQuery)))
       )
       .map(([id]) => id);
   }

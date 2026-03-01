@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /*
  * 🗄️  STORAGE SERVICE - MULTI-CLOUD ABSTRACTION LAYER

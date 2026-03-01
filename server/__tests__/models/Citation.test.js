@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ CITATION MODEL TESTS - INVESTOR DUE DILIGENCE                 ║
   ║ 100% coverage | POPIA compliant | Forensic evidence           ║
@@ -154,13 +152,15 @@ describe('Citation Model - Forensic Due Diligence', () => {
           citedPrecedent: citedPrecedentId,
           tenantId: tenantId,
         },
-        expect.anything(),
+        expect.anything()
       );
     });
 
     it('should calculate precedent strength per tenant', async () => {
       // Mock find to return citations
-      jest.spyOn(Citation, 'find').mockResolvedValueOnce([{ strength: 80 }, { strength: 90 }, { strength: 70 }]);
+      jest
+        .spyOn(Citation, 'find')
+        .mockResolvedValueOnce([{ strength: 80 }, { strength: 90 }, { strength: 70 }]);
 
       const strength = await Citation.calculatePrecedentStrength(citedPrecedentId, tenantId);
 
@@ -182,7 +182,8 @@ describe('Citation Model - Forensic Due Diligence', () => {
       expect(testCitation.retentionEnd).toBeDefined();
       expect(testCitation.retentionEnd.getTime()).toBeGreaterThan(beforeSave.getTime());
 
-      const yearsDiff = testCitation.retentionEnd.getFullYear() - testCitation.retentionStart.getFullYear();
+      const yearsDiff =
+        testCitation.retentionEnd.getFullYear() - testCitation.retentionStart.getFullYear();
       expect(yearsDiff).toBe(10); // companies_act_10_years
     });
 
@@ -207,7 +208,7 @@ describe('Citation Model - Forensic Due Diligence', () => {
           userId: createdBy,
           retentionPolicy: testCitation.retentionPolicy,
           dataResidency: testCitation.dataResidency,
-        }),
+        })
       );
     });
 

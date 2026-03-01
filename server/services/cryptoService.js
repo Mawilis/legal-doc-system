@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ================================================================================================
  * FILE: server/services/cryptoService.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/cryptoService.js
@@ -159,7 +157,7 @@ class CryptoService {
 
     if (keyBuffer.length !== 32) {
       throw new Error(
-        `MASTER_ENCRYPTION_KEY must be 32 bytes (64 hex chars). Got ${keyBuffer.length} bytes`,
+        `MASTER_ENCRYPTION_KEY must be 32 bytes (64 hex chars). Got ${keyBuffer.length} bytes`
       );
     }
 
@@ -201,7 +199,7 @@ class CryptoService {
         this.algorithms.symmetric.aes256gcm,
         this.keyManagement.masterKey,
         iv,
-        additionalData ? { authTagLength: 16 } : undefined,
+        additionalData ? { authTagLength: 16 } : undefined
       );
 
       // Add additional authenticated data if provided
@@ -222,7 +220,7 @@ class CryptoService {
           algorithm: this.algorithms.symmetric.aes256gcm,
           iv: iv.toString('hex'),
           timestamp: new Date().toISOString(),
-        }),
+        })
       );
 
       // Return encrypted package with metadata
@@ -262,13 +260,11 @@ class CryptoService {
       this._validateEncryptedPackage(encryptedPackage);
 
       // Extract components
-      const {
-        encrypted, iv, authTag, algorithm, metadataHash,
-      } = encryptedPackage;
+      const { encrypted, iv, authTag, algorithm, metadataHash } = encryptedPackage;
 
       if (algorithm !== this.algorithms.symmetric.aes256gcm) {
         throw new Error(
-          `Unsupported algorithm: ${algorithm}. Expected ${this.algorithms.symmetric.aes256gcm}`,
+          `Unsupported algorithm: ${algorithm}. Expected ${this.algorithms.symmetric.aes256gcm}`
         );
       }
 
@@ -278,7 +274,7 @@ class CryptoService {
           algorithm,
           iv,
           timestamp: encryptedPackage.timestamp,
-        }),
+        })
       );
 
       if (calculatedHash !== metadataHash) {
@@ -289,7 +285,7 @@ class CryptoService {
       const decipher = crypto.createDecipheriv(
         algorithm,
         this.keyManagement.masterKey,
-        Buffer.from(iv, 'hex'),
+        Buffer.from(iv, 'hex')
       );
 
       // Set authentication tag
@@ -460,10 +456,10 @@ class CryptoService {
       const keyPair = privateKey
         ? { privateKey }
         : crypto.generateKeyPairSync('ec', {
-          namedCurve: 'P-521',
-          publicKeyEncoding: { type: 'spki', format: 'pem' },
-          privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
-        });
+            namedCurve: 'P-521',
+            publicKeyEncoding: { type: 'spki', format: 'pem' },
+            privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+          });
 
       // Create signature
       const sign = crypto.createSign('SHA512');
@@ -543,7 +539,7 @@ class CryptoService {
       process.env.MASTER_ENCRYPTION_KEY = newMasterKey.toString('hex');
 
       console.log(
-        `[QUANTUM CRYPTO] Master key rotated to generation ${this.keyManagement.generation}`,
+        `[QUANTUM CRYPTO] Master key rotated to generation ${this.keyManagement.generation}`
       );
 
       return {
@@ -611,7 +607,7 @@ class CryptoService {
       keyGeneration: this.keyManagement.generation,
       lastRotation: this.keyManagement.lastRotation,
       nextRotationDue: new Date(
-        this.keyManagement.lastRotation.getTime() + this.keyManagement.keyRotationInterval,
+        this.keyManagement.lastRotation.getTime() + this.keyManagement.keyRotationInterval
       ),
       quantumResistance: this.quantumResistance.enabled,
       algorithms: Object.keys(this.algorithms.symmetric),
@@ -650,7 +646,7 @@ class CryptoService {
         saltBuffer,
         iterations,
         32, // 32 bytes = 256 bits
-        'sha512',
+        'sha512'
       );
 
       return {

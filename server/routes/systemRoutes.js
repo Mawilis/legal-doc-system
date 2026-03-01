@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/systemRoutes.js
  * STATUS: PRODUCTION-READY | SOVEREIGN GOD-MODE ROUTES
  * VERSION: 2026.01.19 (Global Legal OS)

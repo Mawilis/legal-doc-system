@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* eslint-env node */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ TEST HELPER - FORENSIC TEST SETUP (v2.0 ESM)                  ║

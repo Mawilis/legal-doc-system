@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  ███████╗██╗   ██╗███████╗███╗   ██╗████████╗    ██╗  ██╗ █████╗ ███████╗██╗  ██╗                       ║
  * ║  ██╔════╝██║   ██║██╔════╝████╗  ██║╚══██╔══╝    ██║  ██║██╔══██╗██╔════╝██║  ██║                       ║
@@ -253,7 +251,8 @@ function generateEventHash(eventData, options = {}) {
     const forensicError = new Error(QUANTUM_ERRORS.HASH_GENERATION_FAILED.message);
     forensicError.code = QUANTUM_ERRORS.HASH_GENERATION_FAILED.code;
     forensicError.originalError = error.message;
-    forensicError.eventData = typeof eventData === 'string' ? `${eventData.substring(0, 100)}...` : 'Object';
+    forensicError.eventData =
+      typeof eventData === 'string' ? `${eventData.substring(0, 100)}...` : 'Object';
 
     throw forensicError;
   }
@@ -423,7 +422,7 @@ function verifyMerkleProof(eventHash, proof, rootHash) {
     const isValid = tree.verify(
       formattedProof,
       Buffer.from(eventHash, QUANTUM_CONFIG.OUTPUT_ENCODING),
-      Buffer.from(rootHash, QUANTUM_CONFIG.OUTPUT_ENCODING),
+      Buffer.from(rootHash, QUANTUM_CONFIG.OUTPUT_ENCODING)
     );
 
     return {
@@ -501,7 +500,7 @@ function generatePOPIAConsentHash(consentData) {
       section14Compliant: true,
       consentId: `POPIA-CONSENT-${hashResult.hash.substring(0, 16).toUpperCase()}`,
       recommendedReviewDate: new Date(
-        Date.now() + popiaConsentObject.retentionPeriodMonths * 30 * 24 * 60 * 60 * 1000,
+        Date.now() + popiaConsentObject.retentionPeriodMonths * 30 * 24 * 60 * 60 * 1000
       ).toISOString(),
     },
   };
@@ -516,9 +515,9 @@ function generatePOPIAConsentHash(consentData) {
 function generateECTSignatureHash(signatureData) {
   // Validate ECT Act requirements
   if (
-    !signatureData.signatoryId
-    || !signatureData.documentHash
-    || !signatureData.signatureTimestamp
+    !signatureData.signatoryId ||
+    !signatureData.documentHash ||
+    !signatureData.signatureTimestamp
   ) {
     throw new Error('ECT signature requires signatoryId, documentHash, and signatureTimestamp');
   }

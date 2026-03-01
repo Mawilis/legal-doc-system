@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/rbacMiddleware.js
  * STATUS: PRODUCTION-READY (WILSY OS V2.0)
  *
@@ -589,7 +587,7 @@ const createDecisionCacheKey = (userId, permission, resourceId = '') => {
 const cacheDecision = async (
   cacheKey,
   decision,
-  ttl = RBAC_CONFIG.ENFORCEMENT.CACHE_TTL_SECONDS,
+  ttl = RBAC_CONFIG.ENFORCEMENT.CACHE_TTL_SECONDS
 ) => {
   try {
     await redisClient.setex(cacheKey, ttl, decision ? 'ALLOW' : 'DENY');
@@ -666,7 +664,7 @@ const logAccessDecision = async (params) => {
     // Console log for development
     if (!decision) {
       console.warn(
-        `🚫 [ACCESS_DENIED] ${role} (${userId}) denied ${permission} on ${resourceType}:${resourceId} - ${reason}`,
+        `🚫 [ACCESS_DENIED] ${role} (${userId}) denied ${permission} on ${resourceType}:${resourceId} - ${reason}`
       );
     }
   } catch (error) {
@@ -682,9 +680,7 @@ const logAccessDecision = async (params) => {
  * @returns {boolean} True if privileged access is allowed
  */
 const checkLegalPrivilege = (context) => {
-  const {
-    role, resourceType, resourceOwner, relationship,
-  } = context;
+  const { role, resourceType, resourceOwner, relationship } = context;
 
   // Attorney-Client Privilege Enforcement
   if (resourceType === 'DOCUMENT' && resourceOwner === 'CLIENT') {
@@ -722,9 +718,7 @@ const checkLegalPrivilege = (context) => {
  * @returns {boolean} True if POPIA compliant
  */
 const checkPOPIACompliance = (context) => {
-  const {
-    role, resourceType, dataCategory, purpose,
-  } = context;
+  const { role, resourceType, dataCategory, purpose } = context;
 
   // Minimal Data Collection Principle
   if (role === 'LEGAL_SECRETARY' && dataCategory === 'PERSONAL_SENSITIVE') {
@@ -764,41 +758,98 @@ const checkPOPIACompliance = (context) => {
  * @compliance POPIA access control, ISO27001 A.9.2
  * @performance <5ms processing time with cache
  */
-exports.restrictTo = (...allowedRoles) => async (req, res, next) => {
-  const startTime = performance.now();
+exports.restrictTo =
+  (...allowedRoles) =>
+  async (req, res, next) => {
+    const startTime = performance.now();
 
-  try {
-    // Check if user is authenticated
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required',
-        code: 'AUTHENTICATION_REQUIRED',
-      });
-    }
+    try {
+      // Check if user is authenticated
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          code: 'AUTHENTICATION_REQUIRED',
+        });
+      }
 
-    const userRole = normalizeRole(req.user.role);
-    const userId = req.user.id;
-    const { tenantId } = req.user;
+      const userRole = normalizeRole(req.user.role);
+      const userId = req.user.id;
+      const { tenantId } = req.user;
 
-    // Super admin bypasses all role checks
-    if (userRole === 'SUPER_ADMIN') {
+      // Super admin bypasses all role checks
+      if (userRole === 'SUPER_ADMIN') {
+        const processingTime = performance.now() - startTime;
+        console.log(
+          `👑 [SUPER_ADMIN_BYPASS] ${userId} accessing ${req.path} in ${processingTime.toFixed(
+            2
+          )}ms`
+        );
+        return next();
+      }
+
+      // Normalize allowed roles
+      const normalizedAllowedRoles = allowedRoles.map(normalizeRole);
+
+      // Check if user role is in allowed roles
+      if (!normalizedAllowedRoles.includes(userRole)) {
+        const processingTime = performance.now() - startTime;
+
+        await logAccessDecision({
+          userId,
+          tenantId,
+          role: userRole,
+          permission: 'ROLE_ACCESS',
+          resourceType: 'ENDPOINT',
+          resourceId: req.path,
+          decision: false,
+          reason: `Role ${userRole} not in allowed roles: ${normalizedAllowedRoles.join(', ')}`,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          requestId: req.id,
+        });
+
+        return res.status(403).json({
+          success: false,
+          error: 'Insufficient role permissions',
+          code: 'INSUFFICIENT_ROLE_PERMISSIONS',
+          message: `Role ${userRole} does not have access to this resource`,
+          requiredRoles: normalizedAllowedRoles,
+          processingTime: processingTime.toFixed(2),
+        });
+      }
+
+      // Check role scope
+      const roleConfig = getRoleConfig(userRole);
+      if (!validateScope(userRole, roleConfig.scope)) {
+        const processingTime = performance.now() - startTime;
+
+        await logAccessDecision({
+          userId,
+          tenantId,
+          role: userRole,
+          permission: 'SCOPE_ACCESS',
+          resourceType: 'ENDPOINT',
+          resourceId: req.path,
+          decision: false,
+          reason: `Role ${userRole} not allowed in scope ${roleConfig.scope}`,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          requestId: req.id,
+        });
+
+        return res.status(403).json({
+          success: false,
+          error: 'Scope violation',
+          code: 'SCOPE_VIOLATION',
+          message: `Role ${userRole} cannot access resources in this scope`,
+          processingTime: processingTime.toFixed(2),
+        });
+      }
+
       const processingTime = performance.now() - startTime;
-      console.log(
-        `👑 [SUPER_ADMIN_BYPASS] ${userId} accessing ${req.path} in ${processingTime.toFixed(
-          2,
-        )}ms`,
-      );
-      return next();
-    }
 
-    // Normalize allowed roles
-    const normalizedAllowedRoles = allowedRoles.map(normalizeRole);
-
-    // Check if user role is in allowed roles
-    if (!normalizedAllowedRoles.includes(userRole)) {
-      const processingTime = performance.now() - startTime;
-
+      // Log successful role check
       await logAccessDecision({
         userId,
         tenantId,
@@ -806,83 +857,28 @@ exports.restrictTo = (...allowedRoles) => async (req, res, next) => {
         permission: 'ROLE_ACCESS',
         resourceType: 'ENDPOINT',
         resourceId: req.path,
-        decision: false,
-        reason: `Role ${userRole} not in allowed roles: ${normalizedAllowedRoles.join(', ')}`,
+        decision: true,
+        reason: `Role ${userRole} authorized for endpoint`,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
         requestId: req.id,
-      });
-
-      return res.status(403).json({
-        success: false,
-        error: 'Insufficient role permissions',
-        code: 'INSUFFICIENT_ROLE_PERMISSIONS',
-        message: `Role ${userRole} does not have access to this resource`,
-        requiredRoles: normalizedAllowedRoles,
         processingTime: processingTime.toFixed(2),
       });
-    }
 
-    // Check role scope
-    const roleConfig = getRoleConfig(userRole);
-    if (!validateScope(userRole, roleConfig.scope)) {
+      next();
+    } catch (error) {
       const processingTime = performance.now() - startTime;
+      console.error(`🔐 [RBAC_ERROR] Role restriction failed: ${error.message}`);
 
-      await logAccessDecision({
-        userId,
-        tenantId,
-        role: userRole,
-        permission: 'SCOPE_ACCESS',
-        resourceType: 'ENDPOINT',
-        resourceId: req.path,
-        decision: false,
-        reason: `Role ${userRole} not allowed in scope ${roleConfig.scope}`,
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent'],
-        requestId: req.id,
-      });
-
-      return res.status(403).json({
+      res.status(500).json({
         success: false,
-        error: 'Scope violation',
-        code: 'SCOPE_VIOLATION',
-        message: `Role ${userRole} cannot access resources in this scope`,
+        error: 'Role validation failed',
+        code: 'ROLE_VALIDATION_FAILED',
+        message: 'Unable to validate role permissions',
         processingTime: processingTime.toFixed(2),
       });
     }
-
-    const processingTime = performance.now() - startTime;
-
-    // Log successful role check
-    await logAccessDecision({
-      userId,
-      tenantId,
-      role: userRole,
-      permission: 'ROLE_ACCESS',
-      resourceType: 'ENDPOINT',
-      resourceId: req.path,
-      decision: true,
-      reason: `Role ${userRole} authorized for endpoint`,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-      requestId: req.id,
-      processingTime: processingTime.toFixed(2),
-    });
-
-    next();
-  } catch (error) {
-    const processingTime = performance.now() - startTime;
-    console.error(`🔐 [RBAC_ERROR] Role restriction failed: ${error.message}`);
-
-    res.status(500).json({
-      success: false,
-      error: 'Role validation failed',
-      code: 'ROLE_VALIDATION_FAILED',
-      message: 'Unable to validate role permissions',
-      processingTime: processingTime.toFixed(2),
-    });
-  }
-};
+  };
 
 /*
  * @middleware requirePermission
@@ -944,8 +940,8 @@ exports.requirePermission = (requiredPermission) => async (req, res, next) => {
       const processingTime = performance.now() - startTime;
       console.log(
         `🔐 [PERMISSION_CACHE_HIT] ${userId} permission ${normalizedPermission} allowed in ${processingTime.toFixed(
-          2,
-        )}ms`,
+          2
+        )}ms`
       );
       return next();
     }
@@ -956,8 +952,8 @@ exports.requirePermission = (requiredPermission) => async (req, res, next) => {
       const processingTime = performance.now() - startTime;
       console.log(
         `👑 [SUPER_ADMIN_PERMISSION] ${userId} granted ${normalizedPermission} in ${processingTime.toFixed(
-          2,
-        )}ms`,
+          2
+        )}ms`
       );
       return next();
     }
@@ -1091,8 +1087,8 @@ exports.requireResourcePermission = (resourceType, action) => async (req, res, n
       const processingTime = performance.now() - startTime;
       console.log(
         `🔐 [RESOURCE_CACHE_HIT] ${userId} can ${action} ${resourceType} ${resourceId} in ${processingTime.toFixed(
-          2,
-        )}ms`,
+          2
+        )}ms`
       );
       return next();
     }
@@ -1103,8 +1099,8 @@ exports.requireResourcePermission = (resourceType, action) => async (req, res, n
       const processingTime = performance.now() - startTime;
       console.log(
         `👑 [SUPER_ADMIN_RESOURCE] ${userId} can ${action} ${resourceType} ${resourceId} in ${processingTime.toFixed(
-          2,
-        )}ms`,
+          2
+        )}ms`
       );
       return next();
     }
@@ -1243,7 +1239,7 @@ exports.requireResourcePermission = (resourceType, action) => async (req, res, n
   } catch (error) {
     const processingTime = performance.now() - startTime;
     console.error(
-      `🔐 [RESOURCE_PERMISSION_ERROR] Resource permission check failed: ${error.message}`,
+      `🔐 [RESOURCE_PERMISSION_ERROR] Resource permission check failed: ${error.message}`
     );
 
     res.status(500).json({
@@ -1284,13 +1280,14 @@ exports.requireSameTenant = async (req, res, next) => {
     if (userRole === 'SUPER_ADMIN') {
       const processingTime = performance.now() - startTime;
       console.log(
-        `👑 [SUPER_ADMIN_TENANT] ${userId} accessing cross-tenant in ${processingTime.toFixed(2)}ms`,
+        `👑 [SUPER_ADMIN_TENANT] ${userId} accessing cross-tenant in ${processingTime.toFixed(2)}ms`
       );
       return next();
     }
 
     // Extract requested tenant ID from various sources
-    let requestedTenantId = req.headers['x-tenant-id'] || req.body.tenantId || req.params.tenantId || req.query.tenantId;
+    let requestedTenantId =
+      req.headers['x-tenant-id'] || req.body.tenantId || req.params.tenantId || req.query.tenantId;
 
     // If no tenant ID in request, assume user's own tenant
     if (!requestedTenantId) {
@@ -1352,7 +1349,7 @@ exports.requireSameTenant = async (req, res, next) => {
           timestamp: new Date().toISOString(),
           path: req.path,
           ipAddress: req.ip,
-        }),
+        })
       );
 
       return res.status(403).json({
@@ -1406,63 +1403,94 @@ exports.requireSameTenant = async (req, res, next) => {
  * @complements RBAC with ownership checks
  * @performance <8ms processing time
  */
-exports.requireOwnership = (ownershipField = 'userId') => async (req, res, next) => {
-  const startTime = performance.now();
+exports.requireOwnership =
+  (ownershipField = 'userId') =>
+  async (req, res, next) => {
+    const startTime = performance.now();
 
-  try {
-    // Check if user is authenticated
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required',
-        code: 'AUTHENTICATION_REQUIRED',
-      });
-    }
-
-    const userRole = normalizeRole(req.user.role);
-    const userId = req.user.id;
-    const { tenantId } = req.user;
-
-    // Super admin and firm admins bypass ownership checks
-    if (['SUPER_ADMIN', 'FIRM_PARTNER', 'FIRM_ADMIN', 'COMPLIANCE_OFFICER'].includes(userRole)) {
-      const processingTime = performance.now() - startTime;
-      console.log(
-        `🔐 [ADMIN_OWNERSHIP_BYPASS] ${userRole} ${userId} bypassing ownership check in ${processingTime.toFixed(
-          2,
-        )}ms`,
-      );
-      return next();
-    }
-
-    // Resolve ownership field from request
-    let ownerId;
-
-    if (ownershipField.includes('.')) {
-      // Handle nested fields (e.g., 'body.owner.id')
-      ownerId = ownershipField.split('.').reduce((obj, key) => obj?.[key], req);
-    } else {
-      // Handle direct fields
-      ownerId = req[ownershipField]
-          || req.body[ownershipField]
-          || req.params[ownershipField]
-          || req.query[ownershipField];
-    }
-
-    // If no owner ID found, check for resource ID to fetch ownership
-    if (!ownerId) {
-      const resourceId = req.params.id || req.body.id;
-      if (resourceId) {
-        // In production, fetch resource from database to get owner
-        // const resource = await ResourceModel.findById(resourceId);
-        // ownerId = resource?.ownerId;
-        ownerId = 'unknown'; // Mock for now
+    try {
+      // Check if user is authenticated
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          code: 'AUTHENTICATION_REQUIRED',
+        });
       }
-    }
 
-    // Validate ownership
-    if (!ownerId || ownerId.toString() !== userId.toString()) {
+      const userRole = normalizeRole(req.user.role);
+      const userId = req.user.id;
+      const { tenantId } = req.user;
+
+      // Super admin and firm admins bypass ownership checks
+      if (['SUPER_ADMIN', 'FIRM_PARTNER', 'FIRM_ADMIN', 'COMPLIANCE_OFFICER'].includes(userRole)) {
+        const processingTime = performance.now() - startTime;
+        console.log(
+          `🔐 [ADMIN_OWNERSHIP_BYPASS] ${userRole} ${userId} bypassing ownership check in ${processingTime.toFixed(
+            2
+          )}ms`
+        );
+        return next();
+      }
+
+      // Resolve ownership field from request
+      let ownerId;
+
+      if (ownershipField.includes('.')) {
+        // Handle nested fields (e.g., 'body.owner.id')
+        ownerId = ownershipField.split('.').reduce((obj, key) => obj?.[key], req);
+      } else {
+        // Handle direct fields
+        ownerId =
+          req[ownershipField] ||
+          req.body[ownershipField] ||
+          req.params[ownershipField] ||
+          req.query[ownershipField];
+      }
+
+      // If no owner ID found, check for resource ID to fetch ownership
+      if (!ownerId) {
+        const resourceId = req.params.id || req.body.id;
+        if (resourceId) {
+          // In production, fetch resource from database to get owner
+          // const resource = await ResourceModel.findById(resourceId);
+          // ownerId = resource?.ownerId;
+          ownerId = 'unknown'; // Mock for now
+        }
+      }
+
+      // Validate ownership
+      if (!ownerId || ownerId.toString() !== userId.toString()) {
+        const processingTime = performance.now() - startTime;
+
+        await logAccessDecision({
+          userId,
+          tenantId,
+          role: userRole,
+          permission: 'OWNERSHIP_CHECK',
+          resourceType: 'RESOURCE',
+          resourceId: req.params.id || 'unknown',
+          decision: false,
+          reason: `Ownership mismatch: user ${userId} != owner ${ownerId}`,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          requestId: req.id,
+        });
+
+        return res.status(403).json({
+          success: false,
+          error: 'Ownership violation',
+          code: 'OWNERSHIP_VIOLATION',
+          message: 'You do not own this resource',
+          userId,
+          resourceOwner: ownerId,
+          processingTime: processingTime.toFixed(2),
+        });
+      }
+
       const processingTime = performance.now() - startTime;
 
+      // Log successful ownership validation
       await logAccessDecision({
         userId,
         tenantId,
@@ -1470,56 +1498,28 @@ exports.requireOwnership = (ownershipField = 'userId') => async (req, res, next)
         permission: 'OWNERSHIP_CHECK',
         resourceType: 'RESOURCE',
         resourceId: req.params.id || 'unknown',
-        decision: false,
-        reason: `Ownership mismatch: user ${userId} != owner ${ownerId}`,
+        decision: true,
+        reason: 'Ownership verified',
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
         requestId: req.id,
+        processingTime: processingTime.toFixed(2),
       });
 
-      return res.status(403).json({
+      next();
+    } catch (error) {
+      const processingTime = performance.now() - startTime;
+      console.error(`🔐 [OWNERSHIP_ERROR] Ownership validation failed: ${error.message}`);
+
+      res.status(500).json({
         success: false,
-        error: 'Ownership violation',
-        code: 'OWNERSHIP_VIOLATION',
-        message: 'You do not own this resource',
-        userId,
-        resourceOwner: ownerId,
+        error: 'Ownership validation failed',
+        code: 'OWNERSHIP_VALIDATION_FAILED',
+        message: 'Unable to validate resource ownership',
         processingTime: processingTime.toFixed(2),
       });
     }
-
-    const processingTime = performance.now() - startTime;
-
-    // Log successful ownership validation
-    await logAccessDecision({
-      userId,
-      tenantId,
-      role: userRole,
-      permission: 'OWNERSHIP_CHECK',
-      resourceType: 'RESOURCE',
-      resourceId: req.params.id || 'unknown',
-      decision: true,
-      reason: 'Ownership verified',
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-      requestId: req.id,
-      processingTime: processingTime.toFixed(2),
-    });
-
-    next();
-  } catch (error) {
-    const processingTime = performance.now() - startTime;
-    console.error(`🔐 [OWNERSHIP_ERROR] Ownership validation failed: ${error.message}`);
-
-    res.status(500).json({
-      success: false,
-      error: 'Ownership validation failed',
-      code: 'OWNERSHIP_VALIDATION_FAILED',
-      message: 'Unable to validate resource ownership',
-      processingTime: processingTime.toFixed(2),
-    });
-  }
-};
+  };
 
 /*
  * @middleware requireFeature
@@ -1550,8 +1550,8 @@ exports.requireFeature = (featureKey) => async (req, res, next) => {
       const processingTime = performance.now() - startTime;
       console.log(
         `👑 [SUPER_ADMIN_FEATURE] ${userId} accessing feature ${featureKey} in ${processingTime.toFixed(
-          2,
-        )}ms`,
+          2
+        )}ms`
       );
       return next();
     }
@@ -1668,8 +1668,8 @@ exports.requireMFAForRole = async (req, res, next) => {
       const processingTime = performance.now() - startTime;
       console.log(
         `🔐 [MFA_NOT_REQUIRED] ${userRole} ${userId} does not require MFA in ${processingTime.toFixed(
-          2,
-        )}ms`,
+          2
+        )}ms`
       );
       return next();
     }
@@ -1681,7 +1681,7 @@ exports.requireMFAForRole = async (req, res, next) => {
     if (mfaVerified === 'true') {
       const processingTime = performance.now() - startTime;
       console.log(
-        `🔐 [MFA_VERIFIED] ${userRole} ${userId} MFA verified in ${processingTime.toFixed(2)}ms`,
+        `🔐 [MFA_VERIFIED] ${userRole} ${userId} MFA verified in ${processingTime.toFixed(2)}ms`
       );
       return next();
     }
@@ -1790,29 +1790,91 @@ exports.requireMFAForRole = async (req, res, next) => {
  * @compliance SOX, corporate governance requirements
  * @performance <10ms processing time
  */
-exports.requireSeparationOfDuties = (conflictingRoles = []) => async (req, res, next) => {
-  const startTime = performance.now();
+exports.requireSeparationOfDuties =
+  (conflictingRoles = []) =>
+  async (req, res, next) => {
+    const startTime = performance.now();
 
-  try {
-    // Check if user is authenticated
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required',
-        code: 'AUTHENTICATION_REQUIRED',
-      });
-    }
+    try {
+      // Check if user is authenticated
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+          code: 'AUTHENTICATION_REQUIRED',
+        });
+      }
 
-    const userRole = normalizeRole(req.user.role);
-    const userId = req.user.id;
-    const { tenantId } = req.user;
+      const userRole = normalizeRole(req.user.role);
+      const userId = req.user.id;
+      const { tenantId } = req.user;
 
-    // Check for role conflicts
-    const normalizedConflictingRoles = conflictingRoles.map(normalizeRole);
+      // Check for role conflicts
+      const normalizedConflictingRoles = conflictingRoles.map(normalizeRole);
 
-    if (normalizedConflictingRoles.includes(userRole)) {
+      if (normalizedConflictingRoles.includes(userRole)) {
+        const processingTime = performance.now() - startTime;
+
+        await logAccessDecision({
+          userId,
+          tenantId,
+          role: userRole,
+          permission: 'SOD_CHECK',
+          resourceType: 'ENDPOINT',
+          resourceId: req.path,
+          decision: false,
+          reason: `Separation of Duties violation: ${userRole} cannot perform this action`,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          requestId: req.id,
+        });
+
+        return res.status(403).json({
+          success: false,
+          error: 'Separation of Duties violation',
+          code: 'SOD_VIOLATION',
+          message: `Role ${userRole} has conflicting duties for this operation`,
+          conflictingRoles: normalizedConflictingRoles,
+          processingTime: processingTime.toFixed(2),
+        });
+      }
+
+      // Check for specific SoD rules
+      if (RBAC_CONFIG.POLICIES.SOD.rules.includes('BILLING_APPROVAL_SEPARATION')) {
+        if (userRole === 'FINANCE_OFFICER' && req.path.includes('/billing/approve')) {
+          // Finance officers cannot approve their own bills
+          const billCreator = req.body.createdBy || req.query.createdBy;
+          if (billCreator === userId) {
+            const processingTime = performance.now() - startTime;
+
+            await logAccessDecision({
+              userId,
+              tenantId,
+              role: userRole,
+              permission: 'SOD_CHECK',
+              resourceType: 'BILLING',
+              resourceId: req.params.id || 'unknown',
+              decision: false,
+              reason: 'Finance officer cannot approve own bills',
+              ipAddress: req.ip,
+              userAgent: req.headers['user-agent'],
+              requestId: req.id,
+            });
+
+            return res.status(403).json({
+              success: false,
+              error: 'Separation of Duties violation',
+              code: 'SOD_VIOLATION',
+              message: 'Finance officers cannot approve their own bills',
+              processingTime: processingTime.toFixed(2),
+            });
+          }
+        }
+      }
+
       const processingTime = performance.now() - startTime;
 
+      // Log successful SoD check
       await logAccessDecision({
         userId,
         tenantId,
@@ -1820,88 +1882,28 @@ exports.requireSeparationOfDuties = (conflictingRoles = []) => async (req, res, 
         permission: 'SOD_CHECK',
         resourceType: 'ENDPOINT',
         resourceId: req.path,
-        decision: false,
-        reason: `Separation of Duties violation: ${userRole} cannot perform this action`,
+        decision: true,
+        reason: 'Separation of Duties check passed',
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
         requestId: req.id,
+        processingTime: processingTime.toFixed(2),
       });
 
-      return res.status(403).json({
+      next();
+    } catch (error) {
+      const processingTime = performance.now() - startTime;
+      console.error(`🔐 [SOD_ERROR] Separation of Duties check failed: ${error.message}`);
+
+      res.status(500).json({
         success: false,
-        error: 'Separation of Duties violation',
-        code: 'SOD_VIOLATION',
-        message: `Role ${userRole} has conflicting duties for this operation`,
-        conflictingRoles: normalizedConflictingRoles,
+        error: 'Separation of Duties validation failed',
+        code: 'SOD_VALIDATION_FAILED',
+        message: 'Unable to validate separation of duties',
         processingTime: processingTime.toFixed(2),
       });
     }
-
-    // Check for specific SoD rules
-    if (RBAC_CONFIG.POLICIES.SOD.rules.includes('BILLING_APPROVAL_SEPARATION')) {
-      if (userRole === 'FINANCE_OFFICER' && req.path.includes('/billing/approve')) {
-        // Finance officers cannot approve their own bills
-        const billCreator = req.body.createdBy || req.query.createdBy;
-        if (billCreator === userId) {
-          const processingTime = performance.now() - startTime;
-
-          await logAccessDecision({
-            userId,
-            tenantId,
-            role: userRole,
-            permission: 'SOD_CHECK',
-            resourceType: 'BILLING',
-            resourceId: req.params.id || 'unknown',
-            decision: false,
-            reason: 'Finance officer cannot approve own bills',
-            ipAddress: req.ip,
-            userAgent: req.headers['user-agent'],
-            requestId: req.id,
-          });
-
-          return res.status(403).json({
-            success: false,
-            error: 'Separation of Duties violation',
-            code: 'SOD_VIOLATION',
-            message: 'Finance officers cannot approve their own bills',
-            processingTime: processingTime.toFixed(2),
-          });
-        }
-      }
-    }
-
-    const processingTime = performance.now() - startTime;
-
-    // Log successful SoD check
-    await logAccessDecision({
-      userId,
-      tenantId,
-      role: userRole,
-      permission: 'SOD_CHECK',
-      resourceType: 'ENDPOINT',
-      resourceId: req.path,
-      decision: true,
-      reason: 'Separation of Duties check passed',
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-      requestId: req.id,
-      processingTime: processingTime.toFixed(2),
-    });
-
-    next();
-  } catch (error) {
-    const processingTime = performance.now() - startTime;
-    console.error(`🔐 [SOD_ERROR] Separation of Duties check failed: ${error.message}`);
-
-    res.status(500).json({
-      success: false,
-      error: 'Separation of Duties validation failed',
-      code: 'SOD_VALIDATION_FAILED',
-      message: 'Unable to validate separation of duties',
-      processingTime: processingTime.toFixed(2),
-    });
-  }
-};
+  };
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // RBAC MANAGEMENT FUNCTIONS - THE SACRED ADMINISTRATION
@@ -2115,7 +2117,7 @@ exports.clearPermissionCache = async (options = {}) => {
       if (keys.length > 0) {
         await redisClient.del(...keys);
         console.log(
-          `🔐 [CACHE_CLEARED] Cleared ${keys.length} cache entries for tenant ${tenantId}`,
+          `🔐 [CACHE_CLEARED] Cleared ${keys.length} cache entries for tenant ${tenantId}`
         );
       }
     }

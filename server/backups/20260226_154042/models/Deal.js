@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL MODEL - QUANTUM M&A PIPELINE WITH FORENSIC TRACEABILITY                          ║
   ║ [Production Grade | Competition Act Compliant | 100-Year Evidence Chain]              ║

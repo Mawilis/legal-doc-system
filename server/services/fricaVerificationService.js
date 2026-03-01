@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ███████╗██╗ ██████╗ █████╗    ██╗   ██╗███████╗██████╗ ██╗██████╗ ██╗ █████╗ ██████╗ ██╗ █████╗     ║
 ║ ██╔════╝██║██╔════╝██╔══██╗   ██║   ██║██╔════╝██╔══██╗██║██╔══██╗██║██╔══██╗██╔══██╗██║██╔══██╗    ║
@@ -189,7 +187,8 @@ const decryptSensitiveData = (encryptedData, keyType = 'FICA') => {
  * @returns {String} SHA-256 hash of document
  * @security Cryptographic hash for document integrity
  */
-const generateDocumentHash = (documentBuffer) => crypto.createHash('sha256').update(documentBuffer).digest('hex');
+const generateDocumentHash = (documentBuffer) =>
+  crypto.createHash('sha256').update(documentBuffer).digest('hex');
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 // ║                               SOUTH AFRICAN ID VALIDATION ENGINE                                     ║
@@ -401,7 +400,7 @@ class FicaVerificationService {
           // Handle API errors
           console.error(`FICA API Error: ${error.response.status}`, error.response.data);
           throw new Error(
-            `FICA verification failed: ${error.response.data.message || 'Unknown error'}`,
+            `FICA verification failed: ${error.response.data.message || 'Unknown error'}`
           );
         } else if (error.request) {
           // Handle network errors
@@ -412,7 +411,7 @@ class FicaVerificationService {
           console.error('FICA Service Error:', error.message);
           throw error;
         }
-      },
+      }
     );
   }
 
@@ -482,7 +481,7 @@ class FicaVerificationService {
       // Make API call to external verification service
       const response = await this.apiClient.post(
         FICA_CONFIG.endpoints.identityVerification,
-        requestPayload,
+        requestPayload
       );
 
       // Process verification result
@@ -620,7 +619,7 @@ class FicaVerificationService {
       // Make API call to document verification service
       const response = await this.apiClient.post(
         FICA_CONFIG.endpoints.documentVerification,
-        requestPayload,
+        requestPayload
       );
 
       const verificationResult = {
@@ -666,7 +665,7 @@ class FicaVerificationService {
         documentType,
         metadata,
         tenantId,
-        error,
+        error
       );
     }
   }
@@ -716,7 +715,8 @@ class FicaVerificationService {
           if (documentBuffer.toString('hex', 0, 4) === '25504446') {
             const pdfData = await pdf(documentBuffer);
             return pdfData.text;
-          } if (documentBuffer.toString('utf8', 0, 100).includes('<?xml')) {
+          }
+          if (documentBuffer.toString('utf8', 0, 100).includes('<?xml')) {
             // XML document
             const parser = new xml2js.Parser();
             const result = await parser.parseStringPromise(documentBuffer.toString());
@@ -748,7 +748,7 @@ class FicaVerificationService {
     documentType,
     metadata,
     tenantId,
-    originalError,
+    originalError
   ) {
     // Basic document validation
     const documentHash = generateDocumentHash(documentBuffer);
@@ -941,8 +941,10 @@ class FicaVerificationService {
       // Adjust based on position
       const positions = ['PRESIDENT', 'MINISTER', 'MP', 'JUDGE'];
       if (
-        pepData.matches
-        && pepData.matches.some((match) => positions.some((pos) => match.position && match.position.includes(pos)))
+        pepData.matches &&
+        pepData.matches.some((match) =>
+          positions.some((pos) => match.position && match.position.includes(pos))
+        )
       ) {
         score += 10;
         reasons.push('HIGH_RISK_POSITION');
@@ -976,7 +978,9 @@ class FicaVerificationService {
     // Check against known high-risk names (for testing only)
     const highRiskNames = process.env.HIGH_RISK_NAMES ? process.env.HIGH_RISK_NAMES.split(',') : [];
 
-    const isHighRiskName = highRiskNames.some((riskName) => name.includes(riskName.trim().toUpperCase()));
+    const isHighRiskName = highRiskNames.some((riskName) =>
+      name.includes(riskName.trim().toUpperCase())
+    );
 
     const result = {
       pepScreening: {
@@ -1180,18 +1184,18 @@ class FicaVerificationService {
         'Conduct enhanced due diligence',
         'Obtain senior management approval',
         'Implement enhanced monitoring',
-        'Review client relationship quarterly',
+        'Review client relationship quarterly'
       );
     } else if (riskLevel === 'MEDIUM') {
       recommendations.push(
         'Conduct additional verification',
         'Monitor transactions closely',
-        'Review client relationship semi-annually',
+        'Review client relationship semi-annually'
       );
     } else {
       recommendations.push(
         'Standard monitoring procedures',
-        'Annual review of client relationship',
+        'Annual review of client relationship'
       );
     }
 

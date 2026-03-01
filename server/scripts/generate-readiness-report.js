@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 /* eslint-disable */
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -41,10 +41,11 @@ function getEvidenceFiles() {
     console.log(`⚠️  Evidence directory not found: ${EVIDENCE_DIR}`);
     return [];
   }
-  
-  return fs.readdirSync(EVIDENCE_DIR)
-    .filter(f => f.endsWith('.json'))
-    .map(f => path.join(EVIDENCE_DIR, f));
+
+  return fs
+    .readdirSync(EVIDENCE_DIR)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => path.join(EVIDENCE_DIR, f));
 }
 
 function calculateFileHash(filePath) {
@@ -54,10 +55,10 @@ function calculateFileHash(filePath) {
 
 function calculateMerkleRoot(fileHashes) {
   if (fileHashes.length === 0) return null;
-  
+
   const sorted = [...fileHashes].sort();
   let layer = sorted;
-  
+
   while (layer.length > 1) {
     const newLayer = [];
     for (let i = 0; i < layer.length; i += 2) {
@@ -70,7 +71,7 @@ function calculateMerkleRoot(fileHashes) {
     }
     layer = newLayer;
   }
-  
+
   return layer[0];
 }
 
@@ -82,7 +83,8 @@ function generateBlockchainAnchor(merkleRoot) {
     transactionId: crypto.randomBytes(32).toString('hex'),
     blockNumber: Math.floor(Math.random() * 10000000) + 20000000,
     gasUsed: Math.floor(Math.random() * 500000) + 100000,
-    verifier: '0x' + crypto.createHash('sha256').update('wilsy-oracle').digest('hex').substring(0, 40)
+    verifier:
+      '0x' + crypto.createHash('sha256').update('wilsy-oracle').digest('hex').substring(0, 40),
   };
 }
 
@@ -95,7 +97,7 @@ function extractValueFromEvidence(evidence, moduleName) {
       }
     }
   }
-  
+
   // Map based on module name
   if (moduleName.includes('ma-service')) return 'R3.5B/year';
   if (moduleName.includes('quantum-court')) return 'R25.0M/year';
@@ -104,7 +106,7 @@ function extractValueFromEvidence(evidence, moduleName) {
   if (moduleName.includes('case-analysis')) return 'R4.2M/year';
   if (moduleName.includes('validation-audit')) return 'R2.1M/year';
   if (moduleName.includes('retention-policy')) return 'R1.8M/year';
-  
+
   return 'R1.0M/year';
 }
 
@@ -116,7 +118,7 @@ function extractTypeFromEvidence(moduleName) {
   if (moduleName.includes('case-analysis')) return 'Case Analysis';
   if (moduleName.includes('validation-audit')) return 'Audit Trail';
   if (moduleName.includes('retention-policy')) return 'Retention';
-  
+
   return 'Core Module';
 }
 
@@ -160,7 +162,7 @@ const masterReport = {
     generatedBy: 'Wilsy OS Forensic Engine v1.0',
     testStatus: '88/88 PASSING',
     evidenceCount: evidenceFiles.length,
-    systemVersion: process.env.npm_package_version || 'GEN-10'
+    systemVersion: process.env.npm_package_version || 'GEN-10',
   },
   modules: [],
   summary: {
@@ -170,10 +172,10 @@ const masterReport = {
     averageAccuracy: 0,
     averageMargin: 0,
     totalAuditEntries: 0,
-    totalTestResults: 0
+    totalTestResults: 0,
   },
   blockchain: null,
-  forensicHash: null
+  forensicHash: null,
 };
 
 const fileHashes = [];
@@ -185,24 +187,24 @@ evidenceFiles.forEach((file, index) => {
   const fileName = path.basename(file, '.json');
   const fileHash = calculateFileHash(file);
   fileHashes.push(fileHash);
-  
+
   try {
     const evidence = JSON.parse(fs.readFileSync(file, 'utf8'));
-    
+
     const valueStr = extractValueFromEvidence(evidence, fileName);
-    const valueNum = parseFloat(valueStr.replace(/[^0-9.]/g, '')) * 
-                     (valueStr.includes('B') ? 1000 : 1);
+    const valueNum =
+      parseFloat(valueStr.replace(/[^0-9.]/g, '')) * (valueStr.includes('B') ? 1000 : 1);
     totalValue += valueNum;
-    
+
     const margin = extractMargin(fileName);
     const accuracy = extractAccuracy(fileName);
-    
+
     totalAccuracy += parseFloat(accuracy);
     totalMargin += parseFloat(margin);
-    
+
     const auditCount = evidence.auditEntries?.length || 0;
     const resultsCount = evidence.results?.length || 0;
-    
+
     const moduleReport = {
       name: fileName,
       evidenceFile: file,
@@ -215,17 +217,16 @@ evidenceFiles.forEach((file, index) => {
       accuracy: accuracy,
       description: `${extractTypeFromEvidence(fileName)} with ${accuracy} accuracy`,
       auditEntries: auditCount,
-      results: resultsCount
+      results: resultsCount,
     };
-    
+
     masterReport.modules.push(moduleReport);
-    
+
     console.log(`✅ Module ${index + 1}: ${fileName}`);
     console.log(`   • Hash: ${fileHash.substring(0, 16)}...`);
     console.log(`   • Value: ${valueStr}`);
     console.log(`   • Type: ${extractTypeFromEvidence(fileName)}`);
     console.log(`   • Audit Entries: ${auditCount}\n`);
-    
   } catch (error) {
     console.error(`❌ Error processing ${file}:`, error.message);
   }
@@ -239,7 +240,7 @@ masterReport.summary = {
   averageAccuracy: (totalAccuracy / masterReport.modules.length).toFixed(1) + '%',
   averageMargin: (totalMargin / masterReport.modules.length).toFixed(1) + '%',
   totalAuditEntries: masterReport.modules.reduce((sum, m) => sum + m.auditEntries, 0),
-  totalTestResults: masterReport.modules.reduce((sum, m) => sum + m.results, 0)
+  totalTestResults: masterReport.modules.reduce((sum, m) => sum + m.results, 0),
 };
 
 // Generate merkle root
@@ -248,9 +249,7 @@ masterReport.blockchain = generateBlockchainAnchor(merkleRoot);
 
 // Generate final forensic hash
 const reportString = JSON.stringify(masterReport, null, 2);
-masterReport.forensicHash = crypto.createHash('sha256')
-  .update(reportString)
-  .digest('hex');
+masterReport.forensicHash = crypto.createHash('sha256').update(reportString).digest('hex');
 
 // Save master report
 fs.writeFileSync(MASTER_REPORT, JSON.stringify(masterReport, null, 2));
@@ -287,9 +286,12 @@ const mdReport = `# 🛡️ WILSY OS: QUANTUM READINESS FORENSIC REPORT
 
 | Module | Type | Value | Margin | Accuracy | SHA256 | Verified |
 |:-------|:-----|------:|-------:|---------:|:-------|:--------:|
-${masterReport.modules.map(m => 
-  `| **${m.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}** | ${m.type} | ${m.value} | ${m.margin} | ${m.accuracy} | \`${m.sha256.substring(0, 16)}...\` | ✅ |`
-).join('\n')}
+${masterReport.modules
+  .map(
+    (m) =>
+      `| **${m.name.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}** | ${m.type} | ${m.value} | ${m.margin} | ${m.accuracy} | \`${m.sha256.substring(0, 16)}...\` | ✅ |`
+  )
+  .join('\n')}
 
 ---
 
@@ -307,7 +309,7 @@ ${masterReport.modules.map(m =>
 
 ## 💰 ECONOMIC VALUE BREAKDOWN
 
-${masterReport.modules.map(m => `- **${m.type}**: ${m.value} (${m.margin} margin)`).join('\n')}
+${masterReport.modules.map((m) => `- **${m.type}**: ${m.value} (${m.margin} margin)`).join('\n')}
 
 **TOTAL SYSTEM VALUE: ${masterReport.summary.totalValue}**
 

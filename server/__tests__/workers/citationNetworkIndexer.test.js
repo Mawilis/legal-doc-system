@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ CITATION NETWORK INDEXER TESTS - INVESTOR DUE DILIGENCE - $85M TARGET    ║
   ║ 100% coverage | Graph AI | Network Effects | Unassailable Moat           ║
@@ -131,7 +129,7 @@ jest.mock(
     generateEdgeEmbedding: jest.fn().mockResolvedValue(Array(128).fill(0.1)),
     findSimilarNodes: jest.fn().mockResolvedValue([]),
   }),
-  { virtual: true },
+  { virtual: true }
 );
 
 // Import after mocks
@@ -221,9 +219,9 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
     it('should handle citation not found', async () => {
       Citation.findById.mockResolvedValue(null);
 
-      await expect(citationNetworkIndexer.indexCitation(mockCitationId, mockTenantId)).rejects.toThrow(
-        'Citation not found',
-      );
+      await expect(
+        citationNetworkIndexer.indexCitation(mockCitationId, mockTenantId)
+      ).rejects.toThrow('Citation not found');
     });
 
     it('should handle missing source or target', async () => {
@@ -232,15 +230,19 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
         citingCase: null,
       });
 
-      await expect(citationNetworkIndexer.indexCitation(mockCitationId, mockTenantId)).rejects.toThrow(
-        'Citation missing source or target',
-      );
+      await expect(
+        citationNetworkIndexer.indexCitation(mockCitationId, mockTenantId)
+      ).rejects.toThrow('Citation missing source or target');
     });
   });
 
   describe('2. Batch Indexing', () => {
     it('should batch index multiple citations', async () => {
-      const citationIds = [new mongoose.Types.ObjectId(), new mongoose.Types.ObjectId(), new mongoose.Types.ObjectId()];
+      const citationIds = [
+        new mongoose.Types.ObjectId(),
+        new mongoose.Types.ObjectId(),
+        new mongoose.Types.ObjectId(),
+      ];
 
       Citation.findById
         .mockResolvedValueOnce(mockCitation)
@@ -261,7 +263,9 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
     it('should handle failures in batch indexing', async () => {
       const citationIds = [new mongoose.Types.ObjectId(), new mongoose.Types.ObjectId()];
 
-      Citation.findById.mockResolvedValueOnce(mockCitation).mockRejectedValueOnce(new Error('Database error'));
+      Citation.findById
+        .mockResolvedValueOnce(mockCitation)
+        .mockRejectedValueOnce(new Error('Database error'));
 
       const result = await citationNetworkIndexer.batchIndexCitations(citationIds, mockTenantId);
 
@@ -497,7 +501,10 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
 
   describe('7. Queue Management', () => {
     it('should queue citation for indexing', async () => {
-      const result = await citationNetworkIndexer.queueCitationForIndexing(mockCitationId, mockTenantId);
+      const result = await citationNetworkIndexer.queueCitationForIndexing(
+        mockCitationId,
+        mockTenantId
+      );
 
       expect(result.jobId).toBeDefined();
       expect(result.citationId).toBe(mockCitationId.toString());
@@ -730,7 +737,10 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'citation-network-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'citation-network-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'citation-network-evidence.json'))
@@ -739,7 +749,10 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'citation-network-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'citation-network-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

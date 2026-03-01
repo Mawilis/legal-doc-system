@@ -1,4 +1,4 @@
-/* eslint-env mocha */
+#!/* eslint-env mocha */
 /* eslint-disable */
 
 import { expect } from 'chai';
@@ -8,36 +8,36 @@ import { caseAnalysisService } from '../../../services/case-analysis/caseAnalysi
 import Case from '../../../models/Case.js';
 import Precedent from '../../../models/Precedent.js';
 
-describe('Case Analysis Service - AI-Powered Legal Research', function() {
+describe('Case Analysis Service - AI-Powered Legal Research', function () {
   const testTenantId = 'test-tenant-12345678';
   const testCaseId = new mongoose.Types.ObjectId();
   const testUserId = new mongoose.Types.ObjectId();
 
   let sandbox;
 
-  before(async function() {
+  before(async function () {
     // Connect to test database
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/legal_doc_test');
     }
   });
 
-  after(async function() {
+  after(async function () {
     await mongoose.disconnect();
   });
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     sandbox = sinon.createSandbox();
     await Case.deleteMany({});
     await Precedent.deleteMany({});
   });
 
-  afterEach(async function() {
+  afterEach(async function () {
     sandbox.restore();
   });
 
-  describe('🔍 Case Analysis', function() {
-    it('should analyze case and return insights', async function() {
+  describe('🔍 Case Analysis', function () {
+    it('should analyze case and return insights', async function () {
       // Create test case
       const testCase = new Case({
         tenantId: testTenantId,
@@ -45,7 +45,7 @@ describe('Case Analysis Service - AI-Powered Legal Research', function() {
         title: 'Smith v Minister of Home Affairs',
         court: 'HIGH_COURT',
         client: { name: 'John Smith' },
-        audit: { createdBy: testUserId }
+        audit: { createdBy: testUserId },
       });
       await testCase.save();
 
@@ -55,7 +55,7 @@ describe('Case Analysis Service - AI-Powered Legal Research', function() {
         keyIssues: ['Citizenship', 'Constitutional Rights', 'Administrative Justice'],
         relevantPrecedents: ['S v Makwanyane 1995 (3) SA 391 (CC)'],
         predictedOutcome: 'Likely in favor of applicant',
-        confidence: 0.85
+        confidence: 0.85,
       };
 
       sandbox.stub(caseAnalysisService, 'analyzeCase').resolves(mockAnalysis);
@@ -70,7 +70,7 @@ describe('Case Analysis Service - AI-Powered Legal Research', function() {
       expect(result.confidence).to.be.at.least(0.8);
     });
 
-    it('should find similar precedents', async function() {
+    it('should find similar precedents', async function () {
       // Create test precedents
       const precedents = [
         {
@@ -79,7 +79,7 @@ describe('Case Analysis Service - AI-Powered Legal Research', function() {
           citation: '1995 (2) SA 642 (CC)',
           court: 'CONSTITUTIONAL_COURT',
           summary: 'Fair trial rights',
-          tags: ['criminal', 'fair trial', 'constitutional']
+          tags: ['criminal', 'fair trial', 'constitutional'],
         },
         {
           tenantId: testTenantId,
@@ -87,8 +87,8 @@ describe('Case Analysis Service - AI-Powered Legal Research', function() {
           citation: '1995 (3) SA 391 (CC)',
           court: 'CONSTITUTIONAL_COURT',
           summary: 'Death penalty unconstitutional',
-          tags: ['criminal', 'death penalty', 'constitutional']
-        }
+          tags: ['criminal', 'death penalty', 'constitutional'],
+        },
       ];
 
       await Precedent.insertMany(precedents);
@@ -101,15 +101,15 @@ describe('Case Analysis Service - AI-Powered Legal Research', function() {
     });
   });
 
-  describe('📊 Risk Assessment', function() {
-    it('should calculate case risk score', async function() {
+  describe('📊 Risk Assessment', function () {
+    it('should calculate case risk score', async function () {
       const caseData = {
         court: 'HIGH_COURT',
         matterType: 'constitutional',
         hasPrecedent: true,
         jurisdiction: 'ZA',
         parties: 2,
-        documents: 5
+        documents: 5,
       };
 
       const riskScore = await caseAnalysisService.calculateRiskScore(caseData);
@@ -121,13 +121,13 @@ describe('Case Analysis Service - AI-Powered Legal Research', function() {
     });
   });
 
-  describe('💰 Cost Estimation', function() {
-    it('should estimate case costs', async function() {
+  describe('💰 Cost Estimation', function () {
+    it('should estimate case costs', async function () {
       const caseParams = {
         court: 'HIGH_COURT',
         estimatedDuration: 12, // months
         numberOfHearings: 5,
-        expertsRequired: 2
+        expertsRequired: 2,
       };
 
       const costEstimate = await caseAnalysisService.estimateCaseCosts(caseParams);
@@ -139,10 +139,10 @@ describe('Case Analysis Service - AI-Powered Legal Research', function() {
     });
   });
 
-  describe('📈 Investor Metrics', function() {
-    it('should demonstrate R4.2M/year value', function() {
+  describe('📈 Investor Metrics', function () {
+    it('should demonstrate R4.2M/year value', function () {
       const annualSavings = 4200000;
-      
+
       console.log('\n📊 INVESTOR METRICS - CASE ANALYSIS SERVICE:');
       console.log('   • Annual Savings/Client: R4,200,000');
       console.log('   • 92% margin on AI-powered research');

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ================================================================================
 🧬 QUANTUM DATA SUBJECT CONSCIOUSNESS: IMMORTAL PERSONAL IDENTITY NEXUS 🧬
 ================================================================================
@@ -84,7 +82,7 @@ require('dotenv').config();
   console.log('   🏛️  All 11 Official Languages: SUPPORTED');
   console.log('   🔐 Encryption Key: CONFIGURED');
   console.log('   👥 Information Officer: CONFIGURED');
-}());
+})();
 
 // =============================================================================
 // 🔐 QUANTUM ENCRYPTION UTILITIES - DATA SUBJECT PROTECTION
@@ -146,7 +144,7 @@ class DataSubjectEncryptionVault {
     return {
       pseudonym: `DS-${pseudonymHash.substring(0, 8)}-${pseudonymHash.substring(
         8,
-        16,
+        16
       )}-${pseudonymHash.substring(16, 24)}`,
       salt,
       algorithm: 'SHA-256',
@@ -458,7 +456,7 @@ const dataSubjectSchema = new mongoose.Schema(
       validate: {
         validator(v) {
           return /^tenant_[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(
-            v,
+            v
           );
         },
         message: 'Invalid tenant ID format',
@@ -1306,7 +1304,7 @@ const dataSubjectSchema = new mongoose.Schema(
       maxVariable: 'punct',
       backwards: false,
     },
-  },
+  }
 );
 
 // =============================================================================
@@ -1345,7 +1343,7 @@ dataSubjectSchema.index(
     },
     default_language: 'english',
     language_override: 'languageSupport.preferredLanguage',
-  },
+  }
 );
 
 // =============================================================================
@@ -1357,9 +1355,9 @@ dataSubjectSchema.virtual('isActive').get(function () {
 
 dataSubjectSchema.virtual('requiresVerification').get(function () {
   return (
-    this.securityVerification.verificationStatus === 'UNVERIFIED'
-    || (this.demographicInformation.age < 18
-      && this.securityVerification.verificationStatus !== 'FICA_COMPLIANT')
+    this.securityVerification.verificationStatus === 'UNVERIFIED' ||
+    (this.demographicInformation.age < 18 &&
+      this.securityVerification.verificationStatus !== 'FICA_COMPLIANT')
   );
 });
 
@@ -1369,8 +1367,9 @@ dataSubjectSchema.virtual('hasSpecialInformation').get(function () {
 
 dataSubjectSchema.virtual('multilingualRightsSummary').get(function () {
   const languageCode = this.languageSupport.preferredLanguage;
-  const rightsSummary = ConstitutionalLanguageConstants.RIGHTS_SUMMARY_TEMPLATES[languageCode]
-    || ConstitutionalLanguageConstants.RIGHTS_SUMMARY_TEMPLATES.en;
+  const rightsSummary =
+    ConstitutionalLanguageConstants.RIGHTS_SUMMARY_TEMPLATES[languageCode] ||
+    ConstitutionalLanguageConstants.RIGHTS_SUMMARY_TEMPLATES.en;
 
   return {
     language: {
@@ -1378,8 +1377,8 @@ dataSubjectSchema.virtual('multilingualRightsSummary').get(function () {
       name: rightsSummary.languageName,
       nativeName: rightsSummary.nativeName,
       constitutionalStatus:
-        ConstitutionalLanguageConstants.OFFICIAL_LANGUAGES[languageCode]?.constitutionalStatus
-        || 'Official Language',
+        ConstitutionalLanguageConstants.OFFICIAL_LANGUAGES[languageCode]?.constitutionalStatus ||
+        'Official Language',
     },
     rights: rightsSummary,
     popiaReferences: ConstitutionalLanguageConstants.POPIA_SECTION_REFERENCES,
@@ -1447,8 +1446,8 @@ const dataSubjectValidationSchema = Joi.object({
             'SEX_LIFE',
             'BIOMETRIC_DATA',
             'CRIMINAL_BEHAVIOUR',
-            'ETHNIC_ORIGIN',
-          ),
+            'ETHNIC_ORIGIN'
+          )
         )
         .default([]),
     }).default(),
@@ -1475,7 +1474,7 @@ dataSubjectSchema.statics.createQuantumDataSubject = async function (subjectData
 
     if (error) {
       throw new Error(
-        `Data subject validation failed: ${error.details.map((d) => d.message).join(', ')}`,
+        `Data subject validation failed: ${error.details.map((d) => d.message).join(', ')}`
       );
     }
 
@@ -1484,24 +1483,24 @@ dataSubjectSchema.statics.createQuantumDataSubject = async function (subjectData
     const pseudonymData = DataSubjectEncryptionVault.generatePseudonym(
       `${value.identityInformation.firstName} ${value.identityInformation.lastName}`,
       value.identityInformation.dateOfBirth,
-      value.tenantId,
+      value.tenantId
     );
 
     // 🔐 Step 3: Encrypt sensitive identity information
     const encryptedIdentity = DataSubjectEncryptionVault.encryptSensitiveData(
       JSON.stringify(value.identityInformation),
-      subjectId,
+      subjectId
     );
 
     const identityHash = DataSubjectEncryptionVault.generateIdentityHash(
       value.identityInformation.identityNumber || value.identityInformation.passportNumber,
-      subjectId,
+      subjectId
     );
 
     // 📞 Step 4: Encrypt contact information
     const encryptedContact = DataSubjectEncryptionVault.encryptSensitiveData(
       JSON.stringify(value.contactInformation),
-      subjectId,
+      subjectId
     );
 
     // 🎂 Step 5: Calculate age and age category
@@ -1611,7 +1610,7 @@ dataSubjectSchema.statics.createQuantumDataSubject = async function (subjectData
               pseudonym: pseudonymData.pseudonym,
               identityHash,
               timestamp: new Date().toISOString(),
-            }),
+            })
           )
           .digest('hex'),
         integrityCheckTimestamp: new Date(),
@@ -1654,7 +1653,7 @@ dataSubjectSchema.statics.createQuantumDataSubject = async function (subjectData
 dataSubjectSchema.statics.createDataSubjectAudit = async function (
   dataSubject,
   action,
-  session = null,
+  session = null
 ) {
   try {
     const AuditLog = mongoose.model('AuditLog');
@@ -1685,7 +1684,7 @@ dataSubjectSchema.statics.createDataSubjectAudit = async function (
           createdAt: new Date(),
         },
       ],
-      { session },
+      { session }
     );
   } catch (error) {
     console.error('Data subject audit creation failed:', error);
@@ -1709,7 +1708,7 @@ dataSubjectSchema.statics.findByPseudonym = async function (pseudonym, tenantId)
     tenantId,
     'status.current': { $ne: 'DELETED' },
   }).select(
-    '-identityInformation.encryptedData -contactInformation.encryptedData -demographicInformation.encryptedDemographics',
+    '-identityInformation.encryptedData -contactInformation.encryptedData -demographicInformation.encryptedDemographics'
   );
 };
 
@@ -1729,7 +1728,7 @@ dataSubjectSchema.statics.findByIdentityHash = async function (identityHash, ten
     tenantId,
     'status.current': { $ne: 'DELETED' },
   }).select(
-    '-identityInformation.encryptedData -contactInformation.encryptedData -demographicInformation.encryptedDemographics',
+    '-identityInformation.encryptedData -contactInformation.encryptedData -demographicInformation.encryptedDemographics'
   );
 };
 
@@ -1803,7 +1802,7 @@ dataSubjectSchema.statics.updateVerificationStatus = async function (
   subjectId,
   verificationStatus,
   verificationData = {},
-  session = null,
+  session = null
 ) {
   try {
     const updateData = {
@@ -1824,13 +1823,14 @@ dataSubjectSchema.statics.updateVerificationStatus = async function (
     if (verificationStatus === 'FICA_COMPLIANT') {
       updateData['securityVerification.ficaStatus.verified'] = true;
       updateData['securityVerification.ficaStatus.verificationDate'] = new Date();
-      updateData['securityVerification.ficaStatus.riskCategory'] = verificationData.riskCategory || 'LOW';
+      updateData['securityVerification.ficaStatus.riskCategory'] =
+        verificationData.riskCategory || 'LOW';
     }
 
     const result = await this.findOneAndUpdate(
       { subjectId },
       { $set: updateData },
-      { new: true, session },
+      { new: true, session }
     );
 
     if (!result) {
@@ -1870,7 +1870,7 @@ dataSubjectSchema.statics.updateVerificationStatus = async function (
 dataSubjectSchema.methods.exerciseRight = async function (
   rightType,
   requestData = {},
-  session = null,
+  session = null
 ) {
   try {
     // 🛡️ Quantum Security: Safe property access with prototype pollution protection
@@ -1890,7 +1890,7 @@ dataSubjectSchema.methods.exerciseRight = async function (
     ];
     if (!validRights.includes(rightType)) {
       throw new Error(
-        `Invalid right type: ${rightType}. Must be one of: ${validRights.join(', ')}`,
+        `Invalid right type: ${rightType}. Must be one of: ${validRights.join(', ')}`
       );
     }
 
@@ -2143,7 +2143,7 @@ dataSubjectSchema.methods.updateContactInformation = async function (contactData
     // Encrypt new contact information
     const encryptedContact = DataSubjectEncryptionVault.encryptSensitiveData(
       JSON.stringify(contactData),
-      this.subjectId,
+      this.subjectId
     );
 
     // Update contact information
@@ -2263,9 +2263,9 @@ dataSubjectSchema.pre('save', function (next) {
 
   // Update quantum integrity hash on significant changes
   if (
-    this.isModified('identityInformation')
-    || this.isModified('contactInformation')
-    || this.isModified('demographicInformation')
+    this.isModified('identityInformation') ||
+    this.isModified('contactInformation') ||
+    this.isModified('demographicInformation')
   ) {
     this.quantumIntegrity.previousHash = this.quantumIntegrity.dataHash;
 

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * =============================================================================
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/Sheriff.js
  * =============================================================================
@@ -121,7 +119,7 @@ const decryptField = async (encryptedObject) => {
   const decipher = crypto.createDecipheriv(
     'aes-256-gcm',
     key,
-    Buffer.from(encryptedObject.iv, 'hex'),
+    Buffer.from(encryptedObject.iv, 'hex')
   );
 
   decipher.setAuthTag(Buffer.from(encryptedObject.authTag, 'hex'));
@@ -298,10 +296,10 @@ const sheriffSchema = new mongoose.Schema(
             for (const point of polygon) {
               const [lng, lat] = point;
               if (
-                lng < SA_BOUNDS.minLng
-                || lng > SA_BOUNDS.maxLng
-                || lat < SA_BOUNDS.minLat
-                || lat > SA_BOUNDS.maxLat
+                lng < SA_BOUNDS.minLng ||
+                lng > SA_BOUNDS.maxLng ||
+                lat < SA_BOUNDS.minLat ||
+                lat > SA_BOUNDS.maxLat
               ) {
                 return false;
               }
@@ -338,10 +336,10 @@ const sheriffSchema = new mongoose.Schema(
             if (!v || v.length !== 2) return false;
             const [lng, lat] = v;
             return (
-              lng >= SA_BOUNDS.minLng
-              && lng <= SA_BOUNDS.maxLng
-              && lat >= SA_BOUNDS.minLat
-              && lat <= SA_BOUNDS.maxLat
+              lng >= SA_BOUNDS.minLng &&
+              lng <= SA_BOUNDS.maxLng &&
+              lat >= SA_BOUNDS.minLat &&
+              lat <= SA_BOUNDS.maxLat
             );
           },
           message: 'Location must be within South African territory',
@@ -595,7 +593,7 @@ const sheriffSchema = new mongoose.Schema(
       },
     },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // =============================================================================
@@ -616,7 +614,7 @@ sheriffSchema.index(
     name: 'retentionPolicyIndex',
     background: true,
     comment: 'Compliance Quantum: Companies Act 2008 - 10 year retention',
-  },
+  }
 );
 
 // =============================================================================
@@ -635,9 +633,10 @@ sheriffSchema.virtual('isBadgeValid').get(function () {
 
 sheriffSchema.virtual('operationalEfficiency').get(function () {
   const ageInDays = Math.max(1, (Date.now() - this.createdAt) / (1000 * 60 * 60 * 24));
-  const efficiency = (this.stats.successfulServes / ageInDays)
-    * (this.stats.customerSatisfactionScore / 5)
-    * (this.isOnline ? 1.2 : 0.8);
+  const efficiency =
+    (this.stats.successfulServes / ageInDays) *
+    (this.stats.customerSatisfactionScore / 5) *
+    (this.isOnline ? 1.2 : 0.8);
   return parseFloat(efficiency.toFixed(2));
 });
 
@@ -728,7 +727,7 @@ sheriffSchema.pre('save', async function (next) {
 sheriffSchema.statics.findNearestAvailableSheriff = async function (
   coordinates,
   tenantId,
-  options = {},
+  options = {}
 ) {
   const {
     maxDistance = 5000, // meters
@@ -797,7 +796,7 @@ sheriffSchema.statics.verifyWithDOJCD = async function (sheriffId) {
           'Content-Type': 'application/json',
         },
         timeout: 10000,
-      },
+      }
     );
 
     return {
@@ -877,10 +876,10 @@ sheriffSchema.statics.generateServiceReport = async function (startDate, endDate
 sheriffSchema.methods.updateLocation = async function (latitude, longitude, metadata = {}) {
   // Validate coordinates within South Africa
   if (
-    longitude < SA_BOUNDS.minLng
-    || longitude > SA_BOUNDS.maxLng
-    || latitude < SA_BOUNDS.minLat
-    || latitude > SA_BOUNDS.maxLat
+    longitude < SA_BOUNDS.minLng ||
+    longitude > SA_BOUNDS.maxLng ||
+    latitude < SA_BOUNDS.minLat ||
+    latitude > SA_BOUNDS.maxLat
   ) {
     throw new Error('Coordinates outside South African jurisdiction');
   }

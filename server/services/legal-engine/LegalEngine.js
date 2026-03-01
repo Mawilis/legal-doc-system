@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*= ==========================================================================
+#!/*= ==========================================================================
   WILSY OS - SUPREME ARCHITECT GENERATED FILE
   ===========================================================================
   ██╗     ███████╗ ██████╗ █████╗ ██╗      ███████╗███╗   ██╗ ██████╗ ██╗███╗   ██╗███████╗
@@ -384,11 +382,12 @@ class LegalEngine {
 
     // Validate consent timestamp (must be recent for certain data categories)
     const consentAge = Date.now() - new Date(dataSubject.consentTimestamp).getTime();
-    const maxConsentAge = {
-      SENSITIVE_PERSONAL_INFORMATION: 365 * 24 * 60 * 60 * 1000, // 1 year
-      HEALTH_DATA: 180 * 24 * 60 * 60 * 1000, // 6 months
-      PERSONAL_INFORMATION: 2 * 365 * 24 * 60 * 60 * 1000, // 2 years
-    }[dataCategory] || 2 * 365 * 24 * 60 * 60 * 1000;
+    const maxConsentAge =
+      {
+        SENSITIVE_PERSONAL_INFORMATION: 365 * 24 * 60 * 60 * 1000, // 1 year
+        HEALTH_DATA: 180 * 24 * 60 * 60 * 1000, // 6 months
+        PERSONAL_INFORMATION: 2 * 365 * 24 * 60 * 60 * 1000, // 2 years
+      }[dataCategory] || 2 * 365 * 24 * 60 * 60 * 1000;
 
     if (consentAge > maxConsentAge) {
       return {
@@ -399,7 +398,7 @@ class LegalEngine {
         violations: [`POPIA §11: Consent expired for ${dataCategory}`],
         remediationSteps: ['Obtain renewed consent from data subject'],
         validationDetails: `Consent age ${Math.floor(
-          consentAge / (24 * 60 * 60 * 1000),
+          consentAge / (24 * 60 * 60 * 1000)
         )} days exceeds maximum ${Math.floor(maxConsentAge / (24 * 60 * 60 * 1000))} days`,
       };
     }
@@ -449,12 +448,13 @@ class LegalEngine {
     }
 
     const recordAge = currentDate - new Date(record.createdAt).getTime();
-    const maxRetentionPeriod = {
-      PERSONAL_INFORMATION: 365 * 24 * 60 * 60 * 1000, // 1 year
-      HEALTH_DATA: 5 * 365 * 24 * 60 * 60 * 1000, // 5 years
-      CRIMINAL_RECORDS: 10 * 365 * 24 * 60 * 60 * 1000, // 10 years
-      FINANCIAL_DATA: 7 * 365 * 24 * 60 * 60 * 1000, // 7 years
-    }[record.dataCategory] || 365 * 24 * 60 * 60 * 1000;
+    const maxRetentionPeriod =
+      {
+        PERSONAL_INFORMATION: 365 * 24 * 60 * 60 * 1000, // 1 year
+        HEALTH_DATA: 5 * 365 * 24 * 60 * 60 * 1000, // 5 years
+        CRIMINAL_RECORDS: 10 * 365 * 24 * 60 * 60 * 1000, // 10 years
+        FINANCIAL_DATA: 7 * 365 * 24 * 60 * 60 * 1000, // 7 years
+      }[record.dataCategory] || 365 * 24 * 60 * 60 * 1000;
 
     const retentionExceeded = recordAge > maxRetentionPeriod;
 
@@ -493,7 +493,7 @@ class LegalEngine {
 
     // Count valid signatures
     const signedParties = contract.parties.filter(
-      (party) => party.signed && party.signatureTimestamp,
+      (party) => party.signed && party.signatureTimestamp
     );
 
     const signatureCount = signedParties.length;
@@ -503,16 +503,18 @@ class LegalEngine {
     const signatureTypeValid = contract.signatureType === signatureType;
 
     // Check for high-value contracts requiring advanced signatures
-    const requiresAdvancedSignature = contract.value > 500000 || contract.contractType === 'SALE_OF_IMMOVABLE_PROPERTY';
+    const requiresAdvancedSignature =
+      contract.value > 500000 || contract.contractType === 'SALE_OF_IMMOVABLE_PROPERTY';
 
-    const advancedSignatureValid = !requiresAdvancedSignature || contract.signatureType === 'ADVANCED_ELECTRONIC_SIGNATURE';
+    const advancedSignatureValid =
+      !requiresAdvancedSignature || contract.signatureType === 'ADVANCED_ELECTRONIC_SIGNATURE';
 
     const compliant = hasRequiredSignatures && signatureTypeValid && advancedSignatureValid;
 
     const violations = [];
     if (!hasRequiredSignatures) {
       violations.push(
-        `ECT Act §13: Requires ${minimumSignatures} signatures, found ${signatureCount}`,
+        `ECT Act §13: Requires ${minimumSignatures} signatures, found ${signatureCount}`
       );
     }
     if (!signatureTypeValid) {
@@ -520,7 +522,7 @@ class LegalEngine {
     }
     if (!advancedSignatureValid) {
       violations.push(
-        'ECT Act §13: Advanced electronic signature required for high-value contracts',
+        'ECT Act §13: Advanced electronic signature required for high-value contracts'
       );
     }
 
@@ -641,7 +643,7 @@ class LegalEngine {
     // Check if data has tenantId that matches engine tenant
     if (data.tenantId && data.tenantId !== this.tenantId) {
       throw new Error(
-        `Tenant context mismatch: engine configured for ${this.tenantId}, data belongs to ${data.tenantId}`,
+        `Tenant context mismatch: engine configured for ${this.tenantId}, data belongs to ${data.tenantId}`
       );
     }
 

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ⚡ TENANT SOVEREIGNTY SCOPE MIDDLEWARE v11.1.0
  * File: server/middleware/tenantScope.js
  *
@@ -134,7 +132,7 @@ const resolveAuditService = () => {
 
     _auditService = async (req, auditData) => {
       process.stderr.write(
-        `📝 [AUDIT_STUB] ${auditData.action}: ${JSON.stringify(auditData.metadata)}\n`,
+        `📝 [AUDIT_STUB] ${auditData.action}: ${JSON.stringify(auditData.metadata)}\n`
       );
     };
 
@@ -361,9 +359,7 @@ const tenantScope = async (req, res, next) => {
       });
     }
 
-    const {
-      role, tenantId, email, _id: userId,
-    } = req.user;
+    const { role, tenantId, email, _id: userId } = req.user;
     const normalizedRole = normalizeRole(role);
 
     // ====================
@@ -381,7 +377,7 @@ const tenantScope = async (req, res, next) => {
 
         if (!tenantValidation.valid) {
           process.stderr.write(
-            `❌ [OVERRIDE_DENIED] Sovereign ${email} attempted invalid override: ${tenantValidation.reason}\n`,
+            `❌ [OVERRIDE_DENIED] Sovereign ${email} attempted invalid override: ${tenantValidation.reason}\n`
           );
 
           await auditService(req, {
@@ -408,7 +404,7 @@ const tenantScope = async (req, res, next) => {
 
         // Log the sovereign override with high-court fidelity
         process.stdout.write(
-          `🕵️ [SOVEREIGN_OVERRIDE] ${normalizedRole} ${email} accessing Tenant: ${overrideId} (${tenantValidation.tenant.name})\n`,
+          `🕵️ [SOVEREIGN_OVERRIDE] ${normalizedRole} ${email} accessing Tenant: ${overrideId} (${tenantValidation.tenant.name})\n`
         );
 
         // Create immutable sovereignty filter
@@ -658,7 +654,7 @@ const tenantScope = async (req, res, next) => {
       });
     } catch (auditError) {
       process.stderr.write(
-        `💥 [AUDIT_FAILURE] Failed to record sovereignty failure: ${auditError.message}\n`,
+        `💥 [AUDIT_FAILURE] Failed to record sovereignty failure: ${auditError.message}\n`
       );
     }
 
@@ -688,7 +684,7 @@ const requireTenantScope = (req, res, next) => {
     const traceId = req.headers['x-request-id'] || generateScopeTraceId();
 
     process.stderr.write(
-      `🚨 [SCOPE_VIOLATION] Attempted data access without tenant scope [Trace: ${traceId}]\n`,
+      `🚨 [SCOPE_VIOLATION] Attempted data access without tenant scope [Trace: ${traceId}]\n`
     );
 
     return res.status(500).json({
@@ -709,39 +705,41 @@ const requireTenantScope = (req, res, next) => {
  * @param {Object} baseQuery - Base query object
  * @returns {Function} Middleware function
  */
-const enrichQueryWithTenantScope = (baseQuery = {}) => (req, res, next) => {
-  try {
-    if (!req.tenantFilter) {
-      throw new Error('Tenant scope not applied');
+const enrichQueryWithTenantScope =
+  (baseQuery = {}) =>
+  (req, res, next) => {
+    try {
+      if (!req.tenantFilter) {
+        throw new Error('Tenant scope not applied');
+      }
+
+      // Create enriched query with tenant scope
+      req.enrichedQuery = {
+        ...baseQuery,
+        ...req.tenantFilter,
+      };
+
+      // Remove internal integrity fields from query
+      delete req.enrichedQuery._integrity;
+      delete req.enrichedQuery._override;
+
+      next();
+    } catch (error) {
+      const traceId = req.headers['x-request-id'] || generateScopeTraceId();
+
+      process.stderr.write(
+        `🚨 [QUERY_ENRICHMENT] Failed to enrich query: ${error.message} [Trace: ${traceId}]\n`
+      );
+
+      return res.status(500).json({
+        success: false,
+        code: SCOPE_VIOLATION_CODES.DATA_SOVEREIGNTY_BREACH,
+        message: 'Failed to apply tenant scope to database query',
+        traceId,
+        timestamp: new Date().toISOString(),
+      });
     }
-
-    // Create enriched query with tenant scope
-    req.enrichedQuery = {
-      ...baseQuery,
-      ...req.tenantFilter,
-    };
-
-    // Remove internal integrity fields from query
-    delete req.enrichedQuery._integrity;
-    delete req.enrichedQuery._override;
-
-    next();
-  } catch (error) {
-    const traceId = req.headers['x-request-id'] || generateScopeTraceId();
-
-    process.stderr.write(
-      `🚨 [QUERY_ENRICHMENT] Failed to enrich query: ${error.message} [Trace: ${traceId}]\n`,
-    );
-
-    return res.status(500).json({
-      success: false,
-      code: SCOPE_VIOLATION_CODES.DATA_SOVEREIGNTY_BREACH,
-      message: 'Failed to apply tenant scope to database query',
-      traceId,
-      timestamp: new Date().toISOString(),
-    });
-  }
-};
+  };
 
 // ============================================================================
 // SOVEREIGNTY UTILITY FUNCTIONS

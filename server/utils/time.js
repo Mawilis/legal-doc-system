@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔══════════════════════════════════════════════════════════════════════════════╗
   ║ TIME - QUANTUM TEMPORAL ORCHESTRATOR                                        ║
   ║ Chronosphere of Legal Certainty | Court-Admissible Timestamps              ║
@@ -53,7 +51,7 @@ const require = _createRequire(import.meta.url);
  */
 
 /* eslint-env node */
-'use strict';
+('use strict');
 
 // =============================================================================
 // QUANTUM ENVIRONMENT INITIALIZATION

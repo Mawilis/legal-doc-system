@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ HEALTH ROUTES - INVESTOR-GRADE MODULE                          ║
   ║ 99.99% uptime | Real-time telemetry | Forensic monitoring      ║
@@ -20,7 +20,7 @@
  * ]
  */
 
-import express from "express";
+import express from 'express';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 

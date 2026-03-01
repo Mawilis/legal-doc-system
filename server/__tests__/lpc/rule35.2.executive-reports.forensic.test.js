@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /* eslint-disable no-unused-vars */
 
 const crypto = require('crypto');
@@ -8,9 +6,21 @@ const fs = require('fs');
 const path = require('path');
 
 // Constants - MUST be used in tests
-const EXECUTIVE_ROLES = ['COMPLIANCE_OFFICER', 'LPC_ADMIN', 'MANAGING_PARTNER', 'DIRECTOR', 'AUDITOR'];
+const EXECUTIVE_ROLES = [
+  'COMPLIANCE_OFFICER',
+  'LPC_ADMIN',
+  'MANAGING_PARTNER',
+  'DIRECTOR',
+  'AUDITOR',
+];
 const NON_EXECUTIVE_ROLES = ['ATTORNEY', 'ASSOCIATE', 'PARALEGAL', 'SECRETARY'];
-const REPORT_TYPES = ['COMPLIANCE_SUMMARY', 'RISK_ASSESSMENT', 'AUDIT_HISTORY', 'FULL_REPORT', 'EXECUTIVE_SUMMARY'];
+const REPORT_TYPES = [
+  'COMPLIANCE_SUMMARY',
+  'RISK_ASSESSMENT',
+  'AUDIT_HISTORY',
+  'FULL_REPORT',
+  'EXECUTIVE_SUMMARY',
+];
 const REGULATORY_FRAMEWORKS = ['lpc', 'popia', 'fica', 'gdpr', 'sarb', 'fsca', 'aml'];
 
 // Economic metrics - Investor value
@@ -125,7 +135,8 @@ describe('LPC RULE 35.2 — EXECUTIVE REPORTS [FORENSIC GRADE]', () => {
     expect(sameTenantAccess).toBe(true);
 
     // Cross tenant - should be denied
-    const crossTenantAccess = tenant1.tenantId === tenant2.tenantId && tenant1.firmId === tenant2.firmId;
+    const crossTenantAccess =
+      tenant1.tenantId === tenant2.tenantId && tenant1.firmId === tenant2.firmId;
     expect(crossTenantAccess).toBe(false);
 
     evidenceEntries.push({

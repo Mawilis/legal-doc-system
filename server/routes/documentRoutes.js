@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT SERVICE ROUTES - BACKEND CONTRACT                                  ║
   ║ [OpenAPI 3.0 | 100% type safety | Parallel frontend/backend dev]           ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -45,7 +43,7 @@ const upload = multer({
     } else {
       cb(
         new Error('INVALID_FILE_TYPE: Only PDF, DOC, DOCX, TXT, JPEG, PNG files are allowed'),
-        false,
+        false
       );
     }
   },
@@ -340,7 +338,7 @@ router.post('/', upload.single('file'), async (req, res, next) => {
       const validation = await validationService.validateDocument(
         req.body.documentType,
         req.body,
-        userContext,
+        userContext
       );
 
       if (!validation.valid) {
@@ -395,7 +393,7 @@ router.get('/:documentId', async (req, res, next) => {
     res.setHeader('Content-Type', result.content.mimeType);
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="${result.content.originalFileName}"`,
+      `attachment; filename="${result.content.originalFileName}"`
     );
     res.setHeader('X-Document-Id', result.documentId);
     res.setHeader('X-Document-Version', result.metadata.fullVersion);
@@ -465,7 +463,7 @@ router.put('/:documentId', upload.single('file'), async (req, res, next) => {
     const result = await documentService.updateDocument(
       req.params.documentId,
       updates,
-      userContext,
+      userContext
     );
 
     res.json({
@@ -503,7 +501,7 @@ router.delete('/:documentId', async (req, res, next) => {
     const result = await documentService.deleteDocument(
       req.params.documentId,
       userContext,
-      req.query.reason || 'USER_REQUESTED',
+      req.query.reason || 'USER_REQUESTED'
     );
 
     res.json({
@@ -577,7 +575,7 @@ router.post('/audit', async (req, res, next) => {
     const result = await documentService.performComplianceAudit(
       req.tenant.id,
       req.body,
-      userContext,
+      userContext
     );
 
     res.json({

@@ -1,4 +1,4 @@
-import express from 'express';
+#!import express from 'express';
 import investorRoutes from './investorRoutes.js';
 import dealFlowRoutes from './dealFlowRoutes.js';
 import healthRoutes from './health.js';
@@ -10,7 +10,7 @@ router.get('/test', (req, res) => {
   res.json({
     success: true,
     message: 'API is working',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 

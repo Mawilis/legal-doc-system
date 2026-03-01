@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: QUANTUM GPU MANAGER - PARALLEL PROCESSING ORCHESTRATOR
  * ============================================================================

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║                                                                                                ║
   ║ ██╗███╗   ██╗██╗   ██╗ ██████╗ ██╗   ██╗███████╗    ███╗   ███╗ ██████╗ ██████╗ ███████╗██╗      ║
   ║ ██║████╗  ██║██║   ██║██╔═══██╗██║   ██║██╔════╝    ████╗ ████║██╔═══██╗██╔══██╗██╔════╝██║      ║
@@ -481,7 +479,7 @@ const LineItemSchema = new Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 /*
@@ -490,25 +488,46 @@ const LineItemSchema = new Schema(
 LineItemSchema.methods.getUnitConfig = function () {
   const UNIT_CONFIGS = {
     HOUR: {
-      precision: 4, min: 0.25, max: 24, description: 'Billable hours',
+      precision: 4,
+      min: 0.25,
+      max: 24,
+      description: 'Billable hours',
     },
     DAY: {
-      precision: 1, min: 0.1, max: 365, description: 'Daily rates',
+      precision: 1,
+      min: 0.1,
+      max: 365,
+      description: 'Daily rates',
     },
     ITEM: {
-      precision: 0, min: 1, max: 10000, description: 'Discrete items',
+      precision: 0,
+      min: 1,
+      max: 10000,
+      description: 'Discrete items',
     },
     PAGE: {
-      precision: 0, min: 1, max: 10000, description: 'Document pages',
+      precision: 0,
+      min: 1,
+      max: 10000,
+      description: 'Document pages',
     },
     KILOMETER: {
-      precision: 1, min: 0.1, max: 10000, description: 'Travel distance',
+      precision: 1,
+      min: 0.1,
+      max: 10000,
+      description: 'Travel distance',
     },
     PERCENTAGE: {
-      precision: 4, min: 0.0001, max: 1, description: 'Percentage based',
+      precision: 4,
+      min: 0.0001,
+      max: 1,
+      description: 'Percentage based',
     },
     FLAT_RATE: {
-      precision: 2, min: 0.01, max: 10000000, description: 'Fixed amount',
+      precision: 2,
+      min: 0.01,
+      max: 10000000,
+      description: 'Fixed amount',
     },
   };
 
@@ -522,7 +541,7 @@ LineItemSchema.methods.calculateAmount = function () {
 
   this.amount = mongoose.Types.Decimal128.fromString(amount.toFixed(2));
   this.vatAmount = mongoose.Types.Decimal128.fromString(
-    amount.times(this.vatRateApplied).toFixed(2),
+    amount.times(this.vatRateApplied).toFixed(2)
   );
 
   return amount;
@@ -1096,7 +1115,7 @@ const InvoiceSchema = new Schema(
         return doc.toJSON();
       },
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1210,7 +1229,7 @@ InvoiceSchema.methods.addPayment = async function (
   method,
   reference,
   userId,
-  metadata = {},
+  metadata = {}
 ) {
   const paymentAmount = new Decimal(amount);
   const currentBalance = new Decimal(this.balanceDue.toString());
@@ -1244,7 +1263,7 @@ InvoiceSchema.methods.addPayment = async function (
     action: paymentAmount.equals(currentBalance) ? 'PAYMENT_RECEIVED' : 'PAYMENT_PARTIAL',
     user: userId,
     note: `Payment of ${this.currency} ${paymentAmount.toFixed(
-      2,
+      2
     )} received via ${method}. Reference: ${reference}`,
     timestamp: new Date(),
     metadata: {
@@ -1306,7 +1325,7 @@ InvoiceSchema.methods.applyTrustFunds = async function (amount, trustRef, userId
     action: 'TRUST_APPLIED',
     user: userId,
     note: `Trust funds of ${this.currency} ${trustAmount.toFixed(
-      2,
+      2
     )} applied. Trust reference: ${trustRef}`,
     timestamp: new Date(),
     metadata: {
@@ -1435,7 +1454,7 @@ InvoiceSchema.statics.generateInvoiceNumber = async function (tenantId) {
       upsert: true,
       new: true,
       setDefaultsOnInsert: true,
-    },
+    }
   );
 
   // Generate checksum
@@ -1826,7 +1845,7 @@ InvoiceSchema.index(
       'lineItems.description': 5,
     },
     default_language: 'english',
-  },
+  }
 );
 
 // TTL index for auto-archiving (7 years retention)
@@ -1836,7 +1855,7 @@ InvoiceSchema.index(
     name: 'invoice_ttl',
     expireAfterSeconds: 220752000, // 7 years in seconds
     partialFilterExpression: { status: 'ARCHIVED' },
-  },
+  }
 );
 
 // ============================================================================
@@ -2008,5 +2027,5 @@ export default Invoice;
  */
 
 console.log(
-  '⚡ INVOICE MODEL QUANTUM: Financial truth engine activated. Ready to transform legal service into eternal economic value.',
+  '⚡ INVOICE MODEL QUANTUM: Financial truth engine activated. Ready to transform legal service into eternal economic value.'
 );

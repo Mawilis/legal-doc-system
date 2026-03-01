@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/taskController.js
  * STATUS: PRODUCTION-READY | WORKFLOW OPERATIONAL GRADE
  * -----------------------------------------------------------------------------
@@ -21,9 +19,7 @@ const Task = require('../models/Task');
  * @route   POST /api/v1/tasks
  */
 exports.createTask = asyncHandler(async (req, res) => {
-  const {
-    title, caseId, assignedTo, dueDate, priority,
-  } = req.body;
+  const { title, caseId, assignedTo, dueDate, priority } = req.body;
 
   // 1. CASE SCOPE VALIDATION
   if (caseId) {
@@ -34,7 +30,7 @@ exports.createTask = asyncHandler(async (req, res) => {
         res,
         404,
         'The referenced case matter is invalid or inaccessible.',
-        'ERR_CASE_NOT_FOUND',
+        'ERR_CASE_NOT_FOUND'
       );
     }
   }

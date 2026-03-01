@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: NEURAL PRECEDENT SCHEMA - THE KNOWLEDGE ENGINE
  * ============================================================================

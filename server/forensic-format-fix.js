@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /*
  * ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -8,9 +8,9 @@
  */
 
 import { execSync } from 'child_process';
-import { createHash } from "crypto";
-import fs from "fs";
-import path from "fs";
+import { createHash } from 'crypto';
+import fs from 'fs';
+import path from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,7 +54,7 @@ console.log('\n📍 STEP 2: Fixing common syntax errors...');
 
 const jsFiles = execSync(
   'find . -name "*.js" -o -name "*.cjs" -o -name "*.mjs" -not -path "*/node_modules/*" -not -path "*/coverage/*"',
-  { encoding: 'utf8' },
+  { encoding: 'utf8' }
 )
   .split('\n')
   .filter((f) => f && f.trim());
@@ -71,17 +71,20 @@ for (const file of jsFiles) {
     content = content.replace(/(\/\*[\s\S]*?)\*\*([\s\S]*?\*\/)/g, '$1*$2');
 
     // Fix 2: Fix unterminated string literals (simplified)
-    content = content.replace(/(['"])(?:(?=(\\?))\2.)*?\1/g, (match) =>
-      // This is a simplified fix - in production we'd need a proper parser
-      match);
+    content = content.replace(
+      /(['"])(?:(?=(\\?))\2.)*?\1/g,
+      (match) =>
+        // This is a simplified fix - in production we'd need a proper parser
+        match
+    );
 
     // Fix 3: Add missing semicolons at end of file
     if (
-      content.trim()
-      && !content.trim().endsWith(';')
-      && !content.trim().endsWith('}')
-      && !content.trim().endsWith('{')
-      && !content.trim().endsWith(')')
+      content.trim() &&
+      !content.trim().endsWith(';') &&
+      !content.trim().endsWith('}') &&
+      !content.trim().endsWith('{') &&
+      !content.trim().endsWith(')')
     ) {
       content = `${content};`;
     }
@@ -172,8 +175,8 @@ const hash = createHash('sha256')
       evidence,
       Object.keys(evidence)
         .filter((k) => k !== 'forensicHash')
-        .sort(),
-    ),
+        .sort()
+    )
   )
   .digest('hex');
 
@@ -196,6 +199,6 @@ console.log('\n📍 NEXT STEPS:');
 console.log('   1. Review fixed files: git diff');
 console.log('   2. Test with: npm test');
 console.log(
-  '   3. Commit fixes: git add . && git commit -m "fix(prettier): forensic formatting repair"',
+  '   3. Commit fixes: git add . && git commit -m "fix(prettier): forensic formatting repair"'
 );
 console.log('   4. Restore pre-commit hook: cp .husky/pre-commit.full .husky/pre-commit');

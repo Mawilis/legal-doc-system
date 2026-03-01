@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 
 const crypto = require('crypto');
 const fs = require('fs');
@@ -165,7 +163,8 @@ describe('SA LEGAL VALIDATORS — FORENSIC VALIDATION', () => {
     ];
 
     edgeCases.forEach(({ input, type }) => {
-      const result = type === 'id' ? validateSAIDNumber(input) : validateBusinessRegistration(input);
+      const result =
+        type === 'id' ? validateSAIDNumber(input) : validateBusinessRegistration(input);
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
     });

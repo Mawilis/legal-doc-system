@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - ATTORNEY PROFILE MODEL
  * LEGAL PRACTICE COUNCIL · FORENSIC ATTORNEY REGISTRY

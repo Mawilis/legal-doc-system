@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/eventRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Event Gateway (Tenant-Scoped). Manages the Legal Diary (Court Dates, Deadlines, Meetings).
@@ -97,7 +95,7 @@ router.post(
       err.code = 'EVENT_CREATE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -118,7 +116,7 @@ router.get(
       err.code = 'EVENT_LIST_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -154,7 +152,7 @@ router.patch(
       err.code = 'EVENT_RESCHEDULE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -184,7 +182,7 @@ router.delete(
       err.code = 'EVENT_DELETE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

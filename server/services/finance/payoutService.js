@@ -1,4 +1,4 @@
-/**
+#!/**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - INVESTOR PAYOUT & CAP TABLE ORCHESTRATOR                       ║
  * ║ DOCTRINE: Flawless Equity & ARR Mathematics                               ║
@@ -10,13 +10,13 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/finance/payoutService.js
  * VERSION: 1.0.0-PRODUCTION
  * CREATED: 2026-02-28
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R12M/year in manual cap table management and dividend calculations
  * • Generates: R650M/year ARR with 15x multiple = R9.75B valuation
  * • Risk elimination: R25M in tax compliance penalties
  * • Compliance: Companies Act §46, Income Tax Act §1, JSE Listings §3.4
- * 
+ *
  * REVOLUTIONARY FEATURES:
  * • Single source of truth for cap table (no duplicate exports)
  * • Investor-grade mathematics with forensic traceability
@@ -27,14 +27,14 @@
 const TOTAL_SHARES = 100000000; // 100M shares (foundation for all equity math)
 
 const CAP_TABLE = {
-  founders: 0.60,      // 60% Equity - Wilson Khanyezi & founding team
-  investors: 0.20,     // 20% Equity - Quantum Ventures, LegalTech Fund, etc.
-  employeePool: 0.20   // 20% Equity - ESOP for future talent acquisition
+  founders: 0.6, // 60% Equity - Wilson Khanyezi & founding team
+  investors: 0.2, // 20% Equity - Quantum Ventures, LegalTech Fund, etc.
+  employeePool: 0.2, // 20% Equity - ESOP for future talent acquisition
 };
 
 const DISTRIBUTION_STRUCTURE = {
-  preferred: 0.30,     // 30% to preferred shareholders (liquidation preference)
-  common: 0.70         // 70% to common shareholders
+  preferred: 0.3, // 30% to preferred shareholders (liquidation preference)
+  common: 0.7, // 70% to common shareholders
 };
 
 // ============================================================================
@@ -81,17 +81,17 @@ const getInvestorBreakdown = () => {
     totalShares: TOTAL_SHARES,
     founders: {
       percentage: CAP_TABLE.founders * 100 + '%',
-      shares: TOTAL_SHARES * CAP_TABLE.founders
+      shares: TOTAL_SHARES * CAP_TABLE.founders,
     },
     investors: {
       percentage: CAP_TABLE.investors * 100 + '%',
       shares: TOTAL_SHARES * CAP_TABLE.investors,
-      distribution: DISTRIBUTION_STRUCTURE
+      distribution: DISTRIBUTION_STRUCTURE,
     },
     employeePool: {
       percentage: CAP_TABLE.employeePool * 100 + '%',
-      shares: TOTAL_SHARES * CAP_TABLE.employeePool
-    }
+      shares: TOTAL_SHARES * CAP_TABLE.employeePool,
+    },
   };
 };
 
@@ -99,12 +99,12 @@ const getInvestorBreakdown = () => {
  * Project valuation at different ARR multiples
  */
 const projectValuationAtMultiple = (arr, multiples = [10, 15, 20, 25, 30]) => {
-  return multiples.map(multiple => ({
+  return multiples.map((multiple) => ({
     multiple,
     valuation: arr * multiple,
-    investorValue: (arr * multiple) * CAP_TABLE.investors,
-    founderValue: (arr * multiple) * CAP_TABLE.founders,
-    employeeValue: (arr * multiple) * CAP_TABLE.employeePool
+    investorValue: arr * multiple * CAP_TABLE.investors,
+    founderValue: arr * multiple * CAP_TABLE.founders,
+    employeeValue: arr * multiple * CAP_TABLE.employeePool,
   }));
 };
 
@@ -122,7 +122,7 @@ export {
   projectInvestorReturns,
   getCapTable,
   getInvestorBreakdown,
-  projectValuationAtMultiple
+  projectValuationAtMultiple,
 };
 
 // 2. Default Export (for convenience)
@@ -135,5 +135,5 @@ export default {
   projectInvestorReturns,
   getCapTable,
   getInvestorBreakdown,
-  projectValuationAtMultiple
+  projectValuationAtMultiple,
 };

@@ -1,4 +1,4 @@
-/**
+#!/**
  * Async Handler Middleware
  * Wraps async route handlers to catch errors and pass to Express error handler
  */

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ BILLING INVOICE MODEL - INVESTOR-GRADE MODULE                 ║
   ║ Forensic Traceability | POPIA Compliant | Retention-Aware     ║
@@ -12,9 +12,9 @@
  * • Compliance: Companies Act §24, POPIA §19, Consumer Protection Act §43
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid.js';
-import { createHash } from "crypto";
+import { createHash } from 'crypto';
 
 const { Schema } = mongoose;
 

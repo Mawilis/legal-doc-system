@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const crypto = require('crypto');
+#!const crypto = require('crypto');
 const { EventEmitter } = require('events');
 const loggerRaw = require('../utils/logger');
 const logger = loggerRaw.default || loggerRaw;

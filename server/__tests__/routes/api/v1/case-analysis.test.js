@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ CASE ANALYSIS API TESTS - INVESTOR DUE DILIGENCE              ║
   ║ 100% coverage | API-First | Strategic Gateway                 ║
@@ -162,7 +160,9 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
     });
 
     it('should handle service errors gracefully', async () => {
-      caseAnalysisService.analyzeCase.mockRejectedValueOnce(new Error('Analysis service unavailable'));
+      caseAnalysisService.analyzeCase.mockRejectedValueOnce(
+        new Error('Analysis service unavailable')
+      );
 
       const response = await request(app)
         .post('/api/v1/case-analysis/analyze')
@@ -181,7 +181,11 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
       const response = await request(app)
         .post('/api/v1/case-analysis/batch')
         .send({
-          caseIds: ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012', '507f1f77bcf86cd799439013'],
+          caseIds: [
+            '507f1f77bcf86cd799439011',
+            '507f1f77bcf86cd799439012',
+            '507f1f77bcf86cd799439013',
+          ],
           analysisType: 'FULL',
           priority: 'HIGH',
         })
@@ -233,7 +237,9 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
 
   describe('4. GET / - Analysis History Endpoint', () => {
     it('should retrieve analysis history with pagination', async () => {
-      const response = await request(app).get('/api/v1/case-analysis?limit=10&offset=0').expect(200);
+      const response = await request(app)
+        .get('/api/v1/case-analysis?limit=10&offset=0')
+        .expect(200);
 
       expect(response.body.status).toBe('success');
       expect(response.body.data).toBeInstanceOf(Array);
@@ -384,7 +390,7 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
         expect.anything(),
         '507f1f77bcf86cd799439014', // tenantId
         expect.anything(),
-        expect.anything(),
+        expect.anything()
       );
     });
   });
@@ -406,7 +412,7 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
           action: 'CASE_ANALYSIS_API_REQUEST',
           tenantId: '507f1f77bcf86cd799439014',
           userId: '507f1f77bcf86cd799439013',
-        }),
+        })
       );
     });
 
@@ -425,14 +431,16 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
         expect.objectContaining({
           event: 'API_REQUEST',
           endpoint: '/api/v1/case-analysis/analyze',
-        }),
+        })
       );
     });
   });
 
   describe('11. 404 Handler', () => {
     it('should return 404 for undefined routes', async () => {
-      const response = await request(app).get('/api/v1/case-analysis/non-existent-route').expect(404);
+      const response = await request(app)
+        .get('/api/v1/case-analysis/non-existent-route')
+        .expect(404);
 
       expect(response.body.code).toBe('ROUTE_NOT_FOUND');
     });
@@ -473,7 +481,10 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'case-analysis-api-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'case-analysis-api-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       // Verify evidence
       const fileExists = await fs
@@ -483,7 +494,10 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'case-analysis-api-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'case-analysis-api-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

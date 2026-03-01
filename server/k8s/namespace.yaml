@@ -8,6 +8,6 @@ metadata:
     tier: ai-platform
     managed-by: terraform
   annotations:
-    description: "WILSY OS - Next Generation Legal AI Platform"
-    owner: "platform-team"
-    sla: "99.99"
+    description: 'WILSY OS - Next Generation Legal AI Platform'
+    owner: 'platform-team'
+    sla: '99.99'

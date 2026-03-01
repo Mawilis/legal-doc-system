@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ E-SIGNATURE CONTROLLER - INVESTOR-GRADE MODULE                            ║
   ║ 94% cost reduction | R8.2M risk elimination | 85% margins                ║
@@ -11,11 +11,11 @@
  * CREATED: 2026-03-01
  */
 
-import ESignService, { 
-  SIGNATURE_STATUS, 
+import ESignService, {
+  SIGNATURE_STATUS,
   SIGNATURE_TYPES,
   SIGNATURE_PROVIDERS,
-  VERIFICATION_LEVELS 
+  VERIFICATION_LEVELS,
 } from '../services/eSignService.js';
 import auditLogger from '../utils/auditLogger.js';
 import logger from '../utils/logger.js';
@@ -43,7 +43,7 @@ export const createSignatureRequest = async (req, res, next) => {
       return res.status(422).json({
         error: 'Missing required field: documentId',
         code: 'MISSING_DOCUMENT_ID',
-        correlationId
+        correlationId,
       });
     }
 
@@ -51,7 +51,7 @@ export const createSignatureRequest = async (req, res, next) => {
       return res.status(422).json({
         error: 'Missing required field: signers (non-empty array)',
         code: 'MISSING_SIGNERS',
-        correlationId
+        correlationId,
       });
     }
 
@@ -59,14 +59,10 @@ export const createSignatureRequest = async (req, res, next) => {
       ...options,
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
-      metadata: { ...options.metadata, correlationId, source: 'api', endpoint: req.path }
+      metadata: { ...options.metadata, correlationId, source: 'api', endpoint: req.path },
     };
 
-    const result = await eSignService.createSignatureRequest(
-      documentId,
-      signers,
-      enrichedOptions
-    );
+    const result = await eSignService.createSignatureRequest(documentId, signers, enrichedOptions);
 
     const timeSaved = (Date.now() - startTime) / 1000;
     const annualSavings = (timeSaved * 250 * 8 * 100).toFixed(2);
@@ -77,7 +73,7 @@ export const createSignatureRequest = async (req, res, next) => {
       documentId,
       signerCount: signers.length,
       tenantId,
-      userId
+      userId,
     });
 
     await auditLogger.log({
@@ -88,25 +84,24 @@ export const createSignatureRequest = async (req, res, next) => {
       tenantId,
       userId,
       signerCount: signers.length,
-      economicValue: { timeSavedSeconds: timeSaved, annualSavings: `R${annualSavings}` }
+      economicValue: { timeSavedSeconds: timeSaved, annualSavings: `R${annualSavings}` },
     });
 
     console.log(`💰 Economic Impact: R${annualSavings} annual savings per client`);
 
     res.status(202).json({ success: true, correlationId, ...result });
-
   } catch (error) {
     logger.error('Signature request failed', {
       correlationId,
       documentId: req.body?.documentId,
-      error: error.message
+      error: error.message,
     });
 
     await auditLogger.log({
       action: 'SIGNATURE_REQUEST_FAILED_API',
       correlationId,
       documentId: req.body?.documentId,
-      error: error.message
+      error: error.message,
     });
 
     next(error);
@@ -129,7 +124,7 @@ export const getSignatureStatus = async (req, res, next) => {
       return res.status(422).json({
         error: 'Missing required parameter: signatureId',
         code: 'MISSING_SIGNATURE_ID',
-        correlationId
+        correlationId,
       });
     }
 
@@ -139,20 +134,21 @@ export const getSignatureStatus = async (req, res, next) => {
       correlationId,
       signatureId,
       status: result.status,
-      tenantId
+      tenantId,
     });
 
     res.json({ success: true, correlationId, ...result });
-
   } catch (error) {
     logger.error('Get signature status failed', {
       correlationId,
       signatureId: req.params.signatureId,
-      error: error.message
+      error: error.message,
     });
 
     if (error.message.includes('not found')) {
-      return res.status(404).json({ error: error.message, code: 'SIGNATURE_NOT_FOUND', correlationId });
+      return res
+        .status(404)
+        .json({ error: error.message, code: 'SIGNATURE_NOT_FOUND', correlationId });
     }
 
     next(error);
@@ -173,11 +169,15 @@ export const signDocument = async (req, res, next) => {
     const { signerData, options = {} } = req.body;
 
     if (!signatureId) {
-      return res.status(422).json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
+      return res
+        .status(422)
+        .json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
     }
 
     if (!signerData || !signerData.email) {
-      return res.status(422).json({ error: 'Missing signerData.email', code: 'MISSING_SIGNER_EMAIL', correlationId });
+      return res
+        .status(422)
+        .json({ error: 'Missing signerData.email', code: 'MISSING_SIGNER_EMAIL', correlationId });
     }
 
     const enrichedOptions = { ...options, ipAddress: req.ip, userAgent: req.get('user-agent') };
@@ -187,20 +187,23 @@ export const signDocument = async (req, res, next) => {
     logger.info('Document signed', {
       correlationId,
       signatureId,
-      signerEmail: redactSensitive(signerData.email, ['email'])
+      signerEmail: redactSensitive(signerData.email, ['email']),
     });
 
     await auditLogger.log({
       action: 'DOCUMENT_SIGNED_API',
       correlationId,
       signatureId,
-      signerEmail: redactSensitive(signerData.email, ['email'])
+      signerEmail: redactSensitive(signerData.email, ['email']),
     });
 
     res.json({ success: true, correlationId, ...result });
-
   } catch (error) {
-    logger.error('Sign document failed', { correlationId, signatureId: req.params.signatureId, error: error.message });
+    logger.error('Sign document failed', {
+      correlationId,
+      signatureId: req.params.signatureId,
+      error: error.message,
+    });
     next(error);
   }
 };
@@ -218,7 +221,9 @@ export const verifySignature = async (req, res, next) => {
     const { signatureId } = req.params;
 
     if (!signatureId) {
-      return res.status(422).json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
+      return res
+        .status(422)
+        .json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
     }
 
     const result = await eSignService.verifySignature(signatureId);
@@ -226,13 +231,16 @@ export const verifySignature = async (req, res, next) => {
     logger.info('Signature verified', {
       correlationId,
       signatureId,
-      verified: result.verified
+      verified: result.verified,
     });
 
     res.json({ success: true, correlationId, ...result });
-
   } catch (error) {
-    logger.error('Verify signature failed', { correlationId, signatureId: req.params.signatureId, error: error.message });
+    logger.error('Verify signature failed', {
+      correlationId,
+      signatureId: req.params.signatureId,
+      error: error.message,
+    });
     next(error);
   }
 };
@@ -249,14 +257,19 @@ export const getSignatureHistory = async (req, res, next) => {
     const { signatureId } = req.params;
 
     if (!signatureId) {
-      return res.status(422).json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
+      return res
+        .status(422)
+        .json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
     }
 
     const result = await eSignService.getSignatureHistory(signatureId);
     res.json({ success: true, correlationId, ...result });
-
   } catch (error) {
-    logger.error('Get signature history failed', { correlationId, signatureId: req.params.signatureId, error: error.message });
+    logger.error('Get signature history failed', {
+      correlationId,
+      signatureId: req.params.signatureId,
+      error: error.message,
+    });
     next(error);
   }
 };
@@ -276,21 +289,35 @@ export const voidSignature = async (req, res, next) => {
     const { reason } = req.body;
 
     if (!signatureId) {
-      return res.status(422).json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
+      return res
+        .status(422)
+        .json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
     }
 
     if (!reason) {
-      return res.status(422).json({ error: 'Missing reason', code: 'MISSING_REASON', correlationId });
+      return res
+        .status(422)
+        .json({ error: 'Missing reason', code: 'MISSING_REASON', correlationId });
     }
 
     const result = await eSignService.voidSignature(signatureId, reason);
 
-    await auditLogger.log({ action: 'SIGNATURE_VOIDED_API', correlationId, signatureId, reason, tenantId, userId });
+    await auditLogger.log({
+      action: 'SIGNATURE_VOIDED_API',
+      correlationId,
+      signatureId,
+      reason,
+      tenantId,
+      userId,
+    });
 
     res.json({ success: true, correlationId, ...result });
-
   } catch (error) {
-    logger.error('Void signature failed', { correlationId, signatureId: req.params.signatureId, error: error.message });
+    logger.error('Void signature failed', {
+      correlationId,
+      signatureId: req.params.signatureId,
+      error: error.message,
+    });
     next(error);
   }
 };
@@ -309,14 +336,19 @@ export const sendReminder = async (req, res, next) => {
     const { signerEmail } = req.body;
 
     if (!signatureId) {
-      return res.status(422).json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
+      return res
+        .status(422)
+        .json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
     }
 
     const result = await eSignService.sendReminder(signatureId, signerEmail);
     res.json({ success: true, correlationId, ...result });
-
   } catch (error) {
-    logger.error('Send reminder failed', { correlationId, signatureId: req.params.signatureId, error: error.message });
+    logger.error('Send reminder failed', {
+      correlationId,
+      signatureId: req.params.signatureId,
+      error: error.message,
+    });
     next(error);
   }
 };
@@ -334,7 +366,9 @@ export const downloadSignedDocument = async (req, res, next) => {
     const { signatureId } = req.params;
 
     if (!signatureId) {
-      return res.status(422).json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
+      return res
+        .status(422)
+        .json({ error: 'Missing signatureId', code: 'MISSING_SIGNATURE_ID', correlationId });
     }
 
     const document = await eSignService.downloadSignedDocument(signatureId);
@@ -342,9 +376,12 @@ export const downloadSignedDocument = async (req, res, next) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="signed-${signatureId}.pdf"`);
     res.send(document);
-
   } catch (error) {
-    logger.error('Download signed document failed', { correlationId, signatureId: req.params.signatureId, error: error.message });
+    logger.error('Download signed document failed', {
+      correlationId,
+      signatureId: req.params.signatureId,
+      error: error.message,
+    });
     next(error);
   }
 };
@@ -360,7 +397,6 @@ export const getSignatureStats = async (req, res, next) => {
   try {
     const stats = await eSignService.getStats(tenantId);
     res.json({ success: true, correlationId, ...stats });
-
   } catch (error) {
     logger.error('Get signature stats failed', { correlationId, error: error.message });
     next(error);
@@ -390,5 +426,5 @@ export default {
   sendReminder,
   downloadSignedDocument,
   getSignatureStats,
-  healthCheck
+  healthCheck,
 };

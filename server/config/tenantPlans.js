@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/config/tenantPlans.js
  * PATH: server/config/tenantPlans.js
  * STATUS: PRODUCTION-READY | BIBLICAL | RESOURCE CONSTITUTION
@@ -131,7 +129,7 @@ exports.getTenantPlan = async (tenantId) => {
       }
     } catch (err) {
       console.error(
-        `⚠️ Wilsy OS: Redis Plan Lookup Failed for ${key}. Falling back to Heuristics.`,
+        `⚠️ Wilsy OS: Redis Plan Lookup Failed for ${key}. Falling back to Heuristics.`
       );
     }
   }
@@ -161,7 +159,8 @@ exports.getTenantPlan = async (tenantId) => {
  */
 exports.registerPlanInStore = async (tenantId, plan) => {
   if (!redis) throw new Error('System Error: Redis Persistence Layer Offline.');
-  if (!validatePlanIntegrity(plan)) throw new Error('Validation Error: Plan payload is non-biblical.');
+  if (!validatePlanIntegrity(plan))
+    throw new Error('Validation Error: Plan payload is non-biblical.');
 
   const storeKey = `tenant:plan:${tenantId}`;
   await redis.set(storeKey, JSON.stringify(plan));

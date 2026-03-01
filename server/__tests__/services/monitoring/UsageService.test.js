@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ USAGE SERVICE TESTS - INVESTOR DUE DILIGENCE - $500M UPSIDE              ║
   ║ 100% coverage | Real-time quota | Predictive alerts                      ║
@@ -232,13 +232,13 @@ describe('UsageService - Gateway Quota Dashboard Due Diligence', () => {
         JSON.stringify({
           id: 'alert1',
           message: 'Alert 1',
-        }),
+        })
       );
       mockRedis.get.withArgs('alert:tenant1:alert2').resolves(
         JSON.stringify({
           id: 'alert2',
           message: 'Alert 2',
-        }),
+        })
       );
 
       const alerts = await usageService.getActiveAlerts('tenant1');

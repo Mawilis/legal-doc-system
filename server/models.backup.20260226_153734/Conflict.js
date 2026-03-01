@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
@@ -196,7 +194,10 @@ const ConflictSchema = new Schema(
         enum: ['internal_db', 'external_service', 'manual_check', 'ai_screening'],
       },
       confidenceScore: {
-        type: Number, min: 0, max: 100, default: 0,
+        type: Number,
+        min: 0,
+        max: 100,
+        default: 0,
       },
       matchingRules: [
         {
@@ -334,7 +335,7 @@ const ConflictSchema = new Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // ==================== PLUGINS ====================
@@ -355,10 +356,10 @@ ConflictSchema.pre('save', function (next) {
 
   // Validate waiver expiry
   if (
-    this.resolution.waiver
-    && this.resolution.waiver.granted
-    && this.resolution.waiver.waiverExpiry
-    && this.resolution.waiver.waiverExpiry < new Date()
+    this.resolution.waiver &&
+    this.resolution.waiver.granted &&
+    this.resolution.waiver.waiverExpiry &&
+    this.resolution.waiver.waiverExpiry < new Date()
   ) {
     this.status = 'active';
   }
@@ -376,8 +377,8 @@ ConflictSchema.pre('remove', function (next) {
 // ==================== VIRTUAL PROPERTIES ====================
 ConflictSchema.virtual('requiresImmediateAttention').get(function () {
   return (
-    this.severity === 'critical'
-    || (this.status === 'active' && this.metadata.priority === 'immediate')
+    this.severity === 'critical' ||
+    (this.status === 'active' && this.metadata.priority === 'immediate')
   );
 });
 
@@ -389,8 +390,8 @@ ConflictSchema.virtual('daysSinceDetection').get(function () {
 
 ConflictSchema.virtual('popiaCompliant').get(function () {
   return (
-    this.compliance.popia.dataSubjectConsent.obtained
-    && this.compliance.popia.informationOfficerNotified
+    this.compliance.popia.dataSubjectConsent.obtained &&
+    this.compliance.popia.informationOfficerNotified
   );
 });
 
@@ -560,7 +561,7 @@ ConflictSchema.statics.getTenantStatistics = function (tenantId, callback) {
       };
 
       callback(null, result);
-    },
+    }
   );
 };
 

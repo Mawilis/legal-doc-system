@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ====================================================================
  * TAX RECORD MODEL - SARS eFILING INTEGRATION
  * ====================================================================
@@ -57,10 +55,16 @@ const TaxRecordSchema = new mongoose.Schema(
       default: 'ANNUAL',
     },
     filingDate: {
-      type: Date, default: Date.now, index: true, required: true,
+      type: Date,
+      default: Date.now,
+      index: true,
+      required: true,
     },
     submissionId: {
-      type: String, sparse: true, unique: true, index: true,
+      type: String,
+      sparse: true,
+      unique: true,
+      index: true,
     },
     status: {
       type: String,
@@ -181,7 +185,10 @@ const TaxRecordSchema = new mongoose.Schema(
       },
     ],
     riskScore: {
-      type: Number, min: 0, max: 100, default: 0,
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
     },
     retentionPolicy: {
       type: String,
@@ -221,7 +228,7 @@ const TaxRecordSchema = new mongoose.Schema(
     forensicHash: { type: String, required: true, unique: true },
     metadata: mongoose.Schema.Types.Mixed,
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 // ====================================================================

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * @file paymentService.js
  * @module PaymentService
  * @description Quantum payment processing service with PCI-DSS Level 1 compliance,
@@ -92,7 +90,7 @@ const paymentLogger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.json(),
     winston.format.errors({ stack: true }),
-    winston.format.metadata(),
+    winston.format.metadata()
   ),
   defaultMeta: { service: 'payment-service' },
   transports: [
@@ -123,7 +121,7 @@ if (process.env.NODE_ENV !== 'production') {
   paymentLogger.add(
     new winston.transports.Console({
       format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
-    }),
+    })
   );
 }
 
@@ -273,7 +271,7 @@ class QuantumEncryptionService {
     this.key = crypto.scryptSync(
       process.env.ENCRYPTION_KEY || process.env.JWT_SECRET,
       'salt',
-      SECURITY_CONFIG.ENCRYPTION.KEY_LENGTH,
+      SECURITY_CONFIG.ENCRYPTION.KEY_LENGTH
     );
   }
 
@@ -319,9 +317,7 @@ class QuantumEncryptionService {
    */
   decryptSensitiveData(encryptedPackage) {
     try {
-      const {
-        encryptedData, iv, authTag, algorithm,
-      } = encryptedPackage;
+      const { encryptedData, iv, authTag, algorithm } = encryptedPackage;
 
       if (algorithm !== this.algorithm) {
         throw new Error('Invalid encryption algorithm');
@@ -573,9 +569,10 @@ class QuantumPaymentGateway {
     this.merchantKey = process.env.PAYFAST_MERCHANT_KEY;
     this.passphrase = process.env.PAYFAST_PASSPHRASE;
     this.mode = process.env.PAYFAST_MODE || 'sandbox';
-    this.baseUrl = this.mode === 'live'
-      ? PAYMENT_CONSTANTS.SOUTH_AFRICA.PAYFAST_LIVE_URL
-      : PAYMENT_CONSTANTS.SOUTH_AFRICA.PAYFAST_SANDBOX_URL;
+    this.baseUrl =
+      this.mode === 'live'
+        ? PAYMENT_CONSTANTS.SOUTH_AFRICA.PAYFAST_LIVE_URL
+        : PAYMENT_CONSTANTS.SOUTH_AFRICA.PAYFAST_SANDBOX_URL;
 
     this.httpClient = axios.create({
       baseURL: this.baseUrl,
@@ -607,9 +604,9 @@ class QuantumPaymentGateway {
     // Remove empty values
     Object.keys(signatureParams).forEach((key) => {
       if (
-        signatureParams[key] === ''
-        || signatureParams[key] === null
-        || signatureParams[key] === undefined
+        signatureParams[key] === '' ||
+        signatureParams[key] === null ||
+        signatureParams[key] === undefined
       ) {
         delete signatureParams[key];
       }
@@ -854,7 +851,7 @@ class QuantumFraudDetectionService {
     // 1. Velocity Check - Fixed: Using hourly threshold
     if (userHistory.recentTransactions) {
       const lastHourTransactions = userHistory.recentTransactions.filter(
-        (t) => Date.now() - new Date(t.timestamp) < 3600000,
+        (t) => Date.now() - new Date(t.timestamp) < 3600000
       );
 
       // Use direct hourly threshold instead of per-minute calculation
@@ -999,7 +996,7 @@ class QuantumFraudDetectionService {
           riskScore,
           riskLevel,
           timestamp: Date.now(),
-        }),
+        })
       )
       .digest('hex');
 
@@ -1038,11 +1035,12 @@ class QuantumFraudDetectionService {
     const dLat = this.deg2rad(loc2.latitude - loc1.latitude);
     const dLon = this.deg2rad(loc2.longitude - loc1.longitude);
 
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-      + Math.cos(this.deg2rad(loc1.latitude))
-        * Math.cos(this.deg2rad(loc2.latitude))
-        * Math.sin(dLon / 2)
-        * Math.sin(dLon / 2);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.deg2rad(loc1.latitude)) *
+        Math.cos(this.deg2rad(loc2.latitude)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
@@ -1299,7 +1297,7 @@ class QuantumPaymentService {
       // Step 3: Fraud analysis
       const fraudAnalysis = await this.fraudDetectionService.analyzeTransaction(
         paymentRequest,
-        user.transactionHistory || {},
+        user.transactionHistory || {}
       );
 
       if (fraudAnalysis.riskLevel === 'HIGH' || fraudAnalysis.riskLevel === 'CRITICAL') {
@@ -1327,13 +1325,13 @@ class QuantumPaymentService {
       // Step 4: Compliance validation
       const complianceResult = await this.complianceService.validatePaymentCompliance(
         paymentRequest,
-        user,
+        user
       );
       if (!complianceResult.compliant) {
         throw new Error(
           `Compliance validation failed: ${complianceResult.failedRules
             .map((r) => r.requirement)
-            .join(', ')}`,
+            .join(', ')}`
         );
       }
 
@@ -1342,7 +1340,7 @@ class QuantumPaymentService {
       if (paymentRequest.sensitiveData) {
         encryptedPaymentData = this.encryptionService.encryptSensitiveData(
           JSON.stringify(paymentRequest.sensitiveData),
-          'payment_processing',
+          'payment_processing'
         );
 
         // Remove sensitive data from payment request after encryption
@@ -1456,8 +1454,8 @@ class QuantumPaymentService {
     // Validate currency
     const supportedCurrencies = ['ZAR', 'USD', 'EUR', 'GBP'];
     if (
-      !paymentRequest.currency
-      || !supportedCurrencies.includes(paymentRequest.currency.toUpperCase())
+      !paymentRequest.currency ||
+      !supportedCurrencies.includes(paymentRequest.currency.toUpperCase())
     ) {
       errors.push(`Unsupported currency. Supported: ${supportedCurrencies.join(', ')}`);
     }
@@ -1665,7 +1663,7 @@ const healthCheck = async () => {
 
     return {
       status: checks.every(
-        (check) => check.status === 'healthy' || check.status === 'not_configured',
+        (check) => check.status === 'healthy' || check.status === 'not_configured'
       )
         ? 'healthy'
         : 'unhealthy',

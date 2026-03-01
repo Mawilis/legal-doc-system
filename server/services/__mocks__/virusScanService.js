@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/services/__mocks__/virusScanService.js
  * STATUS: PRODUCTION-READY | TEST MOCK | EPITOME
  * -----------------------------------------------------------------------------
@@ -127,16 +125,25 @@ async function scanFile(localPath) {
     const durationMs = Date.now() - start;
     if (forced === 'infected') {
       return {
-        status: 'infected', details: 'forced-infected', engine: 'mock', durationMs,
+        status: 'infected',
+        details: 'forced-infected',
+        engine: 'mock',
+        durationMs,
       };
     }
     if (forced === 'error') {
       return {
-        status: 'error', details: 'forced-error', engine: 'mock', durationMs,
+        status: 'error',
+        details: 'forced-error',
+        engine: 'mock',
+        durationMs,
       };
     }
     return {
-      status: 'clean', details: 'forced-clean', engine: 'mock', durationMs,
+      status: 'clean',
+      details: 'forced-clean',
+      engine: 'mock',
+      durationMs,
     };
   }
 
@@ -147,7 +154,10 @@ async function scanFile(localPath) {
   if (lower.includes('error-scan')) {
     const durationMs = Date.now() - start;
     return {
-      status: 'error', details: 'simulated-scan-error-marker', engine: 'mock', durationMs,
+      status: 'error',
+      details: 'simulated-scan-error-marker',
+      engine: 'mock',
+      durationMs,
     };
   }
 
@@ -155,14 +165,20 @@ async function scanFile(localPath) {
   if (lower.includes('infected')) {
     const durationMs = Date.now() - start;
     return {
-      status: 'infected', details: 'test-signature-match', engine: 'mock', durationMs,
+      status: 'infected',
+      details: 'test-signature-match',
+      engine: 'mock',
+      durationMs,
     };
   }
 
   // Default: clean
   const durationMs = Date.now() - start;
   return {
-    status: 'clean', details: null, engine: 'mock', durationMs,
+    status: 'clean',
+    details: null,
+    engine: 'mock',
+    durationMs,
   };
 }
 

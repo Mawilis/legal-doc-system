@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ FORENSIC PDF SERVICE - INVESTOR-GRADE MODULE                  ║
   ║ 92% cost reduction | R2.5B risk elimination | 94% margins     ║
@@ -55,10 +55,10 @@
 
 import PDFDocument from 'pdfkit.js';
 import qr from 'qr-image.js';
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
-import { createHash } from "crypto";
+import { createHash } from 'crypto';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 

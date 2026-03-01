@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - NEURAL PRECEDENT VECTORIZER v1.0                               ║
@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
   port: process.env.REDIS_PORT || 6379,
-  maxRetriesPerRequest: null
+  maxRetriesPerRequest: null,
 });
 
 // Vector dimensions (OpenAI Ada-002 compatible)
@@ -41,7 +41,7 @@ export class NeuralPrecedentVectorizer {
       processed: 0,
       failed: 0,
       totalTokens: 0,
-      startTime: Date.now()
+      startTime: Date.now(),
     };
   }
 
@@ -59,11 +59,11 @@ export class NeuralPrecedentVectorizer {
       this.model = {
         predict: async (text) => {
           // Simulate neural processing
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise((resolve) => setTimeout(resolve, 50));
           return this.generateMockEmbedding(text);
-        }
+        },
       };
-      
+
       this.initialized = true;
       console.log('✅ Neural vectorizer initialized');
     } catch (error) {
@@ -79,17 +79,17 @@ export class NeuralPrecedentVectorizer {
   generateMockEmbedding(text) {
     const hash = crypto.createHash('sha256').update(text).digest();
     const embedding = new Array(VECTOR_DIMENSIONS);
-    
+
     // Generate pseudo-random but deterministic embedding
     for (let i = 0; i < VECTOR_DIMENSIONS; i++) {
       // Use hash to generate values between -1 and 1
       const byte = hash[i % hash.length];
-      embedding[i] = (byte / 127.5) - 1;
+      embedding[i] = byte / 127.5 - 1;
     }
-    
+
     // Normalize the embedding (L2 norm)
     const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-    return embedding.map(val => val / norm);
+    return embedding.map((val) => val / norm);
   }
 
   /**
@@ -97,7 +97,7 @@ export class NeuralPrecedentVectorizer {
    */
   preprocessLegalText(text) {
     if (!text) return '';
-    
+
     // Remove citations and legal boilerplate
     let processed = text
       .replace(/\b\d{4}\s+JDR\s+\d{4}\b/g, '') // Remove JDR citations
@@ -108,7 +108,7 @@ export class NeuralPrecedentVectorizer {
       .replace(/\b\d{4}\s+ZAGPJHC\s+\d+\b/g, '') // Remove Gauteng High Court citations
       .replace(/\s+/g, ' ') // Normalize whitespace
       .trim();
-    
+
     return processed;
   }
 
@@ -119,11 +119,11 @@ export class NeuralPrecedentVectorizer {
     // Simple whitespace tokenization (in production, use actual tokenizer)
     const words = text.split(/\s+/);
     const chunks = [];
-    
+
     for (let i = 0; i < words.length; i += maxTokens) {
       chunks.push(words.slice(i, i + maxTokens).join(' '));
     }
-    
+
     this.stats.totalTokens += words.length;
     return chunks;
   }
@@ -133,16 +133,8 @@ export class NeuralPrecedentVectorizer {
    */
   async generateEmbedding(precedent) {
     await this.initialize();
-    
-    const {
-      caseName,
-      citation,
-      court,
-      judgmentDate,
-      summary,
-      keyPrinciples,
-      fullText
-    } = precedent;
+
+    const { caseName, citation, court, judgmentDate, summary, keyPrinciples, fullText } = precedent;
 
     // Create rich text representation
     const richText = `
@@ -153,17 +145,17 @@ export class NeuralPrecedentVectorizer {
       Summary: ${summary || ''}
       Principles: ${keyPrinciples ? keyPrinciples.join('; ') : ''}
       Text: ${fullText || ''}
-    `.replace(/\s+/g, ' ').trim();
+    `
+      .replace(/\s+/g, ' ')
+      .trim();
 
     // Preprocess and tokenize
     const processed = this.preprocessLegalText(richText);
     const chunks = this.tokenizeLegalText(processed);
-    
+
     // Generate embeddings for each chunk
-    const chunkEmbeddings = await Promise.all(
-      chunks.map(chunk => this.model.predict(chunk))
-    );
-    
+    const chunkEmbeddings = await Promise.all(chunks.map((chunk) => this.model.predict(chunk)));
+
     // Average the chunk embeddings
     const finalEmbedding = new Array(VECTOR_DIMENSIONS).fill(0);
     for (const emb of chunkEmbeddings) {
@@ -171,13 +163,13 @@ export class NeuralPrecedentVectorizer {
         finalEmbedding[i] += emb[i];
       }
     }
-    
+
     // Normalize
     const norm = Math.sqrt(finalEmbedding.reduce((sum, val) => sum + val * val, 0));
     for (let i = 0; i < VECTOR_DIMENSIONS; i++) {
       finalEmbedding[i] /= norm;
     }
-    
+
     return finalEmbedding;
   }
 
@@ -185,22 +177,27 @@ export class NeuralPrecedentVectorizer {
    * Save embedding to disk (for production, use vector database)
    */
   async saveEmbedding(citation, embedding, metadata) {
-    const embeddingId = crypto.createHash('sha256')
-      .update(citation)
-      .digest('hex');
-    
+    const embeddingId = crypto.createHash('sha256').update(citation).digest('hex');
+
     const embeddingPath = path.join(EMBEDDINGS_PATH, `${embeddingId}.json`);
-    
-    await fs.writeFile(embeddingPath, JSON.stringify({
-      id: embeddingId,
-      citation,
-      embedding,
-      metadata,
-      generatedAt: new Date().toISOString(),
-      version: '1.0',
-      dimensions: VECTOR_DIMENSIONS
-    }, null, 2));
-    
+
+    await fs.writeFile(
+      embeddingPath,
+      JSON.stringify(
+        {
+          id: embeddingId,
+          citation,
+          embedding,
+          metadata,
+          generatedAt: new Date().toISOString(),
+          version: '1.0',
+          dimensions: VECTOR_DIMENSIONS,
+        },
+        null,
+        2
+      )
+    );
+
     return embeddingId;
   }
 
@@ -209,27 +206,23 @@ export class NeuralPrecedentVectorizer {
    */
   async processJob(job) {
     const { precedent, options = {} } = job.data;
-    
+
     console.log(`🧠 Processing precedent: ${precedent.citation}`);
-    
+
     try {
       // Generate embedding
       const embedding = await this.generateEmbedding(precedent);
-      
+
       // Save to disk/vector DB
-      const embeddingId = await this.saveEmbedding(
-        precedent.citation,
-        embedding,
-        {
-          caseName: precedent.caseName,
-          court: precedent.court,
-          judgmentDate: precedent.judgmentDate,
-          tags: precedent.tags || []
-        }
-      );
-      
+      const embeddingId = await this.saveEmbedding(precedent.citation, embedding, {
+        caseName: precedent.caseName,
+        court: precedent.court,
+        judgmentDate: precedent.judgmentDate,
+        tags: precedent.tags || [],
+      });
+
       this.stats.processed++;
-      
+
       return {
         success: true,
         embeddingId,
@@ -238,8 +231,8 @@ export class NeuralPrecedentVectorizer {
         processingTime: Date.now() - job.timestamp,
         stats: {
           processed: this.stats.processed,
-          failed: this.stats.failed
-        }
+          failed: this.stats.failed,
+        },
       };
     } catch (error) {
       this.stats.failed++;
@@ -257,7 +250,7 @@ export class NeuralPrecedentVectorizer {
       uptime: Date.now() - this.stats.startTime,
       queueSize: this.processingQueue.length,
       initialized: this.initialized,
-      modelLoaded: !!this.model
+      modelLoaded: !!this.model,
     };
   }
 }
@@ -265,16 +258,20 @@ export class NeuralPrecedentVectorizer {
 // Create and start the worker
 const vectorizer = new NeuralPrecedentVectorizer();
 
-export const worker = new Worker('neural-vectorizer', async job => {
-  return await vectorizer.processJob(job);
-}, {
-  connection: redis,
-  concurrency: 4,
-  limiter: {
-    max: 10,
-    duration: 1000
+export const worker = new Worker(
+  'neural-vectorizer',
+  async (job) => {
+    return await vectorizer.processJob(job);
+  },
+  {
+    connection: redis,
+    concurrency: 4,
+    limiter: {
+      max: 10,
+      duration: 1000,
+    },
   }
-});
+);
 
 // Event handlers
 worker.on('completed', (job, result) => {

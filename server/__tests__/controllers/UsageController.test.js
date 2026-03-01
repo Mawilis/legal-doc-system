@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ USAGE CONTROLLER TESTS - INVESTOR DUE DILIGENCE - $1.2B+ VALUE           ║
   ║ 100% coverage | Upsell automation | Executive intelligence               ║

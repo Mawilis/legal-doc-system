@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 =============================================================================================================
 QUANTUM BIOMETRIC AUDIT LOG CITADEL - IMMUTABLE CHRONICLE OF DIGITAL IDENTITY SANCTITY
 =============================================================================================================
@@ -44,12 +42,12 @@ const mongoose = require('mongoose');
 // Quantum Sentinel: Validate audit encryption key
 if (!process.env.AUDIT_LOG_ENCRYPTION_KEY) {
   throw new Error(
-    'QUANTUM BREACH: AUDIT_LOG_ENCRYPTION_KEY missing from .env - Audit logs cannot be secured',
+    'QUANTUM BREACH: AUDIT_LOG_ENCRYPTION_KEY missing from .env - Audit logs cannot be secured'
   );
 }
 if (!process.env.AUDIT_LOG_HASH_SECRET) {
   throw new Error(
-    'QUANTUM BREACH: AUDIT_LOG_HASH_SECRET missing from .env - Audit integrity cannot be guaranteed',
+    'QUANTUM BREACH: AUDIT_LOG_HASH_SECRET missing from .env - Audit integrity cannot be guaranteed'
   );
 }
 
@@ -199,9 +197,9 @@ const BiometricAuditLogSchema = new mongoose.Schema(
       required() {
         // Required for credential-related events
         return (
-          this.eventCategory === 'REGISTRATION'
-          || this.eventCategory === 'AUTHENTICATION'
-          || this.eventCategory === 'CREDENTIAL_MANAGEMENT'
+          this.eventCategory === 'REGISTRATION' ||
+          this.eventCategory === 'AUTHENTICATION' ||
+          this.eventCategory === 'CREDENTIAL_MANAGEMENT'
         );
       },
       index: true,
@@ -610,7 +608,7 @@ const BiometricAuditLogSchema = new mongoose.Schema(
     // Quantum Performance: Optimize for audit queries
     autoIndex: true,
     minimize: false,
-  },
+  }
 );
 
 // ============================================
@@ -635,10 +633,10 @@ BiometricAuditLogSchema.index({ timestamp: -1, 'complianceMarkers.popia.lawfulPr
  */
 BiometricAuditLogSchema.virtual('isImmutable').get(function () {
   return (
-    this.integrityHash
-    && this.merkleProof
-    && this.merkleProof.rootHash
-    && this.schemaVersion.startsWith('2.')
+    this.integrityHash &&
+    this.merkleProof &&
+    this.merkleProof.rootHash &&
+    this.schemaVersion.startsWith('2.')
   );
 });
 
@@ -652,13 +650,13 @@ BiometricAuditLogSchema.virtual('isCompliant').get(function () {
   const ect = this.complianceMarkers.ectAct;
 
   return (
-    popia.lawfulProcessing
-    && popia.purposeSpecified
-    && popia.dataMinimization
-    && cybercrimes.incidentLogged
-    && cybercrimes.forensicDataCollected
-    && ect.electronicEvidence
-    && ect.timestamped
+    popia.lawfulProcessing &&
+    popia.purposeSpecified &&
+    popia.dataMinimization &&
+    cybercrimes.incidentLogged &&
+    cybercrimes.forensicDataCollected &&
+    ect.electronicEvidence &&
+    ect.timestamped
   );
 });
 
@@ -709,8 +707,8 @@ BiometricAuditLogSchema.pre('save', function (next) {
   if (this.retentionPeriod > 10) {
     next(
       new Error(
-        'COMPLIANCE VIOLATION: Audit logs cannot be retained beyond 10 years without special authorization',
-      ),
+        'COMPLIANCE VIOLATION: Audit logs cannot be retained beyond 10 years without special authorization'
+      )
     );
     return;
   }
@@ -805,7 +803,7 @@ BiometricAuditLogSchema.statics.findSecurityIncidents = function (legalFirmId, d
 BiometricAuditLogSchema.statics.generateComplianceReport = async function (
   legalFirmId,
   startDate,
-  endDate,
+  endDate
 ) {
   const logs = await this.find({
     legalFirmId,
@@ -833,10 +831,12 @@ BiometricAuditLogSchema.statics.generateComplianceReport = async function (
   // Analyze logs
   logs.forEach((log) => {
     // Categorize
-    report.totals.byCategory[log.eventCategory] = (report.totals.byCategory[log.eventCategory] || 0) + 1;
+    report.totals.byCategory[log.eventCategory] =
+      (report.totals.byCategory[log.eventCategory] || 0) + 1;
 
     // Severity
-    report.totals.bySeverity[log.eventMetadata.severity] = (report.totals.bySeverity[log.eventMetadata.severity] || 0) + 1;
+    report.totals.bySeverity[log.eventMetadata.severity] =
+      (report.totals.bySeverity[log.eventMetadata.severity] || 0) + 1;
 
     // Compliance
     if (this.isCompliantLog(log)) {
@@ -977,7 +977,7 @@ BiometricAuditLogSchema.methods.placeLegalHold = function (
   placedBy,
   reason,
   caseReference,
-  expectedReleaseDate,
+  expectedReleaseDate
 ) {
   this.legalHold.active = true;
   this.legalHold.placedBy = placedBy;

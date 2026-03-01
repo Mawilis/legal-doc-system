@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*! =======================================================================================
  * ███████╗██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ██████╗ ██████╗ ███╗   ███╗██████╗  █████╗ ███╗   ██╗██╗   ██╗
  * ██╔════╝██║    ██║██║██║     ██╔════╝╚██╗ ██╔╝   ██╔════╝██╔═══██╗████╗ ████║██╔══██╗██╔══██╗████╗  ██║╚██╗ ██╔╝
@@ -29,7 +27,7 @@ const require = _createRequire(import.meta.url);
  * =======================================================================================
  */
 
-'use strict';
+('use strict');
 
 /* eslint-disable no-undef */ // ESLint directive for test suite
 
@@ -1083,7 +1081,7 @@ CompanySchema.methods.registerDsarContact = async function (contactInfo, registe
     tenantId: this.tenantId,
     action: 'dsar_contact_registered',
     message: 'DSAR Information Officer contact registered',
-    contactInfo: `${contactInfo.substring(0, 50)  }...`, // Truncate for security
+    contactInfo: `${contactInfo.substring(0, 50)}...`, // Truncate for security
   });
 
   return this;

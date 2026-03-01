@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env node/bin/bash
 /* eslint-disable no-console, max-len */
 /*
 ╔══════════════════════════════════════════════════════════════════════════════╗

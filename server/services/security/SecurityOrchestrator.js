@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS: SECURITY ORCHESTRATOR - NUCLEAR OPTION FOR TENANT MANAGEMENT                ║
   ║ Powers the "Nuclear Option" for instant tenant quarantine                             ║
@@ -9,13 +9,13 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/security/SecurityOrchestrator.js
  * VERSION: 1.0.0-SECURITY
  * CREATED: 2026-02-26
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Powers the "Nuclear Option" for tenant management
  * • Trips circuit breakers in milliseconds
  * • Preserves forensic evidence for insurance/legal claims
  * • Protects $2.7B system revenue while isolating threats
- * 
+ *
  * REVOLUTIONARY FEATURES:
  * • Millisecond tenant quarantine
  * • Automatic forensic logging
@@ -28,12 +28,12 @@ import { redisClient } from '../../utils/redisClient.js';
 import { AuditLogger } from '../../utils/auditLogger.js';
 import loggerRaw from '../../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
-import { 
-  quarantineTenant, 
+import {
+  quarantineTenant,
   resetTenantQuarantine,
-  QUARANTINE_REASONS 
+  QUARANTINE_REASONS,
 } from '../../middleware/emergencyKillSwitch.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 
 class SecurityOrchestrator {
   /**
@@ -51,14 +51,14 @@ class SecurityOrchestrator {
       tenantId,
       reason,
       operationId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     try {
       // 1. Set the quarantine flag in Redis
       const quarantineDetails = await quarantineTenant(
-        tenantId, 
-        reason, 
+        tenantId,
+        reason,
         metadata.ttl || 86400 // Default 24h
       );
 
@@ -69,7 +69,7 @@ class SecurityOrchestrator {
         quarantineDetails,
         metadata,
         responseTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // 3. Invalidate all sessions for this tenant (if applicable)
@@ -85,7 +85,7 @@ class SecurityOrchestrator {
         operationId,
         responseTimeMs: Date.now() - startTime,
         reason,
-        expiresAt: quarantineDetails.expiresAt
+        expiresAt: quarantineDetails.expiresAt,
       });
 
       return {
@@ -94,15 +94,14 @@ class SecurityOrchestrator {
         reason,
         operationId,
         quarantineDetails,
-        responseTimeMs: Date.now() - startTime
+        responseTimeMs: Date.now() - startTime,
       };
-
     } catch (error) {
       logger.error('Failed to trip circuit breaker', {
         tenantId,
         reason,
         error: error.message,
-        operationId
+        operationId,
       });
 
       throw new Error(`CIRCUIT_BREAKER_FAILED: ${error.message}`);
@@ -129,14 +128,14 @@ class SecurityOrchestrator {
           reason,
           operationId,
           restoredAt: new Date().toISOString(),
-          responseTimeMs: Date.now() - startTime
+          responseTimeMs: Date.now() - startTime,
         });
 
         this.updateMetrics('restore', tenantId, reason);
 
         logger.info(`✅ Tenant ${tenantId} restored to active status.`, {
           operationId,
-          responseTimeMs: Date.now() - startTime
+          responseTimeMs: Date.now() - startTime,
         });
 
         return {
@@ -144,21 +143,20 @@ class SecurityOrchestrator {
           tenantId,
           reason,
           operationId,
-          restoredAt: new Date().toISOString()
+          restoredAt: new Date().toISOString(),
         };
       }
 
       return {
         success: false,
         tenantId,
-        reason: 'NOT_QUARANTINED'
+        reason: 'NOT_QUARANTINED',
       };
-
     } catch (error) {
       logger.error('Failed to reset circuit breaker', {
         tenantId,
         error: error.message,
-        operationId
+        operationId,
       });
 
       throw new Error(`CIRCUIT_BREAKER_RESET_FAILED: ${error.message}`);
@@ -178,20 +176,20 @@ class SecurityOrchestrator {
         return {
           tenantId,
           status: 'OPEN',
-          quarantine: JSON.parse(isQuarantined)
+          quarantine: JSON.parse(isQuarantined),
         };
       }
 
       return {
         tenantId,
-        status: 'CLOSED'
+        status: 'CLOSED',
       };
     } catch (error) {
       logger.error('Failed to check circuit breaker', { tenantId, error: error.message });
       return {
         tenantId,
         status: 'UNKNOWN',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -204,7 +202,7 @@ class SecurityOrchestrator {
     try {
       // Find all session keys for this tenant
       const sessionKeys = await redisClient.keys(`sess:${tenantId}:*`);
-      
+
       if (sessionKeys.length > 0) {
         await redisClient.del(...sessionKeys);
         logger.info(`Invalidated ${sessionKeys.length} sessions for tenant ${tenantId}`);
@@ -223,12 +221,12 @@ class SecurityOrchestrator {
     // - Post to Slack #security channel
     // - Create PagerDuty incident
     // - Update security dashboard
-    
+
     logger.warn('🔔 EMERGENCY ALERT: Tenant quarantine triggered', {
       tenantId,
       reason,
       quarantineDetails,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Log to security audit
@@ -236,7 +234,7 @@ class SecurityOrchestrator {
       tenantId,
       reason,
       quarantineDetails,
-      alertType: 'TENANT_QUARANTINE'
+      alertType: 'TENANT_QUARANTINE',
     });
   }
 
@@ -264,20 +262,20 @@ class SecurityOrchestrator {
         const data = await redisClient.get(key);
         details.push({
           tenantId,
-          quarantine: JSON.parse(data)
+          quarantine: JSON.parse(data),
         });
       }
 
       return {
         activeQuarantines,
         details,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       logger.error('Failed to get quarantine stats', { error: error.message });
       return {
         activeQuarantines: 0,
-        error: error.message
+        error: error.message,
       };
     }
   }

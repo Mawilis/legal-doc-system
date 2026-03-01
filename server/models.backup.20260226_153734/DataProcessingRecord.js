@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                     QUANTUM DATA PROCESSING RECORD NEXUS                            ║
  * ║  This celestial ledger immortalizes every quantum of data processing within Wilsy   ║
@@ -781,7 +779,7 @@ const DataProcessingRecordSchema = new mongoose.Schema(
     toObject: {
       virtuals: true,
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -810,7 +808,7 @@ DataProcessingRecordSchema.index(
       notes: 1,
     },
     name: 'DataProcessingRecordTextSearch',
-  },
+  }
 );
 
 // TTL Index for Automated Archive (30 years retention)
@@ -819,7 +817,7 @@ DataProcessingRecordSchema.index(
   {
     expireAfterSeconds: 946080000, // 30 years in seconds
     partialFilterExpression: { status: 'ARCHIVED' },
-  },
+  }
 );
 
 // ============================================================================
@@ -848,11 +846,11 @@ DataProcessingRecordSchema.virtual('processingDurationDays').get(function () {
  */
 DataProcessingRecordSchema.virtual('requiresRegulatorNotification').get(function () {
   return (
-    this.dataCategories.specialCategoryData
-    || this.processingDetails.automatedDecisionMaking
-    || this.dpiaReference.riskLevel === 'HIGH'
-    || this.dpiaReference.riskLevel === 'VERY_HIGH'
-    || this.thirdPartyDisclosures.some((d) => !['ZA', 'EU', 'UK'].includes(d.country))
+    this.dataCategories.specialCategoryData ||
+    this.processingDetails.automatedDecisionMaking ||
+    this.dpiaReference.riskLevel === 'HIGH' ||
+    this.dpiaReference.riskLevel === 'VERY_HIGH' ||
+    this.thirdPartyDisclosures.some((d) => !['ZA', 'EU', 'UK'].includes(d.country))
   );
 });
 
@@ -868,7 +866,8 @@ DataProcessingRecordSchema.virtual('retentionComplianceStatus').get(function () 
 
   if (daysSinceCreation > maxRetention && !this.retentionPolicy.legalHoldApplied) {
     return 'OVERDUE_FOR_ERASURE';
-  } if (daysSinceCreation > maxRetention * 0.9) {
+  }
+  if (daysSinceCreation > maxRetention * 0.9) {
     return 'APPROACHING_RETENTION_LIMIT';
   }
   return 'WITHIN_RETENTION_PERIOD';
@@ -886,15 +885,15 @@ DataProcessingRecordSchema.virtual('retentionComplianceStatus').get(function () 
 DataProcessingRecordSchema.pre('save', async function (next) {
   // Only validate on new documents or when specific fields change
   if (
-    this.isNew
-    || this.isModified('processingPurpose')
-    || this.isModified('lawfulBases')
-    || this.isModified('dataCategories')
+    this.isNew ||
+    this.isModified('processingPurpose') ||
+    this.isModified('lawfulBases') ||
+    this.isModified('dataCategories')
   ) {
     // Validate at least one lawful basis is specified
     if (!this.lawfulBases || this.lawfulBases.length === 0) {
       const err = new Error(
-        'At least one lawful basis for processing must be specified (POPIA Section 11)',
+        'At least one lawful basis for processing must be specified (POPIA Section 11)'
       );
       err.code = 'POPIA_COMPLIANCE_ERROR';
       return next(err);
@@ -905,11 +904,11 @@ DataProcessingRecordSchema.pre('save', async function (next) {
       // 10 years
       // Require additional justification for extended retention
       if (
-        !this.retentionPolicy.retentionJustification
-        || this.retentionPolicy.retentionJustification.length < 100
+        !this.retentionPolicy.retentionJustification ||
+        this.retentionPolicy.retentionJustification.length < 100
       ) {
         const err = new Error(
-          'Retention periods exceeding 10 years require detailed justification',
+          'Retention periods exceeding 10 years require detailed justification'
         );
         err.code = 'RETENTION_POLICY_ERROR';
         return next(err);
@@ -928,7 +927,7 @@ DataProcessingRecordSchema.pre('save', async function (next) {
 
       if (!hasValidBasis) {
         const err = new Error(
-          'Special category data requires explicit consent, vital interests, public interest, or legal claims basis',
+          'Special category data requires explicit consent, vital interests, public interest, or legal claims basis'
         );
         err.code = 'SPECIAL_CATEGORY_ERROR';
         return next(err);
@@ -1076,7 +1075,7 @@ DataProcessingRecordSchema.methods.updateComplianceScore = function () {
 DataProcessingRecordSchema.methods.triggerComplianceReview = async function (doc) {
   // Implementation would connect to workflow engine
   console.log(
-    `Compliance review triggered for record ${doc.recordId}. Score: ${doc.complianceStatus.complianceScore}`,
+    `Compliance review triggered for record ${doc.recordId}. Score: ${doc.complianceStatus.complianceScore}`
   );
 
   // TODO: Implement actual workflow integration
@@ -1190,7 +1189,7 @@ DataProcessingRecordSchema.statics.findByComplianceScore = function (minScore = 
  */
 DataProcessingRecordSchema.statics.getProcessingActivitiesReport = async function (
   startDate,
-  endDate,
+  endDate
 ) {
   const matchStage = {
     createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
@@ -1476,10 +1475,10 @@ export default DataProcessingRecord;
 
 // FINAL QUANTUM INVOCATION
 console.log(
-  '🛡️  DataProcessingRecord Quantum Model Activated: Weaving POPIA compliance into the eternal fabric of African digital sovereignty.',
+  '🛡️  DataProcessingRecord Quantum Model Activated: Weaving POPIA compliance into the eternal fabric of African digital sovereignty.'
 );
 console.log(
-  '⚖️  Wilsy Touching Lives Eternally through unbreakable data protection and legal compliance.',
+  '⚖️  Wilsy Touching Lives Eternally through unbreakable data protection and legal compliance.'
 );
 
 /*

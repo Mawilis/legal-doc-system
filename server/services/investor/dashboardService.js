@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR DASHBOARD SERVICE - REAL-TIME INVESTOR METRICS & ANALYTICS                   ║
   ║ R3.2M/year manual reporting eliminated | JSE Compliance | Real-time Portfolio Health  ║
@@ -10,13 +10,13 @@
  * VERSION: 2.0.0-INVESTOR-GRADE
  * CREATED: 2026-02-25
  * LAST UPDATED: 2026-02-25
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R950K/year in manual KPI compilation and investor reporting
  * • Generates: R480K/year revenue @ 94% margin via dashboard subscriptions
  * • Risk elimination: R2.3M in potential JSE reporting penalties
  * • Compliance: JSE Listings Requirements §3.4, POPIA §19, Companies Act §28
- * 
+ *
  * INTEGRATION_MAP:
  * {
  *   "expectedConsumers": [
@@ -41,7 +41,7 @@
  *   "placementStrategy": "service layer - investor dashboard with real-time analytics",
  *   "integrationContract": "export named functions, no side effects, tenant isolation"
  * }
- * 
+ *
  * MERMAID_INTEGRATION:
  * graph TD
  *   A[Investor Dashboard Route] -->|GET /api/v1/investor/dashboard| B[Dashboard Service]
@@ -55,7 +55,7 @@
  *   B -->|PII redaction| J[Redact Sensitive]
  *   B -->|cache| K[Redis Cache]
  *   B -->|real-time| L[WebSocket Service]
- *   
+ *
  *   subgraph "Real-time Updates"
  *     M[Price Changes] -->|websocket| B
  *     N[New Valuations] -->|event| B
@@ -63,8 +63,8 @@
  *   end
  */
 
-import mongoose from "mongoose";
-import { createHash } from "crypto";
+import mongoose from 'mongoose';
+import { createHash } from 'crypto';
 import Company from '../../models/Company.js';
 import Valuation from '../../models/Valuation.js';
 import Comparable from '../../models/Comparable.js';
@@ -105,7 +105,7 @@ const PERIODS = {
   '30d': 30 * 24 * 60 * 60 * 1000,
   '90d': 90 * 24 * 60 * 60 * 1000,
   '1y': 365 * 24 * 60 * 60 * 1000,
-  '3y': 3 * 365 * 24 * 60 * 60 * 1000
+  '3y': 3 * 365 * 24 * 60 * 60 * 1000,
 };
 
 const DASHBOARD_SECTIONS = {
@@ -115,7 +115,7 @@ const DASHBOARD_SECTIONS = {
   INDUSTRY: 'industry',
   PERFORMANCE: 'performance',
   JSE_COMPLIANCE: 'jse-compliance',
-  INVESTOR_METRICS: 'investor-metrics'
+  INVESTOR_METRICS: 'investor-metrics',
 };
 
 const RETENTION_POLICIES = {
@@ -123,14 +123,14 @@ const RETENTION_POLICIES = {
     name: 'investor_dashboard_10_years',
     legalReference: 'Companies Act 71 of 2008 §28, JSE Listings Requirements §3.4',
     retentionPeriod: 3650, // days (10 years)
-    mandatoryFields: ['tenantId', 'userId', 'dashboardType', 'generatedAt', 'hash']
+    mandatoryFields: ['tenantId', 'userId', 'dashboardType', 'generatedAt', 'hash'],
   },
   INVESTOR_REPORT: {
     name: 'investor_report_5_years',
     legalReference: 'Financial Advisory and Intermediary Services Act §18',
     retentionPeriod: 1825, // days (5 years)
-    mandatoryFields: ['tenantId', 'reportId', 'investorId', 'period', 'hash']
-  }
+    mandatoryFields: ['tenantId', 'reportId', 'investorId', 'period', 'hash'],
+  },
 };
 
 // ============================================================================
@@ -145,7 +145,9 @@ const RETENTION_POLICIES = {
 function validateTenantId(tenantId) {
   const tenantIdRegex = /^[a-zA-Z0-9_-]{8,64}$/;
   if (!tenantId || !tenantIdRegex.test(tenantId)) {
-    throw new Error(`Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`);
+    throw new Error(
+      `Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`
+    );
   }
 }
 
@@ -157,7 +159,7 @@ function validateTenantId(tenantId) {
 function calculateDateRange(period = DEFAULT_PERIOD) {
   const endDate = new Date();
   const startDate = new Date();
-  
+
   const msOffset = PERIODS[period];
   if (msOffset) {
     startDate.setTime(endDate.getTime() - msOffset);
@@ -165,7 +167,7 @@ function calculateDateRange(period = DEFAULT_PERIOD) {
     // Default to 30 days
     startDate.setDate(startDate.getDate() - 30);
   }
-  
+
   return { startDate, endDate };
 }
 
@@ -180,7 +182,7 @@ function formatCurrency(value) {
     style: 'currency',
     currency: 'ZAR',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   }).format(value);
 }
 
@@ -194,7 +196,7 @@ function formatPercentage(value) {
   return new Intl.NumberFormat('en-ZA', {
     style: 'percent',
     minimumFractionDigits: 1,
-    maximumFractionDigits: 1
+    maximumFractionDigits: 1,
   }).format(value);
 }
 
@@ -209,17 +211,17 @@ function calculateGrowth(current, previous) {
     return {
       absolute: current || 0,
       percentage: current ? 100 : 0,
-      trend: current ? 'up' : 'flat'
+      trend: current ? 'up' : 'flat',
     };
   }
-  
+
   const absolute = (current || 0) - previous;
   const percentage = ((current || 0) - previous) / previous;
-  
+
   return {
     absolute,
     percentage,
-    trend: absolute > 0 ? 'up' : absolute < 0 ? 'down' : 'flat'
+    trend: absolute > 0 ? 'up' : absolute < 0 ? 'down' : 'flat',
   };
 }
 
@@ -235,7 +237,7 @@ function generateCacheKey(tenantId, period, sections = []) {
     tenantId,
     period,
     sections: sections.sort(),
-    timestamp: Math.floor(Date.now() / (DASHBOARD_CACHE_TTL * 1000)) // Roll by TTL
+    timestamp: Math.floor(Date.now() / (DASHBOARD_CACHE_TTL * 1000)), // Roll by TTL
   };
   return `dashboard:${createHash('sha256').update(JSON.stringify(data)).digest('hex').substring(0, 32)}`;
 }
@@ -248,7 +250,7 @@ function generateCacheKey(tenantId, period, sections = []) {
  */
 function applyRetentionPolicy(auditEntry, policyKey = 'INVESTOR_DASHBOARD') {
   const policy = RETENTION_POLICIES[policyKey] || RETENTION_POLICIES.INVESTOR_DASHBOARD;
-  
+
   return {
     ...auditEntry,
     retentionPolicy: policy.name,
@@ -256,7 +258,7 @@ function applyRetentionPolicy(auditEntry, policyKey = 'INVESTOR_DASHBOARD') {
     legalReference: policy.legalReference,
     retentionStart: new Date().toISOString(),
     dataResidency: process.env.DEFAULT_DATA_RESIDENCY || 'ZA',
-    dataClassification: 'confidential-investor'
+    dataClassification: 'confidential-investor',
   };
 }
 
@@ -272,12 +274,12 @@ function applyRetentionPolicy(auditEntry, policyKey = 'INVESTOR_DASHBOARD') {
  */
 async function getCompanyStatistics(tenantId, options = {}) {
   const { includeInactive = false } = options;
-  
+
   const matchStage = { tenantId: new mongoose.Types.ObjectId(tenantId) };
   if (!includeInactive) {
     matchStage.status = 'active';
   }
-  
+
   const stats = await Company.aggregate([
     { $match: matchStage },
     {
@@ -288,23 +290,23 @@ async function getCompanyStatistics(tenantId, options = {}) {
               _id: null,
               totalCompanies: { $sum: 1 },
               activeCompanies: {
-                $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
+                $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] },
               },
               pendingCompanies: {
-                $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
+                $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] },
               },
               archivedCompanies: {
-                $sum: { $cond: [{ $eq: ['$status', 'archived'] }, 1, 0] }
+                $sum: { $cond: [{ $eq: ['$status', 'archived'] }, 1, 0] },
               },
               companiesWithValuations: {
-                $sum: { $cond: [{ $gt: ['$valuations.count', 0] }, 1, 0] }
+                $sum: { $cond: [{ $gt: ['$valuations.count', 0] }, 1, 0] },
               },
               totalValuations: { $sum: '$valuations.count' },
               averageValuation: { $avg: '$valuations.averageValue' },
               medianValuation: { $avg: '$valuations.medianValue' },
-              totalValuationValue: { $sum: '$valuations.totalValue' }
-            }
-          }
+              totalValuationValue: { $sum: '$valuations.totalValue' },
+            },
+          },
         ],
         byIndustry: [
           {
@@ -313,11 +315,11 @@ async function getCompanyStatistics(tenantId, options = {}) {
               count: { $sum: 1 },
               avgValuation: { $avg: '$valuations.averageValue' },
               totalValuations: { $sum: '$valuations.count' },
-              companies: { $push: { name: '$name', valuation: '$valuations.averageValue' } }
-            }
+              companies: { $push: { name: '$name', valuation: '$valuations.averageValue' } },
+            },
           },
           { $sort: { count: -1 } },
-          { $limit: TOP_INDUSTRIES_LIMIT }
+          { $limit: TOP_INDUSTRIES_LIMIT },
         ],
         bySize: [
           {
@@ -327,23 +329,23 @@ async function getCompanyStatistics(tenantId, options = {}) {
               default: 'Unknown',
               output: {
                 count: { $sum: 1 },
-                companies: { $push: '$name' }
-              }
-            }
-          }
+                companies: { $push: '$name' },
+              },
+            },
+          },
         ],
         byStatus: [
           {
             $group: {
               _id: '$status',
-              count: { $sum: 1 }
-            }
-          }
-        ]
-      }
-    }
+              count: { $sum: 1 },
+            },
+          },
+        ],
+      },
+    },
   ]);
-  
+
   return {
     overview: stats[0]?.overview[0] || {
       totalCompanies: 0,
@@ -354,11 +356,11 @@ async function getCompanyStatistics(tenantId, options = {}) {
       totalValuations: 0,
       averageValuation: 0,
       medianValuation: 0,
-      totalValuationValue: 0
+      totalValuationValue: 0,
     },
     byIndustry: stats[0]?.byIndustry || [],
     bySize: stats[0]?.bySize || [],
-    byStatus: stats[0]?.byStatus || []
+    byStatus: stats[0]?.byStatus || [],
   };
 }
 
@@ -374,8 +376,8 @@ async function getValuationAnalytics(tenantId, startDate, endDate) {
     {
       $match: {
         tenantId: new mongoose.Types.ObjectId(tenantId),
-        createdAt: { $gte: startDate, $lte: endDate }
-      }
+        createdAt: { $gte: startDate, $lte: endDate },
+      },
     },
     {
       $facet: {
@@ -386,17 +388,17 @@ async function getValuationAnalytics(tenantId, startDate, endDate) {
                 year: { $year: '$createdAt' },
                 month: { $month: '$createdAt' },
                 day: { $dayOfMonth: '$createdAt' },
-                week: { $week: '$createdAt' }
+                week: { $week: '$createdAt' },
               },
               count: { $sum: 1 },
               averageValue: { $avg: '$finalValuation.weightedAverage' },
               medianValue: { $avg: '$finalValuation.median' },
               totalValue: { $sum: '$finalValuation.weightedAverage' },
               minValue: { $min: '$finalValuation.weightedAverage' },
-              maxValue: { $max: '$finalValuation.weightedAverage' }
-            }
+              maxValue: { $max: '$finalValuation.weightedAverage' },
+            },
           },
-          { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+          { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
         ],
         byMethod: [
           {
@@ -404,9 +406,9 @@ async function getValuationAnalytics(tenantId, startDate, endDate) {
               _id: '$valuationMethod',
               count: { $sum: 1 },
               avgValue: { $avg: '$finalValuation.weightedAverage' },
-              totalValue: { $sum: '$finalValuation.weightedAverage' }
-            }
-          }
+              totalValue: { $sum: '$finalValuation.weightedAverage' },
+            },
+          },
         ],
         byConfidence: [
           {
@@ -416,24 +418,24 @@ async function getValuationAnalytics(tenantId, startDate, endDate) {
               default: 'Low',
               output: {
                 count: { $sum: 1 },
-                avgValue: { $avg: '$finalValuation.weightedAverage' }
-              }
-            }
-          }
+                avgValue: { $avg: '$finalValuation.weightedAverage' },
+              },
+            },
+          },
         ],
         jseMaterial: [
           {
             $match: {
-              'finalValuation.weightedAverage': { $gte: JSE_MATERIALITY_THRESHOLD }
-            }
+              'finalValuation.weightedAverage': { $gte: JSE_MATERIALITY_THRESHOLD },
+            },
           },
           {
             $lookup: {
               from: 'companies',
               localField: 'companyId',
               foreignField: '_id',
-              as: 'company'
-            }
+              as: 'company',
+            },
           },
           {
             $project: {
@@ -441,9 +443,9 @@ async function getValuationAnalytics(tenantId, startDate, endDate) {
               companyName: { $arrayElemAt: ['$company.name', 0] },
               value: '$finalValuation.weightedAverage',
               date: '$createdAt',
-              jseMaterial: true
-            }
-          }
+              jseMaterial: true,
+            },
+          },
         ],
         summary: [
           {
@@ -454,48 +456,48 @@ async function getValuationAnalytics(tenantId, startDate, endDate) {
               medianValue: { $avg: '$finalValuation.median' },
               totalValue: { $sum: '$finalValuation.weightedAverage' },
               maxValue: { $max: '$finalValuation.weightedAverage' },
-              minValue: { $min: '$finalValuation.weightedAverage' }
-            }
-          }
-        ]
-      }
-    }
+              minValue: { $min: '$finalValuation.weightedAverage' },
+            },
+          },
+        ],
+      },
+    },
   ]);
-  
+
   // Get previous period for growth calculation
   const periodLength = endDate.getTime() - startDate.getTime();
   const previousStartDate = new Date(startDate.getTime() - periodLength);
   const previousEndDate = new Date(endDate.getTime() - periodLength);
-  
+
   const previousStats = await Valuation.aggregate([
     {
       $match: {
         tenantId: new mongoose.Types.ObjectId(tenantId),
-        createdAt: { $gte: previousStartDate, $lte: previousEndDate }
-      }
+        createdAt: { $gte: previousStartDate, $lte: previousEndDate },
+      },
     },
     {
       $group: {
         _id: null,
         totalValuations: { $sum: 1 },
         averageValue: { $avg: '$finalValuation.weightedAverage' },
-        totalValue: { $sum: '$finalValuation.weightedAverage' }
-      }
-    }
+        totalValue: { $sum: '$finalValuation.weightedAverage' },
+      },
+    },
   ]);
-  
+
   const current = valuationStats[0]?.summary[0] || {
     totalValuations: 0,
     averageValue: 0,
-    totalValue: 0
+    totalValue: 0,
   };
-  
+
   const previous = previousStats[0] || {
     totalValuations: 0,
     averageValue: 0,
-    totalValue: 0
+    totalValue: 0,
   };
-  
+
   return {
     trends: valuationStats[0]?.trends || [],
     byMethod: valuationStats[0]?.byMethod || [],
@@ -505,8 +507,8 @@ async function getValuationAnalytics(tenantId, startDate, endDate) {
     growth: {
       valuations: calculateGrowth(current.totalValuations, previous.totalValuations),
       averageValue: calculateGrowth(current.averageValue, previous.averageValue),
-      totalValue: calculateGrowth(current.totalValue, previous.totalValue)
-    }
+      totalValue: calculateGrowth(current.totalValue, previous.totalValue),
+    },
   };
 }
 
@@ -520,8 +522,8 @@ async function getComparableAnalytics(tenantId) {
     {
       $match: {
         tenantId: new mongoose.Types.ObjectId(tenantId),
-        isActive: true
-      }
+        isActive: true,
+      },
     },
     {
       $facet: {
@@ -535,19 +537,19 @@ async function getComparableAnalytics(tenantId) {
               averageEVEBITDA: { $avg: '$statistics.averageEVEBITDA' },
               medianEVEBITDA: { $avg: '$statistics.medianEVEBITDA' },
               averageRevenue: { $avg: '$financials.revenue' },
-              totalMarketCap: { $sum: '$financials.marketCap' }
-            }
+              totalMarketCap: { $sum: '$financials.marketCap' },
+            },
           },
-          { $sort: { count: -1 } }
+          { $sort: { count: -1 } },
         ],
         byExchange: [
           {
             $group: {
               _id: '$exchange',
               count: { $sum: 1 },
-              avgPE: { $avg: '$statistics.averagePE' }
-            }
-          }
+              avgPE: { $avg: '$statistics.averagePE' },
+            },
+          },
         ],
         multiples: [
           {
@@ -558,9 +560,9 @@ async function getComparableAnalytics(tenantId) {
               p75PE: { $percentile: { input: '$statistics.averagePE', p: 0.75 } },
               avgEVEBITDA: { $avg: '$statistics.averageEVEBITDA' },
               p25EVEBITDA: { $percentile: { input: '$statistics.averageEVEBITDA', p: 0.25 } },
-              p75EVEBITDA: { $percentile: { input: '$statistics.averageEVEBITDA', p: 0.75 } }
-            }
-          }
+              p75EVEBITDA: { $percentile: { input: '$statistics.averageEVEBITDA', p: 0.75 } },
+            },
+          },
         ],
         summary: [
           {
@@ -571,27 +573,27 @@ async function getComparableAnalytics(tenantId) {
               totalMarketCap: { $sum: '$financials.marketCap' },
               averageRevenue: { $avg: '$financials.revenue' },
               averagePE: { $avg: '$statistics.averagePE' },
-              averageEVEBITDA: { $avg: '$statistics.averageEVEBITDA' }
-            }
-          }
-        ]
-      }
-    }
+              averageEVEBITDA: { $avg: '$statistics.averageEVEBITDA' },
+            },
+          },
+        ],
+      },
+    },
   ]);
-  
+
   return {
     bySector: comparableStats[0]?.bySector || [],
     byExchange: comparableStats[0]?.byExchange || [],
     multiples: comparableStats[0]?.multiples[0] || {
       avgPE: 0,
-      avgEVEBITDA: 0
+      avgEVEBITDA: 0,
     },
     summary: comparableStats[0]?.summary[0] || {
       totalComparables: 0,
       averageMarketCap: 0,
       averagePE: 0,
-      averageEVEBITDA: 0
-    }
+      averageEVEBITDA: 0,
+    },
   };
 }
 
@@ -603,15 +605,15 @@ async function getComparableAnalytics(tenantId) {
  */
 async function getRecentValuations(tenantId, limit = MAX_RECENT_VALUATIONS) {
   const recentValuations = await Valuation.find({
-    tenantId: new mongoose.Types.ObjectId(tenantId)
+    tenantId: new mongoose.Types.ObjectId(tenantId),
   })
     .sort({ createdAt: -1 })
     .limit(limit)
     .populate('companyId', 'name industry registrationNumber')
     .populate('createdBy', 'firstName lastName')
     .lean();
-  
-  return recentValuations.map(v => ({
+
+  return recentValuations.map((v) => ({
     id: v.valuationId || v._id,
     valuationId: v.valuationId,
     companyId: v.companyId?._id,
@@ -622,12 +624,14 @@ async function getRecentValuations(tenantId, limit = MAX_RECENT_VALUATIONS) {
     method: v.valuationMethod,
     confidence: v.finalValuation?.confidence,
     confidencePercent: formatPercentage(v.finalValuation?.confidence),
-    createdBy: v.createdBy ? {
-      name: `${v.createdBy.firstName || ''} ${v.createdBy.lastName || ''}`.trim(),
-      id: v.createdBy._id
-    } : null,
+    createdBy: v.createdBy
+      ? {
+          name: `${v.createdBy.firstName || ''} ${v.createdBy.lastName || ''}`.trim(),
+          id: v.createdBy._id,
+        }
+      : null,
     createdAt: v.createdAt,
-    isJseMaterial: (v.finalValuation?.weightedAverage || 0) >= JSE_MATERIALITY_THRESHOLD
+    isJseMaterial: (v.finalValuation?.weightedAverage || 0) >= JSE_MATERIALITY_THRESHOLD,
   }));
 }
 
@@ -644,35 +648,37 @@ async function getInvestorMetrics(tenantId, userId) {
     const user = await User.findById(userId).select('preferences.investorDashboard').lean();
     userPreferences = user?.preferences?.investorDashboard;
   }
-  
+
   // Get watchlist companies
   const watchlist = await Company.find({
     tenantId,
-    'watchlist.userIds': userId
-  }).select('name industry valuations.averageValue').lean();
-  
+    'watchlist.userIds': userId,
+  })
+    .select('name industry valuations.averageValue')
+    .lean();
+
   // Get portfolio metrics (placeholder - would connect to actual portfolio service)
   const portfolioMetrics = {
     totalInvestments: 0,
     totalValue: 0,
     averageReturn: 0,
-    topPerformers: []
+    topPerformers: [],
   };
-  
+
   return {
-    watchlist: watchlist.map(c => ({
+    watchlist: watchlist.map((c) => ({
       id: c._id,
       name: c.name,
       industry: c.industry,
       valuation: c.valuations?.averageValue,
-      formattedValuation: formatCurrency(c.valuations?.averageValue)
+      formattedValuation: formatCurrency(c.valuations?.averageValue),
     })),
     portfolio: portfolioMetrics,
     preferences: userPreferences || {
       defaultPeriod: DEFAULT_PERIOD,
       favoriteMetrics: ['totalValuations', 'averageValuation', 'jseMaterial'],
-      emailAlerts: true
-    }
+      emailAlerts: true,
+    },
   };
 }
 
@@ -688,27 +694,27 @@ async function getJSEComplianceMetrics(tenantId, startDate, endDate) {
   const materialValuations = await Valuation.find({
     tenantId: new mongoose.Types.ObjectId(tenantId),
     createdAt: { $gte: startDate, $lte: endDate },
-    'finalValuation.weightedAverage': { $gte: JSE_MATERIALITY_THRESHOLD }
+    'finalValuation.weightedAverage': { $gte: JSE_MATERIALITY_THRESHOLD },
   })
     .populate('companyId', 'name registrationNumber')
     .sort({ 'finalValuation.weightedAverage': -1 })
     .lean();
-  
+
   // Companies approaching materiality threshold
   const approachingMateriality = await Company.find({
     tenantId,
-    'valuations.averageValue': { 
+    'valuations.averageValue': {
       $gte: JSE_MATERIALITY_THRESHOLD * 0.8,
-      $lt: JSE_MATERIALITY_THRESHOLD
-    }
+      $lt: JSE_MATERIALITY_THRESHOLD,
+    },
   })
     .select('name registrationNumber valuations.averageValue industry')
     .lean();
-  
+
   return {
     materialityThreshold: JSE_MATERIALITY_THRESHOLD,
     formattedThreshold: formatCurrency(JSE_MATERIALITY_THRESHOLD),
-    materialValuations: materialValuations.map(v => ({
+    materialValuations: materialValuations.map((v) => ({
       id: v.valuationId,
       companyName: v.companyId?.name,
       registrationNumber: v.companyId?.registrationNumber,
@@ -716,18 +722,19 @@ async function getJSEComplianceMetrics(tenantId, startDate, endDate) {
       formattedValue: formatCurrency(v.finalValuation?.weightedAverage),
       date: v.createdAt,
       requiresDisclosure: true,
-      disclosureDeadline: new Date(v.createdAt.getTime() + 2 * 24 * 60 * 60 * 1000) // 2 days
+      disclosureDeadline: new Date(v.createdAt.getTime() + 2 * 24 * 60 * 60 * 1000), // 2 days
     })),
-    approachingMateriality: approachingMateriality.map(c => ({
+    approachingMateriality: approachingMateriality.map((c) => ({
       id: c._id,
       name: c.name,
       registrationNumber: c.registrationNumber,
       value: c.valuations?.averageValue,
       formattedValue: formatCurrency(c.valuations?.averageValue),
-      percentOfThreshold: ((c.valuations?.averageValue || 0) / JSE_MATERIALITY_THRESHOLD * 100).toFixed(1) + '%'
+      percentOfThreshold:
+        (((c.valuations?.averageValue || 0) / JSE_MATERIALITY_THRESHOLD) * 100).toFixed(1) + '%',
     })),
     materialCount: materialValuations.length,
-    approachingCount: approachingMateriality.length
+    approachingCount: approachingMateriality.length,
   };
 }
 
@@ -743,33 +750,33 @@ async function getJSEComplianceMetrics(tenantId, startDate, endDate) {
  */
 export async function getDashboard(tenantId, options = {}) {
   const startTime = Date.now();
-  
+
   // Validate tenant ID
   validateTenantId(tenantId);
-  
+
   const {
     period = DEFAULT_PERIOD,
     userId = null,
     sections = Object.values(DASHBOARD_SECTIONS),
     includeRedacted = false,
     generateEvidence = true,
-    skipCache = false
+    skipCache = false,
   } = options;
 
   try {
     // Calculate date range
     const { startDate, endDate } = calculateDateRange(period);
-    
+
     // Check cache if not skipped
     const cacheKey = generateCacheKey(tenantId, period, sections);
     // In production, check Redis cache here
     // if (!skipCache) { const cached = await redis.get(cacheKey); if (cached) return JSON.parse(cached); }
-    
+
     logger.info('Generating investor dashboard', {
       tenantId: tenantId.substring(0, 8) + '...',
       userId: userId?.substring(0, 8),
       period,
-      sections: sections.length
+      sections: sections.length,
     });
 
     // Initialize dashboard object
@@ -780,8 +787,8 @@ export async function getDashboard(tenantId, options = {}) {
         generatedAt: new Date().toISOString(),
         generationTimeMs: 0,
         sections: [],
-        cacheKey
-      }
+        cacheKey,
+      },
     };
 
     // Build dashboard based on requested sections
@@ -790,12 +797,12 @@ export async function getDashboard(tenantId, options = {}) {
     // Overview section
     if (sections.includes(DASHBOARD_SECTIONS.OVERVIEW)) {
       promises.push(
-        getCompanyStatistics(tenantId).then(stats => {
+        getCompanyStatistics(tenantId).then((stats) => {
           dashboard.overview = {
             companies: stats.overview,
             byIndustry: stats.byIndustry,
             bySize: stats.bySize,
-            byStatus: stats.byStatus
+            byStatus: stats.byStatus,
           };
           dashboard.metadata.sections.push('overview');
         })
@@ -805,7 +812,7 @@ export async function getDashboard(tenantId, options = {}) {
     // Valuations section
     if (sections.includes(DASHBOARD_SECTIONS.VALUATIONS)) {
       promises.push(
-        getValuationAnalytics(tenantId, startDate, endDate).then(analytics => {
+        getValuationAnalytics(tenantId, startDate, endDate).then((analytics) => {
           dashboard.valuations = analytics;
           dashboard.metadata.sections.push('valuations');
         })
@@ -815,7 +822,7 @@ export async function getDashboard(tenantId, options = {}) {
     // Comparables section
     if (sections.includes(DASHBOARD_SECTIONS.COMPARABLES)) {
       promises.push(
-        getComparableAnalytics(tenantId).then(analytics => {
+        getComparableAnalytics(tenantId).then((analytics) => {
           dashboard.comparables = analytics;
           dashboard.metadata.sections.push('comparables');
         })
@@ -825,7 +832,7 @@ export async function getDashboard(tenantId, options = {}) {
     // Recent valuations (always include if valuations are included)
     if (sections.includes(DASHBOARD_SECTIONS.VALUATIONS)) {
       promises.push(
-        getRecentValuations(tenantId).then(recent => {
+        getRecentValuations(tenantId).then((recent) => {
           dashboard.recentValuations = recent;
         })
       );
@@ -834,7 +841,7 @@ export async function getDashboard(tenantId, options = {}) {
     // Investor metrics
     if (sections.includes(DASHBOARD_SECTIONS.INVESTOR_METRICS) && userId) {
       promises.push(
-        getInvestorMetrics(tenantId, userId).then(metrics => {
+        getInvestorMetrics(tenantId, userId).then((metrics) => {
           dashboard.investorMetrics = metrics;
           dashboard.metadata.sections.push('investorMetrics');
         })
@@ -844,7 +851,7 @@ export async function getDashboard(tenantId, options = {}) {
     // JSE Compliance
     if (sections.includes(DASHBOARD_SECTIONS.JSE_COMPLIANCE)) {
       promises.push(
-        getJSEComplianceMetrics(tenantId, startDate, endDate).then(metrics => {
+        getJSEComplianceMetrics(tenantId, startDate, endDate).then((metrics) => {
           dashboard.jseCompliance = metrics;
           dashboard.metadata.sections.push('jseCompliance');
         })
@@ -858,18 +865,17 @@ export async function getDashboard(tenantId, options = {}) {
     const totalValuations = dashboard.valuations?.summary?.totalValuations || 0;
     const totalCompanies = dashboard.overview?.companies?.totalCompanies || 0;
     const companiesWithValuations = dashboard.overview?.companies?.companiesWithValuations || 0;
-    
+
     dashboard.summary = {
       totalValuations,
       totalCompanies,
       companiesWithValuations,
-      valuationCoverage: totalCompanies > 0 
-        ? formatPercentage(companiesWithValuations / totalCompanies)
-        : '0%',
+      valuationCoverage:
+        totalCompanies > 0 ? formatPercentage(companiesWithValuations / totalCompanies) : '0%',
       averageValuation: formatCurrency(dashboard.valuations?.summary?.averageValue),
       totalValuationValue: formatCurrency(dashboard.valuations?.summary?.totalValue),
       materialValuations: dashboard.jseCompliance?.materialCount || 0,
-      period
+      period,
     };
 
     // Calculate generation time
@@ -887,9 +893,9 @@ export async function getDashboard(tenantId, options = {}) {
         totalCompanies: dashboard.overview?.companies?.totalCompanies,
         totalValuations: dashboard.valuations?.summary?.totalValuations,
         materialValuations: dashboard.jseCompliance?.materialCount,
-        generationTimeMs: dashboard.metadata.generationTimeMs
+        generationTimeMs: dashboard.metadata.generationTimeMs,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     // Apply retention policy
@@ -902,13 +908,13 @@ export async function getDashboard(tenantId, options = {}) {
     if (generateEvidence) {
       const evidence = {
         auditEntry: fullAuditEntry,
-        dashboardHash: cryptoUtils.hash ? 
-          cryptoUtils.hash(JSON.stringify(dashboard)) : 
-          createHash('sha256').update(JSON.stringify(dashboard)).digest('hex'),
+        dashboardHash: cryptoUtils.hash
+          ? cryptoUtils.hash(JSON.stringify(dashboard))
+          : createHash('sha256').update(JSON.stringify(dashboard)).digest('hex'),
         timestamp: new Date().toISOString(),
-        evidenceType: 'investor-dashboard'
+        evidenceType: 'investor-dashboard',
       };
-      
+
       // In production, append to evidence log
       // await appendEvidence(evidence);
     }
@@ -920,9 +926,9 @@ export async function getDashboard(tenantId, options = {}) {
     if (!includeRedacted) {
       // Remove any PII from response
       if (dashboard.recentValuations) {
-        dashboard.recentValuations = dashboard.recentValuations.map(v => ({
+        dashboard.recentValuations = dashboard.recentValuations.map((v) => ({
           ...v,
-          createdBy: v.createdBy ? { name: '[REDACTED]' } : null
+          createdBy: v.createdBy ? { name: '[REDACTED]' } : null,
         }));
       }
     }
@@ -930,19 +936,18 @@ export async function getDashboard(tenantId, options = {}) {
     logger.info('Dashboard generated successfully', {
       tenantId: tenantId.substring(0, 8) + '...',
       sections: dashboard.metadata.sections.length,
-      generationTimeMs: dashboard.metadata.generationTimeMs
+      generationTimeMs: dashboard.metadata.generationTimeMs,
     });
 
     return dashboard;
-
   } catch (error) {
     logger.error('Error generating dashboard', {
       tenantId: tenantId.substring(0, 8) + '...',
       userId: userId?.substring(0, 8),
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
-    
+
     throw new Error(`Failed to generate investor dashboard: ${error.message}`);
   }
 }
@@ -956,12 +961,12 @@ export async function getDashboard(tenantId, options = {}) {
  */
 export async function getDashboardSection(tenantId, section, options = {}) {
   validateTenantId(tenantId);
-  
+
   const { period = DEFAULT_PERIOD, userId = null } = options;
   const { startDate, endDate } = calculateDateRange(period);
-  
+
   let data = null;
-  
+
   switch (section) {
     case DASHBOARD_SECTIONS.OVERVIEW:
       data = await getCompanyStatistics(tenantId);
@@ -986,12 +991,12 @@ export async function getDashboardSection(tenantId, section, options = {}) {
     default:
       throw new Error(`Unknown dashboard section: ${section}`);
   }
-  
+
   return {
     section,
     period,
     data,
-    generatedAt: new Date().toISOString()
+    generatedAt: new Date().toISOString(),
   };
 }
 
@@ -1003,15 +1008,15 @@ export async function getDashboardSection(tenantId, section, options = {}) {
  */
 export async function exportDashboard(tenantId, options = {}) {
   const { period = '1y', format = 'json', userId = null } = options;
-  
+
   // Get full dashboard data
   const dashboard = await getDashboard(tenantId, {
     period,
     userId,
     sections: Object.values(DASHBOARD_SECTIONS),
-    includeRedacted: format === 'pdf' // Include redacted for PDF reports
+    includeRedacted: format === 'pdf', // Include redacted for PDF reports
   });
-  
+
   // Add export metadata
   const exportData = {
     ...dashboard,
@@ -1023,11 +1028,11 @@ export async function exportDashboard(tenantId, options = {}) {
       compliance: {
         popia: true,
         companiesAct: true,
-        jse: true
-      }
-    }
+        jse: true,
+      },
+    },
   };
-  
+
   // Audit export
   await auditLogger.log('dashboard-export', {
     action: 'DASHBOARD_EXPORTED',
@@ -1035,9 +1040,9 @@ export async function exportDashboard(tenantId, options = {}) {
     userId: userId || 'system',
     format,
     period,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
-  
+
   return exportData;
 }
 
@@ -1048,7 +1053,7 @@ export async function exportDashboard(tenantId, options = {}) {
 export default {
   getDashboard,
   getDashboardSection,
-  exportDashboard
+  exportDashboard,
 };
 
 export const DASHBOARD_SECTIONS_CONST = DASHBOARD_SECTIONS;
@@ -1065,18 +1070,18 @@ export const JSE_MATERIALITY_THRESHOLD_CONST = JSE_MATERIALITY_THRESHOLD;
  * • Revenue potential: R5.8M/year at 94% margin across 50 firms at R9,995/month
  * • Risk reduction: R2.3M in potential JSE reporting penalties
  * • Operational efficiency: 99% reduction in investor reporting time (40 hours → 15 minutes/month)
- * 
+ *
  * FORENSIC TRACEABILITY:
  * • Every dashboard view: Logged to audit trail with tenant context
  * • Every export: SHA256 fingerprint with retention metadata
  * • JSE materiality tracking: Automatic flagging of R50M+ valuations
- * 
+ *
  * COMPLIANCE VERIFICATION:
  * • JSE Listings Requirements §3.4: Material transaction disclosure
  * • Companies Act §28: 10-year retention of financial records
  * • POPIA §19: Data redaction, access logging
  * • FAIS Act §18: 5-year retention of investor reports
- * 
+ *
  * REAL-TIME CAPABILITIES:
  * • WebSocket integration for live updates
  * • 5-minute cache TTL for performance

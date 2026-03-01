@@ -1,4 +1,4 @@
-/* eslint-env mocha */
+#!/* eslint-env mocha */
 /* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ BILLING WEBHOOK TESTS - REAL-TIME REVENUE INTEGRATION                     ║
@@ -22,7 +22,7 @@ describe('💳 BILLING WEBHOOK - LIVE REVENUE INTEGRATION', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    
+
     // Mock payout service
     sandbox.stub(payoutService, 'calculateInvestorDividends').returns({
       success: true,
@@ -30,17 +30,17 @@ describe('💳 BILLING WEBHOOK - LIVE REVENUE INTEGRATION', () => {
       summary: {
         investorPayout: 1000000,
         founderPayout: 1200000,
-        totalPayout: 2200000
+        totalPayout: 2200000,
       },
       dividends: {
         investors: [{ name: 'Test Investor', dividend: 1000000 }],
-        founder: { dividend: 1200000 }
-      }
+        founder: { dividend: 1200000 },
+      },
     });
 
     // Mock ValidationAudit
     sandbox.stub(ValidationAudit, 'create').resolves({});
-    
+
     // Mock ApiKey
     sandbox.stub(ApiKey, 'findOneAndUpdate').resolves({});
 
@@ -55,7 +55,6 @@ describe('💳 BILLING WEBHOOK - LIVE REVENUE INTEGRATION', () => {
   });
 
   describe('Paystack Webhook', () => {
-    
     it('should process successful payment and trigger dividends', async () => {
       const payload = {
         event: 'charge.success',
@@ -64,12 +63,12 @@ describe('💳 BILLING WEBHOOK - LIVE REVENUE INTEGRATION', () => {
           reference: 'test-ref-123',
           metadata: {
             tenantId: 'test-tenant-123',
-            subscriptionId: 'sub-456'
+            subscriptionId: 'sub-456',
           },
           customer: {
-            email: 'firm@example.com'
-          }
-        }
+            email: 'firm@example.com',
+          },
+        },
       };
 
       const response = await request(app)
@@ -98,7 +97,6 @@ describe('💳 BILLING WEBHOOK - LIVE REVENUE INTEGRATION', () => {
   });
 
   describe('Stripe Webhook', () => {
-    
     it('should process successful invoice payment', async () => {
       const payload = {
         type: 'invoice.payment_succeeded',
@@ -108,11 +106,11 @@ describe('💳 BILLING WEBHOOK - LIVE REVENUE INTEGRATION', () => {
             amount_paid: 32500000, // R325,000 in cents
             subscription: 'sub-456',
             metadata: {
-              tenantId: 'test-tenant-123'
+              tenantId: 'test-tenant-123',
             },
-            next_payment_attempt: Date.now() + 30 * 24 * 60 * 60 * 1000
-          }
-        }
+            next_payment_attempt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+          },
+        },
       };
 
       const response = await request(app)

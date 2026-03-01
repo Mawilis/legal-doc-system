@@ -5,7 +5,13 @@ const sinon = require('sinon');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 
-let ESignService, SIGNATURE_STATUS, SIGNATURE_TYPES, SIGNATURE_PROVIDERS, RETENTION_POLICIES, VERIFICATION_LEVELS, DATA_RESIDENCY;
+let ESignService,
+  SIGNATURE_STATUS,
+  SIGNATURE_TYPES,
+  SIGNATURE_PROVIDERS,
+  RETENTION_POLICIES,
+  VERIFICATION_LEVELS,
+  DATA_RESIDENCY;
 let ElectronicSignature, DocumentTemplate;
 let tenantContext, auditLogger, logger;
 
@@ -35,7 +41,7 @@ before(async () => {
   logger = loggerModule.default;
 });
 
-describe('E-Signature Service - Forensic Test Suite', function() {
+describe('E-Signature Service - Forensic Test Suite', function () {
   let eSignService;
   let sandbox;
   let testTenantId;
@@ -66,12 +72,12 @@ describe('E-Signature Service - Forensic Test Suite', function() {
       practiceArea: 'corporate',
       content: { raw: 'Test content', format: 'handlebars' },
       audit: { createdBy: testUserId },
-      status: 'active'
+      status: 'active',
     });
 
     testSigners = [
       { email: 'signer1@example.com', name: 'John Doe', role: 'signer', order: 1 },
-      { email: 'signer2@example.com', name: 'Jane Smith', role: 'witness', order: 2 }
+      { email: 'signer2@example.com', name: 'Jane Smith', role: 'witness', order: 2 },
     ];
   });
 
@@ -83,17 +89,23 @@ describe('E-Signature Service - Forensic Test Suite', function() {
 
   describe('1. SIGNATURE REQUEST CREATION', () => {
     it('should create a signature request with tenant isolation', async () => {
-      const result = await eSignService.createSignatureRequest(testDocument.templateId, testSigners);
+      const result = await eSignService.createSignatureRequest(
+        testDocument.templateId,
+        testSigners
+      );
       expect(result).to.have.property('success', true);
       expect(result).to.have.property('signatureId').that.is.a('string');
       expect(result).to.have.property('status', SIGNATURE_STATUS.PENDING);
     });
 
     it('should enforce tenant isolation', async () => {
-      const result = await eSignService.createSignatureRequest(testDocument.templateId, testSigners);
+      const result = await eSignService.createSignatureRequest(
+        testDocument.templateId,
+        testSigners
+      );
       sandbox.restore();
       sandbox.stub(tenantContext, 'getCurrentTenant').returns('different-tenant');
-      
+
       try {
         await eSignService.getSignatureStatus(result.signatureId);
         expect.fail('Should have thrown error');
@@ -103,7 +115,10 @@ describe('E-Signature Service - Forensic Test Suite', function() {
     });
 
     it('should generate forensic hash', async () => {
-      const result = await eSignService.createSignatureRequest(testDocument.templateId, testSigners);
+      const result = await eSignService.createSignatureRequest(
+        testDocument.templateId,
+        testSigners
+      );
       const signature = await ElectronicSignature.findOne({ signatureId: result.signatureId });
       expect(signature.forensicHash).to.exist;
       expect(signature.forensicHash).to.match(/^[a-f0-9]{64}$/);
@@ -111,8 +126,8 @@ describe('E-Signature Service - Forensic Test Suite', function() {
 
     it('should set correct retention policy', async () => {
       const result = await eSignService.createSignatureRequest(
-        testDocument.templateId, 
-        testSigners, 
+        testDocument.templateId,
+        testSigners,
         { retentionPolicy: RETENTION_POLICIES.COMPANIES_ACT_7_YEARS }
       );
       const signature = await ElectronicSignature.findOne({ signatureId: result.signatureId });
@@ -124,7 +139,10 @@ describe('E-Signature Service - Forensic Test Suite', function() {
     let signatureId;
 
     beforeEach(async () => {
-      const result = await eSignService.createSignatureRequest(testDocument.templateId, testSigners);
+      const result = await eSignService.createSignatureRequest(
+        testDocument.templateId,
+        testSigners
+      );
       signatureId = result.signatureId;
     });
 
@@ -149,7 +167,10 @@ describe('E-Signature Service - Forensic Test Suite', function() {
     let signatureId;
 
     beforeEach(async () => {
-      const result = await eSignService.createSignatureRequest(testDocument.templateId, testSigners);
+      const result = await eSignService.createSignatureRequest(
+        testDocument.templateId,
+        testSigners
+      );
       signatureId = result.signatureId;
       await eSignService.signDocument(signatureId, { email: testSigners[0].email });
     });
@@ -171,7 +192,10 @@ describe('E-Signature Service - Forensic Test Suite', function() {
 
   describe('4. RETENTION AND POPIA COMPLIANCE', () => {
     it('should include retention metadata', async () => {
-      const result = await eSignService.createSignatureRequest(testDocument.templateId, testSigners);
+      const result = await eSignService.createSignatureRequest(
+        testDocument.templateId,
+        testSigners
+      );
       const signature = await ElectronicSignature.findOne({ signatureId: result.signatureId });
       expect(signature.retentionPolicy).to.exist;
       expect(signature.retentionStart).to.exist;
@@ -182,9 +206,12 @@ describe('E-Signature Service - Forensic Test Suite', function() {
 
   describe('5. SIGNATURE HISTORY', () => {
     it('should maintain complete signature history', async () => {
-      const result = await eSignService.createSignatureRequest(testDocument.templateId, testSigners);
+      const result = await eSignService.createSignatureRequest(
+        testDocument.templateId,
+        testSigners
+      );
       await eSignService.signDocument(result.signatureId, { email: testSigners[0].email });
-      
+
       const history = await eSignService.getSignatureHistory(result.signatureId);
       expect(history).to.have.property('history').that.is.an('array');
       expect(history.history.length).to.be.at.least(2);

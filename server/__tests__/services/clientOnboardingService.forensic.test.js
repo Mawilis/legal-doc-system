@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 
 const crypto = require('crypto');
 const fs = require('fs');
@@ -19,10 +17,12 @@ jest.mock('../../utils/complianceIdGenerator');
 jest.mock('../../workers/documentVerificationWorker');
 
 // Mock models - IMPORTANT: Do NOT use DateTime or other outer scope variables here
-jest.mock('../../models/Client', () => jest.fn().mockImplementation(() => ({
-  clientId: 'CL-12345678',
-  save: jest.fn().mockResolvedValue(true),
-})));
+jest.mock('../../models/Client', () =>
+  jest.fn().mockImplementation(() => ({
+    clientId: 'CL-12345678',
+    save: jest.fn().mockResolvedValue(true),
+  }))
+);
 
 jest.mock('../../models/OnboardingSession', () => {
   // Use static dates instead of DateTime
@@ -197,10 +197,14 @@ describe('CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION', () => {
   });
 
   it('[TC-001] should create onboarding session', async () => {
-    const result = await clientOnboardingService.createSession('INDIVIDUAL', 'tenant-test-12345678', {
-      firstName: 'John',
-      lastName: 'Doe',
-    });
+    const result = await clientOnboardingService.createSession(
+      'INDIVIDUAL',
+      'tenant-test-12345678',
+      {
+        firstName: 'John',
+        lastName: 'Doe',
+      }
+    );
 
     expect(result.success).toBe(true);
     expect(result.sessionId).toBeDefined();
@@ -212,7 +216,7 @@ describe('CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION', () => {
     const result = await clientOnboardingService.updateSession(
       'ONB-IND-20250215123045-A1B2C3D4-1234',
       { dateOfBirth: '1980-01-01' },
-      'tenant-test-12345678',
+      'tenant-test-12345678'
     );
 
     expect(result.success).toBe(true);
@@ -223,7 +227,7 @@ describe('CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION', () => {
   it('[TC-003] should get session', async () => {
     const result = await clientOnboardingService.getSession(
       'ONB-IND-20250215123045-A1B2C3D4-1234',
-      'tenant-test-12345678',
+      'tenant-test-12345678'
     );
 
     expect(result.success).toBe(true);
@@ -244,7 +248,7 @@ describe('CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION', () => {
       'ID_COPY',
       fileBuffer,
       metadata,
-      'tenant-test-12345678',
+      'tenant-test-12345678'
     );
 
     expect(result.success).toBe(true);
@@ -256,7 +260,7 @@ describe('CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION', () => {
   it('[TC-005] should get documents', async () => {
     const result = await clientOnboardingService.getDocuments(
       'ONB-IND-20250215123045-A1B2C3D4-1234',
-      'tenant-test-12345678',
+      'tenant-test-12345678'
     );
 
     expect(result.success).toBe(true);
@@ -280,7 +284,7 @@ describe('CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION', () => {
 
     const result = await clientOnboardingService.completeOnboarding(
       'ONB-IND-20250215123045-A1B2C3D4-1234',
-      'tenant-test-12345678',
+      'tenant-test-12345678'
     );
 
     expect(result.success).toBe(true);
@@ -293,7 +297,7 @@ describe('CLIENT ONBOARDING SERVICE — FORENSIC VALIDATION', () => {
     const result = await clientOnboardingService.rejectOnboarding(
       'ONB-IND-20250215123045-A1B2C3D4-1234',
       'Failed verification',
-      'tenant-test-12345678',
+      'tenant-test-12345678'
     );
 
     expect(result.success).toBe(true);

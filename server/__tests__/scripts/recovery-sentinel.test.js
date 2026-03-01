@@ -1,4 +1,4 @@
-/* ╔════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════╗
   ║ RECOVERY SENTINEL TESTS - INVESTOR DUE DILIGENCE              ║
   ║ 100% coverage | Self-healing | Autonomous recovery           ║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -13,9 +13,9 @@
 import fs from 'fs/promises';
 import axios from 'axios.js';
 import { exec } from 'child_process';
-import crypto from "crypto";
-import path from "path";
-import { promisify } from "util";
+import crypto from 'crypto';
+import path from 'path';
+import { promisify } from 'util';
 
 import * as recoverySentinel from 'wilsy-os-sentinel/recovery-sentinel.js';
 
@@ -129,7 +129,9 @@ describe('RecoverySentinel - Self-Healing System Due Diligence', () => {
       const mockFn = jest.fn().mockResolvedValue('success');
       const fallback = jest.fn().mockReturnValue('fallback');
 
-      await expect(circuitBreaker.execute(mockFn, fallback)).rejects.toThrow('Circuit breaker is OPEN');
+      await expect(circuitBreaker.execute(mockFn, fallback)).rejects.toThrow(
+        'Circuit breaker is OPEN'
+      );
 
       expect(fallback).not.toHaveBeenCalled(); // Throws before fallback
     });
@@ -183,7 +185,9 @@ describe('RecoverySentinel - Self-Healing System Due Diligence', () => {
     });
 
     it('should reset failures on success', async () => {
-      axios.get.mockRejectedValueOnce(new Error('Failed')).mockResolvedValueOnce({ data: { status: 'HEALTHY' } });
+      axios.get
+        .mockRejectedValueOnce(new Error('Failed'))
+        .mockResolvedValueOnce({ data: { status: 'HEALTHY' } });
 
       await healthChecker.checkHealth(); // Fail
       expect(healthChecker.consecutiveFailures).toBe(1);
@@ -221,7 +225,10 @@ describe('RecoverySentinel - Self-Healing System Due Diligence', () => {
 
       expect(result.action).toBe('restart');
       expect(result.strategy).toBe('pm2');
-      expect(exec).toHaveBeenCalledWith('pm2 reload wilsy-server --time --update-env', expect.any(Function));
+      expect(exec).toHaveBeenCalledWith(
+        'pm2 reload wilsy-server --time --update-env',
+        expect.any(Function)
+      );
     });
 
     it('should attempt Docker recovery', async () => {
@@ -232,7 +239,10 @@ describe('RecoverySentinel - Self-Healing System Due Diligence', () => {
       expect(result.action).toBe('restart');
       expect(result.strategy).toBe('docker');
       expect(result.containerName).toBe('test-container');
-      expect(exec).toHaveBeenCalledWith('docker stop test-container --time=30', expect.any(Function));
+      expect(exec).toHaveBeenCalledWith(
+        'docker stop test-container --time=30',
+        expect.any(Function)
+      );
     });
 
     it('should send alerts', async () => {
@@ -317,7 +327,7 @@ describe('RecoverySentinel - Self-Healing System Due Diligence', () => {
       delete process.env.INTERNAL_HEALTH_SECRET;
 
       await expect(recoverySentinel.startRecoverySentinel()).rejects.toThrow(
-        'INTERNAL_HEALTH_SECRET environment variable is required',
+        'INTERNAL_HEALTH_SECRET environment variable is required'
       );
 
       process.env.INTERNAL_HEALTH_SECRET = originalSecret;
@@ -334,7 +344,7 @@ describe('RecoverySentinel - Self-Healing System Due Diligence', () => {
           headers: expect.objectContaining({
             'x-health-secret': 'test-secret',
           }),
-        }),
+        })
       );
     });
   });
@@ -356,7 +366,9 @@ describe('RecoverySentinel - Self-Healing System Due Diligence', () => {
       console.log(`Valuation Premium (99.9999% uptime): $${(valuationPremium / 1e9).toFixed(1)}B`);
       console.log(`Engineering Productivity: R${(engineeringSavings / 1e6).toFixed(0)}M`);
       console.log('='.repeat(50));
-      console.log(`TOTAL VALUE: $${(downtimeSavings / 18 + valuationPremium + engineeringSavings / 18) / 1e9}B`);
+      console.log(
+        `TOTAL VALUE: $${(downtimeSavings / 18 + valuationPremium + engineeringSavings / 18) / 1e9}B`
+      );
 
       expect(totalValue).toBeGreaterThan(1.5e9);
     });
@@ -402,7 +414,10 @@ describe('RecoverySentinel - Self-Healing System Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'recovery-sentinel-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'recovery-sentinel-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'recovery-sentinel-evidence.json'))
@@ -411,7 +426,10 @@ describe('RecoverySentinel - Self-Healing System Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'recovery-sentinel-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'recovery-sentinel-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

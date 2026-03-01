@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/caseFileController.js
  * PATH: server/controllers/caseFileController.js
  * STATUS: PRODUCTION-READY | SOVEREIGN LEGAL GRADE | EPITOME
@@ -31,8 +29,9 @@ const mongoose = require('mongoose');
 const { emitAudit } = require('../middleware/security');
 
 // --- SOVEREIGN MODEL INJECTION ---
-let CaseFile; let User; let
-  AuditLog;
+let CaseFile;
+let User;
+let AuditLog;
 try {
   CaseFile = require('../models/caseFileModel');
   User = require('../models/userModel');
@@ -52,9 +51,7 @@ try {
 exports.createCase = async (req, res) => {
   const traceId = req.headers['x-request-id'];
   try {
-    const {
-      caseNumber, title, clientName, practiceArea, description,
-    } = req.body;
+    const { caseNumber, title, clientName, practiceArea, description } = req.body;
 
     // Injected via tenantScope: req.tenantFilter = { tenantId: '...' }
     const newCase = await CaseFile.create({
@@ -202,11 +199,14 @@ exports.transitionCaseStatus = async (req, res) => {
         status,
         $push: {
           timeline: {
-            status, reason, date: new Date(), actor: req.user.id,
+            status,
+            reason,
+            date: new Date(),
+            actor: req.user.id,
           },
         },
       },
-      { new: true },
+      { new: true }
     );
 
     await emitAudit(req, {
@@ -229,7 +229,7 @@ exports.archiveCase = async (req, res) => {
   try {
     await CaseFile.findOneAndUpdate(
       { _id: req.params.id, ...req.tenantFilter },
-      { status: 'archived', archivedAt: new Date() },
+      { status: 'archived', archivedAt: new Date() }
     );
 
     await emitAudit(req, {

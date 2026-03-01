@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * 🧠⚡️ QUANTUM ANALYTICS CORTEX: NEURAL INTELLIGENCE ORACLE ⚡️🧠
  * ============================================================================
@@ -151,7 +149,7 @@ const validateEnvironment = () => {
     const keyBuffer = Buffer.from(process.env.ANALYTICS_ENCRYPTION_KEY, 'hex');
     if (keyBuffer.length !== 32) {
       throw new Error(
-        'QUANTUM BREACH: ANALYTICS_ENCRYPTION_KEY must be 32 bytes (64 hex characters)',
+        'QUANTUM BREACH: ANALYTICS_ENCRYPTION_KEY must be 32 bytes (64 hex characters)'
       );
     }
   }
@@ -207,7 +205,7 @@ exports.getFinancialDashboard = asyncHandler(async (req, res) => {
   await validateRBAC(
     req,
     ['SUPER_ADMIN', 'TENANT_ADMIN', 'FINANCE_MANAGER'],
-    'FINANCIAL_ANALYTICS_READ',
+    'FINANCIAL_ANALYTICS_READ'
   );
 
   // INPUT VALIDATION
@@ -349,33 +347,33 @@ exports.getFinancialDashboard = asyncHandler(async (req, res) => {
     // Churn Data (if requested)
     includeChurn === 'true'
       ? Subscription.aggregate([
-        {
-          $match: {
-            ...tenantScope,
-            status: { $in: ['CANCELLED', 'EXPIRED'] },
-            cancellationDate: { $gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) },
-          },
-        },
-        {
-          $group: {
-            _id: {
-              month: { $month: '$cancellationDate' },
-              reason: '$cancellationReason',
+          {
+            $match: {
+              ...tenantScope,
+              status: { $in: ['CANCELLED', 'EXPIRED'] },
+              cancellationDate: { $gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) },
             },
-            count: { $sum: 1 },
-            lostRevenue: { $sum: '$totalAmount' },
-            avgTenureAtCancel: {
-              $avg: {
-                $divide: [
-                  { $subtract: ['$cancellationDate', '$startDate'] },
-                  1000 * 60 * 60 * 24,
-                ],
+          },
+          {
+            $group: {
+              _id: {
+                month: { $month: '$cancellationDate' },
+                reason: '$cancellationReason',
+              },
+              count: { $sum: 1 },
+              lostRevenue: { $sum: '$totalAmount' },
+              avgTenureAtCancel: {
+                $avg: {
+                  $divide: [
+                    { $subtract: ['$cancellationDate', '$startDate'] },
+                    1000 * 60 * 60 * 24,
+                  ],
+                },
               },
             },
           },
-        },
-        { $sort: { '_id.month': -1 } },
-      ])
+          { $sort: { '_id.month': -1 } },
+        ])
       : Promise.resolve([]),
   ]);
 
@@ -536,7 +534,7 @@ exports.getFinancialDashboard = asyncHandler(async (req, res) => {
         popia: 'COMPLIANT',
         sars: 'EFILING_READY',
       },
-    },
+    }
   );
 });
 
@@ -564,7 +562,7 @@ exports.getSecurityHeatmap = asyncHandler(async (req, res) => {
   await validateRBAC(
     req,
     ['SUPER_ADMIN', 'SECURITY_ADMIN', 'COMPLIANCE_OFFICER'],
-    'SECURITY_ANALYTICS',
+    'SECURITY_ANALYTICS'
   );
 
   const { timeframe = '24h', severity = 'all', includeIOCs = 'true' } = req.query;
@@ -643,8 +641,8 @@ exports.getSecurityHeatmap = asyncHandler(async (req, res) => {
       totalEvents: securityEvents.reduce((sum, event) => sum + event.count, 0),
       uniqueThreatTypes: [...new Set(securityEvents.map((e) => e._id.threatType))].length,
       avgThreatScore:
-        securityEvents.reduce((sum, event) => sum + event.avgThreatScore, 0)
-          / securityEvents.length || 0,
+        securityEvents.reduce((sum, event) => sum + event.avgThreatScore, 0) /
+          securityEvents.length || 0,
     },
 
     // Detailed Threats
@@ -724,7 +722,7 @@ exports.getComplianceDashboard = asyncHandler(async (req, res) => {
   await validateRBAC(
     req,
     ['SUPER_ADMIN', 'COMPLIANCE_OFFICER', 'LEAL_COUNSEL'],
-    'COMPLIANCE_ANALYTICS',
+    'COMPLIANCE_ANALYTICS'
   );
 
   const { jurisdictions = 'ZA', includeGapAnalysis = 'true' } = req.query;
@@ -775,7 +773,7 @@ exports.getComplianceDashboard = asyncHandler(async (req, res) => {
         jurisdictions: jurisdictionList.join(', '),
         frameworks: 'POPIA, NDPA, DPA2019, GDPR',
       },
-    },
+    }
   );
 });
 
@@ -787,9 +785,7 @@ exports.getComplianceDashboard = asyncHandler(async (req, res) => {
  * Generate revenue forecast based on historical data
  */
 async function generateRevenueForecast(config) {
-  const {
-    historicalMRR, growthRate, period, currency,
-  } = config;
+  const { historicalMRR, growthRate, period, currency } = config;
 
   const forecast = {
     method: 'EXPONENTIAL_SMOOTHING',

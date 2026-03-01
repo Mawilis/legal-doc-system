@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR ANALYTICS ROUTES TESTS - INVESTOR DUE DILIGENCE - $5B VALUATION ║
   ║ 100% coverage | Real-time metrics | Investor-grade security               ║
@@ -6,9 +6,9 @@
 
 import request from 'supertest.js';
 import express from 'express.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 import fs from 'fs/promises';
-import path from "path";
+import path from 'path';
 import { jest } from '@jest/globals.js';
 
 // Mock dependencies
@@ -233,7 +233,9 @@ describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      investorIntelligenceService.getRealTimeValuation.mockRejectedValueOnce(new Error('Database error'));
+      investorIntelligenceService.getRealTimeValuation.mockRejectedValueOnce(
+        new Error('Database error')
+      );
 
       const response = await request(app)
         .get('/api/v1/analytics/valuation')
@@ -318,7 +320,10 @@ describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
 
   describe('5. GET /arr', () => {
     it('should return ARR breakdown', async () => {
-      const response = await request(app).get('/api/v1/analytics/arr').set('X-Investor-Key', 'test-key').expect(200);
+      const response = await request(app)
+        .get('/api/v1/analytics/arr')
+        .set('X-Investor-Key', 'test-key')
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.total).toBe(650000000);
@@ -343,7 +348,10 @@ describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
 
   describe('7. GET /growth', () => {
     it('should return growth metrics', async () => {
-      const response = await request(app).get('/api/v1/analytics/growth').set('X-Investor-Key', 'test-key').expect(200);
+      const response = await request(app)
+        .get('/api/v1/analytics/growth')
+        .set('X-Investor-Key', 'test-key')
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.qoqRevenue).toBe(0.15);
@@ -450,7 +458,9 @@ describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
 
   describe('12. Security Headers', () => {
     it('should include security headers', async () => {
-      const response = await request(app).get('/api/v1/analytics/valuation').set('X-Investor-Key', 'test-key');
+      const response = await request(app)
+        .get('/api/v1/analytics/valuation')
+        .set('X-Investor-Key', 'test-key');
 
       expect(response.headers['x-correlation-id']).toBeDefined();
       expect(response.headers['x-api-version']).toBe('42.0.0');
@@ -533,7 +543,10 @@ describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'investor-analytics-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'investor-analytics-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'investor-analytics-evidence.json'))
@@ -542,7 +555,10 @@ describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'investor-analytics-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'investor-analytics-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

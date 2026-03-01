@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const mongoose = require('mongoose');
+#!const mongoose = require('mongoose');
 
 describe('Working Test', () => {
   test('mongoose basics work', () => {

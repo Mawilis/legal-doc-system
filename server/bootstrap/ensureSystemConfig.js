@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/bootstrap/ensureSystemConfig.js
  * STATUS: PRODUCTION-READY | EPITOME | SYSTEM BOOTSTRAP
  * -----------------------------------------------------------------------------
@@ -47,9 +45,7 @@ const logger = loggerRaw.default || loggerRaw;
  * @returns {Promise<Object>} the loaded SystemConfig document (lean)
  */
 async function ensureSystemConfig(opts = {}) {
-  const {
-    correlationId = uuidv4(), retries = 2, retryDelayMs = 500, emitAudit = true,
-  } = opts;
+  const { correlationId = uuidv4(), retries = 2, retryDelayMs = 500, emitAudit = true } = opts;
 
   // Attach correlation id to logs for traceability
   const logMeta = { correlationId };
@@ -154,8 +150,8 @@ function invalidateSystemConfigCache() {
   try {
     // If SystemConfig model exposes a cache invalidator, call it
     if (
-      typeof SystemConfig.ensureDefaultConfig === 'function'
-      && typeof SystemConfig.getSingleton === 'function'
+      typeof SystemConfig.ensureDefaultConfig === 'function' &&
+      typeof SystemConfig.getSingleton === 'function'
     ) {
       // No-op here; models/services that cache should expose their own invalidator.
       // Provide a best-effort hook for known implementations.

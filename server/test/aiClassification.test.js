@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env mocha, node */
+#!/* eslint-env mocha, node */
 const assert = require('assert');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
@@ -94,7 +92,9 @@ describe('🤖 AI Document Classification Test Suite', function () {
       });
 
       // Random text should fail classification
-      assert.ok(result.verificationStatus === 'MISMATCH' || result.verificationStatus === 'FLAGGED');
+      assert.ok(
+        result.verificationStatus === 'MISMATCH' || result.verificationStatus === 'FLAGGED'
+      );
     });
 
     it('should handle empty text', async () => {
@@ -118,7 +118,11 @@ describe('🤖 AI Document Classification Test Suite', function () {
 
     it('should process document with AI and update verification status', async () => {
       // NOW THIS METHOD EXISTS ON THE MODEL
-      await session.processDocumentWithAI('DOC-1', 'Identity Number: 800101 5009 087', 'ID_DOCUMENT');
+      await session.processDocumentWithAI(
+        'DOC-1',
+        'Identity Number: 800101 5009 087',
+        'ID_DOCUMENT'
+      );
 
       const updated = await OnboardingSession.findById(session._id);
       assert.strictEqual(updated.verificationStatus, 'VERIFIED');

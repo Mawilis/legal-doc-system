@@ -1,4 +1,4 @@
-/*
+#!/*
  * FILE: /server/models/featureFlagModel.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/featureFlagModel.js
  * STATUS: EPITOME | QUANTUM FEATURE ORCHESTRATION | PRODUCTION IMMORTAL

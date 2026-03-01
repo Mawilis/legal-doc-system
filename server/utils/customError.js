@@ -1,4 +1,4 @@
-/*
+#!/*
  * File: server/utils/customError.js
  * STATUS: PRODUCTION-READY | OPERATIONAL EXCELLENCE GRADE
  * -----------------------------------------------------------------------------

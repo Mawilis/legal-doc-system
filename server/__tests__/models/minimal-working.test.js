@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * @jest-environment node
  */
 
@@ -19,7 +17,10 @@ describe('🔧 MINIMAL WORKING TEST - Model Loading Verification', () => {
     await mongoose.connect(uri);
 
     // Load model using helper
-    OnboardingSession = await modelLoader.loadModel('OnboardingSession', 'models/OnboardingSession.js');
+    OnboardingSession = await modelLoader.loadModel(
+      'OnboardingSession',
+      'models/OnboardingSession.js'
+    );
 
     console.log('✅ Model loaded, type:', typeof OnboardingSession);
   });

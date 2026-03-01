@@ -1,4 +1,4 @@
-/* eslint-env mocha */
+#!/* eslint-env mocha */
 
 /* eslint-disable */
 import { expect } from "chai";
@@ -9,7 +9,7 @@ import ValidationAudit, {
   SEVERITY_LEVELS,
   RETENTION_POLICIES,
   DATA_RESIDENCY,
-} from '../../models/ValidationAudit;
+} from '../../models/ValidationAudit.js';
 
 describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
   const testTenantId = 'test-tenant-12345678';

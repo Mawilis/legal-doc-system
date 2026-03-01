@@ -90,11 +90,7 @@
     "ignorePermissionErrors": true,
     "followSymlinks": false
   },
-  "nodeArgs": [
-    "--max-old-space-size=4096",
-    "--heap-prof",
-    "--diagnostic-dir=./logs/diagnostic"
-  ],
+  "nodeArgs": ["--max-old-space-size=4096", "--heap-prof", "--diagnostic-dir=./logs/diagnostic"],
   "signal": "SIGTERM",
   "killSignal": "SIGTERM",
   "killTimeout": 3000,

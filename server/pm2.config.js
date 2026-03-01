@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: PM2 PRODUCTION CONFIGURATION
  * Self-healing cluster configuration with auto-restart

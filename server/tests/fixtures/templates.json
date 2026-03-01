@@ -9,18 +9,18 @@
         "format": "handlebars"
       },
       "variables": [
-        {"name": "employerName", "type": "name", "required": true},
-        {"name": "employeeName", "type": "name", "required": true},
-        {"name": "startDate", "type": "date", "required": true},
-        {"name": "position", "type": "string", "required": true},
-        {"name": "salary", "type": "currency", "required": true},
-        {"name": "workingHours", "type": "string", "required": true},
-        {"name": "leaveDays", "type": "number", "required": true},
-        {"name": "noticePeriod", "type": "string", "required": true},
-        {"name": "place", "type": "string", "required": true},
-        {"name": "day", "type": "number", "required": true},
-        {"name": "month", "type": "string", "required": true},
-        {"name": "year", "type": "number", "required": true}
+        { "name": "employerName", "type": "name", "required": true },
+        { "name": "employeeName", "type": "name", "required": true },
+        { "name": "startDate", "type": "date", "required": true },
+        { "name": "position", "type": "string", "required": true },
+        { "name": "salary", "type": "currency", "required": true },
+        { "name": "workingHours", "type": "string", "required": true },
+        { "name": "leaveDays", "type": "number", "required": true },
+        { "name": "noticePeriod", "type": "string", "required": true },
+        { "name": "place", "type": "string", "required": true },
+        { "name": "day", "type": "number", "required": true },
+        { "name": "month", "type": "string", "required": true },
+        { "name": "year", "type": "number", "required": true }
       ]
     },
     {
@@ -32,20 +32,20 @@
         "format": "handlebars"
       },
       "variables": [
-        {"name": "sellerName", "type": "name", "required": true},
-        {"name": "sellerId", "type": "id_number", "required": true},
-        {"name": "purchaserName", "type": "name", "required": true},
-        {"name": "purchaserId", "type": "id_number", "required": true},
-        {"name": "erfNumber", "type": "string", "required": true},
-        {"name": "suburb", "type": "string", "required": true},
-        {"name": "city", "type": "string", "required": true},
-        {"name": "purchasePrice", "type": "currency", "required": true},
-        {"name": "purchasePriceWords", "type": "string", "required": true},
-        {"name": "deposit", "type": "currency", "required": true},
-        {"name": "depositDate", "type": "date", "required": true},
-        {"name": "occupationDate", "type": "date", "required": true},
-        {"name": "conditions", "type": "textarea", "required": false},
-        {"name": "conveyancer", "type": "name", "required": true}
+        { "name": "sellerName", "type": "name", "required": true },
+        { "name": "sellerId", "type": "id_number", "required": true },
+        { "name": "purchaserName", "type": "name", "required": true },
+        { "name": "purchaserId", "type": "id_number", "required": true },
+        { "name": "erfNumber", "type": "string", "required": true },
+        { "name": "suburb", "type": "string", "required": true },
+        { "name": "city", "type": "string", "required": true },
+        { "name": "purchasePrice", "type": "currency", "required": true },
+        { "name": "purchasePriceWords", "type": "string", "required": true },
+        { "name": "deposit", "type": "currency", "required": true },
+        { "name": "depositDate", "type": "date", "required": true },
+        { "name": "occupationDate", "type": "date", "required": true },
+        { "name": "conditions", "type": "textarea", "required": false },
+        { "name": "conveyancer", "type": "name", "required": true }
       ]
     }
   ],
@@ -59,21 +59,21 @@
         "format": "handlebars"
       },
       "variables": [
-        {"name": "court", "type": "string", "required": true},
-        {"name": "location", "type": "string", "required": true},
-        {"name": "caseNumber", "type": "string", "required": true},
-        {"name": "plaintiffName", "type": "name", "required": true},
-        {"name": "defendantName", "type": "name", "required": true},
-        {"name": "defendantAddress", "type": "address", "required": true},
-        {"name": "claimAmount", "type": "currency", "required": true},
-        {"name": "interestRate", "type": "number", "required": true},
-        {"name": "particularsOfClaim", "type": "textarea", "required": true},
-        {"name": "place", "type": "string", "required": true},
-        {"name": "day", "type": "number", "required": true},
-        {"name": "month", "type": "string", "required": true},
-        {"name": "year", "type": "number", "required": true},
-        {"name": "attorneyName", "type": "name", "required": true},
-        {"name": "attorneyReference", "type": "string", "required": true}
+        { "name": "court", "type": "string", "required": true },
+        { "name": "location", "type": "string", "required": true },
+        { "name": "caseNumber", "type": "string", "required": true },
+        { "name": "plaintiffName", "type": "name", "required": true },
+        { "name": "defendantName", "type": "name", "required": true },
+        { "name": "defendantAddress", "type": "address", "required": true },
+        { "name": "claimAmount", "type": "currency", "required": true },
+        { "name": "interestRate", "type": "number", "required": true },
+        { "name": "particularsOfClaim", "type": "textarea", "required": true },
+        { "name": "place", "type": "string", "required": true },
+        { "name": "day", "type": "number", "required": true },
+        { "name": "month", "type": "string", "required": true },
+        { "name": "year", "type": "number", "required": true },
+        { "name": "attorneyName", "type": "name", "required": true },
+        { "name": "attorneyReference", "type": "string", "required": true }
       ]
     }
   ]

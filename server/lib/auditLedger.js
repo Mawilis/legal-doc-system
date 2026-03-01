@@ -1,4 +1,4 @@
-/*
+#!/*
  * Audit Ledger Shim - Placeholder for forensic audit logging
  * This is a temporary shim until full audit ledger is implemented
  */

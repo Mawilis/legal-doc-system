@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ███████╗██╗    ██╗██╗██╗  ██╗███████╗██╗   ██╗    ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ██╗      █████╗ ███╗   ██╗ ██████╗███████╗     ██████╗ ██╗   ██╗██╗     ███████╗     ███████╗███╗   ██╗ ██████╗ ██╗███╗   ██╗███████╗
+#!/* ███████╗██╗    ██╗██╗██╗  ██╗███████╗██╗   ██╗    ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ██╗      █████╗ ███╗   ██╗ ██████╗███████╗     ██████╗ ██╗   ██╗██╗     ███████╗     ███████╗███╗   ██╗ ██████╗ ██╗███╗   ██╗███████╗
 ██╔════╝██║    ██║██║██║ ██╔╝██╔════╝╚██╗ ██╔╝    ██╔════╝██╔═══██╗████╗ ████║██╔══██╗██║     ██║     ██╔══██╗████╗  ██║██╔════╝██╔════╝    ██╔═══██╗██║   ██║██║     ██╔════╝    ██╔════╝████╗  ██║██╔════╝ ██║████╗  ██║██╔════╝
 ███████╗██║ █╗ ██║██║█████╔╝ ███████╗ ╚████╔╝     ██║     ██║   ██║██╔████╔██║██████╔╝██║     ██║     ███████║██╔██╗ ██║██║     █████╗      ██║   ██║██║   ██║██║     █████╗      █████╗  ██╔██╗ ██║██║  ███╗██║██╔██╗ ██║█████╗
 ╚════██║██║███╗██║██║██╔═██╗ ╚════██║  ╚██╔╝      ██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██║     ██║     ██╔══██║██║╚██╗██║██║     ██╔══╝      ██║   ██║██║   ██║██║     ██╔══╝      ██╔══╝  ██║╚██╗██║██║   ██║██║██║╚██╗██║██╔══╝
@@ -41,8 +39,9 @@ const fs = require('fs').promises;
 const path = require('path');
 
 // Quantum Sentinel: Optional dependencies for enhanced capabilities
-let Redis; let BullMQ; let
-  mongoose;
+let Redis;
+let BullMQ;
+let mongoose;
 try {
   Redis = require('ioredis');
 } catch (e) {
@@ -85,7 +84,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((varName) => {
   if (!process.env[varName] && process.env.NODE_ENV === 'production') {
     throw new Error(
-      `🚨 QUANTUM RULE ENGINE BREACH: Missing required environment variable: ${varName}`,
+      `🚨 QUANTUM RULE ENGINE BREACH: Missing required environment variable: ${varName}`
     );
   }
 });
@@ -254,8 +253,8 @@ class ComplianceRuleEngine extends EventEmitter {
       if (timeSinceFailure < this.config.circuitBreakerResetTimeout) {
         throw new Error(
           `Circuit breaker OPEN. Retry after ${Math.ceil(
-            (this.config.circuitBreakerResetTimeout - timeSinceFailure) / 1000,
-          )} seconds`,
+            (this.config.circuitBreakerResetTimeout - timeSinceFailure) / 1000
+          )} seconds`
         );
       }
       this.engineState.circuitBreakerState = 'HALF_OPEN';
@@ -271,7 +270,8 @@ class ComplianceRuleEngine extends EventEmitter {
       await this.loadBaseRuleSets();
 
       // Load jurisdiction-specific rules
-      const jurisdictions = options.jurisdictions || RULE_ENGINE_CONSTANTS.JURISDICTION_PRIORITIES.PRIMARY;
+      const jurisdictions =
+        options.jurisdictions || RULE_ENGINE_CONSTANTS.JURISDICTION_PRIORITIES.PRIMARY;
       await this.loadJurisdictionalRules(jurisdictions);
 
       // Load context-specific rules
@@ -315,7 +315,7 @@ class ComplianceRuleEngine extends EventEmitter {
 
       console.log(`✅ Quantum Compliance Rule Engine initialized in ${initializationDuration}ms`);
       console.log(
-        `📊 Rules Loaded: ${this.engineState.rulesLoaded}, Active: ${this.engineState.rulesActive}`,
+        `📊 Rules Loaded: ${this.engineState.rulesLoaded}, Active: ${this.engineState.rulesActive}`
       );
 
       return {
@@ -549,7 +549,7 @@ class ComplianceRuleEngine extends EventEmitter {
           await this.redisClient.setex(
             cacheKey,
             RULE_ENGINE_CONSTANTS.PERFORMANCE.CACHE_TTL,
-            JSON.stringify(rule),
+            JSON.stringify(rule)
           );
         }
       }
@@ -657,7 +657,7 @@ class ComplianceRuleEngine extends EventEmitter {
         transformedData = await this.applyTransformations(
           rule.transformations,
           data,
-          evaluationResult,
+          evaluationResult
         );
       }
 
@@ -774,7 +774,7 @@ class ComplianceRuleEngine extends EventEmitter {
             await this.redisClient.setex(
               `rule:${ruleId}`,
               RULE_ENGINE_CONSTANTS.PERFORMANCE.CACHE_TTL,
-              JSON.stringify(rule),
+              JSON.stringify(rule)
             );
           }
           return rule;
@@ -847,7 +847,7 @@ class ComplianceRuleEngine extends EventEmitter {
         await this.redisClient.setex(
           cacheKey,
           RULE_ENGINE_CONSTANTS.PERFORMANCE.CACHE_TTL,
-          JSON.stringify(result),
+          JSON.stringify(result)
         );
       }
 
@@ -945,8 +945,8 @@ class ComplianceRuleEngine extends EventEmitter {
                 for (const transformation of transformations) {
                   try {
                     if (
-                      !transformation.condition
-                      || (await transformation.condition.evaluate({ data: result, context }))
+                      !transformation.condition ||
+                      (await transformation.condition.evaluate({ data: result, context }))
                     ) {
                       const value = await transformation.expression.evaluate({
                         data: result,
@@ -959,7 +959,7 @@ class ComplianceRuleEngine extends EventEmitter {
                   } catch (error) {
                     console.warn(
                       `Transformation failed for path ${transformation.path}:`,
-                      error.message,
+                      error.message
                     );
                   }
                 }
@@ -1060,7 +1060,10 @@ class ComplianceRuleEngine extends EventEmitter {
           'ComplianceRule',
           new mongoose.Schema({
             ruleId: {
-              type: String, required: true, unique: true, index: true,
+              type: String,
+              required: true,
+              unique: true,
+              index: true,
             },
             name: { type: String, required: true },
             description: { type: String },
@@ -1080,14 +1083,17 @@ class ComplianceRuleEngine extends EventEmitter {
             transformations: { type: [mongoose.Schema.Types.Mixed] },
             severity: { type: String, enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] },
             priority: {
-              type: Number, min: 1, max: 10, default: 5,
+              type: Number,
+              min: 1,
+              max: 10,
+              default: 5,
             },
             active: { type: Boolean, default: true },
             metadata: { type: mongoose.Schema.Types.Mixed },
             createdAt: { type: Date, default: Date.now },
             updatedAt: { type: Date, default: Date.now },
             expiresAt: { type: Date },
-          }),
+          })
         );
 
         this.RuleEvaluation = mongoose.model(
@@ -1105,7 +1111,7 @@ class ComplianceRuleEngine extends EventEmitter {
             performance: { type: mongoose.Schema.Types.Mixed },
             timestamp: { type: Date, default: Date.now },
             metadata: { type: mongoose.Schema.Types.Mixed },
-          }),
+          })
         );
       } catch (error) {
         console.warn('⚠️  MongoDB connection failed:', error.message);
@@ -1168,7 +1174,7 @@ class ComplianceRuleEngine extends EventEmitter {
         {
           connection: { url: this.config.redisUrl },
           concurrency: this.config.maxConcurrentEvaluations,
-        },
+        }
       );
 
       console.log('🔧 Initialized BullMQ processing queues for rule operations');
@@ -1254,7 +1260,7 @@ class ComplianceRuleEngine extends EventEmitter {
         await this.redisClient.setex(
           `logs:engine:${logEntry.eventId}`,
           86400, // 24 hours
-          JSON.stringify(logEntry),
+          JSON.stringify(logEntry)
         );
       }
 

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ SYNERGY SCORE MODEL - QUANTUM SYNERGY CALCULATION WITH 94% ACCURACY                   ║
   ║ [Production Grade | 127-Dimensions | Real-time | Forensic Traceability]               ║

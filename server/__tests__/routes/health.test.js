@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ HEALTH ROUTES TESTS - INVESTOR-GRADE                          ║
   ║ 85% cost reduction | R382k/year savings | 99.99% uptime       ║
@@ -181,7 +179,7 @@ describe('Health Routes - Investor Grade Tests', () => {
         expect.objectContaining({
           action: 'HEALTH_CHECK',
           status: 'healthy',
-        }),
+        })
       );
 
       // Verify metrics
@@ -297,7 +295,7 @@ describe('Health Routes - Investor Grade Tests', () => {
         expect.objectContaining({
           action: 'HEALTH_CHECK',
           status: 'healthy',
-        }),
+        })
       );
     });
 
@@ -353,7 +351,10 @@ describe('Health Routes - Investor Grade Tests', () => {
         .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
       // Generate hash
-      const canonicalJson = JSON.stringify(evidence.auditEntries, Object.keys(evidence.auditEntries[0] || {}).sort());
+      const canonicalJson = JSON.stringify(
+        evidence.auditEntries,
+        Object.keys(evidence.auditEntries[0] || {}).sort()
+      );
       evidence.hash = crypto.createHash('sha256').update(canonicalJson).digest('hex');
 
       // Save evidence

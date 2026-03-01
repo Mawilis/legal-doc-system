@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const loggerRaw = require('../../utils/logger');
+#!const loggerRaw = require('../../utils/logger');
 const logger = loggerRaw.default || loggerRaw;
 
 class RiskAssessor {

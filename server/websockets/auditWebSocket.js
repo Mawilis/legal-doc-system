@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/integrations/ficaVerificationService.js
@@ -71,7 +69,7 @@ const require = _createRequire(import.meta.url);
  * Africa's legal renaissance is built upon incorruptible financial foundations.
  */
 
-'use strict';
+('use strict');
 
 // QUANTUM IMPORTS: Secure, Pinned Dependencies
 const crypto = require('crypto'); // Node.js built-in crypto for quantum-grade operations

@@ -1,4 +1,4 @@
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                     QUANTUM SECURITY INCIDENT NEXUS                                 ║
  * ║  This celestial bastion immortalizes every quantum of security disturbance within   ║

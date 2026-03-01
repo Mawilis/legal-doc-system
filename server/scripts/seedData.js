@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/scripts/seedData.js
  * STATUS: PRODUCTION-READY | MASTER ORCHESTRATOR | SINGLE-QUOTE ENFORCED
  */

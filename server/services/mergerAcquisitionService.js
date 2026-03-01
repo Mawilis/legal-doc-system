@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ MERGER & ACQUISITION SERVICE - INVESTOR-GRADE DEAL ENGINE                             ║
   ║ R3.5B/year deal flow | 94% predictive accuracy | Anti-trust compliance                ║
@@ -8,13 +8,13 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/mergerAcquisitionService.js
  * VERSION: 1.0.0-MA
  * CREATED: 2026-02-27
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R450M/year in missed M&A opportunities and manual due diligence
  * • Generates: R1.2B/year deal flow @ 94% predictive accuracy
  * • Risk elimination: R850M in failed acquisitions and regulatory penalties
  * • Compliance: Competition Act 89 of 1998, JSE Listings Requirements, POPIA, CCA
- * 
+ *
  * INTEGRATION_MAP:
  * {
  *   "expectedConsumers": [
@@ -42,7 +42,7 @@
  *   "placementStrategy": "service layer - core M&A engine with quantum scoring",
  *   "integrationContract": "export factory function, no side effects, tenant isolation"
  * }
- * 
+ *
  * MERMAID_INTEGRATION:
  * graph TD
  *   A[Deal Flow Controller] -->|GET /api/deals| B[M&A Service]
@@ -54,7 +54,7 @@
  *   B -->|structured logs| H[Logger]
  *   B -->|tenant context| I[Tenant Middleware]
  *   B -->|PII redaction| J[RedactSensitive]
- *   
+ *
  *   subgraph "Quantum Scoring Engine"
  *     K[Financial Analysis] --> B
  *     L[Market Analysis] --> B
@@ -99,7 +99,7 @@ const DEAL_TYPES = {
   DIVESTITURE: 'divestiture',
   SPIN_OFF: 'spin_off',
   TAKEOVER: 'takeover',
-  SCHEME_OF_ARRANGEMENT: 'scheme_of_arrangement'
+  SCHEME_OF_ARRANGEMENT: 'scheme_of_arrangement',
 };
 
 const DEAL_STAGES = {
@@ -116,7 +116,7 @@ const DEAL_STAGES = {
   CLOSING: 'closing',
   INTEGRATION: 'integration',
   COMPLETED: 'completed',
-  WITHDRAWN: 'withdrawn'
+  WITHDRAWN: 'withdrawn',
 };
 
 const SYNERGY_CATEGORIES = {
@@ -129,7 +129,7 @@ const SYNERGY_CATEGORIES = {
   CULTURAL: 'cultural',
   STRATEGIC: 'strategic',
   MARKET: 'market',
-  TALENT: 'talent'
+  TALENT: 'talent',
 };
 
 const REGULATORY_JURISDICTIONS = {
@@ -142,16 +142,16 @@ const REGULATORY_JURISDICTIONS = {
   EU: 'EU',
   USA: 'US',
   CHINA: 'CN',
-  INDIA: 'IN'
+  INDIA: 'IN',
 };
 
 const COMPETITION_THRESHOLDS = {
   ZA: {
     merger_control: 600000000, // R600M
-    small_merger: 30000000,     // R30M
-    intermediate: 600000000,    // R600M
-    large: 6600000000          // R6.6B
-  }
+    small_merger: 30000000, // R30M
+    intermediate: 600000000, // R600M
+    large: 6600000000, // R6.6B
+  },
 };
 
 const RETENTION_POLICIES = {
@@ -159,20 +159,20 @@ const RETENTION_POLICIES = {
     name: 'companies_act_10_years',
     legalReference: 'Companies Act 71 of 2008 §15(1)',
     retentionYears: 10,
-    mandatoryFields: ['tenantId', 'dealId', 'dealType', 'value']
+    mandatoryFields: ['tenantId', 'dealId', 'dealType', 'value'],
   },
   TAX_ACT_5_YEARS: {
     name: 'tax_act_5_years',
     legalReference: 'Income Tax Act §55(2)',
     retentionYears: 5,
-    mandatoryFields: ['tenantId', 'dealId', 'taxImplications']
+    mandatoryFields: ['tenantId', 'dealId', 'taxImplications'],
   },
   COMPETITION_ACT_10_YEARS: {
     name: 'competition_act_10_years',
     legalReference: 'Competition Act 89 of 1998 §59(2)',
     retentionYears: 10,
-    mandatoryFields: ['tenantId', 'filingId', 'jurisdiction']
-  }
+    mandatoryFields: ['tenantId', 'filingId', 'jurisdiction'],
+  },
 };
 
 // ============================================================================
@@ -186,26 +186,34 @@ async function getModels() {
   if (!Deal) {
     const dealModule = await import('../models/Deal.js');
     Deal = dealModule.default;
-    
+
     const targetModule = await import('../models/Target.js');
     Target = targetModule.default;
-    
+
     const synergyModule = await import('../models/SynergyScore.js');
     SynergyScore = synergyModule.default;
-    
+
     const regulatoryModule = await import('../models/RegulatoryFiling.js');
     RegulatoryFiling = regulatoryModule.default;
-    
+
     const integrationModule = await import('../models/IntegrationSimulation.js');
     IntegrationSimulation = integrationModule.default;
-    
+
     const companyModule = await import('../models/Company.js');
     Company = companyModule.default;
-    
+
     const valuationModule = await import('../models/Valuation.js');
     Valuation = valuationModule.default;
   }
-  return { Deal, Target, SynergyScore, RegulatoryFiling, IntegrationSimulation, Company, Valuation };
+  return {
+    Deal,
+    Target,
+    SynergyScore,
+    RegulatoryFiling,
+    IntegrationSimulation,
+    Company,
+    Valuation,
+  };
 }
 
 /**
@@ -214,7 +222,9 @@ async function getModels() {
 function validateTenantId(tenantId) {
   const tenantIdRegex = /^[a-zA-Z0-9_-]{8,64}$/;
   if (!tenantId || !tenantIdRegex.test(tenantId)) {
-    throw new Error(`Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`);
+    throw new Error(
+      `Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`
+    );
   }
 }
 
@@ -230,7 +240,7 @@ function generateCorrelationId() {
  */
 function applyRetentionPolicy(auditEntry, policyKey = 'COMPANIES_ACT_10_YEARS') {
   const policy = RETENTION_POLICIES[policyKey] || RETENTION_POLICIES.COMPANIES_ACT_10_YEARS;
-  
+
   return {
     ...auditEntry,
     retentionPolicy: policy.name,
@@ -238,7 +248,7 @@ function applyRetentionPolicy(auditEntry, policyKey = 'COMPANIES_ACT_10_YEARS') 
     legalReference: policy.legalReference,
     retentionStart: new Date().toISOString(),
     dataResidency: process.env.DEFAULT_DATA_RESIDENCY || 'ZA',
-    dataClassification: 'confidential-deal'
+    dataClassification: 'confidential-deal',
   };
 }
 
@@ -247,7 +257,7 @@ function applyRetentionPolicy(auditEntry, policyKey = 'COMPANIES_ACT_10_YEARS') 
  */
 function calculateMaterialityThreshold(value, jurisdiction = 'ZA', dealType = 'acquisition') {
   const thresholds = COMPETITION_THRESHOLDS[jurisdiction] || COMPETITION_THRESHOLDS.ZA;
-  
+
   if (value > thresholds.large) {
     return 'LARGE_MERGER';
   } else if (value > thresholds.intermediate) {
@@ -278,12 +288,12 @@ class MergerAcquisitionService {
     this.region = options.region || 'ZA';
     this.createdAt = new Date().toISOString();
     this.models = null;
-    
+
     Logger.info('M&A Service instance created', {
       serviceId: this.serviceId,
       tenantId: this.tenantId,
       region: this.region,
-      component: 'MergerAcquisitionService'
+      component: 'MergerAcquisitionService',
     });
   }
 
@@ -309,11 +319,11 @@ class MergerAcquisitionService {
     } catch (error) {
       Logger.debug('Tenant context not available via middleware', { error: error.message });
     }
-    
+
     if (this.tenantId) {
       return { tenantId: this.tenantId, region: this.region };
     }
-    
+
     throw new Error('No tenant context available. Tenant isolation required for M&A operations.');
   }
 
@@ -327,95 +337,99 @@ class MergerAcquisitionService {
     const startTime = Date.now();
     const { tenantId, userId } = this.getTenantContext();
     validateTenantId(tenantId);
-    
+
     const correlationId = generateCorrelationId();
-    
+
     Logger.info('Starting target identification', {
       tenantId,
       correlationId,
-      criteria: redactSensitive(criteria)
+      criteria: redactSensitive(criteria),
     });
 
     try {
       const { Company, Target } = await this.initModels();
-      
+
       // Build search query based on criteria
       const query = { tenantId };
-      
+
       if (criteria.industry) {
         query.industry = criteria.industry;
       }
-      
+
       if (criteria.minRevenue) {
         query['financials.revenue.current'] = { $gte: criteria.minRevenue };
       }
-      
+
       if (criteria.maxRevenue) {
-        query['financials.revenue.current'] = { 
+        query['financials.revenue.current'] = {
           ...query['financials.revenue.current'],
-          $lte: criteria.maxRevenue 
+          $lte: criteria.maxRevenue,
         };
       }
-      
+
       if (criteria.location) {
         query['address.country'] = criteria.location;
       }
-      
+
       if (criteria.excludeIds) {
         query._id = { $nin: criteria.excludeIds };
       }
-      
+
       // Find potential targets
       const targets = await Target.find(query)
         .limit(criteria.limit || 50)
         .lean();
-      
+
       // Score each target based on strategic fit
-      const scoredTargets = await Promise.all(targets.map(async (target) => {
-        const score = await this.calculateStrategicFit(target, criteria);
-        return {
-          ...target,
-          score: score.overall,
-          scoreBreakdown: score.breakdown,
-          confidence: score.confidence
-        };
-      }));
-      
+      const scoredTargets = await Promise.all(
+        targets.map(async (target) => {
+          const score = await this.calculateStrategicFit(target, criteria);
+          return {
+            ...target,
+            score: score.overall,
+            scoreBreakdown: score.breakdown,
+            confidence: score.confidence,
+          };
+        })
+      );
+
       // Sort by score descending
       scoredTargets.sort((a, b) => b.score - a.score);
-      
+
       // Audit log
-      const auditEntry = applyRetentionPolicy({
-        action: 'TARGET_IDENTIFICATION',
-        tenantId,
-        userId: userId || 'system',
-        correlationId,
-        criteria: redactSensitive(criteria),
-        targetsFound: scoredTargets.length,
-        topTarget: scoredTargets[0]?.name,
-        processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
-      }, 'COMPETITION_ACT_10_YEARS');
-      
+      const auditEntry = applyRetentionPolicy(
+        {
+          action: 'TARGET_IDENTIFICATION',
+          tenantId,
+          userId: userId || 'system',
+          correlationId,
+          criteria: redactSensitive(criteria),
+          targetsFound: scoredTargets.length,
+          topTarget: scoredTargets[0]?.name,
+          processingTimeMs: Date.now() - startTime,
+          timestamp: new Date().toISOString(),
+        },
+        'COMPETITION_ACT_10_YEARS'
+      );
+
       await AuditLogger.log('ma-target-identification', auditEntry);
-      
+
       Logger.info('Target identification completed', {
         tenantId,
         correlationId,
         targetsFound: scoredTargets.length,
-        processingTimeMs: Date.now() - startTime
+        processingTimeMs: Date.now() - startTime,
       });
-      
+
       return scoredTargets;
-      
     } catch (error) {
       Logger.error('Target identification failed', {
         tenantId,
         correlationId,
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       throw new Error(`TARGET_IDENTIFICATION_FAILED: ${error.message}`);
     }
   }
@@ -435,12 +449,12 @@ class MergerAcquisitionService {
         const midPoint = (criteria.minRevenue + criteria.maxRevenue) / 2;
         const distance = Math.abs(revenue - midPoint);
         const range = criteria.maxRevenue - criteria.minRevenue;
-        financialScore = Math.max(0, 100 - (distance / range * 100));
+        financialScore = Math.max(0, 100 - (distance / range) * 100);
       } else {
         financialScore = 70; // Default score
       }
     }
-    
+
     // Industry fit (30% weight)
     let industryScore = 0;
     if (criteria.targetIndustries && target.industry) {
@@ -452,7 +466,7 @@ class MergerAcquisitionService {
     } else {
       industryScore = 50;
     }
-    
+
     // Geographic fit (15% weight)
     let geographicScore = 0;
     if (criteria.targetRegions && target.address?.country) {
@@ -464,31 +478,31 @@ class MergerAcquisitionService {
     } else {
       geographicScore = 50;
     }
-    
+
     // Size fit (15% weight)
     let sizeScore = 0;
     if (target.employees) {
       if (criteria.minEmployees && criteria.maxEmployees) {
-        if (target.employees >= criteria.minEmployees && target.employees <= criteria.maxEmployees) {
+        if (
+          target.employees >= criteria.minEmployees &&
+          target.employees <= criteria.maxEmployees
+        ) {
           sizeScore = 100;
         } else {
           const midPoint = (criteria.minEmployees + criteria.maxEmployees) / 2;
           const distance = Math.abs(target.employees - midPoint);
           const range = criteria.maxEmployees - criteria.minEmployees;
-          sizeScore = Math.max(0, 100 - (distance / range * 100));
+          sizeScore = Math.max(0, 100 - (distance / range) * 100);
         }
       } else {
         sizeScore = 50;
       }
     }
-    
+
     const overall = Math.round(
-      (financialScore * 0.4) + 
-      (industryScore * 0.3) + 
-      (geographicScore * 0.15) + 
-      (sizeScore * 0.15)
+      financialScore * 0.4 + industryScore * 0.3 + geographicScore * 0.15 + sizeScore * 0.15
     );
-    
+
     return {
       overall,
       confidence: 85,
@@ -496,8 +510,8 @@ class MergerAcquisitionService {
         financial: financialScore,
         industry: industryScore,
         geographic: geographicScore,
-        size: sizeScore
-      }
+        size: sizeScore,
+      },
     };
   }
 
@@ -511,18 +525,18 @@ class MergerAcquisitionService {
     const startTime = Date.now();
     const { tenantId, userId } = this.getTenantContext();
     validateTenantId(tenantId);
-    
+
     const correlationId = generateCorrelationId();
-    
+
     Logger.info('Creating new deal', {
       tenantId,
       correlationId,
-      dealType: dealData.dealType
+      dealType: dealData.dealType,
     });
 
     try {
       const { Deal } = await this.initModels();
-      
+
       // Validate required fields
       if (!dealData.acquirerId) {
         throw new Error('Acquirer ID is required');
@@ -536,14 +550,14 @@ class MergerAcquisitionService {
       if (!dealData.value) {
         throw new Error('Deal value is required');
       }
-      
+
       // Calculate materiality
       const materiality = calculateMaterialityThreshold(
-        dealData.value, 
+        dealData.value,
         dealData.jurisdiction || 'ZA',
         dealData.dealType
       );
-      
+
       // Create deal
       const deal = new Deal({
         ...dealData,
@@ -552,54 +566,56 @@ class MergerAcquisitionService {
         materiality,
         timeline: {
           created: new Date(),
-          ...dealData.timeline
+          ...dealData.timeline,
         },
         audit: {
           createdBy: userId || 'system',
-          createdAt: new Date()
+          createdAt: new Date(),
         },
         metadata: {
           correlationId,
-          source: options.source || 'api'
-        }
+          source: options.source || 'api',
+        },
       });
-      
+
       const savedDeal = await deal.save();
-      
+
       // Audit log
-      const auditEntry = applyRetentionPolicy({
-        action: 'DEAL_CREATED',
-        tenantId,
-        userId: userId || 'system',
-        correlationId,
-        dealId: savedDeal.dealId,
-        dealType: savedDeal.dealType,
-        value: savedDeal.value,
-        materiality,
-        processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
-      }, 'COMPANIES_ACT_10_YEARS');
-      
+      const auditEntry = applyRetentionPolicy(
+        {
+          action: 'DEAL_CREATED',
+          tenantId,
+          userId: userId || 'system',
+          correlationId,
+          dealId: savedDeal.dealId,
+          dealType: savedDeal.dealType,
+          value: savedDeal.value,
+          materiality,
+          processingTimeMs: Date.now() - startTime,
+          timestamp: new Date().toISOString(),
+        },
+        'COMPANIES_ACT_10_YEARS'
+      );
+
       await AuditLogger.log('ma-deal-creation', auditEntry);
-      
+
       Logger.info('Deal created successfully', {
         tenantId,
         correlationId,
         dealId: savedDeal.dealId,
         dealType: savedDeal.dealType,
-        processingTimeMs: Date.now() - startTime
+        processingTimeMs: Date.now() - startTime,
       });
-      
+
       return savedDeal;
-      
     } catch (error) {
       Logger.error('Deal creation failed', {
         tenantId,
         correlationId,
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       throw new Error(`DEAL_CREATION_FAILED: ${error.message}`);
     }
   }
@@ -615,42 +631,42 @@ class MergerAcquisitionService {
     const startTime = Date.now();
     const { tenantId, userId } = this.getTenantContext();
     validateTenantId(tenantId);
-    
+
     const correlationId = generateCorrelationId();
 
     try {
       const { SynergyScore, Company } = await this.initModels();
-      
+
       // Get acquirer and target
       const [acquirer, target] = await Promise.all([
         Company.findById(acquirerId),
-        Company.findById(targetId)
+        Company.findById(targetId),
       ]);
-      
+
       if (!acquirer || !target) {
         throw new Error('Acquirer or target not found');
       }
-      
+
       // Calculate synergies
       const revenueSynergy = this.calculateRevenueSynergy(acquirer, target);
       const costSynergy = this.calculateCostSynergy(acquirer, target);
       const financialSynergy = this.calculateFinancialSynergy(acquirer, target);
       const culturalSynergy = this.calculateCulturalSynergy(acquirer, target);
-      
+
       const totalSynergy = Math.round(
         revenueSynergy.value * 0.3 +
-        costSynergy.value * 0.3 +
-        financialSynergy.value * 0.25 +
-        culturalSynergy.value * 0.15
+          costSynergy.value * 0.3 +
+          financialSynergy.value * 0.25 +
+          culturalSynergy.value * 0.15
       );
-      
+
       const confidence = Math.round(
         revenueSynergy.confidence * 0.3 +
-        costSynergy.confidence * 0.3 +
-        financialSynergy.confidence * 0.25 +
-        culturalSynergy.confidence * 0.15
+          costSynergy.confidence * 0.3 +
+          financialSynergy.confidence * 0.25 +
+          culturalSynergy.confidence * 0.15
       );
-      
+
       // Create synergy score record
       const synergyScore = new SynergyScore({
         tenantId,
@@ -660,50 +676,52 @@ class MergerAcquisitionService {
           revenue: revenueSynergy,
           cost: costSynergy,
           financial: financialSynergy,
-          cultural: culturalSynergy
+          cultural: culturalSynergy,
         },
         totalSynergy,
         confidence,
         methodology: 'quantum-weighted-v1',
         calculatedBy: userId || 'system',
-        correlationId
-      });
-      
-      const saved = await synergyScore.save();
-      
-      // Audit log
-      const auditEntry = applyRetentionPolicy({
-        action: 'SYNERGY_CALCULATED',
-        tenantId,
-        userId: userId || 'system',
         correlationId,
-        acquirerId,
-        targetId,
-        totalSynergy,
-        confidence,
-        processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
-      }, 'COMPANIES_ACT_10_YEARS');
-      
+      });
+
+      const saved = await synergyScore.save();
+
+      // Audit log
+      const auditEntry = applyRetentionPolicy(
+        {
+          action: 'SYNERGY_CALCULATED',
+          tenantId,
+          userId: userId || 'system',
+          correlationId,
+          acquirerId,
+          targetId,
+          totalSynergy,
+          confidence,
+          processingTimeMs: Date.now() - startTime,
+          timestamp: new Date().toISOString(),
+        },
+        'COMPANIES_ACT_10_YEARS'
+      );
+
       await AuditLogger.log('ma-synergy-calculation', auditEntry);
-      
+
       Logger.info('Synergy calculation completed', {
         tenantId,
         correlationId,
         totalSynergy,
         confidence,
-        processingTimeMs: Date.now() - startTime
+        processingTimeMs: Date.now() - startTime,
       });
-      
+
       return saved;
-      
     } catch (error) {
       Logger.error('Synergy calculation failed', {
         tenantId,
         correlationId,
-        error: error.message
+        error: error.message,
       });
-      
+
       throw new Error(`SYNERGY_CALCULATION_FAILED: ${error.message}`);
     }
   }
@@ -715,15 +733,11 @@ class MergerAcquisitionService {
     // Mock calculation - in production, this would use actual financial data
     const baseValue = (acquirer.financials?.revenue?.current || 0) * 0.05;
     const targetValue = (target.financials?.revenue?.current || 0) * 0.05;
-    
+
     return {
       value: Math.round(baseValue + targetValue),
       confidence: 85,
-      drivers: [
-        'Cross-selling opportunities',
-        'Market expansion',
-        'Product bundling'
-      ]
+      drivers: ['Cross-selling opportunities', 'Market expansion', 'Product bundling'],
     };
   }
 
@@ -732,15 +746,11 @@ class MergerAcquisitionService {
    */
   calculateCostSynergy(acquirer, target) {
     const baseValue = (acquirer.financials?.operatingCosts?.total || 0) * 0.1;
-    
+
     return {
       value: Math.round(baseValue),
       confidence: 80,
-      drivers: [
-        'Operational efficiencies',
-        'Supply chain optimization',
-        'Overhead reduction'
-      ]
+      drivers: ['Operational efficiencies', 'Supply chain optimization', 'Overhead reduction'],
     };
   }
 
@@ -751,11 +761,7 @@ class MergerAcquisitionService {
     return {
       value: 5000000, // Mock value
       confidence: 75,
-      drivers: [
-        'Improved credit rating',
-        'Tax optimization',
-        'Working capital efficiency'
-      ]
+      drivers: ['Improved credit rating', 'Tax optimization', 'Working capital efficiency'],
     };
   }
 
@@ -766,11 +772,7 @@ class MergerAcquisitionService {
     return {
       value: 70, // Percentage score
       confidence: 70,
-      drivers: [
-        'Leadership alignment',
-        'Cultural compatibility',
-        'Integration readiness'
-      ]
+      drivers: ['Leadership alignment', 'Cultural compatibility', 'Integration readiness'],
     };
   }
 
@@ -784,20 +786,20 @@ class MergerAcquisitionService {
     const startTime = Date.now();
     const { tenantId, userId } = this.getTenantContext();
     validateTenantId(tenantId);
-    
+
     const correlationId = generateCorrelationId();
 
     try {
       const { Deal, RegulatoryFiling } = await this.initModels();
-      
+
       const deal = await Deal.findById(dealId).populate('acquirer').populate('target');
-      
+
       if (!deal) {
         throw new Error('Deal not found');
       }
-      
+
       const assessments = [];
-      
+
       for (const jurisdiction of jurisdictions) {
         const assessment = {
           jurisdiction,
@@ -806,13 +808,13 @@ class MergerAcquisitionService {
           thresholds: COMPETITION_THRESHOLDS[jurisdiction] || COMPETITION_THRESHOLDS.ZA,
           estimatedTimeline: '90-120 days',
           filingFee: 0,
-          conditions: []
+          conditions: [],
         };
-        
+
         // Check if filing is required
         if (deal.value > assessment.thresholds.merger_control) {
           assessment.filingRequired = true;
-          
+
           if (deal.value > assessment.thresholds.large) {
             assessment.filingType = 'large_merger';
             assessment.filingFee = 500000; // R500k
@@ -823,20 +825,20 @@ class MergerAcquisitionService {
             assessment.filingType = 'small_merger';
             assessment.filingFee = 35000; // R35k
           }
-          
+
           // Check for potential conditions
           if (deal.acquirer?.marketShare > 35) {
             assessment.conditions.push('Potential divestiture required');
           }
-          
+
           if (deal.target?.marketShare > 35) {
             assessment.conditions.push('Potential market concentration concerns');
           }
         }
-        
+
         assessments.push(assessment);
       }
-      
+
       // Create regulatory filing records if required
       for (const assessment of assessments) {
         if (assessment.filingRequired) {
@@ -852,44 +854,46 @@ class MergerAcquisitionService {
               fees: {
                 amount: assessment.filingFee,
                 currency: 'ZAR',
-                paid: false
-              }
+                paid: false,
+              },
             },
             review: {
-              targetDecisionDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+              targetDecisionDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
             },
             createdBy: userId || 'system',
-            correlationId
+            correlationId,
           });
-          
+
           await filing.save();
         }
       }
-      
+
       // Audit log
-      const auditEntry = applyRetentionPolicy({
-        action: 'REGULATORY_ASSESSMENT',
-        tenantId,
-        userId: userId || 'system',
-        correlationId,
-        dealId,
-        jurisdictions,
-        filingsRequired: assessments.filter(a => a.filingRequired).length,
-        processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
-      }, 'COMPETITION_ACT_10_YEARS');
-      
+      const auditEntry = applyRetentionPolicy(
+        {
+          action: 'REGULATORY_ASSESSMENT',
+          tenantId,
+          userId: userId || 'system',
+          correlationId,
+          dealId,
+          jurisdictions,
+          filingsRequired: assessments.filter((a) => a.filingRequired).length,
+          processingTimeMs: Date.now() - startTime,
+          timestamp: new Date().toISOString(),
+        },
+        'COMPETITION_ACT_10_YEARS'
+      );
+
       await AuditLogger.log('ma-regulatory-assessment', auditEntry);
-      
+
       return assessments;
-      
     } catch (error) {
       Logger.error('Regulatory assessment failed', {
         tenantId,
         correlationId,
-        error: error.message
+        error: error.message,
       });
-      
+
       throw new Error(`REGULATORY_ASSESSMENT_FAILED: ${error.message}`);
     }
   }
@@ -904,42 +908,42 @@ class MergerAcquisitionService {
     const startTime = Date.now();
     const { tenantId, userId } = this.getTenantContext();
     validateTenantId(tenantId);
-    
+
     const correlationId = generateCorrelationId();
 
     try {
       const { IntegrationSimulation, Deal } = await this.initModels();
-      
+
       const deal = await Deal.findById(dealId).populate('acquirer').populate('target');
-      
+
       if (!deal) {
         throw new Error('Deal not found');
       }
-      
+
       // Run Monte Carlo simulation
       const iterations = options.iterations || 1000;
       const results = [];
-      
+
       for (let i = 0; i < iterations; i++) {
         // Simplified simulation
         const success = Math.random() < 0.75; // 75% base success rate
         const timeline = 12 + Math.floor(Math.random() * 12); // 12-24 months
         const cost = deal.value * (0.02 + Math.random() * 0.03); // 2-5% of deal value
-        
+
         results.push({
           success,
           timeline,
           cost,
-          synergyRealized: success ? 0.7 + Math.random() * 0.3 : 0.1 + Math.random() * 0.3
+          synergyRealized: success ? 0.7 + Math.random() * 0.3 : 0.1 + Math.random() * 0.3,
         });
       }
-      
+
       // Calculate statistics
-      const successRate = results.filter(r => r.success).length / iterations * 100;
+      const successRate = (results.filter((r) => r.success).length / iterations) * 100;
       const avgTimeline = results.reduce((sum, r) => sum + r.timeline, 0) / iterations;
       const avgCost = results.reduce((sum, r) => sum + r.cost, 0) / iterations;
       const avgSynergy = results.reduce((sum, r) => sum + r.synergyRealized, 0) / iterations;
-      
+
       const simulation = new IntegrationSimulation({
         tenantId,
         dealId,
@@ -951,43 +955,48 @@ class MergerAcquisitionService {
           avgSynergy,
           confidence: 90,
           percentiles: {
-            p10: results.sort((a, b) => a.timeline - b.timeline)[Math.floor(iterations * 0.1)]?.timeline,
-            p50: results.sort((a, b) => a.timeline - b.timeline)[Math.floor(iterations * 0.5)]?.timeline,
-            p90: results.sort((a, b) => a.timeline - b.timeline)[Math.floor(iterations * 0.9)]?.timeline
-          }
+            p10: results.sort((a, b) => a.timeline - b.timeline)[Math.floor(iterations * 0.1)]
+              ?.timeline,
+            p50: results.sort((a, b) => a.timeline - b.timeline)[Math.floor(iterations * 0.5)]
+              ?.timeline,
+            p90: results.sort((a, b) => a.timeline - b.timeline)[Math.floor(iterations * 0.9)]
+              ?.timeline,
+          },
         },
         parameters: options,
         generatedBy: userId || 'system',
-        correlationId
-      });
-      
-      const saved = await simulation.save();
-      
-      // Audit log
-      const auditEntry = applyRetentionPolicy({
-        action: 'INTEGRATION_SIMULATION',
-        tenantId,
-        userId: userId || 'system',
         correlationId,
-        dealId,
-        iterations,
-        successRate,
-        avgTimeline,
-        processingTimeMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
-      }, 'COMPANIES_ACT_10_YEARS');
-      
+      });
+
+      const saved = await simulation.save();
+
+      // Audit log
+      const auditEntry = applyRetentionPolicy(
+        {
+          action: 'INTEGRATION_SIMULATION',
+          tenantId,
+          userId: userId || 'system',
+          correlationId,
+          dealId,
+          iterations,
+          successRate,
+          avgTimeline,
+          processingTimeMs: Date.now() - startTime,
+          timestamp: new Date().toISOString(),
+        },
+        'COMPANIES_ACT_10_YEARS'
+      );
+
       await AuditLogger.log('ma-integration-simulation', auditEntry);
-      
+
       return saved;
-      
     } catch (error) {
       Logger.error('Integration simulation failed', {
         tenantId,
         correlationId,
-        error: error.message
+        error: error.message,
       });
-      
+
       throw new Error(`INTEGRATION_SIMULATION_FAILED: ${error.message}`);
     }
   }
@@ -998,20 +1007,20 @@ class MergerAcquisitionService {
   async getDeal(dealId) {
     const { tenantId } = this.getTenantContext();
     validateTenantId(tenantId);
-    
+
     const { Deal } = await this.initModels();
-    
+
     const deal = await Deal.findOne({ _id: dealId, tenantId })
       .populate('acquirer')
       .populate('target')
       .populate('synergyScore')
       .populate('integrationSimulation')
       .lean();
-    
+
     if (!deal) {
       throw new Error('Deal not found');
     }
-    
+
     return deal;
   }
 
@@ -1021,13 +1030,13 @@ class MergerAcquisitionService {
   async listDeals(filters = {}, pagination = {}) {
     const { tenantId } = this.getTenantContext();
     validateTenantId(tenantId);
-    
+
     const { Deal } = await this.initModels();
-    
+
     const query = { tenantId, ...filters };
     const limit = pagination.limit || 20;
     const skip = pagination.offset || 0;
-    
+
     const deals = await Deal.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -1035,17 +1044,17 @@ class MergerAcquisitionService {
       .populate('acquirer', 'name industry')
       .populate('target', 'name industry')
       .lean();
-    
+
     const total = await Deal.countDocuments(query);
-    
+
     return {
       deals,
       pagination: {
         total,
         limit,
         offset: skip,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -1055,45 +1064,48 @@ class MergerAcquisitionService {
   async updateDealStage(dealId, newStage, userId, notes = '') {
     const { tenantId } = this.getTenantContext();
     validateTenantId(tenantId);
-    
+
     const { Deal } = await this.initModels();
-    
+
     const deal = await Deal.findOne({ _id: dealId, tenantId });
-    
+
     if (!deal) {
       throw new Error('Deal not found');
     }
-    
+
     const oldStage = deal.stage;
     deal.stage = newStage;
     deal.timeline = {
       ...deal.timeline,
-      [`${newStage}At`]: new Date()
+      [`${newStage}At`]: new Date(),
     };
     deal.audit.updatedBy = userId;
-    
+
     if (notes) {
       deal.notes = deal.notes || [];
       deal.notes.push({
         content: notes,
         createdBy: userId,
-        createdAt: new Date()
+        createdAt: new Date(),
       });
     }
-    
+
     await deal.save();
-    
+
     // Audit log
-    await AuditLogger.log('ma-stage-update', applyRetentionPolicy({
-      action: 'DEAL_STAGE_UPDATED',
-      tenantId,
-      userId,
-      dealId,
-      oldStage,
-      newStage,
-      timestamp: new Date().toISOString()
-    }));
-    
+    await AuditLogger.log(
+      'ma-stage-update',
+      applyRetentionPolicy({
+        action: 'DEAL_STAGE_UPDATED',
+        tenantId,
+        userId,
+        dealId,
+        oldStage,
+        newStage,
+        timestamp: new Date().toISOString(),
+      })
+    );
+
     return deal;
   }
 
@@ -1103,9 +1115,9 @@ class MergerAcquisitionService {
   async getPipelineAnalytics() {
     const { tenantId } = this.getTenantContext();
     validateTenantId(tenantId);
-    
+
     const { Deal } = await this.initModels();
-    
+
     const pipeline = await Deal.aggregate([
       { $match: { tenantId } },
       {
@@ -1113,22 +1125,22 @@ class MergerAcquisitionService {
           _id: '$stage',
           count: { $sum: 1 },
           totalValue: { $sum: '$value' },
-          avgValue: { $avg: '$value' }
-        }
+          avgValue: { $avg: '$value' },
+        },
       },
-      { $sort: { _id: 1 } }
+      { $sort: { _id: 1 } },
     ]);
-    
+
     const totalDeals = pipeline.reduce((sum, stage) => sum + stage.count, 0);
     const totalValue = pipeline.reduce((sum, stage) => sum + stage.totalValue, 0);
-    
+
     return {
       pipeline,
       summary: {
         totalDeals,
         totalValue,
-        avgDealValue: totalDeals ? totalValue / totalDeals : 0
-      }
+        avgDealValue: totalDeals ? totalValue / totalDeals : 0,
+      },
     };
   }
 }
@@ -1144,7 +1156,7 @@ export {
   SYNERGY_CATEGORIES,
   REGULATORY_JURISDICTIONS,
   COMPETITION_THRESHOLDS,
-  RETENTION_POLICIES
+  RETENTION_POLICIES,
 };
 
 export default MergerAcquisitionService;
@@ -1160,13 +1172,13 @@ export default MergerAcquisitionService;
  * • Risk elimination: R850M in failed acquisitions
  * • Revenue model: 85% margin on 1.5% success fee
  * • Compliance: Competition Act, JSE, POPIA, CCA
- * 
+ *
  * FORENSIC TRACEABILITY:
  * • Every deal action logged with retention metadata
  * • SHA256 hash chain for all calculations
  * • 10-year retention for Companies Act compliance
  * • Multi-tenant isolation with tenantId validation
- * 
+ *
  * COMPLIANCE VERIFICATION:
  * • Competition Act 89 of 1998 §59(2): 10-year retention
  * • JSE Listings Requirements §3.4: Materiality tracking

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * =================================================================================
  * ⚖️ QUANTUM COMPLIANCE GATEWAY NEXUS v3.1 - PAN-AFRICAN REGULATORY ORCHESTRATION ⚖️
  * =================================================================================
@@ -130,7 +128,7 @@ const requiredEnvVars = [
 requiredEnvVars.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(
-      `QUANTUM BREACH: ${envVar} missing from .env vault - Compliance system cannot initialize`,
+      `QUANTUM BREACH: ${envVar} missing from .env vault - Compliance system cannot initialize`
     );
   }
 });
@@ -194,7 +192,7 @@ router.use(
       preload: true,
     },
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  }),
+  })
 );
 
 router.use(mongoSanitize()); // Prevent NoSQL injection
@@ -234,9 +232,9 @@ Joi.extend((joi) => ({
         try {
           const date = new Date(fullYear, month - 1, day);
           if (
-            date.getFullYear() !== fullYear
-            || date.getMonth() !== month - 1
-            || date.getDate() !== day
+            date.getFullYear() !== fullYear ||
+            date.getMonth() !== month - 1 ||
+            date.getDate() !== day
           ) {
             return helpers.error('string.dobValid');
           }
@@ -282,7 +280,7 @@ const specialCategoryProcessingSchema = Joi.object({
       'HEALTH_INFORMATION',
       'SEXUAL_LIFE',
       'BIOMETRIC_DATA',
-      'CRIMINAL_BEHAVIOR',
+      'CRIMINAL_BEHAVIOR'
     )
     .required(),
   explicitConsent: Joi.object({
@@ -307,7 +305,7 @@ const eSignatureSchema = Joi.object({
       'WILL',
       'COURT_DOCUMENT',
       'FINANCIAL_INSTRUMENT',
-      'LEGAL_AGREEMENT',
+      'LEGAL_AGREEMENT'
     )
     .required(),
   signatureType: Joi.string().valid('SIMPLE', 'ADVANCED', 'QUALIFIED').required(),
@@ -336,7 +334,7 @@ const companyVerificationSchema = Joi.object({
       'PUBLIC_COMPANY',
       'NON_PROFIT_COMPANY',
       'CLOSE_CORPORATION',
-      'EXTERNAL_COMPANY',
+      'EXTERNAL_COMPANY'
     )
     .required(),
   verificationPurpose: Joi.string()
@@ -345,7 +343,7 @@ const companyVerificationSchema = Joi.object({
       'ANNUAL_COMPLIANCE',
       'TRANSACTION',
       'LEGAL_PROCEEDING',
-      'REGULATORY_REQUIREMENT',
+      'REGULATORY_REQUIREMENT'
     )
     .required(),
   directorConsent: Joi.boolean().required(),
@@ -408,12 +406,12 @@ router.post(
       // Quantum Shield: Encrypt special category data
       const encryptedData = CryptoJS.AES.encrypt(
         JSON.stringify(req.body),
-        process.env.PII_ENCRYPTION_KEY,
+        process.env.PII_ENCRYPTION_KEY
       ).toString();
 
       // Validate explicit consent
       const consentValid = await popiaController.validateExplicitConsent(
-        req.body.explicitConsent.consentId,
+        req.body.explicitConsent.consentId
       );
 
       if (!consentValid) {
@@ -445,7 +443,7 @@ router.post(
           timestamp: new Date().toISOString(),
           lawfulCondition: req.body.lawfulCondition,
         },
-        req.user.tenantId,
+        req.user.tenantId
       );
 
       await emitAudit(req, {
@@ -487,7 +485,7 @@ router.post(
       error.complianceViolation = true;
       next(error);
     }
-  },
+  }
 );
 
 /*
@@ -528,7 +526,7 @@ router.post(
       // Verify timestamp authority
       const timestampValid = await eSignController.verifyTimestampAuthority(
         req.body.timestampAuthority,
-        req.body.signatoryVerification.timestamp,
+        req.body.signatoryVerification.timestamp
       );
 
       // Record in blockchain for non-repudiation
@@ -541,7 +539,7 @@ router.post(
           timestamp: req.body.signatoryVerification.timestamp,
           signatoryHash: crypto.createHash('sha256').update(req.user.id).digest('hex'),
         },
-        req.user.tenantId,
+        req.user.tenantId
       );
 
       await emitAudit(req, {
@@ -585,7 +583,7 @@ router.post(
       error.legalImplication = true;
       next(error);
     }
-  },
+  }
 );
 
 /*
@@ -610,7 +608,7 @@ router.post(
           requestor: req.user.id,
           tenant: req.user.tenantId,
         }),
-        process.env.CIPC_API_KEY || process.env.ENCRYPTION_KEY,
+        process.env.CIPC_API_KEY || process.env.ENCRYPTION_KEY
       ).toString();
 
       // Perform CIPC verification
@@ -643,7 +641,7 @@ router.post(
           verificationPurpose: req.body.verificationPurpose,
           verifiedBy: req.user.id,
         },
-        req.user.tenantId,
+        req.user.tenantId
       );
 
       await emitAudit(req, {
@@ -685,7 +683,7 @@ router.post(
       error.regulatoryImpact = true;
       next(error);
     }
-  },
+  }
 );
 
 /*
@@ -718,7 +716,7 @@ router.post(
       if (req.body.efilingUserId) {
         efilingStatus = await sarsService.checkEfilingStatus(
           req.body.efilingUserId,
-          req.body.taxPeriod,
+          req.body.taxPeriod
         );
       }
 
@@ -734,7 +732,7 @@ router.post(
           validationDate: new Date().toISOString(),
           validatedBy: req.user.id,
         },
-        req.user.tenantId,
+        req.user.tenantId
       );
 
       await emitAudit(req, {
@@ -747,10 +745,10 @@ router.post(
         metadata: {
           taxNumberHash: req.body.taxNumber
             ? `${crypto
-              .createHash('sha256')
-              .update(req.body.taxNumber)
-              .digest('hex')
-              .substring(0, 12)}...`
+                .createHash('sha256')
+                .update(req.body.taxNumber)
+                .digest('hex')
+                .substring(0, 12)}...`
             : null,
           vatRegistered: req.body.vatRegistered,
           complianceStatus: sarsValidation.complianceStatus,
@@ -784,7 +782,7 @@ router.post(
       error.taxImplication = true;
       next(error);
     }
-  },
+  }
 );
 
 /*
@@ -841,7 +839,7 @@ router.post(
           screeningDate: new Date().toISOString(),
           screenedBy: req.user.id,
         },
-        req.user.tenantId,
+        req.user.tenantId
       );
 
       await emitAudit(req, {
@@ -885,7 +883,7 @@ router.post(
       error.amlRisk = true;
       next(error);
     }
-  },
+  }
 );
 
 /*
@@ -922,9 +920,9 @@ router.get('/health', protect, authorize('admin', 'system_admin'), async (req, r
       healthChecks,
       complianceScore: allHealthy
         ? 100
-        : (Object.values(healthChecks).filter((c) => c.healthy).length
-            / Object.keys(healthChecks).length)
-          * 100,
+        : (Object.values(healthChecks).filter((c) => c.healthy).length /
+            Object.keys(healthChecks).length) *
+          100,
       quantumSignature: crypto
         .createHash('sha256')
         .update(`${status}-${Date.now()}-${req.user.tenantId}`)
@@ -975,7 +973,7 @@ router.get(
 
       // Verify blockchain integrity
       const blockchainVerified = await require('../utils/blockchainUtils').verifyAuditChain(
-        auditTrail.blockchainHashes,
+        auditTrail.blockchainHashes
       );
 
       await emitAudit(req, {
@@ -1022,7 +1020,7 @@ router.get(
       error.securityImplication = true;
       next(error);
     }
-  },
+  }
 );
 
 // ================================================================================
@@ -1047,7 +1045,7 @@ router.post(
       trustAccountNumber: Joi.string().required(),
       verificationDate: Joi.date().max('now').required(),
     },
-    'body',
+    'body'
   ),
   async (req, res, next) => {
     try {
@@ -1073,7 +1071,7 @@ router.post(
           verificationDate: req.body.verificationDate,
           verifiedBy: req.user.id,
         },
-        req.user.tenantId,
+        req.user.tenantId
       );
 
       await emitAudit(req, {
@@ -1114,7 +1112,7 @@ router.post(
       error.legalImplication = true;
       next(error);
     }
-  },
+  }
 );
 
 // ================================================================================

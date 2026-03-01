@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ LEGAL PRECEDENT - INVESTOR-GRADE MODULE                                     ║
   ║ 85% cost reduction | R2.97M savings | 99.99% legal certainty                ║
   ║ POPIA §19 | ECT Act §15 | Companies Act §28 | National Archives Act         ║
@@ -866,7 +864,7 @@ const legalPrecedentSchema = new mongoose.Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -968,7 +966,7 @@ legalPrecedentSchema.pre('save', async function (next) {
 
       // Set compliance flags
       this.popiaCompliant = this.parties.every(
-        (p) => this.accessLevel !== 'PUBLIC' || p.name.includes('.'),
+        (p) => this.accessLevel !== 'PUBLIC' || p.name.includes('.')
       );
       this.paiaReady = this.accessLevel === 'PUBLIC';
 
@@ -1044,7 +1042,7 @@ legalPrecedentSchema.methods.addCitation = async function () {
   // Increase value (5% per citation)
   const valueIncrease = this.estimatedValue * INVESTOR_METRICS.CITATION_VALUE_INCREASE;
   this.estimatedValue = Math.round(
-    this.estimatedValue * (1 + INVESTOR_METRICS.CITATION_VALUE_INCREASE),
+    this.estimatedValue * (1 + INVESTOR_METRICS.CITATION_VALUE_INCREASE)
   );
   this.networkValue = Math.round(this.networkValue * 1.1); // 10% network increase
 
@@ -1108,7 +1106,7 @@ legalPrecedentSchema.methods.verifyIntegrity = function () {
 legalPrecedentSchema.methods.addRelatedPrecedent = async function (
   relatedId,
   relationship,
-  strength = 0.5,
+  strength = 0.5
 ) {
   this.relatedPrecedents.push({
     precedentId: relatedId,
@@ -1228,7 +1226,7 @@ legalPrecedentSchema.statics.findRelated = async function (precedentId, depth = 
 
 legalPrecedentSchema.statics.getJurisprudenceReport = async function (
   jurisdiction = 'ZA',
-  year = null,
+  year = null
 ) {
   const matchStage = { jurisdiction };
 

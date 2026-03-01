@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 import { expect } from 'chai';
 import request from 'supertest';
 import fs from 'fs';
@@ -25,7 +25,10 @@ describe('🔗 Predictive Engine Integration Suite', function () {
     }
     fs.mkdirSync(snapshotDir, { recursive: true });
 
-    service = new PredictiveEngineService({ snapshotDir, modelDir: path.resolve(process.cwd(), 'test-models') });
+    service = new PredictiveEngineService({
+      snapshotDir,
+      modelDir: path.resolve(process.cwd(), 'test-models'),
+    });
 
     app = express();
     app.use(bodyParser.json({ limit: '1mb' }));
@@ -38,15 +41,27 @@ describe('🔗 Predictive Engine Integration Suite', function () {
       content: { raw: 'Test template content about ESG and compliance' },
       usageStats: { timesUsed: 120, lastUsedAt: new Date().toISOString() },
       versionHistory: [
-        { version: 1, createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(), changelog: 'Initial' },
-        { version: 2, createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(), changelog: 'Update' }
-      ]
+        {
+          version: 1,
+          createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
+          changelog: 'Initial',
+        },
+        {
+          version: 2,
+          createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
+          changelog: 'Update',
+        },
+      ],
     };
   });
 
   after(async () => {
-    try { fs.rmSync(snapshotDir, { recursive: true, force: true }); } catch (e) {}
-    try { fs.rmSync(path.resolve(process.cwd(), 'test-models'), { recursive: true, force: true }); } catch (e) {}
+    try {
+      fs.rmSync(snapshotDir, { recursive: true, force: true });
+    } catch (e) {}
+    try {
+      fs.rmSync(path.resolve(process.cwd(), 'test-models'), { recursive: true, force: true });
+    } catch (e) {}
   });
 
   describe('API Endpoints', () => {

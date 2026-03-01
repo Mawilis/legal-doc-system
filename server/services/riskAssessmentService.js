@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * ⚠️ RISK ASSESSMENT SERVICE QUANTUM SCROLL: AI-POWERED LEGAL RISK ORACLE ⚠️
  * ============================================================================
@@ -373,7 +371,7 @@ class RiskPredictionModel {
       complianceData.electronicSignatureValidity || 0,
       complianceData.ficaVerificationRate || 0,
       complianceData.auditTrailCompleteness || 0,
-      complianceData.incidentResponseScore || 0,
+      complianceData.incidentResponseScore || 0
     );
 
     // 💰 FINANCIAL FEATURES
@@ -383,7 +381,7 @@ class RiskPredictionModel {
       firmData.paymentCollectionRate || 0,
       firmData.expenseToRevenueRatio || 0,
       firmData.cashReserveCoverage || 0,
-      firmData.debtorDays || 0,
+      firmData.debtorDays || 0
     );
 
     // ⚙️ OPERATIONAL FEATURES
@@ -393,7 +391,7 @@ class RiskPredictionModel {
       firmData.processCompletionTime || 0,
       firmData.documentProcessingSpeed || 0,
       firmData.supportResolutionTime || 0,
-      firmData.userSatisfactionScore || 0,
+      firmData.userSatisfactionScore || 0
     );
 
     // 🔐 SECURITY FEATURES
@@ -403,7 +401,7 @@ class RiskPredictionModel {
       firmData.passwordStrengthScore || 0,
       firmData.encryptionCoverage || 0,
       firmData.vulnerabilityScanFrequency || 0,
-      firmData.securityPatchLatency || 0,
+      firmData.securityPatchLatency || 0
     );
 
     // 📈 STATISTICAL FEATURES
@@ -412,7 +410,7 @@ class RiskPredictionModel {
       firmData.clientRetentionRate || 0,
       firmData.revenueGrowthRate || 0,
       firmData.profitMargin || 0,
-      firmData.operatingExpenseRatio || 0,
+      firmData.operatingExpenseRatio || 0
     );
 
     // 🏛️ LEGAL FEATURES
@@ -421,7 +419,7 @@ class RiskPredictionModel {
       complianceData.regulatoryInquiries || 0,
       complianceData.contractDisputes || 0,
       firmData.professionalIndemnityClaims || 0,
-      complianceData.statuteOfLimitationsAlerts || 0,
+      complianceData.statuteOfLimitationsAlerts || 0
     );
 
     // Pad to 50 features if necessary
@@ -453,8 +451,9 @@ class RiskPredictionModel {
       const severityLevel = maxIndex + 1; // Convert to 1-6 scale
 
       // Map to risk severity
-      const severity = Object.values(RISK_SEVERITY).find((s) => s.level === severityLevel)
-        || RISK_SEVERITY.MODERATE;
+      const severity =
+        Object.values(RISK_SEVERITY).find((s) => s.level === severityLevel) ||
+        RISK_SEVERITY.MODERATE;
 
       // Calculate confidence score
       const confidence = Math.max(...predictionData) * 100;
@@ -610,7 +609,7 @@ class RiskAssessmentService {
       // 🤖 AI PREDICTION: Generate risk predictions using ML model
       const featureVector = this.predictionModel.extractFeatures(
         metrics.operational,
-        metrics.compliance,
+        metrics.compliance
       );
 
       const aiPrediction = await this.predictionModel.predictRisk(featureVector);
@@ -625,7 +624,7 @@ class RiskAssessmentService {
       const recommendations = await this.generateMitigationRecommendations(
         riskAreas,
         metrics,
-        firm,
+        firm
       );
 
       // 📝 COMPLIANCE MAPPING: Map risks to SA legal requirements
@@ -700,7 +699,7 @@ class RiskAssessmentService {
           ...assessmentReport,
           _id: savedAssessment._id,
           cachedAt: new Date().toISOString(),
-        }),
+        })
       );
 
       // 🔔 NOTIFICATIONS: Trigger alerts for high risks
@@ -730,9 +729,7 @@ class RiskAssessmentService {
    * @returns {Object} - Calculated risk metrics
    */
   async calculateRiskMetrics(data) {
-    const {
-      firm, users, documents, auditLogs, complianceReports,
-    } = data;
+    const { firm, users, documents, auditLogs, complianceReports } = data;
 
     // 📊 COMPLIANCE METRICS
     const complianceMetrics = {
@@ -983,7 +980,9 @@ class RiskAssessmentService {
 
     // Group risks by category
     riskAreas.forEach((risk) => {
-      const category = Object.keys(RISK_CATEGORIES).find((cat) => Object.values(RISK_CATEGORIES[cat]).includes(risk.category));
+      const category = Object.keys(RISK_CATEGORIES).find((cat) =>
+        Object.values(RISK_CATEGORIES[cat]).includes(risk.category)
+      );
 
       if (category) {
         if (!categoryScores[category]) {
@@ -998,7 +997,7 @@ class RiskAssessmentService {
         categoryScores[category].totalSeverity += risk.severity.level;
         categoryScores[category].highestSeverity = Math.max(
           categoryScores[category].highestSeverity,
-          risk.severity.level,
+          risk.severity.level
         );
       }
     });
@@ -1022,9 +1021,10 @@ class RiskAssessmentService {
     const normalizedScore = totalWeight > 0 ? weightedScore / totalWeight : 0;
 
     // Adjust with AI prediction confidence
-    const aiAdjustedScore = aiPrediction.confidence > 70
-      ? normalizedScore * 0.7 + (aiPrediction.severity.level / 6) * 100 * 0.3
-      : normalizedScore;
+    const aiAdjustedScore =
+      aiPrediction.confidence > 70
+        ? normalizedScore * 0.7 + (aiPrediction.severity.level / 6) * 100 * 0.3
+        : normalizedScore;
 
     return {
       overall: Math.min(Math.round(aiAdjustedScore), 100),
@@ -1315,7 +1315,7 @@ class RiskAssessmentService {
     await this.redisClient.setEx(
       `risk-alert:critical:${firm._id}:${Date.now()}`,
       7 * 24 * 60 * 60, // 7 days
-      JSON.stringify(alertData),
+      JSON.stringify(alertData)
     );
 
     console.warn('🚨 CRITICAL RISK ALERT:', alertData);
@@ -1356,7 +1356,7 @@ class RiskAssessmentService {
         contentAnalysis,
         complianceRisks,
         signatureRisks,
-        retentionRisks,
+        retentionRisks
       );
 
       const documentAssessment = {
@@ -1388,7 +1388,7 @@ class RiskAssessmentService {
       await this.redisClient.setEx(
         `risk-assessment:document:${documentId}`,
         24 * 60 * 60,
-        JSON.stringify(documentAssessment),
+        JSON.stringify(documentAssessment)
       );
 
       return {
@@ -1479,8 +1479,9 @@ const riskAssessmentService = new RiskAssessmentService();
 // Helper calculation methods
 RiskAssessmentService.prototype.calculateConsentRate = function (users) {
   const withConsent = users.filter(
-    (u) => u.popiaConsents
-      && u.popiaConsents.some((c) => c.status === 'granted' && new Date(c.expiry) > new Date()),
+    (u) =>
+      u.popiaConsents &&
+      u.popiaConsents.some((c) => c.status === 'granted' && new Date(c.expiry) > new Date())
   ).length;
 
   return users.length > 0 ? Math.round((withConsent / users.length) * 100) : 100;

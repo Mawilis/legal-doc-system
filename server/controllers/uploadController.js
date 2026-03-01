@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/uploadController.js
  * PATH: server/controllers/uploadController.js
  * VERSION: 2026-01-19
@@ -67,7 +65,7 @@ function safeRequireModels() {
  */
 function makePresignedUrlMock(filename, tenantId) {
   const key = `dev/${tenantId || 'unknown'}/${Date.now().toString(
-    36,
+    36
   )}_${uuidv4()}_${filename.replace(/\s+/g, '_')}`;
   // In dev we return a mock URL that the client can POST to; server will accept finalizeUpload with this key.
   const uploadUrl = `http://localhost:3001/internal/mock-upload/${encodeURIComponent(key)}`;
@@ -81,9 +79,7 @@ function makePresignedUrlMock(filename, tenantId) {
    - If S3 env vars present, returns real presigned URL; otherwise returns mock.
    ------------------------- */
 router.post('/presign', express.json({ limit: '10kb' }), async (req, res) => {
-  const {
-    filename, contentType, size, tenantId,
-  } = req.body || {};
+  const { filename, contentType, size, tenantId } = req.body || {};
   const correlationId = req.headers['x-correlation-id'] || `req_${Date.now().toString(36)}`;
 
   if (!filename || typeof filename !== 'string') {
@@ -95,7 +91,7 @@ router.post('/presign', express.json({ limit: '10kb' }), async (req, res) => {
     // For now, return a safe mock URL so clients can proceed in dev and tests.
     const { uploadUrl, key } = makePresignedUrlMock(
       filename,
-      tenantId || (req.user && req.user.tenantId),
+      tenantId || (req.user && req.user.tenantId)
     );
     const expiresIn = 15 * 60; // 15 minutes
 
@@ -107,7 +103,11 @@ router.post('/presign', express.json({ limit: '10kb' }), async (req, res) => {
         action: 'request_presign',
         severity: 'info',
         metadata: {
-          filename, key, size, contentType, correlationId,
+          filename,
+          key,
+          size,
+          contentType,
+          correlationId,
         },
       });
     } catch (e) {
@@ -116,7 +116,11 @@ router.post('/presign', express.json({ limit: '10kb' }), async (req, res) => {
     }
 
     return res.status(200).json({
-      success: true, uploadUrl, key, expiresIn, correlationId,
+      success: true,
+      uploadUrl,
+      key,
+      expiresIn,
+      correlationId,
     });
   } catch (err) {
     console.error('[UPLOAD] presign error', err && err.stack ? err.stack : err);
@@ -133,9 +137,7 @@ router.post('/presign', express.json({ limit: '10kb' }), async (req, res) => {
    * Attach storageKey and contentHash to Document and append history
    ------------------------- */
 router.post('/finalize', express.json({ limit: '200kb' }), async (req, res) => {
-  const {
-    key, documentId, size, contentHash,
-  } = req.body || {};
+  const { key, documentId, size, contentHash } = req.body || {};
   const correlationId = req.headers['x-correlation-id'] || `req_${Date.now().toString(36)}`;
 
   if (!key || !documentId) {
@@ -149,13 +151,14 @@ router.post('/finalize', express.json({ limit: '200kb' }), async (req, res) => {
 
     // Validate document exists and tenant scope
     const doc = await Document.findById(documentId);
-    if (!doc) return res.status(404).json({ success: false, message: 'Document not found', correlationId });
+    if (!doc)
+      return res.status(404).json({ success: false, message: 'Document not found', correlationId });
 
     // Enforce tenant scope if req.user exists
     if (
-      req.user
-      && String(req.user.tenantId) !== String(doc.tenantId)
-      && req.user.role !== 'SUPER_ADMIN'
+      req.user &&
+      String(req.user.tenantId) !== String(doc.tenantId) &&
+      req.user.role !== 'SUPER_ADMIN'
     ) {
       try {
         await emitAudit(req, {
@@ -168,7 +171,7 @@ router.post('/finalize', express.json({ limit: '200kb' }), async (req, res) => {
         // best-effort audit; log errors without affecting control flow
         console.error(
           '[UPLOAD] emitAudit finalize_forbidden error',
-          e && e.message ? e.message : e,
+          e && e.message ? e.message : e
         );
       }
       return res.status(403).json({ success: false, message: 'Forbidden', correlationId });
@@ -204,7 +207,10 @@ router.post('/finalize', express.json({ limit: '200kb' }), async (req, res) => {
         action: 'finalize',
         severity: 'info',
         metadata: {
-          documentId, key, contentHash: finalHash, correlationId,
+          documentId,
+          key,
+          contentHash: finalHash,
+          correlationId,
         },
       });
     } catch (e) {
@@ -231,18 +237,20 @@ router.delete('/:documentId', async (req, res) => {
   const { documentId } = req.params;
   const correlationId = req.headers['x-correlation-id'] || `req_${Date.now().toString(36)}`;
 
-  if (!documentId) return res.status(400).json({ success: false, message: 'documentId required', correlationId });
+  if (!documentId)
+    return res.status(400).json({ success: false, message: 'documentId required', correlationId });
 
   try {
     const { Document, emitAudit } = safeRequireModels();
     const doc = await Document.findById(documentId);
-    if (!doc) return res.status(404).json({ success: false, message: 'Document not found', correlationId });
+    if (!doc)
+      return res.status(404).json({ success: false, message: 'Document not found', correlationId });
 
     // Tenant enforcement
     if (
-      req.user
-      && String(req.user.tenantId) !== String(doc.tenantId)
-      && req.user.role !== 'SUPER_ADMIN'
+      req.user &&
+      String(req.user.tenantId) !== String(doc.tenantId) &&
+      req.user.role !== 'SUPER_ADMIN'
     ) {
       try {
         await emitAudit(req, {
@@ -305,9 +313,12 @@ router.post(
         : 0;
     console.debug(`[UPLOAD-MOCK] Received mock upload for key=${key} size=${size}`);
     res.status(200).json({
-      success: true, message: 'mock upload accepted', key, size,
+      success: true,
+      message: 'mock upload accepted',
+      key,
+      size,
     });
-  },
+  }
 );
 
 /* -------------------------

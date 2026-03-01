@@ -1,10 +1,10 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: USAGE ROUTES - REAL-TIME QUOTA DASHBOARD API
  * ============================================================================
  */
 
-import express from "express";
+import express from 'express';
 import { body, query, param, validationResult } from 'express-validator.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* eslint-disable no-underscore-dangle */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - MATTER MODEL v2.0 (FORENSIC-GRADE)                            ║

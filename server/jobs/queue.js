@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/jobs/queue.js
  * STATUS: PRODUCTION-READY | INDUSTRIAL EVENT BUS
  * -----------------------------------------------------------------------------

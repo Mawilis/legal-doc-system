@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ REQUEST VALIDATOR MIDDLEWARE - INVESTOR-GRADE INPUT VALIDATION & SANITIZATION         ║
   ║ R2.1M/year injection attack prevention | POPIA §19 | OWASP Top 10 Compliant           ║
@@ -10,13 +10,13 @@
  * VERSION: 2.0.0-INVESTOR-GRADE
  * CREATED: 2026-02-25
  * LAST UPDATED: 2026-02-25
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R850K/year in security breach remediation and data corruption
  * • Generates: R420K/year risk reduction @ 99.99% validation accuracy
  * • Risk elimination: R1.25M in potential POPIA fines and JSE penalties
  * • Compliance: OWASP Top 10, POPIA §19, JSE Listings Requirements §3.4, ECT Act §15
- * 
+ *
  * INTEGRATION_MAP:
  * {
  *   "expectedConsumers": [
@@ -35,7 +35,7 @@
  *   "placementStrategy": "middleware layer - request validation before business logic",
  *   "integrationContract": "Express middleware with comprehensive validation and sanitization"
  * }
- * 
+ *
  * MERMAID_INTEGRATION:
  * graph TD
  *   A[Incoming Request] -->|Raw Input| B[Sanitize Middleware]
@@ -46,14 +46,14 @@
  *   D -->|Fail| E
  *   E -->|400 Response| G[Client]
  *   F -->|Processed| H[Response]
- *   
+ *
  *   subgraph "Validation Layers"
  *     I[Query Params] --> C
  *     J[Body Fields] --> C
  *     K[Headers] --> C
  *     L[Path Params] --> C
  *   end
- *   
+ *
  *   subgraph "Security Layers"
  *     M[XSS Prevention] --> B
  *     N[SQL Injection] --> B
@@ -62,9 +62,9 @@
  *   end
  */
 
-import { createHash } from "crypto";
-import validator from "validator";
-import xss from "xss";
+import { createHash } from 'crypto';
+import validator from 'validator';
+import xss from 'xss';
 import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../utils/auditLogger.js';
@@ -88,9 +88,9 @@ import { redactSensitive } from '../utils/redactSensitive.js';
 // ============================================================================
 
 const VALIDATION_MODES = {
-  STRICT: 'strict',     // Reject unknown fields
+  STRICT: 'strict', // Reject unknown fields
   PERMISSIVE: 'permissive', // Allow unknown fields
-  PRODUCTION: 'production'  // Strict in production, log warnings in dev
+  PRODUCTION: 'production', // Strict in production, log warnings in dev
 };
 
 const DATA_TYPES = {
@@ -109,7 +109,7 @@ const DATA_TYPES = {
   TAX_NUMBER: 'taxNumber', // VAT/PAYE number
   COMPANY_REG: 'companyReg', // Company registration number
   CURRENCY: 'currency', // ZAR amounts
-  PERCENTAGE: 'percentage' // 0-100
+  PERCENTAGE: 'percentage', // 0-100
 };
 
 const SAFE_PATTERNS = {
@@ -121,7 +121,7 @@ const SAFE_PATTERNS = {
   PHONE_SA: /^(\+27|0)[1-9][0-9]{8}$/,
   CURRENCY_ZAR: /^[0-9]+(\.[0-9]{1,2})?$/,
   UUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-  MONGO_ID: /^[0-9a-f]{24}$/i
+  MONGO_ID: /^[0-9a-f]{24}$/i,
 };
 
 const MAX_STRING_LENGTH = 5000;
@@ -134,8 +134,8 @@ const RETENTION_POLICY = {
     name: 'validation_logs_1_year',
     legalReference: 'POPIA §19 - Access Records, ECT Act §15(2) - Electronic Evidence',
     retentionPeriod: 365, // days
-    mandatoryFields: ['tenantId', 'schema', 'valid', 'errors']
-  }
+    mandatoryFields: ['tenantId', 'schema', 'valid', 'errors'],
+  },
 };
 
 // ============================================================================
@@ -152,44 +152,44 @@ const schemas = {
         minLength: 8,
         maxLength: 64,
         required: true,
-        description: 'Tenant ID for multi-tenant isolation'
+        description: 'Tenant ID for multi-tenant isolation',
       },
       period: {
         type: DATA_TYPES.STRING,
         enum: ['7d', '30d', '90d', '1y', '3y'],
         optional: true,
         default: '30d',
-        description: 'Time period for dashboard data'
+        description: 'Time period for dashboard data',
       },
       userId: {
         type: DATA_TYPES.STRING,
         pattern: SAFE_PATTERNS.MONGO_ID,
         optional: true,
-        description: 'User ID for personalized metrics'
+        description: 'User ID for personalized metrics',
       },
       sections: {
         type: DATA_TYPES.ARRAY,
         items: {
           type: DATA_TYPES.STRING,
-          enum: ['overview', 'valuations', 'comparables', 'jse-compliance', 'investor-metrics']
+          enum: ['overview', 'valuations', 'comparables', 'jse-compliance', 'investor-metrics'],
         },
         optional: true,
-        description: 'Specific dashboard sections to include'
-      }
+        description: 'Specific dashboard sections to include',
+      },
     },
     headers: {
       'x-tenant-id': {
         type: DATA_TYPES.STRING,
         pattern: SAFE_PATTERNS.ALPHANUMERIC,
         required: true,
-        description: 'Tenant ID for isolation'
+        description: 'Tenant ID for isolation',
       },
       'x-api-key': {
         type: DATA_TYPES.STRING,
         optional: true,
-        description: 'API key for service-to-service auth'
-      }
-    }
+        description: 'API key for service-to-service auth',
+      },
+    },
   },
 
   // Valuation routes
@@ -198,18 +198,18 @@ const schemas = {
       companyId: {
         type: DATA_TYPES.MONGO_ID,
         required: true,
-        description: 'Company being valued'
+        description: 'Company being valued',
       },
       valuationMethod: {
         type: DATA_TYPES.STRING,
         enum: ['dcf', 'comparable', 'precedent', 'asset-based', 'market'],
         required: true,
-        description: 'Primary valuation methodology'
+        description: 'Primary valuation methodology',
       },
       valuationDate: {
         type: DATA_TYPES.DATE,
         required: true,
-        description: 'Date of valuation'
+        description: 'Date of valuation',
       },
       assumptions: {
         type: DATA_TYPES.OBJECT,
@@ -218,9 +218,9 @@ const schemas = {
           discountRate: { type: DATA_TYPES.PERCENTAGE, min: 0, max: 100 },
           growthRate: { type: DATA_TYPES.PERCENTAGE, min: -100, max: 100 },
           terminalValue: { type: DATA_TYPES.CURRENCY, min: 0 },
-          marketRiskPremium: { type: DATA_TYPES.PERCENTAGE, min: 0, max: 20 }
+          marketRiskPremium: { type: DATA_TYPES.PERCENTAGE, min: 0, max: 20 },
         },
-        description: 'Valuation assumptions'
+        description: 'Valuation assumptions',
       },
       financials: {
         type: DATA_TYPES.OBJECT,
@@ -230,9 +230,9 @@ const schemas = {
           ebitda: { type: DATA_TYPES.CURRENCY, min: 0 },
           netIncome: { type: DATA_TYPES.CURRENCY },
           totalAssets: { type: DATA_TYPES.CURRENCY, min: 0 },
-          totalLiabilities: { type: DATA_TYPES.CURRENCY, min: 0 }
+          totalLiabilities: { type: DATA_TYPES.CURRENCY, min: 0 },
         },
-        description: 'Financial data for valuation'
+        description: 'Financial data for valuation',
       },
       comparables: {
         type: DATA_TYPES.ARRAY,
@@ -244,16 +244,16 @@ const schemas = {
             ticker: { type: DATA_TYPES.STRING, maxLength: 20 },
             marketCap: { type: DATA_TYPES.CURRENCY },
             peRatio: { type: DATA_TYPES.NUMBER, min: 0, max: 100 },
-            evEbitda: { type: DATA_TYPES.NUMBER, min: 0, max: 50 }
-          }
+            evEbitda: { type: DATA_TYPES.NUMBER, min: 0, max: 50 },
+          },
         },
-        description: 'Comparable company analysis'
-      }
+        description: 'Comparable company analysis',
+      },
     },
     query: {
       includeHistory: { type: DATA_TYPES.BOOLEAN, optional: true },
-      format: { type: DATA_TYPES.STRING, enum: ['json', 'pdf', 'excel'], optional: true }
-    }
+      format: { type: DATA_TYPES.STRING, enum: ['json', 'pdf', 'excel'], optional: true },
+    },
   },
 
   // Company routes
@@ -265,41 +265,50 @@ const schemas = {
         maxLength: 200,
         required: true,
         sanitize: true,
-        description: 'Legal company name'
+        description: 'Legal company name',
       },
       registrationNumber: {
         type: DATA_TYPES.COMPANY_REG,
         pattern: SAFE_PATTERNS.COMPANY_REG,
         required: true,
-        description: 'CIPC registration number (YYYY/123456/07)'
+        description: 'CIPC registration number (YYYY/123456/07)',
       },
       taxNumber: {
         type: DATA_TYPES.TAX_NUMBER,
         pattern: SAFE_PATTERNS.VAT_NUMBER,
         optional: true,
-        description: 'VAT/PAYE number'
+        description: 'VAT/PAYE number',
       },
       industry: {
         type: DATA_TYPES.STRING,
         enum: [
-          'technology', 'legal', 'financial', 'healthcare',
-          'manufacturing', 'retail', 'construction', 'mining',
-          'agriculture', 'transport', 'telecom', 'energy'
+          'technology',
+          'legal',
+          'financial',
+          'healthcare',
+          'manufacturing',
+          'retail',
+          'construction',
+          'mining',
+          'agriculture',
+          'transport',
+          'telecom',
+          'energy',
         ],
         required: true,
-        description: 'Primary industry sector'
+        description: 'Primary industry sector',
       },
       type: {
         type: DATA_TYPES.STRING,
         enum: ['pty_ltd', 'ltd', 'incorporated', 'trust', 'cc', 'sole_prop'],
         required: true,
-        description: 'Company legal structure'
+        description: 'Company legal structure',
       },
       status: {
         type: DATA_TYPES.STRING,
         enum: ['active', 'pending', 'archived', 'deregistered'],
         optional: true,
-        default: 'active'
+        default: 'active',
       },
       address: {
         type: DATA_TYPES.OBJECT,
@@ -309,26 +318,26 @@ const schemas = {
           city: { type: DATA_TYPES.STRING, maxLength: 100 },
           province: { type: DATA_TYPES.STRING, maxLength: 50 },
           postalCode: { type: DATA_TYPES.STRING, pattern: /^[0-9]{4}$/ },
-          country: { type: DATA_TYPES.STRING, default: 'ZA' }
-        }
+          country: { type: DATA_TYPES.STRING, default: 'ZA' },
+        },
       },
       contactEmail: {
         type: DATA_TYPES.EMAIL,
         pattern: SAFE_PATTERNS.EMAIL,
         optional: true,
-        description: 'Primary contact email'
+        description: 'Primary contact email',
       },
       contactPhone: {
         type: DATA_TYPES.PHONE,
         pattern: SAFE_PATTERNS.PHONE_SA,
         optional: true,
-        description: 'Primary contact phone'
-      }
+        description: 'Primary contact phone',
+      },
     },
     query: {
       includeInactive: { type: DATA_TYPES.BOOLEAN, optional: true },
-      industry: { type: DATA_TYPES.STRING, optional: true }
-    }
+      industry: { type: DATA_TYPES.STRING, optional: true },
+    },
   },
 
   // DSAR (Data Subject Access Request) routes
@@ -342,23 +351,23 @@ const schemas = {
       requestType: {
         type: DATA_TYPES.STRING,
         enum: ['access', 'rectification', 'erasure', 'restriction', 'portability'],
-        required: true
+        required: true,
       },
       dataCategories: {
         type: DATA_TYPES.ARRAY,
         items: {
           type: DATA_TYPES.STRING,
-          enum: ['personal', 'financial', 'employment', 'health', 'biometric']
+          enum: ['personal', 'financial', 'employment', 'health', 'biometric'],
         },
-        required: true
+        required: true,
       },
       consentVerified: { type: DATA_TYPES.BOOLEAN, required: true },
       verificationMethod: {
         type: DATA_TYPES.STRING,
         enum: ['id_document', 'email', 'phone', 'face_to_face'],
-        required: true
-      }
-    }
+        required: true,
+      },
+    },
   },
 
   // JSE Compliance routes
@@ -368,7 +377,7 @@ const schemas = {
       transactionType: {
         type: DATA_TYPES.STRING,
         enum: ['acquisition', 'disposal', 'merger', 'restructuring'],
-        required: true
+        required: true,
       },
       transactionValue: { type: DATA_TYPES.CURRENCY, min: 0, required: true },
       materialityThreshold: { type: DATA_TYPES.CURRENCY, default: 50000000 },
@@ -379,13 +388,13 @@ const schemas = {
           properties: {
             name: { type: DATA_TYPES.STRING, required: true },
             registrationNumber: { type: DATA_TYPES.COMPANY_REG },
-            relationship: { type: DATA_TYPES.STRING }
-          }
-        }
+            relationship: { type: DATA_TYPES.STRING },
+          },
+        },
       },
       disclosureDate: { type: DATA_TYPES.DATE, required: true },
-      requiresShareholderVote: { type: DATA_TYPES.BOOLEAN }
-    }
+      requiresShareholderVote: { type: DATA_TYPES.BOOLEAN },
+    },
   },
 
   // User routes
@@ -399,16 +408,16 @@ const schemas = {
       role: {
         type: DATA_TYPES.STRING,
         enum: ['admin', 'analyst', 'viewer', 'investor'],
-        required: true
+        required: true,
       },
       permissions: {
         type: DATA_TYPES.ARRAY,
         items: {
           type: DATA_TYPES.STRING,
-          enum: ['read:valuations', 'write:valuations', 'read:companies', 'write:companies']
-        }
-      }
-    }
+          enum: ['read:valuations', 'write:valuations', 'read:companies', 'write:companies'],
+        },
+      },
+    },
   },
 
   // Authentication routes
@@ -417,15 +426,15 @@ const schemas = {
       email: { type: DATA_TYPES.EMAIL, required: true },
       password: { type: DATA_TYPES.STRING, minLength: 8, maxLength: 128 },
       token: { type: DATA_TYPES.STRING, optional: true },
-      refreshToken: { type: DATA_TYPES.STRING, optional: true }
-    }
+      refreshToken: { type: DATA_TYPES.STRING, optional: true },
+    },
   },
 
   // Default schema (minimal validation)
   default: {
     query: {},
-    body: {}
-  }
+    body: {},
+  },
 };
 
 // ============================================================================
@@ -513,7 +522,7 @@ function validateObject(obj, schema, path = 'body', depth = 0) {
 
   // Check for unknown fields in strict mode
   if (process.env.VALIDATION_MODE === VALIDATION_MODES.STRICT) {
-    const unknownFields = Object.keys(obj).filter(field => !schema[field]);
+    const unknownFields = Object.keys(obj).filter((field) => !schema[field]);
     for (const field of unknownFields) {
       errors.push(`${path}.${field}: Unknown field in strict mode`);
     }
@@ -521,7 +530,7 @@ function validateObject(obj, schema, path = 'body', depth = 0) {
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -635,7 +644,7 @@ function validateType(value, def, path) {
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -663,7 +672,7 @@ function sanitizeObject(obj, depth = 0) {
       safeValue = xss(safeValue, {
         whiteList: {}, // No tags allowed
         stripIgnoreTag: true,
-        stripIgnoreTagBody: ['script', 'style']
+        stripIgnoreTagBody: ['script', 'style'],
       });
 
       // 2. SQL injection prevention
@@ -714,7 +723,7 @@ async function logValidation(req, schemaName, valid, errors) {
       timestamp: new Date().toISOString(),
       retentionPolicy: RETENTION_POLICY.validation_logs.name,
       retentionPeriod: RETENTION_POLICY.validation_logs.retentionPeriod,
-      dataResidency: process.env.DEFAULT_DATA_RESIDENCY || 'ZA'
+      dataResidency: process.env.DEFAULT_DATA_RESIDENCY || 'ZA',
     });
   } catch (error) {
     logger.error('Failed to log validation', { error: error.message });
@@ -736,8 +745,9 @@ async function logValidation(req, schemaName, valid, errors) {
 export const validateRequest = (options = {}) => {
   const schemaName = options.schema || 'default';
   const schema = schemas[schemaName] || schemas.default;
-  const validationMode = options.strict ? VALIDATION_MODES.STRICT :
-    process.env.VALIDATION_MODE || VALIDATION_MODES.PRODUCTION;
+  const validationMode = options.strict
+    ? VALIDATION_MODES.STRICT
+    : process.env.VALIDATION_MODE || VALIDATION_MODES.PRODUCTION;
 
   return async (req, res, next) => {
     const startTime = Date.now();
@@ -791,7 +801,7 @@ export const validateRequest = (options = {}) => {
     }
 
     // Log validation attempt asynchronously
-    logValidation(req, schemaName, allErrors.length === 0, allErrors).catch(err =>
+    logValidation(req, schemaName, allErrors.length === 0, allErrors).catch((err) =>
       logger.error('Async validation log failed', { error: err.message })
     );
 
@@ -801,7 +811,7 @@ export const validateRequest = (options = {}) => {
       valid: allErrors.length === 0,
       errorCount: allErrors.length,
       durationMs: Date.now() - startTime,
-      requestId: req.requestId
+      requestId: req.requestId,
     });
 
     // Handle validation errors
@@ -812,7 +822,7 @@ export const validateRequest = (options = {}) => {
         path: req.path,
         method: req.method,
         requestId: req.requestId,
-        tenantId: req.tenantContext?.tenantId
+        tenantId: req.tenantContext?.tenantId,
       });
 
       // Return RFC 7807 compliant error response
@@ -824,7 +834,7 @@ export const validateRequest = (options = {}) => {
         instance: req.requestId,
         timestamp: new Date().toISOString(),
         validationErrors: allErrors,
-        schema: schemaName
+        schema: schemaName,
       });
     }
 
@@ -847,7 +857,7 @@ export const sanitizeRequest = (req, res, next) => {
   } catch (error) {
     logger.error('Sanitization failed', {
       error: error.message,
-      requestId: req.requestId
+      requestId: req.requestId,
     });
 
     res.status(400).json({
@@ -856,7 +866,7 @@ export const sanitizeRequest = (req, res, next) => {
       status: 400,
       detail: 'Request sanitization failed due to malformed input',
       instance: req.requestId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 };
@@ -886,8 +896,8 @@ export const createValidator = (fieldSchema) => {
           code: 'CUSTOM_VALIDATION_ERROR',
           message: 'Custom validation failed',
           details: errors,
-          requestId: req.requestId
-        }
+          requestId: req.requestId,
+        },
       });
     }
 
@@ -905,14 +915,14 @@ export const createValidator = (fieldSchema) => {
  * • Risk reduction: R1.25M in potential POPIA fines (up to R10M per incident)
  * • Operational efficiency: 99.99% validation accuracy, zero false positives
  * • Compliance coverage: OWASP Top 10, POPIA §19, JSE Listings Requirements
- * 
+ *
  * SECURITY FEATURES (OWASP Top 10 Coverage):
  * • A1: Injection - SQL, NoSQL, Command injection prevention
  * • A3: Sensitive Data Exposure - Redaction, validation
  * • A7: XSS - Comprehensive sanitization with xss library
  * • A8: Insecure Deserialization - Type checking
  * • A10: Insufficient Logging - Full audit trail
- * 
+ *
  * VALIDATION COVERAGE:
  * • 12+ data types including SA-specific formats
  * • 50+ validation rules across 8 schema categories
@@ -920,18 +930,18 @@ export const createValidator = (fieldSchema) => {
  * • Array validation with size limits
  * • Pattern matching with regex
  * • Enum validation for controlled vocabularies
- * 
+ *
  * COMPLIANCE VERIFICATION:
  * • POPIA §19: Data minimization, access logging
  * • ECT Act §15(2): Electronic evidence admissibility
  * • JSE Listing Requirements §3.4: Materiality validation
  * • Companies Act §28: Financial record validation
- * 
+ *
  * INDUSTRY BENCHMARKS:
  * • Google/Facebook: Similar validation depth for user data
  * • Stripe/Twilio: RFC 7807 error format adoption
  * • Financial services: SA ID, VAT, company reg validation
- * 
+ *
  * PERFORMANCE:
  * • Sub-5ms validation time for typical requests
  * • Streaming validation for large payloads

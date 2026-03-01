@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ TEST SETUP - DOCUMENT GENERATION SYSTEM                                   ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
@@ -19,8 +19,8 @@ jest.unstable_mockModule('../config/redis.js', () => ({
     setex: jest.fn(),
     del: jest.fn(),
     flushall: jest.fn(),
-    quit: jest.fn()
-  }
+    quit: jest.fn(),
+  },
 }));
 
 // Mock logger
@@ -30,15 +30,15 @@ jest.unstable_mockModule('../utils/logger.js', () => ({
     info: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
-    debug: jest.fn()
-  }
+    debug: jest.fn(),
+  },
 }));
 
 jest.unstable_mockModule('../utils/auditLogger.js', () => ({
   __esModule: true,
   default: {
-    log: jest.fn()
-  }
+    log: jest.fn(),
+  },
 }));
 
 // Global test setup
@@ -61,7 +61,7 @@ beforeEach(async () => {
   for (const key in collections) {
     await collections[key].deleteMany();
   }
-  
+
   // Clear all mocks
   jest.clearAllMocks();
 });
@@ -69,6 +69,6 @@ beforeEach(async () => {
 // Global test utilities
 global.generateTestObjectId = () => new mongoose.Types.ObjectId();
 global.createTestTenantId = () => `tenant-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-global.waitFor = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+global.waitFor = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default mongoose;

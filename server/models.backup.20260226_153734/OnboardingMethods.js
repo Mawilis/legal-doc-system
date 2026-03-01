@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ONBOARDING METHODS - LEGAL GRADE ● FORENSIC ● PRODUCTION                    ║
   ║ FICA Compliant | POPIA Compliant | Multi-tenant | Blockchain Ready         ║
   ║ Version: 1.0.0 - Sovereign Shield - Method Isolation                       ║
@@ -14,16 +12,28 @@ const { DateTime } = require('luxon');
 // =================================================================================================================
 const ONBOARDING_STAGES = {
   INITIATED: {
-    id: 'INITIATED', name: 'Onboarding Initiated', order: 0, requiredRole: null,
+    id: 'INITIATED',
+    name: 'Onboarding Initiated',
+    order: 0,
+    requiredRole: null,
   },
   CLIENT_INFO: {
-    id: 'CLIENT_INFO', name: 'Client Information', order: 1, requiredRole: null,
+    id: 'CLIENT_INFO',
+    name: 'Client Information',
+    order: 1,
+    requiredRole: null,
   },
   FICA_SCREENING: {
-    id: 'FICA_SCREENING', name: 'FICA Screening', order: 2, requiredRole: null,
+    id: 'FICA_SCREENING',
+    name: 'FICA Screening',
+    order: 2,
+    requiredRole: null,
   },
   DOCUMENT_UPLOAD: {
-    id: 'DOCUMENT_UPLOAD', name: 'Document Upload', order: 3, requiredRole: null,
+    id: 'DOCUMENT_UPLOAD',
+    name: 'Document Upload',
+    order: 3,
+    requiredRole: null,
   },
   DOCUMENT_VERIFICATION: {
     id: 'DOCUMENT_VERIFICATION',
@@ -32,10 +42,16 @@ const ONBOARDING_STAGES = {
     requiredRole: null,
   },
   REVIEW: {
-    id: 'REVIEW', name: 'Legal Review', order: 5, requiredRole: 'legal_officer',
+    id: 'REVIEW',
+    name: 'Legal Review',
+    order: 5,
+    requiredRole: 'legal_officer',
   },
   COMPLETED: {
-    id: 'COMPLETED', name: 'Completed', order: 6, requiredRole: null,
+    id: 'COMPLETED',
+    name: 'Completed',
+    order: 6,
+    requiredRole: null,
   },
 };
 
@@ -64,9 +80,10 @@ exports.advanceStage = async function (stageId, data = {}, performedBy, options 
     throw new Error(`Stage ${stageId} requires approval by ${stage.requiredRole}`);
   }
 
-  const previousHash = this.stages && this.stages.length > 0
-    ? this.stages[this.stages.length - 1].hash
-    : '0'.repeat(64);
+  const previousHash =
+    this.stages && this.stages.length > 0
+      ? this.stages[this.stages.length - 1].hash
+      : '0'.repeat(64);
 
   const stageEntry = {
     stage: stageId,
@@ -93,7 +110,7 @@ exports.advanceStage = async function (stageId, data = {}, performedBy, options 
         stageEntry.status
       }|${stageEntry.timestamp.getTime()}|${JSON.stringify(stageEntry.data)}|${
         stageEntry.performedBy
-      }`,
+      }`
     )
     .digest('hex');
 
@@ -200,8 +217,9 @@ exports.updateFICAStatus = async function (status, data, performedBy) {
   this.fica.status = status;
 
   if (status === 'APPROVED') {
-    this.fica.reference = data.reference
-      || `FICA-${DateTime.now().toFormat('yyyyMMdd')}-${crypto
+    this.fica.reference =
+      data.reference ||
+      `FICA-${DateTime.now().toFormat('yyyyMMdd')}-${crypto
         .randomBytes(2)
         .toString('hex')
         .toUpperCase()}`;
@@ -316,9 +334,9 @@ exports.getLegalSummary = function () {
     tenantId: this.tenantId,
     clientType: this.clientType,
     clientName:
-      this.clientData?.businessName
-      || `${this.clientData?.firstName || ''} ${this.clientData?.lastName || ''}`.trim()
-      || 'Unknown',
+      this.clientData?.businessName ||
+      `${this.clientData?.firstName || ''} ${this.clientData?.lastName || ''}`.trim() ||
+      'Unknown',
     status: this.status,
     currentStage: this.currentStage,
     fica: {
@@ -377,7 +395,7 @@ exports.verifyAuditTrail = function () {
       .update(
         `${previousHash}|${stage.stage}|${
           stage.status
-        }|${stage.timestamp.getTime()}|${JSON.stringify(stage.data)}|${stage.performedBy}`,
+        }|${stage.timestamp.getTime()}|${JSON.stringify(stage.data)}|${stage.performedBy}`
       )
       .digest('hex');
 

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ REQUEST ID MIDDLEWARE - INVESTOR-GRADE                                      ║
   ║ 99.99% traceability | Distributed tracing | Forensic audit support         ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -31,11 +29,12 @@ export default (req, res, next) => {
 
   try {
     // 1. Extract or generate request ID
-    let requestId = req.headers['x-request-id']
-      || req.headers['x-amzn-trace-id']
-      || req.headers.traceparent?.split('-')[1]
-      || req.headers['x-tenant-request-id']
-      || uuidv4();
+    let requestId =
+      req.headers['x-request-id'] ||
+      req.headers['x-amzn-trace-id'] ||
+      req.headers.traceparent?.split('-')[1] ||
+      req.headers['x-tenant-request-id'] ||
+      uuidv4();
 
     // 2. Validate UUID format, generate new if invalid
     if (!uuidValidate(requestId) && !requestId.includes('Root=')) {

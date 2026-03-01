@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/utils/smsSender.js
  * STATUS: PRODUCTION-READY | RAPID DISPATCH GRADE
  * -----------------------------------------------------------------------------

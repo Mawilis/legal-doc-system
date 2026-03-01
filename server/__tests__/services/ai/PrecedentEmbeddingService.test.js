@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT EMBEDDING SERVICE TESTS - INVESTOR DUE DILIGENCE - $2B TARGET  ║
   ║ 100% coverage | AI Core | Legal Understanding | Unprecedented            ║
@@ -35,7 +33,7 @@ jest.mock('@xenova/transformers', () => ({
   pipeline: jest.fn().mockResolvedValue(
     jest.fn().mockResolvedValue({
       data: [0.1, 0.2, 0.3],
-    }),
+    })
   ),
   env: { cacheDir: '', localModelPath: '' },
 }));
@@ -363,14 +361,18 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     });
 
     it('should return model metadata', () => {
-      const metadata = embeddingService.getModelMetadata(embeddingService.EMBEDDING_MODELS.LEGAL_BERT);
+      const metadata = embeddingService.getModelMetadata(
+        embeddingService.EMBEDDING_MODELS.LEGAL_BERT
+      );
 
       expect(metadata).toBeDefined();
       expect(metadata.dimension).toBeDefined();
     });
 
     it('should return model version', () => {
-      const version = embeddingService.getModelVersion(embeddingService.EMBEDDING_MODELS.LEGAL_BERT);
+      const version = embeddingService.getModelVersion(
+        embeddingService.EMBEDDING_MODELS.LEGAL_BERT
+      );
 
       expect(version).toBeDefined();
     });
@@ -422,7 +424,9 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     it('should handle concurrent requests', async () => {
       const texts = Array(10).fill('Concurrent test text.');
 
-      const promises = texts.map((text) => embeddingService.generateEmbedding(text, { tenantId: mockTenantId }));
+      const promises = texts.map((text) =>
+        embeddingService.generateEmbedding(text, { tenantId: mockTenantId })
+      );
 
       const results = await Promise.all(promises);
 
@@ -458,7 +462,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
       await expect(
         embeddingService.generateEmbedding('test', {
           model: 'non-existent-model',
-        }),
+        })
       ).rejects.toThrow();
     });
 
@@ -526,11 +530,16 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
         metadata: {
           service: 'PrecedentEmbeddingService',
           version: '42.0.0',
-          modelVersion: embeddingService.getModelVersion(embeddingService.EMBEDDING_MODELS.LEGAL_BERT),
+          modelVersion: embeddingService.getModelVersion(
+            embeddingService.EMBEDDING_MODELS.LEGAL_BERT
+          ),
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'embedding-service-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'embedding-service-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'embedding-service-evidence.json'))
@@ -539,7 +548,10 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'embedding-service-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'embedding-service-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 
@@ -550,7 +562,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
       console.log(`📊 Sample: [${embedding.slice(0, 3).join(', ')}...]`);
       console.log(`🤖 Model: ${embeddingService.EMBEDDING_MODELS.LEGAL_BERT}`);
       console.log(
-        `📦 Model Version: ${embeddingService.getModelVersion(embeddingService.EMBEDDING_MODELS.LEGAL_BERT)}`,
+        `📦 Model Version: ${embeddingService.getModelVersion(embeddingService.EMBEDDING_MODELS.LEGAL_BERT)}`
       );
       console.log(`🔐 Evidence Hash: ${hash.substring(0, 16)}...`);
       console.log('\n💰 REVENUE TARGET: $650M ARR');

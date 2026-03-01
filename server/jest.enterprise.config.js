@@ -1,4 +1,4 @@
-// Enterprise-grade Jest configuration for Wilsy OS
+#!// Enterprise-grade Jest configuration for Wilsy OS
 export default {
   testEnvironment: 'node',
   setupFilesAfterEnv: [

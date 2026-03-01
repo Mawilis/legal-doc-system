@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/middleware/maintenanceMiddleware.js
  * STATUS: PRODUCTION-READY | EPITOME | MAINTENANCE GUARD
  * -----------------------------------------------------------------------------
@@ -176,7 +174,8 @@ export default function maintenanceMiddleware(options = {}) {
       // 4) Bypass header (set by infra/WAF) - must be protected by infra
       if (req.headers && req.headers[bypassHeader]) {
         logger.info('Maintenance bypass header present; allowing request', { correlationId });
-        if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('maintenance.bypass.header');
+        if (metricsClient && typeof metricsClient.increment === 'function')
+          metricsClient.increment('maintenance.bypass.header');
         return next();
       }
 
@@ -194,7 +193,8 @@ export default function maintenanceMiddleware(options = {}) {
             correlationId,
             userId: req.user._id || req.user.id,
           });
-          if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('maintenance.bypass.role');
+          if (metricsClient && typeof metricsClient.increment === 'function')
+            metricsClient.increment('maintenance.bypass.role');
           return next();
         }
       }
@@ -213,8 +213,8 @@ export default function maintenanceMiddleware(options = {}) {
               const decoded = jwt.verify(token, secret, { ignoreExpiration: true });
               const role = (decoded && (decoded.role || decoded.roles || decoded.userRole)) || null;
               if (
-                role
-                && allowRoles
+                role &&
+                allowRoles
                   .map(String)
                   .map((r) => r.toUpperCase())
                   .includes(String(role).toUpperCase())
@@ -224,7 +224,8 @@ export default function maintenanceMiddleware(options = {}) {
                   correlationId,
                   sub: decoded && (decoded.id || decoded.sub),
                 });
-                if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('maintenance.bypass.token');
+                if (metricsClient && typeof metricsClient.increment === 'function')
+                  metricsClient.increment('maintenance.bypass.token');
                 return next();
               }
             }
@@ -239,7 +240,8 @@ export default function maintenanceMiddleware(options = {}) {
       }
 
       // 7) Deny all other requests with maintenance message
-      if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('maintenance.blocked');
+      if (metricsClient && typeof metricsClient.increment === 'function')
+        metricsClient.increment('maintenance.blocked');
       return res.status(503).json({
         status: 'maintenance',
         message: cfg.maintenanceMessage || 'Service temporarily unavailable for maintenance.',
@@ -251,7 +253,8 @@ export default function maintenanceMiddleware(options = {}) {
         err: err && err.message ? err.message : err,
         correlationId,
       });
-      if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('maintenance.error');
+      if (metricsClient && typeof metricsClient.increment === 'function')
+        metricsClient.increment('maintenance.error');
       if (failClosed) {
         return res.status(503).json({
           status: 'maintenance',
@@ -262,7 +265,7 @@ export default function maintenanceMiddleware(options = {}) {
       return next();
     }
   };
-};
+}
 
 /* Expose cache invalidation helper for admin flows to call after toggling maintenance */
 module.exports.invalidateConfigCache = invalidateConfigCache;

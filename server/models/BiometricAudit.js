@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ================================================================================
     QUANTUM BIOMETRIC AUDIT CITADEL - Wilsy OS Immutable Digital Trust Ledger
 ================================================================================
@@ -114,7 +112,7 @@ const validateBiometricEnv = () => {
   const retentionYears = parseInt(process.env.BIOMETRIC_AUDIT_RETENTION_YEARS) || 7;
   if (retentionYears < 7) {
     console.error(
-      '❌ BIOMETRIC AUDIT: Retention must be at least 7 years for Companies Act compliance',
+      '❌ BIOMETRIC AUDIT: Retention must be at least 7 years for Companies Act compliance'
     );
   }
 };
@@ -429,9 +427,9 @@ const biometricAuditSchema = new mongoose.Schema(
       },
       required() {
         return (
-          this.action.includes('BIOMETRIC')
-          && !this.action.includes('CONSENT')
-          && !this.action.includes('COMPLIANCE')
+          this.action.includes('BIOMETRIC') &&
+          !this.action.includes('CONSENT') &&
+          !this.action.includes('COMPLIANCE')
         );
       },
     },
@@ -526,8 +524,10 @@ const biometricAuditSchema = new mongoose.Schema(
       required: [true, 'IP address required for Cybercrimes Act §2 compliance'],
       validate: {
         validator(v) {
-          const ipv4Pattern = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-          const ipv6Pattern = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+          const ipv4Pattern =
+            /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+          const ipv6Pattern =
+            /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
           return ipv4Pattern.test(v) || ipv6Pattern.test(v);
         },
         message: 'Invalid IP address format',
@@ -841,7 +841,7 @@ const biometricAuditSchema = new mongoose.Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 // =============================================================================
@@ -869,7 +869,7 @@ biometricAuditSchema.index(
       status: { $nin: ['LEGAL_HOLD', 'COMPLIANCE_REVIEW'] },
       archivalDate: { $exists: false },
     },
-  },
+  }
 );
 
 // =============================================================================
@@ -995,9 +995,9 @@ biometricAuditSchema.methods.maskSensitiveData = function (data) {
     if (str.length <= 4) return '*';
     const visible = Math.min(2, Math.floor(str.length / 4));
     return (
-      str.substring(0, visible)
-      + '*'.repeat(str.length - visible * 2)
-      + str.substring(str.length - visible)
+      str.substring(0, visible) +
+      '*'.repeat(str.length - visible * 2) +
+      str.substring(str.length - visible)
     );
   };
 
@@ -1090,8 +1090,9 @@ biometricAuditSchema.methods.verifyIntegrity = async function () {
       .update(JSON.stringify(verificationPayload))
       .digest('hex');
 
-    const storedHash = this.integrityVerification?.currentHash
-      || crypto
+    const storedHash =
+      this.integrityVerification?.currentHash ||
+      crypto
         .createHash('sha256')
         .update(this.evidenceId + this.eventTimestamp.toISOString())
         .digest('hex');
@@ -1156,10 +1157,10 @@ biometricAuditSchema.methods.generateComplianceReport = function (format = 'JSON
       recommendations: this.legalCompliance?.popia?.section19
         ? []
         : [
-          'Implement enhanced encryption for biometric data',
-          'Document consent mechanisms',
-          'Appoint Information Officer',
-        ],
+            'Implement enhanced encryption for biometric data',
+            'Document consent mechanisms',
+            'Appoint Information Officer',
+          ],
     },
     ectActAssessment: {
       section13: this.legalCompliance?.ectAct?.section13,
@@ -1170,9 +1171,9 @@ biometricAuditSchema.methods.generateComplianceReport = function (format = 'JSON
       recommendations: this.legalCompliance?.ectAct?.section13
         ? []
         : [
-          'Implement advanced electronic signature requirements',
-          'Ensure non-repudiation mechanisms',
-        ],
+            'Implement advanced electronic signature requirements',
+            'Ensure non-repudiation mechanisms',
+          ],
     },
     retentionCompliance: {
       applicableLaws: ['Companies Act 2008', 'National Archives Act'],
@@ -1189,10 +1190,10 @@ biometricAuditSchema.methods.generateComplianceReport = function (format = 'JSON
         this.integrityVerification?.verificationStatus === 'VERIFIED'
           ? []
           : [
-            'Investigate potential tampering',
-            'Re-verify chain of custody',
-            'Update integrity hashes',
-          ],
+              'Investigate potential tampering',
+              'Re-verify chain of custody',
+              'Update integrity hashes',
+            ],
     },
   };
 
@@ -1266,7 +1267,7 @@ biometricAuditSchema.statics.findByComplianceRequirement = function (requirement
 biometricAuditSchema.statics.generateRegulatoryExport = async function (
   userId,
   regulatorType,
-  options = {},
+  options = {}
 ) {
   try {
     const exportConfig = {
@@ -1422,7 +1423,8 @@ biometricAuditSchema.pre('save', async function (next) {
       this.legalCompliance = this.legalCompliance || {};
       this.legalCompliance.ectAct = this.legalCompliance.ectAct || {};
       this.legalCompliance.ectAct.section13 = true;
-      this.legalCompliance.ectAct.advancedElectronicSignature = this.action === 'ADVANCED_ELECTRONIC_SIGNATURE';
+      this.legalCompliance.ectAct.advancedElectronicSignature =
+        this.action === 'ADVANCED_ELECTRONIC_SIGNATURE';
       this.legalCompliance.ectAct.nonRepudiation = true;
     }
 
@@ -1483,9 +1485,9 @@ biometricAuditSchema.post('save', async (doc) => {
   try {
     // Security incident alerts
     if (
-      doc.action === 'BIOMETRIC_SECURITY_ALERT'
-      || doc.action === 'BIOMETRIC_TAMPER_DETECTED'
-      || doc.action === 'BIOMETRIC_FAILED_ATTEMPT'
+      doc.action === 'BIOMETRIC_SECURITY_ALERT' ||
+      doc.action === 'BIOMETRIC_TAMPER_DETECTED' ||
+      doc.action === 'BIOMETRIC_FAILED_ATTEMPT'
     ) {
       await quantumLogger.security('BIOMETRIC_SECURITY_INCIDENT', {
         evidenceId: doc.evidenceId,

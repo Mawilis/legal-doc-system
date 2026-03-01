@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ TENANT GUARD TESTS - INVESTOR DUE DILIGENCE - $25B RISK ELIMINATION      ║
   ║ 100% coverage | Quantum-grade security | Forensic isolation              ║
@@ -6,9 +6,9 @@
 
 import request from 'supertest.js';
 import express from 'express.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 import fs from 'fs/promises';
-import path from "path";
+import path from 'path';
 import { jest } from '@jest/globals.js';
 
 // Mock dependencies
@@ -47,7 +47,11 @@ jest.mock('../../utils/metricsCollector.js', () => ({
 }));
 
 // Import after mocks
-import { tenantGuard, getTenantGuardMetrics, clearTenantCache } from '../../middleware/tenantGuard.js';
+import {
+  tenantGuard,
+  getTenantGuardMetrics,
+  clearTenantCache,
+} from '../../middleware/tenantGuard.js';
 import { TenantConfig } from '../../models/TenantConfig.js';
 import { AuditLogger } from '../../utils/auditLogger.js';
 import { QuantumLogger } from '../../utils/quantumLogger.js';
@@ -88,7 +92,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
 
   describe('1. Tenant ID Extraction', () => {
     it('should extract tenant from X-Tenant-ID header', async () => {
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(200);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(200);
 
       expect(response.body.tenantId).toBe('test-tenant-12345678');
     });
@@ -145,7 +152,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
       const response = await request(app).get('/test').expect(403);
 
       expect(response.body.code).toBe('TENANT_ID_REQUIRED');
-      expect(AuditLogger.securityAlert).toHaveBeenCalledWith('UNAUTHORIZED_TENANT_ACCESS_ATTEMPT', expect.any(Object));
+      expect(AuditLogger.securityAlert).toHaveBeenCalledWith(
+        'UNAUTHORIZED_TENANT_ACCESS_ATTEMPT',
+        expect.any(Object)
+      );
     });
   });
 
@@ -157,7 +167,12 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
     });
 
     it('should accept valid tenant ID formats', async () => {
-      const validIds = ['tenant-12345678', 'tenant_12345678', 'TENANT12345678', 'test-tenant-id-12345678'];
+      const validIds = [
+        'tenant-12345678',
+        'tenant_12345678',
+        'TENANT12345678',
+        'test-tenant-id-12345678',
+      ];
 
       for (const tenantId of validIds) {
         const response = await request(app).get('/test').set('X-Tenant-ID', tenantId).expect(200);
@@ -175,12 +190,18 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         status: 'active',
       });
 
-      const response1 = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(200);
+      const response1 = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(200);
 
       expect(response1.body.tenantId).toBe('test-tenant-12345678');
 
       // Second request - should use cache
-      const response2 = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(200);
+      const response2 = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(200);
 
       expect(response2.body.tenantId).toBe('test-tenant-12345678');
 
@@ -192,7 +213,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
       // Mock Redis cache hit
       redisClient.get.mockResolvedValueOnce(JSON.stringify({ status: 'active' }));
 
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(200);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(200);
 
       expect(response.body.tenantId).toBe('test-tenant-12345678');
       expect(TenantConfig.findOne).not.toHaveBeenCalled();
@@ -208,7 +232,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         status: 'active',
       });
 
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(200);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(200);
 
       expect(response.body.tenantId).toBe('test-tenant-12345678');
       expect(TenantConfig.findOne).toHaveBeenCalledWith({ tenantId: 'test-tenant-12345678' });
@@ -220,7 +247,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
     it('should return 401 for non-existent tenant', async () => {
       TenantConfig.findOne.mockResolvedValue(null);
 
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(401);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(401);
 
       expect(response.body.code).toBe('TENANT_NOT_FOUND');
     });
@@ -231,7 +261,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         status: 'inactive',
       });
 
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(403);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(403);
 
       expect(response.body.code).toBe('TENANT_NOT_ACTIVE');
     });
@@ -242,7 +275,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         status: 'suspended',
       });
 
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(403);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(403);
 
       expect(response.body.code).toBe('TENANT_NOT_ACTIVE');
     });
@@ -254,7 +290,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         plan: 'expired',
       });
 
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(403);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(403);
 
       expect(response.body.code).toBe('TENANT_PLAN_INACTIVE');
     });
@@ -268,12 +307,15 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
       }
 
       // Next attempt should trigger rate limit
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'invalid-format').expect(429);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'invalid-format')
+        .expect(429);
 
       expect(response.body.code).toBe('TOO_MANY_ATTEMPTS');
       expect(AuditLogger.securityAlert).toHaveBeenCalledWith(
         'SUSPICIOUS_ATTEMPT_THRESHOLD_EXCEEDED',
-        expect.any(Object),
+        expect.any(Object)
       );
     });
   });
@@ -285,7 +327,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         status: 'active',
       });
 
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(200);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(200);
 
       expect(response.body.tenantId).toBe('test-tenant-12345678');
       expect(response.body.traceId).toBeDefined();
@@ -318,7 +363,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
 
   describe('7. Security Headers', () => {
     it('should set security headers', async () => {
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(200);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(200);
 
       expect(response.headers['x-tenant-id']).toBeDefined();
       expect(response.headers['x-tenant-validated-at']).toBeDefined();
@@ -341,14 +389,17 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         expect.objectContaining({
           action: 'TENANT_VALIDATION_SUCCESS',
           tenantId: 'test-tenant-12345678',
-        }),
+        })
       );
     });
 
     it('should log security alerts for failures', async () => {
       await request(app).get('/test').expect(403);
 
-      expect(AuditLogger.securityAlert).toHaveBeenCalledWith('UNAUTHORIZED_TENANT_ACCESS_ATTEMPT', expect.any(Object));
+      expect(AuditLogger.securityAlert).toHaveBeenCalledWith(
+        'UNAUTHORIZED_TENANT_ACCESS_ATTEMPT',
+        expect.any(Object)
+      );
     });
   });
 
@@ -362,7 +413,7 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
       expect(QuantumLogger.log).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'TENANT_VALIDATION_DATABASE_ERROR',
-        }),
+        })
       );
     });
   });
@@ -408,7 +459,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         status: 'active',
       });
 
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(200);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(200);
 
       expect(response.body.tenantId).toBe('test-tenant-12345678');
     });
@@ -420,7 +474,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         throw new Error('Unexpected error');
       });
 
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(500);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(500);
 
       expect(response.body.code).toBe('TENANT_GUARD_FAILURE');
 
@@ -489,7 +546,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         status: 'active',
       });
 
-      const response = await request(app).get('/test').set('X-Tenant-ID', 'test-tenant-12345678').expect(200);
+      const response = await request(app)
+        .get('/test')
+        .set('X-Tenant-ID', 'test-tenant-12345678')
+        .expect(200);
 
       const metrics = getTenantGuardMetrics();
 
@@ -529,7 +589,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'tenant-guard-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'tenant-guard-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'tenant-guard-evidence.json'))
@@ -538,7 +601,10 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'tenant-guard-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'tenant-guard-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

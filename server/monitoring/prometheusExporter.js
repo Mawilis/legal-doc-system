@@ -1,5 +1,4 @@
-/* eslint-disable */
-import { createRequire as _createRequire } from 'module';
+#!/* eslint-disable */
 const require = _createRequire(import.meta.url);
 /* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗

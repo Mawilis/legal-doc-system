@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/lib/redisClient.js
  * PATH: server/lib/redisClient.js
  * STATUS: PRODUCTION-READY | BIBLICAL | ARCHITECT-GRADE
@@ -66,8 +64,7 @@ const createSecureOptions = () => {
     enableOfflineQueue: false, // Prevent Memory Bloat during outages
     reconnectOnError: (err) =>
       // Force reconnection if we hit a Read-Only slave during AWS/Azure failover
-      err.message.includes('READONLY')
-    ,
+      err.message.includes('READONLY'),
   };
 
   // --- ENFORCE PRODUCTION TLS ---

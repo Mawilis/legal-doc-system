@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 📦 WILSYS OS - STORAGE LIBRARY
  * Standard: ES Module (Surgically Standardized)

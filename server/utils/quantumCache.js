@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * ⚡️🧠 QUANTUM CACHE ENGINE: REDIS-POWERED INTELLIGENCE ACCELERATOR ⚡️🧠
  * ============================================================================

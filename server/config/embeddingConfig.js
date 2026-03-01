@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/config/embeddingConfig.js
  * PATH: /server/config/embeddingConfig.js

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/services/jobService.js
  * STATUS: PRODUCTION-READY | JOB ORCHESTRATION | EPITOME
  * -----------------------------------------------------------------------------
@@ -184,7 +182,7 @@ async function enqueue(jobName, payload = {}, opts = {}) {
           removeOnComplete,
           removeOnFail,
           timeout,
-        },
+        }
       );
       // queuedJob.id is string
     } else {
@@ -199,7 +197,7 @@ async function enqueue(jobName, payload = {}, opts = {}) {
           removeOnComplete,
           removeOnFail,
           timeout,
-        },
+        }
       );
     }
 
@@ -234,14 +232,17 @@ async function enqueue(jobName, payload = {}, opts = {}) {
     }
 
     return {
-      id: queuedJob.id || effectiveJobId, jobDocId: jobDoc._id, queue, correlationId: corr,
+      id: queuedJob.id || effectiveJobId,
+      jobDocId: jobDoc._id,
+      queue,
+      correlationId: corr,
     };
   } catch (err) {
     // If queue add fails, mark job doc as failed
     try {
       await JobModel.markFailed(
         jobDoc._id,
-        `Queue enqueue failed: ${err && err.message ? err.message : String(err)}`,
+        `Queue enqueue failed: ${err && err.message ? err.message : String(err)}`
       );
     } catch (e) {
       logger.warn('jobService.enqueue: failed to mark job doc failed', {
@@ -387,7 +388,8 @@ function registerWorker(queueName = DEFAULT_QUEUE_NAME, processor, opts = {}) {
 
       // Mark completed
       await JobModel.markCompleted(jobDocId, result || {});
-      if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('jobs.completed', { queue: queueName, job: job.name });
+      if (metricsClient && typeof metricsClient.increment === 'function')
+        metricsClient.increment('jobs.completed', { queue: queueName, job: job.name });
 
       // Emit audit success (best-effort)
       try {
@@ -402,7 +404,10 @@ function registerWorker(queueName = DEFAULT_QUEUE_NAME, processor, opts = {}) {
             severity: 'INFO',
             summary: `Job ${job.name} completed`,
             metadata: {
-              jobId: job.id, queue: queueName, jobDocId, correlationId,
+              jobId: job.id,
+              queue: queueName,
+              jobDocId,
+              correlationId,
             },
           });
         }
@@ -453,7 +458,8 @@ function registerWorker(queueName = DEFAULT_QUEUE_NAME, processor, opts = {}) {
         });
       }
 
-      if (metricsClient && typeof metricsClient.increment === 'function') metricsClient.increment('jobs.failed', { queue: queueName, job: job.name });
+      if (metricsClient && typeof metricsClient.increment === 'function')
+        metricsClient.increment('jobs.failed', { queue: queueName, job: job.name });
 
       throw err;
     } finally {
@@ -540,18 +546,22 @@ async function shutdown() {
       if (isBullMQ) {
         // BullMQ: q.close()
         closePromises.push(
-          q.close().catch((e) => logger.warn('jobService.shutdown: queue close failed', {
-            key,
-            err: e && e.message ? e.message : e,
-          })),
+          q.close().catch((e) =>
+            logger.warn('jobService.shutdown: queue close failed', {
+              key,
+              err: e && e.message ? e.message : e,
+            })
+          )
         );
       } else {
         // Bull v3: q.close()
         closePromises.push(
-          q.close().catch((e) => logger.warn('jobService.shutdown: queue close failed', {
-            key,
-            err: e && e.message ? e.message : e,
-          })),
+          q.close().catch((e) =>
+            logger.warn('jobService.shutdown: queue close failed', {
+              key,
+              err: e && e.message ? e.message : e,
+            })
+          )
         );
       }
     } catch (e) {

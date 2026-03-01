@@ -1,4 +1,4 @@
-/* Simple mock for Document model */
+#!/* Simple mock for Document model */
 export default class Document {
   constructor(data) {
     Object.assign(this, data);
@@ -36,4 +36,4 @@ export default class Document {
   static deleteOne() {
     return Promise.resolve({ deletedCount: 1 });
   }
-};
+}

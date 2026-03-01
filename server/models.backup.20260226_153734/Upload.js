@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * QUANTUM FORENSIC LEDGER: IMMUTABLE ASSET INTEGRITY VAULT
  * ============================================================================
@@ -880,7 +878,7 @@ const uploadSchema = new mongoose.Schema(
             const cipher = crypto.createCipheriv(
               'aes-256-gcm',
               Buffer.from(process.env.ENCRYPTION_KEY, 'hex'),
-              crypto.randomBytes(16),
+              crypto.randomBytes(16)
             );
             let encrypted = cipher.update(ip, 'utf8', 'hex');
             encrypted += cipher.final('hex');
@@ -1001,7 +999,7 @@ const uploadSchema = new mongoose.Schema(
     toObject: {
       virtuals: true,
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1031,7 +1029,7 @@ uploadSchema.index(
       'retention.disposition.status': 'APPROVED_FOR_DELETION',
       status: { $in: ['ARCHIVED', 'DELETED'] },
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1097,12 +1095,12 @@ uploadSchema.virtual('signedUrl').get(function () {
  */
 uploadSchema.virtual('isAdmissible').get(function () {
   return (
-    this.checksum
-    && this.digitalSignature
-    && this.signatureMetadata
-    && this.signatureMetadata.timestampToken
-    && this.scanStatus === 'CLEAN'
-    && !this.isQuarantined
+    this.checksum &&
+    this.digitalSignature &&
+    this.signatureMetadata &&
+    this.signatureMetadata.timestampToken &&
+    this.scanStatus === 'CLEAN' &&
+    !this.isQuarantined
   );
 });
 
@@ -1118,8 +1116,8 @@ uploadSchema.pre('validate', function (next) {
   if (this.size > (process.env.MAX_UPLOAD_SIZE || 1073741824)) {
     return next(
       new Error(
-        `File exceeds maximum allowed size of ${process.env.MAX_UPLOAD_SIZE || 1073741824} bytes`,
-      ),
+        `File exceeds maximum allowed size of ${process.env.MAX_UPLOAD_SIZE || 1073741824} bytes`
+      )
     );
   }
 
@@ -1153,8 +1151,8 @@ uploadSchema.pre('save', async function (next) {
 
     // Generate digital signature for high-classification files
     if (
-      (this.classification === 'RESTRICTED' || this.classification === 'SECRET')
-      && !this.digitalSignature
+      (this.classification === 'RESTRICTED' || this.classification === 'SECRET') &&
+      !this.digitalSignature
     ) {
       await this.generateDigitalSignature();
     }

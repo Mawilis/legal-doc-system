@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - LPC REGULATOR BLOCKCHAIN ANCHOR
  * Standard: ES Module (Surgically Standardized)

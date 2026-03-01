@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: ANOMALY DETECTION SERVICE - LEGAL FRAUD SENTINEL
  * ============================================================================
@@ -87,11 +87,11 @@
 
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
-import EventEmitter from "events";
+import EventEmitter from 'events';
 import * as tf from '@tensorflow/tfjs-node.js';
 import { RandomForest } from 'ml-random-forest.js';
 import { IsolationForest } from 'isolation-forest.js';
-import { createHmac } from "crypto";
+import { createHmac } from 'crypto';
 
 // WILSY OS CORE IMPORTS
 import { QuantumLogger } from '../utils/quantumLogger.js';
@@ -1338,7 +1338,7 @@ class AnomalyDetectionService extends EventEmitter {
 // ANOMALY MODEL (for database storage)
 // =============================================================================
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const AnomalySchema = new mongoose.Schema(
   {

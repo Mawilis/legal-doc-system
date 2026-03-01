@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*= ==========================================================================
+#!/*= ==========================================================================
   WILSY OS - SUPREME ARCHITECT GENERATED FILE
   ===========================================================================
   ██████╗ ███████╗████████╗███████╗███╗   ██╗████████╗██╗ ██████╗ ███╗   ██╗
@@ -89,9 +87,7 @@ exports.applyLegalHold = [
   authorize('legal_hold', 'apply'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const {
-      reason, holdDuration, holdExpiry, placedBy, externalReference,
-    } = req.body;
+    const { reason, holdDuration, holdExpiry, placedBy, externalReference } = req.body;
 
     // Validate required parameters
     if (!reason || typeof reason !== 'string' || reason.trim().length < 10) {
@@ -100,7 +96,7 @@ exports.applyLegalHold = [
         res,
         400,
         'Legal hold reason must be provided with minimum 10 characters for audit compliance.',
-        'ERR_INVALID_HOLD_REASON',
+        'ERR_INVALID_HOLD_REASON'
       );
     }
 
@@ -112,7 +108,7 @@ exports.applyLegalHold = [
         res,
         403,
         'Tenant context required for legal hold operations.',
-        'ERR_TENANT_CONTEXT_REQUIRED',
+        'ERR_TENANT_CONTEXT_REQUIRED'
       );
     }
 
@@ -148,7 +144,7 @@ exports.applyLegalHold = [
       {
         new: true,
         runValidators: true,
-      },
+      }
     );
 
     if (!caseFile) {
@@ -157,7 +153,7 @@ exports.applyLegalHold = [
         res,
         404,
         'Case not found in tenant scope or already under legal hold.',
-        'ERR_CASE_NOT_FOUND_OR_HOLD_ACTIVE',
+        'ERR_CASE_NOT_FOUND_OR_HOLD_ACTIVE'
       );
     }
 
@@ -209,7 +205,7 @@ exports.applyLegalHold = [
         message: 'Legal hold activated. Automated cleanup disabled until hold expiry.',
         complianceWarning: 'Legal hold overrides statutory retention requirements',
         holdExpiry: expiryDate.toISOString(),
-      },
+      }
     );
   }),
 ];
@@ -231,7 +227,7 @@ exports.getExpiringRecords = [
         res,
         403,
         'Tenant context required for retention operations.',
-        'ERR_TENANT_CONTEXT_REQUIRED',
+        'ERR_TENANT_CONTEXT_REQUIRED'
       );
     }
 
@@ -246,7 +242,7 @@ exports.getExpiringRecords = [
         res,
         400,
         'Retention period must be between 1 and 99 years for statutory compliance.',
-        'ERR_INVALID_RETENTION_PERIOD',
+        'ERR_INVALID_RETENTION_PERIOD'
       );
     }
 
@@ -274,11 +270,13 @@ exports.getExpiringRecords = [
     switch (recordType) {
       case 'Case':
         Model = Case;
-        selectFields = 'caseNumber title closedAt retentionStatus retentionPolicy.legalHold createdAt';
+        selectFields =
+          'caseNumber title closedAt retentionStatus retentionPolicy.legalHold createdAt';
         break;
       case 'Document':
         Model = Document;
-        selectFields = 'title documentType createdAt retentionPolicy disposalMethod sensitivityLevel';
+        selectFields =
+          'title documentType createdAt retentionPolicy disposalMethod sensitivityLevel';
         query.disposalMethod = { $exists: false }; // Not yet disposed
         break;
       default:
@@ -287,7 +285,7 @@ exports.getExpiringRecords = [
           res,
           400,
           `Unsupported record type: ${recordType}. Supported: Case, Document`,
-          'ERR_UNSUPPORTED_RECORD_TYPE',
+          'ERR_UNSUPPORTED_RECORD_TYPE'
         );
     }
 
@@ -373,7 +371,7 @@ exports.destroyExpiredRecords = [
         res,
         400,
         'Record ID is required for forensic destruction.',
-        'ERR_RECORD_ID_REQUIRED',
+        'ERR_RECORD_ID_REQUIRED'
       );
     }
 
@@ -383,7 +381,7 @@ exports.destroyExpiredRecords = [
         res,
         400,
         'Disposal reason must be at least 20 characters for audit compliance.',
-        'ERR_INSUFFICIENT_DISPOSAL_REASON',
+        'ERR_INSUFFICIENT_DISPOSAL_REASON'
       );
     }
 
@@ -395,7 +393,7 @@ exports.destroyExpiredRecords = [
         res,
         403,
         'Tenant context required for destruction operations.',
-        'ERR_TENANT_CONTEXT_REQUIRED',
+        'ERR_TENANT_CONTEXT_REQUIRED'
       );
     }
 
@@ -420,7 +418,7 @@ exports.destroyExpiredRecords = [
           res,
           400,
           `Unsupported record type for destruction: ${recordType}`,
-          'ERR_UNSUPPORTED_DESTRUCTION_TYPE',
+          'ERR_UNSUPPORTED_DESTRUCTION_TYPE'
         );
     }
 
@@ -435,7 +433,7 @@ exports.destroyExpiredRecords = [
         res,
         404,
         'Destruction failed: Record not found in tenant scope.',
-        'ERR_RECORD_NOT_FOUND',
+        'ERR_RECORD_NOT_FOUND'
       );
     }
 
@@ -450,7 +448,7 @@ exports.destroyExpiredRecords = [
           res,
           403,
           `Destruction Blocked: Record is under active legal hold until ${holdExpiry}.`,
-          'ERR_LEGAL_HOLD_ACTIVE',
+          'ERR_LEGAL_HOLD_ACTIVE'
         );
       }
     }
@@ -463,7 +461,7 @@ exports.destroyExpiredRecords = [
         res,
         400,
         `Invalid disposal method. Valid methods: ${validMethods.join(', ')}`,
-        'ERR_INVALID_DISPOSAL_METHOD',
+        'ERR_INVALID_DISPOSAL_METHOD'
       );
     }
 
@@ -518,7 +516,7 @@ exports.destroyExpiredRecords = [
         res,
         500,
         `Destruction failed: ${workerError.message}`,
-        'ERR_DESTRUCTION_EXECUTION_FAILED',
+        'ERR_DESTRUCTION_EXECUTION_FAILED'
       );
     } finally {
       // Clean up worker
@@ -583,7 +581,7 @@ exports.destroyExpiredRecords = [
         message: `Forensic destruction of ${recordType} record completed with statutory compliance.`,
         certificateId: disposalCertificate.certificateId,
         legalNotice: 'This disposal certificate serves as legal proof of statutory compliance',
-      },
+      }
     );
   }),
 ];
@@ -603,7 +601,7 @@ exports.getRetentionPosture = [
         res,
         403,
         'Tenant context required for retention posture analysis.',
-        'ERR_TENANT_CONTEXT_REQUIRED',
+        'ERR_TENANT_CONTEXT_REQUIRED'
       );
     }
 
@@ -731,7 +729,7 @@ exports.bulkUpdateRetentionStatus = [
         res,
         400,
         'Record IDs array is required for bulk update.',
-        'ERR_INVALID_RECORD_IDS',
+        'ERR_INVALID_RECORD_IDS'
       );
     }
 
@@ -741,7 +739,7 @@ exports.bulkUpdateRetentionStatus = [
         res,
         400,
         'Update reason must be at least 20 characters for audit compliance.',
-        'ERR_INSUFFICIENT_UPDATE_REASON',
+        'ERR_INSUFFICIENT_UPDATE_REASON'
       );
     }
 
@@ -752,7 +750,7 @@ exports.bulkUpdateRetentionStatus = [
         res,
         403,
         'Tenant context required for bulk operations.',
-        'ERR_TENANT_CONTEXT_REQUIRED',
+        'ERR_TENANT_CONTEXT_REQUIRED'
       );
     }
 
@@ -776,7 +774,7 @@ exports.bulkUpdateRetentionStatus = [
             recordCount: recordIds.length,
           },
         },
-      },
+      }
     );
 
     // Audit bulk operation
@@ -809,7 +807,7 @@ exports.bulkUpdateRetentionStatus = [
       },
       {
         message: `Bulk retention status update completed for ${updateResult.modifiedCount} records.`,
-      },
+      }
     );
   }),
 ];

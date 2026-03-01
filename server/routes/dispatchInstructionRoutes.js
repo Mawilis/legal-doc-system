@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/dispatchInstructionRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Dispatch Instruction Gateway (Tenant-Scoped). Manages specific service instructions for Sheriffs (e.g., specific address, urgency, special notes).
@@ -96,7 +94,7 @@ router.post(
       err.code = 'INSTRUCTION_CREATE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -129,7 +127,7 @@ router.patch(
       err.code = 'INSTRUCTION_UPDATE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -151,7 +149,7 @@ router.get(
       err.code = 'INSTRUCTION_GET_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 
 const crypto = require('crypto');
 const fs = require('fs');
@@ -106,7 +104,11 @@ describe('ENCRYPTION SERVICE — FORENSIC VALIDATION', () => {
 
   it('should complete full encrypt/decrypt cycle', () => {
     const key = encryptionService.generateKey();
-    const testCases = [{ simple: 'text' }, { number: 42, boolean: true }, { nested: { a: 1, b: [2, 3] } }];
+    const testCases = [
+      { simple: 'text' },
+      { number: 42, boolean: true },
+      { nested: { a: 1, b: [2, 3] } },
+    ];
 
     testCases.forEach((data) => {
       const encrypted = encryptionService.encrypt(data, key);

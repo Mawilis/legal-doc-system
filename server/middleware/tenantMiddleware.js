@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ======================================================================
  * QUANTUM TENANT ISOLATION MIDDLEWARE - ETERNAL MULTI-TENANT BOUNDARY
  * ======================================================================
@@ -613,7 +611,8 @@ const detectCrossTenantAttempt = async (req, requestedTenantId) => {
       createdAt: { $gte: new Date(Date.now() - 60 * 60 * 1000) }, // Last hour
     });
 
-    const isSuspicious = recentAttempts >= TENANT_CONFIG.crossTenantPrevention.maxCrossTenantAttempts;
+    const isSuspicious =
+      recentAttempts >= TENANT_CONFIG.crossTenantPrevention.maxCrossTenantAttempts;
 
     // Log the attempt
     securityLogger.warn('CROSS_TENANT_ATTEMPT', {
@@ -871,7 +870,7 @@ const enforceTenantBoundary = (modelName) => async (req, res, next) => {
           isDeleted: false,
         },
         projection,
-        options,
+        options
       );
     };
 
@@ -973,7 +972,7 @@ const getTenantEncryptionKey = async (tenantId) => {
             encryptionKey: newKey,
             keyRotationDate: new Date(),
             previousEncryptionKey: tenant.encryptionKey,
-          },
+          }
         );
 
         securityLogger.info('TENANT_ENCRYPTION_KEY_ROTATED', {
@@ -996,7 +995,7 @@ const getTenantEncryptionKey = async (tenantId) => {
         encryptionKey: newKey,
         keyRotationDate: new Date(),
       },
-      { upsert: true },
+      { upsert: true }
     );
 
     securityLogger.info('TENANT_ENCRYPTION_KEY_GENERATED', {

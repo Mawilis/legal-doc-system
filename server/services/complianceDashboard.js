@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * QUANTUM SENTINEL: COMPLIANCE DASHBOARD SERVICE - SECURITY ENHANCED EDITION
  * ============================================================================
@@ -777,20 +775,20 @@ class ComplianceDashboardService {
     switch (data.streamType) {
       case 'complianceScore':
         return (
-          !data.parameters
-          || ((!data.parameters.framework || typeof data.parameters.framework === 'string')
-            && (!data.parameters.interval
-              || (typeof data.parameters.interval === 'number' && data.parameters.interval >= 1000)))
+          !data.parameters ||
+          ((!data.parameters.framework || typeof data.parameters.framework === 'string') &&
+            (!data.parameters.interval ||
+              (typeof data.parameters.interval === 'number' && data.parameters.interval >= 1000)))
         );
       case 'liveAlerts':
         return (
-          !data.parameters
-          || ((!data.parameters.severity
-            || ['all', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(data.parameters.severity))
-            && (!data.parameters.maxAlerts
-              || (typeof data.parameters.maxAlerts === 'number'
-                && data.parameters.maxAlerts > 0
-                && data.parameters.maxAlerts <= 1000)))
+          !data.parameters ||
+          ((!data.parameters.severity ||
+            ['all', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(data.parameters.severity)) &&
+            (!data.parameters.maxAlerts ||
+              (typeof data.parameters.maxAlerts === 'number' &&
+                data.parameters.maxAlerts > 0 &&
+                data.parameters.maxAlerts <= 1000)))
         );
       default:
         return true;
@@ -816,9 +814,9 @@ class ComplianceDashboardService {
     // Check for specific dashboard permissions
     if (permissions && Array.isArray(permissions)) {
       return (
-        permissions.includes('dashboard:access')
-        || permissions.includes('compliance:view')
-        || permissions.includes('*')
+        permissions.includes('dashboard:access') ||
+        permissions.includes('compliance:view') ||
+        permissions.includes('*')
       );
     }
 
@@ -852,7 +850,10 @@ class ComplianceDashboardService {
    */
   getAlertsBySeverity() {
     const bySeverity = {
-      CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0,
+      CRITICAL: 0,
+      HIGH: 0,
+      MEDIUM: 0,
+      LOW: 0,
     };
 
     for (const alert of this.liveAlerts.values()) {
@@ -1269,7 +1270,7 @@ class ComplianceDashboardService {
       streaming: {
         activeStreams: Array.from(this.dashboardMetrics.values()).reduce(
           (sum, metrics) => sum + (metrics.streamsActive ? metrics.streamsActive.size : 0),
-          0,
+          0
         ),
         intervals: Array.from(this.streamingIntervals.keys()),
         totalDataStreamed: this.calculateTotalDataStreamed(),

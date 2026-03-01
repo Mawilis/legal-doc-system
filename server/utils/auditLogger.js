@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ AUDIT LOGGER - FORENSIC-GRADE AUDIT TRAIL                                ║
   ║ POPIA §19 | ECT Act §15 | 100-year retention                             ║
@@ -20,12 +20,12 @@ export class AuditLogger {
       action,
       timestamp: new Date().toISOString(),
       auditId: crypto.randomBytes(16).toString('hex'),
-      ...data
+      ...data,
     };
 
     // In production, this would write to a secure audit store
     logger.info(`AUDIT: ${action}`, auditEntry);
-    
+
     // Also write to audit log file in production
     if (process.env.NODE_ENV === 'production') {
       // Write to secure audit store
@@ -42,7 +42,7 @@ export class AuditLogger {
       ...data,
       retentionPolicy,
       retentionStart: new Date().toISOString(),
-      dataResidency: process.env.DEFAULT_DATA_RESIDENCY || 'ZA'
+      dataResidency: process.env.DEFAULT_DATA_RESIDENCY || 'ZA',
     };
 
     return this.log(action, auditEntry);

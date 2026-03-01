@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/seed/seedDocuments.js
  * STATUS: PRODUCTION-READY | FORENSIC ALIGNMENT
  */
@@ -86,7 +84,7 @@ const seedDocuments = async (tenantId, clientIds) => {
     const savedDocs = await Document.insertMany(demoDocs);
 
     console.log(
-      `✅ [SEED_DOCUMENTS]: Successfully injected ${savedDocs.length} forensic-grade documents.`,
+      `✅ [SEED_DOCUMENTS]: Successfully injected ${savedDocs.length} forensic-grade documents.`
     );
     return savedDocs.map((d) => d._id);
   } catch (err) {

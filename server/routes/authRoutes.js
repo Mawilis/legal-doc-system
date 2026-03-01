@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * FILE: server/routes/authRoutes.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/authRoutes.js
  * VERSION: 10.0.0-GENERATIONAL
@@ -155,7 +153,7 @@ router.post(
   authLimiter, // Brute-force protection (5/15min)
   deviceFingerprint, // Device recognition
   validateLogin, // Input validation
-  authController.login, // Billion-dollar business logic
+  authController.login // Billion-dollar business logic
 );
 
 /*
@@ -191,7 +189,7 @@ router.post(
   rateLimiter(GENERATIONAL_CONFIG.PUBLIC_RATE_LIMIT), // Public rate limit
   geoBlock(GENERATIONAL_CONFIG.GEO_BLOCK_LIST), // Threat blocking
   validateRegister, // Comprehensive validation
-  authController.register, // Genesis business logic
+  authController.register // Genesis business logic
 );
 
 /*
@@ -213,7 +211,7 @@ router.post(
   requestLogger('AUTH_PASSWORD_RESET_REQUEST'),
   rateLimiter('10/hour'), // Limited recovery attempts
   validatePasswordReset, // Email validation
-  authController.requestPasswordReset, // Secure recovery logic
+  authController.requestPasswordReset // Secure recovery logic
 );
 
 /*
@@ -234,7 +232,7 @@ router.post(
   '/reset-password',
   requestLogger('AUTH_PASSWORD_RESET'),
   rateLimiter('5/hour'), // Strict rate limiting
-  authController.resetPassword, // Password reset logic
+  authController.resetPassword // Password reset logic
 );
 
 // =============================================================================
@@ -267,7 +265,7 @@ router.get(
   requestLogger('AUTH_ME'), // Forensic logging
   protect, // JWT validation
   sessionValidator, // Active session check
-  authController.me, // Identity introspection
+  authController.me // Identity introspection
 );
 
 /*
@@ -296,7 +294,7 @@ router.post(
   requestLogger('AUTH_LOGOUT'), // Forensic logging
   protect, // JWT validation
   sessionValidator, // Active session check
-  authController.logout, // Secure termination
+  authController.logout // Secure termination
 );
 
 /*
@@ -325,7 +323,7 @@ router.post(
   requestLogger('AUTH_REFRESH'), // Forensic logging
   rateLimiter(GENERATIONAL_CONFIG.PRIVATE_RATE_LIMIT), // Private rate limit
   validateTokenRefresh, // Token validation
-  authController.refreshToken, // Token rotation logic
+  authController.refreshToken // Token rotation logic
 );
 
 // =============================================================================
@@ -357,7 +355,7 @@ router.post(
   requestLogger('AUTH_SETUP_MFA'), // Forensic logging
   protect, // JWT validation
   sessionValidator, // Active session check
-  authController.setupMFA, // MFA setup logic
+  authController.setupMFA // MFA setup logic
 );
 
 /*
@@ -378,7 +376,7 @@ router.post(
   requestLogger('AUTH_VERIFY_MFA'), // Forensic logging
   protect, // JWT validation
   validateMFARequest, // MFA validation
-  authController.verifyMFA, // MFA verification logic
+  authController.verifyMFA // MFA verification logic
 );
 
 // =============================================================================
@@ -403,7 +401,7 @@ router.get(
   requestLogger('AUTH_GET_SESSIONS'), // Forensic logging
   protect, // JWT validation
   sessionValidator, // Active session check
-  authController.getActiveSessions, // Session retrieval logic
+  authController.getActiveSessions // Session retrieval logic
 );
 
 /*
@@ -424,7 +422,7 @@ router.delete(
   requestLogger('AUTH_REVOKE_SESSION'), // Forensic logging
   protect, // JWT validation
   sessionValidator, // Active session check
-  authController.revokeSession, // Session revocation logic
+  authController.revokeSession // Session revocation logic
 );
 
 // =============================================================================
@@ -461,7 +459,7 @@ router.get(
   '/generational',
   requestLogger('AUTH_GENERATIONAL'), // Forensic logging
   rateLimiter('60/hour'), // Educational rate limit
-  authController.generational, // Generational vision
+  authController.generational // Generational vision
 );
 
 // =============================================================================
@@ -502,7 +500,7 @@ router.get(
         date: new Date().toISOString(),
       },
     });
-  },
+  }
 );
 
 // =============================================================================

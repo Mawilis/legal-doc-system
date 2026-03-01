@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* eslint-disable */
 import { expect } from "chai";
 import mongoose from "mongoose";

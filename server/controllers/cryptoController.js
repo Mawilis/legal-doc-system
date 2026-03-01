@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/cryptoController.js
  * STATUS: PRODUCTION-READY | CRYPTOGRAPHIC FORTRESS GRADE
  * -----------------------------------------------------------------------------
@@ -45,7 +43,7 @@ exports.signDocument = asyncHandler(async (req, res) => {
       res,
       400,
       'Document hash is required for cryptographic sealing.',
-      'ERR_HASH_MISSING',
+      'ERR_HASH_MISSING'
     );
   }
 
@@ -78,7 +76,7 @@ exports.signDocument = asyncHandler(async (req, res) => {
         res,
         503,
         'Vault Service unreachable. Signing suspended.',
-        'ERR_VAULT_OFFLINE',
+        'ERR_VAULT_OFFLINE'
       );
     }
     return errorResponse(req, res, 500, 'Cryptographic signing failure.', 'ERR_CRYPTO_FAULT');
@@ -107,7 +105,7 @@ exports.verifySignature = asyncHandler(async (req, res) => {
       res,
       500,
       'Signature verification engine failure.',
-      'ERR_VERIFY_FAULT',
+      'ERR_VERIFY_FAULT'
     );
   }
 });
@@ -171,7 +169,7 @@ exports.decryptData = asyncHandler(async (req, res) => {
       res,
       403,
       'Decryption unauthorized or key mismatch.',
-      'ERR_DECRYPT_DENIED',
+      'ERR_DECRYPT_DENIED'
     );
   }
 });

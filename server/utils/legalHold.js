@@ -1,4 +1,4 @@
-/*
+#!/*
  * Legal hold manager for litigation and investigation holds
  */
 class LegalHoldManager {

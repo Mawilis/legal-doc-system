@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*= ==========================================================================
+#!/*= ==========================================================================
   WILSY OS - SUPREME ARCHITECT GENERATED FILE
   ===========================================================================
   ██████╗ ██╗███████╗██████╗  ██████╗ █████╗ ██╗     ███████╗    ██████╗ ███████╗██████╗ ████████╗██╗███████╗██╗ █████╗ ████████╗███████╗
@@ -235,9 +233,9 @@ const disposalCertificateSchema = new mongoose.Schema(
       validate: {
         validator(v) {
           return (
-            Array.isArray(v)
-            && v.length > 0
-            && v.every((ref) => typeof ref === 'string' && ref.trim().length > 0)
+            Array.isArray(v) &&
+            v.length > 0 &&
+            v.every((ref) => typeof ref === 'string' && ref.trim().length > 0)
           );
         },
         message: 'At least one valid compliance reference is required',
@@ -361,7 +359,7 @@ const disposalCertificateSchema = new mongoose.Schema(
     collection: 'disposal_certificates',
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 /*
@@ -414,7 +412,7 @@ disposalCertificateSchema.index(
     partialFilterExpression: {
       certificateRetentionYears: { $lte: 1 },
     },
-  },
+  }
 );
 
 // Text index for searchable fields
@@ -431,7 +429,7 @@ disposalCertificateSchema.index(
       disposalReason: 1,
     },
     name: 'certificate_search_index',
-  },
+  }
 );
 
 /*
@@ -537,8 +535,7 @@ disposalCertificateSchema.statics.findByTenant = function (tenantId, options) {
   sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
   return Promise.all([
-    this.find(query).sort(sort).skip(skip).limit(limit)
-      .lean(),
+    this.find(query).sort(sort).skip(skip).limit(limit).lean(),
     this.countDocuments(query),
   ]).then((results) => {
     const certificates = results[0];
@@ -595,7 +592,7 @@ disposalCertificateSchema.statics.generateComplianceReport = function (tenantId,
 
         // Determine compliance status
         const ageInDays = Math.ceil(
-          (new Date() - new Date(cert.disposalDate)) / (1000 * 60 * 60 * 24),
+          (new Date() - new Date(cert.disposalDate)) / (1000 * 60 * 60 * 24)
         );
         const isExpired = ageInDays > cert.certificateRetentionYears * 365;
         const status = !cert.otsProof ? 'PENDING_OTS' : isExpired ? 'EXPIRED' : 'COMPLIANT';
@@ -629,13 +626,14 @@ disposalCertificateSchema.statics.verifyIntegrity = function (certificateId) {
       const hashValid = certificate.auditTrailHash === recomputedHash;
 
       // Check OTS proof if present
-      const otsValid = !certificate.otsProof
-        || certificate.otsProof.startsWith('ots:')
-        || certificate.otsProof.startsWith('rfc3161:');
+      const otsValid =
+        !certificate.otsProof ||
+        certificate.otsProof.startsWith('ots:') ||
+        certificate.otsProof.startsWith('rfc3161:');
 
       // Check retention period
       const ageInDays = Math.ceil(
-        (new Date() - new Date(certificate.disposalDate)) / (1000 * 60 * 60 * 24),
+        (new Date() - new Date(certificate.disposalDate)) / (1000 * 60 * 60 * 24)
       );
       const retentionValid = ageInDays <= certificate.certificateRetentionYears * 365;
 

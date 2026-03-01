@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ###############################################################################
+#!/* ###############################################################################
 ################################################################################
 #                                                                              #
 #  ██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ██████╗ ██████╗ ███╗   ███╗██████╗ #
@@ -227,7 +225,7 @@ class ComplianceIntelligence {
 
     // Sentinel Beacon: Log initialization
     console.info(
-      '🛡️  Quantum Compliance Intelligence Initialized: Wilsy OS Legal Fortress Activated',
+      '🛡️  Quantum Compliance Intelligence Initialized: Wilsy OS Legal Fortress Activated'
     );
   }
 
@@ -311,8 +309,8 @@ class ComplianceIntelligence {
     if (!COMPLIANCE_CONSTANTS.POPIA_CONDITIONS.includes(lawfulCondition)) {
       throw new Error(
         `POPIA Quantum Error: Invalid lawful condition. Must be one of: ${COMPLIANCE_CONSTANTS.POPIA_CONDITIONS.join(
-          ', ',
-        )}`,
+          ', '
+        )}`
       );
     }
 
@@ -344,7 +342,7 @@ class ComplianceIntelligence {
         consentValid ? 100 : 0,
         piiDetected.encrypted ? 100 : 0,
         retentionCompliant ? 100 : 0,
-        securityScore,
+        securityScore
       );
 
       // Determine Risk Level
@@ -428,9 +426,10 @@ class ComplianceIntelligence {
     });
 
     // Check if data appears encrypted (basic heuristic)
-    const isEncrypted = dataString.includes('encrypted')
-      || dataString.includes('cipher')
-      || (dataString.length > 100 && /[0-9a-f]{64,}/i.test(dataString));
+    const isEncrypted =
+      dataString.includes('encrypted') ||
+      dataString.includes('cipher') ||
+      (dataString.length > 100 && /[0-9a-f]{64,}/i.test(dataString));
 
     return {
       count: piiCount,
@@ -499,7 +498,7 @@ class ComplianceIntelligence {
         idValid ? 0 : 100,
         sanctionsCheck.riskScore,
         addressVerification.verified ? 0 : 40,
-        enhancedDueDiligence?.riskScore || 0,
+        enhancedDueDiligence?.riskScore || 0
       );
 
       // Determine FICA Compliance Status
@@ -628,11 +627,12 @@ class ComplianceIntelligence {
       const bbbeeCompliance = await this.checkBBBEECompliance(companyRegistrationNumber);
 
       // Calculate Overall Compliance Score
-      const complianceScore = (cipcData.status === 'In Business' ? 100 : 0) * 0.3
-        + (directorCompliance.compliant ? 100 : 0) * 0.25
-        + (annualReturnStatus.upToDate ? 100 : 0) * 0.25
-        + (financialCompliance.compliant ? 100 : 0) * 0.15
-        + (bbbeeCompliance.level ? 80 : 60) * 0.05;
+      const complianceScore =
+        (cipcData.status === 'In Business' ? 100 : 0) * 0.3 +
+        (directorCompliance.compliant ? 100 : 0) * 0.25 +
+        (annualReturnStatus.upToDate ? 100 : 0) * 0.25 +
+        (financialCompliance.compliant ? 100 : 0) * 0.15 +
+        (bbbeeCompliance.level ? 80 : 60) * 0.05;
 
       // Generate Compliance Certificate
       const certificate = {
@@ -679,7 +679,7 @@ class ComplianceIntelligence {
       await this.scheduleNextComplianceCheck(
         'COMPANIES_ACT',
         companyRegistrationNumber,
-        nextCheckInterval,
+        nextCheckInterval
       );
 
       return {
@@ -755,11 +755,12 @@ class ComplianceIntelligence {
       // Step 4: Document Integrity Check
       const integrityValid = await this.verifyDocumentIntegrity(
         signatureData.documentHash,
-        documentType,
+        documentType
       );
 
       // Determine ECT Act Compliance
-      const isCompliant = methodCompliant && nonRepudiation.valid && timestampValid && integrityValid;
+      const isCompliant =
+        methodCompliant && nonRepudiation.valid && timestampValid && integrityValid;
 
       // Calculate Security Level Achieved
       let achievedLevel = 1;
@@ -857,18 +858,18 @@ class ComplianceIntelligence {
 
       // Determine strictest requirements across jurisdictions
       requirements.strictestRequirements = this.determineStrictestRequirements(
-        requirements.requirements,
+        requirements.requirements
       );
 
       // Identify conflicts and generate resolutions
       requirements.conflictResolutions = this.identifyComplianceConflicts(
-        requirements.requirements,
+        requirements.requirements
       );
 
       // Generate harmonization recommendations
       requirements.harmonizationRecommendations = this.generateHarmonizationRecommendations(
         requirements.requirements,
-        requirements.strictestRequirements,
+        requirements.strictestRequirements
       );
 
       // Calculate compliance effort score (higher = more complex)
@@ -899,14 +900,15 @@ class ComplianceIntelligence {
 
     try {
       // Collect all compliance data for the entity
-      const [popiaAudit, ficaAudit, companiesActAudit, ectAudit, paiaRequests, securityIncidents] = await Promise.all([
-        this.auditPOPIACompliance(entityId, auditPeriod),
-        this.auditFICACompliance(entityId, auditPeriod),
-        this.auditCompaniesActCompliance(entityId, auditPeriod),
-        this.auditECTCompliance(entityId, auditPeriod),
-        this.getPAIARequests(entityId, auditPeriod),
-        this.getSecurityIncidents(entityId, auditPeriod),
-      ]);
+      const [popiaAudit, ficaAudit, companiesActAudit, ectAudit, paiaRequests, securityIncidents] =
+        await Promise.all([
+          this.auditPOPIACompliance(entityId, auditPeriod),
+          this.auditFICACompliance(entityId, auditPeriod),
+          this.auditCompaniesActCompliance(entityId, auditPeriod),
+          this.auditECTCompliance(entityId, auditPeriod),
+          this.getPAIARequests(entityId, auditPeriod),
+          this.getSecurityIncidents(entityId, auditPeriod),
+        ]);
 
       // Calculate overall compliance score
       const overallScore = this.calculateAuditScore([
@@ -1063,7 +1065,7 @@ class ComplianceIntelligence {
       await this.redisClient.setex(
         `compliance:log:${logEntry.eventId}`,
         2592000, // 30 days TTL
-        JSON.stringify(logEntry),
+        JSON.stringify(logEntry)
       );
     }
 
@@ -1229,8 +1231,8 @@ class ComplianceIntelligence {
     diagnostics.overallStatus = failedChecks > 0 ? 'FAIL' : partialChecks > 0 ? 'WARNING' : 'PASS';
 
     diagnostics.healthScore = Math.round(
-      (diagnostics.checks.filter((c) => c.status === 'PASS').length / diagnostics.checks.length)
-        * 100,
+      (diagnostics.checks.filter((c) => c.status === 'PASS').length / diagnostics.checks.length) *
+        100
     );
 
     return diagnostics;

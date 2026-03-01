@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT VAULT SERVICE - INVESTOR-GRADE MODULE                ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -139,9 +137,9 @@ class DocumentVaultService {
           dataResidency,
           retentionStart: new Date().toISOString(),
           legalBasis:
-            this.retentionPolicies[retentionPolicy.toUpperCase()]?.legalReference
-            || 'CLIENT_CONTRACT',
-        },
+            this.retentionPolicies[retentionPolicy.toUpperCase()]?.legalReference ||
+            'CLIENT_CONTRACT',
+        }
       );
 
       logger.info(`Document stored: ${document._id} for tenant ${tenantId}`, {
@@ -202,7 +200,7 @@ class DocumentVaultService {
           retentionPolicy: 'audit_only',
           dataResidency: 'ZA',
           accessType: 'READ',
-        },
+        }
       );
 
       logger.info(`Document accessed: ${documentId} by ${requestedBy.userId}`, {
@@ -270,7 +268,7 @@ class DocumentVaultService {
               retentionPolicy: policy,
               dataResidency: 'ZA',
               archivedAt: new Date().toISOString(),
-            },
+            }
           );
 
           results.archived++;
@@ -327,7 +325,8 @@ class DocumentVaultService {
       // Analyze documents
       documents.forEach((doc) => {
         // Confidentiality distribution
-        report.byConfidentiality[doc.confidentiality] = (report.byConfidentiality[doc.confidentiality] || 0) + 1;
+        report.byConfidentiality[doc.confidentiality] =
+          (report.byConfidentiality[doc.confidentiality] || 0) + 1;
 
         // Simple retention compliance check
         const ageInYears = (Date.now() - doc.createdAt) / (1000 * 60 * 60 * 24 * 365);
@@ -358,7 +357,7 @@ class DocumentVaultService {
           retentionPolicy: 'audit_only',
           dataResidency: 'ZA',
           reportId: `report-${Date.now()}-${tenantId}`,
-        },
+        }
       );
 
       return report;

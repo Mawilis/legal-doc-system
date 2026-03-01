@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * FILE: /server/models/featureFlagModel.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/featureFlagModel.js
  * STATUS: EPITOME | QUANTUM FEATURE ORCHESTRATION | PRODUCTION IMMORTAL
@@ -127,11 +125,12 @@ const calculateAfricanFeatureComplexity = (targetCountries, featureCategory) => 
   };
 
   const complexities = targetCountries.map(
-    (country) => countryComplexities[country] || {
-      legalComplexity: 1.5,
-      techReadiness: 0.5,
-      complianceOverhead: 1.5,
-    },
+    (country) =>
+      countryComplexities[country] || {
+        legalComplexity: 1.5,
+        techReadiness: 0.5,
+        complianceOverhead: 1.5,
+      }
   );
 
   const averageComplexity = complexities.reduce(
@@ -140,7 +139,7 @@ const calculateAfricanFeatureComplexity = (targetCountries, featureCategory) => 
       techReadiness: acc.techReadiness + curr.techReadiness,
       complianceOverhead: acc.complianceOverhead + curr.complianceOverhead,
     }),
-    { legalComplexity: 0, techReadiness: 0, complianceOverhead: 0 },
+    { legalComplexity: 0, techReadiness: 0, complianceOverhead: 0 }
   );
 
   Object.keys(averageComplexity).forEach((key) => {
@@ -151,8 +150,8 @@ const calculateAfricanFeatureComplexity = (targetCountries, featureCategory) => 
     averageComplexity,
     featureModifier: featureComplexities[featureCategory] || 1.0,
     totalComplexity:
-      (averageComplexity.legalComplexity + averageComplexity.complianceOverhead)
-      * (featureComplexities[featureCategory] || 1.0),
+      (averageComplexity.legalComplexity + averageComplexity.complianceOverhead) *
+      (featureComplexities[featureCategory] || 1.0),
     rolloutReadiness: averageComplexity.techReadiness > 0.7 ? 'READY' : 'NEEDS_PREPARATION',
   };
 };
@@ -169,7 +168,8 @@ const featureFlagSchema = new Schema(
       required: [true, 'Quantum feature identity is mandatory for sovereignty'],
       unique: true,
       immutable: true,
-      default: () => `feature:${crypto.randomBytes(32).toString('hex')}:${Date.now()}:africa:quantum`,
+      default: () =>
+        `feature:${crypto.randomBytes(32).toString('hex')}:${Date.now()}:africa:quantum`,
     },
 
     // === SOVEREIGN FEATURE ESSENCE ===
@@ -860,7 +860,7 @@ const featureFlagSchema = new Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 // -----------------------------------------------------------------------------
@@ -905,7 +905,7 @@ featureFlagSchema.pre('validate', function (next) {
     const targetCountries = this.africanSovereignty.targetCountries.map((tc) => tc.country);
     this._africanComplexity = calculateAfricanFeatureComplexity(
       targetCountries,
-      this.sovereignty.category,
+      this.sovereignty.category
     );
   }
 
@@ -955,7 +955,7 @@ featureFlagSchema.pre('save', async function (next) {
     const allowedPaths = ['quantumState.lifecycle.timeline', 'eternalRecord', 'quantumAnalytics'];
 
     const hasUnauthorizedChange = this.modifiedPaths().some(
-      (path) => !allowedPaths.some((allowed) => path.startsWith(allowed)),
+      (path) => !allowedPaths.some((allowed) => path.startsWith(allowed))
     );
 
     if (hasUnauthorizedChange) {
@@ -972,7 +972,7 @@ featureFlagSchema.pre('save', async function (next) {
       enteredAt: this._previousPhaseEntered || new Date(),
       exitedAt: new Date(),
       durationDays: Math.floor(
-        (Date.now() - (this._previousPhaseEntered || Date.now())) / (1000 * 60 * 60 * 24),
+        (Date.now() - (this._previousPhaseEntered || Date.now())) / (1000 * 60 * 60 * 24)
       ),
       notes: `Transition to ${this.quantumState.lifecycle.phase}`,
     });
@@ -1223,8 +1223,8 @@ featureFlagSchema.methods.evaluateQuantumFeature = async function (context = {})
 
   // 3. Check whitelist (override)
   if (
-    tenantId
-    && this.quantumAccess?.whitelist?.tenants?.some((t) => t.tenantId.equals(tenantId))
+    tenantId &&
+    this.quantumAccess?.whitelist?.tenants?.some((t) => t.tenantId.equals(tenantId))
   ) {
     return {
       access: true,
@@ -1243,7 +1243,7 @@ featureFlagSchema.methods.evaluateQuantumFeature = async function (context = {})
 
   // 4. Check country targeting
   const countryTargeted = this.africanSovereignty?.targetCountries?.some(
-    (tc) => tc.country === country || tc.country === 'ALL_AFRICA',
+    (tc) => tc.country === country || tc.country === 'ALL_AFRICA'
   );
 
   if (!countryTargeted) {

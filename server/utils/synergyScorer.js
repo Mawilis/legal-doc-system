@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ SYNERGY SCORER - 127-DIMENSIONAL SYNERGY CALCULATION ENGINE                           ║
   ║ [94% Accuracy | Real-time | Industry-Leading | Production Grade]                      ║
@@ -24,28 +24,28 @@ export class synergyScorer {
 
     // Revenue synergies
     scores.revenue = this.calculateRevenueSynergies(featureVectors, criteria);
-    
+
     // Cost synergies
     scores.cost = this.calculateCostSynergies(featureVectors, criteria);
-    
+
     // Financial synergies
     scores.financial = this.calculateFinancialSynergies(featureVectors, criteria);
-    
+
     // Tax synergies
     scores.tax = this.calculateTaxSynergies(featureVectors, criteria);
-    
+
     // Operational synergies
     scores.operational = this.calculateOperationalSynergies(featureVectors, criteria);
-    
+
     // Technological synergies
     scores.technological = this.calculateTechnologicalSynergies(featureVectors, criteria);
-    
+
     // Cultural fit
     scores.cultural = this.calculateCulturalFit(featureVectors, criteria);
-    
+
     // Strategic alignment
     scores.strategic = this.calculateStrategicAlignment(featureVectors, criteria);
-    
+
     // Market impact
     scores.market = this.calculateMarketImpact(featureVectors, criteria);
 
@@ -66,7 +66,7 @@ export class synergyScorer {
       name: 'Cross-selling',
       contribution: crossSelling.value,
       timeline: 12,
-      confidence: crossSelling.confidence
+      confidence: crossSelling.confidence,
     });
 
     // Market access
@@ -76,7 +76,7 @@ export class synergyScorer {
       name: 'Market Access',
       contribution: marketAccess.value,
       timeline: 6,
-      confidence: marketAccess.confidence
+      confidence: marketAccess.confidence,
     });
 
     // Product bundling
@@ -86,7 +86,7 @@ export class synergyScorer {
       name: 'Product Bundling',
       contribution: bundling.value,
       timeline: 9,
-      confidence: bundling.confidence
+      confidence: bundling.confidence,
     });
 
     // Pricing power
@@ -96,13 +96,13 @@ export class synergyScorer {
       name: 'Pricing Power',
       contribution: pricing.value,
       timeline: 3,
-      confidence: pricing.confidence
+      confidence: pricing.confidence,
     });
 
     return {
       value,
       confidence: this.calculateConfidence(drivers),
-      drivers
+      drivers,
     };
   }
 
@@ -121,7 +121,7 @@ export class synergyScorer {
       contribution: overhead.value,
       timeline: 6,
       oneTime: overhead.oneTime,
-      recurring: overhead.recurring
+      recurring: overhead.recurring,
     });
 
     // Supply chain optimization
@@ -132,7 +132,7 @@ export class synergyScorer {
       contribution: supplyChain.value,
       timeline: 12,
       oneTime: supplyChain.oneTime,
-      recurring: supplyChain.recurring
+      recurring: supplyChain.recurring,
     });
 
     // Facility consolidation
@@ -143,7 +143,7 @@ export class synergyScorer {
       contribution: facilities.value,
       timeline: 18,
       oneTime: facilities.oneTime,
-      recurring: facilities.recurring
+      recurring: facilities.recurring,
     });
 
     // IT integration
@@ -154,13 +154,13 @@ export class synergyScorer {
       contribution: it.value,
       timeline: 9,
       oneTime: it.oneTime,
-      recurring: it.recurring
+      recurring: it.recurring,
     });
 
     return {
       value,
       confidence: this.calculateConfidence(drivers),
-      drivers
+      drivers,
     };
   }
 
@@ -178,7 +178,7 @@ export class synergyScorer {
       name: 'Credit Rating',
       contribution: credit.value,
       type: 'financing',
-      confidence: credit.confidence
+      confidence: credit.confidence,
     });
 
     // Tax optimization
@@ -188,7 +188,7 @@ export class synergyScorer {
       name: 'Tax Optimization',
       contribution: tax.value,
       type: 'tax',
-      confidence: tax.confidence
+      confidence: tax.confidence,
     });
 
     // Working capital
@@ -198,13 +198,13 @@ export class synergyScorer {
       name: 'Working Capital',
       contribution: workingCapital.value,
       type: 'capital',
-      confidence: workingCapital.confidence
+      confidence: workingCapital.confidence,
     });
 
     return {
       value,
       confidence: this.calculateConfidence(drivers),
-      drivers
+      drivers,
     };
   }
 
@@ -219,11 +219,11 @@ export class synergyScorer {
       riskTolerance: this.compareRiskTolerance(vectors),
       innovation: this.compareInnovation(vectors),
       hierarchy: this.compareHierarchy(vectors),
-      values: this.compareValues(vectors)
+      values: this.compareValues(vectors),
     };
 
-    const score = Object.values(dimensions).reduce((sum, d) => sum + d, 0) / 
-                  Object.values(dimensions).length;
+    const score =
+      Object.values(dimensions).reduce((sum, d) => sum + d, 0) / Object.values(dimensions).length;
 
     const riskAreas = [];
     if (dimensions.leadership < 0.3) riskAreas.push('leadership_clash');
@@ -234,7 +234,7 @@ export class synergyScorer {
       score,
       confidence: 0.85,
       dimensions,
-      riskAreas
+      riskAreas,
     };
   }
 
@@ -243,12 +243,12 @@ export class synergyScorer {
    */
   calculateStrategicAlignment(vectors, criteria) {
     const alignment = this.calculateAlignmentScore(vectors, criteria);
-    
+
     return {
       score: alignment.score,
       confidence: alignment.confidence,
       alignment: alignment.factors,
-      rationale: alignment.rationale
+      rationale: alignment.rationale,
     };
   }
 
@@ -268,8 +268,8 @@ export class synergyScorer {
       impact: {
         marketShare: marketShare.detail,
         competitorResponse: competitorResponse.detail,
-        barriers: barriers.detail
-      }
+        barriers: barriers.detail,
+      },
     };
   }
 
@@ -280,8 +280,8 @@ export class synergyScorer {
     return {
       crossSelling: 0.35,
       marketAccess: 0.25,
-      bundling: 0.20,
-      pricing: 0.20
+      bundling: 0.2,
+      pricing: 0.2,
     };
   }
 
@@ -290,11 +290,11 @@ export class synergyScorer {
    */
   initializeCostWeights() {
     return {
-      overhead: 0.30,
+      overhead: 0.3,
       supplyChain: 0.25,
-      facilities: 0.20,
+      facilities: 0.2,
       it: 0.15,
-      procurement: 0.10
+      procurement: 0.1,
     };
   }
 
@@ -303,9 +303,9 @@ export class synergyScorer {
    */
   initializeFinancialWeights() {
     return {
-      credit: 0.40,
+      credit: 0.4,
       tax: 0.35,
-      workingCapital: 0.25
+      workingCapital: 0.25,
     };
   }
 
@@ -313,31 +313,75 @@ export class synergyScorer {
    * Calculate confidence from components
    */
   calculateConfidence(components) {
-    const confidences = components.map(c => c.confidence || 0.85);
+    const confidences = components.map((c) => c.confidence || 0.85);
     return confidences.reduce((sum, c) => sum + c, 0) / confidences.length;
   }
 
   // Private estimation methods
-  estimateCrossSelling(vectors, criteria) { /* Implementation */ }
-  estimateMarketAccess(vectors, criteria) { /* Implementation */ }
-  estimateBundling(vectors, criteria) { /* Implementation */ }
-  estimatePricingPower(vectors, criteria) { /* Implementation */ }
-  estimateOverheadReduction(vectors, criteria) { /* Implementation */ }
-  estimateSupplyChain(vectors, criteria) { /* Implementation */ }
-  estimateFacilityConsolidation(vectors, criteria) { /* Implementation */ }
-  estimateITIntegration(vectors, criteria) { /* Implementation */ }
-  estimateCreditImprovement(vectors, criteria) { /* Implementation */ }
-  estimateTaxOptimization(vectors, criteria) { /* Implementation */ }
-  estimateWorkingCapital(vectors, criteria) { /* Implementation */ }
-  compareLeadership(vectors) { /* Implementation */ }
-  compareCommunication(vectors) { /* Implementation */ }
-  compareDecisionMaking(vectors) { /* Implementation */ }
-  compareRiskTolerance(vectors) { /* Implementation */ }
-  compareInnovation(vectors) { /* Implementation */ }
-  compareHierarchy(vectors) { /* Implementation */ }
-  compareValues(vectors) { /* Implementation */ }
-  calculateAlignmentScore(vectors, criteria) { /* Implementation */ }
-  estimateMarketShare(vectors, criteria) { /* Implementation */ }
-  estimateCompetitorResponse(vectors, criteria) { /* Implementation */ }
-  estimateBarriers(vectors, criteria) { /* Implementation */ }
+  estimateCrossSelling(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateMarketAccess(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateBundling(vectors, criteria) {
+    /* Implementation */
+  }
+  estimatePricingPower(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateOverheadReduction(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateSupplyChain(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateFacilityConsolidation(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateITIntegration(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateCreditImprovement(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateTaxOptimization(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateWorkingCapital(vectors, criteria) {
+    /* Implementation */
+  }
+  compareLeadership(vectors) {
+    /* Implementation */
+  }
+  compareCommunication(vectors) {
+    /* Implementation */
+  }
+  compareDecisionMaking(vectors) {
+    /* Implementation */
+  }
+  compareRiskTolerance(vectors) {
+    /* Implementation */
+  }
+  compareInnovation(vectors) {
+    /* Implementation */
+  }
+  compareHierarchy(vectors) {
+    /* Implementation */
+  }
+  compareValues(vectors) {
+    /* Implementation */
+  }
+  calculateAlignmentScore(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateMarketShare(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateCompetitorResponse(vectors, criteria) {
+    /* Implementation */
+  }
+  estimateBarriers(vectors, criteria) {
+    /* Implementation */
+  }
 }

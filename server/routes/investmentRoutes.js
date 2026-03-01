@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const express = require('express');
+#!const express = require('express');
 
 const router = express.Router();
 

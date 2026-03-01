@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/taskController.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Task Management & Fleet Intelligence. Monitors field service progress.
@@ -48,7 +46,7 @@ exports.getLiveFleetData = asyncHandler(async (req, res) => {
         lastUpdate: lastAttempt ? lastAttempt.at : job.updatedAt,
         outcome: lastAttempt ? lastAttempt.outcome : 'En Route',
       };
-    }),
+    })
   );
 
   // 3. Audit access to live tracking data
@@ -103,7 +101,7 @@ exports.updateTaskPriority = asyncHandler(async (req, res) => {
   const task = await DispatchInstruction.findOneAndUpdate(
     { _id: req.params.id, tenantId: req.user.tenantId },
     { urgency },
-    { new: true },
+    { new: true }
   );
 
   if (!task) {

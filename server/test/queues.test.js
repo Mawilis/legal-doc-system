@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env mocha */
+#!/* eslint-env mocha */
 /*
  * QUEUES CONFIGURATION TESTS
  * Investor-Grade | 100% job reliability | Zero data loss
@@ -93,7 +91,7 @@ describe('🔧 Queues Configuration Tests', function () {
         {
           delay: 1000,
           priority: 1,
-        },
+        }
       );
 
       assert.ok(job.id);

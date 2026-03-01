@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const fs = require('fs');
+#!const fs = require('fs');
 const path = require('path');
 
 const verifyPath = path.join(__dirname, 'verify-migration-state.js');
@@ -11,8 +9,10 @@ try {
   let content = fs.readFileSync(verifyPath, 'utf8');
 
   // Find and fix the "EMPTY" message
-  const emptyLine = "                console.log('⚠️  MIGRATION REGISTRY: COLLECTION EXISTS BUT EMPTY');";
-  const fixedLine = '                console.log(`✅ MIGRATION REGISTRY: ${migrations.length} MIGRATION(S) FOUND`);';
+  const emptyLine =
+    "                console.log('⚠️  MIGRATION REGISTRY: COLLECTION EXISTS BUT EMPTY');";
+  const fixedLine =
+    '                console.log(`✅ MIGRATION REGISTRY: ${migrations.length} MIGRATION(S) FOUND`);';
 
   content = content.replace(emptyLine, fixedLine);
 

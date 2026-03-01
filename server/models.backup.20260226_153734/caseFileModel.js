@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * ╔══════════════════════════════════════════════════════════════════════════╗
  * ║                     WILSY OS - THE LEGAL VAULT                          ║
@@ -56,8 +56,8 @@
  *  - Last Updated: 2026-01-20 (Day of Document Sovereignty)
  */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 import mongoosePaginate from 'mongoose-paginate-v2.js';
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals.js';
 

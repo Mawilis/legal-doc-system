@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════╗
   ║ SOUTH AFRICA LAUNCH PLAN - INVESTOR-GRADE MODULE             ║
   ║ [90% market capture | R50M revenue | 85% margins]            ║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -64,7 +62,7 @@ class SouthAfricaLaunchPlan {
           retentionPolicy: 'companies_act_10_years',
           dataResidency: 'ZA',
           regulatoryStatus: 'POPIA_COMPLIANT',
-        },
+        }
       );
 
       // Execute launch phases
@@ -107,7 +105,7 @@ class SouthAfricaLaunchPlan {
           retentionPolicy: 'companies_act_10_years',
           dataResidency: 'ZA',
           launchStatus: 'SUCCESS',
-        },
+        }
       );
 
       return results;
@@ -135,7 +133,7 @@ class SouthAfricaLaunchPlan {
       {
         retentionPolicy: 'companies_act_10_years',
         dataResidency: 'ZA',
-      },
+      }
     );
   }
 

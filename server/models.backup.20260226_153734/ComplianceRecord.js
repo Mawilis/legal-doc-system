@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ███████ ██ ██       ██████  ██ ███████ ██    ██     ██████  ███████ ██████  ██████   ██████  ██████  ███████
  * ██      ██ ██      ██    ██ ██ ██       ██  ██      ██   ██ ██      ██   ██ ██   ██ ██    ██ ██   ██ ██
  * ███████ ██ ██      ██    ██ ██ ███████   ████       ██████  █████   ██████  ██████  ██    ██ ██████  █████
@@ -109,13 +107,13 @@ const encryptComplianceDocument = async (documentUrl, firmId, documentType) => {
     // QUANTUM SHIELD: Generate document-specific encryption key
     const documentKey = await generateQuantumKey(
       `${firmId}-${documentType}-${Date.now()}`,
-      process.env.QUANTUM_KEY_DERIVATION_SECRET,
+      process.env.QUANTUM_KEY_DERIVATION_SECRET
     );
 
     // ENV VALIDATION: Ensure quantum secrets exist
     if (!process.env.QUANTUM_KEY_DERIVATION_SECRET) {
       throw new Error(
-        'QUANTUM_KEY_DERIVATION_SECRET missing from .env - Compliance encryption disabled',
+        'QUANTUM_KEY_DERIVATION_SECRET missing from .env - Compliance encryption disabled'
       );
     }
 
@@ -152,15 +150,15 @@ const decryptComplianceDocument = async (encryptedDocument, firmId) => {
     // Reconstruct key from same parameters
     const documentKey = await generateQuantumKey(
       `${firmId}-${encryptedDocument.documentType}-${new Date(
-        encryptedDocument.encryptedAt,
+        encryptedDocument.encryptedAt
       ).getTime()}`,
-      process.env.QUANTUM_KEY_DERIVATION_SECRET,
+      process.env.QUANTUM_KEY_DERIVATION_SECRET
     );
 
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       Buffer.from(documentKey, 'hex'),
-      Buffer.from(encryptedDocument.iv, 'hex'),
+      Buffer.from(encryptedDocument.iv, 'hex')
     );
 
     decipher.setAuthTag(Buffer.from(encryptedDocument.authTag, 'hex'));
@@ -609,7 +607,10 @@ const complianceRecordSchema = new Schema(
     escalationPath: [
       {
         level: {
-          type: Number, min: 1, max: 5, required: true,
+          type: Number,
+          min: 1,
+          max: 5,
+          required: true,
         },
         triggerCondition: String,
         escalationRole: String,
@@ -702,7 +703,7 @@ const complianceRecordSchema = new Schema(
           validate: {
             validator(v) {
               return /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}$/.test(
-                v,
+                v
               );
             },
             message: 'Invalid IP address format',
@@ -807,7 +808,7 @@ const complianceRecordSchema = new Schema(
       },
     },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // ==============================================================================================================
@@ -842,7 +843,7 @@ complianceRecordSchema.index(
     },
     name: 'compliance_search_index',
     default_language: 'english',
-  },
+  }
 );
 
 // ==============================================================================================================
@@ -870,7 +871,7 @@ complianceRecordSchema.pre('save', async function (next) {
           const encrypted = await encryptComplianceDocument(
             doc.documentUrl || '',
             this.firmId,
-            doc.documentCategory,
+            doc.documentCategory
           );
           doc.encryptedMetadata = encrypted;
           delete doc.documentUrl; // Remove plaintext URL
@@ -880,9 +881,9 @@ complianceRecordSchema.pre('save', async function (next) {
 
     // REGULATORY: Calculate compliance score
     if (
-      this.isModified('status')
-      || this.isModified('complianceDocuments')
-      || this.isModified('evidenceLog')
+      this.isModified('status') ||
+      this.isModified('complianceDocuments') ||
+      this.isModified('evidenceLog')
     ) {
       this.complianceMetrics.overallScore = await this.calculateComplianceScore();
       this.complianceMetrics.lastScored = new Date();
@@ -890,16 +891,16 @@ complianceRecordSchema.pre('save', async function (next) {
 
     // WORKFLOW: Auto-assign based on risk
     if (
-      this.isModified('riskAssessment.inherentRisk')
-      && ['CRITICAL', 'HIGH'].includes(this.riskAssessment.inherentRisk)
+      this.isModified('riskAssessment.inherentRisk') &&
+      ['CRITICAL', 'HIGH'].includes(this.riskAssessment.inherentRisk)
     ) {
       await this.autoEscalateComplianceIssue();
     }
 
     // BLOCKCHAIN: Anchor critical changes
     if (
-      this.isModified('status')
-      && ['APPROVED', 'SUSPENDED', 'UNDER_INVESTIGATION'].includes(this.status)
+      this.isModified('status') &&
+      ['APPROVED', 'SUSPENDED', 'UNDER_INVESTIGATION'].includes(this.status)
     ) {
       await this.anchorToBlockchain('STATUS_CHANGE');
     }
@@ -945,7 +946,7 @@ complianceRecordSchema.post('find', (docs) => {
           try {
             document.decryptedUrl = await decryptComplianceDocument(
               document.encryptedMetadata,
-              doc.firmId,
+              doc.firmId
             );
           } catch (error) {
             console.error('Document decryption failed:', error);
@@ -1019,7 +1020,9 @@ complianceRecordSchema.methods.calculateRegulatoryCoverage = function () {
   const applicableSections = this.applicableSections || [];
   const evidenceSections = this.evidenceLog.map((e) => `${e.regulation}-${e.section}`);
 
-  const coveredSections = applicableSections.filter((section) => evidenceSections.includes(`${section.regulation}-${section.section}`)).length;
+  const coveredSections = applicableSections.filter((section) =>
+    evidenceSections.includes(`${section.regulation}-${section.section}`)
+  ).length;
 
   return applicableSections.length > 0 ? coveredSections / applicableSections.length : 0;
 };
@@ -1039,7 +1042,7 @@ complianceRecordSchema.methods.calculateTimelinessScore = async function () {
   // Check assessment timeliness
   if (this.riskAssessment.nextAssessment) {
     const daysUntilAssessment = Math.ceil(
-      (this.riskAssessment.nextAssessment - new Date()) / (1000 * 60 * 60 * 24),
+      (this.riskAssessment.nextAssessment - new Date()) / (1000 * 60 * 60 * 24)
     );
     if (daysUntilAssessment > 60) score += 0.4;
     else if (daysUntilAssessment > 30) score += 0.3;
@@ -1203,7 +1206,7 @@ complianceRecordSchema.methods.autoEscalateComplianceIssue = async function () {
   } else if (this.riskAssessment.inherentRisk === 'HIGH' && this.status === 'UNDER_INVESTIGATION') {
     await this.escalateComplianceIssue(
       'Automatic escalation: HIGH risk under investigation',
-      'HIGH',
+      'HIGH'
     );
   }
 };
@@ -1354,9 +1357,7 @@ complianceRecordSchema.statics.findExpiringCompliance = function (daysThreshold 
  * @returns {Promise<Object>} Detailed compliance report
  */
 complianceRecordSchema.statics.generateComplianceReport = async function (options = {}) {
-  const {
-    firmId, jurisdiction, startDate, endDate, complianceType,
-  } = options;
+  const { firmId, jurisdiction, startDate, endDate, complianceType } = options;
 
   const query = {};
   if (firmId) query.firmId = firmId;
@@ -1410,7 +1411,8 @@ complianceRecordSchema.statics.generateComplianceReport = async function (option
     report.summary.byStatus[record.status] = (report.summary.byStatus[record.status] || 0) + 1;
 
     // Compliance type distribution
-    report.summary.byComplianceType[record.complianceType] = (report.summary.byComplianceType[record.complianceType] || 0) + 1;
+    report.summary.byComplianceType[record.complianceType] =
+      (report.summary.byComplianceType[record.complianceType] || 0) + 1;
 
     // Risk level distribution
     const riskLevel = record.riskAssessment?.inherentRisk || 'MEDIUM';
@@ -1431,8 +1433,8 @@ complianceRecordSchema.statics.generateComplianceReport = async function (option
 
     // Detailed findings
     if (
-      record.complianceMetrics?.overallScore < 70
-      || record.riskAssessment?.inherentRisk === 'CRITICAL'
+      record.complianceMetrics?.overallScore < 70 ||
+      record.riskAssessment?.inherentRisk === 'CRITICAL'
     ) {
       report.findings.push({
         recordId: record._id,
@@ -1592,11 +1594,11 @@ complianceRecordSchema.virtual('daysUntilExpiry').get(function () {
  */
 complianceRecordSchema.virtual('requiresAttention').get(function () {
   return (
-    this.status === 'EXPIRED'
-    || this.status === 'UNDER_INVESTIGATION'
-    || this.riskAssessment?.inherentRisk === 'CRITICAL'
-    || this.complianceMetrics?.overallScore < 50
-    || this.isExpiringSoon
+    this.status === 'EXPIRED' ||
+    this.status === 'UNDER_INVESTIGATION' ||
+    this.riskAssessment?.inherentRisk === 'CRITICAL' ||
+    this.complianceMetrics?.overallScore < 50 ||
+    this.isExpiringSoon
   );
 });
 

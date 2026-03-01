@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
@@ -576,7 +574,7 @@ const PrecedentSchema = new Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // ==================== PLUGINS & MIDDLEWARE ====================
@@ -610,7 +608,7 @@ PrecedentSchema.index(
       'citation.standardFormat': 3,
       'judgment.fullText': 1,
     },
-  },
+  }
 );
 
 /*
@@ -651,8 +649,8 @@ PrecedentSchema.virtual('yearsSinceJudgment').get(function () {
  */
 PrecedentSchema.virtual('isGoodLaw').get(function () {
   return (
-    this.compliance.appealStatus !== 'overturned'
-    && this.compliance.publicationStatus !== 'withdrawn'
+    this.compliance.appealStatus !== 'overturned' &&
+    this.compliance.publicationStatus !== 'withdrawn'
   );
 });
 
@@ -733,7 +731,7 @@ PrecedentSchema.statics.findSimilar = function (tenantId, embeddingVector, simil
         const precedentVector = precedent.aiAnalysis.embeddings.vector;
         const similarity = PrecedentSchema.statics.calculateCosineSimilarity(
           embeddingVector,
-          precedentVector,
+          precedentVector
         );
         results.push({ precedent, similarity });
       }
@@ -869,14 +867,15 @@ PrecedentSchema.statics.getCitationStats = function (tenantId) {
       },
     },
   ]).then(
-    (stats) => stats[0] || {
-      total: 0,
-      landmarkCount: 0,
-      landmarkPercentage: 0,
-      typeBreakdown: {},
-      categoryBreakdown: {},
-      yearBreakdown: {},
-    },
+    (stats) =>
+      stats[0] || {
+        total: 0,
+        landmarkCount: 0,
+        landmarkPercentage: 0,
+        typeBreakdown: {},
+        categoryBreakdown: {},
+        yearBreakdown: {},
+      }
   );
 };
 

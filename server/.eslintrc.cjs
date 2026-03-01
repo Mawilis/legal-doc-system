@@ -5,10 +5,7 @@ module.exports = {
     es2022: true,
     jest: true,
   },
-  extends: [
-    'eslint:recommended',
-    'airbnb-base',
-  ],
+  extends: ['eslint:recommended', 'airbnb-base'],
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
@@ -19,9 +16,12 @@ module.exports = {
     'import/prefer-default-export': 'off',
     'import/extensions': ['error', 'ignorePackages'],
     'comma-dangle': ['error', 'always-multiline'],
-    'no-underscore-dangle': ['error', {
-      allow: ['_id', '__v', '_doc'],
-    }],
+    'no-underscore-dangle': [
+      'error',
+      {
+        allow: ['_id', '__v', '_doc'],
+      },
+    ],
   },
   settings: {
     'import/resolver': {

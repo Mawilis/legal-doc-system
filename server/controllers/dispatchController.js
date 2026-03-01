@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/dispatchController.js
  * STATUS: PRODUCTION-READY | LOGISTICS LIFECYCLE GRADE
  * -----------------------------------------------------------------------------
@@ -20,9 +18,7 @@ const Dispatch = require('../models/Dispatch');
  * @route   POST /api/v1/dispatches
  */
 exports.createDispatch = asyncHandler(async (req, res) => {
-  const {
-    caseId, sheriffId, address, type, instructions,
-  } = req.body;
+  const { caseId, sheriffId, address, type, instructions } = req.body;
 
   // 1. ATOMIC CREATION
   const dispatch = await Dispatch.create({
@@ -49,9 +45,7 @@ exports.createDispatch = asyncHandler(async (req, res) => {
  * @route   GET /api/v1/dispatches
  */
 exports.getAllDispatches = asyncHandler(async (req, res) => {
-  const {
-    status, urgency, page = 1, limit = 20,
-  } = req.query;
+  const { status, urgency, page = 1, limit = 20 } = req.query;
 
   // 1. DYNAMIC QUERY BUILDING
   const query = { ...req.tenantFilter };
@@ -102,7 +96,7 @@ exports.getDispatch = asyncHandler(async (req, res) => {
       res,
       404,
       'Dispatch instruction not found.',
-      'ERR_DISPATCH_NOT_FOUND',
+      'ERR_DISPATCH_NOT_FOUND'
     );
   }
 
@@ -124,7 +118,7 @@ exports.updateDispatch = asyncHandler(async (req, res) => {
       res,
       404,
       'Update failed: Dispatch record not found.',
-      'ERR_DISPATCH_NOT_FOUND',
+      'ERR_DISPATCH_NOT_FOUND'
     );
   }
 
@@ -135,7 +129,7 @@ exports.updateDispatch = asyncHandler(async (req, res) => {
       res,
       403,
       'Permission denied: Field agents cannot reassign workload.',
-      'ERR_RBAC_FORBIDDEN',
+      'ERR_RBAC_FORBIDDEN'
     );
   }
 
@@ -177,7 +171,7 @@ exports.deleteDispatch = asyncHandler(async (req, res) => {
       res,
       404,
       'Cancellation failed: Instruction not found.',
-      'ERR_DISPATCH_NOT_FOUND',
+      'ERR_DISPATCH_NOT_FOUND'
     );
   }
 

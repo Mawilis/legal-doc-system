@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT MODEL TESTS - INVESTOR DUE DILIGENCE                ║
   ║ 100% coverage | Quantum-safe | Forensic evidence              ║
@@ -68,7 +66,8 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
       date: new Date('2023-05-15'),
       ratio:
         'The principle of legality requires that all law must be rationally connected to a legitimate governmental purpose.',
-      obiter: 'The court further observed that international law may inform the development of domestic jurisprudence.',
+      obiter:
+        'The court further observed that international law may inform the development of domestic jurisprudence.',
       holdings: [
         {
           text: 'Section 172(1)(a) of the Constitution empowers courts to declare invalid any law inconsistent with the Constitution',
@@ -136,7 +135,10 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
       expect(testPrecedent.fullTextLength).toBe(fullText.length);
 
       // Test hash consistency
-      const expectedRatioHash = crypto.createHash('sha256').update(testPrecedent.ratio).digest('hex');
+      const expectedRatioHash = crypto
+        .createHash('sha256')
+        .update(testPrecedent.ratio)
+        .digest('hex');
       expect(testPrecedent.ratioHash).toBe(expectedRatioHash);
     });
 
@@ -254,7 +256,12 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
 
     it('should validate SA citation format', () => {
       // Valid formats
-      const validCitations = ['[2023] ZACC 15', '[2022] ZASCA 112', '[2021] 1 All SA 1 (CC)', '2020 2 SA 123 (SCA)'];
+      const validCitations = [
+        '[2023] ZACC 15',
+        '[2022] ZASCA 112',
+        '[2021] 1 All SA 1 (CC)',
+        '2020 2 SA 123 (SCA)',
+      ];
 
       validCitations.forEach(async (citation) => {
         const precedent = new Precedent({
@@ -288,13 +295,16 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
       await testPrecedent.save();
 
       expect(testPrecedent.retentionEnd).toBeDefined();
-      expect(testPrecedent.retentionEnd.getFullYear()).toBeGreaterThan(new Date().getFullYear() + 99);
+      expect(testPrecedent.retentionEnd.getFullYear()).toBeGreaterThan(
+        new Date().getFullYear() + 99
+      );
 
       // Test different policy
       testPrecedent.retentionPolicy = 'companies_act_10_years';
       await testPrecedent.save();
 
-      const yearsDiff = testPrecedent.retentionEnd.getFullYear() - testPrecedent.retentionStart.getFullYear();
+      const yearsDiff =
+        testPrecedent.retentionEnd.getFullYear() - testPrecedent.retentionStart.getFullYear();
       expect(yearsDiff).toBe(10);
     });
   });
@@ -356,7 +366,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
           resourceId: testPrecedent._id,
           userId: createdBy,
           retentionPolicy: testPrecedent.retentionPolicy,
-        }),
+        })
       );
 
       expect(quantumLogger.log).toHaveBeenCalledWith(
@@ -364,7 +374,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
           event: 'PRECEDENT_CREATED',
           resourceHash: testPrecedent.precedentHash,
           tenantId,
-        }),
+        })
       );
     });
   });
@@ -435,7 +445,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
       // Canonicalize
       const canonicalized = JSON.stringify(
         auditEntries.sort((a, b) => a.citation.localeCompare(b.citation)),
-        Object.keys(auditEntries[0]).sort(),
+        Object.keys(auditEntries[0]).sort()
       );
 
       const hash = crypto.createHash('sha256').update(canonicalized).digest('hex');
@@ -451,7 +461,10 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'precedent-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'precedent-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       // Verify evidence
       const fileExists = await fs
@@ -461,7 +474,10 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'precedent-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'precedent-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 
@@ -480,7 +496,9 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
   describe('7. Exported Constants', () => {
     it('should export all required constants', () => {
       expect(Precedent.RETENTION_POLICIES).toBeDefined();
-      expect(Precedent.RETENTION_POLICIES.CONSTITUTIONAL_PERMANENT).toBe('constitutional_permanent');
+      expect(Precedent.RETENTION_POLICIES.CONSTITUTIONAL_PERMANENT).toBe(
+        'constitutional_permanent'
+      );
 
       expect(Precedent.ACCESS_LEVELS).toBeDefined();
       expect(Precedent.ACCESS_LEVELS.PUBLIC).toBe('PUBLIC');

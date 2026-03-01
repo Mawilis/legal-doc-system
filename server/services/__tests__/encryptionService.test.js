@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ ENCRYPTION SERVICE TEST V6 — FORENSIC INTEGRITY ● POPIA §19 ● COURT-ADMISSIBLE                                 ║
   ║ 99.999% encryption integrity | R12.5M breach prevention | 73% risk reduction                                   ║
@@ -152,7 +150,9 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
       const totalSavings = insuranceSavings + breachPreventionSavings;
 
       console.log(`✓ Annual Premium Savings: R${insuranceSavings.toLocaleString()}`);
-      console.log(`✓ Breach Prevention Savings: R${Math.round(breachPreventionSavings).toLocaleString()}`);
+      console.log(
+        `✓ Breach Prevention Savings: R${Math.round(breachPreventionSavings).toLocaleString()}`
+      );
       console.log(`✓ TOTAL ANNUAL SAVINGS: R${Math.round(totalSavings).toLocaleString()}`);
 
       expect(insuranceSavings).toBe(125000);
@@ -167,7 +167,9 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
       const roi = ((threeYearSavings - implementationCost) / implementationCost) * 100;
 
       console.log(`✓ 3-Year ROI: ${Math.round(roi)}%`);
-      console.log(`✓ Payback Period: ${(implementationCost / (annualSavings / 12)).toFixed(1)} months`);
+      console.log(
+        `✓ Payback Period: ${(implementationCost / (annualSavings / 12)).toFixed(1)} months`
+      );
 
       expect(roi).toBeGreaterThan(3000); // 3000%+ ROI
     });
@@ -341,7 +343,9 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
       expect(attempts).toBe(1000);
 
       console.log(`✓ Brute force simulation: ${attempts} attempts detected in ${duration}ms`);
-      console.log(`✓ Attack resistance: ${(1000 / (duration / 1000)).toFixed(0)} attempts/second blocked`);
+      console.log(
+        `✓ Attack resistance: ${(1000 / (duration / 1000)).toFixed(0)} attempts/second blocked`
+      );
     });
 
     test('should verify authentication tag integrity', () => {
@@ -408,7 +412,9 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
 
       console.log('✓ Encryption performance benchmarks:');
       Object.entries(results).forEach(([size, metrics]) => {
-        console.log(`  ${size}: ${metrics.encryptPerSec}/sec encrypt, ${metrics.decryptPerSec}/sec decrypt`);
+        console.log(
+          `  ${size}: ${metrics.encryptPerSec}/sec encrypt, ${metrics.decryptPerSec}/sec decrypt`
+        );
       });
 
       expect(results['100B'].encryptPerSec).toBeGreaterThan(1000);
@@ -483,7 +489,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
                 cryptoEvidence,
                 testResults,
                 timestamp: new Date().toISOString(),
-              }),
+              })
             )
             .digest('hex'),
           previousEvidenceHash: null,
@@ -515,7 +521,9 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
         .reverse();
 
       if (files.length > 0) {
-        const latestEvidence = JSON.parse(fs.readFileSync(path.join(evidenceDir, files[0]), 'utf8'));
+        const latestEvidence = JSON.parse(
+          fs.readFileSync(path.join(evidenceDir, files[0]), 'utf8')
+        );
 
         // Recalculate hash to verify integrity
         const recalculatedHash = crypto
@@ -525,7 +533,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
               cryptoEvidence: latestEvidence.cryptoEvidence,
               testResults: latestEvidence.testResults,
               timestamp: latestEvidence.timestamp,
-            }),
+            })
           )
           .digest('hex');
 

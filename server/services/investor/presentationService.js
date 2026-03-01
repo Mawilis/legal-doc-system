@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR PRESENTATION SERVICE - INVESTOR DECK GENERATOR                  ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
@@ -24,7 +24,7 @@ export const generatePresentation = async (data) => {
     tenantId,
     userId,
     companyId: company._id,
-    template
+    template,
   });
 
   // This would generate a real presentation in production
@@ -34,18 +34,18 @@ export const generatePresentation = async (data) => {
     company: {
       name: company.name,
       industry: company.industry,
-      valuations: valuations.map(v => ({
+      valuations: valuations.map((v) => ({
         date: v.createdAt,
-        value: v.finalValuation?.weightedAverage
-      }))
+        value: v.finalValuation?.weightedAverage,
+      })),
     },
     template,
     includeCharts,
     generatedAt: new Date().toISOString(),
-    url: `/api/investor/presentations/${Date.now()}.pdf`
+    url: `/api/investor/presentations/${Date.now()}.pdf`,
   };
 };
 
 export default {
-  generatePresentation
+  generatePresentation,
 };

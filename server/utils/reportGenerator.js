@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ===================================================================================
  * QUANTUM REPORT GENERATOR - Wilsy OS Forensic Document Generation Engine
  * File Path: /Users/wilsonkhanyezi/legal-doc-system/server/utils/reportGenerator.js
@@ -89,7 +87,8 @@ class QuantumReportGenerator {
     this.encryptionKey = process.env.REPORT_ENCRYPTION_KEY;
     this.tempPath = process.env.TEMP_REPORT_PATH || './temp/reports';
     this.maxSizeMB = parseInt(process.env.MAX_REPORT_SIZE_MB) || 50;
-    this.watermarkText = process.env.REPORT_WATERMARK_TEXT || 'Wilsy OS Quantum Legal Report - CONFIDENTIAL';
+    this.watermarkText =
+      process.env.REPORT_WATERMARK_TEXT || 'Wilsy OS Quantum Legal Report - CONFIDENTIAL';
 
     // Legal Compliance Constants
     this.LEGAL_FRAMEWORKS = {
@@ -217,7 +216,7 @@ class QuantumReportGenerator {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(this.encryptionKey, 'hex'),
-        iv,
+        iv
       );
 
       const data = Buffer.isBuffer(reportData) ? reportData : Buffer.from(reportData, 'utf8');
@@ -264,7 +263,7 @@ class QuantumReportGenerator {
       const decipher = crypto.createDecipheriv(
         'aes-256-gcm',
         Buffer.from(this.encryptionKey, 'hex'),
-        Buffer.from(metadata.iv, 'hex'),
+        Buffer.from(metadata.iv, 'hex')
       );
 
       decipher.setAuthTag(Buffer.from(metadata.tag, 'hex'));
@@ -491,14 +490,13 @@ class QuantumReportGenerator {
       .text(
         `Generated: ${now.toLocaleDateString('en-ZA')} ${now.toLocaleTimeString('en-ZA')} SAST`,
         50,
-        190,
+        190
       )
       .text(`Report ID: ${crypto.randomBytes(6).toString('hex').toUpperCase()}`, 50, 205)
       .moveDown();
 
     // Separator line
-    doc.moveTo(50, 230).lineTo(550, 230).strokeColor('#1a237e').lineWidth(2)
-      .stroke();
+    doc.moveTo(50, 230).lineTo(550, 230).strokeColor('#1a237e').lineWidth(2).stroke();
 
     doc.moveDown(2);
   }
@@ -855,8 +853,7 @@ Governing Law: The laws of the Republic of South Africa.
       doc.switchToPage(i);
 
       // Footer line
-      doc.moveTo(50, 800).lineTo(550, 800).strokeColor('#1a237e').lineWidth(0.5)
-        .stroke();
+      doc.moveTo(50, 800).lineTo(550, 800).strokeColor('#1a237e').lineWidth(0.5).stroke();
 
       // Footer text
       doc
@@ -1344,8 +1341,8 @@ IMPORTANT: This digital signature ensures the report has not been altered since 
 
       // Generate each format and add to archive
       for (const format of formats) {
-        let buffer; let
-          filename;
+        let buffer;
+        let filename;
 
         switch (format) {
           case 'pdf':

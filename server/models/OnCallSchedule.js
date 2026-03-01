@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 import { DataTypes } from 'sequelize.js';
 import { sequelize } from '../config/database.js';
 

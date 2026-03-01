@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ================================================================================
     COMPLIANCE EXPORT CITADEL - Wilsy OS Legal Data Sovereignty Gateway
 ================================================================================
@@ -375,7 +373,7 @@ const popiaDSARSchema = Joi.object({
       'LEGAL_OBLIGATION',
       'VITAL_INTERESTS',
       'PUBLIC_TASK',
-      'LEGITIMATE_INTERESTS',
+      'LEGITIMATE_INTERESTS'
     )
     .default('CONSENT'),
 
@@ -409,11 +407,10 @@ const paiaRequestSchema = Joi.object({
 
   requesterType: Joi.string().valid('INDIVIDUAL', 'ORGANIZATION', 'PUBLIC_BODY').required(),
 
-  informationRequested: Joi.string().min(10).max(5000).required()
-    .messages({
-      'string.min': 'Information request must be at least 10 characters',
-      'string.max': 'Information request must not exceed 5000 characters',
-    }),
+  informationRequested: Joi.string().min(10).max(5000).required().messages({
+    'string.min': 'Information request must be at least 10 characters',
+    'string.max': 'Information request must not exceed 5000 characters',
+  }),
 
   urgency: Joi.string().valid('STANDARD', 'URGENT', 'EMERGENCY').default('STANDARD'),
 
@@ -460,8 +457,8 @@ const legalSubpoenaSchema = Joi.object({
           'FINANCIAL_RECORDS',
           'BIOMETRIC_DATA',
           'AUDIT_LOGS',
-          'USER_ACTIVITY',
-        ),
+          'USER_ACTIVITY'
+        )
       )
       .min(1)
       .required(),
@@ -478,7 +475,7 @@ const legalSubpoenaSchema = Joi.object({
       'CRIMINAL_INVESTIGATION',
       'CIVIL_LITIGATION',
       'REGULATORY_INVESTIGATION',
-      'FOREIGN_REQUEST',
+      'FOREIGN_REQUEST'
     )
     .required(),
 
@@ -517,8 +514,8 @@ const validateDataSubjectAccess = async (requesterId, dataSubjectId) => {
     }
     // Compliance officers can access data from their firm
     if (
-      requester.role === 'COMPLIANCE_OFFICER'
-      && requester.firmId.toString() === dataSubject.firmId.toString()
+      requester.role === 'COMPLIANCE_OFFICER' &&
+      requester.firmId.toString() === dataSubject.firmId.toString()
     ) {
       return { authorized: true, relationship: 'FIRM_COMPLIANCE_OFFICER' };
     }
@@ -610,7 +607,7 @@ const generateExportManifest = async (exportData, exportPath) => {
     await fs.writeFile(
       path.join(exportPath, 'manifest.sha256'),
       `${manifestHash} manifest.json`,
-      'utf8',
+      'utf8'
     );
     quantumLogger.debug('ComplianceExportController', 'Export manifest generated', {
       exportId: exportData.exportId,
@@ -628,36 +625,37 @@ const generateExportManifest = async (exportData, exportPath) => {
  * Utility: createExportArchive
  * Creates encrypted ZIP archive of export data
  */
-const createExportArchive = async (exportId, exportPath, files) => new Promise((resolve, reject) => {
-  try {
-    const archivePath = path.join(exportPath, `${exportId}.zip`);
-    const output = fs.createWriteStream(archivePath);
-    const archive = archiver('zip', {
-      zlib: { level: 9 }, // Maximum compression
-    });
-    output.on('close', () => {
-      quantumLogger.info('ComplianceExportController', 'Export archive created', {
-        exportId,
-        archiveSize: archive.pointer(),
-        fileCount: files.length,
+const createExportArchive = async (exportId, exportPath, files) =>
+  new Promise((resolve, reject) => {
+    try {
+      const archivePath = path.join(exportPath, `${exportId}.zip`);
+      const output = fs.createWriteStream(archivePath);
+      const archive = archiver('zip', {
+        zlib: { level: 9 }, // Maximum compression
       });
-      resolve(archivePath);
-    });
-    archive.on('error', (error) => {
-      quantumLogger.error('ComplianceExportController', 'Archive creation failed', {
-        exportId,
-        error: error.message,
+      output.on('close', () => {
+        quantumLogger.info('ComplianceExportController', 'Export archive created', {
+          exportId,
+          archiveSize: archive.pointer(),
+          fileCount: files.length,
+        });
+        resolve(archivePath);
       });
-      reject(error);
-    });
-    archive.pipe(output);
-    // Add files to archive
-    files.forEach((file) => {
-      const filePath = path.join(exportPath, file);
-      archive.file(filePath, { name: file });
-    });
-    // Add README file
-    const readmeContent = `
+      archive.on('error', (error) => {
+        quantumLogger.error('ComplianceExportController', 'Archive creation failed', {
+          exportId,
+          error: error.message,
+        });
+        reject(error);
+      });
+      archive.pipe(output);
+      // Add files to archive
+      files.forEach((file) => {
+        const filePath = path.join(exportPath, file);
+        archive.file(filePath, { name: file });
+      });
+      // Add README file
+      const readmeContent = `
 ================================================================================
 WILSYS OS COMPLIANCE EXPORT ARCHIVE
 ================================================================================
@@ -695,12 +693,12 @@ Contact: compliance@wilsy.africa
 Phone: +27 69 046 5710
 Chief Compliance Officer: Wilson Khanyezi
             `.trim();
-    archive.append(readmeContent, { name: 'README.txt' });
-    archive.finalize();
-  } catch (error) {
-    reject(error);
-  }
-});
+      archive.append(readmeContent, { name: 'README.txt' });
+      archive.finalize();
+    } catch (error) {
+      reject(error);
+    }
+  });
 /*
  * Utility: encryptExportArchive
  * Encrypts export archive using quantum encryption
@@ -771,7 +769,7 @@ const sendExportNotification = async (exportData, recipientEmail) => {
           recordCount: exportData.recordCount,
           downloadUrl: `${process.env.APP_URL}/api/v1/compliance/exports/${exportData.exportId}/download`,
           expiryDate: new Date(
-            Date.now() + parseInt(process.env.COMPLIANCE_RETENTION_DAYS || 90) * 24 * 60 * 60 * 1000,
+            Date.now() + parseInt(process.env.COMPLIANCE_RETENTION_DAYS || 90) * 24 * 60 * 60 * 1000
           ),
           complianceOfficer: process.env.COMPLIANCE_NOTIFICATION_EMAIL || 'compliance@wilsy.africa',
         },
@@ -843,9 +841,8 @@ const handlePOPIADSAR = [
     session.startTransaction();
 
     try {
-      const {
-        dataSubjectId, requestType, timeRange, encryptionLevel, deliveryMethod,
-      } = req.validatedData;
+      const { dataSubjectId, requestType, timeRange, encryptionLevel, deliveryMethod } =
+        req.validatedData;
       const requesterId = req.user._id;
       const exportId = generateExportId();
 
@@ -916,7 +913,8 @@ const handlePOPIADSAR = [
             documents,
             consentRecords,
           };
-          exportData.recordCount = biometricAudits.length + documents.length + consentRecords.length;
+          exportData.recordCount =
+            biometricAudits.length + documents.length + consentRecords.length;
           exportData.dataTypes = ['BIOMETRIC_AUDITS', 'DOCUMENTS', 'CONSENT_RECORDS'];
           break;
         }
@@ -1099,9 +1097,7 @@ const handlePAIARequest = [
 
   async (req, res) => {
     try {
-      const {
-        requesterId, informationRequested, urgency, formatPreference,
-      } = req.validatedData;
+      const { requesterId, informationRequested, urgency, formatPreference } = req.validatedData;
       const complianceOfficerId = req.user._id;
       const exportId = generateExportId();
 
@@ -1134,8 +1130,8 @@ const handlePAIARequest = [
         urgency,
         formatPreference,
         paiaReference:
-          req.validatedData.paiaReference
-          || `PAIA-${new Date().getFullYear()}-${Math.random()
+          req.validatedData.paiaReference ||
+          `PAIA-${new Date().getFullYear()}-${Math.random()
             .toString(36)
             .substr(2, 6)
             .toUpperCase()}`,
@@ -1145,7 +1141,7 @@ const handlePAIARequest = [
       // This is a simplified example - in production, this would be more sophisticated
       const informationScope = await determinePAIAInformationScope(
         informationRequested,
-        requesterId,
+        requesterId
       );
 
       if (!informationScope.authorized) {
@@ -1267,17 +1263,20 @@ const generateForensicIntegrityPackage = async (
   _data,
   _exportId,
   _caseNumber,
-  _evidenceStandard,
+  _evidenceStandard
 ) => ({ rootHash: 'hash', merkleTreeDepth: 1, timestampChain: 'chain' });
 const applyLegalExportSecurity = async (_exportPath, _exportId, _caseNumber) => {};
-const generateLegalManifest = async (exportData, exportPath, _caseNumber) => await generateExportManifest(exportData, exportPath);
-const createForensicArchive = async (exportId, exportPath, files) => await createExportArchive(exportId, exportPath, files);
-const encryptLegalExport = async (archivePath, _evidenceStandard) => await encryptExportArchive(archivePath, 'ENHANCED');
+const generateLegalManifest = async (exportData, exportPath, _caseNumber) =>
+  await generateExportManifest(exportData, exportPath);
+const createForensicArchive = async (exportId, exportPath, files) =>
+  await createExportArchive(exportId, exportPath, files);
+const encryptLegalExport = async (archivePath, _evidenceStandard) =>
+  await encryptExportArchive(archivePath, 'ENHANCED');
 const generateCourtSubmissionPackage = async (
   _encryptedExport,
   _exportData,
   _caseNumber,
-  _courtName,
+  _courtName
 ) => {};
 
 const handleLegalSubpoena = [
@@ -1289,9 +1288,7 @@ const handleLegalSubpoena = [
     session.startTransaction();
 
     try {
-      const {
-        caseNumber, courtName, scope, evidenceStandard,
-      } = req.validatedData;
+      const { caseNumber, courtName, scope, evidenceStandard } = req.validatedData;
       const complianceOfficerId = req.user._id;
       const exportId = generateExportId();
 
@@ -1370,7 +1367,7 @@ const handleLegalSubpoena = [
         exportData.data,
         exportId,
         caseNumber,
-        evidenceStandard,
+        evidenceStandard
       );
 
       // Create export directory with enhanced security
@@ -1402,7 +1399,7 @@ const handleLegalSubpoena = [
         encryptedExport,
         exportData,
         caseNumber,
-        courtName,
+        courtName
       );
 
       // Commit transaction
@@ -1424,7 +1421,7 @@ const handleLegalSubpoena = [
           legalJurisdiction: 'ZA',
           caseType: 'SUBPOENA_COMPLIANCE',
           retentionPeriod: 'CASE_DURATION_PLUS_7_YEARS',
-        },
+        }
       );
 
       return res.status(200).json({
@@ -1492,7 +1489,7 @@ const downloadExport = [
         __dirname,
         '..',
         process.env.EXPORT_STORAGE_PATH || '/server/exports/compliance',
-        exportId,
+        exportId
       );
 
       // Check if export exists
@@ -1614,7 +1611,7 @@ const verifyExportIntegrity = [
         __dirname,
         '..',
         process.env.EXPORT_STORAGE_PATH || '/server/exports/compliance',
-        exportId,
+        exportId
       );
 
       // Check if manifest exists
@@ -1656,11 +1653,12 @@ const verifyExportIntegrity = [
         const encryptedPackage = JSON.parse(encryptedContent);
 
         // Verify encryption package structure
-        encryptionVerified = encryptedPackage
-          && encryptedPackage.ciphertext
-          && encryptedPackage.iv
-          && encryptedPackage.authTag
-          && encryptedPackage.timestamp;
+        encryptionVerified =
+          encryptedPackage &&
+          encryptedPackage.ciphertext &&
+          encryptedPackage.iv &&
+          encryptedPackage.authTag &&
+          encryptedPackage.timestamp;
       } catch {
         encryptionVerified = false;
       }

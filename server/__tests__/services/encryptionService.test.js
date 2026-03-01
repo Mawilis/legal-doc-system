@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 const encryptionService = require('../../services/encryptionService');
 
 describe('Encryption Service', () => {

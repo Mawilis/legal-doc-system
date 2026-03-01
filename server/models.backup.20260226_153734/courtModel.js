@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * FILE: /server/models/courtModel.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/courtModel.js
  * STATUS: INVESTMENT GRADE | PITCH READY | SCALE TO 100M USERS
@@ -291,7 +289,7 @@ const courtSchema = new Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 /* -----------------------------------------------------------------------------
@@ -562,11 +560,12 @@ courtSchema.methods.predictCaseOutcome = function (caseData) {
   };
 
   // AI calculation (simplified for example)
-  const winProbability = ((factors.courtHistory / 100) * 0.4
-      + factors.judgeTendency * 0.3
-      + (1 - factors.caseComplexity) * 0.2
-      + factors.evidenceStrength * 0.1)
-    * 100;
+  const winProbability =
+    ((factors.courtHistory / 100) * 0.4 +
+      factors.judgeTendency * 0.3 +
+      (1 - factors.caseComplexity) * 0.2 +
+      factors.evidenceStrength * 0.1) *
+    100;
 
   // Update AI metrics
   this.aiPredictions = {
@@ -672,11 +671,11 @@ courtSchema.statics.generateDemoForInvestors = async function () {
     courtsCreated: savedCourts.length,
     totalMonthlyRevenue: savedCourts.reduce(
       (sum, court) => sum + (court.revenueMetrics.revenueLastMonth || 0),
-      0,
+      0
     ),
     totalAnnualRevenue: savedCourts.reduce(
       (sum, court) => sum + (court.revenueMetrics.revenueLastMonth || 0) * 12,
-      0,
+      0
     ),
     totalValuation,
     investorDeckReady: true,

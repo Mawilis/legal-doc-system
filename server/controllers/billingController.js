@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ BILLING CONTROLLER - INVESTOR-GRADE MODULE                    ║
   ║ 91% cost reduction | R12B risk elimination | 94% margins      ║
@@ -72,11 +72,11 @@
 // ============================================================================
 
 import axios from 'axios.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 import asyncHandler from 'express-async-handler.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
-import https from "https";
+import https from 'https';
 
 // WILSY OS CORE IMPORTS
 import { successResponse, errorResponse } from '../middleware/responseHandler.js';

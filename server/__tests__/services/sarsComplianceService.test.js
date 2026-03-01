@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /* eslint-disable no-redeclare, no-undef */
 
 const crypto = require('crypto');
@@ -187,7 +185,10 @@ class SarsComplianceService {
   }
 
   async generateFilingHistory(tenantId, taxYear) {
-    const filings = await TaxRecord.find({ tenantId, taxYear }).sort({ filingDate: -1 }).lean().exec();
+    const filings = await TaxRecord.find({ tenantId, taxYear })
+      .sort({ filingDate: -1 })
+      .lean()
+      .exec();
 
     auditLogger.audit('Filing history generated', { tenantId, taxYear });
     return { filings, summary: { total: filings.length } };

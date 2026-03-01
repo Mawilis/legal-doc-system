@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: INTERNATIONAL LEGAL GATEWAY - GLOBAL LEGAL INTELLIGENCE
  * ============================================================================
@@ -93,13 +93,13 @@
   ║ Premium endpoints | Global intelligence | Strategic gateway               ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import express from "express";
+import express from 'express';
 import { body, query, param, validationResult } from 'express-validator.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
-import cors from "cors";
+import cors from 'cors';
 import compression from 'compression.js';
-import helmet from "helmet";
+import helmet from 'helmet';
 
 // WILSY OS CORE IMPORTS
 import { tenantGuard } from '../middleware/tenantGuard.js';

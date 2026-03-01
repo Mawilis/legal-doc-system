@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
+#!/* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
  *  🌀 QUANTUM SESSION NEXUS V5.0: IMMORTAL AUTHENTICATION CITADEL FOR WILSY OS 🌀
  *  Path: /server/models/sessionModel.js
  *  Supreme Architect: Wilson Khanyezi (wilsy.wk@gmail.com | +27 69 046 5710)
@@ -66,7 +64,7 @@ if (process.env.SESSION_ENCRYPTION_KEY) {
   const keyBuffer = Buffer.from(process.env.SESSION_ENCRYPTION_KEY, 'base64');
   if (keyBuffer.length !== 32) {
     throw new Error(
-      '🚨 ENCRYPTION VIOLATION: SESSION_ENCRYPTION_KEY must be 32 bytes base64 encoded',
+      '🚨 ENCRYPTION VIOLATION: SESSION_ENCRYPTION_KEY must be 32 bytes base64 encoded'
     );
   }
 }
@@ -204,8 +202,10 @@ const sessionSchema = new mongoose.Schema(
       validate: {
         validator(v) {
           if (!v) return true;
-          const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-          const ipv6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+          const ipv4Regex =
+            /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+          const ipv6Regex =
+            /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
           return ipv4Regex.test(v) || ipv6Regex.test(v);
         },
         message: 'Invalid IP address format - must be valid IPv4 or IPv6',
@@ -635,7 +635,7 @@ const sessionSchema = new mongoose.Schema(
     strict: 'throw', // Strict mode for security - throws on unknown fields
     id: false, // Disable id virtual to prevent conflicts
     versionKey: '_securityVersion', // Custom version key for security updates
-  },
+  }
 );
 
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
@@ -813,7 +813,8 @@ sessionSchema.methods.verifyRefreshToken = async function (token) {
     }
 
     // Check if refresh token needs rotation (older than 30 days)
-    const tokenAgeDays = (Date.now() - this.tokenMetadata.refreshTokenIssuedAt) / (1000 * 60 * 60 * 24);
+    const tokenAgeDays =
+      (Date.now() - this.tokenMetadata.refreshTokenIssuedAt) / (1000 * 60 * 60 * 24);
     const requiresRotation = tokenAgeDays > 30;
 
     return { valid: true, requiresRotation };
@@ -855,7 +856,7 @@ sessionSchema.methods.revoke = async function (reason, metadata = {}) {
           sessionId: this._id,
           reason,
           timestamp: new Date().toISOString(),
-        }),
+        })
       ),
     },
   });
@@ -916,7 +917,7 @@ sessionSchema.methods.updateActivity = async function (context = {}) {
     });
     this.securityContext.riskScore = Math.min(
       100,
-      this.securityContext.riskScore + context.riskIndicators.length * 2,
+      this.securityContext.riskScore + context.riskIndicators.length * 2
     );
   }
 
@@ -1097,10 +1098,12 @@ sessionSchema.statics.revokeAllUserSessions = async function (tenantId, userId, 
     isActive: true,
   });
 
-  const revocationPromises = activeSessions.map((session) => session.revoke(reason, {
-    bulkOperation: true,
-    totalSessions: activeSessions.length,
-  }));
+  const revocationPromises = activeSessions.map((session) =>
+    session.revoke(reason, {
+      bulkOperation: true,
+      totalSessions: activeSessions.length,
+    })
+  );
 
   await Promise.all(revocationPromises);
 
@@ -1119,13 +1122,13 @@ sessionSchema.statics.revokeAllUserSessions = async function (tenantId, userId, 
         action: 'bulk_revocation',
         count: activeSessions.length,
         timestamp: new Date().toISOString(),
-      }),
+      })
     ),
   };
 
   // Log for PAIA reporting
   console.log(
-    `⚖️  PAIA AUDIT: Revoked ${activeSessions.length} sessions for Tenant ${tenantId}, User ${userId}`,
+    `⚖️  PAIA AUDIT: Revoked ${activeSessions.length} sessions for Tenant ${tenantId}, User ${userId}`
   );
 
   // Security monitoring
@@ -1377,9 +1380,9 @@ sessionSchema.pre('save', async function (next) {
 
   // POPIA Compliance: Ensure consent is recorded for SA users
   if (
-    this.location
-    && this.location.country === 'South Africa'
-    && !this.legalCompliance.popiaConsentRecorded
+    this.location &&
+    this.location.country === 'South Africa' &&
+    !this.legalCompliance.popiaConsentRecorded
   ) {
     console.warn(`⚠️  POPIA WARNING: Session for SA user ${this.userId} lacks consent record`);
   }

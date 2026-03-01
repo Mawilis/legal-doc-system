@@ -1,4 +1,4 @@
-/* Simple mock for logger */
+#!/* Simple mock for logger */
 export default {
   error: jest.fn(),
   warn: jest.fn(),

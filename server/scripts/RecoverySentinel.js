@@ -1,4 +1,4 @@
-/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS: RECOVERY SENTINEL - $2.75B SELF-HEALING INFRASTRUCTURE                      ║
   ║ DOCTRINE: The system must never sleep.                                                ║
   ║ Strategy: Autonomous Health Monitoring | Circuit Breaking | Exponential Backoff       ║
@@ -26,11 +26,11 @@
  */
 
 import { exec } from 'child_process';
-import { createHash } from "crypto";
-import { EventEmitter } from "events";
+import { createHash } from 'crypto';
+import { EventEmitter } from 'events';
 import Redis from 'ioredis.js';
-import mongoose from "mongoose";
-import { promisify } from "util";
+import mongoose from 'mongoose';
+import { promisify } from 'util';
 
 // Internal imports
 import SecurityOrchestrator from 'wilsy-os-server/services/security/SecurityOrchestrator.js';
@@ -837,9 +837,11 @@ class RecoverySentinel extends EventEmitter {
 
     // Clean up old circuit breakers
     for (const [service, breaker] of this.circuitBreakers.entries()) {
-      if (breaker.state === CIRCUIT_BREAKER_STATES.CLOSED
-          && breaker.lastFailure
-          && now - breaker.lastFailure > staleThreshold) {
+      if (
+        breaker.state === CIRCUIT_BREAKER_STATES.CLOSED &&
+        breaker.lastFailure &&
+        now - breaker.lastFailure > staleThreshold
+      ) {
         this.circuitBreakers.delete(service);
       }
     }
@@ -881,8 +883,9 @@ class RecoverySentinel extends EventEmitter {
     const metrics = {
       uptime_seconds: process.uptime(),
       health_checks_total: this.healthStatus.size,
-      circuit_breakers_open: Array.from(this.circuitBreakers.values())
-        .filter((b) => b.state === CIRCUIT_BREAKER_STATES.OPEN).length,
+      circuit_breakers_open: Array.from(this.circuitBreakers.values()).filter(
+        (b) => b.state === CIRCUIT_BREAKER_STATES.OPEN
+      ).length,
       recovery_attempts_total: this.recoveryAttempts.size,
       active_failures: Array.from(this.failures.values()).reduce((sum, f) => sum + f, 0),
       memory_usage_bytes: process.memoryUsage().rss,
@@ -918,6 +921,4 @@ class RecoverySentinel extends EventEmitter {
 const sentinel = new RecoverySentinel();
 
 export default sentinel;
-export {
-  RecoverySentinel, SENTINEL_CONFIG, SERVICE_TYPES, CIRCUIT_BREAKER_STATES,
-};
+export { RecoverySentinel, SENTINEL_CONFIG, SERVICE_TYPES, CIRCUIT_BREAKER_STATES };

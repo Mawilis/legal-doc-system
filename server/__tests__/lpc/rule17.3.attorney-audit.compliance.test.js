@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSYS OS — LPC RULE 17.3 FORENSIC COMPLIANCE SUITE ● INVESTOR-GRADE ● COURT-ADMISSIBLE EVIDENCE              ║
   ║ [97% COST REDUCTION | R5.2M RISK ELIMINATION | 91% MARGINS | R630M TAM]                                      ║
   ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
@@ -134,7 +132,14 @@ const LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS = Object.freeze({
     forensicHashAlgorithm: 'sha3-512',
     hashLengthBytes: 64,
     hashLengthHex: 128,
-    chainOfCustodyEvents: ['CREATED', 'MODIFIED', 'VIEWED', 'EXPORTED', 'BLOCKCHAIN_ANCHORED', 'LEGAL_HOLD_PLACED'],
+    chainOfCustodyEvents: [
+      'CREATED',
+      'MODIFIED',
+      'VIEWED',
+      'EXPORTED',
+      'BLOCKCHAIN_ANCHORED',
+      'LEGAL_HOLD_PLACED',
+    ],
     legalReference: 'Legal Practice Council Rule 95.3 — Audit Trail Integrity',
     auditFrequency: 'CONTINUOUS',
   },
@@ -165,7 +170,14 @@ const LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS = Object.freeze({
     section: '20',
     act: 'Protection of Personal Information Act, 2013',
     requiresRedaction: true,
-    sensitiveFields: ['ipAddress', 'userAgent', 'sessionId', 'deviceId', 'emailAddress', 'idNumber'],
+    sensitiveFields: [
+      'ipAddress',
+      'userAgent',
+      'sessionId',
+      'deviceId',
+      'emailAddress',
+      'idNumber',
+    ],
     redactionToken: '[REDACTED-POPIA-§20]',
     retentionRequirementYears: 10,
     legalReference: 'POPIA Section 20 — Records of Processing Activities',
@@ -277,7 +289,8 @@ class ForensicEvidenceCollector {
       temporalContext: {
         startTime: this.startTime,
         endTime,
-        durationSeconds: DateTime.fromISO(endTime).diff(DateTime.fromISO(this.startTime), 'seconds').seconds,
+        durationSeconds: DateTime.fromISO(endTime).diff(DateTime.fromISO(this.startTime), 'seconds')
+          .seconds,
       },
       economicImpactAssessment: {
         currency: 'ZAR',
@@ -285,27 +298,43 @@ class ForensicEvidenceCollector {
         ...this.economicMetrics,
         valueProposition: '94-97% reduction in LPC compliance opex per firm',
         investorROI: `${(
-          (this.economicMetrics.annualSavingsPerFirmZAR / this.economicMetrics.wilsysAutomationCostZAR)
-          * 100
+          (this.economicMetrics.annualSavingsPerFirmZAR /
+            this.economicMetrics.wilsysAutomationCostZAR) *
+          100
         ).toFixed(1)}%`,
         paybackPeriodDescription: `${this.economicMetrics.paybackPeriodMonths} months average`,
       },
       complianceVerification: {
         regulatoryFrameworks: [
           {
-            name: 'LPC Rule 17.3', status: 'VERIFIED', testsPassed: 0, testsTotal: 0,
+            name: 'LPC Rule 17.3',
+            status: 'VERIFIED',
+            testsPassed: 0,
+            testsTotal: 0,
           },
           {
-            name: 'LPC Rule 95.3', status: 'VERIFIED', testsPassed: 0, testsTotal: 0,
+            name: 'LPC Rule 95.3',
+            status: 'VERIFIED',
+            testsPassed: 0,
+            testsTotal: 0,
           },
           {
-            name: 'LPC Rule 3.4.3', status: 'VERIFIED', testsPassed: 0, testsTotal: 0,
+            name: 'LPC Rule 3.4.3',
+            status: 'VERIFIED',
+            testsPassed: 0,
+            testsTotal: 0,
           },
           {
-            name: 'POPIA Section 20', status: 'VERIFIED', testsPassed: 0, testsTotal: 0,
+            name: 'POPIA Section 20',
+            status: 'VERIFIED',
+            testsPassed: 0,
+            testsTotal: 0,
           },
           {
-            name: 'ECT Act Section 15', status: 'VERIFIED', testsPassed: 0, testsTotal: 0,
+            name: 'ECT Act Section 15',
+            status: 'VERIFIED',
+            testsPassed: 0,
+            testsTotal: 0,
           },
         ],
         assertionSummary: this.complianceAssertions,
@@ -317,8 +346,14 @@ class ForensicEvidenceCollector {
     };
 
     // Update test counts from assertions
-    const totalAssertions = this.complianceAssertions.reduce((sum, a) => sum + (a.totalAssertions || 0), 0);
-    const passedAssertions = this.complianceAssertions.reduce((sum, a) => sum + (a.passedAssertions || 0), 0);
+    const totalAssertions = this.complianceAssertions.reduce(
+      (sum, a) => sum + (a.totalAssertions || 0),
+      0
+    );
+    const passedAssertions = this.complianceAssertions.reduce(
+      (sum, a) => sum + (a.passedAssertions || 0),
+      0
+    );
 
     evidencePackage.complianceVerification.regulatoryFrameworks.forEach((framework) => {
       framework.testsTotal = totalAssertions;
@@ -344,7 +379,7 @@ class ForensicEvidenceCollector {
         this.evidencePath
       }' | sha3sum -a 512 | cut -d' ' -f1 | grep -q '${evidenceHash.substring(
         0,
-        32,
+        32
       )}' && echo "✓ INTEGRITY VERIFIED" || echo "❌ TAMPER DETECTED"`,
     };
 
@@ -383,22 +418,32 @@ describe('═══════════════════════�
       it('[CONSTRAINT-001] SHALL export compliance matrix with complete regulatory metadata', () => {
         expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS).toBeDefined();
         expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_17_3_ACCESS_LOGGING).toBeDefined();
-        expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_17_3_ACCESS_LOGGING.legalReference).toMatch(
-          /Legal Practice Council Rule 17\.3/i,
+        expect(
+          LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_17_3_ACCESS_LOGGING.legalReference
+        ).toMatch(/Legal Practice Council Rule 17\.3/i);
+        expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_17_3_ACCESS_LOGGING.retentionDays).toBe(
+          3650
         );
-        expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_17_3_ACCESS_LOGGING.retentionDays).toBe(3650);
-        expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_17_3_ACCESS_LOGGING.requiredFields).toContain('forensicHash');
-        expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_95_3_AUDIT_TRAIL.forensicHashAlgorithm).toBe('sha3-512');
+        expect(
+          LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_17_3_ACCESS_LOGGING.requiredFields
+        ).toContain('forensicHash');
+        expect(
+          LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_95_3_AUDIT_TRAIL.forensicHashAlgorithm
+        ).toBe('sha3-512');
         expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_95_3_AUDIT_TRAIL.hashLengthHex).toBe(128);
-        expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_3_4_3_BLOCKCHAIN_ANCHORING.criticalEventTypes).toContain(
-          'DATA_BREACH_DETECTED',
-        );
-        expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.POPIA_20_RECORDS_OF_PROCESSING.requiresRedaction).toBe(true);
-        expect(LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.POPIA_20_RECORDS_OF_PROCESSING.redactionToken).toBe(
-          '[REDACTED-POPIA-§20]',
-        );
+        expect(
+          LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_3_4_3_BLOCKCHAIN_ANCHORING.criticalEventTypes
+        ).toContain('DATA_BREACH_DETECTED');
+        expect(
+          LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.POPIA_20_RECORDS_OF_PROCESSING.requiresRedaction
+        ).toBe(true);
+        expect(
+          LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.POPIA_20_RECORDS_OF_PROCESSING.redactionToken
+        ).toBe('[REDACTED-POPIA-§20]');
 
-        console.log('  ✅ [CONSTRAINT-001] Compliance matrix validated — 12 regulatory parameters verified');
+        console.log(
+          '  ✅ [CONSTRAINT-001] Compliance matrix validated — 12 regulatory parameters verified'
+        );
       });
 
       // =============================================================================================================
@@ -411,13 +456,17 @@ describe('═══════════════════════�
 
         // Generate unique forensic evidence run ID
         testRunId = `${DateTime.now().toFormat('yyyyMMdd-HHmmss')}-${crypto.randomBytes(4).toString('hex')}`;
-        evidenceCollector = new ForensicEvidenceCollector('LPC Rule 17.3 Compliance Suite', testRunId);
+        evidenceCollector = new ForensicEvidenceCollector(
+          'LPC Rule 17.3 Compliance Suite',
+          testRunId
+        );
 
         // ---------------------------------------------------------------------------------------------------------
         // MOCK: cryptoUtils.generateForensicHash — Deterministic SHA3-512
         // ---------------------------------------------------------------------------------------------------------
         cryptoUtils.generateForensicHash = jest.fn().mockImplementation((data) => {
-          const input = typeof data === 'object' ? JSON.stringify(this._sortObjectKeys(data)) : String(data);
+          const input =
+            typeof data === 'object' ? JSON.stringify(this._sortObjectKeys(data)) : String(data);
           return crypto.createHash('sha3-512').update(input).digest('hex');
         });
 
@@ -455,90 +504,98 @@ describe('═══════════════════════�
         mockAuditService = {
           recordAccess: jest
             .fn()
-            .mockImplementation(async (resource, identifier, userContext, action, metadata = {}) => {
-              const auditId = `audit-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
-              const timestamp = DateTime.now().toUTC().toISO();
+            .mockImplementation(
+              async (resource, identifier, userContext, action, metadata = {}) => {
+                const auditId = `audit-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
+                const timestamp = DateTime.now().toUTC().toISO();
 
-              // DETERMINISTIC FORENSIC HASH
-              const hashInput = `${auditId}:${resource}:${identifier}:${userContext.userId}:${timestamp}:${action}`;
-              const forensicHash = cryptoUtils.generateForensicHash(hashInput);
+                // DETERMINISTIC FORENSIC HASH
+                const hashInput = `${auditId}:${resource}:${identifier}:${userContext.userId}:${timestamp}:${action}`;
+                const forensicHash = cryptoUtils.generateForensicHash(hashInput);
 
-              // COMPLETE AUDIT ENTRY WITH ALL REQUIRED FIELDS
-              const auditEntry = {
-                auditId,
-                resource,
-                identifier,
-                userId: userContext.userId,
-                tenantId: userContext.tenantId || 'tenant-unknown',
-                firmId: userContext.firmId || 'firm-unspecified',
-                practiceId: userContext.practiceId,
-                departmentId: userContext.departmentId,
-                roles: userContext.roles || ['USER'],
-                permissions: userContext.permissions || [],
-                ipAddress: userContext.ipAddress || '0.0.0.0',
-                userAgent: userContext.userAgent || 'WilsyOS/6.0.1',
-                sessionId: userContext.sessionId || crypto.randomUUID(),
-                correlationId: userContext.correlationId || crypto.randomUUID(),
-                requestId: userContext.requestId || `req-${crypto.randomBytes(4).toString('hex')}`,
-                action,
-                timestamp,
-                year: DateTime.fromISO(timestamp).year,
-                month: DateTime.fromISO(timestamp).month,
-                day: DateTime.fromISO(timestamp).day,
-                hour: DateTime.fromISO(timestamp).hour,
-                minute: DateTime.fromISO(timestamp).minute,
-                second: DateTime.fromISO(timestamp).second,
-                regulatoryTags: ['LPC-17.3', 'LPC-95.3', 'POPIA-20'],
-                forensicHash,
-                metadata,
-                retentionDays: metadata.retentionDays || 3650,
-                dataResidency: userContext.dataResidency || 'ZA',
+                // COMPLETE AUDIT ENTRY WITH ALL REQUIRED FIELDS
+                const auditEntry = {
+                  auditId,
+                  resource,
+                  identifier,
+                  userId: userContext.userId,
+                  tenantId: userContext.tenantId || 'tenant-unknown',
+                  firmId: userContext.firmId || 'firm-unspecified',
+                  practiceId: userContext.practiceId,
+                  departmentId: userContext.departmentId,
+                  roles: userContext.roles || ['USER'],
+                  permissions: userContext.permissions || [],
+                  ipAddress: userContext.ipAddress || '0.0.0.0',
+                  userAgent: userContext.userAgent || 'WilsyOS/6.0.1',
+                  sessionId: userContext.sessionId || crypto.randomUUID(),
+                  correlationId: userContext.correlationId || crypto.randomUUID(),
+                  requestId:
+                    userContext.requestId || `req-${crypto.randomBytes(4).toString('hex')}`,
+                  action,
+                  timestamp,
+                  year: DateTime.fromISO(timestamp).year,
+                  month: DateTime.fromISO(timestamp).month,
+                  day: DateTime.fromISO(timestamp).day,
+                  hour: DateTime.fromISO(timestamp).hour,
+                  minute: DateTime.fromISO(timestamp).minute,
+                  second: DateTime.fromISO(timestamp).second,
+                  regulatoryTags: ['LPC-17.3', 'LPC-95.3', 'POPIA-20'],
+                  forensicHash,
+                  metadata,
+                  retentionDays: metadata.retentionDays || 3650,
+                  dataResidency: userContext.dataResidency || 'ZA',
 
-                // CHAIN OF CUSTODY — IMMUTABLE
-                chainOfCustody: [
-                  {
-                    action: 'CREATED',
-                    actor: userContext.userId,
-                    timestamp,
-                    ipAddress: userContext.ipAddress,
-                    sessionId: userContext.sessionId,
-                    hash: forensicHash,
-                    previousHash: null,
-                  },
-                ],
-              };
-
-              // BLOCKCHAIN ANCHORING FOR CRITICAL EVENTS
-              if (
-                LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_3_4_3_BLOCKCHAIN_ANCHORING.criticalEventTypes.includes(action)
-              ) {
-                const blockHeight = 8450000 + Math.floor(Math.random() * 10000);
-                const blockHash = crypto.createHash('sha256').update(`${auditId}:${blockHeight}`).digest('hex');
-
-                auditEntry.blockchainAnchor = {
-                  transactionId: `0x${crypto.randomBytes(32).toString('hex')}`,
-                  blockHeight,
-                  blockHash: `0x${blockHash}`,
-                  timestamp: DateTime.now().toUTC().toISO(),
-                  network: 'LPC-Regulator-Mainnet-v2',
-                  confirmationBlocks: 12,
-                  anchoredBy: 'WilsyOS Blockchain Anchoring Service',
+                  // CHAIN OF CUSTODY — IMMUTABLE
+                  chainOfCustody: [
+                    {
+                      action: 'CREATED',
+                      actor: userContext.userId,
+                      timestamp,
+                      ipAddress: userContext.ipAddress,
+                      sessionId: userContext.sessionId,
+                      hash: forensicHash,
+                      previousHash: null,
+                    },
+                  ],
                 };
 
-                auditEntry.chainOfCustody.push({
-                  action: 'BLOCKCHAIN_ANCHORED',
-                  actor: 'WilsyOS-Blockchain-Service',
-                  timestamp: DateTime.now().toUTC().toISO(),
-                  transactionId: auditEntry.blockchainAnchor.transactionId,
-                  blockHeight: auditEntry.blockchainAnchor.blockHeight,
-                  hash: cryptoUtils.generateForensicHash(auditEntry.blockchainAnchor),
-                });
+                // BLOCKCHAIN ANCHORING FOR CRITICAL EVENTS
+                if (
+                  LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_3_4_3_BLOCKCHAIN_ANCHORING.criticalEventTypes.includes(
+                    action
+                  )
+                ) {
+                  const blockHeight = 8450000 + Math.floor(Math.random() * 10000);
+                  const blockHash = crypto
+                    .createHash('sha256')
+                    .update(`${auditId}:${blockHeight}`)
+                    .digest('hex');
 
-                auditEntry.regulatoryTags.push('LPC-3.4.3-IMMEDIATE-ANCHOR');
+                  auditEntry.blockchainAnchor = {
+                    transactionId: `0x${crypto.randomBytes(32).toString('hex')}`,
+                    blockHeight,
+                    blockHash: `0x${blockHash}`,
+                    timestamp: DateTime.now().toUTC().toISO(),
+                    network: 'LPC-Regulator-Mainnet-v2',
+                    confirmationBlocks: 12,
+                    anchoredBy: 'WilsyOS Blockchain Anchoring Service',
+                  };
+
+                  auditEntry.chainOfCustody.push({
+                    action: 'BLOCKCHAIN_ANCHORED',
+                    actor: 'WilsyOS-Blockchain-Service',
+                    timestamp: DateTime.now().toUTC().toISO(),
+                    transactionId: auditEntry.blockchainAnchor.transactionId,
+                    blockHeight: auditEntry.blockchainAnchor.blockHeight,
+                    hash: cryptoUtils.generateForensicHash(auditEntry.blockchainAnchor),
+                  });
+
+                  auditEntry.regulatoryTags.push('LPC-3.4.3-IMMEDIATE-ANCHOR');
+                }
+
+                return auditEntry;
               }
-
-              return auditEntry;
-            }),
+            ),
 
           verifyAuditIntegrity: jest.fn().mockImplementation((auditEntry) => {
             const recomputedHash = cryptoUtils.generateForensicHash({
@@ -578,25 +635,33 @@ describe('═══════════════════════�
             features: ['attorney-profile', 'compliance-audit', 'evidence-registry'],
           }),
 
-          getAttorneyProfile: jest.fn().mockImplementation(async (lpcNumber, tenantId, userContext) => {
-            // RECORD AUDIT ACCESS — MANDATORY PER LPC 17.3
-            await mockAuditService.recordAccess('attorney_profile', lpcNumber, userContext, 'VIEW', {
-              source: 'lpcService.getAttorneyProfile',
-              lpcNumber,
-              queryType: 'profile-retrieval',
-            });
+          getAttorneyProfile: jest
+            .fn()
+            .mockImplementation(async (lpcNumber, tenantId, userContext) => {
+              // RECORD AUDIT ACCESS — MANDATORY PER LPC 17.3
+              await mockAuditService.recordAccess(
+                'attorney_profile',
+                lpcNumber,
+                userContext,
+                'VIEW',
+                {
+                  source: 'lpcService.getAttorneyProfile',
+                  lpcNumber,
+                  queryType: 'profile-retrieval',
+                }
+              );
 
-            return {
-              lpcNumber,
-              tenantId,
-              attorneyName: 'WILSON KHANYEZI (TEST ATTORNEY)',
-              status: 'active',
-              verifiedAt: DateTime.now().toUTC().toISO(),
-              practiceAreas: ['Conveyancing', 'Trust Accounting', 'Compliance'],
-              fidelityFundCertificate: 'FFC-2026-789012',
-              complianceRating: 'A+',
-            };
-          }),
+              return {
+                lpcNumber,
+                tenantId,
+                attorneyName: 'WILSON KHANYEZI (TEST ATTORNEY)',
+                status: 'active',
+                verifiedAt: DateTime.now().toUTC().toISO(),
+                practiceAreas: ['Conveyancing', 'Trust Accounting', 'Compliance'],
+                fidelityFundCertificate: 'FFC-2026-789012',
+                complianceRating: 'A+',
+              };
+            }),
 
           // EVIDENCE REGISTRY — O(1) LOOKUP FOR COMPLIANCE AUDITS
           evidenceRegistry: new Map(),
@@ -728,13 +793,13 @@ describe('═══════════════════════�
 ║  │                                                                                                          │   ║
 ║  │  INTEGRITY SEAL (SHA3-512):                                                                             │   ║
 ║  │  ${
-  evidence?.integritySeal?.hashHex?.substring(0, 64)
-          || 'f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6'
-}  │   ║
+          evidence?.integritySeal?.hashHex?.substring(0, 64) ||
+          'f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6'
+        }  │   ║
 ║  │  ${
-  evidence?.integritySeal?.hashHex?.substring(64, 128)
-          || 'd5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2'
-}  │   ║
+          evidence?.integritySeal?.hashHex?.substring(64, 128) ||
+          'd5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2'
+        }  │   ║
 ║  │                                                                                                          │   ║
 ║  │  VERIFICATION COMMAND:                                                                                  │   ║
 ║  │  $ jq -c '.forensicAuditTrail.entries' /docs/evidence/lpc-17.3.latest.json | sha3sum -a 512            │   ║
@@ -811,7 +876,11 @@ describe('═══════════════════════�
         // ---------------------------------------------------------------------------------------------------------
         // EXECUTE — ATTORNEY PROFILE ACCESS (AUDITED OPERATION)
         // ---------------------------------------------------------------------------------------------------------
-        const profile = await mockLpcService.getAttorneyProfile(mockLpcNumber, mockTenantId, mockUserContext);
+        const profile = await mockLpcService.getAttorneyProfile(
+          mockLpcNumber,
+          mockTenantId,
+          mockUserContext
+        );
 
         // ---------------------------------------------------------------------------------------------------------
         // VERIFICATION — AUDIT RECORD CREATION
@@ -828,7 +897,7 @@ describe('═══════════════════════�
           'VIEW',
           expect.objectContaining({
             source: 'lpcService.getAttorneyProfile',
-          }),
+          })
         );
 
         // ---------------------------------------------------------------------------------------------------------
@@ -885,7 +954,7 @@ describe('═══════════════════════�
         // ---------------------------------------------------------------------------------------------------------
         expect(auditEntry.retentionDays).toBe(3650);
         expect(auditEntry.retentionDays).toBe(
-          LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_17_3_ACCESS_LOGGING.retentionDays,
+          LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_17_3_ACCESS_LOGGING.retentionDays
         );
 
         // ---------------------------------------------------------------------------------------------------------
@@ -941,7 +1010,7 @@ describe('═══════════════════════�
             },
           },
           'TC-001-COMPLETE-ACCESS-LOGGING',
-          { passed: 24, total: 24 },
+          { passed: 24, total: 24 }
         );
 
         evidenceCollector.setEconomicMetrics({
@@ -960,13 +1029,13 @@ describe('═══════════════════════�
   │  ✅ [TC-001] COMPLETE ATTORNEY PROFILE ACCESS LOGGING — LPC 17.3 ✓  POPIA §20 REDACTION ✓                  │
   ├─────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
   │  AUDIT ID:        ${auditEntry.auditId.substring(0, 16)}...${auditEntry.auditId.slice(
-  -8,
-)}                                              │
+    -8
+  )}                                              │
   │  ATTORNEY:        ${mockLpcNumber}                                                │
   │  TENANT:          ${auditEntry.tenantId}                              │
   │  USER:            ${auditEntry.userId}                                    │
   │  TIMESTAMP:       ${DateTime.fromISO(auditEntry.timestamp).toFormat(
-    'yyyy-MM-dd HH:mm:ss',
+    'yyyy-MM-dd HH:mm:ss'
   )} UTC                               │
   │                                                                                                             │
   │  ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐   │
@@ -975,25 +1044,25 @@ describe('═══════════════════════�
   │  │ FIELD                                    │ STATUS                                              │   │
   │  ├──────────────────────────────────────────┼─────────────────────────────────────────────────────┤   │
   │  │ ipAddress                                │ ${
-  auditEntry.ipAddress ? '✓ REDACTED' : 'N/A'
-} (${'[REDACTED-POPIA-§20]'})           │   │
+    auditEntry.ipAddress ? '✓ REDACTED' : 'N/A'
+  } (${'[REDACTED-POPIA-§20]'})           │   │
   │  │ userAgent                                │ ${
-  auditEntry.userAgent ? '✓ REDACTED' : 'N/A'
-} (${'[REDACTED-POPIA-§20]'})           │   │
+    auditEntry.userAgent ? '✓ REDACTED' : 'N/A'
+  } (${'[REDACTED-POPIA-§20]'})           │   │
   │  │ sessionId                                │ ${
-  auditEntry.sessionId ? '✓ REDACTED' : 'N/A'
-} (${'[REDACTED-POPIA-§20]'})           │   │
+    auditEntry.sessionId ? '✓ REDACTED' : 'N/A'
+  } (${'[REDACTED-POPIA-§20]'})           │   │
   │  │ deviceId                                 │ ${
-  auditEntry.deviceId ? '✓ REDACTED' : 'N/A'
-} (${'[REDACTED-POPIA-§20]'})           │   │
+    auditEntry.deviceId ? '✓ REDACTED' : 'N/A'
+  } (${'[REDACTED-POPIA-§20]'})           │   │
   │  └──────────────────────────────────────────┴─────────────────────────────────────────────────────┘   │
   │                                                                                                             │
   │  FORENSIC HASH:   ${auditEntry.forensicHash.substring(0, 32)}...${auditEntry.forensicHash.slice(
-  -16,
-)}                  │
+    -16
+  )}                  │
   │  RETENTION:       ${
-  auditEntry.retentionDays
-} DAYS (10 YEARS — LPC 17.3 §4.2.1)                                      │
+    auditEntry.retentionDays
+  } DAYS (10 YEARS — LPC 17.3 §4.2.1)                                      │
   │  REGULATORY TAGS: ${auditEntry.regulatoryTags.join(' • ')}                                          │
   └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
         `);
@@ -1031,7 +1100,7 @@ describe('═══════════════════════�
             purpose: 'Regulatory compliance verification',
             retentionDays: 3650,
             auditLevel: 'MAXIMUM_FORENSIC',
-          },
+          }
         );
 
         // ---------------------------------------------------------------------------------------------------------
@@ -1081,7 +1150,7 @@ describe('═══════════════════════�
           const currEntry = auditEntry.chainOfCustody[i];
 
           expect(DateTime.fromISO(currEntry.timestamp).toMillis()).toBeGreaterThanOrEqual(
-            DateTime.fromISO(prevEntry.timestamp).toMillis(),
+            DateTime.fromISO(prevEntry.timestamp).toMillis()
           );
         }
 
@@ -1105,7 +1174,7 @@ describe('═══════════════════════�
             hashLength: 128,
           },
           'TC-002-CHAIN-OF-CUSTODY',
-          { passed: 14, total: 14 },
+          { passed: 14, total: 14 }
         );
 
         console.log(`
@@ -1113,11 +1182,11 @@ describe('═══════════════════════�
   │  ✅ [TC-002] IMMUTABLE CHAIN OF CUSTODY — LPC RULE 95.3 ✓  SHA3-512 FORENSIC HASHING ✓                    │
   ├─────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
   │  AUDIT ID:        ${auditEntry.auditId.substring(0, 16)}...${auditEntry.auditId.slice(
-  -8,
-)}                                              │
+    -8
+  )}                                              │
   │  CHAIN LENGTH:    ${
-  auditEntry.chainOfCustody.length
-} ENTRIES                                                            │
+    auditEntry.chainOfCustody.length
+  } ENTRIES                                                            │
   │  HASH ALGORITHM:  SHA3-512 (128-CHAR HEX)                                                                │
   │                                                                                                             │
   │  ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐   │
@@ -1126,20 +1195,23 @@ describe('═══════════════════════�
   │  │ ACTION     │ ACTOR                              │ TIMESTAMP                │ HASH (FIRST 16)      │   │
   │  ├────────────┼────────────────────────────────────┼──────────────────────────┼──────────────────────┤   │
 ${auditEntry.chainOfCustody
-    .map(
-      (e, i) => `  │  │ ${e.action.padEnd(10)} │ ${(e.actor || 'SYSTEM').substring(0, 30).padEnd(30)} │ ${DateTime.fromISO(
-        e.timestamp,
-      ).toFormat('yyyy-MM-dd HH:mm:ss')} │ ${e.hash ? e.hash.substring(0, 16) : 'null'.padEnd(16)} │`,
-    )
-    .join('\n')}
+  .map(
+    (e, i) =>
+      `  │  │ ${e.action.padEnd(10)} │ ${(e.actor || 'SYSTEM').substring(0, 30).padEnd(30)} │ ${DateTime.fromISO(
+        e.timestamp
+      ).toFormat(
+        'yyyy-MM-dd HH:mm:ss'
+      )} │ ${e.hash ? e.hash.substring(0, 16) : 'null'.padEnd(16)} │`
+  )
+  .join('\n')}
   │  └────────────┴────────────────────────────────────┴──────────────────────────┴──────────────────────┘   │
   │                                                                                                             │
   │  INTEGRITY VERIFICATION:  ${
-  verificationResult.isValid ? '✓ PASSED (HASH MATCH)' : '✗ FAILED'
-}                                          │
+    verificationResult.isValid ? '✓ PASSED (HASH MATCH)' : '✗ FAILED'
+  }                                          │
   │  TAMPER DETECTION:       ${
-  tamperedVerification.isValid === false ? '✓ DETECTED (HASH MISMATCH)' : '✗ NOT DETECTED'
-}                          │
+    tamperedVerification.isValid === false ? '✓ DETECTED (HASH MISMATCH)' : '✗ NOT DETECTED'
+  }                          │
   │  LPC RULE 95.3:          ✓ COMPLIANT — FORENSIC AUDIT TRAIL INTEGRITY VERIFIED                          │
   └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
         `);
@@ -1152,7 +1224,8 @@ ${auditEntry.chainOfCustody
         // ---------------------------------------------------------------------------------------------------------
         // TEST DATA — COMPLETE SET OF CRITICAL EVENTS PER LPC RULE 3.4.3
         // ---------------------------------------------------------------------------------------------------------
-        const { criticalEventTypes } = LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_3_4_3_BLOCKCHAIN_ANCHORING;
+        const { criticalEventTypes } =
+          LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_3_4_3_BLOCKCHAIN_ANCHORING;
 
         const mockUserContext = {
           userId: 'SYSTEM-LPC-REGULATOR-INTEGRATION',
@@ -1183,7 +1256,7 @@ ${auditEntry.chainOfCustody
               anchoringRequirement: 'IMMEDIATE',
               complianceReference: 'LPC-3.4.3-VALIDATION',
               eventType,
-            },
+            }
           );
 
           anchoredEvents.push(auditEntry);
@@ -1195,7 +1268,9 @@ ${auditEntry.chainOfCustody
         expect(anchoredEvents.length).toBe(criticalEventTypes.length);
 
         for (const [index, event] of anchoredEvents.entries()) {
-          expect(event.blockchainAnchor).toBeDefined(`Event ${criticalEventTypes[index]} missing blockchain anchor`);
+          expect(event.blockchainAnchor).toBeDefined(
+            `Event ${criticalEventTypes[index]} missing blockchain anchor`
+          );
           expect(event.blockchainAnchor.transactionId).toBeDefined();
           expect(event.blockchainAnchor.transactionId).toMatch(/^0x[a-f0-9]{64}$/);
           expect(event.blockchainAnchor.blockHeight).toBeGreaterThan(8000000);
@@ -1224,7 +1299,7 @@ ${auditEntry.chainOfCustody
           'LPC-2026-111222333',
           mockUserContext,
           'VIEW',
-          { testEvent: 'NON_CRITICAL_ACCESS' },
+          { testEvent: 'NON_CRITICAL_ACCESS' }
         );
 
         expect(nonCriticalEvent.blockchainAnchor).toBeUndefined();
@@ -1248,25 +1323,25 @@ ${auditEntry.chainOfCustody
             })),
           },
           'TC-003-BLOCKCHAIN-ANCHORING',
-          { passed: 45, total: 45 },
+          { passed: 45, total: 45 }
         );
 
         console.log(`
   ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
   │  ✅ [TC-003] BLOCKCHAIN ANCHORING — LPC RULE 3.4.3 ✓  ${
-  criticalEventTypes.length
-} CRITICAL EVENTS ANCHORED ✓                    │
+    criticalEventTypes.length
+  } CRITICAL EVENTS ANCHORED ✓                    │
   ├─────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
   │  CRITICAL EVENTS TESTED:     ${
-  criticalEventTypes.length
-}                                                                    │
+    criticalEventTypes.length
+  }                                                                    │
   │  SUCCESSFULLY ANCHORED:      ${
-  anchoredEvents.length
-} (100%)                                                              │
+    anchoredEvents.length
+  } (100%)                                                              │
   │  BLOCKCHAIN NETWORK:         LPC-Regulator-Mainnet-v2                                                                  │
   │  CONFIRMATIONS:              ${
-  anchoredEvents[0]?.blockchainAnchor?.confirmationBlocks || 12
-} BLOCKS                                                  │
+    anchoredEvents[0]?.blockchainAnchor?.confirmationBlocks || 12
+  } BLOCKS                                                  │
   │                                                                                                             │
   │  ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐   │
   │  │  ANCHORED CRITICAL EVENTS — LPC RULE 3.4.3                                                       │   │
@@ -1274,19 +1349,20 @@ ${auditEntry.chainOfCustody
   │  │ EVENT TYPE                         │ TRANSACTION ID                   │ BLOCK HEIGHT             │   │
   │  ├────────────────────────────────────┼──────────────────────────────────┼──────────────────────────┤   │
 ${anchoredEvents
-    .slice(0, 10)
-    .map(
-      (e) => `  │  │ ${e.action.padEnd(34)} │ ${e.blockchainAnchor.transactionId.substring(0, 24)}... │ ${
+  .slice(0, 10)
+  .map(
+    (e) =>
+      `  │  │ ${e.action.padEnd(34)} │ ${e.blockchainAnchor.transactionId.substring(0, 24)}... │ ${
         e.blockchainAnchor.blockHeight
-      }                    │`,
-    )
-    .join('\n')}
+      }                    │`
+  )
+  .join('\n')}
   │  └────────────────────────────────────┴──────────────────────────────────┴──────────────────────────┘   │
   │                                                                                                             │
   │  LPC RULE 3.4.3:          ✓ COMPLIANT — IMMEDIATE REGULATOR ANCHORING VERIFIED                          │
   │  REGULATOR NOTIFICATION:  ✓ AUTOMATED — ANCHORING WITHIN ${
-  LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_3_4_3_BLOCKCHAIN_ANCHORING.anchoringTimeWindowSeconds
-}S WINDOW          │
+    LPC_RULE_17_3_COMPLIANCE_REQUIREMENTS.LPC_3_4_3_BLOCKCHAIN_ANCHORING.anchoringTimeWindowSeconds
+  }S WINDOW          │
   └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
         `);
       });
@@ -1326,13 +1402,13 @@ ${anchoredEvents
             auditor: 'Wilson Khanyezi',
             auditReference: 'LPC-AUDIT-Q1-2026',
             retentionDays: 3650,
-          },
+          }
         );
 
         // STORE IN EVIDENCE REGISTRY (PUBLIC API)
         const evidenceKey = `attorney-access:${lpcNumber}:${accessId}`;
         const evidenceHash = cryptoUtils.generateForensicHash(
-          `${accessId}:${lpcNumber}:${accessTime.toISO()}:${auditEntry.auditId}`,
+          `${accessId}:${lpcNumber}:${accessTime.toISO()}:${auditEntry.auditId}`
         );
 
         mockLpcService.storeEvidence(evidenceKey, {
@@ -1430,7 +1506,7 @@ ${anchoredEvents
             lpcNumber,
           },
           'TC-004-EVIDENCE-REGISTRY',
-          { passed: 12, total: 12 },
+          { passed: 12, total: 12 }
         );
 
         console.log(`
@@ -1440,19 +1516,19 @@ ${anchoredEvents
   │  EVIDENCE KEY:      ${evidenceKey.substring(0, 32)}...${evidenceKey.slice(-16)}                            │
   │  ATTORNEY:          ${lpcNumber}                                                │
   │  AUDIT ID:          ${auditEntry.auditId.substring(0, 16)}...${auditEntry.auditId.slice(
-  -8,
-)}                                              │
+    -8
+  )}                                              │
   │                                                                                                             │
   │  RETRIEVAL TIME:    ${retrievalTime}ms (O(1) — ${
-  retrievalTime < 10 ? '✓ PASSED' : '✗ FAILED'
-})                                              │
+    retrievalTime < 10 ? '✓ PASSED' : '✗ FAILED'
+  })                                              │
   │  RETENTION PERIOD:  ${evidence.retentionDays} DAYS (${
-  evidence.retentionYears
-} YEARS — LPC 17.3 ✓)                                     │
+    evidence.retentionYears
+  } YEARS — LPC 17.3 ✓)                                     │
   │  EVIDENCE HASH:     ${evidence.evidenceHash} (SHA3-512 TRUNCATED)                                          │
   │  FORENSIC HASH:     ${auditEntry.forensicHash.substring(0, 32)}...${auditEntry.forensicHash.slice(
-  -16,
-)}                              │
+    -16
+  )}                              │
   │                                                                                                             │
   │  LPC RULE 17.3:     ✓ COMPLIANT — EVIDENCE REGISTRY ACTIVE                                                 │
   │  RETENTION POLICY:  ✓ ENFORCED — 10 YEAR MINIMUM MET                                                      │
@@ -1514,7 +1590,7 @@ ${anchoredEvents
             tenant.lpcNumber,
             userContext,
             'VIEW',
-            { tenantId: tenant.tenantId },
+            { tenantId: tenant.tenantId }
           );
 
           auditEntries.push(auditEntry);
@@ -1580,7 +1656,7 @@ ${anchoredEvents
             })),
           },
           'TC-005-TENANT-ISOLATION',
-          { passed: 10, total: 10 },
+          { passed: 10, total: 10 }
         );
 
         console.log(`
@@ -1588,8 +1664,8 @@ ${anchoredEvents
   │  ✅ [TC-005] TENANT ISOLATION — POPIA §20 ✓  ZERO CROSS-TENANT LEAKAGE ✓                                  │
   ├─────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
   │  TENANTS TESTED:     ${
-  tenants.length
-} (ALPHA, BETA, GAMMA)                                                            │
+    tenants.length
+  } (ALPHA, BETA, GAMMA)                                                            │
   │                                                                                                             │
   │  ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐   │
   │  │  TENANT AUDIT ENTRIES — COMPLETE ISOLATION                                                       │   │
@@ -1597,12 +1673,13 @@ ${anchoredEvents
   │  │ TENANT ID            │ USER ID               │ LPC NUMBER            │ AUDIT ID                    │   │
   │  ├──────────────────────┼──────────────────────┼──────────────────────┼──────────────────────────────┤   │
 ${auditEntries
-    .map(
-      (e) => `  │  │ ${e.tenantId.substring(0, 20).padEnd(20)} │ ${e.userId
+  .map(
+    (e) =>
+      `  │  │ ${e.tenantId.substring(0, 20).padEnd(20)} │ ${e.userId
         .substring(0, 20)
-        .padEnd(20)} │ ${e.identifier.padEnd(20)} │ ${e.auditId.substring(0, 20)}... │`,
-    )
-    .join('\n')}
+        .padEnd(20)} │ ${e.identifier.padEnd(20)} │ ${e.auditId.substring(0, 20)}... │`
+  )
+  .join('\n')}
   │  └──────────────────────┴──────────────────────┴──────────────────────┴──────────────────────────────┘   │
   │                                                                                                             │
   │  TENANT ISOLATION:    ✓ VERIFIED — EACH TENANT'S DATA ISOLATED                                           │

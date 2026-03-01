@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ ALERT ROUTES - INVESTOR-GRADE MODULE                          ║
   ║ Incident management | Real-time notifications                 ║
@@ -11,7 +11,7 @@
  * • Compliance-ready audit trail of all incidents
  */
 
-import express from "express";
+import express from 'express';
 import { body, query, param, validationResult } from 'express-validator.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';

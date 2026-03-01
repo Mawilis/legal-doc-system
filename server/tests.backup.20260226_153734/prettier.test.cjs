@@ -23,7 +23,7 @@ describe('🔷 WILSY OS PRETTIER FORENSIC VALIDATION', function () {
   const evidenceDir = path.join(__dirname, '..', 'docs', 'evidence');
   const evidencePath = path.join(
     evidenceDir,
-    `prettier-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.forensic.json`,
+    `prettier-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.forensic.json`
   );
 
   let originalConfig;
@@ -110,14 +110,14 @@ describe('🔷 WILSY OS PRETTIER FORENSIC VALIDATION', function () {
         assert.strictEqual(
           config[rule],
           expected,
-          `Rule ${rule} must be ${expected} for forensic traceability`,
+          `Rule ${rule} must be ${expected} for forensic traceability`
         );
       });
 
       // Validate no conflicting rules
       assert.ok(
         !config.tabWidth || config.tabWidth === 2,
-        'Tab width must be 2 spaces for court-admissible formatting',
+        'Tab width must be 2 spaces for court-admissible formatting'
       );
 
       console.log('✓ Prettier configuration validated with forensic standards');
@@ -414,8 +414,8 @@ export const RETENTION_POLICIES = {
           savedEvidence,
           Object.keys(savedEvidence)
             .filter((k) => !k.includes('hash'))
-            .sort(),
-        ),
+            .sort()
+        )
       );
       const verifyHash = crypto
         .createHash('sha256')
@@ -425,7 +425,7 @@ export const RETENTION_POLICIES = {
       assert.strictEqual(
         verifyHash,
         savedEvidence.forensicHash,
-        'Evidence hash mismatch - possible tampering',
+        'Evidence hash mismatch - possible tampering'
       );
 
       console.log('\n📍 FORENSIC EVIDENCE GENERATED:');
@@ -522,13 +522,13 @@ async function checkConsent(tenantId) {
         assert.strictEqual(
           settings['editor.formatOnSave'],
           true,
-          'VS Code must have format-on-save enabled',
+          'VS Code must have format-on-save enabled'
         );
 
         assert.strictEqual(
           settings['editor.defaultFormatter'],
           'esbenp.prettier-vscode',
-          'Prettier must be default formatter',
+          'Prettier must be default formatter'
         );
 
         console.log('✓ VS Code integration verified');
@@ -543,7 +543,7 @@ async function checkConsent(tenantId) {
       const largeContent = Array(1000)
         .fill()
         .map(
-          (_, i) => `const variable${i} = { id: ${i}, name: 'test${i}', active: ${i % 2 === 0} };`,
+          (_, i) => `const variable${i} = { id: ${i}, name: 'test${i}', active: ${i % 2 === 0} };`
         )
         .join('\n');
 

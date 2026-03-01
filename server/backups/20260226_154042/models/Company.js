@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - COMPANY MODEL v2.0 (FORENSIC-GRADE) ║
   ║ [Companies Act 71 of 2008 | CIPC | FICA | POPIA | JSE | SARS] ║

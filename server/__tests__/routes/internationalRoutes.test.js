@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ INTERNATIONAL ROUTES TESTS - INVESTOR DUE DILIGENCE - $5B VALUATION      ║
   ║ 100% coverage | Premium endpoints | Global legal intelligence            ║
@@ -6,10 +6,10 @@
 
 import request from 'supertest.js';
 import express from 'express.js';
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 import fs from 'fs/promises';
-import path from "path";
+import path from 'path';
 import { jest } from '@jest/globals.js';
 
 // Mock dependencies
@@ -232,7 +232,8 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
       const response = await request(app)
         .post('/api/v1/international/map-principle')
         .send({
-          principle: 'The principle of legality requires rational connection to governmental purpose',
+          principle:
+            'The principle of legality requires rational connection to governmental purpose',
           sourceJurisdiction: 'ZA',
           targetJurisdiction: 'UK',
           legalArea: 'constitutional',
@@ -263,7 +264,7 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
           target: 'UK',
           tier: 'ultra_premium',
           valuationContext: '$5B_GLOBAL_OS',
-        }),
+        })
       );
     });
 
@@ -433,7 +434,9 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
     });
 
     it('should validate query parameters', async () => {
-      const response = await request(app).get('/api/v1/international/trending?days=999').expect(400);
+      const response = await request(app)
+        .get('/api/v1/international/trending?days=999')
+        .expect(400);
     });
   });
 
@@ -530,7 +533,9 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
 
   describe('13. 404 Handler', () => {
     it('should return 404 for undefined routes', async () => {
-      const response = await request(app).get('/api/v1/international/non-existent-route').expect(404);
+      const response = await request(app)
+        .get('/api/v1/international/non-existent-route')
+        .expect(404);
 
       expect(response.body.error.code).toBe('ROUTE_NOT_FOUND');
     });
@@ -550,13 +555,17 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
       console.log('\n💰 INTERNATIONAL GATEWAY REVENUE ANALYSIS');
       console.log('='.repeat(50));
       console.log(`Daily premium queries: ${dailyQueries.toLocaleString()}`);
-      console.log(`Premium price per query: $${premiumPrice} (${premiumPrice / basePrice}x domestic)`);
+      console.log(
+        `Premium price per query: $${premiumPrice} (${premiumPrice / basePrice}x domestic)`
+      );
       console.log(`Daily premium revenue: $${(dailyRevenue / 1e3).toFixed(1)}K`);
       console.log(`Annual premium revenue: $${(annualRevenue / 1e6).toFixed(1)}M`);
       console.log(`Enterprise licensing: $${(enterpriseRevenue / 1e6).toFixed(1)}M`);
       console.log('='.repeat(50));
       console.log(`TOTAL ANNUAL REVENUE: $${(totalRevenue / 1e6).toFixed(1)}M`);
-      console.log(`VALUATION (10x revenue): $${((totalRevenue * 10) / 1e6).toFixed(1)}M ($5B target)`);
+      console.log(
+        `VALUATION (10x revenue): $${((totalRevenue * 10) / 1e6).toFixed(1)}M ($5B target)`
+      );
 
       expect(totalRevenue).toBeCloseTo(500e6, -7); // $500M target
     });
@@ -567,7 +576,8 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
       const response = await request(app)
         .post('/api/v1/international/map-principle')
         .send({
-          principle: 'The principle of legality requires rational connection to governmental purpose',
+          principle:
+            'The principle of legality requires rational connection to governmental purpose',
           sourceJurisdiction: 'ZA',
           targetJurisdiction: 'UK',
           legalArea: 'constitutional',
@@ -614,7 +624,10 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'international-routes-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'international-routes-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'international-routes-evidence.json'))
@@ -623,7 +636,10 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'international-routes-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'international-routes-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

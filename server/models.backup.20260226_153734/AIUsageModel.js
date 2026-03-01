@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/AIUsageModel.js
  * STATUS: PRODUCTION-READY (WILSY OS V2.0)
  *
@@ -521,7 +519,7 @@ const AIUsageSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -541,9 +539,9 @@ AIUsageSchema.virtual('valuePerToken').get(function () {
 
 AIUsageSchema.virtual('roiPercentage').get(function () {
   return this.financials.costZAR > 0
-    ? ((this.valueMetrics.totalValueGenerated - this.financials.costZAR)
-        / this.financials.costZAR)
-        * 100
+    ? ((this.valueMetrics.totalValueGenerated - this.financials.costZAR) /
+        this.financials.costZAR) *
+        100
     : 0;
 });
 
@@ -719,7 +717,8 @@ AIUsageSchema.methods.calculateValueMetrics = async function () {
   const totalValueGenerated = lawyerHourValue + riskReductionValue + complianceValue;
 
   // Calculate ROI multiple
-  const roiMultiple = this.financials.costZAR > 0 ? totalValueGenerated / this.financials.costZAR : 0;
+  const roiMultiple =
+    this.financials.costZAR > 0 ? totalValueGenerated / this.financials.costZAR : 0;
 
   this.valueMetrics = {
     estimatedTimeSaved,
@@ -750,7 +749,8 @@ AIUsageSchema.methods.enforceCompliance = function () {
   }
 
   // Audit readiness
-  this.compliance.auditReady = this.security.integrityHash && this.security.digitalSignature && this.auditTrail.length > 0;
+  this.compliance.auditReady =
+    this.security.integrityHash && this.security.digitalSignature && this.auditTrail.length > 0;
 };
 
 AIUsageSchema.methods.getChanges = function () {
@@ -883,30 +883,38 @@ AIUsageSchema.statics.getTenantUsageSummary = async function (tenantId, startDat
 
   // Calculate averages
   if (usageRecords.length > 0) {
-    summary.tokenUsage.averageTokensPerRequest = summary.tokenUsage.totalTokens / usageRecords.length;
-    summary.financials.averageCostPerRequest = summary.financials.totalCostZAR / usageRecords.length;
-    summary.financials.costPerToken = summary.tokenUsage.totalTokens > 0
-      ? summary.financials.totalCostZAR / summary.tokenUsage.totalTokens
-      : 0;
+    summary.tokenUsage.averageTokensPerRequest =
+      summary.tokenUsage.totalTokens / usageRecords.length;
+    summary.financials.averageCostPerRequest =
+      summary.financials.totalCostZAR / usageRecords.length;
+    summary.financials.costPerToken =
+      summary.tokenUsage.totalTokens > 0
+        ? summary.financials.totalCostZAR / summary.tokenUsage.totalTokens
+        : 0;
 
     summary.performance.averageProcessingTime /= usageRecords.length;
-    summary.performance.cacheHitRate = (summary.performance.cacheHitRate / usageRecords.length) * 100;
+    summary.performance.cacheHitRate =
+      (summary.performance.cacheHitRate / usageRecords.length) * 100;
     summary.performance.errorRate = (summary.performance.errorRate / usageRecords.length) * 100;
 
-    summary.valueGenerated.totalROI = summary.financials.totalCostZAR > 0
-      ? ((summary.valueGenerated.totalValueZAR - summary.financials.totalCostZAR)
-            / summary.financials.totalCostZAR)
-          * 100
-      : 0;
+    summary.valueGenerated.totalROI =
+      summary.financials.totalCostZAR > 0
+        ? ((summary.valueGenerated.totalValueZAR - summary.financials.totalCostZAR) /
+            summary.financials.totalCostZAR) *
+          100
+        : 0;
 
-    summary.valueGenerated.averageROIMultiple = summary.financials.totalCostZAR > 0
-      ? summary.valueGenerated.totalValueZAR / summary.financials.totalCostZAR
-      : 0;
+    summary.valueGenerated.averageROIMultiple =
+      summary.financials.totalCostZAR > 0
+        ? summary.valueGenerated.totalValueZAR / summary.financials.totalCostZAR
+        : 0;
   }
 
   // Calculate compliance percentages
-  summary.compliance.vatCompliantPercentage = (summary.compliance.vatCompliantRequests / usageRecords.length) * 100;
-  summary.compliance.auditReadyPercentage = (summary.compliance.auditReadyRequests / usageRecords.length) * 100;
+  summary.compliance.vatCompliantPercentage =
+    (summary.compliance.vatCompliantRequests / usageRecords.length) * 100;
+  summary.compliance.auditReadyPercentage =
+    (summary.compliance.auditReadyRequests / usageRecords.length) * 100;
 
   // Add forecast
   summary.forecast = this.calculateForecast(summary, startDate, endDate);
@@ -1158,7 +1166,7 @@ class AIUsageModel {
       this.revenueMetrics.totalRevenueZAR += invoiceTotals.totalChargeZAR;
 
       console.log(
-        `💰 [BILLING_PROCESSED] Generated invoice ${invoice.invoiceId} for R${invoiceTotals.totalChargeZAR}`,
+        `💰 [BILLING_PROCESSED] Generated invoice ${invoice.invoiceId} for R${invoiceTotals.totalChargeZAR}`
       );
 
       return {
@@ -1210,7 +1218,7 @@ class AIUsageModel {
         tenantId,
         forecast,
         opportunities,
-        forecastPeriod,
+        forecastPeriod
       );
 
       const processingTime = performance.now() - startTime;
@@ -1249,8 +1257,8 @@ class AIUsageModel {
     }
 
     if (
-      usageData.tokenUsage.totalTokens
-      !== usageData.tokenUsage.inputTokens + usageData.tokenUsage.outputTokens
+      usageData.tokenUsage.totalTokens !==
+      usageData.tokenUsage.inputTokens + usageData.tokenUsage.outputTokens
     ) {
       throw new Error('Total tokens must equal inputTokens + outputTokens');
     }
@@ -1270,7 +1278,8 @@ class AIUsageModel {
     const serviceTier = tenant?.subscriptionTier || 'PROFESSIONAL';
 
     // Calculate character count if not provided
-    const characterCount = usageData.tokenUsage.characterCount || Math.floor(usageData.tokenUsage.totalTokens * 4); // Approximate 4 chars per token
+    const characterCount =
+      usageData.tokenUsage.characterCount || Math.floor(usageData.tokenUsage.totalTokens * 4); // Approximate 4 chars per token
 
     // Calculate document pages if not provided
     const documentPages = usageData.tokenUsage.documentPages || Math.ceil(characterCount / 2500); // Approximate 2500 chars per page
@@ -1314,11 +1323,12 @@ class AIUsageModel {
     this.revenueMetrics.totalValueGenerated += usageRecord.valueMetrics.totalValueGenerated;
 
     // Update ROI
-    this.revenueMetrics.totalROI = this.revenueMetrics.totalValueGenerated > 0
-      ? ((this.revenueMetrics.totalValueGenerated - this.revenueMetrics.totalRevenueZAR)
-            / this.revenueMetrics.totalRevenueZAR)
-          * 100
-      : 0;
+    this.revenueMetrics.totalROI =
+      this.revenueMetrics.totalValueGenerated > 0
+        ? ((this.revenueMetrics.totalValueGenerated - this.revenueMetrics.totalRevenueZAR) /
+            this.revenueMetrics.totalRevenueZAR) *
+          100
+        : 0;
   }
 
   async cacheRealTimeUpdate(usageRecord, processingTime) {
@@ -1335,7 +1345,7 @@ class AIUsageModel {
     await this.redis.setex(
       cacheKey,
       300, // 5 minutes TTL
-      JSON.stringify(cacheData),
+      JSON.stringify(cacheData)
     );
   }
 
@@ -1482,7 +1492,7 @@ class AIUsageModel {
     await this.redis.setex(
       `invoice:${invoiceId}`,
       365 * 24 * 60 * 60, // 1 year
-      JSON.stringify(invoice),
+      JSON.stringify(invoice)
     );
 
     return invoice;
@@ -1499,7 +1509,7 @@ class AIUsageModel {
           'financials.invoiceId': invoiceId,
           'financials.invoiceDate': new Date(),
         },
-      },
+      }
     );
   }
 
@@ -1511,7 +1521,7 @@ class AIUsageModel {
     // 4. Trigger payment processing workflow
 
     console.log(
-      `📧 [BILLING_NOTIFICATION] Invoice ${invoice.invoiceId} generated for R${invoice.totals.totalChargeZAR}`,
+      `📧 [BILLING_NOTIFICATION] Invoice ${invoice.invoiceId} generated for R${invoice.totals.totalChargeZAR}`
     );
 
     // Store notification
@@ -1523,7 +1533,7 @@ class AIUsageModel {
         invoiceId: invoice.invoiceId,
         amount: invoice.totals.totalChargeZAR,
         timestamp: new Date().toISOString(),
-      }),
+      })
     );
   }
 
@@ -1537,7 +1547,7 @@ class AIUsageModel {
         errorId,
         ...errorData,
         timestamp: new Date().toISOString(),
-      }),
+      })
     );
   }
 
@@ -1615,7 +1625,7 @@ class AIUsageModel {
             period,
             revenue: this.revenueMetrics.todayRevenue,
             timestamp: now.toISOString(),
-          }),
+          })
         )
         .digest('hex'),
     };

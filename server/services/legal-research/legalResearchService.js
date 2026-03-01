@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ LEGAL RESEARCH SERVICE - INVESTOR-GRADE MODULE                                                           ║
   ║ 90% cost reduction | R12M risk elimination | 85% margins | Multi-jurisdictional                          ║

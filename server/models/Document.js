@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const mongoose = require('mongoose');
+#!const mongoose = require('mongoose');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
 
@@ -66,7 +64,7 @@ const documentSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: 'documents',
-  },
+  }
 );
 
 // Pre-save middleware to generate audit hash
@@ -114,7 +112,7 @@ documentSchema.methods.addAuditEntry = async function (
   action,
   performedBy,
   details = {},
-  ipAddress = null,
+  ipAddress = null
 ) {
   const entry = {
     action,
@@ -161,7 +159,7 @@ documentSchema.methods.verifyIntegrity = function () {
 documentSchema.methods.updateAIClassification = async function (
   aiType,
   confidence,
-  performedBy = 'ai-system',
+  performedBy = 'ai-system'
 ) {
   this.aiType = aiType;
   this.confidence = confidence;

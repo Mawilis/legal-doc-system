@@ -1,4 +1,4 @@
-/*
+#!/*
  * Retention policy manager for compliance with legal hold requirements
  */
 class RetentionManager {

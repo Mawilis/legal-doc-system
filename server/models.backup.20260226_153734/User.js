@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * =================================================================================
  *  ██╗   ██╗███████╗███████╗██████╗      ███╗   ███╗ ██████╗ ██████╗ ███████╗██╗
@@ -26,9 +26,9 @@
  * =================================================================================
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import bcrypt from 'bcrypt.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 import validator from 'validator.js';
 import dotenv from 'dotenv.js';
 

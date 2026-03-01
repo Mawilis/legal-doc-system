@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ QUANTUM PRECEDENT MATCHER - REVOLUTIONARY LEGAL AI ENGINE                ║
   ║ 10x better than TikTok's algorithm | Quantum-inspired neural matching    ║
@@ -6,7 +6,7 @@
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
 import crypto from 'crypto';
-import AuditLogger from './auditLogger.js';  // Changed from { AuditLogger } to default import
+import AuditLogger from './auditLogger.js'; // Changed from { AuditLogger } to default import
 import loggerRaw from './logger.js';
 const logger = loggerRaw.default || loggerRaw;
 
@@ -30,17 +30,17 @@ const LEGAL_DIMENSIONS = {
     LAND: 4,
     FAMILY: 5,
     TAX: 6,
-    COMPETITION: 7
+    COMPETITION: 7,
   },
-  
+
   COURT_TIER: {
     CONSTITUTIONAL: 0,
     SUPREME_APPEAL: 1,
     HIGH: 2,
     SPECIALIST: 3,
-    MAGISTRATE: 4
+    MAGISTRATE: 4,
   },
-  
+
   LEGAL_PRINCIPLE: Array.from({ length: 15 }, (_, i) => i),
   SUBJECT_MATTER: Array.from({ length: 20 }, (_, i) => i + 10),
   OUTCOME: Array.from({ length: 10 }, (_, i) => i + 30),
@@ -49,7 +49,7 @@ const LEGAL_DIMENSIONS = {
   JURISDICTION: Array.from({ length: 15 }, (_, i) => i + 70),
   PROCEDURAL: Array.from({ length: 15 }, (_, i) => i + 85),
   EVIDENCE: Array.from({ length: 10 }, (_, i) => i + 100),
-  REMEDY: Array.from({ length: 18 }, (_, i) => i + 110)
+  REMEDY: Array.from({ length: 18 }, (_, i) => i + 110),
 };
 
 // ============================================================================
@@ -70,7 +70,7 @@ class QuantumLegalState {
     this.jurisdiction = precedent.jurisdiction || 'ZA';
     this.outcome = precedent.outcome || null;
     this.citations = precedent.citations || 0;
-    
+
     this.initializeQuantumState(precedent);
   }
 
@@ -79,12 +79,12 @@ class QuantumLegalState {
     if (precedent.caseType !== undefined) {
       this.vector[LEGAL_DIMENSIONS.CASE_TYPE[precedent.caseType] || 0] += 1.0;
     }
-    
+
     // Encode court tier
     if (precedent.courtTier !== undefined) {
       this.vector[LEGAL_DIMENSIONS.COURT_TIER[precedent.courtTier] || 0] += 0.8;
     }
-    
+
     // Encode legal principles (multiple)
     if (precedent.principles) {
       precedent.principles.forEach((principle, i) => {
@@ -93,7 +93,7 @@ class QuantumLegalState {
         }
       });
     }
-    
+
     // Encode subject matter
     if (precedent.subjectMatter) {
       precedent.subjectMatter.forEach((matter, i) => {
@@ -102,46 +102,43 @@ class QuantumLegalState {
         }
       });
     }
-    
+
     // Encode outcome
     if (precedent.outcomeIndex !== undefined) {
       this.vector[LEGAL_DIMENSIONS.OUTCOME[precedent.outcomeIndex % 10]] += 0.9;
     }
-    
+
     // Encode judge propensity
     if (precedent.judgeId) {
-      const judgeHash = crypto.createHash('sha256')
-        .update(precedent.judgeId)
-        .digest();
+      const judgeHash = crypto.createHash('sha256').update(precedent.judgeId).digest();
       for (let i = 0; i < 20; i++) {
         this.vector[LEGAL_DIMENSIONS.JUDGE_PROPENSITY[i]] += judgeHash[i % judgeHash.length] / 255;
       }
     }
-    
+
     // Encode temporal factor
     const ageInYears = (Date.now() - this.timestamp) / (365 * 24 * 60 * 60 * 1000);
     const temporalWeight = Math.pow(TEMPORAL_DECAY, ageInYears);
     for (let i = 0; i < 10; i++) {
       this.vector[LEGAL_DIMENSIONS.TEMPORAL[i]] += temporalWeight * (0.5 + i * 0.05);
     }
-    
+
     // Encode jurisdiction
     if (precedent.jurisdiction) {
-      const jurisdictionHash = crypto.createHash('sha256')
-        .update(precedent.jurisdiction)
-        .digest();
+      const jurisdictionHash = crypto.createHash('sha256').update(precedent.jurisdiction).digest();
       for (let i = 0; i < 15; i++) {
-        this.vector[LEGAL_DIMENSIONS.JURISDICTION[i]] += jurisdictionHash[i % jurisdictionHash.length] / 255;
+        this.vector[LEGAL_DIMENSIONS.JURISDICTION[i]] +=
+          jurisdictionHash[i % jurisdictionHash.length] / 255;
       }
     }
-    
+
     this.normalize();
   }
 
   normalize() {
     const magnitude = Math.sqrt(this.vector.reduce((sum, val) => sum + val * val, 0));
     if (magnitude > 0) {
-      this.vector = this.vector.map(val => val / magnitude);
+      this.vector = this.vector.map((val) => val / magnitude);
     }
   }
 
@@ -151,12 +148,12 @@ class QuantumLegalState {
       this.entangledStates.push({
         id: otherState.id,
         similarity,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
       otherState.entangledStates.push({
         id: this.id,
         similarity,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
     return similarity;
@@ -166,35 +163,35 @@ class QuantumLegalState {
     let dotProduct = 0;
     let normA = 0;
     let normB = 0;
-    
+
     for (let i = 0; i < QUANTUM_DIMENSIONS; i++) {
       dotProduct += this.vector[i] * otherState.vector[i];
       normA += this.vector[i] * this.vector[i];
       normB += otherState.vector[i] * otherState.vector[i];
     }
-    
+
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 
   static superpose(states) {
     if (states.length === 0) return null;
-    
+
     const superposed = new QuantumLegalState({});
     superposed.vector = new Array(QUANTUM_DIMENSIONS).fill(0);
-    superposed.superposition = states.map(s => s.id);
-    
+    superposed.superposition = states.map((s) => s.id);
+
     let totalWeight = 0;
-    states.forEach(state => {
+    states.forEach((state) => {
       for (let i = 0; i < QUANTUM_DIMENSIONS; i++) {
         superposed.vector[i] += state.vector[i] * state.weight;
       }
       totalWeight += state.weight;
     });
-    
-    superposed.vector = superposed.vector.map(val => val / totalWeight);
+
+    superposed.vector = superposed.vector.map((val) => val / totalWeight);
     superposed.normalize();
     superposed.collapsed = false;
-    
+
     return superposed;
   }
 
@@ -219,7 +216,7 @@ export class QuantumPrecedentMatcher {
       totalEntanglements: 0,
       averageSimilarity: 0,
       cacheHits: 0,
-      cacheMisses: 0
+      cacheMisses: 0,
     };
   }
 
@@ -227,7 +224,7 @@ export class QuantumPrecedentMatcher {
     const state = new QuantumLegalState(precedent);
     this.states.set(state.id, state);
     this.stats.totalPrecedents++;
-    
+
     this.states.forEach((otherState, otherId) => {
       if (otherId !== state.id) {
         const similarity = state.entangle(otherState);
@@ -244,7 +241,7 @@ export class QuantumPrecedentMatcher {
         }
       }
     });
-    
+
     return state.id;
   }
 
@@ -254,12 +251,10 @@ export class QuantumPrecedentMatcher {
       minSimilarity = 0.6,
       useCache = true,
       includeEntangled = true,
-      jurisdictionBoost = true
+      jurisdictionBoost = true,
     } = options;
 
-    const cacheKey = crypto.createHash('sha256')
-      .update(JSON.stringify(query))
-      .digest('hex');
+    const cacheKey = crypto.createHash('sha256').update(JSON.stringify(query)).digest('hex');
 
     if (useCache && this.cache.has(cacheKey)) {
       this.stats.cacheHits++;
@@ -270,47 +265,45 @@ export class QuantumPrecedentMatcher {
     const queryState = new QuantumLegalState({
       ...query,
       id: 'query',
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     const similarities = [];
     this.states.forEach((state, id) => {
       let similarity = queryState.cosineSimilarity(state);
-      
+
       if (jurisdictionBoost && query.jurisdiction === state.jurisdiction) {
         similarity *= JURISDICTION_BOOST;
       }
-      
+
       if (query.judgeId && state.judge === query.judgeId) {
-        similarity *= (1 + JUDGE_WEIGHT_FACTOR);
+        similarity *= 1 + JUDGE_WEIGHT_FACTOR;
       }
-      
-      similarity *= (1 + Math.log(state.citations + 1) * 0.1);
-      
+
+      similarity *= 1 + Math.log(state.citations + 1) * 0.1;
+
       if (similarity >= minSimilarity) {
         similarities.push({
           id,
           similarity,
           state,
-          entangled: includeEntangled ? 
-            Array.from(this.entanglementGraph.get(id) || []) : []
+          entangled: includeEntangled ? Array.from(this.entanglementGraph.get(id) || []) : [],
         });
       }
     });
 
     similarities.sort((a, b) => b.similarity - a.similarity);
-    
-    const results = similarities.slice(0, limit).map(s => ({
+
+    const results = similarities.slice(0, limit).map((s) => ({
       id: s.id,
       similarity: s.similarity,
       entangledPrecedents: s.entangled.slice(0, 3),
-      confidence: this.calculateConfidence(s.similarity, s.state)
+      confidence: this.calculateConfidence(s.similarity, s.state),
     }));
 
     if (similarities.length > 0) {
       const avgSim = similarities.reduce((sum, s) => sum + s.similarity, 0) / similarities.length;
-      this.stats.averageSimilarity = 
-        (this.stats.averageSimilarity * 0.9 + avgSim * 0.1);
+      this.stats.averageSimilarity = this.stats.averageSimilarity * 0.9 + avgSim * 0.1;
     }
 
     if (useCache) {
@@ -323,42 +316,40 @@ export class QuantumPrecedentMatcher {
 
   async predictOutcome(query) {
     const similar = await this.findSimilar(query, { limit: 50, minSimilarity: 0.7 });
-    
+
     if (similar.length === 0) {
       return {
         predictedOutcome: null,
         confidence: 0,
-        similarPrecedents: []
+        similarPrecedents: [],
       };
     }
 
-    const states = similar
-      .map(s => this.states.get(s.id))
-      .filter(s => s.outcome !== null);
+    const states = similar.map((s) => this.states.get(s.id)).filter((s) => s.outcome !== null);
 
     if (states.length === 0) {
       return {
         predictedOutcome: null,
         confidence: 0,
-        similarPrecedents: similar
+        similarPrecedents: similar,
       };
     }
 
-    const weightedStates = states.map(state => {
-      const similarity = similar.find(s => s.id === state.id).similarity;
+    const weightedStates = states.map((state) => {
+      const similarity = similar.find((s) => s.id === state.id).similarity;
       return {
         ...state,
-        weight: similarity
+        weight: similarity,
       };
     });
 
     const outcomeGroups = new Map();
-    weightedStates.forEach(state => {
+    weightedStates.forEach((state) => {
       if (!outcomeGroups.has(state.outcome)) {
         outcomeGroups.set(state.outcome, {
           count: 0,
           totalWeight: 0,
-          precedents: []
+          precedents: [],
         });
       }
       const group = outcomeGroups.get(state.outcome);
@@ -376,9 +367,11 @@ export class QuantumPrecedentMatcher {
       }
     });
 
-    const totalWeight = Array.from(outcomeGroups.values())
-      .reduce((sum, g) => sum + g.totalWeight, 0);
-    
+    const totalWeight = Array.from(outcomeGroups.values()).reduce(
+      (sum, g) => sum + g.totalWeight,
+      0
+    );
+
     const confidence = bestWeight / totalWeight;
 
     return {
@@ -387,26 +380,26 @@ export class QuantumPrecedentMatcher {
       outcomeDistribution: Array.from(outcomeGroups.entries()).map(([outcome, group]) => ({
         outcome,
         probability: group.totalWeight / totalWeight,
-        precedentCount: group.count
+        precedentCount: group.count,
       })),
-      similarPrecedents: similar.slice(0, 10)
+      similarPrecedents: similar.slice(0, 10),
     };
   }
 
   calculateConfidence(similarity, state) {
     let confidence = similarity;
-    
+
     if (state.court) {
       if (state.court === 'constitutional_court') confidence *= 1.2;
       else if (state.court === 'supreme_court_appeal') confidence *= 1.15;
       else if (state.court === 'high_court') confidence *= 1.1;
     }
-    
+
     const ageInYears = (Date.now() - state.timestamp) / (365 * 24 * 60 * 60 * 1000);
     confidence *= Math.pow(TEMPORAL_DECAY, ageInYears);
-    
-    confidence *= (1 + Math.log(state.citations + 1) * 0.05);
-    
+
+    confidence *= 1 + Math.log(state.citations + 1) * 0.05;
+
     return Math.min(confidence, 1.0);
   }
 
@@ -414,8 +407,9 @@ export class QuantumPrecedentMatcher {
     return {
       ...this.stats,
       cacheSize: this.cache.size,
-      entanglementDensity: this.stats.totalEntanglements / 
-        (this.stats.totalPrecedents * (this.stats.totalPrecedents - 1) / 2)
+      entanglementDensity:
+        this.stats.totalEntanglements /
+        ((this.stats.totalPrecedents * (this.stats.totalPrecedents - 1)) / 2),
     };
   }
 

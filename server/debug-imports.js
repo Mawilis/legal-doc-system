@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const path = require('path');
+#!const path = require('path');
 
 console.log('=== Current Working Directory ===');
 console.log(process.cwd());

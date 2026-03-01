@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * =================================================================================
  * QUANTUM CONSENT ORCHESTRATION NEXUS - IMMORTAL LEGAL SOVEREIGNTY
  * =================================================================================
@@ -117,7 +115,7 @@ const validateQuantumEnvironment = () => {
   const missing = REQUIRED_ENV.filter((varName) => !process.env[varName]);
   if (missing.length > 0) {
     const errorMsg = `QUANTUM BASTION BREACH: Missing critical environment variables - ${missing.join(
-      ', ',
+      ', '
     )}`;
     console.error('🚨', errorMsg);
     throw new Error(errorMsg);
@@ -127,7 +125,7 @@ const validateQuantumEnvironment = () => {
   const keyBuffer = Buffer.from(process.env.CONSENT_ENCRYPTION_KEY, 'hex');
   if (keyBuffer.length !== 32) {
     throw new Error(
-      'QUANTUM SHIELD: CONSENT_ENCRYPTION_KEY must be 64-character hex string (32 bytes)',
+      'QUANTUM SHIELD: CONSENT_ENCRYPTION_KEY must be 64-character hex string (32 bytes)'
     );
   }
 
@@ -135,7 +133,7 @@ const validateQuantumEnvironment = () => {
   const ivBuffer = Buffer.from(process.env.CONSENT_ENCRYPTION_IV, 'hex');
   if (ivBuffer.length !== 12) {
     throw new Error(
-      'QUANTUM SHIELD: CONSENT_ENCRYPTION_IV must be 24-character hex string (12 bytes)',
+      'QUANTUM SHIELD: CONSENT_ENCRYPTION_IV must be 24-character hex string (12 bytes)'
     );
   }
 
@@ -146,7 +144,7 @@ const validateQuantumEnvironment = () => {
   }
 
   console.log(
-    '✅ QUANTUM ENVIRONMENT: All validation checks passed - Fortress integrity confirmed',
+    '✅ QUANTUM ENVIRONMENT: All validation checks passed - Fortress integrity confirmed'
   );
 };
 
@@ -310,7 +308,7 @@ const encryptConsentQuantum = (consentData) => {
     const cipher = crypto.createCipheriv(
       'aes-256-gcm',
       Buffer.from(process.env.CONSENT_ENCRYPTION_KEY, 'hex'),
-      iv,
+      iv
     );
 
     const plaintext = JSON.stringify(consentData);
@@ -343,7 +341,7 @@ const decryptConsentQuantum = (encryptedRecord) => {
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       Buffer.from(process.env.CONSENT_ENCRYPTION_KEY, 'hex'),
-      Buffer.from(encryptedRecord.encryptionMetadata.iv, 'hex'),
+      Buffer.from(encryptedRecord.encryptionMetadata.iv, 'hex')
     );
 
     decipher.setAuthTag(Buffer.from(encryptedRecord.encryptionMetadata.authTag, 'hex'));
@@ -381,22 +379,22 @@ const generateConsentSummary = (consentArtifact) => {
     JURISDICTION: ${jurisdiction.name}
     GRANTED: ${new Date(consentArtifact.grantedAt).toLocaleDateString('en-ZA')}
     ${
-  consentArtifact.expiresAt
-    ? `EXPIRES: ${new Date(consentArtifact.expiresAt).toLocaleDateString('en-ZA')}`
-    : 'NO EXPIRATION'
-}
+      consentArtifact.expiresAt
+        ? `EXPIRES: ${new Date(consentArtifact.expiresAt).toLocaleDateString('en-ZA')}`
+        : 'NO EXPIRATION'
+    }
     PURPOSES: ${consentArtifact.purposes.join(', ')}
     ${
-  consentArtifact.thirdParties?.length
-    ? `THIRD PARTIES: ${consentArtifact.thirdParties.join(', ')}`
-    : 'NO THIRD PARTY SHARING'
-}
+      consentArtifact.thirdParties?.length
+        ? `THIRD PARTIES: ${consentArtifact.thirdParties.join(', ')}`
+        : 'NO THIRD PARTY SHARING'
+    }
     LEGAL BASIS: ${consentArtifact.legalBasis || 'Consent (POPIA §11)'}
     DATA CATEGORIES: ${consentArtifact.dataCategories?.join(', ') || 'General Personal Information'}
     RETENTION PERIOD: ${consentArtifact.retentionPeriod || '7 years (Companies Act 2008)'}
     WITHDRAWAL INSTRUCTIONS: Submit DSAR request via Wilsy OS portal or email ${
-  process.env.POPIA_IO_EMAIL
-}
+      process.env.POPIA_IO_EMAIL
+    }
     `;
 
   return summary.trim();
@@ -488,8 +486,8 @@ const getRetentionExceptions = (consent) => {
 
   // Companies Act 2008 - 7 year retention for business records
   if (
-    consent.type === CONSENT_TYPES.DATA_PROCESSING
-    && consent.purposes.includes('COMPLIANCE_REPORTING')
+    consent.type === CONSENT_TYPES.DATA_PROCESSING &&
+    consent.purposes.includes('COMPLIANCE_REPORTING')
   ) {
     exceptions.push({
       act: 'Companies Act, 2008',
@@ -568,7 +566,7 @@ class ConsentManagementService {
 
     try {
       console.log(
-        `🧬 QUANTUM CONSENT: Recording consent for user ${userId}, transaction ${transactionId}`,
+        `🧬 QUANTUM CONSENT: Recording consent for user ${userId}, transaction ${transactionId}`
       );
 
       // 1. QUANTUM VALIDATION: Input and POPIA compliance
@@ -691,7 +689,7 @@ class ConsentManagementService {
             consentId: consentArtifact.consentId,
             expiresAt: consentArtifact.expiresAt,
             lastUpdated: new Date(),
-          }),
+          })
         );
       }
 
@@ -742,7 +740,7 @@ class ConsentManagementService {
             jobId: `compliance_${consentArtifact.consentId}`,
             attempts: 3,
             backoff: { type: 'exponential', delay: 5000 },
-          },
+          }
         );
       }
 
@@ -788,7 +786,7 @@ class ConsentManagementService {
 
     try {
       console.log(
-        `🔄 QUANTUM WITHDRAWAL: Processing withdrawal ${withdrawalId} for consent ${consentId}`,
+        `🔄 QUANTUM WITHDRAWAL: Processing withdrawal ${withdrawalId} for consent ${consentId}`
       );
 
       // 1. VALIDATE AND RETRIEVE CONSENT
@@ -838,7 +836,7 @@ class ConsentManagementService {
           priority: 1,
           attempts: 5,
           backoff: { type: 'exponential', delay: 10000 },
-        },
+        }
       );
 
       // 5. SCHEDULE DATA DELETION
@@ -968,9 +966,12 @@ class ConsentManagementService {
         report.consents.push(consentEntry);
 
         // Update statistics
-        report.statistics.byType[decrypted.type] = (report.statistics.byType[decrypted.type] || 0) + 1;
-        report.statistics.byJurisdiction[decrypted.jurisdiction] = (report.statistics.byJurisdiction[decrypted.jurisdiction] || 0) + 1;
-        report.statistics.byStatus[consent.status] = (report.statistics.byStatus[consent.status] || 0) + 1;
+        report.statistics.byType[decrypted.type] =
+          (report.statistics.byType[decrypted.type] || 0) + 1;
+        report.statistics.byJurisdiction[decrypted.jurisdiction] =
+          (report.statistics.byJurisdiction[decrypted.jurisdiction] || 0) + 1;
+        report.statistics.byStatus[consent.status] =
+          (report.statistics.byStatus[consent.status] || 0) + 1;
 
         if (consent.status === CONSENT_STATUS.GRANTED) report.statistics.active++;
         if (consent.status === CONSENT_STATUS.WITHDRAWN) report.statistics.withdrawn++;
@@ -1043,7 +1044,7 @@ class ConsentManagementService {
 
     try {
       console.log(
-        `🌍 QUANTUM CROSS-BORDER: Mapping consent ${mappingId} from ${sourceJurisdiction} to ${targetJurisdiction}`,
+        `🌍 QUANTUM CROSS-BORDER: Mapping consent ${mappingId} from ${sourceJurisdiction} to ${targetJurisdiction}`
       );
 
       // 1. CHECK ADEQUACY DECISION
@@ -1055,7 +1056,7 @@ class ConsentManagementService {
           userId,
           sourceJurisdiction,
           targetJurisdiction,
-          mappingId,
+          mappingId
         );
 
         return {
@@ -1263,7 +1264,7 @@ class ConsentManagementService {
       await this.redisClient.setEx(
         `otp_verification:${userId}`,
         300, // 5 minute expiry
-        otpHash,
+        otpHash
       );
     }
 
@@ -1290,7 +1291,7 @@ class ConsentManagementService {
         userId,
         consentDetails.thirdParties,
         'CONSENT_WITHDRAWN',
-        withdrawalId,
+        withdrawalId
       ),
       this.updateMarketingPreferences(userId, 'OPT_OUT', withdrawalId),
       this.clearUserCookies(userId, withdrawalId),
@@ -1421,7 +1422,7 @@ class ConsentManagementService {
           archivedAt: new Date(),
           archiveReference: referenceId,
         },
-      },
+      }
     );
 
     return {
@@ -1503,12 +1504,12 @@ class ConsentManagementService {
             ${metadata.referenceId ? `Reference: ${metadata.referenceId}` : ''}
             
             Compliance Status: ${
-  action === 'WITHDRAWN' ? 'POPIA §14 Processed' : 'POPIA §11 Recorded'
-}
+              action === 'WITHDRAWN' ? 'POPIA §14 Processed' : 'POPIA §11 Recorded'
+            }
             
             Action Required: ${
-  action === 'COMPLIANCE_VIOLATION' ? 'Immediate review required' : 'For records only'
-}
+              action === 'COMPLIANCE_VIOLATION' ? 'Immediate review required' : 'For records only'
+            }
             `,
       priority: action === 'COMPLIANCE_VIOLATION' ? 'HIGH' : 'MEDIUM',
       jurisdiction: 'ZA',
@@ -1531,11 +1532,12 @@ class ConsentManagementService {
     if (!requestor) return false;
 
     // Check for DPO role or Information Officer designation
-    const hasRole = requestor.roles
-      && (requestor.roles.includes('DPO')
-        || requestor.roles.includes('INFORMATION_OFFICER')
-        || requestor.roles.includes('COMPLIANCE_OFFICER')
-        || requestor.roles.includes('SUPER_ADMIN'));
+    const hasRole =
+      requestor.roles &&
+      (requestor.roles.includes('DPO') ||
+        requestor.roles.includes('INFORMATION_OFFICER') ||
+        requestor.roles.includes('COMPLIANCE_OFFICER') ||
+        requestor.roles.includes('SUPER_ADMIN'));
 
     // Additional check for firm-level permissions
     if (requestor.firmId) {
@@ -1591,9 +1593,9 @@ class ConsentManagementService {
     // Check for expired consents
     consents.forEach((consent) => {
       if (
-        consent.status === 'GRANTED'
-        && consent.expiresAt
-        && new Date(consent.expiresAt) < new Date()
+        consent.status === 'GRANTED' &&
+        consent.expiresAt &&
+        new Date(consent.expiresAt) < new Date()
       ) {
         gaps.push({
           type: 'EXPIRED_CONSENT',
@@ -1609,9 +1611,9 @@ class ConsentManagementService {
     // Check for third-party sharing without explicit consent
     consents.forEach((consent) => {
       if (
-        consent.thirdParties
-        && consent.thirdParties.length > 0
-        && !consent.type.includes('THIRD_PARTY')
+        consent.thirdParties &&
+        consent.thirdParties.length > 0 &&
+        !consent.type.includes('THIRD_PARTY')
       ) {
         gaps.push({
           type: 'UNAUTHORIZED_THIRD_PARTY_SHARING',
@@ -1691,7 +1693,7 @@ class ConsentManagementService {
         const statuteValidation = await this.lawsAfricaClient.validateAgainstStatute(
           'za',
           'popia',
-          consent,
+          consent
         );
 
         validations.push({
@@ -1728,7 +1730,8 @@ class ConsentManagementService {
       };
     }
 
-    const approved = sourceJurisdiction.adequacyDecisions && sourceJurisdiction.adequacyDecisions.includes(target);
+    const approved =
+      sourceJurisdiction.adequacyDecisions && sourceJurisdiction.adequacyDecisions.includes(target);
 
     return {
       approved,
@@ -1797,7 +1800,7 @@ class ConsentManagementService {
           jobId: `safeguards_${referenceId}`,
           priority: 2,
           attempts: 3,
-        },
+        }
       );
     }
 
@@ -1890,7 +1893,7 @@ class ConsentManagementService {
           priority: 1, // High priority for critical violations
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
-        },
+        }
       );
     }
 
@@ -1963,11 +1966,12 @@ class ConsentManagementService {
         },
       });
 
-      health.components.encryption = JSON.stringify(decrypted) === JSON.stringify(testData) ? 'HEALTHY' : 'UNHEALTHY';
+      health.components.encryption =
+        JSON.stringify(decrypted) === JSON.stringify(testData) ? 'HEALTHY' : 'UNHEALTHY';
 
       // Overall status determination
       const unhealthyComponents = Object.values(health.components).filter(
-        (status) => status === 'UNHEALTHY',
+        (status) => status === 'UNHEALTHY'
       ).length;
 
       if (unhealthyComponents > 0) {
@@ -2280,15 +2284,15 @@ ConsentManagementService.runQuantumTests = async () => {
     };
 
     console.log(
-      `✅ QUANTUM TEST SUITE: ${testResults.passed} passed, ${testResults.failed} failed`,
+      `✅ QUANTUM TEST SUITE: ${testResults.passed} passed, ${testResults.failed} failed`
     );
     console.log(
       `⚖️  Compliance Status: ${
         testResults.complianceStatus.overall ? 'FULLY COMPLIANT' : 'NON-COMPLIANT'
-      }`,
+      }`
     );
     console.log(
-      `🛡️  Security Status: ${testResults.securityStatus.overall ? 'SECURE' : 'VULNERABLE'}`,
+      `🛡️  Security Status: ${testResults.securityStatus.overall ? 'SECURE' : 'VULNERABLE'}`
     );
 
     return testResults;

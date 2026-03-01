@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 
 /* eslint-env jest */
 /*╔════════════════════════════════════════════════════════════════╗
@@ -13,10 +13,10 @@
  * • Confirms forensic traceability with SHA256 hashes
  */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 import fs from 'fs/promises';
-import path from "path";
+import path from 'path';
 
 // Mock dependencies
 jest.mock('../../../models/TenantConfig.js');
@@ -149,11 +149,13 @@ describe('BillingReportService - Forensic Billing Due Diligence', () => {
           userId: mockUserId,
           retentionPolicy: 'companies_act_10_years',
           dataResidency: 'ZA',
-        }),
+        })
       );
 
       // Log economic metric
-      console.log(`✓ Annual Savings/Client: R${(report.value.manualCostEquivalent / 1000).toFixed(0)}K`);
+      console.log(
+        `✓ Annual Savings/Client: R${(report.value.manualCostEquivalent / 1000).toFixed(0)}K`
+      );
       console.log(`✓ Report ROI: ${report.value.roi}%`);
       console.log(`✓ Time Savings: ${report.value.timeSavingsHours} hours/month`);
     });
@@ -190,7 +192,9 @@ describe('BillingReportService - Forensic Billing Due Diligence', () => {
     it('should handle tenant not found', async () => {
       TenantConfig.findOne.mockResolvedValue(null);
 
-      await expect(generateMonthlyBillingReport('invalid-tenant', 'premium')).rejects.toThrow('Tenant not found');
+      await expect(generateMonthlyBillingReport('invalid-tenant', 'premium')).rejects.toThrow(
+        'Tenant not found'
+      );
     });
 
     it('should generate upsell recommendations at high usage', async () => {
@@ -426,7 +430,10 @@ describe('BillingReportService - Forensic Billing Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'billing-report-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'billing-report-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'billing-report-evidence.json'))
@@ -435,7 +442,10 @@ describe('BillingReportService - Forensic Billing Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'billing-report-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'billing-report-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

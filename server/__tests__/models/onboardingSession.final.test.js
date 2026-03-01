@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const { MongoMemoryServer } = require('mongodb-memory-server');
+#!const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
 
 describe('Wilsy OS - OnboardingSession Integrity', () => {

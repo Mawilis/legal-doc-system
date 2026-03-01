@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /*
  * FORENSIC TEST SUITE: SA Legal Validators V6
  * Investor-grade deterministic tests with economic metrics
@@ -99,7 +97,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
           metadata: expect.objectContaining({
             fraudIndicator: 'POTENTIAL_FRAUD',
           }),
-        }),
+        })
       );
     });
 
@@ -118,7 +116,9 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
       expect(result.isValid).toBe(true);
 
       // No warning for valid race digit
-      expect(auditLogger.audit).not.toHaveBeenCalledWith(expect.objectContaining({ action: 'ID_VALIDATION_WARNING' }));
+      expect(auditLogger.audit).not.toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'ID_VALIDATION_WARNING' })
+      );
     });
 
     test('TENANT: Should use tenant context when not provided', () => {
@@ -232,7 +232,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
       expect(auditLogger.audit).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'MULTI_FACTOR_VERIFICATION',
-        }),
+        })
       );
     });
 
@@ -251,7 +251,9 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
       expect(RETENTION_POLICIES.COMPANIES_ACT_7_YEARS.legalReference).toMatch(/Companies Act/);
       expect(RETENTION_POLICIES.FICA_5_YEARS.legalReference).toMatch(/FICA/);
       expect(RETENTION_POLICIES.POPIA_1_YEAR.legalReference).toMatch(/POPIA/);
-      expect(RETENTION_POLICIES.TRUST_PERPETUAL.legalReference).toMatch(/Trust Property Control Act/);
+      expect(RETENTION_POLICIES.TRUST_PERPETUAL.legalReference).toMatch(
+        /Trust Property Control Act/
+      );
     });
   });
 

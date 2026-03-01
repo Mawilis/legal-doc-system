@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*= ==========================================================================================================================
+#!/*= ==========================================================================================================================
     ╔═╗╦  ╦╔═╗╔╦╗╔═╗╦  ╦╔═╗╔╗╔╔╦╗╦╔═╗╔═╗  ╔═╗╦  ╔╦╗╔═╗╦═╗╔╦╗╔═╗
     ╠═╝╚╗╔╝╠═╣║║║╠═╣║  ║║╣ ║║║ ║ ║║ ║╚═╗  ║ ║║   ║ ╠═╣╠╦╝ ║║╚═╗
     ╩   ╚╝ ╩ ╩╩ ╩╩ ╩╩═╝╩╚═╝╝╚╝ ╩ ╩╚═╝╚═╝  ╚═╝╩═╝ ╩ ╩ ╩╩╚══╩╝╚═╝
@@ -453,7 +451,7 @@ const COMPLIANCE_CONSTANTS = Object.freeze({
 
   // Currencies for Multi-Currency Support
   CURRENCIES: (process.env.SUPPORTED_CURRENCIES || 'ZAR,USD,EUR,GBP,BWP,NAD,NGN,KES,GHS').split(
-    ',',
+    ','
   ),
 });
 
@@ -515,7 +513,7 @@ const PersonalInformationSchema = new Schema(
   {
     _id: false,
     timestamps: false,
-  },
+  }
 );
 
 // Virtual for getting decrypted value (requires authorization)
@@ -1091,8 +1089,8 @@ const ClientSchema = new Schema(
               // Quantum Shield: Validate secure storage URL
               const bucket = process.env.DOCUMENT_STORAGE_BUCKET || 'wilsy-secure-documents';
               return (
-                v.startsWith(`https://${bucket}.s3.af-south-1.amazonaws.com/`)
-                || v.startsWith(`https://${bucket}.s3.amazonaws.com/`)
+                v.startsWith(`https://${bucket}.s3.af-south-1.amazonaws.com/`) ||
+                v.startsWith(`https://${bucket}.s3.amazonaws.com/`)
               );
             },
             message: 'Documents must be stored in secure Wilsy OS storage',
@@ -1545,7 +1543,7 @@ const ClientSchema = new Schema(
       virtuals: true,
       getters: true,
     },
-  },
+  }
 );
 
 // ================================================================================================================
@@ -1609,10 +1607,10 @@ ClientSchema.pre('save', async function (next) {
 
     // Update search vector for full-text search
     if (
-      this.isModified('fullName')
-      || this.isModified('email')
-      || this.isModified('companyName')
-      || this.isModified('companyRegistrationNumber')
+      this.isModified('fullName') ||
+      this.isModified('email') ||
+      this.isModified('companyName') ||
+      this.isModified('companyRegistrationNumber')
     ) {
       this.searchVector = [
         this.fullName?.displayValue,
@@ -1632,8 +1630,8 @@ ClientSchema.pre('save', async function (next) {
 
     // Update FICA next review date
     if (
-      this.ficaStatus === 'VERIFIED'
-      && (!this.ficaNextReview || this.isModified('ficaLastVerified'))
+      this.ficaStatus === 'VERIFIED' &&
+      (!this.ficaNextReview || this.isModified('ficaLastVerified'))
     ) {
       this.ficaNextReview = moment(this.ficaLastVerified || new Date())
         .add(365, 'days')
@@ -1668,7 +1666,7 @@ ClientSchema.pre('validate', function (next) {
   if (this.entityType === 'COMPANY' && !this.companyRegistrationNumber) {
     this.invalidate(
       'companyRegistrationNumber',
-      'Company registration number required for companies',
+      'Company registration number required for companies'
     );
   }
 
@@ -1694,9 +1692,9 @@ ClientSchema.post('save', async (doc) => {
 
     // Update risk score if risk factors changed
     if (
-      doc.isModified('riskFactors')
-      || doc.isModified('pepStatus')
-      || doc.isModified('sanctionsStatus')
+      doc.isModified('riskFactors') ||
+      doc.isModified('pepStatus') ||
+      doc.isModified('sanctionsStatus')
     ) {
       await doc.calculateRiskScore();
     }
@@ -1731,7 +1729,7 @@ ClientSchema.methods.updateTrustBalance = async function (amount, userId, reason
   const overdraftLimit = parseFloat((this.trustOverdraftLimit || 0).toString());
   if (newBalance < overdraftLimit) {
     throw new Error(
-      `Trust account cannot be overdrawn beyond ${Math.abs(overdraftLimit).toFixed(2)} limit`,
+      `Trust account cannot be overdrawn beyond ${Math.abs(overdraftLimit).toFixed(2)} limit`
     );
   }
 
@@ -1758,7 +1756,8 @@ ClientSchema.methods.updateTrustBalance = async function (amount, userId, reason
   // Update metrics
   this.metrics.totalTransactions += 1;
   this.metrics.totalTransactionValue = currentBalance + newBalance;
-  this.metrics.averageTransactionValue = this.metrics.totalTransactionValue / this.metrics.totalTransactions;
+  this.metrics.averageTransactionValue =
+    this.metrics.totalTransactionValue / this.metrics.totalTransactions;
   this.metrics.lastTransactionDate = new Date();
 
   return this.save();
@@ -1776,7 +1775,7 @@ ClientSchema.methods.verifyFICA = async function (
   userId,
   documentIds = [],
   verificationMethod = 'MANUAL',
-  metadata = {},
+  metadata = {}
 ) {
   // Validate entity-specific requirements
   const entityConfig = COMPLIANCE_CONSTANTS.ENTITY_TYPES[this.entityType];
@@ -1852,7 +1851,7 @@ ClientSchema.methods.verifyFICA = async function (
 ClientSchema.methods.addDocument = async function (documentData, userId) {
   // Generate document hash for integrity
   const documentHash = CryptoUtils.generateDocumentHash(
-    documentData.fileUrl + documentData.documentName + Date.now(),
+    documentData.fileUrl + documentData.documentName + Date.now()
   );
 
   const document = {
@@ -2040,7 +2039,7 @@ ClientSchema.methods.addAuditTrailEntry = async function (entryData) {
 
   // Calculate current hash
   auditEntry.eventHash = CryptoUtils.generateDocumentHash(
-    JSON.stringify(auditEntry) + this.lastAuditHash,
+    JSON.stringify(auditEntry) + this.lastAuditHash
   );
 
   this.auditTrail.push(auditEntry);
@@ -2179,7 +2178,7 @@ ClientSchema.statics.batchUpdateStatus = async function (clientIds, status, user
           eventHash: CryptoUtils.generateDocumentHash(`batch-status-${Date.now()}`),
         },
       },
-    },
+    }
   );
 
   return updateResult;
@@ -2261,7 +2260,7 @@ ClientSchema.index({ tenantId: 1, 'email.displayValue': 1 }, { unique: true, spa
 ClientSchema.index({ tenantId: 1, 'idNumber.displayValue': 1 }, { unique: true, sparse: true });
 ClientSchema.index(
   { tenantId: 1, 'companyRegistrationNumber.displayValue': 1 },
-  { unique: true, sparse: true },
+  { unique: true, sparse: true }
 );
 ClientSchema.index({ dataRetentionUntil: 1 }, { expireAfterSeconds: 0 });
 ClientSchema.index({ createdAt: -1 });
@@ -2275,7 +2274,7 @@ ClientSchema.index(
       searchVector: 10,
     },
     name: 'client_search_index',
-  },
+  }
 );
 
 // ================================================================================================================

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * @file /Users/wilsonkhanyezi/legal-doc-system/server/models/DSARRequest.js
  * @module DSARRequest
  * @description Data Subject Access Request model for POPIA/GDPR compliance
@@ -516,7 +514,7 @@ const DSARRequestSchema = new mongoose.Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 // ==================== COMPOUND INDEXES ====================
@@ -753,7 +751,7 @@ DSARRequestSchema.methods.addProcessingLog = function (
   action,
   performedBy = 'system',
   metadata = {},
-  status = 'SUCCESS',
+  status = 'SUCCESS'
 ) {
   this.processingLog.push({
     timestamp: new Date(),
@@ -806,7 +804,7 @@ DSARRequestSchema.methods.calculateSLAStatus = function () {
   const hoursRemaining = Math.max(0, Math.floor(remainingMs / (1000 * 60 * 60)));
   const percentageComplete = Math.min(
     100,
-    Math.floor((elapsedMs / (totalHours * 60 * 60 * 1000)) * 100),
+    Math.floor((elapsedMs / (totalHours * 60 * 60 * 1000)) * 100)
   );
   const isBreached = remainingMs < 0;
 

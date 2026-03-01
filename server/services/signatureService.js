@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                                      ║
 ║    ███████╗██╗ ██████╗ ███╗    ██╗ █████╗ ████████╗██╗   ██╗██████╗ ███████╗                         ║
@@ -101,7 +99,7 @@ const validateSignatureEnvironment = function () {
       {
         missing,
         service: 'SignatureService',
-      },
+      }
     );
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
@@ -152,7 +150,7 @@ class QuantumCertificateAuthority {
         globalQuantumLogger.info('CA_KEY_GENERATED', 'Generated new CA key pair');
         globalQuantumLogger.warn(
           'CA_KEY_STORAGE',
-          'CA private key not persisted - configure secure storage',
+          'CA private key not persisted - configure secure storage'
         );
       }
 
@@ -172,7 +170,7 @@ class QuantumCertificateAuthority {
     cert.validity.notBefore = new Date();
     cert.validity.notAfter = new Date();
     cert.validity.notAfter.setDate(
-      cert.validity.notBefore.getDate() + QUANTUM_CONSTANTS.CRYPTOGRAPHY.CERTIFICATE_VALIDITY,
+      cert.validity.notBefore.getDate() + QUANTUM_CONSTANTS.CRYPTOGRAPHY.CERTIFICATE_VALIDITY
     );
 
     const attrs = [
@@ -187,7 +185,10 @@ class QuantumCertificateAuthority {
     cert.setExtensions([
       { name: 'basicConstraints', cA: true, pathLenConstraint: 0 },
       {
-        name: 'keyUsage', keyCertSign: true, cRLSign: true, digitalSignature: true,
+        name: 'keyUsage',
+        keyCertSign: true,
+        cRLSign: true,
+        digitalSignature: true,
       },
       { name: 'subjectKeyIdentifier' },
     ]);
@@ -209,7 +210,7 @@ class QuantumCertificateAuthority {
       cert.validity.notBefore = new Date();
       cert.validity.notAfter = new Date();
       cert.validity.notAfter.setDate(
-        cert.validity.notBefore.getDate() + QUANTUM_CONSTANTS.CRYPTOGRAPHY.CERTIFICATE_VALIDITY,
+        cert.validity.notBefore.getDate() + QUANTUM_CONSTANTS.CRYPTOGRAPHY.CERTIFICATE_VALIDITY
       );
 
       const subjectAttrs = [
@@ -239,7 +240,7 @@ class QuantumCertificateAuthority {
 
       const encryptedPrivateKey = await EncryptionService.encryptData(
         forge.pki.privateKeyToPem(keys.privateKey),
-        'SIGNATURE_PRIVATE_KEY',
+        'SIGNATURE_PRIVATE_KEY'
       );
       this.keyStorage.set(certificateId, encryptedPrivateKey);
 
@@ -443,10 +444,13 @@ class SignatureProvider {
   async createInternalSignature(requestData) {
     const signatureId = uuidv4();
     const certificates = await Promise.all(
-      requestData.signers.map(async (signer) => await this.config.certificateAuthority.issueCertificate(
-        signer,
-        QUANTUM_CONSTANTS.SIGNATURE_TYPES.ADVANCED,
-      )),
+      requestData.signers.map(
+        async (signer) =>
+          await this.config.certificateAuthority.issueCertificate(
+            signer,
+            QUANTUM_CONSTANTS.SIGNATURE_TYPES.ADVANCED
+          )
+      )
     );
     return {
       signatureId,

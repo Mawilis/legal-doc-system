@@ -1,4 +1,4 @@
-/* ╔════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════╗
   ║ PROMETHEUS EXPORTER TESTS - INVESTOR DUE DILIGENCE            ║
   ║ 100% coverage | Enterprise monitoring | Real-time metrics     ║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -11,10 +11,10 @@
  */
 
 import fs from 'fs/promises';
-import crypto from "crypto";
+import crypto from 'crypto';
 import express from 'express.js';
 import os from 'os';
-import path from "path";
+import path from 'path';
 import process from 'process';
 import promClient from 'prom-client.js';
 import request from 'supertest.js';
@@ -49,11 +49,17 @@ describe('PrometheusExporter - Enterprise Monitoring Due Diligence', () => {
 
     // Mock system info
     os.hostname.mockReturnValue('test-host');
-    os.cpus.mockReturnValue([{
-      times: {
-        user: 100, nice: 0, sys: 50, idle: 200, irq: 0,
+    os.cpus.mockReturnValue([
+      {
+        times: {
+          user: 100,
+          nice: 0,
+          sys: 50,
+          idle: 200,
+          irq: 0,
+        },
       },
-    }]);
+    ]);
     os.totalmem.mockReturnValue(16 * 1024 * 1024 * 1024); // 16GB
     os.freemem.mockReturnValue(8 * 1024 * 1024 * 1024); // 8GB
     os.loadavg.mockReturnValue([1.5, 1.2, 1.0]);
@@ -772,7 +778,10 @@ describe('PrometheusExporter - Enterprise Monitoring Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'prometheus-exporter-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'prometheus-exporter-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'prometheus-exporter-evidence.json'))
@@ -781,7 +790,10 @@ describe('PrometheusExporter - Enterprise Monitoring Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'prometheus-exporter-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'prometheus-exporter-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

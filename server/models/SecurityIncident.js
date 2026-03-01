@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                     QUANTUM SECURITY INCIDENT NEXUS                                 ║
  * ║  This celestial bastion immortalizes every quantum of security disturbance within   ║
@@ -525,8 +523,8 @@ const SecurityIncidentSchema = new mongoose.Schema(
           type: Boolean,
           default() {
             return (
-              (this.incidentType === 'DATA_BREACH' && this.severity === 'HIGH')
-              || this.severity === 'CRITICAL'
+              (this.incidentType === 'DATA_BREACH' && this.severity === 'HIGH') ||
+              this.severity === 'CRITICAL'
             );
           },
         },
@@ -818,7 +816,8 @@ const SecurityIncidentSchema = new mongoose.Schema(
           communicationId: {
             type: String,
             required: true,
-            default: () => `REG-COMM-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+            default: () =>
+              `REG-COMM-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
           },
           type: {
             type: String,
@@ -1215,7 +1214,7 @@ const SecurityIncidentSchema = new mongoose.Schema(
     toObject: {
       virtuals: true,
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1240,7 +1239,7 @@ SecurityIncidentSchema.index(
       'incidentStatus.status': 'CLOSED',
       'legalCompliance.legalHold': false,
     },
-  },
+  }
 );
 
 // Geospatial Index for Physical Incidents
@@ -1294,8 +1293,8 @@ SecurityIncidentSchema.virtual('popiaNotificationCompliance').get(function () {
 
   // Check data subject notification
   if (
-    this.incidentType === 'DATA_BREACH'
-    && (this.severity === 'HIGH' || this.severity === 'CRITICAL')
+    this.incidentType === 'DATA_BREACH' &&
+    (this.severity === 'HIGH' || this.severity === 'CRITICAL')
   ) {
     if (!this.notificationCompliance?.dataSubjectNotification?.notificationStartedAt) {
       compliance.dataSubjectNotification = 'PENDING';
@@ -1368,16 +1367,16 @@ SecurityIncidentSchema.virtual('financialImpactScore').get(function () {
 SecurityIncidentSchema.pre('save', async function (next) {
   // Only validate on new documents or when specific fields change
   if (
-    this.isNew
-    || this.isModified('incidentType')
-    || this.isModified('severity')
-    || this.isModified('breachDetails')
+    this.isNew ||
+    this.isModified('incidentType') ||
+    this.isModified('severity') ||
+    this.isModified('breachDetails')
   ) {
     // Validate POPIA data breach requirements
     if (this.incidentType === 'DATA_BREACH') {
       if (
-        !this.breachDetails?.dataSubjectsAffected
-        || this.breachDetails.dataSubjectsAffected < 0
+        !this.breachDetails?.dataSubjectsAffected ||
+        this.breachDetails.dataSubjectsAffected < 0
       ) {
         const err = new Error('Data breach incidents require valid data subjects affected count');
         err.code = 'POPIA_COMPLIANCE_ERROR';
@@ -1385,11 +1384,11 @@ SecurityIncidentSchema.pre('save', async function (next) {
       }
 
       if (
-        !this.breachDetails?.breachDescription
-        || this.breachDetails.breachDescription.length < 100
+        !this.breachDetails?.breachDescription ||
+        this.breachDetails.breachDescription.length < 100
       ) {
         const err = new Error(
-          'Data breach incidents require detailed description (minimum 100 characters)',
+          'Data breach incidents require detailed description (minimum 100 characters)'
         );
         err.code = 'POPIA_COMPLIANCE_ERROR';
         return next(err);
@@ -1398,11 +1397,11 @@ SecurityIncidentSchema.pre('save', async function (next) {
 
     // Validate severity justification
     if (
-      this.severity === 'CRITICAL'
-      && (!this.severityJustification || this.severityJustification.length < 100)
+      this.severity === 'CRITICAL' &&
+      (!this.severityJustification || this.severityJustification.length < 100)
     ) {
       const err = new Error(
-        'CRITICAL severity incidents require detailed justification (minimum 100 characters)',
+        'CRITICAL severity incidents require detailed justification (minimum 100 characters)'
       );
       err.code = 'SEVERITY_VALIDATION_ERROR';
       return next(err);
@@ -1457,15 +1456,19 @@ SecurityIncidentSchema.pre('validate', function (next) {
   // Auto-set notification requirements based on severity and type
   if (!this.notificationCompliance?.regulatorNotification?.required) {
     this.notificationCompliance = this.notificationCompliance || {};
-    this.notificationCompliance.regulatorNotification = this.notificationCompliance.regulatorNotification || {};
-    this.notificationCompliance.regulatorNotification.required = this.incidentType === 'DATA_BREACH' && this.severity !== 'LOW';
+    this.notificationCompliance.regulatorNotification =
+      this.notificationCompliance.regulatorNotification || {};
+    this.notificationCompliance.regulatorNotification.required =
+      this.incidentType === 'DATA_BREACH' && this.severity !== 'LOW';
   }
 
   // Auto-set data subject notification requirements
   if (!this.notificationCompliance?.dataSubjectNotification?.required) {
-    this.notificationCompliance.dataSubjectNotification = this.notificationCompliance.dataSubjectNotification || {};
-    this.notificationCompliance.dataSubjectNotification.required = this.incidentType === 'DATA_BREACH'
-      && (this.severity === 'HIGH' || this.severity === 'CRITICAL');
+    this.notificationCompliance.dataSubjectNotification =
+      this.notificationCompliance.dataSubjectNotification || {};
+    this.notificationCompliance.dataSubjectNotification.required =
+      this.incidentType === 'DATA_BREACH' &&
+      (this.severity === 'HIGH' || this.severity === 'CRITICAL');
   }
 
   next();
@@ -1513,8 +1516,9 @@ SecurityIncidentSchema.methods.updateComplianceStatus = function () {
   const compliance = this.popiaNotificationCompliance;
 
   this.incidentStatus.popiaCompliant = compliance.overallCompliance === 'COMPLIANT';
-  this.incidentStatus.notificationsComplete = compliance.regulatorNotification !== 'PENDING'
-    && compliance.dataSubjectNotification !== 'PENDING';
+  this.incidentStatus.notificationsComplete =
+    compliance.regulatorNotification !== 'PENDING' &&
+    compliance.dataSubjectNotification !== 'PENDING';
 
   return {
     popiaCompliant: this.incidentStatus.popiaCompliant,
@@ -2050,13 +2054,13 @@ export default SecurityIncident;
 
 // FINAL QUANTUM INVOCATION
 console.log(
-  '🛡️  SecurityIncident Quantum Model Activated: Weaving Cybercrimes Act compliance into the eternal fabric of African digital sovereignty.',
+  '🛡️  SecurityIncident Quantum Model Activated: Weaving Cybercrimes Act compliance into the eternal fabric of African digital sovereignty.'
 );
 console.log(
-  '⚖️  Wilsy Touching Lives Eternally through unbreakable cybersecurity and regulatory compliance.',
+  '⚖️  Wilsy Touching Lives Eternally through unbreakable cybersecurity and regulatory compliance.'
 );
 console.log(
-  '🚀 72-Hour POPIA Clock Synchronized | Forensic Chain of Custody Established | Regulator Interface Quantum Linked',
+  '🚀 72-Hour POPIA Clock Synchronized | Forensic Chain of Custody Established | Regulator Interface Quantum Linked'
 );
 
 /*

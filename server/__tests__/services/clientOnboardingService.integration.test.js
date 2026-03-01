@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /*
  * INTEGRATION TEST: Client Onboarding Service
  * INVESTOR-GRADE - WORKING SOLUTION
@@ -18,7 +16,9 @@ jest.mock('../../utils/auditLogger', () => ({
 }));
 
 jest.mock('../../utils/cryptoUtils', () => ({
-  generateForensicHash: jest.fn().mockImplementation((data) => `hash_${Buffer.from(data).toString('hex').substring(0, 10)}`),
+  generateForensicHash: jest
+    .fn()
+    .mockImplementation((data) => `hash_${Buffer.from(data).toString('hex').substring(0, 10)}`),
   redactSensitive: jest.fn().mockImplementation((data) => data),
 }));
 
@@ -96,7 +96,12 @@ describe('Client Onboarding Service - Integration Tests', () => {
       popiaConsent: true,
     };
 
-    const session = await clientOnboardingService.createSession(sessionId, tenantId, clientType, initialData);
+    const session = await clientOnboardingService.createSession(
+      sessionId,
+      tenantId,
+      clientType,
+      initialData
+    );
 
     expect(session).toBeDefined();
     expect(session.sessionId).toBe(sessionId);
@@ -142,13 +147,18 @@ describe('Client Onboarding Service - Integration Tests', () => {
       popiaConsent: true,
     });
 
-    const updated = await clientOnboardingService.updateSessionData(sessionId, tenantId, 'CLIENT_INFO', {
-      firstName: 'John',
-      lastName: 'Doe',
-      idNumber: '9001011234567',
-      dateOfBirth: '1990-01-01',
-      nationality: 'South African',
-    });
+    const updated = await clientOnboardingService.updateSessionData(
+      sessionId,
+      tenantId,
+      'CLIENT_INFO',
+      {
+        firstName: 'John',
+        lastName: 'Doe',
+        idNumber: '9001011234567',
+        dateOfBirth: '1990-01-01',
+        nationality: 'South African',
+      }
+    );
 
     expect(updated).toBeDefined();
     expect(updated.stages).toHaveLength(2);
@@ -178,7 +188,12 @@ describe('Client Onboarding Service - Integration Tests', () => {
 
     const fileData = Buffer.from('mock file content');
 
-    const document = await clientOnboardingService.uploadDocument(sessionId, tenantId, documentInfo, fileData);
+    const document = await clientOnboardingService.uploadDocument(
+      sessionId,
+      tenantId,
+      documentInfo,
+      fileData
+    );
 
     expect(document).toBeDefined();
     expect(document.documentType).toBe('ID_COPY');
@@ -209,7 +224,7 @@ describe('Client Onboarding Service - Integration Tests', () => {
         fileSize: 1024,
         mimeType: 'application/pdf',
       },
-      Buffer.from('id content'),
+      Buffer.from('id content')
     );
 
     await clientOnboardingService.uploadDocument(
@@ -221,7 +236,7 @@ describe('Client Onboarding Service - Integration Tests', () => {
         fileSize: 2048,
         mimeType: 'application/pdf',
       },
-      Buffer.from('address content'),
+      Buffer.from('address content')
     );
 
     const documents = await clientOnboardingService.getDocuments(sessionId, tenantId);
@@ -233,14 +248,19 @@ describe('Client Onboarding Service - Integration Tests', () => {
     const tenantId = 'tenant-test-12345678';
 
     for (let i = 0; i < 5; i++) {
-      await clientOnboardingService.createSession(`test-session-stat-${i}`, tenantId, 'INDIVIDUAL', {
-        firstName: `User${i}`,
-        lastName: 'Test',
-        idNumber: `900101123456${i}`,
-        dateOfBirth: '1990-01-01',
-        nationality: 'South African',
-        popiaConsent: true,
-      });
+      await clientOnboardingService.createSession(
+        `test-session-stat-${i}`,
+        tenantId,
+        'INDIVIDUAL',
+        {
+          firstName: `User${i}`,
+          lastName: 'Test',
+          idNumber: `900101123456${i}`,
+          dateOfBirth: '1990-01-01',
+          nationality: 'South African',
+          popiaConsent: true,
+        }
+      );
     }
 
     const stats = await clientOnboardingService.getStatistics(tenantId);

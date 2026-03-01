@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: INTERNATIONAL GATEWAY SENTINEL - GLOBAL TRAFFIC CONTROLLER
  * ============================================================================

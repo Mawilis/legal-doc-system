@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/standardsController.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Compliance Gateway. Validates legal documents against Court Rules & Jurisdictional Standards.
@@ -36,7 +34,7 @@ exports.validateDocument = async (req, res, next) => {
       {
         headers: { 'x-service-secret': SERVICE_SECRET },
         timeout: 5000,
-      },
+      }
     );
 
     // 2. Audit the Compliance Check

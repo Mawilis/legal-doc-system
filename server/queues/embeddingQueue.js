@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/queues/embeddingQueue.js
  * PATH: /server/queues/embeddingQueue.js
@@ -99,7 +99,7 @@
 import { Queue, QueueEvents } from 'bullmq.js';
 import Redis from 'ioredis.js';
 import { performance } from 'perf_hooks';
-import crypto from "crypto";
+import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid.js';
 import promClient from 'prom-client.js';
 

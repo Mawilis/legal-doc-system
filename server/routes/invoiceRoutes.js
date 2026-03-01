@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/invoiceRoutes.js
  * PATH: server/routes/invoiceRoutes.js
  * STATUS: PRODUCTION-READY | BIBLICAL | FORENSIC SAFE
@@ -48,7 +46,7 @@ router.get(
   protect,
   tenantGuard(),
   restrictTo('partner', 'finance', 'admin'),
-  asyncHandler(invoiceController.getAllInvoices),
+  asyncHandler(invoiceController.getAllInvoices)
 );
 
 /*
@@ -60,7 +58,7 @@ router.post(
   protect,
   tenantGuard(),
   restrictTo('partner', 'finance', 'admin'),
-  asyncHandler(invoiceController.createInvoice),
+  asyncHandler(invoiceController.createInvoice)
 );
 
 /*
@@ -73,7 +71,7 @@ router.get(
   protect,
   tenantGuard(),
   restrictTo('partner', 'finance', 'admin', 'lawyer', 'client'),
-  asyncHandler(invoiceController.getInvoice),
+  asyncHandler(invoiceController.getInvoice)
 );
 
 /*
@@ -87,8 +85,8 @@ router.get(
   tenantGuard(),
   restrictTo('partner', 'finance', 'admin', 'lawyer', 'client'),
   asyncHandler(
-    invoiceController.getInvoicePdf || ((req, res) => res.status(501).send('PDF Engine Pending')),
-  ),
+    invoiceController.getInvoicePdf || ((req, res) => res.status(501).send('PDF Engine Pending'))
+  )
 );
 
 /*
@@ -101,7 +99,7 @@ router.patch(
   protect,
   tenantGuard(),
   restrictTo('finance', 'admin', 'partner'),
-  asyncHandler(invoiceController.recordPayment),
+  asyncHandler(invoiceController.recordPayment)
 );
 
 /*
@@ -115,8 +113,8 @@ router.post(
   tenantGuard(),
   restrictTo('finance', 'partner', 'lawyer'),
   asyncHandler(
-    invoiceController.emailInvoice || ((req, res) => res.status(501).send('Mailer Engine Pending')),
-  ),
+    invoiceController.emailInvoice || ((req, res) => res.status(501).send('Mailer Engine Pending'))
+  )
 );
 
 /*
@@ -129,7 +127,7 @@ router.delete(
   protect,
   tenantGuard(),
   restrictTo('partner', 'admin'),
-  asyncHandler(invoiceController.voidInvoice),
+  asyncHandler(invoiceController.voidInvoice)
 );
 
 /* ---------------------------------------------------------------------------

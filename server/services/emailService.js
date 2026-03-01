@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                                                                                      ║
  * ║  ██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ███████╗███╗   ██╗ ██████╗ ██████╗       ║
@@ -340,18 +338,22 @@ class TemplateEngine {
    */
   initializeHandlebarsHelpers() {
     // South African date formatting
-    handlebars.registerHelper('saDate', (date) => new Date(date).toLocaleDateString('en-ZA', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }));
+    handlebars.registerHelper('saDate', (date) =>
+      new Date(date).toLocaleDateString('en-ZA', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    );
 
     // South African currency formatting
-    handlebars.registerHelper('zar', (amount) => new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR',
-      minimumFractionDigits: 2,
-    }).format(amount));
+    handlebars.registerHelper('zar', (amount) =>
+      new Intl.NumberFormat('en-ZA', {
+        style: 'currency',
+        currency: 'ZAR',
+        minimumFractionDigits: 2,
+      }).format(amount)
+    );
 
     // Legal case number formatting
     handlebars.registerHelper('caseNumber', (caseNo) => {
@@ -360,7 +362,10 @@ class TemplateEngine {
     });
 
     // Confidentiality notice
-    handlebars.registerHelper('confidentialityNotice', () => EMAIL_CONFIG.SOUTH_AFRICAN.LEGAL_TERMS.CONFIDENTIALITY_NOTICE);
+    handlebars.registerHelper(
+      'confidentialityNotice',
+      () => EMAIL_CONFIG.SOUTH_AFRICAN.LEGAL_TERMS.CONFIDENTIALITY_NOTICE
+    );
 
     // Safe string helper to prevent XSS
     handlebars.registerHelper('safe', (context) => new handlebars.SafeString(context));
@@ -393,7 +398,7 @@ class TemplateEngine {
         templatePath = path.join(
           EMAIL_CONFIG.TEMPLATES.DIRECTORY,
           EMAIL_CONFIG.TEMPLATES.DEFAULT_LOCALE,
-          `${templateName}.hbs`,
+          `${templateName}.hbs`
         );
       }
 
@@ -711,7 +716,8 @@ class EmailDeliveryService {
       return nodemailer.createTransport({
         SES: { ses: sesClient, aws: AWS },
       });
-    } if (EMAIL_CONFIG.DELIVERY.PROVIDER === 'SMTP') {
+    }
+    if (EMAIL_CONFIG.DELIVERY.PROVIDER === 'SMTP') {
       // Use SMTP
       return nodemailer.createTransport({
         host: process.env.SMTP_HOST,
@@ -984,7 +990,7 @@ class EmailDeliveryService {
       // Encrypt attachment if enabled
       if (EMAIL_CONFIG.SECURITY.ATTACHMENTS.ENCRYPT_ATTACHMENTS) {
         const encrypted = await EmailEncryptionService.encryptAttachment(
-          Buffer.from(attachment.content),
+          Buffer.from(attachment.content)
         );
 
         processedAttachments.push({
@@ -1101,7 +1107,8 @@ class EmailDeliveryService {
       headers['X-Tracking-ID'] = crypto.randomBytes(16).toString('hex');
 
       if (tracking.READ_RECEIPTS) {
-        headers['Disposition-Notification-To'] = process.env.EMAIL_RETURN_PATH || process.env.EMAIL_FROM;
+        headers['Disposition-Notification-To'] =
+          process.env.EMAIL_RETURN_PATH || process.env.EMAIL_FROM;
         headers['Return-Receipt-To'] = process.env.EMAIL_RETURN_PATH || process.env.EMAIL_FROM;
       }
     }
@@ -1122,7 +1129,9 @@ class EmailDeliveryService {
     const saDomains = ['.co.za', '.ac.za', '.gov.za', '.org.za', '.net.za', '.web.za'];
     const recipientList = Array.isArray(recipients) ? recipients : [recipients];
 
-    return recipientList.some((recipient) => saDomains.some((domain) => recipient.toLowerCase().endsWith(domain)));
+    return recipientList.some((recipient) =>
+      saDomains.some((domain) => recipient.toLowerCase().endsWith(domain))
+    );
   }
 
   /*
@@ -1211,7 +1220,7 @@ class EmailDeliveryService {
             templateId: params.templateId,
             processingTime: params.result.processingTime,
           },
-        },
+        }
       );
     } catch (error) {
       console.error(`📧 Audit logging error: ${error.message}`);
@@ -1237,7 +1246,7 @@ class EmailDeliveryService {
             error: params.error,
             processingTime: params.processingTime,
           },
-        },
+        }
       );
     } catch (error) {
       console.error(`📧 Failure audit logging error: ${error.message}`);
@@ -1359,14 +1368,16 @@ class EmailService {
       // Process in batches
       for (let i = 0; i < emails.length; i += concurrency) {
         const batch = emails.slice(i, i + concurrency);
-        const batchPromises = batch.map((email) => emailDeliveryService.sendEmail({
-          ...email,
-          metadata: {
-            ...email.metadata,
-            batchId,
-            batchIndex: i,
-          },
-        }));
+        const batchPromises = batch.map((email) =>
+          emailDeliveryService.sendEmail({
+            ...email,
+            metadata: {
+              ...email.metadata,
+              batchId,
+              batchIndex: i,
+            },
+          })
+        );
 
         const batchResults = await Promise.allSettled(batchPromises);
         results.push(...batchResults);
@@ -1398,7 +1409,7 @@ class EmailService {
             failed,
             processingTime,
           },
-        },
+        }
       );
 
       return {
@@ -1507,7 +1518,7 @@ class EmailService {
             messageId: result.messageId,
             processingTime,
           },
-        },
+        }
       );
 
       return {
@@ -1556,8 +1567,8 @@ class EmailService {
                     <li><strong>Parties:</strong> ${document.parties.join(', ')}</li>
                     <li><strong>Document Type:</strong> ${document.type}</li>
                     <li><strong>Date Filed:</strong> ${new Date(
-    document.filingDate,
-  ).toLocaleDateString('en-ZA')}</li>
+                      document.filingDate
+                    ).toLocaleDateString('en-ZA')}</li>
                 </ul>
                 
                 <p>The attached document(s) have been formally served upon you via electronic mail as permitted by the Rules of Court.</p>
@@ -1628,13 +1639,13 @@ class EmailService {
         deliveryConfirmation: params.result.accepted || [],
         digitalSignature: EmailEncryptionService.generateDigitalSignature(
           params,
-          process.env.LEGAL_SIGNATURE_KEY,
+          process.env.LEGAL_SIGNATURE_KEY
         ),
       },
       statement: `I, ${params.servedBy}, hereby declare under oath that the documents in case ${
         params.document.caseNumber
       } were served via electronic mail on ${new Date(params.timestamp).toLocaleDateString(
-        'en-ZA',
+        'en-ZA'
       )} at ${new Date(params.timestamp).toLocaleTimeString('en-ZA')}.`,
     };
   }
@@ -1768,7 +1779,7 @@ if (process.env.NODE_ENV === 'production') {
         console.error(`❌ Email health check error: ${error.message}`);
       }
     },
-    15 * 60 * 1000,
+    15 * 60 * 1000
   ); // Every 15 minutes
 }
 

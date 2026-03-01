@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - TRUST ACCOUNT MODEL
  * Standard: ES Module (Surgically Standardized)

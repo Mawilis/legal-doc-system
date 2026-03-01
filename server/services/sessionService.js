@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * /Users/wilsonkhanyezi/legal-doc-system/server/services/sessionService.js
  *
  * Session Service
@@ -14,7 +12,7 @@ exports.revokeAllSessionsForUser = async (userId, reason = 'security_password_re
   const now = new Date();
   await Session.updateMany(
     { userId, valid: true },
-    { $set: { valid: false, revokedAt: now, revokedReason: reason } },
+    { $set: { valid: false, revokedAt: now, revokedReason: reason } }
   );
 };
 
@@ -22,7 +20,7 @@ exports.revokeSessionByHash = async (refreshTokenHash, reason = 'manual_logout')
   const now = new Date();
   await Session.updateOne(
     { refreshTokenHash, valid: true },
-    { $set: { valid: false, revokedAt: now, revokedReason: reason } },
+    { $set: { valid: false, revokedAt: now, revokedReason: reason } }
   );
 };
 

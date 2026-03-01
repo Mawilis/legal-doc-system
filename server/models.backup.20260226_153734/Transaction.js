@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - QUANTUM TRANSACTION MODEL
  * Standard: ES Module (Surgically Standardized)
@@ -6,7 +6,7 @@
  */
 
 import crypto from 'node:crypto';
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid.js';
 import { DateTime } from 'luxon.js';
 

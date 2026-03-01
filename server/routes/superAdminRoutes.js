@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable no-irregular-whitespace */
+#!/* eslint-disable no-irregular-whitespace */
 /*
 ================================================================================
                            SUPREME ROUTING MATRIX
@@ -54,9 +52,7 @@ const express = require('express');
 
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const {
-  body, param, query, validationResult,
-} = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
 const helmet = require('helmet');
 const cors = require('cors');
 const compression = require('compression');
@@ -170,8 +166,7 @@ const divineProtectedLimiter = rateLimit({
   },
   keyGenerator: (req) =>
     // Use authenticated user ID for rate limiting
-    req.superAdmin?.quantumId || req.ip
-  ,
+    req.superAdmin?.quantumId || req.ip,
 });
 
 // Emergency Rate Limiter (Crisis endpoints)
@@ -196,11 +191,11 @@ const corsOptions = {
     const allowedOrigins = process.env.CORS_ORIGINS
       ? process.env.CORS_ORIGINS.split(',')
       : [
-        'https://admin.wilsyos.co.za',
-        'https://dashboard.wilsyos.co.za',
-        'https://investor.wilsyos.co.za',
-        'https://emergency.wilsyos.co.za',
-      ];
+          'https://admin.wilsyos.co.za',
+          'https://dashboard.wilsyos.co.za',
+          'https://investor.wilsyos.co.za',
+          'https://emergency.wilsyos.co.za',
+        ];
 
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -490,20 +485,20 @@ const routeAuditLogger = (req, res, next) => {
 
     // Log response details
     console.log(
-      `SUPREME_RESPONSE: ${auditData.method} ${auditData.url} - ${auditData.statusCode} (${responseTime}ms)`,
+      `SUPREME_RESPONSE: ${auditData.method} ${auditData.url} - ${auditData.statusCode} (${responseTime}ms)`
     );
 
     // Alert on slow responses (> 2 seconds)
     if (responseTime > 2000) {
       console.warn(
-        `SLOW_RESPONSE_ALERT: ${auditData.method} ${auditData.url} took ${responseTime}ms`,
+        `SLOW_RESPONSE_ALERT: ${auditData.method} ${auditData.url} took ${responseTime}ms`
       );
     }
 
     // Alert on error responses
     if (auditData.statusCode >= 400) {
       console.error(
-        `ERROR_RESPONSE: ${auditData.method} ${auditData.url} - ${auditData.statusCode}`,
+        `ERROR_RESPONSE: ${auditData.method} ${auditData.url} - ${auditData.statusCode}`
       );
     }
   });
@@ -569,7 +564,7 @@ router.post(
   emergencyAuth, // Only accessible through emergency override
   supremePublicLimiter, // Strict rate limiting
   validateSuperAdminRegistration,
-  registerSuperAdmin,
+  registerSuperAdmin
 );
 
 // =============================================================================
@@ -628,7 +623,7 @@ router.patch(
   divineProtectedLimiter,
   superAdminAuth,
   superAdminEnhancedAuth('canAccessAllData'), // Enhanced security for profile updates
-  updateSuperAdminProfile,
+  updateSuperAdminProfile
 );
 
 /*
@@ -678,7 +673,7 @@ router.get(
   divineProtectedLimiter,
   superAdminAuth,
   superAdminEnhancedAuth('canAccessAllData'),
-  getAllTenants,
+  getAllTenants
 );
 
 /*
@@ -694,7 +689,7 @@ router.post(
   superAdminAuth,
   superAdminEnhancedAuth('canSuspendTenants'), // Specific permission required
   validateTenantSuspension,
-  suspendTenant,
+  suspendTenant
 );
 
 // =============================================================================
@@ -713,7 +708,7 @@ router.post(
   divineProtectedLimiter,
   superAdminAuth,
   superAdminEnhancedAuth('canInitiateAudits'),
-  generateComplianceReport,
+  generateComplianceReport
 );
 
 // =============================================================================
@@ -732,7 +727,7 @@ router.post(
   emergencyCrisisLimiter,
   emergencyAuth, // Special emergency authentication
   validateEmergencyProtocol,
-  activateEmergencyProtocol,
+  activateEmergencyProtocol
 );
 
 // =============================================================================
@@ -819,8 +814,8 @@ router.get(
               projectedValuation >= 1000000000
                 ? 'ACHIEVED'
                 : `${Math.ceil(
-                  (1000000000 - projectedValuation) / (projectedRevenue * 12 * 15 * growthRate),
-                )} months`,
+                    (1000000000 - projectedValuation) / (projectedRevenue * 12 * 15 * growthRate)
+                  )} months`,
           },
           marketAnalysis: {
             southAfricanMarketSize: '30,000+ legal practitioners',
@@ -845,7 +840,7 @@ router.get(
         complianceReference: 'POPIA Section 19 - System integrity',
       });
     }
-  },
+  }
 );
 
 /*
@@ -942,9 +937,9 @@ router.get(
             highRiskTenants: metrics.highRiskTenants,
             mediumRiskTenants: Math.floor(metrics.totalTenants * 0.3), // Placeholder
             lowRiskTenants:
-              metrics.totalTenants
-              - metrics.highRiskTenants
-              - Math.floor(metrics.totalTenants * 0.3),
+              metrics.totalTenants -
+              metrics.highRiskTenants -
+              Math.floor(metrics.totalTenants * 0.3),
             recommendations:
               metrics.highRiskTenants > 0
                 ? [`Review ${metrics.highRiskTenants} high-risk tenants`]
@@ -966,7 +961,7 @@ router.get(
         complianceReference: 'POPIA Section 56 - Information Officer reporting',
       });
     }
-  },
+  }
 );
 
 // =============================================================================
@@ -983,8 +978,8 @@ router.get(
 router.get('/founder/authority', divineProtectedLimiter, superAdminAuth, (req, res) => {
   // Verify requester is Wilson Khanyezi or authorized delegate
   if (
-    req.superAdmin.quantumId !== 'SUPREME-FOUNDER-001'
-    && req.superAdmin.supervisionLevel !== 'FOUNDER_DIRECT'
+    req.superAdmin.quantumId !== 'SUPREME-FOUNDER-001' &&
+    req.superAdmin.supervisionLevel !== 'FOUNDER_DIRECT'
   ) {
     return res.status(403).json({
       success: false,
@@ -1146,7 +1141,7 @@ router.get(
         complianceReference: 'International expansion compliance requirements',
       });
     }
-  },
+  }
 );
 
 // =============================================================================
@@ -1203,7 +1198,7 @@ router.get('/health', supremePublicLimiter, async (req, res) => {
 
   // Overall status
   const allHealthy = Object.values(healthChecks.checks).every(
-    (check) => check.status === 'HEALTHY' || check.status === 'CHECKING',
+    (check) => check.status === 'HEALTHY' || check.status === 'CHECKING'
   );
 
   healthChecks.status = allHealthy ? 'HEALTHY' : 'DEGRADED';

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 console.log('🏥 WILSY OS - Comprehensive Health Check');
 console.log('💰 INVESTOR PRESENTATION READY');

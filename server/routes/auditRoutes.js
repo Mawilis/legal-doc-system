@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/routes/auditRoutes.js
  * PATH: /server/routes/auditRoutes.js
  * STATUS: QUANTUM-FORTIFIED | HYPER-SCALE | BIBLICAL IMMORTALITY
@@ -102,14 +100,16 @@ const tenantScope = require('../middleware/tenantScope');
 const monitoring = require('../utils/monitoring');
 
 // QUANTUM AI: Anomaly Detection Integration
-const anomalyDetection = process.env.ENABLE_AI_ANOMALY_DETECTION === 'true'
-  ? require('../middleware/anomalyDetection')
-  : null;
+const anomalyDetection =
+  process.env.ENABLE_AI_ANOMALY_DETECTION === 'true'
+    ? require('../middleware/anomalyDetection')
+    : null;
 
 // QUANTUM BLOCKCHAIN: Immutable Evidence Verification
-const blockchainVerification = process.env.ENABLE_BLOCKCHAIN_AUDIT === 'true'
-  ? require('../middleware/blockchainVerification')
-  : null;
+const blockchainVerification =
+  process.env.ENABLE_BLOCKCHAIN_AUDIT === 'true'
+    ? require('../middleware/blockchainVerification')
+    : null;
 
 // Load environment variables for configuration
 require('dotenv').config();
@@ -206,7 +206,7 @@ const auditQuerySchema = Joi.object({
       'TRUST_QUANTUM',
       'COMPLIANCE_QUANTUM',
       'SECURITY_QUANTUM',
-      'SYSTEM_QUANTUM',
+      'SYSTEM_QUANTUM'
     )
     .description('Filter by quantum event category'),
 
@@ -276,8 +276,8 @@ const auditExportSchema = Joi.object({
         'TRUST_TRANSACTION',
         'USER_ACCOUNT',
         'CONSENT_RECORD',
-        'COMPLIANCE_REPORT',
-      ),
+        'COMPLIANCE_REPORT'
+      )
     )
     .max(10)
     .description('Array of resource types to include'),
@@ -339,7 +339,7 @@ const auditIngestionSchema = Joi.object({
         tenantId: Joi.string()
           .pattern(/^[a-f0-9]{24}$/)
           .required(),
-      }),
+      })
     )
     .min(1)
     .max(parseInt(process.env.AUDIT_BATCH_MAX_SIZE) || 1000)
@@ -563,7 +563,7 @@ router.get(
   popiaCompliance, // QUANTUM COMPLIANCE: POPIA access control
   cacheMiddleware({ ttl: 300 }), // QUANTUM PERFORMANCE: 5-minute Redis cache
   anomalyDetection ? anomalyDetection('audit_query') : (req, res, next) => next(), // AI threat detection
-  auditController.getQuantumTrail, // QUANTUM ORCHESTRATION: Controller logic
+  auditController.getQuantumTrail // QUANTUM ORCHESTRATION: Controller logic
 );
 
 /*
@@ -585,7 +585,7 @@ router.get(
   paiaCompliance, // QUANTUM COMPLIANCE: PAIA access control
   companiesActCompliance, // QUANTUM COMPLIANCE: Companies Act retention
   blockchainVerification ? blockchainVerification() : (req, res, next) => next(), // Blockchain immutability
-  auditController.getForensicTrail, // QUANTUM ORCHESTRATION: Controller logic
+  auditController.getForensicTrail // QUANTUM ORCHESTRATION: Controller logic
 );
 
 /*
@@ -613,7 +613,7 @@ router.post(
     },
   }),
   anomalyDetection ? anomalyDetection('batch_ingestion') : (req, res, next) => next(), // AI anomaly detection
-  auditController.ingestQuantumBatch, // QUANTUM ORCHESTRATION: Controller logic
+  auditController.ingestQuantumBatch // QUANTUM ORCHESTRATION: Controller logic
 );
 
 /*
@@ -633,7 +633,7 @@ router.get(
   validateQuantumQuery, // QUANTUM VALIDATION: Schema validation
   popiaCompliance, // QUANTUM COMPLIANCE: POPIA reporting requirements
   companiesActCompliance, // QUANTUM COMPLIANCE: Companies Act reporting
-  auditController.generateComplianceReport, // QUANTUM ORCHESTRATION: Controller logic
+  auditController.generateComplianceReport // QUANTUM ORCHESTRATION: Controller logic
 );
 
 /*
@@ -654,7 +654,7 @@ router.get(
   paiaCompliance, // QUANTUM COMPLIANCE: PAIA export requirements
   companiesActCompliance, // QUANTUM COMPLIANCE: Companies Act retention
   blockchainVerification ? blockchainVerification({ verifyAll: true }) : (req, res, next) => next(), // Full blockchain verification
-  auditController.exportQuantumStream, // QUANTUM ORCHESTRATION: Controller logic
+  auditController.exportQuantumStream // QUANTUM ORCHESTRATION: Controller logic
 );
 
 /*
@@ -673,7 +673,7 @@ router.get(
   blockchainVerification
     ? blockchainVerification({ verifySingle: true })
     : (req, res, next) => next(), // Blockchain verification
-  auditController.verifyQuantumRecord, // QUANTUM ORCHESTRATION: Controller logic
+  auditController.verifyQuantumRecord // QUANTUM ORCHESTRATION: Controller logic
 );
 
 /*
@@ -686,7 +686,7 @@ router.get(
 router.get(
   '/quantum-health',
   rateLimiter({ windowMs: 60000, max: 60 }), // QUANTUM PROTECTION: Health check rate limiting
-  auditController.getQuantumHealth, // QUANTUM ORCHESTRATION: Controller logic
+  auditController.getQuantumHealth // QUANTUM ORCHESTRATION: Controller logic
 );
 
 /*
@@ -704,7 +704,7 @@ router.get(
   requireElevatedRole(['SECURITY_OFFICER', 'SYSTEM_ADMIN']), // QUANTUM RBAC
   rateLimiter(rateLimitConfigs.complianceReport), // QUANTUM PROTECTION: Moderate rate limiting
   anomalyDetection ? anomalyDetection('anomaly_report') : (req, res, next) => next(), // AI anomaly detection
-  auditController.getAnomalyReport, // QUANTUM ORCHESTRATION: Controller logic
+  auditController.getAnomalyReport // QUANTUM ORCHESTRATION: Controller logic
 );
 
 /* ---------------------------------------------------------------------------
@@ -740,7 +740,7 @@ router.get(
 
     next();
   },
-  auditController.getAll,
+  auditController.getAll
 );
 
 /*
@@ -773,7 +773,7 @@ router.post(
 
     next();
   },
-  auditController.ingestQuantumBatch, // Use quantum controller for processing
+  auditController.ingestQuantumBatch // Use quantum controller for processing
 );
 
 /*
@@ -805,7 +805,7 @@ router.get(
 
     next();
   },
-  auditController.exportQuantumStream, // Use quantum controller for processing
+  auditController.exportQuantumStream // Use quantum controller for processing
 );
 
 /* ---------------------------------------------------------------------------

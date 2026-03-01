@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*= ==========================================================================
+#!/*= ==========================================================================
   WILSY OS - SUPREME ARCHITECT GENERATED FILE
   ===========================================================================
   ██████╗  ██████╗ ██╗     ██╗     ██╗      ██████╗██╗  ██╗    ███╗   ███╗██╗ ██████╗ ██████╗  █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
@@ -168,15 +166,15 @@ class MigrationRollbackManager {
         if (this.dbConnection && typeof this.dbConnection.close === 'function') {
           await this.dbConnection.close();
         } else if (
-          this.dbConnection
-          && this.dbConnection.client
-          && typeof this.dbConnection.client.close === 'function'
+          this.dbConnection &&
+          this.dbConnection.client &&
+          typeof this.dbConnection.client.close === 'function'
         ) {
           await this.dbConnection.client.close();
         } else if (
-          this.dbConnection
-          && this.dbConnection.connection
-          && typeof this.dbConnection.connection.close === 'function'
+          this.dbConnection &&
+          this.dbConnection.connection &&
+          typeof this.dbConnection.connection.close === 'function'
         ) {
           await this.dbConnection.connection.close();
         }

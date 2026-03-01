@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/workflowController.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Legal Process Automation. Manages procedural steps and statutory timelines.
@@ -34,13 +32,22 @@ exports.initializeWorkflow = asyncHandler(async (req, res) => {
   const templates = {
     DEBT_COLLECTION: [
       {
-        step: 1, name: 'Letter of Demand', status: 'PENDING', durationDays: 14,
+        step: 1,
+        name: 'Letter of Demand',
+        status: 'PENDING',
+        durationDays: 14,
       },
       {
-        step: 2, name: 'Summons Issued', status: 'LOCKED', durationDays: 30,
+        step: 2,
+        name: 'Summons Issued',
+        status: 'LOCKED',
+        durationDays: 30,
       },
       {
-        step: 3, name: 'Judgment Application', status: 'LOCKED', durationDays: 60,
+        step: 3,
+        name: 'Judgment Application',
+        status: 'LOCKED',
+        durationDays: 60,
       },
     ],
   };

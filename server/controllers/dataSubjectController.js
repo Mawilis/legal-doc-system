@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ██████╗  █████╗ ████████╗ █████╗     ███████╗██╗   ██╗██████╗ ████████╗███████╗ ██████╗ █████╗
  * ██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗    ██╔════╝██║   ██║██╔══██╗╚══██╔══╝██╔════╝██╔════╝██╔══██╗
  * ██║  ██║███████║   ██║   ███████║    ███████╗██║   ██║██████╔╝   ██║   █████╗  ██║     ███████║
@@ -103,7 +101,8 @@ class DataSubjectController {
     this.cacheTTL = parseInt(process.env.DATA_SUBJECT_CACHE_TTL) || 300000; // 5 minutes
 
     // POPIA Compliance: Initialize Information Officer contact
-    this.informationOfficer = process.env.DEFAULT_INFORMATION_OFFICER || 'information.officer@wilsyos.co.za';
+    this.informationOfficer =
+      process.env.DEFAULT_INFORMATION_OFFICER || 'information.officer@wilsyos.co.za';
 
     // Quantum Performance: Initialize connection pooling
     this.maxRetries = parseInt(process.env.MAX_DB_RETRIES) || 3;
@@ -286,7 +285,7 @@ class DataSubjectController {
       // POPIA Section 23(4): Re-verify identity for each DSAR
       const identityVerified = await this.verifyIdentityForDSAR(
         dataSubjectId,
-        dsarData.identityDocuments,
+        dsarData.identityDocuments
       );
 
       if (!identityVerified) {
@@ -421,14 +420,14 @@ class DataSubjectController {
       const compiledData = await this.compileDSARResponse(
         dsar.requestType,
         dataSubject.id,
-        decryptedData,
+        decryptedData
       );
 
       // Generate secure delivery package
       const deliveryPackage = await this.createSecureDeliveryPackage(
         compiledData,
         dsar.preferredFormat,
-        dataSubject.reference,
+        dataSubject.reference
       );
 
       // Update DSAR status
@@ -539,7 +538,7 @@ class DataSubjectController {
       if (this.isSensitiveUpdate(updates) && identityDocuments) {
         const identityVerified = await this.verifyIdentityForUpdate(
           dataSubjectId,
-          identityDocuments,
+          identityDocuments
         );
         if (!identityVerified) {
           throw new Error('Identity verification failed for sensitive update');
@@ -908,7 +907,7 @@ class DataSubjectController {
       const portabilityPackage = await this.createPortabilityPackage(
         formattedData,
         format,
-        dataSubjectId,
+        dataSubjectId
       );
 
       // Audit portability access
@@ -1007,7 +1006,7 @@ class DataSubjectController {
           }
         } catch (docError) {
           console.warn(
-            `Identity document verification failed for ${doc.type}: ${docError.message}`,
+            `Identity document verification failed for ${doc.type}: ${docError.message}`
           );
         }
       }
@@ -1039,7 +1038,7 @@ class DataSubjectController {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(process.env.ENCRYPTION_KEY, 'base64'),
-        iv,
+        iv
       );
 
       // Encrypt the data
@@ -1086,7 +1085,7 @@ class DataSubjectController {
       const decipher = crypto.createDecipheriv(
         'aes-256-gcm',
         Buffer.from(process.env.ENCRYPTION_KEY, 'base64'),
-        iv,
+        iv
       );
 
       // Set authentication tag
@@ -1311,7 +1310,9 @@ class DataSubjectController {
 
     // Prevent updates to immutable fields
     const immutableFields = ['idNumber', 'dateOfBirth'];
-    const attemptedImmutableUpdates = Object.keys(updates).filter((field) => immutableFields.includes(field));
+    const attemptedImmutableUpdates = Object.keys(updates).filter((field) =>
+      immutableFields.includes(field)
+    );
 
     if (attemptedImmutableUpdates.length > 0) {
       throw new Error(`Cannot update immutable fields: ${attemptedImmutableUpdates.join(', ')}`);

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ E-SIGNATURE ROUTES - INVESTOR-GRADE MODULE                                ║
   ║ 94% cost reduction | R8.2M risk elimination | 85% margins                ║

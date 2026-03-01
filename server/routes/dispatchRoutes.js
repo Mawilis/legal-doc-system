@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/dispatchRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Master Dispatch Gateway. Manages the overall Dispatch Board, route optimization, and bulk assignment of instructions.
@@ -84,7 +82,7 @@ router.get(
       err.code = 'DISPATCH_BOARD_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -114,7 +112,7 @@ router.post(
       err.code = 'ROUTE_OPTIMIZE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -145,7 +143,7 @@ router.post(
       err.code = 'BULK_ASSIGN_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

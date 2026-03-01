@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * 📊 REPORT LEDGER QUANTUM SCROLL v2.0: IMMUTABLE AUDIT CHRONICLE 📊
  * ============================================================================
@@ -265,7 +263,7 @@ const decryptReportData = (encryptedData, iv, authTag, encryptionKey) => {
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       Buffer.from(encryptionKey, 'hex'),
-      Buffer.from(iv, 'hex'),
+      Buffer.from(iv, 'hex')
     );
 
     decipher.setAuthTag(Buffer.from(authTag, 'hex'));
@@ -885,7 +883,7 @@ const ReportLedgerSchema = new mongoose.Schema(
     collection: 'report_ledgers',
     minimize: false,
     strict: true,
-  },
+  }
 );
 
 // ============================================================================
@@ -921,7 +919,7 @@ ReportLedgerSchema.pre('save', async function (next) {
       const previousEntry = await this.constructor.findOne(
         { firmId: this.firmId },
         {},
-        { sort: { blockIndex: -1 } },
+        { sort: { blockIndex: -1 } }
       );
 
       this.previousHash = previousEntry
@@ -1077,7 +1075,7 @@ ReportLedgerSchema.methods.decryptData = async function (requestingUserId) {
       this.encryptedData,
       this.encryptionMetadata.iv,
       this.encryptionMetadata.authTag,
-      encryptionKey,
+      encryptionKey
     );
 
     // 📝 AUDIT TRAIL: Log decryption access
@@ -1097,7 +1095,7 @@ ReportLedgerSchema.methods.decryptData = async function (requestingUserId) {
     // 🚨 SECURITY ALERT: Failed decryption attempt
     console.error(
       `Failed decryption attempt for ledger ${this.ledgerId} by user ${requestingUserId}:`,
-      error.message,
+      error.message
     );
     throw new Error(`Data decryption failed: ${error.message}`);
   }
@@ -1205,7 +1203,7 @@ ReportLedgerSchema.methods.verifyIntegrity = async function () {
 
     if (calculatedHash !== this.merkleRoot) {
       console.error(
-        `Integrity breach: Calculated hash ${calculatedHash} doesn't match stored hash ${this.merkleRoot}`,
+        `Integrity breach: Calculated hash ${calculatedHash} doesn't match stored hash ${this.merkleRoot}`
       );
       return false;
     }
@@ -1474,7 +1472,8 @@ ReportLedgerSchema.statics.generateAuditTrail = async function (firmId, startDat
     trail.byDepartment[report.department] = (trail.byDepartment[report.department] || 0) + 1;
 
     // Categorize by jurisdiction
-    trail.byJurisdiction[report.jurisdiction] = (trail.byJurisdiction[report.jurisdiction] || 0) + 1;
+    trail.byJurisdiction[report.jurisdiction] =
+      (trail.byJurisdiction[report.jurisdiction] || 0) + 1;
 
     // Count compliance issues
     if (report.complianceFlags && report.complianceFlags.length > 0) {
@@ -1526,8 +1525,9 @@ ReportLedgerSchema.statics.verifyLedgerChain = async function (firmId) {
     const calculatedHash = generateMerkleHash(dataToHash, previousHash);
     const hashValid = calculatedHash === block.merkleRoot;
     const blockIndexValid = block.blockIndex === expectedBlockIndex;
-    const previousHashValid = block.previousHash === previousHash
-      || (expectedBlockIndex === 0 && block.previousHash === '');
+    const previousHashValid =
+      block.previousHash === previousHash ||
+      (expectedBlockIndex === 0 && block.previousHash === '');
 
     const blockValid = hashValid && blockIndexValid && previousHashValid;
 

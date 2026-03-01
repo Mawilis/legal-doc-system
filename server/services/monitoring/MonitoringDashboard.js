@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: MONITORING DASHBOARD SERVICE - EXECUTIVE COMMAND CENTER
  * ============================================================================

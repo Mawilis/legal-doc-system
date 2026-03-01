@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /*
  * FORENSIC TEST SUITE: NotificationLog Model V6
  * Investor-grade deterministic tests with economic metrics
@@ -46,7 +44,9 @@ describe('FORENSIC NOTIFICATION LOG MODEL V6', () => {
       const complianceValuePerNotification = 25; // R25 compliance proof value
       const auditSavingsPerNotification = 50; // R50 audit savings
 
-      const totalEconomicValue = notificationsPerYear * (savingsPerNotification + complianceValuePerNotification + auditSavingsPerNotification);
+      const totalEconomicValue =
+        notificationsPerYear *
+        (savingsPerNotification + complianceValuePerNotification + auditSavingsPerNotification);
 
       console.log(`✓ Savings per notification: R${savingsPerNotification}`);
       console.log(`✓ Annual savings (100k notifications): R${totalSavings.toLocaleString()}`);
@@ -532,7 +532,8 @@ describe('FORENSIC NOTIFICATION LOG MODEL V6', () => {
       expect(notification.metadata.ttlDays).toBe(1825);
       expect(notification.metadata.shouldExpireAt).toBeDefined();
 
-      const daysUntilExpiry = (new Date(notification.metadata.shouldExpireAt) - new Date()) / (1000 * 60 * 60 * 24);
+      const daysUntilExpiry =
+        (new Date(notification.metadata.shouldExpireAt) - new Date()) / (1000 * 60 * 60 * 24);
       expect(daysUntilExpiry).toBeCloseTo(1825, 0);
     });
   });

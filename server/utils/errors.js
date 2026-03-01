@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - ERROR HANDLING ENGINE
  * Standard: ES Module (Surgically Standardized)

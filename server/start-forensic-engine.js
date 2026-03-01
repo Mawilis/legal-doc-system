@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔══════════════════════════════════════════════════════════════════════════╗
   ║           WILSY OS - FORENSIC ENGINE STARTUP - 10TH GENERATION          ║
   ║              "Igniting Code That Funds 10 Generations"                  ║
@@ -33,9 +33,9 @@
 
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
-import { dirname, join } from "path";
+import { dirname, join } from 'path';
 import fs from 'fs/promises';
-import crypto from "crypto";
+import crypto from 'crypto';
 import os from 'os';
 import cluster from 'cluster';
 

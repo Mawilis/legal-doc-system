@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ================================================================================
  * ██████╗ ██╗ ██████╗ ███╗   ███╗███████╗████████╗████████╗██████╗ ██╗ ██████╗
  * ██╔══██╗██║██╔═══██╗████╗ ████║██╔════╝╚══██╔══╝╚══██╔══╝██╔══██╗██║██╔════╝
@@ -314,7 +312,7 @@ class WebAuthnService {
         const legalEvidence = await this.generateLegalEvidence(
           user,
           verification,
-          'PASSKEY_REGISTRATION',
+          'PASSKEY_REGISTRATION'
         );
 
         // Update user biometric status
@@ -448,14 +446,14 @@ class WebAuthnService {
         // Update credential counter
         await this.updateCredentialCounter(
           storedCredential._id,
-          verification.authenticationInfo.newCounter,
+          verification.authenticationInfo.newCounter
         );
 
         // Generate authentication evidence
         const authenticationEvidence = await this.generateLegalEvidence(
           user,
           verification,
-          'BIOMETRIC_AUTHENTICATION',
+          'BIOMETRIC_AUTHENTICATION'
         );
 
         // Log successful authentication
@@ -522,7 +520,7 @@ class WebAuthnService {
     try {
       // Encrypt sensitive credential data
       const encryptedPublicKey = await encryptData(
-        registrationInfo.credentialPublicKey.toString('base64'),
+        registrationInfo.credentialPublicKey.toString('base64')
       );
 
       const credential = new BiometricCredential({
@@ -575,8 +573,8 @@ class WebAuthnService {
       verificationDetails: {
         verified: verification.verified,
         deviceType:
-          verification.registrationInfo?.credentialDeviceType
-          || verification.authenticationInfo?.credentialDeviceType,
+          verification.registrationInfo?.credentialDeviceType ||
+          verification.authenticationInfo?.credentialDeviceType,
         algorithm: 'WebAuthn/FIDO2',
         rpID: this.rpID,
         origin: this.rpOrigin,
@@ -650,7 +648,7 @@ class WebAuthnService {
       {
         expiresIn: '24h',
         algorithm: 'HS256',
-      },
+      }
     );
   }
 
@@ -978,7 +976,7 @@ class BiometricService {
           biometricType,
           processingPurpose: 'AUTHENTICATION_AND_VERIFICATION',
           dataRetention: 'ENCRYPTED_TEMPLATES_ONLY',
-        },
+        }
       );
 
       let registrationResult;
@@ -1068,7 +1066,7 @@ class BiometricService {
       // Verify consent exists (POPIA)
       const consentCheck = await this.consentService.verifyConsent(
         userId,
-        'Biometric authentication',
+        'Biometric authentication'
       );
 
       if (!consentCheck.valid) {
@@ -1304,7 +1302,7 @@ class BiometricService {
       const verificationResult = await this.webAuthnService.verifyAuthentication(
         user,
         credential,
-        storedCredentials[0],
+        storedCredentials[0]
       );
 
       return {
@@ -1502,7 +1500,7 @@ class BiometricService {
     this.failedAttempts.set(lockoutKey, lockoutUntil);
 
     console.warn(
-      `User ${userId} locked out for biometric attempts until ${new Date(lockoutUntil)}`,
+      `User ${userId} locked out for biometric attempts until ${new Date(lockoutUntil)}`
     );
   }
 
@@ -1579,7 +1577,7 @@ class BiometricService {
       {
         expiresIn: '24h',
         algorithm: 'HS256',
-      },
+      }
     );
 
     return {
@@ -1616,7 +1614,7 @@ class BiometricService {
 
       const consentCheck = await this.consentService.verifyConsent(
         userId,
-        'Biometric authentication',
+        'Biometric authentication'
       );
 
       return {
@@ -1662,7 +1660,7 @@ class BiometricService {
       const BiometricCredential = require('../models/BiometricCredential');
       await BiometricCredential.updateMany(
         { userId, status: 'ACTIVE' },
-        { $set: { status: 'REVOKED', revokedAt: new Date() } },
+        { $set: { status: 'REVOKED', revokedAt: new Date() } }
       );
 
       // Update user profile

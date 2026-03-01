@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ====================================================================================
  * QUANTUM DATA SANCTIFICATION NEXUS V2.0: Wilsy OS Anonymization & Pseudonymization Engine
  * File: /server/services/dataAnonymizationService.js
@@ -52,9 +50,8 @@ const require = _createRequire(import.meta.url);
 require('dotenv').config();
 const crypto = require('crypto');
 
-const {
-  createHash, createHmac, randomBytes, createCipheriv, createDecipheriv, generateKeyPair,
-} = crypto;
+const { createHash, createHmac, randomBytes, createCipheriv, createDecipheriv, generateKeyPair } =
+  crypto;
 const { performance } = require('perf_hooks');
 const axios = require('axios'); // For blockchain anchoring
 const bcrypt = require('bcrypt');
@@ -174,9 +171,7 @@ const anonymizationLogger = createLogger({
     format.errors({ stack: true }),
     format.splat(),
     format.json(),
-    format.printf(({
-      timestamp, level, message, ...meta
-    }) => {
+    format.printf(({ timestamp, level, message, ...meta }) => {
       const logEntry = JSON.stringify({
         timestamp,
         level,
@@ -206,7 +201,7 @@ const anonymizationLogger = createLogger({
         _system: 'wilsy_anonymization_v2',
         _quantum_resistant: process.env.POST_QUANTUM_CRYPTO_ENABLED === 'true',
       });
-    }),
+    })
   ),
   transports: [
     new transports.File({
@@ -290,7 +285,7 @@ class DataAnonymizationService {
         techniquesLoaded: this.techniques.size,
         postQuantumEnabled: this.postQuantumEnabled,
         quantumTimestamp: new Date().toISOString(),
-      },
+      }
     );
   }
 
@@ -322,7 +317,7 @@ class DataAnonymizationService {
           techniquesAvailable: Array.from(this.techniques.keys()),
           syntheticDataEnabled: this.techniques.has(ANONYMIZATION_TECHNIQUES.SYNTHETIC_DATA),
           quantumTimestamp: new Date().toISOString(),
-        },
+        }
       );
 
       return this;
@@ -458,9 +453,9 @@ class DataAnonymizationService {
           ssl:
             process.env.NODE_ENV === 'production'
               ? {
-                require: true,
-                rejectUnauthorized: false,
-              }
+                  require: true,
+                  rejectUnauthorized: false,
+                }
               : false,
           statement_timeout: 30000,
           connectionTimeoutMillis: 10000,
@@ -623,7 +618,7 @@ class DataAnonymizationService {
                 .digest('hex');
             },
           },
-        },
+        }
       );
 
       // Enhanced Re-identification Audit with quantum features
@@ -888,9 +883,9 @@ class DataAnonymizationService {
         const maskLength = 5 + (randomPattern % 3);
         maskedResult = {
           anonymized:
-            dataString.substring(0, maskStart)
-            + '*'.repeat(maskLength)
-            + dataString.substring(maskStart + maskLength),
+            dataString.substring(0, maskStart) +
+            '*'.repeat(maskLength) +
+            dataString.substring(maskStart + maskLength),
           metadata: {
             dataType,
             algorithm: 'quantum_variable_mask',
@@ -912,13 +907,17 @@ class DataAnonymizationService {
         // Quantum-random masking of local part
         const maskCount = Math.min(localPart.length - 2, 5);
         const maskStart = 1 + (randomPattern % (localPart.length - maskCount - 1));
-        const maskedLocal = localPart.substring(0, maskStart)
-          + '*'.repeat(maskCount)
-          + localPart.substring(maskStart + maskCount);
+        const maskedLocal =
+          localPart.substring(0, maskStart) +
+          '*'.repeat(maskCount) +
+          localPart.substring(maskStart + maskCount);
         maskedResult = {
           anonymized: `${maskedLocal}@${domain}`,
           metadata: {
-            dataType, algorithm: 'quantum_email_mask', maskStart, maskCount,
+            dataType,
+            algorithm: 'quantum_email_mask',
+            maskStart,
+            maskCount,
           },
         };
       }
@@ -930,9 +929,10 @@ class DataAnonymizationService {
     } else if (dataString.length > 2) {
       // Quantum-random partial masking
       const revealCount = 1 + (randomPattern % 2); // Reveal 1-2 characters
-      const masked = dataString.substring(0, revealCount)
-        + '*'.repeat(dataString.length - 2 * revealCount)
-        + dataString.substring(dataString.length - revealCount);
+      const masked =
+        dataString.substring(0, revealCount) +
+        '*'.repeat(dataString.length - 2 * revealCount) +
+        dataString.substring(dataString.length - revealCount);
       maskedResult = {
         anonymized: masked,
         metadata: { dataType: 'generic', algorithm: 'quantum_generic_mask', revealCount },
@@ -1017,7 +1017,10 @@ class DataAnonymizationService {
       return {
         anonymized: `Region ${precisionLevel}`,
         metadata: {
-          dataType, k, algorithm: 'quantum_location_generalization', precisionLevel,
+          dataType,
+          k,
+          algorithm: 'quantum_location_generalization',
+          precisionLevel,
         },
       };
     } else if (dataType === 'salary') {
@@ -1030,7 +1033,10 @@ class DataAnonymizationService {
         return {
           anonymized: `R${lowerBand}-R${upperBand}`,
           metadata: {
-            dataType, k, algorithm: 'quantum_salary_band', bandMultiplier,
+            dataType,
+            k,
+            algorithm: 'quantum_salary_band',
+            bandMultiplier,
           },
         };
       }
@@ -1045,7 +1051,10 @@ class DataAnonymizationService {
     return {
       anonymized: categories[categoryIndex],
       metadata: {
-        dataType, k, algorithm: 'quantum_categorical_generalization', quantumSeed,
+        dataType,
+        k,
+        algorithm: 'quantum_categorical_generalization',
+        quantumSeed,
       },
     };
   }
@@ -1272,7 +1281,7 @@ class DataAnonymizationService {
             Authorization: `Bearer ${process.env.CONSENT_MANAGER_TOKEN}`,
           },
           timeout: 10000,
-        },
+        }
       );
 
       return response.data.valid === true;
@@ -1312,7 +1321,7 @@ class DataAnonymizationService {
             'X-Quantum-Signature': await this.generateQuantumSignature(userId),
           },
           timeout: 15000,
-        },
+        }
       );
 
       return {
@@ -1330,8 +1339,8 @@ class DataAnonymizationService {
 
       // Fail closed for high-risk data types
       if (
-        dataType === SOUTH_AFRICAN_IDENTIFIERS.ID_NUMBER
-        || dataType === POPIA_DATA_CATEGORIES.FINANCIAL_INFORMATION
+        dataType === SOUTH_AFRICAN_IDENTIFIERS.ID_NUMBER ||
+        dataType === POPIA_DATA_CATEGORIES.FINANCIAL_INFORMATION
       ) {
         throw new Error(`FICA compliance check failed for high-risk data: ${error.message}`);
       }
@@ -1373,7 +1382,7 @@ class DataAnonymizationService {
         },
         {
           timeout: 30000,
-        },
+        }
       );
 
       this.metrics.blockchainAnchors++;
@@ -1458,7 +1467,7 @@ class DataAnonymizationService {
           });
         }
       },
-      6 * 60 * 60 * 1000,
+      6 * 60 * 60 * 1000
     );
 
     anonymizationLogger.info('QUANTUM SELF-HEALING: Scheduler started', {
@@ -1566,7 +1575,7 @@ class DataAnonymizationService {
           });
         }
       },
-      24 * 60 * 60 * 1000,
+      24 * 60 * 60 * 1000
     );
 
     anonymizationLogger.info('QUANTUM BLOCKCHAIN: Daily anchoring scheduler started');
@@ -1601,7 +1610,7 @@ class DataAnonymizationService {
       // Anchor merkle root to blockchain
       const anchorResult = await this.anchorToBlockchain(
         merkleRoot,
-        `daily_anchor_${today.toISOString().split('T')[0]}`,
+        `daily_anchor_${today.toISOString().split('T')[0]}`
       );
 
       if (anchorResult) {
@@ -1681,27 +1690,31 @@ class DataAnonymizationService {
 
     // Calculate basic statistics
     const numericValues = originalArray.filter((v) => typeof v === 'number');
-    const mean = numericValues.length > 0
-      ? numericValues.reduce((a, b) => a + b, 0) / numericValues.length
-      : 0;
-    const stddev = numericValues.length > 1
-      ? Math.sqrt(
-        numericValues.reduce((sq, n) => sq + (n - mean) ** 2, 0)
-              / (numericValues.length - 1),
-      )
-      : 0;
+    const mean =
+      numericValues.length > 0
+        ? numericValues.reduce((a, b) => a + b, 0) / numericValues.length
+        : 0;
+    const stddev =
+      numericValues.length > 1
+        ? Math.sqrt(
+            numericValues.reduce((sq, n) => sq + (n - mean) ** 2, 0) / (numericValues.length - 1)
+          )
+        : 0;
 
     // Generate synthetic array
     return originalArray.map((item, index) => {
       if (typeof item === 'number') {
         return this.generateSyntheticNumber(item, { mean, stddev });
-      } if (typeof item === 'string') {
+      }
+      if (typeof item === 'string') {
         const dataType = this.detectDataType(item);
         if (dataType === SOUTH_AFRICAN_IDENTIFIERS.EMAIL) {
           return this.generateSyntheticEmail();
-        } if (dataType === SOUTH_AFRICAN_IDENTIFIERS.CELLPHONE) {
+        }
+        if (dataType === SOUTH_AFRICAN_IDENTIFIERS.CELLPHONE) {
           return this.generateSyntheticCellphone();
-        } if (dataType === SOUTH_AFRICAN_IDENTIFIERS.ID_NUMBER) {
+        }
+        if (dataType === SOUTH_AFRICAN_IDENTIFIERS.ID_NUMBER) {
           return this.generateSyntheticIdNumber();
         }
         // Generic string synthesis
@@ -1716,9 +1729,11 @@ class DataAnonymizationService {
     // Generate generic synthetic data
     if (typeof original === 'string') {
       return `synthetic_${createHash('md5').update(original).digest('hex').substring(0, 8)}`;
-    } if (typeof original === 'number') {
+    }
+    if (typeof original === 'number') {
       return this.generateSyntheticNumber(original, options);
-    } if (typeof original === 'boolean') {
+    }
+    if (typeof original === 'boolean') {
       return Math.random() > 0.5;
     }
     return { synthetic: true, type: typeof original, timestamp: Date.now() };
@@ -1776,7 +1791,7 @@ class DataAnonymizationService {
       const consentValid = await this.validatePOPIAConsent(
         options.dataType,
         options.userId,
-        options.processingPurpose || 'anonymization',
+        options.processingPurpose || 'anonymization'
       );
 
       if (!consentValid) {
@@ -1786,13 +1801,13 @@ class DataAnonymizationService {
 
     // Check FICA compliance for financial data
     if (
-      options.dataType === POPIA_DATA_CATEGORIES.FINANCIAL_INFORMATION
-      || options.dataType === SOUTH_AFRICAN_IDENTIFIERS.ID_NUMBER
+      options.dataType === POPIA_DATA_CATEGORIES.FINANCIAL_INFORMATION ||
+      options.dataType === SOUTH_AFRICAN_IDENTIFIERS.ID_NUMBER
     ) {
       const ficaCheck = await this.checkFICACompliance(
         options.userId || 'system',
         options.dataType,
-        options.ficaLevel || FICA_COMPLIANCE_LEVELS.LEVEL_2,
+        options.ficaLevel || FICA_COMPLIANCE_LEVELS.LEVEL_2
       );
 
       if (!ficaCheck.compliant) {
@@ -1960,17 +1975,17 @@ if (process.env.NODE_ENV === 'test') {
       console.assert(syntheticResult.anonymized !== testEmail, 'Should generate synthetic email');
       console.assert(
         syntheticResult.metadata.isSynthetic === true,
-        'Should be marked as synthetic',
+        'Should be marked as synthetic'
       );
       console.assert(
         syntheticResult.metadata.technique === ANONYMIZATION_TECHNIQUES.SYNTHETIC_DATA,
-        'Should use synthetic technique',
+        'Should use synthetic technique'
       );
 
       // Verify synthetic email format
       console.assert(
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(syntheticResult.anonymized),
-        'Synthetic email should be valid format',
+        'Synthetic email should be valid format'
       );
 
       return '✅ Quantum synthetic data test passed';
@@ -1987,7 +2002,7 @@ if (process.env.NODE_ENV === 'test') {
       console.assert(token1.anonymized, 'Should generate quantum token');
       console.assert(
         token1.anonymized === token2.anonymized,
-        'Quantum tokenization should be deterministic',
+        'Quantum tokenization should be deterministic'
       );
       console.assert(token1.metadata.algorithm.includes('quantum'), 'Should use quantum algorithm');
 
@@ -2021,11 +2036,11 @@ if (process.env.NODE_ENV === 'test') {
       console.assert(Array.isArray(shuffledResult.anonymized), 'Should return array');
       console.assert(
         shuffledResult.anonymized.length === originalDataset.length,
-        'Should preserve length',
+        'Should preserve length'
       );
       console.assert(
         JSON.stringify(shuffledResult.anonymized) !== JSON.stringify(originalDataset),
-        'Should shuffle dataset',
+        'Should shuffle dataset'
       );
 
       // Verify all elements preserved
@@ -2033,7 +2048,7 @@ if (process.env.NODE_ENV === 'test') {
       const sortedShuffled = [...shuffledResult.anonymized].sort();
       console.assert(
         JSON.stringify(sortedOriginal) === JSON.stringify(sortedShuffled),
-        'Should preserve all elements',
+        'Should preserve all elements'
       );
 
       return '✅ Dataset shuffling test passed';
@@ -2079,7 +2094,7 @@ if (process.env.NODE_ENV === 'test') {
 
       console.assert(
         healedRecord.integrity_check_hash === expectedHash,
-        'Should have corrected integrity hash',
+        'Should have corrected integrity hash'
       );
 
       // Cleanup

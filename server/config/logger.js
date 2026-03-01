@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗    ███████╗██╗      █████╗ ██████╗ ║
 ║██╔════╝██╔═══██╗████╗  ██║██╔════╝██║██╔════╝    ██╔════╝██║     ██╔══██╗██╔══██╗║
@@ -231,7 +229,7 @@ function createTenantLogger(context) {
   // Production security: enforce tenant context with fail-closed design
   if (process.env.NODE_ENV === 'production' && !context.tenantId) {
     const securityError = new Error(
-      'LOGGER_SECURITY_VIOLATION: tenantId is required in production context. Fail-closed enforced.',
+      'LOGGER_SECURITY_VIOLATION: tenantId is required in production context. Fail-closed enforced.'
     );
     securityError.code = 'TENANT_CONTEXT_REQUIRED';
     securityError.timestamp = new Date().toISOString();
@@ -239,7 +237,8 @@ function createTenantLogger(context) {
     throw securityError;
   }
 
-  const logLevel = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
+  const logLevel =
+    process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
   const logsDir = process.env.LOG_DIRECTORY || path.join(process.cwd(), 'logs');
   const auditFilePath = path.join(logsDir, 'wilsy-audit.log');
   const debugFilePath = path.join(logsDir, 'wilsy-debug.log');
@@ -269,21 +268,10 @@ function createTenantLogger(context) {
             metaStr = JSON.stringify(info);
           }
 
-          return (
-            `[${
-              info.timestamp
-            }] ${
-              info.level
-            } [T:${
-              info.tenantId
-            }|U:${
-              info.userId
-            }]: ${
-              info.message
-            } ${
-              metaStr}`
-          );
-        }),
+          return `[${info.timestamp}] ${info.level} [T:${info.tenantId}|U:${info.userId}]: ${
+            info.message
+          } ${metaStr}`;
+        })
       ),
       silent: process.env.NODE_ENV === 'test' || process.env.DISABLE_CONSOLE_LOG === 'true',
     }),
@@ -300,7 +288,7 @@ function createTenantLogger(context) {
         tailable: true,
         format: combine(timestamp(), tenantContextFormat(context)(), json()),
         options: { flags: 'a' },
-      }),
+      })
     );
 
     // Debug file for development
@@ -314,20 +302,14 @@ function createTenantLogger(context) {
           format: combine(
             timestamp(),
             tenantContextFormat(context)(),
-            printf((info) => (
-              `[${
-                info.timestamp
-              }] ${
-                info.level
-              } [T:${
-                info.tenantId
-              }|U:${
-                info.userId
-              }]: ${
-                info.message}`
-            )),
+            printf(
+              (info) =>
+                `[${info.timestamp}] ${info.level} [T:${info.tenantId}|U:${info.userId}]: ${
+                  info.message
+                }`
+            )
           ),
-        }),
+        })
       );
     }
   }
@@ -339,7 +321,7 @@ function createTenantLogger(context) {
       timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
       metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] }),
       tenantContextFormat(context)(),
-      json(),
+      json()
     ),
     transports: loggerTransports,
     exitOnError: false,

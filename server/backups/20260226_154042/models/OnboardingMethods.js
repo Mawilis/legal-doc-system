@@ -1,4 +1,4 @@
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ONBOARDING METHODS - LEGAL GRADE ● FORENSIC ● PRODUCTION                    ║
   ║ FICA Compliant | POPIA Compliant | Multi-tenant | Blockchain Ready         ║
   ║ Version: 1.0.0 - Sovereign Shield - Method Isolation                       ║

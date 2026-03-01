@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/jobs/scheduler.js
  * STATUS: PRODUCTION-READY | DISTRIBUTED MASTER CLOCK
  * -----------------------------------------------------------------------------
@@ -68,7 +66,7 @@ const scheduler = {
     cron.schedule('0 9 * * 1', async () => {
       logger.info('⏰ [CRON]: Dispatching Weekly Legal Briefings...');
       const users = await User.find({ role: { $in: ['admin', 'associate'] } }).select(
-        'email name tenantId',
+        'email name tenantId'
       );
 
       const jobs = users.map((u) => ({

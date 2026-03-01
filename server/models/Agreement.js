@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ██████╗ ██████╗ ██████╗ ███████╗██████╗
  * ██║    ██║██║██║     ██╔════╝╚██╗ ██╔╝   ██╔════╝██╔═══██╗██╔══██╗██╔════╝██╔══██╗
  * ██║ █╗ ██║██║██║     ███████╗ ╚████╔╝    ██║     ██║   ██║██║  ██║█████╗  ██████╔╝
@@ -79,7 +77,7 @@ const quantumEncrypt = (text) => {
   const cipher = crypto.createCipheriv(
     'aes-256-gcm',
     Buffer.from(process.env.ENCRYPTION_KEY, 'hex'),
-    iv,
+    iv
   );
 
   let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -102,7 +100,7 @@ const quantumDecrypt = (encryptedObject) => {
   const decipher = crypto.createDecipheriv(
     'aes-256-gcm',
     Buffer.from(process.env.ENCRYPTION_KEY, 'hex'),
-    Buffer.from(encryptedObject.iv, 'hex'),
+    Buffer.from(encryptedObject.iv, 'hex')
   );
 
   decipher.setAuthTag(Buffer.from(encryptedObject.authTag, 'hex'));
@@ -154,7 +152,10 @@ const agreementSchema = new mongoose.Schema(
       dataProcessingPurpose: { type: String, required: true },
       informationOfficerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       dataRetentionYears: {
-        type: Number, default: 5, min: 1, max: 30,
+        type: Number,
+        default: 5,
+        min: 1,
+        max: 30,
       }, // Companies Act Section 24
 
       // CPA Section 49 Quantum
@@ -551,7 +552,10 @@ const agreementSchema = new mongoose.Schema(
     // Retention Scheduling (Companies Act Section 24)
     retentionSchedule: {
       retentionPeriodYears: {
-        type: Number, default: 5, min: 1, max: 30,
+        type: Number,
+        default: 5,
+        min: 1,
+        max: 30,
       },
       archiveDate: Date,
       destructionDate: Date,
@@ -577,7 +581,7 @@ const agreementSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // Virtual for Cooling Off Period Status

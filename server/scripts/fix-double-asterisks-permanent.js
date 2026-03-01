@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /*
  * ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -7,8 +7,8 @@
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,12 +20,35 @@ console.log('============================================\n');
 
 // Directories to scan (only project code, no node_modules)
 const scanDirs = [
-  'controllers', 'models', 'routes', 'services', 'middleware',
-  'utils', 'validators', 'workers', 'jobs', 'config', 'constants',
-  'scripts', 'seed', 'tests', '__tests__', 'test', 'integrations',
-  'lib', 'cron', 'websockets', 'policies', 'queues', 'monitoring',
-  'i18n', 'market-intelligence', 'investor-materials', 'patents',
-  'global-expansion', 'bootstrap',
+  'controllers',
+  'models',
+  'routes',
+  'services',
+  'middleware',
+  'utils',
+  'validators',
+  'workers',
+  'jobs',
+  'config',
+  'constants',
+  'scripts',
+  'seed',
+  'tests',
+  '__tests__',
+  'test',
+  'integrations',
+  'lib',
+  'cron',
+  'websockets',
+  'policies',
+  'queues',
+  'monitoring',
+  'i18n',
+  'market-intelligence',
+  'investor-materials',
+  'patents',
+  'global-expansion',
+  'bootstrap',
 ];
 
 let fixedCount = 0;
@@ -41,7 +64,10 @@ function fixFile(filePath) {
     content = content.replace(/\/\*\*([\s\S]*?)\*\*\//g, '/*$1*/');
 
     // Fix @param with double asterisks
-    content = content.replace(/@param\s*\{[^}]+\}\s*(\[?\w+\]?)\s*-\s*(.*?)\*\*/g, '@param {$1} - $2');
+    content = content.replace(
+      /@param\s*\{[^}]+\}\s*(\[?\w+\]?)\s*-\s*(.*?)\*\*/g,
+      '@param {$1} - $2'
+    );
 
     // Fix @returns with double asterisks
     content = content.replace(/@returns?\s*\{[^}]+\}\s*-\s*(.*?)\*\*/g, '@returns $1');
@@ -91,10 +117,15 @@ scanDirs.forEach((dir) => {
 
 // Also scan root JS files
 console.log('\n📁 Scanning root directory...');
-const rootFiles = fs.readdirSync(rootDir).filter((f) => f.match(/\.(js|cjs|mjs)$/)
-  && !f.includes('node_modules')
-  && !f.includes('backup')
-  && !f.includes('bak'));
+const rootFiles = fs
+  .readdirSync(rootDir)
+  .filter(
+    (f) =>
+      f.match(/\.(js|cjs|mjs)$/) &&
+      !f.includes('node_modules') &&
+      !f.includes('backup') &&
+      !f.includes('bak')
+  );
 
 rootFiles.forEach((file) => {
   const filePath = path.join(rootDir, file);

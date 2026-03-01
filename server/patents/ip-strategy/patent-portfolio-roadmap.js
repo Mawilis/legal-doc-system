@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════╗
   ║ PATENT PORTFOLIO ROADMAP - INVESTOR-GRADE MODULE             ║
   ║ [90% protection coverage | $100M defensive value | 85% margins]║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -83,7 +81,7 @@ class PatentPortfolioRoadmap {
         retentionPolicy: 'companies_act_10_years',
         dataResidency: 'Global',
         confidentiality: 'SECRET',
-      },
+      }
     );
 
     logger.info('Patent portfolio report generated', {
@@ -98,7 +96,7 @@ class PatentPortfolioRoadmap {
     const filedValue = this.patents.filed.reduce((sum, patent) => sum + patent.estimatedValue, 0);
     const pendingValue = this.patents.pending.reduce(
       (sum, patent) => sum + patent.estimatedValue,
-      0,
+      0
     );
 
     return {

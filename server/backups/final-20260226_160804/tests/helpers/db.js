@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/services/fileIngestionService.js
  * STATUS: PRODUCTION-READY | EPITOME | FILE INGESTION ENGINE
  * -----------------------------------------------------------------------------
@@ -88,7 +86,7 @@ async function computeSha256Stream(localPath) {
         hash.update(chunk);
         cb();
       },
-    }),
+    })
   );
 
   return { hash: hash.digest('hex'), sizeBytes: size };
@@ -185,8 +183,9 @@ async function ingestLocalUpload({
   if (!storageKey) throw new Error('storageKey is required');
 
   // Resolve local path vs storage service
-  const isLocalPath = typeof storageKey === 'string'
-    && (storageKey.startsWith('/') || storageKey.startsWith('./') || storageKey.match(/^[A-Za-z]:\\/));
+  const isLocalPath =
+    typeof storageKey === 'string' &&
+    (storageKey.startsWith('/') || storageKey.startsWith('./') || storageKey.match(/^[A-Za-z]:\\/));
   if (!isLocalPath && !StorageService) {
     throw new Error('Non-local storageKey provided but no StorageService is configured');
   }
@@ -241,7 +240,7 @@ async function ingestLocalUpload({
     if (existing) {
       // If exact same storageKey already present in versions, return existing doc
       const sameStorage = (existing.versions || []).some(
-        (v) => v.hash === hash && v.storageKey === storageKey,
+        (v) => v.hash === hash && v.storageKey === storageKey
       );
       if (sameStorage) {
         // Emit audit and return existing
@@ -280,7 +279,7 @@ async function ingestLocalUpload({
           },
           $push: { versions: versionEntry },
         },
-        { new: true },
+        { new: true }
       ).lean();
 
       await createAudit({
@@ -291,7 +290,10 @@ async function ingestLocalUpload({
         severity: 'INFO',
         summary: 'Added new version to existing file (deduplicated by hash)',
         metadata: {
-          fileId: updated._id, version: newVersionNumber, hash, storageKey,
+          fileId: updated._id,
+          version: newVersionNumber,
+          hash,
+          storageKey,
         },
       });
 
@@ -300,7 +302,7 @@ async function ingestLocalUpload({
         await JobService.enqueue(
           'fileScan',
           { fileId: updated._id, version: newVersionNumber },
-          { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null },
+          { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null }
         );
       } catch (e) {
         logger.warn('ingestLocalUpload: failed to enqueue fileScan job', {
@@ -364,7 +366,10 @@ async function ingestLocalUpload({
     severity: 'INFO',
     summary: 'File document created',
     metadata: {
-      fileId: fileDoc._id, hash, storageKey, sizeBytes,
+      fileId: fileDoc._id,
+      hash,
+      storageKey,
+      sizeBytes,
     },
   });
 
@@ -374,7 +379,7 @@ async function ingestLocalUpload({
     await JobService.enqueue(
       'fileScan',
       { fileId: fileDoc._id, version: 1 },
-      { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null },
+      { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null }
     );
   } catch (e) {
     logger.warn('ingestLocalUpload: failed to enqueue fileScan job', {
@@ -388,7 +393,7 @@ async function ingestLocalUpload({
       await JobService.enqueue(
         'fileMetadataExtract',
         { fileId: fileDoc._id, version: 1 },
-        { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null },
+        { initiatedBy: actor.id || ownerId, tenantId: relatedEntityId || null }
       );
     }
   } catch (e) {

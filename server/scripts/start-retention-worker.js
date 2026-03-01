@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const { startRetentionWorker } = require('../workers/retentionAgenda');
+#!const { startRetentionWorker } = require('../workers/retentionAgenda');
 
 async function main() {
   try {

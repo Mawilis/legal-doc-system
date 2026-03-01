@@ -1,4 +1,4 @@
-import express from 'express';
+#!import express from 'express';
 
 const router = express.Router();
 
@@ -10,16 +10,16 @@ router.get('/dashboard', (req, res) => {
       metrics: {
         totalDeals: 42,
         totalValue: 1500000000,
-        activeDeals: 12
-      }
-    }
+        activeDeals: 12,
+      },
+    },
   });
 });
 
 router.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 

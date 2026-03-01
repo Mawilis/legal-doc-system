@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable no-irregular-whitespace */
+#!/* eslint-disable no-irregular-whitespace */
 /*
 ================================================================================
                            QUANTUM TENANT SOVEREIGNTY
@@ -962,7 +960,7 @@ const tenantSchema = new mongoose.Schema(
     toObject: { virtuals: true },
     strict: true,
     collation: { locale: 'en', strength: 2 },
-  },
+  }
 );
 
 // =============================================================================
@@ -997,8 +995,8 @@ tenantSchema.virtual('isPOPIACompliant').get(function () {
  */
 tenantSchema.virtual('isFICACompliant').get(function () {
   return (
-    this.ficaCompliance.riskCategory !== 'PROHIBITED'
-    && this.ficaCompliance.trainingCompleted === true
+    this.ficaCompliance.riskCategory !== 'PROHIBITED' &&
+    this.ficaCompliance.trainingCompleted === true
   );
 });
 
@@ -1070,10 +1068,10 @@ tenantSchema.pre('save', async function (next) {
 
   // Update integrity hash chain
   if (
-    this.isModified('quantumId')
-    || this.isModified('name')
-    || this.isModified('legalName')
-    || this.isModified('cipcRegistrationNumber')
+    this.isModified('quantumId') ||
+    this.isModified('name') ||
+    this.isModified('legalName') ||
+    this.isModified('cipcRegistrationNumber')
   ) {
     this.previousIntegrityHash = this.integrityHash;
 
@@ -1107,7 +1105,7 @@ tenantSchema.pre('save', async function (next) {
  */
 tenantSchema.pre('remove', (next) => {
   throw new Error(
-    'TENANT_DELETION_FORBIDDEN: Tenants cannot be deleted. Use status change to "ARCHIVED".',
+    'TENANT_DELETION_FORBIDDEN: Tenants cannot be deleted. Use status change to "ARCHIVED".'
   );
 });
 
@@ -1153,7 +1151,7 @@ tenantSchema.methods.validateSubscriptionLimits = async function () {
   // Check storage limits (with 10% buffer)
   if (this.usage.storageUsedGB > tier.maxStorageGB * 1.1) {
     throw new Error(
-      `Storage usage (${this.usage.storageUsedGB}GB) exceeds tier limit (${tier.maxStorageGB}GB)`,
+      `Storage usage (${this.usage.storageUsedGB}GB) exceeds tier limit (${tier.maxStorageGB}GB)`
     );
   }
 
@@ -1195,8 +1193,8 @@ tenantSchema.methods.calculateAIComplianceScore = function () {
 
   // Factor 5: Active Usage (10 points)
   if (
-    this.usage.activeUsers > 0
-    && this.usage.lastActive > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    this.usage.activeUsers > 0 &&
+    this.usage.lastActive > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   ) {
     score += 10;
     factors.push({ factor: 'Active Usage', points: 10 });
@@ -1301,7 +1299,7 @@ tenantSchema.methods.calculateValuation = function () {
 tenantSchema.statics.findBySuperAdmin = function (superAdminId) {
   return this.find({ superAdminId })
     .select(
-      'quantumId name status subscription.tier subscription.status popiaComplianceScore billing.annualRecurringRevenue usage.lastActive',
+      'quantumId name status subscription.tier subscription.status popiaComplianceScore billing.annualRecurringRevenue usage.lastActive'
     )
     .sort({ 'metadata.createdAt': -1 })
     .lean();
@@ -1327,7 +1325,7 @@ tenantSchema.statics.generateRevenueReport = async function (startDate, endDate)
       totalMonthlyRevenue: tenants.reduce((sum, t) => sum + (t.billing?.monthlyRevenue || 0), 0),
       totalAnnualRevenue: tenants.reduce(
         (sum, t) => sum + (t.billing?.annualRecurringRevenue || 0),
-        0,
+        0
       ),
       averageRevenuePerTenant: 0,
       revenueByTier: {},
@@ -1340,7 +1338,7 @@ tenantSchema.statics.generateRevenueReport = async function (startDate, endDate)
     valuation: {
       totalValuation: tenants.reduce(
         (sum, t) => sum + (t.investorMetrics?.estimatedValuation || 0),
-        0,
+        0
       ),
       averageValuation: 0,
     },
@@ -1348,7 +1346,8 @@ tenantSchema.statics.generateRevenueReport = async function (startDate, endDate)
 
   // Calculate averages
   if (tenants.length > 0) {
-    report.revenueMetrics.averageRevenuePerTenant = report.revenueMetrics.totalMonthlyRevenue / tenants.length;
+    report.revenueMetrics.averageRevenuePerTenant =
+      report.revenueMetrics.totalMonthlyRevenue / tenants.length;
     report.valuation.averageValuation = report.valuation.totalValuation / tenants.length;
   }
 
@@ -1386,7 +1385,7 @@ tenantSchema.statics.findComplianceRisks = async function () {
     status: { $in: ['ACTIVE', 'COMPLIANCE_HOLD'] },
   })
     .select(
-      'quantumId name popiaComplianceScore ficaCompliance.riskCategory subscription.status usage.lastActive',
+      'quantumId name popiaComplianceScore ficaCompliance.riskCategory subscription.status usage.lastActive'
     )
     .sort({ popiaComplianceScore: 1 })
     .lean();

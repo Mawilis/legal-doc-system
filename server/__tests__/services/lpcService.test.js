@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ LPC SERVICE TESTS - INVESTOR-GRADE DUE DILIGENCE              ║
   ║ [100% coverage | Deterministic evidence | R10M risk validation] ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -10,7 +8,9 @@ const require = _createRequire(import.meta.url);
 // IMPORTANT: Mock modules BEFORE importing them
 jest.mock('../../utils/cryptoUtils', () => ({
   generateDeterministicId: jest.fn((prefix, input) => `${prefix}-${input || 'test'}-${Date.now()}`),
-  sha3_512: jest.fn((input) => require('crypto').createHash('sha256').update(String(input)).digest('hex')),
+  sha3_512: jest.fn((input) =>
+    require('crypto').createHash('sha256').update(String(input)).digest('hex')
+  ),
 }));
 
 jest.mock('../../utils/auditLogger', () => ({
@@ -33,7 +33,11 @@ jest.mock('../../models/FidelityFund');
 
 // Now import the modules
 const mongoose = require('mongoose');
-const { createLpcService, LPC_STATUTORY_LIMITS, LPC_RETENTION_POLICIES } = require('../../services/lpcService');
+const {
+  createLpcService,
+  LPC_STATUTORY_LIMITS,
+  LPC_RETENTION_POLICIES,
+} = require('../../services/lpcService');
 const auditLogger = require('../../utils/auditLogger');
 
 describe('LPC Service', () => {
@@ -87,7 +91,9 @@ describe('LPC Service', () => {
 
   test('should validate encryption key strength', async () => {
     const invalidConfig = { ...testConfig, encryptionKey: 'too-short' };
-    await expect(lpcService.init(invalidConfig)).rejects.toThrow('Encryption key must be at least 64 characters');
+    await expect(lpcService.init(invalidConfig)).rejects.toThrow(
+      'Encryption key must be at least 64 characters'
+    );
   });
 
   // ===================================================================
@@ -173,7 +179,11 @@ describe('LPC Service', () => {
       currency: 'ZAR',
     };
 
-    const result = await lpcService.processTrustTransaction(transaction, testAttorneyId, testTenantId);
+    const result = await lpcService.processTrustTransaction(
+      transaction,
+      testAttorneyId,
+      testTenantId
+    );
 
     expect(result.success).toBe(true);
     expect(result.transactionId).toBeDefined();
@@ -244,7 +254,11 @@ describe('LPC Service', () => {
   test('should calculate Fidelity Fund contribution', async () => {
     await lpcService.init(testConfig);
 
-    const result = await lpcService.calculateFidelityFundContribution(testAttorneyId, 1000000, testTenantId);
+    const result = await lpcService.calculateFidelityFundContribution(
+      testAttorneyId,
+      1000000,
+      testTenantId
+    );
 
     expect(result.success).toBe(true);
     expect(result.calculationId).toBeDefined();

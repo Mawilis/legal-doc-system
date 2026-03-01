@@ -5,13 +5,13 @@
 # @version: 6.0.1
 # @author: Wilson Khanyezi - Chief Quantum Sentinel
 # @date: 2026-02-15
-# 
+#
 # @description:
 #   COMPREHENSIVE TAX PRACTITIONER REGISTRATION FORM FOR SARS eFILING
 #   This form captures all required practitioner information for SARS
 #   integration, including registration details, practice information,
 #   and compliance declarations.
-# 
+#
 # @regulatoryReferences:
 #   - Tax Administration Act 28 of 2011, Section 240
 #   - Tax Administration Act, Section 46 (Electronic Filing)
@@ -47,7 +47,7 @@ sections:
         pattern: '^PRA\d{10}$'
         validationMessage: Practitioner ID must start with PRA followed by 10 digits
         example: PRA1234567890
-        
+
       - name: practitionerType
         type: select
         label: Practitioner Type
@@ -58,7 +58,7 @@ sections:
           - COMPANY
           - TRUST
         default: INDIVIDUAL
-        
+
       - name: registrationNumber
         type: string
         label: Professional Registration Number
@@ -66,7 +66,7 @@ sections:
         pattern: '^\d{8,15}$'
         validationMessage: Registration number must be 8-15 digits
         example: 87654321
-        
+
       - name: registrationBody
         type: select
         label: Registration Body
@@ -78,14 +78,14 @@ sections:
           - CIMA
           - LSSA
           - OTHER
-          
+
       - name: registrationDate
         type: date
         label: Registration Date
         required: true
         format: YYYY-MM-DD
         validationMessage: Date must be in YYYY-MM-DD format
-        
+
       - name: expiryDate
         type: date
         label: Registration Expiry Date
@@ -104,7 +104,7 @@ sections:
         minLength: 2
         maxLength: 50
         validationMessage: First name must be 2-50 characters
-        
+
       - name: lastName
         type: string
         label: Last Name
@@ -112,7 +112,7 @@ sections:
         minLength: 2
         maxLength: 50
         validationMessage: Last name must be 2-50 characters
-        
+
       - name: idNumber
         type: string
         label: South African ID Number
@@ -121,7 +121,7 @@ sections:
         validationMessage: ID number must be 13 digits
         sensitive: true
         redactionLevel: HIGH
-        
+
       - name: dateOfBirth
         type: date
         label: Date of Birth
@@ -130,7 +130,7 @@ sections:
         validationMessage: Date must be in YYYY-MM-DD format
         sensitive: true
         redactionLevel: MEDIUM
-        
+
       - name: nationality
         type: select
         label: Nationality
@@ -139,7 +139,7 @@ sections:
           - SOUTH_AFRICAN
           - OTHER
         default: SOUTH_AFRICAN
-        
+
       - name: passportNumber
         type: string
         label: Passport Number (if non-SA)
@@ -159,7 +159,7 @@ sections:
         required: true
         pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         validationMessage: Invalid email address format
-        
+
       - name: phoneMobile
         type: string
         label: Mobile Phone Number
@@ -167,14 +167,14 @@ sections:
         pattern: '^0[6-8][0-9]{8}$'
         validationMessage: Invalid SA mobile number format
         example: 0821234567
-        
+
       - name: phoneWork
         type: string
         label: Work Phone Number
         required: false
         pattern: '^0[1-9][0-9]{8}$'
         validationMessage: Invalid SA phone number format
-        
+
       - name: phoneFax
         type: string
         label: Fax Number
@@ -193,7 +193,7 @@ sections:
         minLength: 2
         maxLength: 100
         validationMessage: Practice name must be 2-100 characters
-        
+
       - name: practiceType
         type: select
         label: Practice Type
@@ -206,7 +206,7 @@ sections:
           - PUBLIC_COMPANY
           - NON_PROFIT
         default: SOLE_PROPRIETOR
-        
+
       - name: registrationNumber
         type: string
         label: Company/CC Registration Number
@@ -214,7 +214,7 @@ sections:
         pattern: '^\d{4}\/\d{4,10}\/\d{2}$'
         validationMessage: Invalid company registration number format
         example: 2023/123456/07
-        
+
       - name: vatNumber
         type: string
         label: VAT Registration Number
@@ -222,7 +222,7 @@ sections:
         pattern: '^\d{10}$'
         validationMessage: VAT number must be 10 digits
         example: 4123456789
-        
+
       - name: payrollNumber
         type: string
         label: PAYE Reference Number
@@ -230,7 +230,7 @@ sections:
         pattern: '^\d{8}$'
         validationMessage: PAYE reference must be 8 digits
         example: 87654321
-        
+
       - name: uifNumber
         type: string
         label: UIF Reference Number
@@ -238,7 +238,7 @@ sections:
         pattern: '^\d{8}$'
         validationMessage: UIF reference must be 8 digits
         example: 12345678
-        
+
       - name: sdlNumber
         type: string
         label: SDL Reference Number
@@ -257,28 +257,28 @@ sections:
         required: true
         maxLength: 100
         validationMessage: Address line 1 cannot exceed 100 characters
-        
+
       - name: addressLine2
         type: string
         label: Address Line 2
         required: false
         maxLength: 100
         validationMessage: Address line 2 cannot exceed 100 characters
-        
+
       - name: suburb
         type: string
         label: Suburb
         required: true
         maxLength: 50
         validationMessage: Suburb cannot exceed 50 characters
-        
+
       - name: city
         type: string
         label: City/Town
         required: true
         maxLength: 50
         validationMessage: City cannot exceed 50 characters
-        
+
       - name: province
         type: select
         label: Province
@@ -293,14 +293,14 @@ sections:
           - NORTH_WEST
           - NORTHERN_CAPE
           - WESTERN_CAPE
-          
+
       - name: postalCode
         type: string
         label: Postal Code
         required: true
         pattern: '^\d{4}$'
         validationMessage: Postal code must be 4 digits
-        
+
       - name: country
         type: string
         label: Country
@@ -309,7 +309,7 @@ sections:
         options:
           - SOUTH_AFRICA
           - OTHER
-          
+
       - name: postalAddress
         type: text
         label: Postal Address (if different)
@@ -332,26 +332,26 @@ sections:
             label: Qualification Name
             required: true
             maxLength: 100
-            
+
           - name: institution
             type: string
             label: Institution
             required: true
             maxLength: 100
-            
+
           - name: yearObtained
             type: number
             label: Year Obtained
             required: true
             min: 1950
             max: 2100
-            
+
           - name: certificateNumber
             type: string
             label: Certificate Number
             required: true
             maxLength: 50
-            
+
           - name: expiryDate
             type: date
             label: Expiry Date (if applicable)
@@ -381,7 +381,7 @@ sections:
           - TAX_COMPLIANCE
           - TRANSFER_PRICING
           - CUSTOMS_AND_EXCISE
-          
+
       - name: yearsExperience
         type: number
         label: Years of Tax Experience
@@ -389,7 +389,7 @@ sections:
         min: 0
         max: 70
         default: 0
-        
+
       - name: clientCount
         type: number
         label: Number of Tax Clients
@@ -397,7 +397,7 @@ sections:
         min: 0
         max: 10000
         default: 0
-        
+
       - name: annualTurnover
         type: number
         label: Annual Turnover (ZAR)
@@ -421,13 +421,13 @@ sections:
           - OBJECTION_FILED
           - APPEAL_FILED
         default: COMPLIANT
-        
+
       - name: hasOutstandingTax
         type: boolean
         label: Do you have any outstanding tax debt?
         required: true
         default: false
-        
+
       - name: outstandingTaxAmount
         type: number
         label: Outstanding Tax Amount (if yes)
@@ -435,13 +435,13 @@ sections:
         min: 0
         format: currency
         currency: ZAR
-        
+
       - name: hasBeenAudited
         type: boolean
         label: Have you ever been audited by SARS?
         required: true
         default: false
-        
+
       - name: auditOutcome
         type: select
         label: Audit Outcome (if audited)
@@ -452,32 +452,32 @@ sections:
           - ADJUSTMENTS_DISPUTED
           - PENALTIES_IMPOSED
           - UNDER_OBJECTION
-          
+
       - name: hasCriminalRecord
         type: boolean
         label: Do you have any criminal record related to tax matters?
         required: true
         default: false
-        
+
       - name: criminalRecordDetails
         type: text
         label: Criminal Record Details (if yes)
         required: false
         maxLength: 500
         validationMessage: Details cannot exceed 500 characters
-        
+
       - name: consentToVerification
         type: boolean
         label: I consent to SARS verifying all information provided
         required: true
         default: false
-        
+
       - name: consentToDataProcessing
         type: boolean
         label: I consent to Wilsy OS processing this data for tax compliance
         required: true
         default: false
-        
+
       - name: popiaConsent
         type: boolean
         label: I consent to my personal information being processed as per POPIA
@@ -505,27 +505,27 @@ sections:
             label: Certified ID/Passport Copy
             required: true
             description: Certified copy of ID document or passport
-            
+
           - name: proofOfRegistration
             label: Proof of Professional Registration
             required: true
             description: Certificate from SAICA/SAIPA/ACCA/etc.
-            
+
           - name: taxClearanceCertificate
             label: Tax Clearance Certificate
             required: false
             description: Recent SARS tax clearance certificate
-            
+
           - name: proofOfAddress
             label: Proof of Business Address
             required: true
             description: Utility bill or bank statement (last 3 months)
-            
+
           - name: curriculumVitae
             label: Curriculum Vitae
             required: true
             description: Detailed CV with experience and qualifications
-            
+
           - name: declarationForm
             label: Signed Declaration Form
             required: true
@@ -540,25 +540,25 @@ sections:
         label: Submission ID
         autoGenerated: true
         format: 'SARS-FORM-{timestamp}-{random}'
-        
+
       - name: submittedAt
         type: datetime
         label: Submission Date/Time
         autoGenerated: true
         format: ISO8601
-        
+
       - name: submittedBy
         type: string
         label: Submitted By
         autoGenerated: true
         source: userContext
-        
+
       - name: tenantId
         type: string
         label: Tenant ID
         autoGenerated: true
         source: tenantContext
-        
+
       - name: ipAddress
         type: string
         label: IP Address
@@ -566,7 +566,7 @@ sections:
         source: requestContext
         sensitive: true
         redactionLevel: MEDIUM
-        
+
       - name: userAgent
         type: string
         label: User Agent
@@ -574,19 +574,19 @@ sections:
         source: requestContext
         sensitive: true
         redactionLevel: LOW
-        
+
       - name: forensicHash
         type: string
         label: Forensic Hash
         autoGenerated: true
         algorithm: SHA256
-        
+
       - name: retentionPolicy
         type: string
         label: Retention Policy
         default: tax_act_5_years
         autoGenerated: true
-        
+
       - name: dataResidency
         type: string
         label: Data Residency
@@ -599,28 +599,28 @@ workflow:
       description: Validate all form fields
       required: true
       autoProcess: true
-      
+
     - name: redaction
       description: Redact sensitive information
       required: true
       autoProcess: true
-      
+
     - name: storage
       description: Store form data
       required: true
       autoProcess: true
-      
+
     - name: notification
       description: Send confirmation notification
       required: true
       autoProcess: true
-      
+
     - name: sarsSubmission
       description: Submit to SARS
       required: false
       autoProcess: false
       requiresApproval: true
-      
+
     - name: verification
       description: Verify with SARS
       required: false
@@ -632,16 +632,16 @@ notifications:
     - type: EMAIL
       recipient: SUBMITTER
       template: sars-form-submission-confirmation
-      
+
     - type: EMAIL
       recipient: ADMIN
       template: sars-form-submission-admin
-      
+
   onApproval:
     - type: EMAIL
       recipient: SUBMITTER
       template: sars-form-approval-confirmation
-      
+
   onRejection:
     - type: EMAIL
       recipient: SUBMITTER

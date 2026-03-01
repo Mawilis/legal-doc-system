@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/middleware/compression.js
  * STATUS: PRODUCTION-READY | PERFORMANCE & EFFICIENCY GRADE
  * -----------------------------------------------------------------------------

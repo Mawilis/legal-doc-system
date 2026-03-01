@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: HEALTH CHECK CRON JOB
  * Regular system health monitoring and alerting

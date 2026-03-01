@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ BILLING CONTROLLER TESTS - INVESTOR DUE DILIGENCE             ║
   ║ 100% coverage | R12B validation | Forensic compliance         ║
@@ -18,10 +16,10 @@ const require = _createRequire(import.meta.url);
 
 import request from 'supertest.js';
 import express from 'express.js';
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 import fs from 'fs/promises';
-import path from "path";
+import path from 'path';
 import { v4 as uuidv4 } from 'uuid.js';
 
 // Mock dependencies
@@ -105,7 +103,9 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
 
     axios.get.mockResolvedValue({
       data: {
-        tariffs: [{ code: 'LIT001', description: 'Litigation hourly rate', rate: 2500, lpcApproved: true }],
+        tariffs: [
+          { code: 'LIT001', description: 'Litigation hourly rate', rate: 2500, lpcApproved: true },
+        ],
         pagination: { page: 1, limit: 50, total: 1 },
       },
     });
@@ -161,7 +161,9 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
       status: 'completed',
     });
 
-    PaymentTransaction.aggregate.mockResolvedValue([{ _id: { year: 2025, month: 3 }, totalPayments: 11500, count: 1 }]);
+    PaymentTransaction.aggregate.mockResolvedValue([
+      { _id: { year: 2025, month: 3 }, totalPayments: 11500, count: 1 },
+    ]);
 
     // Setup express app for route testing
     app = express();
@@ -274,7 +276,7 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
       expect(quantumLogger.log).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'HIGH_VALUE_CALCULATION',
-        }),
+        })
       );
     });
   });
@@ -296,7 +298,9 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
     });
 
     it('should handle pagination', async () => {
-      const response = await request(app).get('/api/v1/billing/tariffs?page=2&limit=10').expect(200);
+      const response = await request(app)
+        .get('/api/v1/billing/tariffs?page=2&limit=10')
+        .expect(200);
 
       expect(response.body.data.pagination).toBeDefined();
       expect(axios.get).toHaveBeenCalledWith(
@@ -306,7 +310,7 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
             page: 2,
             limit: 10,
           }),
-        }),
+        })
       );
     });
 
@@ -495,7 +499,9 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
 
   describe('5. getFinancialAnalytics - Real-time Financial Intelligence', () => {
     it('should retrieve analytics successfully', async () => {
-      const response = await request(app).get('/api/v1/billing/analytics?period=monthly').expect(200);
+      const response = await request(app)
+        .get('/api/v1/billing/analytics?period=monthly')
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.summary).toBeDefined();
@@ -518,7 +524,9 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
     });
 
     it('should handle date filtering', async () => {
-      await request(app).get('/api/v1/billing/analytics?startDate=2025-01-01&endDate=2025-03-31').expect(200);
+      await request(app)
+        .get('/api/v1/billing/analytics?startDate=2025-01-01&endDate=2025-03-31')
+        .expect(200);
 
       expect(BillingInvoice.aggregate).toHaveBeenCalled();
       expect(PaymentTransaction.aggregate).toHaveBeenCalled();
@@ -537,7 +545,9 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
 
   describe('6. getInvoices - Invoice List Retrieval', () => {
     it('should retrieve invoices with pagination', async () => {
-      const response = await request(app).get('/api/v1/billing/invoices?limit=10&offset=0').expect(200);
+      const response = await request(app)
+        .get('/api/v1/billing/invoices?limit=10&offset=0')
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBeInstanceOf(Array);
@@ -553,12 +563,14 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
           tenantId: mockTenantId,
           status: 'paid',
         }),
-        expect.anything(),
+        expect.anything()
       );
     });
 
     it('should filter by date range', async () => {
-      await request(app).get('/api/v1/billing/invoices?fromDate=2025-01-01&toDate=2025-03-31').expect(200);
+      await request(app)
+        .get('/api/v1/billing/invoices?fromDate=2025-01-01&toDate=2025-03-31')
+        .expect(200);
 
       expect(BillingInvoice.find).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -568,7 +580,7 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
             $lte: expect.any(Date),
           }),
         }),
-        expect.anything(),
+        expect.anything()
       );
     });
 
@@ -609,7 +621,9 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
 
   describe('7. getInvoiceById - Single Invoice Retrieval', () => {
     it('should retrieve single invoice by ID', async () => {
-      const response = await request(app).get('/api/v1/billing/invoices/INV-20250324-ABC123').expect(200);
+      const response = await request(app)
+        .get('/api/v1/billing/invoices/INV-20250324-ABC123')
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.invoiceId).toBe('INV-20250324-ABC123');
@@ -626,10 +640,13 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
     });
 
     it('should verify blockchain hash', async () => {
-      const verifyFinancialTransaction = require('../../utils/blockchainUtils').verifyFinancialTransaction;
+      const verifyFinancialTransaction =
+        require('../../utils/blockchainUtils').verifyFinancialTransaction;
       verifyFinancialTransaction.mockResolvedValueOnce({ isValid: true });
 
-      const response = await request(app).get('/api/v1/billing/invoices/INV-20250324-ABC123').expect(200);
+      const response = await request(app)
+        .get('/api/v1/billing/invoices/INV-20250324-ABC123')
+        .expect(200);
 
       expect(response.body.verification.isValid).toBe(true);
     });
@@ -648,7 +665,11 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
       const panAfricanValue = 2000000000; // R2B
 
       const totalValue =
-        annualSavingsPerClient * 500 + fraudPrevention + regulatoryAvoidance + cashFlowImprovement + panAfricanValue;
+        annualSavingsPerClient * 500 +
+        fraudPrevention +
+        regulatoryAvoidance +
+        cashFlowImprovement +
+        panAfricanValue;
 
       console.log('\n💰 BILLING CONTROLLER VALUE ANALYSIS');
       console.log('='.repeat(50));
@@ -764,7 +785,10 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'billing-controller-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'billing-controller-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'billing-controller-evidence.json'))
@@ -773,7 +797,10 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'billing-controller-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'billing-controller-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

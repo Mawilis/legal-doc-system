@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ SA LEGAL VALIDATORS — INVESTOR-GRADE ● REGULATOR-READY ● COURT-ADMISSIBLE                                      ║
   ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
 
@@ -34,11 +32,12 @@ function validateSAIDNumber(idNumber) {
     idNumber = idNumber.toString().trim();
 
     if (!/^\d{13}$/.test(idNumber)) {
-      result.code = idNumber.length !== 13
-        ? VALIDATION_CODES.INVALID_LENGTH
-        : VALIDATION_CODES.INVALID_CHARACTERS;
+      result.code =
+        idNumber.length !== 13
+          ? VALIDATION_CODES.INVALID_LENGTH
+          : VALIDATION_CODES.INVALID_CHARACTERS;
       result.errors.push(
-        idNumber.length !== 13 ? 'ID must be exactly 13 digits' : 'ID must contain only digits',
+        idNumber.length !== 13 ? 'ID must be exactly 13 digits' : 'ID must contain only digits'
       );
       return result;
     }

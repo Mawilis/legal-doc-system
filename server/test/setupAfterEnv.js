@@ -1,4 +1,4 @@
-// Jest setup after environment
+#!// Jest setup after environment
 // This runs after Jest environment is set up
 
 // Global test timeout

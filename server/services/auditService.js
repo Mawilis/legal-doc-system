@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
    ║ AUDIT SERVICE - INVESTOR-GRADE MODULE                                       ║
    ║ 99.9% tamper-proof | R50M fraud risk elimination | 95% margin              ║

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 import crypto from 'crypto';
 
 export const DocuSignAdapter = {
@@ -7,19 +7,19 @@ export const DocuSignAdapter = {
     const normalized = JSON.stringify(payload);
     const ts = new Date().toISOString();
     const h = crypto
-      .createHmac('sha256', (process.env.PROVIDER_KEY || 'provider-test-key'))
+      .createHmac('sha256', process.env.PROVIDER_KEY || 'provider-test-key')
       .update(normalized + '|' + (signer.id || signer.email) + '|' + ts)
       .digest('hex');
-      
-    return { 
-      proof: { 
-        method: 'provider-hmac', 
-        value: h, 
-        ts, 
-        provider: 'docusign-sim' 
-      } 
+
+    return {
+      proof: {
+        method: 'provider-hmac',
+        value: h,
+        ts,
+        provider: 'docusign-sim',
+      },
     };
-  }
+  },
 };
 
 export default DocuSignAdapter;

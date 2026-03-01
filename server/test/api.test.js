@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const request = require('supertest');
+#!const request = require('supertest');
 const app = require('../server.js');
 
 describe('Wilsy OS Server API', () => {

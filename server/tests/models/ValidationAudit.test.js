@@ -1,8 +1,8 @@
-/* eslint-env mocha */
+#!/* eslint-env mocha */
 /* eslint-disable */
 
-import { expect } from "chai";
-import mongoose from "mongoose";
+import { expect } from 'chai';
+import mongoose from 'mongoose';
 import ValidationAudit, {
   AUDIT_ACTIONS,
   AUDIT_STATUS,
@@ -11,7 +11,7 @@ import ValidationAudit, {
   DATA_RESIDENCY,
 } from '../../models/ValidationAudit.js';
 
-describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
+describe('ValidationAudit Model - Forensic Grade Audit Trail', function () {
   const testTenantId = 'test-tenant-12345678';
   const testAuditId = 'audit-12345678-test';
 
@@ -31,8 +31,8 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
     await ValidationAudit.deleteMany({});
   });
 
-  describe('📝 Schema Validation', function() {
-    it('should create a valid audit entry', async function() {
+  describe('📝 Schema Validation', function () {
+    it('should create a valid audit entry', async function () {
       const audit = new ValidationAudit({
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.CASE_CREATED,
@@ -41,7 +41,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
         resourceId: 'case-123',
         userId: 'user-123',
         details: { test: true },
-        forensicHash: 'test-hash-123'
+        forensicHash: 'test-hash-123',
       });
 
       const saved = await audit.save();
@@ -51,10 +51,10 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
       expect(saved.severity).to.equal(SEVERITY_LEVELS.INFO);
     });
 
-    it('should require tenantId', async function() {
+    it('should require tenantId', async function () {
       const audit = new ValidationAudit({
         action: AUDIT_ACTIONS.CASE_CREATED,
-        status: AUDIT_STATUS.SUCCESS
+        status: AUDIT_STATUS.SUCCESS,
       });
 
       try {
@@ -66,8 +66,8 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
     });
   });
 
-  describe('🔒 Retention & Compliance', function() {
-    it('should set default retention policy', async function() {
+  describe('🔒 Retention & Compliance', function () {
+    it('should set default retention policy', async function () {
       const audit = new ValidationAudit({
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.CASE_CREATED,
@@ -76,7 +76,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
         resourceId: 'case-123',
         userId: 'user-123',
         details: {},
-        forensicHash: 'test-hash-123'
+        forensicHash: 'test-hash-123',
       });
 
       const saved = await audit.save();
@@ -84,14 +84,14 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
       expect(saved.dataResidency).to.equal(DATA_RESIDENCY.ZA);
     });
 
-    it('should calculate retention end date', async function() {
+    it('should calculate retention end date', async function () {
       const audit = new ValidationAudit({
         tenantId: testTenantId,
         action: AUDIT_ACTIONS.CASE_CREATED,
         status: AUDIT_STATUS.SUCCESS,
         severity: SEVERITY_LEVELS.INFO,
         retentionPolicy: RETENTION_POLICIES.COMPANIES_ACT_10_YEARS,
-        forensicHash: 'test-hash-123'
+        forensicHash: 'test-hash-123',
       });
 
       const saved = await audit.save();
@@ -100,8 +100,8 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
     });
   });
 
-  describe('🔍 Query Methods', function() {
-    beforeEach(async function() {
+  describe('🔍 Query Methods', function () {
+    beforeEach(async function () {
       const audits = [
         {
           tenantId: testTenantId,
@@ -110,7 +110,7 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
           severity: SEVERITY_LEVELS.INFO,
           resourceId: 'case-1',
           userId: 'user-1',
-          forensicHash: 'hash-1'
+          forensicHash: 'hash-1',
         },
         {
           tenantId: testTenantId,
@@ -119,34 +119,34 @@ describe('ValidationAudit Model - Forensic Grade Audit Trail', function() {
           severity: SEVERITY_LEVELS.ERROR,
           resourceId: 'doc-1',
           userId: 'user-2',
-          forensicHash: 'hash-2'
-        }
+          forensicHash: 'hash-2',
+        },
       ];
       await ValidationAudit.insertMany(audits);
     });
 
-    it('should find audits by tenant', async function() {
+    it('should find audits by tenant', async function () {
       const results = await ValidationAudit.findByTenant(testTenantId);
       expect(results).to.have.lengthOf(2);
     });
 
-    it('should filter by action', async function() {
+    it('should filter by action', async function () {
       const results = await ValidationAudit.findByAction(AUDIT_ACTIONS.CASE_CREATED);
       expect(results).to.have.lengthOf(1);
       expect(results[0].action).to.equal(AUDIT_ACTIONS.CASE_CREATED);
     });
 
-    it('should filter by severity', async function() {
+    it('should filter by severity', async function () {
       const results = await ValidationAudit.findBySeverity(SEVERITY_LEVELS.ERROR);
       expect(results).to.have.lengthOf(1);
       expect(results[0].severity).to.equal(SEVERITY_LEVELS.ERROR);
     });
   });
 
-  describe('📈 Investor Metrics', function() {
-    it('should demonstrate R4.2M/year value', function() {
+  describe('📈 Investor Metrics', function () {
+    it('should demonstrate R4.2M/year value', function () {
       const annualSavings = 2088000;
-      
+
       console.log('\n📊 INVESTOR METRICS - VALIDATION AUDIT:');
       console.log('   • Annual Savings/Client: R2,088,000');
       console.log('   • 94% margin on audit trail');

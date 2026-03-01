@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ███████╗ ██████╗ ██████╗ ███╗   ██╗███╗   ██╗███████╗ ██████╗ █████╗ ████████╗███████╗    ██████╗ ███████╗██████╗  ║
 ║ ██╔════╝██╔═══██╗██╔══██╗████╗  ██║████╗  ██║██╔════╝██╔════╝██╔══██╗╚══██╔══╝██╔════╝    ██╔══██╗██╔════╝██╔══██╗ ║
@@ -78,7 +76,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(
-      `❌ QUANTUM BREACH: Missing ${envVar} in .env vault. Legal compliance cannot be guaranteed.`,
+      `❌ QUANTUM BREACH: Missing ${envVar} in .env vault. Legal compliance cannot be guaranteed.`
     );
   }
 });
@@ -364,9 +362,10 @@ class POPIAComplianceNexus {
         name: 'PROCESSING_LIMITATION',
         description: 'Lawful, minimal, and consensual processing',
         legalReference: 'POPIA Section 9-12',
-        validation: () => dataProcessing.consentType
-          && dataProcessing.purposeSpecified
-          && dataProcessing.dataMinimized,
+        validation: () =>
+          dataProcessing.consentType &&
+          dataProcessing.purposeSpecified &&
+          dataProcessing.dataMinimized,
         weight: 0.2,
       },
       {
@@ -382,7 +381,8 @@ class POPIAComplianceNexus {
         name: 'FURTHER_PROCESSING_LIMITATION',
         description: 'Compatible with purpose for which collected',
         legalReference: 'POPIA Section 14',
-        validation: () => !dataProcessing.furtherProcessing || dataProcessing.furtherProcessingCompatible,
+        validation: () =>
+          !dataProcessing.furtherProcessing || dataProcessing.furtherProcessingCompatible,
         weight: 0.1,
       },
       {
@@ -422,11 +422,12 @@ class POPIAComplianceNexus {
     // Calculate compliance score
     const totalWeight = conditions.reduce(
       (sum, condition) => (condition.validation() ? sum + condition.weight : sum),
-      0,
+      0
     );
 
     const complianceScore = (totalWeight * 100).toFixed(2);
-    const isCompliant = parseFloat(complianceScore) >= parseFloat(process.env.COMPLIANCE_THRESHOLD || 85);
+    const isCompliant =
+      parseFloat(complianceScore) >= parseFloat(process.env.COMPLIANCE_THRESHOLD || 85);
 
     // Identify non-compliant conditions
     const nonCompliantConditions = conditions
@@ -555,12 +556,12 @@ class FICAKYCNexus {
             rejectUnauthorized: true,
             ciphers: 'TLS_AES_256_GCM_SHA384',
           }),
-        },
+        }
       );
 
       const kycLevel = this.determineKYCLevel(
         verificationResponse.data,
-        customerDetails.riskProfile,
+        customerDetails.riskProfile
       );
 
       return {
@@ -570,7 +571,7 @@ class FICAKYCNexus {
         verificationDate: new Date().toISOString(),
         // Quantum Security: Store encrypted verification evidence
         encryptedVerification: QuantumEncryptionNexus.encrypt(
-          JSON.stringify(verificationResponse.data),
+          JSON.stringify(verificationResponse.data)
         ),
         ficaCompliant: this.checkFICACompliance(verificationResponse.data),
         amlRiskScore: this.calculateAMLRiskScore(verificationResponse.data),
@@ -580,7 +581,7 @@ class FICAKYCNexus {
         retentionUntil: new Date(
           new Date().getFullYear() + 5,
           new Date().getMonth(),
-          new Date().getDate(),
+          new Date().getDate()
         ).toISOString(),
       };
     } catch (error) {
@@ -600,8 +601,8 @@ class FICAKYCNexus {
       highRiskCountry: verificationData.countryRisk === 'HIGH',
       unusualActivity: verificationData.activityPattern === 'UNUSUAL',
       largeTransaction:
-        verificationData.estimatedTransactionValue
-        > SA_COMPLIANCE_FRAMEWORKS.FICA.AML_THRESHOLD_ZAR,
+        verificationData.estimatedTransactionValue >
+        SA_COMPLIANCE_FRAMEWORKS.FICA.AML_THRESHOLD_ZAR,
       sanctionsMatch: verificationData.sanctionsMatch || false,
     };
 
@@ -609,7 +610,8 @@ class FICAKYCNexus {
 
     if (riskScore >= 3 || riskProfile === 'HIGH' || riskFactors.isPEP) {
       return 'ENHANCED';
-    } if (riskScore >= 1 || riskProfile === 'MEDIUM') {
+    }
+    if (riskScore >= 1 || riskProfile === 'MEDIUM') {
       return 'STANDARD';
     }
     return 'SIMPLIFIED';
@@ -765,7 +767,8 @@ class ComplianceReportService {
     this.db = mongoose.connection;
 
     // Quantum Storage with data residency enforcement
-    this.reportStoragePath = process.env.REPORT_STORAGE_PATH || path.join(__dirname, '../../storage/compliance_reports');
+    this.reportStoragePath =
+      process.env.REPORT_STORAGE_PATH || path.join(__dirname, '../../storage/compliance_reports');
 
     // Compliance thresholds
     this.complianceThreshold = parseFloat(process.env.COMPLIANCE_THRESHOLD) || 85;
@@ -957,12 +960,15 @@ class ComplianceReportService {
       ]);
 
       // Analyze 8 lawful conditions
-      const complianceResults = processingActivities.map((activity) => POPIAComplianceNexus.validateLawfulProcessing(activity));
+      const complianceResults = processingActivities.map((activity) =>
+        POPIAComplianceNexus.validateLawfulProcessing(activity)
+      );
 
       const compliantActivities = complianceResults.filter((r) => r.isCompliant);
-      const complianceRate = processingActivities.length > 0
-        ? (compliantActivities.length / processingActivities.length) * 100
-        : 100;
+      const complianceRate =
+        processingActivities.length > 0
+          ? (compliantActivities.length / processingActivities.length) * 100
+          : 100;
 
       // Calculate breach incidents
       const SecurityIncident = require('../models/SecurityIncident');
@@ -1016,7 +1022,7 @@ class ComplianceReportService {
       }).lean();
 
       const fulfilledRequests = paiaRequests.filter(
-        (req) => req.status === 'CLOSED' || req.status === 'FULFILLED',
+        (req) => req.status === 'CLOSED' || req.status === 'FULFILLED'
       );
 
       // Calculate response times
@@ -1089,7 +1095,8 @@ class ComplianceReportService {
         }),
       ]);
 
-      const retentionCompliance = companyDocs > 0 ? ((companyDocs - overdueDocs) / companyDocs) * 100 : 100;
+      const retentionCompliance =
+        companyDocs > 0 ? ((companyDocs - overdueDocs) / companyDocs) * 100 : 100;
 
       // Check CIPC filings
       const cipcReady = await Document.countDocuments({
@@ -1196,7 +1203,8 @@ class ComplianceReportService {
         createdAt: { $gte: startDate, $lte: endDate },
       });
 
-      const digitalSignatureRate = totalDocuments > 0 ? (signedDocuments / totalDocuments) * 100 : 100;
+      const digitalSignatureRate =
+        totalDocuments > 0 ? (signedDocuments / totalDocuments) * 100 : 100;
 
       return {
         totalDocuments,
@@ -1229,12 +1237,14 @@ class ComplianceReportService {
       }).lean();
 
       const compliantAgreements = agreements.filter(
-        (agreement) => agreement.hasCoolingOffPeriod
-          && agreement.warrantyPeriod >= 6
-          && !agreement.hasUnfairTerms,
+        (agreement) =>
+          agreement.hasCoolingOffPeriod &&
+          agreement.warrantyPeriod >= 6 &&
+          !agreement.hasUnfairTerms
       );
 
-      const complianceRate = agreements.length > 0 ? (compliantAgreements.length / agreements.length) * 100 : 100;
+      const complianceRate =
+        agreements.length > 0 ? (compliantAgreements.length / agreements.length) * 100 : 100;
 
       return {
         totalAgreements: agreements.length,
@@ -1264,15 +1274,18 @@ class ComplianceReportService {
         incidentDate: { $gte: startDate, $lte: endDate },
       }).lean();
 
-      const reportableIncidents = incidents.filter((incident) => SA_COMPLIANCE_FRAMEWORKS.CYBERCRIMES_ACT.REPORTABLE_INCIDENTS.includes(incident.type));
-
-      const reportedIncidents = reportableIncidents.filter(
-        (incident) => incident.reportedToAuthorities,
+      const reportableIncidents = incidents.filter((incident) =>
+        SA_COMPLIANCE_FRAMEWORKS.CYBERCRIMES_ACT.REPORTABLE_INCIDENTS.includes(incident.type)
       );
 
-      const reportingRate = reportableIncidents.length > 0
-        ? (reportedIncidents.length / reportableIncidents.length) * 100
-        : 100;
+      const reportedIncidents = reportableIncidents.filter(
+        (incident) => incident.reportedToAuthorities
+      );
+
+      const reportingRate =
+        reportableIncidents.length > 0
+          ? (reportedIncidents.length / reportableIncidents.length) * 100
+          : 100;
 
       return {
         totalIncidents: incidents.length,
@@ -1367,7 +1380,7 @@ class ComplianceReportService {
 
     if (data.companiesActCompliance?.retentionCompliance < 95) {
       findings.push(
-        `Companies Act retention compliance at ${data.companiesActCompliance.retentionCompliance}%`,
+        `Companies Act retention compliance at ${data.companiesActCompliance.retentionCompliance}%`
       );
     }
 
@@ -1535,13 +1548,13 @@ class ComplianceReportService {
       // Encrypt sensitive data
       const encryptedSections = {
         personalData: QuantumEncryptionNexus.encrypt(
-          JSON.stringify(sensitiveSections.personalData),
+          JSON.stringify(sensitiveSections.personalData)
         ),
         clientDetails: QuantumEncryptionNexus.encrypt(
-          JSON.stringify(sensitiveSections.clientDetails),
+          JSON.stringify(sensitiveSections.clientDetails)
         ),
         incidentDetails: QuantumEncryptionNexus.encrypt(
-          JSON.stringify(sensitiveSections.incidentDetails),
+          JSON.stringify(sensitiveSections.incidentDetails)
         ),
       };
 
@@ -1686,9 +1699,7 @@ class ComplianceReportService {
 // TESTING ARMORY - FORENSIC LEGAL COMPLIANCE TESTS
 // ===============================================================================================================
 if (process.env.NODE_ENV === 'test') {
-  const {
-    describe, it, before, after,
-  } = require('node:test');
+  const { describe, it, before, after } = require('node:test');
   const assert = require('node:assert');
 
   describe('Quantum Compliance Report Service - SA Legal Validation', () => {
@@ -1727,7 +1738,7 @@ if (process.env.NODE_ENV === 'test') {
         const result = await service.analyzePOPIACompliance(
           new Date('2024-01-01'),
           new Date('2024-12-31'),
-          'test_firm',
+          'test_firm'
         );
 
         assert.ok(result.complianceRate >= 0 && result.complianceRate <= 100);
@@ -1740,7 +1751,7 @@ if (process.env.NODE_ENV === 'test') {
         const result = await service.analyzePAIACompliance(
           new Date('2024-01-01'),
           new Date('2024-12-31'),
-          'test_firm',
+          'test_firm'
         );
 
         assert.ok(result.deadlineCompliance >= 0 && result.deadlineCompliance <= 100);
@@ -1753,7 +1764,7 @@ if (process.env.NODE_ENV === 'test') {
         const result = await service.analyzeCompaniesActCompliance(
           new Date('2024-01-01'),
           new Date('2024-12-31'),
-          'test_firm',
+          'test_firm'
         );
 
         assert.ok(result.retentionCompliance >= 0 && result.retentionCompliance <= 100);
@@ -1766,7 +1777,7 @@ if (process.env.NODE_ENV === 'test') {
         const result = await service.analyzeFICACompliance(
           new Date('2024-01-01'),
           new Date('2024-12-31'),
-          'test_firm',
+          'test_firm'
         );
 
         assert.ok(result.kycCoverage >= 0 && result.kycCoverage <= 100);

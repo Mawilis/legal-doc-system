@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  ███████╗ ██████╗████████╗      ███████╗██╗ ██████╗ ███╗   ██╗ █████╗ ████████╗██╗   ██╗██████╗ ███████╗    ███████╗███████╗██████╗  ║
  * ║  ██╔════╝██╔════╝╚══██╔══╝      ██╔════╝██║██╔════╝ ████╗  ██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██╔════╝    ██╔════╝██╔════╝██╔══██╗ ║
@@ -105,15 +103,15 @@ const REQUIRED_ECT_ENV_VARS = [
 REQUIRED_ECT_ENV_VARS.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(
-      `QUANTUM BREACH ALERT: Missing ECT environment variable ${varName}. Signature Service cannot initialize.`,
+      `QUANTUM BREACH ALERT: Missing ECT environment variable ${varName}. Signature Service cannot initialize.`
     );
   }
 });
 
 // Validate RSA key format
 if (
-  process.env.ECT_SIGNATURE_PRIVATE_KEY
-  && !process.env.ECT_SIGNATURE_PRIVATE_KEY.includes('-----BEGIN')
+  process.env.ECT_SIGNATURE_PRIVATE_KEY &&
+  !process.env.ECT_SIGNATURE_PRIVATE_KEY.includes('-----BEGIN')
 ) {
   throw new Error('ECT_SIGNATURE_PRIVATE_KEY must be in PEM format with proper headers');
 }
@@ -340,7 +338,7 @@ class QuantumTimestampingService {
         {
           headers: { 'Content-Type': 'application/timestamp-query' },
           timeout: 10000,
-        },
+        }
       );
 
       if (response.status === 200) {
@@ -363,14 +361,14 @@ class QuantumTimestampingService {
         forge.asn1.Class.UNIVERSAL,
         forge.asn1.Type.INTEGER,
         false,
-        forge.util.hexToBytes('01'),
+        forge.util.hexToBytes('01')
       ), // Version
       forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SEQUENCE, true, [
         forge.asn1.create(
           forge.asn1.Class.UNIVERSAL,
           forge.asn1.Type.OID,
           false,
-          forge.util.hexToBytes('0609608648016503040201'),
+          forge.util.hexToBytes('0609608648016503040201')
         ), // SHA-256 OID
         forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.NULL, false, ''),
       ]),
@@ -378,13 +376,13 @@ class QuantumTimestampingService {
         forge.asn1.Class.UNIVERSAL,
         forge.asn1.Type.OCTETSTRING,
         false,
-        forge.util.hexToBytes(dataHash),
+        forge.util.hexToBytes(dataHash)
       ),
       forge.asn1.create(
         forge.asn1.Class.UNIVERSAL,
         forge.asn1.Type.INTEGER,
         false,
-        forge.util.hexToBytes('00'),
+        forge.util.hexToBytes('00')
       ), // Nonce
     ]);
   }
@@ -506,7 +504,7 @@ class ECTSignatureService {
       const cryptographicSignature = await this._generateCryptographicSignature(
         documentHash,
         signatoryInfo,
-        options,
+        options
       );
 
       // Generate trusted timestamp
@@ -537,7 +535,7 @@ class ECTSignatureService {
       this.signatureCache.set(
         `signature:${advancedSignature.signatureId}`,
         advancedSignature,
-        86400,
+        86400
       ); // 24 hours
 
       // Log signature creation
@@ -585,7 +583,7 @@ class ECTSignatureService {
       // Perform full verification
       const verificationResult = await this._performVerification(
         signaturePackage,
-        originalDocument,
+        originalDocument
       );
 
       // Cache verification result
@@ -593,7 +591,7 @@ class ECTSignatureService {
         this.signatureCache.set(
           `verification:${signaturePackage.signatureId}`,
           verificationResult,
-          3600,
+          3600
         );
       }
 
@@ -935,7 +933,7 @@ class ECTSignatureService {
           response: saaResponse,
           timestamp: new Date().toISOString(),
         },
-        604800,
+        604800
       ); // 7 days
 
       return {
@@ -1034,7 +1032,8 @@ class ECTSignatureService {
   }
 
   _generateDocumentHash(documentData) {
-    const documentString = typeof documentData === 'string' ? documentData : JSON.stringify(documentData);
+    const documentString =
+      typeof documentData === 'string' ? documentData : JSON.stringify(documentData);
 
     // Double hash for additional security
     const firstHash = crypto.createHash('sha256').update(documentString).digest('hex');
@@ -1140,7 +1139,7 @@ class ECTSignatureService {
         timestamp: signingData.timestamp,
       },
       ECT_QUANTUM_CONFIG.JWT_SECRET,
-      { expiresIn: '30d' },
+      { expiresIn: '30d' }
     );
 
     return {
@@ -1195,7 +1194,7 @@ class ECTSignatureService {
     if (originalDocument) {
       const integrityCheck = this._verifyDocumentIntegrity(
         signaturePackage.documentHash,
-        originalDocument,
+        originalDocument
       );
       if (!integrityCheck.valid) {
         return {
@@ -1210,7 +1209,7 @@ class ECTSignatureService {
 
     // 3. Verify timestamp
     const timestampVerification = QuantumTimestampingService.validateTimestamp(
-      signaturePackage.timestamp,
+      signaturePackage.timestamp
     );
     if (!timestampVerification.valid) {
       return {
@@ -1271,7 +1270,7 @@ class ECTSignatureService {
           cryptographicSignature.signedData,
           cryptographicSignature.signature,
           'utf8',
-          'base64',
+          'base64'
         );
 
         return {
@@ -1367,7 +1366,7 @@ class ECTSignatureService {
     ];
 
     const hasControlIndicators = soleControlIndicators.some(
-      (indicator) => indicator && indicator !== 'NOT_CAPTURED',
+      (indicator) => indicator && indicator !== 'NOT_CAPTURED'
     );
 
     return {
@@ -1660,10 +1659,10 @@ class ECTSignatureService {
       signatoryId: signatoryInfo?.id || 'UNKNOWN',
       documentHash: documentData
         ? `${crypto
-          .createHash('sha256')
-          .update(JSON.stringify(documentData))
-          .digest('hex')
-          .substring(0, 16)}...`
+            .createHash('sha256')
+            .update(JSON.stringify(documentData))
+            .digest('hex')
+            .substring(0, 16)}...`
         : 'NO_DOCUMENT',
       timestamp: new Date().toISOString(),
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
@@ -1690,7 +1689,7 @@ class ECTSignatureService {
     this.signatureCache.set(
       `audit:revocation:${revocationRecord.signatureId}`,
       revocationLog,
-      604800,
+      604800
     ); // 7 days
 
     console.log('Signature revoked:', {
@@ -1708,8 +1707,7 @@ const ECTSignatureSchemas = {
   // Signatory Information Schema
   SIGNATORY_SCHEMA: Joi.object({
     id: Joi.string().required().description('Unique signatory identifier'),
-    name: Joi.string().min(2).max(100).required()
-      .description('Full legal name'),
+    name: Joi.string().min(2).max(100).required().description('Full legal name'),
     email: Joi.string().email().optional().description('Verified email address'),
     phone: Joi.string()
       .pattern(/^(\+27|0)[6-8][0-9]{8}$/)
@@ -1770,7 +1768,7 @@ const ECTSignatureSchemas = {
           id: Joi.string().required(),
           name: Joi.string().required(),
           role: Joi.string().required(),
-        }),
+        })
       )
       .min(2)
       .required()
@@ -1900,10 +1898,10 @@ const ECTSignatureUtils = {
                 and Transactions Act 25 of 2002 of South Africa.
                 
                 ${
-  verificationResult.valid
-    ? 'The signature is legally binding and admissible as evidence in South African courts.'
-    : 'The signature does not meet legal requirements and may not be legally binding.'
-}
+                  verificationResult.valid
+                    ? 'The signature is legally binding and admissible as evidence in South African courts.'
+                    : 'The signature does not meet legal requirements and may not be legally binding.'
+                }
                 
                 Certificate issued by: Wilsy OS Quantum Signature Service
                 Jurisdiction: Republic of South Africa
@@ -1962,7 +1960,9 @@ const ECTSignatureUtils = {
       },
     };
 
-    const allRequirementsMet = Object.values(requirements).every((section) => Object.values(section).every((met) => met === true));
+    const allRequirementsMet = Object.values(requirements).every((section) =>
+      Object.values(section).every((met) => met === true)
+    );
 
     return {
       compliant: allRequirementsMet,

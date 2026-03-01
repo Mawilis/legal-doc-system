@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - ATTORNEY PROFILE MODEL
  * LEGAL PRACTICE COUNCIL · FORENSIC ATTORNEY REGISTRY
@@ -6,7 +6,7 @@
  * @version 5.0.1
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import crypto from 'node:crypto';
 import { redactSensitiveData } from '../utils/popiaRedaction.js';
 

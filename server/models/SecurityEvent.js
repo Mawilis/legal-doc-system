@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * =============================================================================
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/SecurityEvent.js
  * =============================================================================
@@ -115,7 +113,7 @@ const RETENTION_DAYS = parseInt(process.env.SECURITY_RETENTION_DAYS || '180', 10
 const ENCRYPTION_KEY = process.env.SECURITY_EVENT_ENCRYPTION_KEY;
 if (!ENCRYPTION_KEY) {
   throw new Error(
-    'QUANTUM BREACH: SECURITY_EVENT_ENCRYPTION_KEY missing in .env - Critical vulnerability!',
+    'QUANTUM BREACH: SECURITY_EVENT_ENCRYPTION_KEY missing in .env - Critical vulnerability!'
   );
 }
 
@@ -155,7 +153,7 @@ const decryptPayload = async (encryptedObject) => {
   const decipher = crypto.createDecipheriv(
     'aes-256-gcm',
     key,
-    Buffer.from(encryptedObject.iv, 'hex'),
+    Buffer.from(encryptedObject.iv, 'hex')
   );
 
   decipher.setAuthTag(Buffer.from(encryptedObject.authTag, 'hex'));
@@ -227,7 +225,8 @@ const securityEventSchema = new mongoose.Schema(
       required: [true, 'Source IP is vital for forensic tracing and GEO compliance'],
       index: true,
       validate: {
-        validator: (v) => /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(v),
+        validator: (v) =>
+          /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(v),
         message: 'Invalid IP address format',
       },
     },
@@ -405,7 +404,7 @@ const securityEventSchema = new mongoose.Schema(
       },
     },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // =============================================================================
@@ -425,7 +424,7 @@ securityEventSchema.index(
     name: 'retentionPolicyIndex',
     background: true,
     comment: `Compliance Quantum: Auto-delete after ${RETENTION_DAYS} days per POPIA Section 14`,
-  },
+  }
 );
 
 // =============================================================================
@@ -606,7 +605,7 @@ securityEventSchema.statics.linkSAFPSReport = async function (eventId, safpsRefe
         authorityReportReference: safpsReference,
       },
     },
-    { new: true },
+    { new: true }
   );
 };
 
@@ -661,7 +660,8 @@ securityEventSchema.methods.calculateCVSS = function () {
  * Quantum Singleton: Prevent OverwriteModelError in hot-reload environments
  * Ensures single instance across the quantum architecture
  */
-export default mongoose.models.SecurityEvent || mongoose.model('SecurityEvent', securityEventSchema);
+export default mongoose.models.SecurityEvent ||
+  mongoose.model('SecurityEvent', securityEventSchema);
 
 // =============================================================================
 // QUANTUM VALUATION FOOTER

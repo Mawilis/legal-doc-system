@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/caseRoutes.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/caseRoutes.js
  * STATUS: QUANTUM-FORTIFIED | PRODUCTION-READY | BIBLICAL IMMORTALITY
@@ -141,7 +139,7 @@ router.post(
   restrictTo('partner', 'lawyer', 'admin'),
   validatePOPIAConsent, // QUANTUM SHIELD: POPIA consent validation
   validateCaseCreation, // LEGAL GUARD: Schema validation
-  asyncHandler(caseController.createCase),
+  asyncHandler(caseController.createCase)
 );
 
 /*
@@ -157,7 +155,7 @@ router.get(
   tenantGuard(),
   restrictTo('partner', 'admin'),
   prescriptionAlertLimiter, // QUANTUM SHIELD: Critical endpoint protection
-  asyncHandler(caseController.getPrescriptionAlerts),
+  asyncHandler(caseController.getPrescriptionAlerts)
 );
 
 /*
@@ -182,7 +180,7 @@ router.patch(
   tenantGuard(),
   restrictTo('partner', 'lawyer'),
   validateCaseUpdate,
-  asyncHandler(caseController.updateCaseStatus),
+  asyncHandler(caseController.updateCaseStatus)
 );
 
 /*
@@ -198,7 +196,7 @@ router.put(
   tenantGuard(),
   restrictTo('partner', 'lawyer'),
   validateCaseUpdate,
-  asyncHandler(caseController.updateCase),
+  asyncHandler(caseController.updateCase)
 );
 
 /*
@@ -213,7 +211,7 @@ router.delete(
   protect,
   tenantGuard(),
   restrictTo('partner'),
-  asyncHandler(caseController.deleteCase),
+  asyncHandler(caseController.deleteCase)
 );
 
 /*
@@ -229,7 +227,7 @@ router.post(
   protect,
   tenantGuard(),
   restrictTo('partner', 'lawyer', 'admin'),
-  asyncHandler(caseController.verifyCIPCEntity),
+  asyncHandler(caseController.verifyCIPCEntity)
 );
 
 /*
@@ -244,7 +242,7 @@ router.get(
   protect,
   tenantGuard(),
   restrictTo('partner', 'admin'),
-  asyncHandler(caseController.getCaseAuditTrail),
+  asyncHandler(caseController.getCaseAuditTrail)
 );
 
 /*
@@ -259,7 +257,7 @@ router.post(
   protect,
   tenantGuard(),
   restrictTo('partner', 'lawyer'),
-  asyncHandler(caseController.assignCase),
+  asyncHandler(caseController.assignCase)
 );
 
 /*
@@ -274,7 +272,7 @@ router.post(
   protect,
   tenantGuard(),
   restrictTo('partner', 'admin'),
-  asyncHandler(caseController.bulkArchiveCases),
+  asyncHandler(caseController.bulkArchiveCases)
 );
 
 /* ---------------------------------------------------------------------------

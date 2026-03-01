@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ MONTHLY DISPATCH CRON - INVESTOR-GRADE MODULE                 ║
   ║ Automated PDF delivery | 100% uptime | Forensic traceability  ║
@@ -15,7 +15,7 @@ import cron from 'node-cron.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 import fs from 'fs/promises';
-import path from "path";
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 // WILSY OS CORE IMPORTS

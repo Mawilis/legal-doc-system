@@ -1,9 +1,9 @@
-/* eslint-env mocha */
+#!/* eslint-env mocha */
 
 /* eslint-disable */
 import { expect } from "chai";
 import mongoose from "mongoose";
-import TenantConfig, { TENANT_STATUS, DATA_RESIDENCY } from '../../models/TenantConfig;
+import TenantConfig, { TENANT_STATUS, DATA_RESIDENCY } from '../../models/TenantConfig.js';
 
 describe('TenantConfig Model - Multi-Tenant Configuration', function() {
   const testTenantId = 'test-tenant-12345678';

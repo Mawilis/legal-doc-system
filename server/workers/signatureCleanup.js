@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ SIGNATURE CLEANUP WORKER - INVESTOR-GRADE MODULE                          ║
   ║ Automated retention compliance | POPIA §19 | 100-year archival           ║
@@ -8,12 +8,12 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/workers/signatureCleanup.js
  * VERSION: 1.0.0-PRODUCTION
  * CREATED: 2026-03-01
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R2.1M/year in manual compliance cleanup
  * • Risk elimination: R8.2M in retention policy violations
  * • Compliance: POPIA §19, ECT Act §15, Companies Act §15(2)(b)
- * 
+ *
  * INTEGRATION_MAP:
  * {
  *   "expectedConsumers": [
@@ -32,10 +32,10 @@
  */
 
 import { Queue, Worker } from 'bullmq';
-import ElectronicSignature, { 
-  SIGNATURE_STATUS, 
+import ElectronicSignature, {
+  SIGNATURE_STATUS,
   RETENTION_POLICIES,
-  AUDIT_EVENTS 
+  AUDIT_EVENTS,
 } from '../models/ElectronicSignature.js';
 import auditLogger from '../utils/auditLogger.js';
 import logger from '../utils/logger.js';
@@ -56,21 +56,21 @@ const CLEANUP_ACTIONS = {
   ARCHIVE: 'archive',
   MARK_FOR_PURGE: 'mark_for_purge',
   PURGE: 'purge',
-  VERIFY_RETENTION: 'verify_retention'
+  VERIFY_RETENTION: 'verify_retention',
 };
 
 const CLEANUP_PRIORITIES = {
   CRITICAL: 1,
   HIGH: 2,
   MEDIUM: 3,
-  LOW: 4
+  LOW: 4,
 };
 
 const NOTIFICATION_TYPES = {
   EXPIRING_SOON: 'expiring_soon',
   ARCHIVAL_NOTICE: 'archival_notice',
   PURGE_NOTICE: 'purge_notice',
-  RETENTION_VIOLATION: 'retention_violation'
+  RETENTION_VIOLATION: 'retention_violation',
 };
 
 const BATCH_SIZE = 100;
@@ -86,106 +86,126 @@ export class SignatureCleanupQueue {
       connection: {
         host: process.env.REDIS_HOST || 'localhost',
         port: process.env.REDIS_PORT || 6379,
-        password: process.env.REDIS_PASSWORD
+        password: process.env.REDIS_PASSWORD,
       },
       defaultJobOptions: {
         attempts: MAX_RETRIES,
         backoff: {
           type: 'exponential',
-          delay: 5000
+          delay: 5000,
         },
         removeOnComplete: 100,
-        removeOnFail: 500
-      }
+        removeOnFail: 500,
+      },
     });
 
-    this.worker = new Worker('signature-cleanup', async job => {
-      switch(job.name) {
-        case 'process-cleanup':
-          return await this.processCleanup(job.data);
-        case 'archive-signatures':
-          return await this.archiveSignatures(job.data);
-        case 'purge-signatures':
-          return await this.purgeSignatures(job.data);
-        case 'send-notifications':
-          return await this.sendNotifications(job.data);
-        default:
-          throw new Error(`Unknown job type: ${job.name}`);
-      }
-    }, {
-      connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: process.env.REDIS_PORT || 6379,
-        password: process.env.REDIS_PASSWORD
+    this.worker = new Worker(
+      'signature-cleanup',
+      async (job) => {
+        switch (job.name) {
+          case 'process-cleanup':
+            return await this.processCleanup(job.data);
+          case 'archive-signatures':
+            return await this.archiveSignatures(job.data);
+          case 'purge-signatures':
+            return await this.purgeSignatures(job.data);
+          case 'send-notifications':
+            return await this.sendNotifications(job.data);
+          default:
+            throw new Error(`Unknown job type: ${job.name}`);
+        }
       },
-      concurrency: 5
-    });
+      {
+        connection: {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: process.env.REDIS_PORT || 6379,
+          password: process.env.REDIS_PASSWORD,
+        },
+        concurrency: 5,
+      }
+    );
 
     this.setupWorkerListeners();
     logger.info('✅ SignatureCleanupQueue initialized');
   }
 
   setupWorkerListeners() {
-    this.worker.on('completed', job => {
+    this.worker.on('completed', (job) => {
       logger.info(`Cleanup job ${job.id} completed`, {
         jobName: job.name,
-        duration: job.finishedOn - job.processedOn
+        duration: job.finishedOn - job.processedOn,
       });
     });
 
     this.worker.on('failed', (job, err) => {
       logger.error(`Cleanup job ${job.id} failed`, {
         jobName: job.name,
-        error: err.message
+        error: err.message,
       });
     });
   }
 
   async addCleanupJob(options = {}) {
-    return this.queue.add('process-cleanup', {
-      batchSize: options.batchSize || BATCH_SIZE,
-      dryRun: options.dryRun || false,
-      timestamp: new Date().toISOString()
-    }, {
-      priority: CLEANUP_PRIORITIES.MEDIUM,
-      jobId: `cleanup-${Date.now()}`
-    });
+    return this.queue.add(
+      'process-cleanup',
+      {
+        batchSize: options.batchSize || BATCH_SIZE,
+        dryRun: options.dryRun || false,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        priority: CLEANUP_PRIORITIES.MEDIUM,
+        jobId: `cleanup-${Date.now()}`,
+      }
+    );
   }
 
   async addArchiveJob(signatureIds, options = {}) {
-    return this.queue.add('archive-signatures', {
-      signatureIds,
-      reason: options.reason || 'retention_policy',
-      dryRun: options.dryRun || false,
-      timestamp: new Date().toISOString()
-    }, {
-      priority: CLEANUP_PRIORITIES.HIGH,
-      jobId: `archive-${Date.now()}`
-    });
+    return this.queue.add(
+      'archive-signatures',
+      {
+        signatureIds,
+        reason: options.reason || 'retention_policy',
+        dryRun: options.dryRun || false,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        priority: CLEANUP_PRIORITIES.HIGH,
+        jobId: `archive-${Date.now()}`,
+      }
+    );
   }
 
   async addPurgeJob(signatureIds, options = {}) {
-    return this.queue.add('purge-signatures', {
-      signatureIds,
-      reason: options.reason || 'retention_expired',
-      verificationHash: options.verificationHash,
-      dryRun: options.dryRun || false,
-      timestamp: new Date().toISOString()
-    }, {
-      priority: CLEANUP_PRIORITIES.CRITICAL,
-      jobId: `purge-${Date.now()}`
-    });
+    return this.queue.add(
+      'purge-signatures',
+      {
+        signatureIds,
+        reason: options.reason || 'retention_expired',
+        verificationHash: options.verificationHash,
+        dryRun: options.dryRun || false,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        priority: CLEANUP_PRIORITIES.CRITICAL,
+        jobId: `purge-${Date.now()}`,
+      }
+    );
   }
 
   async addNotificationJob(notifications, options = {}) {
-    return this.queue.add('send-notifications', {
-      notifications,
-      type: options.type || NOTIFICATION_TYPES.EXPIRING_SOON,
-      timestamp: new Date().toISOString()
-    }, {
-      priority: CLEANUP_PRIORITIES.LOW,
-      jobId: `notify-${Date.now()}`
-    });
+    return this.queue.add(
+      'send-notifications',
+      {
+        notifications,
+        type: options.type || NOTIFICATION_TYPES.EXPIRING_SOON,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        priority: CLEANUP_PRIORITIES.LOW,
+        jobId: `notify-${Date.now()}`,
+      }
+    );
   }
 
   async processCleanup(data) {
@@ -196,20 +216,18 @@ export class SignatureCleanupQueue {
     logger.info('Starting signature cleanup process', {
       correlationId,
       batchSize,
-      dryRun
+      dryRun,
     });
 
     try {
       // Find signatures needing cleanup
-      const signatures = await ElectronicSignature.findForCleanup()
-        .limit(batchSize)
-        .lean();
+      const signatures = await ElectronicSignature.findForCleanup().limit(batchSize).lean();
 
       if (signatures.length === 0) {
         logger.info('No signatures require cleanup', { correlationId });
         return {
           processed: 0,
-          message: 'No cleanup required'
+          message: 'No cleanup required',
         };
       }
 
@@ -218,7 +236,7 @@ export class SignatureCleanupQueue {
         archived: 0,
         purged: 0,
         notified: 0,
-        errors: []
+        errors: [],
       };
 
       // Process each signature
@@ -241,11 +259,13 @@ export class SignatureCleanupQueue {
           }
 
           // Check if should notify about expiry
-          if (sig.status !== SIGNATURE_STATUS.SIGNED && 
-              sig.status !== SIGNATURE_STATUS.VERIFIED &&
-              sig.expiresAt) {
+          if (
+            sig.status !== SIGNATURE_STATUS.SIGNED &&
+            sig.status !== SIGNATURE_STATUS.VERIFIED &&
+            sig.expiresAt
+          ) {
             const daysUntilExpiry = Math.ceil((sig.expiresAt - new Date()) / (1000 * 60 * 60 * 24));
-            
+
             if (daysUntilExpiry <= 7 && daysUntilExpiry > 0) {
               if (!dryRun) {
                 await this.sendExpiryNotification(sig, daysUntilExpiry);
@@ -253,11 +273,10 @@ export class SignatureCleanupQueue {
               results.notified++;
             }
           }
-
         } catch (error) {
           results.errors.push({
             signatureId: sig.signatureId,
-            error: error.message
+            error: error.message,
           });
         }
       }
@@ -268,21 +287,20 @@ export class SignatureCleanupQueue {
         correlationId,
         results,
         duration: Date.now() - startTime,
-        dryRun
+        dryRun,
       });
 
       logger.info('Cleanup process completed', {
         correlationId,
         results,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       return results;
-
     } catch (error) {
       logger.error('Cleanup process failed', {
         correlationId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -301,8 +319,8 @@ export class SignatureCleanupQueue {
             archivedAt: new Date(),
             'cleanup.markedForArchival': true,
             'cleanup.archivalDate': new Date(),
-            'cleanup.archivalReason': 'retention_policy'
-          }
+            'cleanup.archivalReason': 'retention_policy',
+          },
         }
       );
 
@@ -314,7 +332,7 @@ export class SignatureCleanupQueue {
         archivedAt: new Date(),
         retentionPolicy: signature.retentionPolicy,
         dataResidency: signature.dataResidency,
-        forensicHash: signature.forensicHash
+        forensicHash: signature.forensicHash,
       };
 
       // Store in archival storage (S3, Glacier, etc.)
@@ -333,18 +351,17 @@ export class SignatureCleanupQueue {
         correlationId,
         signatureId: signature.signatureId,
         tenantId: signature.tenantId,
-        archivalPath
+        archivalPath,
       });
 
       logger.info('Signature archived', {
         signatureId: signature.signatureId,
-        archivalPath
+        archivalPath,
       });
-
     } catch (error) {
       logger.error('Failed to archive signature', {
         signatureId: signature.signatureId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -357,12 +374,14 @@ export class SignatureCleanupQueue {
       // Generate forensic hash before purge
       const purgeHash = crypto
         .createHash('sha256')
-        .update(JSON.stringify({
-          signatureId: signature.signatureId,
-          purgedAt: new Date().toISOString(),
-          reason: 'retention_expired',
-          forensicHash: signature.forensicHash
-        }))
+        .update(
+          JSON.stringify({
+            signatureId: signature.signatureId,
+            purgedAt: new Date().toISOString(),
+            reason: 'retention_expired',
+            forensicHash: signature.forensicHash,
+          })
+        )
         .digest('hex');
 
       // Create purge record
@@ -374,7 +393,7 @@ export class SignatureCleanupQueue {
         forensicHash: signature.forensicHash,
         purgeHash,
         retentionPolicy: signature.retentionPolicy,
-        dataResidency: signature.dataResidency
+        dataResidency: signature.dataResidency,
       };
 
       // Store purge certificate
@@ -396,8 +415,8 @@ export class SignatureCleanupQueue {
             'cleanup.markedForPurge': true,
             'cleanup.purgeDate': new Date(),
             'cleanup.purgeReason': 'retention_expired',
-            'cleanup.purgeHash': purgeHash
-          }
+            'cleanup.purgeHash': purgeHash,
+          },
         }
       );
 
@@ -407,18 +426,17 @@ export class SignatureCleanupQueue {
         correlationId,
         signatureId: signature.signatureId,
         tenantId: signature.tenantId,
-        purgeHash
+        purgeHash,
       });
 
       logger.info('Signature purged', {
         signatureId: signature.signatureId,
-        purgeHash
+        purgeHash,
       });
-
     } catch (error) {
       logger.error('Failed to purge signature', {
         signatureId: signature.signatureId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -430,11 +448,11 @@ export class SignatureCleanupQueue {
       tenantId: signature.tenantId,
       documentId: signature.documentId,
       daysUntilExpiry,
-      signers: signature.signers?.map(s => ({
+      signers: signature.signers?.map((s) => ({
         email: s.email,
-        name: s.name
+        name: s.name,
       })),
-      expiresAt: signature.expiresAt
+      expiresAt: signature.expiresAt,
     };
 
     // Store notification record
@@ -445,9 +463,9 @@ export class SignatureCleanupQueue {
           'signers.$[].reminders': {
             sentAt: new Date(),
             type: NOTIFICATION_TYPES.EXPIRING_SOON,
-            status: 'sent'
-          }
-        }
+            status: 'sent',
+          },
+        },
       }
     );
 
@@ -456,7 +474,7 @@ export class SignatureCleanupQueue {
       action: 'EXPIRY_NOTIFICATION_SENT',
       signatureId: signature.signatureId,
       tenantId: signature.tenantId,
-      daysUntilExpiry
+      daysUntilExpiry,
     });
   }
 
@@ -515,16 +533,16 @@ export class SignatureCleanupQueue {
       try {
         // Send notification via email, webhook, etc.
         // This would integrate with notification service
-        results.push({ 
-          ...notification, 
+        results.push({
+          ...notification,
           sent: true,
-          sentAt: new Date().toISOString()
+          sentAt: new Date().toISOString(),
         });
       } catch (error) {
-        results.push({ 
-          ...notification, 
+        results.push({
+          ...notification,
           sent: false,
-          error: error.message
+          error: error.message,
         });
       }
     }
@@ -534,39 +552,47 @@ export class SignatureCleanupQueue {
 
   async scheduleRecurringCleanup() {
     // Schedule daily cleanup at 2 AM
-    await this.queue.add('process-cleanup', {
-      batchSize: BATCH_SIZE,
-      timestamp: new Date().toISOString()
-    }, {
-      repeat: {
-        pattern: '0 2 * * *', // Every day at 2 AM
-        tz: 'Africa/Johannesburg'
+    await this.queue.add(
+      'process-cleanup',
+      {
+        batchSize: BATCH_SIZE,
+        timestamp: new Date().toISOString(),
       },
-      jobId: 'daily-cleanup'
-    });
+      {
+        repeat: {
+          pattern: '0 2 * * *', // Every day at 2 AM
+          tz: 'Africa/Johannesburg',
+        },
+        jobId: 'daily-cleanup',
+      }
+    );
 
     // Schedule weekly notification run on Mondays
-    await this.queue.add('send-notifications', {
-      type: NOTIFICATION_TYPES.EXPIRING_SOON,
-      timestamp: new Date().toISOString()
-    }, {
-      repeat: {
-        pattern: '0 9 * * 1', // Every Monday at 9 AM
-        tz: 'Africa/Johannesburg'
+    await this.queue.add(
+      'send-notifications',
+      {
+        type: NOTIFICATION_TYPES.EXPIRING_SOON,
+        timestamp: new Date().toISOString(),
       },
-      jobId: 'weekly-notifications'
-    });
+      {
+        repeat: {
+          pattern: '0 9 * * 1', // Every Monday at 9 AM
+          tz: 'Africa/Johannesburg',
+        },
+        jobId: 'weekly-notifications',
+      }
+    );
 
     logger.info('Scheduled recurring cleanup jobs');
   }
 
   async getStats() {
     const jobCounts = await this.queue.getJobCounts();
-    
+
     return {
       queue: jobCounts,
       workers: this.worker.isRunning() ? 1 : 0,
-      scheduled: await this.queue.getRepeatableJobs()
+      scheduled: await this.queue.getRepeatableJobs(),
     };
   }
 

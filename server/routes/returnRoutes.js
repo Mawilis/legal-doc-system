@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/returnRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Return of Service Gateway (Tenant-Scoped). Manages the upload, verification, and retrieval of Sheriff Returns (Proof of Service).
@@ -100,7 +98,7 @@ router.post(
       err.code = 'RETURN_UPLOAD_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -122,7 +120,7 @@ router.get(
       err.code = 'RETURN_LIST_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -153,7 +151,7 @@ router.get(
       err.code = 'RETURN_GET_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -186,7 +184,7 @@ router.patch(
       err.code = 'RETURN_VERIFY_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS: ADMIN THREAT ROUTES - THE WAR ROOM API                                      ║
   ║ Real-time threat intelligence endpoints for CISO and investors                        ║
@@ -9,13 +9,13 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/admin/threatRoutes.js
  * VERSION: 1.0.0-WARROOM
  * CREATED: 2026-02-26
- * 
+ *
  * PURPOSE: Real-time security dashboard API for $5B+ infrastructure
  * ACCESS: Super Admin only (Wilson Khanyezi)
  * DATA: Live from Global Threat Intelligence, Sentinel, Kill-Switch
  */
 
-import express from "express";
+import express from 'express';
 import GlobalThreatIntel from '../../services/analytics/GlobalThreatIntel.js';
 import SecurityOrchestrator from '../../services/security/SecurityOrchestrator.js';
 import { superAdminGuard } from '../../middleware/superAdminGuard.js';
@@ -48,26 +48,25 @@ router.get('/threat/posture', superAdminGuard, async (req, res) => {
       correlationId,
       responseTimeMs: Date.now() - startTime,
       threatLevel: posture.threatLevel,
-      ip: req.ip
+      ip: req.ip,
     });
 
     logger.info('War Room accessed', {
       user: req.user?.email,
       threatLevel: posture.threatLevel,
-      responseTimeMs: Date.now() - startTime
+      responseTimeMs: Date.now() - startTime,
     });
 
     res.json({
       success: true,
       correlationId,
       responseTimeMs: Date.now() - startTime,
-      data: posture
+      data: posture,
     });
-
   } catch (error) {
-    logger.error('War Room endpoint failed', { 
+    logger.error('War Room endpoint failed', {
       error: error.message,
-      correlationId 
+      correlationId,
     });
 
     res.status(500).json({
@@ -75,7 +74,7 @@ router.get('/threat/posture', superAdminGuard, async (req, res) => {
       correlationId,
       error: 'GTI_SERVICE_OFFLINE',
       message: 'Global Threat Intelligence temporarily unavailable',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -97,10 +96,9 @@ router.get('/threat/history', superAdminGuard, async (req, res) => {
       meta: {
         hours: parseInt(hours),
         points: history.length,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -122,10 +120,9 @@ router.get('/threat/feed', superAdminGuard, async (req, res) => {
       data: feed,
       meta: {
         count: feed.length,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -145,10 +142,9 @@ router.get('/threat/heatmap', superAdminGuard, async (req, res) => {
       data: heatmap,
       meta: {
         regions: heatmap.length,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -168,7 +164,7 @@ router.get('/threat/quarantines', superAdminGuard, async (req, res) => {
         const data = await redisClient.get(key);
         return {
           tenantId,
-          ...JSON.parse(data || '{}')
+          ...JSON.parse(data || '{}'),
         };
       })
     );
@@ -178,10 +174,9 @@ router.get('/threat/quarantines', superAdminGuard, async (req, res) => {
       data: quarantines,
       meta: {
         count: quarantines.length,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -197,18 +192,16 @@ router.post('/threat/quarantine/:tenantId', superAdminGuard, async (req, res) =>
   const { reason = 'ADMIN_ACTION', ttl } = req.body;
 
   try {
-    const result = await SecurityOrchestrator.tripCircuitBreaker(
-      tenantId,
-      reason,
-      { ttl, adminId: req.user?.id }
-    );
+    const result = await SecurityOrchestrator.tripCircuitBreaker(tenantId, reason, {
+      ttl,
+      adminId: req.user?.id,
+    });
 
     res.json({
       success: true,
       data: result,
-      message: `Tenant ${tenantId} quarantined successfully`
+      message: `Tenant ${tenantId} quarantined successfully`,
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -223,17 +216,13 @@ router.delete('/threat/quarantine/:tenantId', superAdminGuard, async (req, res) 
   const { tenantId } = req.params;
 
   try {
-    const result = await SecurityOrchestrator.resetCircuitBreaker(
-      tenantId,
-      'ADMIN_RESTORATION'
-    );
+    const result = await SecurityOrchestrator.resetCircuitBreaker(tenantId, 'ADMIN_RESTORATION');
 
     res.json({
       success: true,
       data: result,
-      message: `Tenant ${tenantId} released from quarantine`
+      message: `Tenant ${tenantId} released from quarantine`,
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -252,40 +241,39 @@ router.get('/threat/stats', superAdminGuard, async (req, res) => {
     const stats = {
       daily: {
         events: await SecurityLog.countDocuments({ timestamp: { $gte: oneDayAgo } }),
-        critical: await SecurityLog.countDocuments({ 
+        critical: await SecurityLog.countDocuments({
           timestamp: { $gte: oneDayAgo },
-          severity: 'critical'
+          severity: 'critical',
         }),
         quarantines: await SecurityLog.countDocuments({
           timestamp: { $gte: oneDayAgo },
-          eventType: 'TENANT_QUARANTINE_TRIPPED'
-        })
+          eventType: 'TENANT_QUARANTINE_TRIPPED',
+        }),
       },
       weekly: {
         events: await SecurityLog.countDocuments({ timestamp: { $gte: oneWeekAgo } }),
-        critical: await SecurityLog.countDocuments({ 
+        critical: await SecurityLog.countDocuments({
           timestamp: { $gte: oneWeekAgo },
-          severity: 'critical'
+          severity: 'critical',
         }),
         quarantines: await SecurityLog.countDocuments({
           timestamp: { $gte: oneWeekAgo },
-          eventType: 'TENANT_QUARANTINE_TRIPPED'
-        })
+          eventType: 'TENANT_QUARANTINE_TRIPPED',
+        }),
       },
       topEvents: await SecurityLog.aggregate([
         { $match: { timestamp: { $gte: oneWeekAgo } } },
         { $group: { _id: '$eventType', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
-        { $limit: 10 }
-      ])
+        { $limit: 10 },
+      ]),
     };
 
     res.json({
       success: true,
       data: stats,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -303,19 +291,18 @@ router.get('/threat/health', superAdminGuard, async (req, res) => {
       killSwitch: await GlobalThreatIntel.checkKillSwitchHealth(),
       quantumLogger: await GlobalThreatIntel.checkQuantumLoggerHealth(),
       redis: await GlobalThreatIntel.checkRedisHealth(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     const allHealthy = Object.values(health)
-      .filter(h => h.status !== 'unknown')
-      .every(h => h.status === 'operational');
+      .filter((h) => h.status !== 'unknown')
+      .every((h) => h.status === 'operational');
 
     res.json({
       success: true,
       data: health,
-      overall: allHealthy ? 'HEALTHY' : 'DEGRADED'
+      overall: allHealthy ? 'HEALTHY' : 'DEGRADED',
     });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

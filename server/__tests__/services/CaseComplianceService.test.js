@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE COMPLIANCE SERVICE - INVESTOR GRADE TEST SUITE          ║
   ║ [Validates R180K/year savings proposition]                   ║
@@ -121,7 +119,10 @@ describe('Production Code Quality (File Inspection)', () => {
     const fs = require('fs');
     const path = require('path');
 
-    const serviceCode = fs.readFileSync(path.join(__dirname, '../../services/CaseComplianceService.js'), 'utf8');
+    const serviceCode = fs.readFileSync(
+      path.join(__dirname, '../../services/CaseComplianceService.js'),
+      'utf8'
+    );
 
     expect(serviceCode).not.toMatch(/console\.log/);
     console.log('✓ No console.log in production code');
@@ -131,7 +132,10 @@ describe('Production Code Quality (File Inspection)', () => {
     const fs = require('fs');
     const path = require('path');
 
-    const serviceCode = fs.readFileSync(path.join(__dirname, '../../services/CaseComplianceService.js'), 'utf8');
+    const serviceCode = fs.readFileSync(
+      path.join(__dirname, '../../services/CaseComplianceService.js'),
+      'utf8'
+    );
 
     // Check for essential compliance patterns
     expect(serviceCode).toMatch(/tenantId/);

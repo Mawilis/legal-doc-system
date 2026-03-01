@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PREDICTIVE TEMPLATE ENGINE - MASTER ORCHESTRATOR                          ║
   ║ Fuses TimeSeries, NLP Trend Detection, and TensorFlow Regulatory models   ║
@@ -13,7 +13,7 @@ export class PredictiveTemplateEngine {
     this.timeSeries = new TimeSeriesAnalyzer();
     this.trendDetector = new LegalTrendDetector();
     this.forecaster = new RegulatoryForecaster();
-    
+
     this.predictions = new Map();
     this.isInitialized = false;
   }
@@ -28,7 +28,7 @@ export class PredictiveTemplateEngine {
   async analyzeTemplate(template) {
     console.time('predictive-analysis');
     await this.initializeEngines();
-    
+
     const practiceArea = template.practiceArea || 'general';
     const jurisdiction = template.jurisdiction || 'global';
 
@@ -36,15 +36,15 @@ export class PredictiveTemplateEngine {
     const emergingTrends = await this.detectEmergingTrends(practiceArea, jurisdiction);
     const regulatoryForecast = await this.forecastRegulatoryChanges(practiceArea, jurisdiction);
     const usagePredictions = await this.predictUsagePatterns(template);
-    
+
     const futureVersions = await this.generateFutureVersions(
       template,
       regulatoryForecast,
       emergingTrends
     );
-    
+
     console.timeEnd('predictive-analysis');
-    
+
     const prediction = {
       templateId: template.templateId,
       timestamp: new Date().toISOString(),
@@ -54,9 +54,9 @@ export class PredictiveTemplateEngine {
       usagePredictions,
       futureVersions,
       riskScore: this.calculateRiskScore(regulatoryForecast),
-      confidence: this.calculateConfidence(regulatoryForecast, emergingTrends)
+      confidence: this.calculateConfidence(regulatoryForecast, emergingTrends),
     };
-    
+
     this.predictions.set(template.templateId, prediction);
     return prediction;
   }
@@ -64,21 +64,21 @@ export class PredictiveTemplateEngine {
   async analyzeHistoricalPatterns(template) {
     const patterns = [];
     if (template.versionHistory && template.versionHistory.length > 0) {
-      const changes = template.versionHistory.map(v => ({
+      const changes = template.versionHistory.map((v) => ({
         date: v.createdAt || new Date(),
-        type: this.classifyChange(v.changelog || '')
+        type: this.classifyChange(v.changelog || ''),
       }));
-      
+
       patterns.push({
         type: 'version_frequency',
         value: this.calculateVersionFrequency(changes),
-        trend: this.determineTrend(changes.map(c => c.date))
+        trend: this.determineTrend(changes.map((c) => c.date)),
       });
-      
+
       patterns.push({
         type: 'seasonal',
         value: this.detectSeasonality(changes),
-        confidence: 0.87
+        confidence: 0.87,
       });
     }
     return patterns;
@@ -107,8 +107,9 @@ export class PredictiveTemplateEngine {
       intervals.push(new Date(dates[i]) - new Date(dates[i - 1]));
     }
     const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-    const recentInterval = intervals.slice(-3).reduce((a, b) => a + b, 0) / Math.min(3, intervals.length);
-    
+    const recentInterval =
+      intervals.slice(-3).reduce((a, b) => a + b, 0) / Math.min(3, intervals.length);
+
     if (recentInterval < avgInterval * 0.7) return 'accelerating';
     if (recentInterval > avgInterval * 1.3) return 'decelerating';
     return 'stable';
@@ -116,35 +117,35 @@ export class PredictiveTemplateEngine {
 
   detectSeasonality(changes) {
     if (changes.length < 4) return 'random';
-    const months = changes.map(c => new Date(c.date).getMonth());
+    const months = changes.map((c) => new Date(c.date).getMonth());
     const monthCounts = Array(12).fill(0);
-    months.forEach(m => monthCounts[m]++);
-    
+    months.forEach((m) => monthCounts[m]++);
+
     const variance = this.calculateVariance(monthCounts);
     return variance > 2 ? 'seasonal' : 'random';
   }
 
   async detectEmergingTrends(practiceArea, jurisdiction) {
     const trends = [];
-    
+
     // FORENSIC FIX: Access the correct payload properties from the upgraded NLP engine
     const trendData = await this.trendDetector.scanLegalDatabases(practiceArea, jurisdiction, '6m');
-    
+
     trends.push({
       type: 'emerging_topics',
-      terms: trendData.trends.emerging.map(t => t.name),
+      terms: trendData.trends.emerging.map((t) => t.name),
       impact: 'high',
-      timeframe: '3-6 months'
+      timeframe: '3-6 months',
     });
-    
+
     const jurisdictionTrends = await this.trendDetector.analyzeJurisdictionTrends(jurisdiction);
     trends.push({
       type: 'jurisdiction_shifts',
       harmonizationScore: jurisdictionTrends.harmonization.score,
       impact: 'critical',
-      timeframe: '6-12 months'
+      timeframe: '6-12 months',
     });
-    
+
     return trends;
   }
 
@@ -152,19 +153,21 @@ export class PredictiveTemplateEngine {
     // FORENSIC FIX: Correctly map the TensorFlow forecaster output
     const predictionResult = await this.forecaster.predict(practiceArea, jurisdiction, 12);
     const forecastArray = predictionResult.forecast || [];
-    
+
     return {
-      changes: forecastArray.map(f => ({
+      changes: forecastArray.map((f) => ({
         probability: f.probability,
         effectiveDate: f.date,
         impact: f.impactLevel,
-        intelligenceSources: f.intelligence?.sources || []
+        intelligenceSources: f.intelligence?.sources || [],
       })),
       summary: {
         totalChanges: forecastArray.length,
-        criticalChanges: forecastArray.filter(f => f.impactLevel === 'critical').length,
-        averageProbability: forecastArray.length ? forecastArray.reduce((a, b) => a + b.probability, 0) / forecastArray.length : 0
-      }
+        criticalChanges: forecastArray.filter((f) => f.impactLevel === 'critical').length,
+        averageProbability: forecastArray.length
+          ? forecastArray.reduce((a, b) => a + b.probability, 0) / forecastArray.length
+          : 0,
+      },
     };
   }
 
@@ -172,30 +175,30 @@ export class PredictiveTemplateEngine {
     // FORENSIC FIX: Generate a safe 6-point sliding window for the LSTM if template lacks history
     let historySequence = template.usageHistory || [];
     if (historySequence.length < 6) {
-       const base = template.usageStats?.timesUsed || 10;
-       historySequence = [base * 0.8, base * 0.85, base * 0.9, base * 0.95, base, base * 1.05];
+      const base = template.usageStats?.timesUsed || 10;
+      historySequence = [base * 0.8, base * 0.85, base * 0.9, base * 0.95, base, base * 1.05];
     }
-    
+
     const forecast = await this.timeSeries.forecast(historySequence, 12);
-    
+
     return {
       nextMonth: Math.round(forecast.forecast[0]),
       nextQuarter: Math.round(forecast.forecast.slice(0, 3).reduce((a, b) => a + b, 0)),
       nextYear: Math.round(forecast.forecast.reduce((a, b) => a + b, 0)),
-      peakPeriods: this.identifyPeakPeriods(forecast.forecast)
+      peakPeriods: this.identifyPeakPeriods(forecast.forecast),
     };
   }
 
   identifyPeakPeriods(forecastArray) {
     const peaks = [];
     const avg = forecastArray.reduce((a, b) => a + b, 0) / forecastArray.length;
-    
+
     forecastArray.forEach((value, index) => {
       if (value > avg * 1.5) {
         peaks.push({
           month: index + 1,
           expectedVolume: Math.round(value),
-          preparation: this.generatePreparationPlan(value)
+          preparation: this.generatePreparationPlan(value),
         });
       }
     });
@@ -208,35 +211,35 @@ export class PredictiveTemplateEngine {
       recommendations: [
         'Pre-warm template cache',
         'Increase queue capacity',
-        'Provision additional workers'
-      ]
+        'Provision additional workers',
+      ],
     };
   }
 
   async generateFutureVersions(template, regulatoryForecast, emergingTrends) {
     const versions = [];
     const currentVersion = template.version || 1;
-    
+
     if (regulatoryForecast.summary.criticalChanges > 0) {
       versions.push({
         version: currentVersion + 1,
         predictedDate: this.calculateVersionDate(3),
         changes: ['Mandatory compliance updates based on high-probability regulatory shifts'],
         priority: 'high',
-        estimatedEffort: '2 weeks'
+        estimatedEffort: '2 weeks',
       });
     }
-    
+
     if (emergingTrends.length > 0) {
       versions.push({
         version: currentVersion + 2,
         predictedDate: this.calculateVersionDate(6),
         changes: ['Adopt emerging terminology', 'Update clauses for modern practices'],
         priority: 'medium',
-        estimatedEffort: '1 week'
+        estimatedEffort: '1 week',
       });
     }
-    
+
     return versions;
   }
 

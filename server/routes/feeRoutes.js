@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/feeRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Fee Gateway (Tenant-Scoped). Manages billing tariffs, custom fee agreements, and automated cost calculations.
@@ -94,7 +92,7 @@ router.post(
       err.code = 'FEE_CREATE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -132,7 +130,7 @@ router.post(
       err.code = 'FEE_CALC_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -162,7 +160,7 @@ router.delete(
       err.code = 'FEE_DELETE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

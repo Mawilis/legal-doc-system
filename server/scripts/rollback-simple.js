@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 console.log('🔄 WILSY OS - Simple Rollback Check');
 console.log('💰 DRY RUN - NO CHANGES WILL BE MADE');

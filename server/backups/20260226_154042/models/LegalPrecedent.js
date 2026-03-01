@@ -1,4 +1,4 @@
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ LEGAL PRECEDENT - INVESTOR-GRADE MODULE                                     ║
   ║ 85% cost reduction | R2.97M savings | 99.99% legal certainty                ║
   ║ POPIA §19 | ECT Act §15 | Companies Act §28 | National Archives Act         ║

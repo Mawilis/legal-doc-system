@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/userController.js
  * PATH: server/controllers/userController.js
  * STATUS: EPITOME | BIBLICAL | PRODUCTION-READY | INVESTOR-GRADE
@@ -228,9 +226,7 @@ async function emitAuditSafe(req, entry) {
  * @route   POST /api/auth/register
  */
 exports.register = asyncHandler(async (req, res) => {
-  const {
-    name, email, password, tenantId,
-  } = req.body;
+  const { name, email, password, tenantId } = req.body;
 
   if (!name || !email || !password) {
     return res

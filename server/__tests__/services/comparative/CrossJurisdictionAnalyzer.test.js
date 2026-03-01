@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ CROSS-JURISDICTION ANALYZER TESTS - INVESTOR DUE DILIGENCE - $5B+ VALUE  ║
   ║ 100% coverage | Global legal intelligence | Comparative analysis          ║
@@ -115,7 +113,9 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
           },
         ],
         metadata: {
-          headnotes: [{ text: 'Legality principle requires rational connection between law and purpose' }],
+          headnotes: [
+            { text: 'Legality principle requires rational connection between law and purpose' },
+          ],
         },
       };
 
@@ -134,7 +134,8 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
       const mockPrecedent = {
         _id: 'prec1',
         citation: '[2023] ZACC 15',
-        ratio: 'The principle of legality requires rational connection. The principle of legality is fundamental.',
+        ratio:
+          'The principle of legality requires rational connection. The principle of legality is fundamental.',
         holdings: [
           {
             text: 'The principle of legality requires rational connection between law and purpose',
@@ -174,14 +175,20 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
     it('should detect systemic conflicts', async () => {
       const comparator = analyzer.comparator;
 
-      const sourcePrinciples = [{ precedent: { court: 'Supreme Court' } }, { precedent: { court: 'High Court' } }];
+      const sourcePrinciples = [
+        { precedent: { court: 'Supreme Court' } },
+        { precedent: { court: 'High Court' } },
+      ];
 
       const targetPrinciples = [
         { precedent: { court: 'Court of Appeal' } },
         { precedent: { court: 'District Court' } },
       ];
 
-      const conflicts = await comparator.analyzeSystemicConflicts(sourcePrinciples, targetPrinciples);
+      const conflicts = await comparator.analyzeSystemicConflicts(
+        sourcePrinciples,
+        targetPrinciples
+      );
 
       expect(conflicts).to.be.an('array');
       expect(conflicts.length).to.be.at.least(1);
@@ -232,7 +239,7 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
         targetProfile,
         { statistics: { totalMatches: 5 } },
         [{ severity: 'high' }],
-        [{ strength: 'strong' }],
+        [{ strength: 'strong' }]
       );
 
       expect(insights).to.be.an('array');
@@ -247,7 +254,7 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
       const recommendations = await comparator.generateRecommendations(
         { statistics: { totalMatches: 10 }, matrix: [{ matches: [{ similarity: 0.7 }] }] },
         [{ severity: 'critical' }],
-        [{}, {}, {}, {}, {}], // 5 harmonies
+        [{}, {}, {}, {}, {}] // 5 harmonies
       );
 
       expect(recommendations).to.be.an('array');

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ COURT ROUTES - COMPLETE SA JUDICIAL MANAGEMENT API                                    ║
   ║ R4.5M/year operational savings | Jurisdiction AI | Appeal Routing                     ║
@@ -21,7 +21,7 @@ import {
   addJudicialOfficer,
   getHierarchy,
   getCourtStats,
-  addPracticeDirective
+  addPracticeDirective,
 } from '../controllers/courtController.js';
 import { authenticate } from '../middleware/auth.js';
 import { extractTenant } from '../middleware/tenantContext.js';

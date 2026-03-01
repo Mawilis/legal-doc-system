@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * FILE: server/routes/clientRoutes.js
  * PATH: /server/routes/clientRoutes.js
  * STATUS: PRODUCTION | QUANTUM-SECURE | FICA-COMPLIANT
@@ -87,7 +85,7 @@ router.post(
   auditLog('CLIENT_CREATE_ATTEMPT'),
   asyncHandler(clientController.createClient),
   clearCache(['clients:*', 'dashboard:*']),
-  auditLog('CLIENT_CREATE_SUCCESS'),
+  auditLog('CLIENT_CREATE_SUCCESS')
 );
 
 /*
@@ -106,7 +104,7 @@ router.get(
     ttl: 300,
     key: (req) => `clients:${req.user.tenantId}:${JSON.stringify(req.query)}`,
   }),
-  asyncHandler(clientController.getAllClients),
+  asyncHandler(clientController.getAllClients)
 );
 
 /*
@@ -131,7 +129,7 @@ router.get(
   }),
   cacheMiddleware({ ttl: 60, key: (req) => `client:profile:${req.params.id}:${req.user._id}` }),
   auditLog('CLIENT_PROFILE_ACCESS'),
-  asyncHandler(clientController.getClientProfile),
+  asyncHandler(clientController.getClientProfile)
 );
 
 /*
@@ -149,7 +147,7 @@ router.get(
   validateRequest('clientSearch'),
   sanitizeInput(['q', 'field']),
   auditLog('CLIENT_SEARCH_EXECUTED'),
-  asyncHandler(clientController.searchClients),
+  asyncHandler(clientController.searchClients)
 );
 
 /*
@@ -176,7 +174,7 @@ router.patch(
   auditLog('FICA_VERIFICATION_ATTEMPT', { clientId: 'params.id', riskLevel: 'body.riskLevel' }),
   asyncHandler(clientController.verifyFica),
   clearCache(['clients:*', 'compliance:*', `client:${'params.id'}:*`]),
-  auditLog('FICA_VERIFICATION_COMPLETE', { clientId: 'params.id', status: 'body.ficaStatus' }),
+  auditLog('FICA_VERIFICATION_COMPLETE', { clientId: 'params.id', status: 'body.ficaStatus' })
 );
 
 /*
@@ -207,7 +205,7 @@ router.post(
     clientId: 'params.id',
     newBalance: 'body.newBalance',
     transactionId: 'body.transactionId',
-  }),
+  })
 );
 
 /*
@@ -238,7 +236,7 @@ router.post(
     format: 'body.format',
     includeSensitive: 'body.includeSensitive',
   }),
-  asyncHandler(clientController.exportClientData),
+  asyncHandler(clientController.exportClientData)
 );
 
 /*
@@ -267,7 +265,7 @@ router.put(
   auditLog('CLIENT_UPDATE_ATTEMPT', { clientId: 'params.id', changes: 'body' }),
   asyncHandler(clientController.updateClient),
   clearCache([`client:${'params.id'}:*`, 'clients:*']),
-  auditLog('CLIENT_UPDATE_SUCCESS', { clientId: 'params.id', version: 'body.version' }),
+  auditLog('CLIENT_UPDATE_SUCCESS', { clientId: 'params.id', version: 'body.version' })
 );
 
 /*
@@ -292,7 +290,7 @@ router.delete(
     clientId: 'params.id',
     retentionPeriod: '7 years',
     anonymizationDate: 'computed',
-  }),
+  })
 );
 
 /*
@@ -333,7 +331,7 @@ router.post(
     successCount: 'body.successCount',
     failureCount: 'body.failureCount',
     duration: 'body.duration',
-  }),
+  })
 );
 
 // ============================================================================

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - VALIDATION AUDIT MODEL v1.0                                    ║

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/models/systemConfigModel.js
  * PATH: server/models/systemConfigModel.js
  * VERSION: 2026-01-19
@@ -26,7 +24,10 @@ const { Schema } = mongoose;
 const SystemConfigSchema = new Schema(
   {
     key: {
-      type: String, required: true, trim: true, uppercase: true,
+      type: String,
+      required: true,
+      trim: true,
+      uppercase: true,
     },
     value: { type: Schema.Types.Mixed, required: true },
     scope: { type: String, trim: true, default: 'global' }, // e.g., 'global', 'tenant', 'feature'
@@ -40,7 +41,7 @@ const SystemConfigSchema = new Schema(
     minimize: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 /*
@@ -48,12 +49,12 @@ const SystemConfigSchema = new Schema(
  */
 SystemConfigSchema.index(
   { key: 1, scope: 1, tenantId: 1 },
-  { unique: true, background: true, name: 'idx_syscfg_key_scope_tenant' },
+  { unique: true, background: true, name: 'idx_syscfg_key_scope_tenant' }
 );
 SystemConfigSchema.index({ scope: 1 }, { background: true, name: 'idx_syscfg_scope' });
 SystemConfigSchema.index(
   { tenantId: 1 },
-  { background: true, sparse: true, name: 'idx_syscfg_tenantId' },
+  { background: true, sparse: true, name: 'idx_syscfg_tenantId' }
 );
 
 /*
@@ -63,8 +64,9 @@ SystemConfigSchema.methods.getValue = function getValue(defaultValue = null) {
   return this && this.value !== undefined ? this.value : defaultValue;
 };
 
-const SystemConfig = mongoose.models && mongoose.models.SystemConfig
-  ? mongoose.model('SystemConfig')
-  : mongoose.model('SystemConfig', SystemConfigSchema);
+const SystemConfig =
+  mongoose.models && mongoose.models.SystemConfig
+    ? mongoose.model('SystemConfig')
+    : mongoose.model('SystemConfig', SystemConfigSchema);
 
 export default SystemConfig;

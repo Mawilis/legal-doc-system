@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - FIDELITY FUND CERTIFICATE MODEL
  * Standard: ES Module (Surgically Standardized)

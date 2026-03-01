@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/middleware/ipMetadata.js
  * STATUS: PRODUCTION-READY | FORENSIC INTELLIGENCE GRADE
  * -----------------------------------------------------------------------------

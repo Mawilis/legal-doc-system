@@ -2,13 +2,13 @@
 
 ## 🏆 Competitive Advantages
 
-| Metric | WILSY OS | Fortune 500 | Advantage |
-|--------|----------|--------------|-----------|
-| Prediction Accuracy | 94.7% | 61.3% | **+33.4%** |
-| Forecast Horizon | 18 months | 3 months | **6x longer** |
-| Jurisdictions | 156 | 32 | **5x more** |
-| Generation Speed | 42ms | 2,847ms | **68x faster** |
-| Annual Value/Client | R29.4M | R8.2M | **3.6x higher** |
+| Metric              | WILSY OS  | Fortune 500 | Advantage       |
+| ------------------- | --------- | ----------- | --------------- |
+| Prediction Accuracy | 94.7%     | 61.3%       | **+33.4%**      |
+| Forecast Horizon    | 18 months | 3 months    | **6x longer**   |
+| Jurisdictions       | 156       | 32          | **5x more**     |
+| Generation Speed    | 42ms      | 2,847ms     | **68x faster**  |
+| Annual Value/Client | R29.4M    | R8.2M       | **3.6x higher** |
 
 ## 💰 Financial Projections
 
@@ -35,7 +35,7 @@
 
 ## 🔧 Quick Start
 
-```bash
+````bash
 # Deploy to production
 ./deploy-production.sh
 
@@ -102,3 +102,4 @@ Backup before rotation
 Git exclusion rules
 
 Optional SOPS encryption
+````

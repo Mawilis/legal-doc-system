@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ===================================================================================
  * QUANTUM SUPREME ADMIN AUTHENTICATION CITADEL - Wilsy OS Divine Access Guardian
  * File Path: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/superAdminAuth.js
@@ -188,7 +186,7 @@ const generateTokens = (superAdmin, tenantId) => {
       algorithm: 'RS256',
       issuer: 'Wilsy OS Supreme Authentication',
       audience: 'token-refresh',
-    },
+    }
   );
 
   return {
@@ -208,7 +206,7 @@ const validateTenantAccess = async (superAdmin, tenantId) => {
   try {
     // Super-admins with 'NATIONAL' jurisdiction can access all tenants
     const hasNationalAccess = superAdmin.regionalJurisdiction.some(
-      (j) => j.province === 'NATIONAL',
+      (j) => j.province === 'NATIONAL'
     );
 
     if (hasNationalAccess) {
@@ -234,7 +232,8 @@ const validateTenantAccess = async (superAdmin, tenantId) => {
     const adminJurisdictions = superAdmin.regionalJurisdiction.map((j) => j.province);
     const tenantJurisdiction = tenant.jurisdiction || 'NATIONAL';
 
-    const jurisdictionValid = tenantJurisdiction === 'NATIONAL' || adminJurisdictions.includes(tenantJurisdiction);
+    const jurisdictionValid =
+      tenantJurisdiction === 'NATIONAL' || adminJurisdictions.includes(tenantJurisdiction);
 
     if (!jurisdictionValid) {
       return {
@@ -320,7 +319,7 @@ const logAuthenticationAttempt = async (data) => {
     console.log(
       `AUTH_LOG: ${data.event} - ${data.success ? 'SUCCESS' : 'FAILED'} - ${data.superAdminId}@${
         data.tenantId
-      }`,
+      }`
     );
     return null;
   }
@@ -417,8 +416,9 @@ const superAdminAuth = async (req, res, next) => {
     // =====================================================================
     const clientIP = req.ip || req.connection.remoteAddress || '0.0.0.0';
     const userAgent = req.headers['user-agent'] || 'Unknown';
-    const deviceFingerprint = req.headers['x-device-fingerprint']
-      || crypto
+    const deviceFingerprint =
+      req.headers['x-device-fingerprint'] ||
+      crypto
         .createHash('sha256')
         .update(userAgent + clientIP)
         .digest('hex');
@@ -626,7 +626,7 @@ const superAdminAuth = async (req, res, next) => {
       quantumId: decoded.quantumId,
       status: 'ACTIVE',
     }).select(
-      '+loginHistory +mfaSecret +lastPasswordChange +regionalJurisdiction +professionalIndemnity',
+      '+loginHistory +mfaSecret +lastPasswordChange +regionalJurisdiction +professionalIndemnity'
     );
 
     if (!superAdmin) {
@@ -695,7 +695,7 @@ const superAdminAuth = async (req, res, next) => {
     // Password rotation policy (90 days)
     if (superAdmin.lastPasswordChange) {
       const daysSinceChange = Math.floor(
-        (new Date() - superAdmin.lastPasswordChange) / (1000 * 60 * 60 * 24),
+        (new Date() - superAdmin.lastPasswordChange) / (1000 * 60 * 60 * 24)
       );
 
       if (daysSinceChange > 90) {
@@ -762,9 +762,10 @@ const superAdminAuth = async (req, res, next) => {
     // PHASE 7: MULTI-FACTOR AUTHENTICATION (Conditional)
     // =====================================================================
     const mfaToken = req.headers['x-mfa-token'] || req.body.mfaToken;
-    const requiresMFA = req.path.includes('/critical')
-      || req.path.includes('/financial')
-      || req.path.includes('/compliance');
+    const requiresMFA =
+      req.path.includes('/critical') ||
+      req.path.includes('/financial') ||
+      req.path.includes('/compliance');
 
     if (requiresMFA && superAdmin.mfaSecret && !mfaToken) {
       await logAuthenticationAttempt({
@@ -1164,9 +1165,10 @@ const jurisdictionAuth = (requiredJurisdictions) => async (req, res, next) => {
     const tenantJurisdiction = req.tenant.jurisdiction || 'NATIONAL';
 
     const hasJurisdiction = requiredJurisdictions.some(
-      (j) => adminJurisdictions.includes(j)
-          || j === tenantJurisdiction
-          || adminJurisdictions.includes('NATIONAL'),
+      (j) =>
+        adminJurisdictions.includes(j) ||
+        j === tenantJurisdiction ||
+        adminJurisdictions.includes('NATIONAL')
     );
 
     if (!hasJurisdiction) {

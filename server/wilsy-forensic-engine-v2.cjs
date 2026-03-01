@@ -214,7 +214,7 @@ class WilsyForensicEngineV2 {
               // JSDoc annotations - careful to preserve valid syntax
               content = content.replace(
                 /@(param|returns?|type|property|example|throws|see|link)\s+(\{[^}]+\})\s+(\S+)\s+-\s+(.*?)\*\*/g,
-                '@$1 $2 $3 - $4*',
+                '@$1 $2 $3 - $4*'
               );
 
               if (content !== original) {
@@ -352,7 +352,7 @@ class WilsyForensicEngineV2 {
           execSync('find . -name "*.js" -not -path "*/node_modules/*" | wc -l', {
             cwd: this.rootDir,
             encoding: 'utf8',
-          }).trim(),
+          }).trim()
         ) || 0;
     } catch (_e) {
       jsCount = this.stats.filesProcessed || 750; // Estimate
@@ -387,7 +387,7 @@ class WilsyForensicEngineV2 {
                 ((this.stats.filesProcessed - this.stats.filesWithIssues) /
                   this.stats.filesProcessed) *
                 100
-              ).toFixed(2)  }%`
+              ).toFixed(2)}%`
             : '100%',
       },
       economicImpact: {
@@ -430,8 +430,8 @@ class WilsyForensicEngineV2 {
         evidence,
         Object.keys(evidence)
           .filter((_k) => k !== 'forensicHash')
-          .sort(),
-      ),
+          .sort()
+      )
     );
     const hash = crypto
       .createHash('sha256')
@@ -489,8 +489,8 @@ class WilsyForensicEngineV2 {
         -not -path "*/dist/*" \
         -not -path "*/build/*" 2>/dev/null | xargs grep -l "\\*\\*" 2>/dev/null | wc -l
       `,
-            { cwd: this.rootDir, encoding: 'utf8' },
-          ).trim(),
+            { cwd: this.rootDir, encoding: 'utf8' }
+          ).trim()
         ) || 0;
 
       if (doubleAsteriskCount === 0) {
@@ -515,8 +515,8 @@ class WilsyForensicEngineV2 {
               evidence,
               Object.keys(evidence)
                 .filter((_k) => k !== 'forensicHash' && k !== 'hashAlgorithm')
-                .sort(),
-            ),
+                .sort()
+            )
           )
           .digest('hex');
 
@@ -652,8 +652,10 @@ if (require.main === module) {
   • File: ${path.relative(__dirname, engine.evidenceFile)}
   • Hash: ${
     engine.evidenceFile
-      ? `${JSON.parse(fs.readFileSync(engine.evidenceFile, 'utf8')).forensicHash.substring(0, 16) 
-        }...`
+      ? `${JSON.parse(fs.readFileSync(engine.evidenceFile, 'utf8')).forensicHash.substring(
+          0,
+          16
+        )}...`
       : 'N/A'
   }
 

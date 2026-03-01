@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * @jest-environment node
  */
 
@@ -122,7 +120,7 @@ describe('🏛️ OnboardingSession Model - Legal Grade Validation', () => {
           },
           metadata: { createdBy: 'test-user' },
         },
-        { createdBy: 'test-user' },
+        { createdBy: 'test-user' }
       );
 
       expect(session.sessionId).toBeDefined();
@@ -233,7 +231,7 @@ describe('🏛️ OnboardingSession Model - Legal Grade Validation', () => {
           method: 'MANUAL',
           notes: 'Verified manually',
         },
-        'verifier-user',
+        'verifier-user'
       );
 
       expect(session.documents[0].verified).toBe(true);
@@ -251,7 +249,7 @@ describe('🏛️ OnboardingSession Model - Legal Grade Validation', () => {
           riskLevel: 'LOW',
           notes: 'All checks passed',
         },
-        'fico-user',
+        'fico-user'
       );
 
       expect(session.fica.status).toBe('APPROVED');
@@ -270,7 +268,7 @@ describe('🏛️ OnboardingSession Model - Legal Grade Validation', () => {
             { factor: 'FOREIGN', score: 45, description: 'Foreign national' },
           ],
         },
-        'risk-user',
+        'risk-user'
       );
 
       expect(session.risk.score).toBe(85);
@@ -463,7 +461,7 @@ describe('🏛️ OnboardingSession Model - Legal Grade Validation', () => {
     test('calculateCompletionRate should return percentage', async () => {
       const rate = await OnboardingSession.calculateCompletionRate(
         'tenant-1',
-        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       );
       expect(rate).toBeGreaterThanOrEqual(0);
       expect(rate).toBeLessThanOrEqual(100);
@@ -475,14 +473,18 @@ describe('🏛️ OnboardingSession Model - Legal Grade Validation', () => {
       const indexes = await OnboardingSession.collection.indexes();
 
       const hasTenantStatusIndex = indexes.some(
-        (i) => i.key && i.key.tenantId === 1 && i.key.status === 1 && i.key.createdAt === -1,
+        (i) => i.key && i.key.tenantId === 1 && i.key.status === 1 && i.key.createdAt === -1
       );
       expect(hasTenantStatusIndex).toBe(true);
 
-      const hasFicaStatusIndex = indexes.some((i) => i.key && i.key['fica.status'] === 1 && i.key.createdAt === -1);
+      const hasFicaStatusIndex = indexes.some(
+        (i) => i.key && i.key['fica.status'] === 1 && i.key.createdAt === -1
+      );
       expect(hasFicaStatusIndex).toBe(true);
 
-      const hasRiskLevelIndex = indexes.some((i) => i.key && i.key['risk.level'] === 1 && i.key.status === 1);
+      const hasRiskLevelIndex = indexes.some(
+        (i) => i.key && i.key['risk.level'] === 1 && i.key.status === 1
+      );
       expect(hasRiskLevelIndex).toBe(true);
     });
 

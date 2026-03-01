@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*!
+#!/*!
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ ╔═╗┌─┐┌┬┐┬┌┬┐┬┌┐┌┌─┐  ╔═╗┌─┐┌┬┐┌─┐┬─┐┌─┐┬┌─┐┌─┐┬┌─┌─┐┬ ┬                   │
 │ ║  │ │ │││ ││││││├┤   ║ ║├─┤ │ ├┤ ├┬┘├─┘│├─┤│ │├┴┐├─┤└┬┘                   │
@@ -128,11 +126,12 @@ class ComplianceChecker {
               name: 'Data Processing Clause',
               description: 'Contract must contain data processing agreement clause',
               severity: 'critical',
-              test: (document) => this.checkForClause(document, [
-                'data processing agreement',
-                'data processor obligations',
-                'POPIA compliance',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'data processing agreement',
+                  'data processor obligations',
+                  'POPIA compliance',
+                ]),
               remediation: 'Add explicit data processing agreement clause referencing POPIA',
             },
             {
@@ -140,12 +139,13 @@ class ComplianceChecker {
               name: 'Consent Mechanism',
               description: 'Clear consent mechanism for data collection',
               severity: 'high',
-              test: (document) => this.checkForClause(document, [
-                'consent',
-                'opt-in',
-                'explicit permission',
-                'data subject authorization',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'consent',
+                  'opt-in',
+                  'explicit permission',
+                  'data subject authorization',
+                ]),
               remediation: 'Include specific consent language with opt-in mechanism',
             },
             {
@@ -153,12 +153,13 @@ class ComplianceChecker {
               name: 'Data Subject Rights',
               description: 'Acknowledgement of data subject rights',
               severity: 'high',
-              test: (document) => this.checkForClause(document, [
-                'right to access',
-                'right to correction',
-                'right to deletion',
-                'data subject request',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'right to access',
+                  'right to correction',
+                  'right to deletion',
+                  'data subject request',
+                ]),
               remediation: 'Add clause detailing data subject rights under POPIA',
             },
             {
@@ -166,12 +167,13 @@ class ComplianceChecker {
               name: 'Security Safeguards',
               description: 'Technical and organizational security measures',
               severity: 'medium',
-              test: (document) => this.checkForClause(document, [
-                'security measures',
-                'confidentiality',
-                'data protection',
-                'encryption',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'security measures',
+                  'confidentiality',
+                  'data protection',
+                  'encryption',
+                ]),
               remediation: 'Specify security measures for personal information protection',
             },
             {
@@ -179,11 +181,12 @@ class ComplianceChecker {
               name: 'Cross-Border Transfer',
               description: 'Cross-border data transfer provisions',
               severity: 'medium',
-              test: (document) => this.checkForClause(document, [
-                'cross-border transfer',
-                'international data transfer',
-                'data residency',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'cross-border transfer',
+                  'international data transfer',
+                  'data residency',
+                ]),
               remediation: 'Add clause addressing cross-border data transfer requirements',
             },
           ],
@@ -200,12 +203,13 @@ class ComplianceChecker {
               name: 'Director Duties',
               description: 'Acknowledgement of director fiduciary duties',
               severity: 'critical',
-              test: (document) => this.checkForClause(document, [
-                'fiduciary duty',
-                'director liability',
-                'duty of care',
-                'duty of loyalty',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'fiduciary duty',
+                  'director liability',
+                  'duty of care',
+                  'duty of loyalty',
+                ]),
               remediation: 'Explicitly reference Companies Act §76 director duties',
             },
             {
@@ -213,12 +217,13 @@ class ComplianceChecker {
               name: 'Shareholder Rights',
               description: 'Protection of shareholder rights',
               severity: 'high',
-              test: (document) => this.checkForClause(document, [
-                'shareholder rights',
-                'voting rights',
-                'dividend',
-                'pre-emptive right',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'shareholder rights',
+                  'voting rights',
+                  'dividend',
+                  'pre-emptive right',
+                ]),
               remediation: 'Clearly define shareholder rights and protections',
             },
             {
@@ -226,12 +231,13 @@ class ComplianceChecker {
               name: 'Financial Reporting',
               description: 'Financial reporting and audit requirements',
               severity: 'medium',
-              test: (document) => this.checkForClause(document, [
-                'financial statements',
-                'audit',
-                'annual financial statements',
-                'audit committee',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'financial statements',
+                  'audit',
+                  'annual financial statements',
+                  'audit committee',
+                ]),
               remediation: 'Include financial reporting obligations per Companies Act',
             },
             {
@@ -239,12 +245,13 @@ class ComplianceChecker {
               name: 'Corporate Governance',
               description: 'Corporate governance framework',
               severity: 'medium',
-              test: (document) => this.checkForClause(document, [
-                'corporate governance',
-                'board of directors',
-                'company secretary',
-                'governance framework',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'corporate governance',
+                  'board of directors',
+                  'company secretary',
+                  'governance framework',
+                ]),
               remediation: 'Establish corporate governance structure',
             },
           ],
@@ -261,11 +268,12 @@ class ComplianceChecker {
               name: 'Electronic Signature Validity',
               description: 'Validity of electronic signatures',
               severity: 'critical',
-              test: (document) => this.checkForClause(document, [
-                'electronic signature',
-                'digital signature',
-                'e-signature validity',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'electronic signature',
+                  'digital signature',
+                  'e-signature validity',
+                ]),
               remediation: 'Include clause confirming ECT Act §13 signature validity',
             },
             {
@@ -273,12 +281,13 @@ class ComplianceChecker {
               name: 'Non-Repudiation',
               description: 'Non-repudiation mechanisms',
               severity: 'high',
-              test: (document) => this.checkForClause(document, [
-                'non-repudiation',
-                'audit trail',
-                'timestamp',
-                'integrity verification',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'non-repudiation',
+                  'audit trail',
+                  'timestamp',
+                  'integrity verification',
+                ]),
               remediation: 'Implement non-repudiation measures per ECT Act',
             },
             {
@@ -286,12 +295,13 @@ class ComplianceChecker {
               name: 'Record Retention',
               description: 'Electronic record retention',
               severity: 'medium',
-              test: (document) => this.checkForClause(document, [
-                'record retention',
-                'electronic records',
-                'archival',
-                'data preservation',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'record retention',
+                  'electronic records',
+                  'archival',
+                  'data preservation',
+                ]),
               remediation: 'Specify electronic record retention policy',
             },
           ],
@@ -308,12 +318,13 @@ class ComplianceChecker {
               name: 'Trust Accounting',
               description: 'Trust account handling and disclosure',
               severity: 'critical',
-              test: (document) => this.checkForClause(document, [
-                'trust account',
-                'fidelity fund',
-                'client funds',
-                'separate account',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'trust account',
+                  'fidelity fund',
+                  'client funds',
+                  'separate account',
+                ]),
               remediation: 'Include trust accounting provisions per LPC Rules',
             },
             {
@@ -321,12 +332,13 @@ class ComplianceChecker {
               name: 'Fee Disclosure',
               description: 'Clear fee disclosure and estimation',
               severity: 'high',
-              test: (document) => this.checkForClause(document, [
-                'fee disclosure',
-                'cost estimate',
-                'bill of costs',
-                'fee agreement',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'fee disclosure',
+                  'cost estimate',
+                  'bill of costs',
+                  'fee agreement',
+                ]),
               remediation: 'Provide detailed fee disclosure as required by LPC',
             },
             {
@@ -334,11 +346,12 @@ class ComplianceChecker {
               name: 'Conflict of Interest',
               description: 'Conflict of interest management',
               severity: 'high',
-              test: (document) => this.checkForClause(document, [
-                'conflict of interest',
-                'ethical walls',
-                'independent advice',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'conflict of interest',
+                  'ethical walls',
+                  'independent advice',
+                ]),
               remediation: 'Implement conflict of interest procedures',
             },
             {
@@ -346,12 +359,13 @@ class ComplianceChecker {
               name: 'Client Confidentiality',
               description: 'Attorney-client privilege protection',
               severity: 'critical',
-              test: (document) => this.checkForClause(document, [
-                'attorney-client privilege',
-                'legal privilege',
-                'confidentiality',
-                'privileged communication',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'attorney-client privilege',
+                  'legal privilege',
+                  'confidentiality',
+                  'privileged communication',
+                ]),
               remediation: 'Explicitly protect attorney-client privilege',
             },
           ],
@@ -368,12 +382,13 @@ class ComplianceChecker {
               name: 'Customer Due Diligence',
               description: 'Customer identification and verification',
               severity: 'critical',
-              test: (document) => this.checkForClause(document, [
-                'customer due diligence',
-                'KYC',
-                'know your customer',
-                'identity verification',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'customer due diligence',
+                  'KYC',
+                  'know your customer',
+                  'identity verification',
+                ]),
               remediation: 'Implement FICA-compliant customer due diligence',
             },
             {
@@ -381,12 +396,13 @@ class ComplianceChecker {
               name: 'Record Keeping',
               description: 'AML/CFT record keeping',
               severity: 'high',
-              test: (document) => this.checkForClause(document, [
-                'record keeping',
-                'transaction records',
-                'FICA records',
-                'compliance records',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'record keeping',
+                  'transaction records',
+                  'FICA records',
+                  'compliance records',
+                ]),
               remediation: 'Establish FICA record keeping procedures',
             },
             {
@@ -394,12 +410,13 @@ class ComplianceChecker {
               name: 'Reporting Obligations',
               description: 'Suspicious transaction reporting',
               severity: 'high',
-              test: (document) => this.checkForClause(document, [
-                'suspicious transaction',
-                'reporting obligation',
-                'FICA report',
-                'financial intelligence',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'suspicious transaction',
+                  'reporting obligation',
+                  'FICA report',
+                  'financial intelligence',
+                ]),
               remediation: 'Define suspicious transaction reporting process',
             },
           ],
@@ -416,11 +433,12 @@ class ComplianceChecker {
               name: 'Information Officer',
               description: 'Designation of Information Officer',
               severity: 'medium',
-              test: (document) => this.checkForClause(document, [
-                'information officer',
-                'PAIA officer',
-                'access to information',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'information officer',
+                  'PAIA officer',
+                  'access to information',
+                ]),
               remediation: 'Designate Information Officer per PAIA §50',
             },
             {
@@ -428,11 +446,12 @@ class ComplianceChecker {
               name: 'Access Request Procedure',
               description: 'Procedure for information access requests',
               severity: 'medium',
-              test: (document) => this.checkForClause(document, [
-                'access request',
-                'information request',
-                'PAIA request procedure',
-              ]),
+              test: (document) =>
+                this.checkForClause(document, [
+                  'access request',
+                  'information request',
+                  'PAIA request procedure',
+                ]),
               remediation: 'Establish PAIA access request procedure',
             },
           ],
@@ -498,7 +517,7 @@ class ComplianceChecker {
     if (documentText.length > (options.maxLength || 10000000)) {
       // 10MB default
       throw new Error(
-        `Document exceeds maximum length of ${options.maxLength || 10000000} characters`,
+        `Document exceeds maximum length of ${options.maxLength || 10000000} characters`
       );
     }
 
@@ -628,7 +647,7 @@ class ComplianceChecker {
 
     if (currentUsage > this.quotaConfig.maxChecksPerHour) {
       throw new Error(
-        `Quota exceeded: ${currentUsage}/${this.quotaConfig.maxChecksPerHour} checks per hour`,
+        `Quota exceeded: ${currentUsage}/${this.quotaConfig.maxChecksPerHour} checks per hour`
       );
     }
 
@@ -710,7 +729,8 @@ class ComplianceChecker {
         }
 
         const regulationDuration = performance.now() - regulationStart;
-        const regulationPercentage = regulationMaxScore > 0 ? (regulationScore / regulationMaxScore) * 100 : 100;
+        const regulationPercentage =
+          regulationMaxScore > 0 ? (regulationScore / regulationMaxScore) * 100 : 100;
 
         checkResults[regulationName] = {
           name: regulation.name,
@@ -737,7 +757,7 @@ class ComplianceChecker {
         validation.documentHash,
         overallScore,
         checkResults,
-        complianceStatus,
+        complianceStatus
       );
 
       // ===================== PHASE 5: AUDIT LOGGING =====================
@@ -786,7 +806,7 @@ class ComplianceChecker {
       }
 
       console.log(
-        `✅ Compliance check completed: ${overallScore.toFixed(1)}% - ${complianceStatus}`,
+        `✅ Compliance check completed: ${overallScore.toFixed(1)}% - ${complianceStatus}`
       );
       console.log(`   📊 Critical failures: ${criticalFailures}`);
       console.log(`   ⏱️  Total time: ${totalDuration.toFixed(0)}ms`);
@@ -841,9 +861,11 @@ class ComplianceChecker {
 
     if (score >= this.ruleEngine.thresholds.pass) {
       return 'COMPLIANT';
-    } if (score >= this.ruleEngine.thresholds.warning) {
+    }
+    if (score >= this.ruleEngine.thresholds.warning) {
       return 'CONDITIONALLY COMPLIANT';
-    } if (score >= this.ruleEngine.thresholds.fail) {
+    }
+    if (score >= this.ruleEngine.thresholds.fail) {
       return 'NON-COMPLIANT (REVIEW REQUIRED)';
     }
     return 'NON-COMPLIANT';
@@ -920,8 +942,8 @@ Issuer: ${payload.issuer}
 
 REGULATION SUMMARIES:
 ${Object.entries(regulationSummaries)
-    .map(([reg, data]) => `  ${reg.toUpperCase()}: ${data.score.toFixed(1)}% - ${data.summary}`)
-    .join('\n')}
+  .map(([reg, data]) => `  ${reg.toUpperCase()}: ${data.score.toFixed(1)}% - ${data.summary}`)
+  .join('\n')}
 
 CERTIFICATE HASH: ${certificateHash}
 VERIFICATION: ${payload.verificationUrl}
@@ -946,7 +968,7 @@ ${new Date().toISOString()}`;
     const totalRules = Object.values(results).reduce((sum, reg) => sum + reg.results.length, 0);
     const passedRules = Object.values(results).reduce(
       (sum, reg) => sum + reg.results.filter((r) => r.passed).length,
-      0,
+      0
     );
 
     return `Compliance Check Summary:
@@ -1102,7 +1124,7 @@ ${
       const { certificateHash, ...certificateWithoutHash } = certificate;
       const payloadString = JSON.stringify(
         certificateWithoutHash,
-        Object.keys(certificateWithoutHash).sort(),
+        Object.keys(certificateWithoutHash).sort()
       );
       const calculatedHash = crypto
         .createHash('sha256')
@@ -1306,7 +1328,7 @@ if (process.env.NODE_ENV === 'test') {
 
     test('should reject invalid document input', () => {
       expect(() => checker.validateDocument('')).toThrow(
-        'Document text must be at least 10 characters',
+        'Document text must be at least 10 characters'
       );
       expect(() => checker.validateDocument(null)).toThrow('Document is required');
       expect(() => checker.validateDocument(undefined)).toThrow('Document is required');
@@ -1396,7 +1418,7 @@ if (process.env.NODE_ENV === 'test') {
         documentHash,
         score,
         results,
-        status,
+        status
       );
 
       expect(certificate.certificateId).toMatch(/^CERT-[A-F0-9]{16}$/);
@@ -1419,7 +1441,10 @@ if (process.env.NODE_ENV === 'test') {
               remediation: 'Add DPA clause',
             },
             {
-              passed: true, ruleName: 'Consent', severity: 'high', remediation: 'N/A',
+              passed: true,
+              ruleName: 'Consent',
+              severity: 'high',
+              remediation: 'N/A',
             },
           ],
         },

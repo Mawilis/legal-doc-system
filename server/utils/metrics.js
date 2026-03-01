@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔══════════════════════════════════════════════════════════════════════════════╗
   ║ METRICS - INVESTOR-GRADE PERFORMANCE MONITORING                            ║
   ║ Prometheus compatible | Real-time | Forensic tracking                      ║

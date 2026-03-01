@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const fs = require('fs');
+#!const fs = require('fs');
 const path = require('path');
 
 const verifyPath = path.join(__dirname, 'verify-migration-state.js');
@@ -20,7 +18,7 @@ try {
     // Replace the Mongoose-based migration check with direct MongoDB query
     const oldSection = content.substring(
       content.indexOf(startMarker),
-      content.indexOf(endMarker) + endMarker.length,
+      content.indexOf(endMarker) + endMarker.length
     );
 
     const newSection = `
@@ -47,10 +45,11 @@ try {
     content = content.replace(oldSection, newSection);
 
     // Also update the success message
-    const successMessage = 'console.log(`✅ MIGRATION REGISTRY: ${migrations.length} MIGRATION(S) FOUND`);';
+    const successMessage =
+      'console.log(`✅ MIGRATION REGISTRY: ${migrations.length} MIGRATION(S) FOUND`);';
     content = content.replace(
       'console.log(`✅ MIGRATION REGISTRY: ${migrations.length} MIGRATION(S) FOUND`);',
-      'console.log(`✅ MIGRATION REGISTRY: ${migrations.length} MIGRATION(S) FOUND - SYSTEM MIGRATED`);',
+      'console.log(`✅ MIGRATION REGISTRY: ${migrations.length} MIGRATION(S) FOUND - SYSTEM MIGRATED`);'
     );
 
     fs.writeFileSync(verifyPath, content);

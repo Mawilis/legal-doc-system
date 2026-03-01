@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ================================================================================================
  * FILE: /server/models/GenerationalLedger.js
  * VERSION: 10.0.7-ETERNAL-COVENANT-PERFECTED
@@ -92,14 +90,15 @@ require('dotenv').config({ path: '/server/.env' });
 // QUANTUM SECURITY: Validate essential environment variables
 if (!process.env.ENCRYPTION_KEY || !process.env.JWT_SECRET) {
   throw new Error(
-    'Quantum Security Alert: Missing essential environment variables in /server/.env',
+    'Quantum Security Alert: Missing essential environment variables in /server/.env'
   );
 }
 
 // ENV ADDITION: Add LEDGER_ENCRYPTION_KEY to .env for quantum-resistant ledger encryption
-const LEDGER_ENCRYPTION_KEY = process.env.LEDGER_ENCRYPTION_KEY
-  || process.env.ENCRYPTION_KEY
-  || crypto.scryptSync('fallback-ledger-key-wilsy-2024', 'salt', 32);
+const LEDGER_ENCRYPTION_KEY =
+  process.env.LEDGER_ENCRYPTION_KEY ||
+  process.env.ENCRYPTION_KEY ||
+  crypto.scryptSync('fallback-ledger-key-wilsy-2024', 'salt', 32);
 
 /*
  * IMPORTS AND DEPENDENCIES
@@ -407,7 +406,7 @@ const generationalLedgerSchema = new mongoose.Schema(
         const cipher = crypto.createCipheriv(
           'aes-256-gcm',
           Buffer.from(LEDGER_ENCRYPTION_KEY, 'hex'),
-          crypto.randomBytes(12),
+          crypto.randomBytes(12)
         );
         let encrypted = cipher.update(v.toString(), 'utf8', 'hex');
         encrypted += cipher.final('hex');
@@ -424,13 +423,11 @@ const generationalLedgerSchema = new mongoose.Schema(
       get(v) {
         if (!v) return 0;
         try {
-          const {
-            encrypted, iv, authTag, algorithm,
-          } = JSON.parse(v);
+          const { encrypted, iv, authTag, algorithm } = JSON.parse(v);
           const decipher = crypto.createDecipheriv(
             algorithm,
             Buffer.from(LEDGER_ENCRYPTION_KEY, 'hex'),
-            Buffer.from(iv, 'hex'),
+            Buffer.from(iv, 'hex')
           );
           decipher.setAuthTag(Buffer.from(authTag, 'hex'));
           let decrypted = decipher.update(encrypted, 'hex', 'utf8');
@@ -759,7 +756,7 @@ const generationalLedgerSchema = new mongoose.Schema(
         const cipher = crypto.createCipheriv(
           'aes-256-gcm',
           Buffer.from(LEDGER_ENCRYPTION_KEY, 'hex'),
-          crypto.randomBytes(12),
+          crypto.randomBytes(12)
         );
         let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
         encrypted += cipher.final('hex');
@@ -776,13 +773,11 @@ const generationalLedgerSchema = new mongoose.Schema(
       get(data) {
         if (!data) return {};
         try {
-          const {
-            encrypted, iv, authTag, algorithm,
-          } = JSON.parse(data);
+          const { encrypted, iv, authTag, algorithm } = JSON.parse(data);
           const decipher = crypto.createDecipheriv(
             algorithm,
             Buffer.from(LEDGER_ENCRYPTION_KEY, 'hex'),
-            Buffer.from(iv, 'hex'),
+            Buffer.from(iv, 'hex')
           );
           decipher.setAuthTag(Buffer.from(authTag, 'hex'));
           let decrypted = decipher.update(encrypted, 'hex', 'utf8');
@@ -939,7 +934,7 @@ const generationalLedgerSchema = new mongoose.Schema(
     toObject: {
       virtuals: true,
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1101,7 +1096,7 @@ generationalLedgerSchema.pre('save', async function (next) {
   } else {
     // Updates not allowed - ledger is quantum immutable
     next(
-      new Error('GenerationalLedger entries cannot be modified - quantum immutability violated'),
+      new Error('GenerationalLedger entries cannot be modified - quantum immutability violated')
     );
   }
 });

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - COMPANY MODEL v2.0 (FORENSIC-GRADE) ║
   ║ [Companies Act 71 of 2008 | CIPC | FICA | POPIA | JSE | SARS] ║
@@ -31,8 +31,8 @@
  * • Unemployment Insurance Act
  * • Compensation for Occupational Injuries and Diseases Act
  */
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 // ============================================================================
 // ENUMS & CONSTANTS - COMPREHENSIVE LEGAL FRAMEWORK
 // ============================================================================
@@ -532,17 +532,19 @@ const registrationDetailsSchema = new mongoose.Schema({
         // Format: YYYY/XXXXXX/YY or YYYY/XXXXXX/YY for close corporations
         return /^\d{4}\/\d{6}\/\d{2}$/.test(v) || /^CK\d{2}\/\d{5}\/\d{2}$/.test(v);
       },
-      message: 'Invalid CIPC registration number'
+      message: 'Invalid CIPC registration number',
     },
-    comment: 'Format: YYYY/NNNNNN/CC (e.g., 2025/012345/07)'
+    comment: 'Format: YYYY/NNNNNN/CC (e.g., 2025/012345/07)',
   },
 
   // Previous registration numbers (for conversions/amalgamations)
-  previousRegistrationNumbers: [{
-    number: String,
-    date: Date,
-    reason: { type: String, enum: ['conversion', 'amalgamation', 're-registration'] }
-  }],
+  previousRegistrationNumbers: [
+    {
+      number: String,
+      date: Date,
+      reason: { type: String, enum: ['conversion', 'amalgamation', 're-registration'] },
+    },
+  ],
 
   // Enterprise Number (for foreign companies)
   enterpriseNumber: {
@@ -550,13 +552,13 @@ const registrationDetailsSchema = new mongoose.Schema({
     sparse: true,
     validate: {
       validator: (v) => !v || /^\d{10}$/.test(v),
-      message: 'Enterprise number must be 10 digits'
-    }
+      message: 'Enterprise number must be 10 digits',
+    },
   },
 
   incorporationDate: {
     type: Date,
-    required: true
+    required: true,
   },
 
   registrationCertificate: {
@@ -564,44 +566,50 @@ const registrationDetailsSchema = new mongoose.Schema({
     issuedDate: Date,
     verified: { type: Boolean, default: false },
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    verifiedAt: Date
+    verifiedAt: Date,
   },
 
-  amendedCertificates: [{
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-    amendmentDate: Date,
-    reason: String,
-    issuedDate: Date
-  }],
+  amendedCertificates: [
+    {
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+      amendmentDate: Date,
+      reason: String,
+      issuedDate: Date,
+    },
+  ],
 
   // MOI (Memorandum of Incorporation) - Section 13
   moi: {
     documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
     version: { type: Number, default: 1 },
     adoptionDate: Date,
-    amendments: [{
-      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-      amendmentDate: Date,
-      specialResolutionNumber: String,
-      description: String
-    }],
+    amendments: [
+      {
+        documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+        amendmentDate: Date,
+        specialResolutionNumber: String,
+        description: String,
+      },
+    ],
     hasSpecialConditions: { type: Boolean, default: false },
-    specialConditions: String
+    specialConditions: String,
   },
 
   // Company Rules (if applicable)
   companyRules: {
     documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-    adoptionDate: Date
+    adoptionDate: Date,
   },
 
   // Name History
-  nameHistory: [{
-    name: String,
-    registeredDate: Date,
-    changedDate: Date,
-    certificateId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  nameHistory: [
+    {
+      name: String,
+      registeredDate: Date,
+      changedDate: Date,
+      certificateId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
   // Registered Address (Section 23(3))
   registeredAddress: {
@@ -611,19 +619,19 @@ const registrationDetailsSchema = new mongoose.Schema({
     province: {
       type: String,
       enum: ['EC', 'FS', 'GP', 'KZN', 'LP', 'MP', 'NC', 'NW', 'WC'],
-      required: true
+      required: true,
     },
     postalCode: {
       type: String,
       required: true,
       validate: {
         validator: (v) => /^\d{4}$/.test(v),
-        message: 'Invalid South African postal code'
-      }
+        message: 'Invalid South African postal code',
+      },
     },
     country: { type: String, default: 'ZA', maxlength: 2 },
     verified: { type: Boolean, default: false },
-    verifiedAt: Date
+    verifiedAt: Date,
   },
 
   // Postal Address (can be different)
@@ -633,7 +641,7 @@ const registrationDetailsSchema = new mongoose.Schema({
     city: String,
     province: String,
     postalCode: String,
-    country: { type: String, default: 'ZA' }
+    country: { type: String, default: 'ZA' },
   },
 
   // Contact Details
@@ -646,16 +654,16 @@ const registrationDetailsSchema = new mongoose.Schema({
       lowercase: true,
       validate: {
         validator: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
-        message: 'Invalid email address'
-      }
+        message: 'Invalid email address',
+      },
     },
     website: {
       type: String,
       validate: {
         validator: (v) => !v || /^https?:\/\/.+/.test(v),
-        message: 'Invalid website URL'
-      }
-    }
+        message: 'Invalid website URL',
+      },
+    },
   },
 
   // Business Hours
@@ -667,14 +675,16 @@ const registrationDetailsSchema = new mongoose.Schema({
     friday: { open: String, close: String },
     saturday: { open: String, close: String },
     sunday: { open: String, close: String },
-    publicHolidays: { type: Boolean, default: false }
+    publicHolidays: { type: Boolean, default: false },
   },
 
   // Languages of operation
-  languages: [{
-    type: String,
-    enum: ['en', 'af', 'zu', 'xh', 'st', 'tn', 'ts', 'ss', 've', 'nr']
-  }]
+  languages: [
+    {
+      type: String,
+      enum: ['en', 'af', 'zu', 'xh', 'st', 'tn', 'ts', 'ss', 've', 'nr'],
+    },
+  ],
 });
 /**
  * SARS Registration Schema
@@ -687,8 +697,8 @@ const sarsRegistrationSchema = new mongoose.Schema({
     sparse: true,
     validate: {
       validator: (v) => /^\d{10}$/.test(v),
-      message: 'Invalid SARS tax number (must be 10 digits)'
-    }
+      message: 'Invalid SARS tax number (must be 10 digits)',
+    },
   },
 
   vatNumber: {
@@ -696,56 +706,56 @@ const sarsRegistrationSchema = new mongoose.Schema({
     sparse: true,
     validate: {
       validator: (v) => !v || /^\d{10}$/.test(v),
-      message: 'Invalid VAT number'
-    }
+      message: 'Invalid VAT number',
+    },
   },
 
   vatRegistrationDate: Date,
   vatScheme: {
     type: String,
     enum: ['standard', 'cash', 'installment', 'nil'],
-    default: 'standard'
+    default: 'standard',
   },
   vatFrequency: {
     type: String,
     enum: ['bi-monthly', 'monthly', '6-monthly', '12-monthly'],
-    default: 'bi-monthly'
+    default: 'bi-monthly',
   },
   vatStatus: {
     type: String,
     enum: ['registered', 'suspended', 'cancelled'],
-    default: 'registered'
+    default: 'registered',
   },
 
   payeNumber: {
     type: String,
-    sparse: true
+    sparse: true,
   },
   payeRegistrationDate: Date,
 
   uifNumber: {
     type: String,
-    sparse: true
+    sparse: true,
   },
   sdlNumber: {
     type: String,
-    sparse: true
+    sparse: true,
   },
 
   customsNumber: {
     type: String,
-    sparse: true
+    sparse: true,
   },
 
   // Tax Compliance Status
   taxComplianceStatus: {
     type: String,
     enum: ['compliant', 'non_compliant', 'pending'],
-    default: 'pending'
+    default: 'pending',
   },
   taxCompliancePin: {
     type: String,
-    sparse: true
+    sparse: true,
   },
   taxComplianceExpiry: Date,
   lastTaxReturnFiled: Date,
@@ -760,8 +770,8 @@ const sarsRegistrationSchema = new mongoose.Schema({
     name: String,
     practiceNumber: String,
     contact: String,
-    email: String
-  }
+    email: String,
+  },
 });
 /**
  * B-BBEE Schema (Broad-Based Black Economic Empowerment)
@@ -771,69 +781,69 @@ const bbbeeSchema = new mongoose.Schema({
   certificate: {
     documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
     uploadedAt: Date,
-    verified: { type: Boolean, default: false }
+    verified: { type: Boolean, default: false },
   },
 
   level: {
     type: Number,
     enum: [1, 2, 3, 4, 5, 6, 7, 8, 0], // 0 = exempted
-    required: true
+    required: true,
   },
 
   status: {
     type: String,
     enum: Object.values(BBBEE_STATUS),
-    required: true
+    required: true,
   },
 
   expiryDate: {
     type: Date,
-    required: true
+    required: true,
   },
 
   issueDate: {
     type: Date,
-    required: true
+    required: true,
   },
 
   verificationAgency: {
     name: String,
     sanasAccreditation: String,
-    contact: String
+    contact: String,
   },
 
   scorecard: {
     ownership: {
       target: Number,
       achieved: Number,
-      points: Number
+      points: Number,
     },
     managementControl: {
       target: Number,
       achieved: Number,
-      points: Number
+      points: Number,
     },
     skillsDevelopment: {
       target: Number,
       achieved: Number,
-      points: Number
+      points: Number,
     },
     enterpriseDevelopment: {
       target: Number,
       achieved: Number,
-      points: Number
+      points: Number,
     },
     socioEconomicDevelopment: {
       target: Number,
       achieved: Number,
-      points: Number
+      points: Number,
     },
     preferentialProcurement: {
       target: Number,
       achieved: Number,
-      points: Number
+      points: Number,
     },
-    totalPoints: Number
+    totalPoints: Number,
   },
 
   blackOwnership: {
@@ -841,25 +851,27 @@ const bbbeeSchema = new mongoose.Schema({
     blackWomenOwnership: { type: Number, min: 0, max: 100 },
     blackYouthOwnership: { type: Number, min: 0, max: 100 },
     blackDisabledOwnership: { type: Number, min: 0, max: 100 },
-    blackMilitaryVeteranOwnership: { type: Number, min: 0, max: 100 }
+    blackMilitaryVeteranOwnership: { type: Number, min: 0, max: 100 },
   },
 
   // EME/QSE status
   enterpriseType: {
     type: String,
     enum: ['eme', 'qse', 'generic'],
-    required: true
+    required: true,
   },
 
   turnover: Number,
 
-  history: [{
-    level: Number,
-    certificateNumber: String,
-    issueDate: Date,
-    expiryDate: Date,
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }]
+  history: [
+    {
+      level: Number,
+      certificateNumber: String,
+      issueDate: Date,
+      expiryDate: Date,
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 });
 /**
  * Director Schema (Companies Act, Sections 66-78)
@@ -878,21 +890,21 @@ const directorSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: (v) => /^\d{13}$/.test(v),
-      message: 'Invalid South African ID number'
-    }
+      message: 'Invalid South African ID number',
+    },
   },
   passportNumber: {
     type: String,
     sparse: true,
     validate: {
       validator: (v) => !v || /^[A-Z]{2}\d{7}$/.test(v),
-      message: 'Invalid passport number'
-    }
+      message: 'Invalid passport number',
+    },
   },
   countryOfOrigin: {
     type: String,
     default: 'ZA',
-    maxlength: 2
+    maxlength: 2,
   },
 
   // Personal Details
@@ -906,7 +918,7 @@ const directorSchema = new mongoose.Schema({
     email: { type: String, required: true },
     phone: String,
     mobile: String,
-    fax: String
+    fax: String,
   },
 
   residentialAddress: {
@@ -915,32 +927,32 @@ const directorSchema = new mongoose.Schema({
     city: String,
     province: String,
     postalCode: String,
-    country: { type: String, default: 'ZA' }
+    country: { type: String, default: 'ZA' },
   },
 
   postalAddress: {
     boxNumber: String,
     city: String,
     postalCode: String,
-    country: { type: String, default: 'ZA' }
+    country: { type: String, default: 'ZA' },
   },
 
   // Directorship Details
   role: {
     type: String,
     enum: Object.values(DIRECTOR_ROLES),
-    required: true
+    required: true,
   },
 
   appointmentDate: {
     type: Date,
-    required: true
+    required: true,
   },
 
   appointmentType: {
     type: String,
     enum: ['initial', 'subsequent', 'alternate', 'temporary'],
-    default: 'initial'
+    default: 'initial',
   },
 
   resignationDate: Date,
@@ -950,7 +962,7 @@ const directorSchema = new mongoose.Schema({
 
   isActive: {
     type: Boolean,
-    default: true
+    default: true,
   },
 
   // Special Positions
@@ -964,18 +976,23 @@ const directorSchema = new mongoose.Schema({
   independenceAssessmentBy: String,
 
   // Committees
-  committees: [{
-    name: { type: String, enum: ['audit', 'remuneration', 'nominations', 'risk', 'social_ethics', 'investment'] },
-    role: { type: String, enum: ['chair', 'member'] },
-    appointedDate: Date,
-    resignedDate: Date
-  }],
+  committees: [
+    {
+      name: {
+        type: String,
+        enum: ['audit', 'remuneration', 'nominations', 'risk', 'social_ethics', 'investment'],
+      },
+      role: { type: String, enum: ['chair', 'member'] },
+      appointedDate: Date,
+      resignedDate: Date,
+    },
+  ],
 
   // Shareholding
   shareholding: {
     shares: Number,
     percentage: { type: Number, min: 0, max: 100 },
-    class: { type: String, enum: Object.values(SHARE_CLASSES) }
+    class: { type: String, enum: Object.values(SHARE_CLASSES) },
   },
 
   // Remuneration
@@ -986,17 +1003,19 @@ const directorSchema = new mongoose.Schema({
     pension: Number,
     shareOptions: Number,
     total: Number,
-    financialYear: String
+    financialYear: String,
   },
 
   // Other directorships
-  otherDirectorships: [{
-    companyName: String,
-    registrationNumber: String,
-    role: String,
-    appointedDate: Date,
-    resignedDate: Date
-  }],
+  otherDirectorships: [
+    {
+      companyName: String,
+      registrationNumber: String,
+      role: String,
+      appointedDate: Date,
+      resignedDate: Date,
+    },
+  ],
 
   // Disqualifications (Section 69)
   disqualifications: {
@@ -1004,22 +1023,24 @@ const directorSchema = new mongoose.Schema({
     disqualificationReason: String,
     disqualificationDate: Date,
     rehabilitationDate: Date,
-    courtOrder: String
+    courtOrder: String,
   },
 
   // Criminal record (for declarations)
   criminalRecord: {
     hasCriminalRecord: { type: Boolean, default: false },
     details: String,
-    date: Date
+    date: Date,
   },
 
   // Insolvency history
-  insolvencyHistory: [{
-    date: Date,
-    details: String,
-    rehabilitationDate: Date
-  }],
+  insolvencyHistory: [
+    {
+      date: Date,
+      details: String,
+      rehabilitationDate: Date,
+    },
+  ],
 
   // FICA Verification
   fica: {
@@ -1027,7 +1048,7 @@ const directorSchema = new mongoose.Schema({
     verifiedAt: Date,
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     documentIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Document' }],
-    riskRating: { type: String, enum: ['low', 'medium', 'high'] }
+    riskRating: { type: String, enum: ['low', 'medium', 'high'] },
   },
 
   // POPIA Consent
@@ -1035,24 +1056,29 @@ const directorSchema = new mongoose.Schema({
     given: { type: Boolean, default: false },
     givenAt: Date,
     revokedAt: Date,
-    consentDocumentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
+    consentDocumentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
   },
 
   // Documents
-  documents: [{
-    type: { type: String, enum: ['id', 'passport', 'proof_of_address', 'cv', 'consent', 'other'] },
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-    uploadedAt: Date,
-    verified: { type: Boolean, default: false }
-  }],
+  documents: [
+    {
+      type: {
+        type: String,
+        enum: ['id', 'passport', 'proof_of_address', 'cv', 'consent', 'other'],
+      },
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+      uploadedAt: Date,
+      verified: { type: Boolean, default: false },
+    },
+  ],
 
   // Audit Trail
   audit: {
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    updatedAt: Date
-  }
+    updatedAt: Date,
+  },
 });
 /**
  * Shareholder Schema
@@ -1060,13 +1086,13 @@ const directorSchema = new mongoose.Schema({
 const shareholderSchema = new mongoose.Schema({
   shareholderId: {
     type: String,
-    default: () => `SH-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+    default: () => `SH-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
   },
 
   entityType: {
     type: String,
     enum: ['individual', 'company', 'trust', 'cc', 'partnership', 'stokvel'],
-    required: true
+    required: true,
   },
 
   // If individual
@@ -1080,8 +1106,8 @@ const shareholderSchema = new mongoose.Schema({
     nationality: String,
     contact: {
       email: String,
-      phone: String
-    }
+      phone: String,
+    },
   },
 
   // If company
@@ -1089,7 +1115,7 @@ const shareholderSchema = new mongoose.Schema({
     name: String,
     registrationNumber: String,
     taxNumber: String,
-    countryOfIncorporation: { type: String, default: 'ZA' }
+    countryOfIncorporation: { type: String, default: 'ZA' },
   },
 
   // If trust
@@ -1099,10 +1125,12 @@ const shareholderSchema = new mongoose.Schema({
     trustNumber: String,
     masterReference: String,
     dateEstablished: Date,
-    trustees: [{
-      name: String,
-      idNumber: String
-    }]
+    trustees: [
+      {
+        name: String,
+        idNumber: String,
+      },
+    ],
   },
 
   // Shareholding Details
@@ -1111,30 +1139,30 @@ const shareholderSchema = new mongoose.Schema({
     class: { type: String, enum: Object.values(SHARE_CLASSES), required: true },
     nominalValue: Number,
     paidUpCapital: Number,
-    certificateNumber: String
+    certificateNumber: String,
   },
 
   ownershipPercentage: {
     type: Number,
     min: 0,
-    max: 100
+    max: 100,
   },
 
   votingRights: {
     hasVotingRights: { type: Boolean, default: true },
     votesPerShare: { type: Number, default: 1 },
-    totalVotes: Number
+    totalVotes: Number,
   },
 
   acquisitionDate: {
     type: Date,
-    required: true
+    required: true,
   },
 
   acquisitionType: {
     type: String,
     enum: ['subscription', 'transfer', 'inheritance', 'donation'],
-    default: 'subscription'
+    default: 'subscription',
   },
 
   disposalDate: Date,
@@ -1143,25 +1171,29 @@ const shareholderSchema = new mongoose.Schema({
   isBeneficialOwner: {
     type: Boolean,
     default: true,
-    comment: 'For FICA beneficial ownership register'
+    comment: 'For FICA beneficial ownership register',
   },
 
   // Certificates
-  certificates: [{
-    certificateNumber: String,
-    issuedDate: Date,
-    shareCount: Number,
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  certificates: [
+    {
+      certificateNumber: String,
+      issuedDate: Date,
+      shareCount: Number,
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
   // Shareholder Register
-  registerEntries: [{
-    entryDate: Date,
-    transactionType: { type: String, enum: ['issue', 'transfer', 'cancellation'] },
-    sharesChange: Number,
-    balanceAfter: Number,
-    reference: String
-  }]
+  registerEntries: [
+    {
+      entryDate: Date,
+      transactionType: { type: String, enum: ['issue', 'transfer', 'cancellation'] },
+      sharesChange: Number,
+      balanceAfter: Number,
+      reference: String,
+    },
+  ],
 });
 /**
  * Share Register Schema
@@ -1169,56 +1201,64 @@ const shareholderSchema = new mongoose.Schema({
 const shareRegisterSchema = new mongoose.Schema({
   authorizedShares: {
     total: { type: Number, required: true },
-    classes: [{
-      class: { type: String, enum: Object.values(SHARE_CLASSES) },
-      number: Number,
-      nominalValue: Number
-    }]
+    classes: [
+      {
+        class: { type: String, enum: Object.values(SHARE_CLASSES) },
+        number: Number,
+        nominalValue: Number,
+      },
+    ],
   },
 
   issuedShares: {
     total: { type: Number, default: 0 },
-    classes: [{
-      class: { type: String, enum: Object.values(SHARE_CLASSES) },
-      number: Number,
-      percentage: Number
-    }]
+    classes: [
+      {
+        class: { type: String, enum: Object.values(SHARE_CLASSES) },
+        number: Number,
+        percentage: Number,
+      },
+    ],
   },
 
   unissuedShares: {
     total: Number,
     underOption: Number,
-    reserved: Number
+    reserved: Number,
   },
 
   sharePremium: {
     total: Number,
-    perShare: Number
+    perShare: Number,
   },
 
   shareholderRegister: [shareholderSchema],
 
-  shareTransfers: [{
-    transferDate: Date,
-    fromShareholder: String,
-    toShareholder: String,
-    shares: Number,
-    class: String,
-    consideration: Number,
-    approvedDate: Date,
-    approvedBy: String,
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  shareTransfers: [
+    {
+      transferDate: Date,
+      fromShareholder: String,
+      toShareholder: String,
+      shares: Number,
+      class: String,
+      consideration: Number,
+      approvedDate: Date,
+      approvedBy: String,
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
-  shareBuybacks: [{
-    date: Date,
-    shareholder: String,
-    shares: Number,
-    price: Number,
-    consideration: Number,
-    approvedBy: String,
-    specialResolutionNumber: String
-  }]
+  shareBuybacks: [
+    {
+      date: Date,
+      shareholder: String,
+      shares: Number,
+      price: Number,
+      consideration: Number,
+      approvedBy: String,
+      specialResolutionNumber: String,
+    },
+  ],
 });
 /**
  * Financial Schema (IFRS compliant)
@@ -1227,40 +1267,42 @@ const financialSchema = new mongoose.Schema({
   fiscalYearEnd: {
     type: String,
     enum: Object.values(FINANCIAL_YEAR_END),
-    required: true
+    required: true,
   },
 
   currency: {
     type: String,
     enum: ['ZAR', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'],
-    default: 'ZAR'
+    default: 'ZAR',
   },
 
   reportingStandard: {
     type: String,
     enum: ['ifrs', 'ifrs_for_smes', 'sa_gaap'],
-    default: 'ifrs'
+    default: 'ifrs',
   },
 
   // Current Financial Year
   currentFinancialYear: {
     startDate: Date,
     endDate: Date,
-    closed: { type: Boolean, default: false }
+    closed: { type: Boolean, default: false },
   },
 
   // Financial Statements
-  financialStatements: [{
-    type: { type: String, enum: Object.values(FINANCIAL_STATEMENT_TYPES) },
-    year: Number,
-    startDate: Date,
-    endDate: Date,
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-    uploadedAt: Date,
-    approvedBy: String,
-    approvedAt: Date,
-    auditorReport: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  financialStatements: [
+    {
+      type: { type: String, enum: Object.values(FINANCIAL_STATEMENT_TYPES) },
+      year: Number,
+      startDate: Date,
+      endDate: Date,
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+      uploadedAt: Date,
+      approvedBy: String,
+      approvedAt: Date,
+      auditorReport: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
   // Auditor Details
   auditor: {
@@ -1273,67 +1315,75 @@ const financialSchema = new mongoose.Schema({
     contact: {
       email: String,
       phone: String,
-      address: String
+      address: String,
     },
     auditPartner: String,
-    tenure: Number
+    tenure: Number,
   },
 
   // Audit Committee
   auditCommittee: {
-    members: [{
-      name: String,
-      role: String,
-      appointedDate: Date
-    }],
-    meetings: [{
-      date: Date,
-      minutes: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-    }]
+    members: [
+      {
+        name: String,
+        role: String,
+        appointedDate: Date,
+      },
+    ],
+    meetings: [
+      {
+        date: Date,
+        minutes: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+      },
+    ],
   },
 
   // Key Financial Metrics
-  metrics: [{
-    year: Number,
-    revenue: Number,
-    costOfSales: Number,
-    grossProfit: Number,
-    operatingExpenses: Number,
-    operatingProfit: Number,
-    interestIncome: Number,
-    interestExpense: Number,
-    profitBeforeTax: Number,
-    taxExpense: Number,
-    profitAfterTax: Number,
-    ebitda: Number,
-    totalAssets: Number,
-    totalLiabilities: Number,
-    equity: Number,
-    cashAndEquivalents: Number,
-    debt: Number,
-    workingCapital: Number,
-    capex: Number,
-    fcf: Number
-  }],
+  metrics: [
+    {
+      year: Number,
+      revenue: Number,
+      costOfSales: Number,
+      grossProfit: Number,
+      operatingExpenses: Number,
+      operatingProfit: Number,
+      interestIncome: Number,
+      interestExpense: Number,
+      profitBeforeTax: Number,
+      taxExpense: Number,
+      profitAfterTax: Number,
+      ebitda: Number,
+      totalAssets: Number,
+      totalLiabilities: Number,
+      equity: Number,
+      cashAndEquivalents: Number,
+      debt: Number,
+      workingCapital: Number,
+      capex: Number,
+      fcf: Number,
+    },
+  ],
 
   // Ratios
-  ratios: [{
-    year: Number,
-    grossMargin: Number,
-    operatingMargin: Number,
-    netMargin: Number,
-    roe: Number,
-    roa: Number,
-    currentRatio: Number,
-    quickRatio: Number,
-    debtToEquity: Number,
-    interestCover: Number,
-    assetTurnover: Number,
-    inventoryTurnover: Number,
-    daysSalesOutstanding: Number,
-    eps: Number,
-    peRatio: Number
-  }]
+  ratios: [
+    {
+      year: Number,
+      grossMargin: Number,
+      operatingMargin: Number,
+      netMargin: Number,
+      roe: Number,
+      roa: Number,
+      currentRatio: Number,
+      quickRatio: Number,
+      debtToEquity: Number,
+      interestCover: Number,
+      assetTurnover: Number,
+      inventoryTurnover: Number,
+      daysSalesOutstanding: Number,
+      eps: Number,
+      peRatio: Number,
+    },
+  ],
 });
 /**
  * Compliance Schema (Regulatory Compliance)
@@ -1344,46 +1394,50 @@ const complianceSchema = new mongoose.Schema({
     status: {
       type: String,
       enum: ['compliant', 'non_compliant', 'pending', 'suspended'],
-      default: 'pending'
+      default: 'pending',
     },
     lastChecked: Date,
     nextCheckDue: Date,
 
-    annualReturns: [{
-      year: Number,
-      returnMonth: Number,
-      dueDate: Date,
-      filedDate: Date,
-      status: { type: String, enum: ['filed', 'pending', 'overdue'] },
-      filingNumber: String,
-      receipt: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-    }],
+    annualReturns: [
+      {
+        year: Number,
+        returnMonth: Number,
+        dueDate: Date,
+        filedDate: Date,
+        status: { type: String, enum: ['filed', 'pending', 'overdue'] },
+        filingNumber: String,
+        receipt: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+      },
+    ],
 
-    financialStatementsFiled: [{
-      year: Number,
-      dueDate: Date,
-      filedDate: Date,
-      status: { type: String, enum: ['filed', 'pending', 'overdue'] },
-      receipt: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-    }],
+    financialStatementsFiled: [
+      {
+        year: Number,
+        dueDate: Date,
+        filedDate: Date,
+        status: { type: String, enum: ['filed', 'pending', 'overdue'] },
+        receipt: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+      },
+    ],
 
     directorsUpdated: {
       lastUpdated: Date,
       nextUpdateDue: Date,
-      status: { type: String, enum: ['compliant', 'non_compliant'] }
+      status: { type: String, enum: ['compliant', 'non_compliant'] },
     },
 
     beneficialOwnersUpdated: {
       lastUpdated: Date,
       nextUpdateDue: Date,
-      status: { type: String, enum: ['compliant', 'non_compliant'] }
+      status: { type: String, enum: ['compliant', 'non_compliant'] },
     },
 
     registeredAddressUpdated: {
       lastUpdated: Date,
       nextUpdateDue: Date,
-      status: { type: String, enum: ['compliant', 'non_compliant'] }
-    }
+      status: { type: String, enum: ['compliant', 'non_compliant'] },
+    },
   },
 
   // FICA Compliance (Financial Intelligence Centre Act)
@@ -1397,13 +1451,13 @@ const complianceSchema = new mongoose.Schema({
     complianceOfficer: {
       name: String,
       contact: String,
-      appointmentDate: Date
+      appointmentDate: Date,
     },
     riskManagementComplianceProgramme: {
       documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
       approvedDate: Date,
-      reviewDate: Date
-    }
+      reviewDate: Date,
+    },
   },
 
   // POPIA Compliance
@@ -1414,28 +1468,30 @@ const complianceSchema = new mongoose.Schema({
     informationOfficer: {
       name: String,
       contact: String,
-      appointmentDate: Date
+      appointmentDate: Date,
     },
     deputyInformationOfficer: {
       name: String,
-      contact: String
+      contact: String,
     },
     registrationNumber: String,
     processingActivities: {
       documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-      lastUpdated: Date
+      lastUpdated: Date,
     },
-    dataSubjectRequests: [{
-      requestId: String,
-      type: { type: String, enum: ['access', 'correction', 'deletion', 'objection'] },
-      requestedAt: Date,
-      completedAt: Date,
-      status: String
-    }],
+    dataSubjectRequests: [
+      {
+        requestId: String,
+        type: { type: String, enum: ['access', 'correction', 'deletion', 'objection'] },
+        requestedAt: Date,
+        completedAt: Date,
+        status: String,
+      },
+    ],
     securityMeasures: {
       documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-      lastReviewed: Date
-    }
+      lastReviewed: Date,
+    },
   },
 
   // SARS Compliance
@@ -1444,39 +1500,43 @@ const complianceSchema = new mongoose.Schema({
     lastChecked: Date,
     nextCheckDue: Date,
 
-    taxTypes: [{
-      type: { type: String, enum: Object.values(SARS_TAX_TYPES) },
-      registrationNumber: String,
-      status: { type: String, enum: ['compliant', 'non_compliant'] },
-      lastReturnFiled: Date,
-      nextReturnDue: Date,
-      lastPaymentMade: Date,
-      nextPaymentDue: Date,
-      outstandingBalance: Number
-    }],
+    taxTypes: [
+      {
+        type: { type: String, enum: Object.values(SARS_TAX_TYPES) },
+        registrationNumber: String,
+        status: { type: String, enum: ['compliant', 'non_compliant'] },
+        lastReturnFiled: Date,
+        nextReturnDue: Date,
+        lastPaymentMade: Date,
+        nextPaymentDue: Date,
+        outstandingBalance: Number,
+      },
+    ],
 
     taxClearance: {
       pin: String,
       issueDate: Date,
       expiryDate: Date,
-      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-    }
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
   },
 
   // B-BBEE Compliance
   bbbee: bbbeeSchema,
 
   // Industry-specific regulatory compliance
-  regulatory: [{
-    body: { type: String, enum: Object.values(REGULATORY_BODIES) },
-    registrationNumber: String,
-    status: { type: String, enum: ['compliant', 'non_compliant', 'pending'] },
-    lastChecked: Date,
-    nextCheckDue: Date,
-    licenseNumber: String,
-    licenseExpiry: Date,
-    licenseDocument: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }]
+  regulatory: [
+    {
+      body: { type: String, enum: Object.values(REGULATORY_BODIES) },
+      registrationNumber: String,
+      status: { type: String, enum: ['compliant', 'non_compliant', 'pending'] },
+      lastChecked: Date,
+      nextCheckDue: Date,
+      licenseNumber: String,
+      licenseExpiry: Date,
+      licenseDocument: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 });
 /**
  * Bank Account Schema
@@ -1484,12 +1544,12 @@ const complianceSchema = new mongoose.Schema({
 const bankAccountSchema = new mongoose.Schema({
   accountId: {
     type: String,
-    default: () => `ACC-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+    default: () => `ACC-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
   },
 
   bankName: {
     type: String,
-    required: true
+    required: true,
   },
 
   branchName: String,
@@ -1499,41 +1559,41 @@ const bankAccountSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: (v) => /^\d{6}$/.test(v),
-      message: 'Branch code must be 6 digits'
-    }
+      message: 'Branch code must be 6 digits',
+    },
   },
 
   accountNumber: {
     type: String,
     required: true,
-    set: (v) => v ? '[REDACTED]' : v // Redacted in database
+    set: (v) => (v ? '[REDACTED]' : v), // Redacted in database
   },
 
   accountType: {
     type: String,
     enum: ['cheque', 'savings', 'transmission', 'credit', 'investment'],
-    required: true
+    required: true,
   },
 
   accountHolder: {
     type: String,
-    required: true
+    required: true,
   },
 
   currency: {
     type: String,
     default: 'ZAR',
-    enum: ['ZAR', 'USD', 'EUR', 'GBP']
+    enum: ['ZAR', 'USD', 'EUR', 'GBP'],
   },
 
   isPrimary: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   isActive: {
     type: Boolean,
-    default: true
+    default: true,
   },
 
   openedDate: Date,
@@ -1543,19 +1603,19 @@ const bankAccountSchema = new mongoose.Schema({
     status: { type: Boolean, default: false },
     verifiedAt: Date,
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    method: { type: String, enum: ['bank_statement', 'letter', 'online'] }
+    method: { type: String, enum: ['bank_statement', 'letter', 'online'] },
   },
 
   // Bank confirmation letter
   confirmationLetter: {
     documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-    uploadedAt: Date
+    uploadedAt: Date,
   },
 
   // For foreign currency accounts
   swiftCode: String,
   iban: String,
-  correspondentBank: String
+  correspondentBank: String,
 });
 /**
  * Business Rescue Schema (Chapter 6)
@@ -1563,7 +1623,7 @@ const bankAccountSchema = new mongoose.Schema({
 const businessRescueSchema = new mongoose.Schema({
   status: {
     type: String,
-    enum: ['pending', 'active', 'completed', 'terminated']
+    enum: ['pending', 'active', 'completed', 'terminated'],
   },
 
   commencementDate: Date,
@@ -1572,38 +1632,46 @@ const businessRescueSchema = new mongoose.Schema({
     name: String,
     registrationNumber: String,
     contact: String,
-    appointmentDate: Date
+    appointmentDate: Date,
   },
 
   plan: {
     documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
     adoptionDate: Date,
     approvalDate: Date,
-    amendments: [{
-      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-      date: Date
-    }]
+    amendments: [
+      {
+        documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+        date: Date,
+      },
+    ],
   },
 
-  creditorsMeeting: [{
-    date: Date,
-    minutes: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  creditorsMeeting: [
+    {
+      date: Date,
+      minutes: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
-  employeesMeeting: [{
-    date: Date,
-    minutes: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  employeesMeeting: [
+    {
+      date: Date,
+      minutes: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
-  progressReports: [{
-    period: String,
-    reportDate: Date,
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  progressReports: [
+    {
+      period: String,
+      reportDate: Date,
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
   terminationDate: Date,
   terminationReason: String,
-  terminationOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
+  terminationOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
 });
 /**
  * Liquidation Schema
@@ -1611,12 +1679,12 @@ const businessRescueSchema = new mongoose.Schema({
 const liquidationSchema = new mongoose.Schema({
   status: {
     type: String,
-    enum: ['provisional', 'final', 'completed']
+    enum: ['provisional', 'final', 'completed'],
   },
 
   type: {
     type: String,
-    enum: ['voluntary', 'compulsory', 'creditors']
+    enum: ['voluntary', 'compulsory', 'creditors'],
   },
 
   commencementDate: Date,
@@ -1626,344 +1694,380 @@ const liquidationSchema = new mongoose.Schema({
     registrationNumber: String,
     contact: String,
     appointmentDate: Date,
-    appointmentOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
+    appointmentOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
   },
 
   courtOrder: {
     documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
     court: String,
     caseNumber: String,
-    date: Date
+    date: Date,
   },
 
-  creditorsMeeting: [{
-    date: Date,
-    minutes: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  creditorsMeeting: [
+    {
+      date: Date,
+      minutes: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
-  proofOfDebt: [{
-    creditor: String,
-    amount: Number,
-    admitted: Boolean,
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  proofOfDebt: [
+    {
+      creditor: String,
+      amount: Number,
+      admitted: Boolean,
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
-  assetRealization: [{
-    asset: String,
-    amount: Number,
-    date: Date,
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  assetRealization: [
+    {
+      asset: String,
+      amount: Number,
+      date: Date,
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
-  distribution: [{
-    date: Date,
-    amount: Number,
-    recipients: String,
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  }],
+  distribution: [
+    {
+      date: Date,
+      amount: Number,
+      recipients: String,
+      documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+  ],
 
   finalizationDate: Date,
-  finalReport: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
+  finalReport: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
 });
 // ============================================================================
 // MAIN COMPANY SCHEMA
 // ============================================================================
-const companySchema = new mongoose.Schema({
-  // Core Identification
-  companyId: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true,
-    default: () => `CMP-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
-  },
-  tenantId: {
-    type: String,
-    required: true,
-    index: true,
-    validate: {
-      validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v),
-      message: 'tenantId must be 8-64 alphanumeric characters'
-    }
-  },
-  // Basic Information
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 200,
-    index: true
-  },
-  tradingName: {
-    type: String,
-    trim: true,
-    maxlength: 200,
-    index: true
-  },
-  previousNames: [{
-    name: String,
-    registeredDate: Date,
-    changedDate: Date
-  }],
-  type: {
-    type: String,
-    enum: Object.values(COMPANY_TYPES),
-    required: true,
-    index: true
-  },
-  status: {
-    type: String,
-    enum: Object.values(COMPANY_STATUS),
-    default: COMPANY_STATUS.ACTIVE,
-    index: true
-  },
-  industry: {
-    type: String,
-    enum: Object.values(INDUSTRY_SECTORS),
-    required: true,
-    index: true
-  },
-  subIndustry: String,
-  size: {
-    type: String,
-    enum: Object.values(COMPANY_SIZE),
-    default: COMPANY_SIZE.MICRO
-  },
-  // Registration Details (Companies Act)
-  registration: {
-    type: registrationDetailsSchema,
-    required: true
-  },
-  // SARS Registration
-  sars: sarsRegistrationSchema,
-  // B-BBEE
-  bbbee: bbbeeSchema,
-  // Share Capital
-  shareCapital: {
-    authorized: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-    issued: {
-      type: Number,
-      default: 0
-    },
-    classes: [{
-      class: { type: String, enum: Object.values(SHARE_CLASSES) },
-      authorized: Number,
-      issued: Number,
-      nominalValue: Number
-    }],
-    shareRegister: shareRegisterSchema
-  },
-  // Directors and Officers
-  directors: [directorSchema],
-  companySecretary: {
-    type: {
-      type: String,
-      enum: Object.values(COMPANY_SECRETARY_TYPES)
-    },
-    name: String,
-    registrationNumber: String,
-    appointmentDate: Date,
-    resignationDate: Date,
-    contact: {
-      email: String,
-      phone: String
-    }
-  },
-  // Financial Information
-  financials: financialSchema,
-  // Employees
-  employees: {
-    total: { type: Number, default: 0 }
-  },
-  // Bank Accounts
-  bankAccounts: [bankAccountSchema],
-  // Business Rescue (if applicable)
-  businessRescue: businessRescueSchema,
-  // Liquidation (if applicable)
-  liquidation: liquidationSchema,
-  // Compliance
-  compliance: complianceSchema,
-  // CIPC Integration Data
-  cipcData: {
-    lastSync: Date,
-    syncStatus: { type: String, enum: ['success', 'failed', 'pending'] },
-    rawData: mongoose.Schema.Types.Mixed,
-    discrepancies: [{
-      field: String,
-      cipcValue: mongoose.Schema.Types.Mixed,
-      companyValue: mongoose.Schema.Types.Mixed,
-      resolved: { type: Boolean, default: false },
-      resolvedAt: Date
-    }],
-    syncHistory: [{
-      date: Date,
-      status: String,
-      message: String
-    }]
-  },
-  // Valuations (summary from Valuation model)
-  valuations: {
-    count: { type: Number, default: 0 },
-    lastValuationDate: Date,
-    lastValuationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Valuation' },
-    lastValue: Number,
-    averageValue: Number,
-    minValue: Number,
-    maxValue: Number,
-    valuationHistory: [{
-      valuationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Valuation' },
-      date: Date,
-      value: Number,
-      method: String
-    }]
-  },
-  // Related Entities
-  subsidiaries: [{
-    companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
-    ownershipPercentage: Number,
-    relationship: { type: String, enum: ['subsidiary', 'associate', 'joint_venture'] },
-    consolidated: { type: Boolean, default: true }
-  }],
-  parentCompany: {
-    companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
-    ownershipPercentage: Number,
-    relationship: { type: String, enum: ['subsidiary', 'branch'] }
-  },
-  holdings: [{
-    companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
-    percentage: Number,
-    type: { type: String, enum: ['investment', 'subsidiary'] }
-  }],
-  // Documents
-  documents: [{
-    documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
-    type: {
-      type: String,
-      enum: [
-        'registration', 'moi', 'amended_moi', 'annual_return',
-        'financial_statement', 'tax_return', 'bbbee_certificate',
-        'director_id', 'share_certificate', 'special_resolution',
-        'ordinary_resolution', 'board_minutes', 'agm_minutes',
-        'audit_report', 'bank_confirmation', 'cog', 'other'
-      ]
-    },
-    category: String,
-    uploadedAt: Date,
-    expiryDate: Date,
-    verified: { type: Boolean, default: false },
-    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    verifiedAt: Date,
-    notes: String
-  }],
-  // Tags and Categories
-  tags: [String],
-  categories: [String],
-  // Notes
-  notes: String,
-  internalNotes: String,
-  // Data Retention (POPIA Section 14, Companies Act Section 28)
-  retention: {
-    policy: {
-      type: String,
-      enum: [
-        'companies_act_10_years',
-        'tax_act_5_years',
-        'popia_1_year',
-        'forensic_permanent'
-      ],
-      default: 'companies_act_10_years'
-    },
-    dataResidency: {
-      type: String,
-      enum: ['ZA', 'US', 'EU', 'GB', 'AU'],
-      default: 'ZA'
-    },
-    retentionStart: { type: Date, default: Date.now },
-    retentionEnd: { type: Date },
-    archivedAt: Date,
-    destroyedAt: Date,
-    destructionCertificate: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }
-  },
-  // Forensic Integrity
-  forensic: {
-    hash: {
+const companySchema = new mongoose.Schema(
+  {
+    // Core Identification
+    companyId: {
       type: String,
       required: true,
       unique: true,
-      match: /^[a-f0-9]{64}$/
+      index: true,
+      default: () => `CMP-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
     },
-    previousHash: {
+    tenantId: {
       type: String,
-      match: /^[a-f0-9]{64}$/
+      required: true,
+      index: true,
+      validate: {
+        validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v),
+        message: 'tenantId must be 8-64 alphanumeric characters',
+      },
     },
-    chainVerified: { type: Boolean, default: false },
-    blockchainAnchor: {
-      transactionId: String,
-      blockNumber: Number,
-      network: { type: String, enum: ['ethereum', 'hyperledger', 'none'], default: 'none' },
-      timestamp: Date,
-      verificationUrl: String
-    }
-  },
-  // Audit Trail
-  audit: {
-    createdAt: { type: Date, default: Date.now, immutable: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    updatedAt: { type: Date, default: Date.now },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    accessedAt: Date,
-    accessedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    changeHistory: [{
-      field: String,
-      oldValue: mongoose.Schema.Types.Mixed,
-      newValue: mongoose.Schema.Types.Mixed,
-      changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-      changedAt: Date,
-      reason: String
-    }]
-  },
-  // Version Control
-  version: {
-    type: Number,
-    default: 1
-  },
-  // Metadata
-  metadata: {
-    source: { type: String, enum: ['manual', 'cipc_import', 'api', 'migration'] },
-    sourceId: String,
-    importedAt: Date,
+    // Basic Information
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 200,
+      index: true,
+    },
+    tradingName: {
+      type: String,
+      trim: true,
+      maxlength: 200,
+      index: true,
+    },
+    previousNames: [
+      {
+        name: String,
+        registeredDate: Date,
+        changedDate: Date,
+      },
+    ],
+    type: {
+      type: String,
+      enum: Object.values(COMPANY_TYPES),
+      required: true,
+      index: true,
+    },
+    status: {
+      type: String,
+      enum: Object.values(COMPANY_STATUS),
+      default: COMPANY_STATUS.ACTIVE,
+      index: true,
+    },
+    industry: {
+      type: String,
+      enum: Object.values(INDUSTRY_SECTORS),
+      required: true,
+      index: true,
+    },
+    subIndustry: String,
+    size: {
+      type: String,
+      enum: Object.values(COMPANY_SIZE),
+      default: COMPANY_SIZE.MICRO,
+    },
+    // Registration Details (Companies Act)
+    registration: {
+      type: registrationDetailsSchema,
+      required: true,
+    },
+    // SARS Registration
+    sars: sarsRegistrationSchema,
+    // B-BBEE
+    bbbee: bbbeeSchema,
+    // Share Capital
+    shareCapital: {
+      authorized: {
+        type: Number,
+        required: true,
+        min: 0,
+      },
+      issued: {
+        type: Number,
+        default: 0,
+      },
+      classes: [
+        {
+          class: { type: String, enum: Object.values(SHARE_CLASSES) },
+          authorized: Number,
+          issued: Number,
+          nominalValue: Number,
+        },
+      ],
+      shareRegister: shareRegisterSchema,
+    },
+    // Directors and Officers
+    directors: [directorSchema],
+    companySecretary: {
+      type: {
+        type: String,
+        enum: Object.values(COMPANY_SECRETARY_TYPES),
+      },
+      name: String,
+      registrationNumber: String,
+      appointmentDate: Date,
+      resignationDate: Date,
+      contact: {
+        email: String,
+        phone: String,
+      },
+    },
+    // Financial Information
+    financials: financialSchema,
+    // Employees
+    employees: {
+      total: { type: Number, default: 0 },
+    },
+    // Bank Accounts
+    bankAccounts: [bankAccountSchema],
+    // Business Rescue (if applicable)
+    businessRescue: businessRescueSchema,
+    // Liquidation (if applicable)
+    liquidation: liquidationSchema,
+    // Compliance
+    compliance: complianceSchema,
+    // CIPC Integration Data
+    cipcData: {
+      lastSync: Date,
+      syncStatus: { type: String, enum: ['success', 'failed', 'pending'] },
+      rawData: mongoose.Schema.Types.Mixed,
+      discrepancies: [
+        {
+          field: String,
+          cipcValue: mongoose.Schema.Types.Mixed,
+          companyValue: mongoose.Schema.Types.Mixed,
+          resolved: { type: Boolean, default: false },
+          resolvedAt: Date,
+        },
+      ],
+      syncHistory: [
+        {
+          date: Date,
+          status: String,
+          message: String,
+        },
+      ],
+    },
+    // Valuations (summary from Valuation model)
+    valuations: {
+      count: { type: Number, default: 0 },
+      lastValuationDate: Date,
+      lastValuationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Valuation' },
+      lastValue: Number,
+      averageValue: Number,
+      minValue: Number,
+      maxValue: Number,
+      valuationHistory: [
+        {
+          valuationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Valuation' },
+          date: Date,
+          value: Number,
+          method: String,
+        },
+      ],
+    },
+    // Related Entities
+    subsidiaries: [
+      {
+        companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+        ownershipPercentage: Number,
+        relationship: { type: String, enum: ['subsidiary', 'associate', 'joint_venture'] },
+        consolidated: { type: Boolean, default: true },
+      },
+    ],
+    parentCompany: {
+      companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+      ownershipPercentage: Number,
+      relationship: { type: String, enum: ['subsidiary', 'branch'] },
+    },
+    holdings: [
+      {
+        companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+        percentage: Number,
+        type: { type: String, enum: ['investment', 'subsidiary'] },
+      },
+    ],
+    // Documents
+    documents: [
+      {
+        documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+        type: {
+          type: String,
+          enum: [
+            'registration',
+            'moi',
+            'amended_moi',
+            'annual_return',
+            'financial_statement',
+            'tax_return',
+            'bbbee_certificate',
+            'director_id',
+            'share_certificate',
+            'special_resolution',
+            'ordinary_resolution',
+            'board_minutes',
+            'agm_minutes',
+            'audit_report',
+            'bank_confirmation',
+            'cog',
+            'other',
+          ],
+        },
+        category: String,
+        uploadedAt: Date,
+        expiryDate: Date,
+        verified: { type: Boolean, default: false },
+        verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        verifiedAt: Date,
+        notes: String,
+      },
+    ],
+    // Tags and Categories
     tags: [String],
-    notes: String
-  }
-}, {
-  timestamps: true,
-  collection: 'companies',
-  strict: true,
-  minimize: false,
-  toJSON: {
-    virtuals: true,
-    transform: (doc, ret) => {
-      // Remove sensitive fields from JSON output
-      delete ret.forensic;
-      delete ret.bankAccounts?.accountNumber;
-      delete ret.audit?.changeHistory;
-      delete ret.metadata;
-      return ret;
-    }
+    categories: [String],
+    // Notes
+    notes: String,
+    internalNotes: String,
+    // Data Retention (POPIA Section 14, Companies Act Section 28)
+    retention: {
+      policy: {
+        type: String,
+        enum: ['companies_act_10_years', 'tax_act_5_years', 'popia_1_year', 'forensic_permanent'],
+        default: 'companies_act_10_years',
+      },
+      dataResidency: {
+        type: String,
+        enum: ['ZA', 'US', 'EU', 'GB', 'AU'],
+        default: 'ZA',
+      },
+      retentionStart: { type: Date, default: Date.now },
+      retentionEnd: { type: Date },
+      archivedAt: Date,
+      destroyedAt: Date,
+      destructionCertificate: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' },
+    },
+    // Forensic Integrity
+    forensic: {
+      hash: {
+        type: String,
+        required: true,
+        unique: true,
+        match: /^[a-f0-9]{64}$/,
+      },
+      previousHash: {
+        type: String,
+        match: /^[a-f0-9]{64}$/,
+      },
+      chainVerified: { type: Boolean, default: false },
+      blockchainAnchor: {
+        transactionId: String,
+        blockNumber: Number,
+        network: { type: String, enum: ['ethereum', 'hyperledger', 'none'], default: 'none' },
+        timestamp: Date,
+        verificationUrl: String,
+      },
+    },
+    // Audit Trail
+    audit: {
+      createdAt: { type: Date, default: Date.now, immutable: true },
+      createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      updatedAt: { type: Date, default: Date.now },
+      updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      accessedAt: Date,
+      accessedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      changeHistory: [
+        {
+          field: String,
+          oldValue: mongoose.Schema.Types.Mixed,
+          newValue: mongoose.Schema.Types.Mixed,
+          changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+          changedAt: Date,
+          reason: String,
+        },
+      ],
+    },
+    // Version Control
+    version: {
+      type: Number,
+      default: 1,
+    },
+    // Metadata
+    metadata: {
+      source: { type: String, enum: ['manual', 'cipc_import', 'api', 'migration'] },
+      sourceId: String,
+      importedAt: Date,
+      tags: [String],
+      notes: String,
+    },
   },
-  toObject: {
-    virtuals: true,
-    transform: (doc, ret) => {
-      delete ret.forensic;
-      delete ret.bankAccounts?.accountNumber;
-      return ret;
-    }
+  {
+    timestamps: true,
+    collection: 'companies',
+    strict: true,
+    minimize: false,
+    toJSON: {
+      virtuals: true,
+      transform: (doc, ret) => {
+        // Remove sensitive fields from JSON output
+        delete ret.forensic;
+        delete ret.bankAccounts?.accountNumber;
+        delete ret.audit?.changeHistory;
+        delete ret.metadata;
+        return ret;
+      },
+    },
+    toObject: {
+      virtuals: true,
+      transform: (doc, ret) => {
+        delete ret.forensic;
+        delete ret.bankAccounts?.accountNumber;
+        return ret;
+      },
+    },
   }
-});
+);
 // ============================================================================
 // INDEXES - COMPREHENSIVE QUERY OPTIMIZATION
 // ============================================================================
@@ -1998,20 +2102,23 @@ companySchema.index({ 'valuations.lastValue': 1 });
 // Forensic
 companySchema.index({ 'forensic.hash': 1 }, { unique: true });
 // Full text search index
-companySchema.index({
-  name: 'text',
-  tradingName: 'text',
-  'registration.registrationNumber': 'text',
-  'previousNames.name': 'text'
-}, {
-  weights: {
-    name: 10,
-    tradingName: 8,
-    'registration.registrationNumber': 5,
-    'previousNames.name': 3
+companySchema.index(
+  {
+    name: 'text',
+    tradingName: 'text',
+    'registration.registrationNumber': 'text',
+    'previousNames.name': 'text',
   },
-  name: 'company_search_index'
-});
+  {
+    weights: {
+      name: 10,
+      tradingName: 8,
+      'registration.registrationNumber': 5,
+      'previousNames.name': 3,
+    },
+    name: 'company_search_index',
+  }
+);
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
@@ -2071,13 +2178,13 @@ companySchema.pre('save', async function (next) {
       taxNumber: this.sars?.taxNumber,
       type: this.type,
       status: this.status,
-      directors: this.directors?.map(d => ({
+      directors: this.directors?.map((d) => ({
         idNumber: d.idNumber,
         firstName: d.firstName,
         lastName: d.lastName,
-        isActive: d.isActive
+        isActive: d.isActive,
       })),
-      version: this.version
+      version: this.version,
     };
     const canonicalData = JSON.stringify(hashData, Object.keys(hashData).sort());
     this.forensic.hash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -2086,7 +2193,7 @@ companySchema.pre('save', async function (next) {
       const previousVersion = await this.constructor.findOne({
         'registration.registrationNumber': this.registration?.registrationNumber,
         tenantId: this.tenantId,
-        version: this.version - 1
+        version: this.version - 1,
       });
       if (previousVersion) {
         this.forensic.previousHash = previousVersion.forensic.hash;
@@ -2119,13 +2226,13 @@ companySchema.methods.verifyIntegrity = function () {
     taxNumber: this.sars?.taxNumber,
     type: this.type,
     status: this.status,
-    directors: this.directors?.map(d => ({
+    directors: this.directors?.map((d) => ({
       idNumber: d.idNumber,
       firstName: d.firstName,
       lastName: d.lastName,
-      isActive: d.isActive
+      isActive: d.isActive,
     })),
-    version: this.version
+    version: this.version,
   };
   const canonicalData = JSON.stringify(hashData, Object.keys(hashData).sort());
   const calculatedHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -2133,7 +2240,7 @@ companySchema.methods.verifyIntegrity = function () {
     verified: calculatedHash === this.forensic.hash,
     calculated: calculatedHash,
     stored: this.forensic.hash,
-    chainVerified: this.forensic.chainVerified
+    chainVerified: this.forensic.chainVerified,
   };
 };
 /**
@@ -2146,13 +2253,13 @@ companySchema.methods.getPrimaryAddress = function () {
  * Get active directors
  */
 companySchema.methods.getActiveDirectors = function () {
-  return this.directors?.filter(d => d.isActive) || [];
+  return this.directors?.filter((d) => d.isActive) || [];
 };
 /**
  * Get directors by role
  */
 companySchema.methods.getDirectorsByRole = function (role) {
-  return this.directors?.filter(d => d.isActive && d.role === role) || [];
+  return this.directors?.filter((d) => d.isActive && d.role === role) || [];
 };
 /**
  * Add director
@@ -2164,8 +2271,8 @@ companySchema.methods.addDirector = async function (directorData, userId) {
     isActive: true,
     audit: {
       createdBy: userId,
-      createdAt: new Date()
-    }
+      createdAt: new Date(),
+    },
   };
 
   this.directors.push(director);
@@ -2175,7 +2282,7 @@ companySchema.methods.addDirector = async function (directorData, userId) {
     action: 'add',
     newValue: director.idNumber,
     changedBy: userId,
-    changedAt: new Date()
+    changedAt: new Date(),
   });
 
   return this.save();
@@ -2199,7 +2306,7 @@ companySchema.methods.removeDirector = async function (directorId, userId, reaso
       oldValue: director.idNumber,
       changedBy: userId,
       changedAt: new Date(),
-      reason
+      reason,
     });
   }
 
@@ -2213,7 +2320,7 @@ companySchema.methods.updateDirector = async function (directorId, updates, user
   if (director) {
     const oldValues = {};
 
-    Object.keys(updates).forEach(key => {
+    Object.keys(updates).forEach((key) => {
       if (director[key] !== undefined) {
         oldValues[key] = director[key];
         director[key] = updates[key];
@@ -2229,7 +2336,7 @@ companySchema.methods.updateDirector = async function (directorId, updates, user
       oldValue: oldValues,
       newValue: updates,
       changedBy: userId,
-      changedAt: new Date()
+      changedAt: new Date(),
     });
   }
 
@@ -2247,7 +2354,7 @@ companySchema.methods.addShareholder = async function (shareholderData, userId) 
 
   const shareholder = {
     ...shareholderData,
-    acquisitionDate: new Date()
+    acquisitionDate: new Date(),
   };
 
   this.shareCapital.shareRegister.shareholderRegister.push(shareholder);
@@ -2262,7 +2369,7 @@ companySchema.methods.addShareholder = async function (shareholderData, userId) 
     action: 'add',
     newValue: shareholder.shareholderId,
     changedBy: userId,
-    changedAt: new Date()
+    changedAt: new Date(),
   });
 
   return this.save();
@@ -2281,8 +2388,9 @@ companySchema.methods.updateValuationSummary = async function (valuation) {
     lastValuationDate: new Date(),
     lastValuationId: valuation._id,
     lastValue: newValue,
-    averageValue: current.averageValue ?
-      ((current.averageValue * (newCount - 1)) + newValue) / newCount : newValue,
+    averageValue: current.averageValue
+      ? (current.averageValue * (newCount - 1) + newValue) / newCount
+      : newValue,
     minValue: Math.min(current.minValue || Infinity, newValue),
     maxValue: Math.max(current.maxValue || -Infinity, newValue),
     valuationHistory: [
@@ -2291,9 +2399,9 @@ companySchema.methods.updateValuationSummary = async function (valuation) {
         valuationId: valuation._id,
         date: new Date(),
         value: newValue,
-        method: valuation.methods?.methodCount > 0 ? 'multiple' : 'single'
-      }
-    ]
+        method: valuation.methods?.methodCount > 0 ? 'multiple' : 'single',
+      },
+    ],
   };
 
   return this.save();
@@ -2305,7 +2413,7 @@ companySchema.methods.checkCompliance = async function () {
   const now = new Date();
   const status = {
     overall: 'compliant',
-    issues: []
+    issues: [],
   };
 
   // Check CIPC compliance
@@ -2351,15 +2459,18 @@ companySchema.methods.syncWithCIPC = async function (cipcData, userId) {
     discrepancies.push({
       field: 'name',
       cipcValue: cipcData.companyName,
-      companyValue: this.name
+      companyValue: this.name,
     });
   }
 
-  if (cipcData.registrationNumber && cipcData.registrationNumber !== this.registration?.registrationNumber) {
+  if (
+    cipcData.registrationNumber &&
+    cipcData.registrationNumber !== this.registration?.registrationNumber
+  ) {
     discrepancies.push({
       field: 'registrationNumber',
       cipcValue: cipcData.registrationNumber,
-      companyValue: this.registration?.registrationNumber
+      companyValue: this.registration?.registrationNumber,
     });
   }
 
@@ -2367,7 +2478,7 @@ companySchema.methods.syncWithCIPC = async function (cipcData, userId) {
     discrepancies.push({
       field: 'status',
       cipcValue: cipcData.status,
-      companyValue: this.status
+      companyValue: this.status,
     });
   }
 
@@ -2381,9 +2492,9 @@ companySchema.methods.syncWithCIPC = async function (cipcData, userId) {
       {
         date: new Date(),
         status: discrepancies.length > 0 ? 'discrepancies' : 'success',
-        message: `Sync completed with ${discrepancies.length} discrepancies`
-      }
-    ]
+        message: `Sync completed with ${discrepancies.length} discrepancies`,
+      },
+    ],
   };
 
   this.audit.changeHistory.push({
@@ -2391,7 +2502,7 @@ companySchema.methods.syncWithCIPC = async function (cipcData, userId) {
     action: 'sync',
     details: { discrepanciesFound: discrepancies.length },
     changedBy: userId,
-    changedAt: new Date()
+    changedAt: new Date(),
   });
 
   return this.save();
@@ -2413,7 +2524,7 @@ companySchema.methods.getRedactedVersion = function (includeSensitive = false) {
 
     // Redact director IDs
     if (redacted.directors) {
-      redacted.directors.forEach(d => {
+      redacted.directors.forEach((d) => {
         d.idNumber = d.idNumber ? d.idNumber.replace(/\d(?=\d{4})/g, '*') : d.idNumber;
         if (d.passportNumber) d.passportNumber = '*********';
       });
@@ -2421,7 +2532,7 @@ companySchema.methods.getRedactedVersion = function (includeSensitive = false) {
 
     // Redact shareholder IDs
     if (redacted.shareCapital?.shareRegister?.shareholderRegister) {
-      redacted.shareCapital.shareRegister.shareholderRegister.forEach(s => {
+      redacted.shareCapital.shareRegister.shareholderRegister.forEach((s) => {
         if (s.individual?.idNumber) {
           s.individual.idNumber = s.individual.idNumber.replace(/\d(?=\d{4})/g, '*');
         }
@@ -2440,7 +2551,7 @@ companySchema.methods.getRedactedVersion = function (includeSensitive = false) {
 companySchema.statics.findByRegistrationNumber = function (registrationNumber, tenantId) {
   return this.findOne({
     'registration.registrationNumber': registrationNumber,
-    tenantId
+    tenantId,
   });
 };
 /**
@@ -2449,7 +2560,7 @@ companySchema.statics.findByRegistrationNumber = function (registrationNumber, t
 companySchema.statics.findByTaxNumber = function (taxNumber, tenantId) {
   return this.findOne({
     'sars.taxNumber': taxNumber,
-    tenantId
+    tenantId,
   });
 };
 /**
@@ -2459,7 +2570,7 @@ companySchema.statics.findByDirectorId = function (idNumber, tenantId) {
   return this.find({
     'directors.idNumber': idNumber,
     tenantId,
-    'directors.isActive': true
+    'directors.isActive': true,
   });
 };
 /**
@@ -2474,8 +2585,8 @@ companySchema.statics.findComplianceDue = function (tenantId) {
     $or: [
       { 'compliance.fica.lastChecked': { $lt: oneYearAgo } },
       { 'compliance.popia.lastChecked': { $lt: oneYearAgo } },
-      { 'compliance.cipc.status': { $ne: 'compliant' } }
-    ]
+      { 'compliance.cipc.status': { $ne: 'compliant' } },
+    ],
   });
 };
 /**
@@ -2489,9 +2600,9 @@ companySchema.statics.findAnnualReturnsDue = function (tenantId) {
     status: COMPANY_STATUS.ACTIVE,
     'compliance.cipc.annualReturns': {
       $not: {
-        $elemMatch: { year: currentYear, status: 'filed' }
-      }
-    }
+        $elemMatch: { year: currentYear, status: 'filed' },
+      },
+    },
   });
 };
 /**
@@ -2502,7 +2613,7 @@ companySchema.statics.findBySize = function (size, tenantId, options = {}) {
 
   return this.find({
     tenantId,
-    size
+    size,
   })
     .skip(skip)
     .limit(limit)
@@ -2523,12 +2634,12 @@ companySchema.statics.getIndustryStats = async function (tenantId) {
         totalValuation: { $sum: '$valuations.lastValue' },
         compliantCount: {
           $sum: {
-            $cond: [{ $eq: ['$compliance.cipc.status', 'compliant'] }, 1, 0]
-          }
-        }
-      }
+            $cond: [{ $eq: ['$compliance.cipc.status', 'compliant'] }, 1, 0],
+          },
+        },
+      },
     },
-    { $sort: { count: -1 } }
+    { $sort: { count: -1 } },
   ]);
 };
 /**
@@ -2543,10 +2654,10 @@ companySchema.statics.getSizeDistribution = async function (tenantId) {
         count: { $sum: 1 },
         totalRevenue: { $sum: '$financials.metrics.revenue' },
         avgValuation: { $avg: '$valuations.averageValue' },
-        avgEmployees: { $avg: '$employees.total' }
-      }
+        avgEmployees: { $avg: '$employees.total' },
+      },
     },
-    { $sort: { count: -1 } }
+    { $sort: { count: -1 } },
   ]);
 };
 /**
@@ -2557,7 +2668,7 @@ companySchema.statics.search = function (query, tenantId, options = {}) {
 
   return this.find({
     tenantId,
-    $text: { $search: query }
+    $text: { $search: query },
   })
     .select('-forensic -bankAccounts -audit.changeHistory')
     .sort({ score: { $meta: 'textScore' } })
@@ -2573,7 +2684,7 @@ companySchema.statics.getForValuation = function (tenantId, options = {}) {
 
   const query = {
     tenantId,
-    'financials.metrics.revenue': { $gte: minRevenue }
+    'financials.metrics.revenue': { $gte: minRevenue },
   };
 
   if (!includeInactive) {
@@ -2601,7 +2712,7 @@ companySchema.virtual('registeredAddressString').get(function () {
  * Director count
  */
 companySchema.virtual('directorCount').get(function () {
-  return this.directors?.filter(d => d.isActive).length || 0;
+  return this.directors?.filter((d) => d.isActive).length || 0;
 });
 /**
  * Shareholder count
@@ -2635,7 +2746,12 @@ companySchema.virtual('ageInYears').get(function () {
  * Is JSE listed
  */
 companySchema.virtual('isJSEListed').get(function () {
-  return [COMPANY_SIZE.JSE_TOP_40, COMPANY_SIZE.JSE_MID_CAP, COMPANY_SIZE.JSE_SMALL_CAP, COMPANY_SIZE.ALTX].includes(this.size);
+  return [
+    COMPANY_SIZE.JSE_TOP_40,
+    COMPANY_SIZE.JSE_MID_CAP,
+    COMPANY_SIZE.JSE_SMALL_CAP,
+    COMPANY_SIZE.ALTX,
+  ].includes(this.size);
 });
 /**
  * Is B-BBEE compliant

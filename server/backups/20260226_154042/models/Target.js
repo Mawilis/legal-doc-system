@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ TARGET MODEL - ACQUISITION TARGET WITH QUANTUM FEATURE VECTORS                        ║
   ║ [Production Grade | 127-Dimensional Analysis | Real-time Scoring]                     ║

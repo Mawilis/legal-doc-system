@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT GENERATION ENGINE - LEGAL DOCUMENT AUTOMATION                    ║
   ║ R12.5M/year revenue | 94% automation | 100-year retention                 ║
@@ -8,13 +8,13 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/documentGenerationService.js
  * VERSION: 2.0.0-PRODUCTION
  * CREATED: 2026-02-28
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Automates: 94% of document drafting (R8.2M/year labor savings)
  * • Reduces errors: 99.7% reduction in document errors (R4.5M/year risk mitigation)
  * • Throughput: 10,000+ documents/hour with sub-2 second generation
  * • Compliance: 100% audit trail with cryptographic verification
- * 
+ *
  * SYSTEM ARCHITECTURE:
  * {
  *   "designPattern": "Factory Pattern with Strategy Pattern for output formats",
@@ -41,9 +41,12 @@ import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../utils/auditLogger.js';
 import * as TenantContextImports from '../middleware/tenantContext.js';
-const TenantContext = TenantContextImports.TenantContext || TenantContextImports.default || TenantContextImports.tenantContext || { getTenantId: () => 'test-tenant-123' };
+const TenantContext = TenantContextImports.TenantContext ||
+  TenantContextImports.default ||
+  TenantContextImports.tenantContext || { getTenantId: () => 'test-tenant-123' };
 import * as redisClient_ns from '../config/redis.js';
-const redisClient = redisClient_ns.default || redisClient_ns.redisClient || redisClient_ns.client || redisClient_ns;
+const redisClient =
+  redisClient_ns.default || redisClient_ns.redisClient || redisClient_ns.client || redisClient_ns;
 import { Queue, Worker } from 'bullmq';
 import { MetricsCollector } from '../monitoring/metrics.js';
 import { CircuitBreaker } from '../utils/circuitBreaker.js';
@@ -65,7 +68,7 @@ const GENERATION_PRIORITY = {
   HIGH: 2,
   MEDIUM: 3,
   LOW: 4,
-  BATCH: 5
+  BATCH: 5,
 };
 
 const GENERATION_STATUS = {
@@ -74,14 +77,14 @@ const GENERATION_STATUS = {
   COMPLETED: 'completed',
   FAILED: 'failed',
   CANCELLED: 'cancelled',
-  RETRYING: 'retrying'
+  RETRYING: 'retrying',
 };
 
 const CACHE_TTL = {
   TEMPLATE: 3600, // 1 hour
   COMPILED: 7200, // 2 hours
   GENERATED: 300, // 5 minutes
-  VARIABLES: 1800 // 30 minutes
+  VARIABLES: 1800, // 30 minutes
 };
 
 const MAX_RETRIES = 3;
@@ -138,20 +141,20 @@ class DocumentGenerationEngine {
     this.encryption = new DocumentEncryption();
     this.signatureService = new DigitalSignatureService();
     this.complianceValidator = new ComplianceValidator();
-    
+
     // Circuit breakers for external services
     this.pdfCircuitBreaker = new CircuitBreaker('pdf-generation', {
       timeout: 30000,
       errorThresholdPercentage: 50,
-      resetTimeout: 30000
+      resetTimeout: 30000,
     });
-    
+
     this.docxCircuitBreaker = new CircuitBreaker('docx-generation', {
       timeout: 30000,
       errorThresholdPercentage: 50,
-      resetTimeout: 30000
+      resetTimeout: 30000,
     });
-    
+
     // Configure Handlebars
     this.configureHandlebars();
   }
@@ -166,7 +169,7 @@ class DocumentGenerationEngine {
 
     logger.info('Initializing Document Generation Engine v2.0.0', {
       component: 'DocumentGenerationEngine',
-      action: 'initialize'
+      action: 'initialize',
     });
 
     try {
@@ -186,8 +189,8 @@ class DocumentGenerationEngine {
         action: 'initialize',
         metrics: {
           templateCacheSize: this.templateCache.size,
-          compiledCacheSize: this.compiledCache.size
-        }
+          compiledCacheSize: this.compiledCache.size,
+        },
       });
 
       return this;
@@ -196,7 +199,7 @@ class DocumentGenerationEngine {
         component: 'DocumentGenerationEngine',
         action: 'initialize',
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       throw error;
     }
@@ -207,22 +210,22 @@ class DocumentGenerationEngine {
    */
   configureHandlebars() {
     // Date formatting helper
-    Handlebars.registerHelper('formatDate', function(date, format) {
+    Handlebars.registerHelper('formatDate', function (date, format) {
       if (!date) return '';
       const d = new Date(date);
       if (isNaN(d.getTime())) return '';
-      
-      switch(format) {
+
+      switch (format) {
         case 'DD/MM/YYYY':
           return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
         case 'YYYY-MM-DD':
           return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
         case 'long':
-          return d.toLocaleDateString('en-ZA', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          return d.toLocaleDateString('en-ZA', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
           });
         default:
           return d.toISOString().split('T')[0];
@@ -230,82 +233,82 @@ class DocumentGenerationEngine {
     });
 
     // Currency formatting helper
-    Handlebars.registerHelper('formatCurrency', function(amount, currency = 'ZAR') {
+    Handlebars.registerHelper('formatCurrency', function (amount, currency = 'ZAR') {
       if (amount === null || amount === undefined) return '';
       const num = parseFloat(amount);
       if (isNaN(num)) return '';
-      
+
       return new Intl.NumberFormat('en-ZA', {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        maximumFractionDigits: 2,
       }).format(num);
     });
 
     // Number to words helper (for legal documents)
-    Handlebars.registerHelper('numberToWords', function(num) {
+    Handlebars.registerHelper('numberToWords', function (num) {
       if (num === null || num === undefined) return '';
       return this.numberToWordsEnglish(parseFloat(num));
     });
 
     // Conditional logic helpers
-    Handlebars.registerHelper('ifEquals', function(arg1, arg2, options) {
-      return (arg1 == arg2) ? options.fn(this) : options.inverse(this);
+    Handlebars.registerHelper('ifEquals', function (arg1, arg2, options) {
+      return arg1 == arg2 ? options.fn(this) : options.inverse(this);
     });
 
-    Handlebars.registerHelper('ifGreaterThan', function(arg1, arg2, options) {
-      return (arg1 > arg2) ? options.fn(this) : options.inverse(this);
+    Handlebars.registerHelper('ifGreaterThan', function (arg1, arg2, options) {
+      return arg1 > arg2 ? options.fn(this) : options.inverse(this);
     });
 
-    Handlebars.registerHelper('ifAnd', function(...args) {
+    Handlebars.registerHelper('ifAnd', function (...args) {
       const conditions = args.slice(0, -1);
       const options = args[args.length - 1];
       return conditions.every(Boolean) ? options.fn(this) : options.inverse(this);
     });
 
-    Handlebars.registerHelper('ifOr', function(...args) {
+    Handlebars.registerHelper('ifOr', function (...args) {
       const conditions = args.slice(0, -1);
       const options = args[args.length - 1];
       return conditions.some(Boolean) ? options.fn(this) : options.inverse(this);
     });
 
     // Array helpers
-    Handlebars.registerHelper('join', function(array, separator = ', ') {
+    Handlebars.registerHelper('join', function (array, separator = ', ') {
       if (!Array.isArray(array)) return '';
       return array.join(separator);
     });
 
-    Handlebars.registerHelper('first', function(array) {
+    Handlebars.registerHelper('first', function (array) {
       if (!Array.isArray(array)) return '';
       return array[0];
     });
 
-    Handlebars.registerHelper('last', function(array) {
+    Handlebars.registerHelper('last', function (array) {
       if (!Array.isArray(array)) return '';
       return array[array.length - 1];
     });
 
     // String helpers
-    Handlebars.registerHelper('uppercase', function(str) {
+    Handlebars.registerHelper('uppercase', function (str) {
       if (!str) return '';
       return str.toUpperCase();
     });
 
-    Handlebars.registerHelper('lowercase', function(str) {
+    Handlebars.registerHelper('lowercase', function (str) {
       if (!str) return '';
       return str.toLowerCase();
     });
 
-    Handlebars.registerHelper('capitalize', function(str) {
+    Handlebars.registerHelper('capitalize', function (str) {
       if (!str) return '';
       return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     });
 
     // Legal-specific helpers
-    Handlebars.registerHelper('partyName', function(party, type = 'full') {
+    Handlebars.registerHelper('partyName', function (party, type = 'full') {
       if (!party) return '';
-      switch(type) {
+      switch (type) {
         case 'full':
           return `${party.name} ${party.surname || ''}`.trim();
         case 'initials':
@@ -317,11 +320,11 @@ class DocumentGenerationEngine {
       }
     });
 
-    Handlebars.registerHelper('citeAct', function(act, year, section) {
+    Handlebars.registerHelper('citeAct', function (act, year, section) {
       return `${act} ${year}, section ${section}`;
     });
 
-    Handlebars.registerHelper('courtName', function(court, division, location) {
+    Handlebars.registerHelper('courtName', function (court, division, location) {
       return `${court} ${division ? `(${division})` : ''} ${location || ''}`.trim();
     });
   }
@@ -333,40 +336,40 @@ class DocumentGenerationEngine {
     const connection = {
       host: process.env.REDIS_HOST || 'localhost',
       port: process.env.REDIS_PORT || 6379,
-      password: process.env.REDIS_PASSWORD
+      password: process.env.REDIS_PASSWORD,
     };
 
-    this.generationQueue = new Queue(GENERATION_QUEUE, { 
+    this.generationQueue = new Queue(GENERATION_QUEUE, {
       connection,
       defaultJobOptions: {
         attempts: MAX_RETRIES,
         backoff: {
           type: 'exponential',
-          delay: 2000
+          delay: 2000,
         },
         removeOnComplete: 100,
-        removeOnFail: 500
-      }
+        removeOnFail: 500,
+      },
     });
 
-    this.batchQueue = new Queue(BATCH_QUEUE, { 
+    this.batchQueue = new Queue(BATCH_QUEUE, {
       connection,
       defaultJobOptions: {
         attempts: 2,
         backoff: {
           type: 'fixed',
-          delay: 5000
+          delay: 5000,
         },
         removeOnComplete: 50,
-        removeOnFail: 200
-      }
+        removeOnFail: 200,
+      },
     });
 
-// FORENSIC FIX: QueueScheduler removed (Natively handled in BullMQ v3+)
-    
+    // FORENSIC FIX: QueueScheduler removed (Natively handled in BullMQ v3+)
+
     logger.info('Document generation queues initialized', {
       component: 'DocumentGenerationEngine',
-      action: 'initializeQueues'
+      action: 'initializeQueues',
     });
   }
 
@@ -377,45 +380,53 @@ class DocumentGenerationEngine {
     const connection = {
       host: process.env.REDIS_HOST || 'localhost',
       port: process.env.REDIS_PORT || 6379,
-      password: process.env.REDIS_PASSWORD
+      password: process.env.REDIS_PASSWORD,
     };
 
     // Real-time generation worker
-    new Worker(GENERATION_QUEUE, async job => {
-      const { type, data } = job.data;
-      
-      switch(type) {
-        case 'generate':
-          return await this.processGeneration(data);
-        case 'batch-generate':
-          return await this.processBatchGeneration(data);
-        default:
-          throw new Error(`Unknown job type: ${type}`);
+    new Worker(
+      GENERATION_QUEUE,
+      async (job) => {
+        const { type, data } = job.data;
+
+        switch (type) {
+          case 'generate':
+            return await this.processGeneration(data);
+          case 'batch-generate':
+            return await this.processBatchGeneration(data);
+          default:
+            throw new Error(`Unknown job type: ${type}`);
+        }
+      },
+      {
+        connection,
+        concurrency: 5,
+        limiter: {
+          max: 100,
+          duration: 1000,
+        },
       }
-    }, { 
-      connection,
-      concurrency: 5,
-      limiter: {
-        max: 100,
-        duration: 1000
-      }
-    });
+    );
 
     // Batch processing worker
-    new Worker(BATCH_QUEUE, async job => {
-      return await this.processLargeBatch(job.data);
-    }, { 
-      connection,
-      concurrency: 2,
-      limiter: {
-        max: 20,
-        duration: 1000
+    new Worker(
+      BATCH_QUEUE,
+      async (job) => {
+        return await this.processLargeBatch(job.data);
+      },
+      {
+        connection,
+        concurrency: 2,
+        limiter: {
+          max: 20,
+          duration: 1000,
+        },
       }
-    });
+    );
 
     logger.info('Document generation workers initialized', {
       component: 'DocumentGenerationEngine',
-      action: 'initializeWorkers'
+      action: 'initializeWorkers',
     });
   }
 
@@ -425,15 +436,15 @@ class DocumentGenerationEngine {
   async warmUpCaches() {
     try {
       const tenantId = TenantContext.getCurrentTenant();
-      
+
       // Get most used templates
       const popularTemplates = await DocumentTemplate.getMostUsed(tenantId, 20);
-      
+
       for (const template of popularTemplates) {
         const cacheKey = `template:${template.templateId}`;
         this.templateCache.set(cacheKey, {
           template,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
 
         // Pre-compile template
@@ -441,7 +452,7 @@ class DocumentGenerationEngine {
           const compiled = Handlebars.compile(template.content.raw);
           this.compiledCache.set(`compiled:${template.templateId}`, {
             compiled,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           });
         }
       }
@@ -449,13 +460,13 @@ class DocumentGenerationEngine {
       logger.info('Cache warming completed', {
         component: 'DocumentGenerationEngine',
         action: 'warmUpCaches',
-        templatesLoaded: popularTemplates.length
+        templatesLoaded: popularTemplates.length,
       });
     } catch (error) {
       logger.warn('Cache warming failed, continuing with cold start', {
         component: 'DocumentGenerationEngine',
         action: 'warmUpCaches',
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -476,16 +487,13 @@ class DocumentGenerationEngine {
       action: 'generateDocument',
       templateId,
       correlationId,
-      options
+      options,
     });
 
     try {
       // Validate inputs
       if (!templateId) {
-        throw new DocumentGenerationError(
-          'Template ID is required',
-          'MISSING_TEMPLATE_ID'
-        );
+        throw new DocumentGenerationError('Template ID is required', 'MISSING_TEMPLATE_ID');
       }
 
       // Get template (with caching)
@@ -501,23 +509,20 @@ class DocumentGenerationEngine {
       }
 
       // Validate and process variables
-      const processedVariables = await this.validateAndProcessVariables(
-        template,
-        variables
-      );
+      const processedVariables = await this.validateAndProcessVariables(template, variables);
 
       // Check compliance
       await this.complianceValidator.validateDocumentGeneration({
         template,
         variables: processedVariables,
-        jurisdiction: options.jurisdiction || template.jurisdiction
+        jurisdiction: options.jurisdiction || template.jurisdiction,
       });
 
       // Generate document based on format
       let document;
       let format = options.format || template.output.defaultFormat;
 
-      switch(format) {
+      switch (format) {
         case OUTPUT_FORMATS.PDF:
           document = await this.generatePDF(template, processedVariables, options);
           break;
@@ -541,7 +546,7 @@ class DocumentGenerationEngine {
       if (options.encrypt) {
         document = await this.encryption.encryptDocument(document, {
           algorithm: 'aes-256-gcm',
-          keyId: options.keyId
+          keyId: options.keyId,
         });
       }
 
@@ -549,7 +554,7 @@ class DocumentGenerationEngine {
       if (options.sign) {
         document = await this.signatureService.signDocument(document, {
           type: options.signatureType || 'advanced',
-          signers: options.signers
+          signers: options.signers,
         });
       }
 
@@ -561,7 +566,7 @@ class DocumentGenerationEngine {
         format,
         userId: options.userId,
         tenantId: options.tenantId,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       // Update metrics
@@ -569,7 +574,7 @@ class DocumentGenerationEngine {
         templateId,
         format,
         duration: Date.now() - startTime,
-        success: true
+        success: true,
       });
 
       // Update template usage stats
@@ -577,7 +582,7 @@ class DocumentGenerationEngine {
         { templateId },
         {
           $inc: { 'usageStats.timesUsed': 1 },
-          $set: { 'usageStats.lastUsedAt': new Date() }
+          $set: { 'usageStats.lastUsedAt': new Date() },
         }
       );
 
@@ -588,7 +593,7 @@ class DocumentGenerationEngine {
         correlationId,
         format,
         duration: Date.now() - startTime,
-        documentSize: document.length
+        documentSize: document.length,
       });
 
       return {
@@ -600,17 +605,16 @@ class DocumentGenerationEngine {
           correlationId,
           generatedAt: new Date().toISOString(),
           generationTime: Date.now() - startTime,
-          forensicHash: this.calculateDocumentHash(document)
-        }
+          forensicHash: this.calculateDocumentHash(document),
+        },
       };
-
     } catch (error) {
       // Record failed metrics
       this.metrics.recordDocumentGeneration({
         templateId,
         duration: Date.now() - startTime,
         success: false,
-        error: error.code
+        error: error.code,
       });
 
       logger.error('Document generation failed', {
@@ -621,7 +625,7 @@ class DocumentGenerationEngine {
         error: error.message,
         code: error.code,
         stack: error.stack,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       throw error;
@@ -639,7 +643,7 @@ class DocumentGenerationEngine {
       action: 'generateBatch',
       batchId,
       documentCount: documents.length,
-      options
+      options,
     });
 
     try {
@@ -649,7 +653,7 @@ class DocumentGenerationEngine {
         successful: 0,
         failed: 0,
         documents: [],
-        errors: []
+        errors: [],
       };
 
       // Process in chunks for memory efficiency
@@ -661,23 +665,22 @@ class DocumentGenerationEngine {
           component: 'DocumentGenerationEngine',
           action: 'generateBatch',
           batchId,
-          chunkSize: chunk.length
+          chunkSize: chunk.length,
         });
 
         const promises = chunk.map(async (doc) => {
           try {
-            const result = await this.generateDocument(
-              doc.templateId,
-              doc.variables,
-              { ...options, ...doc.options }
-            );
+            const result = await this.generateDocument(doc.templateId, doc.variables, {
+              ...options,
+              ...doc.options,
+            });
 
             results.documents.push({
               id: doc.id,
               success: true,
               document: result.document,
               format: result.format,
-              metadata: result.metadata
+              metadata: result.metadata,
             });
             results.successful++;
           } catch (error) {
@@ -686,14 +689,14 @@ class DocumentGenerationEngine {
               success: false,
               error: {
                 message: error.message,
-                code: error.code
-              }
+                code: error.code,
+              },
             });
             results.failed++;
             results.errors.push({
               id: doc.id,
               error: error.message,
-              code: error.code
+              code: error.code,
             });
           }
         });
@@ -702,7 +705,7 @@ class DocumentGenerationEngine {
 
         // Small delay between chunks to prevent memory spikes
         if (index < chunks.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
 
@@ -712,11 +715,10 @@ class DocumentGenerationEngine {
         batchId,
         successful: results.successful,
         failed: results.failed,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       return results;
-
     } catch (error) {
       logger.error('Batch document generation failed', {
         component: 'DocumentGenerationEngine',
@@ -724,7 +726,7 @@ class DocumentGenerationEngine {
         batchId,
         error: error.message,
         stack: error.stack,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       throw error;
@@ -737,30 +739,34 @@ class DocumentGenerationEngine {
   async queueDocumentGeneration(templateId, variables, options = {}) {
     const jobId = `gen-${Date.now()}-${randomBytes(4).toString('hex')}`;
 
-    const job = await this.generationQueue.add(jobId, {
-      type: 'generate',
-      data: {
-        templateId,
-        variables,
-        options
-      }
-    }, {
-      priority: options.priority || GENERATION_PRIORITY.MEDIUM,
+    const job = await this.generationQueue.add(
       jobId,
-      delay: options.delay || 0
-    });
+      {
+        type: 'generate',
+        data: {
+          templateId,
+          variables,
+          options,
+        },
+      },
+      {
+        priority: options.priority || GENERATION_PRIORITY.MEDIUM,
+        jobId,
+        delay: options.delay || 0,
+      }
+    );
 
     logger.info('Document generation queued', {
       component: 'DocumentGenerationEngine',
       action: 'queueDocumentGeneration',
       jobId,
-      templateId
+      templateId,
     });
 
     return {
       jobId,
       queue: GENERATION_QUEUE,
-      status: GENERATION_STATUS.PENDING
+      status: GENERATION_STATUS.PENDING,
     };
   }
 
@@ -789,11 +795,11 @@ class DocumentGenerationEngine {
    */
   async processLargeBatch(data) {
     const { batchId, filePath, options } = data;
-    
+
     // Read and process in chunks
     const fileStream = await fs.readFile(filePath, 'utf8');
     const documents = JSON.parse(fileStream);
-    
+
     return await this.generateBatch(batchId, documents, options);
   }
 
@@ -802,7 +808,7 @@ class DocumentGenerationEngine {
    */
   async getTemplate(templateId, tenantId = null) {
     const cacheKey = `template:${templateId}`;
-    
+
     // Check memory cache
     if (this.templateCache.has(cacheKey)) {
       const cached = this.templateCache.get(cacheKey);
@@ -810,7 +816,7 @@ class DocumentGenerationEngine {
         logger.debug('Template cache hit', {
           component: 'DocumentGenerationEngine',
           action: 'getTemplate',
-          templateId
+          templateId,
         });
         return cached.template;
       }
@@ -819,55 +825,46 @@ class DocumentGenerationEngine {
     // Check Redis cache
     const redisKey = `doc:template:${templateId}`;
     const cachedTemplate = await redisClient.get(redisKey);
-    
+
     if (cachedTemplate) {
       const template = JSON.parse(cachedTemplate);
-      
+
       // Update memory cache
       this.templateCache.set(cacheKey, {
         template,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-      
+
       logger.debug('Template Redis cache hit', {
         component: 'DocumentGenerationEngine',
         action: 'getTemplate',
-        templateId
+        templateId,
       });
-      
+
       return template;
     }
 
     // Query database
-    const query = tenantId 
-      ? { templateId, tenantId }
-      : { templateId };
+    const query = tenantId ? { templateId, tenantId } : { templateId };
 
     const template = await DocumentTemplate.findOne(query).lean();
 
     if (!template) {
-      throw new DocumentGenerationError(
-        `Template not found: ${templateId}`,
-        'TEMPLATE_NOT_FOUND'
-      );
+      throw new DocumentGenerationError(`Template not found: ${templateId}`, 'TEMPLATE_NOT_FOUND');
     }
 
     // Update caches
-    await redisClient.setex(
-      redisKey,
-      CACHE_TTL.TEMPLATE,
-      JSON.stringify(template)
-    );
+    await redisClient.setex(redisKey, CACHE_TTL.TEMPLATE, JSON.stringify(template));
 
     this.templateCache.set(cacheKey, {
       template,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     logger.debug('Template loaded from database', {
       component: 'DocumentGenerationEngine',
       action: 'getTemplate',
-      templateId
+      templateId,
     });
 
     return template;
@@ -885,16 +882,13 @@ class DocumentGenerationEngine {
       if (variable.required && !variables[variable.name]) {
         errors.push({
           variable: variable.name,
-          error: 'Required variable missing'
+          error: 'Required variable missing',
         });
       }
     }
 
     if (errors.length > 0) {
-      throw new VariableValidationError(
-        'Variable validation failed',
-        { errors }
-      );
+      throw new VariableValidationError('Variable validation failed', { errors });
     }
 
     // Process and validate each variable
@@ -913,16 +907,13 @@ class DocumentGenerationEngine {
       } catch (error) {
         errors.push({
           variable: variable.name,
-          error: error.message
+          error: error.message,
         });
       }
     }
 
     if (errors.length > 0) {
-      throw new VariableValidationError(
-        'Variable processing failed',
-        { errors }
-      );
+      throw new VariableValidationError('Variable processing failed', { errors });
     }
 
     return processed;
@@ -933,7 +924,7 @@ class DocumentGenerationEngine {
    */
   async processVariable(variable, value) {
     // Type conversion and validation
-    switch(variable.type) {
+    switch (variable.type) {
       case 'string':
       case 'name':
       case 'email':
@@ -943,20 +934,20 @@ class DocumentGenerationEngine {
       case 'address':
       case 'textarea':
         return this.processStringVariable(variable, value);
-      
+
       case 'number':
       case 'currency':
         return this.processNumberVariable(variable, value);
-      
+
       case 'date':
         return this.processDateVariable(variable, value);
-      
+
       case 'boolean':
         return this.processBooleanVariable(variable, value);
-      
+
       case 'select':
         return this.processSelectVariable(variable, value);
-      
+
       default:
         return value;
     }
@@ -983,21 +974,21 @@ class DocumentGenerationEngine {
     }
 
     // Type-specific validation
-    switch(variable.type) {
+    switch (variable.type) {
       case 'email':
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(str)) {
           throw new Error('Invalid email address');
         }
         break;
-      
+
       case 'phone':
         const phoneRegex = /^(\+27|0)[1-9][0-9]{8}$/;
         if (!phoneRegex.test(str.replace(/[-\s]/g, ''))) {
           throw new Error('Invalid South African phone number');
         }
         break;
-      
+
       case 'id_number':
         // South African ID number validation
         if (!this.validateSAIDNumber(str)) {
@@ -1070,28 +1061,28 @@ class DocumentGenerationEngine {
   validateSAIDNumber(id) {
     // Remove any non-digit characters
     const clean = String(id).replace(/\D/g, '');
-    
+
     if (clean.length !== 13) return false;
-    
+
     // Basic Luhn algorithm check
     let sum = 0;
     let alternate = false;
-    
+
     for (let i = clean.length - 1; i >= 0; i--) {
       let n = parseInt(clean.charAt(i), 10);
-      
+
       if (alternate) {
         n *= 2;
         if (n > 9) {
           n = (n % 10) + 1;
         }
       }
-      
+
       sum += n;
       alternate = !alternate;
     }
-    
-    return (sum % 10 === 0);
+
+    return sum % 10 === 0;
   }
 
   // ==========================================================================
@@ -1106,23 +1097,23 @@ class DocumentGenerationEngine {
       try {
         // Get compiled template
         const compiled = await this.getCompiledTemplate(template);
-        
+
         // Generate HTML content
         const html = compiled(variables);
-        
+
         // Create PDF document
         const pdfDoc = await PDFDocument.create();
         const page = pdfDoc.addPage([
           template.output.pageSize === 'A4' ? 595 : 612,
-          template.output.pageSize === 'A4' ? 842 : 792
+          template.output.pageSize === 'A4' ? 842 : 792,
         ]);
 
         // Set margins
         const { top, right, bottom, left } = template.output.margins;
-        
+
         // Embed font
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        
+
         // Draw content (simplified - would use HTML to PDF in production)
         page.drawText(html.replace(/<[^>]*>/g, ''), {
           x: left,
@@ -1131,7 +1122,7 @@ class DocumentGenerationEngine {
           font,
           color: rgb(0, 0, 0),
           lineHeight: template.output.fontSize * 1.5,
-          maxWidth: page.getWidth() - left - right
+          maxWidth: page.getWidth() - left - right,
         });
 
         // Add metadata
@@ -1139,10 +1130,10 @@ class DocumentGenerationEngine {
         pdfDoc.setAuthor(options.userId || 'System');
         pdfDoc.setSubject(`Generated from template: ${template.templateId}`);
         pdfDoc.setKeywords(['legal', 'document', template.templateType]);
-        
+
         // Add creation date
         pdfDoc.setCreationDate(new Date());
-        
+
         // Add custom metadata
         pdfDoc.setProducer('Legal Document Generation Engine v2.0');
         pdfDoc.setCreator('Document Generation Service');
@@ -1155,12 +1146,8 @@ class DocumentGenerationEngine {
         }
 
         return pdfBytes;
-
       } catch (error) {
-        throw new OutputGenerationError(
-          'PDF generation failed',
-          { originalError: error.message }
-        );
+        throw new OutputGenerationError('PDF generation failed', { originalError: error.message });
       }
     });
   }
@@ -1173,17 +1160,17 @@ class DocumentGenerationEngine {
       try {
         // Get compiled template
         const compiled = await this.getCompiledTemplate(template);
-        
+
         // Generate content
         const content = compiled(variables);
-        
+
         // Create DOCX template
         const zip = new PizZip();
         zip.file('word/document.xml', this.createDocxXml(content));
-        
+
         const doc = new Docxtemplater(zip, {
           paragraphLoop: true,
-          linebreaks: true
+          linebreaks: true,
         });
 
         doc.setData(variables);
@@ -1191,16 +1178,12 @@ class DocumentGenerationEngine {
 
         const docxBuffer = doc.getZip().generate({
           type: 'nodebuffer',
-          compression: 'DEFLATE'
+          compression: 'DEFLATE',
         });
 
         return docxBuffer;
-
       } catch (error) {
-        throw new OutputGenerationError(
-          'DOCX generation failed',
-          { originalError: error.message }
-        );
+        throw new OutputGenerationError('DOCX generation failed', { originalError: error.message });
       }
     });
   }
@@ -1246,10 +1229,10 @@ class DocumentGenerationEngine {
   async generateTXT(template, variables, options) {
     const compiled = await this.getCompiledTemplate(template);
     const content = compiled(variables);
-    
+
     // Remove HTML tags
     const plainText = content.replace(/<[^>]*>/g, '');
-    
+
     return Buffer.from(plainText, 'utf-8');
   }
 
@@ -1258,7 +1241,7 @@ class DocumentGenerationEngine {
    */
   async getCompiledTemplate(template) {
     const cacheKey = `compiled:${template.templateId}`;
-    
+
     // Check memory cache
     if (this.compiledCache.has(cacheKey)) {
       const cached = this.compiledCache.get(cacheKey);
@@ -1266,7 +1249,7 @@ class DocumentGenerationEngine {
         logger.debug('Compiled template cache hit', {
           component: 'DocumentGenerationEngine',
           action: 'getCompiledTemplate',
-          templateId: template.templateId
+          templateId: template.templateId,
         });
         return cached.compiled;
       }
@@ -1278,7 +1261,7 @@ class DocumentGenerationEngine {
     // Update cache
     this.compiledCache.set(cacheKey, {
       compiled,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return compiled;
@@ -1308,9 +1291,7 @@ class DocumentGenerationEngine {
    * Calculate document hash for forensic integrity
    */
   calculateDocumentHash(document) {
-    return createHash('sha256')
-      .update(document)
-      .digest('hex');
+    return createHash('sha256').update(document).digest('hex');
   }
 
   /**
@@ -1327,8 +1308,8 @@ class DocumentGenerationEngine {
         correlationId: data.correlationId,
         format: data.format,
         duration: data.duration,
-        variables: data.variables
-      }
+        variables: data.variables,
+      },
     });
   }
 
@@ -1347,17 +1328,47 @@ class DocumentGenerationEngine {
    * Number to words conversion (for legal documents)
    */
   numberToWordsEnglish(num) {
-    const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
-                  'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
-                  'seventeen', 'eighteen', 'nineteen'];
-    const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+    const ones = [
+      '',
+      'one',
+      'two',
+      'three',
+      'four',
+      'five',
+      'six',
+      'seven',
+      'eight',
+      'nine',
+      'ten',
+      'eleven',
+      'twelve',
+      'thirteen',
+      'fourteen',
+      'fifteen',
+      'sixteen',
+      'seventeen',
+      'eighteen',
+      'nineteen',
+    ];
+    const tens = [
+      '',
+      '',
+      'twenty',
+      'thirty',
+      'forty',
+      'fifty',
+      'sixty',
+      'seventy',
+      'eighty',
+      'ninety',
+    ];
     const scales = ['', 'thousand', 'million', 'billion', 'trillion'];
 
     if (num === 0) return 'zero';
 
     const numStr = num.toString();
     const groups = [];
-    
+
     // Split into groups of 3 digits
     for (let i = numStr.length; i > 0; i -= 3) {
       groups.push(numStr.substring(Math.max(0, i - 3), i));
@@ -1381,13 +1392,13 @@ class DocumentGenerationEngine {
 
   convertThreeDigits(num) {
     const words = [];
-    
+
     if (num >= 100) {
       words.push(ones[Math.floor(num / 100)] + ' hundred');
       num %= 100;
       if (num > 0) words.push('and');
     }
-    
+
     if (num >= 20) {
       words.push(tens[Math.floor(num / 10)]);
       num %= 10;
@@ -1395,7 +1406,7 @@ class DocumentGenerationEngine {
     } else if (num > 0) {
       words.push(ones[num]);
     }
-    
+
     return words;
   }
 
@@ -1404,23 +1415,23 @@ class DocumentGenerationEngine {
    */
   async getStatus() {
     const queueStatus = await this.generationQueue.getJobCounts();
-    
+
     return {
       initialized: this.initialized,
       version: '2.0.0',
       caches: {
         templateCache: this.templateCache.size,
-        compiledCache: this.compiledCache.size
+        compiledCache: this.compiledCache.size,
       },
       queues: {
         generation: queueStatus,
-        batch: await this.batchQueue.getJobCounts()
+        batch: await this.batchQueue.getJobCounts(),
       },
       circuitBreakers: {
         pdf: this.pdfCircuitBreaker.getStatus(),
-        docx: this.docxCircuitBreaker.getStatus()
+        docx: this.docxCircuitBreaker.getStatus(),
       },
-      metrics: this.metrics.getSnapshot()
+      metrics: this.metrics.getSnapshot(),
     };
   }
 
@@ -1430,7 +1441,7 @@ class DocumentGenerationEngine {
   async shutdown() {
     logger.info('Shutting down Document Generation Engine', {
       component: 'DocumentGenerationEngine',
-      action: 'shutdown'
+      action: 'shutdown',
     });
 
     // Close queues
@@ -1446,7 +1457,7 @@ class DocumentGenerationEngine {
 
     logger.info('Document Generation Engine shutdown complete', {
       component: 'DocumentGenerationEngine',
-      action: 'shutdown'
+      action: 'shutdown',
     });
   }
 }
@@ -1473,7 +1484,7 @@ export {
   VariableValidationError,
   OutputGenerationError,
   GENERATION_STATUS,
-  GENERATION_PRIORITY
+  GENERATION_PRIORITY,
 };
 
 export default getDocumentGenerationEngine;

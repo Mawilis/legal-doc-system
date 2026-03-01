@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ EXAMPLE USAGE - DOCUMENT GENERATION ENGINE                                ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
@@ -10,7 +10,7 @@ async function example() {
   try {
     // Get engine instance
     const engine = await getDocumentGenerationEngine();
-    
+
     // Example 1: Generate a single document
     const result = await engine.generateDocument(
       'TMP-1234', // template ID
@@ -19,7 +19,7 @@ async function example() {
         clientIdNumber: '9001015084083',
         contractDate: '2026-02-28',
         contractAmount: 1500000,
-        propertyAddress: '123 Main Street, Sandton, Johannesburg'
+        propertyAddress: '123 Main Street, Sandton, Johannesburg',
       },
       {
         format: 'pdf',
@@ -27,14 +27,14 @@ async function example() {
         tenantId: 'law-firm-001',
         correlationId: 'corr-123456',
         encrypt: true,
-        sign: true
+        sign: true,
       }
     );
 
     console.log('Document generated:', {
       format: result.format,
       size: result.document.length,
-      metadata: result.metadata
+      metadata: result.metadata,
     });
 
     // Example 2: Batch generation
@@ -46,28 +46,28 @@ async function example() {
           templateId: 'TMP-1234',
           variables: {
             clientName: 'Jane Smith',
-            contractAmount: 750000
-          }
+            contractAmount: 750000,
+          },
         },
         {
           id: 'doc-2',
           templateId: 'TMP-5678',
           variables: {
             companyName: 'Acme Corp',
-            registrationNumber: '2020/123456/07'
-          }
-        }
+            registrationNumber: '2020/123456/07',
+          },
+        },
       ],
       {
         userId: 'user-123',
-        tenantId: 'law-firm-001'
+        tenantId: 'law-firm-001',
       }
     );
 
     console.log('Batch generation:', {
       total: batchResult.total,
       successful: batchResult.successful,
-      failed: batchResult.failed
+      failed: batchResult.failed,
     });
 
     // Example 3: Queue for background processing
@@ -75,12 +75,12 @@ async function example() {
       'TMP-1234',
       {
         clientName: 'Background Job',
-        contractAmount: 2500000
+        contractAmount: 2500000,
       },
       {
         priority: 3, // MEDIUM
         delay: 5000, // 5 seconds delay
-        userId: 'user-123'
+        userId: 'user-123',
       }
     );
 
@@ -89,7 +89,6 @@ async function example() {
     // Get engine status
     const status = await engine.getStatus();
     console.log('Engine status:', status);
-
   } catch (error) {
     console.error('Generation failed:', error);
   }

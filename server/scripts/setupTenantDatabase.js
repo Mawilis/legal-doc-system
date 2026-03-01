@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ================================================================================
 ⚡ QUANTUM DATABASE ARCHITECTURE FORGERY: MULTI-TENANT LEGAL ORACLE NEXUS ⚡
 ================================================================================
@@ -74,12 +72,12 @@ require('dotenv').config();
   // Validate MongoDB URI format for security
   if (!process.env.MONGO_URI.includes('mongodb+srv://')) {
     console.warn(
-      '⚠️  SECURITY ADVISORY: Consider using MongoDB Atlas SRV connection for enhanced security',
+      '⚠️  SECURITY ADVISORY: Consider using MongoDB Atlas SRV connection for enhanced security'
     );
   }
 
   console.log('✅ Quantum Environment Validation: PASSED');
-}());
+})();
 
 // =============================================================================
 // 🔐 QUANTUM ENCRYPTION UTILITIES - ZERO-TRUST DATA PROTECTION
@@ -425,7 +423,7 @@ async function setupTenantDatabase() {
         unique: true,
         name: 'tenantId_unique',
         background: true,
-      },
+      }
     );
 
     await tenantsCollection.createIndex(
@@ -435,7 +433,7 @@ async function setupTenantDatabase() {
         unique: true,
         name: 'cipc_unique',
         background: true,
-      },
+      }
     );
 
     // 🏢 Business Operation Indexes
@@ -447,7 +445,7 @@ async function setupTenantDatabase() {
       {
         name: 'status_subscription_composite',
         background: true,
-      },
+      }
     );
 
     // 🔍 Full-Text Search for Legal Names
@@ -461,7 +459,7 @@ async function setupTenantDatabase() {
         name: 'tenant_legal_search',
         weights: { legalName: 10, name: 5, cipcRegistrationNumber: 8 },
         background: true,
-      },
+      }
     );
 
     // 📅 Temporal Indexes
@@ -470,7 +468,7 @@ async function setupTenantDatabase() {
       {
         name: 'created_at_desc',
         background: true,
-      },
+      }
     );
 
     await tenantsCollection.createIndex(
@@ -478,7 +476,7 @@ async function setupTenantDatabase() {
       {
         name: 'updated_at_desc',
         background: true,
-      },
+      }
     );
 
     // 🌍 Data Residency Indexes
@@ -487,7 +485,7 @@ async function setupTenantDatabase() {
       {
         name: 'data_residency_region',
         background: true,
-      },
+      }
     );
 
     // ⚖️ Compliance Indexes
@@ -496,7 +494,7 @@ async function setupTenantDatabase() {
       {
         name: 'popia_compliance_status',
         background: true,
-      },
+      }
     );
 
     await tenantsCollection.createIndex(
@@ -504,7 +502,7 @@ async function setupTenantDatabase() {
       {
         name: 'company_type_index',
         background: true,
-      },
+      }
     );
 
     // 💼 Subscription Analytics
@@ -516,7 +514,7 @@ async function setupTenantDatabase() {
       {
         name: 'subscription_analytics',
         background: true,
-      },
+      }
     );
 
     // 🔐 Security Indexes
@@ -525,7 +523,7 @@ async function setupTenantDatabase() {
       {
         name: 'mfa_enforcement',
         background: true,
-      },
+      }
     );
 
     console.log('✅ 11 quantum indexes created for optimal performance');
@@ -546,7 +544,7 @@ async function setupTenantDatabase() {
       JSON.stringify({
         phone: '+27 11 123 4567',
         address: '1 Justice Street, Sandton, 2196',
-      }),
+      })
     );
 
     const systemTenantData = {
@@ -646,7 +644,7 @@ async function setupTenantDatabase() {
       console.log('   🔐 Encryption at Rest: ENABLED');
     } else {
       console.warn(
-        '   ⚠️  Encryption at Rest: NOT ENABLED - Consider enabling for POPIA compliance',
+        '   ⚠️  Encryption at Rest: NOT ENABLED - Consider enabling for POPIA compliance'
       );
     }
 

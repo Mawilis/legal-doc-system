@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 
 ██╗    ██╗██╗██╗     ███████╗██╗   ██╗     ██████╗ ███████╗    ███████╗██╗    ██╗ ██████╗ ██████╗ ███████╗███████╗██╗     ██╗
 ██║    ██║██║██║     ██╔════╝╚██╗ ██╔╝    ██╔═══██╗██╔════╝    ██╔════╝██║    ██║██╔═══██╗██╔══██╗██╔════╝██╔════╝██║     ██║
@@ -630,7 +628,7 @@ const jobSchema = new mongoose.Schema(
     id: false,
     collection: 'quantum_jobs',
     autoIndex: process.env.NODE_ENV !== 'production',
-  },
+  }
 );
 
 // =============================================================================
@@ -727,9 +725,9 @@ jobSchema.pre('save', function (next) {
 
   // Calculate scheduled deletion for POPIA compliance
   if (
-    this.popiaCompliance
-    && this.popiaCompliance.retentionPeriod
-    && !this.popiaCompliance.scheduledDeletion
+    this.popiaCompliance &&
+    this.popiaCompliance.retentionPeriod &&
+    !this.popiaCompliance.scheduledDeletion
   ) {
     const deletionDate = new Date(this.createdAt || new Date());
     deletionDate.setMonth(deletionDate.getMonth() + this.popiaCompliance.retentionPeriod);
@@ -935,7 +933,7 @@ jobSchema.methods.markFailed = async function (error, userId) {
       'RETRY_SCHEDULED',
       `Retry ${this.attempts}/${this.maxAttempts} scheduled for ${retryInfo.nextRetry}`,
       userId,
-      { systemContext: { delayMs: retryInfo.delayMs } },
+      { systemContext: { delayMs: retryInfo.delayMs } }
     );
   }
 

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*= ======================================================================================================================
+#!/*= ======================================================================================================================
                                    ██████╗ ███████╗ ██████╗ ██╗   ██╗██╗      █████╗ ████████╗ ██████╗ ██████╗ ██╗   ██╗
                                   ██╔════╝██╔════╝██╔════╝ ██║   ██║██║     ██╔══██╗╚══██╔══╝██╔═══██╗██╔══██╗╚██╗ ██╔╝
                                   ██║     █████╗  ██║  ███╗██║   ██║██║     ███████║   ██║   ██║   ██║██║  ██║ ╚████╔╝
@@ -43,8 +41,11 @@ const mongoose = require('mongoose');
 const cron = require('node-cron');
 
 // Optional Dependencies with Graceful Fallbacks
-let Redis; let BullMQ; let cheerio; let natural; let
-  winston;
+let Redis;
+let BullMQ;
+let cheerio;
+let natural;
+let winston;
 
 try {
   Redis = require('ioredis');
@@ -95,7 +96,7 @@ const missingVars = REQUIRED_ENV_VARS.filter((varName) => !process.env[varName])
 
 if (missingVars.length > 0 && process.env.NODE_ENV === 'production') {
   throw new Error(
-    `🚨 QUANTUM MONITOR CRITICAL: Missing required environment variables: ${missingVars.join(', ')}`,
+    `🚨 QUANTUM MONITOR CRITICAL: Missing required environment variables: ${missingVars.join(', ')}`
   );
 } else if (missingVars.length > 0) {
   console.warn(`⚠️  DEVELOPMENT: Missing environment variables: ${missingVars.join(', ')}`);
@@ -248,7 +249,7 @@ const createLogger = () => {
         winston.format.timestamp(),
         winston.format.errors({ stack: true }),
         winston.format.splat(),
-        winston.format.json(),
+        winston.format.json()
       ),
       defaultMeta: { service: 'quantum-regulatory-monitor' },
       transports: [
@@ -292,8 +293,8 @@ class RegulatoryChangeMonitor extends EventEmitter {
       lawsAfricaApiKey: process.env.LAWS_AFRICA_API_KEY,
       mongoUrl: process.env.MONGODB_URL || 'mongodb://localhost:27017/wilsy_quantum_regulatory',
       cronSchedule:
-        process.env.REGULATORY_MONITOR_CRON_SCHEDULE
-        || REGULATORY_CONSTANTS.SCHEDULE.MEDIUM_PRIORITY,
+        process.env.REGULATORY_MONITOR_CRON_SCHEDULE ||
+        REGULATORY_CONSTANTS.SCHEDULE.MEDIUM_PRIORITY,
       alertWebhook: process.env.REGULATORY_ALERT_WEBHOOK_URL,
       isProduction: process.env.NODE_ENV === 'production',
       autoUpdateEnabled: process.env.REGULATORY_AUTO_UPDATE_ENABLED === 'true',
@@ -349,7 +350,7 @@ class RegulatoryChangeMonitor extends EventEmitter {
       this.logger.info(`📊 System Status: ${this.monitoringState.healthStatus}`);
       this.logger.info(`⏰ Uptime: ${this.getUptime()}`);
       this.logger.info(
-        `🔗 Sources: ${Object.keys(REGULATORY_CONSTANTS.MONITORING_SOURCES).length} configured`,
+        `🔗 Sources: ${Object.keys(REGULATORY_CONSTANTS.MONITORING_SOURCES).length} configured`
       );
 
       this.emit('monitor:initialized', this.monitoringState);
@@ -492,7 +493,7 @@ class RegulatoryChangeMonitor extends EventEmitter {
         {
           timestamps: true,
           collection: 'regulatory_frameworks',
-        },
+        }
       );
 
       // Create indexes
@@ -616,10 +617,11 @@ class RegulatoryChangeMonitor extends EventEmitter {
       // Fallback processors
       this.nlpProcessors = {
         tokenizer: {
-          tokenize: (text) => text
-            .toLowerCase()
-            .split(/\W+/)
-            .filter((token) => token.length > 0),
+          tokenize: (text) =>
+            text
+              .toLowerCase()
+              .split(/\W+/)
+              .filter((token) => token.length > 0),
         },
         stemmer: {
           stem: (word) => word.toLowerCase(),
@@ -659,15 +661,25 @@ class RegulatoryChangeMonitor extends EventEmitter {
     this.logger.info('⏰ Initializing Scheduled Monitoring Tasks...');
 
     // Schedule priority monitoring
-    this.scheduleTask('HIGH_PRIORITY_MONITOR', REGULATORY_CONSTANTS.SCHEDULE.HIGH_PRIORITY, () => this.executePriorityMonitoring('HIGH'));
+    this.scheduleTask('HIGH_PRIORITY_MONITOR', REGULATORY_CONSTANTS.SCHEDULE.HIGH_PRIORITY, () =>
+      this.executePriorityMonitoring('HIGH')
+    );
 
-    this.scheduleTask('MEDIUM_PRIORITY_MONITOR', this.config.cronSchedule, () => this.executeComprehensiveMonitoring());
+    this.scheduleTask('MEDIUM_PRIORITY_MONITOR', this.config.cronSchedule, () =>
+      this.executeComprehensiveMonitoring()
+    );
 
-    this.scheduleTask('DAILY_DEEP_SCAN', REGULATORY_CONSTANTS.SCHEDULE.DAILY_DEEP_SCAN, () => this.executeDeepScan());
+    this.scheduleTask('DAILY_DEEP_SCAN', REGULATORY_CONSTANTS.SCHEDULE.DAILY_DEEP_SCAN, () =>
+      this.executeDeepScan()
+    );
 
-    this.scheduleTask('WEEKLY_ANALYSIS', REGULATORY_CONSTANTS.SCHEDULE.WEEKLY_ANALYSIS, () => this.executeWeeklyAnalysis());
+    this.scheduleTask('WEEKLY_ANALYSIS', REGULATORY_CONSTANTS.SCHEDULE.WEEKLY_ANALYSIS, () =>
+      this.executeWeeklyAnalysis()
+    );
 
-    this.scheduleTask('MONTHLY_REPORT', REGULATORY_CONSTANTS.SCHEDULE.MONTHLY_REPORT, () => this.generateMonthlyReport());
+    this.scheduleTask('MONTHLY_REPORT', REGULATORY_CONSTANTS.SCHEDULE.MONTHLY_REPORT, () =>
+      this.generateMonthlyReport()
+    );
 
     this.scheduleTask('HEALTH_CHECK', '*/5 * * * *', () => this.performHealthCheck());
 
@@ -690,7 +702,7 @@ class RegulatoryChangeMonitor extends EventEmitter {
           scheduled: true,
           timezone: 'Africa/Johannesburg',
           recoverMissedExecutions: false,
-        },
+        }
       );
 
       this.scheduledTasks.set(taskName, task);
@@ -809,7 +821,7 @@ class RegulatoryChangeMonitor extends EventEmitter {
 
       this.logger.info(`✅ Comprehensive monitoring completed in ${results.duration}ms`);
       this.logger.info(
-        `📊 Results: ${results.changesDetected} changes detected across ${results.sourcesScanned} sources`,
+        `📊 Results: ${results.changesDetected} changes detected across ${results.sourcesScanned} sources`
       );
 
       // Emit completion event
@@ -1065,7 +1077,8 @@ class RegulatoryChangeMonitor extends EventEmitter {
   }
 
   generateContentHash(update) {
-    const content = JSON.stringify(update.rawData || {}) + update.title + (update.description || '');
+    const content =
+      JSON.stringify(update.rawData || {}) + update.title + (update.description || '');
     return crypto.createHash('sha256').update(content).digest('hex');
   }
 
@@ -1161,8 +1174,8 @@ class RegulatoryChangeMonitor extends EventEmitter {
 
     // Alert for new legislation in important categories
     if (
-      analysis.changeType === 'NEW_LEGISLATION'
-      && (analysis.category === 'DATA_PROTECTION' || analysis.category === 'FINANCIAL_COMPLIANCE')
+      analysis.changeType === 'NEW_LEGISLATION' &&
+      (analysis.category === 'DATA_PROTECTION' || analysis.category === 'FINANCIAL_COMPLIANCE')
     ) {
       return true;
     }
@@ -1173,7 +1186,8 @@ class RegulatoryChangeMonitor extends EventEmitter {
   async storeRegulatoryUpdate(update, contentHash, analysis) {
     if (this.RegulatoryModel) {
       try {
-        const legislationId = update.id || `reg_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+        const legislationId =
+          update.id || `reg_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
 
         await this.RegulatoryModel.findOneAndUpdate(
           { legislationId },
@@ -1207,7 +1221,7 @@ class RegulatoryChangeMonitor extends EventEmitter {
               },
             },
           },
-          { upsert: true, new: true },
+          { upsert: true, new: true }
         );
       } catch (error) {
         this.logger.error('❌ Failed to store regulatory update:', error);
@@ -1232,7 +1246,8 @@ class RegulatoryChangeMonitor extends EventEmitter {
   async generateRegulatoryAlert(updateAnalysis) {
     try {
       const alertLevel = updateAnalysis.impactLevel || 'MEDIUM';
-      const alertConfig = REGULATORY_CONSTANTS.ALERT_LEVELS[alertLevel] || REGULATORY_CONSTANTS.ALERT_LEVELS.MEDIUM;
+      const alertConfig =
+        REGULATORY_CONSTANTS.ALERT_LEVELS[alertLevel] || REGULATORY_CONSTANTS.ALERT_LEVELS.MEDIUM;
 
       const alertData = {
         title: `Regulatory Change: ${updateAnalysis.title}`,
@@ -1576,8 +1591,8 @@ class RegulatoryChangeMonitor extends EventEmitter {
         alertGenerationRate:
           this.monitoringState.changesDetected > 0
             ? (this.monitoringState.alertsGenerated / this.monitoringState.changesDetected).toFixed(
-              2,
-            )
+                2
+              )
             : 0,
       },
       cache: {

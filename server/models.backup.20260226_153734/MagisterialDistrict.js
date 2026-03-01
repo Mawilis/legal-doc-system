@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * =============================================================================
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/MagisterialDistrict.js
  * =============================================================================
@@ -213,10 +211,10 @@ const magisterialDistrictSchema = new mongoose.Schema(
             for (const point of polygon) {
               const [lng, lat] = point;
               if (
-                lng < SA_BOUNDS.minLng
-                || lng > SA_BOUNDS.maxLng
-                || lat < SA_BOUNDS.minLat
-                || lat > SA_BOUNDS.maxLat
+                lng < SA_BOUNDS.minLng ||
+                lng > SA_BOUNDS.maxLng ||
+                lat < SA_BOUNDS.minLat ||
+                lat > SA_BOUNDS.maxLat
               ) {
                 return false;
               }
@@ -561,7 +559,7 @@ const magisterialDistrictSchema = new mongoose.Schema(
     },
     toObject: { virtuals: true },
     collation: { locale: 'en', strength: 2 }, // Case-insensitive indexing
-  },
+  }
 );
 
 // =============================================================================
@@ -581,7 +579,7 @@ magisterialDistrictSchema.index(
     name: 'complianceRetentionIndex',
     background: true,
     partialFilterExpression: { status: 'ARCHIVED' },
-  },
+  }
 );
 
 // =============================================================================
@@ -590,9 +588,9 @@ magisterialDistrictSchema.index(
 magisterialDistrictSchema.virtual('isCurrentlyEffective').get(function () {
   const now = new Date();
   return (
-    this.status === 'ACTIVE'
-    && this.effectiveFrom <= now
-    && (!this.effectiveTo || this.effectiveTo >= now)
+    this.status === 'ACTIVE' &&
+    this.effectiveFrom <= now &&
+    (!this.effectiveTo || this.effectiveTo >= now)
   );
 });
 
@@ -627,7 +625,7 @@ magisterialDistrictSchema.pre('save', async function (next) {
     // Quantum Shield: Encrypt sensitive data
     if (this.isModified('_plaintextBankingDetails') && this._plaintextBankingDetails) {
       this.sensitiveData.bankingDetails = await encryptJurisdictionalData(
-        this._plaintextBankingDetails,
+        this._plaintextBankingDetails
       );
       delete this._plaintextBankingDetails;
     }
@@ -673,7 +671,7 @@ magisterialDistrictSchema.pre('save', async function (next) {
 magisterialDistrictSchema.statics.findDistrictByLocation = async function (
   longitude,
   latitude,
-  options = {},
+  options = {}
 ) {
   const { bufferMeters = 1000, activeOnly = true } = options;
 
@@ -899,8 +897,8 @@ magisterialDistrictSchema.methods.calculateArea = function () {
     const [lng1, lat1] = coordinates[i];
     const [lng2, lat2] = coordinates[i + 1];
 
-    area
-      += (lng2 - lng1) * (2 + Math.sin((lat1 * Math.PI) / 180) + Math.sin((lat2 * Math.PI) / 180));
+    area +=
+      (lng2 - lng1) * (2 + Math.sin((lat1 * Math.PI) / 180) + Math.sin((lat2 * Math.PI) / 180));
   }
 
   area = Math.abs((area * 6371 * 6371) / (2 * Math.PI)); // Earth radius in km
@@ -959,12 +957,12 @@ magisterialDistrictSchema.methods.generateJurisdictionalReport = function () {
     },
     demographics: this.demographics
       ? {
-        population: this.demographics.totalPopulation,
-        density: this.populationDensity,
-        crimeRate: this.demographics.crimeStats
-          ? (this.demographics.crimeStats.totalCases / this.demographics.totalPopulation) * 1000
-          : null,
-      }
+          population: this.demographics.totalPopulation,
+          density: this.populationDensity,
+          crimeRate: this.demographics.crimeStats
+            ? (this.demographics.crimeStats.totalCases / this.demographics.totalPopulation) * 1000
+            : null,
+        }
       : null,
     compliance: {
       dojcdVerified: this.governmentIntegration.dojcdVerified,
@@ -980,8 +978,8 @@ magisterialDistrictSchema.methods.generateJurisdictionalReport = function () {
 // =============================================================================
 // QUANTUM EXPORT - ETERNAL SINGLETON PATTERN
 // =============================================================================
-export default mongoose.models.MagisterialDistrict
-  || mongoose.model('MagisterialDistrict', magisterialDistrictSchema);
+export default mongoose.models.MagisterialDistrict ||
+  mongoose.model('MagisterialDistrict', magisterialDistrictSchema);
 
 // =============================================================================
 // QUANTUM VALUATION FOOTER

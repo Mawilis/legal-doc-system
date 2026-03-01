@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const assert = require('assert');
+#!const assert = require('assert');
 const crypto = require('crypto');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');

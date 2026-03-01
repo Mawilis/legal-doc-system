@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════╗
   ║ RETENTION POLICY ENFORCER - INVESTOR-GRADE MODULE             ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -150,7 +148,8 @@ function identifyDisposalCandidates(records, tenantId) {
   const retained = [];
 
   records.forEach((record) => {
-    const hasRequiredFields = record.retentionPolicy && record.retentionStart && record.dataResidency === 'ZA';
+    const hasRequiredFields =
+      record.retentionPolicy && record.retentionStart && record.dataResidency === 'ZA';
 
     if (!hasRequiredFields) {
       logger.warn('Record missing retention metadata', {
@@ -163,12 +162,12 @@ function identifyDisposalCandidates(records, tenantId) {
     }
 
     const disposalDate = new Date(
-      record.disposalDate
-        || calculateDisposalSchedule(
+      record.disposalDate ||
+        calculateDisposalSchedule(
           new Date(record.createdAt || record.retentionStart),
           record.retentionPolicy,
-          tenantId,
-        ).disposalDate,
+          tenantId
+        ).disposalDate
     );
 
     if (disposalDate <= now) {

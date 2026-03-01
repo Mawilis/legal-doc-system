@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/storageController.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Secure Storage Engine. Manages File Metadata, Quotas, and Signed Upload URLs.
@@ -19,9 +17,7 @@ const Tenant = require('../models/Tenant'); // For quota checking
  * @access  Lawyer, Admin, Secretary
  */
 exports.getUploadUrl = asyncHandler(async (req, res) => {
-  const {
-    fileName, fileType, fileSize, caseId,
-  } = req.body;
+  const { fileName, fileType, fileSize, caseId } = req.body;
 
   // 1. Quota Validation
   const tenant = await Tenant.findById(req.user.tenantId);

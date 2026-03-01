@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: USAGE HISTORY MODEL - PERSISTENT USAGE TRACKING
  * ============================================================================

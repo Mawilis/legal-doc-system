@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE COMPLIANCE SERVICE - INVESTOR GRADE TEST SUITE          ║
   ║ [Validates R180K/year savings proposition]                   ║
@@ -187,12 +185,13 @@ describe('Service Method Validation (Static Tests)', () => {
   test('TC-METHOD-003: Data Residency Calculation', () => {
     const calculateDisposalDate = (startDate, policyRule) => {
       const disposalDate = new Date(startDate);
-      const yearIncrement = {
-        COMPANIES_ACT_7YR: 7,
-        LPC_6YR: 6,
-        PAIA_5YR: 5,
-        PERMANENT: 100,
-      }[policyRule] || 7;
+      const yearIncrement =
+        {
+          COMPANIES_ACT_7YR: 7,
+          LPC_6YR: 6,
+          PAIA_5YR: 5,
+          PERMANENT: 100,
+        }[policyRule] || 7;
 
       disposalDate.setFullYear(disposalDate.getFullYear() + yearIncrement);
       return disposalDate;
@@ -211,7 +210,10 @@ describe('Production Code Quality (File Inspection)', () => {
     const fs = require('fs');
     const path = require('path');
 
-    const serviceCode = fs.readFileSync(path.join(__dirname, '../../services/CaseComplianceService.js'), 'utf8');
+    const serviceCode = fs.readFileSync(
+      path.join(__dirname, '../../services/CaseComplianceService.js'),
+      'utf8'
+    );
 
     expect(serviceCode).not.toMatch(/console\.log/);
     console.log('✓ No console.log in production code');
@@ -221,7 +223,10 @@ describe('Production Code Quality (File Inspection)', () => {
     const fs = require('fs');
     const path = require('path');
 
-    const serviceCode = fs.readFileSync(path.join(__dirname, '../../services/CaseComplianceService.js'), 'utf8');
+    const serviceCode = fs.readFileSync(
+      path.join(__dirname, '../../services/CaseComplianceService.js'),
+      'utf8'
+    );
 
     // Check for essential compliance patterns
     expect(serviceCode).toMatch(/tenantId/);
@@ -323,7 +328,9 @@ test('FINAL-ACCEPTANCE: All Investor Criteria Met', () => {
     },
   };
 
-  const allPass = Object.values(acceptanceCriteria).every((criterion) => criterion.status === 'PASS');
+  const allPass = Object.values(acceptanceCriteria).every(
+    (criterion) => criterion.status === 'PASS'
+  );
 
   console.log('\n=== FINAL ACCEPTANCE REPORT ===');
   Object.entries(acceptanceCriteria).forEach(([key, value]) => {

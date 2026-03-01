@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
    ║                              WILSY OS - SOVEREIGN LEGAL OPERATING SYSTEM                                                               ║
    ║                         TENANT CONFIGURATION MODEL - MULTI-TENANT v3.0                                                                 ║

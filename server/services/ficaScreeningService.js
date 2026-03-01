@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ FICA SCREENING SERVICE - INVESTOR-GRADE MODULE                              ║
   ║ FICA §22 compliant | Risk assessment | Forensic logging                     ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */

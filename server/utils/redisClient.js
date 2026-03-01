@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-import loggerRaw from '../utils/logger.js';
+#!import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 /*
  * File: server/utils/redisClient.js
@@ -13,7 +11,7 @@ const logger = loggerRaw.default || loggerRaw;
  * -----------------------------------------------------------------------------
  */
 
-'use strict';
+('use strict');
 
 const { createClient } = require('redis');
 const logger = require('./logger'); // Using our hardened logger

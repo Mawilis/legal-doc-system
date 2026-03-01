@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-// server/config/db.js
+#!// server/config/db.js
 const mongoose = require('mongoose');
 const loggerRaw = require('../utils/logger');
 const logger = loggerRaw.default || loggerRaw; // Assuming you have a logger utility

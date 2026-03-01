@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  QUANTUM CASE MODEL NEXUS - WILSY OS LEGAL SOVEREIGNTY ENGINE                                                      ║
  * ║  Cosmic Purpose: Transform legal matter management into quantum-entangled jurisprudence scripture,                 ║
@@ -81,8 +79,8 @@ const validateCaseEnvironment = () => {
   const missingVars = REQUIRED_ENV_VARS.filter((varName) => !process.env[varName]);
   if (missingVars.length > 0) {
     throw new Error(
-      `QUANTUM BREACH: Missing case management environment variables: ${missingVars.join(', ')}\n`
-        + 'Add these to /server/.env with appropriate values.',
+      `QUANTUM BREACH: Missing case management environment variables: ${missingVars.join(', ')}\n` +
+        'Add these to /server/.env with appropriate values.'
     );
   }
 
@@ -394,10 +392,10 @@ const QuantumCaseSchema = new mongoose.Schema(
             // Magistrate: AXXX/YYYY
             // CCMA: GAXXXXX/YY
             return (
-              !v
-              || /^\d{4}\/\d{5}$/.test(v)
-              || /^A\d{3}\/\d{4}$/.test(v)
-              || /^[A-Z]{2}\d{5}\/\d{2}$/.test(v)
+              !v ||
+              /^\d{4}\/\d{5}$/.test(v) ||
+              /^A\d{3}\/\d{4}$/.test(v) ||
+              /^[A-Z]{2}\d{5}\/\d{2}$/.test(v)
             );
           },
           message: 'Invalid South African court reference format',
@@ -467,15 +465,15 @@ const QuantumCaseSchema = new mongoose.Schema(
           const User = mongoose.model('User');
           const user = await User.findById(v).select('role qualifications lpcNumber');
           return (
-            user
-            && [
+            user &&
+            [
               'LEGAL_FIRM_OWNER',
               'SENIOR_PARTNER',
               'PARTNER',
               'ASSOCIATE',
               'LEGAL_PRACTITIONER',
-            ].includes(user.role)
-            && user.lpcNumber
+            ].includes(user.role) &&
+            user.lpcNumber
           );
         },
         message: 'Lead attorney must be LPC-registered legal practitioner',
@@ -1124,7 +1122,7 @@ const QuantumCaseSchema = new mongoose.Schema(
     },
     minimize: false,
     collection: 'quantum_cases',
-  },
+  }
 );
 
 // =============================================================================
@@ -1164,7 +1162,10 @@ QuantumCaseSchema.plugin(mongooseEncryption, {
  * @performance O(1) workload queries for 500,000+ matters
  */
 QuantumCaseSchema.index({
-  firmId: 1, status: 1, priority: 1, dateOpened: -1,
+  firmId: 1,
+  status: 1,
+  priority: 1,
+  dateOpened: -1,
 });
 
 /*
@@ -1188,7 +1189,7 @@ QuantumCaseSchema.index(
     'jurisdiction.integratedWithCourt': 1,
     'jurisdiction.courtCaseNumber': 1,
   },
-  { sparse: true },
+  { sparse: true }
 );
 
 /*
@@ -1205,7 +1206,7 @@ QuantumCaseSchema.index(
       'legalHold.active': false,
       retentionPolicy: 'STANDARD_5_YEARS',
     },
-  },
+  }
 );
 
 /*
@@ -1227,7 +1228,7 @@ QuantumCaseSchema.index(
       'jurisdiction.courtCaseNumber': 8,
     },
     name: 'quantum_search_index',
-  },
+  }
 );
 
 // =============================================================================
@@ -1253,7 +1254,7 @@ QuantumCaseSchema.pre('save', async function (next) {
         .findOne(
           { firmId: this.firmId, matterNumber: new RegExp(`^${firmPrefix}/${year}`) },
           { matterNumber: 1 },
-          { sort: { matterNumber: -1 } },
+          { sort: { matterNumber: -1 } }
         )
         .session(this.$session());
 
@@ -1288,7 +1289,7 @@ QuantumCaseSchema.pre('save', async function (next) {
     if (!popiaValidation.valid) {
       throw new ComplianceError(
         `POPIA validation failed: ${popiaValidation.errors.join(', ')}`,
-        'POPIA',
+        'POPIA'
       );
     }
 
@@ -1300,17 +1301,18 @@ QuantumCaseSchema.pre('save', async function (next) {
       const prescriptionDate = new Date(this.prescription.date);
 
       // Validate prescription period
-      const prescriptionPeriod = LEGAL_CONSTANTS.PRESCRIPTION_PERIODS[this.prescription.prescriptionType];
+      const prescriptionPeriod =
+        LEGAL_CONSTANTS.PRESCRIPTION_PERIODS[this.prescription.prescriptionType];
       if (prescriptionPeriod) {
         const calculatedDate = new Date(this.dateOpened);
         calculatedDate.setTime(calculatedDate.getTime() + prescriptionPeriod);
 
         if (
-          Math.abs(prescriptionDate.getTime() - calculatedDate.getTime())
-          > 30 * 24 * 60 * 60 * 1000
+          Math.abs(prescriptionDate.getTime() - calculatedDate.getTime()) >
+          30 * 24 * 60 * 60 * 1000
         ) {
           console.warn(
-            `⚠️ Prescription date differs significantly from calculated period for matter ${this.matterNumber}`,
+            `⚠️ Prescription date differs significantly from calculated period for matter ${this.matterNumber}`
           );
         }
       }
@@ -1366,7 +1368,7 @@ QuantumCaseSchema.pre('save', async function (next) {
       if (!allowedTransitions[currentStatus]?.includes(this.status)) {
         throw new PrescriptionError(
           `Invalid status transition from ${currentStatus} to ${this.status}`,
-          this.prescription?.date,
+          this.prescription?.date
         );
       }
 
@@ -1412,7 +1414,7 @@ QuantumCaseSchema.pre('remove', async function (next) {
   if (this.status !== 'ARCHIVED') {
     throw new ComplianceError(
       'Only archived cases can be deleted per retention policy',
-      'COMPANIES_ACT',
+      'COMPANIES_ACT'
     );
   }
 
@@ -1617,7 +1619,7 @@ QuantumCaseSchema.statics.findPrescriptionRisks = async function (firmId) {
   // AI Risk scoring
   const riskScoredCases = cases.map((caseDoc) => {
     const daysRemaining = Math.ceil(
-      (new Date(caseDoc.prescription.date) - today) / (1000 * 60 * 60 * 24),
+      (new Date(caseDoc.prescription.date) - today) / (1000 * 60 * 60 * 24)
     );
 
     let riskScore = 100 - (daysRemaining / 30) * 100;
@@ -1836,7 +1838,7 @@ QuantumCaseSchema.virtual('nextCriticalAction').get(function () {
   // Prescription actions
   if (this.prescription?.date && this.status !== 'CLOSED' && this.status !== 'ARCHIVED') {
     const daysToPrescription = Math.ceil(
-      (new Date(this.prescription.date) - now) / (1000 * 60 * 60 * 24),
+      (new Date(this.prescription.date) - now) / (1000 * 60 * 60 * 24)
     );
     if (daysToPrescription <= 30) {
       actions.push({
@@ -1866,7 +1868,7 @@ QuantumCaseSchema.virtual('nextCriticalAction').get(function () {
   // Workflow actions
   if (this.workflow?.currentStep?.dueDate) {
     const daysToStep = Math.ceil(
-      (new Date(this.workflow.currentStep.dueDate) - now) / (1000 * 60 * 60 * 24),
+      (new Date(this.workflow.currentStep.dueDate) - now) / (1000 * 60 * 60 * 24)
     );
     if (daysToStep <= 7) {
       actions.push({
@@ -1883,11 +1885,14 @@ QuantumCaseSchema.virtual('nextCriticalAction').get(function () {
   return (
     actions.sort((a, b) => {
       const priorityOrder = {
-        CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3,
+        CRITICAL: 0,
+        HIGH: 1,
+        MEDIUM: 2,
+        LOW: 3,
       };
       return (
-        priorityOrder[a.priority] - priorityOrder[b.priority]
-        || new Date(a.dueDate) - new Date(b.dueDate)
+        priorityOrder[a.priority] - priorityOrder[b.priority] ||
+        new Date(a.dueDate) - new Date(b.dueDate)
       );
     })[0] || null
   );

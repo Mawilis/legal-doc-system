@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ⚛️ QUANTUM TENANT ADMINISTRATION CONTROLLER v2.2.0 - FULLY FIXED EDITION
  * File: /server/controllers/tenantAdminController.js
  *
@@ -222,8 +220,8 @@ function getDateRange(period, startDate, endDate) {
     };
   }
 
-  let start; let
-    end;
+  let start;
+  let end;
 
   switch (period.toUpperCase()) {
     case 'DAILY': {
@@ -443,7 +441,7 @@ exports.getFirmDashboard = asyncHandler(async (req, res) => {
       storageUsage,
     ] = await Promise.all([
       Tenant.findById(tenantId).select(
-        'name plan status billing settings lpcNumber province practiceAreas',
+        'name plan status billing settings lpcNumber province practiceAreas'
       ),
       getTeamStatistics(tenantId),
       getDocumentStatistics(tenantId),
@@ -556,7 +554,7 @@ exports.updateFirmSettings = asyncHandler(async (req, res) => {
   if (error) {
     throw new CustomError(
       `Validation error: ${error.details.map((d) => d.message).join(', ')}`,
-      400,
+      400
     );
   }
 
@@ -664,9 +662,7 @@ exports.updateFirmSettings = asyncHandler(async (req, res) => {
  */
 exports.getTeamMembers = asyncHandler(async (req, res) => {
   const { tenantId } = req.user;
-  const {
-    page = 1, limit = 50, role, department, status = 'ACTIVE', search,
-  } = req.query;
+  const { page = 1, limit = 50, role, department, status = 'ACTIVE', search } = req.query;
 
   // Build query
   const query = { tenantId, deletedAt: null };
@@ -717,7 +713,7 @@ exports.getTeamMembers = asyncHandler(async (req, res) => {
         roleDisplay: formatLegalRole(user.role),
         permissions: user.permissions || getDefaultPermissions(user.role),
       };
-    }),
+    })
   );
 
   // Get role distribution
@@ -761,7 +757,7 @@ exports.inviteTeamMember = asyncHandler(async (req, res) => {
   if (error) {
     throw new CustomError(
       `Validation error: ${error.details.map((d) => d.message).join(', ')}`,
-      400,
+      400
     );
   }
 
@@ -775,7 +771,7 @@ exports.inviteTeamMember = asyncHandler(async (req, res) => {
   if (currentTeamSize >= maxTeamSize) {
     throw new CustomError(
       `Team limit reached for ${firm.plan} plan. Maximum: ${maxTeamSize} members`,
-      400,
+      400
     );
   }
 
@@ -798,7 +794,7 @@ exports.inviteTeamMember = asyncHandler(async (req, res) => {
     // Validate LPC registration
     const lpcValid = await LPCService.validatePractitioner(
       value.saLegal.practitionerNumber,
-      `${value.firstName} ${value.lastName}`,
+      `${value.firstName} ${value.lastName}`
     ).catch(() => false);
 
     if (!lpcValid) {
@@ -842,7 +838,7 @@ exports.inviteTeamMember = asyncHandler(async (req, res) => {
           },
         },
       ],
-      { session },
+      { session }
     );
 
     // Send invitation email
@@ -887,7 +883,7 @@ exports.inviteTeamMember = asyncHandler(async (req, res) => {
           },
         },
       ],
-      { session },
+      { session }
     );
 
     await session.commitTransaction();
@@ -1265,7 +1261,7 @@ async function getDocumentStatistics(tenantId) {
     totalSizeGB: totalSize[0] ? (totalSize[0].totalSize / (1024 * 1024 * 1024)).toFixed(2) : 0,
     byType: byType.reduce(
       (acc, curr) => ({ ...acc, [curr._id]: { count: curr.count, size: curr.totalSize } }),
-      {},
+      {}
     ),
     byStatus: byStatus.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
     recentActivity,
@@ -1705,8 +1701,8 @@ async function getTeamCompliance(tenantId) {
 
       // Check FICA training for finance/compliance roles
       if (
-        ['FINANCE_OFFICER', 'COMPLIANCE_OFFICER'].includes(member.role)
-        && !member.saLegal?.ficaTrainingCompleted
+        ['FINANCE_OFFICER', 'COMPLIANCE_OFFICER'].includes(member.role) &&
+        !member.saLegal?.ficaTrainingCompleted
       ) {
         isCompliant = false;
         issues.push('FICA training not completed');
@@ -1805,7 +1801,10 @@ async function getFinancialAnalytics(tenantId, dateRange) {
     console.error('Financial analytics error:', error);
     return {
       revenue: {
-        total: 0, currency: 'ZAR', growth: 0, breakdown: {},
+        total: 0,
+        currency: 'ZAR',
+        growth: 0,
+        breakdown: {},
       },
       expenses: { total: 0, breakdown: {} },
       profitability: { netProfit: 0, margin: '0.00', perAttorney: 0 },
@@ -1846,7 +1845,7 @@ async function getDocumentAnalytics(tenantId, dateRange) {
 
     // Get signature statistics
     const signedDocs = documents.filter(
-      (doc) => doc.documentStatus?.status === 'SIGNED' || doc.electronicSignatures?.length > 0,
+      (doc) => doc.documentStatus?.status === 'SIGNED' || doc.electronicSignatures?.length > 0
     ).length;
 
     return {
@@ -1859,14 +1858,14 @@ async function getDocumentAnalytics(tenantId, dateRange) {
         signatureRate: documents.length > 0 ? (signedDocs / documents.length) * 100 : 0,
         averageSignatures:
           documents.length > 0
-            ? documents.reduce((sum, doc) => sum + (doc.electronicSignatures?.length || 0), 0)
-              / documents.length
+            ? documents.reduce((sum, doc) => sum + (doc.electronicSignatures?.length || 0), 0) /
+              documents.length
             : 0,
       },
       productivity: {
         documentsPerDay:
-          documents.length
-          / Math.max(1, (dateRange.endDate - dateRange.startDate) / (1000 * 60 * 60 * 24)),
+          documents.length /
+          Math.max(1, (dateRange.endDate - dateRange.startDate) / (1000 * 60 * 60 * 24)),
         averageSizeKB: documents.length > 0 ? (totalSize / documents.length / 1024).toFixed(2) : 0,
       },
       period: dateRange,
@@ -1928,9 +1927,10 @@ async function getClientAnalytics(tenantId, dateRange) {
       deletedAt: null,
     });
 
-    const retentionRate = previousClients > 0
-      ? (clients.filter((c) => previousClients > 0).length / previousClients) * 100
-      : 100;
+    const retentionRate =
+      previousClients > 0
+        ? (clients.filter((c) => previousClients > 0).length / previousClients) * 100
+        : 100;
 
     return {
       total: clients.length,
@@ -2006,7 +2006,7 @@ async function getComplianceTrends(tenantId, dateRange) {
       summary: {
         currentScore: trends[trends.length - 1]?.scores.overall || 0,
         averageScore: Math.round(
-          trends.reduce((sum, t) => sum + t.scores.overall, 0) / trends.length,
+          trends.reduce((sum, t) => sum + t.scores.overall, 0) / trends.length
         ),
         improvement:
           trends.length > 1
@@ -2077,7 +2077,7 @@ async function getTeamProductivity(tenantId, dateRange) {
           signed: signedCount,
           productivity: docCount > 0 ? (signedCount / docCount) * 100 : 0,
         };
-      }),
+      })
     );
 
     return {
@@ -2310,7 +2310,7 @@ async function getFirmNotifications(tenantId, firm) {
       type: 'STORAGE_LIMIT',
       severity: 'MEDIUM',
       message: `Storage usage at ${((storageUsage.totalSizeBytes / storageLimit) * 100).toFixed(
-        0,
+        0
       )}% of limit`,
       action: 'UPGRADE_STORAGE',
       deadline: null,
@@ -2556,7 +2556,7 @@ async function validateStatusChange(user, newStatus, requester) {
       if (activeMatters > 0) {
         throw new CustomError(
           `Cannot deactivate ${formatLegalRole(user.role)} with ${activeMatters} active matters.`,
-          400,
+          400
         );
       }
     } catch (error) {
@@ -2571,9 +2571,10 @@ async function validateStatusChange(user, newStatus, requester) {
  * @description Calculate productivity metrics
  */
 function calculateProductivityMetrics(teamStats, documentStats) {
-  const activeAttorneys = (teamStats.byRole.SENIOR_ATTORNEY || 0)
-      + (teamStats.byRole.JUNIOR_ATTORNEY || 0)
-      + (teamStats.byRole.CANDIDATE_ATTORNEY || 0) || 1;
+  const activeAttorneys =
+    (teamStats.byRole.SENIOR_ATTORNEY || 0) +
+      (teamStats.byRole.JUNIOR_ATTORNEY || 0) +
+      (teamStats.byRole.CANDIDATE_ATTORNEY || 0) || 1;
 
   return {
     documentsPerAttorney: documentStats.total / activeAttorneys,

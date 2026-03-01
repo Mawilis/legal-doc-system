@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * /Users/wilsonkhanyezi/legal-doc-system/server/validators/userValidator.js
  *
  * Enterprise User Validator (Masterpiece Edition)

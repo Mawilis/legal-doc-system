@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * 🧬 BIOMETRIC ROUTES QUANTUM SCROLL: WEB AUTHN API ORCHESTRATION 🧬
  * ============================================================================
@@ -165,7 +163,7 @@ router.post(
   ],
 
   // 🎯 CONTROLLER QUANTUM: Route to controller
-  biometricController.generateRegistrationOptions,
+  biometricController.generateRegistrationOptions
 );
 
 /*
@@ -191,7 +189,7 @@ router.post(
   validateBiometricRegistration,
 
   // 🎯 CONTROLLER QUANTUM: Route to controller
-  biometricController.verifyRegistration,
+  biometricController.verifyRegistration
 );
 
 /*
@@ -252,7 +250,7 @@ router.post(
   }),
 
   // 🎯 CONTROLLER QUANTUM: Route to controller
-  biometricController.generateAuthenticationOptions,
+  biometricController.generateAuthenticationOptions
 );
 
 /*
@@ -310,7 +308,7 @@ router.post(
   ],
 
   // 🎯 CONTROLLER QUANTUM: Route to controller
-  biometricController.verifyAuthentication,
+  biometricController.verifyAuthentication
 );
 
 /*
@@ -352,7 +350,7 @@ router.get(
   }),
 
   // 🎯 CONTROLLER QUANTUM: Route to controller
-  biometricController.getCredentials,
+  biometricController.getCredentials
 );
 
 /*
@@ -398,7 +396,7 @@ router.delete(
   ],
 
   // 🎯 CONTROLLER QUANTUM: Route to controller
-  biometricController.revokeCredential,
+  biometricController.revokeCredential
 );
 
 /*
@@ -454,7 +452,7 @@ router.put(
   ],
 
   // 🎯 CONTROLLER QUANTUM: Route to controller
-  biometricController.updateBiometricConsent,
+  biometricController.updateBiometricConsent
 );
 
 /*
@@ -498,9 +496,9 @@ router.get(
       // 🔍 SYSTEM HEALTH QUANTUM: Check all required components
       const checks = {
         webauthnConfigured:
-          !!process.env.WEBAUTHN_RP_ID
-          && !!process.env.WEBAUTHN_RP_NAME
-          && !!process.env.WEBAUTHN_RP_ORIGIN,
+          !!process.env.WEBAUTHN_RP_ID &&
+          !!process.env.WEBAUTHN_RP_NAME &&
+          !!process.env.WEBAUTHN_RP_ORIGIN,
         encryptionKey: !!process.env.ENCRYPTION_KEY,
         redisAvailable: false, // Would check Redis connection in production
         databaseConnected: false, // Would check MongoDB connection
@@ -529,12 +527,12 @@ router.get(
               ? 'Biometric system is operational and compliant with South African law'
               : 'Biometric system is experiencing issues',
           compliance: {
-            popia:
-              `Biometric data protection protocols ${
-                checks.webauthnConfigured ? 'active' : 'inactive'}`,
-            ectAct:
-              `Advanced electronic signature capability ${
-                checks.webauthnConfigured ? 'enabled' : 'disabled'}`,
+            popia: `Biometric data protection protocols ${
+              checks.webauthnConfigured ? 'active' : 'inactive'
+            }`,
+            ectAct: `Advanced electronic signature capability ${
+              checks.webauthnConfigured ? 'enabled' : 'disabled'
+            }`,
             dataResidency: 'South Africa (Cape Town region compliance)',
           },
         },
@@ -550,7 +548,7 @@ router.get(
         },
       });
     }
-  },
+  }
 );
 
 /*
@@ -598,7 +596,7 @@ router.get(
       status: 'success',
       data: config,
     });
-  },
+  }
 );
 
 /*

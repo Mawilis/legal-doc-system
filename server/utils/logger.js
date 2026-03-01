@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * Wilsy OS - Logger Utility
  * Structured JSON logging with levels

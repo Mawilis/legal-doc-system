@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/controllers/subscriptionController.js
  * STATUS: PRODUCTION-READY | SAAS MONETIZATION GRADE
  * -----------------------------------------------------------------------------
@@ -58,7 +56,7 @@ exports.changePlan = asyncHandler(async (req, res) => {
   // 3. UPDATE TENANT-LEVEL ENTITLEMENTS
   await Tenant.findOneAndUpdate(
     { _id: req.user.tenantId },
-    { 'subscription.tier': newPlanId, 'subscription.status': 'ACTIVE' },
+    { 'subscription.tier': newPlanId, 'subscription.status': 'ACTIVE' }
   );
 
   // 4. HIGH-SEVERITY AUDIT (Monetization Event)
@@ -137,4 +135,5 @@ exports.cancelSubscription = asyncHandler(async (req, res) => {
 exports.handleWebhook = asyncHandler(async (req, res) =>
   // This is a placeholder for the raw-body webhook handler
   // It would verify signatures and update subscription.status (PAST_DUE, ACTIVE, etc.)
-  successResponse(req, res, { received: true }));
+  successResponse(req, res, { received: true })
+);

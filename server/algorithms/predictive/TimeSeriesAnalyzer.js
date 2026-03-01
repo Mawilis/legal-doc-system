@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ TIME SERIES ANALYZER - FORENSIC EDITION                                   ║
   ║ Hybrid forecasting (LSTM + Seasonality + Trend)                           ║
@@ -23,12 +23,12 @@ export class TimeSeriesAnalyzer {
     console.time('timeseries-forecast');
 
     if (!Array.isArray(data) || data.length < this.seqLength + 1) {
-      throw new Error(`Invalid input: minimum ${this.seqLength + 1} numeric points required for sequence window.`);
+      throw new Error(
+        `Invalid input: minimum ${this.seqLength + 1} numeric points required for sequence window.`
+      );
     }
 
-    const datasetHash = createHash('sha256')
-      .update(JSON.stringify(data))
-      .digest('hex');
+    const datasetHash = createHash('sha256').update(JSON.stringify(data)).digest('hex');
 
     const seasonality = await this.detectSeasonality(data);
     const trend = await this.extractTrend(data);
@@ -54,8 +54,8 @@ export class TimeSeriesAnalyzer {
         dataPoints: data.length,
         periods,
         method: 'Forensic LSTM + Prophet Hybrid',
-        accuracy
-      }
+        accuracy,
+      },
     };
   }
 
@@ -63,7 +63,8 @@ export class TimeSeriesAnalyzer {
     const n = data.length;
     const fft = [];
     for (let k = 0; k < n; k++) {
-      let real = 0, imag = 0;
+      let real = 0,
+        imag = 0;
       for (let t = 0; t < n; t++) {
         const angle = (2 * Math.PI * k * t) / n;
         real += data[t] * Math.cos(angle);
@@ -94,21 +95,26 @@ export class TimeSeriesAnalyzer {
     }
     // FORENSIC FIX: Divide by `n` to get per-period slope, preventing exponential explosion
     const slope = (trend[trend.length - 1] - trend[0]) / n;
-    return { values: trend, slope, direction: slope > 0 ? 'upward' : slope < 0 ? 'downward' : 'stable' };
+    return {
+      values: trend,
+      slope,
+      direction: slope > 0 ? 'upward' : slope < 0 ? 'downward' : 'stable',
+    };
   }
 
   async buildAndTrainModel(data) {
     this.min = Math.min(...data);
     this.max = Math.max(...data);
-    
+
     // Protect against zero-variance datasets
     if (this.max === this.min) {
-       this.max += 1; 
+      this.max += 1;
     }
-    
-    const normalized = data.map(x => (x - this.min) / (this.max - this.min));
 
-    const X = [], y = [];
+    const normalized = data.map((x) => (x - this.min) / (this.max - this.min));
+
+    const X = [],
+      y = [];
     for (let i = 0; i < normalized.length - this.seqLength; i++) {
       X.push(normalized.slice(i, i + this.seqLength));
       y.push(normalized[i + this.seqLength]);
@@ -133,7 +139,9 @@ export class TimeSeriesAnalyzer {
 
   async generateForecast(data, periods, seasonality, trend) {
     // Keep a running sequence of normalized values
-    let currentSeqArray = data.slice(-this.seqLength).map(x => (x - this.min) / (this.max - this.min));
+    let currentSeqArray = data
+      .slice(-this.seqLength)
+      .map((x) => (x - this.min) / (this.max - this.min));
     const forecast = [];
 
     for (let i = 0; i < periods; i++) {
@@ -145,13 +153,14 @@ export class TimeSeriesAnalyzer {
       });
 
       const denorm = predVal * (this.max - this.min) + this.min;
-      
+
       // FORENSIC FIX: Phase shift `t` starts at `data.length + i` to continue the wave smoothly
       const t = data.length + i;
-      const seasonalAdj = seasonality.hasSeasonality 
-        ? seasonality.patterns[0].strength * Math.sin(2 * Math.PI * t / seasonality.patterns[0].period) 
+      const seasonalAdj = seasonality.hasSeasonality
+        ? seasonality.patterns[0].strength *
+          Math.sin((2 * Math.PI * t) / seasonality.patterns[0].period)
         : 0;
-      
+
       const trendAdj = trend.slope * (i + 1);
 
       // Construct final forecast point
@@ -168,25 +177,28 @@ export class TimeSeriesAnalyzer {
   calculateConfidence(forecast, data) {
     const residuals = data.slice(1).map((v, i) => v - data[i]);
     const meanError = residuals.reduce((a, b) => a + b, 0) / residuals.length;
-    const stdError = Math.sqrt(residuals.reduce((a, b) => a + Math.pow(b - meanError, 2), 0) / residuals.length);
-    
+    const stdError = Math.sqrt(
+      residuals.reduce((a, b) => a + Math.pow(b - meanError, 2), 0) / residuals.length
+    );
+
     return forecast.map((_, i) => ({
       upper: forecast[i] + 1.96 * stdError * Math.sqrt(i + 1),
       lower: forecast[i] - 1.96 * stdError * Math.sqrt(i + 1),
-      confidence: Math.max(0, 1 - 0.05 * Math.sqrt(i + 1))
+      confidence: Math.max(0, 1 - 0.05 * Math.sqrt(i + 1)),
     }));
   }
 
   async evaluateAccuracy(data) {
     if (!this.model) return null;
-    const normalized = data.map(x => (x - this.min) / (this.max - this.min));
-    const X = [], y = [];
-    
+    const normalized = data.map((x) => (x - this.min) / (this.max - this.min));
+    const X = [],
+      y = [];
+
     for (let i = 0; i < normalized.length - this.seqLength; i++) {
       X.push(normalized.slice(i, i + this.seqLength));
       y.push(normalized[i + this.seqLength]);
     }
-    
+
     // FORENSIC FIX: Memory safety for evaluation
     const loss = tf.tidy(() => {
       const xs = tf.tensor3d(X, [X.length, this.seqLength, 1]);
@@ -194,7 +206,7 @@ export class TimeSeriesAnalyzer {
       const evalResult = this.model.evaluate(xs, ys);
       return evalResult.dataSync()[0];
     });
-    
+
     return Math.max(0, 1 - loss); // Pseudo accuracy bound
   }
 
@@ -204,7 +216,7 @@ export class TimeSeriesAnalyzer {
         fs.mkdirSync(this.modelPath, { recursive: true });
       }
       await this.model.save(`file://${this.modelPath}`);
-      
+
       // FORENSIC FIX: Persist scalers to prevent Amnesia State on reboot
       const scalers = { min: this.min, max: this.max };
       fs.writeFileSync(`${this.modelPath}/scalers.json`, JSON.stringify(scalers));
@@ -213,9 +225,12 @@ export class TimeSeriesAnalyzer {
   }
 
   async loadModel() {
-    if (fs.existsSync(`${this.modelPath}/model.json`) && fs.existsSync(`${this.modelPath}/scalers.json`)) {
+    if (
+      fs.existsSync(`${this.modelPath}/model.json`) &&
+      fs.existsSync(`${this.modelPath}/scalers.json`)
+    ) {
       this.model = await tf.loadLayersModel(`file://${this.modelPath}/model.json`);
-      
+
       const scalers = JSON.parse(fs.readFileSync(`${this.modelPath}/scalers.json`, 'utf8'));
       this.min = scalers.min;
       this.max = scalers.max;

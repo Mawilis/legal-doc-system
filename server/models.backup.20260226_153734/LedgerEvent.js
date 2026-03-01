@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 
 ███████╗██╗   ██╗███████╗███████╗████████╗██╗  ██╗███████╗████████╗    ███████╗██╗    ██╗██╗      ███████╗██╗   ██╗    ███████╗██╗  ██╗██╗███████╗██╗ ██████╗ ███╗   ██╗████████╗
 ██╔════╝██║   ██║██╔════╝██╔════╝╚══██╔══╝██║  ██║██╔════╝╚══██╔══╝    ██╔════╝██║    ██║██║      ██╔════╝╚██╗ ██╔╝    ██╔════╝██║  ██║██║██╔════╝██║██╔═══██╗████╗  ██║╚══██╔══╝
@@ -117,7 +115,7 @@ const QuantumLedgerEncryption = {
   key: Buffer.from(process.env.LEDGER_ENCRYPTION_KEY, 'hex'),
   iv: Buffer.from(
     process.env.LEDGER_ENCRYPTION_IV || crypto.randomBytes(12).toString('hex'),
-    'hex',
+    'hex'
   ),
 
   /*
@@ -578,7 +576,7 @@ const ledgerEventSchema = new mongoose.Schema(
     id: false,
     collection: 'quantum_ledger_events',
     autoIndex: process.env.NODE_ENV !== 'production',
-  },
+  }
 );
 
 // =============================================================================
@@ -595,7 +593,10 @@ ledgerEventSchema.index({ tenantId: 1, sarsPeriod: 1, accountType: 1 });
 ledgerEventSchema.index({ bankReference: 1, tenantId: 1 });
 ledgerEventSchema.index({ narrativeCode: 1, tenantId: 1 });
 ledgerEventSchema.index({
-  tenantId: 1, createdAt: -1, type: 1, accountType: 1,
+  tenantId: 1,
+  createdAt: -1,
+  type: 1,
+  accountType: 1,
 });
 ledgerEventSchema.index({ tenantId: 1, clearedAt: -1, isReconciled: 1 });
 ledgerEventSchema.index({ tenantId: 1, subAccount: 1, financialYear: 1 });
@@ -639,9 +640,9 @@ ledgerEventSchema.pre('save', function (next) {
 
   // Calculate scheduled deletion for POPIA compliance
   if (
-    this.popiaCompliance
-    && this.popiaCompliance.retentionPeriod
-    && !this.popiaCompliance.scheduledDeletion
+    this.popiaCompliance &&
+    this.popiaCompliance.retentionPeriod &&
+    !this.popiaCompliance.scheduledDeletion
   ) {
     const deletionDate = new Date(this.createdAt || new Date());
     deletionDate.setMonth(deletionDate.getMonth() + this.popiaCompliance.retentionPeriod);
@@ -662,8 +663,8 @@ ledgerEventSchema.pre('save', function (next) {
     if (unauthorizedUpdates.length > 0) {
       return next(
         new Error(
-          `Ledger entries are immutable. Attempted to modify: ${unauthorizedUpdates.join(', ')}`,
-        ),
+          `Ledger entries are immutable. Attempted to modify: ${unauthorizedUpdates.join(', ')}`
+        )
       );
     }
   }
@@ -802,7 +803,7 @@ ledgerEventSchema.methods.generateSecurityContext = function () {
           action: 'CREATED',
           timestamp: new Date(),
           amount: this.amountValue,
-        }),
+        })
       )
       .digest('hex'),
   });
@@ -815,7 +816,7 @@ ledgerEventSchema.methods.generateSecurityContext = function () {
 ledgerEventSchema.methods.markReconciled = async function (
   bankReference,
   userId,
-  clearedDate = new Date(),
+  clearedDate = new Date()
 ) {
   if (this.isReconciled) {
     throw new Error('Transaction already reconciled');
@@ -842,7 +843,7 @@ ledgerEventSchema.methods.markReconciled = async function (
           action: 'RECONCILED',
           timestamp: new Date(),
           bankReference,
-        }),
+        })
       )
       .digest('hex'),
   });
@@ -894,7 +895,7 @@ ledgerEventSchema.statics.getBalance = async function (
   tenantId,
   accountType,
   subAccount = null,
-  asOfDate = new Date(),
+  asOfDate = new Date()
 ) {
   const matchQuery = {
     tenantId: new mongoose.Types.ObjectId(tenantId),

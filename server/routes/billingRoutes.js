@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ BILLING ROUTES - INVESTOR-GRADE MODULE                        ║
   ║ 92% cost reduction | R4.8B risk elimination | 94% margins     ║
@@ -62,11 +62,11 @@
  * }
  */
 
-import express from "express";
+import express from 'express';
 import { body, query, param, validationResult } from 'express-validator.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 
 // WILSY OS CORE IMPORTS
 import { tenantGuard } from '../middleware/tenantGuard.js';

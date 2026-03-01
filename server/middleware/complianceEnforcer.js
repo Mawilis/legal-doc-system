@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env node */
+#!/* eslint-env node */
 /* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ QUANTUM COMPLIANCE ENFORCER - INVESTOR-GRADE MODULE                         ║
   ║ 99.99% uptime | SA Legal Framework | Zero-trust enforcement                 ║
@@ -128,7 +126,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(
-      `[QUANTUM FAILURE] Missing ${envVar} in .env vault. Compliance enforcement cannot ensure legal sanctity.`,
+      `[QUANTUM FAILURE] Missing ${envVar} in .env vault. Compliance enforcement cannot ensure legal sanctity.`
     );
   }
 });
@@ -407,7 +405,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       // 2. Initialize Bull queue for distributed enforcement
       this.blockedRequestsQueue = new Bull(
         process.env.ENFORCEMENT_QUEUE_NAME || 'compliance-enforcement',
-        process.env.REDIS_URL,
+        process.env.REDIS_URL
       );
 
       // 3. Initialize encryption engine
@@ -596,8 +594,8 @@ class QuantumComplianceEnforcer extends EventEmitter {
     if (this.circuitState === 'OPEN') {
       const now = Date.now();
       if (
-        this.lastFailureTime
-        && now - this.lastFailureTime > ENFORCEMENT_CONFIG.TIMEOUTS.CIRCUIT_BREAKER_RESET
+        this.lastFailureTime &&
+        now - this.lastFailureTime > ENFORCEMENT_CONFIG.TIMEOUTS.CIRCUIT_BREAKER_RESET
       ) {
         this.circuitState = 'HALF_OPEN';
       } else {
@@ -638,7 +636,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       const enforcementActions = await this._determineEnhancedEnforcementActions(
         complianceData,
         req,
-        threatAssessment,
+        threatAssessment
       );
 
       // Execute enforcement with distributed processing
@@ -646,7 +644,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
         enforcementActions,
         req,
         res,
-        enforcementId,
+        enforcementId
       );
 
       // Apply modifications if any
@@ -707,7 +705,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
           const statuteActions = await this._getEnhancedStatuteEnforcementActions(
             statute,
             validation,
-            req,
+            req
           );
           actions.push(...statuteActions);
         }
@@ -782,7 +780,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       case 'COMPANIES_ACT': {
         const companiesActions = await this._getEnhancedCompaniesActEnforcementActions(
           validation,
-          req,
+          req
         );
         actions.push(...companiesActions);
         break;
@@ -800,7 +798,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
       case 'CYBERCRIMES_ACT': {
         const cyberActions = await this._getEnhancedCybercrimesActEnforcementActions(
           validation,
-          req,
+          req
         );
         actions.push(...cyberActions);
         break;
@@ -973,8 +971,8 @@ class QuantumComplianceEnforcer extends EventEmitter {
 
     // KYC verification
     if (
-      !details.kycVerified
-      && details.transactionAmount > this.enforcementRules.FICA.kycThreshold
+      !details.kycVerified &&
+      details.transactionAmount > this.enforcementRules.FICA.kycThreshold
     ) {
       actions.push({
         type: ENFORCEMENT_LEVELS.BLOCK,
@@ -1003,8 +1001,8 @@ class QuantumComplianceEnforcer extends EventEmitter {
 
     // Suspicious transaction reporting
     if (
-      details.suspiciousActivity
-      && details.transactionAmount > this.enforcementRules.FICA.reportingThreshold
+      details.suspiciousActivity &&
+      details.transactionAmount > this.enforcementRules.FICA.reportingThreshold
     ) {
       actions.push({
         type: ENFORCEMENT_LEVELS.ESCALATE,
@@ -1116,8 +1114,8 @@ class QuantumComplianceEnforcer extends EventEmitter {
 
     // Cooling-off period
     if (
-      details.directMarketing
-      && details.coolingOffPeriod < this.enforcementRules.CPA.coolingOffPeriod
+      details.directMarketing &&
+      details.coolingOffPeriod < this.enforcementRules.CPA.coolingOffPeriod
     ) {
       actions.push({
         type: ENFORCEMENT_LEVELS.MODIFY,
@@ -1322,7 +1320,7 @@ class QuantumComplianceEnforcer extends EventEmitter {
           {
             jobId: `${enforcementId}_${action.action}`,
             timeout: ENFORCEMENT_CONFIG.TIMEOUTS.MODIFICATION_TIMEOUT,
-          },
+          }
         );
 
         // Process action with timeout protection
@@ -2067,17 +2065,19 @@ function getEnhancedEnforcementStats() {
     jurisdiction: enforcerInstance.enforcementRules.GLOBAL.jurisdiction,
     dataResidency: enforcerInstance.enforcementRules.GLOBAL.dataResidency,
     // SA Legal Framework Status
-    saStatutes: Object.keys(enforcerInstance.enforcementRules).filter((k) => [
-      'POPIA',
-      'PAIA',
-      'FICA',
-      'COMPANIES_ACT',
-      'ECT_ACT',
-      'CPA',
-      'CYBERCRIMES_ACT',
-      'SARS',
-      'PEPUDA',
-    ].includes(k)),
+    saStatutes: Object.keys(enforcerInstance.enforcementRules).filter((k) =>
+      [
+        'POPIA',
+        'PAIA',
+        'FICA',
+        'COMPANIES_ACT',
+        'ECT_ACT',
+        'CPA',
+        'CYBERCRIMES_ACT',
+        'SARS',
+        'PEPUDA',
+      ].includes(k)
+    ),
     // Pan-African readiness
     panAfricanReady: Object.keys(ENFORCEMENT_CONFIG.COMPLIANCE.PAN_AFRICAN_MODES),
     timestamp: new Date().toISOString(),
@@ -2271,7 +2271,7 @@ if (process.env.NODE_ENV === 'test') {
             { id: 'test-req' },
             { set: () => {}, status: () => ({ json: () => {} }) },
             () => {},
-            'test-enf-id',
+            'test-enf-id'
           );
         }
 

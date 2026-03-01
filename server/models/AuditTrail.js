@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-#!/bin/bash
+#!/usr/bin/env node/bin/bash
 /* eslint-disable no-console, max-len */
 /*
 ╔══════════════════════════════════════════════════════════════════════════════╗

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/trackingRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Tracking Gateway (Tenant-Scoped). Collects telemetry and UX metrics (e.g., "User clicked Help button").
@@ -43,8 +41,7 @@ const eventSchema = {
 };
 
 const batchEventSchema = {
-  events: Joi.array().items(eventSchema).min(1).max(100)
-    .required(),
+  events: Joi.array().items(eventSchema).min(1).max(100).required(),
 };
 
 // ------------------------------
@@ -74,7 +71,7 @@ router.post(
       console.error('Tracking Error:', err.message);
       res.status(200).json({ status: 'ignored' });
     }
-  },
+  }
 );
 
 /*
@@ -90,12 +87,13 @@ router.post(
   async (req, res, next) => {
     try {
       const result = await trackingController.trackBatch(req, res);
-      if (!res.headersSent && result) res.status(201).json({ status: 'success', count: result.count });
+      if (!res.headersSent && result)
+        res.status(201).json({ status: 'success', count: result.count });
     } catch (err) {
       console.error('Batch Tracking Error:', err.message);
       res.status(200).json({ status: 'ignored' });
     }
-  },
+  }
 );
 
 export default router;

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/jobs/bundleWorker.js
  * STATUS: PRODUCTION-READY | EPITOME | FORENSIC STITCHING
  * -----------------------------------------------------------------------------
@@ -57,9 +55,8 @@ const DEFAULTS = {
   outputBaseDir: path.join(__dirname, '../../public/bundles'),
   // Avoid regex literal containing an escaped forward slash to satisfy linters.
   // Use two simple replaces instead of a character class with an escaped slash.
-  filenameTemplate: ({ caseNumber }) => `BUNDLE_${String(caseNumber)
-    .replace(/\s+/g, '_')
-    .replace(/\//g, '_')}_${Date.now()}.pdf`,
+  filenameTemplate: ({ caseNumber }) =>
+    `BUNDLE_${String(caseNumber).replace(/\s+/g, '_').replace(/\//g, '_')}_${Date.now()}.pdf`,
   stamp: {
     fontSize: 9,
     marginRight: 40,
@@ -79,8 +76,9 @@ async function ensureDir(dir) {
 
 async function downloadToLocal(storageKey) {
   if (!storageKey) throw new Error('storageKey required');
-  const isLocal = typeof storageKey === 'string'
-    && (storageKey.startsWith('/') || storageKey.startsWith('./') || /^[A-Za-z]:\\/.test(storageKey));
+  const isLocal =
+    typeof storageKey === 'string' &&
+    (storageKey.startsWith('/') || storageKey.startsWith('./') || /^[A-Za-z]:\\/.test(storageKey));
   if (isLocal) {
     await fsp.access(storageKey, fs.constants.R_OK);
     return storageKey;
@@ -106,20 +104,20 @@ async function safeUnlink(p) {
    ------------------------- */
 
 async function generateCourtBundle(opts = {}) {
-  const {
-    tenantId, caseNumber, documentIds = [], title = '', config = {},
-  } = opts;
+  const { tenantId, caseNumber, documentIds = [], title = '', config = {} } = opts;
   if (!tenantId) throw new Error('tenantId is required');
   if (!caseNumber) throw new Error('caseNumber is required');
-  if (!Array.isArray(documentIds) || documentIds.length === 0) throw new Error('documentIds required');
+  if (!Array.isArray(documentIds) || documentIds.length === 0)
+    throw new Error('documentIds required');
 
   const cfg = { ...DEFAULTS, ...config };
   const outDir = path.join(cfg.outputBaseDir, String(tenantId));
   await ensureDir(outDir);
 
-  const fileName = typeof cfg.filenameTemplate === 'function'
-    ? cfg.filenameTemplate({ caseNumber, title })
-    : cfg.filenameTemplate;
+  const fileName =
+    typeof cfg.filenameTemplate === 'function'
+      ? cfg.filenameTemplate({ caseNumber, title })
+      : cfg.filenameTemplate;
   const filePath = path.join(outDir, fileName);
 
   const masterDoc = await PDFDocument.create();
@@ -171,7 +169,7 @@ async function generateCourtBundle(opts = {}) {
         const { width, height } = page.getSize();
         const stampText = `CASE: ${caseNumber} | BATES: ${String(globalPageCounter).padStart(
           6,
-          '0',
+          '0'
         )}`;
         const textWidth = helveticaFont.widthOfTextAtSize(stampText, cfg.stamp.fontSize);
         const x = Math.max(10, width - cfg.stamp.marginRight - textWidth);
@@ -225,12 +223,8 @@ async function generateCourtBundle(opts = {}) {
    ------------------------- */
 
 async function bundleProcessor(payload = {}, ctx = {}) {
-  const {
-    tenantId, caseNumber, documentIds, title,
-  } = payload || {};
-  const {
-    job, meta = {}, jobDocId, updateProgress,
-  } = ctx || {};
+  const { tenantId, caseNumber, documentIds, title } = payload || {};
+  const { job, meta = {}, jobDocId, updateProgress } = ctx || {};
   const correlationId = meta?.correlationId || (job && job.id) || uuidv4();
 
   const setProgress = async (p, patch = {}) => {
@@ -257,7 +251,10 @@ async function bundleProcessor(payload = {}, ctx = {}) {
 
   try {
     const result = await generateCourtBundle({
-      tenantId, caseNumber, documentIds, title,
+      tenantId,
+      caseNumber,
+      documentIds,
+      title,
     });
 
     await setProgress(100, { status: 'completed', result });
@@ -345,7 +342,7 @@ function registerWithJobService(opts = {}) {
 
       return bundleProcessor(payload, { ...ctx, updateProgress });
     },
-    { concurrency, metricsClient },
+    { concurrency, metricsClient }
   );
 }
 
@@ -371,10 +368,13 @@ function registerBullMQWorker({ queueName = 'bundleQueue', connection, concurren
       };
 
       return bundleProcessor(payload, {
-        job, meta, jobDocId, updateProgress,
+        job,
+        meta,
+        jobDocId,
+        updateProgress,
       });
     },
-    { connection, concurrency },
+    { connection, concurrency }
   );
 
   worker.on('failed', (job, err) => {

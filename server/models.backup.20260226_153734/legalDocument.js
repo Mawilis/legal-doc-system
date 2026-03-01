@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ███████╗ ██████╗ ██████╗ ███████╗███╗   ██╗███████╗
  * ██╔════╝██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝
  * ███████╗██║   ██║██████╔╝█████╗  ██╔██╗ ██║███████╗
@@ -293,7 +291,7 @@ const LegalDocumentSchema = new Schema(
     },
     toJSON: { virtuals: true, transform: hideSensitiveData },
     toObject: { virtuals: true, transform: hideSensitiveData },
-  },
+  }
 );
 
 // ====================================================================================
@@ -318,20 +316,20 @@ LegalDocumentSchema.pre('save', async function (next) {
     await validationSchema.validateAsync({ title: this.title, fileHash: this.fileHash });
     // Compliance Omniscience: Auto-calculate destruction date
     if (
-      this.isNew
-      || this.isModified('retentionPolicy.retentionStartDate')
-      || this.isModified('retentionPolicy.durationYears')
+      this.isNew ||
+      this.isModified('retentionPolicy.retentionStartDate') ||
+      this.isModified('retentionPolicy.durationYears')
     ) {
       const startDate = new Date(this.retentionPolicy.retentionStartDate);
       this.retentionPolicy.scheduledDestructionDate = new Date(
-        startDate.setFullYear(startDate.getFullYear() + this.retentionPolicy.durationYears),
+        startDate.setFullYear(startDate.getFullYear() + this.retentionPolicy.durationYears)
       );
     }
 
     // Quantum Shield: If personal info identified but no consent, prevent save
     if (
-      this.popiaCompliance.personalInformationIdentified
-      && !this.popiaCompliance.dataSubjectConsentObtained
+      this.popiaCompliance.personalInformationIdentified &&
+      !this.popiaCompliance.dataSubjectConsentObtained
     ) {
       throw new Error('POPIA_VIOLATION: Personal information identified but consent not obtained.');
     }
@@ -367,7 +365,7 @@ LegalDocumentSchema.post('save', (doc, next) => {
  */
 LegalDocumentSchema.virtual('isSubjectToPOPIA').get(function () {
   return this.applicableRegulations.some(
-    (reg) => reg.code === 'POPIA' && reg.jurisdiction === 'ZA',
+    (reg) => reg.code === 'POPIA' && reg.jurisdiction === 'ZA'
   );
 });
 
@@ -389,7 +387,7 @@ LegalDocumentSchema.virtual('daysUntilDestruction').get(function () {
 LegalDocumentSchema.methods.grantAccess = function (userId, accessLevel = 'VIEW') {
   // Quantum Security: Check for duplicate grants
   const alreadyGranted = this.accessControlMatrix.authorizedUsers.some(
-    (au) => au.userId.toString() === userId.toString(),
+    (au) => au.userId.toString() === userId.toString()
   );
   if (!alreadyGranted) {
     this.accessControlMatrix.authorizedUsers.push({

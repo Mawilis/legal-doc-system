@@ -1,9 +1,13 @@
-import crypto from 'crypto';
+#!import crypto from 'crypto';
 
 class DocumentEncryption {
   constructor() {
     this.algorithm = 'aes-256-gcm';
-    this.key = crypto.scryptSync(process.env.DOC_ENCRYPTION_SECRET || 'wilsy_forensic_secret_key_2026', 'salt', 32);
+    this.key = crypto.scryptSync(
+      process.env.DOC_ENCRYPTION_SECRET || 'wilsy_forensic_secret_key_2026',
+      'salt',
+      32
+    );
   }
 
   async encryptDocument(buffer) {
@@ -11,7 +15,7 @@ class DocumentEncryption {
     const cipher = crypto.createCipheriv(this.algorithm, this.key, iv);
     const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
     const tag = cipher.getAuthTag();
-    
+
     // Bundle IV and Tag with the data for forensic recovery
     return Buffer.concat([iv, tag, encrypted]);
   }

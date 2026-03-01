@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * QUANTUM NEXUS: IMMUTABLE COMPLIANCE EVENT LEDGER
  * ============================================================================
@@ -99,7 +97,10 @@ const EVENT_SEVERITY = Object.freeze({
     reportTo: 'Regulator Required',
   },
   HIGH: {
-    level: 1, label: 'High', response: 'Urgent (4 hours)', reportTo: 'Information Officer',
+    level: 1,
+    label: 'High',
+    response: 'Urgent (4 hours)',
+    reportTo: 'Information Officer',
   },
   MEDIUM: {
     level: 2,
@@ -108,10 +109,16 @@ const EVENT_SEVERITY = Object.freeze({
     reportTo: 'Compliance Team',
   },
   LOW: {
-    level: 3, label: 'Low', response: 'Standard (7 days)', reportTo: 'System Log',
+    level: 3,
+    label: 'Low',
+    response: 'Standard (7 days)',
+    reportTo: 'System Log',
   },
   INFO: {
-    level: 4, label: 'Informational', response: 'Monitoring', reportTo: 'Audit Trail',
+    level: 4,
+    label: 'Informational',
+    response: 'Monitoring',
+    reportTo: 'Audit Trail',
   },
 });
 
@@ -461,7 +468,7 @@ const complianceEventSchema = new mongoose.Schema(
     toObject: {
       virtuals: true,
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -508,8 +515,8 @@ complianceEventSchema.virtual('severityInfo').get(function () {
  */
 complianceEventSchema.virtual('isRegulatorReportable').get(function () {
   return (
-    this.severity === 'CRITICAL'
-    || (this.complianceCategory === 'POPIA' && this.eventType.includes('Breach'))
+    this.severity === 'CRITICAL' ||
+    (this.complianceCategory === 'POPIA' && this.eventType.includes('Breach'))
   );
 });
 
@@ -594,7 +601,7 @@ complianceEventSchema.methods.encryptSensitiveDetails = function () {
     if (this.details[field]) {
       this.details[field] = CryptoJS.AES.encrypt(
         String(this.details[field]),
-        encryptionKey,
+        encryptionKey
       ).toString();
     }
   });
@@ -694,7 +701,7 @@ complianceEventSchema.statics.findByCategoryAndDate = function (category, startD
  */
 complianceEventSchema.statics.generateResourceAuditTrail = async function (
   resourceType,
-  resourceId,
+  resourceId
 ) {
   const events = await this.find({
     resourceType,
@@ -779,24 +786,18 @@ const complianceEventJoiSchema = joi.object({
         'Event type may only contain alphanumerics, dots, dashes, and underscores',
     }),
 
-  userId: joi.string().hex().length(24).optional()
-    .label('User ID')
-    .messages({
-      'string.hex': 'User ID must be a valid MongoDB ObjectId',
-      'string.length': 'User ID must be exactly 24 hex characters',
-    }),
+  userId: joi.string().hex().length(24).optional().label('User ID').messages({
+    'string.hex': 'User ID must be a valid MongoDB ObjectId',
+    'string.length': 'User ID must be exactly 24 hex characters',
+  }),
 
-  resourceId: joi.string().hex().length(24).optional()
-    .label('Resource ID'),
+  resourceId: joi.string().hex().length(24).optional().label('Resource ID'),
 
-  resourceType: joi.string().trim().max(50).optional()
-    .label('Resource Type'),
+  resourceType: joi.string().trim().max(50).optional().label('Resource Type'),
 
-  description: joi.string().trim().max(1000).required()
-    .label('Description')
-    .messages({
-      'string.max': 'Description cannot exceed 1000 characters for database optimization',
-    }),
+  description: joi.string().trim().max(1000).required().label('Description').messages({
+    'string.max': 'Description cannot exceed 1000 characters for database optimization',
+  }),
 
   details: joi.object().optional().label('Event Details'),
 
@@ -806,10 +807,9 @@ const complianceEventJoiSchema = joi.object({
     .default('INFO')
     .label('Severity Level'),
 
-  userIp: joi.string().ip().optional().label('User IP Address')
-    .messages({
-      'string.ip': 'User IP must be a valid IP address',
-    }),
+  userIp: joi.string().ip().optional().label('User IP Address').messages({
+    'string.ip': 'User IP must be a valid IP address',
+  }),
 
   eventTimestamp: joi
     .date()

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  HYPERLEDGER FABRIC QUANTUM CLIENT - IMMUTABLE AUDIT TRAIL NEXUS                        ║
  * ║  Cosmic Purpose: Forge unbreakable blockchain bastions for legal sanctity,              ║
@@ -102,8 +100,8 @@ const validateHyperledgerEnvironment = () => {
   if (missingVars.length > 0) {
     throw new Error(
       `QUANTUM BREACH: Missing Hyperledger Fabric environment variables: ${missingVars.join(
-        ', ',
-      )}\n` + 'Please add these to your .env file with appropriate values.',
+        ', '
+      )}\n` + 'Please add these to your .env file with appropriate values.'
     );
   }
 
@@ -317,9 +315,9 @@ class FabricConnectionPool {
       // QUANTUM SECURITY: Configure TLS options
       const tlsInfo = networkConfig.client.tlsEnable
         ? {
-          trustedRoots: [await fs.readFile(process.env.HLF_TLS_ROOT_CERT_PATH || '', 'utf8')],
-          verify: process.env.NODE_ENV === 'production',
-        }
+            trustedRoots: [await fs.readFile(process.env.HLF_TLS_ROOT_CERT_PATH || '', 'utf8')],
+            verify: process.env.NODE_ENV === 'production',
+          }
         : undefined;
 
       // Create gateway connection
@@ -364,7 +362,7 @@ class FabricConnectionPool {
       console.error('❌ Failed to establish Hyperledger Fabric connection:', error);
       throw new NetworkConnectionError(
         `Failed to connect to Hyperledger Fabric network: ${error.message}`,
-        error,
+        error
       );
     }
   }
@@ -399,7 +397,7 @@ class FabricConnectionPool {
       await connection.contract.evaluateTransaction(
         HLF_CONSTANTS.CONTRACT_FUNCTIONS.QUERY_RECORD,
         'health_check',
-        Date.now().toString(),
+        Date.now().toString()
       );
 
       return {
@@ -498,7 +496,7 @@ class HyperledgerClient {
     if (transactionData.sensitiveFields) {
       transactionPayload.encryptedData = this.encryptSensitiveData(
         transactionData.sensitiveFields,
-        process.env.HLF_DATA_ENCRYPTION_KEY,
+        process.env.HLF_DATA_ENCRYPTION_KEY
       );
     }
 
@@ -511,7 +509,7 @@ class HyperledgerClient {
 
         // Submit transaction to chaincode
         const transaction = connection.contract.createTransaction(
-          HLF_CONSTANTS.CONTRACT_FUNCTIONS.CREATE_RECORD,
+          HLF_CONSTANTS.CONTRACT_FUNCTIONS.CREATE_RECORD
         );
 
         // Set transaction timeout
@@ -524,7 +522,7 @@ class HyperledgerClient {
 
         const result = await transaction.submit(
           transactionData.recordType || 'GENERIC_RECORD',
-          payloadString,
+          payloadString
         );
 
         const endTime = Date.now();
@@ -533,8 +531,9 @@ class HyperledgerClient {
         // Update metrics
         this.metrics.transactionsSubmitted++;
         this.metrics.transactionsSuccessful++;
-        this.metrics.averageLatency = (this.metrics.averageLatency * (this.metrics.transactionsSuccessful - 1) + latency)
-          / this.metrics.transactionsSuccessful;
+        this.metrics.averageLatency =
+          (this.metrics.averageLatency * (this.metrics.transactionsSuccessful - 1) + latency) /
+          this.metrics.transactionsSuccessful;
 
         // Parse result
         const resultObj = JSON.parse(result.toString());
@@ -557,7 +556,7 @@ class HyperledgerClient {
 
         console.warn(
           `⚠️ Transaction ${transactionId} failed (attempt ${retryCount}):`,
-          error.message,
+          error.message
         );
 
         if (retryCount < HLF_CONSTANTS.MAX_RETRIES) {
@@ -582,7 +581,7 @@ class HyperledgerClient {
     throw new TransactionError(
       `Transaction failed after ${HLF_CONSTANTS.MAX_RETRIES} retries. ${fallbackResult.message}`,
       transactionId,
-      lastError,
+      lastError
     );
   }
 
@@ -597,7 +596,7 @@ class HyperledgerClient {
       const result = await connection.contract.evaluateTransaction(
         HLF_CONSTANTS.CONTRACT_FUNCTIONS.QUERY_RECORD,
         recordType,
-        recordId,
+        recordId
       );
 
       const record = JSON.parse(result.toString());
@@ -614,7 +613,7 @@ class HyperledgerClient {
       if (record.encryptedData) {
         record.decryptedData = this.decryptSensitiveData(
           record.encryptedData,
-          process.env.HLF_DATA_ENCRYPTION_KEY,
+          process.env.HLF_DATA_ENCRYPTION_KEY
         );
       }
 
@@ -628,7 +627,7 @@ class HyperledgerClient {
       throw new ChaincodeError(
         `Failed to query record ${recordId} of type ${recordType}: ${error.message}`,
         HLF_CONSTANTS.CONTRACT_FUNCTIONS.QUERY_RECORD,
-        error,
+        error
       );
     }
   }
@@ -644,7 +643,7 @@ class HyperledgerClient {
       const result = await connection.contract.evaluateTransaction(
         HLF_CONSTANTS.CONTRACT_FUNCTIONS.QUERY_HISTORY,
         recordType,
-        recordId,
+        recordId
       );
 
       const history = JSON.parse(result.toString());
@@ -655,7 +654,7 @@ class HyperledgerClient {
           const isValid = this.verifyMerkleProof(entry);
           if (!isValid) {
             console.warn(
-              `⚠️ Merkle proof verification failed for history entry: ${entry.transactionId}`,
+              `⚠️ Merkle proof verification failed for history entry: ${entry.transactionId}`
             );
           }
         }
@@ -671,7 +670,7 @@ class HyperledgerClient {
       throw new ChaincodeError(
         `Failed to query history for ${recordId}: ${error.message}`,
         HLF_CONSTANTS.CONTRACT_FUNCTIONS.QUERY_HISTORY,
-        error,
+        error
       );
     }
   }
@@ -687,7 +686,7 @@ class HyperledgerClient {
       const result = await connection.contract.evaluateTransaction(
         HLF_CONSTANTS.CONTRACT_FUNCTIONS.VERIFY_RECORD,
         recordType,
-        recordId,
+        recordId
       );
 
       const verification = JSON.parse(result.toString());
@@ -714,7 +713,7 @@ class HyperledgerClient {
       throw new ChaincodeError(
         `Failed to verify record ${recordId}: ${error.message}`,
         HLF_CONSTANTS.CONTRACT_FUNCTIONS.VERIFY_RECORD,
-        error,
+        error
       );
     }
   }
@@ -746,7 +745,7 @@ class HyperledgerClient {
     if (dataSize > 1048576) {
       throw new ValidationError(
         `Transaction data exceeds maximum size of 1MB (actual: ${dataSize} bytes)`,
-        'data',
+        'data'
       );
     }
 
@@ -806,7 +805,7 @@ class HyperledgerClient {
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       Buffer.from(encryptionKey, 'hex'),
-      Buffer.from(encryptedRecord.iv, 'hex'),
+      Buffer.from(encryptedRecord.iv, 'hex')
     );
 
     decipher.setAuthTag(Buffer.from(encryptedRecord.authTag, 'hex'));
@@ -921,7 +920,7 @@ class HyperledgerClient {
     // Generate local Merkle proof
     const localMerkleLeaf = this.generateMerkleLeaf(
       transactionPayload.data,
-      transactionPayload.transactionId,
+      transactionPayload.transactionId
     );
 
     // Store in local fallback database (implementation depends on your setup)
@@ -1003,13 +1002,14 @@ class HyperledgerClient {
 const hyperledgerClient = new HyperledgerClient();
 
 // Export the main function expected by consent service
-const logToBlockchain = async (data) => await hyperledgerClient.submitTransaction({
-  recordType: data.eventType || 'AUDIT_TRAIL',
-  data,
-  sourceSystem: 'WILSY_OS_CONSENT_SERVICE',
-  jurisdiction: data.jurisdiction || 'ZA',
-  complianceMarkers: data.complianceMarkers || ['POPIA', 'GDPR'],
-});
+const logToBlockchain = async (data) =>
+  await hyperledgerClient.submitTransaction({
+    recordType: data.eventType || 'AUDIT_TRAIL',
+    data,
+    sourceSystem: 'WILSY_OS_CONSENT_SERVICE',
+    jurisdiction: data.jurisdiction || 'ZA',
+    complianceMarkers: data.complianceMarkers || ['POPIA', 'GDPR'],
+  });
 
 // Export comprehensive API
 export default {

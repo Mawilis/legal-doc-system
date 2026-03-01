@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/middleware/roles.js
  * PATH: server/middleware/roles.js
  * STATUS: PRODUCTION-READY | BIBLICAL | PERIMETER GUARD
@@ -64,7 +62,9 @@ const isTokenRevoked = async (token) => {
  */
 exports.requireRole = (allowedRoles = []) => {
   // Normalize roles to uppercase for case-insensitive biblical enforcement
-  const targetRoles = (Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]).map((r) => String(r).toUpperCase());
+  const targetRoles = (Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]).map((r) =>
+    String(r).toUpperCase()
+  );
 
   return async (req, res, next) => {
     try {
@@ -89,7 +89,8 @@ exports.requireRole = (allowedRoles = []) => {
       try {
         decoded = jwt.verify(token, secret);
       } catch (err) {
-        const message = err.name === 'TokenExpiredError' ? 'Session Expired.' : 'Invalid Signature.';
+        const message =
+          err.name === 'TokenExpiredError' ? 'Session Expired.' : 'Invalid Signature.';
         throw new CustomError(message, 401);
       }
 
@@ -113,7 +114,7 @@ exports.requireRole = (allowedRoles = []) => {
       // Role Membership Check
       if (!targetRoles.includes(userRole)) {
         console.warn(
-          `🚨 SECURITY ALERT: Unauthorized access attempt by ${req.user.email} (Role: ${userRole})`,
+          `🚨 SECURITY ALERT: Unauthorized access attempt by ${req.user.email} (Role: ${userRole})`
         );
         throw new CustomError('Insufficient permissions for this sovereign resource.', 403);
       }

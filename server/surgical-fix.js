@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /*
  * ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -8,8 +8,8 @@
  */
 
 import { execSync } from 'child_process';
-import fs from "fs";
-import path from "fs";
+import fs from 'fs';
+import path from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -38,7 +38,7 @@ filesToFix.forEach((filePath) => {
       content = content.replace(/\/\*\/\s*([\n\r])/g, '/* */$1');
       content = content.replace(
         /\}\s+catch\s*\(\s*e\s*\)\s*\{\s*\/\*\/\s*\}/g,
-        '} catch (e) { /* ignore */ }',
+        '} catch (e) { /* ignore */ }'
       );
       content = content.replace(/\/\*\/\s*\}/g, '/* */ }');
 

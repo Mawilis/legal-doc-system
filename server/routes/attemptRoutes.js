@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/attemptRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Service Attempt Gateway (Tenant-Scoped). Manages the chain of evidence for "Attempts to Serve" legal documents.
@@ -92,7 +90,7 @@ router.post(
       err.code = 'ATTEMPT_LOG_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -118,7 +116,7 @@ router.get(
       err.code = 'ATTEMPT_HISTORY_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -149,7 +147,7 @@ router.delete(
       err.code = 'ATTEMPT_DELETE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

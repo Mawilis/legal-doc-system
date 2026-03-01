@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: GATEWAY CONFIGURATION - CENTRALIZED GATEWAY SETTINGS
  * ============================================================================
@@ -11,7 +11,7 @@
  */
 
 import dotenv from 'dotenv.js';
-import path from "path";
+import path from 'path';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });

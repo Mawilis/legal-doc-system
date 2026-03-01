@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ONBOARDING DOCUMENT MODEL - INVESTOR-GRADE ● FORENSIC ● PRODUCTION          ║
   ║ FICA Compliant | POPIA Compliant | Chain of Custody | Forensic Tracking    ║
   ║ Version: 4.0.1 - Complete - Static Methods Using .static()                  ║
@@ -297,7 +295,7 @@ const onboardingDocumentSchema = new mongoose.Schema(
               .update(
                 `${this.action}|${this.performedBy}|${this.timestamp.getTime()}|${
                   this.reason || ''
-                }|${this.correlationId || ''}`,
+                }|${this.correlationId || ''}`
               )
               .digest('hex');
           },
@@ -494,7 +492,7 @@ const onboardingDocumentSchema = new mongoose.Schema(
       },
       virtuals: true,
     },
-  },
+  }
 );
 
 // =================================================================================================================
@@ -529,18 +527,18 @@ onboardingDocumentSchema.virtual('isExpired').get(function () {
 
 onboardingDocumentSchema.virtual('isProcessed').get(function () {
   return (
-    this.processingStatus.virusScan.status === 'CLEAN'
-    && this.processingStatus.verification.status === 'VERIFIED'
+    this.processingStatus.virusScan.status === 'CLEAN' &&
+    this.processingStatus.verification.status === 'VERIFIED'
   );
 });
 
 onboardingDocumentSchema.virtual('needsReview').get(function () {
   return (
-    this.processingStatus.verification.status === 'MANUAL_REVIEW'
-    || this.processingStatus.fraudDetection.riskLevel === 'HIGH'
-    || this.processingStatus.fraudDetection.riskLevel === 'CRITICAL'
-    || this.auditFlags.suspicious === true
-    || this.auditFlags.flaggedForReview === true
+    this.processingStatus.verification.status === 'MANUAL_REVIEW' ||
+    this.processingStatus.fraudDetection.riskLevel === 'HIGH' ||
+    this.processingStatus.fraudDetection.riskLevel === 'CRITICAL' ||
+    this.auditFlags.suspicious === true ||
+    this.auditFlags.flaggedForReview === true
   );
 });
 
@@ -741,9 +739,9 @@ onboardingDocumentSchema.static(
           deletionReason: reason,
           deletionAuthorization: authorization,
         },
-      },
+      }
     );
-  },
+  }
 );
 
 // Generate document ID
@@ -823,7 +821,7 @@ onboardingDocumentSchema.method(
     this.metadata.updatedBy = performedBy;
 
     return this.save();
-  },
+  }
 );
 
 // Add to chain of custody
@@ -847,7 +845,7 @@ onboardingDocumentSchema.method(
       .update(
         `${entry.action}|${entry.performedBy}|${entry.timestamp.getTime()}|${entry.reason || ''}|${
           entry.correlationId
-        }`,
+        }`
       )
       .digest('hex');
 
@@ -856,7 +854,7 @@ onboardingDocumentSchema.method(
     this.metadata.updatedBy = performedBy;
 
     return this.save();
-  },
+  }
 );
 
 // Soft delete
@@ -872,7 +870,7 @@ onboardingDocumentSchema.method(
     await this.addToChainOfCustody('DELETED', deletedBy, { reason });
 
     return this.save();
-  },
+  }
 );
 
 // Restore document
@@ -904,7 +902,7 @@ onboardingDocumentSchema.method(
     });
 
     return this.save();
-  },
+  }
 );
 
 // Release legal hold

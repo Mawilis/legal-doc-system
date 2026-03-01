@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - COMPARABLE COMPANY MODEL v1.0                                  ║
   ║ [Valuation Multiples | Industry Benchmarks | Market Data]                ║

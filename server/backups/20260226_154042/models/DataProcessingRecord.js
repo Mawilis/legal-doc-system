@@ -1,4 +1,4 @@
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                     QUANTUM DATA PROCESSING RECORD NEXUS                            ║
  * ║  This celestial ledger immortalizes every quantum of data processing within Wilsy   ║

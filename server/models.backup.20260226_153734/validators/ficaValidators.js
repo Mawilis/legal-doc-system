@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ FICA VALIDATORS - INVESTOR-GRADE ● FORENSIC ● PRODUCTION                    ║
   ║ Financial Intelligence Centre Act 38 of 2001 Compliant                      ║
   ║ Version: 1.0.0 - PRODUCTION                                                 ║
@@ -14,7 +12,8 @@ const crypto = require('crypto');
 exports.validateSAIDNumber = (idNumber) => {
   if (!idNumber) throw new Error('ID number is required');
   const cleanId = idNumber.toString().replace(/\s+/g, '');
-  if (cleanId.length !== 13) throw new Error(`Invalid ID length: expected 13, got ${cleanId.length}`);
+  if (cleanId.length !== 13)
+    throw new Error(`Invalid ID length: expected 13, got ${cleanId.length}`);
   if (!/^\d+$/.test(cleanId)) throw new Error('ID must contain only digits');
 
   // Extract birth date
@@ -144,7 +143,8 @@ exports.validateIdentity = (identityType, identityNumber, countryOfIssue = null)
 
   if (identityType === 'SA_ID') {
     return exports.validateSAIDNumber(identityNumber);
-  } if (identityType === 'PASSPORT') {
+  }
+  if (identityType === 'PASSPORT') {
     if (!countryOfIssue) throw new Error('Country of issue required for passport');
     return exports.validatePassport(identityNumber, countryOfIssue);
   }

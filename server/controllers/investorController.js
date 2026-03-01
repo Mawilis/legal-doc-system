@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR CONTROLLER - FORENSIC GATEWAY WITH x-correlation-id TRACING                  ║
   ║ [Production Grade | POPIA Compliant | 100-Year Evidence Chain]                        ║
@@ -8,14 +8,14 @@
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/investorController.js
  * VERSION: 1.0.0-FORENSIC-INVESTOR
  * CREATED: 2026-02-25
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Forensic gateway for R240M annual revenue platform
  * • x-correlation-id tracing across entire request lifecycle
  * • POPIA §19-22 compliance with breach notification
  * • SHA256 hash chain for court-admissible evidence
  * • Multi-tenant isolation with tenant validation
- * 
+ *
  * INTEGRATION_MAP:
  * {
  *   "consumers": [
@@ -36,11 +36,14 @@
  * }
  */
 
-import { getInvestorDashboardData, getForensicReport } from '../services/investor/InvestorService.js';
+import {
+  getInvestorDashboardData,
+  getForensicReport,
+} from '../services/investor/InvestorService.js';
 import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../utils/auditLogger.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -61,11 +64,11 @@ function generateCorrelationId() {
  */
 function getCorrelationId(req) {
   const headerId = req.headers['x-correlation-id'];
-  
+
   if (headerId && /^[a-f0-9]{16,32}$/i.test(headerId)) {
     return headerId;
   }
-  
+
   return generateCorrelationId();
 }
 
@@ -80,7 +83,7 @@ function formatSuccess(data, correlationId) {
     success: true,
     forensicId: correlationId,
     timestamp: new Date().toISOString(),
-    data
+    data,
   };
 }
 
@@ -98,8 +101,8 @@ function formatError(error, correlationId) {
     error: {
       code: error.code || 'INTERNAL_ERROR',
       message: error.message || 'An unexpected error occurred',
-      ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-    }
+      ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
+    },
   };
 }
 
@@ -109,7 +112,7 @@ function formatError(error, correlationId) {
 
 /**
  * Handle investor dashboard requests with forensic logging
- * 
+ *
  * @param {Object} req - Express request
  * @param {Object} res - Express response
  * @returns {Promise<void>}
@@ -126,17 +129,21 @@ export const handleInvestorRequest = async (req, res) => {
     tenantId,
     userId,
     path: req.originalUrl,
-    method: req.method
+    method: req.method,
   });
 
   try {
     // Validate required headers
     if (!tenantId) {
       logger.warn('Missing tenant ID in request', { correlationId });
-      return res.status(400).json(formatError(
-        new Error('X-Tenant-ID header is required for multi-tenant isolation'),
-        correlationId
-      ));
+      return res
+        .status(400)
+        .json(
+          formatError(
+            new Error('X-Tenant-ID header is required for multi-tenant isolation'),
+            correlationId
+          )
+        );
     }
 
     // Prepare parameters for service
@@ -147,7 +154,7 @@ export const handleInvestorRequest = async (req, res) => {
       userId,
       ipAddress: req.ip || req.connection.remoteAddress,
       userAgent: req.get('user-agent'),
-      ...req.query
+      ...req.query,
     };
 
     // Call the forensic worker
@@ -168,12 +175,11 @@ export const handleInvestorRequest = async (req, res) => {
       tenantId,
       responseTime,
       sections: data.metadata?.sections,
-      chainPosition: data.metadata?.chainPosition
+      chainPosition: data.metadata?.chainPosition,
     });
 
     // Return success response
     res.status(200).json(formatSuccess(data, correlationId));
-
   } catch (err) {
     // Calculate error response time
     const responseTime = Date.now() - startTime;
@@ -185,7 +191,7 @@ export const handleInvestorRequest = async (req, res) => {
       userId,
       error: err.message,
       stack: err.stack,
-      responseTime
+      responseTime,
     });
 
     // Set forensic headers even on error
@@ -206,7 +212,7 @@ export const handleInvestorRequest = async (req, res) => {
 
 /**
  * Handle forensic report requests (view chain by correlation ID)
- * 
+ *
  * @param {Object} req - Express request
  * @param {Object} res - Express response
  * @returns {Promise<void>}
@@ -217,26 +223,24 @@ export const handleForensicReport = async (req, res) => {
 
   logger.info('InvestorController.handleForensicReport started', {
     correlationId,
-    targetCorrelationId
+    targetCorrelationId,
   });
 
   try {
     if (!targetCorrelationId) {
-      return res.status(400).json(formatError(
-        new Error('correlationId parameter is required'),
-        correlationId
-      ));
+      return res
+        .status(400)
+        .json(formatError(new Error('correlationId parameter is required'), correlationId));
     }
 
     const report = await getForensicReport(targetCorrelationId);
 
     res.setHeader('x-correlation-id', correlationId);
     res.status(200).json(formatSuccess(report, correlationId));
-
   } catch (err) {
     logger.error('InvestorController.handleForensicReport failed', {
       correlationId,
-      error: err.message
+      error: err.message,
     });
 
     res.status(500).json(formatError(err, correlationId));
@@ -245,7 +249,7 @@ export const handleForensicReport = async (req, res) => {
 
 /**
  * Handle health check with forensic verification
- * 
+ *
  * @param {Object} req - Express request
  * @param {Object} res - Express response
  * @returns {Promise<void>}
@@ -258,7 +262,7 @@ export const handleHealthCheck = async (req, res) => {
     service: 'investor-controller',
     timestamp: new Date().toISOString(),
     correlationId,
-    version: process.env.npm_package_version || '1.0.0'
+    version: process.env.npm_package_version || '1.0.0',
   };
 
   res.setHeader('x-correlation-id', correlationId);
@@ -272,5 +276,5 @@ export const handleHealthCheck = async (req, res) => {
 export default {
   handleInvestorRequest,
   handleForensicReport,
-  handleHealthCheck
+  handleHealthCheck,
 };

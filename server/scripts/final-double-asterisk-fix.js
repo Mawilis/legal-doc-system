@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -7,8 +7,8 @@
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -48,7 +48,10 @@ filesToFix.forEach((relativePath) => {
     content = content.replace(/\/\*\*([\s\S]*?)\*\*\//g, '/*$1*/');
 
     // Fix 2: @param with double asterisks
-    content = content.replace(/@param\s*\{[^}]+\}\s*(\[?\w+\]?)\s*-\s*(.*?)\*\*/g, '@param {$1} - $2');
+    content = content.replace(
+      /@param\s*\{[^}]+\}\s*(\[?\w+\]?)\s*-\s*(.*?)\*\*/g,
+      '@param {$1} - $2'
+    );
 
     // Fix 3: @returns with double asterisks
     content = content.replace(/@returns?\s*\{[^}]+\}\s*-\s*(.*?)\*\*/g, '@returns $1');
@@ -58,10 +61,15 @@ filesToFix.forEach((relativePath) => {
     content = content.replace(/(\/\/.*?)\*\*/g, '$1');
 
     // Fix 5: Specific pattern for asyncHandler.js
-    content = content.replace(/catch\s*\(\s*error\s*\)\s*\{\s*\/\*\/\s*\}/g, 'catch (error) { /* ignore */ }');
+    content = content.replace(
+      /catch\s*\(\s*error\s*\)\s*\{\s*\/\*\/\s*\}/g,
+      'catch (error) { /* ignore */ }'
+    );
 
     // Fix 6: Specific pattern for caseFileModel.js
-    content = content.replace(/\/\*\*[\s\S]*?@description[\s\S]*?\*\*\//g, (match) => match.replace(/\*\*/g, '*'));
+    content = content.replace(/\/\*\*[\s\S]*?@description[\s\S]*?\*\*\//g, (match) =>
+      match.replace(/\*\*/g, '*')
+    );
 
     if (content !== original) {
       fs.writeFileSync(fullPath, content, 'utf8');
@@ -82,7 +90,8 @@ console.log(`   • Remaining issues: ${filesToFix.length - fixedCount}`);
 
 // Now verify
 console.log('\n🔍 VERIFYING...');
-const verifyCmd = 'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
+const verifyCmd =
+  'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
   -not -path "*/node_modules/*" \
   -not -path "*/coverage/*" \
   -not -path "*/dist/*" \

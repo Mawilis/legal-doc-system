@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * @file /Users/wilsonkhanyezi/legal-doc-system/server/routes/dsar.js
  * @module DSARRoutes

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * FILE: server/controllers/authController.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/authController.js
  * VERSION: 10.0.0-GENERATIONAL
@@ -1116,7 +1114,7 @@ exports.logout = async (req, res) => {
         isActive: false,
         loggedOutAt: new Date(),
         logoutReason: 'user_initiated',
-      },
+      }
     );
 
     // Clear refresh token
@@ -1237,7 +1235,7 @@ exports.refreshToken = async (req, res) => {
         refreshToken: newRefreshTokenData.hashedToken,
         lastActivity: new Date(),
         expiresAt: new Date(Date.now() + GENERATIONAL_CONFIG.SESSION_TIMEOUT),
-      },
+      }
     );
 
     // Audit

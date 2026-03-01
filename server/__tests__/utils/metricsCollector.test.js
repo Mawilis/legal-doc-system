@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ METRICS COLLECTOR TESTS - INVESTOR DUE DILIGENCE - $49M ANNUAL VALUE     ║
   ║ 100% coverage | Real-time observability | Business intelligence          ║
@@ -446,7 +444,10 @@ describe('MetricsCollector - Observability Nexus Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'metrics-collector-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'metrics-collector-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'metrics-collector-evidence.json'))
@@ -455,7 +456,10 @@ describe('MetricsCollector - Observability Nexus Due Diligence', () => {
 
       expect(fileExists).to.be.true;
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'metrics-collector-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'metrics-collector-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).to.equal(hash);
 

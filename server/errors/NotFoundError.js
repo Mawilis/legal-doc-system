@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 export class NotFoundError extends Error {
   constructor(message = 'not found') {
     super(message);

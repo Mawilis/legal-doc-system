@@ -1,10 +1,10 @@
-/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS: SENTINEL BOOTSTRAP - LAUNCH AUTONOMOUS PROTECTION                           ║
   ║ [99.999% Uptime | Gen 10 Ready | Self-Healing Infrastructure]                         ║
   ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 import dotenv from 'dotenv.js';
-import { dirname, join } from "path";
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import RecoverySentinel from './RecoverySentinel.js';
 

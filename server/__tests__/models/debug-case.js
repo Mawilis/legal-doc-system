@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const Case = require('../../models/Case');
+#!const Case = require('../../models/Case');
 
 console.log('Case type:', typeof Case);
 console.log('Case is constructor:', typeof Case === 'function');

@@ -1,4 +1,4 @@
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js';
+#!import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js';
 import { createBullBoard } from '@bull-board/api.js';
 import { ExpressAdapter } from '@bull-board/express.js';
 import express from 'express.js';

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ COMPLIANCE MESSAGES - INVESTOR-GRADE ● FORENSIC ● PRODUCTION                ║
   ║ FICA Compliant | POPIA Compliant | Multi-lingual | Legal Grade             ║
   ║ Version: 1.0.0 - Production - Complete i18n System                          ║
@@ -105,7 +103,12 @@ class ComplianceMessages {
    * Get nested value using dot notation
    */
   _getNestedValue(obj, path) {
-    return path.split('.').reduce((current, key) => (current && current[key] !== undefined ? current[key] : undefined), obj);
+    return path
+      .split('.')
+      .reduce(
+        (current, key) => (current && current[key] !== undefined ? current[key] : undefined),
+        obj
+      );
   }
 
   /*
@@ -114,7 +117,9 @@ class ComplianceMessages {
   _replaceParams(message, params) {
     if (!params || Object.keys(params).length === 0) return message;
 
-    return message.replace(/\{\{(\w+)\}\}/g, (match, key) => (params[key] !== undefined ? params[key] : match));
+    return message.replace(/\{\{(\w+)\}\}/g, (match, key) =>
+      params[key] !== undefined ? params[key] : match
+    );
   }
 
   /*

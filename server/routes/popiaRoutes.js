@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ██████╗  ██████╗ ██████╗ ██╗ █████╗
  * ██╔══██╗██╔═══██╗██╔══██╗██║██╔══██╗
  * ██████╔╝██║   ██║██████╔╝██║███████║
@@ -96,8 +94,8 @@ const consentSchema = {
         'FINANCIAL_DATA',
         'HEALTH_DATA',
         'BIOMETRIC_DATA',
-        'SPECIAL_PERSONAL_DATA',
-      ),
+        'SPECIAL_PERSONAL_DATA'
+      )
     )
     .min(1)
     .required()
@@ -117,7 +115,7 @@ const consentSchema = {
         purpose: Joi.string().required(),
         country: Joi.string().required(),
         adequacyDetermination: Joi.boolean().default(false),
-      }),
+      })
     )
     .optional()
     .description('Cross-border transfers as per POPIA Section 72'),
@@ -143,7 +141,7 @@ const dsarSchema = {
         type: Joi.string().valid('ID_BOOK', 'PASSPORT', 'DRIVERS_LICENSE', 'COMPANY_REG'),
         number: Joi.string().required(),
         fileId: Joi.string().uuid().optional(),
-      }),
+      })
     )
     .min(1)
     .required()
@@ -167,7 +165,7 @@ const breachSchema = {
       'DATA_CORRUPTION',
       'RANSOMWARE',
       'PHISHING',
-      'INSIDER_THREAT',
+      'INSIDER_THREAT'
     )
     .required()
     .description('Type of security compromise as per POPIA Section 22'),
@@ -183,8 +181,8 @@ const breachSchema = {
         'CONTACT_DETAILS',
         'FINANCIAL_DATA',
         'HEALTH_DATA',
-        'SPECIAL_PERSONAL_DATA',
-      ),
+        'SPECIAL_PERSONAL_DATA'
+      )
     )
     .min(1)
     .required()
@@ -224,7 +222,7 @@ const processingRecordSchema = {
       'LEGAL_OBLIGATION',
       'VITAL_INTEREST',
       'PUBLIC_INTEREST',
-      'LEGITIMATE_INTEREST',
+      'LEGITIMATE_INTEREST'
     )
     .required()
     .description('Lawful basis for processing per POPIA Section 11'),
@@ -296,10 +294,8 @@ const crossBorderTransferSchema = {
     .length(2)
     .required()
     .description('ISO 3166-1 alpha-2 country code'),
-  recipientEntity: Joi.string().min(2).max(200).required()
-    .description('Name of recipient entity'),
-  transferPurpose: Joi.string().min(10).max(500).required()
-    .description('Purpose of the transfer'),
+  recipientEntity: Joi.string().min(2).max(200).required().description('Name of recipient entity'),
+  transferPurpose: Joi.string().min(10).max(500).required().description('Purpose of the transfer'),
   dataCategories: Joi.array()
     .items(Joi.string())
     .min(1)
@@ -310,7 +306,7 @@ const crossBorderTransferSchema = {
       'ADEQUACY_DECISION',
       'STANDARD_CONTRACTUAL_CLAUSES',
       'BINDING_CORPORATE_RULES',
-      'DEROGATION',
+      'DEROGATION'
     )
     .required()
     .description('Legal mechanism for transfer'),
@@ -387,7 +383,7 @@ router.post(
         purpose: result.purpose,
         withdrawalInstructions: generateWithdrawalInstructions(
           result.id,
-          req.body.withdrawalMechanism,
+          req.body.withdrawalMechanism
         ),
         // POPIA Section 18: Right to object
         objectionMechanism: `EMAIL_TO_IO@${process.env.DOMAIN}`,
@@ -431,7 +427,7 @@ router.post(
 
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -488,7 +484,7 @@ router.delete(
       // Quantum Automation: Trigger downstream processing cessation
       if (process.env.CONSENT_WITHDRAWAL_WEBHOOK) {
         console.log(
-          `[CONSENT CESSATION] Notifying downstream processors for consent ${req.params.id}`,
+          `[CONSENT CESSATION] Notifying downstream processors for consent ${req.params.id}`
         );
       }
 
@@ -511,7 +507,7 @@ router.delete(
       err.severity = 'CRITICAL';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -599,7 +595,7 @@ router.post(
 
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -737,7 +733,7 @@ router.post(
       // Automated Alert: Notify Information Regulator if configured
       if (process.env.INFORMATION_REGULATOR_WEBHOOK && req.body.potentialHarm === 'SEVERE') {
         console.log(
-          `[REGULATOR NOTIFICATION] Severe breach ${result.id} queued for immediate notification`,
+          `[REGULATOR NOTIFICATION] Severe breach ${result.id} queued for immediate notification`
         );
       }
 
@@ -776,7 +772,7 @@ router.post(
 
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -832,7 +828,7 @@ router.post(
       // Quantum Automation: Schedule annual review
       if (process.env.PROCESSING_REVIEW_SCHEDULER) {
         console.log(
-          `[REVIEW SCHEDULER] Annual review scheduled for processing record ${result.id}`,
+          `[REVIEW SCHEDULER] Annual review scheduled for processing record ${result.id}`
         );
       }
 
@@ -861,7 +857,7 @@ router.post(
       err.severity = 'HIGH';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -946,7 +942,7 @@ router.post(
       err.severity = 'HIGH';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -994,8 +990,7 @@ router.post(
             adequacyMechanism: req.body.adequacyMechanism,
             safeguards: req.body.safeguards.length,
             // POPIA Section 72(2): Information Regulator notification
-            regulatorNotificationRequired:
-              req.body.adequacyMechanism === 'DEROGATION',
+            regulatorNotificationRequired: req.body.adequacyMechanism === 'DEROGATION',
             // GDPR Chapter V: Adequacy decision alignment
             gdprAdequacy: checkGDPRAdequacy(req.body.recipientCountry),
           },
@@ -1034,7 +1029,7 @@ router.post(
       err.severity = 'HIGH';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -1103,7 +1098,7 @@ router.get(
       err.severity = 'MEDIUM';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -1172,7 +1167,7 @@ router.post(
       err.severity = 'HIGH';
       next(err);
     }
-  },
+  }
 );
 
 // ============================================================================
@@ -1322,7 +1317,10 @@ function assessBreachSeverity(breachData) {
 
   // Factor 3: Potential harm
   const harmScores = {
-    LOW: 1, MEDIUM: 2, HIGH: 3, SEVERE: 4,
+    LOW: 1,
+    MEDIUM: 2,
+    HIGH: 3,
+    SEVERE: 4,
   };
   severityScore += harmScores[breachData.potentialHarm] || 0;
 

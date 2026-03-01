@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ LITIGATION SUPPORT CONTROLLER TESTS - INVESTOR DUE DILIGENCE  ║
   ║ 100% coverage | AI-Powered | Strategic Command Center         ║
@@ -69,7 +67,9 @@ jest.mock('../../services/caseAnalysisService', () => ({
 
 jest.mock('../../services/documentGenerationService', () => ({
   generateFromTemplate: jest.fn().mockResolvedValue({ content: 'Generated document content' }),
-  generateDocument: jest.fn().mockResolvedValue({ content: 'Default document content', title: 'Test Document' }),
+  generateDocument: jest
+    .fn()
+    .mockResolvedValue({ content: 'Default document content', title: 'Test Document' }),
 }));
 
 jest.mock(
@@ -81,7 +81,7 @@ jest.mock(
       .fn()
       .mockResolvedValue({ vulnerabilityScore: 30, vulnerabilities: [], counterArguments: [] }),
   }),
-  { virtual: true },
+  { virtual: true }
 );
 
 jest.mock(
@@ -95,7 +95,7 @@ jest.mock(
       recommendedApproach: 'Focus on precedent',
     }),
   }),
-  { virtual: true },
+  { virtual: true }
 );
 
 jest.mock(
@@ -109,7 +109,7 @@ jest.mock(
       recommendedCounterStrategy: 'Stay methodical',
     }),
   }),
-  { virtual: true },
+  { virtual: true }
 );
 
 jest.mock('../../utils/logger', () => ({
@@ -171,7 +171,10 @@ app.use((req, res, next) => {
 // Mount routes (simplified for testing)
 app.get('/api/litigation-support/case/:caseId/intelligence', litigationSupport.getCaseIntelligence);
 app.get('/api/litigation-support/case/:caseId/strategy', litigationSupport.getCaseStrategy);
-app.post('/api/litigation-support/case/:caseId/documents/generate', litigationSupport.generateDocument);
+app.post(
+  '/api/litigation-support/case/:caseId/documents/generate',
+  litigationSupport.generateDocument
+);
 app.post('/api/litigation-support/case/:caseId/witnesses', litigationSupport.manageWitness);
 app.get('/api/litigation-support/case/:caseId/hearings', litigationSupport.getHearingPreparation);
 app.post('/api/litigation-support/case/:caseId/chronology', litigationSupport.generateChronology);
@@ -286,7 +289,9 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
         },
       ]);
 
-      const response = await request(app).get(`/api/litigation-support/case/${mockCaseId}/intelligence`).expect(200);
+      const response = await request(app)
+        .get(`/api/litigation-support/case/${mockCaseId}/intelligence`)
+        .expect(200);
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.caseSummary).toBeDefined();
@@ -302,13 +307,17 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
     it('should return 404 for non-existent case', async () => {
       Case.findOne.mockResolvedValue(null);
 
-      const response = await request(app).get(`/api/litigation-support/case/${mockCaseId}/intelligence`).expect(404);
+      const response = await request(app)
+        .get(`/api/litigation-support/case/${mockCaseId}/intelligence`)
+        .expect(404);
 
       expect(response.body.code).toBe('CASE_NOT_FOUND');
     });
 
     it('should return 400 for invalid case ID', async () => {
-      const response = await request(app).get('/api/litigation-support/case/invalid-id/intelligence').expect(400);
+      const response = await request(app)
+        .get('/api/litigation-support/case/invalid-id/intelligence')
+        .expect(400);
 
       expect(response.body.code).toBe('INVALID_CASE_ID');
     });
@@ -318,7 +327,9 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
     it('should return comprehensive case strategy', async () => {
       Case.findOne.mockResolvedValue(mockCaseData);
 
-      const response = await request(app).get(`/api/litigation-support/case/${mockCaseId}/strategy`).expect(200);
+      const response = await request(app)
+        .get(`/api/litigation-support/case/${mockCaseId}/strategy`)
+        .expect(200);
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.overview).toBeDefined();
@@ -332,7 +343,9 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
     it('should include judge analysis when available', async () => {
       Case.findOne.mockResolvedValue(mockCaseData);
 
-      const response = await request(app).get(`/api/litigation-support/case/${mockCaseId}/strategy`).expect(200);
+      const response = await request(app)
+        .get(`/api/litigation-support/case/${mockCaseId}/strategy`)
+        .expect(200);
 
       expect(response.body.data.judgeConsiderations).toBeDefined();
     });
@@ -340,7 +353,9 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
     it('should include opponent profiling when available', async () => {
       Case.findOne.mockResolvedValue(mockCaseData);
 
-      const response = await request(app).get(`/api/litigation-support/case/${mockCaseId}/strategy`).expect(200);
+      const response = await request(app)
+        .get(`/api/litigation-support/case/${mockCaseId}/strategy`)
+        .expect(200);
 
       expect(response.body.data.opponentConsiderations).toBeDefined();
     });
@@ -428,7 +443,7 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
           tenantId: mockTenantId,
           ...witnessData,
           createdBy: mockUserId,
-        }),
+        })
       );
     });
 
@@ -493,7 +508,9 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
 
       Citation.find.mockResolvedValue([]);
 
-      const response = await request(app).get(`/api/litigation-support/case/${mockCaseId}/hearings`).expect(200);
+      const response = await request(app)
+        .get(`/api/litigation-support/case/${mockCaseId}/hearings`)
+        .expect(200);
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.hearing).toBeDefined();
@@ -522,7 +539,7 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
       expect(Hearing.findOne).toHaveBeenCalledWith(
         expect.objectContaining({
           _id: hearingId,
-        }),
+        })
       );
     });
   });
@@ -551,7 +568,7 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
         .expect(200);
 
       expect(response.headers['content-type']).toBe(
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       );
       expect(response.headers['content-disposition']).toContain('.xlsx');
     });
@@ -610,7 +627,9 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
     it('should handle database errors gracefully', async () => {
       Case.findOne.mockRejectedValue(new Error('Database connection failed'));
 
-      const response = await request(app).get(`/api/litigation-support/case/${mockCaseId}/intelligence`).expect(500);
+      const response = await request(app)
+        .get(`/api/litigation-support/case/${mockCaseId}/intelligence`)
+        .expect(500);
 
       expect(response.body.code).toBe('CASE_INTELLIGENCE_FAILED');
     });
@@ -630,7 +649,9 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
     it('should export document types constants', () => {
       expect(litigationSupport.DOCUMENT_TYPES).toBeDefined();
       expect(litigationSupport.DOCUMENT_TYPES.PLEADINGS.SUMMONS).toBe('SUMMONS');
-      expect(litigationSupport.DOCUMENT_TYPES.COURT_PREPARATION.HEADS_OF_ARGUMENT).toBe('HEADS_OF_ARGUMENT');
+      expect(litigationSupport.DOCUMENT_TYPES.COURT_PREPARATION.HEADS_OF_ARGUMENT).toBe(
+        'HEADS_OF_ARGUMENT'
+      );
     });
 
     it('should export strategy types', () => {
@@ -657,7 +678,9 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
       Case.findOne.mockResolvedValue(mockCaseData);
       Citation.find.mockResolvedValue([]);
 
-      const response = await request(app).get(`/api/litigation-support/case/${mockCaseId}/intelligence`).expect(200);
+      const response = await request(app)
+        .get(`/api/litigation-support/case/${mockCaseId}/intelligence`)
+        .expect(200);
 
       // Generate evidence entry
       const evidenceEntry = {
@@ -687,7 +710,10 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'litigation-support-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'litigation-support-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'litigation-support-evidence.json'))
@@ -696,7 +722,10 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'litigation-support-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'litigation-support-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

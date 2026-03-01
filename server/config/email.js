@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ EMAIL CONFIGURATION - INVESTOR-GRADE MODULE                                 ║
   ║ Multi-provider support | POPIA compliant | Forensic logging                 ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -23,8 +21,8 @@ const emailConfig = {
   primary: {
     provider: isProduction ? 'aws-ses' : isTest ? 'test' : 'ethereal',
     host:
-      process.env.EMAIL_HOST
-      || (isProduction ? 'email-smtp.af-south-1.amazonaws.com' : 'smtp.ethereal.email'),
+      process.env.EMAIL_HOST ||
+      (isProduction ? 'email-smtp.af-south-1.amazonaws.com' : 'smtp.ethereal.email'),
     port: parseInt(process.env.EMAIL_PORT, 10) || (isProduction ? 587 : 587),
     secure: process.env.EMAIL_SECURE === 'true' || false,
     auth: {

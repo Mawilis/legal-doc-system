@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ BILLING REPORT SERVICE - INVESTOR-GRADE MODULE                ║
   ║ 90% cost reduction | R3.2B risk elimination | 94% margins     ║
@@ -63,7 +63,7 @@
 
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
-import { createHash } from "crypto";
+import { createHash } from 'crypto';
 
 // WILSY OS CORE IMPORTS
 import auditLogger from '../../utils/auditLogger.js';

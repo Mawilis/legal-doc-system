@@ -1,8 +1,8 @@
-/**
+#!/**
  * WILSY OS - User Routes
  */
 
-import express from "express";
+import express from 'express';
 
 const router = express.Router();
 

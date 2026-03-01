@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ================================================================================
 QUANTUM SCROLL OF IMMUTABLE EVIDENCE: SUPREME AUDIT LOG
 Path: /server/models/AuditLog.js
@@ -86,9 +84,7 @@ HORIZON EXPANSION:
  */
 
 const crypto = require('crypto');
-const {
-  createHash, createHmac, createCipheriv, createDecipheriv,
-} = require('crypto');
+const { createHash, createHmac, createCipheriv, createDecipheriv } = require('crypto');
 const mongoose = require('mongoose');
 const superAdminValidator = require('../validators/superAdminValidator');
 
@@ -122,7 +118,7 @@ const validateSupremeEnvironment = () => {
   const key = Buffer.from(process.env.AUDIT_ENCRYPTION_KEY, 'hex');
   if (key.length !== 32) {
     throw new Error(
-      '[Supreme Audit Model] AUDIT_ENCRYPTION_KEY must be 64 hex characters (32 bytes) for AES-256',
+      '[Supreme Audit Model] AUDIT_ENCRYPTION_KEY must be 64 hex characters (32 bytes) for AES-256'
     );
   }
 
@@ -250,7 +246,7 @@ const SupremeEncryptedFieldSchema = new mongoose.Schema(
   {
     _id: false,
     versionKey: false,
-  },
+  }
 );
 
 /*
@@ -330,7 +326,7 @@ const SupremeAdminActionSchema = new mongoose.Schema(
   {
     _id: false,
     versionKey: false,
-  },
+  }
 );
 
 /*
@@ -408,7 +404,7 @@ const EnhancedPOPIAComplianceSchema = new mongoose.Schema(
   {
     _id: false,
     versionKey: false,
-  },
+  }
 );
 
 /*
@@ -459,7 +455,7 @@ const EnhancedCybersecuritySchema = new mongoose.Schema(
   {
     _id: false,
     versionKey: false,
-  },
+  }
 );
 
 // =============================================================================
@@ -1239,7 +1235,7 @@ const SupremeAuditLogSchema = new mongoose.Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 // =============================================================================
@@ -1285,7 +1281,7 @@ SupremeAuditLogSchema.index(
   },
   {
     partialFilterExpression: { 'security.severity': { $in: ['HIGH', 'CRITICAL'] } },
-  },
+  }
 ); // Security incident monitoring
 
 SupremeAuditLogSchema.index({
@@ -1300,7 +1296,7 @@ SupremeAuditLogSchema.index(
   },
   {
     partialFilterExpression: { 'security.anomalyDetection.riskScore': { $gt: 70 } },
-  },
+  }
 ); // High-risk anomaly detection
 
 // RETENTION INDEX: Auto-expiry of non-legal hold records
@@ -1313,7 +1309,7 @@ SupremeAuditLogSchema.index(
       'retention.archiveStatus': { $ne: 'LEGAL_HOLD' },
       'retention.policy': { $ne: 'SUPREME_ADMIN_ETERNAL' },
     },
-  },
+  }
 );
 
 // GEO-SPATIAL INDEX: For location-based forensics
@@ -1465,7 +1461,7 @@ SupremeAuditLogSchema.pre('save', async function (next) {
     // Set retention expiry based on policy
     const retentionYears = this.getRetentionYears();
     this.retention.expiresAt = new Date(
-      this.timestamp.getTime() + retentionYears * 365 * 24 * 60 * 60 * 1000,
+      this.timestamp.getTime() + retentionYears * 365 * 24 * 60 * 60 * 1000
     );
 
     // Set Supreme retention for Supreme Admin actions
@@ -1532,14 +1528,14 @@ SupremeAuditLogSchema.methods.verifyEvidence = function () {
       timestampValid,
       retentionValid,
       blockchainValid,
-      supremeValid,
+      supremeValid
     ),
     courtAdmissible: hashValid && timestampValid && supremeValid,
     recommendedActions: this.getVerificationActions(
       hashValid,
       timestampValid,
       retentionValid,
-      supremeValid,
+      supremeValid
     ),
     lastVerifiedAt: new Date(),
   };
@@ -1556,7 +1552,7 @@ SupremeAuditLogSchema.methods.decryptActorPII = function (decryptionKey, request
   const authorizedRoles = ['COMPLIANCE_OFFICER', 'SUPREME_ADMIN', 'SYSTEM_ADMIN'];
   if (!authorizedRoles.includes(requesterRole)) {
     throw new Error(
-      'Unauthorized: Only compliance officers and system administrators can decrypt PII',
+      'Unauthorized: Only compliance officers and system administrators can decrypt PII'
     );
   }
 
@@ -1711,7 +1707,7 @@ SupremeAuditLogSchema.methods.calculateAnomalyRisk = async function () {
  */
 SupremeAuditLogSchema.statics.generateSupremeComplianceReport = async function (
   firmId,
-  year = new Date().getFullYear(),
+  year = new Date().getFullYear()
 ) {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31, 23, 59, 59);
@@ -1948,9 +1944,10 @@ SupremeAuditLogSchema.statics.generateSupremeComplianceReport = async function (
       auditReady: complianceScore > 75 && supremeAdminScore > 90,
       blockchainAnchored:
         data.monthlyAnalysis?.reduce(
-          (sum, month) => sum
-            + month.categories.reduce((catSum, cat) => catSum + (cat.blockchainAnchored || 0), 0),
-          0,
+          (sum, month) =>
+            sum +
+            month.categories.reduce((catSum, cat) => catSum + (cat.blockchainAnchored || 0), 0),
+          0
         ) || 0,
       supremeAdminActions:
         data.supremeAdminAnalysis?.reduce((sum, month) => sum + month.totalSupremeActions, 0) || 0,
@@ -1978,7 +1975,7 @@ SupremeAuditLogSchema.statics.generateSupremeComplianceReport = async function (
     recommendations: this.generateSupremeComplianceRecommendations(
       complianceScore,
       supremeAdminScore,
-      data,
+      data
     ),
   };
 };
@@ -1991,7 +1988,7 @@ SupremeAuditLogSchema.statics.generateSupremeComplianceReport = async function (
  */
 SupremeAuditLogSchema.statics.getSupremeEvidenceChain = async function (
   resourceId,
-  includeSupreme = false,
+  includeSupreme = false
 ) {
   const matchCriteria = {
     'event.resourceId': resourceId,
@@ -2004,7 +2001,7 @@ SupremeAuditLogSchema.statics.getSupremeEvidenceChain = async function (
   return await this.find(matchCriteria)
     .sort({ timestamp: 1 })
     .select(
-      'quantumId actor.role actor.displayName actor.isSupremeAdmin event description timestamp integrity.evidenceHash security.legalHold security.anomalyDetection.riskScore compliance.popia.lawfulBasis supremeAdminContext.authorizationLevel',
+      'quantumId actor.role actor.displayName actor.isSupremeAdmin event description timestamp integrity.evidenceHash security.legalHold security.anomalyDetection.riskScore compliance.popia.lawfulBasis supremeAdminContext.authorizationLevel'
     )
     .lean();
 };
@@ -2066,7 +2063,7 @@ SupremeAuditLogSchema.statics.detectSupremeAnomalies = async function (tenantId,
       anomalyType: anomaly._id.anomalyType,
       recommendation: this.generateSupremeAnomalyRecommendation(
         anomaly._id.anomalyType,
-        anomaly._id.isSupremeAdmin,
+        anomaly._id.isSupremeAdmin
       ),
       urgency:
         anomaly.maxRiskScore > 90
@@ -2119,7 +2116,7 @@ SupremeAuditLogSchema.methods.calculateVerificationScore = function (
   timestampValid,
   retentionValid,
   blockchainValid,
-  supremeValid,
+  supremeValid
 ) {
   let score = 0;
   if (hashValid) score += 30;
@@ -2135,7 +2132,7 @@ SupremeAuditLogSchema.methods.getVerificationActions = function (
   hashValid,
   timestampValid,
   retentionValid,
-  supremeValid,
+  supremeValid
 ) {
   const actions = [];
   if (!hashValid) actions.push('REVALIDATE_EVIDENCE_HASH');
@@ -2243,7 +2240,7 @@ SupremeAuditLogSchema.methods.decryptField = function (encryptedField) {
   const decipher = createDecipheriv(
     encryptedField.algorithm,
     key,
-    Buffer.from(encryptedField.iv, 'hex'),
+    Buffer.from(encryptedField.iv, 'hex')
   );
 
   decipher.setAuthTag(Buffer.from(encryptedField.tag, 'hex'));
@@ -2455,10 +2452,12 @@ SupremeAuditLogSchema.statics.calculateSupremeComplianceScore = function (data) 
   if (metrics.ectActCompliant) score += (metrics.ectActCompliant / totalEvents) * 20;
 
   // Bonus for blockchain anchoring
-  const blockchainAnchored = data.monthlyAnalysis?.reduce(
-    (sum, month) => sum + month.categories.reduce((catSum, cat) => catSum + (cat.blockchainAnchored || 0), 0),
-    0,
-  ) || 0;
+  const blockchainAnchored =
+    data.monthlyAnalysis?.reduce(
+      (sum, month) =>
+        sum + month.categories.reduce((catSum, cat) => catSum + (cat.blockchainAnchored || 0), 0),
+      0
+    ) || 0;
 
   if (blockchainAnchored) score += (blockchainAnchored / totalEvents) * 15;
 
@@ -2511,7 +2510,7 @@ SupremeAuditLogSchema.statics.calculateMonthSupremeScore = function (monthData) 
 SupremeAuditLogSchema.statics.generateSupremeComplianceRecommendations = function (
   complianceScore,
   supremeAdminScore,
-  data,
+  data
 ) {
   const recommendations = [];
 
@@ -2549,7 +2548,7 @@ SupremeAuditLogSchema.statics.generateSupremeComplianceRecommendations = functio
 // Generate Supreme anomaly recommendation
 SupremeAuditLogSchema.statics.generateSupremeAnomalyRecommendation = function (
   anomalyType,
-  isSupremeAdmin,
+  isSupremeAdmin
 ) {
   const baseRecommendations = {
     GEOGRAPHIC: 'VERIFY_USER_LOCATION_AND_ENABLE_GEO_FENCING',
@@ -2560,7 +2559,8 @@ SupremeAuditLogSchema.statics.generateSupremeAnomalyRecommendation = function (
     SUPREME_ADMIN_ANOMALY: 'VALIDATE_SUPREME_ADMIN_AUTHORIZATION_AND_NOTIFY_COMPLIANCE_TEAM',
   };
 
-  let recommendation = baseRecommendations[anomalyType] || 'REVIEW_ANOMALY_DETAILS_WITH_SECURITY_TEAM';
+  let recommendation =
+    baseRecommendations[anomalyType] || 'REVIEW_ANOMALY_DETAILS_WITH_SECURITY_TEAM';
 
   if (isSupremeAdmin) {
     recommendation += ' | SUPREME_ADMIN_PRIORITY';
@@ -2617,12 +2617,12 @@ if (process.env.NODE_ENV === 'test') {
     await testLog.save();
     console.assert(
       testLog.quantumId.startsWith('SUPREME-AUDIT-'),
-      'Supreme audit ID generation failed',
+      'Supreme audit ID generation failed'
     );
     console.assert(testLog.actor.isSupremeAdmin === true, 'Supreme Admin flag not set');
     console.assert(
       testLog.retention.policy === 'SUPREME_ADMIN_ETERNAL',
-      'Supreme retention policy not applied',
+      'Supreme retention policy not applied'
     );
 
     // Test encryption
@@ -2647,9 +2647,10 @@ if (process.env.NODE_ENV === 'test') {
 // =============================================================================
 // QUANTUM MODEL EXPORT
 // =============================================================================
-const SupremeAuditLog = mongoose.models.SupremeAuditLog
-  || mongoose.models.AuditLog
-  || mongoose.model('SupremeAuditLog', SupremeAuditLogSchema);
+const SupremeAuditLog =
+  mongoose.models.SupremeAuditLog ||
+  mongoose.models.AuditLog ||
+  mongoose.model('SupremeAuditLog', SupremeAuditLogSchema);
 
 export default SupremeAuditLog;
 

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* eslint-env jest */
 /*
  * ╔══════════════════════════════════════════════════════════════════════════╗
@@ -21,10 +21,10 @@
  */
 
 import request from 'supertest.js';
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 import fs from 'fs/promises';
-import path from "path";
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Import the actual server (not mocked - real integration tests)
@@ -71,14 +71,19 @@ describe('🌍 REAL WORLD SCENARIO 1: LAW FIRM ONSLAUGHT', () => {
     const startTime = Date.now();
     const results = await Promise.allSettled(
       firmTenants.map((tenantId) =>
-        request(app).get('/health').set('X-Tenant-ID', tenantId).set('X-API-Key', `test-key-${tenantId}`),
-      ),
+        request(app)
+          .get('/health')
+          .set('X-Tenant-ID', tenantId)
+          .set('X-API-Key', `test-key-${tenantId}`)
+      )
     );
 
     const duration = Date.now() - startTime;
 
     // Verify all requests succeeded
-    const succeeded = results.filter((r) => r.status === 'fulfilled' && r.value.status === 200).length;
+    const succeeded = results.filter(
+      (r) => r.status === 'fulfilled' && r.value.status === 200
+    ).length;
     expect(succeeded).toBe(FIRM_COUNT);
 
     // Verify performance (should handle 100 requests in < 2 seconds)
@@ -123,7 +128,8 @@ describe('🌍 REAL WORLD SCENARIO 1: LAW FIRM ONSLAUGHT', () => {
       tenantA,
       tenantB,
       result: response.status,
-      isolationMaintained: response.status !== 200 || !response.body?.some?.((d) => d.tenantId === tenantA),
+      isolationMaintained:
+        response.status !== 200 || !response.body?.some?.((d) => d.tenantId === tenantA),
     });
   });
 
@@ -138,14 +144,16 @@ describe('🌍 REAL WORLD SCENARIO 1: LAW FIRM ONSLAUGHT', () => {
         request(app)
           .get('/health')
           .set('X-Tenant-ID', aggressiveTenant)
-          .set('X-API-Key', `test-key-${aggressiveTenant}`),
+          .set('X-API-Key', `test-key-${aggressiveTenant}`)
       );
     }
 
     const results = await Promise.allSettled(requests);
 
     // Count rate limited responses (429)
-    const rateLimited = results.filter((r) => r.status === 'fulfilled' && r.value.status === 429).length;
+    const rateLimited = results.filter(
+      (r) => r.status === 'fulfilled' && r.value.status === 429
+    ).length;
 
     expect(rateLimited).toBeGreaterThan(0);
 
@@ -336,7 +344,9 @@ describe('💰 REAL WORLD SCENARIO 3: INVESTOR DUE DILIGENCE', () => {
 
     // Verify valuation is within reasonable range (0 to R1B)
     expect(data.financials.valuation.current).toBeGreaterThanOrEqual(0);
-    expect(data.financials.valuation.current).toBeLessThanOrEqual(FINANCIAL_TARGETS.VALUATION_TARGET * 1.1);
+    expect(data.financials.valuation.current).toBeLessThanOrEqual(
+      FINANCIAL_TARGETS.VALUATION_TARGET * 1.1
+    );
 
     testEvidence.economicProjections = {
       valuation: data.financials.valuation,
@@ -352,7 +362,9 @@ describe('💰 REAL WORLD SCENARIO 3: INVESTOR DUE DILIGENCE', () => {
       valuationTarget: FINANCIAL_TARGETS.VALUATION_TARGET,
     });
 
-    console.log(`✅ INVESTOR DASHBOARD: Valuation R${data.financials.valuation.current.toLocaleString()}`);
+    console.log(
+      `✅ INVESTOR DASHBOARD: Valuation R${data.financials.valuation.current.toLocaleString()}`
+    );
   });
 
   test('should calculate correct economic metrics (R1.2M annual savings per firm)', async () => {
@@ -374,7 +386,7 @@ describe('💰 REAL WORLD SCENARIO 3: INVESTOR DUE DILIGENCE', () => {
     testEvidence.economicProjections.savingsPerFirm = ANNUAL_SAVINGS_PER_FIRM;
 
     console.log(
-      `💰 ECONOMIC IMPACT: R${totalAnnualSavings.toLocaleString()} annual savings across ${activeFirms} firms`,
+      `💰 ECONOMIC IMPACT: R${totalAnnualSavings.toLocaleString()} annual savings across ${activeFirms} firms`
     );
     console.log(`   (R${ANNUAL_SAVINGS_PER_FIRM.toLocaleString()} per firm)`);
   });
@@ -423,7 +435,11 @@ describe('📊 REAL WORLD SCENARIO 4: METRICS & MONITORING', () => {
 
     testEvidence.tests.push({
       name: 'metrics endpoint',
-      metricsAvailable: ['wilsy_api_requests_total', 'wilsy_active_firms_total', 'wilsy_daily_revenue_zar'],
+      metricsAvailable: [
+        'wilsy_api_requests_total',
+        'wilsy_active_firms_total',
+        'wilsy_daily_revenue_zar',
+      ],
     });
 
     console.log('✅ METRICS ENDPOINT: Prometheus metrics available');
@@ -577,7 +593,9 @@ describe('🌐 REAL WORLD SCENARIO 6: CONTINENTAL SCALE', () => {
       expect([200, 201, 501]).toContain(response.status);
 
       if (response.status === 501) {
-        console.log(`⚠️  Country registration for ${country.code} not yet implemented (future generation)`);
+        console.log(
+          `⚠️  Country registration for ${country.code} not yet implemented (future generation)`
+        );
       } else {
         console.log(`✅ Registered firm in ${country.name}`);
       }
@@ -613,9 +631,17 @@ describe('🌐 REAL WORLD SCENARIO 6: CONTINENTAL SCALE', () => {
     };
 
     // Submit documents
-    await request(app).post('/api/v1/documents').set('X-Tenant-ID', zaTenant).set('X-Country-Code', 'ZA').send(docZA);
+    await request(app)
+      .post('/api/v1/documents')
+      .set('X-Tenant-ID', zaTenant)
+      .set('X-Country-Code', 'ZA')
+      .send(docZA);
 
-    await request(app).post('/api/v1/documents').set('X-Tenant-ID', ngTenant).set('X-Country-Code', 'NG').send(docNG);
+    await request(app)
+      .post('/api/v1/documents')
+      .set('X-Tenant-ID', ngTenant)
+      .set('X-Country-Code', 'NG')
+      .send(docNG);
 
     // Query documents and verify data residency metadata
     const response = await request(app)
@@ -679,7 +705,8 @@ describe('🤖 REAL WORLD SCENARIO 7: AI & AUTOMATION', () => {
 
   test('should have vector database integration planned', async () => {
     // Check configuration for vector DB
-    const configHasVector = JSON.stringify(FINANCIAL_TARGETS).includes('vector') || !!process.env.VECTOR_DB_URL;
+    const configHasVector =
+      JSON.stringify(FINANCIAL_TARGETS).includes('vector') || !!process.env.VECTOR_DB_URL;
 
     // This is a forward-looking test - will pass when implemented
     if (configHasVector) {
@@ -792,9 +819,13 @@ afterAll(async () => {
   if (testEvidence.economicProjections.totalAnnualSavings) {
     console.log('\n💰 ECONOMIC METRICS:');
     console.log(
-      `   Annual Savings Generated: R${testEvidence.economicProjections.totalAnnualSavings.toLocaleString()}`,
+      `   Annual Savings Generated: R${testEvidence.economicProjections.totalAnnualSavings.toLocaleString()}`
     );
-    console.log(`   Per Firm Savings: R${testEvidence.economicProjections.savingsPerFirm.toLocaleString()}`);
-    console.log(`   Exit Projection: R${testEvidence.economicProjections.exitProjection?.toLocaleString() || 'N/A'}`);
+    console.log(
+      `   Per Firm Savings: R${testEvidence.economicProjections.savingsPerFirm.toLocaleString()}`
+    );
+    console.log(
+      `   Exit Projection: R${testEvidence.economicProjections.exitProjection?.toLocaleString() || 'N/A'}`
+    );
   }
 });

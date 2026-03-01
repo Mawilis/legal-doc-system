@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-const auditLogger = require('../../utils/auditLogger');
+#!const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
 const loggerRaw = require('../../utils/logger');
 const logger = loggerRaw.default || loggerRaw;

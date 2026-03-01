@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║                                                                                                ║
   ║ ███╗   ███╗███████╗███████╗███████╗ █████╗  ██████╗ ███████╗    ███╗   ███╗ ██████╗ ██████╗ ███████╗██╗      ║
   ║ ████╗ ████║██╔════╝██╔════╝██╔════╝██╔══██╗██╔════╝ ██╔════╝    ████╗ ████║██╔═══██╗██╔══██╗██╔════╝██║      ║
@@ -105,7 +103,7 @@ const REQUIRED_LEGAL_ENV_VARS = [
 REQUIRED_LEGAL_ENV_VARS.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(
-      `QUANTUM BREACH: Missing ${envVar} in .env - Required for legal communications`,
+      `QUANTUM BREACH: Missing ${envVar} in .env - Required for legal communications`
     );
   }
 });
@@ -616,7 +614,8 @@ const MessageSchema = new Schema(
         const classification = MESSAGE_CLASSIFICATIONS[this.classification];
         if (classification.privilegeLevel === 'MAXIMUM') {
           return 'ATTORNEY_CLIENT';
-        } if (classification.privilegeLevel === 'WITHOUT_PREJUDICE') {
+        }
+        if (classification.privilegeLevel === 'WITHOUT_PREJUDICE') {
           return 'WITHOUT_PREJUDICE';
         }
         return 'PUBLIC';
@@ -628,9 +627,9 @@ const MessageSchema = new Schema(
       type: Boolean,
       default() {
         return (
-          this.legalPrivilege === 'ATTORNEY_CLIENT'
-          || this.legalPrivilege === 'WORK_PRODUCT'
-          || this.legalPrivilege === 'WITHOUT_PREJUDICE'
+          this.legalPrivilege === 'ATTORNEY_CLIENT' ||
+          this.legalPrivilege === 'WORK_PRODUCT' ||
+          this.legalPrivilege === 'WITHOUT_PREJUDICE'
         );
       },
     },
@@ -1064,7 +1063,7 @@ const MessageSchema = new Schema(
         return doc.toJSON();
       },
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1210,7 +1209,7 @@ MessageSchema.methods.addAttachment = async function (
   mimeType,
   size,
   hash,
-  userId,
+  userId
 ) {
   // Validate attachment limit
   if (this.attachments.length >= 20) {
@@ -1263,7 +1262,7 @@ MessageSchema.methods.applyLegalHold = async function (
   reason,
   caseReference,
   userId,
-  expectedRelease = null,
+  expectedRelease = null
 ) {
   if (this.retentionPolicy.legalHold.active) {
     throw new Error('Legal hold already active');
@@ -1469,7 +1468,10 @@ MessageSchema.statics.getCommunicationAnalytics = async function (tenantId, star
           },
           {
             $sort: {
-              '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.hour': 1,
+              '_id.year': 1,
+              '_id.month': 1,
+              '_id.day': 1,
+              '_id.hour': 1,
             },
           },
         ],
@@ -1539,7 +1541,7 @@ MessageSchema.statics.archiveOldMessages = async function (retentionYears = 7) {
       $set: {
         status: 'ARCHIVED',
       },
-    },
+    }
   );
 
   return {
@@ -1627,7 +1629,7 @@ MessageSchema.pre('save', async function (next) {
   if (this.isModified() && !this.isNew) {
     const auditContext = this.$__auditContext || {};
     const modifiedPaths = this.modifiedPaths().filter(
-      (path) => !['__v', 'updatedAt', 'auditTrail', 'statistics'].includes(path),
+      (path) => !['__v', 'updatedAt', 'auditTrail', 'statistics'].includes(path)
     );
 
     if (modifiedPaths.length > 0) {
@@ -1697,7 +1699,7 @@ MessageSchema.index(
       content: 5,
     },
     default_language: 'english',
-  },
+  }
 );
 
 // TTL index for auto-archiving
@@ -1713,7 +1715,7 @@ MessageSchema.index(
       status: 'ARCHIVED',
       'retentionPolicy.legalHold.active': false,
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1901,5 +1903,5 @@ export default Message;
  */
 
 console.log(
-  '⚡ MESSAGE MODEL QUANTUM: Legal communication sanctuary activated. Ready to safeguard the sacred discourse of justice.',
+  '⚡ MESSAGE MODEL QUANTUM: Legal communication sanctuary activated. Ready to safeguard the sacred discourse of justice.'
 );

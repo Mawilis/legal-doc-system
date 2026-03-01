@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ NOTIFICATION LOG MODEL V6 — FORENSIC INVESTOR-GRADE ● POPIA COMPLIANT ● COURT-ADMISSIBLE                       ║
   ║ 78% penalty reduction | R1.2M annual savings | 92% audit readiness                                             ║
   ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
@@ -353,7 +351,7 @@ const notificationLogSchema = new mongoose.Schema(
     timestamps: true,
     strict: true,
     collection: 'notification_logs',
-  },
+  }
 );
 
 // Indexes (unchanged)
@@ -383,7 +381,7 @@ notificationLogSchema.index(
       content: 5,
     },
     name: 'notification_search_index',
-  },
+  }
 );
 
 // Pre-save middleware (unchanged)
@@ -728,7 +726,7 @@ notificationLogSchema.statics = {
               tenantId,
               stats,
               timestamp: new Date().toISOString(),
-            }),
+            })
           )
           .digest('hex'),
       },

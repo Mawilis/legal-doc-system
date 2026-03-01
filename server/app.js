@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * ╔═══════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - SOVEREIGN LEGAL TECHNOLOGY PLATFORM                           ║
@@ -59,11 +59,10 @@ import cors from 'cors.js';
 import helmet from 'helmet.js';
 import compression from 'compression.js';
 import { fileURLToPath } from 'url';
-import { dirname, join } from "path";
-import { createServer } from "http";
+import { dirname, join } from 'path';
+import { createServer } from 'http';
 import { createRequire } from 'module.js';
-import crypto from "crypto";
-
+import crypto from 'crypto';
 
 // ES Module compatibility for CommonJS imports
 const __filename = fileURLToPath(import.meta.url);

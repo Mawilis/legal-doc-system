@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/Audit.js
  * STATUS: PRODUCTION-READY (WILSY OS V2.0)
  *
@@ -251,7 +249,10 @@ const AuditSchema = new mongoose.Schema(
     eventType: {
       type: String,
       required: true,
-      enum: Object.keys(AUDIT_CONFIG.EVENT_TYPES).reduce((acc, category) => [...acc, ...AUDIT_CONFIG.EVENT_TYPES[category]], []),
+      enum: Object.keys(AUDIT_CONFIG.EVENT_TYPES).reduce(
+        (acc, category) => [...acc, ...AUDIT_CONFIG.EVENT_TYPES[category]],
+        []
+      ),
       index: true,
     },
 
@@ -541,7 +542,7 @@ const AuditSchema = new mongoose.Schema(
     // Enable virtuals in JSON output
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -724,13 +725,14 @@ AuditSchema.methods.calculatePerformanceMetrics = function () {
 
   // Calculate compression ratio based on retention policy
   const policy = AUDIT_CONFIG.RETENTION_POLICIES[this.retention.policy];
-  this.performance.compressionRatio = policy.compression === 'NONE'
-    ? 1
-    : policy.compression === 'GZIP'
-      ? 0.7
-      : policy.compression === 'LZ4'
-        ? 0.6
-        : 1;
+  this.performance.compressionRatio =
+    policy.compression === 'NONE'
+      ? 1
+      : policy.compression === 'GZIP'
+        ? 0.7
+        : policy.compression === 'LZ4'
+          ? 0.6
+          : 1;
 
   // Mark as indexed for fast queries
   this.performance.indexed = true;
@@ -739,8 +741,8 @@ AuditSchema.methods.calculatePerformanceMetrics = function () {
 AuditSchema.methods.applyComplianceTags = function () {
   // Apply POPIA compliance for South African jurisdiction
   if (
-    this.legalMetadata.jurisdiction === 'RSA'
-    && (this.eventCategory === 'LEGAL' || this.eventCategory === 'SECURITY')
+    this.legalMetadata.jurisdiction === 'RSA' &&
+    (this.eventCategory === 'LEGAL' || this.eventCategory === 'SECURITY')
   ) {
     this.complianceTags.push({
       standard: 'POPIA',
@@ -785,7 +787,7 @@ AuditSchema.methods.ensureRealTimeIndexing = async function (doc) {
       action: doc.action,
       severity: doc.severity,
       actor: doc.actorDetails?.username || 'SYSTEM',
-    }),
+    })
   );
 };
 
@@ -838,7 +840,7 @@ AuditSchema.methods.triggerRealTimeAlert = async function (doc) {
   await this.constructor.redis.setex(
     `alert:${alertData.alertId}`,
     86400, // 24 hours
-    JSON.stringify(alertData),
+    JSON.stringify(alertData)
   );
 
   // Publish to alert channel
@@ -891,7 +893,10 @@ AuditSchema.statics.validateEventData = function (eventData) {
   });
 
   // Validate event type
-  const validEventTypes = Object.keys(AUDIT_CONFIG.EVENT_TYPES).reduce((acc, category) => [...acc, ...AUDIT_CONFIG.EVENT_TYPES[category]], []);
+  const validEventTypes = Object.keys(AUDIT_CONFIG.EVENT_TYPES).reduce(
+    (acc, category) => [...acc, ...AUDIT_CONFIG.EVENT_TYPES[category]],
+    []
+  );
 
   if (!validEventTypes.includes(eventData.eventType)) {
     throw new Error(`Invalid event type: ${eventData.eventType}`);
@@ -1027,7 +1032,7 @@ AuditSchema.statics.logAuditFailure = async function (error, eventData) {
   await this.redis.setex(
     `audit:failure:${failureId}`,
     7 * 24 * 60 * 60, // 7 days
-    JSON.stringify(failureLog),
+    JSON.stringify(failureLog)
   );
 
   // Alert security team
@@ -1038,7 +1043,7 @@ AuditSchema.statics.logAuditFailure = async function (error, eventData) {
       failureId,
       timestamp: new Date().toISOString(),
       severity: 'CRITICAL',
-    }),
+    })
   );
 
   return failureId;
@@ -1048,7 +1053,7 @@ AuditSchema.statics.generateDiscoveryBundle = async function (
   tenantId,
   caseNumber,
   startDate,
-  endDate,
+  endDate
 ) {
   try {
     // QUERY AUDIT LOGS
@@ -1106,11 +1111,11 @@ AuditSchema.statics.generateDiscoveryBundle = async function (
     await this.redis.setex(
       storageKey,
       30 * 24 * 60 * 60, // 30 days
-      JSON.stringify(discoveryBundle),
+      JSON.stringify(discoveryBundle)
     );
 
     console.log(
-      `📦 [DISCOVERY_BUNDLE] Generated bundle ${bundleMetadata.bundleId} with ${auditLogs.length} records`,
+      `📦 [DISCOVERY_BUNDLE] Generated bundle ${bundleMetadata.bundleId} with ${auditLogs.length} records`
     );
 
     return {
@@ -1158,7 +1163,8 @@ AuditSchema.statics.generateBundleSummary = function (auditLogs) {
     summary.userActivity[actor] = (summary.userActivity[actor] || 0) + 1;
 
     // Resource activity
-    summary.resourceActivity[log.resourceType] = (summary.resourceActivity[log.resourceType] || 0) + 1;
+    summary.resourceActivity[log.resourceType] =
+      (summary.resourceActivity[log.resourceType] || 0) + 1;
   });
 
   return summary;
@@ -1305,14 +1311,14 @@ class AuditModel {
         investigationId,
         tenantId,
         investigationCriteria,
-        auditLogs,
+        auditLogs
       );
 
       // STORE INVESTIGATION
       await this.storeInvestigation(investigationId, report);
 
       console.log(
-        `🔬 [FORENSIC_INVESTIGATION] Completed investigation ${investigationId} with ${auditLogs.length} records`,
+        `🔬 [FORENSIC_INVESTIGATION] Completed investigation ${investigationId} with ${auditLogs.length} records`
       );
 
       return {
@@ -1353,7 +1359,7 @@ class AuditModel {
         tenantId,
         complianceStandard,
         period,
-        auditLogs,
+        auditLogs
       );
 
       // ADD DIGITAL SIGNATURE
@@ -1368,7 +1374,7 @@ class AuditModel {
       const processingTime = process.hrtime(startTime);
 
       console.log(
-        `📋 [COMPLIANCE_REPORT] Generated ${complianceStandard} report for tenant ${tenantId}`,
+        `📋 [COMPLIANCE_REPORT] Generated ${complianceStandard} report for tenant ${tenantId}`
       );
 
       return {
@@ -1427,7 +1433,7 @@ class AuditModel {
     // Trim old events
     const cutoff = Date.now() - this.realTimeWindow;
     this.realTimeEvents = this.realTimeEvents.filter(
-      (event) => new Date(event.timestamp).getTime() > cutoff,
+      (event) => new Date(event.timestamp).getTime() > cutoff
     );
 
     // Publish to real-time stream
@@ -1441,7 +1447,7 @@ class AuditModel {
         timestamp: eventData.timestamp,
         actor: eventData.actorDetails?.username || 'SYSTEM',
         action: eventData.action,
-      }),
+      })
     );
   }
 
@@ -1465,7 +1471,7 @@ class AuditModel {
     await this.redis.setex(
       `alert:critical:${alert.alertId}`,
       24 * 60 * 60, // 24 hours
-      JSON.stringify(alert),
+      JSON.stringify(alert)
     );
 
     // Notify security team
@@ -1508,7 +1514,7 @@ class AuditModel {
           eventsPerMinute,
           criticalEvents,
           timestamp: new Date().toISOString(),
-        }),
+        })
       );
 
       // Clear processed events
@@ -1533,8 +1539,8 @@ class AuditModel {
           end: auditLogs[auditLogs.length - 1]?.timestamp,
           duration:
             auditLogs.length > 0
-              ? new Date(auditLogs[auditLogs.length - 1].timestamp)
-                - new Date(auditLogs[0].timestamp)
+              ? new Date(auditLogs[auditLogs.length - 1].timestamp) -
+                new Date(auditLogs[0].timestamp)
               : 0,
         },
 
@@ -1574,17 +1580,21 @@ class AuditModel {
     // Calculate statistics
     auditLogs.forEach((log) => {
       // By event type
-      report.summary.statistics.byEventType[log.eventType] = (report.summary.statistics.byEventType[log.eventType] || 0) + 1;
+      report.summary.statistics.byEventType[log.eventType] =
+        (report.summary.statistics.byEventType[log.eventType] || 0) + 1;
 
       // By severity
-      report.summary.statistics.bySeverity[log.severity] = (report.summary.statistics.bySeverity[log.severity] || 0) + 1;
+      report.summary.statistics.bySeverity[log.severity] =
+        (report.summary.statistics.bySeverity[log.severity] || 0) + 1;
 
       // By actor
       const actor = log.actorDetails?.username || 'SYSTEM';
-      report.summary.statistics.byActor[actor] = (report.summary.statistics.byActor[actor] || 0) + 1;
+      report.summary.statistics.byActor[actor] =
+        (report.summary.statistics.byActor[actor] || 0) + 1;
 
       // By resource
-      report.summary.statistics.byResource[log.resourceType] = (report.summary.statistics.byResource[log.resourceType] || 0) + 1;
+      report.summary.statistics.byResource[log.resourceType] =
+        (report.summary.statistics.byResource[log.resourceType] || 0) + 1;
 
       // By hour
       const hour = new Date(log.timestamp).getHours();
@@ -1662,7 +1672,7 @@ class AuditModel {
 
     // Find critical security events
     const securityEvents = auditLogs.filter(
-      (log) => log.severity === 'SECURITY' || log.severity === 'CRITICAL',
+      (log) => log.severity === 'SECURITY' || log.severity === 'CRITICAL'
     );
 
     if (securityEvents.length > 0) {
@@ -1681,8 +1691,9 @@ class AuditModel {
 
     // Find data access patterns
     const dataAccessEvents = auditLogs.filter(
-      (log) => log.resourceType === 'DOCUMENT'
-        && (log.action.includes('READ') || log.action.includes('ACCESS')),
+      (log) =>
+        log.resourceType === 'DOCUMENT' &&
+        (log.action.includes('READ') || log.action.includes('ACCESS'))
     );
 
     if (dataAccessEvents.length > 10) {
@@ -1715,14 +1726,14 @@ class AuditModel {
     await this.redis.setex(
       `investigation:${investigationId}`,
       90 * 24 * 60 * 60, // 90 days
-      JSON.stringify(report),
+      JSON.stringify(report)
     );
   }
 
   getPeriodDates(period) {
     const now = new Date();
-    let startDate; let
-      endDate;
+    let startDate;
+    let endDate;
 
     switch (period) {
       case 'DAILY': {
@@ -1839,13 +1850,13 @@ class AuditModel {
     // Generate recommendations
     if (report.analysis.gaps.length > 0) {
       report.executiveSummary.recommendations.push(
-        `Address ${report.analysis.gaps.length} compliance gaps identified in the audit`,
+        `Address ${report.analysis.gaps.length} compliance gaps identified in the audit`
       );
     }
 
     if (report.executiveSummary.complianceScore < 90) {
       report.executiveSummary.recommendations.push(
-        'Implement additional controls to improve compliance score above 90%',
+        'Implement additional controls to improve compliance score above 90%'
       );
     }
 
@@ -1889,7 +1900,7 @@ class AuditModel {
     await this.redis.setex(
       `compliance:report:${reportId}`,
       365 * 24 * 60 * 60, // 1 year
-      JSON.stringify(report),
+      JSON.stringify(report)
     );
   }
 

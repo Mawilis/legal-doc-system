@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ⚡ TENANT PLAN ORCHESTRATION CONTROLLER v15.1.0
  * File: server/controllers/tenantPlanController.js
  *
@@ -631,7 +629,7 @@ async function applyPlanOverride(tenantId, overrideData, actorId) {
     await RedisService.set(
       overrideKey,
       JSON.stringify(overrideData),
-      86400 * 30, // 30 days TTL
+      86400 * 30 // 30 days TTL
     );
 
     // 4. Update feature flags based on override
@@ -644,7 +642,7 @@ async function applyPlanOverride(tenantId, overrideData, actorId) {
       (err) => {
         console.error('Billing sync failed:', err.message);
         // Continue without billing sync - manual intervention required
-      },
+      }
     );
 
     // 6. Commit transaction
@@ -702,15 +700,15 @@ exports.getPlan = async (req, res, next) => {
     const utilization = {
       users: (plan.usage.users / (plan.customLimits?.maxUsers || plan.features.maxUsers)) * 100,
       storage:
-        (plan.usage.storageGB / (plan.customLimits?.maxStorageGB || plan.features.maxStorageGB))
-        * 100,
+        (plan.usage.storageGB / (plan.customLimits?.maxStorageGB || plan.features.maxStorageGB)) *
+        100,
       documents:
-        (plan.usage.documentsLast30Days
-          / (plan.customLimits?.maxDocumentsPerMonth || plan.features.maxDocumentsPerMonth))
-        * 100,
+        (plan.usage.documentsLast30Days /
+          (plan.customLimits?.maxDocumentsPerMonth || plan.features.maxDocumentsPerMonth)) *
+        100,
       matters:
-        (plan.usage.activeMatters / (plan.customLimits?.maxMatters || plan.features.maxMatters))
-        * 100,
+        (plan.usage.activeMatters / (plan.customLimits?.maxMatters || plan.features.maxMatters)) *
+        100,
     };
 
     res.status(200).json({
@@ -895,9 +893,7 @@ exports.listAllPlans = async (req, res, next) => {
       });
     }
 
-    const {
-      page = 1, limit = 50, planType, hasOverride, minUsers, maxUtilization,
-    } = req.query;
+    const { page = 1, limit = 50, planType, hasOverride, minUsers, maxUtilization } = req.query;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -960,7 +956,7 @@ exports.listAllPlans = async (req, res, next) => {
             lastUpdated: new Date(),
           };
         }
-      }),
+      })
     );
 
     // Apply additional filters
@@ -977,7 +973,7 @@ exports.listAllPlans = async (req, res, next) => {
 
     if (maxUtilization) {
       filteredTenants = filteredTenants.filter(
-        (t) => t.usage.utilization <= parseInt(maxUtilization),
+        (t) => t.usage.utilization <= parseInt(maxUtilization)
       );
     }
 
@@ -1133,19 +1129,19 @@ exports.checkCompliance = async (req, res, next) => {
     const compliance = {
       vat: {
         required:
-          plan.customPricing?.monthlyPriceZAR >= 50000
-          || SA_PLANS[tenant.plan]?.monthlyPriceZAR >= 50000,
+          plan.customPricing?.monthlyPriceZAR >= 50000 ||
+          SA_PLANS[tenant.plan]?.monthlyPriceZAR >= 50000,
         registered: tenant.billing?.vatRegistered || false,
         vatNumber: tenant.billing?.vatNumber,
         compliant:
           !(
-            plan.customPricing?.monthlyPriceZAR >= 50000
-            || SA_PLANS[tenant.plan]?.monthlyPriceZAR >= 50000
+            plan.customPricing?.monthlyPriceZAR >= 50000 ||
+            SA_PLANS[tenant.plan]?.monthlyPriceZAR >= 50000
           ) || tenant.billing?.vatRegistered,
         actionRequired:
-          (plan.customPricing?.monthlyPriceZAR >= 50000
-            || SA_PLANS[tenant.plan]?.monthlyPriceZAR >= 50000)
-          && !tenant.billing?.vatRegistered,
+          (plan.customPricing?.monthlyPriceZAR >= 50000 ||
+            SA_PLANS[tenant.plan]?.monthlyPriceZAR >= 50000) &&
+          !tenant.billing?.vatRegistered,
       },
       popia: {
         compliant: await checkPOPIACompliance(tenantId),
@@ -1163,8 +1159,8 @@ exports.checkCompliance = async (req, res, next) => {
         autoRenew: plan.contractTerms?.autoRenew !== false,
         noticePeriod: plan.contractTerms?.terminationNoticeDays >= 30,
         compliant:
-          plan.contractTerms?.autoRenew !== false
-          && plan.contractTerms?.terminationNoticeDays >= 30,
+          plan.contractTerms?.autoRenew !== false &&
+          plan.contractTerms?.terminationNoticeDays >= 30,
         actionRequired:
           plan.contractTerms?.autoRenew === false || plan.contractTerms?.terminationNoticeDays < 30,
       },
@@ -1317,11 +1313,14 @@ function calculateTotalMRR(tenants) {
  */
 function calculateAverageUtilization(tenants) {
   const tenantsWithUtilization = tenants.filter(
-    (t) => t.usage && typeof t.usage.utilization === 'number',
+    (t) => t.usage && typeof t.usage.utilization === 'number'
   );
   if (tenantsWithUtilization.length === 0) return 0;
 
-  const totalUtilization = tenantsWithUtilization.reduce((sum, tenant) => sum + tenant.usage.utilization, 0);
+  const totalUtilization = tenantsWithUtilization.reduce(
+    (sum, tenant) => sum + tenant.usage.utilization,
+    0
+  );
 
   return Math.round(totalUtilization / tenantsWithUtilization.length);
 }

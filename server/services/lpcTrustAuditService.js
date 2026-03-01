@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  ██╗     ██████╗  ██████╗     ████████╗██████╗ ██╗   ██╗███████╗████████╗     █████╗ ██╗   ██╗██████╗ ██╗████████╗    ║
  * ║  ██║     ██╔══██╗██╔════╝     ╚══██╔══╝██╔══██╗██║   ██║██╔════╝╚══██╔══╝    ██╔══██╗██║   ██║██╔══██╗██║╚══██╔══╝    ║
@@ -91,7 +89,7 @@ const REQUIRED_ENV_VARS = [
 REQUIRED_ENV_VARS.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(
-      `QUANTUM BREACH ALERT: Missing environment variable ${varName}. LPC Trust Audit service cannot initialize.`,
+      `QUANTUM BREACH ALERT: Missing environment variable ${varName}. LPC Trust Audit service cannot initialize.`
     );
   }
 });
@@ -280,7 +278,7 @@ const trustTransactionSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: 'trust_transactions',
-  },
+  }
 );
 
 // Trust Account Schema
@@ -392,7 +390,7 @@ const trustAccountSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: 'trust_accounts',
-  },
+  }
 );
 
 // Trust Reconciliation Schema
@@ -529,16 +527,19 @@ const trustReconciliationSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: 'trust_reconciliations',
-  },
+  }
 );
 
 //  ===============================================================================================
 //  MONGOOSE MODEL REGISTRATION
 //  ===============================================================================================
-const TrustTransaction = mongoose.models.TrustTransaction || mongoose.model('TrustTransaction', trustTransactionSchema);
-const TrustAccount = mongoose.models.TrustAccount || mongoose.model('TrustAccount', trustAccountSchema);
-const TrustReconciliation = mongoose.models.TrustReconciliation
-  || mongoose.model('TrustReconciliation', trustReconciliationSchema);
+const TrustTransaction =
+  mongoose.models.TrustTransaction || mongoose.model('TrustTransaction', trustTransactionSchema);
+const TrustAccount =
+  mongoose.models.TrustAccount || mongoose.model('TrustAccount', trustAccountSchema);
+const TrustReconciliation =
+  mongoose.models.TrustReconciliation ||
+  mongoose.model('TrustReconciliation', trustReconciliationSchema);
 
 //  ===============================================================================================
 //  QUANTUM ENCRYPTION SERVICE - TRUST DATA SANCTITY NEXUS
@@ -554,7 +555,7 @@ class QuantumTrustEncryptionService {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(QUANTUM_CONFIG.ENCRYPTION_KEY, 'hex'),
-        iv,
+        iv
       );
 
       // Use Decimal.js for precise financial calculations
@@ -580,7 +581,7 @@ class QuantumTrustEncryptionService {
       const decipher = crypto.createDecipheriv(
         'aes-256-gcm',
         Buffer.from(QUANTUM_CONFIG.ENCRYPTION_KEY, 'hex'),
-        Buffer.from(encryptedPackage.iv, 'hex'),
+        Buffer.from(encryptedPackage.iv, 'hex')
       );
 
       decipher.setAuthTag(Buffer.from(encryptedPackage.authTag, 'hex'));
@@ -606,7 +607,7 @@ class QuantumTrustEncryptionService {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(QUANTUM_CONFIG.ENCRYPTION_KEY, 'hex'),
-        iv,
+        iv
       );
 
       let encrypted = cipher.update(JSON.stringify(bankDetails), 'utf8', 'hex');
@@ -629,7 +630,7 @@ class QuantumTrustEncryptionService {
       const decipher = crypto.createDecipheriv(
         'aes-256-gcm',
         Buffer.from(QUANTUM_CONFIG.ENCRYPTION_KEY, 'hex'),
-        Buffer.from(encryptedPackage.iv, 'hex'),
+        Buffer.from(encryptedPackage.iv, 'hex')
       );
 
       decipher.setAuthTag(Buffer.from(encryptedPackage.authTag, 'hex'));
@@ -651,10 +652,11 @@ class QuantumMerkleAuditService {
   constructor() {
     this.merkleStream = new MerkleTreeStream({
       leaf: (leaf, roots) => crypto.createHash('sha256').update(JSON.stringify(leaf)).digest(),
-      parent: (a, b) => crypto
-        .createHash('sha256')
-        .update(Buffer.concat([a, b]))
-        .digest(),
+      parent: (a, b) =>
+        crypto
+          .createHash('sha256')
+          .update(Buffer.concat([a, b]))
+          .digest(),
     });
   }
 
@@ -680,7 +682,7 @@ class QuantumMerkleAuditService {
                 amount: transaction.encryptedAmount,
                 timestamp: transaction.createdAt,
                 type: transaction.transactionType,
-              }),
+              })
             )
             .digest('hex');
 
@@ -698,10 +700,12 @@ class QuantumMerkleAuditService {
       return {
         merkleRoot: nodes[nodes.length - 1]?.root?.toString('hex') || '',
         nodeCount: nodes.length,
-        leafHashes: transactions.map((t) => crypto
-          .createHash('sha256')
-          .update(t.transactionId + t.createdAt)
-          .digest('hex')),
+        leafHashes: transactions.map((t) =>
+          crypto
+            .createHash('sha256')
+            .update(t.transactionId + t.createdAt)
+            .digest('hex')
+        ),
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
@@ -722,7 +726,7 @@ class QuantumMerkleAuditService {
             amount: transaction.encryptedAmount,
             timestamp: transaction.createdAt,
             type: transaction.transactionType,
-          }),
+          })
         )
         .digest('hex');
 
@@ -789,27 +793,27 @@ class LPCTrustAuditService {
       // LPC Compliance: Check if deposit exceeds maximum client trust balance
       const currentBalance = await this._getClientTrustBalance(
         depositData.clientId,
-        depositData.firmId,
+        depositData.firmId
       );
       const depositAmount = new Decimal(depositData.amount);
 
       if (currentBalance.plus(depositAmount).gt(QUANTUM_CONFIG.MAX_CLIENT_TRUST_BALANCE)) {
         throw new Error(
-          `Deposit would exceed LPC maximum client trust balance of R${QUANTUM_CONFIG.MAX_CLIENT_TRUST_BALANCE}`,
+          `Deposit would exceed LPC maximum client trust balance of R${QUANTUM_CONFIG.MAX_CLIENT_TRUST_BALANCE}`
         );
       }
 
       // Check transaction amount limit
       if (depositAmount.gt(QUANTUM_CONFIG.MAX_TRANSACTION_AMOUNT)) {
         throw new Error(
-          `Deposit amount exceeds maximum transaction limit of R${QUANTUM_CONFIG.MAX_TRANSACTION_AMOUNT}`,
+          `Deposit amount exceeds maximum transaction limit of R${QUANTUM_CONFIG.MAX_TRANSACTION_AMOUNT}`
         );
       }
 
       // Encrypt financial data
       const encryptedAmount = this.encryptionService.encryptFinancialData(depositData.amount);
       const encryptedBalance = this.encryptionService.encryptFinancialData(
-        currentBalance.plus(depositAmount).toString(),
+        currentBalance.plus(depositAmount).toString()
       );
 
       // Create transaction record
@@ -825,11 +829,11 @@ class LPCTrustAuditService {
         valueDate: depositData.valueDate || new Date(),
         encryptedBankReference: depositData.bankReference
           ? this.encryptionService.encryptBankDetails({ reference: depositData.bankReference })
-            .encryptedData
+              .encryptedData
           : null,
         encryptedNarrative: depositData.narrative
           ? this.encryptionService.encryptBankDetails({ narrative: depositData.narrative })
-            .encryptedData
+              .encryptedData
           : null,
         authorizedBy: depositData.authorizedBy,
         encryptionIv: encryptedAmount.iv,
@@ -844,7 +848,7 @@ class LPCTrustAuditService {
       if (depositData.requireMultipleSignatures) {
         transaction.authorizedSignatories = await this._applyDigitalSignatures(
           transaction,
-          depositData.signatories,
+          depositData.signatories
         );
       }
 
@@ -893,7 +897,7 @@ class LPCTrustAuditService {
       // Verify sufficient funds
       const currentBalance = await this._getClientTrustBalance(
         withdrawalData.clientId,
-        withdrawalData.firmId,
+        withdrawalData.firmId
       );
       const withdrawalAmount = new Decimal(withdrawalData.amount);
 
@@ -916,7 +920,7 @@ class LPCTrustAuditService {
       // Encrypt financial data
       const encryptedAmount = this.encryptionService.encryptFinancialData(withdrawalData.amount);
       const encryptedBalance = this.encryptionService.encryptFinancialData(
-        currentBalance.minus(withdrawalAmount).toString(),
+        currentBalance.minus(withdrawalAmount).toString()
       );
 
       // Create transaction record
@@ -932,11 +936,11 @@ class LPCTrustAuditService {
         valueDate: withdrawalData.valueDate || new Date(),
         encryptedBankReference: withdrawalData.bankReference
           ? this.encryptionService.encryptBankDetails({ reference: withdrawalData.bankReference })
-            .encryptedData
+              .encryptedData
           : null,
         encryptedNarrative: withdrawalData.narrative
           ? this.encryptionService.encryptBankDetails({ narrative: withdrawalData.narrative })
-            .encryptedData
+              .encryptedData
           : null,
         authorizedBy: withdrawalData.authorizedBy,
         encryptionIv: encryptedAmount.iv,
@@ -951,7 +955,7 @@ class LPCTrustAuditService {
       // Apply digital signatures
       transaction.authorizedSignatories = await this._applyDigitalSignatures(
         transaction,
-        withdrawalData.signatories,
+        withdrawalData.signatories
       );
 
       // Save transaction
@@ -961,7 +965,7 @@ class LPCTrustAuditService {
       await this._updateTrustAccountBalance(
         withdrawalData.firmId,
         withdrawalAmount.negated(),
-        'withdrawal',
+        'withdrawal'
       );
 
       // Generate audit trail
@@ -998,9 +1002,7 @@ class LPCTrustAuditService {
       // Validate reconciliation period
       this._validateReconciliationPeriod(reconciliationData);
 
-      const {
-        firmId, trustAccountId, periodStart, periodEnd,
-      } = reconciliationData;
+      const { firmId, trustAccountId, periodStart, periodEnd } = reconciliationData;
 
       // Get transactions for period
       const transactions = await TrustTransaction.find({
@@ -1017,7 +1019,7 @@ class LPCTrustAuditService {
       const bankStatementData = await this._fetchBankStatementData(
         trustAccountId,
         periodStart,
-        periodEnd,
+        periodEnd
       );
 
       // Perform reconciliation
@@ -1025,7 +1027,7 @@ class LPCTrustAuditService {
         transactions,
         bankStatementData,
         openingBalance,
-        closingBalance,
+        closingBalance
       );
 
       // Create reconciliation record
@@ -1035,19 +1037,19 @@ class LPCTrustAuditService {
         reconciliationPeriodStart: periodStart,
         reconciliationPeriodEnd: periodEnd,
         encryptedOpeningBalance: this.encryptionService.encryptFinancialData(
-          openingBalance.toString(),
+          openingBalance.toString()
         ).encryptedData,
         encryptedClosingBalance: this.encryptionService.encryptFinancialData(
-          closingBalance.toString(),
+          closingBalance.toString()
         ).encryptedData,
         encryptedBookBalance: this.encryptionService.encryptFinancialData(
-          reconciliationResult.bookBalance.toString(),
+          reconciliationResult.bookBalance.toString()
         ).encryptedData,
         encryptedBankBalance: this.encryptionService.encryptFinancialData(
-          reconciliationResult.bankBalance.toString(),
+          reconciliationResult.bankBalance.toString()
         ).encryptedData,
         varianceAmount: this.encryptionService.encryptFinancialData(
-          reconciliationResult.variance.toString(),
+          reconciliationResult.variance.toString()
         ).encryptedData,
         variancePercentage: reconciliationResult.variancePercentage,
         reconciled: reconciliationResult.reconciled,
@@ -1067,7 +1069,7 @@ class LPCTrustAuditService {
       if (reconciliationResult.reconciled) {
         await this._markTransactionsAsReconciled(
           transactions.map((t) => t._id),
-          reconciliation._id,
+          reconciliation._id
         );
       }
 
@@ -1087,8 +1089,8 @@ class LPCTrustAuditService {
         varianceAmount: reconciliationResult.variance.toString(),
         variancePercentage: reconciliationResult.variancePercentage,
         outstandingItems:
-          reconciliationResult.outstandingDeposits.length
-          + reconciliationResult.outstandingWithdrawals.length,
+          reconciliationResult.outstandingDeposits.length +
+          reconciliationResult.outstandingWithdrawals.length,
         complianceReport,
         timestamp: new Date().toISOString(),
       };
@@ -1103,9 +1105,7 @@ class LPCTrustAuditService {
    */
   async generateLPCAuditReport(auditRequest) {
     try {
-      const {
-        firmId, auditPeriodStart, auditPeriodEnd, reportFormat = 'PDF',
-      } = auditRequest;
+      const { firmId, auditPeriodStart, auditPeriodEnd, reportFormat = 'PDF' } = auditRequest;
 
       // Validate audit period (maximum 1 year as per LPC rules)
       const periodDays = moment(auditPeriodEnd).diff(moment(auditPeriodStart), 'days');
@@ -1139,7 +1139,7 @@ class LPCTrustAuditService {
       const submissionPackage = await this._createLPCSubmissionPackage(
         report,
         digitalSignature,
-        auditData,
+        auditData
       );
 
       // Log audit report generation
@@ -1219,21 +1219,21 @@ class LPCTrustAuditService {
         firmId,
         totalInterest,
         interestCalculations,
-        calculationDate,
+        calculationDate
       );
 
       // Generate interest certificate
       const interestCertificate = await this._generateInterestCertificate(
         interestCalculations,
         totalInterest,
-        calculationDate,
+        calculationDate
       );
 
       // SARS Compliance: Prepare interest tax documentation
       const taxDocumentation = await this._prepareInterestTaxDocumentation(
         interestCalculations,
         totalInterest,
-        calculationDate,
+        calculationDate
       );
 
       return {
@@ -1303,7 +1303,7 @@ class LPCTrustAuditService {
     const periodDays = moment(endDate).diff(moment(startDate), 'days');
     if (periodDays > QUANTUM_CONFIG.TRUST_AUDIT_FREQUENCY_DAYS) {
       throw new Error(
-        `Reconciliation period cannot exceed ${QUANTUM_CONFIG.TRUST_AUDIT_FREQUENCY_DAYS} days`,
+        `Reconciliation period cannot exceed ${QUANTUM_CONFIG.TRUST_AUDIT_FREQUENCY_DAYS} days`
       );
     }
   }
@@ -1424,8 +1424,9 @@ class LPCTrustAuditService {
     };
 
     // Store in MongoDB audit collection
-    const AuditTrail = mongoose.model('AuditTrail')
-      || mongoose.model('AuditTrail', new mongoose.Schema({}, { strict: false }));
+    const AuditTrail =
+      mongoose.model('AuditTrail') ||
+      mongoose.model('AuditTrail', new mongoose.Schema({}, { strict: false }));
 
     await AuditTrail.create(auditEntry);
 
@@ -1539,7 +1540,7 @@ class LPCTrustAuditService {
           reconciliationId,
           updatedAt: new Date(),
         },
-      },
+      }
     );
   }
 
@@ -1637,8 +1638,9 @@ class LPCTrustAuditService {
     };
 
     // Store audit trigger
-    const AuditTrigger = mongoose.model('AuditTrigger')
-      || mongoose.model('AuditTrigger', new mongoose.Schema({}, { strict: false }));
+    const AuditTrigger =
+      mongoose.model('AuditTrigger') ||
+      mongoose.model('AuditTrigger', new mongoose.Schema({}, { strict: false }));
 
     await AuditTrigger.create(auditTrigger);
 
@@ -1731,7 +1733,7 @@ class LPCTrustAuditService {
         x: 50,
         y: yPosition,
         size: 12,
-      },
+      }
     );
     yPosition -= lineHeight * 2;
 
@@ -1932,8 +1934,9 @@ class LPCTrustAuditService {
     };
 
     // Store in MongoDB compliance logs
-    const ComplianceLog = mongoose.model('ComplianceLog')
-      || mongoose.model('ComplianceLog', new mongoose.Schema({}, { strict: false }));
+    const ComplianceLog =
+      mongoose.model('ComplianceLog') ||
+      mongoose.model('ComplianceLog', new mongoose.Schema({}, { strict: false }));
 
     await ComplianceLog.create(auditLog);
 
@@ -1953,8 +1956,9 @@ class LPCTrustAuditService {
 
   async _getComplianceIssues(firmId, periodStart, periodEnd) {
     // Get compliance issues for the period
-    const ComplianceIssue = mongoose.model('ComplianceIssue')
-      || mongoose.model('ComplianceIssue', new mongoose.Schema({}, { strict: false }));
+    const ComplianceIssue =
+      mongoose.model('ComplianceIssue') ||
+      mongoose.model('ComplianceIssue', new mongoose.Schema({}, { strict: false }));
 
     return await ComplianceIssue.find({
       firmId,
@@ -2059,7 +2063,7 @@ class LPCTrustAuditService {
     const interestAccount = await TrustAccount.findOneAndUpdate(
       { firmId, accountType: 'INTEREST_TRUST' },
       { $inc: { encryptedCurrentBalance: totalInterest.toString() } }, // Simplified
-      { new: true, upsert: true },
+      { new: true, upsert: true }
     );
 
     return transaction;
@@ -2160,7 +2164,7 @@ class LPCTrustAuditService {
         expiresAt: moment().add(24, 'hours').toISOString(),
       },
       QUANTUM_CONFIG.JWT_SECRET,
-      { expiresIn: '24h' },
+      { expiresIn: '24h' }
     );
 
     return `${process.env.APP_URL}/download/audit-report/${downloadToken}`;
@@ -2201,15 +2205,15 @@ class LPCTrustAuditService {
         </Summary>
         <Compliance>
             <Status>${
-  auditData.complianceIssues.length === 0 ? 'FULLY_COMPLIANT' : 'ISSUES_DETECTED'
-}</Status>
+              auditData.complianceIssues.length === 0 ? 'FULLY_COMPLIANT' : 'ISSUES_DETECTED'
+            }</Status>
             <IssuesCount>${auditData.complianceIssues.length}</IssuesCount>
         </Compliance>
         <QuantumSignature>
             <Hash>${crypto
-    .createHash('sha256')
-    .update(JSON.stringify(auditData))
-    .digest('hex')}</Hash>
+              .createHash('sha256')
+              .update(JSON.stringify(auditData))
+              .digest('hex')}</Hash>
             <Timestamp>${new Date().toISOString()}</Timestamp>
         </QuantumSignature>
     </Submission>

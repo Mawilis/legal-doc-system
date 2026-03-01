@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - QUANTUM TRANSACTION MODEL
  * Standard: ES Module (Surgically Standardized)

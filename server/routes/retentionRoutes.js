@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 import express from 'express';
 import RetentionPolicy from '../models/RetentionPolicy.js';
 import { authenticate } from '../middleware/auth.js';
@@ -20,11 +20,11 @@ router.use(authenticate({ required: true }));
 router.post('/policies', rateLimiter({ mode: 'standard' }), async (req, res) => {
   try {
     const tenantId = req.headers['x-tenant-id'] || req.tenantContext?.tenantId;
-    
+
     const policyData = {
       ...req.body,
       tenantId,
-      createdBy: req.user?.id || 'system'
+      createdBy: req.user?.id || 'system',
     };
 
     const policy = new RetentionPolicy(policyData);
@@ -32,12 +32,12 @@ router.post('/policies', rateLimiter({ mode: 'standard' }), async (req, res) => 
 
     await auditLogger.log(tenantId, 'RETENTION_POLICY_CREATED', req.user?.id, {
       policyId: policy.policyId,
-      policyName: policy.policyName
+      policyName: policy.policyName,
     });
 
     res.status(201).json({
       success: true,
-      data: policy
+      data: policy,
     });
   } catch (error) {
     logger.error('Failed to create retention policy', { error: error.message });
@@ -57,12 +57,11 @@ router.get('/policies', async (req, res) => {
     if (matterType) query.matterType = matterType;
     if (status) query.status = status;
 
-    const policies = await RetentionPolicy.find(query)
-      .sort({ createdAt: -1 });
+    const policies = await RetentionPolicy.find(query).sort({ createdAt: -1 });
 
     res.json({
       success: true,
-      data: policies
+      data: policies,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -85,7 +84,7 @@ router.get('/policies/active/:matterType', async (req, res) => {
 
     res.json({
       success: true,
-      data: policy
+      data: policy,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -104,7 +103,7 @@ router.get('/policies/expiring', async (req, res) => {
 
     res.json({
       success: true,
-      data: policies
+      data: policies,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -122,7 +121,7 @@ router.get('/compliance-report', async (req, res) => {
 
     res.json({
       success: true,
-      data: report
+      data: report,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -139,7 +138,7 @@ router.get('/policies/:policyId', async (req, res) => {
 
     const policy = await RetentionPolicy.findOne({
       policyId,
-      tenantId
+      tenantId,
     });
 
     if (!policy) {
@@ -148,7 +147,7 @@ router.get('/policies/:policyId', async (req, res) => {
 
     res.json({
       success: true,
-      data: policy
+      data: policy,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -166,7 +165,7 @@ router.put('/policies/:policyId', async (req, res) => {
 
     const existing = await RetentionPolicy.findOne({
       policyId,
-      tenantId
+      tenantId,
     });
 
     if (!existing) {
@@ -177,7 +176,7 @@ router.put('/policies/:policyId', async (req, res) => {
 
     res.json({
       success: true,
-      data: newVersion
+      data: newVersion,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -194,7 +193,7 @@ router.delete('/policies/:policyId', async (req, res) => {
 
     const policy = await RetentionPolicy.findOne({
       policyId,
-      tenantId
+      tenantId,
     });
 
     if (!policy) {
@@ -207,7 +206,7 @@ router.delete('/policies/:policyId', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Policy archived successfully'
+      message: 'Policy archived successfully',
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/workflowRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Workflow Gateway (Tenant-Scoped). Manages Business Process Automation (BPA) rules, triggers, and action chains.
@@ -52,7 +50,7 @@ const createWorkflowSchema = {
           .valid('SEND_EMAIL', 'CREATE_TASK', 'GENERATE_DOC', 'UPDATE_STATUS')
           .required(),
         config: Joi.object().required(),
-      }),
+      })
     )
     .min(1)
     .required(),
@@ -96,7 +94,7 @@ router.post(
       err.code = 'WORKFLOW_CREATE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -117,7 +115,7 @@ router.get(
       err.code = 'WORKFLOW_LIST_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -148,7 +146,7 @@ router.post(
       err.code = 'WORKFLOW_TRIGGER_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -178,7 +176,7 @@ router.delete(
       err.code = 'WORKFLOW_DELETE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

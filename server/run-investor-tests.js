@@ -1,6 +1,6 @@
-import crypto from "crypto";
+#!import crypto from 'crypto';
 import { MongoMemoryServer } from 'mongodb-memory-server.js';
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 /*
  * WILSY OS - INVESTOR-GRADE TEST RUNNER (ESM VERSION)
@@ -29,7 +29,8 @@ const LegalPrecedentSchema = new mongoose.Schema({
   summary: String,
 });
 
-const LegalPrecedent = mongoose.models.LegalPrecedent || mongoose.model('LegalPrecedent', LegalPrecedentSchema);
+const LegalPrecedent =
+  mongoose.models.LegalPrecedent || mongoose.model('LegalPrecedent', LegalPrecedentSchema);
 
 async function runTests() {
   let mongoServer;
@@ -68,7 +69,7 @@ async function runTests() {
     console.log('║                WILSY OS - VALUATION METRICS                    ║');
     console.log('╠════════════════════════════════════════════════════════════════╣');
     console.log(
-      `║  Tests Passed: ${passedTests}/${totalTests}                                   ║`,
+      `║  Tests Passed: ${passedTests}/${totalTests}                                   ║`
     );
     console.log(`║  Success Rate: ${successRate}%                                             ║`);
     console.log('║  Annual Savings per Firm: R2.97M                               ║');

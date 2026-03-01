@@ -1,11 +1,11 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - FIDELITY FUND CERTIFICATE MODEL
  * Standard: ES Module (Surgically Standardized)
  * Forensic-Grade | LPC Rule 55 | $10B Infrastructure
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import crypto from 'node:crypto';
 
 const { Schema } = mongoose;

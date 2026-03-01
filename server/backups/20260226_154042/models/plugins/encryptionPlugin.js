@@ -1,4 +1,4 @@
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ ENCRYPTION PLUGIN - INVESTOR-GRADE ● FORENSIC ● PRODUCTION                  ║
   ║ AES-256-GCM | Field-level encryption | Key management                       ║
   ║ Version: 1.0.0 - PRODUCTION                                                 ║

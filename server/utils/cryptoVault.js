@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * =============================================================================
  * WILSY OS - QUANTUM CRYPTOGRAPHY UTILITY
  * PURPOSE: AES-256-GCM Authenticated Encryption for Legal PII
@@ -39,7 +37,7 @@ exports.decrypt = (ciphertext, secretKey) => {
   const decipher = crypto.createDecipheriv(
     ALGORITHM,
     Buffer.from(secretKey, 'hex'),
-    Buffer.from(ivHex, 'hex'),
+    Buffer.from(ivHex, 'hex')
   );
 
   decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));

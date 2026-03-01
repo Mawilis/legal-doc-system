@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ SA LEGAL VALIDATORS - FICA COMPLIANT | POPIA COMPLIANT                     ║
   ║ South African legal requirements validation                                 ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */

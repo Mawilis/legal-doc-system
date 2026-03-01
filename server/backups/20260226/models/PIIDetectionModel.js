@@ -1,4 +1,4 @@
-/*
+#!/*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/AIModel.js
  * STATUS: PRODUCTION-READY (WILSY OS V2.0)
  *

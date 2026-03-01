@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ VALUATION MODEL - FORENSIC VALUATION PERSISTENCE              ║
   ║ [POPIA §19 | Companies Act §28 | IFRS 13 | JSE Compliant]     ║

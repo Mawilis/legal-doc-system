@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ CLIENT MODEL - INVESTOR-GRADE MODULE                                        ║
   ║ FICA compliant | POPIA compliant | Forensic tracking                        ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -429,7 +427,7 @@ const ClientSchema = new mongoose.Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 // Indexes
@@ -444,7 +442,7 @@ ClientSchema.index(
   {
     expireAfterSeconds: 157680000,
     partialFilterExpression: { deletedAt: { $exists: true } },
-  },
+  }
 );
 
 // Virtuals
@@ -457,8 +455,8 @@ ClientSchema.virtual('displayName').get(function () {
 
 ClientSchema.virtual('ficaCompliant').get(function () {
   return (
-    this.ficaDetails.status === 'VERIFIED'
-    && (!this.ficaDetails.expiryDate || this.ficaDetails.expiryDate > new Date())
+    this.ficaDetails.status === 'VERIFIED' &&
+    (!this.ficaDetails.expiryDate || this.ficaDetails.expiryDate > new Date())
   );
 });
 
@@ -642,7 +640,9 @@ ClientSchema.methods.updateFICAStatus = async function () {
   const requiredDocs = this.getRequiredFICADocuments();
   const providedDocs = this.ficaDetails.documents || [];
 
-  const allRequiredProvided = requiredDocs.every((req) => providedDocs.some((doc) => doc.documentType === req));
+  const allRequiredProvided = requiredDocs.every((req) =>
+    providedDocs.some((doc) => doc.documentType === req)
+  );
 
   const allVerified = providedDocs.every((doc) => doc.verified);
 
@@ -723,7 +723,8 @@ ClientSchema.statics.getFICAComplianceReport = async function (tenantId) {
   };
 
   clients.forEach((client) => {
-    report.summary.byClientType[client.clientType] = (report.summary.byClientType[client.clientType] || 0) + 1;
+    report.summary.byClientType[client.clientType] =
+      (report.summary.byClientType[client.clientType] || 0) + 1;
 
     const ficaStatus = client.ficaDetails?.status || 'NOT_STARTED';
     report.summary.byFICAStatus[ficaStatus] = (report.summary.byFICAStatus[ficaStatus] || 0) + 1;
@@ -739,8 +740,8 @@ ClientSchema.statics.getFICAComplianceReport = async function (tenantId) {
       return daysUntil > 0 && daysUntil <= 30;
     }).length,
     nonCompliant:
-      (report.summary.byFICAStatus.NOT_STARTED || 0)
-      + (report.summary.byFICAStatus.IN_PROGRESS || 0),
+      (report.summary.byFICAStatus.NOT_STARTED || 0) +
+      (report.summary.byFICAStatus.IN_PROGRESS || 0),
   };
 
   return report;

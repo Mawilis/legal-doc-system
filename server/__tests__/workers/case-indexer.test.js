@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ CASE INDEXER WORKER TESTS - INVESTOR DUE DILIGENCE            ║
   ║ 100% coverage | AI-Powered | Real-time Indexer                ║
@@ -42,10 +40,10 @@ jest.mock(
     generateEmbedding: jest.fn().mockResolvedValue(
       Array(384)
         .fill(0)
-        .map(() => Math.random()),
+        .map(() => Math.random())
     ),
   }),
-  { virtual: true },
+  { virtual: true }
 );
 
 jest.mock(
@@ -58,7 +56,7 @@ jest.mock(
     index: jest.fn().mockResolvedValue({ result: 'created' }),
     delete: jest.fn().mockResolvedValue({ result: 'deleted' }),
   }),
-  { virtual: true },
+  { virtual: true }
 );
 
 jest.mock('../../utils/logger', () => ({
@@ -174,13 +172,17 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
     it('should handle case not found', async () => {
       Case.findOne.mockResolvedValue(null);
 
-      await expect(caseIndexer.indexCase(mockCaseId, mockTenantId)).rejects.toThrow('Case not found');
+      await expect(caseIndexer.indexCase(mockCaseId, mockTenantId)).rejects.toThrow(
+        'Case not found'
+      );
     });
 
     it('should handle indexing without embeddings service', async () => {
       // Temporarily disable embeddings service
       const originalService = embeddingsService.generateEmbedding;
-      embeddingsService.generateEmbedding = jest.fn().mockRejectedValue(new Error('Service unavailable'));
+      embeddingsService.generateEmbedding = jest
+        .fn()
+        .mockRejectedValue(new Error('Service unavailable'));
 
       Case.findOne.mockResolvedValue(mockCaseData);
       Citation.find.mockResolvedValue([]);
@@ -353,10 +355,15 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
     });
 
     it('should handle failures in bulk indexing', async () => {
-      const caseIds = [new mongoose.Types.ObjectId().toString(), new mongoose.Types.ObjectId().toString()];
+      const caseIds = [
+        new mongoose.Types.ObjectId().toString(),
+        new mongoose.Types.ObjectId().toString(),
+      ];
 
       // First succeeds, second fails
-      Case.findOne.mockResolvedValueOnce(mockCaseData).mockRejectedValueOnce(new Error('Database error'));
+      Case.findOne
+        .mockResolvedValueOnce(mockCaseData)
+        .mockRejectedValueOnce(new Error('Database error'));
 
       Citation.find.mockResolvedValue([]);
 
@@ -378,7 +385,10 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
     });
 
     it('should queue batch for indexing', async () => {
-      const caseIds = [new mongoose.Types.ObjectId().toString(), new mongoose.Types.ObjectId().toString()];
+      const caseIds = [
+        new mongoose.Types.ObjectId().toString(),
+        new mongoose.Types.ObjectId().toString(),
+      ];
 
       const result = await caseIndexer.queueBatchForIndexing(caseIds, mockTenantId);
 
@@ -483,7 +493,9 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
   describe('12. Forensic Evidence Generation', () => {
     it('should generate indexing evidence with SHA256 hash', async () => {
       Case.findOne.mockResolvedValue(mockCaseData);
-      Citation.find.mockResolvedValue([{ citedPrecedent: new mongoose.Types.ObjectId(), strength: 80 }]);
+      Citation.find.mockResolvedValue([
+        { citedPrecedent: new mongoose.Types.ObjectId(), strength: 80 },
+      ]);
 
       const result = await caseIndexer.indexCase(mockCaseId, mockTenantId);
 
@@ -513,7 +525,10 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'case-indexer-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'case-indexer-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'case-indexer-evidence.json'))
@@ -522,7 +537,10 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'case-indexer-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'case-indexer-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

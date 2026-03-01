@@ -1,9 +1,9 @@
+#!/* eslint-disable */
 /* eslint-disable */
-/* eslint-disable */
-import { expect } from "chai";
-import mongoose from "mongoose";
+import { expect } from 'chai';
+import mongoose from 'mongoose';
 import TenantConfig, { TENANT_STATUS, DATA_RESIDENCY } from '../../models/TenantConfig.js';
-describe('TenantConfig Model - Multi-Tenant Configuration', function() {
+describe('TenantConfig Model - Multi-Tenant Configuration', function () {
   const testTenantId = 'test-tenant-12345678';
 
   before(async () => {
@@ -21,8 +21,8 @@ describe('TenantConfig Model - Multi-Tenant Configuration', function() {
     await TenantConfig.deleteMany({});
   });
 
-  describe('🏗️ Tenant Provisioning', function() {
-    it('should create a valid tenant with minimal fields', async function() {
+  describe('🏗️ Tenant Provisioning', function () {
+    it('should create a valid tenant with minimal fields', async function () {
       const tenant = new TenantConfig({
         tenantId: testTenantId,
         name: 'Test Law Firm',
@@ -36,7 +36,7 @@ describe('TenantConfig Model - Multi-Tenant Configuration', function() {
       expect(saved.status).to.equal(TENANT_STATUS.ACTIVE);
     });
 
-    it('should require a unique tenantId', async function() {
+    it('should require a unique tenantId', async function () {
       const tenant1 = new TenantConfig({
         tenantId: testTenantId,
         name: 'Firm 1',
@@ -59,8 +59,8 @@ describe('TenantConfig Model - Multi-Tenant Configuration', function() {
     });
   });
 
-  describe('🔐 Security & API Management', function() {
-    it('should find tenant by API key via static method', async function() {
+  describe('🔐 Security & API Management', function () {
+    it('should find tenant by API key via static method', async function () {
       const apiKey = 'test-api-key-12345';
 
       const tenant = new TenantConfig({
@@ -84,7 +84,7 @@ describe('TenantConfig Model - Multi-Tenant Configuration', function() {
       expect(found.tenantId).to.equal(testTenantId);
     });
 
-    it('should validate IP whitelist correctly', async function() {
+    it('should validate IP whitelist correctly', async function () {
       const tenant = new TenantConfig({
         tenantId: testTenantId,
         name: 'Test Law Firm',
@@ -100,8 +100,8 @@ describe('TenantConfig Model - Multi-Tenant Configuration', function() {
     });
   });
 
-  describe('⚖️ Compliance & Residency', function() {
-    it('should enforce default data residency (ZA)', async function() {
+  describe('⚖️ Compliance & Residency', function () {
+    it('should enforce default data residency (ZA)', async function () {
       const tenant = new TenantConfig({
         tenantId: testTenantId,
         name: 'Test Law Firm',
@@ -113,7 +113,7 @@ describe('TenantConfig Model - Multi-Tenant Configuration', function() {
       expect(tenant.dataResidency.processing).to.be.an('array').that.includes(DATA_RESIDENCY.ZA);
     });
 
-    it('should correctly store POPIA compliance settings', async function() {
+    it('should correctly store POPIA compliance settings', async function () {
       const tenant = new TenantConfig({
         tenantId: testTenantId,
         name: 'Test Law Firm',

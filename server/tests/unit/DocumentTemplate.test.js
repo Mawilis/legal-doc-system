@@ -1,4 +1,4 @@
-import { expect } from 'chai';
+#!import { expect } from 'chai';
 
 describe('📝 WILSY OS - Document Template Registry', () => {
   it('should successfully register a legal template', () => {
@@ -8,7 +8,7 @@ describe('📝 WILSY OS - Document Template Registry', () => {
   });
 
   it('should identify dynamic variables within a template', () => {
-    const rawText = "Agreement between {{tenant}} and {{client}}.";
+    const rawText = 'Agreement between {{tenant}} and {{client}}.';
     const hasVariables = /\{\{.*?\}\}/.test(rawText);
     expect(hasVariables).to.be.true;
   });

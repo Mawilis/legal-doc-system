@@ -3,10 +3,11 @@
 Wilsy OS is a multi-tenant, AI-driven legal operating system engineered for the South African judicial ecosystem. It combines predictive neural engines, cryptographic document generation, and forensic-grade compliance trails natively running on a modern ECMAScript Module (ESM) architecture.
 
 ## 💰 Investor Metrics & Value Proposition
-* **Neural Predictive Engine:** R22.5M/year in litigation risk avoidance.
-* **Quantum Court Engine:** R25.0M/year in automated legal precedent analysis.
-* **Document Generation Pipeline:** R18.5M/year in automated, zero-latency drafting.
-* **Forensic Blockchain Anchor:** 100% tamper detection compliant with ECT Act §15.
+
+- **Neural Predictive Engine:** R22.5M/year in litigation risk avoidance.
+- **Quantum Court Engine:** R25.0M/year in automated legal precedent analysis.
+- **Document Generation Pipeline:** R18.5M/year in automated, zero-latency drafting.
+- **Forensic Blockchain Anchor:** 100% tamper detection compliant with ECT Act §15.
 
 ---
 
@@ -14,28 +15,32 @@ Wilsy OS is a multi-tenant, AI-driven legal operating system engineered for the 
 
 Wilsy OS operates on a highly strict, hyper-optimized V8 Engine configuration. We have successfully migrated the entire legacy monolith to **100% Native ES Modules (ESM)**.
 
-* **Runtime:** Node.js v20+ (Strict ESM Mode)
-* **Database:** MongoDB Atlas (Multi-tenant isolated)
-* **Cache/Queues:** Redis & BullMQ v3+
-* **AI Toolchain:** TensorFlow.js, Brain.js, GPU.js, Natural
-* **Cryptography:** AES-256-GCM & SHA-256 Forensic Hashing
+- **Runtime:** Node.js v20+ (Strict ESM Mode)
+- **Database:** MongoDB Atlas (Multi-tenant isolated)
+- **Cache/Queues:** Redis & BullMQ v3+
+- **AI Toolchain:** TensorFlow.js, Brain.js, GPU.js, Natural
+- **Cryptography:** AES-256-GCM & SHA-256 Forensic Hashing
 
 ---
 
 ## 🚀 Developer Onboarding & Setup
 
-Due to the deep native modules and AI toolchains (TensorFlow, GPU.js), setting up the environment requires specific bindings. 
+Due to the deep native modules and AI toolchains (TensorFlow, GPU.js), setting up the environment requires specific bindings.
 
 ### 1. Prerequisites
+
 Ensure you have the following installed on your machine:
-* **Node.js:** v20.x or higher
-* **Python:** v3.x (Crucial for `node-gyp` native compilation)
-* **Make/GCC:** standard build tools (Xcode Command Line Tools on macOS)
+
+- **Node.js:** v20.x or higher
+- **Python:** v3.x (Crucial for `node-gyp` native compilation)
+- **Make/GCC:** standard build tools (Xcode Command Line Tools on macOS)
 
 ### 2. Environment Variable Configuration
-**CRITICAL:** Modern npm (v7+) no longer accepts `python` via `npm config`. You *must* export the Python path to your environment before installing packages, or the AI native modules will fail to compile.
+
+**CRITICAL:** Modern npm (v7+) no longer accepts `python` via `npm config`. You _must_ export the Python path to your environment before installing packages, or the AI native modules will fail to compile.
 
 Run this in your terminal before installing:
+
 ```bash
 export PYTHON=/usr/bin/python3
 export npm_config_python=/usr/bin/python3
@@ -76,3 +81,4 @@ Wilsy OS: Engineering the Future of Law.
 - **Performance:** Achieved <1ms document generation latency.
 - **Validation:** 13/13 Production Tests Passed.
 
+```

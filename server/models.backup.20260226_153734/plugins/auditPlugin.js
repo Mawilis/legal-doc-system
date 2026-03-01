@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ AUDIT PLUGIN - INVESTOR-GRADE ● FORENSIC ● PRODUCTION                       ║
   ║ Blockchain-ready audit trails | Tamper-proof logging                        ║
   ║ Version: 1.0.0 - PRODUCTION                                                 ║
@@ -86,9 +84,10 @@ export default function auditPlugin(schema, options = {}) {
       });
 
       if (Object.keys(changes).length > 0) {
-        const previousHash = this._audit.events?.length > 0
-          ? this._audit.events[this._audit.events.length - 1].hash
-          : '0'.repeat(64);
+        const previousHash =
+          this._audit.events?.length > 0
+            ? this._audit.events[this._audit.events.length - 1].hash
+            : '0'.repeat(64);
 
         const event = {
           action: 'UPDATED',
@@ -105,8 +104,8 @@ export default function auditPlugin(schema, options = {}) {
           .createHash('sha256')
           .update(
             `${previousHash}|${event.action}|${event.timestamp.getTime()}|${JSON.stringify(
-              event.data,
-            )}|${event.performedBy}`,
+              event.data
+            )}|${event.performedBy}`
           )
           .digest('hex');
 
@@ -168,8 +167,8 @@ export default function auditPlugin(schema, options = {}) {
         .createHash('sha256')
         .update(
           `${previousHash}|${event.action}|${event.timestamp.getTime()}|${JSON.stringify(
-            event.data,
-          )}|${event.performedBy}`,
+            event.data
+          )}|${event.performedBy}`
         )
         .digest('hex');
 
@@ -199,4 +198,4 @@ export default function auditPlugin(schema, options = {}) {
       data: this.toObject(),
     };
   };
-};
+}

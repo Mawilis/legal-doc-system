@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * FILE: /server/models/Event.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Event.js
  * STATUS: EPITOME | QUANTUM CALENDAR | PROFESSIONAL IMMORTAL
@@ -160,9 +158,10 @@ const eventSchema = new Schema(
       required: [true, 'Temporal identity is mandatory for chronometric tracking'],
       unique: true,
       immutable: true,
-      default: () => `event:${crypto
-        .randomBytes(16)
-        .toString('hex')}:${Temporal.Now.instant().toString()}:africa`,
+      default: () =>
+        `event:${crypto
+          .randomBytes(16)
+          .toString('hex')}:${Temporal.Now.instant().toString()}:africa`,
     },
 
     // === SOVEREIGN TEMPORAL CONTEXT ===
@@ -182,7 +181,7 @@ const eventSchema = new Schema(
         required() {
           // Some events may not be case-specific (e.g., firm meetings)
           return ['COURT_HEARING', 'FILING_DEADLINE', 'PRESCRIPTION_DATE'].includes(
-            this.temporal?.eventType,
+            this.temporal?.eventType
           );
         },
       },
@@ -784,7 +783,7 @@ const eventSchema = new Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 // -----------------------------------------------------------------------------
@@ -826,7 +825,7 @@ eventSchema.pre('validate', function (next) {
     africanTimeComplexity: calculateAfricanTimeComplexity(
       country,
       province,
-      this.temporal.eventType,
+      this.temporal.eventType
     ),
     preparationTimeEstimate: this.calculatePreparationTime(),
     travelTimeEstimate: this.calculateTravelTime(),
@@ -834,8 +833,8 @@ eventSchema.pre('validate', function (next) {
 
   // Set temporal signature if not present
   if (
-    !this.temporalIntegrity?.quantumSignature?.signature
-    && this.temporal?.coordinates?.start?.instant
+    !this.temporalIntegrity?.quantumSignature?.signature &&
+    this.temporal?.coordinates?.start?.instant
   ) {
     const instant = Temporal.Instant.from(this.temporal.coordinates.start.instant);
     this.temporalIntegrity.quantumSignature = {
@@ -871,7 +870,7 @@ eventSchema.pre('save', async function (next) {
     const allowedPaths = ['status.timeline', 'status.outcome', 'eternity'];
 
     const hasUnauthorizedChange = this.modifiedPaths().some(
-      (path) => !allowedPaths.some((allowed) => path.startsWith(allowed)),
+      (path) => !allowedPaths.some((allowed) => path.startsWith(allowed))
     );
 
     if (hasUnauthorizedChange) {
@@ -934,12 +933,15 @@ eventSchema.methods.calculateTemporalUrgency = function () {
 
   if (hoursUntil < 24 && this.temporal.significance.legalWeight > 80) {
     return 'CRITICAL_IMMEDIATE';
-  } if (hoursUntil < 72 && this.temporal.significance.legalWeight > 60) {
+  }
+  if (hoursUntil < 72 && this.temporal.significance.legalWeight > 60) {
     return 'CRITICAL';
-  } if (hoursUntil < 168) {
+  }
+  if (hoursUntil < 168) {
     // 7 days
     return 'HIGH';
-  } if (hoursUntil < 720) {
+  }
+  if (hoursUntil < 720) {
     // 30 days
     return 'MEDIUM';
   }
@@ -1145,9 +1147,9 @@ eventSchema.methods.activatePrescriptionGuardian = async function () {
 
 eventSchema.virtual('isPrescriptionCritical').get(function () {
   return (
-    this.temporal.eventType === 'PRESCRIPTION_DATE'
-    && this.temporal.significance.isStatutory
-    && this.guardianship.prescriptionGuardian.enabled
+    this.temporal.eventType === 'PRESCRIPTION_DATE' &&
+    this.temporal.significance.isStatutory &&
+    this.guardianship.prescriptionGuardian.enabled
   );
 });
 
@@ -1167,7 +1169,8 @@ eventSchema.virtual('timeUntilEvent').get(function () {
 
   if (days > 0) {
     return `${days} days, ${hours} hours`;
-  } if (hours > 0) {
+  }
+  if (hours > 0) {
     return `${hours} hours, ${minutes} minutes`;
   }
   return `${minutes} minutes`;

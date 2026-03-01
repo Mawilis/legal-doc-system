@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/bundleRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Bundle Gateway (Tenant-Scoped). Orchestrates the compilation of multiple documents into a single, indexed PDF Court Bundle.
@@ -46,7 +44,7 @@ const createBundleSchema = {
         documentId: Joi.string().required(),
         order: Joi.number().required(),
         section: Joi.string().valid('A', 'B', 'C', 'D', 'NONE').default('NONE'),
-      }),
+      })
     )
     .min(1)
     .max(200)
@@ -99,7 +97,7 @@ router.post(
       err.code = 'BUNDLE_CREATE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -122,7 +120,7 @@ router.get(
       err.code = 'BUNDLE_GET_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -152,7 +150,7 @@ router.post(
       err.code = 'BUNDLE_REGEN_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -182,7 +180,7 @@ router.delete(
       err.code = 'BUNDLE_DELETE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

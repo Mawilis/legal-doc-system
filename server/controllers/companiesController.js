@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ======================================================================
  * QUANTUM COMPANIES CONTROLLER - LEGAL ENTITY ORCHESTRATION NEXUS (CORRECTED)
  * ======================================================================
@@ -140,11 +138,12 @@ const calculateMatchScore = (userName, cipcName) => {
   try {
     if (!userName || !cipcName) return 0;
     // Normalize strings for comparison
-    const normalize = (str) => str
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const normalize = (str) =>
+      str
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
     const normalizedUser = normalize(userName);
     const normalizedCIPC = normalize(cipcName);
     // Simple Levenshtein distance implementation
@@ -164,7 +163,7 @@ const calculateMatchScore = (userName, cipcName) => {
             matrix[i][j] = Math.min(
               matrix[i - 1][j - 1] + 1,
               matrix[i][j - 1] + 1,
-              matrix[i - 1][j] + 1,
+              matrix[i - 1][j] + 1
             );
           }
         }
@@ -353,8 +352,7 @@ const validateCompanyUpdate = async (existingCompany, updateData) => {
 const checkLegalHolds = async (companyId) =>
   // In production, this would query legal holds/matters database
   // For now, return false (no legal holds)
-  false
-;
+  false;
 /*
  * 🌍 UTILITY: Verify Company with CIPC API
  *
@@ -417,7 +415,8 @@ const verifyWithCIPC_API = async (companyData) => {
         verifiedAt: new Date(),
         confidenceLevel: 'low',
       };
-    } if (error.request) {
+    }
+    if (error.request) {
       // No response from CIPC
       complianceLogger.warn('CIPC_NO_RESPONSE', {
         registrationNumber: companyData.registrationNumber,
@@ -497,13 +496,15 @@ const generateComplianceReportInternal = async (companyId, tenantId) => {
     },
   };
   // 📈 Calculate overall compliance score
-  const scores = Object.values(complianceChecks).map((check) => (check.status === 'compliant'
-    ? 100
-    : check.status === 'pending'
-      ? 50
-      : check.status === 'non_compliant'
-        ? 0
-        : 25));
+  const scores = Object.values(complianceChecks).map((check) =>
+    check.status === 'compliant'
+      ? 100
+      : check.status === 'pending'
+        ? 50
+        : check.status === 'non_compliant'
+          ? 0
+          : 25
+  );
   const overallScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
   // Generate recommendations
   const recommendations = generateComplianceRecommendations(complianceChecks);
@@ -580,7 +581,8 @@ const generateTenantComplianceSummary = async (tenantId) => {
     // Count CIPC verification
     const cipcStatus = company.cipcVerification?.status || 'pending';
     if (cipcStatus === 'verified') summary.cipcVerification.verified++;
-    else if (cipcStatus === 'api_error' || cipcStatus === 'no_response') summary.cipcVerification.failed++;
+    else if (cipcStatus === 'api_error' || cipcStatus === 'no_response')
+      summary.cipcVerification.failed++;
     else summary.cipcVerification.pending++;
   });
   return summary;
@@ -669,7 +671,8 @@ const checkCompaniesActCompliance = async (company) => {
     // Determine compliance status
     if (checks.length >= 3) {
       return 'compliant';
-    } if (checks.length >= 2) {
+    }
+    if (checks.length >= 2) {
       return 'pending';
     }
     return 'non_compliant';
@@ -690,8 +693,7 @@ const checkCompaniesActCompliance = async (company) => {
 const checkPOPIACompliance = async (company) =>
   // Simplified POPIA check
   // In production, this would integrate with POPIA compliance engine
-  company.popiaComplianceStatus || 'pending'
-;
+  company.popiaComplianceStatus || 'pending';
 /*
  * ⚖️ COMPLIANCE: Check SARS Compliance
  *
@@ -732,9 +734,7 @@ const validateCompanyRegistration = async (req, res, next) => {
         timestamp: new Date().toISOString(),
       });
     }
-    const {
-      registrationNumber, companyName, entityType, tenantId,
-    } = req.body;
+    const { registrationNumber, companyName, entityType, tenantId } = req.body;
     // 🏛️ Compliance Quantum: Validate Companies Act requirements
     const companiesActValidation = await validateCompaniesAct({
       registrationNumber,
@@ -1126,7 +1126,7 @@ exports.getAllCompanies = async (req, res) => {
     const sortDirection = sortOrder === 'desc' ? -1 : 1;
     const companies = await Company.find(query)
       .select(
-        'registrationNumber companyName entityType registrationDate complianceStatus cipcVerification createdAt',
+        'registrationNumber companyName entityType registrationDate complianceStatus cipcVerification createdAt'
       )
       .sort({ [sortBy]: sortDirection })
       .skip(skip)
@@ -1270,7 +1270,7 @@ exports.updateCompany = async (req, res) => {
         updatedBy: userId,
         updatedAt: new Date(),
       },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
     // 📊 Audit Quantum: Log successful update
     auditLogger.info('COMPANY_UPDATED', {

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
  * ╔══════════════════════════════════════════════════════════════════════╗
  * ║                 WILSY OS - QUANTUM DATA SUBJECT SERVICE              ║
@@ -223,11 +221,11 @@ class DataSubjectService {
         id: dsar.requestId,
         status: dsar.status,
         deadline: dsar.statutoryDeadline,
-      }),
+      })
     );
 
     logger.info(
-      `DSAR ${dsar.requestId} created - Jurisdiction: ${jurisdiction}, Deadline: ${deadline}`,
+      `DSAR ${dsar.requestId} created - Jurisdiction: ${jurisdiction}, Deadline: ${deadline}`
     );
 
     return {
@@ -305,7 +303,7 @@ class DataSubjectService {
     // ENCRYPTION QUANTUM: Secure report storage
     const encryptedReport = encryptData(
       report,
-      process.env.DSAR_REPORT_ENCRYPTION_KEY || this.encryptionKey,
+      process.env.DSAR_REPORT_ENCRYPTION_KEY || this.encryptionKey
     );
 
     // UPDATE QUANTUM: Mark as ready for review
@@ -470,7 +468,7 @@ class DataSubjectService {
       const cipher = crypto.createCipheriv(
         'aes-256-gcm',
         Buffer.from(this.encryptionKey, 'hex'),
-        iv,
+        iv
       );
 
       let encrypted = cipher.update(JSON.stringify(piiToEncrypt), 'utf8', 'hex');

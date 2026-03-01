@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PROMETHEUS METRICS REGISTRY                                               ║
   ║ Lightweight metrics collection for /metrics endpoint                     ║
@@ -35,12 +35,12 @@ export class PrometheusRegistry {
   }
 
   createHistogram(name, help, buckets = [0.1, 0.5, 1, 2.5, 5, 10]) {
-    this.histograms.set(name, { 
+    this.histograms.set(name, {
       buckets,
       counts: new Array(buckets.length + 1).fill(0),
       sum: 0,
       count: 0,
-      help 
+      help,
     });
   }
 
@@ -83,13 +83,13 @@ export class PrometheusRegistry {
     for (const [name, hist] of this.histograms) {
       output += `# HELP ${name} ${hist.help}\n`;
       output += `# TYPE ${name} histogram\n`;
-      
+
       // Buckets
       for (let i = 0; i < hist.buckets.length; i++) {
         output += `${name}_bucket{le="${hist.buckets[i]}"} ${hist.counts[i]}\n`;
       }
       output += `${name}_bucket{le="+Inf"} ${hist.counts[hist.counts.length - 1]}\n`;
-      
+
       // Count and sum
       output += `${name}_count ${hist.count}\n`;
       output += `${name}_sum ${hist.sum}\n\n`;

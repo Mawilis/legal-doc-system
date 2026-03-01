@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║                                           WILSY OS - SOVEREIGN LEGAL OPERATING SYSTEM                                                   ║
   ║                                       INVESTOR-GRADE VALIDATION ENGINE - PRODUCTION v3.0                                               ║

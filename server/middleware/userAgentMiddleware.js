@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/middleware/userAgentMiddleware.js
  * STATUS: PRODUCTION-READY | SECURITY TELEMETRY GRADE
  * -----------------------------------------------------------------------------

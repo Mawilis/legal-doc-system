@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ RECOVERY SENTINEL - INVESTOR-GRADE MODULE                     ║
   ║ 99.9999% uptime | Autonomous restoration | $1.5B value        ║
@@ -55,12 +55,12 @@
 
 import axios from 'axios.js';
 import { exec, spawn } from 'child_process';
-import { promisify } from "util";
+import { promisify } from 'util';
 import fs from 'fs/promises';
-import path from "path";
+import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { createHmac, randomBytes } from "crypto";
+import { createHmac, randomBytes } from 'crypto';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 

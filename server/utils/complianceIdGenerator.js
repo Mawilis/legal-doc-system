@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ COMPLIANCE ID GENERATOR V6 — FORENSIC INVESTOR-GRADE ● REGULATOR-READY ● COURT-ADMISSIBLE                      ║
   ║ 94% error reduction | R2.8M penalty elimination | Multi-entity embedded                                        ║
   ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
@@ -223,13 +221,13 @@ function calculateChecksum(id) {
 function generateHostHash() {
   const hostname = os.hostname();
   const networkIfaces = os.networkInterfaces();
-  const mac = Object.values(networkIfaces)
-    .flat()
-    .find((i) => !i.internal && i.mac !== '00:00:00:00:00:00')?.mac || '00:00:00:00:00:00';
+  const mac =
+    Object.values(networkIfaces)
+      .flat()
+      .find((i) => !i.internal && i.mac !== '00:00:00:00:00:00')?.mac || '00:00:00:00:00:00';
 
   const hostString = `${hostname}-${mac}-${process.pid}`;
-  return crypto.createHash('md5').update(hostString).digest('hex').substring(0, 4)
-    .toUpperCase();
+  return crypto.createHash('md5').update(hostString).digest('hex').substring(0, 4).toUpperCase();
 }
 
 /*
@@ -290,7 +288,10 @@ function parseTimestamp(timestampStr) {
     };
   } catch (error) {
     return {
-      valid: false, iso: null, dateTime: null, error: error.message,
+      valid: false,
+      iso: null,
+      dateTime: null,
+      error: error.message,
     };
   }
 }
@@ -344,7 +345,7 @@ function generateComplianceId(type, options = {}) {
   } else {
     if (!ID_TYPES[type]) {
       throw new Error(
-        `Invalid ID type: ${type}. Must be one of: ${Object.keys(ID_TYPES).join(', ')}`,
+        `Invalid ID type: ${type}. Must be one of: ${Object.keys(ID_TYPES).join(', ')}`
       );
     }
     idType = type;
@@ -504,7 +505,8 @@ function validateId(id, options = {}) {
     return true;
   }
 
-  const v6Pattern = /^[A-Z]+-[A-Z]+_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}(?:_H[A-F0-9]{4})?(?:_P[A-F0-9]{4})?(?:_C\d)?$/;
+  const v6Pattern =
+    /^[A-Z]+-[A-Z]+_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}(?:_H[A-F0-9]{4})?(?:_P[A-F0-9]{4})?(?:_C\d)?$/;
   if (!v6Pattern.test(id)) {
     return false;
   }

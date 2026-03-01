@@ -1,4 +1,4 @@
-/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS: EMERGENCY KILL-SWITCH MIDDLEWARE - $2.75B NUCLEAR SAFETY PROTOCOL ║
   ║ DOCTRINE: Absolute Quarantine. Instant tenant isolation in milliseconds. ║
   ║ Purpose: Halts all operations for a specific tenant if security breach detected. ║
@@ -25,7 +25,7 @@
  * • RFC 7807 compliant error responses
  */
 
-import crypto from "crypto";
+import crypto from 'crypto';
 import { AuditLogger } from '../utils/auditLogger.js';
 import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
@@ -70,10 +70,8 @@ const emergencyKillSwitch = (options = {}) => {
       return next();
     }
     // Extract tenant ID from various sources
-    const tenantId = req.headers['x-tenant-id']
-      || req.user?.tenantId
-      || req.body?.tenantId
-      || req.query?.tenantId;
+    const tenantId =
+      req.headers['x-tenant-id'] || req.user?.tenantId || req.body?.tenantId || req.query?.tenantId;
     if (!tenantId) {
       // Public endpoint, no tenant context
       return next();
@@ -123,7 +121,8 @@ const emergencyKillSwitch = (options = {}) => {
           type: 'https://api.wilsyos.com/errors/tenant-quarantine',
           title: 'Tenant Quarantine Active',
           status: QUARANTINE_CONFIG.HTTP_STATUS,
-          detail: 'Your account is temporarily suspended for forensic security review. Please contact support.',
+          detail:
+            'Your account is temporarily suspended for forensic security review. Please contact support.',
           instance: forensicId,
           timestamp: new Date().toISOString(),
           code: QUARANTINE_CONFIG.ERROR_CODE,
@@ -155,7 +154,11 @@ const emergencyKillSwitch = (options = {}) => {
  * @param {number} ttl - Time to live in seconds
  * @returns {Promise<Object>} Quarantine details
  */
-const quarantineTenant = async (tenantId, reason = QUARANTINE_REASONS.SECURITY_BREACH, ttl = QUARANTINE_CONFIG.DEFAULT_TTL) => {
+const quarantineTenant = async (
+  tenantId,
+  reason = QUARANTINE_REASONS.SECURITY_BREACH,
+  ttl = QUARANTINE_CONFIG.DEFAULT_TTL
+) => {
   const quarantineKey = `${QUARANTINE_CONFIG.REDIS_KEY_PREFIX}${tenantId}`;
 
   const quarantineDetails = {
@@ -169,7 +172,7 @@ const quarantineTenant = async (tenantId, reason = QUARANTINE_REASONS.SECURITY_B
     quarantineKey,
     JSON.stringify(quarantineDetails),
     'EX',
-    Math.min(ttl, QUARANTINE_CONFIG.MAX_TTL),
+    Math.min(ttl, QUARANTINE_CONFIG.MAX_TTL)
   );
   // Log to forensic chain
   await AuditLogger.logAction(tenantId, 'SYSTEM', 'TENANT_QUARANTINE_TRIPPED', null, {

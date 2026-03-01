@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 // Epitope Coverage Generator for Wilsy OS
 const { execSync } = require('child_process');
 const fs = require('fs');

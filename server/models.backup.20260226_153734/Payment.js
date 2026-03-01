@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ====================================================================================
  * WILSY OS - THE SUPREME LEGAL TECHNOLOGY FORTRESS
  * ====================================================================================
@@ -111,7 +109,7 @@ const decryptSensitiveData = (encryptedObj) => {
   const decipher = crypto.createDecipheriv(
     'aes-256-gcm',
     Buffer.from(encryptionKey, 'hex'),
-    Buffer.from(iv, 'hex'),
+    Buffer.from(iv, 'hex')
   );
   decipher.setAuthTag(Buffer.from(authTag, 'hex'));
   let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
@@ -1042,7 +1040,7 @@ const PaymentSchema = new Schema(
       virtuals: true,
       getters: true,
     },
-  },
+  }
 );
 
 // ============================================================================
@@ -1068,9 +1066,9 @@ PaymentSchema.virtual('isRefundable').get(function () {
   const nonRefundableStatuses = ['REFUNDED', 'PARTIALLY_REFUNDED', 'DISPUTED', 'CHARGEBACK'];
 
   return (
-    refundableStatuses.includes(this.status)
-    && !nonRefundableStatuses.includes(this.status)
-    && new Date() < new Date(this.paymentDate.getTime() + 180 * 24 * 60 * 60 * 1000)
+    refundableStatuses.includes(this.status) &&
+    !nonRefundableStatuses.includes(this.status) &&
+    new Date() < new Date(this.paymentDate.getTime() + 180 * 24 * 60 * 60 * 1000)
   ); // 180 days CPA limit
 });
 
@@ -1084,8 +1082,8 @@ PaymentSchema.virtual('isDisputable').get(function () {
   const disputePeriodDays = this.paymentMethod === 'CREDIT_CARD' ? 120 : 90; // Card vs other methods
 
   return (
-    disputableStatuses.includes(this.status)
-    && new Date() < new Date(this.paymentDate.getTime() + disputePeriodDays * 24 * 60 * 60 * 1000)
+    disputableStatuses.includes(this.status) &&
+    new Date() < new Date(this.paymentDate.getTime() + disputePeriodDays * 24 * 60 * 60 * 1000)
   );
 });
 
@@ -1132,9 +1130,9 @@ PaymentSchema.virtual('sarsVatCompliant').get(function () {
   const vatDifference = Math.abs(this.vatAmount - expectedVat);
 
   return (
-    vatDifference < 0.01 // Allow for rounding differences
-    && this.complianceFlags.sarsVatApplied
-    && this.vatAmount > 0
+    vatDifference < 0.01 && // Allow for rounding differences
+    this.complianceFlags.sarsVatApplied &&
+    this.vatAmount > 0
   );
 });
 
@@ -1152,7 +1150,7 @@ PaymentSchema.pre('validate', function (next) {
   if (this.currency === 'ZAR' && this.amount > 25000 && !this.complianceFlags.ficaVerified) {
     this.invalidate(
       'complianceFlags.ficaVerified',
-      'FICA verification required for large transactions (> ZAR 25,000)',
+      'FICA verification required for large transactions (> ZAR 25,000)'
     );
   }
 
@@ -1160,7 +1158,7 @@ PaymentSchema.pre('validate', function (next) {
   if (!this.complianceFlags.popiaConsent) {
     this.invalidate(
       'complianceFlags.popiaConsent',
-      'POPIA consent required for payment processing',
+      'POPIA consent required for payment processing'
     );
   }
 
@@ -1168,7 +1166,7 @@ PaymentSchema.pre('validate', function (next) {
   if (this.jurisdiction.startsWith('ZA') && !['ZAR', 'USD', 'EUR', 'GBP'].includes(this.currency)) {
     this.invalidate(
       'currency',
-      `Currency ${this.currency} not supported in South African jurisdiction`,
+      `Currency ${this.currency} not supported in South African jurisdiction`
     );
   }
 
@@ -1203,9 +1201,9 @@ PaymentSchema.pre('save', function (next) {
 
   // Calculate VAT for ZAR non-trust payments
   if (
-    this.isModified('amount')
-    || this.isModified('currency')
-    || this.isModified('isTrustPayment')
+    this.isModified('amount') ||
+    this.isModified('currency') ||
+    this.isModified('isTrustPayment')
   ) {
     if (this.currency === 'ZAR' && !this.isTrustPayment) {
       this.vatAmount = parseFloat((this.amount * 0.15).toFixed(2));
@@ -1251,7 +1249,7 @@ PaymentSchema.pre('save', function (next) {
   // Add audit trail entry for modifications
   if (this.isModified() && this.auditTrail) {
     const modifiedPaths = this.modifiedPaths().filter(
-      (path) => !['__v', 'updatedAt', 'auditTrail', 'integrityHash'].includes(path),
+      (path) => !['__v', 'updatedAt', 'auditTrail', 'integrityHash'].includes(path)
     );
 
     if (modifiedPaths.length > 0) {
@@ -1332,7 +1330,7 @@ PaymentSchema.methods.processRefund = async function (amount, reason, userId) {
         originalAmount: this.totalAmount,
         reason,
       },
-    },
+    }
   );
 
   return this.save();
@@ -1410,7 +1408,7 @@ PaymentSchema.methods.generateInvoice = function () {
       address: process.env.COMPANY_ADDRESS || 'Johannesburg, South Africa',
       taxPeriod: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(
         2,
-        '0',
+        '0'
       )}`,
     },
     paymentDetails: {
@@ -1450,7 +1448,7 @@ PaymentSchema.methods.recordPOPIAConsent = async function (consentId, userId) {
   await this.addAuditEntry(
     'POPIA_CONSENT_RECORDED',
     'POPIA consent recorded for payment processing',
-    userId,
+    userId
   );
 
   return this.save();
@@ -1474,7 +1472,7 @@ PaymentSchema.methods.recordFICAVerification = async function (verificationId, u
   await this.addAuditEntry(
     'FICA_VERIFIED',
     'FICA verification recorded for AML compliance',
-    userId,
+    userId
   );
 
   return this.save();
@@ -1490,7 +1488,8 @@ PaymentSchema.methods.recordFICAVerification = async function (verificationId, u
  * @returns {Promise<Payment>} Updated divine payment
  */
 PaymentSchema.methods.addAuditEntry = async function (action, details, userId, context = {}) {
-  const previousHash = this.auditTrail.length > 0 ? this.auditTrail[this.auditTrail.length - 1].hash : null;
+  const previousHash =
+    this.auditTrail.length > 0 ? this.auditTrail[this.auditTrail.length - 1].hash : null;
 
   const auditEntry = {
     action,
@@ -1790,7 +1789,7 @@ PaymentSchema.statics.cleanupExpiredPayments = async function () {
         status: 'DESTROYED',
         destroyedAt: new Date(),
       },
-    },
+    }
   );
 
   return {
@@ -1819,10 +1818,16 @@ PaymentSchema.index({ paymentGateway: 1, status: 1 }); // Gateway performance
 
 // Compound indexes for complex payment queries
 PaymentSchema.index({
-  tenantId: 1, paymentDate: -1, status: 1, currency: 1,
+  tenantId: 1,
+  paymentDate: -1,
+  status: 1,
+  currency: 1,
 });
 PaymentSchema.index({
-  tenantId: 1, clientId: 1, isTrustPayment: 1, status: 1,
+  tenantId: 1,
+  clientId: 1,
+  isTrustPayment: 1,
+  status: 1,
 });
 PaymentSchema.index({ tenantId: 1, 'reconciliationData.matched': 1, paymentDate: -1 });
 

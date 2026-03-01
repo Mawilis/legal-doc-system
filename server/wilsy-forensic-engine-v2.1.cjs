@@ -315,7 +315,7 @@ class WilsyForensicEngineV21 {
           execSync('find . -name "*.js" -not -path "*/node_modules/*" | wc -l', {
             cwd: this.rootDir,
             encoding: 'utf8',
-          }).trim(),
+          }).trim()
         ) || 0;
     } catch (_e) {
       jsCount = this.stats.filesProcessed || 750;
@@ -349,7 +349,7 @@ class WilsyForensicEngineV21 {
                 ((this.stats.filesProcessed - this.stats.filesWithIssues) /
                   this.stats.filesProcessed) *
                 100
-              ).toFixed(2)  }%`
+              ).toFixed(2)}%`
             : '100%',
       },
       economicImpact: {
@@ -387,8 +387,8 @@ class WilsyForensicEngineV21 {
         evidence,
         Object.keys(evidence)
           .filter((_k) => k !== 'forensicHash')
-          .sort(),
-      ),
+          .sort()
+      )
     );
     const hash = crypto
       .createHash('sha256')
@@ -441,8 +441,8 @@ class WilsyForensicEngineV21 {
         -not -path "*/dist/*" \
         -not -path "*/build/*" 2>/dev/null | xargs grep -l "\\*\\*" 2>/dev/null | wc -l
       `,
-            { cwd: this.rootDir, encoding: 'utf8' },
-          ).trim(),
+            { cwd: this.rootDir, encoding: 'utf8' }
+          ).trim()
         ) || 0;
 
       if (doubleAsteriskCount === 0) {
@@ -465,8 +465,8 @@ class WilsyForensicEngineV21 {
               evidence,
               Object.keys(evidence)
                 .filter((_k) => k !== 'forensicHash' && k !== 'hashAlgorithm')
-                .sort(),
-            ),
+                .sort()
+            )
           )
           .digest('hex');
 
@@ -571,7 +571,7 @@ class WilsyForensicEngineV21 {
   • File: ${path.relative(__dirname, this.evidenceFile)}
   • Hash: ${
     this.evidenceFile
-      ? `${JSON.parse(fs.readFileSync(this.evidenceFile, 'utf8')).forensicHash.substring(0, 16)  }...`
+      ? `${JSON.parse(fs.readFileSync(this.evidenceFile, 'utf8')).forensicHash.substring(0, 16)}...`
       : 'N/A'
   }
 

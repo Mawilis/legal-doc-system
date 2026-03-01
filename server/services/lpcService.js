@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - LPC SERVICE v5.2.2
  * Standard: ES Module (Surgically Standardized)
@@ -28,7 +26,7 @@ import {
 } from '../utils/errors.js';
 
 import crypto from 'node:crypto';
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid.js';
 import axios from 'axios.js';
 import { DateTime } from 'luxon.js';

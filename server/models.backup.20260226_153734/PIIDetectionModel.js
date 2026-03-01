@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/models/AIModel.js
  * STATUS: PRODUCTION-READY (WILSY OS V2.0)
  *
@@ -259,7 +257,7 @@ const AIIntelligenceSchema = new mongoose.Schema(
   {
     timestamps: true,
     strict: false, // Allows for dynamic legal document structures
-  },
+  }
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -288,7 +286,7 @@ AIIntelligenceSchema.pre('save', function (next) {
   if (this.processingMetrics?.processingTime > 10000) {
     // 10 seconds
     console.warn(
-      `SLOW AI PROCESSING: ${this.processingMetrics.processingTime}ms for ${this.intelligenceId}`,
+      `SLOW AI PROCESSING: ${this.processingMetrics.processingTime}ms for ${this.intelligenceId}`
     );
   }
 
@@ -351,7 +349,7 @@ class AIModel {
 
       if (cached) {
         console.log(
-          `[AI_CACHE_HIT] Saved R${AI_CONFIG.PRICING_TIERS.CLAUSE_EXTRACTION.base} in API costs`,
+          `[AI_CACHE_HIT] Saved R${AI_CONFIG.PRICING_TIERS.CLAUSE_EXTRACTION.base} in API costs`
         );
         return JSON.parse(cached);
       }
@@ -428,7 +426,7 @@ class AIModel {
 
       // PARSE THE PROPHECY
       const aiResponse = JSON.parse(
-        response?.choices?.[0]?.message?.content || response?.content?.[0]?.text || '{}',
+        response?.choices?.[0]?.message?.content || response?.content?.[0]?.text || '{}'
       );
 
       // ENHANCE WITH WILSY LEGAL INTELLIGENCE
@@ -462,12 +460,12 @@ class AIModel {
           serviceTier: 'PROFESSIONAL',
           baseCharge: AI_CONFIG.PRICING_TIERS.CLAUSE_EXTRACTION.base,
           additionalCharges:
-            enhancedResponse.extractedClauses?.length
-              * AI_CONFIG.PRICING_TIERS.CLAUSE_EXTRACTION.perPage || 0,
+            enhancedResponse.extractedClauses?.length *
+              AI_CONFIG.PRICING_TIERS.CLAUSE_EXTRACTION.perPage || 0,
           totalCharge:
-            AI_CONFIG.PRICING_TIERS.CLAUSE_EXTRACTION.base
-            + (enhancedResponse.extractedClauses?.length
-              * AI_CONFIG.PRICING_TIERS.CLAUSE_EXTRACTION.perPage || 0),
+            AI_CONFIG.PRICING_TIERS.CLAUSE_EXTRACTION.base +
+            (enhancedResponse.extractedClauses?.length *
+              AI_CONFIG.PRICING_TIERS.CLAUSE_EXTRACTION.perPage || 0),
           currency: 'ZAR',
         },
       });
@@ -476,7 +474,7 @@ class AIModel {
       await this.redis.setex(
         cacheKey,
         86400, // 24 hours
-        JSON.stringify(intelligenceRecord),
+        JSON.stringify(intelligenceRecord)
       );
 
       // UPDATE REVENUE COUNTER
@@ -487,14 +485,14 @@ class AIModel {
       const totalTime = performance.measure(
         'totalExtraction',
         'clauseExtraction_start',
-        'clauseExtraction_end',
+        'clauseExtraction_end'
       ).duration;
 
       console.log(
-        `💰 [AI_REVENUE] Generated R${intelligenceRecord.billingDetails.totalCharge} in ${totalTime}ms`,
+        `💰 [AI_REVENUE] Generated R${intelligenceRecord.billingDetails.totalCharge} in ${totalTime}ms`
       );
       console.log(
-        `📊 [AI_STATS] Total: R${this.revenueGenerated} from ${this.documentsProcessed} documents`,
+        `📊 [AI_STATS] Total: R${this.revenueGenerated} from ${this.documentsProcessed} documents`
       );
 
       return intelligenceRecord;
@@ -534,7 +532,8 @@ class AIModel {
         // Additional African jurisdictions...
       };
 
-      const jurisdictionData = africanRiskDatabase[documentAnalysis.jurisdiction] || africanRiskDatabase.RSA;
+      const jurisdictionData =
+        africanRiskDatabase[documentAnalysis.jurisdiction] || africanRiskDatabase.RSA;
 
       // RISK PREDICTION ENGINE
       const riskPredictions = documentAnalysis.extractedClauses.map((clause) => {
@@ -559,7 +558,8 @@ class AIModel {
         };
       });
 
-      const overallRiskScore = riskPredictions.reduce((sum, r) => sum + r.riskScore, 0) / riskPredictions.length;
+      const overallRiskScore =
+        riskPredictions.reduce((sum, r) => sum + r.riskScore, 0) / riskPredictions.length;
 
       performance.mark('riskAssessment_end');
 
@@ -567,7 +567,7 @@ class AIModel {
         overallRisk: overallRiskScore > 70 ? 'HIGH' : overallRiskScore > 40 ? 'MEDIUM' : 'LOW',
         riskScore: Math.round(overallRiskScore),
         highRiskClauses: riskPredictions.filter(
-          (r) => r.riskLevel === 'CRITICAL' || r.riskLevel === 'HIGH',
+          (r) => r.riskLevel === 'CRITICAL' || r.riskLevel === 'HIGH'
         ),
         mediumRiskClauses: riskPredictions.filter((r) => r.riskLevel === 'MEDIUM'),
         totalFinancialExposure: riskPredictions.reduce((sum, r) => sum + r.financialImpact, 0),
@@ -575,7 +575,7 @@ class AIModel {
         recommendedActions: this.generateRiskMitigationPlan(riskPredictions),
         predictiveAnalytics: await this.predictDisputeProbability(
           riskPredictions,
-          jurisdictionData,
+          jurisdictionData
         ),
       };
     } catch (error) {
@@ -702,7 +702,7 @@ class AIModel {
     // RSA ID: 12 digits starting with date
     text = text.replace(
       /\b\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{4}\d{3}\d\b/g,
-      '[RSA_ID_REDACTED]',
+      '[RSA_ID_REDACTED]'
     );
 
     // Phone: South African format
@@ -723,14 +723,14 @@ class AIModel {
     return {
       baseCharge: base,
       additionalCharges:
-        (documentAnalysis.extractedClauses?.length || 0) * perClause
-        + riskPremium
-        + compliancePremium,
+        (documentAnalysis.extractedClauses?.length || 0) * perClause +
+        riskPremium +
+        compliancePremium,
       totalCharge:
-        base
-        + (documentAnalysis.extractedClauses?.length || 0) * perClause
-        + riskPremium
-        + compliancePremium,
+        base +
+        (documentAnalysis.extractedClauses?.length || 0) * perClause +
+        riskPremium +
+        compliancePremium,
       currency: 'ZAR',
       breakdown: {
         clauseExtraction: documentAnalysis.extractedClauses?.length * perClause || 0,
@@ -744,7 +744,8 @@ class AIModel {
   calculateCost(tokensUsed, model) {
     if (model === 'GPT-4') {
       return (tokensUsed / 1000) * AI_CONFIG.OPENAI_GPT4.costPerToken * 18; // Convert to ZAR
-    } if (model === 'CLAUDE') {
+    }
+    if (model === 'CLAUDE') {
       return (tokensUsed / 1000) * AI_CONFIG.CLAUDE_ENTERPRISE.costPerToken * 18; // Convert to ZAR
     }
     return 0;
@@ -777,7 +778,7 @@ class AIModel {
       aiResponse.extractedClauses?.map(async (clause) => ({
         ...clause,
         precedents: await this.findSimilarPrecedents(clause, jurisdiction, tenantId),
-      })) || [],
+      })) || []
     );
 
     return aiResponse;
@@ -837,7 +838,7 @@ class AIModel {
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       Buffer.from(process.env.AI_ENCRYPTION_KEY, 'hex'),
-      Buffer.from(encryptedPackage.iv, 'hex'),
+      Buffer.from(encryptedPackage.iv, 'hex')
     );
     decipher.setAuthTag(Buffer.from(encryptedPackage.authTag, 'hex'));
 

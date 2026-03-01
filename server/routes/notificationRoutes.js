@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/routes/notificationRoutes.js
  * STATUS: PRODUCTION-READY
  * PURPOSE: Notification Gateway (Tenant-Scoped). Manages Multi-Channel Alerts (Push, Email, In-App) and User Preferences.
@@ -86,7 +84,7 @@ router.post(
       err.code = 'NOTIF_TOKEN_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -122,7 +120,7 @@ router.patch(
       err.code = 'NOTIF_READ_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -158,7 +156,7 @@ router.patch(
       err.code = 'NOTIF_PREF_UPDATE_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 /*
@@ -189,7 +187,7 @@ router.post(
       err.code = 'NOTIF_BROADCAST_FAILED';
       next(err);
     }
-  },
+  }
 );
 
 export default router;

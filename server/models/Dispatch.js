@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * FILE: /server/models/Dispatch.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Dispatch.js
  * STATUS: EPITOME | PRODUCTION READY | GENERATIONAL ARCHITECTURE
@@ -560,7 +558,7 @@ const dispatchSchema = new Schema(
 
     // === QUERY OPTIMIZATION ===
     queryOptimizer: true,
-  },
+  }
 );
 
 // -----------------------------------------------------------------------------
@@ -702,7 +700,7 @@ dispatchSchema.methods.initiateDivineDispatch = async function () {
 
   // Update status based on results
   const successful = results.filter(
-    (r) => r.status === 'fulfilled' && r.value.status === 'DISPATCHED',
+    (r) => r.status === 'fulfilled' && r.value.status === 'DISPATCHED'
   ).length;
 
   if (successful === this.channels.length) {
@@ -895,9 +893,9 @@ dispatchSchema.methods.calculateAfricanDeliveryScore = function () {
 
   // Positive factors
   if (
-    this.recipient.physical?.address?.city
-    && ['JOHANNESBURG', 'CAPE_TOWN', 'DURBAN', 'PRETORIA'].includes(
-      this.recipient.physical.address.city.toUpperCase(),
+    this.recipient.physical?.address?.city &&
+    ['JOHANNESBURG', 'CAPE_TOWN', 'DURBAN', 'PRETORIA'].includes(
+      this.recipient.physical.address.city.toUpperCase()
     )
   ) {
     score += 2; // Major city
@@ -910,9 +908,10 @@ dispatchSchema.methods.calculateAfricanDeliveryScore = function () {
   // Negative factors
   if (this.routing.africanFactors?.politicalClimate === 'CRITICAL') score -= 3;
   if (
-    this.content.urgency === 'DIVINE_IMMEDIATE'
-    && !this.channels.some((c) => c.type === 'COURT_API_DIRECT')
-  ) score -= 2;
+    this.content.urgency === 'DIVINE_IMMEDIATE' &&
+    !this.channels.some((c) => c.type === 'COURT_API_DIRECT')
+  )
+    score -= 2;
 
   return Math.max(0, Math.min(score, 10));
 };
@@ -923,9 +922,9 @@ dispatchSchema.methods.calculateAfricanDeliveryScore = function () {
 
 dispatchSchema.virtual('isJudiciallyPerfect').get(function () {
   return (
-    this.status === 'JUDICIALLY_ACCEPTED'
-    && this.security.timestampChain.length > 0
-    && this.channels.every((c) => c.status === 'DELIVERED' || c.status === 'VERIFIED')
+    this.status === 'JUDICIALLY_ACCEPTED' &&
+    this.security.timestampChain.length > 0 &&
+    this.channels.every((c) => c.status === 'DELIVERED' || c.status === 'VERIFIED')
   );
 });
 

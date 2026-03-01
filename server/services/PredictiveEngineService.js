@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PREDICTIVE TEMPLATE ENGINE SERVICE - FORENSIC EDITION                     ║
   ║ Features: Safe concurrency queue, idempotent metrics, bulletproof async   ║
@@ -22,7 +22,7 @@ if (!analyzeHistogram) {
     name: 'predictive_engine_analyze_duration_seconds',
     help: 'Duration of template analysis in seconds',
     registers: [register],
-    buckets: [0.1, 0.5, 1, 2, 5, 10, 30]
+    buckets: [0.1, 0.5, 1, 2, 5, 10, 30],
   });
 }
 
@@ -31,7 +31,7 @@ if (!analyzeCounter) {
   analyzeCounter = new client.Counter({
     name: 'predictive_engine_analyze_requests_total',
     help: 'Total analyze requests',
-    registers: [register]
+    registers: [register],
   });
 }
 
@@ -40,7 +40,7 @@ if (!analyzeFailures) {
   analyzeFailures = new client.Counter({
     name: 'predictive_engine_analyze_failures_total',
     help: 'Total analyze failures',
-    registers: [register]
+    registers: [register],
   });
 }
 
@@ -49,7 +49,7 @@ if (!predictionGauge) {
   predictionGauge = new client.Gauge({
     name: 'predictive_engine_active_predictions',
     help: 'Number of active predictions stored',
-    registers: [register]
+    registers: [register],
   });
 }
 
@@ -81,7 +81,7 @@ export class PredictiveEngineService {
 
     if (this.activeCount >= this.concurrentLimit) {
       logger.debug('Job queued', { queueLength: this.queue.length + 1 });
-      await new Promise(resolve => this.queue.push(resolve));
+      await new Promise((resolve) => this.queue.push(resolve));
     }
 
     this.activeCount++;
@@ -93,7 +93,10 @@ export class PredictiveEngineService {
       return result;
     } catch (err) {
       analyzeFailures.inc();
-      logger.error('Template analysis failed', { err: err.message, templateId: template?.templateId });
+      logger.error('Template analysis failed', {
+        err: err.message,
+        templateId: template?.templateId,
+      });
       throw err;
     } finally {
       endTimer();
@@ -107,7 +110,7 @@ export class PredictiveEngineService {
     if (this.queue.length > 0) {
       const nextResolver = this.queue.shift();
       // Unblock the next waiting job in the queue
-      nextResolver(); 
+      nextResolver();
     }
   }
 
@@ -116,31 +119,45 @@ export class PredictiveEngineService {
       throw new Error('Template must include templateId');
     }
 
-    logger.info('Starting analysis', { templateId: template.templateId, practiceArea: template.practiceArea });
+    logger.info('Starting analysis', {
+      templateId: template.templateId,
+      practiceArea: template.practiceArea,
+    });
 
     const templateCopy = JSON.parse(JSON.stringify(template));
     const analysis = await this.engine.analyzeTemplate(templateCopy);
 
-    const datasetHash = createHash('sha256').update(JSON.stringify({
-      template: templateCopy,
-      analysis: analysis
-    })).digest('hex');
+    const datasetHash = createHash('sha256')
+      .update(
+        JSON.stringify({
+          template: templateCopy,
+          analysis: analysis,
+        })
+      )
+      .digest('hex');
 
     const snapshotPath = path.join(this.snapshotDir, `${template.templateId}_${datasetHash}.json`);
     try {
-      fs.writeFileSync(snapshotPath, JSON.stringify({ template: templateCopy, analysis }, null, 2), 'utf8');
+      fs.writeFileSync(
+        snapshotPath,
+        JSON.stringify({ template: templateCopy, analysis }, null, 2),
+        'utf8'
+      );
       logger.info('Snapshot persisted', { templateId: template.templateId, snapshotPath });
     } catch (err) {
-      logger.warn('Failed to persist snapshot', { err: err.message, templateId: template.templateId });
+      logger.warn('Failed to persist snapshot', {
+        err: err.message,
+        templateId: template.templateId,
+      });
     }
 
-    this.engine.predictions.set(template.templateId, { 
-      ...analysis, 
-      datasetHash, 
-      snapshotPath, 
-      timestamp: new Date().toISOString() 
+    this.engine.predictions.set(template.templateId, {
+      ...analysis,
+      datasetHash,
+      snapshotPath,
+      timestamp: new Date().toISOString(),
     });
-    
+
     predictionGauge.set(this.engine.predictions.size);
 
     return { templateId: template.templateId, datasetHash, snapshotPath, analysis };
@@ -167,7 +184,7 @@ export class PredictiveEngineService {
       predictionsStored: this.engine.predictions.size,
       queueLength: this.queue.length,
       active: this.activeCount,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
   }
 
@@ -175,17 +192,21 @@ export class PredictiveEngineService {
     logger.info('Shutdown initiated for PredictiveEngineService');
     const start = Date.now();
 
-    while (this.activeCount > 0 && (Date.now() - start) < timeoutMs) {
-      await new Promise(r => setTimeout(r, 200));
+    while (this.activeCount > 0 && Date.now() - start < timeoutMs) {
+      await new Promise((r) => setTimeout(r, 200));
     }
 
     try {
-      const index = Array.from(this.engine.predictions.entries()).map(([id, p]) => ({ 
-        id, 
-        timestamp: p.timestamp, 
-        datasetHash: p.datasetHash 
+      const index = Array.from(this.engine.predictions.entries()).map(([id, p]) => ({
+        id,
+        timestamp: p.timestamp,
+        datasetHash: p.datasetHash,
       }));
-      fs.writeFileSync(path.join(this.snapshotDir, 'index.json'), JSON.stringify(index, null, 2), 'utf8');
+      fs.writeFileSync(
+        path.join(this.snapshotDir, 'index.json'),
+        JSON.stringify(index, null, 2),
+        'utf8'
+      );
       logger.info('Prediction index persisted');
     } catch (err) {
       logger.warn('Failed to persist prediction index during shutdown', { err: err.message });

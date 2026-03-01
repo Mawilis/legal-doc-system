@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env jest */
+#!/* eslint-env jest */
 
 // Clear require cache
 delete require.cache[require.resolve('../../services/CaseComplianceService')];
@@ -84,7 +82,10 @@ describe('CaseComplianceService - Basic Tests', () => {
   test('Should enforce data residency and retention', () => {
     const service = require('../../services/CaseComplianceService');
 
-    const disposalDate = service._calculateDisposalDate(new Date('2024-01-01'), 'COMPANIES_ACT_7YR');
+    const disposalDate = service._calculateDisposalDate(
+      new Date('2024-01-01'),
+      'COMPANIES_ACT_7YR'
+    );
 
     expect(disposalDate.getFullYear()).toBe(2031); // 2024 + 7
 

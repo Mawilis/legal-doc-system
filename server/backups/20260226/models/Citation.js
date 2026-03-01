@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ CITATION MODEL - INVESTOR-GRADE MODULE                         ║
   ║ 85% cost reduction | R3.2M risk elimination | 90% margins      ║

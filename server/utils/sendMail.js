@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * File: server/utils/sendMail.js
  * STATUS: PRODUCTION-READY | MULTI-PROVIDER COMMUNICATION ENGINE
  * -----------------------------------------------------------------------------
@@ -113,7 +111,7 @@ const sendEmail = async (options) => {
 
         if (options.alert) {
           await sendSlackAlert(
-            `🔥 *MAIL CRITICAL*: Failed to notify ${options.email} regarding ${options.subject}`,
+            `🔥 *MAIL CRITICAL*: Failed to notify ${options.email} regarding ${options.subject}`
           );
         }
 

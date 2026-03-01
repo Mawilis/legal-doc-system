@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                               ║
 ║   ██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ██████╗  ██████╗ ███████╗        ║
@@ -63,7 +61,7 @@ const JOB_CONFIG = {
 if (!process.env.ARCHIVAL_ENCRYPTION_KEY) {
   logger.quantumAlert(
     'CRITICAL',
-    'ARCHIVAL_ENCRYPTION_KEY missing from .env - Archival encryption disabled',
+    'ARCHIVAL_ENCRYPTION_KEY missing from .env - Archival encryption disabled'
   );
   throw new Error('Missing ARCHIVAL_ENCRYPTION_KEY environment variable');
 }
@@ -246,7 +244,7 @@ class RiskArchivalQuantumOrchestrator {
         // Companies Act Quantum: Ensure minimum retention period met
         createdAt: {
           $lte: new Date(
-            new Date().setFullYear(new Date().getFullYear() - JOB_CONFIG.RETENTION_YEARS),
+            new Date().setFullYear(new Date().getFullYear() - JOB_CONFIG.RETENTION_YEARS)
           ),
         },
       };
@@ -283,7 +281,9 @@ class RiskArchivalQuantumOrchestrator {
       batchSize: batch.length,
     });
 
-    const promises = batch.map(async (assessment) => await this.archiveSingleAssessment(assessment));
+    const promises = batch.map(
+      async (assessment) => await this.archiveSingleAssessment(assessment)
+    );
 
     const results = await Promise.allSettled(promises);
 
@@ -348,7 +348,7 @@ class RiskArchivalQuantumOrchestrator {
         archivalReason: 'scheduled_expiry',
         archivedBy: 'system_automation',
         retentionUntil: new Date(
-          new Date().setFullYear(new Date().getFullYear() + JOB_CONFIG.RETENTION_YEARS),
+          new Date().setFullYear(new Date().getFullYear() + JOB_CONFIG.RETENTION_YEARS)
         ),
         legalComplianceTags: ['POPIA_RETENTION', 'COMPANIES_ACT_2008', 'SA_LEGAL_MANDATE'],
         metadata: {
@@ -392,7 +392,7 @@ class RiskArchivalQuantumOrchestrator {
             archiveReference: archiveRecord._id,
           },
         },
-        { session },
+        { session }
       );
 
       await session.commitTransaction();
@@ -440,7 +440,7 @@ class RiskArchivalQuantumOrchestrator {
         JSON.stringify({
           timestamp: new Date(),
           metrics: this.metrics,
-        }),
+        })
       );
     } catch (error) {
       logger.quantumError('CLEANUP_FAILED', error);
@@ -561,7 +561,7 @@ const initializeRiskArchivalScheduler = () => {
   if (!JOB_CONFIG.ENABLED) {
     logger.quantumInfo(
       'JOB_DISABLED',
-      'Risk archival job is disabled via environment configuration',
+      'Risk archival job is disabled via environment configuration'
     );
     return;
   }
@@ -587,7 +587,7 @@ const initializeRiskArchivalScheduler = () => {
     {
       scheduled: true,
       timezone: 'Africa/Johannesburg', // SAST timezone
-    },
+    }
   );
 
   logger.quantumSuccess('SCHEDULER_INITIALIZED', {

@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ BILLING INVOICE MODEL - INVESTOR-GRADE MODULE                 ║
   ║ Forensic Traceability | POPIA Compliant | Retention-Aware     ║

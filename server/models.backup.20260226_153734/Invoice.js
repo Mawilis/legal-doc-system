@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ====================================================================================
  * 🏛️📜 INVOICE QUANTUM MODEL: THE SACRED LEDGER V25.0 🏛️📜
  * ====================================================================================
@@ -902,7 +900,7 @@ const invoiceSchema = new Schema(
     },
     optimisticConcurrency: true,
     autoCreate: true,
-  },
+  }
 );
 
 // =============================================================================
@@ -928,7 +926,7 @@ invoiceSchema.index(
   },
   {
     partialFilterExpression: { status: { $in: ['ISSUED', 'OVERDUE', 'PARTIALLY_PAID'] } },
-  },
+  }
 );
 
 // TTL Index for deleted invoices (cleanup after retention period)
@@ -940,7 +938,7 @@ invoiceSchema.index(
       isDeleted: true,
       'compliance.retentionPeriod': { $exists: true },
     },
-  },
+  }
 );
 
 // =============================================================================
@@ -1060,9 +1058,10 @@ invoiceSchema.pre('validate', function (next) {
   // Ensure financial consistency
   if (this.subtotal !== undefined) {
     // Calculate discounted amount
-    const discountAmt = this.discountPercentage > 0
-      ? this.subtotal * (this.discountPercentage / 100)
-      : this.discountAmount || 0;
+    const discountAmt =
+      this.discountPercentage > 0
+        ? this.subtotal * (this.discountPercentage / 100)
+        : this.discountAmount || 0;
 
     this.taxableAmount = Math.round((this.subtotal - discountAmt) * 100) / 100;
     this.taxAmount = Math.round(this.taxableAmount * this.taxRate * 100) / 100;
@@ -1113,9 +1112,9 @@ invoiceSchema.pre('save', function (next) {
 
   // Mark as overdue if past due date
   if (
-    this.dueDate
-    && new Date() > new Date(this.dueDate)
-    && ['ISSUED', 'PARTIALLY_PAID'].includes(this.status)
+    this.dueDate &&
+    new Date() > new Date(this.dueDate) &&
+    ['ISSUED', 'PARTIALLY_PAID'].includes(this.status)
   ) {
     this.status = 'OVERDUE';
   }
@@ -1413,7 +1412,7 @@ invoiceSchema.statics.generateVAT201Return = async function (tenantId, vatPeriod
         totalTax: acc.totalTax + curr.totalTax,
         totalInvoices: acc.totalInvoices + curr.invoiceCount,
       }),
-      { totalTaxable: 0, totalTax: 0, totalInvoices: 0 },
+      { totalTaxable: 0, totalTax: 0, totalInvoices: 0 }
     ),
     sarsFields: generateSARSFields(vatData),
   };
@@ -1437,7 +1436,7 @@ invoiceSchema.methods.recordPayment = function (
   paymentMethod,
   reference,
   processedBy,
-  notes = '',
+  notes = ''
 ) {
   if (amount <= 0) {
     throw new Error('Payment amount must be positive');
@@ -1445,7 +1444,7 @@ invoiceSchema.methods.recordPayment = function (
 
   if (amount > this.outstandingAmount) {
     throw new Error(
-      `Payment amount (${amount}) exceeds outstanding amount (${this.outstandingAmount})`,
+      `Payment amount (${amount}) exceeds outstanding amount (${this.outstandingAmount})`
     );
   }
 
@@ -1615,9 +1614,7 @@ const generateSARSFields = (vatData) =>
     field3: 'Net VAT payable',
     field4: 'Zero-rated supplies',
     field5: 'Exempt supplies',
-  })
-;
-
+  });
 // =============================================================================
 // MODEL EXPORT: QUANTUM MANIFESTATION
 // =============================================================================

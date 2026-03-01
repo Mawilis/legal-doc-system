@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/workers/citationNetworkIndexer.js
  * PATH: /server/workers/citationNetworkIndexer.js
@@ -150,7 +148,7 @@ const require = _createRequire(import.meta.url);
  * }
  */
 
-'use strict';
+('use strict');
 
 // QUANTUM IMPORTS: Enterprise-scale dependencies
 const mongoose = require('mongoose');

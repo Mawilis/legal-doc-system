@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ DATABASE CONFIGURATION - INVESTOR-GRADE MODULE                              ║
   ║ 99.99% uptime | Multi-tenant isolation | Connection pooling                 ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -74,7 +72,7 @@ class DatabaseConfig {
     }
 
     let uri = `mongodb://${encodeURIComponent(DB_USERNAME)}:${encodeURIComponent(
-      DB_PASSWORD,
+      DB_PASSWORD
     )}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=${DB_AUTH_SOURCE}`;
 
     if (DB_REPLICA_SET) {
@@ -157,7 +155,7 @@ class DatabaseConfig {
       }
 
       throw new Error(
-        `Failed to connect to database after ${this.maxRetries} attempts: ${error.message}`,
+        `Failed to connect to database after ${this.maxRetries} attempts: ${error.message}`
       );
     }
   }

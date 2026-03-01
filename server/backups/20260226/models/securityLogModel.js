@@ -1,4 +1,4 @@
-/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - SECURITY LOG MODEL v4.0.0 - 100-YEAR FORENSIC LEDGER                      ║
   ║ [Production Grade | POPIA §19-22 | SHA256 Hash Chain | Court-Admissible Evidence]    ║
   ║ R240M Annual Revenue Protection | Immutable | Multi-Tenant | x-correlation-id        ║

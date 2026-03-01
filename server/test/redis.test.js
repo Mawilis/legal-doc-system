@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-env mocha */
+#!/* eslint-env mocha */
 /*
  * REDIS CONFIGURATION TESTS
  * Investor-Grade | 99.99% uptime | Zero data loss

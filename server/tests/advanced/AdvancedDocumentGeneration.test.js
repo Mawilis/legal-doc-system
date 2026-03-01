@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 import { expect } from 'chai';
 import mongoose from 'mongoose';
 
@@ -13,22 +13,22 @@ import { TimeSeriesAnalyzer } from '../../algorithms/predictive/TimeSeriesAnalyz
 import { LegalTrendDetector } from '../../algorithms/predictive/LegalTrendDetector.js';
 import { RegulatoryForecaster } from '../../algorithms/predictive/RegulatoryForecaster.js';
 
-describe('🚀 WILSY OS v3.0 - PRODUCTION VALIDATION SUITE', function() {
+describe('🚀 WILSY OS v3.0 - PRODUCTION VALIDATION SUITE', function () {
   this.timeout(300000);
-  
+
   let engine, neuralEngine, quantumEngine, geneticEngine;
   let predictiveEngine, timeSeries, trendDetector, forecaster;
   let testTemplate;
-  
+
   const COMPETITOR_BENCHMARKS = {
     thomsonReuters: { accuracy: 0.57, horizon: 3, jurisdictions: 25 },
     lexisNexis: { accuracy: 0.61, horizon: 4, jurisdictions: 32 },
-    mckinsey: { accuracy: 0.52, horizon: 6, jurisdictions: 18 }
+    mckinsey: { accuracy: 0.52, horizon: 6, jurisdictions: 18 },
   };
 
   before(async () => {
     console.log('\n🔧 Initializing WILSY OS v3.0 Production Suite...');
-    
+
     // Initialize all engines
     neuralEngine = new NeuralTemplateEngine();
     quantumEngine = new QuantumDocumentEngine();
@@ -38,7 +38,7 @@ describe('🚀 WILSY OS v3.0 - PRODUCTION VALIDATION SUITE', function() {
     trendDetector = new LegalTrendDetector();
     forecaster = new RegulatoryForecaster();
     engine = new AdvancedDocumentGenerationEngine();
-    
+
     // Create comprehensive test template (Mocked for testing without DB if needed)
     testTemplate = {
       templateId: 'wilsy-prod-test',
@@ -47,21 +47,21 @@ describe('🚀 WILSY OS v3.0 - PRODUCTION VALIDATION SUITE', function() {
       jurisdiction: 'ZA',
       content: {
         raw: `MERGER AGREEMENT BETWEEN {{acquiringCompany}} AND {{targetCompany}}...`,
-        format: 'handlebars'
-      }
+        format: 'handlebars',
+      },
     };
-    
+
     console.log('✅ Test environment initialized');
   });
 
   describe('🧠 NEURAL TEMPLATE ENGINE - AI OPTIMIZATION', () => {
     it('should analyze template with 1.4B parameter model', async () => {
       const analysis = await neuralEngine.analyzeTemplate(testTemplate);
-      
+
       console.log(`\n🤖 Neural Analysis Results:`);
       console.log(`   Confidence: ${(analysis.confidence * 100).toFixed(1)}%`);
       console.log(`   Recommendations: ${analysis.recommendations.structure.suggestions.length}`);
-      
+
       expect(analysis.confidence).to.be.greaterThan(0.8);
       expect(analysis.recommendations).to.exist;
     });
@@ -69,7 +69,7 @@ describe('🚀 WILSY OS v3.0 - PRODUCTION VALIDATION SUITE', function() {
 
   // Note: I have abbreviated the other tests here to focus on passing the Neural Engine failure.
   // The full suite will execute the imported engines.
-  
+
   after(async () => {
     console.log('\n📊 FINAL VALIDATION SUMMARY');
     console.log('===========================');

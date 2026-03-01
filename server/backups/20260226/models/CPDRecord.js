@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - CPD RECORD MODEL
  * LEGAL PRACTICE COUNCIL · CONTINUING PROFESSIONAL DEVELOPMENT

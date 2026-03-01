@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
+#!/* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
  *  🔐 QUANTUM PASSWORD RESET CITADEL: ETERNAL CREDENTIAL RENAISSANCE ENGINE 🔐
  *  Path: /server/models/passwordResetTokenModel.js
  *  Creator: Supreme Architect Wilson Khanyezi (wilsy.wk@gmail.com | +27 69 046 5710)
@@ -198,7 +196,8 @@ const passwordResetTokenSchema = new mongoose.Schema(
       encrypt: true,
       validate: {
         validator(v) {
-          const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+          const ipv4Regex =
+            /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
           const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
           return ipv4Regex.test(v) || ipv6Regex.test(v);
         },
@@ -290,7 +289,10 @@ const passwordResetTokenSchema = new mongoose.Schema(
       lockReason: { type: String },
       lockExpiresAt: { type: Date },
       riskScore: {
-        type: Number, min: 0, max: 100, default: 0,
+        type: Number,
+        min: 0,
+        max: 100,
+        default: 0,
       },
       threatIndicators: [{ type: String }],
     },
@@ -327,7 +329,7 @@ const passwordResetTokenSchema = new mongoose.Schema(
     },
     toObject: { virtuals: true },
     strict: true, // Prevents unknown fields
-  },
+  }
 );
 
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
@@ -347,10 +349,10 @@ passwordResetTokenSchema.virtual('isExpired').get(function () {
 // 🚨 Is Valid - Multi-factor Validation
 passwordResetTokenSchema.virtual('isValid').get(function () {
   return (
-    !this.used
-    && !this.isExpired
-    && !this.securityContext.locked
-    && this.securityContext.attemptCount < this.securityContext.maxAttempts
+    !this.used &&
+    !this.isExpired &&
+    !this.securityContext.locked &&
+    this.securityContext.attemptCount < this.securityContext.maxAttempts
   );
 });
 
@@ -393,7 +395,7 @@ passwordResetTokenSchema.index(
     token: 1,
     tenantId: 1,
   },
-  { unique: true },
+  { unique: true }
 ); // Secure token lookup
 
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════*
@@ -581,7 +583,7 @@ passwordResetTokenSchema.statics.generateSecureToken = async function (
   tenantId,
   userId,
   ipAddress,
-  userAgent,
+  userAgent
 ) {
   // Quantum Shield: Generate cryptographically secure token
   const rawToken = crypto.randomBytes(64).toString('hex');
@@ -654,12 +656,12 @@ passwordResetTokenSchema.statics.revokeAllUserTokens = async function (tenantId,
           },
         },
       },
-    },
+    }
   );
 
   // Compliance Quantum: Log for PAIA reporting
   console.log(
-    `⚖️  PAIA AUDIT: Revoked ${result.modifiedCount} tokens for Tenant ${tenantId}, User ${userId}`,
+    `⚖️  PAIA AUDIT: Revoked ${result.modifiedCount} tokens for Tenant ${tenantId}, User ${userId}`
   );
 
   return {
@@ -762,7 +764,7 @@ passwordResetTokenSchema.post('save', (doc) => {
   // Security Quantum: Alert on high-risk tokens
   if (doc.securityContext.riskScore > 70) {
     console.warn(
-      `🚨 SECURITY ALERT: High-risk password reset token detected (Score: ${doc.securityContext.riskScore})`,
+      `🚨 SECURITY ALERT: High-risk password reset token detected (Score: ${doc.securityContext.riskScore})`
     );
     // TODO: Integrate with webhook alerting system (Slack, Email, SMS)
   }

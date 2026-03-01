@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ EXCEL GENERATOR - INVESTOR-GRADE DATA EXPORT ENGINE                                   ║
   ║ R1.8M/year manual data compilation eliminated | Zero financial reporting errors       ║
   ║ 89% margin on automated Excel exports | POPIA §19, Companies Act §28 compliant        ║
@@ -53,21 +51,25 @@ const require = _createRequire(import.meta.url);
 
 import fs from 'fs/promises';
 import { pipeline } from 'stream/promises';
-import { createHash, randomBytes } from "crypto";
-import path from "path";
-import { Readable } from "stream";
-import { promisify } from "util";
+import { createHash, randomBytes } from 'crypto';
+import path from 'path';
+import { Readable } from 'stream';
+import { promisify } from 'util';
 
 // Internal imports with defensive error handling
-let auditLogger; let logger; let cryptoUtils; let redactSensitive; let
-  tenantContext;
+let auditLogger;
+let logger;
+let cryptoUtils;
+let redactSensitive;
+let tenantContext;
 
 try {
   auditLogger = require('./auditLogger').default || require('./auditLogger');
   logger = require('./logger').default || require('./logger');
   cryptoUtils = require('./cryptoUtils').default || require('./cryptoUtils');
   redactSensitive = require('./redactSensitive').default || require('./redactSensitive');
-  tenantContext = require('../middleware/tenantContext').default || require('../middleware/tenantContext');
+  tenantContext =
+    require('../middleware/tenantContext').default || require('../middleware/tenantContext');
 } catch (importError) {
   console.error('Critical dependency import failed in ExcelGenerator:', importError.message);
   // Provide minimal shim for catastrophic failure
@@ -112,12 +114,33 @@ try {
 // ============================================================================
 
 const REDACT_FIELDS = [
-  'idNumber', 'passportNumber', 'email', 'phone', 'cellphone',
-  'bankAccount', 'creditCard', 'identityNumber', 'patientId',
-  'nationalId', 'driversLicense', 'taxReference', 'vatNumber',
-  'bankAccountNumber', 'routingNumber', 'swiftCode', 'bsbCode',
-  'accountNumber', 'sortCode', 'iban', 'creditCardNumber',
-  'cvv', 'cvc', 'pin', 'password', 'secret', 'token',
+  'idNumber',
+  'passportNumber',
+  'email',
+  'phone',
+  'cellphone',
+  'bankAccount',
+  'creditCard',
+  'identityNumber',
+  'patientId',
+  'nationalId',
+  'driversLicense',
+  'taxReference',
+  'vatNumber',
+  'bankAccountNumber',
+  'routingNumber',
+  'swiftCode',
+  'bsbCode',
+  'accountNumber',
+  'sortCode',
+  'iban',
+  'creditCardNumber',
+  'cvv',
+  'cvc',
+  'pin',
+  'password',
+  'secret',
+  'token',
 ];
 
 const RETENTION_POLICIES = {
@@ -178,7 +201,9 @@ function redactSensitiveData(data) {
 
   for (const [key, value] of Object.entries(data)) {
     // Check if key contains sensitive field name (case insensitive)
-    const isSensitiveKey = REDACT_FIELDS.some((field) => key.toLowerCase().includes(field.toLowerCase()));
+    const isSensitiveKey = REDACT_FIELDS.some((field) =>
+      key.toLowerCase().includes(field.toLowerCase())
+    );
 
     if (isSensitiveKey) {
       redacted[key] = '[REDACTED-POPIA]';
@@ -229,7 +254,9 @@ async function ensureDirectoryExists(filePath) {
 function validateTenantId(tenantId) {
   const tenantIdRegex = /^[a-zA-Z0-9_-]{8,64}$/;
   if (!tenantId || !tenantIdRegex.test(tenantId)) {
-    throw new Error(`Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`);
+    throw new Error(
+      `Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`
+    );
   }
 }
 
@@ -261,8 +288,8 @@ function validateSheetName(sheetName) {
 function validateRowCount(rows, sheetName) {
   if (rows.length > EXCEL_MAX_ROWS_PER_SHEET) {
     throw new Error(
-      `Sheet "${sheetName}" exceeds Excel row limit: ${rows.length} > ${EXCEL_MAX_ROWS_PER_SHEET}. `
-      + 'Consider splitting data across multiple sheets.',
+      `Sheet "${sheetName}" exceeds Excel row limit: ${rows.length} > ${EXCEL_MAX_ROWS_PER_SHEET}. ` +
+        'Consider splitting data across multiple sheets.'
     );
   }
 }
@@ -295,11 +322,7 @@ async function appendEvidence(evidence) {
   try {
     const evidenceDir = path.dirname(EVIDENCE_LOG_PATH);
     await fs.mkdir(evidenceDir, { recursive: true, mode: 0o750 });
-    await fs.appendFile(
-      EVIDENCE_LOG_PATH,
-      `${JSON.stringify(evidence)}\n`,
-      { mode: 0o640 },
-    );
+    await fs.appendFile(EVIDENCE_LOG_PATH, `${JSON.stringify(evidence)}\n`, { mode: 0o640 });
   } catch (error) {
     logger.error('Failed to append evidence:', error);
     // Non-blocking - don't throw
@@ -337,7 +360,9 @@ class Worksheet {
     }
 
     if (headers.length > EXCEL_MAX_COLUMNS_PER_SHEET) {
-      throw new Error(`Headers exceed Excel column limit: ${headers.length} > ${EXCEL_MAX_COLUMNS_PER_SHEET}`);
+      throw new Error(
+        `Headers exceed Excel column limit: ${headers.length} > ${EXCEL_MAX_COLUMNS_PER_SHEET}`
+      );
     }
 
     this.headers = headers.map((h) => String(h).substring(0, EXCEL_MAX_CELL_CHARACTERS));
@@ -353,23 +378,28 @@ class Worksheet {
     let rowArray;
 
     if (Array.isArray(rowData)) {
-      rowArray = rowData.map((cell) => (cell !== null && cell !== undefined
-        ? String(cell).substring(0, EXCEL_MAX_CELL_CHARACTERS)
-        : ''));
+      rowArray = rowData.map((cell) =>
+        cell !== null && cell !== undefined
+          ? String(cell).substring(0, EXCEL_MAX_CELL_CHARACTERS)
+          : ''
+      );
     } else if (rowData && typeof rowData === 'object') {
       // If headers are defined, map object by header position
       if (this.headers) {
         rowArray = this.headers.map((header) => {
-          const value = rowData[header] !== undefined ? rowData[header] : rowData[header.toLowerCase()];
+          const value =
+            rowData[header] !== undefined ? rowData[header] : rowData[header.toLowerCase()];
           return value !== null && value !== undefined
             ? String(value).substring(0, EXCEL_MAX_CELL_CHARACTERS)
             : '';
         });
       } else {
         // No headers, use object values
-        rowArray = Object.values(rowData).map((cell) => (cell !== null && cell !== undefined
-          ? String(cell).substring(0, EXCEL_MAX_CELL_CHARACTERS)
-          : ''));
+        rowArray = Object.values(rowData).map((cell) =>
+          cell !== null && cell !== undefined
+            ? String(cell).substring(0, EXCEL_MAX_CELL_CHARACTERS)
+            : ''
+        );
       }
     } else {
       throw new Error('Row data must be an array or object');
@@ -529,14 +559,19 @@ class Workbook {
     // In production, this would use ExcelJS to generate actual .xlsx file
     // For investor demo, we're generating a forensic-grade mock with full tracing
     const buffer = Buffer.from(
-      JSON.stringify({
-        format: 'WilsyOS-Excel-Export-v1',
-        workbook: workbookData,
-        forensicMark: `Generated at ${new Date().toISOString()} for ${this.metadata.author}`,
-        legalDisclaimer: 'This export is electronically generated and constitutes evidence under ECT Act §15(2)',
-        sheetCount: this.worksheets.length,
-        totalRows: this.worksheets.reduce((sum, ws) => sum + ws.rows.length, 0),
-      }, null, 2),
+      JSON.stringify(
+        {
+          format: 'WilsyOS-Excel-Export-v1',
+          workbook: workbookData,
+          forensicMark: `Generated at ${new Date().toISOString()} for ${this.metadata.author}`,
+          legalDisclaimer:
+            'This export is electronically generated and constitutes evidence under ECT Act §15(2)',
+          sheetCount: this.worksheets.length,
+          totalRows: this.worksheets.reduce((sum, ws) => sum + ws.rows.length, 0),
+        },
+        null,
+        2
+      )
     );
 
     return buffer;
@@ -711,13 +746,7 @@ class ExcelGenerator {
     const year = date.getUTCFullYear();
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const filename = `${exportType}-${exportHash.substring(0, 8)}-${this.generationId.substring(0, 8)}.xlsx`;
-    const storagePath = path.join(
-      EXPORT_STORAGE_PATH,
-      tenantId,
-      String(year),
-      month,
-      filename,
-    );
+    const storagePath = path.join(EXPORT_STORAGE_PATH, tenantId, String(year), month, filename);
 
     // Store export if requested
     if (storeExport) {
@@ -850,9 +879,9 @@ class ExcelGenerator {
         ? dsarData.dataCategories.join(', ')
         : dsarData.dataCategories,
       'Data Items': Array.isArray(dsarData.dataItems)
-        ? dsarData.dataItems.map((item) => (typeof item === 'object'
-          ? `${item.category}: ${item.value}`
-          : item)).join('\n')
+        ? dsarData.dataItems
+            .map((item) => (typeof item === 'object' ? `${item.category}: ${item.value}` : item))
+            .join('\n')
         : dsarData.dataItems,
     };
 
@@ -934,11 +963,7 @@ class ExcelGenerator {
       bsSheet.addHeader(['Account', 'Current Year', 'Previous Year']);
 
       Object.entries(financialData.balanceSheet).forEach(([account, values]) => {
-        bsSheet.addRow([
-          account,
-          values.currentYear || 0,
-          values.previousYear || 0,
-        ]);
+        bsSheet.addRow([account, values.currentYear || 0, values.previousYear || 0]);
       });
 
       bsSheet.freezePanes(1, 1);
@@ -949,16 +974,12 @@ class ExcelGenerator {
       isSheet.addHeader(['Line Item', 'Current Year', 'Previous Year', 'Variance %']);
 
       Object.entries(financialData.incomeStatement).forEach(([item, values]) => {
-        const variance = values.currentYear && values.previousYear
-          ? ((values.currentYear - values.previousYear) / values.previousYear * 100).toFixed(2)
-          : 'N/A';
+        const variance =
+          values.currentYear && values.previousYear
+            ? (((values.currentYear - values.previousYear) / values.previousYear) * 100).toFixed(2)
+            : 'N/A';
 
-        isSheet.addRow([
-          item,
-          values.currentYear || 0,
-          values.previousYear || 0,
-          variance,
-        ]);
+        isSheet.addRow([item, values.currentYear || 0, values.previousYear || 0, variance]);
       });
 
       isSheet.freezePanes(1, 1);
@@ -1004,7 +1025,7 @@ class ExcelGenerator {
       const findPromise = promisify(exec);
 
       const { stdout } = await findPromise(
-        `find ${basePath} -name "*${exportHash.substring(0, 8)}*.xlsx" -type f | head -1`,
+        `find ${basePath} -name "*${exportHash.substring(0, 8)}*.xlsx" -type f | head -1`
       );
 
       const filePath = stdout.trim();

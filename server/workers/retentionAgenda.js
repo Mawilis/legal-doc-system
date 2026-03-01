@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /* eslint-disable no-underscore-dangle, no-undef, no-unused-vars, consistent-return, no-plusplus, no-await-in-loop, no-loop-func */
 /*╔════════════════════════════════════════════════════════════════╗
   ║ RETENTION AGENDA WORKER - INVESTOR-GRADE MODULE               ║
@@ -11,15 +11,15 @@
  * • Generates: R420K/year revenue @ 85% margin (managed service tier)
  * • Compliance: POPIA §19 (Record Retention), §21(1)(a) (Data Minimization)
  * • Risk Mitigation: R2.1M potential POPIA fines avoided per breach incident
- * 
- * INTEGRATION_HINT: imports -> 
+ *
+ * INTEGRATION_HINT: imports ->
  *   - ../utils/auditLogger (audit trail)
  *   - ../utils/logger (structured logging)
  *   - ../utils/cryptoUtils (hash verification)
  *   - ../middleware/tenantContext (tenant isolation)
  *   - ../models/Matter (data subject)
  *   - ../models/RetentionPolicy (policy definitions)
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "expectedConsumers": [
@@ -30,7 +30,7 @@
  *   "expectedProviders": [
  *     "../utils/auditLogger",
  *     "../utils/logger",
- *     "../utils/cryptoUtils", 
+ *     "../utils/cryptoUtils",
  *     "../middleware/tenantContext",
  *     "../models/Matter",
  *     "../models/RetentionPolicy",
@@ -38,7 +38,7 @@
  *   ],
  *   "placementStrategy": "workers/ - Background job processing for data lifecycle"
  * }
- * 
+ *
  * MERMAID DIAGRAM (run: npx mmdc -i <(echo 'graph TD...') -o diagram.png):
  * graph TD
  *   A[Agenda Scheduler] --> B{RetentionAgenda.initialize()}
@@ -57,7 +57,7 @@
  *   L --> N[Audit Logger]
  *   M --> N
  *   N --> O[Evidence Generation]
- * 
+ *
  * ASSUMPTIONS:
  * - Agenda connection string: process.env.MONGODB_URI (agenda-specific collection)
  * - Default tenantId regex: ^[a-zA-Z0-9_-]{8,64}$
@@ -67,7 +67,7 @@
  * - Default dataResidency: ZA (POPIA Chapter 9)
  * - auditLogger assumes tenant context via cls-hooked or async hooks
  */
- 
+
 import Agenda from 'agenda';
 import mongoose from 'mongoose';
 import { AuditLogger } from '../utils/auditLogger.js';
@@ -80,7 +80,13 @@ import RetentionPolicy from '../models/RetentionPolicy.js';
 import RetentionExecutionLog from '../models/RetentionExecutionLog.js';
 
 // REDACT_FIELDS for POPIA compliance
-const REDACT_FIELDS = ['clientName', 'clientIdNumber', 'clientEmail', 'clientPhone', 'matterDescription'];
+const REDACT_FIELDS = [
+  'clientName',
+  'clientIdNumber',
+  'clientEmail',
+  'clientPhone',
+  'matterDescription',
+];
 
 /**
  * Retention Agenda Worker
@@ -110,12 +116,12 @@ class RetentionAgenda {
       };
 
       this.agenda = new Agenda({ ...defaultOptions, ...options });
-      
+
       await this._defineJobs();
       await this.agenda.start();
-      
+
       this.initialized = true;
-      
+
       logger.info({
         message: 'Retention Agenda initialized successfully',
         component: 'RetentionAgenda',
@@ -123,7 +129,7 @@ class RetentionAgenda {
         processEvery: defaultOptions.processEvery,
         maxConcurrency: defaultOptions.maxConcurrency,
       });
-      
+
       // Audit trail for system initialization
       await AuditLogger.log({
         eventType: 'RETENTION_AGENDA_INIT',
@@ -141,7 +147,7 @@ class RetentionAgenda {
         dataResidency: 'ZA',
         retentionStart: new Date(),
       });
-      
+
       return this.agenda;
     } catch (error) {
       logger.error({
@@ -151,7 +157,7 @@ class RetentionAgenda {
         error: error.message,
         stack: error.stack,
       });
-      
+
       await AuditLogger.log({
         eventType: 'RETENTION_AGENDA_INIT_FAILED',
         tenantId: 'SYSTEM',
@@ -167,7 +173,7 @@ class RetentionAgenda {
         dataResidency: 'ZA',
         retentionStart: new Date(),
       });
-      
+
       throw error;
     }
   }
@@ -178,7 +184,11 @@ class RetentionAgenda {
    */
   async _defineJobs() {
     // Job 1: Retention Cleanup - Permanently delete expired matters
-    this.agenda.define('retention.cleanup', { priority: 'high' }, this._processRetentionCleanup.bind(this));
+    this.agenda.define(
+      'retention.cleanup',
+      { priority: 'high' },
+      this._processRetentionCleanup.bind(this)
+    );
     this.jobDefinitions.set('retention.cleanup', {
       description: 'Permanently delete matters exceeding retention period',
       schedule: '0 2 * * *', // 2 AM daily
@@ -186,7 +196,11 @@ class RetentionAgenda {
     });
 
     // Job 2: Retention Notification - Notify data subjects before deletion
-    this.agenda.define('retention.notify', { priority: 'medium' }, this._processRetentionNotifications.bind(this));
+    this.agenda.define(
+      'retention.notify',
+      { priority: 'medium' },
+      this._processRetentionNotifications.bind(this)
+    );
     this.jobDefinitions.set('retention.notify', {
       description: 'Send notifications for matters approaching retention expiry',
       schedule: '0 9 * * *', // 9 AM daily
@@ -194,7 +208,11 @@ class RetentionAgenda {
     });
 
     // Job 3: Retention Archive - Archive matters before deletion (if required)
-    this.agenda.define('retention.archive', { priority: 'low' }, this._processRetentionArchive.bind(this));
+    this.agenda.define(
+      'retention.archive',
+      { priority: 'low' },
+      this._processRetentionArchive.bind(this)
+    );
     this.jobDefinitions.set('retention.archive', {
       description: 'Archive matters to cold storage before deletion',
       schedule: '0 3 * * *', // 3 AM daily
@@ -266,9 +284,9 @@ class RetentionAgenda {
         try {
           // Set tenant context for audit logging
           tenantContext.setTenantId(tenantId);
-          
+
           // Get tenant-specific retention policies
-          const policies = await RetentionPolicy.find({ 
+          const policies = await RetentionPolicy.find({
             tenantId,
             isActive: true,
           }).lean();
@@ -284,18 +302,18 @@ class RetentionAgenda {
           }
 
           // Calculate cutoff date based on policies
-          const policyMap = new Map(policies.map(p => [p.matterType, p]));
-          
+          const policyMap = new Map(policies.map((p) => [p.matterType, p]));
+
           // Find matters exceeding retention period
           const matters = await Matter.find({
             tenantId,
             status: { $ne: 'deleted' },
             $or: [
               { retentionExpiryDate: { $lt: new Date() } },
-              { 
+              {
                 retentionExpiryDate: { $exists: false },
-                lastActivityDate: { 
-                  $lt: this._calculateCutoffDate(policies.map(p => p.retentionYears)) 
+                lastActivityDate: {
+                  $lt: this._calculateCutoffDate(policies.map((p) => p.retentionYears)),
                 },
               },
             ],
@@ -304,7 +322,7 @@ class RetentionAgenda {
           for (const matter of matters) {
             try {
               const policy = policyMap.get(matter.matterType) || policies[0];
-              
+
               // Skip if autoDelete is false
               if (!policy.autoDelete) {
                 results.mattersSkipped++;
@@ -314,7 +332,7 @@ class RetentionAgenda {
               // Check if matter has been notified
               const notificationWindow = policy.notificationDays || 30;
               const notified = await this._checkNotificationSent(matter._id, notificationWindow);
-              
+
               if (!notified && notificationWindow > 0) {
                 // Schedule notification instead of deletion
                 await this.agenda.now('retention.notify', {
@@ -328,7 +346,7 @@ class RetentionAgenda {
 
               // Secure deletion with cryptographic verification
               const deletionProof = await this._secureDeleteMatter(matter, policy);
-              
+
               // Record deletion in execution log
               await RetentionExecutionLog.create({
                 tenantId,
@@ -366,13 +384,12 @@ class RetentionAgenda {
                 dataResidency: 'ZA',
                 retentionStart: new Date(),
               });
-
             } catch (matterError) {
               results.errors.push({
                 matterId: matter._id,
                 error: matterError.message,
               });
-              
+
               logger.error({
                 message: 'Failed to process matter deletion',
                 component: 'RetentionAgenda',
@@ -382,13 +399,12 @@ class RetentionAgenda {
               });
             }
           }
-
         } catch (tenantError) {
           results.errors.push({
             tenantId,
             error: tenantError.message,
           });
-          
+
           logger.error({
             message: `Failed to process tenant: ${tenantId}`,
             component: 'RetentionAgenda',
@@ -403,7 +419,7 @@ class RetentionAgenda {
       }
 
       const duration = Date.now() - startTime;
-      
+
       // Log completion
       logger.info({
         message: 'Retention cleanup job completed',
@@ -422,7 +438,6 @@ class RetentionAgenda {
       await job.save();
 
       done();
-
     } catch (error) {
       logger.error({
         message: 'Retention cleanup job failed',
@@ -479,9 +494,9 @@ class RetentionAgenda {
 
       // Implementation similar to cleanup but for notifications
       // (Abbreviated for space - full implementation would be included)
-      
+
       const duration = Date.now() - startTime;
-      
+
       logger.info({
         message: 'Retention notification job completed',
         component: 'RetentionAgenda',
@@ -492,7 +507,6 @@ class RetentionAgenda {
       });
 
       done();
-
     } catch (error) {
       logger.error({
         message: 'Retention notification job failed',
@@ -532,13 +546,13 @@ class RetentionAgenda {
   async _checkNotificationSent(matterId, daysWindow) {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - daysWindow);
-    
+
     const notification = await RetentionExecutionLog.findOne({
       matterId,
       executionType: 'NOTIFY',
       executionDate: { $gte: cutoff },
     });
-    
+
     return !!notification;
   }
 
@@ -555,9 +569,9 @@ class RetentionAgenda {
       policyId: policy._id,
       retentionYears: policy.retentionYears,
     };
-    
+
     const deletionProof = cryptoUtils.hash(JSON.stringify(deletionData));
-    
+
     // Perform soft delete first (mark as deleted)
     await Matter.updateOne(
       { _id: matter._id },
@@ -567,20 +581,20 @@ class RetentionAgenda {
           deletedAt: new Date(),
           deletionProof,
           dataResidency: policy.dataResidency || 'ZA',
-        }
+        },
       }
     );
-    
+
     // Schedule hard delete after 30 days (grace period)
     const hardDeleteDate = new Date();
     hardDeleteDate.setDate(hardDeleteDate.getDate() + 30);
-    
+
     await this.agenda.schedule(hardDeleteDate, 'retention.hardDelete', {
       matterId: matter._id,
       tenantId: matter.tenantId,
       deletionProof,
     });
-    
+
     return deletionProof;
   }
 
@@ -602,11 +616,11 @@ class RetentionAgenda {
       },
       hash: null,
     };
-    
+
     // Canonicalize and hash
     const canonicalEvidence = JSON.stringify(evidence, Object.keys(evidence).sort());
     evidence.hash = cryptoUtils.hash(canonicalEvidence);
-    
+
     // Store in database for audit purposes
     await mongoose.model('JobEvidence').create({
       jobId,
@@ -615,7 +629,7 @@ class RetentionAgenda {
       hash: evidence.hash,
       createdAt: new Date(),
     });
-    
+
     return evidence;
   }
 
@@ -629,10 +643,10 @@ class RetentionAgenda {
     if (!this.initialized) {
       throw new Error('RetentionAgenda not initialized. Call initialize() first.');
     }
-    
+
     const job = this.agenda.create(jobName, data);
     await job.schedule(when).save();
-    
+
     logger.info({
       message: 'Scheduled one-time retention job',
       component: 'RetentionAgenda',
@@ -641,7 +655,7 @@ class RetentionAgenda {
       when,
       data: { ...data, sensitive: '[REDACTED]' },
     });
-    
+
     return job;
   }
 
@@ -653,16 +667,16 @@ class RetentionAgenda {
     if (!this.initialized) {
       throw new Error('RetentionAgenda not initialized.');
     }
-    
+
     const job = await this.agenda.cancel({ _id: jobId });
-    
+
     logger.info({
       message: 'Cancelled retention job',
       component: 'RetentionAgenda',
       action: 'cancelJob',
       jobId,
     });
-    
+
     return job;
   }
 
@@ -674,24 +688,26 @@ class RetentionAgenda {
     if (!this.initialized) {
       throw new Error('RetentionAgenda not initialized.');
     }
-    
+
     const query = jobName ? { name: jobName } : {};
-    
-    const stats = await this.agenda._collection.aggregate([
-      { $match: query },
-      {
-        $group: {
-          _id: '$name',
-          count: { $sum: 1 },
-          lastRun: { $max: '$lastRunAt' },
-          nextRun: { $min: '$nextRunAt' },
-          failed: {
-            $sum: { $cond: [{ $eq: ['$failCount', 0] }, 0, 1] }
+
+    const stats = await this.agenda._collection
+      .aggregate([
+        { $match: query },
+        {
+          $group: {
+            _id: '$name',
+            count: { $sum: 1 },
+            lastRun: { $max: '$lastRunAt' },
+            nextRun: { $min: '$nextRunAt' },
+            failed: {
+              $sum: { $cond: [{ $eq: ['$failCount', 0] }, 0, 1] },
+            },
           },
         },
-      },
-    ]).toArray();
-    
+      ])
+      .toArray();
+
     return stats;
   }
 
@@ -702,7 +718,7 @@ class RetentionAgenda {
     if (this.agenda) {
       await this.agenda.stop();
       this.initialized = false;
-      
+
       logger.info({
         message: 'Retention Agenda shutdown complete',
         component: 'RetentionAgenda',

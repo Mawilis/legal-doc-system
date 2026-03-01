@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ EVIDENCE GENERATOR - INVESTOR-GRADE MODULE                                  ║
   ║ SHA256 forensic evidence | Deterministic audit trails                       ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -31,7 +29,9 @@ class EvidenceGenerator {
     }
 
     // Canonicalize audit entries (sort keys for determinism)
-    const canonicalEntries = auditEntries.map((entry) => JSON.parse(JSON.stringify(entry, Object.keys(entry).sort())));
+    const canonicalEntries = auditEntries.map((entry) =>
+      JSON.parse(JSON.stringify(entry, Object.keys(entry).sort()))
+    );
 
     // Create evidence object
     const evidence = {

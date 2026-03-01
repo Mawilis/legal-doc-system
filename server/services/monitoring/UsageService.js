@@ -1,4 +1,4 @@
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * WILSY OS: GATEWAY QUOTA DASHBOARD SERVICE - REAL-TIME USAGE INTELLIGENCE
  * ============================================================================

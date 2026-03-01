@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ================================================================================
     COMPLIANCE CONFIGURATION CITADEL - Wilsy OS Legal Digital Governance Nexus
 ================================================================================
@@ -1364,17 +1362,16 @@ export default {
   isPOPIACompliant: () => {
     const validation = validateComplianceConfig();
     return (
-      validation.valid
-      && ComplianceConfig.southAfrica.popia
-      && ComplianceConfig.officers.informationOfficer.name
+      validation.valid &&
+      ComplianceConfig.southAfrica.popia &&
+      ComplianceConfig.officers.informationOfficer.name
     );
   },
 
-  getRetentionPeriod: (dataType) => (
-    ComplianceConfig.validation.retention.schedules[dataType]
-      || ComplianceConfig.validation.retention.schedules.default
-      || 2555
-  ), // Default 7 years
+  getRetentionPeriod: (dataType) =>
+    ComplianceConfig.validation.retention.schedules[dataType] ||
+    ComplianceConfig.validation.retention.schedules.default ||
+    2555, // Default 7 years
 
   // System Information
   getSystemInfo: () => ({
@@ -1495,6 +1492,6 @@ if (!initialValidation.valid) {
 }
 
 console.log(
-  '✅ Compliance Configuration Nexus Initialized - Legal DNA Encoded for South African Digital Justice',
+  '✅ Compliance Configuration Nexus Initialized - Legal DNA Encoded for South African Digital Justice'
 );
 console.log(`🔗 Configuration Integrity: ${generateConfigIntegrityHash().substring(0, 16)}...`);

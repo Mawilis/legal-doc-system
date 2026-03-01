@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/services/ai/PrecedentEmbeddingService.js
  * PATH: /server/services/ai/PrecedentEmbeddingService.js
@@ -145,7 +143,7 @@ const require = _createRequire(import.meta.url);
  * }
  */
 
-'use strict';
+('use strict');
 
 // QUANTUM IMPORTS: Core dependencies
 const tf = require('@tensorflow/tfjs-node');

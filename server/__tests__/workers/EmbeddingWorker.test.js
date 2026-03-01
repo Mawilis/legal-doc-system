@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* eslint-disable */
+#!/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║ EMBEDDING WORKER TESTS - INVESTOR DUE DILIGENCE - $2B INFRASTRUCTURE     ║
   ║ 100% coverage | GPU-accelerated | Hyper-scale | Production-ready         ║
@@ -149,7 +147,9 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
 
     // 2. Safely generate a Mock MongoDB ObjectId
     // We remove the ?. from the 'new' expression
-    mockPrecedentId = mongoose.Types?.ObjectId ? new mongoose.Types.ObjectId() : '507f1f77bcf86cd799439011';
+    mockPrecedentId = mongoose.Types?.ObjectId
+      ? new mongoose.Types.ObjectId()
+      : '507f1f77bcf86cd799439011';
 
     // 3. Define the mockJob object used across tests
     mockJob = {
@@ -328,7 +328,7 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
             'embedding.vector': expect.any(Array),
             'embedding.model': 'legal-bert',
           }),
-        }),
+        })
       );
     });
 
@@ -432,7 +432,7 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
           action: 'EMBEDDING_GENERATED',
           tenantId: 'test-tenant',
           resourceId: mockPrecedentId,
-        }),
+        })
       );
     });
 
@@ -453,7 +453,7 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
       expect(quantumLogger.log).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'EMBEDDING_FAILED',
-        }),
+        })
       );
     });
   });
@@ -552,7 +552,10 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
         },
       };
 
-      await fs.writeFile(path.join(__dirname, 'embedding-worker-evidence.json'), JSON.stringify(evidence, null, 2));
+      await fs.writeFile(
+        path.join(__dirname, 'embedding-worker-evidence.json'),
+        JSON.stringify(evidence, null, 2)
+      );
 
       const fileExists = await fs
         .access(path.join(__dirname, 'embedding-worker-evidence.json'))
@@ -561,7 +564,10 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
 
       expect(fileExists).toBe(true);
 
-      const fileContent = await fs.readFile(path.join(__dirname, 'embedding-worker-evidence.json'), 'utf8');
+      const fileContent = await fs.readFile(
+        path.join(__dirname, 'embedding-worker-evidence.json'),
+        'utf8'
+      );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
 

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ╔══════════════════════════════════════════════════════════════════════════╗
  * ║                WILSY OS - QUANTUM KYC COMPLIANCE FORTRESS               ║
  * ╠══════════════════════════════════════════════════════════════════════════╣
@@ -99,7 +97,7 @@ require('dotenv').config();
 // ENV VALIDATION: Ensure all quantum secrets exist
 if (!process.env.AES_ENCRYPTION_KEY || !process.env.MONGO_URI) {
   throw new Error(
-    'QUANTUM CRISIS: Missing critical environment variables. Check .env configuration.',
+    'QUANTUM CRISIS: Missing critical environment variables. Check .env configuration.'
   );
 }
 
@@ -316,8 +314,8 @@ const KYCVerificationSchema = new mongoose.Schema(
           type: Boolean,
           default() {
             return (
-              this.verificationType === 'ENHANCED_DUE_DILIGENCE'
-              || this.riskAssessment?.overallRiskScore > 70
+              this.verificationType === 'ENHANCED_DUE_DILIGENCE' ||
+              this.riskAssessment?.overallRiskScore > 70
             );
           },
         },
@@ -583,8 +581,8 @@ const KYCVerificationSchema = new mongoose.Schema(
           type: Boolean,
           default() {
             return (
-              this.verificationType === 'ENHANCED_DUE_DILIGENCE'
-              || this.verificationType === 'POLITICAL_EXPOSURE_SCREENING'
+              this.verificationType === 'ENHANCED_DUE_DILIGENCE' ||
+              this.verificationType === 'POLITICAL_EXPOSURE_SCREENING'
             );
           },
         },
@@ -673,8 +671,8 @@ const KYCVerificationSchema = new mongoose.Schema(
           type: Boolean,
           default() {
             return (
-              this.verificationType === 'ENHANCED_DUE_DILIGENCE'
-              || this.riskAssessment?.overallRiskScore > 60
+              this.verificationType === 'ENHANCED_DUE_DILIGENCE' ||
+              this.riskAssessment?.overallRiskScore > 60
             );
           },
         },
@@ -720,8 +718,8 @@ const KYCVerificationSchema = new mongoose.Schema(
           type: Boolean,
           default() {
             return (
-              this.verificationType === 'ENHANCED_DUE_DILIGENCE'
-              || this.riskAssessment?.overallRiskScore > 70
+              this.verificationType === 'ENHANCED_DUE_DILIGENCE' ||
+              this.riskAssessment?.overallRiskScore > 70
             );
           },
         },
@@ -973,10 +971,10 @@ const KYCVerificationSchema = new mongoose.Schema(
         type: Boolean,
         default() {
           return (
-            this.riskAssessment?.riskLevel === 'HIGH'
-            || this.riskAssessment?.riskLevel === 'VERY_HIGH'
-            || this.verificationType === 'ENHANCED_DUE_DILIGENCE'
-            || this.amlScreening?.pepScreening?.matches?.length > 0
+            this.riskAssessment?.riskLevel === 'HIGH' ||
+            this.riskAssessment?.riskLevel === 'VERY_HIGH' ||
+            this.verificationType === 'ENHANCED_DUE_DILIGENCE' ||
+            this.amlScreening?.pepScreening?.matches?.length > 0
           );
         },
       },
@@ -1378,7 +1376,7 @@ const KYCVerificationSchema = new mongoose.Schema(
     id: true,
     safe: true,
     validateBeforeSave: true,
-  },
+  }
 );
 
 // =============================================================================
@@ -1441,7 +1439,7 @@ KYCVerificationSchema.index(
       'evidencePackage.retentionPolicy': 'STANDARD_5_YEARS',
     },
     name: 'AutoArchiveTTL',
-  },
+  }
 );
 
 /*
@@ -1478,7 +1476,7 @@ KYCVerificationSchema.index(
       'metadata.tags': 5,
     },
     name: 'VerificationTextSearch',
-  },
+  }
 );
 
 // =============================================================================
@@ -1508,7 +1506,7 @@ KYCVerificationSchema.pre('save', async function (next) {
         .findOne(
           { firmId: this.firmId, verificationId: new RegExp(`^VRF-${firmPrefix}-${year}`) },
           { verificationId: 1 },
-          { sort: { verificationId: -1 } },
+          { sort: { verificationId: -1 } }
         )
         .lean();
 
@@ -1542,8 +1540,8 @@ KYCVerificationSchema.pre('save', async function (next) {
 
       // Set completion timestamp when verification is approved/rejected
       if (
-        ['APPROVED', 'REJECTED', 'SUSPENDED'].includes(this.verificationStatus)
-        && !this.completedAt
+        ['APPROVED', 'REJECTED', 'SUSPENDED'].includes(this.verificationStatus) &&
+        !this.completedAt
       ) {
         this.completedAt = now;
       }
@@ -1580,7 +1578,7 @@ KYCVerificationSchema.pre('save', async function (next) {
       this.riskAssessment = this.riskAssessment || {};
       this.riskAssessment.overallRiskScore = this._calculateRiskScore();
       this.riskAssessment.riskLevel = this._determineRiskLevel(
-        this.riskAssessment.overallRiskScore,
+        this.riskAssessment.overallRiskScore
       );
 
       // Set AI model details
@@ -1607,10 +1605,11 @@ KYCVerificationSchema.pre('save', async function (next) {
       this.ongoingMonitoring = this.ongoingMonitoring || {};
 
       // Determine if monitoring required based on risk level
-      const requiresMonitoring = this.riskAssessment?.riskLevel === 'HIGH'
-        || this.riskAssessment?.riskLevel === 'VERY_HIGH'
-        || this.verificationType === 'ENHANCED_DUE_DILIGENCE'
-        || (this.amlScreening?.pepScreening?.matches?.length || 0) > 0;
+      const requiresMonitoring =
+        this.riskAssessment?.riskLevel === 'HIGH' ||
+        this.riskAssessment?.riskLevel === 'VERY_HIGH' ||
+        this.verificationType === 'ENHANCED_DUE_DILIGENCE' ||
+        (this.amlScreening?.pepScreening?.matches?.length || 0) > 0;
 
       this.ongoingMonitoring.monitoringRequired = requiresMonitoring;
 
@@ -1694,7 +1693,7 @@ KYCVerificationSchema.pre('save', async function (next) {
   } catch (error) {
     console.error(
       `QUANTUM ERROR in KYCVerification pre-save for ${this.verificationId || 'NEW VERIFICATION'}:`,
-      error,
+      error
     );
     next(error);
   }
@@ -1715,8 +1714,8 @@ KYCVerificationSchema.post('save', async (doc, next) => {
 
     // Trigger async third-party verification if required
     if (
-      doc.verificationStatus === 'DOCUMENTS_VERIFIED'
-      || doc.verificationStatus === 'THIRD_PARTY_PENDING'
+      doc.verificationStatus === 'DOCUMENTS_VERIFIED' ||
+      doc.verificationStatus === 'THIRD_PARTY_PENDING'
     ) {
       // In production, this would call async verification services
       console.log(`THIRD-PARTY VERIFICATION QUEUED: ${doc.verificationId}`);
@@ -1735,7 +1734,7 @@ KYCVerificationSchema.post('save', async (doc, next) => {
             'riskAssessment.riskScore': doc.riskAssessment?.overallRiskScore,
             'riskAssessment.riskRating': doc.riskAssessment?.riskLevel,
           },
-        },
+        }
       );
     }
 
@@ -1743,7 +1742,7 @@ KYCVerificationSchema.post('save', async (doc, next) => {
     if (doc.ongoingMonitoring?.monitoringRequired && doc.ongoingMonitoring?.nextReviewDate) {
       // In production, this would schedule a job for review date
       console.log(
-        `MONITORING SCHEDULED: ${doc.verificationId} next review on ${doc.ongoingMonitoring.nextReviewDate}`,
+        `MONITORING SCHEDULED: ${doc.verificationId} next review on ${doc.ongoingMonitoring.nextReviewDate}`
       );
     }
 
@@ -1801,7 +1800,8 @@ KYCVerificationSchema.methods._calculateRiskScore = function () {
     score += 30 + pepMatches * 5; // Base 30 + 5 per PEP match
   }
 
-  const sanctionsMatches = this.amlScreening?.sanctionsScreening?.result === 'CONFIRMED_MATCH' ? 50 : 0;
+  const sanctionsMatches =
+    this.amlScreening?.sanctionsScreening?.result === 'CONFIRMED_MATCH' ? 50 : 0;
   score += sanctionsMatches;
 
   const adverseMediaFindings = this.amlScreening?.adverseMediaScreening?.findings?.length || 0;
@@ -1847,9 +1847,11 @@ KYCVerificationSchema.methods._determineRiskLevel = function (score) {
 KYCVerificationSchema.methods._generateRiskExplanation = function (score) {
   if (score >= 75) {
     return 'Very high risk due to PEP matches, adverse media findings, or sanctions screening matches. Enhanced due diligence required.';
-  } if (score >= 50) {
+  }
+  if (score >= 50) {
     return 'High risk profile. Multiple risk factors identified requiring additional verification.';
-  } if (score >= 25) {
+  }
+  if (score >= 25) {
     return 'Medium risk with some verification gaps. Standard monitoring recommended.';
   }
   return 'Low risk profile. All verifications completed satisfactorily.';
@@ -2028,10 +2030,12 @@ KYCVerificationSchema.statics.getComplianceReport = async function (firmId) {
   // Analyze verifications
   verifications.forEach((verification) => {
     // Status analysis
-    report.summary.byStatus[verification.verificationStatus] = (report.summary.byStatus[verification.verificationStatus] || 0) + 1;
+    report.summary.byStatus[verification.verificationStatus] =
+      (report.summary.byStatus[verification.verificationStatus] || 0) + 1;
 
     // Type analysis
-    report.summary.byType[verification.verificationType] = (report.summary.byType[verification.verificationType] || 0) + 1;
+    report.summary.byType[verification.verificationType] =
+      (report.summary.byType[verification.verificationType] || 0) + 1;
 
     // Risk level analysis
     const riskLevel = verification.riskAssessment?.riskLevel || 'MEDIUM';
@@ -2040,19 +2044,20 @@ KYCVerificationSchema.statics.getComplianceReport = async function (firmId) {
 
   // Calculate compliance metrics
   const approvedCount = report.summary.byStatus.APPROVED || 0;
-  const pendingCount = report.summary.byStatus.UNDER_REVIEW || 0 + report.summary.byStatus.INITIATED || 0;
+  const pendingCount =
+    report.summary.byStatus.UNDER_REVIEW || 0 + report.summary.byStatus.INITIATED || 0;
 
   report.summary.complianceMetrics = {
     approvalRate:
       verifications.length > 0 ? Math.round((approvedCount / verifications.length) * 100) : 100,
     averageRiskScore: Math.round(
-      verifications.reduce((sum, v) => sum + (v.riskAssessment?.overallRiskScore || 50), 0)
-        / Math.max(1, verifications.length),
+      verifications.reduce((sum, v) => sum + (v.riskAssessment?.overallRiskScore || 50), 0) /
+        Math.max(1, verifications.length)
     ),
     pepMatches: verifications.filter((v) => v.amlScreening?.pepScreening?.matches?.length > 0)
       .length,
     sanctionsMatches: verifications.filter(
-      (v) => v.amlScreening?.sanctionsScreening?.result === 'CONFIRMED_MATCH',
+      (v) => v.amlScreening?.sanctionsScreening?.result === 'CONFIRMED_MATCH'
     ).length,
     pendingVerifications: pendingCount,
     averageProcessingTime: 0, // Would calculate from timestamps
@@ -2089,7 +2094,8 @@ KYCVerificationSchema.statics.getComplianceReport = async function (firmId) {
   }
 
   if (report.summary.byRiskLevel.HIGH > 0 || report.summary.byRiskLevel.VERY_HIGH > 0) {
-    const highRiskCount = (report.summary.byRiskLevel.HIGH || 0) + (report.summary.byRiskLevel.VERY_HIGH || 0);
+    const highRiskCount =
+      (report.summary.byRiskLevel.HIGH || 0) + (report.summary.byRiskLevel.VERY_HIGH || 0);
     report.recommendations.push({
       priority: 'HIGH',
       action: 'ENHANCED_MONITORING',
@@ -2100,13 +2106,13 @@ KYCVerificationSchema.statics.getComplianceReport = async function (firmId) {
   // Regulatory compliance assessment
   report.regulatoryCompliance = {
     ficaCompliant:
-      report.summary.complianceMetrics.approvalRate >= 85
-      && report.summary.complianceMetrics.sanctionsMatches === 0,
+      report.summary.complianceMetrics.approvalRate >= 85 &&
+      report.summary.complianceMetrics.sanctionsMatches === 0,
     ficActCompliant: report.summary.complianceMetrics.sanctionsMatches === 0,
     overallComplianceScore: Math.min(
       100,
-      report.summary.complianceMetrics.approvalRate * 0.6
-        + (report.summary.complianceMetrics.sanctionsMatches === 0 ? 100 : 0) * 0.4,
+      report.summary.complianceMetrics.approvalRate * 0.6 +
+        (report.summary.complianceMetrics.sanctionsMatches === 0 ? 100 : 0) * 0.4
     ),
   };
 
@@ -2122,7 +2128,7 @@ KYCVerificationSchema.statics.getComplianceReport = async function (firmId) {
  */
 KYCVerificationSchema.statics.findExpiringVerifications = async function (
   firmId,
-  daysThreshold = 30,
+  daysThreshold = 30
 ) {
   const warningDate = new Date();
   warningDate.setDate(warningDate.getDate() + daysThreshold);
@@ -2190,11 +2196,11 @@ KYCVerificationSchema.virtual('daysToExpiry').get(function () {
  */
 KYCVerificationSchema.virtual('requiresEnhancedDueDiligence').get(function () {
   return (
-    this.verificationType === 'ENHANCED_DUE_DILIGENCE'
-    || this.riskAssessment?.riskLevel === 'HIGH'
-    || this.riskAssessment?.riskLevel === 'VERY_HIGH'
-    || (this.amlScreening?.pepScreening?.matches?.length || 0) > 0
-    || this.amlScreening?.sanctionsScreening?.result === 'CONFIRMED_MATCH'
+    this.verificationType === 'ENHANCED_DUE_DILIGENCE' ||
+    this.riskAssessment?.riskLevel === 'HIGH' ||
+    this.riskAssessment?.riskLevel === 'VERY_HIGH' ||
+    (this.amlScreening?.pepScreening?.matches?.length || 0) > 0 ||
+    this.amlScreening?.sanctionsScreening?.result === 'CONFIRMED_MATCH'
   );
 });
 
@@ -2248,7 +2254,8 @@ KYCVerificationSchema.plugin(mongooseLeanVirtuals);
  * @integration Datanamix, LexisNexis, Home Affairs SA, FIC Sanctions, Biometric AI
  * @intelligence AI-powered risk scoring, behavioral analysis, predictive monitoring
  */
-const KYCVerification = mongoose.models.KYCVerification || mongoose.model('KYCVerification', KYCVerificationSchema);
+const KYCVerification =
+  mongoose.models.KYCVerification || mongoose.model('KYCVerification', KYCVerificationSchema);
 
 // =============================================================================
 // SECTION 10: QUANTUM EXPORT - THE COMPLIANCE FORTRESS

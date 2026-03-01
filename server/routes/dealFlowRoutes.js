@@ -1,4 +1,4 @@
-import express from 'express';
+#!import express from 'express';
 import {
   identifyTargets,
   createDeal,
@@ -10,7 +10,7 @@ import {
   updateDealStage,
   getPipelineAnalytics,
   getTargets,
-  getDealStats
+  getDealStats,
 } from '../controllers/dealFlowController.js';
 import { authenticate } from '../middleware/auth.js';
 import { extractTenant } from '../middleware/tenantContext.js';

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
 ================================================================================
 QUANTUM SCROLL OF THREAT INTELLIGENCE: AI-POWERED THREAT DETECTION SERVICE
 Path: /server/services/threatIntelligenceService.js
@@ -127,15 +125,15 @@ const validateThreatIntelligenceEnvironment = () => {
   if (missingVars.length > 0) {
     throw new Error(
       `[Threat Intelligence Service] Missing required environment variables: ${missingVars.join(
-        ', ',
-      )}`,
+        ', '
+      )}`
     );
   }
 
   // Validate API keys have minimum length
   if (process.env.THREAT_INTELLIGENCE_API_KEY.length < 32) {
     throw new Error(
-      '[Threat Intelligence Service] THREAT_INTELLIGENCE_API_KEY must be at least 32 characters',
+      '[Threat Intelligence Service] THREAT_INTELLIGENCE_API_KEY must be at least 32 characters'
     );
   }
 
@@ -143,7 +141,7 @@ const validateThreatIntelligenceEnvironment = () => {
   const threshold = parseFloat(process.env.THREAT_DETECTION_THRESHOLD);
   if (isNaN(threshold) || threshold < 0.5 || threshold > 0.99) {
     throw new Error(
-      '[Threat Intelligence Service] THREAT_DETECTION_THRESHOLD must be between 0.5 and 0.99',
+      '[Threat Intelligence Service] THREAT_DETECTION_THRESHOLD must be between 0.5 and 0.99'
     );
   }
 
@@ -458,7 +456,7 @@ const threatIntelligenceSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: 'threat_intelligence',
-  },
+  }
 );
 
 // Indexes for threat intelligence
@@ -468,8 +466,9 @@ threatIntelligenceSchema.index({ 'response.status': 1 });
 threatIntelligenceSchema.index({ 'compliance.cybercrimesAct.reportable': 1 });
 
 // Create model
-const ThreatIntelligence = mongoose.models.ThreatIntelligence
-  || mongoose.model('ThreatIntelligence', threatIntelligenceSchema);
+const ThreatIntelligence =
+  mongoose.models.ThreatIntelligence ||
+  mongoose.model('ThreatIntelligence', threatIntelligenceSchema);
 
 // =============================================================================
 // QUANTUM ML ENGINE: THREAT DETECTION MODEL
@@ -536,7 +535,7 @@ class ThreatDetectionEngine {
    */
   async loadModel() {
     this.model = await tf.loadLayersModel(
-      `file://${THREAT_INTELLIGENCE_CONFIG.ML.MODEL_PATH}/model.json`,
+      `file://${THREAT_INTELLIGENCE_CONFIG.ML.MODEL_PATH}/model.json`
     );
 
     // Warm up the model
@@ -609,7 +608,7 @@ class ThreatDetectionEngine {
         onEpochEnd: (epoch, logs) => {
           if (epoch % 10 === 0) {
             console.log(
-              `Epoch ${epoch}: loss = ${logs.loss.toFixed(4)}, accuracy = ${logs.acc.toFixed(4)}`,
+              `Epoch ${epoch}: loss = ${logs.loss.toFixed(4)}, accuracy = ${logs.acc.toFixed(4)}`
             );
           }
         },
@@ -681,7 +680,7 @@ class ThreatDetectionEngine {
 
     fs.writeFileSync(
       path.join(THREAT_INTELLIGENCE_CONFIG.ML.MODEL_PATH, 'metadata.json'),
-      JSON.stringify(metadata, null, 2),
+      JSON.stringify(metadata, null, 2)
     );
   }
 
@@ -727,7 +726,7 @@ class ThreatDetectionEngine {
           console.error('❌ Periodic retraining failed:', error);
         }
       },
-      24 * 60 * 60 * 1000,
+      24 * 60 * 60 * 1000
     ); // 24 hours
   }
 
@@ -1007,15 +1006,19 @@ class ThreatDetectionEngine {
   determineThreatType(features, prediction) {
     if (features[4] > 0.7 && features[5] > 0.8) {
       return 'PRIVILEGE_ESCALATION';
-    } if (features[6] === 1.0) {
+    }
+    if (features[6] === 1.0) {
       // AUDIT_LOG access
       return 'INSIDER_THREAT';
-    } if (features[5] > 0.9) {
+    }
+    if (features[5] > 0.9) {
       // SUPREME_OVERRIDE
       return 'INSIDER_THREAT';
-    } if (prediction > 0.9) {
+    }
+    if (prediction > 0.9) {
       return 'MALWARE';
-    } if (features[3] > 0.5 && prediction > 0.7) {
+    }
+    if (features[3] > 0.5 && prediction > 0.7) {
       return 'DATA_EXFILTRATION';
     }
     return 'UNKNOWN';
@@ -1276,7 +1279,9 @@ class ThreatIntelligenceService {
     // Check patterns
     if (threat.indicators?.patterns) {
       const logString = JSON.stringify(auditLog);
-      const patternMatch = threat.indicators.patterns.some((pattern) => logString.includes(pattern));
+      const patternMatch = threat.indicators.patterns.some((pattern) =>
+        logString.includes(pattern)
+      );
       if (patternMatch) score += 0.3;
     }
 
@@ -1302,9 +1307,10 @@ class ThreatIntelligenceService {
   assessRisk(mlAnalysis, threatIntelligence) {
     const mlScore = mlAnalysis.riskScore;
     const tiScore = threatIntelligence.correlated ? 30 : 0;
-    const correlationScore = threatIntelligence.correlations.length > 0
-      ? Math.max(...threatIntelligence.correlations.map((c) => c.matchScore)) * 20
-      : 0;
+    const correlationScore =
+      threatIntelligence.correlations.length > 0
+        ? Math.max(...threatIntelligence.correlations.map((c) => c.matchScore)) * 20
+        : 0;
 
     const totalRiskScore = mlScore + tiScore + correlationScore;
 
@@ -1330,7 +1336,7 @@ class ThreatIntelligenceService {
     const recommendedActions = this.generateRecommendedActions(
       threatLevel,
       mlAnalysis.threatType,
-      threatIntelligence,
+      threatIntelligence
     );
 
     return {
@@ -1418,7 +1424,7 @@ class ThreatIntelligenceService {
         auditLog,
         mlAnalysis,
         threatIntelligence,
-        riskAssessment,
+        riskAssessment
       );
 
       // Trigger alerts
@@ -1508,13 +1514,13 @@ class ThreatIntelligenceService {
           auditLog,
           mlAnalysis,
           threatIntelligence,
-          riskAssessment,
+          riskAssessment
         ),
       },
       metadata: {
         expiresAt: new Date(
-          Date.now()
-            + THREAT_INTELLIGENCE_CONFIG.COMPLIANCE.DATA_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+          Date.now() +
+            THREAT_INTELLIGENCE_CONFIG.COMPLIANCE.DATA_RETENTION_DAYS * 24 * 60 * 60 * 1000
         ),
       },
     });
@@ -1552,7 +1558,7 @@ class ThreatIntelligenceService {
     // Extract device fingerprint
     if (auditLog.actor?.deviceFingerprint) {
       iocs.signatures.push(
-        `DEVICE_FINGERPRINT:${JSON.stringify(auditLog.actor.deviceFingerprint)}`,
+        `DEVICE_FINGERPRINT:${JSON.stringify(auditLog.actor.deviceFingerprint)}`
       );
     }
 
@@ -1754,7 +1760,7 @@ class ThreatIntelligenceService {
       if (THREAT_INTELLIGENCE_CONFIG.ALERTING.SUPREME_ADMIN_PHONE) {
         await this.sendSMSAlert(
           THREAT_INTELLIGENCE_CONFIG.ALERTING.SUPREME_ADMIN_PHONE,
-          `Wilsy OS Threat Alert: ${threatRecord.threatType} - ${riskAssessment.threatLevel}`,
+          `Wilsy OS Threat Alert: ${threatRecord.threatType} - ${riskAssessment.threatLevel}`
         );
       }
 
@@ -1928,8 +1934,8 @@ Severity: ${riskAssessment.threatLevel}
 COMPLIANCE IMPACTS:
 • POPIA: ${threatRecord.impact.dataBreach ? 'DATA BREACH DETECTED' : 'No data breach'}
 • Cybercrimes Act: ${
-  threatRecord.compliance.cybercrimesAct.reportable ? 'REPORTABLE INCIDENT' : 'Not reportable'
-}
+      threatRecord.compliance.cybercrimesAct.reportable ? 'REPORTABLE INCIDENT' : 'Not reportable'
+    }
 • ${threatRecord.impact.complianceImpact}
 
 AFFECTED DATA SUBJECTS:
@@ -1938,10 +1944,10 @@ ${threatRecord.isPIIAffected ? 'PII data potentially affected' : 'No PII data af
 REQUIRED ACTIONS:
 1. Assess data breach notification requirements (POPIA Section 22)
 2. ${
-  threatRecord.compliance.cybercrimesAct.reportable
-    ? 'Prepare Cybercrimes Act report'
-    : 'No Cybercrimes Act reporting required'
-}
+      threatRecord.compliance.cybercrimesAct.reportable
+        ? 'Prepare Cybercrimes Act report'
+        : 'No Cybercrimes Act reporting required'
+    }
 3. Notify Information Officer if required
 4. Document incident for regulatory compliance
 
@@ -1966,11 +1972,11 @@ This is an automated compliance alert from Wilsy OS Threat Intelligence System.
    */
   generateSlackAlert(threatRecord, riskAssessment) {
     return (
-      `🚨 *Threat Detected*: ${threatRecord.threatType} (${riskAssessment.threatLevel})\n`
-      + `*ID*: ${threatRecord.threatId}\n`
-      + `*Risk Score*: ${riskAssessment.totalRiskScore}/100\n`
-      + `*Confidence*: ${(threatRecord.mlPrediction.confidence * 100).toFixed(1)}%\n`
-      + `*Actions Required*: ${riskAssessment.recommendedActions.length}`
+      `🚨 *Threat Detected*: ${threatRecord.threatType} (${riskAssessment.threatLevel})\n` +
+      `*ID*: ${threatRecord.threatId}\n` +
+      `*Risk Score*: ${riskAssessment.totalRiskScore}/100\n` +
+      `*Confidence*: ${(threatRecord.mlPrediction.confidence * 100).toFixed(1)}%\n` +
+      `*Actions Required*: ${riskAssessment.recommendedActions.length}`
     );
   }
 
@@ -2298,8 +2304,8 @@ This is an automated compliance alert from Wilsy OS Threat Intelligence System.
     if (!popiaStatus.compliant) {
       recommendations.push(
         `IMPROVE POPIA BREACH NOTIFICATION: Current rate ${popiaStatus.notificationRate.toFixed(
-          1,
-        )}%, target 100%`,
+          1
+        )}%, target 100%`
       );
     }
 
@@ -2307,24 +2313,24 @@ This is an automated compliance alert from Wilsy OS Threat Intelligence System.
     if (!cyberStatus.compliant) {
       recommendations.push(
         `ENHANCE CYBERCRIMES ACT REPORTING: Current rate ${cyberStatus.reportingRate.toFixed(
-          1,
-        )}%, target 100%`,
+          1
+        )}%, target 100%`
       );
     }
 
     const dataBreaches = threats.filter((t) => t.impact.dataBreach);
     if (dataBreaches.length > 0) {
       recommendations.push(
-        `IMPLEMENT DATA LOSS PREVENTION FOR ${dataBreaches.length} IDENTIFIED BREACH VECTORS`,
+        `IMPLEMENT DATA LOSS PREVENTION FOR ${dataBreaches.length} IDENTIFIED BREACH VECTORS`
       );
     }
 
     const highCriticalThreats = threats.filter(
-      (t) => t.impact.severity === 'HIGH' || t.impact.severity === 'CRITICAL',
+      (t) => t.impact.severity === 'HIGH' || t.impact.severity === 'CRITICAL'
     );
     if (highCriticalThreats.length > 5) {
       recommendations.push(
-        `REVIEW SECURITY CONTROLS: ${highCriticalThreats.length} high/critical threats detected`,
+        `REVIEW SECURITY CONTROLS: ${highCriticalThreats.length} high/critical threats detected`
       );
     }
 
@@ -2365,7 +2371,7 @@ This is an automated compliance alert from Wilsy OS Threat Intelligence System.
       // Encrypt report for transmission
       const encryptedReport = await encryptionService.encrypt(
         JSON.stringify(sacertReport),
-        'SA-CERT-REPORT',
+        'SA-CERT-REPORT'
       );
 
       // Send to SA-CERT API
@@ -2382,7 +2388,7 @@ This is an automated compliance alert from Wilsy OS Threat Intelligence System.
             iv: encryptedReport.iv,
             tag: encryptedReport.tag,
           }),
-        },
+        }
       );
 
       if (response.ok) {
@@ -2561,13 +2567,13 @@ This is an automated compliance alert from Wilsy OS Threat Intelligence System.
       health.components.activeThreats = {
         count: this.activeThreats.size,
         critical: Array.from(this.activeThreats.values()).filter(
-          (t) => t.impact.severity === 'CRITICAL',
+          (t) => t.impact.severity === 'CRITICAL'
         ).length,
       };
 
       // Overall status
       const unhealthyComponents = Object.values(health.components).filter(
-        (c) => c.status === 'UNHEALTHY',
+        (c) => c.status === 'UNHEALTHY'
       ).length;
 
       health.status = unhealthyComponents === 0 ? 'HEALTHY' : 'DEGRADED';
@@ -2665,14 +2671,14 @@ if (process.env.NODE_ENV === 'test') {
       console.assert(analysis !== null, 'Threat analysis failed');
       console.assert(
         typeof analysis.threatDetected === 'boolean',
-        'Invalid threat detection result',
+        'Invalid threat detection result'
       );
 
       // Test 3: Health check
       const health = await service.healthCheck();
       console.assert(
         health.status === 'HEALTHY' || health.status === 'DEGRADED',
-        'Invalid health status',
+        'Invalid health status'
       );
 
       console.log('✅ ALL THREAT INTELLIGENCE SERVICE TESTS PASSED');

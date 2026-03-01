@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/* ╔══════════════════════════════════════════════════════════════════════════════╗
+#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ AUDIT MIDDLEWARE - INVESTOR-GRADE                                           ║
   ║ 99.99% tamper-proof | Real-time compliance | Forensic evidence             ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -103,7 +101,7 @@ export default (req, res, next) => {
     if (responseChunks.length) {
       try {
         const combined = Buffer.concat(
-          responseChunks.map((c) => (Buffer.isBuffer(c) ? c : Buffer.from(c))),
+          responseChunks.map((c) => (Buffer.isBuffer(c) ? c : Buffer.from(c)))
         );
         responseBody = combined.toString('utf8');
       } catch (err) {
@@ -180,9 +178,10 @@ export default (req, res, next) => {
     // Add request body for non-GET requests (with size limit)
     if (req.method !== 'GET' && req.body) {
       const bodySize = JSON.stringify(req.body).length;
-      auditEntry.requestBody = bodySize > 10000
-        ? { _warning: 'Request body too large', size: bodySize }
-        : redactSensitiveData(req.body);
+      auditEntry.requestBody =
+        bodySize > 10000
+          ? { _warning: 'Request body too large', size: bodySize }
+          : redactSensitiveData(req.body);
     }
 
     // Log to audit system (async, don't block)

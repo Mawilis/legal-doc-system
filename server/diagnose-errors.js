@@ -1,7 +1,7 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 import { readFile } from 'fs/promises';
-import { join, dirname } from "path";
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,15 +20,17 @@ const colors = {
 
 async function checkErrorLogs() {
   console.log(
-    `${colors.cyan
+    `${
+      colors.cyan
     }\n═══════════════════════════════════════════════════════════════════════════════${
-      colors.reset}`,
+      colors.reset
+    }`
   );
   console.log(`${colors.yellow}                     WILSY OS ERROR DIAGNOSTIC${colors.reset}`);
   console.log(
-    `${colors.cyan
-    }═══════════════════════════════════════════════════════════════════════════════${
-      colors.reset}`,
+    `${colors.cyan}═══════════════════════════════════════════════════════════════════════════════${
+      colors.reset
+    }`
   );
   console.log('');
 
@@ -44,7 +46,7 @@ async function checkErrorLogs() {
             .split('\n')
             .slice(0, 10)
             .map((line) => `  ${line}`)
-            .join('\n'),
+            .join('\n')
         );
       } else {
         console.log(`${colors.green}✅ Worker ${i}: No errors${colors.reset}`);
@@ -65,7 +67,7 @@ async function checkErrorLogs() {
           .split('\n')
           .slice(0, 10)
           .map((line) => `  ${line}`)
-          .join('\n'),
+          .join('\n')
       );
     } else {
       console.log(`${colors.green}\n✅ API: No errors${colors.reset}`);
@@ -75,9 +77,11 @@ async function checkErrorLogs() {
   }
 
   console.log(
-    `${colors.cyan
+    `${
+      colors.cyan
     }\n═══════════════════════════════════════════════════════════════════════════════${
-      colors.reset}`,
+      colors.reset
+    }`
   );
   console.log('');
 }

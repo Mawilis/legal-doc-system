@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*= ======================================================================================================================
+#!/*= ======================================================================================================================
 ╔═╗┌─┐┌┬┐┬─┐┌─┐┬  ┌─┐  ╦═╗┌─┐┌─┐┬ ┬┌─┐┬─┐  ╦═╗┌─┐┬─┐┌─┐┌─┐┌─┐┌┬┐┌─┐  ╔═╗┌─┐┬─┐┌─┐┌─┐┌─┐┌┬┐┌─┐
 ║ ║├─┘ │ ├┬┘├┤ │  ├┤   ╠╦╝├┤ ├─┘│ │├┤ ├┬┘  ╠╦╝│ │├┬┘├┤ │  │ ││││├┤   ╠═╝├─┤├┬┘├┤ │  │ ││││├┤
 ╚═╝┴   ┴ ┴└─└─┘┴─┘└─┘  ╩╚═└─┘┴  └─┘└─┘┴└─  ╩╚═└─┘┴└─└─┘└─┘└─┘┴ ┴└─┘  ╩  ┴ ┴┴└─└─┘└─┘└─┘┴ ┴└─┘
@@ -34,9 +32,7 @@ const {
   QuantumSecurityMiddleware,
   RegulatoryValidations,
 } = require('../controllers/regulatoryController');
-const {
-  body, param, query, validationResult,
-} = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
 
 // ================================================================================================================
 // QUANTUM SECURITY CITADEL - ROUTE-LEVEL SECURITY MIDDLEWARE
@@ -56,11 +52,13 @@ const enforceSecurity = function (req, res, next) {
   }
 
   // For authenticated routes, require either API Key or JWT
-  const hasApiKey = req.headers['x-api-key']
-    || (req.headers.authorization && req.headers.authorization.startsWith('Bearer '));
-  const hasJWT = req.headers.authorization
-    && req.headers.authorization.startsWith('Bearer ')
-    && req.headers.authorization.length > 100;
+  const hasApiKey =
+    req.headers['x-api-key'] ||
+    (req.headers.authorization && req.headers.authorization.startsWith('Bearer '));
+  const hasJWT =
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer ') &&
+    req.headers.authorization.length > 100;
 
   if (!hasApiKey && !hasJWT) {
     return res.status(401).json({
@@ -211,7 +209,7 @@ router.post(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.startMonitoring(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -228,7 +226,7 @@ router.post(
   QuantumSecurityMiddleware.sanitizeInput,
   (req, res, next) => {
     regulatoryController.stopMonitoring(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -245,7 +243,7 @@ router.get(
   QuantumSecurityMiddleware.sanitizeInput,
   (req, res, next) => {
     regulatoryController.getMonitoringMetrics(req, res).catch(next);
-  },
+  }
 );
 
 // ============================================================================================================
@@ -268,7 +266,7 @@ router.get(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.getRegulatoryChanges(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -290,7 +288,7 @@ router.get(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.getChangeById(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -313,7 +311,7 @@ router.get(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.getLegislation(req, res).catch(next);
-  },
+  }
 );
 
 // ============================================================================================================
@@ -336,7 +334,7 @@ router.get(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.getAlerts(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -358,7 +356,7 @@ router.get(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.getAlertById(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -382,7 +380,7 @@ router.post(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.handleAlertAction(req, res).catch(next);
-  },
+  }
 );
 
 // ============================================================================================================
@@ -409,7 +407,7 @@ router.get(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.generateComplianceReport(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -431,7 +429,7 @@ router.post(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.performComplianceScan(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -448,7 +446,7 @@ router.get(
   QuantumSecurityMiddleware.sanitizeInput,
   (req, res, next) => {
     regulatoryController.getComplianceStatus(req, res).catch(next);
-  },
+  }
 );
 
 // ============================================================================================================
@@ -472,7 +470,7 @@ router.post(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.configureWebhook(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -489,7 +487,7 @@ router.get(
   QuantumSecurityMiddleware.sanitizeInput,
   (req, res, next) => {
     regulatoryController.getWebhooks(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -511,7 +509,7 @@ router.delete(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.deleteWebhook(req, res).catch(next);
-  },
+  }
 );
 
 // ============================================================================================================
@@ -533,7 +531,7 @@ router.post(
   enforceAdminRole,
   (req, res, next) => {
     regulatoryController.adminShutdown(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -555,7 +553,7 @@ router.post(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.adminClearCache(req, res).catch(next);
-  },
+  }
 );
 
 /*
@@ -575,7 +573,7 @@ router.get(
   handleValidationErrors,
   (req, res, next) => {
     regulatoryController.getAuditLog(req, res).catch(next);
-  },
+  }
 );
 
 // ============================================================================================================
@@ -617,7 +615,7 @@ router.get(
       data: dashboardData,
       timestamp: new Date().toISOString(),
     });
-  },
+  }
 );
 
 /*
@@ -654,7 +652,7 @@ router.get(
       data: subscriptions,
       timestamp: new Date().toISOString(),
     });
-  },
+  }
 );
 
 // ============================================================================================================

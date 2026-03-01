@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /**
  * WILSY OS: SENTINEL STATUS CHECK
@@ -44,7 +44,9 @@ async function checkStatus() {
 
     console.log(`\n🔒 QUARANTINED TENANTS: ${quarantined.length}`);
     quarantined.forEach((q) => {
-      console.log(`  🚫 ${q.tenantId}: ${q.quarantine.reason} (expires: ${q.quarantine.expiresAt})`);
+      console.log(
+        `  🚫 ${q.tenantId}: ${q.quarantine.reason} (expires: ${q.quarantine.expiresAt})`
+      );
     });
 
     console.log(`\n${'='.repeat(70)}`);

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ⚛️ QUANTUM TENANT ORCHESTRATION CONTROLLER v32.0.0
  * File: /server/controllers/tenantController.js
  *
@@ -302,7 +300,8 @@ async function validateLPCNumber(lpcNumber) {
  */
 function generateSecurePassword() {
   const length = 16; // Increased for quantum security
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const charset =
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
   let password = '';
 
   // Ensure compliance with POPIA password policies
@@ -369,9 +368,15 @@ async function emitFirmAudit({
     // Create cryptographic hash of audit data
     const auditHash = crypto
       .createHash('sha256')
-      .update(JSON.stringify({
-        tenantId, actorId, eventType, summary, timestamp: new Date(),
-      }))
+      .update(
+        JSON.stringify({
+          tenantId,
+          actorId,
+          eventType,
+          summary,
+          timestamp: new Date(),
+        })
+      )
       .digest('hex');
 
     await AuditEvent.create({
@@ -511,9 +516,7 @@ exports.updateComplianceSettings = async (req, res, next) => {
 
   try {
     const { id } = req.params;
-    const {
-      popiaSettings, gdprSettings, dataRetention, auditFrequency,
-    } = req.body;
+    const { popiaSettings, gdprSettings, dataRetention, auditFrequency } = req.body;
 
     // Validate tenant access
     if (req.user.tenantId.toString() !== id && req.user.role !== 'SUPER_ADMIN') {
@@ -580,7 +583,7 @@ exports.updateComplianceSettings = async (req, res, next) => {
           },
         },
       },
-      { upsert: true, session },
+      { upsert: true, session }
     );
 
     // Invalidate compliance cache
@@ -857,7 +860,7 @@ exports.upgradePlan = async (req, res, next) => {
           nextBillingDate: upgradeDetails.nextBillingDate,
         },
       },
-      { session },
+      { session }
     );
 
     // Process payment if immediate upgrade with charge
@@ -1309,25 +1312,25 @@ function generateComplianceRecommendations(score) {
     recommendations.push(
       'Urgent: Appoint Information Officer and register with Regulator',
       'Priority: Implement POPIA-compliant consent management system',
-      'Required: Conduct data protection impact assessment',
+      'Required: Conduct data protection impact assessment'
     );
   } else if (score < 75) {
     recommendations.push(
       'Implement automated data subject access request processing',
       'Schedule quarterly security audits',
-      'Document all data processing activities',
+      'Document all data processing activities'
     );
   } else if (score < 90) {
     recommendations.push(
       'Consider GDPR compliance for international clients',
       'Implement advanced data encryption for sensitive documents',
-      'Setup automated compliance reporting',
+      'Setup automated compliance reporting'
     );
   } else {
     recommendations.push(
       'Maintain compliance with quarterly reviews',
       'Consider ISO 27001 certification',
-      'Explore blockchain document notarization for enhanced security',
+      'Explore blockchain document notarization for enhanced security'
     );
   }
 
@@ -1523,9 +1526,7 @@ exports.activateTenant = async (req, res, next) => {
 exports.updateBranding = async (req, res, next) => {
   try {
     const { tenantId } = req.user;
-    const {
-      logoUrl, brandColor, secondaryColor, fontFamily,
-    } = req.body;
+    const { logoUrl, brandColor, secondaryColor, fontFamily } = req.body;
 
     const tenant = await Tenant.findById(tenantId);
 

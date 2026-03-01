@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node/usr/bin/env node
 
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -15,8 +15,8 @@
  */
 
 import { execSync } from 'child_process';
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -84,11 +84,12 @@ const fixes = {
     content,
 
   // Replace console with logger
-  replaceConsoleWithLogger: (content) => content
-    .replace(/console\.log\(/g, 'logger.info(')
-    .replace(/console\.error\(/g, 'logger.error(')
-    .replace(/console\.warn\(/g, 'logger.warn(')
-    .replace(/console\.debug\(/g, 'logger.debug('),
+  replaceConsoleWithLogger: (content) =>
+    content
+      .replace(/console\.log\(/g, 'logger.info(')
+      .replace(/console\.error\(/g, 'logger.error(')
+      .replace(/console\.warn\(/g, 'logger.warn(')
+      .replace(/console\.debug\(/g, 'logger.debug('),
 
   // Add logger import if needed
   addLoggerImport: (content) => {
@@ -100,10 +101,11 @@ const logger = loggerRaw.default || loggerRaw;\n${content}`;
   },
 
   // Convert CommonJS exports to ES modules
-  convertToESModules: (content) => content
-    .replace(/module\.exports\s*=\s*{/g, 'export default {')
-    .replace(/module\.exports\s*=\s*(\w+)/g, 'export default $1')
-    .replace(/exports\.(\w+)\s*=\s*(\w+)/g, 'export const $1 = $2'),
+  convertToESModules: (content) =>
+    content
+      .replace(/module\.exports\s*=\s*{/g, 'export default {')
+      .replace(/module\.exports\s*=\s*(\w+)/g, 'export default $1')
+      .replace(/exports\.(\w+)\s*=\s*(\w+)/g, 'export const $1 = $2'),
 
   // Fix no-undef by adding imports
   addMongooseImport: (content) => {
@@ -218,4 +220,6 @@ console.log('\n✅ Strategic code quality fixes complete');
 console.log('\n📋 NEXT STEPS:');
 console.log('1. Review changes: git diff');
 console.log('2. Run tests: npm test');
-console.log('3. Commit fixes: git add . && git commit -m "fix: strategic code quality improvements"');
+console.log(
+  '3. Commit fixes: git add . && git commit -m "fix: strategic code quality improvements"'
+);

@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from 'module';
-const require = _createRequire(import.meta.url);
-/*
+#!/*
  * ============================================================================
  * ⚠️ RISK ASSESSMENT MODEL QUANTUM SCROLL: IMMUTABLE RISK CHRONICLE ⚠️
  * ============================================================================
@@ -68,7 +66,7 @@ if (!process.env.ENCRYPTION_KEY) {
 
 if (!process.env.RISK_ASSESSMENT_SALT) {
   console.warn(
-    '⚠️  WARNING: RISK_ASSESSMENT_SALT not set, using default. Generate with: openssl rand -hex 32',
+    '⚠️  WARNING: RISK_ASSESSMENT_SALT not set, using default. Generate with: openssl rand -hex 32'
   );
 }
 
@@ -1269,7 +1267,7 @@ const riskAssessmentSchema = new mongoose.Schema(
         return ret;
       },
     },
-  },
+  }
 );
 
 /*
@@ -1341,7 +1339,7 @@ riskAssessmentSchema.pre('save', async function (next) {
       const previousAssessment = await this.constructor.findOne(
         { firmId: this.firmId },
         {},
-        { sort: { assessmentDate: -1 } },
+        { sort: { assessmentDate: -1 } }
       );
 
       this.previousHash = previousAssessment ? previousAssessment.merkleRoot : '';
@@ -1351,7 +1349,7 @@ riskAssessmentSchema.pre('save', async function (next) {
           assessmentId: this.assessmentId,
           assessmentDate: this.assessmentDate,
         },
-        this.previousHash,
+        this.previousHash
       );
 
       this.blockIndex = previousAssessment ? previousAssessment.blockIndex + 1 : 0;
@@ -1378,7 +1376,7 @@ riskAssessmentSchema.pre('remove', async function (next) {
   // 🚫 COMPLIANCE QUANTUM: Prevent deletion if under legal hold
   if (this.status === ASSESSMENT_STATUS.QUARANTINED) {
     const error = new Error(
-      'Cannot delete risk assessment under legal hold. Contact compliance officer.',
+      'Cannot delete risk assessment under legal hold. Contact compliance officer.'
     );
     error.statusCode = 403;
     error.compliance = {
@@ -1465,7 +1463,8 @@ riskAssessmentSchema.virtual('riskMatrix').get(function () {
     }
     matrix[key].count++;
     matrix[key].risks.push(risk.category);
-    matrix[key].averageScore = (matrix[key].averageScore * (matrix[key].count - 1) + risk.riskScore) / matrix[key].count;
+    matrix[key].averageScore =
+      (matrix[key].averageScore * (matrix[key].count - 1) + risk.riskScore) / matrix[key].count;
   });
 
   return matrix;
@@ -1536,7 +1535,7 @@ riskAssessmentSchema.methods.decryptSensitiveData = async function (requestingUs
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       Buffer.from(encryptionKey, 'hex'),
-      Buffer.from(this.encryptionMetadata.iv, 'hex'),
+      Buffer.from(this.encryptionMetadata.iv, 'hex')
     );
 
     decipher.setAuthTag(Buffer.from(this.encryptionMetadata.authTag, 'hex'));
@@ -1567,7 +1566,7 @@ riskAssessmentSchema.methods.verifyIntegrity = async function () {
       assessmentId: this.assessmentId,
       assessmentDate: this.assessmentDate,
     },
-    this.previousHash,
+    this.previousHash
   );
 
   if (calculatedHash !== this.merkleRoot) {
@@ -1783,7 +1782,7 @@ riskAssessmentSchema.statics.aggregateRiskCategories = function (assessments) {
       categories[risk.category].totalScore += risk.riskScore;
       categories[risk.category].highestScore = Math.max(
         categories[risk.category].highestScore,
-        risk.riskScore,
+        risk.riskScore
       );
       categories[risk.category].occurrences.push({
         date: assessment.assessmentDate,
@@ -1795,7 +1794,8 @@ riskAssessmentSchema.statics.aggregateRiskCategories = function (assessments) {
 
   // Calculate averages
   Object.keys(categories).forEach((category) => {
-    categories[category].averageScore = categories[category].totalScore / categories[category].count;
+    categories[category].averageScore =
+      categories[category].totalScore / categories[category].count;
   });
 
   return categories;
