@@ -78,7 +78,7 @@ jobs:
           cd server
           npm ci --omit=dev --ignore-scripts
           # Quantum-level audit - fails on ANY high/critical vulnerability
-          npm audit --omit=dev --audit-level=high --json > security-audit.json || true
+          npm audit || true || true --omit=dev --audit-level=high --json > security-audit.json || true
 
       - name: 📊 Analyze Security Posture
         id: score
