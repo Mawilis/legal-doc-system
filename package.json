@@ -16,7 +16,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
     "@sentry/node": "^7.0.0",
-    "axios": "^1.13.5",
+    "axios": "^1.13.6",
     "bullmq": "^5.0.0",
     "crypto-js": "^4.0.0",
     "dotenv": "^16.0.0",
@@ -28,7 +28,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "eslint": "^4.1.1",
+    "eslint": "^10.0.2",
     "jest": "^30.2.0",
     "nodemon": "^3.0.0"
   }
