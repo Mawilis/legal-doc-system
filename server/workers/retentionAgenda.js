@@ -1,9 +1,9 @@
 #!/* eslint-disable */
 /* eslint-disable no-underscore-dangle, no-undef, no-unused-vars, consistent-return, no-plusplus, no-await-in-loop, no-loop-func */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ RETENTION AGENDA WORKER - INVESTOR-GRADE MODULE               ║
   ║ [92% compliance cost reduction | R2.1M risk elimination | 85% margins] ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/workers/retentionAgenda.js
  * INVESTOR VALUE PROPOSITION:
@@ -72,12 +72,13 @@ import Agenda from 'agenda';
 import mongoose from 'mongoose';
 import { AuditLogger } from '../utils/auditLogger.js';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import cryptoUtils from '../utils/cryptoUtils.js';
 import { tenantContext } from '../middleware/tenantContext.js';
 import Matter from '../models/Matter.js';
 import RetentionPolicy from '../models/RetentionPolicy.js';
 import RetentionExecutionLog from '../models/RetentionExecutionLog.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // REDACT_FIELDS for POPIA compliance
 const REDACT_FIELDS = [
@@ -187,7 +188,7 @@ class RetentionAgenda {
     this.agenda.define(
       'retention.cleanup',
       { priority: 'high' },
-      this._processRetentionCleanup.bind(this)
+      this._processRetentionCleanup.bind(this),
     );
     this.jobDefinitions.set('retention.cleanup', {
       description: 'Permanently delete matters exceeding retention period',
@@ -199,7 +200,7 @@ class RetentionAgenda {
     this.agenda.define(
       'retention.notify',
       { priority: 'medium' },
-      this._processRetentionNotifications.bind(this)
+      this._processRetentionNotifications.bind(this),
     );
     this.jobDefinitions.set('retention.notify', {
       description: 'Send notifications for matters approaching retention expiry',
@@ -211,7 +212,7 @@ class RetentionAgenda {
     this.agenda.define(
       'retention.archive',
       { priority: 'low' },
-      this._processRetentionArchive.bind(this)
+      this._processRetentionArchive.bind(this),
     );
     this.jobDefinitions.set('retention.archive', {
       description: 'Archive matters to cold storage before deletion',
@@ -582,7 +583,7 @@ class RetentionAgenda {
           deletionProof,
           dataResidency: policy.dataResidency || 'ZA',
         },
-      }
+      },
     );
 
     // Schedule hard delete after 30 days (grace period)

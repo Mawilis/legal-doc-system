@@ -92,10 +92,10 @@
  * This is the foundation upon which all AI-powered legal reasoning is built.
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT VECTORIZER - INVESTOR-GRADE MODULE - $3B INFRASTRUCTURE VALUE  ║
   ║ 99.99% uptime | 50,000 docs/sec | 95% compression | Multi-GPU            ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/workers/precedentVectorizer.js
  * INVESTOR VALUE PROPOSITION:
@@ -149,8 +149,6 @@
  * }
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Core dependencies
 const { Worker, QueueEvents } = require('bullmq');
 const IORedis = require('ioredis');
@@ -180,6 +178,7 @@ let Precedent = null;
 
 // QUANTUM UTILITIES
 const loggerRaw = require('../../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../../utils/auditLogger');
 const quantumLogger = require('../../utils/quantumLogger');
@@ -357,7 +356,7 @@ class GPUManager {
       try {
         const nvidiaSmi = execSync(
           'nvidia-smi --query-gpu=index,name,memory.total,memory.free,temperature.gpu,utilization.gpu --format=csv,noheader,nounits',
-          { encoding: 'utf8' }
+          { encoding: 'utf8' },
         );
         const lines = nvidiaSmi.trim().split('\n');
 
@@ -409,7 +408,7 @@ class GPUManager {
           const { execSync } = require('child_process');
           const stats = execSync(
             `nvidia-smi --query-gpu=temperature.gpu,utilization.gpu,memory.used --format=csv,noheader,nounits -i ${gpu.id}`,
-            { encoding: 'utf8' }
+            { encoding: 'utf8' },
           );
           const [temperature, utilization, memoryUsed] = stats
             .trim()
@@ -555,7 +554,7 @@ const loadServices = async () => {
           logger.error('[PrecedentVectorizer] Failed to load embedding service:', error);
           throw error;
         }
-      })()
+      })(),
     );
   }
 
@@ -569,7 +568,7 @@ const loadServices = async () => {
         } catch (error) {
           logger.warn('[PrecedentVectorizer] Milvus connection failed:', error.message);
         }
-      })()
+      })(),
     );
   }
 
@@ -583,7 +582,7 @@ const loadServices = async () => {
           logger.error('[PrecedentVectorizer] Failed to load models:', error);
           throw error;
         }
-      })()
+      })(),
     );
   }
 
@@ -606,7 +605,7 @@ const embeddingBreaker = new CircuitBreaker(
     rollingCountTimeout: 30000,
     name: 'embedding-service',
     volumeThreshold: 5,
-  }
+  },
 );
 
 embeddingBreaker.on('open', () => {
@@ -632,7 +631,7 @@ const milvusBreaker = new CircuitBreaker(
     errorThresholdPercentage: 50,
     resetTimeout: 30000,
     name: 'milvus-service',
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -704,12 +703,12 @@ const quantizeVector = (vector, bits = 8) => {
 
   if (range === 0) return { quantized: vector.map(() => 0), scale: 1, zeroPoint: 0 };
 
-  const scale = range / (Math.pow(2, bits) - 1);
+  const scale = range / (2 ** bits - 1);
   const zeroPoint = Math.round(-min / scale);
 
   const quantized = vector.map((val) => {
     const q = Math.round(val / scale) + zeroPoint;
-    return Math.max(0, Math.min(Math.pow(2, bits) - 1, q));
+    return Math.max(0, Math.min(2 ** bits - 1, q));
   });
 
   return { quantized, scale, zeroPoint };
@@ -718,9 +717,7 @@ const quantizeVector = (vector, bits = 8) => {
 /*
  * Dequantize vector
  */
-const dequantizeVector = (quantized, scale, zeroPoint) => {
-  return quantized.map((q) => (q - zeroPoint) * scale);
-};
+const dequantizeVector = (quantized, scale, zeroPoint) => quantized.map((q) => (q - zeroPoint) * scale);
 
 /*
  * Compress vector for storage
@@ -1142,7 +1139,7 @@ const worker = new Worker(
 
           logger.info(`[PrecedentVectorizer] Vector stored in Milvus for ${precedentId}`);
         } catch (error) {
-          logger.warn(`[PrecedentVectorizer] Milvus storage failed:`, error.message);
+          logger.warn('[PrecedentVectorizer] Milvus storage failed:', error.message);
         }
       }
 
@@ -1173,7 +1170,7 @@ const worker = new Worker(
         } catch (dbError) {
           logger.warn(
             `[PrecedentVectorizer] Failed to update precedent ${precedentId}:`,
-            dbError.message
+            dbError.message,
           );
         }
       }
@@ -1307,9 +1304,9 @@ const worker = new Worker(
     concurrency: embeddingConfig.performance?.concurrency || 1,
     limiter: embeddingConfig.performance?.rateLimit
       ? {
-          max: embeddingConfig.performance.rateLimit.max,
-          duration: embeddingConfig.performance.rateLimit.duration,
-        }
+        max: embeddingConfig.performance.rateLimit.max,
+        duration: embeddingConfig.performance.rateLimit.duration,
+      }
       : undefined,
     settings: {
       stalledInterval: embeddingConfig.performance?.stalledInterval || 30000,
@@ -1317,7 +1314,7 @@ const worker = new Worker(
       lockDuration: embeddingConfig.performance?.lockDuration || 60000,
       lockRenewTime: embeddingConfig.performance?.lockRenewTime || 30000,
     },
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1337,7 +1334,7 @@ worker.on('failed', (job, error) => {
     logger.info(
       `[PrecedentVectorizer] Job ${job.id} will retry (attempt ${job.attemptsMade + 1}/${
         job.opts.attempts
-      })`
+      })`,
     );
   }
 });
@@ -1374,31 +1371,29 @@ worker.on('closed', () => {
    QUANTUM HEALTH CHECK ENDPOINT
    --------------------------------------------------------------------------- */
 
-const getWorkerHealth = () => {
-  return {
-    workerId,
-    status: 'healthy',
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    cpu: process.cpuUsage(),
-    gpu: gpuManager.getStats(),
-    batchProcessor: {
-      queueSize: batchProcessor.getQueueSize(),
-      isProcessing: batchProcessor.processing,
-    },
-    queue: {
-      counts: worker.getQueue().count(),
-      isPaused: worker.isPaused(),
-      concurrency: worker.concurrency,
-    },
-    metrics: {
-      vectorsProcessed: vectorizerMetrics.vectorsProcessedTotal.get(),
-      vectorsPerSecond: vectorizerMetrics.vectorsPerSecond.get(),
-      errors: vectorizerMetrics.errorsTotal.get(),
-    },
-    timestamp: new Date().toISOString(),
-  };
-};
+const getWorkerHealth = () => ({
+  workerId,
+  status: 'healthy',
+  uptime: process.uptime(),
+  memory: process.memoryUsage(),
+  cpu: process.cpuUsage(),
+  gpu: gpuManager.getStats(),
+  batchProcessor: {
+    queueSize: batchProcessor.getQueueSize(),
+    isProcessing: batchProcessor.processing,
+  },
+  queue: {
+    counts: worker.getQueue().count(),
+    isPaused: worker.isPaused(),
+    concurrency: worker.concurrency,
+  },
+  metrics: {
+    vectorsProcessed: vectorizerMetrics.vectorsProcessedTotal.get(),
+    vectorsPerSecond: vectorizerMetrics.vectorsPerSecond.get(),
+    errors: vectorizerMetrics.errorsTotal.get(),
+  },
+  timestamp: new Date().toISOString(),
+});
 
 /* ---------------------------------------------------------------------------
    QUANTUM GRACEFUL SHUTDOWN
@@ -1460,7 +1455,7 @@ const initialize = async () => {
       }
     });
 
-    logger.info(`[PrecedentVectorizer] Initialized successfully`, {
+    logger.info('[PrecedentVectorizer] Initialized successfully', {
       workerId,
       concurrency: worker.concurrency,
       gpuEnabled: gpuId !== null,

@@ -78,20 +78,20 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ GATEWAY QUOTA DASHBOARD - INVESTOR-GRADE MODULE - $500M VALUE            ║
   ║ Real-time usage | Predictive alerts | Upgrade triggers                   ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
+import { Op } from 'sequelize.js';
+import { v4 as uuidv4 } from 'uuid.js';
+import { performance } from 'perf_hooks';
 import { redisClient } from '../../cache/redisClient.js';
 import { QuantumLogger } from '../../utils/quantumLogger.js';
 import { metrics, trackError } from '../../utils/metricsCollector.js';
 import { TenantConfig } from '../../models/TenantConfig.js';
 import { BillingSubscription } from '../../models/BillingSubscription.js';
 import { UsageHistory } from '../../models/UsageHistory.js';
-import { Op } from 'sequelize.js';
-import { v4 as uuidv4 } from 'uuid.js';
-import { performance } from 'perf_hooks';
 
 // =============================================================================
 // QUANTUM CONSTANTS
@@ -187,8 +187,8 @@ class UsageService {
       const cacheKey = `usage:${tenantId}:${tier}`;
       const cached = this.cache.get(cacheKey);
       if (
-        cached &&
-        Date.now() - cached.timestamp < USAGE_CONSTANTS.CACHE_TTL.CURRENT_USAGE * 1000
+        cached
+        && Date.now() - cached.timestamp < USAGE_CONSTANTS.CACHE_TTL.CURRENT_USAGE * 1000
       ) {
         return cached.data;
       }
@@ -228,7 +228,7 @@ class UsageService {
         quota: {
           total: limit,
           used: currentUsage,
-          remaining: remaining,
+          remaining,
           percentUsed: percentUsed.toFixed(2),
           percentUsedFormatted: `${percentUsed.toFixed(1)}%`,
           status: this.getUsageStatus(currentUsage, limit),
@@ -312,9 +312,9 @@ class UsageService {
 
     if (percent >= USAGE_CONSTANTS.ALERT_THRESHOLDS.EXHAUSTED) {
       return 'EXHAUSTED';
-    } else if (percent >= USAGE_CONSTANTS.ALERT_THRESHOLDS.CRITICAL) {
+    } if (percent >= USAGE_CONSTANTS.ALERT_THRESHOLDS.CRITICAL) {
       return 'CRITICAL';
-    } else if (percent >= USAGE_CONSTANTS.ALERT_THRESHOLDS.WARNING) {
+    } if (percent >= USAGE_CONSTANTS.ALERT_THRESHOLDS.WARNING) {
       return 'WARNING';
     }
 
@@ -375,7 +375,9 @@ class UsageService {
    * Get usage history for a tenant
    */
   async getUsageHistory(tenantId, options = {}) {
-    const { period = 'day', days = 30, startDate, endDate } = options;
+    const {
+      period = 'day', days = 30, startDate, endDate,
+    } = options;
 
     try {
       const query = {
@@ -409,7 +411,9 @@ class UsageService {
       };
     } catch (error) {
       console.error('Failed to get usage history:', error);
-      return { period, days, data: [], total: 0, average: 0 };
+      return {
+        period, days, data: [], total: 0, average: 0,
+      };
     }
   }
 
@@ -604,7 +608,7 @@ class UsageService {
         predictions.push({
           date: day.toISOString().split('T')[0],
           predicted,
-          percentageOfLimit: ((predicted / limit) * 100).toFixed(1) + '%',
+          percentageOfLimit: `${((predicted / limit) * 100).toFixed(1)}%`,
           willExceed: predicted > limit,
         });
       }
@@ -743,7 +747,7 @@ class UsageService {
         id: alertId,
         timestamp: new Date().toISOString(),
         acknowledged: false,
-      })
+      }),
     );
 
     // Call registered callbacks
@@ -844,7 +848,7 @@ class UsageService {
       currentLimit,
       recommendedLimit: nextLimit,
       additionalCapacity: nextLimit - currentLimit,
-      percentIncrease: (((nextLimit - currentLimit) / currentLimit) * 100).toFixed(0) + '%',
+      percentIncrease: `${(((nextLimit - currentLimit) / currentLimit) * 100).toFixed(0)}%`,
       priceMultiplier: this.getMultiplier(nextTier),
       estimatedMonthlyCost: currentLimit * this.getMultiplier(currentTier) * 10, // Rough estimate
       upgradeBenefits: this.getUpgradeBenefits(currentTier, nextTier),
@@ -1031,7 +1035,7 @@ class UsageService {
 
     if (format === 'csv') {
       return this.convertToCSV(history);
-    } else if (format === 'pdf') {
+    } if (format === 'pdf') {
       return this.convertToPDF(history);
     }
 

@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ POPIA UTILS - COMPLIANCE REDACTION MODULE                     ║
   ║ [POPIA §19 Compliant | ECT Act §15 Verified | Production]     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/popiaUtils.js
@@ -351,7 +351,7 @@ export function maskPhone(phone) {
 
   // Preserve original formatting if possible
   if (phone.includes('+')) {
-    return '+' + masked;
+    return `+${masked}`;
   }
   return masked;
 }

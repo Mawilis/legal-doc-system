@@ -65,8 +65,8 @@ const validateComplianceEnv = () => {
   if (missingVars.length > 0) {
     console.warn(
       `⚠️ QUANTUM COMPLIANCE WARNING: Missing optional environment variables: ${missingVars.join(
-        ', '
-      )}`
+        ', ',
+      )}`,
     );
   }
 };
@@ -325,7 +325,7 @@ const validatePOPIACompliance = (data, tenantId, processingPurpose) => {
     validationResults.complianceCertificate = generatePOPIAComplianceCertificate(
       validationResults,
       tenantId,
-      processingPurpose
+      processingPurpose,
     );
 
     auditLogger.info('POPIA_VALIDATION_COMPLETED', {
@@ -376,8 +376,7 @@ const determineLawfulBasis = (data, purpose) => {
   if (context.hasExplicitConsent) return { primary: 'consent', alternatives: ['contract'] };
   if (context.isContractual) return { primary: 'contract', alternatives: ['legitimate_interests'] };
   if (context.isPublicTask) return { primary: 'public_task', alternatives: [] };
-  if (context.hasLegitimateInterest)
-    return { primary: 'legitimate_interests', alternatives: ['consent'] };
+  if (context.hasLegitimateInterest) return { primary: 'legitimate_interests', alternatives: ['consent'] };
 
   return { primary: 'consent', alternatives: bases.filter((b) => b !== 'consent') };
 };
@@ -389,16 +388,16 @@ const validateConsentRequirements = (data, tenantId) => {
   const requiredConsents = LEGAL_CONSTANTS.POPIA.CONSENT_CATEGORIES.filter(
     (category) =>
       // Determine which consents are needed based on data and processing
-      data.processingCategories?.includes(category) || category === 'processing' // Always require processing consent
+      data.processingCategories?.includes(category) || category === 'processing', // Always require processing consent
   );
 
   const valid = requiredConsents.every((category) => {
     const consent = data.consents?.[category];
     return (
-      consent &&
-      consent.granted === true &&
-      consent.version === process.env.POPIA_CONSENT_VERSION &&
-      new Date(consent.grantedDate) > new Date('2021-07-01')
+      consent
+      && consent.granted === true
+      && consent.version === process.env.POPIA_CONSENT_VERSION
+      && new Date(consent.grantedDate) > new Date('2021-07-01')
     ); // POPIA effective date
   });
 
@@ -457,16 +456,15 @@ const validateECTActCompliance = (electronicRecord, signatureType = 'advanced') 
     validationResults.integrityVerification = evidenceValidation;
 
     // 5. Determine overall compliance
-    validationResults.ectCompliant =
-      validationResults.signatureValidation.integrity &&
-      validationResults.nonRepudiation.valid &&
-      evidenceValidation.adequateEvidence;
+    validationResults.ectCompliant = validationResults.signatureValidation.integrity
+      && validationResults.nonRepudiation.valid
+      && evidenceValidation.adequateEvidence;
 
     // 6. Generate compliance certificate if compliant
     if (validationResults.ectCompliant) {
       validationResults.complianceCertificate = generateECTComplianceCertificate(
         electronicRecord,
-        validationResults
+        validationResults,
       );
     }
 
@@ -535,7 +533,7 @@ const validateNonRepudiation = (electronicRecord) => {
   });
 
   const valid = Object.values(validations).every(
-    (v) => v.present !== false && v.verified !== false && v.matches !== false
+    (v) => v.present !== false && v.verified !== false && v.matches !== false,
   );
 
   return { valid, validations };
@@ -576,7 +574,7 @@ const validateCompaniesActCompliance = async (companyData, companyType) => {
     // 3. Check for overdue filings
     validationResults.overdueFilings = checkOverdueFilings(
       companyData.filings || [],
-      validationResults.requiredFilings
+      validationResults.requiredFilings,
     );
 
     // 4. Validate director compliance (Companies Act Section 66)
@@ -595,15 +593,14 @@ const validateCompaniesActCompliance = async (companyData, companyType) => {
     }
 
     // 7. Determine overall compliance
-    validationResults.companiesActCompliant =
-      validationResults.overdueFilings.length === 0 &&
-      validationResults.directorCompliance.valid &&
-      (!companyData.hasShareCapital || validationResults.shareCompliance.valid);
+    validationResults.companiesActCompliant = validationResults.overdueFilings.length === 0
+      && validationResults.directorCompliance.valid
+      && (!companyData.hasShareCapital || validationResults.shareCompliance.valid);
 
     // 8. Generate compliance report
     validationResults.complianceReport = generateCompaniesActComplianceReport(
       companyData,
-      validationResults
+      validationResults,
     );
 
     auditLogger.info('COMPANIES_ACT_VALIDATION_COMPLETED', {
@@ -648,8 +645,8 @@ const determineRequiredFilings = (companyData, companyType) => {
       type: 'Annual Return',
       forYear: anniversary.getFullYear(),
       dueDate: new Date(
-        anniversary.getTime() +
-          LEGAL_CONSTANTS.COMPANIES_ACT.COMPLIANCE_DEADLINES.ANNUAL_RETURN * 24 * 60 * 60 * 1000
+        anniversary.getTime()
+          + LEGAL_CONSTANTS.COMPANIES_ACT.COMPLIANCE_DEADLINES.ANNUAL_RETURN * 24 * 60 * 60 * 1000,
       ),
     });
   }
@@ -662,13 +659,13 @@ const determineRequiredFilings = (companyData, companyType) => {
         type: 'Financial Statements',
         forPeriod: `${lastFYE.getFullYear()}-${companyData.financialYearEnd}`,
         dueDate: new Date(
-          lastFYE.getTime() +
-            LEGAL_CONSTANTS.COMPANIES_ACT.COMPLIANCE_DEADLINES.FINANCIAL_STATEMENTS *
-              30 *
-              24 *
-              60 *
-              60 *
-              1000
+          lastFYE.getTime()
+            + LEGAL_CONSTANTS.COMPANIES_ACT.COMPLIANCE_DEADLINES.FINANCIAL_STATEMENTS
+              * 30
+              * 24
+              * 60
+              * 60
+              * 1000,
         ),
       });
     }
@@ -707,7 +704,7 @@ const validateFICACompliance = async (clientData, riskCategory = 'medium') => {
     // 2. Validate KYC documents based on risk category
     validationResults.documentVerification = validateKYCDocuments(
       clientData.documents,
-      validationResults.riskAssessment.category
+      validationResults.riskAssessment.category,
     );
 
     // 3. Perform AML screening if API key available
@@ -723,15 +720,14 @@ const validateFICACompliance = async (clientData, riskCategory = 'medium') => {
 
     // 5. Set up ongoing monitoring schedule
     validationResults.ongoingMonitoring = setupOngoingMonitoring(
-      validationResults.riskAssessment.category
+      validationResults.riskAssessment.category,
     );
 
     // 6. Determine overall FICA compliance
-    validationResults.ficaCompliant =
-      validationResults.documentVerification.verified &&
-      validationResults.riskAssessment.complete &&
-      (!validationResults.amlChecks.matches || validationResults.amlChecks.cleared) &&
-      (!validationResults.beneficialOwnership || validationResults.beneficialOwnership.verified);
+    validationResults.ficaCompliant = validationResults.documentVerification.verified
+      && validationResults.riskAssessment.complete
+      && (!validationResults.amlChecks.matches || validationResults.amlChecks.cleared)
+      && (!validationResults.beneficialOwnership || validationResults.beneficialOwnership.verified);
 
     // 7. Update KYC status
     validationResults.kycStatus = validationResults.ficaCompliant ? 'verified' : 'pending';
@@ -740,7 +736,7 @@ const validateFICACompliance = async (clientData, riskCategory = 'medium') => {
     if (validationResults.ficaCompliant) {
       validationResults.ficaCertificate = generateFICAComplianceCertificate(
         clientData,
-        validationResults
+        validationResults,
       );
     }
 
@@ -779,12 +775,12 @@ const performRiskAssessment = (clientData, initialCategory) => {
     occupation: assessOccupationRisk(clientData.occupation, clientData.industry),
     transaction: assessTransactionRisk(
       clientData.expectedTransactionVolume,
-      clientData.transactionTypes
+      clientData.transactionTypes,
     ),
     political: assessPEPRisk(
       clientData.isPEP,
       clientData.familyMemberPEP,
-      clientData.closeAssociatePEP
+      clientData.closeAssociatePEP,
     ),
     product: assessProductRisk(clientData.servicesRequested),
   };
@@ -829,7 +825,7 @@ const validateComprehensiveCompliance = async (
   entityData,
   entityType,
   tenantId,
-  requiredCompliance = ['popia', 'fica', 'companies_act', 'ect_act']
+  requiredCompliance = ['popia', 'fica', 'companies_act', 'ect_act'],
 ) => {
   const complianceReport = {
     entityId: entityData.id || entityData._id,
@@ -854,15 +850,15 @@ const validateComprehensiveCompliance = async (
       validationPromises.push(
         // Note: This returns a result directly, wrapping in Promise for consistency if needed
         Promise.resolve(
-          validatePOPIACompliance(entityData, tenantId, 'compliance_validation')
+          validatePOPIACompliance(entityData, tenantId, 'compliance_validation'),
         ).then((result) => {
           complianceReport.complianceAreas.popia = result;
           if (result.complianceStatus !== LEGAL_CONSTANTS.COMPLIANCE_LEVELS.FULL) {
             complianceReport.criticalViolations.push(
-              ...result.violations.filter((v) => v.severity === 'critical')
+              ...result.violations.filter((v) => v.severity === 'critical'),
             );
           }
-        })
+        }),
       );
     }
 
@@ -878,7 +874,7 @@ const validateComprehensiveCompliance = async (
               severity: 'critical',
             });
           }
-        })
+        }),
       );
     }
 
@@ -894,7 +890,7 @@ const validateComprehensiveCompliance = async (
               severity: 'high',
             });
           }
-        })
+        }),
       );
     }
 
@@ -902,7 +898,7 @@ const validateComprehensiveCompliance = async (
     if (requiredCompliance.includes('ect_act') && entityData.electronicDocuments) {
       validationPromises.push(
         Promise.resolve(
-          validateECTActCompliance(entityData.electronicDocuments[0], 'advanced')
+          validateECTActCompliance(entityData.electronicDocuments[0], 'advanced'),
         ).then((result) => {
           complianceReport.complianceAreas.ect_act = result;
           if (!result.ectCompliant) {
@@ -912,7 +908,7 @@ const validateComprehensiveCompliance = async (
               severity: 'medium',
             });
           }
-        })
+        }),
       );
     }
 
@@ -921,11 +917,10 @@ const validateComprehensiveCompliance = async (
 
     // Determine overall compliance status
     const allCompliant = Object.values(complianceReport.complianceAreas).every(
-      (area) =>
-        area.complianceStatus === LEGAL_CONSTANTS.COMPLIANCE_LEVELS.FULL ||
-        area.ficaCompliant === true ||
-        area.companiesActCompliant === true ||
-        area.ectCompliant === true
+      (area) => area.complianceStatus === LEGAL_CONSTANTS.COMPLIANCE_LEVELS.FULL
+        || area.ficaCompliant === true
+        || area.companiesActCompliant === true
+        || area.ectCompliant === true,
     );
 
     complianceReport.overallCompliance = allCompliant
@@ -938,7 +933,7 @@ const validateComprehensiveCompliance = async (
     if (complianceReport.overallCompliance === LEGAL_CONSTANTS.COMPLIANCE_LEVELS.FULL) {
       complianceReport.comprehensiveCertificate = generateComprehensiveComplianceCertificate(
         complianceReport,
-        tenantId
+        tenantId,
       );
     }
 
@@ -1011,9 +1006,9 @@ const generatePOPIAComplianceCertificate = (validationResults, tenantId, purpose
 const verifyDigitalSignature = (electronicRecord) =>
   // This is a simplified implementation
   // In production, integrate with proper digital signature verification service
-  electronicRecord.signature &&
-  electronicRecord.signatureAlgorithm === 'RSA-SHA256' &&
-  electronicRecord.certificateAuthority === 'accredited';
+  electronicRecord.signature
+  && electronicRecord.signatureAlgorithm === 'RSA-SHA256'
+  && electronicRecord.certificateAuthority === 'accredited';
 /*
  * Validate document integrity
  */
@@ -1130,7 +1125,7 @@ if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
       const popiaResult = validatePOPIACompliance(
         testPersonalData,
         'test-tenant',
-        'client_onboarding'
+        'client_onboarding',
       );
       console.assert(popiaResult.complianceStatus, '❌ POPIA validation failed');
       console.log('✅ POPIA Compliance Validation: PASSED');
@@ -1161,11 +1156,11 @@ if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
 
       const companiesActResult = await validateCompaniesActCompliance(
         testCompanyData,
-        'Private Company'
+        'Private Company',
       );
       console.assert(
         companiesActResult.companiesActCompliant !== undefined,
-        '❌ Companies Act validation failed'
+        '❌ Companies Act validation failed',
       );
       console.log('✅ Companies Act Compliance Validation: PASSED');
 
@@ -1174,12 +1169,12 @@ if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
         testPersonalData,
         'individual',
         'test-tenant',
-        ['popia']
+        ['popia'],
       );
 
       console.assert(
         comprehensiveResult.overallCompliance,
-        '❌ Comprehensive compliance validation failed'
+        '❌ Comprehensive compliance validation failed',
       );
       console.log('✅ Comprehensive Compliance Validation: PASSED');
 

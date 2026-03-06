@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ LEGAL TREND DETECTOR - PRODUCTION GRADE                                   ║
   ║ NLP-powered legal trend analysis with 94.3% accuracy                      ║
   ║ Trained on: 2.4M legal documents, 847k court rulings, 156k regulations   ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 // No external dependencies - pure JavaScript implementation
 export class LegalTrendDetector {
@@ -73,7 +73,7 @@ export class LegalTrendDetector {
           velocity: this.calculateVelocity(category),
           impact: this.calculateImpact(trend, category),
           timeframe: this.estimateTimeframe(category),
-          jurisdiction: jurisdiction,
+          jurisdiction,
           confidence: 0.85 + Math.random() * 0.1,
         });
       });
@@ -129,42 +129,42 @@ export class LegalTrendDetector {
     const text_lower = text.toLowerCase();
 
     if (
-      text_lower.includes('esg') ||
-      text_lower.includes('governance') ||
-      text_lower.includes('board') ||
-      text_lower.includes('shareholder')
+      text_lower.includes('esg')
+      || text_lower.includes('governance')
+      || text_lower.includes('board')
+      || text_lower.includes('shareholder')
     ) {
       return 'corporate';
     }
     if (
-      text_lower.includes('ai') ||
-      text_lower.includes('algorithm') ||
-      text_lower.includes('digital') ||
-      text_lower.includes('software')
+      text_lower.includes('ai')
+      || text_lower.includes('algorithm')
+      || text_lower.includes('digital')
+      || text_lower.includes('software')
     ) {
       return 'technology';
     }
     if (
-      text_lower.includes('privacy') ||
-      text_lower.includes('data') ||
-      text_lower.includes('gdpr') ||
-      text_lower.includes('popia')
+      text_lower.includes('privacy')
+      || text_lower.includes('data')
+      || text_lower.includes('gdpr')
+      || text_lower.includes('popia')
     ) {
       return 'privacy';
     }
     if (
-      text_lower.includes('employee') ||
-      text_lower.includes('worker') ||
-      text_lower.includes('labor') ||
-      text_lower.includes('remote')
+      text_lower.includes('employee')
+      || text_lower.includes('worker')
+      || text_lower.includes('labor')
+      || text_lower.includes('remote')
     ) {
       return 'employment';
     }
     if (
-      text_lower.includes('contract') ||
-      text_lower.includes('supply chain') ||
-      text_lower.includes('commercial') ||
-      text_lower.includes('transaction')
+      text_lower.includes('contract')
+      || text_lower.includes('supply chain')
+      || text_lower.includes('commercial')
+      || text_lower.includes('transaction')
     ) {
       return 'commercial';
     }
@@ -197,7 +197,7 @@ export class LegalTrendDetector {
       },
     };
 
-    const data = jurisdictionData[jurisdiction] || jurisdictionData['US'];
+    const data = jurisdictionData[jurisdiction] || jurisdictionData.US;
 
     Object.entries(data).forEach(([region, topics]) => {
       topics.forEach((topic) => {

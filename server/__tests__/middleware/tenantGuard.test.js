@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ TENANT GUARD TESTS - INVESTOR DUE DILIGENCE - $25B RISK ELIMINATION      ║
   ║ 100% coverage | Quantum-grade security | Forensic isolation              ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import request from 'supertest.js';
 import express from 'express.js';
@@ -10,6 +10,17 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { jest } from '@jest/globals.js';
+
+// Import after mocks
+import {
+  tenantGuard,
+  getTenantGuardMetrics,
+  clearTenantCache,
+} from '../../middleware/tenantGuard.js';
+import { TenantConfig } from '../../models/TenantConfig.js';
+import { AuditLogger } from '../../utils/auditLogger.js';
+import { QuantumLogger } from '../../utils/quantumLogger.js';
+import { redisClient } from '../../cache/redisClient.js';
 
 // Mock dependencies
 jest.mock('../../models/TenantConfig.js', () => ({
@@ -45,17 +56,6 @@ jest.mock('../../utils/metricsCollector.js', () => ({
     increment: jest.fn(),
   },
 }));
-
-// Import after mocks
-import {
-  tenantGuard,
-  getTenantGuardMetrics,
-  clearTenantCache,
-} from '../../middleware/tenantGuard.js';
-import { TenantConfig } from '../../models/TenantConfig.js';
-import { AuditLogger } from '../../utils/auditLogger.js';
-import { QuantumLogger } from '../../utils/quantumLogger.js';
-import { redisClient } from '../../cache/redisClient.js';
 
 describe('TenantGuard - Fortress Isolation Due Diligence', () => {
   let app;
@@ -154,7 +154,7 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
       expect(response.body.code).toBe('TENANT_ID_REQUIRED');
       expect(AuditLogger.securityAlert).toHaveBeenCalledWith(
         'UNAUTHORIZED_TENANT_ACCESS_ATTEMPT',
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -315,7 +315,7 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
       expect(response.body.code).toBe('TOO_MANY_ATTEMPTS');
       expect(AuditLogger.securityAlert).toHaveBeenCalledWith(
         'SUSPICIOUS_ATTEMPT_THRESHOLD_EXCEEDED',
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -389,7 +389,7 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
         expect.objectContaining({
           action: 'TENANT_VALIDATION_SUCCESS',
           tenantId: 'test-tenant-12345678',
-        })
+        }),
       );
     });
 
@@ -398,7 +398,7 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
 
       expect(AuditLogger.securityAlert).toHaveBeenCalledWith(
         'UNAUTHORIZED_TENANT_ACCESS_ATTEMPT',
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -413,7 +413,7 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
       expect(QuantumLogger.log).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'TENANT_VALIDATION_DATABASE_ERROR',
-        })
+        }),
       );
     });
   });
@@ -591,7 +591,7 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'tenant-guard-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -603,7 +603,7 @@ describe('TenantGuard - Fortress Isolation Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'tenant-guard-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);

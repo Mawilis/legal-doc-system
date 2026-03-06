@@ -35,8 +35,11 @@
  */
 
 const express = require('express');
+
 const router = express.Router();
-const { body, param, query, validationResult } = require('express-validator');
+const {
+  body, param, query, validationResult,
+} = require('express-validator');
 const mongoose = require('mongoose');
 
 // Middleware imports
@@ -93,13 +96,13 @@ async function validateDSAROwnership(req, res, next) {
     const dsarId = req.params.id;
     const userId = req.user.id;
     const userRole = req.user.role;
-    const tenantId = req.tenantId;
+    const { tenantId } = req;
 
     // Admins can access any DSAR in their tenant
     if (userRole === 'TENANT_ADMIN' || userRole === 'SUPER_ADMIN') {
       const dsar = await DSARRequest.findOne({
         _id: dsarId,
-        tenantId: tenantId,
+        tenantId,
       });
 
       if (!dsar) {
@@ -117,18 +120,18 @@ async function validateDSAROwnership(req, res, next) {
     // Regular users can only access their own DSARs
     const dsar = await DSARRequest.findOne({
       _id: dsarId,
-      tenantId: tenantId,
+      tenantId,
       'dataSubject.userId': userId,
     });
 
     if (!dsar) {
       // Log failed access attempt for security
       await AuditLedger.create({
-        tenantId: tenantId,
+        tenantId,
         eventType: 'ACCESS_DENIED',
         severity: 'WARNING',
         actor: {
-          userId: userId,
+          userId,
           userEmail: req.user.email,
           role: userRole,
           ipAddress: req.ip,
@@ -180,13 +183,13 @@ async function validateDSAROwnership(req, res, next) {
 async function logDSARAuditEvent(tenantId, eventType, actor, resource, description, metadata = {}) {
   try {
     const auditEntry = await AuditLedger.create({
-      tenantId: tenantId,
-      eventType: eventType,
-      actor: actor,
-      resource: resource,
+      tenantId,
+      eventType,
+      actor,
+      resource,
       action: `DSAR_${eventType}`,
-      description: description,
-      metadata: metadata,
+      description,
+      metadata,
       compliance: {
         popiaCategory: 'PERSONAL',
         dsarRelevant: true,
@@ -324,9 +327,7 @@ router.post(
     body('preferredContactMethod').isIn(['email', 'sms', 'both']),
     body('verificationMethods')
       .isArray()
-      .custom((value) => {
-        return value.every((method) => IDENTITY_VERIFICATION_METHODS.includes(method));
-      }),
+      .custom((value) => value.every((method) => IDENTITY_VERIFICATION_METHODS.includes(method))),
   ],
   async (req, res) => {
     try {
@@ -341,7 +342,7 @@ router.post(
         });
       }
 
-      const tenantId = req.tenantId;
+      const { tenantId } = req;
       const userId = req.user.id;
       const userEmail = req.user.email;
       const userRole = req.user.role;
@@ -368,19 +369,19 @@ router.post(
 
       // Step 2: Create DSAR request record
       const dsarRequest = new DSARRequest({
-        tenantId: tenantId,
-        dsarType: dsarType,
+        tenantId,
+        dsarType,
         dataSubject: {
-          userId: userId,
+          userId,
           email: dataSubject.email,
           phone: dataSubject.phone,
           fullName: dataSubject.fullName,
           idNumber: dataSubject.idNumber,
           residentialAddress: dataSubject.residentialAddress,
         },
-        scope: scope,
-        preferredContactMethod: preferredContactMethod,
-        verificationMethods: verificationMethods,
+        scope,
+        preferredContactMethod,
+        verificationMethods,
         additionalInfo: additionalInfo || '',
         status: 'SUBMITTED',
         submittedAt: new Date(),
@@ -397,8 +398,8 @@ router.post(
         tenantId,
         'DSAR_REQUESTED',
         {
-          userId: userId,
-          userEmail: userEmail,
+          userId,
+          userEmail,
           role: userRole,
           ipAddress: req.ip,
         },
@@ -410,8 +411,8 @@ router.post(
         `DSAR ${dsarType} request submitted by ${dataSubject.fullName}`,
         {
           dsarId: dsarRequest._id,
-          verificationMethods: verificationMethods,
-        }
+          verificationMethods,
+        },
       );
 
       // Step 5: Initiate identity verification (async)
@@ -419,7 +420,7 @@ router.post(
         try {
           const verificationResult = await verifyDataSubjectIdentity(
             dataSubject,
-            verificationMethods
+            verificationMethods,
           );
 
           dsarRequest.identityVerification = verificationResult;
@@ -470,7 +471,7 @@ router.post(
         compliance: 'POPIA §14(3) - Form of access',
       });
     }
-  }
+  },
 );
 
 /*
@@ -501,13 +502,15 @@ router.get(
         });
       }
 
-      const tenantId = req.tenantId;
+      const { tenantId } = req;
       const userId = req.user.id;
       const userRole = req.user.role;
-      const { status, dsarType, page, limit } = req.query;
+      const {
+        status, dsarType, page, limit,
+      } = req.query;
 
       // Build query based on user role
-      let query = { tenantId: tenantId };
+      const query = { tenantId };
 
       // Data Subjects can only see their own DSARs
       if (userRole !== 'TENANT_ADMIN' && userRole !== 'SUPER_ADMIN') {
@@ -565,7 +568,7 @@ router.get(
         compliance: 'POPIA §8 - Data quality',
       });
     }
-  }
+  },
 );
 
 /*
@@ -587,7 +590,7 @@ router.get('/:id', [param('id').isMongoId().withMessage('Invalid DSAR ID')], asy
       });
     }
 
-    const dsar = req.dsar;
+    const { dsar } = req;
     const userRole = req.user.role;
 
     // Prepare response data
@@ -659,7 +662,7 @@ router.get(
         });
       }
 
-      const dsar = req.dsar;
+      const { dsar } = req;
       const { format } = req.query;
 
       // Check if DSAR is fulfilled
@@ -687,7 +690,7 @@ router.get(
           Expires: 3600, // 1 hour expiration
           ResponseContentDisposition: `attachment; filename="DSAR-${dsar.referenceNumber}.${format}"`,
           ResponseContentType: getMimeType(format),
-        }
+        },
       );
 
       // Log download event
@@ -707,15 +710,15 @@ router.get(
         },
         `Evidence package downloaded for DSAR ${dsar.referenceNumber}`,
         {
-          format: format,
+          format,
           downloadUrl: downloadUrl.split('?')[0], // Store only base URL
-        }
+        },
       );
 
       res.json({
         success: true,
         data: {
-          downloadUrl: downloadUrl,
+          downloadUrl,
           expiresAt: new Date(Date.now() + 3600000), // 1 hour
           fileName: `DSAR-${dsar.referenceNumber}.${format}`,
           fileSize: dsar.evidencePackage.sizeBytes,
@@ -734,7 +737,7 @@ router.get(
         compliance: 'POPIA §19 - Security measures',
       });
     }
-  }
+  },
 );
 
 /*
@@ -763,7 +766,7 @@ router.post(
         });
       }
 
-      const dsar = req.dsar;
+      const { dsar } = req;
       const { appealReason, additionalEvidence } = req.body;
 
       // Check if DSAR can be appealed
@@ -809,9 +812,9 @@ router.post(
         },
         `DSAR appeal submitted by ${req.user.email}`,
         {
-          appealReason: appealReason,
+          appealReason,
           evidenceCount: additionalEvidence?.length || 0,
-        }
+        },
       );
 
       // Notify Information Officer
@@ -840,7 +843,7 @@ router.post(
         compliance: 'POPIA §24(3) - Objection procedures',
       });
     }
-  }
+  },
 );
 
 /*
@@ -859,7 +862,7 @@ router.post(
   ],
   async (req, res) => {
     try {
-      const dsar = req.dsar;
+      const { dsar } = req;
       const { cancellationReason } = req.body;
 
       // Check if DSAR can be cancelled
@@ -898,9 +901,9 @@ router.post(
         },
         `DSAR cancelled by ${req.user.email}`,
         {
-          cancellationReason: cancellationReason,
+          cancellationReason,
           previousStatus: dsar.status,
-        }
+        },
       );
 
       res.json({
@@ -925,7 +928,7 @@ router.post(
         compliance: 'POPIA §14(4) - Extension of period',
       });
     }
-  }
+  },
 );
 
 /*
@@ -942,7 +945,7 @@ router.get(
   [query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601()],
   async (req, res) => {
     try {
-      const tenantId = req.tenantId;
+      const { tenantId } = req;
       const { startDate, endDate } = req.query;
 
       const start = startDate
@@ -954,7 +957,7 @@ router.get(
       const metrics = await DSARRequest.aggregate([
         {
           $match: {
-            tenantId: tenantId,
+            tenantId,
             submittedAt: { $gte: start, $lte: end },
           },
         },
@@ -1081,7 +1084,7 @@ router.get(
 
       // Add current pending requests
       const pendingCount = await DSARRequest.countDocuments({
-        tenantId: tenantId,
+        tenantId,
         status: { $in: ['SUBMITTED', 'VERIFYING', 'PROCESSING'] },
         slaDeadline: { $gt: new Date() },
       });
@@ -1106,7 +1109,7 @@ router.get(
         compliance: 'POPIA §8 - Data quality',
       });
     }
-  }
+  },
 );
 
 // ==================== HELPER FUNCTIONS ====================
@@ -1153,7 +1156,7 @@ router.use((err, req, res, next) => {
         id: req.params?.id || 'unknown',
         name: 'DSAR Error',
       },
-      action: req.method + ' ' + req.path,
+      action: `${req.method} ${req.path}`,
       description: `DSAR error: ${err.message}`,
       metadata: {
         error: err.name,

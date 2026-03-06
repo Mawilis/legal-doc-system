@@ -2,12 +2,14 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+
 class WilsyFileOrchestrator {
   constructor() {
     this.version = '1.0.0';
     this.writtenFiles = new Map();
     this.auditLog = [];
   }
+
   atomicWrite(filePath, content) {
     const absolutePath = filePath.startsWith('/')
       ? filePath
@@ -17,13 +19,11 @@ class WilsyFileOrchestrator {
     const tempPath = `${absolutePath}.tmp.${Date.now()}`;
     fs.writeFileSync(tempPath, content, 'utf8');
     const written = fs.readFileSync(tempPath, 'utf8');
-    if (written.length !== content.length)
-      throw new Error(`INTEGRITY FAILURE: ${filePath} - truncation`);
+    if (written.length !== content.length) throw new Error(`INTEGRITY FAILURE: ${filePath} - truncation`);
     const hash = crypto.createHash('sha256').update(content).digest('hex');
     fs.renameSync(tempPath, absolutePath);
     const final = fs.readFileSync(absolutePath, 'utf8');
-    if (crypto.createHash('sha256').update(final).digest('hex') !== hash)
-      throw new Error(`VERIFICATION FAILURE: ${filePath} - hash mismatch`);
+    if (crypto.createHash('sha256').update(final).digest('hex') !== hash) throw new Error(`VERIFICATION FAILURE: ${filePath} - hash mismatch`);
     this.writtenFiles.set(absolutePath, {
       path: absolutePath,
       size: content.length,
@@ -40,14 +40,17 @@ class WilsyFileOrchestrator {
     console.log(
       `  ✓ ATOMIC: ${path.basename(absolutePath)} (${content.length} bytes) [${hash.substring(
         0,
-        8
-      )}]`
+        8,
+      )}]`,
     );
-    return { path: absolutePath, size: content.length, hash, verified: true };
+    return {
+      path: absolutePath, size: content.length, hash, verified: true,
+    };
   }
+
   batchDeploy(files) {
-    const r = [],
-      e = [];
+    const r = [];
+    const e = [];
     for (const [p, c] of Object.entries(files)) {
       try {
         r.push(this.atomicWrite(p, c));
@@ -64,6 +67,7 @@ class WilsyFileOrchestrator {
       timestamp: new Date().toISOString(),
     };
   }
+
   verifyIntegrity() {
     const v = [];
     for (const [fp, rec] of this.writtenFiles) {
@@ -90,6 +94,7 @@ class WilsyFileOrchestrator {
     }
     return v;
   }
+
   generateDeploymentEvidence() {
     const evidence = {
       orchestrator: {
@@ -107,7 +112,7 @@ class WilsyFileOrchestrator {
     };
     this.atomicWrite(
       '/Users/wilsonkhanyezi/legal-doc-system/server/deployment-evidence.json',
-      JSON.stringify(evidence, null, 2)
+      JSON.stringify(evidence, null, 2),
     );
     return evidence;
   }

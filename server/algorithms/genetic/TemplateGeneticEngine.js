@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ GENETIC TEMPLATE ENGINE - SELF-EVOLVING TEMPLATES                         ║
   ║ Templates evolve like DNA - survival of the fittest                       ║
   ║ 1000x faster than manual template optimization                            ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 export class GeneticTemplateEngine {
   constructor() {

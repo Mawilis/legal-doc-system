@@ -3,10 +3,11 @@
    ║ AUDIT SERVICE - INVESTOR-GRADE MODULE                                       ║
    ║ 99.9% tamper-proof | R50M fraud risk elimination | 95% margin              ║
    ║ Standard: ES Module (Surgically Standardized)                               ║
-   ╚══════════════════════════════════════════════════════════════════════════════╝*/
+   ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
 import crypto from 'node:crypto';
 import loggerRaw from '../utils/logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
 
 class AuditService {
@@ -60,8 +61,8 @@ class AuditService {
       const canonicalData = this._canonicalize(data);
 
       let payload = JSON.stringify(canonicalData);
-      if (tenantId) payload = tenantId + '|' + payload;
-      payload = payload + prevHash;
+      if (tenantId) payload = `${tenantId}|${payload}`;
+      payload += prevHash;
 
       return crypto.createHmac('sha256', secret).update(payload).digest('hex');
     } catch (error) {
@@ -76,15 +77,12 @@ class AuditService {
   }
 
   static verifyChain(auditTrail, tenantId = null) {
-    if (!Array.isArray(auditTrail) || auditTrail.length === 0)
-      return { isValid: true, brokenAt: null };
+    if (!Array.isArray(auditTrail) || auditTrail.length === 0) return { isValid: true, brokenAt: null };
     for (let i = 0; i < auditTrail.length; i++) {
       const entry = auditTrail[i];
       const expectedPreviousHash = i === 0 ? '' : auditTrail[i - 1].hash;
-      if (entry.previousHash !== expectedPreviousHash)
-        return { isValid: false, brokenAt: i, reason: 'previousHash mismatch' };
-      if (!this.verifyIntegrity(entry, tenantId))
-        return { isValid: false, brokenAt: i, reason: 'hash verification failed' };
+      if (entry.previousHash !== expectedPreviousHash) return { isValid: false, brokenAt: i, reason: 'previousHash mismatch' };
+      if (!this.verifyIntegrity(entry, tenantId)) return { isValid: false, brokenAt: i, reason: 'hash verification failed' };
     }
     return { isValid: true, brokenAt: null };
   }

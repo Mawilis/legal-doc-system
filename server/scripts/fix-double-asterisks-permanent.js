@@ -66,7 +66,7 @@ function fixFile(filePath) {
     // Fix @param with double asterisks
     content = content.replace(
       /@param\s*\{[^}]+\}\s*(\[?\w+\]?)\s*-\s*(.*?)\*\*/g,
-      '@param {$1} - $2'
+      '@param {$1} - $2',
     );
 
     // Fix @returns with double asterisks
@@ -120,11 +120,10 @@ console.log('\n📁 Scanning root directory...');
 const rootFiles = fs
   .readdirSync(rootDir)
   .filter(
-    (f) =>
-      f.match(/\.(js|cjs|mjs)$/) &&
-      !f.includes('node_modules') &&
-      !f.includes('backup') &&
-      !f.includes('bak')
+    (f) => f.match(/\.(js|cjs|mjs)$/)
+      && !f.includes('node_modules')
+      && !f.includes('backup')
+      && !f.includes('bak'),
   );
 
 rootFiles.forEach((file) => {

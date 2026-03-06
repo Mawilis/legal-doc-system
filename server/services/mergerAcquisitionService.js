@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ MERGER & ACQUISITION SERVICE - INVESTOR-GRADE DEAL ENGINE                             ║
   ║ R3.5B/year deal flow | 94% predictive accuracy | Anti-trust compliance                ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/mergerAcquisitionService.js
@@ -71,7 +71,8 @@ import { redactSensitive, REDACT_FIELDS } from '../utils/redactSensitive.js';
 import tenantContext from '../middleware/tenantContext.js';
 
 // Model imports (will be dynamically required to avoid top-level side effects)
-let Deal, Target, SynergyScore, RegulatoryFiling, IntegrationSimulation, Company, Valuation;
+let Deal; let Target; let SynergyScore; let RegulatoryFiling; let IntegrationSimulation; let Company; let
+  Valuation;
 
 // INTEGRATION_HINT: imports from models with relative paths, no side effects at load time
 
@@ -223,7 +224,7 @@ function validateTenantId(tenantId) {
   const tenantIdRegex = /^[a-zA-Z0-9_-]{8,64}$/;
   if (!tenantId || !tenantIdRegex.test(tenantId)) {
     throw new Error(
-      `Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`
+      `Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`,
     );
   }
 }
@@ -260,9 +261,9 @@ function calculateMaterialityThreshold(value, jurisdiction = 'ZA', dealType = 'a
 
   if (value > thresholds.large) {
     return 'LARGE_MERGER';
-  } else if (value > thresholds.intermediate) {
+  } if (value > thresholds.intermediate) {
     return 'INTERMEDIATE_MERGER';
-  } else if (value > thresholds.small_merger) {
+  } if (value > thresholds.small_merger) {
     return 'SMALL_MERGER';
   }
   return 'EXEMPT';
@@ -390,7 +391,7 @@ class MergerAcquisitionService {
             scoreBreakdown: score.breakdown,
             confidence: score.confidence,
           };
-        })
+        }),
       );
 
       // Sort by score descending
@@ -409,7 +410,7 @@ class MergerAcquisitionService {
           processingTimeMs: Date.now() - startTime,
           timestamp: new Date().toISOString(),
         },
-        'COMPETITION_ACT_10_YEARS'
+        'COMPETITION_ACT_10_YEARS',
       );
 
       await AuditLogger.log('ma-target-identification', auditEntry);
@@ -484,8 +485,8 @@ class MergerAcquisitionService {
     if (target.employees) {
       if (criteria.minEmployees && criteria.maxEmployees) {
         if (
-          target.employees >= criteria.minEmployees &&
-          target.employees <= criteria.maxEmployees
+          target.employees >= criteria.minEmployees
+          && target.employees <= criteria.maxEmployees
         ) {
           sizeScore = 100;
         } else {
@@ -500,7 +501,7 @@ class MergerAcquisitionService {
     }
 
     const overall = Math.round(
-      financialScore * 0.4 + industryScore * 0.3 + geographicScore * 0.15 + sizeScore * 0.15
+      financialScore * 0.4 + industryScore * 0.3 + geographicScore * 0.15 + sizeScore * 0.15,
     );
 
     return {
@@ -555,7 +556,7 @@ class MergerAcquisitionService {
       const materiality = calculateMaterialityThreshold(
         dealData.value,
         dealData.jurisdiction || 'ZA',
-        dealData.dealType
+        dealData.dealType,
       );
 
       // Create deal
@@ -594,7 +595,7 @@ class MergerAcquisitionService {
           processingTimeMs: Date.now() - startTime,
           timestamp: new Date().toISOString(),
         },
-        'COMPANIES_ACT_10_YEARS'
+        'COMPANIES_ACT_10_YEARS',
       );
 
       await AuditLogger.log('ma-deal-creation', auditEntry);
@@ -654,17 +655,17 @@ class MergerAcquisitionService {
       const culturalSynergy = this.calculateCulturalSynergy(acquirer, target);
 
       const totalSynergy = Math.round(
-        revenueSynergy.value * 0.3 +
-          costSynergy.value * 0.3 +
-          financialSynergy.value * 0.25 +
-          culturalSynergy.value * 0.15
+        revenueSynergy.value * 0.3
+          + costSynergy.value * 0.3
+          + financialSynergy.value * 0.25
+          + culturalSynergy.value * 0.15,
       );
 
       const confidence = Math.round(
-        revenueSynergy.confidence * 0.3 +
-          costSynergy.confidence * 0.3 +
-          financialSynergy.confidence * 0.25 +
-          culturalSynergy.confidence * 0.15
+        revenueSynergy.confidence * 0.3
+          + costSynergy.confidence * 0.3
+          + financialSynergy.confidence * 0.25
+          + culturalSynergy.confidence * 0.15,
       );
 
       // Create synergy score record
@@ -701,7 +702,7 @@ class MergerAcquisitionService {
           processingTimeMs: Date.now() - startTime,
           timestamp: new Date().toISOString(),
         },
-        'COMPANIES_ACT_10_YEARS'
+        'COMPANIES_ACT_10_YEARS',
       );
 
       await AuditLogger.log('ma-synergy-calculation', auditEntry);
@@ -881,7 +882,7 @@ class MergerAcquisitionService {
           processingTimeMs: Date.now() - startTime,
           timestamp: new Date().toISOString(),
         },
-        'COMPETITION_ACT_10_YEARS'
+        'COMPETITION_ACT_10_YEARS',
       );
 
       await AuditLogger.log('ma-regulatory-assessment', auditEntry);
@@ -984,7 +985,7 @@ class MergerAcquisitionService {
           processingTimeMs: Date.now() - startTime,
           timestamp: new Date().toISOString(),
         },
-        'COMPANIES_ACT_10_YEARS'
+        'COMPANIES_ACT_10_YEARS',
       );
 
       await AuditLogger.log('ma-integration-simulation', auditEntry);
@@ -1103,7 +1104,7 @@ class MergerAcquisitionService {
         oldStage,
         newStage,
         timestamp: new Date().toISOString(),
-      })
+      }),
     );
 
     return deal;

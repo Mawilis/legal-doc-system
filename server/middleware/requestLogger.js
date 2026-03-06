@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - ENTERPRISE REQUEST LOGGER                                      ║
   ║ Full audit trail | GDPR compliant | Real-time monitoring                 ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import pino from 'pino';
 import { getCurrentContext } from './tenantContext.js';
@@ -134,7 +134,7 @@ export const getMetrics = (req, res) => {
     responses: metrics.responses,
     errors: metrics.errors,
     errorRate:
-      metrics.responses > 0 ? ((metrics.errors / metrics.responses) * 100).toFixed(2) + '%' : '0%',
+      metrics.responses > 0 ? `${((metrics.errors / metrics.responses) * 100).toFixed(2)}%` : '0%',
     averageLatency: `${averageLatency.toFixed(2)}ms`,
     endpoints: endpointStats,
     uptime: process.uptime(),

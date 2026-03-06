@@ -180,7 +180,7 @@ const SessionSchema = new mongoose.Schema(
       set(token) {
         // Quantum Encryption with key rotation
         const encryptionKey = `${SESSION_ENCRYPTION_KEY}_${Math.floor(
-          Date.now() / (1000 * 60 * 60 * 24)
+          Date.now() / (1000 * 60 * 60 * 24),
         )}`; // Daily key rotation
         return encryptData(token, encryptionKey);
       },
@@ -211,7 +211,7 @@ const SessionSchema = new mongoose.Schema(
       select: false,
       set(token) {
         const encryptionKey = `${SESSION_ENCRYPTION_KEY}_REFRESH_${Math.floor(
-          Date.now() / (1000 * 60 * 60 * 24 * 7)
+          Date.now() / (1000 * 60 * 60 * 24 * 7),
         )}`; // Weekly rotation
         return encryptData(token, encryptionKey);
       },
@@ -244,7 +244,7 @@ const SessionSchema = new mongoose.Schema(
           this.userId.toString(),
           this.tenantId.toString(),
           Date.now(),
-          this.deviceFingerprint
+          this.deviceFingerprint,
         );
       },
     },
@@ -526,10 +526,9 @@ const SessionSchema = new mongoose.Schema(
       verificationTimestamp: { type: Date },
       nextVerificationDue: {
         type: Date,
-        default: () =>
-          new Date(
-            Date.now() + FICA_VERIFICATION_TIMEFRAMES.REFRESH_KYC_MONTHS * 30 * 24 * 60 * 60 * 1000
-          ),
+        default: () => new Date(
+          Date.now() + FICA_VERIFICATION_TIMEFRAMES.REFRESH_KYC_MONTHS * 30 * 24 * 60 * 60 * 1000,
+        ),
       },
       riskScore: {
         type: Number,
@@ -791,7 +790,7 @@ const SessionSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 // ============================================================================
@@ -848,10 +847,9 @@ SessionSchema.virtual('riskLevel').get(function () {
   // Compliance violations
   if (!this.popiaConsent.consentGiven) score += 40;
   if (
-    this.gdprCompliance?.rightToErasure?.requested &&
-    !this.gdprCompliance?.rightToErasure?.fulfilled
-  )
-    score += 20;
+    this.gdprCompliance?.rightToErasure?.requested
+    && !this.gdprCompliance?.rightToErasure?.fulfilled
+  ) score += 20;
 
   // Risk level determination
   if (score >= 80) return 'CRITICAL';
@@ -881,8 +879,8 @@ SessionSchema.virtual('complianceStatus').get(function () {
 
   // GDPR Compliance Check
   if (
-    this.gdprCompliance?.rightToErasure?.requested &&
-    !this.gdprCompliance?.rightToErasure?.fulfilled
+    this.gdprCompliance?.rightToErasure?.requested
+    && !this.gdprCompliance?.rightToErasure?.fulfilled
   ) {
     status.gdpr = 'ACTION_REQUIRED';
   }
@@ -955,7 +953,7 @@ SessionSchema.pre('save', async function (next) {
         this.userId.toString(),
         this.tenantId.toString(),
         Date.now(),
-        this.deviceFingerprint
+        this.deviceFingerprint,
       );
       this.sessionHash = hash;
 
@@ -973,7 +971,7 @@ SessionSchema.pre('save', async function (next) {
     // Quantum Compliance: Enhanced POPIA consent validation
     if (this.isNew && !this.popiaConsent.consentGiven) {
       throw new Error(
-        'POPIA_COMPLIANCE_VIOLATION: Session creation requires explicit user consent'
+        'POPIA_COMPLIANCE_VIOLATION: Session creation requires explicit user consent',
       );
     }
 
@@ -1029,9 +1027,9 @@ SessionSchema.pre('save', async function (next) {
 
     // Quantum Threat Intelligence: Real-time session risk assessment
     if (
-      this.isModified('geolocation') ||
-      this.isModified('ipAddress') ||
-      this.isModified('deviceFingerprint')
+      this.isModified('geolocation')
+      || this.isModified('ipAddress')
+      || this.isModified('deviceFingerprint')
     ) {
       const hijackRisk = await detectSessionHijacking(this);
       if (hijackRisk.anomalyScore > this.hijackDetection.autoQuarantineThreshold) {
@@ -1039,7 +1037,7 @@ SessionSchema.pre('save', async function (next) {
         this.addSecurityEvent(
           'SESSION_HIJACK_ATTEMPT',
           'CRITICAL',
-          `Anomaly detected: ${hijackRisk.reason}`
+          `Anomaly detected: ${hijackRisk.reason}`,
         );
       }
       this.hijackDetection = {
@@ -1118,16 +1116,15 @@ SessionSchema.post('save', async (doc) => {
       const previousStatus = doc.previous('status');
 
       if (previousStatus && previousStatus !== doc.status) {
-        const threatData =
-          doc.threatMetrics?.threatScore > 50
-            ? {
-                threatIntelligenceData: {
-                  score: doc.threatMetrics.threatScore,
-                  sources: doc.threatMetrics.threatSources,
-                  automatedResponse: doc.status === 'QUARANTINED',
-                },
-              }
-            : {};
+        const threatData = doc.threatMetrics?.threatScore > 50
+          ? {
+            threatIntelligenceData: {
+              score: doc.threatMetrics.threatScore,
+              sources: doc.threatMetrics.threatSources,
+              automatedResponse: doc.status === 'QUARANTINED',
+            },
+          }
+          : {};
 
         doc.securityEvents.push({
           timestamp: new Date(),
@@ -1169,7 +1166,7 @@ SessionSchema.statics.createQuantumSession = async function (
   deviceInfo,
   ipAddress,
   userAgent,
-  mfaMethod = null
+  mfaMethod = null,
 ) {
   try {
     // Quantum Validation: Enhanced user verification
@@ -1203,7 +1200,7 @@ SessionSchema.statics.createQuantumSession = async function (
         expiresIn: SESSION_TTL,
         issuer: 'wilsyos.com',
         audience: 'legal.wilsyos.com',
-      }
+      },
     );
 
     const refreshToken = jwt.sign(
@@ -1216,7 +1213,7 @@ SessionSchema.statics.createQuantumSession = async function (
       {
         algorithm: 'HS256',
         expiresIn: SESSION_REFRESH_TTL,
-      }
+      },
     );
 
     // Create enhanced POPIA consent record
@@ -1224,7 +1221,7 @@ SessionSchema.statics.createQuantumSession = async function (
       userId,
       tenantId,
       'SESSION_DATA_PROCESSING',
-      'GRANULAR'
+      'GRANULAR',
     );
 
     // Create GDPR consent record for global compliance
@@ -1302,7 +1299,7 @@ SessionSchema.statics.createQuantumSession = async function (
 SessionSchema.statics.validateQuantumSession = async function (
   sessionId,
   accessToken,
-  performThreatCheck = true
+  performThreatCheck = true,
 ) {
   try {
     // Find session with enhanced security context
@@ -1344,7 +1341,7 @@ SessionSchema.statics.validateQuantumSession = async function (
       session.addSecurityEvent(
         'SUSPICIOUS_ACTIVITY',
         'HIGH',
-        `JWT verification failed: ${jwtError.message}`
+        `JWT verification failed: ${jwtError.message}`,
       );
       await session.save();
       throw new Error('INVALID_ACCESS_TOKEN');
@@ -1357,7 +1354,7 @@ SessionSchema.statics.validateQuantumSession = async function (
         session.addSecurityEvent(
           'SESSION_HIJACK_ATTEMPT',
           hijackRisk.anomalyScore > 70 ? 'CRITICAL' : 'HIGH',
-          `Potential hijack detected: ${hijackRisk.reason}`
+          `Potential hijack detected: ${hijackRisk.reason}`,
         );
 
         if (hijackRisk.anomalyScore > 70) {
@@ -1419,7 +1416,7 @@ SessionSchema.statics.validateQuantumSession = async function (
 SessionSchema.statics.revokeQuantumSession = async function (
   sessionId,
   reason = 'USER_INITIATED',
-  complianceContext = {}
+  complianceContext = {},
 ) {
   try {
     const session = await this.findOne({ sessionId });
@@ -1537,9 +1534,9 @@ SessionSchema.statics.cleanupExpiredSessions = async function () {
 
     for (const session of expiredSessions) {
       if (
-        session.scheduledDeletionAt < now ||
-        (session.gdprCompliance?.rightToErasure?.requested &&
-          !session.gdprCompliance?.rightToErasure?.fulfilledAt)
+        session.scheduledDeletionAt < now
+        || (session.gdprCompliance?.rightToErasure?.requested
+          && !session.gdprCompliance?.rightToErasure?.fulfilledAt)
       ) {
         // Handle GDPR right to erasure
         if (session.gdprCompliance?.rightToErasure?.requested) {
@@ -1573,7 +1570,7 @@ SessionSchema.statics.cleanupExpiredSessions = async function () {
     console.log(
       `   🛡️  High Risk Sessions: ${
         expiredSessions.filter((s) => s.threatMetrics?.threatScore > 70).length
-      }`
+      }`,
     );
 
     return {
@@ -1597,7 +1594,7 @@ SessionSchema.statics.getUserQuantumSessions = async function (
   userId,
   tenantId,
   includeInactive = false,
-  threatFilter = null
+  threatFilter = null,
 ) {
   try {
     const query = {
@@ -1650,7 +1647,7 @@ SessionSchema.statics.getUserQuantumSessions = async function (
  */
 SessionSchema.statics.bulkRevokeCompromisedSessions = async function (
   criteria,
-  reason = 'SECURITY_INCIDENT'
+  reason = 'SECURITY_INCIDENT',
 ) {
   try {
     const compromisedSessions = await this.find({
@@ -1676,7 +1673,7 @@ SessionSchema.statics.bulkRevokeCompromisedSessions = async function (
 
     // Log bulk operation to security monitoring
     console.log(
-      `🛡️ BULK SESSION REVOCATION: ${revokedCount}/${compromisedSessions.length} sessions revoked`
+      `🛡️ BULK SESSION REVOCATION: ${revokedCount}/${compromisedSessions.length} sessions revoked`,
     );
 
     return {
@@ -1701,7 +1698,7 @@ SessionSchema.methods.logActivity = function (
   action,
   resource,
   metadata = {},
-  complianceContext = {}
+  complianceContext = {},
 ) {
   try {
     const activityEntry = {
@@ -1756,7 +1753,7 @@ SessionSchema.methods.addSecurityEvent = function (
   eventType,
   severity,
   description,
-  threatData = {}
+  threatData = {},
 ) {
   try {
     const securityEvent = {
@@ -1806,7 +1803,7 @@ SessionSchema.methods.addSecurityEvent = function (
     };
     this.threatMetrics.threatScore = Math.min(
       100,
-      (this.threatMetrics.threatScore || 0) + severityScore[severity] || 0
+      (this.threatMetrics.threatScore || 0) + severityScore[severity] || 0,
     );
 
     this.threatMetrics.lastThreatCheck = new Date();
@@ -1843,7 +1840,7 @@ SessionSchema.methods.refreshTokens = function () {
         expiresIn: SESSION_TTL,
         issuer: 'wilsyos.com',
         audience: 'legal.wilsyos.com',
-      }
+      },
     );
 
     const newRefreshToken = jwt.sign(
@@ -1857,7 +1854,7 @@ SessionSchema.methods.refreshTokens = function () {
       {
         algorithm: 'HS256',
         expiresIn: SESSION_REFRESH_TTL,
-      }
+      },
     );
 
     // Update session with new tokens
@@ -1913,7 +1910,7 @@ SessionSchema.methods.verifyBlockchainIntegrity = async function (includeMerkleP
     const isVerified = await verifyBlockchainIntegrity(
       this.blockchainProof.transactionHash,
       verificationData,
-      includeMerkleProof ? this.blockchainProof.merkleRoot : undefined
+      includeMerkleProof ? this.blockchainProof.merkleRoot : undefined,
     );
 
     this.blockchainProof.verified = isVerified;
@@ -1929,7 +1926,7 @@ SessionSchema.methods.verifyBlockchainIntegrity = async function (includeMerkleP
       this.addSecurityEvent(
         'BLOCKCHAIN_TAMPERING',
         'HIGH',
-        'Blockchain verification failed - potential data tampering'
+        'Blockchain verification failed - potential data tampering',
       );
     }
 
@@ -2050,7 +2047,9 @@ SessionSchema.methods.triggerIncidentResponse = function (incidentType, incident
  * Quantum Test Suite: Enhanced validation for CI/CD with compliance testing
  */
 if (process.env.NODE_ENV === 'test') {
-  const { describe, it, expect, beforeAll, afterAll, beforeEach } = require('@jest/globals');
+  const {
+    describe, it, expect, beforeAll, afterAll, beforeEach,
+  } = require('@jest/globals');
   const { mockThreatIntelligence } = require('../../test/utils/securityMocks');
 
   describe('Enhanced Quantum Session Model v2.0', () => {
@@ -2095,7 +2094,7 @@ if (process.env.NODE_ENV === 'test') {
         { browser: 'Chrome', os: 'Windows', screenResolution: '1920x1080' },
         '192.168.1.100',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0',
-        'TOTP'
+        'TOTP',
       );
 
       testSession = sessionData.session;
@@ -2142,7 +2141,7 @@ if (process.env.NODE_ENV === 'test') {
         'DOCUMENT_ACCESS',
         'Document: LEGAL-2024-001',
         { documentId: 'DOC123', action: 'VIEW' },
-        { popiaCategory: 'DATA_PROCESSING', gdprBasis: 'CONSENT' }
+        { popiaCategory: 'DATA_PROCESSING', gdprBasis: 'CONSENT' },
       );
 
       expect(activity.timestamp).toBeInstanceOf(Date);
@@ -2164,7 +2163,7 @@ if (process.env.NODE_ENV === 'test') {
         'SUSPICIOUS_ACTIVITY',
         'HIGH',
         'Multiple failed login attempts from unusual location',
-        threatData
+        threatData,
       );
 
       expect(event.timestamp).toBeInstanceOf(Date);
@@ -2179,7 +2178,7 @@ if (process.env.NODE_ENV === 'test') {
       const validation = await Session.validateQuantumSession(
         testSession.sessionId,
         testSession.accessToken,
-        true // Perform threat check
+        true, // Perform threat check
       );
 
       expect(validation.session.sessionId).toBe(testSession.sessionId);
@@ -2217,7 +2216,7 @@ if (process.env.NODE_ENV === 'test') {
 
       expect(testSession.hijackDetection.anomalyScore).toBeGreaterThan(0);
       expect(testSession.securityEvents.some((e) => e.eventType === 'SESSION_HIJACK_ATTEMPT')).toBe(
-        true
+        true,
       );
     });
 

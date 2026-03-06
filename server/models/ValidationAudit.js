@@ -84,7 +84,7 @@ const validationAuditSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Pre-save middleware to set retention end
@@ -98,7 +98,7 @@ validationAuditSchema.pre('save', function (next) {
     }
     this.retentionEnd = endDate;
   }
-  next();
+  return;
 });
 
 // Static methods

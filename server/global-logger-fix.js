@@ -15,9 +15,9 @@ function fixLogger(dir) {
       const stat = fs.lstatSync(fullPath);
       if (stat.isDirectory()) {
         if (
-          !fullPath.includes('node_modules') &&
-          !fullPath.includes('.git') &&
-          !fullPath.includes('backups')
+          !fullPath.includes('node_modules')
+          && !fullPath.includes('.git')
+          && !fullPath.includes('backups')
         ) {
           fixLogger(fullPath);
         }
@@ -29,19 +29,19 @@ function fixLogger(dir) {
         if (/import\s+logger\s+from/.test(content)) {
           content = content.replace(
             /import\s+logger\s+from\s+['"]([^'"]+)['"];?/g,
-            "import loggerRaw from '$1';\nconst logger = loggerRaw.default || loggerRaw;"
+            "import loggerRaw from '$1';\nconst logger = loggerRaw.default || loggerRaw;",
           );
           patched = true;
         }
 
         // Unwrap legacy require() import (only if not already patched)
         if (
-          /(?:const|let|var)\s+logger\s*=\s*require/.test(content) &&
-          !content.includes('loggerRaw')
+          /(?:const|let|var)\s+logger\s*=\s*require/.test(content)
+          && !content.includes('loggerRaw')
         ) {
           content = content.replace(
             /(?:const|let|var)\s+logger\s*=\s*require\(['"]([^'"]+)['"]\);?/g,
-            "const loggerRaw = require('$1');\nconst logger = loggerRaw.default || loggerRaw;"
+            "const loggerRaw = require('$1');\nconst logger = loggerRaw.default || loggerRaw;",
           );
           patched = true;
         }
@@ -49,7 +49,7 @@ function fixLogger(dir) {
         if (patched) {
           fs.writeFileSync(fullPath, content);
           console.log(
-            `✅ Unwrapped logger in: ${fullPath.split('legal-doc-system/')[1] || fullPath}`
+            `✅ Unwrapped logger in: ${fullPath.split('legal-doc-system/')[1] || fullPath}`,
           );
         }
       }

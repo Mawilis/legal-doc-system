@@ -92,10 +92,10 @@
  * the sum of its parts and building a competitive moat that no competitor can cross.
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ CITATION NETWORK INDEXER - INVESTOR-GRADE MODULE - $85M TARGET           ║
   ║ 95% cost reduction | Network effects | Unassailable moat                 ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/workers/citationNetworkIndexer.js
  * INVESTOR VALUE PROPOSITION:
@@ -148,8 +148,6 @@
  * }
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Enterprise-scale dependencies
 const mongoose = require('mongoose');
 const { performance, PerformanceObserver } = require('perf_hooks');
@@ -174,6 +172,7 @@ const Case = require('../models/Case');
 
 // QUANTUM UTILITIES
 const loggerRaw = require('../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../utils/auditLogger');
 const quantumLogger = require('../utils/quantumLogger');
@@ -419,7 +418,7 @@ const cacheLayers = {
     l1Hits: 0,
     l2Hits: 0,
     misses: 0,
-    getHitRatio: function () {
+    getHitRatio() {
       const total = this.l1Hits + this.l2Hits + this.misses;
       return total > 0 ? (this.l1Hits + this.l2Hits) / total : 0;
     },
@@ -544,7 +543,7 @@ const initializeGraphServices = async () => {
             logger.error('[CitationNetworkIndexer] Neo4j connection failed:', error);
             throw error;
           }
-        })()
+        })(),
       );
     }
 
@@ -564,7 +563,7 @@ const initializeGraphServices = async () => {
             logger.error('[CitationNetworkIndexer] Elasticsearch connection failed:', error);
             throw error;
           }
-        })()
+        })(),
       );
     }
 
@@ -580,10 +579,10 @@ const initializeGraphServices = async () => {
           } catch (error) {
             logger.warn(
               '[CitationNetworkIndexer] Graph neural network init failed:',
-              error.message
+              error.message,
             );
           }
-        })()
+        })(),
       );
     }
 
@@ -752,9 +751,7 @@ citationQueue.on('stalled', (job) => {
 /*
  * Generates a unique job ID for tracking
  */
-const generateJobId = (type) => {
-  return `CITATION-${type}-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
-};
+const generateJobId = (type) => `CITATION-${type}-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
 
 /*
  * Extracts citation type based on context
@@ -804,8 +801,7 @@ const calculateCitationStrength = (source, target, metadata = {}) => {
   strength += (targetCourtLevel - 50) * 0.2;
 
   // Factor 4: Recency
-  const yearsSinceCitation =
-    (new Date() - new Date(metadata.date || source.date)) / (365 * 24 * 60 * 60 * 1000);
+  const yearsSinceCitation = (new Date() - new Date(metadata.date || source.date)) / (365 * 24 * 60 * 60 * 1000);
   if (yearsSinceCitation < 2) {
     strength += 10;
   } else if (yearsSinceCitation < 5) {
@@ -853,7 +849,7 @@ const upsertGraphNode = async (node, type, tenantId) => {
        SET n.tenantId = $tenantId
        SET n.updatedAt = datetime()
        RETURN n`,
-      { id: properties.id, tenantId, properties }
+      { id: properties.id, tenantId, properties },
     );
 
     citationNetworkMetrics.graphNodesTotal.labels(nodeType).inc();
@@ -889,7 +885,9 @@ const upsertGraphEdge = async (sourceId, targetId, type, properties = {}, tenant
        SET r += $properties
        SET r.updatedAt = datetime()
        RETURN r`,
-      { sourceId, targetId, tenantId, properties: edgeProperties }
+      {
+        sourceId, targetId, tenantId, properties: edgeProperties,
+      },
     );
 
     citationNetworkMetrics.graphEdgesTotal.labels(edgeType).inc();
@@ -932,9 +930,7 @@ const indexCitationInSearch = async (citation, source, target, tenantId) => {
     // Add embedding if available
     if (ENABLE_AI_ENRICHMENT && graphNeuralNetwork) {
       try {
-        const embedding = await serviceBreakers.graphNeural.fire(async () => {
-          return await graphNeuralNetwork.generateEdgeEmbedding(document);
-        });
+        const embedding = await serviceBreakers.graphNeural.fire(async () => await graphNeuralNetwork.generateEdgeEmbedding(document));
         if (embedding) {
           document.embedding = embedding;
         }
@@ -975,7 +971,7 @@ const runGraphAlgorithms = async (tenantId, algorithm = GRAPH_ALGORITHMS.PAGERAN
            RETURN n.id as id, n.citation as citation, score
            ORDER BY score DESC
            LIMIT 100`,
-          { tenantId }
+          { tenantId },
         );
         break;
 
@@ -987,7 +983,7 @@ const runGraphAlgorithms = async (tenantId, algorithm = GRAPH_ALGORITHMS.PAGERAN
            RETURN n.id as id, n.citation as citation, score
            ORDER BY score DESC
            LIMIT 100`,
-          { tenantId }
+          { tenantId },
         );
         break;
 
@@ -998,7 +994,7 @@ const runGraphAlgorithms = async (tenantId, algorithm = GRAPH_ALGORITHMS.PAGERAN
            MATCH (n) WHERE id(n) = nodeId AND n.tenantId = $tenantId
            RETURN communityId, collect(n.citation) as members
            ORDER BY size(members) DESC`,
-          { tenantId }
+          { tenantId },
         );
         break;
 
@@ -1087,7 +1083,7 @@ const indexCitation = async (citationId, tenantId, options = {}) => {
         reasoning: citation.reasoning,
         date: citation.createdAt,
       },
-      tenantId
+      tenantId,
     );
 
     // STEP 6: Index in Elasticsearch
@@ -1146,8 +1142,8 @@ const indexCitation = async (citationId, tenantId, options = {}) => {
 
     logger.info(
       `[CitationNetworkIndexer] Citation indexed: ${citationId}, time=${Math.round(
-        processingTime
-      )}ms`
+        processingTime,
+      )}ms`,
     );
 
     return {
@@ -1181,7 +1177,7 @@ const batchIndexCitations = async (citationIds, tenantId, options = {}) => {
   const batchId = `BATCH-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
 
   logger.info(
-    `[CitationNetworkIndexer] Starting batch indexing: ${batchId}, count=${citationIds.length}`
+    `[CitationNetworkIndexer] Starting batch indexing: ${batchId}, count=${citationIds.length}`,
   );
 
   const results = {
@@ -1326,7 +1322,7 @@ const updateCitationMetrics = async (tenantId, options = {}) => {
   const processingTime = performance.now() - startTime;
 
   logger.info(
-    `[CitationNetworkIndexer] Metrics updated: ${jobId}, time=${Math.round(processingTime)}ms`
+    `[CitationNetworkIndexer] Metrics updated: ${jobId}, time=${Math.round(processingTime)}ms`,
   );
 
   return {
@@ -1364,7 +1360,9 @@ const findCitationPaths = async (sourceId, targetId, tenantId, options = {}) => 
        )
        RETURN path, length(path) as length
        LIMIT $limit`,
-      { sourceId, targetId, tenantId, limit }
+      {
+        sourceId, targetId, tenantId, limit,
+      },
     );
 
     const paths = result.records.map((record) => {
@@ -1433,7 +1431,9 @@ const getCitationSubgraph = async (nodeId, tenantId, options = {}) => {
        CALL apoc.path.subgraphAll(n, {maxLevel: $depth, limit: $limit})
        YIELD nodes, relationships
        RETURN nodes, relationships`,
-      { nodeId, tenantId, depth, limit }
+      {
+        nodeId, tenantId, depth, limit,
+      },
     );
 
     if (result.records.length === 0) {
@@ -1496,7 +1496,7 @@ const getNetworkStatistics = async (tenantId) => {
       `MATCH (n {tenantId: $tenantId})
        RETURN labels(n)[0] as type, count(n) as count
        ORDER BY count DESC`,
-      { tenantId }
+      { tenantId },
     );
 
     // Get edge counts
@@ -1504,7 +1504,7 @@ const getNetworkStatistics = async (tenantId) => {
       `MATCH (a {tenantId: $tenantId})-[r]->(b {tenantId: $tenantId})
        RETURN type(r) as type, count(r) as count
        ORDER BY count DESC`,
-      { tenantId }
+      { tenantId },
     );
 
     // Get degree distribution
@@ -1513,7 +1513,7 @@ const getNetworkStatistics = async (tenantId) => {
        RETURN avg(size((n)--())) as avgDegree,
               max(size((n)--())) as maxDegree,
               min(size((n)--())) as minDegree`,
-      { tenantId }
+      { tenantId },
     );
 
     // Get density
@@ -1525,7 +1525,7 @@ const getNetworkStatistics = async (tenantId) => {
        RETURN edgeCount, 
               nodeCount,
               toFloat(edgeCount) / (nodeCount * (nodeCount - 1)) as density`,
-      { tenantId }
+      { tenantId },
     );
 
     const duration = performance.now() - startTime;
@@ -1533,10 +1533,10 @@ const getNetworkStatistics = async (tenantId) => {
 
     const stats = {
       nodes: Object.fromEntries(
-        nodeCounts.records.map((r) => [r.get('type'), r.get('count').toNumber()])
+        nodeCounts.records.map((r) => [r.get('type'), r.get('count').toNumber()]),
       ),
       edges: Object.fromEntries(
-        edgeCounts.records.map((r) => [r.get('type'), r.get('count').toNumber()])
+        edgeCounts.records.map((r) => [r.get('type'), r.get('count').toNumber()]),
       ),
       degree: {
         avg: degreeDist.records[0]?.get('avgDegree')?.toNumber() || 0,
@@ -1613,7 +1613,7 @@ const detectCitationTrends = async (tenantId, options = {}) => {
             previousCount: precedent?.citationMetrics?.timesCited || 0,
             trend: count / (days / 30), // Citations per month
           };
-        })
+        }),
     );
 
     // Calculate velocity (citations per day)
@@ -1718,7 +1718,7 @@ const generateNetworkInsights = (stats, trends, pageRank) => {
       type: 'HIGH_ACTIVITY',
       severity: 'INFO',
       message: `High citation activity detected with ${Math.round(
-        trends.averageVelocity
+        trends.averageVelocity,
       )} citations per day.`,
       implication: 'Rapidly evolving area of law with frequent new citations.',
     });
@@ -1781,11 +1781,13 @@ const generateNetworkRecommendations = (stats, trends) => {
 const worker = new Bull(
   'citation-network-indexing',
   async (job) => {
-    const { operation, data, tenantId, options = {} } = job.data;
+    const {
+      operation, data, tenantId, options = {},
+    } = job.data;
     const startTime = performance.now();
 
     logger.info(
-      `[CitationNetworkIndexer Worker] Processing job: ${job.id}, operation=${operation}`
+      `[CitationNetworkIndexer Worker] Processing job: ${job.id}, operation=${operation}`,
     );
 
     try {
@@ -1875,13 +1877,13 @@ const worker = new Bull(
       lockDuration: 60000,
       lockRenewTime: 30000,
     },
-  }
+  },
 );
 
 // Worker event handlers
 worker.on('completed', (job) => {
   logger.info(
-    `[CitationNetworkIndexer Worker] Job completed: ${job.id}, operation=${job.data.operation}`
+    `[CitationNetworkIndexer Worker] Job completed: ${job.id}, operation=${job.data.operation}`,
   );
   citationNetworkMetrics.citationsProcessedPerSecond.labels(job.id).set(1);
 });
@@ -1915,7 +1917,7 @@ const queueCitationForIndexing = async (citationId, tenantId, options = {}) => {
       priority: options.priority || INDEXING_PRIORITY.NORMAL,
       attempts: options.attempts || 3,
       delay: options.delay || 0,
-    }
+    },
   );
 
   logger.info(`[CitationNetworkIndexer] Queued citation: ${citationId}, jobId=${job.id}`);
@@ -1943,7 +1945,7 @@ const queueBatchForIndexing = async (citationIds, tenantId, options = {}) => {
       jobId: generateJobId('batch'),
       priority: options.priority || INDEXING_PRIORITY.BULK,
       attempts: 2,
-    }
+    },
   );
 
   return {
@@ -1990,7 +1992,7 @@ const deleteFromGraph = async (citationId, tenantId) => {
       await session.run(
         `MATCH (a {id: $sourceId, tenantId: $tenantId})-[r]->(b {id: $targetId, tenantId: $tenantId})
          DELETE r`,
-        { sourceId, targetId, tenantId }
+        { sourceId, targetId, tenantId },
       );
     }
 
@@ -2092,18 +2094,16 @@ const getHealth = async () => {
 /*
  * Gets performance metrics
  */
-const getMetrics = async () => {
-  return {
-    requestsTotal: await citationNetworkMetrics.citationsIndexedTotal.get(),
-    errorsTotal: await citationNetworkMetrics.errorsTotal.get(),
-    queueStats: await citationQueue.getJobCounts(),
-    cacheHitRatio: cacheLayers.stats.getHitRatio(),
-    graphStats: {
-      nodes: await citationNetworkMetrics.graphNodesTotal.get(),
-      edges: await citationNetworkMetrics.graphEdgesTotal.get(),
-    },
-  };
-};
+const getMetrics = async () => ({
+  requestsTotal: await citationNetworkMetrics.citationsIndexedTotal.get(),
+  errorsTotal: await citationNetworkMetrics.errorsTotal.get(),
+  queueStats: await citationQueue.getJobCounts(),
+  cacheHitRatio: cacheLayers.stats.getHitRatio(),
+  graphStats: {
+    nodes: await citationNetworkMetrics.graphNodesTotal.get(),
+    edges: await citationNetworkMetrics.graphEdgesTotal.get(),
+  },
+});
 
 /* ---------------------------------------------------------------------------
    QUANTUM INITIALIZATION

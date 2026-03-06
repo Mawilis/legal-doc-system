@@ -80,10 +80,10 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ INTERNATIONAL GATEWAY - INVESTOR-GRADE MODULE - $5B+ VALUATION PROTECTION║
   ║ Tiered rate limiting | Dynamic pricing | Forensic logging                 ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
@@ -380,8 +380,7 @@ class BudgetTracker {
 
 class PriceCalculator {
   constructor() {
-    this.basePrice =
-      parseFloat(process.env.INTERNATIONAL_BASE_QUERY_PRICE) || GATEWAY_CONSTANTS.BASE_PRICE;
+    this.basePrice = parseFloat(process.env.INTERNATIONAL_BASE_QUERY_PRICE) || GATEWAY_CONSTANTS.BASE_PRICE;
   }
 
   calculateCost(tier, options = {}) {
@@ -629,7 +628,7 @@ export const internationalGateway = async (req, res, next) => {
         code: error.code,
         requestId,
         duration,
-      }
+      },
     );
 
     // Don't expose internal errors

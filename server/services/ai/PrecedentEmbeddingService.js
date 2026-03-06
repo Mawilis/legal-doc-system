@@ -93,10 +93,10 @@
  * is built, the substrate of digital legal consciousness.
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT EMBEDDING SERVICE - INVESTOR-GRADE MODULE - $2B TARGET         ║
   ║ 95% margins | 500M+ embeddings | Unprecedented legal understanding       ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/ai/PrecedentEmbeddingService.js
  * INVESTOR VALUE PROPOSITION:
@@ -143,8 +143,6 @@
  * }
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Core dependencies
 const tf = require('@tensorflow/tfjs-node');
 const use = require('@tensorflow-models/universal-sentence-encoder');
@@ -163,6 +161,7 @@ const { Worker } = require('worker_threads');
 
 // QUANTUM UTILITIES
 const loggerRaw = require('../../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../../utils/auditLogger');
 const quantumLogger = require('../../utils/quantumLogger');
@@ -310,8 +309,7 @@ const CACHE_STRATEGIES = {
    --------------------------------------------------------------------------- */
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
-const ENABLE_GPU =
-  process.env.ENABLE_GPU === 'true' && tf.engine().backendNames().includes('webgpu');
+const ENABLE_GPU = process.env.ENABLE_GPU === 'true' && tf.engine().backendNames().includes('webgpu');
 const ENABLE_QUANTIZATION = process.env.ENABLE_QUANTIZATION === 'true';
 const ENABLE_CACHING = process.env.ENABLE_CACHING !== 'false';
 const ENABLE_BATCHING = process.env.ENABLE_BATCHING !== 'false';
@@ -396,7 +394,7 @@ const cacheLayers = {
     l1Hits: 0,
     l2Hits: 0,
     misses: 0,
-    getHitRatio: function () {
+    getHitRatio() {
       const total = this.l1Hits + this.l2Hits + this.misses;
       return total > 0 ? (this.l1Hits + this.l2Hits) / total : 0;
     },
@@ -416,8 +414,8 @@ const cacheGet = async (key, options = {}) => {
   try {
     // Try L1 cache
     if (
-      !skipL1 &&
-      (strategy === CACHE_STRATEGIES.MULTI_LEVEL || strategy === CACHE_STRATEGIES.L1_ONLY)
+      !skipL1
+      && (strategy === CACHE_STRATEGIES.MULTI_LEVEL || strategy === CACHE_STRATEGIES.L1_ONLY)
     ) {
       const l1Value = cacheLayers.l1.get(key);
       if (l1Value !== undefined) {
@@ -431,8 +429,8 @@ const cacheGet = async (key, options = {}) => {
 
     // Try L2 cache
     if (
-      !skipL2 &&
-      (strategy === CACHE_STRATEGIES.MULTI_LEVEL || strategy === CACHE_STRATEGIES.L2_ONLY)
+      !skipL2
+      && (strategy === CACHE_STRATEGIES.MULTI_LEVEL || strategy === CACHE_STRATEGIES.L2_ONLY)
     ) {
       try {
         const l2Value = await cacheLayers.l2.get(key);
@@ -476,16 +474,16 @@ const cacheSet = async (key, value, options = {}) => {
   try {
     // Set L1 cache
     if (
-      !skipL1 &&
-      (strategy === CACHE_STRATEGIES.MULTI_LEVEL || strategy === CACHE_STRATEGIES.L1_ONLY)
+      !skipL1
+      && (strategy === CACHE_STRATEGIES.MULTI_LEVEL || strategy === CACHE_STRATEGIES.L1_ONLY)
     ) {
       cacheLayers.l1.set(key, value);
     }
 
     // Set L2 cache
     if (
-      !skipL2 &&
-      (strategy === CACHE_STRATEGIES.MULTI_LEVEL || strategy === CACHE_STRATEGIES.L2_ONLY)
+      !skipL2
+      && (strategy === CACHE_STRATEGIES.MULTI_LEVEL || strategy === CACHE_STRATEGIES.L2_ONLY)
     ) {
       try {
         await cacheLayers.l2.setex(key, ttl, JSON.stringify(value));
@@ -515,7 +513,7 @@ const generateEmbeddingCacheKey = (text, model, options = {}) => {
 
 const concurrencyLimiter = pLimit(parseInt(process.env.EMBEDDING_CONCURRENCY) || 4);
 const batchQueue = [];
-let isProcessingBatch = false;
+const isProcessingBatch = false;
 
 /* ---------------------------------------------------------------------------
    QUANTUM MODEL MANAGEMENT
@@ -686,7 +684,7 @@ class ModelManager {
 
       const extractor = await pipeline(
         'feature-extraction',
-        'sentence-transformers/all-MiniLM-L6-v2'
+        'sentence-transformers/all-MiniLM-L6-v2',
       );
       this.models.set(EMBEDDING_MODELS.MINI_LM, extractor);
       this.modelVersions.set(EMBEDDING_MODELS.MINI_LM, '2.0.0');
@@ -802,7 +800,7 @@ const preprocessText = (text, options = {}) => {
     // Remove common citation patterns
     processed = processed.replace(
       /\[\d{4}\]\s+(?:ZACC|ZASCA|ZAGPJHC|ZAKZPHC|ZAWCHC|All SA|SACR|SA)\s+\d+/g,
-      ''
+      '',
     );
   }
 
@@ -917,18 +915,14 @@ const generateEmbedding = async (text, options = {}) => {
 
       if (model === EMBEDDING_MODELS.UNIVERSAL) {
         // Universal Sentence Encoder
-        const embeddings = await modelBreakers.universal.fire(async () => {
-          return await embeddingModel.embed(processedText);
-        });
+        const embeddings = await modelBreakers.universal.fire(async () => await embeddingModel.embed(processedText));
         embedding = Array.from(await embeddings.array())[0];
       } else {
         // Transformer-based models
-        const output = await modelBreakers.legalBert.fire(async () => {
-          return await embeddingModel(processedText, {
-            pooling: pooling,
-            normalize: normalize,
-          });
-        });
+        const output = await modelBreakers.legalBert.fire(async () => await embeddingModel(processedText, {
+          pooling,
+          normalize,
+        }));
 
         if (output && output.data) {
           embedding = Array.from(output.data);
@@ -1058,9 +1052,7 @@ const generateEmbeddings = async (texts, options = {}) => {
       // Process in batches
       for (let i = 0; i < uncachedTexts.length; i += batchSize) {
         const batch = uncachedTexts.slice(i, i + batchSize);
-        const batchPromises = batch.map((text) =>
-          generateEmbedding(text, { ...options, cacheStrategy: CACHE_STRATEGIES.NONE })
-        );
+        const batchPromises = batch.map((text) => generateEmbedding(text, { ...options, cacheStrategy: CACHE_STRATEGIES.NONE }));
 
         const batchResults = await Promise.all(batchPromises);
 
@@ -1112,7 +1104,7 @@ const quantizeEmbedding = (embedding, bits = 8) => {
 
   if (range === 0) return embedding;
 
-  const levels = Math.pow(2, bits) - 1;
+  const levels = 2 ** bits - 1;
 
   return embedding.map((val) => {
     const normalized = (val - minVal) / range;
@@ -1238,9 +1230,9 @@ const findSimilar = async (queryEmbedding, candidates, options = {}) => {
     return includeScores
       ? results
       : results.map((r) => {
-          const { similarity, ...rest } = r;
-          return rest;
-        });
+        const { similarity, ...rest } = r;
+        return rest;
+      });
   } catch (error) {
     embeddingMetrics.errorsTotal.labels('similarity', error.name || 'unknown').inc();
     logger.error('[EmbeddingService] Similarity search failed:', error);
@@ -1584,17 +1576,15 @@ const getHealth = async () => {
 /*
  * Get performance metrics
  */
-const getMetrics = async () => {
-  return {
-    embeddingsGenerated: await embeddingMetrics.embeddingsGeneratedTotal.get(),
-    averageLatency: await embeddingMetrics.embeddingDurationSeconds.get(),
-    errorsTotal: await embeddingMetrics.errorsTotal.get(),
-    cacheHitRatio: cacheLayers.stats.getHitRatio(),
-    modelVersions: Object.fromEntries(Array.from(modelManager.modelVersions.entries())),
-    queueSize: concurrencyLimiter.pendingCount,
-    activeWorkers: concurrencyLimiter.activeCount,
-  };
-};
+const getMetrics = async () => ({
+  embeddingsGenerated: await embeddingMetrics.embeddingsGeneratedTotal.get(),
+  averageLatency: await embeddingMetrics.embeddingDurationSeconds.get(),
+  errorsTotal: await embeddingMetrics.errorsTotal.get(),
+  cacheHitRatio: cacheLayers.stats.getHitRatio(),
+  modelVersions: Object.fromEntries(Array.from(modelManager.modelVersions.entries())),
+  queueSize: concurrencyLimiter.pendingCount,
+  activeWorkers: concurrencyLimiter.activeCount,
+});
 
 /* ---------------------------------------------------------------------------
    QUANTUM INITIALIZATION

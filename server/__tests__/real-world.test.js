@@ -70,19 +70,17 @@ describe('🌍 REAL WORLD SCENARIO 1: LAW FIRM ONSLAUGHT', () => {
   test('should handle 100 simultaneous firm health checks with tenant isolation', async () => {
     const startTime = Date.now();
     const results = await Promise.allSettled(
-      firmTenants.map((tenantId) =>
-        request(app)
-          .get('/health')
-          .set('X-Tenant-ID', tenantId)
-          .set('X-API-Key', `test-key-${tenantId}`)
-      )
+      firmTenants.map((tenantId) => request(app)
+        .get('/health')
+        .set('X-Tenant-ID', tenantId)
+        .set('X-API-Key', `test-key-${tenantId}`)),
     );
 
     const duration = Date.now() - startTime;
 
     // Verify all requests succeeded
     const succeeded = results.filter(
-      (r) => r.status === 'fulfilled' && r.value.status === 200
+      (r) => r.status === 'fulfilled' && r.value.status === 200,
     ).length;
     expect(succeeded).toBe(FIRM_COUNT);
 
@@ -144,7 +142,7 @@ describe('🌍 REAL WORLD SCENARIO 1: LAW FIRM ONSLAUGHT', () => {
         request(app)
           .get('/health')
           .set('X-Tenant-ID', aggressiveTenant)
-          .set('X-API-Key', `test-key-${aggressiveTenant}`)
+          .set('X-API-Key', `test-key-${aggressiveTenant}`),
       );
     }
 
@@ -152,7 +150,7 @@ describe('🌍 REAL WORLD SCENARIO 1: LAW FIRM ONSLAUGHT', () => {
 
     // Count rate limited responses (429)
     const rateLimited = results.filter(
-      (r) => r.status === 'fulfilled' && r.value.status === 429
+      (r) => r.status === 'fulfilled' && r.value.status === 429,
     ).length;
 
     expect(rateLimited).toBeGreaterThan(0);
@@ -190,7 +188,7 @@ describe('⚖️ REAL WORLD SCENARIO 2: POPIA COMPLIANCE ENFORCEMENT', () => {
         phone: `082${i.toString().padStart(7, '0')}`,
         address: `${i} Main Street, Johannesburg`,
         caseNumber: `CASE-2026-${i}`,
-        content: `Legal document regarding contractual dispute with sensitive financial information. Bank account: 1234567890, Tax reference: 1234567890.`,
+        content: 'Legal document regarding contractual dispute with sensitive financial information. Bank account: 1234567890, Tax reference: 1234567890.',
       });
     }
   });
@@ -323,7 +321,7 @@ describe('💰 REAL WORLD SCENARIO 3: INVESTOR DUE DILIGENCE', () => {
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
 
-    const data = response.body.data;
+    const { data } = response.body;
 
     // Verify financial structure
     expect(data).toHaveProperty('financials');
@@ -345,7 +343,7 @@ describe('💰 REAL WORLD SCENARIO 3: INVESTOR DUE DILIGENCE', () => {
     // Verify valuation is within reasonable range (0 to R1B)
     expect(data.financials.valuation.current).toBeGreaterThanOrEqual(0);
     expect(data.financials.valuation.current).toBeLessThanOrEqual(
-      FINANCIAL_TARGETS.VALUATION_TARGET * 1.1
+      FINANCIAL_TARGETS.VALUATION_TARGET * 1.1,
     );
 
     testEvidence.economicProjections = {
@@ -363,7 +361,7 @@ describe('💰 REAL WORLD SCENARIO 3: INVESTOR DUE DILIGENCE', () => {
     });
 
     console.log(
-      `✅ INVESTOR DASHBOARD: Valuation R${data.financials.valuation.current.toLocaleString()}`
+      `✅ INVESTOR DASHBOARD: Valuation R${data.financials.valuation.current.toLocaleString()}`,
     );
   });
 
@@ -386,7 +384,7 @@ describe('💰 REAL WORLD SCENARIO 3: INVESTOR DUE DILIGENCE', () => {
     testEvidence.economicProjections.savingsPerFirm = ANNUAL_SAVINGS_PER_FIRM;
 
     console.log(
-      `💰 ECONOMIC IMPACT: R${totalAnnualSavings.toLocaleString()} annual savings across ${activeFirms} firms`
+      `💰 ECONOMIC IMPACT: R${totalAnnualSavings.toLocaleString()} annual savings across ${activeFirms} firms`,
     );
     console.log(`   (R${ANNUAL_SAVINGS_PER_FIRM.toLocaleString()} per firm)`);
   });
@@ -396,7 +394,7 @@ describe('💰 REAL WORLD SCENARIO 3: INVESTOR DUE DILIGENCE', () => {
       .get('/api/investors/generational')
       .set('x-generational-investor-key', 'generational-wealth-10g-2026');
 
-    const exit = response.body.data.exit;
+    const { exit } = response.body.data;
 
     expect(exit.multiple).toBe('50x Revenue');
     expect(exit.options).toContain('NASDAQ IPO');
@@ -560,16 +558,36 @@ describe('🌐 REAL WORLD SCENARIO 6: CONTINENTAL SCALE', () => {
    */
 
   const AFRICAN_COUNTRIES = [
-    { code: 'ZA', name: 'South Africa', currency: 'ZAR', dataResidency: 'ZA' },
-    { code: 'NG', name: 'Nigeria', currency: 'NGN', dataResidency: 'NG' },
-    { code: 'KE', name: 'Kenya', currency: 'KES', dataResidency: 'KE' },
-    { code: 'GH', name: 'Ghana', currency: 'GHS', dataResidency: 'GH' },
-    { code: 'EG', name: 'Egypt', currency: 'EGP', dataResidency: 'EG' },
-    { code: 'MA', name: 'Morocco', currency: 'MAD', dataResidency: 'MA' },
-    { code: 'TZ', name: 'Tanzania', currency: 'TZS', dataResidency: 'TZ' },
-    { code: 'UG', name: 'Uganda', currency: 'UGX', dataResidency: 'UG' },
-    { code: 'RW', name: 'Rwanda', currency: 'RWF', dataResidency: 'RW' },
-    { code: 'BW', name: 'Botswana', currency: 'BWP', dataResidency: 'BW' },
+    {
+      code: 'ZA', name: 'South Africa', currency: 'ZAR', dataResidency: 'ZA',
+    },
+    {
+      code: 'NG', name: 'Nigeria', currency: 'NGN', dataResidency: 'NG',
+    },
+    {
+      code: 'KE', name: 'Kenya', currency: 'KES', dataResidency: 'KE',
+    },
+    {
+      code: 'GH', name: 'Ghana', currency: 'GHS', dataResidency: 'GH',
+    },
+    {
+      code: 'EG', name: 'Egypt', currency: 'EGP', dataResidency: 'EG',
+    },
+    {
+      code: 'MA', name: 'Morocco', currency: 'MAD', dataResidency: 'MA',
+    },
+    {
+      code: 'TZ', name: 'Tanzania', currency: 'TZS', dataResidency: 'TZ',
+    },
+    {
+      code: 'UG', name: 'Uganda', currency: 'UGX', dataResidency: 'UG',
+    },
+    {
+      code: 'RW', name: 'Rwanda', currency: 'RWF', dataResidency: 'RW',
+    },
+    {
+      code: 'BW', name: 'Botswana', currency: 'BWP', dataResidency: 'BW',
+    },
   ];
 
   test('should support multiple African countries', async () => {
@@ -594,7 +612,7 @@ describe('🌐 REAL WORLD SCENARIO 6: CONTINENTAL SCALE', () => {
 
       if (response.status === 501) {
         console.log(
-          `⚠️  Country registration for ${country.code} not yet implemented (future generation)`
+          `⚠️  Country registration for ${country.code} not yet implemented (future generation)`,
         );
       } else {
         console.log(`✅ Registered firm in ${country.name}`);
@@ -705,8 +723,7 @@ describe('🤖 REAL WORLD SCENARIO 7: AI & AUTOMATION', () => {
 
   test('should have vector database integration planned', async () => {
     // Check configuration for vector DB
-    const configHasVector =
-      JSON.stringify(FINANCIAL_TARGETS).includes('vector') || !!process.env.VECTOR_DB_URL;
+    const configHasVector = JSON.stringify(FINANCIAL_TARGETS).includes('vector') || !!process.env.VECTOR_DB_URL;
 
     // This is a forward-looking test - will pass when implemented
     if (configHasVector) {
@@ -793,7 +810,7 @@ afterAll(async () => {
     totalTests: testEvidence.tests.length,
     failures: testEvidence.failures.length,
     timestamp: new Date().toISOString(),
-    economicValidation: testEvidence.economicProjections.valuation ? true : false,
+    economicValidation: !!testEvidence.economicProjections.valuation,
     complianceValidation: Object.keys(testEvidence.complianceVerification).length > 0,
   };
 
@@ -819,13 +836,13 @@ afterAll(async () => {
   if (testEvidence.economicProjections.totalAnnualSavings) {
     console.log('\n💰 ECONOMIC METRICS:');
     console.log(
-      `   Annual Savings Generated: R${testEvidence.economicProjections.totalAnnualSavings.toLocaleString()}`
+      `   Annual Savings Generated: R${testEvidence.economicProjections.totalAnnualSavings.toLocaleString()}`,
     );
     console.log(
-      `   Per Firm Savings: R${testEvidence.economicProjections.savingsPerFirm.toLocaleString()}`
+      `   Per Firm Savings: R${testEvidence.economicProjections.savingsPerFirm.toLocaleString()}`,
     );
     console.log(
-      `   Exit Projection: R${testEvidence.economicProjections.exitProjection?.toLocaleString() || 'N/A'}`
+      `   Exit Projection: R${testEvidence.economicProjections.exitProjection?.toLocaleString() || 'N/A'}`,
     );
   }
 });

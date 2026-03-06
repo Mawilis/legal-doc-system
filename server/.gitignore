@@ -11,3 +11,120 @@ secrets-backup-*.yaml
 *.key
 *.crt
 *.pem
+
+# WILSY OS 2050 - Git Ignore
+# Version: 10.0.0-quantum-2050
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+/var/log/wilsy-os/
+
+# Runtime data
+data/
+pids
+*.pid
+*.seed
+*.pid.lock
+/forensic/
+/data/forensic/
+/reports/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage
+coverage/
+.nyc_output/
+coverage.json
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+
+# Temp files
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Testing
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Production
+certificates/
+*.pem
+*.p12
+*.pfx
+*.key
+*.crt
+*.csr
+
+# Secrets
+**/secrets/
+**/secrets.json
+**/credentials.json
+**/service-account.json
+
+# Forensic evidence (except for committed samples)
+/forensic/evidence/
+/forensic/court-*.json
+/forensic/quantum-*.json
+
+# Reports (except for committed samples)
+/reports/compliance-*.json
+/reports/quantum-verify-*.json
+/reports/chain-*.json
+
+# Quantum keys
+**/quantum-keys/
+**/pqc-keys/
+*.pqc
+*.qkey
+
+# Neural models
+/models/neural/
+/neural-models/
+*.h5
+*.onnx
+*.pb
+*.tflite
+

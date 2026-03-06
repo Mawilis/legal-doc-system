@@ -11,8 +11,9 @@ import Citation from '../models/Citation.js';
 import Precedent from '../models/Precedent.js';
 import { AuditLogger } from '../utils/auditLogger.js';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import QuantumLogger from '../utils/quantumLogger.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // Rest of your code with proper error handling
 // ... (preserve all existing functionality)

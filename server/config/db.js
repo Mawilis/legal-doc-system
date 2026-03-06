@@ -1,6 +1,7 @@
 #!// server/config/db.js
 const mongoose = require('mongoose');
 const loggerRaw = require('../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw; // Assuming you have a logger utility
 
 const connectDB = async () => {

@@ -1,12 +1,12 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║                                           WILSY OS - SOVEREIGN LEGAL OPERATING SYSTEM                                                   ║
   ║                                       INVESTOR-GRADE VALIDATION ENGINE - PRODUCTION v3.0                                               ║
   ║                                                                                                                                        ║
   ║                                   90% cost reduction | R15M risk elimination | 85% margins                                            ║
   ║                                   Multi-tenant | POPIA §19 | ECT Act §15 | Companies Act §28                                          ║
   ║                                   Court-admissible | Forensic traceability | Quantum-ready                                            ║
-  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/validationUtils.js
@@ -63,9 +63,10 @@ import { v4 as uuidv4 } from 'uuid.js';
 import { tenantContext } from '../middleware/tenantContext.js';
 import auditLogger from './auditLogger.js';
 import loggerRaw from './logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import cryptoUtils from './cryptoUtils.js';
 import { redactPII, REDACTION_PATTERNS } from './popiaRedaction.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // MERMAID INTEGRATION DIAGRAM
@@ -158,16 +159,36 @@ export const RETENTION_POLICIES = Object.freeze({
 });
 
 export const JURISDICTIONS = Object.freeze({
-  ZA: { code: 'ZA', name: 'South Africa', type: 'NATIONAL', courts: ['CC', 'SCA', 'HC'] },
-  'ZA-GP': { code: 'ZA-GP', name: 'Gauteng', type: 'PROVINCIAL', capital: 'Johannesburg' },
-  'ZA-WC': { code: 'ZA-WC', name: 'Western Cape', type: 'PROVINCIAL', capital: 'Cape Town' },
-  'ZA-KZN': { code: 'ZA-KZN', name: 'KwaZulu-Natal', type: 'PROVINCIAL', capital: 'Durban' },
-  'ZA-EC': { code: 'ZA-EC', name: 'Eastern Cape', type: 'PROVINCIAL', capital: 'Bhisho' },
-  'ZA-FS': { code: 'ZA-FS', name: 'Free State', type: 'PROVINCIAL', capital: 'Bloemfontein' },
-  'ZA-NW': { code: 'ZA-NW', name: 'North West', type: 'PROVINCIAL', capital: 'Mahikeng' },
-  'ZA-LP': { code: 'ZA-LP', name: 'Limpopo', type: 'PROVINCIAL', capital: 'Polokwane' },
-  'ZA-MP': { code: 'ZA-MP', name: 'Mpumalanga', type: 'PROVINCIAL', capital: 'Mbombela' },
-  'ZA-NC': { code: 'ZA-NC', name: 'Northern Cape', type: 'PROVINCIAL', capital: 'Kimberley' },
+  ZA: {
+    code: 'ZA', name: 'South Africa', type: 'NATIONAL', courts: ['CC', 'SCA', 'HC'],
+  },
+  'ZA-GP': {
+    code: 'ZA-GP', name: 'Gauteng', type: 'PROVINCIAL', capital: 'Johannesburg',
+  },
+  'ZA-WC': {
+    code: 'ZA-WC', name: 'Western Cape', type: 'PROVINCIAL', capital: 'Cape Town',
+  },
+  'ZA-KZN': {
+    code: 'ZA-KZN', name: 'KwaZulu-Natal', type: 'PROVINCIAL', capital: 'Durban',
+  },
+  'ZA-EC': {
+    code: 'ZA-EC', name: 'Eastern Cape', type: 'PROVINCIAL', capital: 'Bhisho',
+  },
+  'ZA-FS': {
+    code: 'ZA-FS', name: 'Free State', type: 'PROVINCIAL', capital: 'Bloemfontein',
+  },
+  'ZA-NW': {
+    code: 'ZA-NW', name: 'North West', type: 'PROVINCIAL', capital: 'Mahikeng',
+  },
+  'ZA-LP': {
+    code: 'ZA-LP', name: 'Limpopo', type: 'PROVINCIAL', capital: 'Polokwane',
+  },
+  'ZA-MP': {
+    code: 'ZA-MP', name: 'Mpumalanga', type: 'PROVINCIAL', capital: 'Mbombela',
+  },
+  'ZA-NC': {
+    code: 'ZA-NC', name: 'Northern Cape', type: 'PROVINCIAL', capital: 'Kimberley',
+  },
   'ZA-CC': { code: 'ZA-CC', name: 'Constitutional Court', type: 'SPECIAL' },
   'ZA-SCA': { code: 'ZA-SCA', name: 'Supreme Court of Appeal', type: 'SPECIAL' },
   'ZA-LC': { code: 'ZA-LC', name: 'Labour Court', type: 'SPECIAL' },
@@ -297,8 +318,7 @@ export const validateSAID = (id, options = {}) => {
     } else {
       result.metadata.birthDate = birthDate.toISOString();
       result.metadata.age = currentYear - fullYear;
-      result.metadata.ageInMonths =
-        currentYear * 12 + new Date().getMonth() - (fullYear * 12 + month - 1);
+      result.metadata.ageInMonths = currentYear * 12 + new Date().getMonth() - (fullYear * 12 + month - 1);
       result.metadata.birthYear = fullYear;
       result.metadata.birthMonth = month;
       result.metadata.birthDay = day;
@@ -318,7 +338,9 @@ export const validateSAID = (id, options = {}) => {
     // Historical race data (restricted access - requires audit)
     if (includeHistorical && audit) {
       const raceDigit = parseInt(id[10], 10);
-      const raceMap = { 0: 'OTHER', 1: 'BLACK', 2: 'COLOURED', 3: 'INDIAN', 4: 'WHITE' };
+      const raceMap = {
+        0: 'OTHER', 1: 'BLACK', 2: 'COLOURED', 3: 'INDIAN', 4: 'WHITE',
+      };
       result.metadata.historicalRace = raceMap[raceDigit] || 'UNKNOWN';
 
       logger.warn('Historical race data accessed', {
@@ -491,7 +513,7 @@ export const validateCIPCNumber = (number, options = {}) => {
 
   const currentYear = moment().year();
   if (year < 1900 || year > currentYear + 1) {
-    result.errors.push('Invalid registration year (must be 1900-' + (currentYear + 1) + ')');
+    result.errors.push(`Invalid registration year (must be 1900-${currentYear + 1})`);
   }
 
   const companyType = COMPANY_TYPES[suffix];
@@ -857,12 +879,24 @@ export const validateAdvocateSociety = (societyNum, options = {}) => {
 
   // Bar associations based on registration number ranges
   const barAssociations = [
-    { name: 'JOHANNESBURG_BAR', region: 'GP', min: 1, max: 2000, chambers: 'Sandton' },
-    { name: 'PRETORIA_BAR', region: 'GP', min: 2001, max: 5000, chambers: 'Brooklyn' },
-    { name: 'CAPE_BAR', region: 'WC', min: 5001, max: 8000, chambers: 'Cape Town' },
-    { name: 'DURBAN_BAR', region: 'KZN', min: 8001, max: 11000, chambers: 'Durban' },
-    { name: 'BLOEMFONTEIN_BAR', region: 'FS', min: 11001, max: 14000, chambers: 'Bloemfontein' },
-    { name: 'PORT_ELIZABETH_BAR', region: 'EC', min: 14001, max: 16000, chambers: 'Gqeberha' },
+    {
+      name: 'JOHANNESBURG_BAR', region: 'GP', min: 1, max: 2000, chambers: 'Sandton',
+    },
+    {
+      name: 'PRETORIA_BAR', region: 'GP', min: 2001, max: 5000, chambers: 'Brooklyn',
+    },
+    {
+      name: 'CAPE_BAR', region: 'WC', min: 5001, max: 8000, chambers: 'Cape Town',
+    },
+    {
+      name: 'DURBAN_BAR', region: 'KZN', min: 8001, max: 11000, chambers: 'Durban',
+    },
+    {
+      name: 'BLOEMFONTEIN_BAR', region: 'FS', min: 11001, max: 14000, chambers: 'Bloemfontein',
+    },
+    {
+      name: 'PORT_ELIZABETH_BAR', region: 'EC', min: 14001, max: 16000, chambers: 'Gqeberha',
+    },
   ];
 
   const bar = barAssociations.find((b) => number >= b.min && number <= b.max);
@@ -1166,7 +1200,7 @@ export const validateSACaseNumber = (number, options = {}) => {
       result.metadata.court = court;
       result.metadata.originalFormat = pattern.source;
 
-      const year = result.metadata.year;
+      const { year } = result.metadata;
       const currentYear = moment().year();
 
       if (year < 1900 || year > currentYear + 1) {
@@ -1417,7 +1451,7 @@ export const validateSALocation = (location, options = {}) => {
 
   const normalizedLocation = location.trim();
   const match = Object.keys(locations).find(
-    (key) => key.toLowerCase() === normalizedLocation.toLowerCase()
+    (key) => key.toLowerCase() === normalizedLocation.toLowerCase(),
   );
 
   if (match) {
@@ -1614,7 +1648,7 @@ export const validateSACitation = (citation, options = {}) => {
       format: 'NEUTRAL',
       extract: (m) => ({
         year: parseInt(m[1], 10),
-        courtCode: 'ZA' + m[2],
+        courtCode: `ZA${m[2]}`,
         number: parseInt(m[3], 10),
       }),
     },
@@ -1840,7 +1874,9 @@ export const validatePOPIACompliance = (data, options = {}) => {
   ];
 
   for (let i = 0; i < patterns.length; i += 1) {
-    const { pattern, type, description, severity, section } = patterns[i];
+    const {
+      pattern, type, description, severity, section,
+    } = patterns[i];
     if (pattern.test(dataString)) {
       result.detectedPII.push({
         type,
@@ -2018,15 +2054,15 @@ export const validateTrustAccount = (trustAccount, options = {}) => {
 
   // Validate account number (6-10 digits)
   if (
-    !validator.isNumeric(trustAccount.accountNumber) ||
-    !validator.isLength(trustAccount.accountNumber, { min: 6, max: 10 })
+    !validator.isNumeric(trustAccount.accountNumber)
+    || !validator.isLength(trustAccount.accountNumber, { min: 6, max: 10 })
   ) {
     result.errors.push('Invalid account number format - must be 6-10 digits');
   } else {
     result.metadata.accountNumberValid = true;
     result.metadata.accountNumberFormatted = trustAccount.accountNumber.replace(
       /(\d{4})(\d+)/,
-      '$1-$2'
+      '$1-$2',
     );
   }
 
@@ -2057,8 +2093,8 @@ export const validateTrustAccount = (trustAccount, options = {}) => {
 
   // Validate branch code (6 digits)
   if (
-    !validator.isNumeric(trustAccount.branchCode) ||
-    !validator.isLength(trustAccount.branchCode, { min: 6, max: 6 })
+    !validator.isNumeric(trustAccount.branchCode)
+    || !validator.isLength(trustAccount.branchCode, { min: 6, max: 6 })
   ) {
     result.errors.push('Invalid branch code format - must be 6 digits');
   } else {
@@ -2330,16 +2366,36 @@ export const validateBusinessDate = (date, options = {}) => {
 
   // South African public holidays (fixed and variable)
   const publicHolidays = [
-    { month: 1, date: 1, name: "New Year's Day", section: 'Public Holidays Act' },
-    { month: 3, date: 21, name: 'Human Rights Day', section: 'Public Holidays Act' },
-    { month: 4, date: 27, name: 'Freedom Day', section: 'Public Holidays Act' },
-    { month: 5, date: 1, name: "Workers' Day", section: 'Public Holidays Act' },
-    { month: 6, date: 16, name: 'Youth Day', section: 'Public Holidays Act' },
-    { month: 8, date: 9, name: "National Women's Day", section: 'Public Holidays Act' },
-    { month: 9, date: 24, name: 'Heritage Day', section: 'Public Holidays Act' },
-    { month: 12, date: 16, name: 'Day of Reconciliation', section: 'Public Holidays Act' },
-    { month: 12, date: 25, name: 'Christmas Day', section: 'Public Holidays Act' },
-    { month: 12, date: 26, name: 'Day of Goodwill', section: 'Public Holidays Act' },
+    {
+      month: 1, date: 1, name: "New Year's Day", section: 'Public Holidays Act',
+    },
+    {
+      month: 3, date: 21, name: 'Human Rights Day', section: 'Public Holidays Act',
+    },
+    {
+      month: 4, date: 27, name: 'Freedom Day', section: 'Public Holidays Act',
+    },
+    {
+      month: 5, date: 1, name: "Workers' Day", section: 'Public Holidays Act',
+    },
+    {
+      month: 6, date: 16, name: 'Youth Day', section: 'Public Holidays Act',
+    },
+    {
+      month: 8, date: 9, name: "National Women's Day", section: 'Public Holidays Act',
+    },
+    {
+      month: 9, date: 24, name: 'Heritage Day', section: 'Public Holidays Act',
+    },
+    {
+      month: 12, date: 16, name: 'Day of Reconciliation', section: 'Public Holidays Act',
+    },
+    {
+      month: 12, date: 25, name: 'Christmas Day', section: 'Public Holidays Act',
+    },
+    {
+      month: 12, date: 26, name: 'Day of Goodwill', section: 'Public Holidays Act',
+    },
   ];
 
   const holiday = publicHolidays.find((h) => h.month === month && h.date === dateNum);
@@ -2374,7 +2430,7 @@ export const validateBusinessDate = (date, options = {}) => {
 
   // Calculate next business day if requested
   if (!result.valid && getNextBusinessDay) {
-    let nextDay = d.clone().add(1, 'day');
+    const nextDay = d.clone().add(1, 'day');
     let nextResult = validateBusinessDate(nextDay, { ...options, getNextBusinessDay: false });
 
     while (!nextResult.valid) {
@@ -2408,7 +2464,9 @@ export const validateBusinessDate = (date, options = {}) => {
  * @returns {Object} Validation result
  */
 export const validateSearchQuery = (query, options = {}) => {
-  const { tenantId = 'system', sanitize = false, maxDepth = 10, maxComplexity = 100 } = options;
+  const {
+    tenantId = 'system', sanitize = false, maxDepth = 10, maxComplexity = 100,
+  } = options;
   const result = {
     valid: true,
     warnings: [],
@@ -2430,12 +2488,9 @@ export const validateSearchQuery = (query, options = {}) => {
   const startTime = Date.now();
 
   // Security patterns
-  const sqlPatterns =
-    /('|--|;|\bDROP\b|\bDELETE\b|\bUPDATE\b|\bINSERT\b|\bEXEC\b|\bUNION\b|\bSELECT\b\s+\bFROM\b)/i;
-  const xssPatterns =
-    /<script|javascript:|onerror=|onload=|onclick=|onmouseover|alert\(|eval\(|document\.|window\./i;
-  const nosqlPatterns =
-    /\$where|\$ne|\$gt|\$lt|\$regex|\$expr|\$function|\$accumulator|\$in|\$nin|\$or|\$and/i;
+  const sqlPatterns = /('|--|;|\bDROP\b|\bDELETE\b|\bUPDATE\b|\bINSERT\b|\bEXEC\b|\bUNION\b|\bSELECT\b\s+\bFROM\b)/i;
+  const xssPatterns = /<script|javascript:|onerror=|onload=|onclick=|onmouseover|alert\(|eval\(|document\.|window\./i;
+  const nosqlPatterns = /\$where|\$ne|\$gt|\$lt|\$regex|\$expr|\$function|\$accumulator|\$in|\$nin|\$or|\$and/i;
   const pathTraversalPatterns = /\.\.\/|\.\.\\|~\/|\/etc\/|\/var\/|\/usr\/|C:\\|\.exe|\.sh|\.bat/i;
 
   // Recursive injection check
@@ -2443,7 +2498,7 @@ export const validateSearchQuery = (query, options = {}) => {
     if (typeof obj === 'string') {
       if (sqlPatterns.test(obj)) {
         result.warnings.push(
-          `Potential SQL injection at ${path || 'root'}: ${obj.substring(0, 50)}`
+          `Potential SQL injection at ${path || 'root'}: ${obj.substring(0, 50)}`,
         );
         result.valid = false;
       }
@@ -2453,7 +2508,7 @@ export const validateSearchQuery = (query, options = {}) => {
       }
       if (pathTraversalPatterns.test(obj)) {
         result.warnings.push(
-          `Potential path traversal at ${path || 'root'}: ${obj.substring(0, 50)}`
+          `Potential path traversal at ${path || 'root'}: ${obj.substring(0, 50)}`,
         );
         result.valid = false;
       }
@@ -2542,7 +2597,7 @@ export const validateSearchQuery = (query, options = {}) => {
 
   if (complexity > maxComplexity) {
     result.warnings.push(
-      `Query complexity (${complexity}) exceeds maximum allowed (${maxComplexity})`
+      `Query complexity (${complexity}) exceeds maximum allowed (${maxComplexity})`,
     );
     result.valid = false;
   }
@@ -2722,11 +2777,10 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
     }
 
     const hasApplicant = metadata.parties.some(
-      (p) =>
-        p.role && ['APPLICANT', 'PLAINTIFF', 'CLAIMANT', 'PERSON'].includes(p.role.toUpperCase())
+      (p) => p.role && ['APPLICANT', 'PLAINTIFF', 'CLAIMANT', 'PERSON'].includes(p.role.toUpperCase()),
     );
     const hasRespondent = metadata.parties.some(
-      (p) => p.role && ['RESPONDENT', 'DEFENDANT', 'ACCUSED'].includes(p.role.toUpperCase())
+      (p) => p.role && ['RESPONDENT', 'DEFENDANT', 'ACCUSED'].includes(p.role.toUpperCase()),
     );
 
     result.metadata.hasApplicant = hasApplicant;
@@ -2786,19 +2840,17 @@ export const validateDocumentMetadata = (metadata, options = {}) => {
     if (validPolicies.includes(metadata.retentionPolicy)) {
       result.metadata.retentionPolicy = metadata.retentionPolicy;
       result.metadata.retentionDuration = RETENTION_POLICIES[metadata.retentionPolicy].duration;
-      result.metadata.retentionLegalReference =
-        RETENTION_POLICIES[metadata.retentionPolicy].legalReference;
+      result.metadata.retentionLegalReference = RETENTION_POLICIES[metadata.retentionPolicy].legalReference;
     }
   } else {
     // Default retention based on document type
-    const defaultRetention =
-      {
-        CONTRACT: 'COMPANIES_ACT_10_YEARS',
-        COURT_ORDER: 'ECT_5_YEARS',
-        WILL: 'LPC_PERMANENT',
-        TRUST_DEED: 'LPC_PERMANENT',
-        AFFIDAVIT: 'ECT_5_YEARS',
-      }[result.metadata.documentType] || 'POPIA_6_YEARS';
+    const defaultRetention = {
+      CONTRACT: 'COMPANIES_ACT_10_YEARS',
+      COURT_ORDER: 'ECT_5_YEARS',
+      WILL: 'LPC_PERMANENT',
+      TRUST_DEED: 'LPC_PERMANENT',
+      AFFIDAVIT: 'ECT_5_YEARS',
+    }[result.metadata.documentType] || 'POPIA_6_YEARS';
 
     result.metadata.suggestedRetention = defaultRetention;
   }
@@ -2943,8 +2995,8 @@ export const validateEvidence = (evidence, options = {}) => {
   // Integrity hash validation
   if (evidence.integrityHash) {
     if (
-      !validator.isAlphanumeric(evidence.integrityHash) ||
-      (evidence.integrityHash.length !== 64 && evidence.integrityHash.length !== 128)
+      !validator.isAlphanumeric(evidence.integrityHash)
+      || (evidence.integrityHash.length !== 64 && evidence.integrityHash.length !== 128)
     ) {
       result.warnings.push('Invalid integrity hash format');
     } else {
@@ -2953,10 +3005,9 @@ export const validateEvidence = (evidence, options = {}) => {
       result.metadata.hashPresent = true;
 
       if (evidence.content) {
-        const contentString =
-          typeof evidence.content === 'string'
-            ? evidence.content
-            : JSON.stringify(evidence.content);
+        const contentString = typeof evidence.content === 'string'
+          ? evidence.content
+          : JSON.stringify(evidence.content);
         const calculatedHash = cryptoUtils.generateHash(contentString);
 
         if (calculatedHash === evidence.integrityHash) {
@@ -3051,8 +3102,8 @@ export const validateEvidence = (evidence, options = {}) => {
 
       // Validate file hash consistency
       if (
-        evidence.fileMetadata.fileHash &&
-        evidence.fileMetadata.fileHash !== evidence.integrityHash
+        evidence.fileMetadata.fileHash
+        && evidence.fileMetadata.fileHash !== evidence.integrityHash
       ) {
         result.warnings.push('File hash mismatch - possible tampering');
       }
@@ -3190,13 +3241,11 @@ export const validateSAEmail = (email, options = {}) => {
     ];
     const businessDomains = ['co.za', 'com', 'org', 'net', 'biz', 'info'];
 
-    result.metadata.isPersonal =
-      personalDomains.includes(result.metadata.domain) ||
-      personalDomains.some((d) => result.metadata.domain.endsWith('.' + d));
+    result.metadata.isPersonal = personalDomains.includes(result.metadata.domain)
+      || personalDomains.some((d) => result.metadata.domain.endsWith(`.${d}`));
     result.metadata.isBusiness = !result.metadata.isPersonal;
     result.metadata.isGovernment = result.metadata.domain.endsWith('.gov.za');
-    result.metadata.isEducational =
-      result.metadata.domain.endsWith('.ac.za') || result.metadata.domain.endsWith('.edu');
+    result.metadata.isEducational = result.metadata.domain.endsWith('.ac.za') || result.metadata.domain.endsWith('.edu');
 
     // South African specific
     result.metadata.isCoZa = result.metadata.domain.endsWith('.co.za');

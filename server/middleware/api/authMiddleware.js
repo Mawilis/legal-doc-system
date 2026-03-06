@@ -1,14 +1,15 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ API KEY AUTHENTICATION - SECURE GATEWAY FOR EXTERNAL CLIENTS             ║
   ║ Tiered access | Rate limiting | Usage tracking | Forensic audit          ║
   ║ R15k/month per license | Multi-tenant isolation                           ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import crypto from 'crypto';
 import { ApiKey } from '../../models/api/ApiKey.js';
 import { AuditLogger } from '../../utils/auditLogger.js';
 import loggerRaw from '../../utils/logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
@@ -52,8 +53,7 @@ const TIERS = {
 export const validateApiKey = async (req, res, next) => {
   const startTime = Date.now();
   const apiKey = req.headers['x-api-key'] || req.query.apiKey;
-  const correlationId =
-    req.headers['x-correlation-id'] || `api-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+  const correlationId = req.headers['x-correlation-id'] || `api-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
 
   req.correlationId = correlationId;
   res.setHeader('x-correlation-id', correlationId);
@@ -144,7 +144,7 @@ export const validateApiKey = async (req, res, next) => {
           },
         },
         $inc: { usageCount: 1 },
-      }
+      },
     );
 
     // Attach to request
@@ -177,31 +177,29 @@ export const validateApiKey = async (req, res, next) => {
 /**
  * Tier-based access control
  */
-export const requireTier = (requiredTier) => {
-  return (req, res, next) => {
-    const tiers = Object.keys(TIERS);
-    const userTierIndex = tiers.indexOf(req.tier);
-    const requiredTierIndex = tiers.indexOf(requiredTier);
+export const requireTier = (requiredTier) => (req, res, next) => {
+  const tiers = Object.keys(TIERS);
+  const userTierIndex = tiers.indexOf(req.tier);
+  const requiredTierIndex = tiers.indexOf(requiredTier);
 
-    if (userTierIndex < requiredTierIndex) {
-      logger.warn('Insufficient tier', {
-        correlationId: req.correlationId,
-        tenantId: req.tenantId,
-        userTier: req.tier,
-        requiredTier,
-      });
+  if (userTierIndex < requiredTierIndex) {
+    logger.warn('Insufficient tier', {
+      correlationId: req.correlationId,
+      tenantId: req.tenantId,
+      userTier: req.tier,
+      requiredTier,
+    });
 
-      return res.status(403).json({
-        success: false,
-        error: 'INSUFFICIENT_TIER',
-        message: `This endpoint requires ${requiredTier} tier or higher`,
-        currentTier: req.tier,
-        correlationId: req.correlationId,
-      });
-    }
+    return res.status(403).json({
+      success: false,
+      error: 'INSUFFICIENT_TIER',
+      message: `This endpoint requires ${requiredTier} tier or higher`,
+      currentTier: req.tier,
+      correlationId: req.correlationId,
+    });
+  }
 
-    next();
-  };
+  next();
 };
 
 /**

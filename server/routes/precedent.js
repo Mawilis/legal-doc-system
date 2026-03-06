@@ -91,10 +91,10 @@
  * is a quantum of justice, every request a step toward a more informed legal world.
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT API - INVESTOR-GRADE MODULE - $500M ARR TARGET                 ║
   ║ 90% margins | 10,000+ enterprise clients | Unassailable data moat        ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/precedent.js
  * INVESTOR VALUE PROPOSITION:
@@ -149,10 +149,9 @@
  * }
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Core dependencies
 const express = require('express');
+
 const router = express.Router();
 const { performance } = require('perf_hooks');
 const crypto = require('crypto');
@@ -181,6 +180,7 @@ const { metricsMiddleware } = require('../middleware/metrics');
 
 // QUANTUM UTILITIES
 const loggerRaw = require('../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../utils/auditLogger');
 const quantumLogger = require('../utils/quantumLogger');
@@ -562,8 +562,7 @@ const cacheConfig = {
 
   network: cacheMiddleware({
     ttl: 1800, // 30 minutes
-    keyGenerator: (req) =>
-      `network:${req.params.id}:${JSON.stringify(req.query)}:${req.tenant?.tenantId}`,
+    keyGenerator: (req) => `network:${req.params.id}:${JSON.stringify(req.query)}:${req.tenant?.tenantId}`,
   }),
 
   jurisdictions: cacheMiddleware({
@@ -579,20 +578,18 @@ const cacheConfig = {
 /*
  * Generates a unique correlation ID for tracking
  */
-const generateCorrelationId = (req) => {
-  return (
-    req.headers['x-correlation-id'] ||
-    req.headers['x-request-id'] ||
-    `PRECEDENT-${Date.now()}-${uuidv4().substring(0, 8)}`
-  );
-};
+const generateCorrelationId = (req) => (
+  req.headers['x-correlation-id']
+    || req.headers['x-request-id']
+    || `PRECEDENT-${Date.now()}-${uuidv4().substring(0, 8)}`
+);
 
 /*
  * Logs API request for audit trail
  */
 const logRequest = async (req, res, responseData, startTime) => {
   const duration = performance.now() - startTime;
-  const correlationId = req.correlationId;
+  const { correlationId } = req;
 
   try {
     // Update metrics
@@ -656,40 +653,36 @@ const logRequest = async (req, res, responseData, startTime) => {
 /*
  * Formats response with consistent structure
  */
-const formatResponse = (data, metadata = {}) => {
-  return {
-    success: true,
-    data,
-    metadata: {
-      timestamp: new Date().toISOString(),
-      version: '33.0.0',
-      ...metadata,
-    },
-    links: {
-      self: metadata.self,
-      docs: 'https://docs.wilsy.os/api/precedent',
-    },
-  };
-};
+const formatResponse = (data, metadata = {}) => ({
+  success: true,
+  data,
+  metadata: {
+    timestamp: new Date().toISOString(),
+    version: '33.0.0',
+    ...metadata,
+  },
+  links: {
+    self: metadata.self,
+    docs: 'https://docs.wilsy.os/api/precedent',
+  },
+});
 
 /*
  * Formats error response
  */
-const formatError = (error, correlationId) => {
-  return {
-    success: false,
-    error: {
-      code: error.code || 'INTERNAL_ERROR',
-      message: error.message,
-      details: error.details,
-    },
-    metadata: {
-      timestamp: new Date().toISOString(),
-      correlationId,
-      version: '33.0.0',
-    },
-  };
-};
+const formatError = (error, correlationId) => ({
+  success: false,
+  error: {
+    code: error.code || 'INTERNAL_ERROR',
+    message: error.message,
+    details: error.details,
+  },
+  metadata: {
+    timestamp: new Date().toISOString(),
+    correlationId,
+    version: '33.0.0',
+  },
+});
 
 /* ---------------------------------------------------------------------------
    QUANTUM MIDDLEWARE - API-wide configuration
@@ -711,7 +704,7 @@ router.use(
       includeSubDomains: true,
       preload: true,
     },
-  })
+  }),
 );
 
 // CORS configuration
@@ -723,7 +716,7 @@ router.use(
     exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-Correlation-ID'],
     credentials: true,
     maxAge: 86400, // 24 hours
-  })
+  }),
 );
 
 // Compression
@@ -735,7 +728,7 @@ router.use(
       if (req.headers['x-no-compression']) return false;
       return compression.filter(req, res);
     },
-  })
+  }),
 );
 
 // Body parsing
@@ -814,8 +807,8 @@ router.get('/', (req, res) => {
       },
       {
         self: req.originalUrl,
-      }
-    )
+      },
+    ),
   );
 });
 
@@ -927,17 +920,39 @@ router.get('/jurisdictions', cacheConfig.jurisdictions, async (req, res, next) =
 
   try {
     const jurisdictions = [
-      { code: 'ZA', name: 'South Africa', courts: 12, precedents: 150000 },
-      { code: 'UK', name: 'United Kingdom', courts: 8, precedents: 250000 },
-      { code: 'US', name: 'United States', courts: 94, precedents: 1000000 },
-      { code: 'EU', name: 'European Union', courts: 3, precedents: 50000 },
-      { code: 'AU', name: 'Australia', courts: 9, precedents: 120000 },
-      { code: 'CA', name: 'Canada', courts: 13, precedents: 180000 },
-      { code: 'IN', name: 'India', courts: 25, precedents: 300000 },
-      { code: 'NG', name: 'Nigeria', courts: 6, precedents: 40000 },
-      { code: 'KE', name: 'Kenya', courts: 5, precedents: 30000 },
-      { code: 'GH', name: 'Ghana', courts: 4, precedents: 20000 },
-      { code: 'INT', name: 'International', courts: 10, precedents: 80000 },
+      {
+        code: 'ZA', name: 'South Africa', courts: 12, precedents: 150000,
+      },
+      {
+        code: 'UK', name: 'United Kingdom', courts: 8, precedents: 250000,
+      },
+      {
+        code: 'US', name: 'United States', courts: 94, precedents: 1000000,
+      },
+      {
+        code: 'EU', name: 'European Union', courts: 3, precedents: 50000,
+      },
+      {
+        code: 'AU', name: 'Australia', courts: 9, precedents: 120000,
+      },
+      {
+        code: 'CA', name: 'Canada', courts: 13, precedents: 180000,
+      },
+      {
+        code: 'IN', name: 'India', courts: 25, precedents: 300000,
+      },
+      {
+        code: 'NG', name: 'Nigeria', courts: 6, precedents: 40000,
+      },
+      {
+        code: 'KE', name: 'Kenya', courts: 5, precedents: 30000,
+      },
+      {
+        code: 'GH', name: 'Ghana', courts: 4, precedents: 20000,
+      },
+      {
+        code: 'INT', name: 'International', courts: 10, precedents: 80000,
+      },
     ];
 
     apiMetrics.cacheHits.labels('/jurisdictions').inc();
@@ -947,7 +962,7 @@ router.get('/jurisdictions', cacheConfig.jurisdictions, async (req, res, next) =
         count: jurisdictions.length,
         self: req.originalUrl,
         processingTimeMs: Math.round(performance.now() - startTime),
-      })
+      }),
     );
   } catch (error) {
     apiMetrics.errorsTotal.labels(req.method, req.path, error.code || 'INTERNAL').inc();
@@ -966,8 +981,12 @@ router.get(
   tenantContext,
   rateLimiters.search,
   validateQuery({
-    days: { type: 'integer', min: 1, max: 90, default: 30 },
-    limit: { type: 'integer', min: 1, max: 50, default: 10 },
+    days: {
+      type: 'integer', min: 1, max: 90, default: 30,
+    },
+    limit: {
+      type: 'integer', min: 1, max: 50, default: 10,
+    },
     jurisdiction: { type: 'string', pattern: '^[A-Z]{2}$' },
   }),
   async (req, res, next) => {
@@ -979,7 +998,7 @@ router.get(
       // Get trending from citation network indexer
       const trends = await citationNetworkIndexer.detectCitationTrends(
         req.tenant?.tenantId || 'public',
-        { days, limit, jurisdiction }
+        { days, limit, jurisdiction },
       );
 
       const response = {
@@ -994,7 +1013,7 @@ router.get(
           trend: t.trend,
           previousCount: t.previousCount,
           percentChange:
-            (((t.citationCount - t.previousCount) / t.previousCount) * 100).toFixed(1) + '%',
+            `${(((t.citationCount - t.previousCount) / t.previousCount) * 100).toFixed(1)}%`,
         })),
       };
 
@@ -1002,7 +1021,7 @@ router.get(
         formatResponse(response, {
           self: req.originalUrl,
           processingTimeMs: Math.round(performance.now() - startTime),
-        })
+        }),
       );
 
       await logRequest(req, res, response, startTime);
@@ -1010,7 +1029,7 @@ router.get(
       apiMetrics.errorsTotal.labels(req.method, req.path, error.code || 'INTERNAL').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1083,7 +1102,7 @@ router.post(
           limit,
           offset,
           sort,
-        }
+        },
       );
 
       // Format response
@@ -1112,13 +1131,13 @@ router.post(
           },
           analysis: includeAnalysis
             ? {
-                ratio: p.analysis?.ratio?.summary,
-                holdings: p.analysis?.holdings?.map((h) => ({
-                  text: h.summary,
-                  weight: h.weight,
-                })),
-                application: p.analysis?.applicationToQuery?.application,
-              }
+              ratio: p.analysis?.ratio?.summary,
+              holdings: p.analysis?.holdings?.map((h) => ({
+                text: h.summary,
+                weight: h.weight,
+              })),
+              application: p.analysis?.applicationToQuery?.application,
+            }
             : undefined,
         })),
         facets: {
@@ -1141,7 +1160,7 @@ router.post(
           processingTimeMs: Math.round(performance.now() - startTime),
           analysisDepth: depth,
           aiAssisted: results.metadata.aiAssisted,
-        })
+        }),
       );
 
       await logRequest(req, res, response, startTime);
@@ -1154,7 +1173,7 @@ router.post(
       });
       next(new AppError(error.message, 500, 'SEARCH_FAILED'));
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1217,7 +1236,7 @@ router.get(
           { jurisdiction: precedent.jurisdiction?.country },
           req.tenant?.tenantId,
           depth,
-          { correlationId: req.correlationId }
+          { correlationId: req.correlationId },
         );
       }
 
@@ -1240,37 +1259,37 @@ router.get(
         },
         citations: citations
           ? {
-              citing: citations
-                .filter((c) => c.citedPrecedent?._id?.toString() === id)
-                .map((c) => ({
-                  id: c._id,
-                  case: c.citingCase?.citation || c.citingCase?.caseNumber,
-                  court: c.citingCase?.court,
-                  date: c.citingCase?.date,
-                  strength: c.strength,
-                  paragraph: c.paragraph,
-                })),
-              cited: citations
-                .filter((c) => c.citingCase?._id?.toString() === id)
-                .map((c) => ({
-                  id: c._id,
-                  precedent: c.citedPrecedent?.citation,
-                  court: c.citedPrecedent?.court,
-                  date: c.citedPrecedent?.date,
-                  strength: c.strength,
-                  paragraph: c.paragraph,
-                })),
-            }
+            citing: citations
+              .filter((c) => c.citedPrecedent?._id?.toString() === id)
+              .map((c) => ({
+                id: c._id,
+                case: c.citingCase?.citation || c.citingCase?.caseNumber,
+                court: c.citingCase?.court,
+                date: c.citingCase?.date,
+                strength: c.strength,
+                paragraph: c.paragraph,
+              })),
+            cited: citations
+              .filter((c) => c.citingCase?._id?.toString() === id)
+              .map((c) => ({
+                id: c._id,
+                precedent: c.citedPrecedent?.citation,
+                court: c.citedPrecedent?.court,
+                date: c.citedPrecedent?.date,
+                strength: c.strength,
+                paragraph: c.paragraph,
+              })),
+          }
           : undefined,
         analysis: analysis
           ? {
-              keyPrinciples: analysis.keyPrinciples?.slice(0, 5),
-              influentialScore: analysis.networkAnalysis?.central?.includes(id) ? 'HIGH' : 'MEDIUM',
-              similarPrecedents: analysis.precedents?.slice(0, 5).map((p) => ({
-                citation: p.citation,
-                relevance: p.relevance.score,
-              })),
-            }
+            keyPrinciples: analysis.keyPrinciples?.slice(0, 5),
+            influentialScore: analysis.networkAnalysis?.central?.includes(id) ? 'HIGH' : 'MEDIUM',
+            similarPrecedents: analysis.precedents?.slice(0, 5).map((p) => ({
+              citation: p.citation,
+              relevance: p.relevance.score,
+            })),
+          }
           : undefined,
       };
 
@@ -1280,7 +1299,7 @@ router.get(
         formatResponse(response, {
           self: req.originalUrl,
           processingTimeMs: Math.round(performance.now() - startTime),
-        })
+        }),
       );
 
       await logRequest(req, res, response, startTime);
@@ -1288,7 +1307,7 @@ router.get(
       apiMetrics.errorsTotal.labels(req.method, req.path, error.code || 'GET_FAILED').inc();
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -1368,8 +1387,8 @@ router.get(
         statistics: {
           avgDegree: (subgraph.relationships.length * 2) / subgraph.nodes.length,
           density:
-            (2 * subgraph.relationships.length) /
-            (subgraph.nodes.length * (subgraph.nodes.length - 1)),
+            (2 * subgraph.relationships.length)
+            / (subgraph.nodes.length * (subgraph.nodes.length - 1)),
         },
       };
 
@@ -1380,7 +1399,7 @@ router.get(
           self: req.originalUrl,
           processingTimeMs: Math.round(performance.now() - startTime),
           format,
-        })
+        }),
       );
 
       await logRequest(req, res, response, startTime);
@@ -1388,7 +1407,7 @@ router.get(
       apiMetrics.errorsTotal.labels(req.method, req.path, error.code || 'NETWORK_FAILED').inc();
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -1407,7 +1426,7 @@ router.get(
       throw new AppError(
         'Professional tier required for deep analysis',
         403,
-        'TIER_UPGRADE_REQUIRED'
+        'TIER_UPGRADE_REQUIRED',
       );
     }
     next();
@@ -1446,7 +1465,7 @@ router.get(
         {
           correlationId: req.correlationId,
           includePredictions,
-        }
+        },
       );
 
       // Get network position
@@ -1507,11 +1526,11 @@ router.get(
         },
         predictions: includePredictions
           ? {
-              futureCitations: predictFutureCitations(trends),
-              influenceScore: calculateInfluenceScore(analysis, network),
-              overrulingRisk: calculateOverrulingRisk(analysis),
-              recommendedApplications: generateRecommendedApplications(analysis),
-            }
+            futureCitations: predictFutureCitations(trends),
+            influenceScore: calculateInfluenceScore(analysis, network),
+            overrulingRisk: calculateOverrulingRisk(analysis),
+            recommendedApplications: generateRecommendedApplications(analysis),
+          }
           : undefined,
         strategicValue: generateStrategicValue(analysis, network),
       };
@@ -1522,7 +1541,7 @@ router.get(
           processingTimeMs: Math.round(performance.now() - startTime),
           depth,
           aiAssisted: true,
-        })
+        }),
       );
 
       await logRequest(req, res, response, startTime);
@@ -1530,7 +1549,7 @@ router.get(
       apiMetrics.errorsTotal.labels(req.method, req.path, error.code || 'ANALYSIS_FAILED').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1615,12 +1634,10 @@ router.post(
 
           case 'citations':
             const citationCounts = await Promise.all(
-              precedents.map((p) =>
-                Citation.countDocuments({
-                  $or: [{ citedPrecedent: p._id }, { citingCase: p._id }],
-                  tenantId: req.tenant?.tenantId,
-                })
-              )
+              precedents.map((p) => Citation.countDocuments({
+                $or: [{ citedPrecedent: p._id }, { citingCase: p._id }],
+                tenantId: req.tenant?.tenantId,
+              })),
             );
 
             precedents.forEach((p, idx) => {
@@ -1645,7 +1662,7 @@ router.post(
           case 'impact':
             // Calculate impact scores based on network position
             const impacts = await Promise.all(
-              precedents.map((p) => calculateImpactScore(p._id, req.tenant?.tenantId))
+              precedents.map((p) => calculateImpactScore(p._id, req.tenant?.tenantId)),
             );
             precedents.forEach((p, idx) => {
               comparison.matrix[aspect][p._id] = impacts[idx];
@@ -1684,7 +1701,7 @@ router.post(
               Object.entries(comparison.matrix).map(([aspect, values]) => [
                 aspect,
                 normalizeValue(values[p._id]),
-              ])
+              ]),
             ),
           })),
         };
@@ -1697,7 +1714,7 @@ router.post(
         formatResponse(comparison, {
           self: req.originalUrl,
           processingTimeMs: Math.round(performance.now() - startTime),
-        })
+        }),
       );
 
       await logRequest(req, res, comparison, startTime);
@@ -1705,7 +1722,7 @@ router.post(
       apiMetrics.errorsTotal.labels(req.method, req.path, error.code || 'COMPARE_FAILED').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1726,7 +1743,7 @@ router.post(
       throw new AppError(
         'Enterprise tier required for batch operations',
         403,
-        'TIER_UPGRADE_REQUIRED'
+        'TIER_UPGRADE_REQUIRED',
       );
     }
     next();
@@ -1778,7 +1795,7 @@ router.post(
                 op.query,
                 op.params || {},
                 req.tenant?.tenantId,
-                'QUICK'
+                'QUICK',
               );
               result = {
                 query: op.query,
@@ -1796,7 +1813,7 @@ router.post(
                 op.query || op.id,
                 op.params || {},
                 req.tenant?.tenantId,
-                'STANDARD'
+                'STANDARD',
               );
               result = {
                 id: op.id,
@@ -1840,7 +1857,7 @@ router.post(
         formatResponse(response, {
           self: req.originalUrl,
           processingTimeMs: Math.round(performance.now() - startTime),
-        })
+        }),
       );
 
       await logRequest(req, res, response, startTime);
@@ -1848,7 +1865,7 @@ router.post(
       apiMetrics.errorsTotal.labels(req.method, req.path, error.code || 'BATCH_FAILED').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1877,7 +1894,9 @@ router.get(
     const startTime = performance.now();
 
     try {
-      const { format, ids, query, fields = ['citation', 'court', 'date'] } = req.query;
+      const {
+        format, ids, query, fields = ['citation', 'court', 'date'],
+      } = req.query;
 
       logger.info('Export request', {
         correlationId: req.correlationId,
@@ -1901,7 +1920,7 @@ router.get(
           query,
           {},
           req.tenant?.tenantId,
-          'QUICK'
+          'QUICK',
         );
         const resultIds = results.precedents?.map((p) => p.id) || [];
         precedents = await Precedent.find({
@@ -1954,9 +1973,7 @@ router.get(
 
         case 'csv':
           const headers = fields.join(',');
-          const rows = exportData.map((item) =>
-            fields.map((f) => `"${item[f]?.toString().replace(/"/g, '""') || ''}"`).join(',')
-          );
+          const rows = exportData.map((item) => fields.map((f) => `"${item[f]?.toString().replace(/"/g, '""') || ''}"`).join(','));
           fileContent = [headers, ...rows].join('\n');
           contentType = 'text/csv';
           filename += '.csv';
@@ -2006,7 +2023,7 @@ router.get(
       apiMetrics.errorsTotal.labels(req.method, req.path, error.code || 'EXPORT_FAILED').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -2090,8 +2107,7 @@ const calculateCentrality = (network, nodeId) => {
   if (nodeIndex === -1) return 'UNKNOWN';
 
   // Simplified centrality based on connection count
-  const connections =
-    network.relationships?.filter((r) => r.source === nodeId || r.target === nodeId).length || 0;
+  const connections = network.relationships?.filter((r) => r.source === nodeId || r.target === nodeId).length || 0;
 
   const avgConnections = (network.relationships?.length * 2) / network.nodes.length;
 
@@ -2179,15 +2195,14 @@ const calculateOverrulingRisk = (analysis) => {
   }
 
   // Age factor
-  const ageInYears =
-    (new Date() - new Date(precedent.precedent?.date)) / (365 * 24 * 60 * 60 * 1000);
+  const ageInYears = (new Date() - new Date(precedent.precedent?.date)) / (365 * 24 * 60 * 60 * 1000);
   if (ageInYears > 30) {
     factors.push('Older than 30 years');
   }
 
   // Conflict factor
   const conflicts = analysis.conflicts?.filter(
-    (c) => c.precedent1 === precedent.citation || c.precedent2 === precedent.citation
+    (c) => c.precedent1 === precedent.citation || c.precedent2 === precedent.citation,
   );
   if (conflicts && conflicts.length > 0) {
     factors.push('Conflicting authorities exist');
@@ -2232,7 +2247,7 @@ const generateRecommendedApplications = (analysis) => {
 
   // Based on conflicts
   const conflicts = analysis.conflicts?.filter(
-    (c) => c.precedent1 === precedent.citation || c.precedent2 === precedent.citation
+    (c) => c.precedent1 === precedent.citation || c.precedent2 === precedent.citation,
   );
   if (conflicts && conflicts.length > 0) {
     recommendations.push('Address conflicting authorities proactively');
@@ -2262,7 +2277,7 @@ const generateStrategicValue = (analysis, network) => {
   }
 
   // Recent and active
-  const trends = analysis.trends;
+  const { trends } = analysis;
   if (trends && trends.trending?.some((t) => t.id === precedent.id)) {
     factors.push('Currently trending');
   }
@@ -2436,8 +2451,8 @@ router.use('*', (req, res) => {
     .json(
       formatError(
         new AppError(`Cannot ${req.method} ${req.originalUrl}`, 404, 'ROUTE_NOT_FOUND'),
-        req.correlationId
-      )
+        req.correlationId,
+      ),
     );
 });
 

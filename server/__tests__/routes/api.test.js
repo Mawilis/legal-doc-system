@@ -1,10 +1,10 @@
 #!/* eslint-disable */
 /* eslint-env jest */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ API ROUTES TESTS - INVESTOR DUE DILIGENCE SUITE                                        ║
   ║ 100% coverage | Security Validation | RFC 7807 Compliance | Rate Limiting Testing      ║
   ║ R650K/year savings validated | POPIA Compliance | JSE Standards                        ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/routes/api.test.js
@@ -25,11 +25,18 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 // Import routes
 import apiRouter, { API_ROUTES } from '../../routes/api.js';
+
+// Import mocked modules for assertions
+import { authenticate } from '../../middleware/auth.js';
+import { extractTenant } from '../../middleware/tenantContext.js';
+import { rateLimiter } from '../../middleware/rateLimiter.js';
+import auditLogger from '../../utils/auditLogger.js';
+import loggerRaw from '../../utils/logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Mock dependencies
 jest.mock('../../models/Company.js');
@@ -43,13 +50,6 @@ jest.mock('../../middleware/tenantContext.js');
 jest.mock('../../middleware/rateLimiter.js');
 jest.mock('../../middleware/auditLogger.js');
 jest.mock('../../middleware/requestValidator.js');
-
-// Import mocked modules for assertions
-import { authenticate } from '../../middleware/auth.js';
-import { extractTenant } from '../../middleware/tenantContext.js';
-import { rateLimiter } from '../../middleware/rateLimiter.js';
-import auditLogger from '../../utils/auditLogger.js';
-import loggerRaw from '../../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
@@ -93,14 +93,12 @@ function createTestApp() {
  */
 function setupDefaultMocks() {
   // Mock authentication middleware
-  authenticate.mockImplementation((options = {}) => {
-    return (req, res, next) => {
-      if (options.required) {
-        req.user = { id: TEST_USER_ID, roles: ['user'] };
-        req.tenantContext = { tenantId: TEST_TENANT_ID, userId: TEST_USER_ID };
-      }
-      next();
-    };
+  authenticate.mockImplementation((options = {}) => (req, res, next) => {
+    if (options.required) {
+      req.user = { id: TEST_USER_ID, roles: ['user'] };
+      req.tenantContext = { tenantId: TEST_TENANT_ID, userId: TEST_USER_ID };
+    }
+    next();
   });
 
   // Mock tenant extraction
@@ -167,7 +165,7 @@ describe('API Routes - Investor Due Diligence Suite', () => {
 
       // Assert security headers [citation:2]
       expect(response.headers['strict-transport-security']).toBe(
-        'max-age=31536000; includeSubDomains; preload'
+        'max-age=31536000; includeSubDomains; preload',
       );
       expect(response.headers['x-content-type-options']).toBe('nosniff');
       expect(response.headers['x-xss-protection']).toBe('1; mode=block');
@@ -266,7 +264,7 @@ describe('API Routes - Investor Due Diligence Suite', () => {
         'Test endpoint accessed',
         expect.objectContaining({
           tenantId: TEST_TENANT_ID,
-        })
+        }),
       );
     });
   });
@@ -294,15 +292,13 @@ describe('API Routes - Investor Due Diligence Suite', () => {
       const app = createTestApp();
 
       // Mock authentication to fail
-      authenticate.mockImplementationOnce((options) => {
-        return (req, res, next) => {
-          res.status(401).json({
-            type: 'https://api.wilsyos.com/errors/401',
-            title: 'Unauthorized',
-            status: 401,
-            detail: 'Authentication required',
-          });
-        };
+      authenticate.mockImplementationOnce((options) => (req, res, next) => {
+        res.status(401).json({
+          type: 'https://api.wilsyos.com/errors/401',
+          title: 'Unauthorized',
+          status: 401,
+          detail: 'Authentication required',
+        });
       });
 
       // Act
@@ -317,12 +313,10 @@ describe('API Routes - Investor Due Diligence Suite', () => {
       const app = createTestApp();
 
       // Mock authentication to succeed with admin role
-      authenticate.mockImplementationOnce((options) => {
-        return (req, res, next) => {
-          req.user = { id: TEST_USER_ID, roles: ['admin'] };
-          req.tenantContext = { tenantId: TEST_TENANT_ID, userId: TEST_USER_ID };
-          next();
-        };
+      authenticate.mockImplementationOnce((options) => (req, res, next) => {
+        req.user = { id: TEST_USER_ID, roles: ['admin'] };
+        req.tenantContext = { tenantId: TEST_TENANT_ID, userId: TEST_USER_ID };
+        next();
       });
 
       // Act
@@ -396,15 +390,13 @@ describe('API Routes - Investor Due Diligence Suite', () => {
       const app = createTestApp();
 
       // Mock authentication to fail
-      authenticate.mockImplementationOnce((options) => {
-        return (req, res, next) => {
-          res.status(401).json({
-            type: 'https://api.wilsyos.com/errors/401',
-            title: 'Unauthorized',
-            status: 401,
-            detail: 'Authentication required for investor routes',
-          });
-        };
+      authenticate.mockImplementationOnce((options) => (req, res, next) => {
+        res.status(401).json({
+          type: 'https://api.wilsyos.com/errors/401',
+          title: 'Unauthorized',
+          status: 401,
+          detail: 'Authentication required for investor routes',
+        });
       });
 
       // Act
@@ -541,7 +533,7 @@ describe('API Routes - Investor Due Diligence Suite', () => {
           path: '/api/test',
           statusCode: 200,
           retentionPolicy: 'api_access_logs_3_years',
-        })
+        }),
       );
     });
 
@@ -610,7 +602,7 @@ describe('API Routes - Investor Due Diligence Suite', () => {
 
       // Assert - HSTS header [citation:2]
       expect(response.headers['strict-transport-security']).toBe(
-        'max-age=31536000; includeSubDomains; preload'
+        'max-age=31536000; includeSubDomains; preload',
       );
     });
 
@@ -678,7 +670,7 @@ describe('API Routes - Investor Due Diligence Suite', () => {
         expect.objectContaining({
           authenticated: 1000,
           unauthenticated: 100,
-        })
+        }),
       );
     });
 
@@ -701,7 +693,7 @@ describe('API Routes - Investor Due Diligence Suite', () => {
       expect(rateLimiter).toHaveBeenCalledWith(
         expect.objectContaining({
           authenticated: 500,
-        })
+        }),
       );
 
       // Restore
@@ -848,7 +840,7 @@ describe('API Routes - Investor Due Diligence Suite', () => {
       // Log for investor visibility
       console.log('🔐 FORENSIC EVIDENCE GENERATED (API Routes):');
       console.log(
-        `   Evidence path: ${path.join(__dirname, '../evidence', 'api-routes-evidence.json')}`
+        `   Evidence path: ${path.join(__dirname, '../evidence', 'api-routes-evidence.json')}`,
       );
       console.log(`   Audit entries: ${evidence.auditEntries.length}`);
       console.log(`   SHA256: ${evidence.hash}`);

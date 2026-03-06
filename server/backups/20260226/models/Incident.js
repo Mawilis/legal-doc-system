@@ -68,7 +68,7 @@ const Incident = sequelize.define(
         fields: ['createdAt'],
       },
     ],
-  }
+  },
 );
 
 export default Incident;

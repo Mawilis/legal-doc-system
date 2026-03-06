@@ -1,7 +1,7 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ EXAMPLE USAGE - DOCUMENT GENERATION ENGINE                                ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import getDocumentGenerationEngine from './documentGenerationService.js';
 import { DocumentTemplate } from '../models/DocumentTemplate.js';
@@ -28,7 +28,7 @@ async function example() {
         correlationId: 'corr-123456',
         encrypt: true,
         sign: true,
-      }
+      },
     );
 
     console.log('Document generated:', {
@@ -61,7 +61,7 @@ async function example() {
       {
         userId: 'user-123',
         tenantId: 'law-firm-001',
-      }
+      },
     );
 
     console.log('Batch generation:', {
@@ -81,7 +81,7 @@ async function example() {
         priority: 3, // MEDIUM
         delay: 5000, // 5 seconds delay
         userId: 'user-123',
-      }
+      },
     );
 
     console.log('Queued:', queued);

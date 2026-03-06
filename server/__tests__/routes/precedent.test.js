@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT API TESTS - INVESTOR DUE DILIGENCE - $500M ARR TARGET          ║
   ║ 100% coverage | Enterprise API | Multi-tenant | Global Scale             ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/routes/precedent.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -59,12 +59,16 @@ jest.mock('../../workers/citationNetworkIndexer', () => ({
       { id: 'prec1', type: 'Precedent', citation: '[2023] ZACC 15' },
       { id: 'prec2', type: 'Precedent', citation: '[2022] ZACC 10' },
     ],
-    relationships: [{ source: 'prec1', target: 'prec2', type: 'CITES', strength: 80 }],
+    relationships: [{
+      source: 'prec1', target: 'prec2', type: 'CITES', strength: 80,
+    }],
   }),
   detectCitationTrends: jest.fn().mockResolvedValue({
     totalCitations: 50,
     uniquePrecedents: 30,
-    trending: [{ id: 'prec1', citation: '[2023] ZACC 15', count: 10, trend: 5 }],
+    trending: [{
+      id: 'prec1', citation: '[2023] ZACC 15', count: 10, trend: 5,
+    }],
     dailyVelocities: { '2024-01-01': 5, '2024-01-02': 7 },
   }),
   getHealth: jest.fn().mockResolvedValue({
@@ -534,7 +538,7 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
 
       const response = await request(app)
         .get(
-          '/api/precedent/export?format=json&ids[]=prec1&fields[]=citation&fields[]=court&fields[]=date'
+          '/api/precedent/export?format=json&ids[]=prec1&fields[]=citation&fields[]=court&fields[]=date',
         )
         .expect(200);
 
@@ -672,14 +676,12 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
         year3: { basic: 3000, professional: 2500, enterprise: 1500 },
       };
 
-      const calculateARR = (year) => {
-        return (
-          (year.basic * pricing.basic +
-            year.professional * pricing.professional +
-            year.enterprise * pricing.enterprise) *
-          12
-        );
-      };
+      const calculateARR = (year) => (
+        (year.basic * pricing.basic
+            + year.professional * pricing.professional
+            + year.enterprise * pricing.enterprise)
+          * 12
+      );
 
       const year1ARR = calculateARR(clientProjections.year1);
       const year2ARR = calculateARR(clientProjections.year2);
@@ -690,7 +692,7 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
       console.log(`Year 1 ARR: $${(year1ARR / 1e6).toFixed(1)}M`);
       console.log(`Year 2 ARR: $${(year2ARR / 1e6).toFixed(1)}M`);
       console.log(`Year 3 ARR: $${(year3ARR / 1e6).toFixed(1)}M`);
-      console.log(`\nTarget: $500M ARR by Year 3`);
+      console.log('\nTarget: $500M ARR by Year 3');
 
       expect(year3ARR).toBeGreaterThanOrEqual(500e6);
     });
@@ -727,7 +729,7 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'precedent-api-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -739,7 +741,7 @@ describe('Precedent API - Enterprise Gateway Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'precedent-api-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);

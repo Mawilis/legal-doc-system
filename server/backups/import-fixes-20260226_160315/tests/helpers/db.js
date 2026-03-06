@@ -7,10 +7,10 @@ let mongoServer;
 export const connectTestDB = async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
-  
+
   await mongoose.connect(uri, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
   });
 };
 
@@ -20,7 +20,7 @@ export const closeTestDB = async () => {
 };
 
 export const clearTestDB = async () => {
-  const collections = mongoose.connection.collections;
+  const { collections } = mongoose.connection;
   for (const key in collections) {
     await collections[key].deleteMany({});
   }

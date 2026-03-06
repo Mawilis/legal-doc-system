@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ ANOMALY DETECTION SERVICE TESTS - INVESTOR DUE DILIGENCE - $4B+ VALUE    ║
   ║ 100% coverage | AI-powered | Real-time fraud prevention                  ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import { expect } from 'chai.js';
 import sinon from 'sinon.js';
@@ -194,7 +194,7 @@ describe('AnomalyDetectionService - Legal Fraud Sentinel Due Diligence', () => {
           tenantId,
           Array(128)
             .fill(0)
-            .map(() => Math.random() * 0.1)
+            .map(() => Math.random() * 0.1),
         );
       }
 
@@ -206,7 +206,7 @@ describe('AnomalyDetectionService - Legal Fraud Sentinel Due Diligence', () => {
         tenantId,
         Array(128)
           .fill(0)
-          .map(() => Math.random() * 2)
+          .map(() => Math.random() * 2),
       );
 
       expect(result).to.have.property('isAnomaly');
@@ -416,7 +416,7 @@ describe('AnomalyDetectionService - Legal Fraud Sentinel Due Diligence', () => {
         'isolationForest',
         'autoencoder',
         'behavioral',
-        'ensemble'
+        'ensemble',
       );
     });
   });

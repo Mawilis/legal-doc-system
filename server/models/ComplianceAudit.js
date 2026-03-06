@@ -93,11 +93,21 @@ const COMPLIANCE_FRAMEWORKS = {
 };
 
 const COMPLIANCE_SCORES = {
-  EXCELLENT: { min: 90, max: 100, label: 'EXCELLENT', color: '#00C853' },
-  GOOD: { min: 75, max: 89, label: 'GOOD', color: '#64DD17' },
-  SATISFACTORY: { min: 60, max: 74, label: 'SATISFACTORY', color: '#FFD600' },
-  POOR: { min: 40, max: 59, label: 'POOR', color: '#FF6D00' },
-  CRITICAL: { min: 0, max: 39, label: 'CRITICAL', color: '#DD2C00' },
+  EXCELLENT: {
+    min: 90, max: 100, label: 'EXCELLENT', color: '#00C853',
+  },
+  GOOD: {
+    min: 75, max: 89, label: 'GOOD', color: '#64DD17',
+  },
+  SATISFACTORY: {
+    min: 60, max: 74, label: 'SATISFACTORY', color: '#FFD600',
+  },
+  POOR: {
+    min: 40, max: 59, label: 'POOR', color: '#FF6D00',
+  },
+  CRITICAL: {
+    min: 0, max: 39, label: 'CRITICAL', color: '#DD2C00',
+  },
 };
 
 const AUDIT_SCOPE_TYPES = {
@@ -135,7 +145,7 @@ const complianceAuditSchema = new Schema(
       index: true,
       immutable: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v);
         },
         message: (props) => `${props.value} is not a valid tenant UUID`,
@@ -270,7 +280,7 @@ const complianceAuditSchema = new Schema(
       duration: {
         type: Number,
         virtual: true,
-        get: function () {
+        get() {
           if (this.scheduling.endDate && this.scheduling.startDate) {
             return Math.ceil((this.scheduling.endDate - this.scheduling.startDate) / (1000 * 60));
           }
@@ -369,9 +379,13 @@ const complianceAuditSchema = new Schema(
           min: 0,
           max: 25,
           virtual: true,
-          get: function () {
-            const likelihoodMap = { VERY_LOW: 1, LOW: 2, MEDIUM: 3, HIGH: 4, VERY_HIGH: 5 };
-            const impactMap = { VERY_LOW: 1, LOW: 2, MEDIUM: 3, HIGH: 4, VERY_HIGH: 5 };
+          get() {
+            const likelihoodMap = {
+              VERY_LOW: 1, LOW: 2, MEDIUM: 3, HIGH: 4, VERY_HIGH: 5,
+            };
+            const impactMap = {
+              VERY_LOW: 1, LOW: 2, MEDIUM: 3, HIGH: 4, VERY_HIGH: 5,
+            };
             return (likelihoodMap[this.likelihood] || 3) * (impactMap[this.impact] || 3);
           },
         },
@@ -400,7 +414,7 @@ const complianceAuditSchema = new Schema(
             fileHash: {
               type: String,
               validate: {
-                validator: function (v) {
+                validator(v) {
                   return !v || /^[a-f0-9]{64}$/i.test(v);
                 },
               },
@@ -628,7 +642,7 @@ const complianceAuditSchema = new Schema(
         min: 0,
         max: 100,
         virtual: true,
-        get: function () {
+        get() {
           if (this.riskAssessment.inherentRisk) {
             return this.riskAssessment.inherentRisk - (this.riskAssessment.residualRisk || 0);
           }
@@ -673,7 +687,7 @@ const complianceAuditSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-      default: function () {
+      default() {
         return crypto
           .createHash('sha3-512')
           .update(`${this.auditId}:${JSON.stringify(this.reportData)}:${Date.now()}`)
@@ -708,7 +722,7 @@ const complianceAuditSchema = new Schema(
           hash: {
             type: String,
             validate: {
-              validator: function (v) {
+              validator(v) {
                 return !v || /^[a-f0-9]{64}$/i.test(v);
               },
             },
@@ -730,7 +744,7 @@ const complianceAuditSchema = new Schema(
       createdBy: String,
       hash: {
         type: String,
-        default: function () {
+        default() {
           return crypto
             .createHash('sha3-512')
             .update(`${this.packageId}:${Date.now()}`)
@@ -797,7 +811,7 @@ const complianceAuditSchema = new Schema(
           type: Date,
           required: true,
           validate: {
-            validator: function (v) {
+            validator(v) {
               return v > new Date();
             },
             message: 'Deadline must be in the future',
@@ -952,13 +966,13 @@ const complianceAuditSchema = new Schema(
         actionId: String,
         hash: {
           type: String,
-          default: function () {
+          default() {
             return crypto
               .createHash('sha3-512')
               .update(
                 `${this.action}:${this.performedAt.toISOString()}:${
                   this.performedBy
-                }:${JSON.stringify(this.changes)}`
+                }:${JSON.stringify(this.changes)}`,
               )
               .digest('hex');
           },
@@ -969,7 +983,7 @@ const complianceAuditSchema = new Schema(
     integrityHash: {
       type: String,
       unique: true,
-      default: function () {
+      default() {
         return crypto
           .createHash('sha3-512')
           .update(`${this.auditId}:${this.score}:${this.workflow.status}:${Date.now()}`)
@@ -979,7 +993,7 @@ const complianceAuditSchema = new Schema(
 
     quantumSignature: {
       type: String,
-      default: function () {
+      default() {
         return crypto
           .createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026')
           .update(`${this.auditId}:${this.integrityHash}:${this.workflow.status}`)
@@ -1023,7 +1037,7 @@ const complianceAuditSchema = new Schema(
 
     retentionExpiry: {
       type: Date,
-      default: function () {
+      default() {
         const date = new Date();
         date.setFullYear(date.getFullYear() + 10);
         return date;
@@ -1051,7 +1065,7 @@ const complianceAuditSchema = new Schema(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret.__v;
         delete ret.auditTrail;
         delete ret.integrityHash;
@@ -1061,7 +1075,7 @@ const complianceAuditSchema = new Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 // ====================================================================
@@ -1090,12 +1104,12 @@ complianceAuditSchema.virtual('remediatedFindingsCount').get(function () {
 
 complianceAuditSchema.virtual('overdueFindingsCount').get(function () {
   return this.findings.filter(
-    (f) => ['OPEN', 'IN_PROGRESS'].includes(f.status) && f.dueDate && f.dueDate < new Date()
+    (f) => ['OPEN', 'IN_PROGRESS'].includes(f.status) && f.dueDate && f.dueDate < new Date(),
   ).length;
 });
 
 complianceAuditSchema.virtual('complianceScore').get(function () {
-  const score = this.score;
+  const { score } = this;
   for (const range of Object.values(COMPLIANCE_SCORES)) {
     if (score >= range.min && score <= range.max) {
       return {
@@ -1127,7 +1141,9 @@ complianceAuditSchema.virtual('remediationProgress').get(function () {
 // ====================================================================
 
 complianceAuditSchema.index({ tenantId: 1, auditType: 1, createdAt: -1 });
-complianceAuditSchema.index({ tenantId: 1, subjectId: 1, subjectModel: 1, createdAt: -1 });
+complianceAuditSchema.index({
+  tenantId: 1, subjectId: 1, subjectModel: 1, createdAt: -1,
+});
 complianceAuditSchema.index({
   tenantId: 1,
   'workflow.status': 1,
@@ -1162,12 +1178,10 @@ complianceAuditSchema.pre('save', async function (next) {
     }
 
     this.metrics.totalFindings = this.findings.length;
-    this.metrics.openFindings = this.findings.filter((f) =>
-      ['OPEN', 'IN_PROGRESS'].includes(f.status)
-    ).length;
+    this.metrics.openFindings = this.findings.filter((f) => ['OPEN', 'IN_PROGRESS'].includes(f.status)).length;
     this.metrics.remediatedFindings = this.findings.filter((f) => f.status === 'REMEDIATED').length;
     this.metrics.overdueFindings = this.findings.filter(
-      (f) => ['OPEN', 'IN_PROGRESS'].includes(f.status) && f.dueDate && f.dueDate < new Date()
+      (f) => ['OPEN', 'IN_PROGRESS'].includes(f.status) && f.dueDate && f.dueDate < new Date(),
     ).length;
 
     const severityCount = {
@@ -1187,7 +1201,7 @@ complianceAuditSchema.pre('save', async function (next) {
     this.metrics.findingsBySeverity = severityCount;
 
     const remediatedFindings = this.findings.filter(
-      (f) => f.status === 'REMEDIATED' && f.remediatedAt && f.createdAt
+      (f) => f.status === 'REMEDIATED' && f.remediatedAt && f.createdAt,
     );
 
     if (remediatedFindings.length > 0) {
@@ -1196,7 +1210,7 @@ complianceAuditSchema.pre('save', async function (next) {
         return sum + days;
       }, 0);
       this.metrics.averageRemediationTime = parseFloat(
-        (totalDays / remediatedFindings.length).toFixed(1)
+        (totalDays / remediatedFindings.length).toFixed(1),
       );
     }
 
@@ -1304,8 +1318,8 @@ complianceAuditSchema.statics = {
 
       audit.complianceIssues.forEach((issue) => {
         if (
-          issue.remediation?.status === 'PENDING' ||
-          issue.remediation?.status === 'IN_PROGRESS'
+          issue.remediation?.status === 'PENDING'
+          || issue.remediation?.status === 'IN_PROGRESS'
         ) {
           summary.openIssues++;
         } else if (issue.remediation?.status === 'COMPLETED') {
@@ -1313,9 +1327,9 @@ complianceAuditSchema.statics = {
         }
 
         if (
-          issue.remediation?.deadline &&
-          issue.remediation.deadline < new Date() &&
-          issue.remediation.status !== 'COMPLETED'
+          issue.remediation?.deadline
+          && issue.remediation.deadline < new Date()
+          && issue.remediation.status !== 'COMPLETED'
         ) {
           summary.overdueIssues++;
         }
@@ -1356,8 +1370,7 @@ complianceAuditSchema.statics = {
         });
     });
 
-    summary.averageScore =
-      audits.length > 0 ? parseFloat((totalScore / audits.length).toFixed(1)) : 0;
+    summary.averageScore = audits.length > 0 ? parseFloat((totalScore / audits.length).toFixed(1)) : 0;
 
     if (summary.averageScore >= 90) summary.overallCompliance = 'EXCELLENT';
     else if (summary.averageScore >= 75) summary.overallCompliance = 'GOOD';
@@ -1367,12 +1380,16 @@ complianceAuditSchema.statics = {
 
     summary.topRisks
       .sort((a, b) => {
-        const severityOrder = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+        const severityOrder = {
+          CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1,
+        };
         return (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
       })
       .slice(0, 10);
 
-    const priorityOrder = { IMMEDIATE: 4, URGENT: 3, HIGH: 2, MEDIUM: 1, LOW: 0 };
+    const priorityOrder = {
+      IMMEDIATE: 4, URGENT: 3, HIGH: 2, MEDIUM: 1, LOW: 0,
+    };
     summary.recommendations
       .sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0))
       .slice(0, 20);
@@ -1625,7 +1642,9 @@ complianceAuditSchema.methods = {
       action: 'FINDING_UPDATED',
       performedBy: userId,
       performedAt: new Date(),
-      changes: { findingId, oldStatus, newStatus: status, notes },
+      changes: {
+        findingId, oldStatus, newStatus: status, notes,
+      },
       findingId,
     });
 
@@ -1705,7 +1724,9 @@ complianceAuditSchema.methods = {
       action: 'ACTION_COMPLETED',
       performedBy: userId,
       performedAt: new Date(),
-      changes: { actionId, oldStatus, newStatus: status, notes },
+      changes: {
+        actionId, oldStatus, newStatus: status, notes,
+      },
       actionId,
     });
 
@@ -1754,7 +1775,7 @@ complianceAuditSchema.methods = {
         complianceGaps: this.complianceIssues.length,
         openActions: this.correctiveActions.filter((a) => a.status !== 'COMPLETED').length,
         overdueActions: this.correctiveActions.filter(
-          (a) => a.status !== 'COMPLETED' && a.deadline < new Date()
+          (a) => a.status !== 'COMPLETED' && a.deadline < new Date(),
         ).length,
       },
 
@@ -1903,7 +1924,7 @@ complianceAuditSchema.methods = {
         subjectIdentifier: this.subjectIdentifier,
         date: this.createdAt,
       },
-      report: report,
+      report,
       findings: this.findings.map((f) => ({
         findingId: f.findingId,
         title: f.title,
@@ -2024,8 +2045,7 @@ complianceAuditSchema.methods = {
 // ============================================================================
 // SURGICAL EXPORTS FOR ESM COMPATIBILITY
 // ============================================================================
-const ComplianceAudit =
-  mongoose.models.ComplianceAudit || mongoose.model('ComplianceAudit', complianceAuditSchema);
+const ComplianceAudit = mongoose.models.ComplianceAudit || mongoose.model('ComplianceAudit', complianceAuditSchema);
 
 export {
   AUDIT_TYPES,

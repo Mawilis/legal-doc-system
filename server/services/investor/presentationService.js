@@ -1,7 +1,7 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR PRESENTATION SERVICE - INVESTOR DECK GENERATOR                  ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/investor/presentationService.js
@@ -10,6 +10,7 @@
  */
 
 import loggerRaw from '../../utils/logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
 
 /**
@@ -18,7 +19,9 @@ const logger = loggerRaw.default || loggerRaw;
  * @returns {Promise<Object>} Presentation
  */
 export const generatePresentation = async (data) => {
-  const { company, valuations, template, includeCharts, userId, tenantId } = data;
+  const {
+    company, valuations, template, includeCharts, userId, tenantId,
+  } = data;
 
   logger.info('Generating investor presentation', {
     tenantId,

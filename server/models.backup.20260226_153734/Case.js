@@ -1,5 +1,5 @@
 #!/* eslint-disable */
-/*╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║                                                                              ║
   ║   ██████╗ ██████╗ ███╗   ██╗███████╗██╗     ███████╗██╗████████╗            ║
   ║  ██╔════╝██╔═══██╗████╗  ██║██╔════╝██║     ██╔════╝██║╚══██╔══╝            ║
@@ -396,7 +396,7 @@ const PaiaRequestSchema = new mongoose.Schema(
       type: Date,
       required: true,
       validate: {
-        validator: function (value) {
+        validator(value) {
           return value > new Date();
         },
         message: 'Statutory deadline must be in the future',
@@ -456,7 +456,7 @@ const PaiaRequestSchema = new mongoose.Schema(
       updatedAt: { type: Date, default: Date.now },
     },
   },
-  { _id: true }
+  { _id: true },
 );
 
 // ============================================================================
@@ -693,7 +693,7 @@ const CaseSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // ============================================================================
@@ -705,17 +705,17 @@ CaseSchema.virtual('courtInfo').get(function () {
 
 CaseSchema.virtual('isConflictFree').get(function () {
   return (
-    this.conflictStatus.checked &&
-    (!this.conflictStatus.foundConflicts || this.conflictStatus.foundConflicts.length === 0)
+    this.conflictStatus.checked
+    && (!this.conflictStatus.foundConflicts || this.conflictStatus.foundConflicts.length === 0)
   );
 });
 
 CaseSchema.virtual('requiresManualConflictReview').get(function () {
   return (
-    this.conflictStatus.checked &&
-    this.conflictStatus.foundConflicts &&
-    this.conflictStatus.foundConflicts.length > 0 &&
-    !this.conflictStatus.clearanceDate
+    this.conflictStatus.checked
+    && this.conflictStatus.foundConflicts
+    && this.conflictStatus.foundConflicts.length > 0
+    && !this.conflictStatus.clearanceDate
   );
 });
 
@@ -728,14 +728,13 @@ CaseSchema.virtual('daysOpen').get(function () {
 CaseSchema.virtual('paiaDeadlineApproaching').get(function () {
   if (!this.paiaRequests || this.paiaRequests.length === 0) return false;
   const pendingRequests = this.paiaRequests.filter(
-    (req) =>
-      req.status === PAIA_REQUEST_STATUSES.PENDING || req.status === PAIA_REQUEST_STATUSES.IN_REVIEW
+    (req) => req.status === PAIA_REQUEST_STATUSES.PENDING || req.status === PAIA_REQUEST_STATUSES.IN_REVIEW,
   );
   if (pendingRequests.length === 0) return false;
   const now = new Date();
   const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   return pendingRequests.some(
-    (req) => req.statutoryDeadline && req.statutoryDeadline <= threeDaysFromNow
+    (req) => req.statutoryDeadline && req.statutoryDeadline <= threeDaysFromNow,
   );
 });
 

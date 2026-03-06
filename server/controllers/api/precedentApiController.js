@@ -1,18 +1,19 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ NEURAL PRECEDENT API CONTROLLER - QUANTUM LEGAL SEARCH ENGINE             ║
   ║ 1536-dim vectors | Semantic search | 99.7% accuracy | R25M/year           ║
   ║ Rate limited | Tiered access | Forensic audit | POPIA compliant           ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
+import crypto from 'crypto';
 import { getEmbedding, findSimilar } from '../../workers/neural-vectorizer/vectorUtils.js';
 import Precedent from '../../models/Precedent.js';
 import ValidationAudit from '../../models/ValidationAudit.js';
 import { ApiKey } from '../../models/api/ApiKey.js';
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
-import crypto from 'crypto';
 import { REDACT_FIELDS, redactSensitive } from '../../utils/redactSensitive.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // CONSTANTS
@@ -35,44 +36,38 @@ const MIN_CONFIDENCE = 0.5;
 /**
  * Generate correlation ID
  */
-const generateCorrelationId = (req) => {
-  return (
-    req.headers['x-correlation-id'] ||
-    `neural-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
-  );
-};
+const generateCorrelationId = (req) => (
+  req.headers['x-correlation-id']
+    || `neural-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+);
 
 /**
  * Format success response
  */
-const formatSuccess = (data, correlationId, metadata = {}) => {
-  return {
-    success: true,
-    correlationId,
-    timestamp: new Date().toISOString(),
-    data,
-    metadata: {
-      ...metadata,
-      apiVersion: 'v1',
-    },
-  };
-};
+const formatSuccess = (data, correlationId, metadata = {}) => ({
+  success: true,
+  correlationId,
+  timestamp: new Date().toISOString(),
+  data,
+  metadata: {
+    ...metadata,
+    apiVersion: 'v1',
+  },
+});
 
 /**
  * Format error response
  */
-const formatError = (error, correlationId, statusCode = 500) => {
-  return {
-    success: false,
-    correlationId,
-    timestamp: new Date().toISOString(),
-    error: {
-      code: error.code || 'NEURAL_SEARCH_ERROR',
-      message: error.message || 'An unexpected error occurred',
-      statusCode,
-    },
-  };
-};
+const formatError = (error, correlationId, statusCode = 500) => ({
+  success: false,
+  correlationId,
+  timestamp: new Date().toISOString(),
+  error: {
+    code: error.code || 'NEURAL_SEARCH_ERROR',
+    message: error.message || 'An unexpected error occurred',
+    statusCode,
+  },
+});
 
 /**
  * Apply tier-based result enhancements
@@ -118,7 +113,7 @@ export const searchPrecedents = async (req, res) => {
     filters = {},
   } = req.body;
   const { tenantId, tier } = req; // From auth middleware
-  const apiKey = req.apiKey;
+  const { apiKey } = req;
 
   // Validate input
   if (!query || typeof query !== 'string') {
@@ -128,8 +123,8 @@ export const searchPrecedents = async (req, res) => {
         formatError(
           new Error('Query parameter is required and must be a string'),
           correlationId,
-          400
-        )
+          400,
+        ),
       );
   }
 
@@ -163,7 +158,7 @@ export const searchPrecedents = async (req, res) => {
     });
 
     let results = [];
-    let searchMetadata = {};
+    const searchMetadata = {};
 
     // Perform search based on mode
     if (mode === SEARCH_MODES.SEMANTIC || mode === SEARCH_MODES.HYBRID) {
@@ -176,7 +171,7 @@ export const searchPrecedents = async (req, res) => {
           $vectorSearch: {
             index: 'precedent_vector_index',
             path: 'embedding',
-            queryVector: queryVector,
+            queryVector,
             numCandidates: Math.min(resultLimit * 10, 100),
             limit: resultLimit,
           },
@@ -201,8 +196,8 @@ export const searchPrecedents = async (req, res) => {
     }
 
     if (
-      mode === SEARCH_MODES.KEYWORD ||
-      (mode === SEARCH_MODES.HYBRID && results.length < resultLimit)
+      mode === SEARCH_MODES.KEYWORD
+      || (mode === SEARCH_MODES.HYBRID && results.length < resultLimit)
     ) {
       // Fallback to keyword search
       const remaining = mode === SEARCH_MODES.HYBRID ? resultLimit - results.length : resultLimit;
@@ -217,7 +212,7 @@ export const searchPrecedents = async (req, res) => {
           },
           {
             score: { $meta: 'textScore' },
-          }
+          },
         )
           .sort({ score: { $meta: 'textScore' } })
           .limit(remaining)
@@ -272,7 +267,7 @@ export const searchPrecedents = async (req, res) => {
         responseTimeMs: responseTime,
         tier,
         mode,
-      })
+      }),
     );
   } catch (error) {
     logger.error('Neural search failed', {
@@ -408,7 +403,7 @@ export const getSimilarPrecedents = async (req, res) => {
     res.status(200).json(
       formatSuccess(similar, correlationId, {
         basedOn: precedent.citation,
-      })
+      }),
     );
   } catch (error) {
     logger.error('Get similar precedents failed', { error: error.message, correlationId });
@@ -436,8 +431,8 @@ export const getSearchStats = async (req, res) => {
           precedents: stats,
           usage: usageStats,
         },
-        correlationId
-      )
+        correlationId,
+      ),
     );
   } catch (error) {
     logger.error('Get search stats failed', { error: error.message, correlationId });

@@ -84,8 +84,7 @@ describe('🔐 TC-010: Audit Trail Tamper Detection (MOCHA)', () => {
 
   it('TC-010.4: Should detect broken hash chain', () => {
     const originalPreviousHash = session.auditTrail[1].previousHash;
-    session.auditTrail[1].previousHash =
-      '0000000000000000000000000000000000000000000000000000000000000000';
+    session.auditTrail[1].previousHash = '0000000000000000000000000000000000000000000000000000000000000000';
 
     const integrity = session.verifyAuditIntegrity();
     assert.strictEqual(integrity.isValid, false);

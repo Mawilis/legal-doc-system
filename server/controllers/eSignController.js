@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ E-SIGNATURE CONTROLLER - INVESTOR-GRADE MODULE                            ║
   ║ 94% cost reduction | R8.2M risk elimination | 85% margins                ║
   ║ POPIA §19 | ECT Act §15 | Companies Act §15 Verified                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/eSignController.js
@@ -11,6 +11,7 @@
  * CREATED: 2026-03-01
  */
 
+import { v4 as uuidv4 } from 'uuid';
 import ESignService, {
   SIGNATURE_STATUS,
   SIGNATURE_TYPES,
@@ -21,7 +22,6 @@ import auditLogger from '../utils/auditLogger.js';
 import logger from '../utils/logger.js';
 import { redactSensitive } from '../utils/redactSensitive.js';
 import { getCurrentTenant, getCurrentUser } from '../middleware/tenantContext.js';
-import { v4 as uuidv4 } from 'uuid';
 
 const REDACTION_FIELDS = ['email', 'phone', 'ipAddress', 'userAgent', 'authenticationData'];
 const eSignService = new ESignService();
@@ -59,7 +59,9 @@ export const createSignatureRequest = async (req, res, next) => {
       ...options,
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
-      metadata: { ...options.metadata, correlationId, source: 'api', endpoint: req.path },
+      metadata: {
+        ...options.metadata, correlationId, source: 'api', endpoint: req.path,
+      },
     };
 
     const result = await eSignService.createSignatureRequest(documentId, signers, enrichedOptions);

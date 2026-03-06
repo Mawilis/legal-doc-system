@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ AUDIT CONTROLLER TESTS - INVESTOR DUE DILIGENCE               ║
   ║ 100% coverage | Quantum-safe | Forensic evidence              ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/controllers/auditController.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -36,9 +36,7 @@ jest.mock('../../utils/quantumLogger', () => ({
 }));
 
 jest.mock('../../utils/cryptoUtils', () => ({
-  sha256: jest.fn().mockImplementation((input) => {
-    return crypto.createHash('sha256').update(JSON.stringify(input)).digest('hex');
-  }),
+  sha256: jest.fn().mockImplementation((input) => crypto.createHash('sha256').update(JSON.stringify(input)).digest('hex')),
   signData: jest.fn().mockReturnValue('digital-signature-123'),
   encryptField: jest.fn().mockImplementation((val) => val),
   decryptField: jest.fn().mockImplementation((val) => val),
@@ -123,7 +121,8 @@ const {
 } = require('../../controllers/auditController');
 
 describe('AuditController - Quantum Forensic Due Diligence', () => {
-  let req, res;
+  let req; let
+    res;
   const tenantId = '507f1f77bcf86cd799439011';
   const userId = '507f1f77bcf86cd799439013';
 
@@ -375,7 +374,7 @@ describe('AuditController - Quantum Forensic Due Diligence', () => {
             $lte: new Date('2024-12-31'),
           },
         }),
-        expect.anything()
+        expect.anything(),
       );
     });
   });
@@ -539,7 +538,7 @@ describe('AuditController - Quantum Forensic Due Diligence', () => {
       // Generate evidence
       const canonicalized = JSON.stringify(
         auditEntries.sort((a, b) => a.chainPosition - b.chainPosition),
-        Object.keys(auditEntries[0]).sort()
+        Object.keys(auditEntries[0]).sort(),
       );
 
       const hash = crypto.createHash('sha256').update(canonicalized).digest('hex');
@@ -557,7 +556,7 @@ describe('AuditController - Quantum Forensic Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'audit-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       // Verify evidence

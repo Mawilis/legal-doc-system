@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT GENERATION ENGINE - LEGAL DOCUMENT AUTOMATION                    ║
   ║ R12.5M/year revenue | 94% automation | 100-year retention                 ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/documentGenerationService.js
@@ -36,23 +36,23 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import util from 'util';
 import { pipeline } from 'stream';
+import { Queue, Worker } from 'bullmq';
 import { DocumentTemplate, TEMPLATE_STATUS, OUTPUT_FORMATS } from '../models/DocumentTemplate.js';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../utils/auditLogger.js';
 import * as TenantContextImports from '../middleware/tenantContext.js';
-const TenantContext = TenantContextImports.TenantContext ||
-  TenantContextImports.default ||
-  TenantContextImports.tenantContext || { getTenantId: () => 'test-tenant-123' };
 import * as redisClient_ns from '../config/redis.js';
-const redisClient =
-  redisClient_ns.default || redisClient_ns.redisClient || redisClient_ns.client || redisClient_ns;
-import { Queue, Worker } from 'bullmq';
 import { MetricsCollector } from '../monitoring/metrics.js';
 import { CircuitBreaker } from '../utils/circuitBreaker.js';
 import { DocumentEncryption } from '../security/documentEncryption.js';
 import { DigitalSignatureService } from './digitalSignatureService.js';
 import { ComplianceValidator } from '../validation/complianceValidator.js';
+
+const logger = loggerRaw.default || loggerRaw;
+const TenantContext = TenantContextImports.TenantContext
+  || TenantContextImports.default
+  || TenantContextImports.tenantContext || { getTenantId: () => 'test-tenant-123' };
+const redisClient = redisClient_ns.default || redisClient_ns.redisClient || redisClient_ns.client || redisClient_ns;
 
 const pump = util.promisify(pipeline);
 
@@ -210,7 +210,7 @@ class DocumentGenerationEngine {
    */
   configureHandlebars() {
     // Date formatting helper
-    Handlebars.registerHelper('formatDate', function (date, format) {
+    Handlebars.registerHelper('formatDate', (date, format) => {
       if (!date) return '';
       const d = new Date(date);
       if (isNaN(d.getTime())) return '';
@@ -233,14 +233,14 @@ class DocumentGenerationEngine {
     });
 
     // Currency formatting helper
-    Handlebars.registerHelper('formatCurrency', function (amount, currency = 'ZAR') {
+    Handlebars.registerHelper('formatCurrency', (amount, currency = 'ZAR') => {
       if (amount === null || amount === undefined) return '';
       const num = parseFloat(amount);
       if (isNaN(num)) return '';
 
       return new Intl.NumberFormat('en-ZA', {
         style: 'currency',
-        currency: currency,
+        currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(num);
@@ -274,39 +274,39 @@ class DocumentGenerationEngine {
     });
 
     // Array helpers
-    Handlebars.registerHelper('join', function (array, separator = ', ') {
+    Handlebars.registerHelper('join', (array, separator = ', ') => {
       if (!Array.isArray(array)) return '';
       return array.join(separator);
     });
 
-    Handlebars.registerHelper('first', function (array) {
+    Handlebars.registerHelper('first', (array) => {
       if (!Array.isArray(array)) return '';
       return array[0];
     });
 
-    Handlebars.registerHelper('last', function (array) {
+    Handlebars.registerHelper('last', (array) => {
       if (!Array.isArray(array)) return '';
       return array[array.length - 1];
     });
 
     // String helpers
-    Handlebars.registerHelper('uppercase', function (str) {
+    Handlebars.registerHelper('uppercase', (str) => {
       if (!str) return '';
       return str.toUpperCase();
     });
 
-    Handlebars.registerHelper('lowercase', function (str) {
+    Handlebars.registerHelper('lowercase', (str) => {
       if (!str) return '';
       return str.toLowerCase();
     });
 
-    Handlebars.registerHelper('capitalize', function (str) {
+    Handlebars.registerHelper('capitalize', (str) => {
       if (!str) return '';
       return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     });
 
     // Legal-specific helpers
-    Handlebars.registerHelper('partyName', function (party, type = 'full') {
+    Handlebars.registerHelper('partyName', (party, type = 'full') => {
       if (!party) return '';
       switch (type) {
         case 'full':
@@ -320,13 +320,9 @@ class DocumentGenerationEngine {
       }
     });
 
-    Handlebars.registerHelper('citeAct', function (act, year, section) {
-      return `${act} ${year}, section ${section}`;
-    });
+    Handlebars.registerHelper('citeAct', (act, year, section) => `${act} ${year}, section ${section}`);
 
-    Handlebars.registerHelper('courtName', function (court, division, location) {
-      return `${court} ${division ? `(${division})` : ''} ${location || ''}`.trim();
-    });
+    Handlebars.registerHelper('courtName', (court, division, location) => `${court} ${division ? `(${division})` : ''} ${location || ''}`.trim());
   }
 
   /**
@@ -405,15 +401,13 @@ class DocumentGenerationEngine {
           max: 100,
           duration: 1000,
         },
-      }
+      },
     );
 
     // Batch processing worker
     new Worker(
       BATCH_QUEUE,
-      async (job) => {
-        return await this.processLargeBatch(job.data);
-      },
+      async (job) => await this.processLargeBatch(job.data),
       {
         connection,
         concurrency: 2,
@@ -421,7 +415,7 @@ class DocumentGenerationEngine {
           max: 20,
           duration: 1000,
         },
-      }
+      },
     );
 
     logger.info('Document generation workers initialized', {
@@ -504,7 +498,7 @@ class DocumentGenerationEngine {
         throw new DocumentGenerationError(
           `Template is not active (status: ${template.status})`,
           'TEMPLATE_NOT_ACTIVE',
-          { status: template.status }
+          { status: template.status },
         );
       }
 
@@ -520,7 +514,7 @@ class DocumentGenerationEngine {
 
       // Generate document based on format
       let document;
-      let format = options.format || template.output.defaultFormat;
+      const format = options.format || template.output.defaultFormat;
 
       switch (format) {
         case OUTPUT_FORMATS.PDF:
@@ -538,7 +532,7 @@ class DocumentGenerationEngine {
         default:
           throw new DocumentGenerationError(
             `Unsupported output format: ${format}`,
-            'UNSUPPORTED_FORMAT'
+            'UNSUPPORTED_FORMAT',
           );
       }
 
@@ -583,7 +577,7 @@ class DocumentGenerationEngine {
         {
           $inc: { 'usageStats.timesUsed': 1 },
           $set: { 'usageStats.lastUsedAt': new Date() },
-        }
+        },
       );
 
       logger.info('Document generation completed', {
@@ -753,7 +747,7 @@ class DocumentGenerationEngine {
         priority: options.priority || GENERATION_PRIORITY.MEDIUM,
         jobId,
         delay: options.delay || 0,
-      }
+      },
     );
 
     logger.info('Document generation queued', {
@@ -1109,7 +1103,9 @@ class DocumentGenerationEngine {
         ]);
 
         // Set margins
-        const { top, right, bottom, left } = template.output.margins;
+        const {
+          top, right, bottom, left,
+        } = template.output.margins;
 
         // Embed font
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -1394,7 +1390,7 @@ class DocumentGenerationEngine {
     const words = [];
 
     if (num >= 100) {
-      words.push(ones[Math.floor(num / 100)] + ' hundred');
+      words.push(`${ones[Math.floor(num / 100)]} hundred`);
       num %= 100;
       if (num > 0) words.push('and');
     }

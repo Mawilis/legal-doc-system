@@ -33,13 +33,15 @@
 
 /* eslint-env node */
 
+import metrics from '../utils/metrics.js';
+
 const crypto = require('crypto'); // Used for generating secure IDs and hashes
 const Redis = require('ioredis');
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
 const loggerRaw = require('../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
-import metrics from '../utils/metrics.js';
 
 class RedisConfig {
   constructor() {
@@ -533,7 +535,7 @@ class RedisConfig {
         () => {
           reject(new Error(`Redis connection timeout for role: ${role}`));
         },
-        parseInt(process.env.REDIS_CONNECT_TIMEOUT) || 30000
+        parseInt(process.env.REDIS_CONNECT_TIMEOUT) || 30000,
       );
 
       client.once('ready', () => {
@@ -901,7 +903,7 @@ class RedisConfig {
             ? 0
             : this.circuitBreaker.state === 'HALF_OPEN'
               ? 1
-              : 2
+              : 2,
         );
 
         logger.debug('Redis health check completed', {
@@ -956,7 +958,7 @@ class RedisConfig {
           });
           // Force disconnect if quit fails
           return client.disconnect();
-        })
+        }),
       );
     }
 

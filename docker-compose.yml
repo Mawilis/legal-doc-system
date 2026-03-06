@@ -1,12 +1,657 @@
-version: '3'
+# ============================================================================
+# WILSY OS 2050 - QUANTUM PRODUCTION DOCKER COMPOSE
+# 10TH GENERATION FORENSIC ENGINE | QUANTUM FORTRESS
+# VERSION: 42.0.0 | GENERATION: 10 | ATLAS-OPTIMIZED
+# INVESTOR-GRADE | POPIA COMPLIANT | SOC2 READY
+# ============================================================================
+
+version: '3.8'
+
 services:
-  app:
-    build: .
-    ports:
-      - '3001:3001'
+  # ============================================================================
+  # ⚡ WILSY OS 2050 - QUANTUM CORE SERVER
+  # Uses YOUR Atlas MongoDB (production & test)
+  # ============================================================================
+  wilsy-os:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wilsy-os-2050:latest
+    container_name: wilsy-os-server
+    restart: unless-stopped
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/legal-doc-system
-  mongo:
-    image: mongo:latest
+      # Application Core
+      NODE_ENV: "production"
+      APP_NAME: "Wilsy OS"
+      APP_VERSION: "42.0.0"
+      API_VERSION: "v1"
+      PORT: "3000"
+      API_PORT: "9095"
+      INVESTOR_PORT: "9096"
+      METRICS_PORT: "9090"
+      HOST: "0.0.0.0"
+      INSTANCE_ID: "${HOSTNAME:-wilsy-prod-001}"
+      REGION: "ZA"
+      DATACENTER: "${DATACENTER:-jhb-01}"
+      
+      # 🗄️ DATABASE - Your Production Atlas
+      PROD_MONGODB_URI: "mongodb+srv://wilsonkhanyezi:Mawilis8596@legaldocsystem.knucgy2.mongodb.net/?retryWrites=true&w=majority&appName=legalDocSystem"
+      TEST_MONGODB_URI: "mongodb+srv://wilsonkhanyezi:Mawilis8596@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test"
+      ACTIVE_DATABASE: "${ACTIVE_DB:-production}"
+      
+      # MongoDB Pool Configuration
+      MONGODB_POOL_MIN: "5"
+      MONGODB_POOL_MAX: "50"
+      MONGODB_POOL_SIZE: "50"
+      MONGODB_CONNECT_TIMEOUT: "10000"
+      MONGODB_SOCKET_TIMEOUT: "45000"
+      MONGODB_SERVER_SELECTION_TIMEOUT: "5000"
+      MONGODB_RETRY_WRITES: "true"
+      MONGODB_RETRY_READS: "true"
+      MONGODB_WRITE_CONCERN: "majority"
+      MONGODB_READ_CONCERN: "majority"
+      MONGODB_SSL: "true"
+      
+      # 📦 REDIS Configuration
+      REDIS_URI: "redis://:${REDIS_PASSWORD:-changeme}@redis:6379"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-changeme}"
+      REDIS_DB: "0"
+      REDIS_CACHE_DB: "1"
+      REDIS_SESSION_DB: "2"
+      REDIS_QUEUE_DB: "3"
+      REDIS_KEY_PREFIX: "wilsy:prod:"  # QUOTED to fix YAML error
+      REDIS_TLS_ENABLED: "false"
+      REDIS_CLUSTER_MODE: "false"
+      
+      # 🔐 JWT Configuration
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET}"
+      JWT_EXPIRY: "15m"
+      JWT_REFRESH_EXPIRY: "7d"
+      JWT_ISSUER: "wilsy.os"
+      JWT_AUDIENCE: "api.wilsy.os"
+      
+      # 🔐 Encryption Keys
+      USER_ENCRYPTION_KEY: "${USER_ENCRYPTION_KEY}"
+      AUDIT_ENCRYPTION_KEY: "${AUDIT_ENCRYPTION_KEY}"
+      DOC_ENCRYPTION_SECRET: "${DOC_ENCRYPTION_SECRET}"
+      FIELD_ENCRYPTION_KEY: "${FIELD_ENCRYPTION_KEY}"
+      TOKEN_ENCRYPTION_KEY: "${TOKEN_ENCRYPTION_KEY}"
+      BIOMETRIC_ENCRYPTION_KEY: "${BIOMETRIC_ENCRYPTION_KEY}"
+      BIOMETRIC_ENCRYPTION_IV: "${BIOMETRIC_ENCRYPTION_IV}"
+      HSM_KEY_ID: "wilsy-hsm-2026-001"
+      
+      # Password & Session
+      PASSWORD_HASH_SALT_ROUNDS: "12"
+      MAX_CONCURRENT_SESSIONS: "5"
+      MAX_LOGIN_ATTEMPTS: "5"
+      WEBAUTHN_RP_ID: "api.wilsy.os"
+      
+      # 🚦 Rate Limiting
+      RATE_LIMIT_ENABLED: "true"
+      RATE_LIMIT_WINDOW_MS: "60000"
+      RATE_LIMIT_MAX_REQUESTS: "100"
+      RATE_LIMIT_BURST: "20"
+      
+      # 📊 Metrics & Monitoring
+      METRICS_PATH: "/metrics"
+      METRICS_AUTH_TOKEN: "${METRICS_AUTH_TOKEN}"
+      METRICS_UPDATE_INTERVAL: "15000"
+      ENABLE_DB_METRICS: "true"
+      ENABLE_QUEUE_METRICS: "true"
+      ENABLE_GPU_METRICS: "${ENABLE_GPU_METRICS:-false}"
+      
+      # 📝 Logging
+      LOG_LEVEL: "info"
+      LOG_FORMAT: "json"
+      LOG_OUTPUT: "combined"
+      LOG_RETENTION_DAYS: "30"
+      LOG_MAX_SIZE: "100m"
+      LOG_MAX_FILES: "10"
+      LOG_ENCRYPT_SENSITIVE: "true"
+      LOG_TIMEZONE: "Africa/Johannesburg"
+      
+      # 🧠 Neural Engine
+      ENABLE_SEMANTIC_SEARCH: "true"
+      ENABLE_CITATION_NETWORK: "true"
+      ENABLE_CROSS_JURISDICTION: "true"
+      ENABLE_GPU_ACCELERATION: "${ENABLE_GPU:-false}"
+      ENABLE_DEEP_LEARNING: "false"
+      EMBEDDING_MODEL: "legal-bert"
+      EMBEDDING_DIMENSION: "768"
+      EMBEDDING_BATCH_SIZE: "${EMBEDDING_BATCH_SIZE:-32}"
+      EMBEDDING_MAX_TEXT_LENGTH: "10000"
+      
+      # 🔍 Vector Database (Milvus)
+      MILVUS_ENABLED: "${MILVUS_ENABLED:-false}"
+      MILVUS_HOST: "milvus"
+      MILVUS_PORT: "19530"
+      MILVUS_TLS: "false"
+      MILVUS_USERNAME: "${MILVUS_USERNAME:-}"
+      MILVUS_PASSWORD: "${MILVUS_PASSWORD:-}"
+      MILVUS_DEFAULT_INDEX: "IVF_FLAT"
+      MILVUS_DEFAULT_METRIC: "COSINE"
+      
+      # 📧 Notifications
+      SMTP_HOST: "${SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT}"
+      SMTP_SECURE: "false"
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD}"
+      SMTP_FROM: "${SMTP_FROM}"
+      ALERT_EMAIL_RECIPIENTS: "${ALERT_EMAIL_RECIPIENTS}"
+      SLACK_WEBHOOK_URL: "${SLACK_WEBHOOK_URL}"
+      SLACK_CRITICAL_CHANNEL: "#wilsy-critical"
+      SLACK_ERROR_CHANNEL: "#wilsy-errors"
+      
+      # 🔗 Hyperledger Fabric
+      HYPERLEDGER_ENABLED: "${HYPERLEDGER_ENABLED:-false}"
+      HYPERLEDGER_CHANNEL: "wilsy-channel"
+      HYPERLEDGER_CHAINCODE: "document-anchor"
+      HYPERLEDGER_MSP_ID: "Org1MSP"
+      HYPERLEDGER_TIMEOUT: "300"
+      HYPERLEDGER_RETRIES: "3"
+      
+      # 🔐 Compliance (POPIA/GDPR)
+      POPIA_COMPLIANT: "true"
+      GDPR_COMPLIANT: "true"
+      DATA_RESIDENCY: "ZA"
+      RETENTION_POLICY: "companies_act_10_years"
+      RETENTION_DAYS: "3650"
+      ENABLE_AUDIT_LOGGING: "true"
+      ENABLE_FORENSIC_LOGGING: "true"
+      ENABLE_QUANTUM_LOGGING: "true"
+      AUDIT_RETENTION_DAYS: "3650"
+      
+      # 👤 Information Officer
+      POPIA_INFORMATION_OFFICER: "Wilson Khanyezi"
+      POPIA_DEPUTY_OFFICER: "contact@wilsy.os"
+      
+      # 💰 FICA/AML
+      FICA_ENABLED: "true"
+      FICA_THRESHOLD: "25000"
+      FICA_ENHANCED_DUE_DILIGENCE: "100000"
+      FICA_AML_MONITORING: "true"
+      
+      # 🏦 SARS Tax
+      SARS_VAT_RATE: "0.15"
+      COMPANY_VAT_NUMBER: "${COMPANY_VAT_NUMBER}"
+      TAX_YEAR_START: "2025-03-01"
+      TAX_YEAR_END: "2026-02-28"
+      
+      # ⚖️ Legal Compliance
+      LPC_COMPLIANT: "true"
+      ECT_ACT_COMPLIANT: "true"
+      COMPANIES_ACT_COMPLIANT: "true"
+      CYBERCRIMES_ACT_COMPLIANT: "true"
+      
+      # 💲 Currency
+      BASE_CURRENCY: "ZAR"
+      ZAR_TO_USD: "0.054"
+      ZAR_TO_EUR: "0.050"
+      ZAR_TO_GBP: "0.043"
+      
+      # 🚀 Feature Flags
+      ENABLE_BILLING: "${ENABLE_BILLING:-false}"
+      ENABLE_INVESTOR_API: "${ENABLE_INVESTOR_API:-false}"
+      ENABLE_HEALTH_CHECKS: "true"
+      ENABLE_BLOCKCHAIN_AUDIT: "${ENABLE_BLOCKCHAIN_AUDIT:-false}"
+      ENABLE_QUANTUM_ENCRYPTION: "${ENABLE_QUANTUM_ENCRYPTION:-false}"
+      
+      # Quantum Features
+      QUANTUM_ENABLED: "true"
+      NEURAL_ENABLED: "true"
+      REGULATORY_ENABLED: "true"
+      PQC_ENABLED: "true"
+      
     ports:
-      - '27017:27017'
+      - "3000:3000"
+      - "9095:9095"
+      - "9096:9096"
+      - "9090:9090"
+    volumes:
+      - audit_logs:/var/log/wilsy-os
+      - forensic_data:/app/data/forensic
+      - reports:/app/reports
+      - ./config:/app/config:ro
+      - ./ssl:/app/ssl:ro
+    networks:
+      - wilsy-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================================
+  # 🔧 WILSY WORKER - Background Processing & Queue Management
+  # ============================================================================
+  wilsy-worker:
+    build:
+      context: .
+      dockerfile: server/Dockerfile.worker
+    image: wilsy-worker-2050:latest
+    container_name: wilsy-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: "production"
+      APP_NAME: "Wilsy Worker"
+      APP_VERSION: "42.0.0"
+      
+      # Database
+      PROD_MONGODB_URI: "mongodb+srv://wilsonkhanyezi:Mawilis8596@legaldocsystem.knucgy2.mongodb.net/?retryWrites=true&w=majority&appName=legalDocSystem"
+      TEST_MONGODB_URI: "mongodb+srv://wilsonkhanyezi:Mawilis8596@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test"
+      ACTIVE_DATABASE: "${ACTIVE_DB:-production}"
+      
+      # Redis
+      REDIS_URI: "redis://:${REDIS_PASSWORD:-changeme}@redis:6379"
+      
+      # Worker Configuration
+      WORKER_COUNT: "4"
+      WORKER_CONCURRENCY: "4"
+      WORKER_MEMORY_LIMIT: "4096"
+      WORKER_MAX_JOBS: "1000"
+      WORKER_STALLED_INTERVAL: "30000"
+      WORKER_LOCK_DURATION: "60000"
+      
+      # Embedding Worker
+      EMBEDDING_WORKER_COUNT: "2"
+      EMBEDDING_WORKER_BATCH_SIZE: "64"
+      EMBEDDING_WORKER_QUEUE_SIZE: "5000"
+      
+      # Vectorizer Worker
+      VECTORIZER_WORKERS: "2"
+      VECTORIZER_BATCH_SIZE: "32"
+      VECTORIZER_QUEUE_SIZE: "10000"
+      
+      # Citation Worker
+      CITATION_WORKERS: "1"
+      CITATION_BATCH_SIZE: "100"
+      CITATION_INDEX_INTERVAL: "3600"
+      
+      # Queue Names
+      EMBEDDING_QUEUE: "embedding-queue"
+      VECTORIZATION_QUEUE: "vectorization-queue"
+      CITATION_QUEUE: "citation-queue"
+      NOTIFICATION_QUEUE: "notification-queue"
+      BILLING_QUEUE: "billing-queue"
+      
+      # Queue Settings
+      QUEUE_CONCURRENCY: "10"
+      QUEUE_MAX_RETRIES: "3"
+      QUEUE_BACKOFF_DELAY: "1000"
+      QUEUE_COMPLETED_TTL: "86400"
+      QUEUE_FAILED_TTL: "604800"
+      
+      # Neural Engine
+      EMBEDDING_MODEL: "legal-bert"
+      EMBEDDING_DIMENSION: "768"
+      ENABLE_GPU_ACCELERATION: "${ENABLE_GPU:-false}"
+      
+      # Logging
+      LOG_LEVEL: "info"
+      LOG_FORMAT: "json"
+      
+    volumes:
+      - forensic_data:/app/data/forensic
+      - reports:/app/reports
+      - model_cache:/app/models
+    networks:
+      - wilsy-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      wilsy-os:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles:
+      - with-workers
+
+  # ============================================================================
+  # 📦 REDIS - Caching, Sessions, and Queue Management
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: wilsy-redis
+    restart: unless-stopped
+    command: >
+      redis-server --appendonly yes 
+      --requirepass ${REDIS_PASSWORD:-changeme} 
+      --maxmemory 4gb 
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - wilsy-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    sysctls:
+      - net.core.somaxconn=511
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================================
+  # 🔍 MILVUS - Vector Database for Semantic Search
+  # ============================================================================
+  milvus:
+    image: milvusdb/milvus:v2.3.4
+    container_name: wilsy-milvus
+    restart: unless-stopped
+    environment:
+      ETCD_ENDPOINTS: "etcd:2379"
+      MINIO_ADDRESS: "minio:9000"
+      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY:-minioadmin}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:-minioadmin}"
+    ports:
+      - "19530:19530"
+    volumes:
+      - milvus_data:/var/lib/milvus
+    networks:
+      - wilsy-network
+    depends_on:
+      - etcd
+      - minio
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles:
+      - with-vector-db
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: wilsy-etcd
+    restart: unless-stopped
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: "revision"
+      ETCD_AUTO_COMPACTION_RETENTION: "1000"
+      ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+      ETCD_SNAPSHOT_COUNT: "50000"
+    command: 
+      - etcd
+      - --advertise-client-urls=http://0.0.0.0:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --data-dir=/etcd
+    volumes:
+      - etcd_data:/etcd
+    networks:
+      - wilsy-network
+    profiles:
+      - with-vector-db
+
+  minio:
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    container_name: wilsy-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY:-minioadmin}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:-minioadmin}"
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - wilsy-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    profiles:
+      - with-vector-db
+
+  # ============================================================================
+  # 🌐 NGINX - Reverse Proxy & Load Balancer
+  # ============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: wilsy-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./public:/usr/share/nginx/html:ro
+    depends_on:
+      wilsy-os:
+        condition: service_healthy
+    networks:
+      - wilsy-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles:
+      - with-proxy
+
+  # ============================================================================
+  # 📊 PROMETHEUS - Metrics Collection (Optional)
+  # ============================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: wilsy-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - wilsy-network
+    profiles:
+      - with-monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: wilsy-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_PASSWORD:-admin}"
+      GF_INSTALL_PLUGINS: "grafana-piechart-panel"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3001:3000"
+    networks:
+      - wilsy-network
+    depends_on:
+      - prometheus
+    profiles:
+      - with-monitoring
+
+  # ============================================================================
+  # 🛠️ MONGO EXPRESS - Database Admin UI (DEVELOPMENT ONLY)
+  # ============================================================================
+  mongo-express:
+    image: mongo-express:latest
+    container_name: wilsy-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: "${PROD_MONGODB_URI}"
+      ME_CONFIG_BASICAUTH_USERNAME: "${ME_USER:-admin}"
+      ME_CONFIG_BASICAUTH_PASSWORD: "${ME_PASSWORD:-changeme}"
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "false"
+    networks:
+      - wilsy-network
+    profiles:
+      - dev-tools
+
+# ============================================================================
+# 🌐 NETWORKS
+# ============================================================================
+networks:
+  wilsy-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+    driver_opts:
+      com.docker.network.bridge.name: "wilsy-bridge"
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+
+# ============================================================================
+# 💾 VOLUMES
+# ============================================================================
+volumes:
+  redis_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH}/redis"
+      o: "bind"
+  
+  audit_logs:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH}/audit-logs"
+      o: "bind"
+  
+  forensic_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH}/forensic-evidence"
+      o: "bind"
+  
+  reports:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH}/reports"
+      o: "bind"
+  
+  model_cache:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH}/models"
+      o: "bind"
+  
+  milvus_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH}/milvus"
+      o: "bind"
+  
+  etcd_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH}/etcd"
+      o: "bind"
+  
+  minio_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH}/minio"
+      o: "bind"
+  
+  prometheus_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH}/prometheus"
+      o: "bind"
+  
+  grafana_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH}/grafana"
+      o: "bind"
+
+# ============================================================================
+# 📋 USAGE INSTRUCTIONS
+# ============================================================================
+# Start with all services:
+#   docker-compose --profile with-workers --profile with-vector-db --profile with-proxy --profile with-monitoring up -d
+#
+# Start minimal (core only):
+#   docker-compose up -d
+#
+# Start with specific profiles:
+#   docker-compose --profile with-workers up -d
+#   docker-compose --profile with-vector-db up -d
+#   docker-compose --profile with-monitoring up -d
+#
+# Environment file required:
+#   .env.docker - Copy from template and fill with your values
+#
+# ============================================================================
+# WILSY OS - The Global Legal Operating System
+# "Law knows no borders. Wilsy OS has no limits."
+# 10 Generations of Wealth | R 1,000,000,000,000,000 Target
+# Wilson Khanyezi - Supreme Architect
+# ============================================================================

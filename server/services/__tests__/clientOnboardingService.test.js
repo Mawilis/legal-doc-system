@@ -99,8 +99,7 @@ const clientOnboardingService = {
               .toString()
               .padStart(2, '0')}`;
             result.details.gender = parseInt(cleanId[6]) >= 5 ? 'MALE' : 'FEMALE';
-            result.details.citizenship =
-              parseInt(cleanId[10]) === 0 ? 'SA CITIZEN' : 'PERMANENT RESIDENT';
+            result.details.citizenship = parseInt(cleanId[10]) === 0 ? 'SA CITIZEN' : 'PERMANENT RESIDENT';
           }
         }
       }
@@ -369,8 +368,8 @@ const clientOnboardingService = {
         totalAuditEntries: auditLog.length,
         averageOnboardingTimeMs: 250, // simulated
         duplicateRate:
-          auditLog.filter((l) => l.action === 'DUPLICATE_DETECTED').length /
-          Math.max(1, clients.length),
+          auditLog.filter((l) => l.action === 'DUPLICATE_DETECTED').length
+          / Math.max(1, clients.length),
       },
       economicImpact: {
         annualSavings: 3100000,
@@ -574,7 +573,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
           idNumber: '8001015009087',
           email: 'existing@example.com',
         },
-        { tenantId: testTenant }
+        { tenantId: testTenant },
       );
     });
 
@@ -649,7 +648,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
           idNumber: '8001015009087',
           email: 'john.smith@example.com',
         },
-        { tenantId: testTenant }
+        { tenantId: testTenant },
       );
 
       await clientOnboardingService.createClient(
@@ -658,7 +657,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
           idNumber: '9001015009087',
           email: 'jane.doe@example.com',
         },
-        { tenantId: testTenant }
+        { tenantId: testTenant },
       );
     });
 
@@ -774,7 +773,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
           idNumber: '8001015009087',
           email: 'tenant1@example.com',
         },
-        { tenantId: tenant1 }
+        { tenantId: tenant1 },
       );
 
       // Create client in tenant 2
@@ -784,7 +783,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
           idNumber: '9001015009087',
           email: 'tenant2@example.com',
         },
-        { tenantId: tenant2 }
+        { tenantId: tenant2 },
       );
 
       // Search in tenant 1 should only find tenant 1 client
@@ -828,7 +827,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
             idNumber: `8001015009${i.toString().padStart(3, '0')}`, // Generate different IDs
             email: `client${i}@example.com`,
           },
-          { tenantId: testTenant }
+          { tenantId: testTenant },
         );
       }
 
@@ -854,7 +853,7 @@ describe('FORENSIC CLIENT ONBOARDING SERVICE V6 - FICA/POPIA COMPLIANT', () => {
             idNumber: `8001015009${i.toString().padStart(3, '0')}`,
             email: `evidence${i}@example.com`,
           },
-          { tenantId: 'INVESTOR_DEMO' }
+          { tenantId: 'INVESTOR_DEMO' },
         );
       }
 

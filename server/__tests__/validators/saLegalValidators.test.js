@@ -97,7 +97,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
           metadata: expect.objectContaining({
             fraudIndicator: 'POTENTIAL_FRAUD',
           }),
-        })
+        }),
       );
     });
 
@@ -117,7 +117,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
 
       // No warning for valid race digit
       expect(auditLogger.audit).not.toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'ID_VALIDATION_WARNING' })
+        expect.objectContaining({ action: 'ID_VALIDATION_WARNING' }),
       );
     });
 
@@ -232,7 +232,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
       expect(auditLogger.audit).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'MULTI_FACTOR_VERIFICATION',
-        })
+        }),
       );
     });
 
@@ -252,7 +252,7 @@ describe('FORENSIC SA LEGAL VALIDATORS V6', () => {
       expect(RETENTION_POLICIES.FICA_5_YEARS.legalReference).toMatch(/FICA/);
       expect(RETENTION_POLICIES.POPIA_1_YEAR.legalReference).toMatch(/POPIA/);
       expect(RETENTION_POLICIES.TRUST_PERPETUAL.legalReference).toMatch(
-        /Trust Property Control Act/
+        /Trust Property Control Act/,
       );
     });
   });

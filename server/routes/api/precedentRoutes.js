@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ NEURAL PRECEDENT API ROUTES - QUANTUM LEGAL SEARCH GATEWAY                ║
   ║ R25M/year revenue | Rate limited | Tiered access | Forensic audit         ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import express from 'express';
 import rateLimit from 'express-rate-limit';
@@ -53,8 +53,12 @@ const strictLimiter = rateLimit({
 
 const searchSchema = {
   body: {
-    query: { type: 'string', required: true, minLength: 3, maxLength: 500 },
-    limit: { type: 'number', min: 1, max: 100, optional: true },
+    query: {
+      type: 'string', required: true, minLength: 3, maxLength: 500,
+    },
+    limit: {
+      type: 'number', min: 1, max: 100, optional: true,
+    },
     mode: { type: 'string', enum: ['semantic', 'keyword', 'hybrid'], optional: true },
     filters: { type: 'object', optional: true },
   },
@@ -62,7 +66,9 @@ const searchSchema = {
 
 const similarSchema = {
   body: {
-    limit: { type: 'number', min: 1, max: 20, optional: true },
+    limit: {
+      type: 'number', min: 1, max: 20, optional: true,
+    },
   },
 };
 
@@ -119,7 +125,7 @@ router.post(
   apiLimiter,
   validateRequest(searchSchema),
   auditMiddleware({ action: 'NEURAL_API_SEARCH' }),
-  searchPrecedents
+  searchPrecedents,
 );
 
 /**
@@ -148,7 +154,7 @@ router.get(
   validateApiKey,
   apiLimiter,
   auditMiddleware({ action: 'NEURAL_API_GET' }),
-  getPrecedentById
+  getPrecedentById,
 );
 
 /**
@@ -184,7 +190,7 @@ router.post(
   strictLimiter,
   validateRequest(similarSchema),
   auditMiddleware({ action: 'NEURAL_API_SIMILAR' }),
-  getSimilarPrecedents
+  getSimilarPrecedents,
 );
 
 /**
@@ -206,7 +212,7 @@ router.get(
   requireTier('PREMIUM'),
   apiLimiter,
   auditMiddleware({ action: 'NEURAL_API_STATS' }),
-  getSearchStats
+  getSearchStats,
 );
 
 export default router;

@@ -61,7 +61,7 @@ const attorneyProfileSchema = new Schema(
       index: true,
       immutable: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v);
         },
         message: (props) => `${props.value} is not a valid tenant UUID`,
@@ -76,7 +76,7 @@ const attorneyProfileSchema = new Schema(
       trim: true,
       immutable: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^(LPC-\d{8}|\d{4}\/\d{4})$/.test(v);
         },
         message: (props) => `${props.value} is not a valid LPC number`,
@@ -91,7 +91,7 @@ const attorneyProfileSchema = new Schema(
       uppercase: true,
       trim: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return !v || /^PRAC-\d{8}$/.test(v);
         },
         message: (props) => `${props.value} is not a valid practice number`,
@@ -104,7 +104,9 @@ const attorneyProfileSchema = new Schema(
         enum: ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Adv', 'Justice'],
         required: true,
       },
-      fullName: { type: String, required: true, trim: true, maxlength: 200 },
+      fullName: {
+        type: String, required: true, trim: true, maxlength: 200,
+      },
       preferredName: { type: String, trim: true, maxlength: 100 },
       idNumber: {
         type: String,
@@ -180,15 +182,17 @@ const attorneyProfileSchema = new Schema(
     },
 
     practice: {
-      name: { type: String, required: true, trim: true, maxlength: 200 },
+      name: {
+        type: String, required: true, trim: true, maxlength: 200,
+      },
       type: { type: String, required: true, enum: Object.values(PRACTICE_TYPES) },
       area: { type: String, required: true, enum: Object.values(PRACTICE_AREAS) },
       commencementDate: { type: Date, required: true, immutable: true },
       yearsOfPractice: {
         type: Number,
-        default: function () {
+        default() {
           return Math.floor(
-            (Date.now() - this.practice.commencementDate) / (1000 * 60 * 60 * 24 * 365)
+            (Date.now() - this.practice.commencementDate) / (1000 * 60 * 60 * 24 * 365),
           );
         },
       },
@@ -239,11 +243,17 @@ const attorneyProfileSchema = new Schema(
 
     cpd: {
       currentYear: { type: Number, default: new Date().getFullYear(), index: true },
-      hoursCompleted: { type: Number, default: 0, min: 0, max: 30 },
-      ethicsHours: { type: Number, default: 0, min: 0, max: 10 },
+      hoursCompleted: {
+        type: Number, default: 0, min: 0, max: 30,
+      },
+      ethicsHours: {
+        type: Number, default: 0, min: 0, max: 10,
+      },
       lastSubmissionDate: Date,
       complianceStatus: { type: String, enum: Object.values(CPD_STATUS), default: 'PENDING' },
-      rolloverHours: { type: Number, default: 0, min: 0, max: 6 },
+      rolloverHours: {
+        type: Number, default: 0, min: 0, max: 6,
+      },
       verifiedAt: Date,
       verifiedBy: String,
     },
@@ -253,8 +263,7 @@ const attorneyProfileSchema = new Schema(
         type: String,
         sparse: true,
         validate: {
-          validator: (v) =>
-            !v || /^TRUST-[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$/.test(v),
+          validator: (v) => !v || /^TRUST-[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$/.test(v),
         },
       },
       bankName: {
@@ -273,7 +282,9 @@ const attorneyProfileSchema = new Schema(
       isActive: { type: Boolean, default: false },
       lastReconciliation: Date,
       nextReconciliationDue: Date,
-      complianceScore: { type: Number, min: 0, max: 100, default: 0 },
+      complianceScore: {
+        type: Number, min: 0, max: 100, default: 0,
+      },
     },
 
     employmentHistory: [
@@ -331,13 +342,13 @@ const attorneyProfileSchema = new Schema(
         newState: Schema.Types.Mixed,
         hash: {
           type: String,
-          default: function () {
+          default() {
             return crypto
               .createHash('sha3-512')
               .update(
                 `${this.action}:${this.performedAt.toISOString()}:${
                   this.performedBy
-                }:${JSON.stringify(this.changes)}`
+                }:${JSON.stringify(this.changes)}`,
               )
               .digest('hex');
           },
@@ -348,18 +359,18 @@ const attorneyProfileSchema = new Schema(
     integrityHash: {
       type: String,
       unique: true,
-      default: function () {
+      default() {
         return crypto
           .createHash('sha3-512')
           .update(
-            `${this.lpcNumber}:${this.personalInfo?.idNumber}:${this.updatedAt || Date.now()}`
+            `${this.lpcNumber}:${this.personalInfo?.idNumber}:${this.updatedAt || Date.now()}`,
           )
           .digest('hex');
       },
     },
     quantumSignature: {
       type: String,
-      default: function () {
+      default() {
         return crypto
           .createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026')
           .update(`${this._id}:${this.lpcNumber}:${this.integrityHash}`)
@@ -367,13 +378,17 @@ const attorneyProfileSchema = new Schema(
       },
     },
 
-    status: { type: String, enum: Object.values(ATTORNEY_STATUS), default: 'ACTIVE', index: true },
+    status: {
+      type: String, enum: Object.values(ATTORNEY_STATUS), default: 'ACTIVE', index: true,
+    },
     statusReason: String,
     statusChangedAt: Date,
     statusChangedBy: String,
 
     createdBy: { type: String, required: true, immutable: true },
-    createdAt: { type: Date, default: Date.now, immutable: true, index: true },
+    createdAt: {
+      type: Date, default: Date.now, immutable: true, index: true,
+    },
     updatedBy: { type: String, required: true },
     updatedAt: { type: Date, default: Date.now },
 
@@ -381,7 +396,7 @@ const attorneyProfileSchema = new Schema(
     retentionStart: { type: Date, default: Date.now, immutable: true },
     retentionExpiry: {
       type: Date,
-      default: function () {
+      default() {
         const d = new Date();
         d.setFullYear(d.getFullYear() + 20);
         return d;
@@ -400,7 +415,7 @@ const attorneyProfileSchema = new Schema(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret.__v;
         delete ret.auditTrail;
         delete ret.integrityHash;
@@ -411,7 +426,7 @@ const attorneyProfileSchema = new Schema(
         return redactSensitiveData(ret);
       },
     },
-  }
+  },
 );
 
 attorneyProfileSchema.virtual('fullAddress').get(function () {
@@ -450,29 +465,30 @@ attorneyProfileSchema.index({ integrityHash: 1 }, { unique: true });
 
 attorneyProfileSchema.pre('save', async function (next) {
   try {
-    if (!this.tenantId)
-      throw new Error('TENANT_ISOLATION_VIOLATION: Attorney profile requires tenantId');
-    if (this.practice?.commencementDate)
+    if (!this.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: Attorney profile requires tenantId');
+    if (this.practice?.commencementDate) {
       this.practice.yearsOfPractice = Math.floor(
-        (Date.now() - this.practice.commencementDate) / (1000 * 60 * 60 * 24 * 365)
+        (Date.now() - this.practice.commencementDate) / (1000 * 60 * 60 * 24 * 365),
       );
+    }
     this.integrityHash = crypto
       .createHash('sha3-512')
       .update(`${this.lpcNumber}:${this.personalInfo?.idNumber}:${Date.now()}`)
       .digest('hex');
-    if (this.isNew)
+    if (this.isNew) {
       this.auditTrail.push({
         action: 'ATTORNEY_PROFILE_CREATED',
         performedBy: this.createdBy,
         performedAt: new Date(),
         changes: { lpcNumber: this.lpcNumber, practiceName: this.practice?.name },
       });
-    else
+    } else {
       this.auditTrail.push({
         action: 'ATTORNEY_PROFILE_UPDATED',
         performedBy: this.updatedBy,
         performedAt: new Date(),
       });
+    }
     next();
   } catch (error) {
     next(error);
@@ -531,10 +547,8 @@ attorneyProfileSchema.methods = {
     else if (this.trustAccount.complianceScore < 70) s -= 15;
     if (this.cpd.complianceStatus !== 'COMPLIANT') s -= 20;
     if (this.disciplinaryHistory) {
-      s -=
-        this.disciplinaryHistory.filter((d) =>
-          ['PENDING', 'UNDER_INVESTIGATION'].includes(d.status)
-        ).length * 15;
+      s
+        -= this.disciplinaryHistory.filter((d) => ['PENDING', 'UNDER_INVESTIGATION'].includes(d.status)).length * 15;
     }
     return Math.max(0, Math.min(100, s));
   },

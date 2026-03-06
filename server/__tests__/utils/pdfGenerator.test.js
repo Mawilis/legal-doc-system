@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ PDF GENERATOR TESTS - INVESTOR DUE DILIGENCE SUITE                                    ║
   ║ 100% coverage | Forensic evidence generation | POPIA compliance verification         ║
   ║ R425K/year savings validated | SHA256 evidence chain                                 ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/utils/pdfGenerator.test.js
@@ -25,6 +25,10 @@ import createPDFGenerator, {
   DEFAULT_CONFIG,
 } from '../utils/pdfGenerator.js';
 
+// Import mocked modules for assertions
+import auditLogger from '../utils/auditLogger.js';
+import tenantContext from '../middleware/tenantContext.js';
+
 // Mock dependencies
 jest.mock('../utils/auditLogger', () => ({
   log: jest.fn().mockResolvedValue(true),
@@ -38,11 +42,10 @@ jest.mock('../utils/logger', () => ({
 
 jest.mock('../utils/cryptoUtils', () => ({
   hash: (data) => createHash('sha256').update(JSON.stringify(data)).digest('hex'),
-  generateKey: (algorithm, seed) =>
-    createHash('sha256')
-      .update(seed || 'test')
-      .digest('hex')
-      .substring(0, 32),
+  generateKey: (algorithm, seed) => createHash('sha256')
+    .update(seed || 'test')
+    .digest('hex')
+    .substring(0, 32),
 }));
 
 jest.mock('../middleware/tenantContext', () => ({
@@ -52,10 +55,6 @@ jest.mock('../middleware/tenantContext', () => ({
     userId: 'test-user-87654321',
   }),
 }));
-
-// Import mocked modules for assertions
-import auditLogger from '../utils/auditLogger.js';
-import tenantContext from '../middleware/tenantContext.js';
 
 // ============================================================================
 // TEST CONSTANTS
@@ -355,7 +354,7 @@ describe('PDFGenerator - Investor Due Diligence Suite', () => {
 
       // Act & Assert - tenant B cannot retrieve tenant A's document
       await expect(
-        generator2.retrieveDocument(result.documentHash, 'tenant-b-87654321')
+        generator2.retrieveDocument(result.documentHash, 'tenant-b-87654321'),
       ).rejects.toThrow('Document not found');
 
       // tenant A can retrieve their own document
@@ -379,7 +378,7 @@ describe('PDFGenerator - Investor Due Diligence Suite', () => {
 
       // Act & Assert
       await expect(generator.retrieveDocument(result.documentHash, TEST_TENANT_ID)).rejects.toThrow(
-        'Tenant isolation violation'
+        'Tenant isolation violation',
       );
     });
   });
@@ -469,7 +468,7 @@ describe('PDFGenerator - Investor Due Diligence Suite', () => {
 
       // Tamper with document
       const tamperedBuffer = Buffer.from(
-        result.buffer.toString('utf-8').replace('1250.00', '999999.99')
+        result.buffer.toString('utf-8').replace('1250.00', '999999.99'),
       );
 
       // Act
@@ -523,7 +522,7 @@ describe('PDFGenerator - Investor Due Diligence Suite', () => {
 
       // Act & Assert
       await expect(generator.generateValuationReport(invalidData)).rejects.toThrow(
-        'Valuation report requires valuationId and companyName'
+        'Valuation report requires valuationId and companyName',
       );
     });
 
@@ -603,7 +602,7 @@ describe('PDFGenerator - Investor Due Diligence Suite', () => {
 
       // Act & Assert
       await expect(generator.generateValuationReport(largeData)).rejects.toThrow(
-        /exceeds maximum size/
+        /exceeds maximum size/,
       );
 
       // Restore
@@ -698,7 +697,7 @@ describe('PDFGenerator - Investor Due Diligence Suite', () => {
       // Generate evidence
       const evidence = await generateEvidenceFile(
         { auditEntries, results },
-        'PDF Generator Integration Test'
+        'PDF Generator Integration Test',
       );
 
       // Verify evidence structure
@@ -709,7 +708,7 @@ describe('PDFGenerator - Investor Due Diligence Suite', () => {
       // Log for investor visibility
       console.log('🔐 FORENSIC EVIDENCE GENERATED:');
       console.log(
-        `   Evidence path: ${path.join(__dirname, 'evidence', 'pdf-generator-evidence.json')}`
+        `   Evidence path: ${path.join(__dirname, 'evidence', 'pdf-generator-evidence.json')}`,
       );
       console.log(`   Audit entries: ${evidence.auditEntries.length}`);
       console.log(`   SHA256: ${evidence.hash}`);
@@ -717,7 +716,7 @@ describe('PDFGenerator - Investor Due Diligence Suite', () => {
       // Write verification command
       console.log('\n📋 Verification command:');
       console.log(
-        `   jq -c '.auditEntries[]' ${path.join(__dirname, 'evidence', 'pdf-generator-evidence.json')} | sha256sum`
+        `   jq -c '.auditEntries[]' ${path.join(__dirname, 'evidence', 'pdf-generator-evidence.json')} | sha256sum`,
       );
     });
   });

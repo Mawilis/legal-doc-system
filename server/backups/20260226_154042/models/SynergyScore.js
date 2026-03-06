@@ -1,42 +1,42 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ SYNERGY SCORE MODEL - QUANTUM SYNERGY CALCULATION WITH 94% ACCURACY                   ║
   ║ [Production Grade | 127-Dimensions | Real-time | Forensic Traceability]               ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 const synergyScoreSchema = new mongoose.Schema({
   scoreId: {
     type: String,
     required: true,
     unique: true,
-    default: () => `SYN-${crypto.randomBytes(4).toString('hex').toUpperCase()}`
+    default: () => `SYN-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
   },
 
   tenantId: {
     type: String,
     required: true,
-    index: true
+    index: true,
   },
 
   acquirerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
-    required: true
+    required: true,
   },
 
   targetId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Target',
-    required: true
+    required: true,
   },
 
   dealId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Deal',
-    sparse: true
+    sparse: true,
   },
 
   // Synergy Categories
@@ -47,9 +47,9 @@ const synergyScoreSchema = new mongoose.Schema({
       drivers: [{
         name: String,
         contribution: Number,
-        timeline: Number // months
+        timeline: Number, // months
       }],
-      assumptions: [String]
+      assumptions: [String],
     },
     cost: {
       value: Number,
@@ -59,8 +59,8 @@ const synergyScoreSchema = new mongoose.Schema({
         contribution: Number,
         timeline: Number,
         oneTime: Number,
-        recurring: Number
-      }]
+        recurring: Number,
+      }],
     },
     financial: {
       value: Number,
@@ -68,15 +68,15 @@ const synergyScoreSchema = new mongoose.Schema({
       drivers: [{
         name: String,
         contribution: Number,
-        type: String
-      }]
+        type: String,
+      }],
     },
     tax: {
       value: Number,
       confidence: Number,
       structure: String,
       jurisdiction: String,
-      expiryDate: Date
+      expiryDate: Date,
     },
     operational: {
       value: Number,
@@ -84,8 +84,8 @@ const synergyScoreSchema = new mongoose.Schema({
       drivers: [{
         area: String,
         savings: Number,
-        implementation: String
-      }]
+        implementation: String,
+      }],
     },
     technological: {
       value: Number,
@@ -93,27 +93,27 @@ const synergyScoreSchema = new mongoose.Schema({
       drivers: [{
         technology: String,
         value: Number,
-        integration: String
-      }]
+        integration: String,
+      }],
     },
     cultural: {
       score: Number,
       confidence: Number,
       dimensions: mongoose.Schema.Types.Mixed,
-      riskAreas: [String]
+      riskAreas: [String],
     },
     strategic: {
       score: Number,
       confidence: Number,
       alignment: Number,
-      rationale: String
+      rationale: String,
     },
     market: {
       score: Number,
       confidence: Number,
       impact: mongoose.Schema.Types.Mixed,
-      competitorResponse: String
-    }
+      competitorResponse: String,
+    },
   },
 
   // Total Synergy
@@ -122,7 +122,7 @@ const synergyScoreSchema = new mongoose.Schema({
     npv: Number,
     irr: Number,
     paybackPeriod: Number, // months
-    confidence: Number
+    confidence: Number,
   },
 
   // Timeline
@@ -131,7 +131,7 @@ const synergyScoreSchema = new mongoose.Schema({
     year2: { value: Number, percentOfTotal: Number },
     year3: { value: Number, percentOfTotal: Number },
     year4: { value: Number, percentOfTotal: Number },
-    year5: { value: Number, percentOfTotal: Number }
+    year5: { value: Number, percentOfTotal: Number },
   },
 
   // Risk Analysis
@@ -140,7 +140,7 @@ const synergyScoreSchema = new mongoose.Schema({
     description: String,
     impact: Number,
     probability: Number,
-    mitigation: String
+    mitigation: String,
   }],
 
   // Sensitivities
@@ -148,7 +148,7 @@ const synergyScoreSchema = new mongoose.Schema({
     revenueMultiple: [{ change: Number, impact: Number }],
     costMultiple: [{ change: Number, impact: Number }],
     discountRate: [{ change: Number, impact: Number }],
-    integrationDelay: [{ months: Number, impact: Number }]
+    integrationDelay: [{ months: Number, impact: Number }],
   },
 
   // Quantum Parameters
@@ -157,7 +157,7 @@ const synergyScoreSchema = new mongoose.Schema({
     temperature: Number,
     iterations: Number,
     convergenceScore: Number,
-    annealingPath: [Number]
+    annealingPath: [Number],
   },
 
   // Validation
@@ -166,13 +166,13 @@ const synergyScoreSchema = new mongoose.Schema({
     independentReview: Boolean,
     reviewedBy: String,
     reviewedAt: Date,
-    comments: String
+    comments: String,
   },
 
   // Metadata
   calculatedAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
 
   calculatedBy: String,
@@ -180,10 +180,10 @@ const synergyScoreSchema = new mongoose.Schema({
   version: { type: Number, default: 1 },
 
   forensicHash: String,
-  previousHash: String
+  previousHash: String,
 }, {
   timestamps: true,
-  collection: 'synergy_scores'
+  collection: 'synergy_scores',
 });
 
 // Indexes
@@ -193,13 +193,13 @@ synergyScoreSchema.index({ 'scores.revenue.value': -1 });
 synergyScoreSchema.index({ calculatedAt: -1 });
 
 // Pre-save middleware
-synergyScoreSchema.pre('save', async function(next) {
+synergyScoreSchema.pre('save', async function (next) {
   // Calculate NPV
   const discountRate = 0.12; // 12% WACC
   let npv = 0;
   for (let year = 1; year <= 5; year++) {
     const value = this.timeline[`year${year}`]?.value || 0;
-    npv += value / Math.pow(1 + discountRate, year);
+    npv += value / (1 + discountRate) ** year;
   }
   this.totalSynergy.npv = npv;
 
@@ -208,13 +208,13 @@ synergyScoreSchema.pre('save', async function(next) {
   for (let year = 1; year <= 5; year++) {
     cashflows.push(this.timeline[`year${year}`]?.value || 0);
   }
-  
+
   // Simple IRR approximation
   let irr = 0.15;
   for (let i = 0; i < 10; i++) {
     let npv2 = 0;
     for (let t = 0; t < cashflows.length; t++) {
-      npv2 += cashflows[t] / Math.pow(1 + irr, t);
+      npv2 += cashflows[t] / (1 + irr) ** t;
     }
     if (Math.abs(npv2) < 1) break;
     irr += npv2 > 0 ? 0.01 : -0.01;
@@ -228,7 +228,7 @@ synergyScoreSchema.pre('save', async function(next) {
     targetId: this.targetId,
     totalSynergy: this.totalSynergy.value,
     calculatedAt: this.calculatedAt,
-    previousHash: this.previousHash
+    previousHash: this.previousHash,
   });
 
   this.forensicHash = crypto
@@ -240,17 +240,17 @@ synergyScoreSchema.pre('save', async function(next) {
 });
 
 // Methods
-synergyScoreSchema.methods.getTopDrivers = function(limit = 3) {
+synergyScoreSchema.methods.getTopDrivers = function (limit = 3) {
   const drivers = [];
-  
+
   Object.entries(this.scores).forEach(([category, data]) => {
     if (data.drivers) {
-      data.drivers.forEach(driver => {
+      data.drivers.forEach((driver) => {
         drivers.push({
           category,
           name: driver.name || driver.area || driver.technology,
           contribution: driver.contribution || driver.savings || driver.value,
-          timeline: driver.timeline
+          timeline: driver.timeline,
         });
       });
     }
@@ -261,14 +261,14 @@ synergyScoreSchema.methods.getTopDrivers = function(limit = 3) {
     .slice(0, limit);
 };
 
-synergyScoreSchema.methods.getConfidenceInterval = function() {
-  const confidence = this.totalSynergy.confidence;
-  const value = this.totalSynergy.value;
-  
+synergyScoreSchema.methods.getConfidenceInterval = function () {
+  const { confidence } = this.totalSynergy;
+  const { value } = this.totalSynergy;
+
   return {
     low: value * (1 - (1 - confidence) / 2),
     high: value * (1 + (1 - confidence) / 2),
-    confidence
+    confidence,
   };
 };
 

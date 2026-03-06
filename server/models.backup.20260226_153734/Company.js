@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - COMPANY MODEL v2.0 (FORENSIC-GRADE) ║
   ║ [Companies Act 71 of 2008 | CIPC | FICA | POPIA | JSE | SARS] ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Company.js
  * VERSION: 2.0.0
@@ -528,10 +528,9 @@ const registrationDetailsSchema = new mongoose.Schema({
     uppercase: true,
     trim: true,
     validate: {
-      validator: (v) => {
+      validator: (v) =>
         // Format: YYYY/XXXXXX/YY or YYYY/XXXXXX/YY for close corporations
-        return /^\d{4}\/\d{6}\/\d{2}$/.test(v) || /^CK\d{2}\/\d{5}\/\d{2}$/.test(v);
-      },
+        /^\d{4}\/\d{6}\/\d{2}$/.test(v) || /^CK\d{2}\/\d{5}\/\d{2}$/.test(v),
       message: 'Invalid CIPC registration number',
     },
     comment: 'Format: YYYY/NNNNNN/CC (e.g., 2025/012345/07)',
@@ -2066,7 +2065,7 @@ const companySchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 // ============================================================================
 // INDEXES - COMPREHENSIVE QUERY OPTIMIZATION
@@ -2117,7 +2116,7 @@ companySchema.index(
       'previousNames.name': 3,
     },
     name: 'company_search_index',
-  }
+  },
 );
 // ============================================================================
 // MIDDLEWARE
@@ -2464,8 +2463,8 @@ companySchema.methods.syncWithCIPC = async function (cipcData, userId) {
   }
 
   if (
-    cipcData.registrationNumber &&
-    cipcData.registrationNumber !== this.registration?.registrationNumber
+    cipcData.registrationNumber
+    && cipcData.registrationNumber !== this.registration?.registrationNumber
   ) {
     discrepancies.push({
       field: 'registrationNumber',
@@ -2706,7 +2705,7 @@ companySchema.virtual('registeredAddressString').get(function () {
   const addr = this.registration?.registeredAddress;
   if (!addr) return '';
 
-  return `${addr.streetAddress}, ${addr.suburb ? addr.suburb + ', ' : ''}${addr.city}, ${addr.postalCode}`;
+  return `${addr.streetAddress}, ${addr.suburb ? `${addr.suburb}, ` : ''}${addr.city}, ${addr.postalCode}`;
 });
 /**
  * Director count
@@ -2725,7 +2724,7 @@ companySchema.virtual('shareholderCount').get(function () {
  */
 companySchema.virtual('complianceScore').get(function () {
   let score = 0;
-  let total = 5;
+  const total = 5;
 
   if (this.compliance?.cipc?.status === 'compliant') score++;
   if (this.compliance?.fica?.status === 'compliant') score++;

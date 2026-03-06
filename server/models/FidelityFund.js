@@ -83,8 +83,7 @@ const fidelityFundSchema = new Schema(
       index: true,
       immutable: true,
       validate: {
-        validator: (v) =>
-          /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v),
+        validator: (v) => /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v),
       },
     },
     certificateId: {
@@ -93,8 +92,7 @@ const fidelityFundSchema = new Schema(
       unique: true,
       uppercase: true,
       immutable: true,
-      default: () =>
-        `FFC-${new Date().getFullYear()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+      default: () => `FFC-${new Date().getFullYear()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
       validate: { validator: (v) => /^FFC-\d{4}-[A-F0-9]{8}$/.test(v) },
       index: true,
     },
@@ -116,7 +114,9 @@ const fidelityFundSchema = new Schema(
       index: true,
       validate: { validator: (v) => !v || /^PRAC-\d{8}$/.test(v) },
     },
-    firmId: { type: Schema.Types.ObjectId, ref: 'Firm', required: true, index: true },
+    firmId: {
+      type: Schema.Types.ObjectId, ref: 'Firm', required: true, index: true,
+    },
     certificateData: {
       type: Schema.Types.Mixed,
       required: true,
@@ -127,7 +127,9 @@ const fidelityFundSchema = new Schema(
         jurisdiction: 'Republic of South Africa',
       },
     },
-    issueDate: { type: Date, required: true, default: Date.now, immutable: true, index: true },
+    issueDate: {
+      type: Date, required: true, default: Date.now, immutable: true, index: true,
+    },
     expiryDate: {
       type: Date,
       required: true,
@@ -172,8 +174,12 @@ const fidelityFundSchema = new Schema(
       min: 0,
       get: (v) => parseFloat(v.toFixed(2)),
     },
-    discountAmount: { type: Number, default: 0, min: 0, get: (v) => parseFloat(v.toFixed(2)) },
-    discountPercentage: { type: Number, default: 0, min: 0, max: 100 },
+    discountAmount: {
+      type: Number, default: 0, min: 0, get: (v) => parseFloat(v.toFixed(2)),
+    },
+    discountPercentage: {
+      type: Number, default: 0, min: 0, max: 100,
+    },
     discountReason: String,
     discounts: [
       {
@@ -234,12 +240,18 @@ const fidelityFundSchema = new Schema(
       },
     ],
     practiceType: { type: String, required: true, enum: Object.values(PRACTICE_TYPES) },
-    yearsOfPractice: { type: Number, required: true, min: 0, max: 100 },
+    yearsOfPractice: {
+      type: Number, required: true, min: 0, max: 100,
+    },
     practiceArea: { type: String, enum: Object.values(PRACTICE_AREAS), required: true },
-    proBonoHours: { type: Number, default: 0, min: 0, max: 5000 },
+    proBonoHours: {
+      type: Number, default: 0, min: 0, max: 5000,
+    },
     employees: { type: Number, default: 1, min: 1 },
     partners: { type: Number, default: 1, min: 1 },
-    annualTurnover: { type: Number, required: true, min: 0, get: (v) => parseFloat(v.toFixed(2)) },
+    annualTurnover: {
+      type: Number, required: true, min: 0, get: (v) => parseFloat(v.toFixed(2)),
+    },
     complianceCheck: {
       cpdCompliant: { type: Boolean, default: false },
       trustAccountActive: { type: Boolean, default: false },
@@ -256,7 +268,7 @@ const fidelityFundSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-      default: function () {
+      default() {
         return crypto
           .createHash('sha3-512')
           .update(
@@ -267,7 +279,7 @@ const fidelityFundSchema = new Schema(
               this.expiryDate.toISOString(),
               this.contributionAmount.toString(),
               this.turnoverDeclared.toString(),
-            ].join(':')
+            ].join(':'),
           )
           .digest('hex');
       },
@@ -275,11 +287,11 @@ const fidelityFundSchema = new Schema(
     digitalSignature: {
       type: String,
       required: true,
-      default: function () {
+      default() {
         return crypto
           .createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026')
           .update(
-            [this.certificateId, this.certificateHash, this.issueDate.toISOString()].join(':')
+            [this.certificateId, this.certificateHash, this.issueDate.toISOString()].join(':'),
           )
           .digest('hex');
       },
@@ -287,7 +299,7 @@ const fidelityFundSchema = new Schema(
     integrityHash: {
       type: String,
       unique: true,
-      default: function () {
+      default() {
         return crypto
           .createHash('sha3-512')
           .update(`${this.certificateId}:${this.certificateHash}:${Date.now()}`)
@@ -296,7 +308,7 @@ const fidelityFundSchema = new Schema(
     },
     quantumSignature: {
       type: String,
-      default: function () {
+      default() {
         return crypto
           .createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026')
           .update(`${this._id}:${this.certificateId}:${this.integrityHash}`)
@@ -305,13 +317,13 @@ const fidelityFundSchema = new Schema(
     },
     verificationUrl: {
       type: String,
-      default: function () {
+      default() {
         return `https://verify.wilsyos.co.za/ffc/${this.certificateId}`;
       },
     },
     verificationQR: {
       type: String,
-      default: function () {
+      default() {
         return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${this.certificateId}`;
       },
     },
@@ -355,7 +367,9 @@ const fidelityFundSchema = new Schema(
       },
       renewalMethod: { type: String, enum: ['AUTOMATIC', 'MANUAL', 'PORTAL', 'BULK'] },
       renewalReminders: [
-        { sentAt: Date, daysBeforeExpiry: Number, method: String, status: String },
+        {
+          sentAt: Date, daysBeforeExpiry: Number, method: String, status: String,
+        },
       ],
       renewalApplication: String,
       renewalApproval: String,
@@ -394,13 +408,13 @@ const fidelityFundSchema = new Schema(
         authorization: String,
         hash: {
           type: String,
-          default: function () {
+          default() {
             return crypto
               .createHash('sha3-512')
               .update(
                 `${this.action}:${this.performedAt.toISOString()}:${
                   this.performedBy
-                }:${JSON.stringify(this.changes)}`
+                }:${JSON.stringify(this.changes)}`,
               )
               .digest('hex');
           },
@@ -414,7 +428,7 @@ const fidelityFundSchema = new Schema(
     retentionStart: { type: Date, default: Date.now, immutable: true },
     retentionExpiry: {
       type: Date,
-      default: function () {
+      default() {
         const d = new Date();
         d.setFullYear(d.getFullYear() + 5);
         return d;
@@ -432,7 +446,7 @@ const fidelityFundSchema = new Schema(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret.__v;
         delete ret.auditTrail;
         delete ret.certificateHash;
@@ -445,15 +459,15 @@ const fidelityFundSchema = new Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 fidelityFundSchema.virtual('isValid').get(function () {
   return (
-    this.status === 'ISSUED' &&
-    this.expiryDate > new Date() &&
-    this.payment.status === 'PAID' &&
-    !this.deleted
+    this.status === 'ISSUED'
+    && this.expiryDate > new Date()
+    && this.payment.status === 'PAID'
+    && !this.deleted
   );
 });
 fidelityFundSchema.virtual('isExpiringSoon').get(function () {
@@ -501,7 +515,7 @@ fidelityFundSchema.virtual('lifecyclePercentage').get(function () {
   if (!this.expiryDate) return 0;
   return Math.min(
     100,
-    Math.max(0, ((Date.now() - this.issueDate) / (this.expiryDate - this.issueDate)) * 100)
+    Math.max(0, ((Date.now() - this.issueDate) / (this.expiryDate - this.issueDate)) * 100),
   );
 });
 
@@ -520,9 +534,8 @@ fidelityFundSchema.pre('save', async function (next) {
   try {
     if (!this.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION');
     this.contributionAmount = Math.max(0, this.baseContribution - this.discountAmount);
-    if (!this.isExempt)
-      this.contributionAmount = Math.max(500, Math.min(50000, this.contributionAmount));
-    if (this.isModified('status'))
+    if (!this.isExempt) this.contributionAmount = Math.max(500, Math.min(50000, this.contributionAmount));
+    if (this.isModified('status')) {
       this.statusHistory.push({
         status: this.status,
         changedAt: new Date(),
@@ -533,6 +546,7 @@ fidelityFundSchema.pre('save', async function (next) {
         ipAddress: this.ipAddress,
         userAgent: this.userAgent,
       });
+    }
     if (this.expiryDate < new Date() && ['ISSUED', 'RENEWED'].includes(this.status)) {
       this.status = 'EXPIRED';
       this.statusHistory.push({
@@ -552,7 +566,7 @@ fidelityFundSchema.pre('save', async function (next) {
           this.expiryDate.toISOString(),
           this.contributionAmount.toString(),
           this.turnoverDeclared.toString(),
-        ].join(':')
+        ].join(':'),
       )
       .digest('hex');
     this.digitalSignature = crypto
@@ -567,7 +581,7 @@ fidelityFundSchema.pre('save', async function (next) {
       .createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026')
       .update(`${this._id || this.certificateId}:${this.certificateId}:${this.integrityHash}`)
       .digest('hex');
-    if (this.isNew)
+    if (this.isNew) {
       this.auditTrail.push({
         action: 'CERTIFICATE_ISSUED',
         performedBy: this.issuedBy,
@@ -579,6 +593,7 @@ fidelityFundSchema.pre('save', async function (next) {
           expiryDate: this.expiryDate,
         },
       });
+    }
     next();
   } catch (error) {
     next(error);
@@ -591,7 +606,7 @@ fidelityFundSchema.statics = {
     practiceType = 'PRIVATE',
     yearsOfPractice = 0,
     proBonoHours = 0,
-    practiceArea = 'URBAN'
+    practiceArea = 'URBAN',
   ) {
     if (['NON_PRACTICING', 'GOVERNMENT', 'RETIRED'].includes(practiceType)) {
       return {
@@ -608,10 +623,10 @@ fidelityFundSchema.statics = {
     }
     let base = turnover * 0.0025;
     base = Math.max(500, Math.min(50000, Math.round(base * 100) / 100));
-    let final = base,
-      discountAmount = 0,
-      discountPct = 0,
-      discounts = [];
+    let final = base;
+    let discountAmount = 0;
+    let discountPct = 0;
+    const discounts = [];
     if (yearsOfPractice < 3) {
       const d = base * 0.5;
       discountAmount += d;
@@ -623,7 +638,7 @@ fidelityFundSchema.statics = {
         reason: `Junior attorney discount - Year ${yearsOfPractice + 1} of 3`,
         statutoryReference: 'LPC Rule 55(6)(a)',
         expiresAt: new Date(
-          new Date().setFullYear(new Date().getFullYear() + (3 - yearsOfPractice))
+          new Date().setFullYear(new Date().getFullYear() + (3 - yearsOfPractice)),
         ),
       });
     }
@@ -727,8 +742,8 @@ fidelityFundSchema.statics = {
       .sort({ paymentDeadline: 1 });
   },
   async getRenewalStats(tenantId, year = new Date().getFullYear()) {
-    const sd = new Date(year, 0, 1),
-      ed = new Date(year, 11, 31);
+    const sd = new Date(year, 0, 1);
+    const ed = new Date(year, 11, 31);
     const stats = await this.aggregate([
       { $match: { tenantId, issueDate: { $gte: sd, $lte: ed }, deleted: false } },
       {
@@ -841,8 +856,7 @@ fidelityFundSchema.statics = {
 
 fidelityFundSchema.methods = {
   async renew(turnover, userContext) {
-    if (!['ISSUED', 'EXPIRED'].includes(this.status))
-      throw new Error(`CERTIFICATE_NOT_RENEWABLE: ${this.status}`);
+    if (!['ISSUED', 'EXPIRED'].includes(this.status)) throw new Error(`CERTIFICATE_NOT_RENEWABLE: ${this.status}`);
     const AttorneyProfile = mongoose.model('AttorneyProfile');
     const attorney = await AttorneyProfile.findById(this.attorneyId);
     if (!attorney) throw new Error('ATTORNEY_NOT_FOUND');
@@ -851,7 +865,7 @@ fidelityFundSchema.methods = {
       attorney.practice?.type || this.practiceType,
       (attorney.practice?.yearsOfPractice || this.yearsOfPractice) + 1,
       attorney.practice?.proBonoHours || this.proBonoHours,
-      attorney.practice?.area || this.practiceArea
+      attorney.practice?.area || this.practiceArea,
     );
     const cert = new this.constructor({
       tenantId: this.tenantId,
@@ -970,8 +984,7 @@ fidelityFundSchema.methods = {
     };
   },
   async applyDiscount(discountData, userContext) {
-    if (this.discounts.some((d) => d.type === discountData.type))
-      throw new Error(`DISCOUNT_ALREADY_APPLIED: ${discountData.type}`);
+    if (this.discounts.some((d) => d.type === discountData.type)) throw new Error(`DISCOUNT_ALREADY_APPLIED: ${discountData.type}`);
     const d = {
       type: discountData.type,
       amount: Math.round(discountData.amount * 100) / 100,
@@ -987,7 +1000,7 @@ fidelityFundSchema.methods = {
     this.discountAmount = this.discounts.reduce((s, x) => s + x.amount, 0);
     this.discountPercentage = Math.min(
       50,
-      this.discounts.reduce((s, x) => s + (x.percentage || 0), 0)
+      this.discounts.reduce((s, x) => s + (x.percentage || 0), 0),
     );
     this.contributionAmount = Math.max(0, this.baseContribution - this.discountAmount);
     this.lastUpdatedBy = userContext.userId;
@@ -1033,20 +1046,21 @@ fidelityFundSchema.methods = {
       verifiedBy: 'WilsyOS Fidelity Fund Engine v5.0.1',
       blockchainAnchor: this.blockchainAnchor?.verified
         ? {
-            anchorId: this.blockchainAnchor.anchorId,
-            transactionHash: this.blockchainAnchor.transactionHash,
-            timestamp: this.blockchainAnchor.timestamp,
-          }
+          anchorId: this.blockchainAnchor.anchorId,
+          transactionHash: this.blockchainAnchor.transactionHash,
+          timestamp: this.blockchainAnchor.timestamp,
+        }
         : null,
     };
   },
   async anchorToBlockchain() {
-    if (this.blockchainAnchor?.verified)
+    if (this.blockchainAnchor?.verified) {
       return {
         success: false,
         message: 'Already anchored to blockchain',
         anchorId: this.blockchainAnchor.anchorId,
       };
+    }
     const anchorId = `FFC-ANC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
     const txHash = crypto
       .createHash('sha3-512')
@@ -1179,8 +1193,7 @@ fidelityFundSchema.methods = {
 // ============================================================================
 // SURGICAL EXPORTS FOR ESM COMPATIBILITY
 // ============================================================================
-const FidelityFund =
-  mongoose.models.FidelityFund || mongoose.model('FidelityFund', fidelityFundSchema);
+const FidelityFund = mongoose.models.FidelityFund || mongoose.model('FidelityFund', fidelityFundSchema);
 
 export {
   CERTIFICATE_STATUS,

@@ -119,7 +119,7 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
       expect(eliminatedRisk).toBeGreaterThanOrEqual(2400000); // R2.4M claim
 
       console.log(
-        `✓ Risk Elimination Validated: R${Math.round(eliminatedRisk).toLocaleString()}/year`
+        `✓ Risk Elimination Validated: R${Math.round(eliminatedRisk).toLocaleString()}/year`,
       );
 
       global.riskEvidence = {
@@ -181,7 +181,7 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
           }),
           retentionPolicy: 'companies_act_10_years',
           dataResidency: 'ZA',
-        })
+        }),
       );
 
       // Verify no PII in logs
@@ -201,7 +201,7 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
       expect(auditLogger.audit).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'DOCUMENT_UPLOAD_UNAUTHORIZED',
-        })
+        }),
       );
 
       console.log('✓ Unauthorized upload prevention: PASSED');
@@ -236,7 +236,7 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
         expect.objectContaining({
           _id: TEST_DOCUMENT_ID,
           tenantId: TEST_TENANT_ID,
-        })
+        }),
       );
 
       expect(mockRes.status).toHaveBeenCalledWith(404);
@@ -299,7 +299,7 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
           metadata: expect.objectContaining({
             title: expect.stringMatching(/^.{1,53}(\.\.\.)?$/), // Redacted or truncated
           }),
-        })
+        }),
       );
 
       console.log('✓ PII redaction compliance: PASSED');
@@ -346,7 +346,7 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
       // Verify forensic headers
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         'X-Downloaded-By',
-        expect.stringMatching(/USER_/)
+        expect.stringMatching(/USER_/),
       );
       expect(mockRes.setHeader).toHaveBeenCalledWith('X-Retention-Policy', 'LPC_6YR');
 
@@ -388,7 +388,7 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
               downloadTimestamp: expect.any(String),
             }),
           }),
-        })
+        }),
       );
 
       console.log('✓ Forensic download audit: PASSED');
@@ -445,7 +445,7 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
           metadata: expect.objectContaining({
             attemptedAction: 'PERMANENT_DELETE',
           }),
-        })
+        }),
       );
 
       console.log('✓ Permanent deletion authorization: PASSED');
@@ -475,7 +475,7 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
             searchQuery: expect.stringMatching(/^.{1,53}(\.\.\.)?$/),
             resultsCount: 0,
           }),
-        })
+        }),
       );
 
       // Verify economic impact in response
@@ -513,7 +513,7 @@ describe('DocumentController - Investor Due Diligence Suite', () => {
 
         // Verify format
         expect(auditEntry.retentionPolicy).toMatch(
-          /companies_act_10_years|LPC_6YR|COMPANIES_ACT_7YR|PAIA_5YR|PERMANENT/
+          /companies_act_10_years|LPC_6YR|COMPANIES_ACT_7YR|PAIA_5YR|PERMANENT/,
         );
         expect(auditEntry.dataResidency).toBe('ZA');
         expect(auditEntry.retentionStart).toBeInstanceOf(Date);
@@ -637,13 +637,13 @@ afterAll(() => {
     console.log('INVESTOR DUE DILIGENCE REPORT');
     console.log('════════════════════════════════════════════════════════════════');
     console.log(
-      `Annual Savings: R${global.economicEvidence?.value?.toLocaleString() || '220,000'}`
+      `Annual Savings: R${global.economicEvidence?.value?.toLocaleString() || '220,000'}`,
     );
     console.log(
-      `Risk Elimination: R${global.riskEvidence?.calculation?.eliminatedRisk?.toLocaleString() || '2,400,000'}`
+      `Risk Elimination: R${global.riskEvidence?.calculation?.eliminatedRisk?.toLocaleString() || '2,400,000'}`,
     );
     console.log(
-      `Performance: ${global.performanceMetrics?.processingTimeMs || '0'}ms (SLA: <2000ms)`
+      `Performance: ${global.performanceMetrics?.processingTimeMs || '0'}ms (SLA: <2000ms)`,
     );
     console.log(`Audit Entries: ${global.evidence?.auditEntries.length || 0}`);
     console.log(`Evidence Hash: ${global.evidence?.hash?.substring(0, 16) || 'N/A'}...`);

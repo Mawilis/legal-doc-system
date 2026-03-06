@@ -44,8 +44,7 @@ console.log(`\n📊 Health Score: ${passed}/${checks.length}`);
 // Check for double asterisks in production code (excluding tools)
 console.log('\n🔍 Scanning production code for double asterisks...');
 
-const findCmd =
-  'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
+const findCmd = 'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
   -not -path "*/node_modules/*" \
   -not -path "*/coverage/*" \
   -not -path "*/dist/*" \

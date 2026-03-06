@@ -154,8 +154,7 @@ async function encryptField(plaintext, keyType = 'field', options = {}) {
     const text = typeof plaintext === 'string' ? plaintext : JSON.stringify(plaintext);
 
     // Get appropriate key
-    const key =
-      keyType === 'data' ? keyVault.getDataEncryptionKey() : keyVault.getFieldEncryptionKey();
+    const key = keyType === 'data' ? keyVault.getDataEncryptionKey() : keyVault.getFieldEncryptionKey();
 
     // Generate random IV
     const iv = crypto.randomBytes(KEY_LENGTHS.IV);
@@ -269,7 +268,7 @@ async function decryptField(encryptedString, keyType = 'field') {
             encrypted: encryptedData.encrypted,
             authTag: encryptedData.authTag,
             algorithm: encryptedData.algorithm,
-          })
+          }),
         )
         .digest('hex');
 
@@ -354,7 +353,7 @@ async function deriveKeyFromPassword(password, salt = null) {
       saltBuffer,
       100000, // iterations
       KEY_LENGTHS.AES,
-      ALGORITHMS.SHA_512
+      ALGORITHMS.SHA_512,
     );
 
     return {
@@ -483,7 +482,7 @@ class RSAQuantum {
         padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
         oaepHash: 'sha256',
       },
-      buffer
+      buffer,
     );
 
     return encrypted.toString('base64');
@@ -507,7 +506,7 @@ class RSAQuantum {
         oaepHash: 'sha256',
         passphrase: process.env.RSA_KEY_PASSPHRASE || '',
       },
-      buffer
+      buffer,
     );
 
     return decrypted.toString('utf8');
@@ -595,7 +594,9 @@ function sanitizeForLogging(data) {
 // ============================================================================
 
 if (process.env.NODE_ENV === 'test') {
-  const { describe, it, expect, beforeAll } = require('@jest/globals');
+  const {
+    describe, it, expect, beforeAll,
+  } = require('@jest/globals');
 
   describe('Crypto Quantizer Quantum Gates', () => {
     const testData = 'This is sensitive legal data that needs protection';

@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL FLOW SERVICE - QUANTUM M&A PIPELINE WITH PREDICTIVE INTELLIGENCE                 ║
   ║ R1.2B/year Deal Flow | 94% Predictive Accuracy | Quantum-Inspired Algorithms         ║
   ║ Real-time Synergy Scoring | Anti-trust Compliance | Cross-border Regulatory Engine   ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/dealFlowService.js
@@ -72,13 +72,14 @@ import SynergyScore from '../models/SynergyScore.js';
 import RegulatoryFiling from '../models/RegulatoryFiling.js';
 import IntegrationSimulation from '../models/IntegrationSimulation.js';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../utils/auditLogger.js';
 import { quantumAnnealing } from '../utils/quantumAnnealing.js';
 import { synergyScorer } from '../utils/synergyScorer.js';
 import { regulatoryEngine } from '../utils/regulatoryEngine.js';
 import { sentimentAnalyzer } from '../utils/sentimentAnalyzer.js';
 import { jurisdictionConfig } from '../config/jurisdictions.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // CONSTANTS - QUANTUM DEAL FLOW PARAMETERS
@@ -193,14 +194,14 @@ class DealFlowService {
       // Step 3: Quantum annealing for optimal matching
       const quantumScores = await this.quantumAnnealing.optimize(
         featureVectors,
-        criteria.strategicWeights
+        criteria.strategicWeights,
       );
 
       // Step 4: Synergy scoring across 127 dimensions
       const synergyScores = await this.synergyScorer.calculate(
         featureVectors,
         quantumScores,
-        criteria
+        criteria,
       );
 
       // Step 5: Cultural fit analysis using NLP
@@ -215,7 +216,7 @@ class DealFlowService {
         quantumScores,
         synergyScores,
         culturalScores,
-        sentimentScores
+        sentimentScores,
       );
 
       // Step 8: Create forensic log
@@ -233,7 +234,7 @@ class DealFlowService {
             convergenceScore: quantumScores.convergence,
           },
         },
-        this.correlationId
+        this.correlationId,
       );
 
       this.logger.info('Target identification completed', {
@@ -265,8 +266,7 @@ class DealFlowService {
       .filter((r) => r.status === 'fulfilled')
       .flatMap((r) => r.value)
       .filter(
-        (value, index, self) =>
-          index === self.findIndex((t) => t.registrationNumber === value.registrationNumber)
+        (value, index, self) => index === self.findIndex((t) => t.registrationNumber === value.registrationNumber),
       );
   }
 
@@ -412,11 +412,11 @@ class DealFlowService {
             totalSynergy,
             confidence: synergyScore.confidence,
             topSynergy: Object.entries(synergyScore.scores).sort(
-              (a, b) => b[1].value - a[1].value
+              (a, b) => b[1].value - a[1].value,
             )[0],
           },
         },
-        this.correlationId
+        this.correlationId,
       );
 
       return synergyScore;
@@ -512,7 +512,7 @@ class DealFlowService {
             regulatoryCompliant: fairnessOpinion.regulatoryCompliant,
           },
         },
-        this.correlationId
+        this.correlationId,
       );
 
       return fairnessOpinion;
@@ -601,7 +601,7 @@ class DealFlowService {
             timelineMonths: timelinePrediction.expectedMonths,
           },
         },
-        this.correlationId
+        this.correlationId,
       );
 
       return simulation;
@@ -639,7 +639,7 @@ class DealFlowService {
 
     // Error correction for missing components
     if (weightSum < 0.9) {
-      total = total * (1 / weightSum);
+      total *= (1 / weightSum);
     }
 
     return {
@@ -795,9 +795,8 @@ class DealFlowService {
       values: await this.compareCoreValues(acquirer, target),
     };
 
-    const score =
-      Object.values(dimensions).reduce((sum, d) => sum + d.score, 0) /
-      Object.values(dimensions).length;
+    const score = Object.values(dimensions).reduce((sum, d) => sum + d.score, 0)
+      / Object.values(dimensions).length;
 
     return {
       score,
@@ -814,183 +813,243 @@ class DealFlowService {
   async queryCompanyDatabase(criteria) {
     /* Implementation */
   }
+
   async scrapePublicRegistries(criteria) {
     /* Implementation */
   }
+
   async checkDealHistory(criteria) {
     /* Implementation */
   }
+
   async queryPrivateEquityNetworks(criteria) {
     /* Implementation */
   }
+
   async extractFinancialFeatures(company) {
     /* Implementation */
   }
+
   async extractOperationalFeatures(company) {
     /* Implementation */
   }
+
   async extractMarketFeatures(company) {
     /* Implementation */
   }
+
   async extractTechnologicalFeatures(company) {
     /* Implementation */
   }
+
   async extractHumanCapitalFeatures(company) {
     /* Implementation */
   }
+
   async extractRegulatoryFeatures(company) {
     /* Implementation */
   }
+
   calculateVectorMagnitude(vector) {
     /* Implementation */
   }
+
   async calculateRevenueSynergies(acquirer, target) {
     /* Implementation */
   }
+
   async calculateCostSynergies(acquirer, target) {
     /* Implementation */
   }
+
   async calculateFinancialSynergies(acquirer, target) {
     /* Implementation */
   }
+
   async calculateTaxSynergies(acquirer, target) {
     /* Implementation */
   }
+
   async calculateOperationalSynergies(acquirer, target) {
     /* Implementation */
   }
+
   async calculateTechnologicalSynergies(acquirer, target) {
     /* Implementation */
   }
+
   async assessStrategicAlignment(acquirer, target) {
     /* Implementation */
   }
+
   async analyzeMarketImpact(acquirer, target) {
     /* Implementation */
   }
+
   combineQuantumRanking(universe, quantum, synergy, cultural, sentiment) {
     /* Implementation */
   }
+
   calculateConfidence(scores) {
     /* Implementation */
   }
+
   async performValuationAnalysis(deal) {
     /* Implementation */
   }
+
   async analyzePremium(deal) {
     /* Implementation */
   }
+
   async findComparableTransactions(deal) {
     /* Implementation */
   }
+
   async performDCFAnalysis(deal) {
     /* Implementation */
   }
+
   async validateSynergies(deal) {
     /* Implementation */
   }
+
   async simulateIndependentReview(deal) {
     /* Implementation */
   }
+
   async generateOpinionText(data) {
     /* Implementation */
   }
+
   async runIntegrationIteration(deal, iteration) {
     /* Implementation */
   }
+
   analyzeSimulationResults(results) {
     /* Implementation */
   }
+
   calculateSuccessProbability(results) {
     /* Implementation */
   }
+
   async predictIntegrationTimeline(deal, stats) {
     /* Implementation */
   }
+
   async identifyIntegrationRisks(deal, simulation) {
     /* Implementation */
   }
+
   async generateMitigationStrategies(risks) {
     /* Implementation */
   }
+
   async forecastCulturalIntegration(deal) {
     /* Implementation */
   }
+
   async predictSynergyRealization(deal, stats) {
     /* Implementation */
   }
+
   async extractStrategicFeatures(deal) {
     /* Implementation */
   }
+
   async extractCulturalFeatures(deal) {
     /* Implementation */
   }
+
   async extractHistoricalFeatures(deal) {
     /* Implementation */
   }
+
   identifyKeyFactors(features) {
     /* Implementation */
   }
+
   async generateRecommendations(deal, probability) {
     /* Implementation */
   }
+
   async identifyRelevantMarkets(deal) {
     /* Implementation */
   }
+
   async calculateConcentration(deal) {
     /* Implementation */
   }
+
   async identifyBarriers(deal) {
     /* Implementation */
   }
+
   async identifyCompetitors(deal) {
     /* Implementation */
   }
+
   async analyzeEmploymentImpact(deal) {
     /* Implementation */
   }
+
   async analyzeSMMEImpact(deal) {
     /* Implementation */
   }
+
   async analyzeTransformation(deal) {
     /* Implementation */
   }
+
   calculateFilingFee(value, jurisdiction) {
     /* Implementation */
   }
+
   async generateFilingDocuments(deal) {
     /* Implementation */
   }
+
   async gatherManagementSources(company) {
     /* Implementation */
   }
+
   async compareLeadershipStyles(a, t) {
     /* Implementation */
   }
+
   async compareCommunicationPatterns(a, t) {
     /* Implementation */
   }
+
   async compareDecisionProcesses(a, t) {
     /* Implementation */
   }
+
   async compareRiskProfiles(a, t) {
     /* Implementation */
   }
+
   async compareInnovationCultures(a, t) {
     /* Implementation */
   }
+
   async compareOrganizationalStructure(a, t) {
     /* Implementation */
   }
+
   async compareCoreValues(a, t) {
     /* Implementation */
   }
+
   interpretCulturalFit(score) {
     /* Implementation */
   }
+
   identifyCulturalRisks(dimensions) {
     /* Implementation */
   }
+
   async generateCulturalRecommendations(dimensions) {
     /* Implementation */
   }
@@ -1006,16 +1065,16 @@ class DealFlowService {
  * @param {string} correlationId - x-correlation-id for tracing
  * @returns {DealFlowService} Configured service instance
  */
-export const createDealFlowService = (tenantId, correlationId) => {
-  return new DealFlowService(tenantId, correlationId);
-};
+export const createDealFlowService = (tenantId, correlationId) => new DealFlowService(tenantId, correlationId);
 
 // ============================================================================
 // EXPORTS
 // ============================================================================
 
 export default createDealFlowService;
-export { DealFlowService, DEAL_STAGES, DEAL_TYPES, SYNERGY_CATEGORIES };
+export {
+  DealFlowService, DEAL_STAGES, DEAL_TYPES, SYNERGY_CATEGORIES,
+};
 
 // ============================================================================
 // INVESTOR METADATA

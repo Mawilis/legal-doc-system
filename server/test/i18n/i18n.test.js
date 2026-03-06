@@ -95,7 +95,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
         assert.strictEqual(
           translation,
           expected[locale],
-          `Failed for ${locale}: expected "${expected[locale]}", got "${translation}"`
+          `Failed for ${locale}: expected "${expected[locale]}", got "${translation}"`,
         );
       });
 
@@ -119,7 +119,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
         assert.strictEqual(
           translation,
           expected[locale],
-          `Failed for ${locale}: expected "${expected[locale]}", got "${translation}"`
+          `Failed for ${locale}: expected "${expected[locale]}", got "${translation}"`,
         );
       });
 
@@ -171,7 +171,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
         assert.strictEqual(
           term,
           ficaTerms[locale],
-          `Failed FICA mapping for ${locale}: expected "${ficaTerms[locale]}", got "${term}"`
+          `Failed FICA mapping for ${locale}: expected "${ficaTerms[locale]}", got "${term}"`,
         );
       });
 
@@ -198,7 +198,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
         assert.strictEqual(
           term,
           popiaTerms[locale],
-          `Failed POPIA mapping for ${locale}: expected "${popiaTerms[locale]}", got "${term}"`
+          `Failed POPIA mapping for ${locale}: expected "${popiaTerms[locale]}", got "${term}"`,
         );
       });
 
@@ -236,7 +236,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
         }
         assert.ok(
           formats[locale].test(formatted),
-          `Date format for ${locale} failed: got "${formatted}"`
+          `Date format for ${locale} failed: got "${formatted}"`,
         );
       });
 
@@ -265,7 +265,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
         }
         assert.ok(
           formats[locale].test(formatted),
-          `Number format for ${locale} failed: got "${formatted}"`
+          `Number format for ${locale} failed: got "${formatted}"`,
         );
       });
 
@@ -295,7 +295,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
         }
         assert.ok(
           pattern.test(formatted),
-          `Currency format for ${locale} failed: got "${formatted}"`
+          `Currency format for ${locale} failed: got "${formatted}"`,
         );
       });
 
@@ -318,7 +318,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
         assert.strictEqual(
           result,
           expected,
-          `Failed to parse "${header}": expected "${expected}", got "${result}"`
+          `Failed to parse "${header}": expected "${expected}", got "${result}"`,
         );
       });
 
@@ -332,14 +332,14 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       supported.forEach((locale) => {
         assert.ok(
           localeMiddleware.isSupported(locale),
-          `Supported locale ${locale} should be identified as supported`
+          `Supported locale ${locale} should be identified as supported`,
         );
       });
 
       unsupported.forEach((locale) => {
         assert.ok(
           !localeMiddleware.isSupported(locale),
-          `Unsupported locale ${locale} should be identified as unsupported`
+          `Unsupported locale ${locale} should be identified as unsupported`,
         );
       });
 
@@ -353,7 +353,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       assert.ok(Array.isArray(switcher), 'Switcher should be an array');
       assert.ok(
         switcher.length >= 18,
-        `Switcher should have at least 18 items, has ${switcher.length}`
+        `Switcher should have at least 18 items, has ${switcher.length}`,
       );
 
       const current = switcher.find((l) => l.current);
@@ -379,7 +379,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
         assert.strictEqual(
           i18nService.getDirection(locale),
           'rtl',
-          `${locale} direction should be 'rtl'`
+          `${locale} direction should be 'rtl'`,
         );
       });
 
@@ -388,7 +388,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
         assert.strictEqual(
           i18nService.getDirection(locale),
           'ltr',
-          `${locale} direction should be 'ltr'`
+          `${locale} direction should be 'ltr'`,
         );
       });
 
@@ -428,7 +428,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       assert.strictEqual(
         reloadedTranslation,
         originalTranslation,
-        'Translations should remain consistent after reload'
+        'Translations should remain consistent after reload',
       );
 
       console.log('✓ Locale reloading works correctly');
@@ -440,7 +440,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       assert.ok(health.initialized, 'Service should be initialized');
       assert.ok(
         health.supportedLocales >= 18,
-        `Expected at least 18 locales, got ${health.supportedLocales}`
+        `Expected at least 18 locales, got ${health.supportedLocales}`,
       );
       assert.ok(health.locales.length >= 18, 'Health check should list all locales');
       assert.ok(health.defaultLocale, 'Default locale should be defined');
@@ -470,7 +470,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       const translation = i18nService.t('common.save', 'invalid-locale');
       assert.ok(
         translation === 'common.save' || translation === 'Save',
-        'Should return either key or default translation'
+        'Should return either key or default translation',
       );
       console.log('✓ Invalid locale handling works');
     });
@@ -497,7 +497,7 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
       const result = i18nService.formatNumber('invalid-number', 'en-ZA');
       assert.ok(
         result === 'invalid-number' || result === 'NaN',
-        'Should handle invalid number gracefully'
+        'Should handle invalid number gracefully',
       );
       console.log('✓ Invalid number handling works');
     });
@@ -507,25 +507,24 @@ describe('🌐 Wilsy OS i18n Internationalization - Complete Test Suite', functi
     it('should demonstrate market reach', () => {
       const saLanguages = i18nService.getSupportedLocales().filter((l) => l.endsWith('-ZA')).length;
 
-      const totalSpeakers =
-        7.2 +
-        4.9 +
-        1.1 +
-        4.6 +
-        3.8 +
-        1.3 +
-        3.9 +
-        2.3 +
-        1.3 +
-        8.1 +
-        12.1 +
-        230 +
-        95 +
-        80 +
-        460 +
-        10 +
-        315 +
-        1300;
+      const totalSpeakers = 7.2
+        + 4.9
+        + 1.1
+        + 4.6
+        + 3.8
+        + 1.3
+        + 3.9
+        + 2.3
+        + 1.3
+        + 8.1
+        + 12.1
+        + 230
+        + 95
+        + 80
+        + 460
+        + 10
+        + 315
+        + 1300;
 
       console.log(`
 ╔══════════════════════════════════════════════════════════════════╗

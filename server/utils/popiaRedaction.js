@@ -108,25 +108,28 @@ export const detectPII = (data, path = '') => {
   Object.keys(data).forEach((key) => {
     const cp = path ? `${path}.${key}` : key;
     const val = data[key];
-    if (LPC_SENSITIVE_FIELDS.includes(key) && val !== '[REDACTED]' && val != null)
+    if (LPC_SENSITIVE_FIELDS.includes(key) && val !== '[REDACTED]' && val != null) {
       violations.push({
         field: cp,
-        value: typeof val === 'string' ? val.substring(0, 4) + '...' : '[NON-STRING]',
+        value: typeof val === 'string' ? `${val.substring(0, 4)}...` : '[NON-STRING]',
         type: 'FIELD_NAME_MATCH',
         severity: 'CRITICAL',
       });
-    if (typeof val === 'string' && val !== '[REDACTED]')
+    }
+    if (typeof val === 'string' && val !== '[REDACTED]') {
       PII_PATTERNS.forEach(({ pattern, type, field: pf }) => {
-        if (pattern.test(val))
+        if (pattern.test(val)) {
           violations.push({
             field: cp,
-            value: val.substring(0, 4) + '...',
+            value: `${val.substring(0, 4)}...`,
             type,
             patternMatch: true,
             expectedField: pf,
             severity: 'CRITICAL',
           });
+        }
       });
+    }
     if (val && typeof val === 'object') violations.push(...detectPII(val, cp));
   });
   return violations;
@@ -139,29 +142,28 @@ export const redactSensitiveData = (data, options = {}) => {
   if (Array.isArray(data)) return data.map((item) => redactSensitiveData(item, options));
   const redacted = { ...data };
   allSensitive.forEach((field) => {
-    if (Object.prototype.hasOwnProperty.call(redacted, field) && redacted[field] != null)
-      redacted[field] = '[REDACTED]';
+    if (Object.prototype.hasOwnProperty.call(redacted, field) && redacted[field] != null) redacted[field] = '[REDACTED]';
   });
   Object.keys(redacted).forEach((key) => {
     const val = redacted[key];
-    if (typeof val === 'string' && val !== '[REDACTED]')
+    if (typeof val === 'string' && val !== '[REDACTED]') {
       PII_PATTERNS.forEach(({ pattern }) => {
         if (pattern.test(val)) redacted[key] = '[REDACTED]';
       });
+    }
     if (val && typeof val === 'object') redacted[key] = redactSensitiveData(val, options);
   });
   return redacted;
 };
 
-export const redactLPCData = (data) =>
-  redactSensitiveData(data, { additionalFields: LPC_SENSITIVE_FIELDS });
+export const redactLPCData = (data) => redactSensitiveData(data, { additionalFields: LPC_SENSITIVE_FIELDS });
 
 export const generateRedactionReport = (orig, redacted) => ({
   timestamp: new Date().toISOString(),
   originalDataSize: JSON.stringify(orig).length,
   redactedDataSize: JSON.stringify(redacted).length,
   compressionRatio: `${Math.round(
-    (1 - JSON.stringify(redacted).length / JSON.stringify(orig).length) * 100
+    (1 - JSON.stringify(redacted).length / JSON.stringify(orig).length) * 100,
   )}%`,
   violationsDetected: detectPII(orig).length,
   violationsRemaining: detectPII(redacted).length,

@@ -151,7 +151,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
 
       console.log(`✓ Annual Premium Savings: R${insuranceSavings.toLocaleString()}`);
       console.log(
-        `✓ Breach Prevention Savings: R${Math.round(breachPreventionSavings).toLocaleString()}`
+        `✓ Breach Prevention Savings: R${Math.round(breachPreventionSavings).toLocaleString()}`,
       );
       console.log(`✓ TOTAL ANNUAL SAVINGS: R${Math.round(totalSavings).toLocaleString()}`);
 
@@ -168,7 +168,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
 
       console.log(`✓ 3-Year ROI: ${Math.round(roi)}%`);
       console.log(
-        `✓ Payback Period: ${(implementationCost / (annualSavings / 12)).toFixed(1)} months`
+        `✓ Payback Period: ${(implementationCost / (annualSavings / 12)).toFixed(1)} months`,
       );
 
       expect(roi).toBeGreaterThan(3000); // 3000%+ ROI
@@ -344,7 +344,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
 
       console.log(`✓ Brute force simulation: ${attempts} attempts detected in ${duration}ms`);
       console.log(
-        `✓ Attack resistance: ${(1000 / (duration / 1000)).toFixed(0)} attempts/second blocked`
+        `✓ Attack resistance: ${(1000 / (duration / 1000)).toFixed(0)} attempts/second blocked`,
       );
     });
 
@@ -413,7 +413,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
       console.log('✓ Encryption performance benchmarks:');
       Object.entries(results).forEach(([size, metrics]) => {
         console.log(
-          `  ${size}: ${metrics.encryptPerSec}/sec encrypt, ${metrics.decryptPerSec}/sec decrypt`
+          `  ${size}: ${metrics.encryptPerSec}/sec encrypt, ${metrics.decryptPerSec}/sec decrypt`,
         );
       });
 
@@ -489,7 +489,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
                 cryptoEvidence,
                 testResults,
                 timestamp: new Date().toISOString(),
-              })
+              }),
             )
             .digest('hex'),
           previousEvidenceHash: null,
@@ -522,7 +522,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
 
       if (files.length > 0) {
         const latestEvidence = JSON.parse(
-          fs.readFileSync(path.join(evidenceDir, files[0]), 'utf8')
+          fs.readFileSync(path.join(evidenceDir, files[0]), 'utf8'),
         );
 
         // Recalculate hash to verify integrity
@@ -533,7 +533,7 @@ describe('FORENSIC ENCRYPTION SERVICE V6 - POPIA §19 COMPLIANCE', () => {
               cryptoEvidence: latestEvidence.cryptoEvidence,
               testResults: latestEvidence.testResults,
               timestamp: latestEvidence.timestamp,
-            })
+            }),
           )
           .digest('hex');
 

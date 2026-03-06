@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-03-02T10:04:55.921Z",
+  "module": "SuperAdminSchema",
+  "version": "3.0.0-FORENSIC",
+  "components": {
+    "cryptography": [
+      "CLASSIC",
+      "POST_QUANTUM",
+      "HYBRID",
+      "FALCON",
+      "SPHINCS",
+      "FORENSIC"
+    ],
+    "popia": [
+      "SECTION_19_FULL",
+      "SECTION_19_PARTIAL",
+      "SECTION_19_BREACH",
+      "SECTION_19_AUDIT",
+      "SECTION_19_EXEMPT"
+    ],
+    "emergency": [
+      "LEVEL_1",
+      "LEVEL_2",
+      "LEVEL_3",
+      "LEVEL_4",
+      "LEVEL_5"
+    ],
+    "retention": [
+      "COMPANIES_ACT_7_YEARS",
+      "COMPANIES_ACT_10_YEARS",
+      "POPIA_1_YEAR",
+      "FORENSIC_INDEFINITE",
+      "EMERGENCY_90_DAYS"
+    ]
+  },
+  "compliance": {
+    "popia_section19": true,
+    "ect_act_section15": true,
+    "companies_act_section24": true
+  }
+}

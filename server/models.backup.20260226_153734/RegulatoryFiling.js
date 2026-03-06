@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ REGULATORY FILING MODEL - COMPETITION ACT & JSE COMPLIANCE ENGINE                     ║
   ║ [Production Grade | 18 Jurisdictions | Automated Section 10 | Forensic Traceability]  ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 import mongoose from 'mongoose';
 import crypto from 'crypto';
@@ -233,7 +233,7 @@ const regulatoryFilingSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: 'regulatory_filings',
-  }
+  },
 );
 
 // Indexes

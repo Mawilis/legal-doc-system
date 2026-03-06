@@ -1,10 +1,10 @@
 #!/* eslint-disable */
 /* eslint-env jest */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR SERVICE TESTS - FORENSIC WORKER VERIFICATION SUITE                           ║
   ║ 100% coverage | 100-Year Chain Validation | POPIA Compliance | x-correlation-id       ║
   ║ R240M Revenue Protection | SHA256 Hash Verification | Breach Detection                ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/services/investor/InvestorService.test.js
@@ -23,9 +23,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 // Import service
 import {
   getInvestorDashboardData,
@@ -39,16 +36,19 @@ import SecurityLog from '../../../models/securityLogModel.js';
 import Valuation from '../../../models/Valuation.js';
 import Company from '../../../models/Company.js';
 
+import loggerRaw from '../../../utils/logger.js';
+import auditLogger from '../../../utils/auditLogger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Mock dependencies
 jest.mock('../../../models/securityLogModel.js');
 jest.mock('../../../models/Valuation.js');
 jest.mock('../../../models/Company.js');
 jest.mock('../../../utils/logger.js');
 jest.mock('../../../utils/auditLogger.js');
-
-import loggerRaw from '../../../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
-import auditLogger from '../../../utils/auditLogger.js';
 
 // ============================================================================
 // TEST CONSTANTS
@@ -108,7 +108,7 @@ const MOCK_SECURITY_LOG = {
   forensicHash: 'abc123',
   chainPosition: 42,
   previousHash: 'def456',
-  toJSON: function () {
+  toJSON() {
     return this;
   },
 };
@@ -157,7 +157,7 @@ beforeEach(() => {
     lean: jest
       .fn()
       .mockResolvedValue(
-        MOCK_VALUATIONS.filter((v) => v.finalValuation.weightedAverage >= 50000000)
+        MOCK_VALUATIONS.filter((v) => v.finalValuation.weightedAverage >= 50000000),
       ),
   });
 
@@ -212,7 +212,7 @@ describe('InvestorService - Forensic Worker Verification Suite', () => {
       expect(SecurityLog.forensicLog.mock.calls.length).toBeGreaterThan(1);
 
       // Check that logs are linked
-      const calls = SecurityLog.forensicLog.mock.calls;
+      const { calls } = SecurityLog.forensicLog.mock;
       expect(calls[0][1]).toBe(TEST_CORRELATION_ID); // First log
 
       // Find the completion log
@@ -379,7 +379,7 @@ describe('InvestorService - Forensic Worker Verification Suite', () => {
 
       // Assert - should create forensic log with breach notification
       const breachLog = SecurityLog.forensicLog.mock.calls.find(
-        (call) => call[0].requiresBreachNotification === true
+        (call) => call[0].requiresBreachNotification === true,
       );
       expect(breachLog).toBeDefined();
     });
@@ -417,10 +417,10 @@ describe('InvestorService - Forensic Worker Verification Suite', () => {
 
       // Mock slow performance by adding delay
       jest.spyOn(global, 'Date').mockImplementation(() => ({
-        now: () => {
+        now: () =>
           // Return increasing timestamps to simulate slow queries
-          return Date.now() + 1000;
-        },
+          Date.now() + 1000
+        ,
       }));
 
       // Act
@@ -428,7 +428,7 @@ describe('InvestorService - Forensic Worker Verification Suite', () => {
 
       // Assert - should log performance warning
       const perfLog = SecurityLog.forensicLog.mock.calls.find(
-        (call) => call[0].eventType === 'performance_anomaly'
+        (call) => call[0].eventType === 'performance_anomaly',
       );
 
       jest.restoreAllMocks();
@@ -449,7 +449,7 @@ describe('InvestorService - Forensic Worker Verification Suite', () => {
 
       // Act & Assert
       await expect(getInvestorDashboardData(params, TEST_CORRELATION_ID)).rejects.toThrow(
-        'FORENSIC_WORKER_FAILED'
+        'FORENSIC_WORKER_FAILED',
       );
 
       // Should log error to forensic chain
@@ -457,7 +457,7 @@ describe('InvestorService - Forensic Worker Verification Suite', () => {
         expect.objectContaining({
           eventType: 'investor_service_error',
         }),
-        expect.any(String)
+        expect.any(String),
       );
     });
 
@@ -551,13 +551,12 @@ describe('InvestorService - Forensic Worker Verification Suite', () => {
       const breachProbabilityWithoutForensic = 0.15; // 15% annual probability
       const breachProbabilityWithForensic = 0.01; // 1% with forensic logging
 
-      const riskReduction =
-        avgBreachCost * (breachProbabilityWithoutForensic - breachProbabilityWithForensic);
+      const riskReduction = avgBreachCost * (breachProbabilityWithoutForensic - breachProbabilityWithForensic);
 
       console.log('💰 RISK REDUCTION METRIC: Annual Risk Reduction per Client');
       console.log(`   Average breach cost: R${avgBreachCost.toLocaleString()}`);
       console.log(
-        `   Breach probability without forensic: ${breachProbabilityWithoutForensic * 100}%`
+        `   Breach probability without forensic: ${breachProbabilityWithoutForensic * 100}%`,
       );
       console.log(`   Breach probability with forensic: ${breachProbabilityWithForensic * 100}%`);
       console.log(`   ✅ Annual risk reduction: R${riskReduction.toLocaleString()}`);

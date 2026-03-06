@@ -80,10 +80,10 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ MILVUS CLIENT - INVESTOR-GRADE MODULE - $2.3B+ TOTAL VALUE               ║
   ║ 70% time savings | 40% accuracy boost | 100M+ vectors                    ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 // =============================================================================
 // DEPENDENCIES & IMPORTS - Production-grade
@@ -280,16 +280,14 @@ const MILVUS_CONSTANTS = Object.freeze({
 // CIRCUIT BREAKER
 // =============================================================================
 
-const createBreaker = (operation, fn) => {
-  return new CircuitBreaker(fn, {
-    timeout: MILVUS_CONSTANTS.CIRCUIT_BREAKER_TIMEOUT,
-    errorThresholdPercentage: MILVUS_CONSTANTS.CIRCUIT_BREAKER_THRESHOLD * 20, // Convert to percentage
-    resetTimeout: MILVUS_CONSTANTS.CIRCUIT_BREAKER_RESET,
-    rollingCountTimeout: 60000,
-    name: `milvus-${operation}`,
-    volumeThreshold: 10,
-  });
-};
+const createBreaker = (operation, fn) => new CircuitBreaker(fn, {
+  timeout: MILVUS_CONSTANTS.CIRCUIT_BREAKER_TIMEOUT,
+  errorThresholdPercentage: MILVUS_CONSTANTS.CIRCUIT_BREAKER_THRESHOLD * 20, // Convert to percentage
+  resetTimeout: MILVUS_CONSTANTS.CIRCUIT_BREAKER_RESET,
+  rollingCountTimeout: 60000,
+  name: `milvus-${operation}`,
+  volumeThreshold: 10,
+});
 
 // =============================================================================
 // CACHE MANAGER
@@ -696,9 +694,7 @@ class MilvusClientWrapper extends EventEmitter {
       return cached.schema;
     }
 
-    const result = await this.withClient('describeCollection', async (client) => {
-      return client.describeCollection({ collection_name: collectionName });
-    });
+    const result = await this.withClient('describeCollection', async (client) => client.describeCollection({ collection_name: collectionName }));
 
     this.cache.set(cacheKey, { exists: true, schema: result });
     return result;
@@ -712,18 +708,14 @@ class MilvusClientWrapper extends EventEmitter {
       return cached;
     }
 
-    const result = await this.withClient('listCollections', async (client) => {
-      return client.listCollections();
-    });
+    const result = await this.withClient('listCollections', async (client) => client.listCollections());
 
     this.cache.set(cacheKey, result, 300); // Cache for 5 minutes
     return result;
   }
 
   async dropCollection(collectionName) {
-    const result = await this.withClient('dropCollection', async (client) => {
-      return client.dropCollection({ collection_name: collectionName });
-    });
+    const result = await this.withClient('dropCollection', async (client) => client.dropCollection({ collection_name: collectionName }));
 
     // Invalidate cache
     this.cache.delete(`collection:${collectionName}`);
@@ -737,15 +729,13 @@ class MilvusClientWrapper extends EventEmitter {
   // =========================================================================
 
   async createIndex(collectionName, fieldName, options = {}) {
-    const result = await this.withClient('createIndex', async (client) => {
-      return client.createIndex({
-        collection_name: collectionName,
-        field_name: fieldName,
-        index_type: options.indexType || MILVUS_CONSTANTS.DEFAULT_INDEX_TYPE,
-        metric_type: options.metricType || MILVUS_CONSTANTS.DEFAULT_METRIC_TYPE,
-        params: options.params || { nlist: MILVUS_CONSTANTS.DEFAULT_NLIST },
-      });
-    });
+    const result = await this.withClient('createIndex', async (client) => client.createIndex({
+      collection_name: collectionName,
+      field_name: fieldName,
+      index_type: options.indexType || MILVUS_CONSTANTS.DEFAULT_INDEX_TYPE,
+      metric_type: options.metricType || MILVUS_CONSTANTS.DEFAULT_METRIC_TYPE,
+      params: options.params || { nlist: MILVUS_CONSTANTS.DEFAULT_NLIST },
+    }));
 
     milvusMetrics.indexStatus.labels(collectionName, fieldName).set(1);
     return result;
@@ -759,24 +749,20 @@ class MilvusClientWrapper extends EventEmitter {
       return cached;
     }
 
-    const result = await this.withClient('describeIndex', async (client) => {
-      return client.describeIndex({
-        collection_name: collectionName,
-        field_name: fieldName,
-      });
-    });
+    const result = await this.withClient('describeIndex', async (client) => client.describeIndex({
+      collection_name: collectionName,
+      field_name: fieldName,
+    }));
 
     this.cache.set(cacheKey, result);
     return result;
   }
 
   async dropIndex(collectionName, fieldName) {
-    const result = await this.withClient('dropIndex', async (client) => {
-      return client.dropIndex({
-        collection_name: collectionName,
-        field_name: fieldName,
-      });
-    });
+    const result = await this.withClient('dropIndex', async (client) => client.dropIndex({
+      collection_name: collectionName,
+      field_name: fieldName,
+    }));
 
     this.cache.delete(`index:${collectionName}:${fieldName}`);
     milvusMetrics.indexStatus.labels(collectionName, fieldName).set(0);
@@ -799,9 +785,7 @@ class MilvusClientWrapper extends EventEmitter {
     const results = [];
 
     for (const batch of batches) {
-      const result = await this.limiters.insert(async () => {
-        return this.circuits.insert.fire(collectionName, batch);
-      });
+      const result = await this.limiters.insert(async () => this.circuits.insert.fire(collectionName, batch));
       results.push(result);
 
       milvusMetrics.vectorsInserted.labels(collectionName).inc(batch.length);
@@ -867,12 +851,10 @@ class MilvusClientWrapper extends EventEmitter {
   async delete(collectionName, filter) {
     this.stats.operations.delete++;
 
-    const result = await this.withClient('delete', async (client) => {
-      return client.delete({
-        collection_name: collectionName,
-        expr: filter,
-      });
-    });
+    const result = await this.withClient('delete', async (client) => client.delete({
+      collection_name: collectionName,
+      expr: filter,
+    }));
 
     await this.updateCollectionStats(collectionName);
 
@@ -885,19 +867,15 @@ class MilvusClientWrapper extends EventEmitter {
 
   async updateCollectionStats(collectionName) {
     try {
-      const stats = await this.withClient('getCollectionStatistics', async (client) => {
-        return client.getCollectionStatistics({
-          collection_name: collectionName,
-        });
-      });
+      const stats = await this.withClient('getCollectionStatistics', async (client) => client.getCollectionStatistics({
+        collection_name: collectionName,
+      }));
 
-      const count = await this.withClient('count', async (client) => {
-        return client.query({
-          collection_name: collectionName,
-          expr: '',
-          output_fields: ['count(*)'],
-        });
-      });
+      const count = await this.withClient('count', async (client) => client.query({
+        collection_name: collectionName,
+        expr: '',
+        output_fields: ['count(*)'],
+      }));
 
       milvusMetrics.collectionCount.labels(collectionName).set(count.data?.[0]?.count || 0);
 
@@ -912,11 +890,9 @@ class MilvusClientWrapper extends EventEmitter {
 
   async getCollectionStats(collectionName) {
     const [stats, count] = await Promise.all([
-      this.withClient('getCollectionStatistics', async (client) => {
-        return client.getCollectionStatistics({
-          collection_name: collectionName,
-        });
-      }),
+      this.withClient('getCollectionStatistics', async (client) => client.getCollectionStatistics({
+        collection_name: collectionName,
+      })),
       this.query(collectionName, '', { outputFields: ['count(*)'] }),
     ]);
 
@@ -928,27 +904,21 @@ class MilvusClientWrapper extends EventEmitter {
   }
 
   async flush(collectionName) {
-    return this.withClient('flush', async (client) => {
-      return client.flush({
-        collection_names: [collectionName],
-      });
-    });
+    return this.withClient('flush', async (client) => client.flush({
+      collection_names: [collectionName],
+    }));
   }
 
   async loadCollection(collectionName) {
-    return this.withClient('loadCollection', async (client) => {
-      return client.loadCollection({
-        collection_name: collectionName,
-      });
-    });
+    return this.withClient('loadCollection', async (client) => client.loadCollection({
+      collection_name: collectionName,
+    }));
   }
 
   async releaseCollection(collectionName) {
-    return this.withClient('releaseCollection', async (client) => {
-      return client.releaseCollection({
-        collection_name: collectionName,
-      });
-    });
+    return this.withClient('releaseCollection', async (client) => client.releaseCollection({
+      collection_name: collectionName,
+    }));
   }
 
   // =========================================================================
@@ -1004,7 +974,7 @@ class MilvusClientWrapper extends EventEmitter {
             successes: circuit.stats.successes,
             rejects: circuit.stats.rejects,
           },
-        ])
+        ]),
       ),
       timestamp: new Date().toISOString(),
     };

@@ -9,8 +9,9 @@
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import cryptoUtils from '../utils/cryptoUtils.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // CONSTANTS & ENUMS
@@ -66,7 +67,7 @@ const tenantConfigSchema = new mongoose.Schema(
       unique: true,
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[a-zA-Z0-9_-]{8,64}$/.test(v);
         },
         message: (props) => `${props.value} is not a valid tenant ID format`,
@@ -86,7 +87,7 @@ const tenantConfigSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
         },
         message: (props) => `${props.value} is not a valid email`,
@@ -301,7 +302,7 @@ const tenantConfigSchema = new mongoose.Schema(
     timestamps: true,
     strict: true,
     collection: 'tenant_configs',
-  }
+  },
 );
 
 // ============================================================================
@@ -339,13 +340,13 @@ tenantConfigSchema.pre('validate', function (next) {
       });
     }
 
-    next();
+    return;
   } catch (error) {
     logger.error('Error in tenant config pre-validate', {
       error: error.message,
       tenantId: this.tenantId,
     });
-    next(error);
+    throw error;
   }
 });
 
@@ -365,13 +366,13 @@ tenantConfigSchema.pre('save', function (next) {
       }
     }
 
-    next();
+    return;
   } catch (error) {
     logger.error('Error in tenant config pre-save', {
       error: error.message,
       tenantId: this.tenantId,
     });
-    next(error);
+    throw error;
   }
 });
 

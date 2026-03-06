@@ -1,19 +1,19 @@
 #!/* eslint-disable */
-/*╔══════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════╗
   ║           WILSY OS - FORENSIC ENGINE STARTUP - 10TH GENERATION          ║
   ║              "Igniting Code That Funds 10 Generations"                  ║
   ╚══════════════════════════════════════════════════════════════════════════╝
- * 
+ *
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/start-forensic-engine.js
  * VERSION: 10.0.1-GODLY
  * PURPOSE: Production-grade process manager for Wilsy OS 10th Generation
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Zero-downtime deployment for R1B valuation target
  * • Automatic recovery mechanisms protect generational wealth
  * • Forensic logging of all process activity (POPIA §19 compliant)
  * • Multi-worker scaling for 270,000 law firm capacity
- * 
+ *
  * MERMAID PROCESS FLOW:
  * graph TD
  *   A[Start Engine] --> B[Initialize Environment]
@@ -47,16 +47,36 @@ const __dirname = dirname(__filename);
 // ===========================================================================
 
 const GENERATIONS = [
-  { number: 1, name: 'Wilson Khanyezi', birth: 2000, wealthTarget: 1_000_000_000 },
-  { number: 2, name: 'Future Khanyezi I', birth: 2030, wealthTarget: 5_000_000_000 },
-  { number: 3, name: 'Legal Sovereign', birth: 2050, wealthTarget: 25_000_000_000 },
-  { number: 4, name: 'Tech Visionary', birth: 2070, wealthTarget: 100_000_000_000 },
-  { number: 5, name: 'Global Ambassador', birth: 2090, wealthTarget: 500_000_000_000 },
-  { number: 6, name: 'Continental Governor', birth: 2110, wealthTarget: 2_500_000_000_000 },
-  { number: 7, name: 'Interstellar Diplomat', birth: 2130, wealthTarget: 10_000_000_000_000 },
-  { number: 8, name: 'Galactic Justiciar', birth: 2150, wealthTarget: 50_000_000_000_000 },
-  { number: 9, name: 'Cosmic Sovereign', birth: 2170, wealthTarget: 250_000_000_000_000 },
-  { number: 10, name: 'Eternal Legacy', birth: 2190, wealthTarget: 1_000_000_000_000_000 },
+  {
+    number: 1, name: 'Wilson Khanyezi', birth: 2000, wealthTarget: 1_000_000_000,
+  },
+  {
+    number: 2, name: 'Future Khanyezi I', birth: 2030, wealthTarget: 5_000_000_000,
+  },
+  {
+    number: 3, name: 'Legal Sovereign', birth: 2050, wealthTarget: 25_000_000_000,
+  },
+  {
+    number: 4, name: 'Tech Visionary', birth: 2070, wealthTarget: 100_000_000_000,
+  },
+  {
+    number: 5, name: 'Global Ambassador', birth: 2090, wealthTarget: 500_000_000_000,
+  },
+  {
+    number: 6, name: 'Continental Governor', birth: 2110, wealthTarget: 2_500_000_000_000,
+  },
+  {
+    number: 7, name: 'Interstellar Diplomat', birth: 2130, wealthTarget: 10_000_000_000_000,
+  },
+  {
+    number: 8, name: 'Galactic Justiciar', birth: 2150, wealthTarget: 50_000_000_000_000,
+  },
+  {
+    number: 9, name: 'Cosmic Sovereign', birth: 2170, wealthTarget: 250_000_000_000_000,
+  },
+  {
+    number: 10, name: 'Eternal Legacy', birth: 2190, wealthTarget: 1_000_000_000_000_000,
+  },
 ];
 
 // Configuration
@@ -67,12 +87,24 @@ const EVIDENCE_DIR = join(__dirname, 'evidence');
 
 // Worker types for different responsibilities
 const WORKER_TYPES = [
-  { name: 'precedent-vectorizer', script: 'workers/precedentVectorizer.js', count: 2, priority: 1 },
-  { name: 'document-processor', script: 'workers/documentProcessor.js', count: 2, priority: 1 },
-  { name: 'audit-archiver', script: 'workers/auditArchiver.js', count: 1, priority: 2 },
-  { name: 'retention-enforcer', script: 'workers/retentionEnforcer.js', count: 1, priority: 2 },
-  { name: 'email-worker', script: 'workers/emailWorker.js', count: 1, priority: 3 },
-  { name: 'report-generator', script: 'workers/reportGenerator.js', count: 1, priority: 3 },
+  {
+    name: 'precedent-vectorizer', script: 'workers/precedentVectorizer.js', count: 2, priority: 1,
+  },
+  {
+    name: 'document-processor', script: 'workers/documentProcessor.js', count: 2, priority: 1,
+  },
+  {
+    name: 'audit-archiver', script: 'workers/auditArchiver.js', count: 1, priority: 2,
+  },
+  {
+    name: 'retention-enforcer', script: 'workers/retentionEnforcer.js', count: 1, priority: 2,
+  },
+  {
+    name: 'email-worker', script: 'workers/emailWorker.js', count: 1, priority: 3,
+  },
+  {
+    name: 'report-generator', script: 'workers/reportGenerator.js', count: 1, priority: 3,
+  },
 ];
 
 // ANSI colors for beautiful console output
@@ -120,7 +152,7 @@ class ForensicLogger {
 
   async log(level, message, metadata = {}) {
     const timestamp = new Date().toISOString();
-    const pid = process.pid;
+    const { pid } = process;
     const hostname = os.hostname();
 
     // Add forensic signature
@@ -173,7 +205,7 @@ class ForensicLogger {
     console.log(
       `${color}[${level.padEnd(12)}]${colors.reset} ${colors.dim}${timeStr}${
         colors.reset
-      } - ${message}`
+      } - ${message}`,
     );
 
     // Write to file asynchronously
@@ -185,7 +217,7 @@ class ForensicLogger {
   async writeToFile(entry) {
     try {
       await fs.mkdir(LOG_DIR, { recursive: true });
-      await fs.appendFile(this.logFile, JSON.stringify(entry) + '\n');
+      await fs.appendFile(this.logFile, `${JSON.stringify(entry)}\n`);
     } catch (error) {
       console.error('Failed to write to log file:', error.message);
     }
@@ -194,21 +226,27 @@ class ForensicLogger {
   generational(message, metadata) {
     return this.log('GENERATIONAL', message, metadata);
   }
+
   billion(message, metadata) {
     return this.log('BILLION', message, metadata);
   }
+
   sovereign(message, metadata) {
     return this.log('SOVEREIGN', message, metadata);
   }
+
   info(message, metadata) {
     return this.log('INFO', message, metadata);
   }
+
   warn(message, metadata) {
     return this.log('WARN', message, metadata);
   }
+
   error(message, metadata) {
     return this.log('ERROR', message, metadata);
   }
+
   debug(message, metadata) {
     return this.log('DEBUG', message, metadata);
   }
@@ -377,7 +415,7 @@ class ProcessManager {
           () => {
             this.startWorker(workerType, procInfo.instance);
           },
-          2000 * (currentRestarts + 1)
+          2000 * (currentRestarts + 1),
         ); // Exponential backoff
       }
     } else {
@@ -455,9 +493,9 @@ function displayStartupBanner() {
   console.clear();
 
   console.log(
-    colors.gold +
-      colors.bold +
-      `
+    `${colors.gold
+      + colors.bold
+    }
     ╔══════════════════════════════════════════════════════════════════════════╗
     ║                                                                          ║
     ║   ██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ██████╗ ███████╗           ║
@@ -479,14 +517,14 @@ function displayStartupBanner() {
     ║  🚀 WORKERS: ${WORKER_COUNT} Parallel Processes                            ║
     ║                                                                          ║
     ╚══════════════════════════════════════════════════════════════════════════╝
-    ` +
-      colors.reset
+    ${
+  colors.reset}`,
   );
 
   console.log(
-    colors.cyan +
-      colors.bold +
-      `
+    `${colors.cyan
+      + colors.bold
+    }
     ┌──────────────────────────────────────────────────────────────────────┐
     │                    GENERATIONAL WEALTH PROGRESSION                   │
     ├──────────────────────────────────────────────────────────────────────┤
@@ -496,8 +534,8 @@ function displayStartupBanner() {
     │  Gen 4: R 100,000,000,000   │ Gen 9: R 250,000,000,000,000          │
     │  Gen 5: R 500,000,000,000   │ Gen 10: R 1,000,000,000,000,000       │
     └──────────────────────────────────────────────────────────────────────┘
-    ` +
-      colors.reset
+    ${
+  colors.reset}`,
   );
 }
 
@@ -527,13 +565,11 @@ async function performHealthChecks(logger) {
 
       if (result) {
         await logger.info(`✅ ${check.name}: PASSED`);
+      } else if (check.critical) {
+        allCriticalPassed = false;
+        await logger.error(`❌ ${check.name}: FAILED (CRITICAL)`);
       } else {
-        if (check.critical) {
-          allCriticalPassed = false;
-          await logger.error(`❌ ${check.name}: FAILED (CRITICAL)`);
-        } else {
-          await logger.warn(`⚠️ ${check.name}: FAILED (Non-critical)`);
-        }
+        await logger.warn(`⚠️ ${check.name}: FAILED (Non-critical)`);
       }
     } catch (error) {
       if (check.critical) {
@@ -556,7 +592,7 @@ async function checkDatabase() {
       process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/wilsy_legal_os_10g',
       {
         serverSelectionTimeoutMS: 5000,
-      }
+      },
     );
     await conn.disconnect();
     return true;
@@ -668,7 +704,7 @@ async function generateStartupEvidence(logger, processManager, healthResults) {
   // Save evidence
   const evidenceFile = join(
     EVIDENCE_DIR,
-    `startup-${new Date().toISOString().replace(/:/g, '-')}.json`
+    `startup-${new Date().toISOString().replace(/:/g, '-')}.json`,
   );
   await fs.writeFile(evidenceFile, JSON.stringify(evidence, null, 2));
 
@@ -708,10 +744,10 @@ async function main() {
   if (!healthResults.passed) {
     await logger.error('CRITICAL HEALTH CHECKS FAILED - Aborting startup');
     console.log(
-      colors.red +
-        colors.bold +
-        '\n❌ CRITICAL HEALTH CHECKS FAILED - Cannot start forensic engine\n' +
-        colors.reset
+      `${colors.red
+        + colors.bold
+      }\n❌ CRITICAL HEALTH CHECKS FAILED - Cannot start forensic engine\n${
+        colors.reset}`,
     );
     process.exit(1);
   }
@@ -741,7 +777,7 @@ async function main() {
     await fs.access(join(__dirname, 'services/monitoring/MonitoringDashboard.js'));
     const monitoring = await processManager.startWorker(
       { name: 'monitoring', script: 'services/monitoring/MonitoringDashboard.js' },
-      1
+      1,
     );
     if (monitoring) {
       await logger.info('Monitoring service started');
@@ -786,9 +822,9 @@ async function main() {
 
   // Display success banner
   console.log(
-    colors.green +
-      colors.bold +
-      `
+    `${colors.green
+      + colors.bold
+    }
     ╔══════════════════════════════════════════════════════════════════════════╗
     ║                                                                          ║
     ║        🚀 FORENSIC ENGINE SUCCESSFULLY IGNITED 🚀                       ║
@@ -796,14 +832,14 @@ async function main() {
     ╠══════════════════════════════════════════════════════════════════════════╣
     ║                                                                          ║
     ║  ⏱️  Startup Time: ${startupSeconds.padStart(
-      8
-    )} seconds                                          ║
+    8,
+  )} seconds                                          ║
     ║  👷 Workers: ${totalWorkers
-      .toString()
-      .padStart(8)}                                                    ║
+    .toString()
+    .padStart(8)}                                                    ║
     ║  📊 Health Checks: ${
-      healthResults.results.length
-    }                                                     ║
+  healthResults.results.length
+}                                                     ║
     ║  🔐 Evidence: ${evidence.signature.substring(0, 16)}...                              ║
     ║  📁 Logs: ${LOG_DIR}                ║
     ║                                                                          ║
@@ -812,8 +848,8 @@ async function main() {
     ║  📊 Metrics: http://localhost:9095/metrics                               ║
     ║                                                                          ║
     ╚══════════════════════════════════════════════════════════════════════════╝
-    ` +
-      colors.reset
+    ${
+  colors.reset}`,
   );
 
   await logger.generational('FORENSIC ENGINE IGNITION COMPLETE', {
@@ -829,34 +865,34 @@ async function main() {
 // Handle shutdown signals
 process.on('SIGTERM', async () => {
   console.log(
-    colors.yellow + '\n\nReceived SIGTERM - Shutting down forensic engine...\n' + colors.reset
+    `${colors.yellow}\n\nReceived SIGTERM - Shutting down forensic engine...\n${colors.reset}`,
   );
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log(
-    colors.yellow + '\n\nReceived SIGINT - Shutting down forensic engine...\n' + colors.reset
+    `${colors.yellow}\n\nReceived SIGINT - Shutting down forensic engine...\n${colors.reset}`,
   );
   process.exit(0);
 });
 
 // Handle uncaught errors
 process.on('uncaughtException', (error) => {
-  console.error(colors.red + colors.bold + '\n💥 UNCAUGHT EXCEPTION:' + colors.reset, error);
-  console.log(colors.yellow + '\nAttempting graceful shutdown...\n' + colors.reset);
+  console.error(`${colors.red + colors.bold}\n💥 UNCAUGHT EXCEPTION:${colors.reset}`, error);
+  console.log(`${colors.yellow}\nAttempting graceful shutdown...\n${colors.reset}`);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
-  console.error(colors.red + colors.bold + '\n💥 UNHANDLED REJECTION:' + colors.reset, reason);
+  console.error(`${colors.red + colors.bold}\n💥 UNHANDLED REJECTION:${colors.reset}`, reason);
 });
 
 // Run main
 main().catch(async (error) => {
   console.error(
-    colors.red + colors.bold + '\n💥 FORENSIC ENGINE IGNITION FAILED:' + colors.reset,
-    error
+    `${colors.red + colors.bold}\n💥 FORENSIC ENGINE IGNITION FAILED:${colors.reset}`,
+    error,
   );
   process.exit(1);
 });

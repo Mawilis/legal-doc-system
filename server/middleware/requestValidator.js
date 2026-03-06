@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ REQUEST VALIDATOR MIDDLEWARE - INVESTOR-GRADE INPUT VALIDATION & SANITIZATION         ║
   ║ R2.1M/year injection attack prevention | POPIA §19 | OWASP Top 10 Compliant           ║
   ║ 99.99% validation accuracy | JSE Listings Requirements §3.4 | XSS Prevention           ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/requestValidator.js
@@ -66,9 +66,10 @@ import { createHash } from 'crypto';
 import validator from 'validator';
 import xss from 'xss';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../utils/auditLogger.js';
 import { redactSensitive } from '../utils/redactSensitive.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // INTEGRATION_HINT: Used by all routes for request validation, no side effects
 
@@ -400,8 +401,12 @@ const schemas = {
   // User routes
   user: {
     body: {
-      firstName: { type: DATA_TYPES.STRING, minLength: 2, maxLength: 50, sanitize: true },
-      lastName: { type: DATA_TYPES.STRING, minLength: 2, maxLength: 50, sanitize: true },
+      firstName: {
+        type: DATA_TYPES.STRING, minLength: 2, maxLength: 50, sanitize: true,
+      },
+      lastName: {
+        type: DATA_TYPES.STRING, minLength: 2, maxLength: 50, sanitize: true,
+      },
       email: { type: DATA_TYPES.EMAIL, required: true },
       phone: { type: DATA_TYPES.PHONE, optional: true },
       idNumber: { type: DATA_TYPES.ID_NUMBER, optional: true, description: 'SA ID number' },
@@ -801,9 +806,7 @@ export const validateRequest = (options = {}) => {
     }
 
     // Log validation attempt asynchronously
-    logValidation(req, schemaName, allErrors.length === 0, allErrors).catch((err) =>
-      logger.error('Async validation log failed', { error: err.message })
-    );
+    logValidation(req, schemaName, allErrors.length === 0, allErrors).catch((err) => logger.error('Async validation log failed', { error: err.message }));
 
     // Track validation metrics
     logger.debug('Validation completed', {
@@ -876,33 +879,31 @@ export const sanitizeRequest = (req, res, next) => {
  * @param {Object} fieldSchema - Field validation schema
  * @returns {Function} Custom validator middleware
  */
-export const createValidator = (fieldSchema) => {
-  return (req, res, next) => {
-    const errors = [];
+export const createValidator = (fieldSchema) => (req, res, next) => {
+  const errors = [];
 
-    for (const [field, def] of Object.entries(fieldSchema)) {
-      const value = req.body[field] || req.query[field] || req.params[field];
-      const result = validateType(value, def, field);
+  for (const [field, def] of Object.entries(fieldSchema)) {
+    const value = req.body[field] || req.query[field] || req.params[field];
+    const result = validateType(value, def, field);
 
-      if (!result.valid) {
-        errors.push(...result.errors);
-      }
+    if (!result.valid) {
+      errors.push(...result.errors);
     }
+  }
 
-    if (errors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'CUSTOM_VALIDATION_ERROR',
-          message: 'Custom validation failed',
-          details: errors,
-          requestId: req.requestId,
-        },
-      });
-    }
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: 'CUSTOM_VALIDATION_ERROR',
+        message: 'Custom validation failed',
+        details: errors,
+        requestId: req.requestId,
+      },
+    });
+  }
 
-    next();
-  };
+  next();
 };
 
 // ============================================================================

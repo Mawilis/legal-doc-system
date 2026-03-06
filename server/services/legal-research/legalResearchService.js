@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ LEGAL RESEARCH SERVICE - INVESTOR-GRADE MODULE                                                           ║
   ║ 90% cost reduction | R12M risk elimination | 85% margins | Multi-jurisdictional                          ║
-  ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/legal-research/legalResearchService.js
@@ -64,6 +64,7 @@
 const { tenantContext } = require('../../middleware/tenantContext');
 const auditLogger = require('../../utils/auditLogger');
 const loggerRaw = require('../../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const cryptoUtils = require('../../utils/cryptoUtils');
 const { redactSensitive, REDACT_FIELDS } = require('../../utils/popiaUtils');
@@ -406,7 +407,7 @@ class LegalResearchService {
       if (includeCitations && results.precedents.length > 0) {
         results.citationNetwork = await this.buildCitationNetwork(
           tenantId,
-          results.precedents.map((p) => p.citation)
+          results.precedents.map((p) => p.citation),
         );
       }
 
@@ -478,7 +479,9 @@ class LegalResearchService {
    * Execute database research
    */
   async executeResearch(tenantId, query, options) {
-    const { jurisdiction, depth, maxResults, dateFrom, dateTo, court } = options;
+    const {
+      jurisdiction, depth, maxResults, dateFrom, dateTo, court,
+    } = options;
 
     const searchCriteria = {
       tenantId: { $in: [tenantId, null] }, // Allow system-wide precedents
@@ -513,7 +516,7 @@ class LegalResearchService {
           $text: { $search: query },
         })
           .limit(maxResults / 2)
-          .lean()
+          .lean(),
       );
     }
 
@@ -703,7 +706,7 @@ class LegalResearchService {
 
     // Sort and stringify for deterministic hash
     const canonicalized = JSON.stringify(
-      auditEntries.sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+      auditEntries.sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
     );
 
     evidence.auditEntries = auditEntries;

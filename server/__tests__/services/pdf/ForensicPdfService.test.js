@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ FORENSIC PDF SERVICE TESTS - INVESTOR DUE DILIGENCE           ║
   ║ 100% coverage | PDF generation | Forensic branding            ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/services/pdf/ForensicPdfService.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -17,6 +17,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Readable } from 'stream';
 
+import {
+  generateBillingPdf,
+  generateImpactPdf,
+  generateCompliancePdf,
+  generateInvestorPdf,
+} from '../../../services/pdf/ForensicPdfService.js';
+import { generateMonthlyBillingReport } from '../../../services/billing/BillingReportService.js';
+import auditLogger from '../../../utils/auditLogger.js';
+
 // Mock dependencies
 jest.mock('pdfkit');
 jest.mock('qr-image');
@@ -28,15 +37,6 @@ jest.mock('../../../utils/metricsCollector.js');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-import {
-  generateBillingPdf,
-  generateImpactPdf,
-  generateCompliancePdf,
-  generateInvestorPdf,
-} from '../../../services/pdf/ForensicPdfService.js';
-import { generateMonthlyBillingReport } from '../../../services/billing/BillingReportService.js';
-import auditLogger from '../../../utils/auditLogger.js';
 
 describe('ForensicPdfService - PDF Generation Due Diligence', () => {
   let mockReq;
@@ -131,12 +131,12 @@ describe('ForensicPdfService - PDF Generation Due Diligence', () => {
       expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
-        expect.stringContaining('WilsyOS_Forensic_Report_test-tenant-12345678')
+        expect.stringContaining('WilsyOS_Forensic_Report_test-tenant-12345678'),
       );
       expect(mockRes.setHeader).toHaveBeenCalledWith('X-Report-ID', mockData.reportId);
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         'X-Report-Hash',
-        mockData.forensicProof.reportHash
+        mockData.forensicProof.reportHash,
       );
 
       expect(mockDoc.pipe).toHaveBeenCalledWith(mockRes);
@@ -145,12 +145,12 @@ describe('ForensicPdfService - PDF Generation Due Diligence', () => {
       // Verify header content
       expect(mockDoc.text).toHaveBeenCalledWith(
         'WILSY OS: QUANTUM FORTRESS',
-        expect.objectContaining({ align: 'center' })
+        expect.objectContaining({ align: 'center' }),
       );
 
       expect(mockDoc.text).toHaveBeenCalledWith(
         'FORENSIC USAGE & IMPACT REPORT',
-        expect.objectContaining({ align: 'center' })
+        expect.objectContaining({ align: 'center' }),
       );
     });
 
@@ -160,13 +160,13 @@ describe('ForensicPdfService - PDF Generation Due Diligence', () => {
       expect(mockDoc.text).toHaveBeenCalledWith(
         expect.stringContaining(`Total Queries: ${mockData.usage.totalQueries}`),
         expect.any(Number),
-        expect.any(Number)
+        expect.any(Number),
       );
 
       expect(mockDoc.text).toHaveBeenCalledWith(
         expect.stringContaining(`Daily Average: ${mockData.usage.dailyAverage}`),
         expect.any(Number),
-        expect.any(Number)
+        expect.any(Number),
       );
     });
 
@@ -176,13 +176,13 @@ describe('ForensicPdfService - PDF Generation Due Diligence', () => {
       expect(mockDoc.text).toHaveBeenCalledWith(
         expect.stringContaining('R50,000'),
         expect.any(Number),
-        expect.any(Number)
+        expect.any(Number),
       );
 
       expect(mockDoc.text).toHaveBeenCalledWith(
         expect.stringContaining('R57,500'),
         expect.any(Number),
-        expect.any(Number)
+        expect.any(Number),
       );
     });
 
@@ -194,7 +194,7 @@ describe('ForensicPdfService - PDF Generation Due Diligence', () => {
       expect(mockDoc.text).toHaveBeenCalledWith(
         expect.stringContaining(`${mockData.value.roi}%`),
         expect.any(Number),
-        expect.any(Number)
+        expect.any(Number),
       );
     });
 
@@ -203,7 +203,7 @@ describe('ForensicPdfService - PDF Generation Due Diligence', () => {
 
       expect(mockDoc.text).toHaveBeenCalledWith(
         expect.stringContaining(mockData.upsell[0].title),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -216,7 +216,7 @@ describe('ForensicPdfService - PDF Generation Due Diligence', () => {
           tenantId: 'test-tenant-12345678',
           resourceId: mockData.reportId,
           resourceType: 'PDF_REPORT',
-        })
+        }),
       );
     });
 
@@ -238,7 +238,7 @@ describe('ForensicPdfService - PDF Generation Due Diligence', () => {
 
       expect(mockDoc.text).toHaveBeenCalledWith(
         expect.stringContaining('Return on Investment (ROI) Analysis:'),
-        expect.anything()
+        expect.anything(),
       );
     });
   });
@@ -250,17 +250,17 @@ describe('ForensicPdfService - PDF Generation Due Diligence', () => {
       expect(mockRes.setHeader).toHaveBeenCalled();
       expect(mockDoc.text).toHaveBeenCalledWith(
         'WILSY OS: COMPLIANCE CERTIFICATE',
-        expect.anything()
+        expect.anything(),
       );
 
       expect(mockDoc.text).toHaveBeenCalledWith(
         expect.stringContaining('POPIA §19'),
-        expect.anything()
+        expect.anything(),
       );
 
       expect(mockDoc.text).toHaveBeenCalledWith(
         expect.stringContaining('✓ COMPLIANT'),
-        expect.anything()
+        expect.anything(),
       );
     });
   });
@@ -301,7 +301,7 @@ describe('ForensicPdfService - PDF Generation Due Diligence', () => {
 
       expect(mockDoc.text).toHaveBeenCalledWith(
         expect.stringContaining('R9.75B'),
-        expect.anything()
+        expect.anything(),
       );
     });
   });

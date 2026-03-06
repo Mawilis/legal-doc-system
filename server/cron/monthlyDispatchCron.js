@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ MONTHLY DISPATCH CRON - INVESTOR-GRADE MODULE                 ║
   ║ Automated PDF delivery | 100% uptime | Forensic traceability  ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/cron/monthlyDispatchCron.js
  * INVESTOR VALUE PROPOSITION:
@@ -23,10 +23,11 @@ import TenantConfig from '../models/TenantConfig.js';
 import { generateBillingPdf } from '../services/pdf/ForensicPdfService.js';
 import { sendEmailWithAttachment } from '../services/email/EmailService.js';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../utils/quantumLogger.js';
 import auditLogger from '../utils/auditLogger.js';
 import { metrics } from '../utils/metricsCollector.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,7 +100,7 @@ export const scheduleMonthlyDispatch = () => {
     {
       scheduled: true,
       timezone: 'Africa/Johannesburg',
-    }
+    },
   );
 
   logger.info('Monthly dispatch cron scheduled for 2:00 AM on the 1st of each month');
@@ -183,8 +184,7 @@ const dispatchTenantReport = async (tenant, batchId) => {
 /*
  * Generates email body text
  */
-const generateEmailBody = (tenant) => {
-  return `
+const generateEmailBody = (tenant) => `
 Dear ${tenant.name || 'Valued Client'},
 
 Your Wilsy OS Forensic Usage & Impact Report for ${new Date().toLocaleString('default', {
@@ -206,7 +206,6 @@ Thank you for trusting Wilsy OS with your legal intelligence needs.
 Wilsy OS Quantum Engine
 "Law knows no borders. Wilsy OS has no limits."
   `;
-};
 
 export default {
   scheduleMonthlyDispatch,

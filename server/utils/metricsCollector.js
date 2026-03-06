@@ -80,10 +80,10 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ METRICS COLLECTOR - INVESTOR-GRADE MODULE - $49M+ ANNUAL VALUE           ║
   ║ 99.99% uptime SLA | Real-time observability | Business intelligence      ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 // =============================================================================
 // DEPENDENCIES & IMPORTS - Production-grade
@@ -177,7 +177,7 @@ const METRICS_CONSTANTS = Object.freeze({
 // =============================================================================
 
 // Create or get default registry
-const register = promClient.register;
+const { register } = promClient;
 
 // Enable default metrics (CPU, memory, etc.)
 promClient.collectDefaultMetrics({
@@ -606,7 +606,7 @@ class MetricsCollector extends EventEmitter {
       const cpus = os.cpus();
       cpus.forEach((cpu, index) => {
         const total = Object.values(cpu.times).reduce((acc, tv) => acc + tv, 0);
-        const idle = cpu.times.idle;
+        const { idle } = cpu.times;
         const usage = ((total - idle) / total) * 100;
         cpuUsage.labels(index.toString()).set(usage);
       });
@@ -698,7 +698,7 @@ class MetricsCollector extends EventEmitter {
     const cpus = os.cpus();
     cpus.forEach((cpu, index) => {
       const total = Object.values(cpu.times).reduce((acc, tv) => acc + tv, 0);
-      const idle = cpu.times.idle;
+      const { idle } = cpu.times;
       const usage = (total - idle) / total;
       if (usage > METRICS_CONSTANTS.ALERT_THRESHOLDS.CPU_USAGE) {
         this.emit('alert', {
@@ -768,10 +768,8 @@ class MetricsCollector extends EventEmitter {
     const uptime = (Date.now() - this.startTime) / 1000;
     const aggregations = this.getAggregations(24);
 
-    const avgRequestRate =
-      aggregations.reduce((sum, a) => sum + a.requestRate, 0) / aggregations.length;
-    const avgErrorRate =
-      aggregations.reduce((sum, a) => sum + a.errorRate, 0) / aggregations.length;
+    const avgRequestRate = aggregations.reduce((sum, a) => sum + a.requestRate, 0) / aggregations.length;
+    const avgErrorRate = aggregations.reduce((sum, a) => sum + a.errorRate, 0) / aggregations.length;
 
     return {
       reportId: `METRICS-${uuidv4().substr(0, 8)}`,
@@ -843,7 +841,7 @@ class MetricsCollector extends EventEmitter {
   middleware() {
     return (req, res, next) => {
       const startTime = performance.now();
-      const method = req.method;
+      const { method } = req;
       const endpoint = req.route?.path || req.path;
       const tenantId = req.tenantContext?.id || 'system';
 
@@ -874,7 +872,7 @@ class MetricsCollector extends EventEmitter {
         const duration = (performance.now() - startTime) / 1000;
 
         // Track response
-        const statusCode = res.statusCode;
+        const { statusCode } = res;
         const responseSize = chunk
           ? chunk.length
           : responseBody

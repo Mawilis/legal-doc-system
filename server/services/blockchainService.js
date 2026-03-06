@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
  * ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
  * ⣿⣿⣿⣿⣿⣿⣿⣿⡿⠛⠉⠉⠉⠉⠉⠉⠉⠉⠉⠛⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿
@@ -55,32 +56,32 @@
 // ============================================================================
 
 // 🔐 Quantum Security: Load environment variables FIRST
-require('dotenv').config();
+import 'dotenv/config';
 
 // 🔗 Blockchain & Cryptography
-const crypto = require('crypto');
-const { createHash, createHmac } = require('crypto');
-const EC = require('elliptic').ec;
+import crypto from 'crypto';
+import { createHash, createHmac } from 'crypto';
+import pkg_ec from 'elliptic'; const { ec: EC } = pkg_ec;
 
 const secp256k1 = new EC('secp256k1');
-const { Transaction } = require('ethereumjs-tx');
+import { Transaction } from 'ethereumjs-tx';
 const MerkleTree = require('merkletreejs');
-const mongoose = require('mongoose');
-const { SHA3 } = require('sha3');
-const Web3 = require('web3');
+import mongoose from 'mongoose';
+import { SHA3 } from 'sha3';
+import Web3 from 'web3';
 
 // 🗄️ Database & Models
-const AuditLog = require('../models/auditLogModel');
-const BlockchainTransaction = require('../models/blockchainTransactionModel');
-const Document = require('../models/documentModel');
-const Firm = require('../models/firmModel');
+import AuditLog from '../models/auditLogModel.js';
+import BlockchainTransaction from '../models/blockchainTransactionModel.js';
+import Document from '../models/documentModel.js';
+import Firm from '../models/firmModel.js';
 
 // 🛡️ Wilsy OS Security
-const { validatePOPIAConsent } = require('../utils/complianceUtils');
-const { encryptData, decryptData, generateKeyPair } = require('../utils/cryptoUtils');
+import { validatePOPIAConsent } from '../utils/complianceUtils.js';
+import { encryptData, decryptData, generateKeyPair } from '../utils/cryptoUtils.js';
 
 // 📜 Logger
-const loggerRaw = require('../utils/logger');
+import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
@@ -1409,7 +1410,7 @@ export default new BlockchainService();
 /*
  * 📁 REQUIRED MODEL: /server/models/blockchainTransactionModel.js
  *
- * const mongoose = require('mongoose');
+ * import mongoose from 'mongoose';
  *
  * const blockchainTransactionSchema = new mongoose.Schema({
  *   type: {

@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ BILLING REPORT SERVICE - INVESTOR-GRADE MODULE                ║
   ║ 90% cost reduction | R3.2B risk elimination | 94% margins     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/billing/BillingReportService.js
  * INVESTOR VALUE PROPOSITION:
@@ -68,15 +68,15 @@ import { createHash } from 'crypto';
 // WILSY OS CORE IMPORTS
 import auditLogger from '../../utils/auditLogger.js';
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../../utils/quantumLogger.js';
-import cryptoUtils from '../../utils/cryptoUtils.js';
-import { redactSensitive } from '../../utils/cryptoUtils.js';
+import cryptoUtils, { redactSensitive } from '../../utils/cryptoUtils.js';
 
 // Models
 import TenantConfig from '../../models/TenantConfig.js';
 import UsageHistory from '../../models/UsageHistory.js';
 import BillingInvoice from '../../models/BillingInvoice.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // Constants
 const REDACT_FIELDS = ['billingEmail', 'paymentMethod', 'bankAccount', 'taxId'];
@@ -462,8 +462,7 @@ function calculateSavingsMetrics(usageMetrics, costBreakdown) {
 
   // Time savings
   const timeSavingsHours = manualHoursEquivalent - usageMetrics.totalQueries / 100; // Automated: 100 queries/hour
-  const timeSavingsPercentage =
-    ((manualHoursEquivalent - usageMetrics.totalQueries / 100) / manualHoursEquivalent) * 100;
+  const timeSavingsPercentage = ((manualHoursEquivalent - usageMetrics.totalQueries / 100) / manualHoursEquivalent) * 100;
 
   // Accuracy improvement (avoided error rate)
   const manualErrorRate = 0.15; // 15% error rate in manual research
@@ -481,7 +480,7 @@ function calculateSavingsMetrics(usageMetrics, costBreakdown) {
     manualCostEquivalent,
     timeSavingsHours: Math.round(timeSavingsHours),
     timeSavingsPercentage: Math.round(timeSavingsPercentage * 100) / 100,
-    accuracyImprovement: Math.round((manualErrorRate - automatedErrorRate) * 100) + '%',
+    accuracyImprovement: `${Math.round((manualErrorRate - automatedErrorRate) * 100)}%`,
     riskReduction,
     roi: Math.round(roi * 100) / 100,
   };
@@ -504,8 +503,7 @@ function generateUpsellRecommendations(usageMetrics, currentTier, tenant) {
       const nextTierPrice = BILLING_CONSTANTS.TIER_PRICES[nextTier] / 12;
       const currentPrice = BILLING_CONSTANTS.TIER_PRICES[currentTier] / 12;
       const priceIncrease = nextTierPrice - currentPrice;
-      const additionalQuota =
-        getTierLimits(nextTier).monthlyQuota - getTierLimits(currentTier).monthlyQuota;
+      const additionalQuota = getTierLimits(nextTier).monthlyQuota - getTierLimits(currentTier).monthlyQuota;
 
       recommendations.push({
         type: 'QUOTA_UPSELL',
@@ -517,9 +515,9 @@ function generateUpsellRecommendations(usageMetrics, currentTier, tenant) {
         priceIncrease,
         formattedPriceIncrease: formatCurrency(priceIncrease),
         savingsVsOverage:
-          priceIncrease <
-          (usageMetrics.totalQueries - getTierLimits(currentTier).monthlyQuota) *
-            getTierLimits(currentTier).pricePerExtra,
+          priceIncrease
+          < (usageMetrics.totalQueries - getTierLimits(currentTier).monthlyQuota)
+            * getTierLimits(currentTier).pricePerExtra,
         roi: calculateUpsellROI(usageMetrics, currentTier, nextTier),
       });
     }
@@ -696,7 +694,7 @@ function generateReportHash(report) {
       totalCost: report.costs.totalIncludingVAT,
       reportId: report.reportId,
     },
-    Object.keys(report).sort()
+    Object.keys(report).sort(),
   );
 
   return createHash('sha256').update(canonical).digest('hex');

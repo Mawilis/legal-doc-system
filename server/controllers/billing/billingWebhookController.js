@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ BILLING WEBHOOK CONTROLLER - LIVE REVENUE INTEGRATION                     ║
   ║ Paystack/Stripe webhook handler | Real-time payout triggers               ║
   ║ R39M/year ARR | Forensic audit | SARS compliance                          ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/billing/billingWebhookController.js
@@ -22,8 +22,9 @@ import { calculateInvestorDividends } from '../../services/finance/payoutService
 import ValidationAudit from '../../models/ValidationAudit.js';
 import { ApiKey } from '../../models/api/ApiKey.js';
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import { AuditLogger } from '../../utils/auditLogger.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // CONSTANTS
@@ -69,7 +70,7 @@ const verifyWebhookSignature = (req, provider) => {
     if (provider === PAYMENT_PROVIDERS.STRIPE) {
       // Stripe verification logic
       const timestamp = req.headers['stripe-signature'].split(',')[0].split('=')[1];
-      const payload = timestamp + '.' + JSON.stringify(req.body);
+      const payload = `${timestamp}.${JSON.stringify(req.body)}`;
       const expected = crypto.createHmac('sha256', WEBHOOK_SECRET).update(payload).digest('hex');
       return expected === req.headers['stripe-signature'].split(',')[1].split('=')[1];
     }
@@ -84,12 +85,10 @@ const verifyWebhookSignature = (req, provider) => {
 /**
  * Format currency
  */
-const formatCurrency = (amount, currency = 'ZAR') => {
-  return new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency,
-  }).format(amount);
-};
+const formatCurrency = (amount, currency = 'ZAR') => new Intl.NumberFormat('en-ZA', {
+  style: 'currency',
+  currency,
+}).format(amount);
 
 // ============================================================================
 // WEBHOOK HANDLERS
@@ -155,7 +154,7 @@ export const handlePaystackWebhook = async (req, res) => {
               'billing.lastInvoicedAt': new Date(),
               'billing.nextInvoiceAt': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             },
-          }
+          },
         );
       }
 
@@ -267,7 +266,7 @@ export const handleStripeWebhook = async (req, res) => {
               'billing.lastInvoicedAt': new Date(),
               'billing.nextInvoiceAt': new Date(data.object.next_payment_attempt * 1000),
             },
-          }
+          },
         );
       }
 
@@ -338,9 +337,8 @@ export const handleWebhook = async (req, res) => {
     // Route to appropriate handler
     if (provider === 'paystack') {
       return handlePaystackWebhook(req, res);
-    } else {
-      return handleStripeWebhook(req, res);
     }
+    return handleStripeWebhook(req, res);
   } catch (error) {
     logger.error('Webhook handling error', {
       correlationId,

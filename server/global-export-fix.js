@@ -16,9 +16,9 @@ function fixExports(dir) {
 
       if (stat.isDirectory()) {
         if (
-          !fullPath.includes('node_modules') &&
-          !fullPath.includes('.git') &&
-          !fullPath.includes('backups')
+          !fullPath.includes('node_modules')
+          && !fullPath.includes('.git')
+          && !fullPath.includes('backups')
         ) {
           fixExports(fullPath);
         }
@@ -30,7 +30,7 @@ function fixExports(dir) {
           content = content.replace(/module\.exports\s*=\s*/g, 'export default ');
           fs.writeFileSync(fullPath, content);
           console.log(
-            `✅ Upgraded export in: ${fullPath.split('legal-doc-system/')[1] || fullPath}`
+            `✅ Upgraded export in: ${fullPath.split('legal-doc-system/')[1] || fullPath}`,
           );
         }
       }

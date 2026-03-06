@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ BILLING INVOICE MODEL - INVESTOR-GRADE MODULE                 ║
   ║ Forensic Traceability | POPIA Compliant | Retention-Aware     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/BillingInvoice.js
  * INVESTOR VALUE PROPOSITION:
@@ -12,9 +12,9 @@
  * • Compliance: Companies Act §24, POPIA §19, Consumer Protection Act §43
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid.js';
-import { createHash } from "crypto";
+import { createHash } from 'crypto';
 
 const { Schema } = mongoose;
 
@@ -38,7 +38,7 @@ const billingInvoiceSchema = new Schema(
       required: true,
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[a-zA-Z0-9_-]{8,64}$/.test(v);
         },
         message: (props) => `${props.value} is not a valid tenant ID format`,
@@ -53,7 +53,9 @@ const billingInvoiceSchema = new Schema(
     },
 
     billingPeriod: {
-      month: { type: Number, required: true, min: 1, max: 12 },
+      month: {
+        type: Number, required: true, min: 1, max: 12,
+      },
       year: { type: Number, required: true },
       startDate: { type: Date, required: true },
       endDate: { type: Date, required: true },
@@ -144,7 +146,7 @@ const billingInvoiceSchema = new Schema(
     // Tenant information (redacted in responses)
     billingEmail: {
       type: String,
-      set: function (v) {
+      set(v) {
         // Store encrypted, return redacted
         return v; // In production, encrypt here
       },
@@ -208,7 +210,7 @@ const billingInvoiceSchema = new Schema(
   {
     timestamps: true,
     collection: 'billing_invoices',
-  }
+  },
 );
 
 // Indexes for performance

@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL MODEL - INVESTOR-GRADE M&A DEAL TRACKING                                         ║
   ║ R3.5B/year deal flow | Competition Act §59(2) | 10-year retention                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Deal.js
@@ -354,7 +354,7 @@ const dealSchema = new mongoose.Schema(
 
     retentionEnd: {
       type: Date,
-      default: function () {
+      default() {
         const date = new Date();
         date.setFullYear(date.getFullYear() + 10);
         return date;
@@ -371,7 +371,7 @@ const dealSchema = new mongoose.Schema(
     collection: 'deals',
     strict: true,
     minimize: false,
-  }
+  },
 );
 
 // ============================================================================
@@ -437,7 +437,7 @@ dealSchema.pre('save', async function (next) {
         materiality: null,
         riskLevel: null,
         previousHash: null,
-      }).sort()
+      }).sort(),
     );
 
     this.forensicHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -588,7 +588,7 @@ dealSchema.methods.verifyIntegrity = function () {
       materiality: null,
       riskLevel: null,
       previousHash: null,
-    }).sort()
+    }).sort(),
   );
 
   const calculatedHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -762,7 +762,7 @@ dealSchema.virtual('needsRegulatoryFiling').get(function () {
 
 dealSchema.virtual('requiresCompetitionApproval').get(function () {
   return [MATERIALITY_LEVELS.INTERMEDIATE_MERGER, MATERIALITY_LEVELS.LARGE_MERGER].includes(
-    this.materiality
+    this.materiality,
   );
 });
 
@@ -772,6 +772,8 @@ dealSchema.virtual('requiresCompetitionApproval').get(function () {
 
 const Deal = mongoose.model('Deal', dealSchema);
 
-export { Deal, DEAL_TYPES, DEAL_STAGES, MATERIALITY_LEVELS, DEAL_RISK_LEVELS, CURRENCIES };
+export {
+  Deal, DEAL_TYPES, DEAL_STAGES, MATERIALITY_LEVELS, DEAL_RISK_LEVELS, CURRENCIES,
+};
 
 export default Deal;

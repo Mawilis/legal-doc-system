@@ -8,9 +8,10 @@ import cron from 'node-cron.js';
 import { getSystemHealth } from '../services/system/HealthService.js';
 import { sendAlert } from '../services/alerting/AlertService.js';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../utils/quantumLogger.js';
 import { metrics } from '../utils/metricsCollector.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // Schedule health check every 5 minutes
 export const scheduleHealthChecks = () => {
@@ -49,7 +50,7 @@ export const scheduleHealthChecks = () => {
                 ? 2
                 : health.status === 'CRITICAL'
                   ? 1
-                  : 0
+                  : 0,
         );
 
         // Send alerts for critical issues
@@ -57,7 +58,7 @@ export const scheduleHealthChecks = () => {
           await sendAlert({
             severity: 'CRITICAL',
             title: 'System Health Critical',
-            message: `Health check detected critical issues`,
+            message: 'Health check detected critical issues',
             details: health.issues,
             timestamp: new Date().toISOString(),
           });
@@ -88,7 +89,7 @@ export const scheduleHealthChecks = () => {
     {
       scheduled: true,
       timezone: 'Africa/Johannesburg',
-    }
+    },
   );
 
   logger.info('Health check cron scheduled for every 5 minutes');

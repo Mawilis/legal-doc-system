@@ -6,8 +6,8 @@
    ║                              "Isolation without compromise - each tenant a sovereign entity"                                          ║
    ╚═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝ */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 import logger from '../utils/logger.js';
 import cryptoUtils from '../utils/cryptoUtils.js';
 
@@ -65,7 +65,7 @@ const tenantConfigSchema = new mongoose.Schema(
       unique: true,
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[a-zA-Z0-9_-]{8,64}$/.test(v);
         },
         message: (props) => `${props.value} is not a valid tenant ID format`,
@@ -85,7 +85,7 @@ const tenantConfigSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
         },
         message: (props) => `${props.value} is not a valid email`,
@@ -300,7 +300,7 @@ const tenantConfigSchema = new mongoose.Schema(
     timestamps: true,
     strict: true,
     collection: 'tenant_configs',
-  }
+  },
 );
 
 // ============================================================================

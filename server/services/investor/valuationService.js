@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ INVESTOR VALUATION SERVICE - COMPLETE PRODUCTION ENGINE       ║
   ║ [90% cost reduction | R12.5M risk elimination | 85% margins]  ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/investor/valuationService.js
@@ -91,14 +91,15 @@
  *   style L fill:#9f9,stroke:#333
  */
 
-import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
-import auditLogger from '../../utils/auditLogger.js';
 import crypto from 'crypto';
+import loggerRaw from '../../utils/logger.js';
+import auditLogger from '../../utils/auditLogger.js';
 import { tenantContext } from '../../middleware/tenantContext.js';
 import { REDACT_FIELDS, redactSensitive } from '../../utils/popiaUtils.js';
 import pdfGenerator from '../../utils/pdfGenerator.js';
 import excelGenerator from '../../utils/excelGenerator.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // MODELS (Would be imported in production)
@@ -648,9 +649,7 @@ class ValuationEngine {
       const methods = this.determineApplicableMethods(company, options);
 
       // Execute parallel valuations
-      const valuationPromises = methods.map((method) =>
-        this.executeValuationMethod(method, company, assumptions)
-      );
+      const valuationPromises = methods.map((method) => this.executeValuationMethod(method, company, assumptions));
 
       const results = await Promise.allSettled(valuationPromises);
 
@@ -671,7 +670,7 @@ class ValuationEngine {
         valuationId,
         companyId,
         tenantId,
-        methods: methods,
+        methods,
         results: compiled,
         monteCarlo,
         sensitivity,
@@ -835,7 +834,7 @@ class ValuationEngine {
     const discountRate = this.calculateDiscountRate(company, assumptions);
 
     const terminalGrowth = assumptions.terminalGrowthRate;
-    const projectionYears = assumptions.projectionYears;
+    const { projectionYears } = assumptions;
 
     // Calculate present value of projected cash flows
     let presentValue = 0;
@@ -844,9 +843,8 @@ class ValuationEngine {
 
     for (let i = 0; i < projections.length; i++) {
       const year = i + 1;
-      const cashFlow =
-        projections[i].freeCashFlow || this.calculateFreeCashFlow(projections[i], assumptions);
-      const discountFactor = 1 / Math.pow(1 + discountRate, year);
+      const cashFlow = projections[i].freeCashFlow || this.calculateFreeCashFlow(projections[i], assumptions);
+      const discountFactor = 1 / (1 + discountRate) ** year;
       const presentValueYear = cashFlow * discountFactor;
       presentValue += presentValueYear;
       presentValues.push({
@@ -859,21 +857,20 @@ class ValuationEngine {
 
     // Calculate terminal value using selected method
     const terminalMethod = assumptions.terminalMethod || TERMINAL_VALUE_METHODS.PERPETUITY_GROWTH;
-    let terminalValue, terminalPresentValue;
+    let terminalValue; let
+      terminalPresentValue;
 
     if (terminalMethod === TERMINAL_VALUE_METHODS.PERPETUITY_GROWTH) {
-      const finalYearCashFlow =
-        projections[projections.length - 1].freeCashFlow ||
-        this.calculateFreeCashFlow(projections[projections.length - 1], assumptions);
+      const finalYearCashFlow = projections[projections.length - 1].freeCashFlow
+        || this.calculateFreeCashFlow(projections[projections.length - 1], assumptions);
       terminalValue = (finalYearCashFlow * (1 + terminalGrowth)) / (discountRate - terminalGrowth);
-      terminalPresentValue = terminalValue / Math.pow(1 + discountRate, projections.length);
+      terminalPresentValue = terminalValue / (1 + discountRate) ** projections.length;
     } else if (terminalMethod === TERMINAL_VALUE_METHODS.EXIT_MULTIPLE) {
-      const finalYearEBITDA =
-        projections[projections.length - 1].ebitda ||
-        this.calculateEBITDA(projections[projections.length - 1]);
+      const finalYearEBITDA = projections[projections.length - 1].ebitda
+        || this.calculateEBITDA(projections[projections.length - 1]);
       const exitMultiple = assumptions.exitMultiple || 8.0;
       terminalValue = finalYearEBITDA * exitMultiple;
-      terminalPresentValue = terminalValue / Math.pow(1 + discountRate, projections.length);
+      terminalPresentValue = terminalValue / (1 + discountRate) ** projections.length;
     } else {
       terminalValue = 0;
       terminalPresentValue = 0;
@@ -920,35 +917,34 @@ class ValuationEngine {
     const method = assumptions.discountRateMethod || DISCOUNT_RATE_METHODS.WACC;
 
     if (method === DISCOUNT_RATE_METHODS.CAPM) {
-      const riskFreeRate = assumptions.riskFreeRate;
+      const { riskFreeRate } = assumptions;
       const beta = this.calculateBeta(company, assumptions);
-      const marketRiskPremium = assumptions.marketRiskPremium;
-      const sizePremium = assumptions.sizePremium;
+      const { marketRiskPremium } = assumptions;
+      const { sizePremium } = assumptions;
       const industryPremium = this.industryPremiums[company.sector] || 0;
-      const companySpecificRisk = assumptions.companySpecificRisk;
-      const countryRiskPremium = assumptions.countryRiskPremium;
+      const { companySpecificRisk } = assumptions;
+      const { countryRiskPremium } = assumptions;
 
       return (
-        riskFreeRate +
-        beta * marketRiskPremium +
-        sizePremium +
-        industryPremium +
-        companySpecificRisk +
-        countryRiskPremium
+        riskFreeRate
+        + beta * marketRiskPremium
+        + sizePremium
+        + industryPremium
+        + companySpecificRisk
+        + countryRiskPremium
       );
-    } else {
-      // WACC Calculation
-      const costOfEquity = this.calculateCostOfEquity(company, assumptions);
-      const costOfDebt = this.calculateCostOfDebt(company, assumptions);
-      const targetDebtEquity = assumptions.targetDebtEquity;
-      const taxRate = assumptions.taxRate;
-
-      const equityWeight = 1 / (1 + targetDebtEquity);
-      const debtWeight = targetDebtEquity / (1 + targetDebtEquity);
-      const afterTaxCostOfDebt = costOfDebt * (1 - taxRate);
-
-      return equityWeight * costOfEquity + debtWeight * afterTaxCostOfDebt;
     }
+    // WACC Calculation
+    const costOfEquity = this.calculateCostOfEquity(company, assumptions);
+    const costOfDebt = this.calculateCostOfDebt(company, assumptions);
+    const { targetDebtEquity } = assumptions;
+    const { taxRate } = assumptions;
+
+    const equityWeight = 1 / (1 + targetDebtEquity);
+    const debtWeight = targetDebtEquity / (1 + targetDebtEquity);
+    const afterTaxCostOfDebt = costOfDebt * (1 - taxRate);
+
+    return equityWeight * costOfEquity + debtWeight * afterTaxCostOfDebt;
   }
 
   /**
@@ -959,7 +955,7 @@ class ValuationEngine {
     // In production, this would fetch industry beta and adjust for company
     const industryBeta = 1.0;
     const debtEquityRatio = assumptions.targetDebtEquity;
-    const taxRate = assumptions.taxRate;
+    const { taxRate } = assumptions;
 
     // Unlever and relever beta
     const unleveredBeta = industryBeta / (1 + (1 - taxRate) * debtEquityRatio);
@@ -973,9 +969,9 @@ class ValuationEngine {
    * @private
    */
   calculateCostOfEquity(company, assumptions) {
-    const riskFreeRate = assumptions.riskFreeRate;
+    const { riskFreeRate } = assumptions;
     const beta = this.calculateBeta(company, assumptions);
-    const marketRiskPremium = assumptions.marketRiskPremium;
+    const { marketRiskPremium } = assumptions;
 
     return riskFreeRate + beta * marketRiskPremium;
   }
@@ -995,12 +991,11 @@ class ValuationEngine {
    */
   calculateFreeCashFlow(financials, assumptions) {
     const ebit = financials.ebit || 0;
-    const taxRate = assumptions.taxRate;
+    const { taxRate } = assumptions;
     const depreciation = financials.depreciation || 0;
     const capex = financials.capex || financials.revenue * assumptions.capExPercent;
-    const workingCapitalChange =
-      financials.workingCapitalChange ||
-      financials.revenue * assumptions.workingCapitalPercent * 0.2;
+    const workingCapitalChange = financials.workingCapitalChange
+      || financials.revenue * assumptions.workingCapitalPercent * 0.2;
 
     const nopat = ebit * (1 - taxRate);
     return nopat + depreciation - capex - workingCapitalChange;
@@ -1557,17 +1552,16 @@ class ValuationEngine {
     // Calculate adjusted asset values
     const adjustedAssets = this.calculateAdjustedAssets(assets, assumptions);
 
-    const totalAssets =
-      adjustedAssets.current +
-      adjustedAssets.fixed +
-      adjustedAssets.intangible +
-      adjustedAssets.investments;
+    const totalAssets = adjustedAssets.current
+      + adjustedAssets.fixed
+      + adjustedAssets.intangible
+      + adjustedAssets.investments;
 
     const totalLiabilities = assets.liabilities || 0;
     const bookValue = totalAssets - totalLiabilities;
 
     // Apply illiquidity discount for private companies
-    const illiquidityDiscount = assumptions.illiquidityDiscount;
+    const { illiquidityDiscount } = assumptions;
     const equityValue = bookValue * (1 - illiquidityDiscount);
 
     // Calculate liquidation value
@@ -1619,11 +1613,10 @@ class ValuationEngine {
       investments: 0.7, // 30% discount for investments
     };
 
-    const liquidationValue =
-      (assets.current || 0) * liquidationDiscounts.current +
-      (assets.fixed || 0) * liquidationDiscounts.fixed +
-      (assets.intangible || 0) * liquidationDiscounts.intangible +
-      (assets.investments || 0) * liquidationDiscounts.investments;
+    const liquidationValue = (assets.current || 0) * liquidationDiscounts.current
+      + (assets.fixed || 0) * liquidationDiscounts.fixed
+      + (assets.intangible || 0) * liquidationDiscounts.intangible
+      + (assets.investments || 0) * liquidationDiscounts.investments;
 
     return liquidationValue;
   }
@@ -1657,7 +1650,7 @@ class ValuationEngine {
 
     // Project EBITDA growth
     const ebitdaGrowth = assumptions.ebitdaGrowth || 0.1;
-    const projectedEBITDA = financials.ebitda * Math.pow(1 + ebitdaGrowth, investmentHorizon);
+    const projectedEBITDA = financials.ebitda * (1 + ebitdaGrowth) ** investmentHorizon;
 
     // Calculate exit value
     const exitValue = projectedEBITDA * exitMultiple;
@@ -1667,17 +1660,17 @@ class ValuationEngine {
     const debtRepayment = this.calculateDebtRepayment(
       debtCapacity,
       interestRate,
-      investmentHorizon
+      investmentHorizon,
     );
 
     // Calculate equity value at exit
     const exitEquityValue = exitValue - debtRepayment;
 
     // Calculate current equity value
-    const equityValue = exitEquityValue / Math.pow(1 + equityReturn, investmentHorizon);
+    const equityValue = exitEquityValue / (1 + equityReturn) ** investmentHorizon;
 
     // Calculate IRR
-    const irr = Math.pow(exitEquityValue / equityValue, 1 / investmentHorizon) - 1;
+    const irr = (exitEquityValue / equityValue) ** (1 / investmentHorizon) - 1;
 
     return {
       method: VALUATION_METHODS.LEVERAGED_BUYOUT,
@@ -1765,7 +1758,7 @@ class ValuationEngine {
     // Calculate expected dilution
     const dilutionPerRound = assumptions.dilutionPerRound || 0.2;
     const roundsToExit = assumptions.roundsToExit || 2;
-    const totalDilution = 1 - Math.pow(1 - dilutionPerRound, roundsToExit);
+    const totalDilution = 1 - (1 - dilutionPerRound) ** roundsToExit;
 
     // Calculate pre-money value
     const preMoneyValue = postMoneyValue * (1 - totalDilution);
@@ -1841,7 +1834,7 @@ class ValuationEngine {
         financials,
         params.revenueGrowth,
         params.marginExpansion,
-        projectionYears
+        projectionYears,
       );
 
       // Calculate scenario value using DCF
@@ -1853,7 +1846,7 @@ class ValuationEngine {
 
       const dcfResult = await this.discountedCashFlow(
         { financials: projectedFinancials },
-        scenarioAssumptions
+        scenarioAssumptions,
       );
 
       const scenarioValue = dcfResult.equityValue || 0;
@@ -1962,7 +1955,7 @@ class ValuationEngine {
       if (stochasticVars.discountRate.distribution === 'normal') {
         iterationAssumptions.discountRate = this.generateNormal(
           stochasticVars.discountRate.mean,
-          stochasticVars.discountRate.stdDev
+          stochasticVars.discountRate.stdDev,
         );
       }
 
@@ -1970,25 +1963,25 @@ class ValuationEngine {
       if (stochasticVars.terminalGrowth.distribution === 'normal') {
         iterationAssumptions.terminalGrowthRate = this.generateNormal(
           stochasticVars.terminalGrowth.mean,
-          stochasticVars.terminalGrowth.stdDev
+          stochasticVars.terminalGrowth.stdDev,
         );
       }
 
       // Apply multipliers to financials
       const revenueMultiplier = this.generateLognormal(
         stochasticVars.revenueMultiplier.mean,
-        stochasticVars.revenueMultiplier.stdDev
+        stochasticVars.revenueMultiplier.stdDev,
       );
 
       const marginMultiplier = this.generateLognormal(
         stochasticVars.marginMultiplier.mean,
-        stochasticVars.marginMultiplier.stdDev
+        stochasticVars.marginMultiplier.stdDev,
       );
 
       const adjustedFinancials = this.adjustFinancials(
         company.financials,
         revenueMultiplier,
-        marginMultiplier
+        marginMultiplier,
       );
 
       iterationAssumptions.financials = adjustedFinancials;
@@ -2050,8 +2043,8 @@ class ValuationEngine {
    */
   generateLognormal(mean, stdDev) {
     // Convert lognormal parameters
-    const mu = Math.log(mean) - 0.5 * Math.log(1 + Math.pow(stdDev / mean, 2));
-    const sigma = Math.sqrt(Math.log(1 + Math.pow(stdDev / mean, 2)));
+    const mu = Math.log(mean) - 0.5 * Math.log(1 + (stdDev / mean) ** 2);
+    const sigma = Math.sqrt(Math.log(1 + (stdDev / mean) ** 2));
 
     // Generate normal and transform
     const normal = this.generateNormal(0, 1);
@@ -2119,7 +2112,7 @@ class ValuationEngine {
 
     let sum = 0;
     for (const v of values) {
-      sum += Math.pow((v - mean) / stdDev, 3);
+      sum += ((v - mean) / stdDev) ** 3;
     }
 
     return sum / n;
@@ -2136,7 +2129,7 @@ class ValuationEngine {
 
     let sum = 0;
     for (const v of values) {
-      sum += Math.pow((v - mean) / stdDev, 4);
+      sum += ((v - mean) / stdDev) ** 4;
     }
 
     return sum / n - 3;
@@ -2325,7 +2318,7 @@ class ValuationEngine {
 
     results.forEach((result, index) => {
       if (result.status === 'fulfilled' && result.value?.applicable) {
-        const method = result.value.method;
+        const { method } = result.value;
         const value = result.value.equityValue || result.value.enterpriseValue;
         const confidence = result.value.confidence || 0.5;
 
@@ -2333,8 +2326,7 @@ class ValuationEngine {
 
         if (value > 0) {
           const methodWeight = weights[method] || 1.0;
-          const weight =
-            methodWeight * confidence * (1 + (result.value.methods?.length || 0) * 0.1);
+          const weight = methodWeight * confidence * (1 + (result.value.methods?.length || 0) * 0.1);
           weightedSum += value * weight;
           totalWeight += weight;
         }
@@ -2432,7 +2424,7 @@ class ValuationEngine {
   calculateStdDev(numbers) {
     if (!numbers || numbers.length === 0) return 0;
     const mean = this.calculateAverage(numbers);
-    const squaredDiffs = numbers.map((v) => Math.pow(v - mean, 2));
+    const squaredDiffs = numbers.map((v) => (v - mean) ** 2);
     const variance = this.calculateAverage(squaredDiffs);
     return Math.sqrt(variance);
   }
@@ -2534,7 +2526,9 @@ class ValuationEngine {
    */
   async listValuations(companyId, options = {}) {
     const { tenantId } = tenantContext.get();
-    const { limit = 10, offset = 0, sortBy = 'createdAt', sortOrder = -1 } = options;
+    const {
+      limit = 10, offset = 0, sortBy = 'createdAt', sortOrder = -1,
+    } = options;
 
     const valuations = await ValuationModel.find({
       companyId,
@@ -2633,18 +2627,15 @@ class ValuationEngine {
 const valuationEngine = new ValuationEngine();
 
 // Named exports
-export const valueCompany = (companyId, options) =>
-  valuationEngine.valueCompany(companyId, options);
+export const valueCompany = (companyId, options) => valuationEngine.valueCompany(companyId, options);
 
 export const getValuation = (valuationId) => valuationEngine.getValuation(valuationId);
 
-export const listValuations = (companyId, options) =>
-  valuationEngine.listValuations(companyId, options);
+export const listValuations = (companyId, options) => valuationEngine.listValuations(companyId, options);
 
 export const generatePDFReport = (valuationId) => valuationEngine.generatePDFReport(valuationId);
 
-export const generateExcelExport = (valuationId) =>
-  valuationEngine.generateExcelExport(valuationId);
+export const generateExcelExport = (valuationId) => valuationEngine.generateExcelExport(valuationId);
 
 // Default export
 export default valuationEngine;

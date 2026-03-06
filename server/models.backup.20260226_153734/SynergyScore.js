@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ SYNERGY SCORE MODEL - QUANTUM SYNERGY CALCULATION WITH 94% ACCURACY                   ║
   ║ [Production Grade | 127-Dimensions | Real-time | Forensic Traceability]               ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 import mongoose from 'mongoose';
 import crypto from 'crypto';
@@ -198,7 +198,7 @@ const synergyScoreSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: 'synergy_scores',
-  }
+  },
 );
 
 // Indexes
@@ -214,7 +214,7 @@ synergyScoreSchema.pre('save', async function (next) {
   let npv = 0;
   for (let year = 1; year <= 5; year++) {
     const value = this.timeline[`year${year}`]?.value || 0;
-    npv += value / Math.pow(1 + discountRate, year);
+    npv += value / (1 + discountRate) ** year;
   }
   this.totalSynergy.npv = npv;
 
@@ -229,7 +229,7 @@ synergyScoreSchema.pre('save', async function (next) {
   for (let i = 0; i < 10; i++) {
     let npv2 = 0;
     for (let t = 0; t < cashflows.length; t++) {
-      npv2 += cashflows[t] / Math.pow(1 + irr, t);
+      npv2 += cashflows[t] / (1 + irr) ** t;
     }
     if (Math.abs(npv2) < 1) break;
     irr += npv2 > 0 ? 0.01 : -0.01;
@@ -272,8 +272,8 @@ synergyScoreSchema.methods.getTopDrivers = function (limit = 3) {
 };
 
 synergyScoreSchema.methods.getConfidenceInterval = function () {
-  const confidence = this.totalSynergy.confidence;
-  const value = this.totalSynergy.value;
+  const { confidence } = this.totalSynergy;
+  const { value } = this.totalSynergy;
 
   return {
     low: value * (1 - (1 - confidence) / 2),

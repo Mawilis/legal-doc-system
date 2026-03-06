@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ REGULATORY MONITORING CRON - 24/7 COMPLIANCE SURVEILLANCE ENGINE                      ║
   ║ R850M/year risk elimination | Real-time regulatory alerts | 10+ jurisdictions         ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/cron/regulatoryMonitoring.js
@@ -35,11 +35,11 @@
  */
 
 import cron from 'node-cron';
+import { getDealFlowWebSocket } from 'wilsy-os-websocket/dealFlowUpdates.js';
 import { RegulatoryFiling } from '../models/RegulatoryFiling.js';
 import { Deal } from '../models/Deal.js';
 import { AuditLogger } from '../utils/auditLogger.js';
 import Logger from '../utils/logger.js';
-import { getDealFlowWebSocket } from '../websocket/dealFlowUpdates.js';
 
 // ============================================================================
 // CONSTANTS
@@ -197,9 +197,9 @@ class RegulatoryMonitoringEngine {
       },
       deal: filing.dealId
         ? {
-            id: filing.dealId.dealId,
-            value: filing.dealId.value,
-          }
+          id: filing.dealId.dealId,
+          value: filing.dealId.value,
+        }
         : null,
       daysRemaining,
       timestamp: new Date().toISOString(),
@@ -247,9 +247,9 @@ class RegulatoryMonitoringEngine {
       },
       deal: filing.dealId
         ? {
-            id: filing.dealId.dealId,
-            value: filing.dealId.value,
-          }
+          id: filing.dealId.dealId,
+          value: filing.dealId.value,
+        }
         : null,
       daysOverdue,
       timestamp: new Date().toISOString(),
@@ -290,9 +290,9 @@ class RegulatoryMonitoringEngine {
       },
       deal: filing.dealId
         ? {
-            id: filing.dealId.dealId,
-            value: filing.dealId.value,
-          }
+          id: filing.dealId.dealId,
+          value: filing.dealId.value,
+        }
         : null,
       daysRemaining,
       timestamp: new Date().toISOString(),
@@ -380,12 +380,11 @@ class RegulatoryMonitoringEngine {
 
       filings.forEach((f) => {
         const daysLeft = f.daysUntilDeadline?.() || 365;
-        const risk =
-          daysLeft <= ALERT_THRESHOLDS.CRITICAL_DAYS
-            ? 'high'
-            : daysLeft <= ALERT_THRESHOLDS.WARNING_DAYS
-              ? 'medium'
-              : 'low';
+        const risk = daysLeft <= ALERT_THRESHOLDS.CRITICAL_DAYS
+          ? 'high'
+          : daysLeft <= ALERT_THRESHOLDS.WARNING_DAYS
+            ? 'medium'
+            : 'low';
 
         const item = {
           filingId: f.filingId,

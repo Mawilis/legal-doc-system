@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ INTEGRATION SIMULATION MODEL - POST-MERGER INTEGRATION FORECASTING                    ║
   ║ 94% predictive accuracy | Monte Carlo simulation | 10,000+ iterations                 ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/IntegrationSimulation.js
@@ -367,7 +367,7 @@ const integrationSimulationSchema = new mongoose.Schema(
 
     retentionEnd: {
       type: Date,
-      default: function () {
+      default() {
         const date = new Date();
         date.setFullYear(date.getFullYear() + 10);
         return date;
@@ -384,7 +384,7 @@ const integrationSimulationSchema = new mongoose.Schema(
     collection: 'integration_simulations',
     strict: true,
     minimize: false,
-  }
+  },
 );
 
 // ============================================================================
@@ -410,24 +410,20 @@ integrationSimulationSchema.pre('save', async function (next) {
 
     // Calculate overall confidence
     const confidences = [];
-    if (this.results?.successProbability?.overall)
-      confidences.push(this.results.successProbability.overall);
-    if (this.results?.timelinePrediction?.confidence)
-      confidences.push(this.results.timelinePrediction.confidence);
+    if (this.results?.successProbability?.overall) confidences.push(this.results.successProbability.overall);
+    if (this.results?.timelinePrediction?.confidence) confidences.push(this.results.timelinePrediction.confidence);
 
     if (confidences.length > 0) {
       this.confidence.overall = Math.round(
-        confidences.reduce((a, b) => a + b, 0) / confidences.length
+        confidences.reduce((a, b) => a + b, 0) / confidences.length,
       );
     }
 
     // Calculate Monte Carlo error
     if (this.results?.stats?.stdDev && this.results?.stats?.mean) {
-      this.confidence.monteCarloError =
-        1.96 * Math.sqrt(Math.pow(this.results.stats.stdDev, 2) / this.iterations);
+      this.confidence.monteCarloError = 1.96 * Math.sqrt(this.results.stats.stdDev ** 2 / this.iterations);
 
-      this.confidence.convergenceAchieved =
-        this.confidence.monteCarloError / this.results.stats.mean < 0.05;
+      this.confidence.convergenceAchieved = this.confidence.monteCarloError / this.results.stats.mean < 0.05;
     }
 
     const canonicalData = JSON.stringify(
@@ -448,7 +444,7 @@ integrationSimulationSchema.pre('save', async function (next) {
         successProbability: null,
         generatedAt: null,
         previousHash: null,
-      }).sort()
+      }).sort(),
     );
 
     this.forensicHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -515,21 +511,20 @@ integrationSimulationSchema.methods.getTimelineConfidence = function (targetDate
   // Simple normal CDF approximation
   const z = (days - mean) / stdDev;
   const t = 1 / (1 + 0.5 * Math.abs(z));
-  const cdf =
-    1 -
-    t *
-      Math.exp(
-        -z * z -
-          1.26551223 +
-          1.00002368 * t +
-          0.37409196 * t * t +
-          0.09678418 * Math.pow(t, 3) -
-          0.18628806 * Math.pow(t, 4) +
-          0.27886807 * Math.pow(t, 5) -
-          1.13520398 * Math.pow(t, 6) +
-          1.48851587 * Math.pow(t, 7) -
-          0.82215223 * Math.pow(t, 8) +
-          0.17087277 * Math.pow(t, 9)
+  const cdf = 1
+    - t
+      * Math.exp(
+        -z * z
+          - 1.26551223
+          + 1.00002368 * t
+          + 0.37409196 * t * t
+          + 0.09678418 * t ** 3
+          - 0.18628806 * t ** 4
+          + 0.27886807 * t ** 5
+          - 1.13520398 * t ** 6
+          + 1.48851587 * t ** 7
+          - 0.82215223 * t ** 8
+          + 0.17087277 * t ** 9,
       );
 
   const probability = z >= 0 ? cdf : 1 - cdf;
@@ -558,7 +553,7 @@ integrationSimulationSchema.methods.verifyIntegrity = function () {
       successProbability: null,
       generatedAt: null,
       previousHash: null,
-    }).sort()
+    }).sort(),
   );
 
   const calculatedHash = crypto.createHash('sha256').update(canonicalData).digest('hex');

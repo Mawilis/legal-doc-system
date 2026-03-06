@@ -1,9 +1,9 @@
 #!/* eslint-disable */
 /* eslint-disable no-underscore-dangle */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - RETENTION POLICY MODEL v2.0 (FORENSIC-GRADE)                  ║
   ║ [Companies Act §24 | POPIA §14 | PAIA §52 | JSE Compliant]               ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/RetentionPolicy.js
@@ -430,7 +430,7 @@ const retentionPolicySchema = new mongoose.Schema(
       min: 0,
       max: 100,
       validate: {
-        validator: function (v) {
+        validator(v) {
           // Permanent retention allowed only with specific legal basis
           if (v > 20 && !['forensic_permanent', 'constitutional'].includes(this.legalBasis)) {
             return false;
@@ -458,7 +458,7 @@ const retentionPolicySchema = new mongoose.Schema(
     // Computed field
     retentionPeriodDays: {
       type: Number,
-      default: function () {
+      default() {
         return this.retentionYears * 365 + this.retentionMonths * 30 + this.retentionDays;
       },
     },
@@ -742,14 +742,14 @@ const retentionPolicySchema = new mongoose.Schema(
     minimize: false,
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret.forensicHash;
         delete ret.previousHash;
         delete ret.auditLog;
         return ret;
       },
     },
-  }
+  },
 );
 
 // ============================================================================
@@ -833,7 +833,7 @@ retentionPolicySchema.pre('save', async function (next) {
   next();
 });
 
-retentionPolicySchema.post('save', function (doc) {
+retentionPolicySchema.post('save', (doc) => {
   // Update any existing matters that use this policy
   // This would be handled by a background worker
   console.log(`Retention policy ${doc.policyId} saved/updated`);
@@ -859,10 +859,10 @@ retentionPolicySchema.methods.calculateExpiryDate = function (startDate = new Da
  */
 retentionPolicySchema.methods.appliesToMatter = function (matter) {
   return (
-    this.matterType === matter.matterType &&
-    this.isActive &&
-    (!this.effectiveDate || this.effectiveDate <= matter.openedDate) &&
-    (!this.expiryDate || this.expiryDate >= new Date())
+    this.matterType === matter.matterType
+    && this.isActive
+    && (!this.effectiveDate || this.effectiveDate <= matter.openedDate)
+    && (!this.expiryDate || this.expiryDate >= new Date())
   );
 };
 
@@ -932,7 +932,7 @@ retentionPolicySchema.methods.addAuditLog = async function (
   action,
   userId,
   changes = {},
-  req = {}
+  req = {},
 ) {
   this.auditLog.push({
     action,
@@ -1086,4 +1086,6 @@ const RetentionPolicy = mongoose.model('RetentionPolicy', retentionPolicySchema)
 export default RetentionPolicy;
 
 // Re-export enums
-export { MATTER_TYPES, LEGAL_BASIS, DATA_RESIDENCY, NOTIFICATION_TRIGGERS, ACTION_TYPES };
+export {
+  MATTER_TYPES, LEGAL_BASIS, DATA_RESIDENCY, NOTIFICATION_TRIGGERS, ACTION_TYPES,
+};

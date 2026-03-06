@@ -1,66 +1,48 @@
-#!import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { DocumentTemplate } from './models/DocumentTemplate.js';
+import AuditLog from './models/auditLogModel.js';
 
 async function debug() {
+  console.log('🔍 DEBUGGING MODEL LOADING');
+  console.log('==========================');
+  
+  // Check what's actually in the file at line 838
+  console.log('\n📄 Checking actual file line 838:');
+  const fs = await import('fs');
+  const fileContent = fs.readFileSync('./models/auditLogModel.js', 'utf8');
+  const lines = fileContent.split('\n');
+  console.log(`Line 838: ${lines[837]}`); // Arrays are 0-indexed
+  
+  // Check the loaded model's middleware
+  console.log('\n🔧 Loaded Model Middleware:');
+  const preSaveHooks = AuditLog.schema.callQueue.filter(q => q[0] === 'pre' && q[1] === 'save');
+  console.log('Pre-save hooks count:', preSaveHooks.length);
+  
+  // Test creating a document
+  console.log('\n🧪 Test document creation:');
+  const mongoServer = await MongoMemoryServer.create();
+  const mongoUri = mongoServer.getUri();
+  await mongoose.connect(mongoUri);
+  
   try {
-    console.log('🚀 Starting MongoDB memory server...');
-    const mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-
-    await mongoose.connect(mongoUri);
-    console.log('✅ Test MongoDB connected');
-
-    // Create a test template
-    const testData = {
-      tenantId: 'test-tenant-123',
-      name: 'Test Contract Template',
-      templateType: 'contract',
-      practiceArea: 'commercial',
-      content: {
-        raw: 'Test content {{variable}}',
-        format: 'handlebars',
-      },
-      variables: [
-        {
-          name: 'variable',
-          type: 'string',
-          required: true,
-        },
-      ],
-      audit: {
-        createdBy: 'test-user',
-      },
-    };
-
-    console.log('\n📝 Creating template with data:', JSON.stringify(testData, null, 2));
-
-    const template = new DocumentTemplate(testData);
-
-    console.log('\n🔍 Before save:');
-    console.log('  - templateId:', template.templateId);
-    console.log('  - forensicHash:', template.forensicHash);
-    console.log('  - retentionEnd:', template.retentionEnd);
-    console.log('  - version:', template.version);
-
-    const saved = await template.save();
-
-    console.log('\n✅ After save:');
-    console.log('  - templateId:', saved.templateId);
-    console.log('  - forensicHash:', saved.forensicHash);
-    console.log('  - retentionEnd:', saved.retentionEnd);
-    console.log('  - version:', saved.version);
-    console.log('  - status:', saved.status);
-
-    // Verify the hash
-    console.log('\n🔐 Hash verification:', saved.verifyIntegrity());
-
-    await mongoose.disconnect();
-    await mongoServer.stop();
-    console.log('\n✅ Debug complete');
+    const testDoc = new AuditLog({
+      tenantId: 'test-tenant',
+      firmId: new mongoose.Types.ObjectId(),
+      userId: new mongoose.Types.ObjectId(),
+      userRole: 'test',
+      action: 'DOCUMENT_VIEWED',
+      category: 'DOCUMENT'
+    });
+    
+    await testDoc.save();
+    console.log('✅ Test document saved successfully');
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('❌ Error:', error.message);
+    console.error('Stack:', error.stack);
   }
+  
+  await mongoose.disconnect();
+  await mongoServer.stop();
 }
 
-debug();
+debug().catch(console.error);

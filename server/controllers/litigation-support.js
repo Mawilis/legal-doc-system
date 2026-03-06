@@ -70,10 +70,10 @@
  * ultimate litigation partner.
  */
 
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ LITIGATION SUPPORT CONTROLLER - INVESTOR-GRADE MODULE         ║
   ║ 92% cost reduction | R45M risk elimination | 94% margins      ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/litigation-support.js
  * INVESTOR VALUE PROPOSITION:
@@ -121,8 +121,6 @@
  * }
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Core dependencies
 const mongoose = require('mongoose');
 const { performance } = require('perf_hooks');
@@ -149,6 +147,7 @@ let opponentProfiler = null;
 
 // QUANTUM UTILITIES
 const loggerRaw = require('../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../utils/auditLogger');
 const quantumLogger = require('../utils/quantumLogger');
@@ -254,12 +253,10 @@ const initializeAIServices = async () => {
 /*
  * Generates a unique correlation ID for tracking
  */
-const generateCorrelationId = (req) => {
-  return (
-    req.headers['x-correlation-id'] ||
-    `LIT-SUPPORT-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`
-  );
-};
+const generateCorrelationId = (req) => (
+  req.headers['x-correlation-id']
+    || `LIT-SUPPORT-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`
+);
 
 /*
  * Logs controller action for audit trail
@@ -498,7 +495,7 @@ const getCaseStrategy = async (req, res, next) => {
     let opponentProfile = null;
     if (opponentProfiler) {
       const case_ = await Case.findOne({ _id: caseId, tenantId: req.tenant.tenantId }).populate(
-        'opposingParty'
+        'opposingParty',
       );
 
       if (case_?.opposingParty) {
@@ -531,22 +528,22 @@ const getCaseStrategy = async (req, res, next) => {
 
       judgeConsiderations: judgeProfile
         ? {
-            tendencies: judgeProfile.tendencies,
-            preferredArguments: judgeProfile.preferredArguments,
-            dislikedArguments: judgeProfile.dislikedArguments,
-            recentRulings: judgeProfile.recentRulings,
-            recommendedApproach: judgeProfile.recommendedApproach,
-          }
+          tendencies: judgeProfile.tendencies,
+          preferredArguments: judgeProfile.preferredArguments,
+          dislikedArguments: judgeProfile.dislikedArguments,
+          recentRulings: judgeProfile.recentRulings,
+          recommendedApproach: judgeProfile.recommendedApproach,
+        }
         : null,
 
       opponentConsiderations: opponentProfile
         ? {
-            style: opponentProfile.litigationStyle,
-            strengths: opponentProfile.strengths,
-            weaknesses: opponentProfile.weaknesses,
-            pastStrategies: opponentProfile.pastStrategies,
-            recommendedCounterStrategy: opponentProfile.recommendedCounterStrategy,
-          }
+          style: opponentProfile.litigationStyle,
+          strengths: opponentProfile.strengths,
+          weaknesses: opponentProfile.weaknesses,
+          pastStrategies: opponentProfile.pastStrategies,
+          recommendedCounterStrategy: opponentProfile.recommendedCounterStrategy,
+        }
         : null,
 
       settlementStrategy: {
@@ -560,7 +557,7 @@ const getCaseStrategy = async (req, res, next) => {
       tacticalRecommendations: generateTacticalRecommendations(
         analysis,
         judgeProfile,
-        opponentProfile
+        opponentProfile,
       ),
 
       riskMitigation: generateRiskMitigationStrategies(analysis.risk?.riskFactors || []),
@@ -603,7 +600,9 @@ const generateDocument = async (req, res, next) => {
   const startTime = performance.now();
   const correlationId = generateCorrelationId(req);
   const { caseId } = req.params;
-  const { documentType, template, variables, format = 'pdf' } = req.body;
+  const {
+    documentType, template, variables, format = 'pdf',
+  } = req.body;
 
   try {
     logger.info('Document generation request', {
@@ -778,7 +777,7 @@ const manageWitness = async (req, res, next) => {
           updatedAt: new Date(),
           updatedBy: req.user._id,
         },
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       );
 
       if (!witness) {
@@ -874,15 +873,15 @@ const getHearingPreparation = async (req, res, next) => {
     const preparation = {
       hearing: hearing
         ? {
-            id: hearing._id,
-            date: hearing.date,
-            type: hearing.type,
-            purpose: hearing.purpose,
-            estimatedDuration: hearing.estimatedDuration,
-            judge: hearing.judge,
-            courtroom: hearing.courtroom,
-            status: hearing.status,
-          }
+          id: hearing._id,
+          date: hearing.date,
+          type: hearing.type,
+          purpose: hearing.purpose,
+          estimatedDuration: hearing.estimatedDuration,
+          judge: hearing.judge,
+          courtroom: hearing.courtroom,
+          status: hearing.status,
+        }
         : null,
 
       checklist: generateHearingChecklist(hearing, case_),
@@ -1067,11 +1066,11 @@ const generateChronology = async (req, res, next) => {
 
       res.setHeader(
         'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="chronology_${case_.caseNumber}.xlsx"`
+        `attachment; filename="chronology_${case_.caseNumber}.xlsx"`,
       );
       res.send(buffer);
     } else {
@@ -1189,8 +1188,7 @@ const testArguments = async (req, res, next) => {
       }
 
       // Calculate overall score
-      const overallScore =
-        result.tests.reduce((acc, test) => acc + test.score, 0) / result.tests.length;
+      const overallScore = result.tests.reduce((acc, test) => acc + test.score, 0) / result.tests.length;
 
       testResults.push({
         ...result,
@@ -1217,11 +1215,11 @@ const testArguments = async (req, res, next) => {
             testResults.reduce((acc, r) => acc + r.overallScore, 0) / testResults.length,
           strongest: testResults.reduce(
             (max, r) => (r.overallScore > max.overallScore ? r : max),
-            testResults[0]
+            testResults[0],
           ),
           weakest: testResults.reduce(
             (min, r) => (r.overallScore < min.overallScore ? r : min),
-            testResults[0]
+            testResults[0],
           ),
         },
       },
@@ -1272,21 +1270,19 @@ const getUpcomingDeadlines = async (caseId, tenantId) => {
 /*
  * Calculates case metrics
  */
-const calculateCaseMetrics = async (case_, analysis, citations) => {
-  return {
-    age: Math.ceil((new Date() - new Date(case_.filingDate)) / (24 * 60 * 60 * 1000)),
-    documentCount: case_.documents?.length || 0,
-    hearingCount: case_.hearings?.length || 0,
-    witnessCount: case_.witnesses?.length || 0,
-    citationCount: citations.length,
-    uniquePrecedents: [...new Set(citations.map((c) => c.citedPrecedent?._id?.toString()))].length,
-    riskScore: analysis.risk?.overallRiskScore || 50,
-    winProbability: analysis.predictions?.winProbability || 50,
-    estimatedDurationMonths: analysis.predictions?.expectedTimelineMonths || 12,
-    estimatedCosts: analysis.predictions?.expectedCosts || 500000,
-    complexityScore: calculateComplexityScore(case_, citations),
-  };
-};
+const calculateCaseMetrics = async (case_, analysis, citations) => ({
+  age: Math.ceil((new Date() - new Date(case_.filingDate)) / (24 * 60 * 60 * 1000)),
+  documentCount: case_.documents?.length || 0,
+  hearingCount: case_.hearings?.length || 0,
+  witnessCount: case_.witnesses?.length || 0,
+  citationCount: citations.length,
+  uniquePrecedents: [...new Set(citations.map((c) => c.citedPrecedent?._id?.toString()))].length,
+  riskScore: analysis.risk?.overallRiskScore || 50,
+  winProbability: analysis.predictions?.winProbability || 50,
+  estimatedDurationMonths: analysis.predictions?.expectedTimelineMonths || 12,
+  estimatedCosts: analysis.predictions?.expectedCosts || 500000,
+  complexityScore: calculateComplexityScore(case_, citations),
+});
 
 /*
  * Calculates complexity score
@@ -1328,8 +1324,7 @@ const calculateRelevance = (citation, case_) => {
   relevance += (citation.strength - 50) * 0.3;
 
   // Factor 2: Recency
-  const yearsDiff =
-    (new Date() - new Date(citation.citedPrecedent?.date)) / (365 * 24 * 60 * 60 * 1000);
+  const yearsDiff = (new Date() - new Date(citation.citedPrecedent?.date)) / (365 * 24 * 60 * 60 * 1000);
   if (yearsDiff < 5) relevance += 10;
   else if (yearsDiff < 10) relevance += 5;
 
@@ -1392,7 +1387,7 @@ const generateCaseRecommendations = (case_, analysis, citations) => {
   // Recommendation 3: Based on deadlines
   if (case_.nextHearingDate) {
     const daysUntilHearing = Math.ceil(
-      (new Date(case_.nextHearingDate) - new Date()) / (24 * 60 * 60 * 1000)
+      (new Date(case_.nextHearingDate) - new Date()) / (24 * 60 * 60 * 1000),
     );
     if (daysUntilHearing < 14) {
       recommendations.push({
@@ -1439,8 +1434,8 @@ const generateStrategySummary = (analysis) => {
   };
 
   return (
-    summaries[strategy] ||
-    'Balanced approach combining litigation preparation with settlement options.'
+    summaries[strategy]
+    || 'Balanced approach combining litigation preparation with settlement options.'
   );
 };
 
@@ -1512,49 +1507,43 @@ const identifyThreats = (analysis) => {
 /*
  * Generates primary arguments
  */
-const generatePrimaryArguments = (analysis) => {
-  return (analysis.precedent?.keyPrinciples || []).slice(0, 3).map((p) => ({
-    principle: p.text,
-    supportingPrecedents: p.citations || [],
-    strength: p.relevance,
-  }));
-};
+const generatePrimaryArguments = (analysis) => (analysis.precedent?.keyPrinciples || []).slice(0, 3).map((p) => ({
+  principle: p.text,
+  supportingPrecedents: p.citations || [],
+  strength: p.relevance,
+}));
 
 /*
  * Generates alternative arguments
  */
-const generateAlternativeArguments = (analysis) => {
-  return [
-    {
-      principle: 'Alternative interpretation of facts',
-      basis: 'Different factual emphasis',
-      strength: 60,
-    },
-    {
-      principle: 'Equitable considerations',
-      basis: 'Fairness and justice grounds',
-      strength: 50,
-    },
-  ];
-};
+const generateAlternativeArguments = (analysis) => [
+  {
+    principle: 'Alternative interpretation of facts',
+    basis: 'Different factual emphasis',
+    strength: 60,
+  },
+  {
+    principle: 'Equitable considerations',
+    basis: 'Fairness and justice grounds',
+    strength: 50,
+  },
+];
 
 /*
  * Generates fallback arguments
  */
-const generateFallbackArguments = (analysis) => {
-  return [
-    {
-      principle: 'Procedural technicalities',
-      basis: 'Jurisdictional or procedural defects',
-      strength: 40,
-    },
-    {
-      principle: 'Mitigation arguments',
-      basis: 'Limit damages if liability found',
-      strength: 30,
-    },
-  ];
-};
+const generateFallbackArguments = (analysis) => [
+  {
+    principle: 'Procedural technicalities',
+    basis: 'Jurisdictional or procedural defects',
+    strength: 40,
+  },
+  {
+    principle: 'Mitigation arguments',
+    basis: 'Limit damages if liability found',
+    strength: 30,
+  },
+];
 
 /*
  * Generates tactical recommendations
@@ -1592,13 +1581,11 @@ const generateTacticalRecommendations = (analysis, judgeProfile, opponentProfile
 /*
  * Generates risk mitigation strategies
  */
-const generateRiskMitigationStrategies = (riskFactors) => {
-  return riskFactors.map((risk) => ({
-    risk: risk.description,
-    mitigation: getMitigationForRisk(risk.factor),
-    priority: risk.impact,
-  }));
-};
+const generateRiskMitigationStrategies = (riskFactors) => riskFactors.map((risk) => ({
+  risk: risk.description,
+  mitigation: getMitigationForRisk(risk.factor),
+  priority: risk.impact,
+}));
 
 /*
  * Gets mitigation for specific risk
@@ -1840,10 +1827,10 @@ const identifyCriticalPeriods = (events) => {
 /*
  * Finds supporting precedents for an argument
  */
-const findSupportingPrecedents = async (argument, caseId, tenantId) => {
+const findSupportingPrecedents = async (argument, caseId, tenantId) =>
   // In production, this would use semantic search
   // For now, return mock data
-  return {
+  ({
     score: 75,
     supporting: 8,
     opposing: 2,
@@ -1852,8 +1839,8 @@ const findSupportingPrecedents = async (argument, caseId, tenantId) => {
       'Supreme Court of Appeal - [2022] ZASCA 42 (Supporting)',
       'High Court - [2021] ZAGPJHC 123 (Distinguishable)',
     ],
-  };
-};
+  })
+;
 
 /* ---------------------------------------------------------------------------
    QUANTUM EXPORTS

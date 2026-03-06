@@ -1,14 +1,13 @@
 #!/* eslint-disable */
 /* eslint-env node */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ TEST HELPER - FORENSIC TEST SETUP (v2.0 ESM)                  ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import path, { dirname } from 'path';
 import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto'; // SURGICAL FIX: Proper ESM import
 
 const __filename = fileURLToPath(import.meta.url);
@@ -33,8 +32,8 @@ before(async function () {
 });
 
 // Cleanup after each test: Ensures no cross-test data leakage
-afterEach(async function () {
-  const collections = mongoose.connection.collections;
+afterEach(async () => {
+  const { collections } = mongoose.connection;
   for (const key in collections) {
     await collections[key].deleteMany({});
   }
@@ -45,7 +44,7 @@ afterEach(async function () {
 });
 
 // Final Teardown
-after(async function () {
+after(async () => {
   await mongoose.disconnect();
   if (global.__TEST_MONGO_SERVER) {
     await global.__TEST_MONGO_SERVER.stop();
@@ -54,19 +53,16 @@ after(async function () {
 });
 
 // Forensic Helper: Generate Test Tenant ID
-global.getTestTenantId = () =>
-  `tenant_test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+global.getTestTenantId = () => `tenant_test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
 // Forensic Helper: Generate Cryptographic Evidence (ESM Version)
 global.generateTestEvidence = (auditEntries) => {
-  const canonicalEntries = auditEntries.map((entry) => {
-    return Object.keys(entry)
-      .sort()
-      .reduce((obj, key) => {
-        obj[key] = entry[key];
-        return obj;
-      }, {});
-  });
+  const canonicalEntries = auditEntries.map((entry) => Object.keys(entry)
+    .sort()
+    .reduce((obj, key) => {
+      obj[key] = entry[key];
+      return obj;
+    }, {}));
 
   const entriesHash = crypto
     .createHash('sha256')

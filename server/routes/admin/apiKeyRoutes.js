@@ -1,17 +1,18 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ API KEY MANAGEMENT ROUTES - ADMIN INTERFACE                               ║
   ║ Generate keys | Manage tiers | Usage analytics | Billing                  ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import express from 'express';
+import crypto from 'crypto';
 import { ApiKey } from '../../models/api/ApiKey.js';
 import { generateApiKey } from '../../middleware/api/authMiddleware.js';
 import { superAdminGuard } from '../../middleware/superAdminGuard.js';
 import { auditMiddleware } from '../../middleware/auditLogger.js';
 import loggerRaw from '../../utils/logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
-import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -31,7 +32,9 @@ router.post(
     const correlationId = req.headers['x-correlation-id'] || `admin-${Date.now()}`;
 
     try {
-      const { tenantId, tier = 'BASIC', expiresInDays = 365, name, description } = req.body;
+      const {
+        tenantId, tier = 'BASIC', expiresInDays = 365, name, description,
+      } = req.body;
 
       if (!tenantId) {
         return res.status(400).json({
@@ -52,7 +55,7 @@ router.post(
           description,
           createdBy: req.user?.id || 'admin',
         },
-        { new: true }
+        { new: true },
       );
 
       logger.info('API key generated', {
@@ -83,7 +86,7 @@ router.post(
         correlationId,
       });
     }
-  }
+  },
 );
 
 /**
@@ -231,7 +234,7 @@ router.patch(
         correlationId,
       });
     }
-  }
+  },
 );
 
 /**
@@ -253,7 +256,7 @@ router.delete(
           updatedBy: req.user?.id,
           updatedAt: new Date(),
         },
-        { new: true }
+        { new: true },
       );
 
       if (!key) {
@@ -285,7 +288,7 @@ router.delete(
         correlationId,
       });
     }
-  }
+  },
 );
 
 /**

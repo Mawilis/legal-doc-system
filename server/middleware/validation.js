@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ VALIDATION MIDDLEWARE - INVESTOR-GRADE MODULE                             ║
   ║ Input validation | POPIA compliance | XSS prevention                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/validation.js
@@ -62,7 +62,8 @@ export const validateSignatureRequest = [
     .isIn(['basic', 'standard', 'advanced', 'qualified'])
     .withMessage('Invalid verification level'),
 
-  body('options.expiresAt').optional().isISO8601().withMessage('Invalid expiration date').toDate(),
+  body('options.expiresAt').optional().isISO8601().withMessage('Invalid expiration date')
+    .toDate(),
 
   // Handle validation errors
   (req, res, next) => {

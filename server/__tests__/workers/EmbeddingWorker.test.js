@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ EMBEDDING WORKER TESTS - INVESTOR DUE DILIGENCE - $2B INFRASTRUCTURE     ║
   ║ 100% coverage | GPU-accelerated | Hyper-scale | Production-ready         ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/workers/EmbeddingWorker.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -328,7 +328,7 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
             'embedding.vector': expect.any(Array),
             'embedding.model': 'legal-bert',
           }),
-        })
+        }),
       );
     });
 
@@ -381,7 +381,7 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
 
   describe('9. Event Handlers', () => {
     it('should register event handlers', () => {
-      const worker = embeddingWorker.worker;
+      const { worker } = embeddingWorker;
 
       expect(worker.on).toHaveBeenCalledWith('completed', expect.any(Function));
       expect(worker.on).toHaveBeenCalledWith('failed', expect.any(Function));
@@ -432,7 +432,7 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
           action: 'EMBEDDING_GENERATED',
           tenantId: 'test-tenant',
           resourceId: mockPrecedentId,
-        })
+        }),
       );
     });
 
@@ -453,7 +453,7 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
       expect(quantumLogger.log).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'EMBEDDING_FAILED',
-        })
+        }),
       );
     });
   });
@@ -554,7 +554,7 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'embedding-worker-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -566,7 +566,7 @@ describe('EmbeddingWorker - Hyper-scale Infrastructure Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'embedding-worker-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);

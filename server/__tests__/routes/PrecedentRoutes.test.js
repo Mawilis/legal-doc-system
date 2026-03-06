@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT ROUTES TESTS - INVESTOR DUE DILIGENCE - $7.5B ARR TARGET       ║
   ║ 100% coverage | Enterprise API | Hyper-scale | Production-ready          ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/routes/PrecedentRoutes.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -610,9 +610,7 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
         enterprise: { clients: 500, price: 10000 },
       };
 
-      const monthlyRevenue = Object.entries(tiers).reduce((sum, [tier, data]) => {
-        return sum + data.clients * data.price;
-      }, 0);
+      const monthlyRevenue = Object.entries(tiers).reduce((sum, [tier, data]) => sum + data.clients * data.price, 0);
 
       const annualRevenue = monthlyRevenue * 12;
 
@@ -623,11 +621,10 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
         adoptionRate: 0.3,
       };
 
-      const consumptionRevenue =
-        consumptionModel.dailyCalls *
-        consumptionModel.pricePerCall *
-        consumptionModel.daysPerYear *
-        consumptionModel.adoptionRate;
+      const consumptionRevenue = consumptionModel.dailyCalls
+        * consumptionModel.pricePerCall
+        * consumptionModel.daysPerYear
+        * consumptionModel.adoptionRate;
 
       console.log('\n💰 API REVENUE PROJECTIONS');
       console.log('='.repeat(50));
@@ -678,7 +675,7 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'precedent-routes-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -690,7 +687,7 @@ describe('PrecedentRoutes - Enterprise API Gateway Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'precedent-routes-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);

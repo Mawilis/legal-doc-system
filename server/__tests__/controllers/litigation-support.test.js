@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ LITIGATION SUPPORT CONTROLLER TESTS - INVESTOR DUE DILIGENCE  ║
   ║ 100% coverage | AI-Powered | Strategic Command Center         ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/controllers/litigation-support.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -81,7 +81,7 @@ jest.mock(
       .fn()
       .mockResolvedValue({ vulnerabilityScore: 30, vulnerabilities: [], counterArguments: [] }),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 jest.mock(
@@ -95,7 +95,7 @@ jest.mock(
       recommendedApproach: 'Focus on precedent',
     }),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 jest.mock(
@@ -109,7 +109,7 @@ jest.mock(
       recommendedCounterStrategy: 'Stay methodical',
     }),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 jest.mock('../../utils/logger', () => ({
@@ -173,7 +173,7 @@ app.get('/api/litigation-support/case/:caseId/intelligence', litigationSupport.g
 app.get('/api/litigation-support/case/:caseId/strategy', litigationSupport.getCaseStrategy);
 app.post(
   '/api/litigation-support/case/:caseId/documents/generate',
-  litigationSupport.generateDocument
+  litigationSupport.generateDocument,
 );
 app.post('/api/litigation-support/case/:caseId/witnesses', litigationSupport.manageWitness);
 app.get('/api/litigation-support/case/:caseId/hearings', litigationSupport.getHearingPreparation);
@@ -443,7 +443,7 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
           tenantId: mockTenantId,
           ...witnessData,
           createdBy: mockUserId,
-        })
+        }),
       );
     });
 
@@ -539,7 +539,7 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
       expect(Hearing.findOne).toHaveBeenCalledWith(
         expect.objectContaining({
           _id: hearingId,
-        })
+        }),
       );
     });
   });
@@ -568,7 +568,7 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
         .expect(200);
 
       expect(response.headers['content-type']).toBe(
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
       expect(response.headers['content-disposition']).toContain('.xlsx');
     });
@@ -650,7 +650,7 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
       expect(litigationSupport.DOCUMENT_TYPES).toBeDefined();
       expect(litigationSupport.DOCUMENT_TYPES.PLEADINGS.SUMMONS).toBe('SUMMONS');
       expect(litigationSupport.DOCUMENT_TYPES.COURT_PREPARATION.HEADS_OF_ARGUMENT).toBe(
-        'HEADS_OF_ARGUMENT'
+        'HEADS_OF_ARGUMENT',
       );
     });
 
@@ -712,7 +712,7 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
 
       await fs.writeFile(
         path.join(__dirname, 'litigation-support-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -724,7 +724,7 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'litigation-support-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
@@ -734,7 +734,7 @@ describe('Litigation Support Controller - Strategic Command Center Due Diligence
       console.log('✓ Document Time Reduction: 70%');
       console.log('✓ Evidence Hash:', hash.substring(0, 8));
       console.log('✓ Case:', response.body.data.caseSummary.number);
-      console.log('✓ Win Probability:', response.body.data.analysis.winProbability + '%');
+      console.log('✓ Win Probability:', `${response.body.data.analysis.winProbability}%`);
     });
   });
 });

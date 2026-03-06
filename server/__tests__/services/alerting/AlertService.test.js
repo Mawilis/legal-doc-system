@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ ALERT SERVICE TESTS - INVESTOR DUE DILIGENCE                  ║
   ║ 100% coverage | Incident management | Multi-channel           ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/services/alerting/AlertService.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -19,19 +19,24 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import AlertService from '../../../services/alerting/AlertService.js';
+import Alert from '../../../models/Alert.js';
+import Incident from '../../../models/Incident.js';
+import OnCallSchedule from '../../../models/OnCallSchedule.js';
+import { metrics } from '../../../utils/metricsCollector.js';
+import quantumLogger from '../../../utils/quantumLogger.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Mock dependencies
 jest.mock('axios');
 jest.mock('nodemailer');
-jest.mock('twilio', () => {
-  return jest.fn().mockImplementation(() => ({
-    messages: {
-      create: jest.fn().mockResolvedValue({ sid: 'test-sid' }),
-    },
-  }));
-});
+jest.mock('twilio', () => jest.fn().mockImplementation(() => ({
+  messages: {
+    create: jest.fn().mockResolvedValue({ sid: 'test-sid' }),
+  },
+})));
 jest.mock('@pagerduty/pdjs', () => ({
   createClient: jest.fn().mockReturnValue({
     post: jest.fn().mockResolvedValue({ data: { dedup_key: 'test-dedup-key' } }),
@@ -44,13 +49,6 @@ jest.mock('../../../utils/metricsCollector');
 jest.mock('../../../models/Alert');
 jest.mock('../../../models/Incident');
 jest.mock('../../../models/OnCallSchedule');
-
-import AlertService from '../../../services/alerting/AlertService.js';
-import Alert from '../../../models/Alert.js';
-import Incident from '../../../models/Incident.js';
-import OnCallSchedule from '../../../models/OnCallSchedule.js';
-import { metrics } from '../../../utils/metricsCollector.js';
-import quantumLogger from '../../../utils/quantumLogger.js';
 
 describe('AlertService - Incident Management Due Diligence', () => {
   let mockAlert;
@@ -95,8 +93,12 @@ describe('AlertService - Incident Management Due Diligence', () => {
     });
 
     Alert.findAll.mockResolvedValue([
-      { alertId: 'alert-1', title: 'Alert 1', severity: 'critical', status: 'active' },
-      { alertId: 'alert-2', title: 'Alert 2', severity: 'warning', status: 'active' },
+      {
+        alertId: 'alert-1', title: 'Alert 1', severity: 'critical', status: 'active',
+      },
+      {
+        alertId: 'alert-2', title: 'Alert 2', severity: 'warning', status: 'active',
+      },
     ]);
 
     Alert.count.mockResolvedValue(5);
@@ -287,7 +289,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
       const invalidAlert = { severity: 'critical' };
 
       await expect(AlertService.sendAlert(invalidAlert)).rejects.toThrow(
-        'Alert must have title and message'
+        'Alert must have title and message',
       );
     });
 
@@ -324,7 +326,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
               ]),
             }),
           ]),
-        })
+        }),
       );
     });
 
@@ -337,7 +339,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           to: expect.stringContaining('ops@wilsy.os'),
           subject: '[CRITICAL] Test Critical Alert',
           html: expect.stringContaining('Test Critical Alert'),
-        })
+        }),
       );
     });
 
@@ -352,7 +354,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           body: '[WILSY OS CRITICAL] Test Critical Alert',
           from: '+1234567890',
           to: '+1234567890',
-        })
+        }),
       );
     });
 
@@ -388,7 +390,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
             class: 'test-class',
             custom_details: mockAlert.details,
           }),
-        })
+        }),
       );
     });
 
@@ -416,7 +418,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
             'X-Wilsy-Signature': expect.any(String),
           }),
           timeout: 5000,
-        })
+        }),
       );
     });
 
@@ -632,7 +634,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           title: 'Test Critical Alert',
           severity: 'critical',
           alertId: expect.any(String),
-        })
+        }),
       );
     });
 
@@ -645,7 +647,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
       expect(Incident.create).toHaveBeenCalledWith(
         expect.objectContaining({
           severity: 'error',
-        })
+        }),
       );
     });
 
@@ -727,7 +729,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           event: 'ALERT_ACKNOWLEDGED',
           alertId: 'test-alert-id',
           userId: 'test-user',
-        })
+        }),
       );
     });
 
@@ -743,7 +745,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           event: 'ALERT_RESOLVED',
           alertId: 'test-alert-id',
           resolution: 'Fixed the issue',
-        })
+        }),
       );
     });
 
@@ -751,7 +753,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
       Alert.findOne.mockResolvedValueOnce(null);
 
       await expect(AlertService.acknowledgeAlert('non-existent', 'test-user')).rejects.toThrow(
-        'Alert not found: non-existent'
+        'Alert not found: non-existent',
       );
     });
 
@@ -781,7 +783,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
           limit: 10,
           offset: 0,
           order: [['createdAt', 'DESC']],
-        })
+        }),
       );
     });
 
@@ -802,7 +804,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
               $lte: new Date(endDate),
             }),
           }),
-        })
+        }),
       );
     });
 
@@ -919,7 +921,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
             createdAt: expect.any(Object),
             status: expect.arrayContaining(['resolved', 'expired']),
           }),
-        })
+        }),
       );
 
       jest.restoreAllMocks();
@@ -1011,7 +1013,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'alert-service-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -1023,7 +1025,7 @@ describe('AlertService - Incident Management Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'alert-service-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);

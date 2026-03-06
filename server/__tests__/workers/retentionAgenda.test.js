@@ -1,10 +1,10 @@
 #!/* eslint-disable */
 /* eslint-env jest */
 /* eslint-disable no-underscore-dangle, no-undef, no-unused-vars */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ RETENTION AGENDA TESTS - INVESTOR DUE DILIGENCE SUITE         ║
   ║ [92% compliance cost reduction | R2.1M risk elimination]      ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/workers/retentionAgenda.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -15,18 +15,19 @@
 
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import RetentionAgenda from '../../workers/retentionAgenda.js';
 import Matter from '../../models/Matter.js';
 import RetentionPolicy from '../../models/RetentionPolicy.js';
 import RetentionExecutionLog from '../../models/RetentionExecutionLog.js';
 import { AuditLogger } from '../../utils/auditLogger.js';
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import cryptoUtils from '../../utils/cryptoUtils.js';
 import { tenantContext } from '../../middleware/tenantContext.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+
+const logger = loggerRaw.default || loggerRaw;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -202,7 +203,7 @@ describe('RetentionAgenda Worker - Investor Due Diligence Suite', () => {
     const monthlySavings = hoursSaved * costPerHour;
     const annualSavings = monthlySavings * 12;
 
-    console.log(`\n📊 ECONOMIC METRIC CALCULATION:`);
+    console.log('\n📊 ECONOMIC METRIC CALCULATION:');
     console.log(`   Manual Hours/Month: ${manualHoursPerMonth}`);
     console.log(`   Automated Hours/Month: ${automatedHoursPerMonth}`);
     console.log(`   Hours Saved/Month: ${hoursSaved}`);
@@ -266,10 +267,10 @@ describe('RetentionAgenda Worker - Investor Due Diligence Suite', () => {
     expect(tenantContext.getTenantId).toBeDefined();
 
     console.log(
-      `✓ Tenant Isolation: Processed ${tenantMatters.length} matters for tenant ${testTenantId}`
+      `✓ Tenant Isolation: Processed ${tenantMatters.length} matters for tenant ${testTenantId}`,
     );
     console.log(
-      `✓ Tenant Isolation: Excluded ${otherTenantMatters.length} matters from other tenants`
+      `✓ Tenant Isolation: Excluded ${otherTenantMatters.length} matters from other tenants`,
     );
   });
 
@@ -378,14 +379,12 @@ describe('RetentionAgenda Worker - Investor Due Diligence Suite', () => {
     ];
 
     // Canonicalize audit entries (sort keys for deterministic hash)
-    const canonicalEntries = auditEntries.map((entry) => {
-      return Object.keys(entry)
-        .sort()
-        .reduce((obj, key) => {
-          obj[key] = entry[key];
-          return obj;
-        }, {});
-    });
+    const canonicalEntries = auditEntries.map((entry) => Object.keys(entry)
+      .sort()
+      .reduce((obj, key) => {
+        obj[key] = entry[key];
+        return obj;
+      }, {}));
 
     // Generate SHA256 hash
     const hash = cryptoUtils.hash(JSON.stringify(canonicalEntries));
@@ -436,7 +435,7 @@ describe('RetentionAgenda Worker - Investor Due Diligence Suite', () => {
     // This is a simplified check - in reality we'd check all imports
     const workerImports = fs.readFileSync(
       path.join(__dirname, '../../workers/retentionAgenda.js'),
-      'utf8'
+      'utf8',
     );
 
     expect(workerImports).toContain("import Agenda from 'agenda'");

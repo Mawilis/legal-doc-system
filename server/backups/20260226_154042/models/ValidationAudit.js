@@ -4,22 +4,22 @@
  * ║ WILSY OS - VALIDATION AUDIT MODEL v1.0                                    ║
  * ║ [Production Grade | POPIA §19 | Forensic Validation Trail]                ║
  * ╚═══════════════════════════════════════════════════════════════════════════╝
- * 
+ *
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/ValidationAudit.js
  * VERSION: 1.0.0
  * CREATED: 2026-02-24
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Complete audit trail of all data validations for regulatory compliance
  * • POPIA §19 security safeguards verification
  * • ECT Act §15 data message integrity tracking
  * • Forensic evidence for disputes and litigation
  * • Multi-tenant validation isolation
- * 
+ *
  * DEPENDENCIES:
  * • mongoose ^8.2.4 - MongoDB ODM
  * • crypto (built-in) - SHA256 hashing
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "consumers": [
@@ -35,8 +35,8 @@
  * }
  */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 /**
  * Validation Types Enum
@@ -51,7 +51,7 @@ const VALIDATION_TYPES = {
   POPIA: 'popia_validation',
   FICA: 'fica_validation',
   TAX: 'tax_validation',
-  CONSENT: 'consent_validation'
+  CONSENT: 'consent_validation',
 };
 
 /**
@@ -62,7 +62,7 @@ const VALIDATION_STATUS = {
   FAILED: 'failed',
   WARNING: 'warning',
   SKIPPED: 'skipped',
-  PENDING: 'pending'
+  PENDING: 'pending',
 };
 
 /**
@@ -72,7 +72,7 @@ const VALIDATION_SEVERITY = {
   INFO: 'info',
   WARNING: 'warning',
   ERROR: 'error',
-  CRITICAL: 'critical'
+  CRITICAL: 'critical',
 };
 
 /**
@@ -88,7 +88,7 @@ const validationAuditSchema = new mongoose.Schema({
     required: true,
     unique: true,
     index: true,
-    default: () => `val-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+    default: () => `val-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
   },
 
   timestamp: {
@@ -96,14 +96,14 @@ const validationAuditSchema = new mongoose.Schema({
     default: Date.now,
     required: true,
     index: true,
-    immutable: true
+    immutable: true,
   },
 
   validationType: {
     type: String,
     required: true,
     enum: Object.values(VALIDATION_TYPES),
-    index: true
+    index: true,
   },
 
   status: {
@@ -111,7 +111,7 @@ const validationAuditSchema = new mongoose.Schema({
     required: true,
     enum: Object.values(VALIDATION_STATUS),
     default: VALIDATION_STATUS.PENDING,
-    index: true
+    index: true,
   },
 
   severity: {
@@ -119,7 +119,7 @@ const validationAuditSchema = new mongoose.Schema({
     required: true,
     enum: Object.values(VALIDATION_SEVERITY),
     default: VALIDATION_SEVERITY.INFO,
-    index: true
+    index: true,
   },
 
   /**
@@ -131,14 +131,14 @@ const validationAuditSchema = new mongoose.Schema({
     index: true,
     validate: {
       validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v),
-      message: 'tenantId must be 8-64 alphanumeric characters'
-    }
+      message: 'tenantId must be 8-64 alphanumeric characters',
+    },
   },
 
   userId: {
     type: String,
     index: true,
-    sparse: true
+    sparse: true,
   },
 
   requestId: {
@@ -147,8 +147,8 @@ const validationAuditSchema = new mongoose.Schema({
     index: true,
     validate: {
       validator: (v) => /^[a-f0-9]{16,32}$/i.test(v),
-      message: 'requestId must be a valid hexadecimal string'
-    }
+      message: 'requestId must be a valid hexadecimal string',
+    },
   },
 
   /**
@@ -157,18 +157,18 @@ const validationAuditSchema = new mongoose.Schema({
   targetModel: {
     type: String,
     required: true,
-    index: true
+    index: true,
   },
 
   targetId: {
     type: String,
     required: true,
-    index: true
+    index: true,
   },
 
   targetVersion: {
     type: Number,
-    default: 1
+    default: 1,
   },
 
   /**
@@ -177,12 +177,12 @@ const validationAuditSchema = new mongoose.Schema({
   rulesApplied: [{
     ruleName: {
       type: String,
-      required: true
+      required: true,
     },
     ruleVersion: String,
     ruleCategory: String,
     ruleDescription: String,
-    parameters: mongoose.Schema.Types.Mixed
+    parameters: mongoose.Schema.Types.Mixed,
   }],
 
   /**
@@ -191,20 +191,20 @@ const validationAuditSchema = new mongoose.Schema({
   results: {
     passed: {
       type: Number,
-      default: 0
+      default: 0,
     },
     failed: {
       type: Number,
-      default: 0
+      default: 0,
     },
     warnings: {
       type: Number,
-      default: 0
+      default: 0,
     },
     total: {
       type: Number,
-      default: 0
-    }
+      default: 0,
+    },
   },
 
   failures: [{
@@ -216,15 +216,15 @@ const validationAuditSchema = new mongoose.Schema({
     code: String,
     severity: {
       type: String,
-      enum: Object.values(VALIDATION_SEVERITY)
-    }
+      enum: Object.values(VALIDATION_SEVERITY),
+    },
   }],
 
   warnings: [{
     ruleName: String,
     field: String,
     message: String,
-    suggestion: String
+    suggestion: String,
   }],
 
   /**
@@ -234,17 +234,17 @@ const validationAuditSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     required: true,
     validate: {
-      validator: function(v) {
+      validator(v) {
         // Ensure input data exists
         return v !== null && v !== undefined;
       },
-      message: 'Input data is required'
-    }
+      message: 'Input data is required',
+    },
   },
 
   outputData: {
     type: mongoose.Schema.Types.Mixed,
-    default: null
+    default: null,
   },
 
   /**
@@ -253,12 +253,12 @@ const validationAuditSchema = new mongoose.Schema({
   piiFields: [{
     field: String,
     redacted: Boolean,
-    redactionMethod: String
+    redactionMethod: String,
   }],
 
   containsPII: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   /**
@@ -267,7 +267,7 @@ const validationAuditSchema = new mongoose.Schema({
   duration: {
     type: Number, // milliseconds
     required: true,
-    min: 0
+    min: 0,
   },
 
   memoryUsed: Number, // bytes
@@ -279,12 +279,12 @@ const validationAuditSchema = new mongoose.Schema({
   complianceFrameworks: [{
     framework: {
       type: String,
-      enum: ['POPIA', 'ECT', 'COMPANIES_ACT', 'FICA', 'TAX_ACT', 'LPC']
+      enum: ['POPIA', 'ECT', 'COMPANIES_ACT', 'FICA', 'TAX_ACT', 'LPC'],
     },
     section: String,
     requirement: String,
     verified: Boolean,
-    verifiedAt: Date
+    verifiedAt: Date,
   }],
 
   /**
@@ -292,18 +292,18 @@ const validationAuditSchema = new mongoose.Schema({
    */
   requiresNotification: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   notificationSent: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   notificationDetails: {
     sentAt: Date,
     recipient: String,
-    reference: String
+    reference: String,
   },
 
   /**
@@ -316,31 +316,31 @@ const validationAuditSchema = new mongoose.Schema({
         'companies_act_10_years',
         'popia_1_year',
         'tax_act_5_years',
-        'forensic_permanent'
-      ]
+        'forensic_permanent',
+      ],
     },
     default: 'companies_act_10_years',
-    required: true
+    required: true,
   },
 
   dataResidency: {
     type: String,
     enum: ['ZA', 'US', 'EU', 'GB', 'AU'],
     default: 'ZA',
-    required: true
+    required: true,
   },
 
   retentionStart: {
     type: Date,
     default: Date.now,
-    required: true
+    required: true,
   },
 
   retentionEnd: {
     type: Date,
-    default: function() {
+    default() {
       const endDate = new Date(this.retentionStart);
-      switch(this.retentionPolicy) {
+      switch (this.retentionPolicy) {
         case 'companies_act_10_years':
           endDate.setFullYear(endDate.getFullYear() + 10);
           break;
@@ -355,7 +355,7 @@ const validationAuditSchema = new mongoose.Schema({
           break;
       }
       return endDate;
-    }
+    },
   },
 
   /**
@@ -364,13 +364,13 @@ const validationAuditSchema = new mongoose.Schema({
   forensicHash: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
 
   previousHash: {
     type: String,
     default: null,
-    index: true
+    index: true,
   },
 
   /**
@@ -380,32 +380,32 @@ const validationAuditSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
     immutable: true,
-    index: true
+    index: true,
   },
 
   updatedAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
 
   createdBy: {
     type: String,
-    default: 'system'
+    default: 'system',
   },
 
   version: {
     type: Number,
-    default: 1
+    default: 1,
   },
 
   tags: [String],
 
-  notes: String
+  notes: String,
 }, {
   timestamps: true,
   collection: 'validation_audits',
   strict: true,
-  minimize: false
+  minimize: false,
 });
 
 /**
@@ -421,7 +421,7 @@ validationAuditSchema.index({ retentionEnd: 1 }, { expireAfterSeconds: 0 });
 /**
  * Pre-save middleware for hash generation
  */
-validationAuditSchema.pre('save', async function(next) {
+validationAuditSchema.pre('save', async function (next) {
   try {
     this.updatedAt = new Date();
 
@@ -429,7 +429,7 @@ validationAuditSchema.pre('save', async function(next) {
     const lastValidation = await this.constructor.findOne(
       { tenantId: this.tenantId },
       { forensicHash: 1 },
-      { sort: { timestamp: -1 } }
+      { sort: { timestamp: -1 } },
     );
 
     if (lastValidation) {
@@ -448,7 +448,7 @@ validationAuditSchema.pre('save', async function(next) {
       rulesApplied: this.rulesApplied,
       results: this.results,
       failures: this.failures,
-      previousHash: this.previousHash
+      previousHash: this.previousHash,
     }, Object.keys.sort());
 
     // Generate SHA256 hash
@@ -466,41 +466,45 @@ validationAuditSchema.pre('save', async function(next) {
 /**
  * Pre-update middleware
  */
-validationAuditSchema.pre('findOneAndUpdate', function() {
+validationAuditSchema.pre('findOneAndUpdate', function () {
   this.set({ updatedAt: new Date() });
 });
 
 /**
  * Static method: Get validation stats for a tenant
  */
-validationAuditSchema.statics.getValidationStats = async function(tenantId, days = 30) {
+validationAuditSchema.statics.getValidationStats = async function (tenantId, days = 30) {
   const since = new Date();
   since.setDate(since.getDate() - days);
 
   const stats = await this.aggregate([
     { $match: { tenantId, timestamp: { $gte: since } } },
-    { $group: {
-      _id: {
-        validationType: '$validationType',
-        status: '$status'
+    {
+      $group: {
+        _id: {
+          validationType: '$validationType',
+          status: '$status',
+        },
+        count: { $sum: 1 },
+        avgDuration: { $avg: '$duration' },
+        totalFailures: { $sum: '$results.failed' },
       },
-      count: { $sum: 1 },
-      avgDuration: { $avg: '$duration' },
-      totalFailures: { $sum: '$results.failed' }
-    }},
-    { $group: {
-      _id: '$_id.validationType',
-      statuses: {
-        $push: {
-          status: '$_id.status',
-          count: '$count',
-          avgDuration: '$avgDuration',
-          totalFailures: '$totalFailures'
-        }
+    },
+    {
+      $group: {
+        _id: '$_id.validationType',
+        statuses: {
+          $push: {
+            status: '$_id.status',
+            count: '$count',
+            avgDuration: '$avgDuration',
+            totalFailures: '$totalFailures',
+          },
+        },
+        total: { $sum: '$count' },
       },
-      total: { $sum: '$count' }
-    }},
-    { $sort: { total: -1 } }
+    },
+    { $sort: { total: -1 } },
   ]);
 
   return stats;
@@ -509,21 +513,21 @@ validationAuditSchema.statics.getValidationStats = async function(tenantId, days
 /**
  * Static method: Find validations requiring regulatory attention
  */
-validationAuditSchema.statics.findRegulatoryIssues = function(tenantId) {
+validationAuditSchema.statics.findRegulatoryIssues = function (tenantId) {
   return this.find({
     tenantId,
     'complianceFrameworks.verified': false,
-    severity: { $in: ['error', 'critical'] }
+    severity: { $in: ['error', 'critical'] },
   })
-  .sort({ timestamp: -1 })
-  .limit(100)
-  .lean();
+    .sort({ timestamp: -1 })
+    .limit(100)
+    .lean();
 };
 
 /**
  * Static method: Get validation history for a specific record
  */
-validationAuditSchema.statics.getRecordValidationHistory = function(targetModel, targetId) {
+validationAuditSchema.statics.getRecordValidationHistory = function (targetModel, targetId) {
   return this.find({ targetModel, targetId })
     .sort({ timestamp: -1 })
     .limit(50)
@@ -533,7 +537,7 @@ validationAuditSchema.statics.getRecordValidationHistory = function(targetModel,
 /**
  * Static method: Verify hash chain integrity
  */
-validationAuditSchema.statics.verifyHashChain = async function(tenantId, fromDate = null) {
+validationAuditSchema.statics.verifyHashChain = async function (tenantId, fromDate = null) {
   const query = { tenantId };
   if (fromDate) {
     query.timestamp = { $gte: fromDate };
@@ -546,14 +550,14 @@ validationAuditSchema.statics.verifyHashChain = async function(tenantId, fromDat
   const brokenLinks = [];
 
   for (let i = 1; i < validations.length; i++) {
-    const expectedHash = validations[i-1].forensicHash;
+    const expectedHash = validations[i - 1].forensicHash;
     if (validations[i].previousHash !== expectedHash) {
       brokenLinks.push({
         index: i,
         validationId: validations[i].validationId,
         timestamp: validations[i].timestamp,
         expected: expectedHash,
-        actual: validations[i].previousHash
+        actual: validations[i].previousHash,
       });
     }
   }
@@ -561,19 +565,19 @@ validationAuditSchema.statics.verifyHashChain = async function(tenantId, fromDat
   return {
     verified: brokenLinks.length === 0,
     totalValidations: validations.length,
-    brokenLinks
+    brokenLinks,
   };
 };
 
 /**
  * Instance method: Get redacted view (remove PII)
  */
-validationAuditSchema.methods.getRedactedView = function() {
+validationAuditSchema.methods.getRedactedView = function () {
   const redacted = this.toObject();
-  
+
   // Redact PII from input data
   if (this.containsPII && this.piiFields) {
-    this.piiFields.forEach(pii => {
+    this.piiFields.forEach((pii) => {
       if (redacted.inputData && pii.field in redacted.inputData) {
         redacted.inputData[pii.field] = '[REDACTED]';
       }
@@ -590,7 +594,7 @@ validationAuditSchema.methods.getRedactedView = function() {
 /**
  * Instance method: Generate compliance report
  */
-validationAuditSchema.methods.generateComplianceReport = function() {
+validationAuditSchema.methods.generateComplianceReport = function () {
   return {
     validationId: this.validationId,
     timestamp: this.timestamp,
@@ -604,14 +608,14 @@ validationAuditSchema.methods.generateComplianceReport = function() {
     retentionEnd: this.retentionEnd,
     dataResidency: this.dataResidency,
     hash: this.forensicHash,
-    previousHash: this.previousHash
+    previousHash: this.previousHash,
   };
 };
 
 /**
  * Static method: Create validation audit entry
  */
-validationAuditSchema.statics.createAudit = async function(data) {
+validationAuditSchema.statics.createAudit = async function (data) {
   const audit = new this({
     validationType: data.validationType,
     tenantId: data.tenantId,
@@ -621,7 +625,9 @@ validationAuditSchema.statics.createAudit = async function(data) {
     targetId: data.targetId,
     targetVersion: data.targetVersion,
     rulesApplied: data.rulesApplied || [],
-    results: data.results || { passed: 0, failed: 0, warnings: 0, total: 0 },
+    results: data.results || {
+      passed: 0, failed: 0, warnings: 0, total: 0,
+    },
     failures: data.failures || [],
     warnings: data.warnings || [],
     inputData: data.inputData,
@@ -635,7 +641,7 @@ validationAuditSchema.statics.createAudit = async function(data) {
     requiresNotification: data.requiresNotification || false,
     severity: data.severity || VALIDATION_SEVERITY.INFO,
     tags: data.tags || [],
-    notes: data.notes
+    notes: data.notes,
   });
 
   return audit.save();

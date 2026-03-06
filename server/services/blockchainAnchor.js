@@ -34,6 +34,7 @@ import {
 
 import { PerformanceMonitor } from '../utils/performance.js';
 import AuditService from './auditService.js';
+
 class BlockchainAnchor extends EventEmitter {
   constructor() {
     super();
@@ -318,25 +319,21 @@ class BlockchainAnchor extends EventEmitter {
           ...options,
         });
       },
-      handleNotFoundError: (message, options = {}) => {
-        return new NotFoundError(message, {
-          resourceType: options.resourceType || 'BlockchainAnchor',
-          resourceId: options.resourceId || options.anchorId,
-          tenantId: this.tenantId,
-          searchCriteria: options.searchCriteria,
-          code: options.code || 'BLOCKCHAIN_NOT_FOUND_001',
-          ...options,
-        });
-      },
-      handleValidationError: (message, options = {}) => {
-        return new ValidationError(message, {
-          field: options.field,
-          value: options.value,
-          constraint: options.constraint,
-          code: options.code || 'BLOCKCHAIN_VALIDATION_001',
-          ...options,
-        });
-      },
+      handleNotFoundError: (message, options = {}) => new NotFoundError(message, {
+        resourceType: options.resourceType || 'BlockchainAnchor',
+        resourceId: options.resourceId || options.anchorId,
+        tenantId: this.tenantId,
+        searchCriteria: options.searchCriteria,
+        code: options.code || 'BLOCKCHAIN_NOT_FOUND_001',
+        ...options,
+      }),
+      handleValidationError: (message, options = {}) => new ValidationError(message, {
+        field: options.field,
+        value: options.value,
+        constraint: options.constraint,
+        code: options.code || 'BLOCKCHAIN_VALIDATION_001',
+        ...options,
+      }),
       handleComplianceError: (message, options = {}) => {
         this.performance.record({
           operation: 'complianceError',
@@ -370,29 +367,25 @@ class BlockchainAnchor extends EventEmitter {
           ...options,
         });
       },
-      handleAuthorizationError: (message, options = {}) => {
-        return new AuthorizationError(message, {
-          requiredRoles: options.requiredRoles || ['LPC_ADMIN'],
-          userRoles: options.userRoles || [],
-          userId: options.userId,
-          resource: options.resource || 'blockchainAnchor',
-          action: options.action || 'anchor',
-          code: options.code || 'BLOCKCHAIN_AUTH_001',
-          ...options,
-        });
-      },
-      handleAuthenticationError: (message, options = {}) => {
-        return new AuthenticationError(message, {
-          userId: options.userId,
-          method: options.method || 'API_KEY',
-          attempts: options.attempts,
-          lockoutUntil: options.lockoutUntil,
-          mfaRequired: options.mfaRequired,
-          sessionExpired: options.sessionExpired,
-          code: options.code || 'BLOCKCHAIN_AUTH_002',
-          ...options,
-        });
-      },
+      handleAuthorizationError: (message, options = {}) => new AuthorizationError(message, {
+        requiredRoles: options.requiredRoles || ['LPC_ADMIN'],
+        userRoles: options.userRoles || [],
+        userId: options.userId,
+        resource: options.resource || 'blockchainAnchor',
+        action: options.action || 'anchor',
+        code: options.code || 'BLOCKCHAIN_AUTH_001',
+        ...options,
+      }),
+      handleAuthenticationError: (message, options = {}) => new AuthenticationError(message, {
+        userId: options.userId,
+        method: options.method || 'API_KEY',
+        attempts: options.attempts,
+        lockoutUntil: options.lockoutUntil,
+        mfaRequired: options.mfaRequired,
+        sessionExpired: options.sessionExpired,
+        code: options.code || 'BLOCKCHAIN_AUTH_002',
+        ...options,
+      }),
       handleRateLimitError: (message, options = {}) => {
         this.performance.record({
           operation: 'rateLimitExceeded',
@@ -410,17 +403,15 @@ class BlockchainAnchor extends EventEmitter {
           ...options,
         });
       },
-      handleConflictError: (message, options = {}) => {
-        return new ConflictError(message, {
-          resourceType: options.resourceType || 'BlockchainAnchor',
-          resourceId: options.resourceId || options.anchorId,
-          currentState: options.currentState,
-          requestedState: options.requestedState,
-          conflictingResource: options.conflictingResource,
-          code: options.code || 'BLOCKCHAIN_CONFLICT_001',
-          ...options,
-        });
-      },
+      handleConflictError: (message, options = {}) => new ConflictError(message, {
+        resourceType: options.resourceType || 'BlockchainAnchor',
+        resourceId: options.resourceId || options.anchorId,
+        currentState: options.currentState,
+        requestedState: options.requestedState,
+        conflictingResource: options.conflictingResource,
+        code: options.code || 'BLOCKCHAIN_CONFLICT_001',
+        ...options,
+      }),
       handleBlockchainAnchorError: (message, options = {}) => {
         this.performance.record({
           operation: 'blockchainAnchorError',
@@ -547,9 +538,7 @@ class BlockchainAnchor extends EventEmitter {
   async _initialize() {
     try {
       const initResults = await Promise.allSettled(
-        Array.from(this.activeRegulators).map((regulator) =>
-          this._testRegulatorConnection(regulator)
-        )
+        Array.from(this.activeRegulators).map((regulator) => this._testRegulatorConnection(regulator)),
       );
 
       const successful = initResults.filter((r) => r.status === 'fulfilled' && r.value).length;
@@ -568,7 +557,7 @@ class BlockchainAnchor extends EventEmitter {
               timeout: 5000,
               retryAfter: 60,
               code: 'BLOCKCHAIN_INIT_001',
-            }
+            },
           );
         }
       });
@@ -594,7 +583,7 @@ class BlockchainAnchor extends EventEmitter {
           failedRegulatorsList: Array.from(this.failedRegulators),
           cryptoVersion: this.cryptoConfig.version,
           timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-        }
+        },
       );
 
       console.log(`
@@ -608,8 +597,8 @@ class BlockchainAnchor extends EventEmitter {
 ║  🏢 Firm ID: ${this.firmId.slice(0, 16)}...                              ║
 ║  🆔 Node ID: ${this.nodeId.slice(0, 16)}...                              ║
 ║  🔒 Quantum: ${
-        this.cryptoConfig.quantumResistant ? 'ENABLED' : 'DISABLED'
-      }                                    ║
+  this.cryptoConfig.quantumResistant ? 'ENABLED' : 'DISABLED'
+}                                    ║
 ║  📅 Initialized: ${DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')}                 ║
 ╚══════════════════════════════════════════════════════════════╝
             `);
@@ -665,7 +654,7 @@ class BlockchainAnchor extends EventEmitter {
       const historyCutoff = now.minus({ days: 30 }).toJSDate();
       const originalLength = this.anchorHistory.length;
       this.anchorHistory = this.anchorHistory.filter(
-        (a) => DateTime.fromISO(a.timestamp).toJSDate() > historyCutoff
+        (a) => DateTime.fromISO(a.timestamp).toJSDate() > historyCutoff,
       );
 
       const historyRemoved = originalLength - this.anchorHistory.length;
@@ -708,7 +697,7 @@ class BlockchainAnchor extends EventEmitter {
         openSince: breaker.openSince,
         nextRetryTimestamp: breaker.nextRetryTimestamp,
         timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-      }
+      },
     );
 
     this._errorHandler.handleCircuitBreakerError(`Circuit breaker opened for ${regulator}`, {
@@ -748,7 +737,7 @@ class BlockchainAnchor extends EventEmitter {
         successThreshold: breaker.successThreshold,
         closedAt: DateTime.now().toISO(), // ✅ DateTime now USED
         timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-      }
+      },
     );
   }
 
@@ -773,7 +762,7 @@ class BlockchainAnchor extends EventEmitter {
         halfOpenAttempts: breaker.halfOpenAttempts,
         successfulAttemptsRequired: breaker.successfulAttemptsRequired,
         timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-      }
+      },
     );
   }
 
@@ -793,8 +782,7 @@ class BlockchainAnchor extends EventEmitter {
       });
     }
 
-    const endpoint =
-      this.environment === 'production' ? config.production.health : config.sandbox.health;
+    const endpoint = this.environment === 'production' ? config.production.health : config.sandbox.health;
 
     try {
       const startTime = Date.now();
@@ -824,7 +812,7 @@ class BlockchainAnchor extends EventEmitter {
           statusCode: response.status,
           responseTime,
           timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-        }
+        },
       );
 
       return isHealthy;
@@ -977,7 +965,7 @@ class BlockchainAnchor extends EventEmitter {
           received: hash.length,
           code: 'BLOCKCHAIN_VALIDATION_004',
           correlationId,
-        }
+        },
       );
     }
 
@@ -1047,34 +1035,32 @@ class BlockchainAnchor extends EventEmitter {
       },
       callback: callbackUrl
         ? {
-            url: callbackUrl,
-            secret: webhookSecret ? '[REDACTED]' : null,
-            events: ['confirmed', 'failed', 'expired'],
-            retryCount: 3,
-            timeout: 10000,
-            headers: {
-              'X-Anchor-ID': anchorId,
-              'X-Correlation-ID': correlationId,
-            },
-          }
+          url: callbackUrl,
+          secret: webhookSecret ? '[REDACTED]' : null,
+          events: ['confirmed', 'failed', 'expired'],
+          retryCount: 3,
+          timeout: 10000,
+          headers: {
+            'X-Anchor-ID': anchorId,
+            'X-Correlation-ID': correlationId,
+          },
+        }
         : null,
     };
 
     const signature = this._generateQuantumSignature(payload);
 
     const results = await Promise.allSettled(
-      regulators.map((regulator) =>
-        this._submitToRegulator(regulator, payload, signature, {
-          test,
-          priority,
-          immediate,
-          retryCount: 0,
-          maxRetries,
-          correlationId,
-          idempotencyKey,
-          anchorId,
-        })
-      )
+      regulators.map((regulator) => this._submitToRegulator(regulator, payload, signature, {
+        test,
+        priority,
+        immediate,
+        retryCount: 0,
+        maxRetries,
+        correlationId,
+        idempotencyKey,
+        anchorId,
+      })),
     );
 
     const successful = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
@@ -1189,7 +1175,7 @@ class BlockchainAnchor extends EventEmitter {
         successful.length > 0 ? 'ANCHOR_SUCCESS' : 'ANCHOR_FAILURE',
         {
           hash: hash.substring(0, 16),
-          regulators: regulators,
+          regulators,
           successfulRegulators: successful.length,
           failedRegulators: failed.length,
           anchorRecord: {
@@ -1199,7 +1185,7 @@ class BlockchainAnchor extends EventEmitter {
           },
           performance: anchorRecord.performance,
           timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-        }
+        },
       );
     }
 
@@ -1209,14 +1195,14 @@ class BlockchainAnchor extends EventEmitter {
         {
           anchorId,
           hash: hash.substring(0, 16),
-          regulators: regulators,
+          regulators,
           failedSubmissions: failed.map((f) => f.regulator),
           errorType: 'COMPLETE_FAILURE',
           retryCount: 0,
           maxRetries,
           code: 'BLOCKCHAIN_ANCHOR_002',
           timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-        }
+        },
       );
 
       this._errorHandler.handleLPCComplianceError(
@@ -1232,7 +1218,7 @@ class BlockchainAnchor extends EventEmitter {
             timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
           },
           code: 'BLOCKCHAIN_COMPLIANCE_002',
-        }
+        },
       );
 
       throw anchorError;
@@ -1243,7 +1229,7 @@ class BlockchainAnchor extends EventEmitter {
         const confirmationResult = await this._waitForConfirmations(
           anchorId,
           requiredConfirmations,
-          this.confirmationConfig.confirmationTimeoutMs
+          this.confirmationConfig.confirmationTimeoutMs,
         );
         anchorRecord.confirmedAt = confirmationResult.confirmedAt;
         anchorRecord.status = 'CONFIRMED';
@@ -1311,17 +1297,17 @@ class BlockchainAnchor extends EventEmitter {
       confirmationRequired:
         successful.length > 0
           ? {
-              current: 0,
-              required: requiredConfirmations,
-              remaining: requiredConfirmations,
-              percentage: 0,
-              estimatedTimeMs: requiredConfirmations * this.regulators.LPC.requirements.blockTimeMs,
-              estimatedSeconds: Math.floor(
-                (requiredConfirmations * this.regulators.LPC.requirements.blockTimeMs) / 1000
-              ),
-              checkUrl: `/api/v1/anchors/${anchorId}/confirmations`,
-              webhookUrl: callbackUrl,
-            }
+            current: 0,
+            required: requiredConfirmations,
+            remaining: requiredConfirmations,
+            percentage: 0,
+            estimatedTimeMs: requiredConfirmations * this.regulators.LPC.requirements.blockTimeMs,
+            estimatedSeconds: Math.floor(
+              (requiredConfirmations * this.regulators.LPC.requirements.blockTimeMs) / 1000,
+            ),
+            checkUrl: `/api/v1/anchors/${anchorId}/confirmations`,
+            webhookUrl: callbackUrl,
+          }
           : null,
       forensicEvidence: {
         anchorId,
@@ -1428,7 +1414,7 @@ class BlockchainAnchor extends EventEmitter {
             correlationId: options.correlationId,
             retryCount: options.retryCount,
             timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-          }
+          },
         );
 
         return {
@@ -1480,7 +1466,7 @@ class BlockchainAnchor extends EventEmitter {
             correlationId: options.correlationId,
             code: 'BLOCKCHAIN_RETRY_002',
             timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-          }
+          },
         );
       } else {
         throw this._errorHandler.handleServiceUnavailableError(
@@ -1496,7 +1482,7 @@ class BlockchainAnchor extends EventEmitter {
             correlationId: options.correlationId,
             code: 'BLOCKCHAIN_SERVICE_003',
             timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-          }
+          },
         );
       }
     }
@@ -1522,11 +1508,11 @@ class BlockchainAnchor extends EventEmitter {
     ];
 
     return (
-      retryableCodes.includes(error.code) ||
-      (error.response && retryableStatusCodes.includes(error.response.status)) ||
-      error.message.includes('timeout') ||
-      error.message.includes('socket') ||
-      error.message.includes('network')
+      retryableCodes.includes(error.code)
+      || (error.response && retryableStatusCodes.includes(error.response.status))
+      || error.message.includes('timeout')
+      || error.message.includes('socket')
+      || error.message.includes('network')
     );
   }
 
@@ -1536,8 +1522,7 @@ class BlockchainAnchor extends EventEmitter {
    * ================================================================
    */
   _calculateBackoff(attempt) {
-    const baseDelay =
-      this.retryConfig.initialDelayMs * Math.pow(this.retryConfig.backoffFactor, attempt - 1);
+    const baseDelay = this.retryConfig.initialDelayMs * this.retryConfig.backoffFactor ** (attempt - 1);
 
     const maxDelay = Math.min(baseDelay, this.retryConfig.maxDelayMs);
     const jitter = maxDelay * this.retryConfig.jitter * (Math.random() * 2 - 1);
@@ -1565,13 +1550,13 @@ class BlockchainAnchor extends EventEmitter {
                 resourceId: anchorId,
                 code: 'BLOCKCHAIN_NOT_FOUND_002',
                 timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-              })
+              }),
             );
             return;
           }
 
           const allConfirmed = anchor.regulators.every(
-            (r) => r.confirmations >= requiredConfirmations
+            (r) => r.confirmations >= requiredConfirmations,
           );
 
           if (allConfirmed) {
@@ -1597,8 +1582,8 @@ class BlockchainAnchor extends EventEmitter {
                   recoverySuccessful: false,
                   code: 'BLOCKCHAIN_INTEGRITY_003',
                   timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-                }
-              )
+                },
+              ),
             );
             return;
           }
@@ -1624,7 +1609,7 @@ class BlockchainAnchor extends EventEmitter {
 
       const now = Date.now();
       const batch = this.retryQueue.filter(
-        (item) => item.attempts < item.maxAttempts && now >= item.nextRetry
+        (item) => item.attempts < item.maxAttempts && now >= item.nextRetry,
       );
 
       for (const item of batch) {
@@ -1641,7 +1626,7 @@ class BlockchainAnchor extends EventEmitter {
               correlationId: item.correlationId,
               idempotencyKey: item.payload.idempotencyKey,
               anchorId: item.anchorId,
-            }
+            },
           );
 
           const anchor = this.anchoredBlocks.get(item.anchorId);
@@ -1674,11 +1659,11 @@ class BlockchainAnchor extends EventEmitter {
               correlationId: item.correlationId,
               responseTime: result.responseTime,
               timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-            }
+            },
           );
 
           this.retryQueue = this.retryQueue.filter(
-            (i) => i.anchorId !== item.anchorId || i.regulator !== item.regulator
+            (i) => i.anchorId !== item.anchorId || i.regulator !== item.regulator,
           );
         } catch (error) {
           item.attempts++;
@@ -1699,7 +1684,7 @@ class BlockchainAnchor extends EventEmitter {
               error: error.message,
               correlationId: item.correlationId,
               timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-            }
+            },
           );
 
           if (item.attempts >= item.maxAttempts) {
@@ -1727,11 +1712,11 @@ class BlockchainAnchor extends EventEmitter {
                 correlationId: item.correlationId,
                 code: 'BLOCKCHAIN_RETRY_EXHAUSTED_001',
                 timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-              }
+              },
             );
 
             this.retryQueue = this.retryQueue.filter(
-              (i) => i.anchorId !== item.anchorId || i.regulator !== item.regulator
+              (i) => i.anchorId !== item.anchorId || i.regulator !== item.regulator,
             );
           }
         }
@@ -1748,7 +1733,7 @@ class BlockchainAnchor extends EventEmitter {
     setInterval(async () => {
       const now = Date.now();
       const pending = Array.from(this.pendingAnchors.values()).filter(
-        (a) => a.status === 'PENDING_CONFIRMATION' && now < a.expiryTime
+        (a) => a.status === 'PENDING_CONFIRMATION' && now < a.expiryTime,
       );
 
       for (const anchor of pending) {
@@ -1761,7 +1746,7 @@ class BlockchainAnchor extends EventEmitter {
             const confirmation = await this._checkConfirmations(
               regulator.name,
               regulator.transactionId,
-              anchor.correlationId
+              anchor.correlationId,
             );
 
             regulator.confirmations = confirmation.confirmations;
@@ -1784,7 +1769,7 @@ class BlockchainAnchor extends EventEmitter {
                   correlationId: anchor.correlationId,
                   verified: confirmation.verified,
                   timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-                }
+                },
               );
             }
           } catch (error) {
@@ -1793,7 +1778,7 @@ class BlockchainAnchor extends EventEmitter {
 
             if (error.response?.status === 404) {
               this._errorHandler.handleDataIntegrityError(
-                `Transaction not found on regulator blockchain`,
+                'Transaction not found on regulator blockchain',
                 {
                   entityType: 'BlockchainAnchor',
                   entityId: anchor.anchorId,
@@ -1812,21 +1797,21 @@ class BlockchainAnchor extends EventEmitter {
                     correlationId: anchor.correlationId,
                   },
                   code: 'BLOCKCHAIN_INTEGRITY_004',
-                }
+                },
               );
             }
           }
         }
 
         const allConfirmed = anchor.regulators.every(
-          (r) => r.confirmations >= anchor.requiredConfirmations
+          (r) => r.confirmations >= anchor.requiredConfirmations,
         );
 
         const majorityConfirmed = this.confirmationConfig.requireMajority
           ? anchor.regulators.filter((r) => r.confirmations >= anchor.requiredConfirmations)
-              .length /
-              anchor.regulators.length >=
-            this.confirmationConfig.majorityThreshold
+            .length
+              / anchor.regulators.length
+            >= this.confirmationConfig.majorityThreshold
           : false;
 
         if (allConfirmed || majorityConfirmed) {
@@ -1849,7 +1834,7 @@ class BlockchainAnchor extends EventEmitter {
               confirmedAt: anchor.confirmedAt,
               correlationId: anchor.correlationId,
               timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-            }
+            },
           );
 
           this.pendingAnchors.delete(anchor.anchorId);
@@ -1882,7 +1867,7 @@ class BlockchainAnchor extends EventEmitter {
               pollingAttempts: anchor.pollingAttempts,
               correlationId: anchor.correlationId,
               timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-            }
+            },
           );
 
           this.pendingAnchors.delete(anchor.anchorId);
@@ -1922,7 +1907,7 @@ class BlockchainAnchor extends EventEmitter {
               {
                 timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
                 downtime: 'unknown',
-              }
+              },
             );
           } else if (!isHealthy && !this.failedRegulators.has(regulator)) {
             this.failedRegulators.add(regulator);
@@ -1963,10 +1948,9 @@ class BlockchainAnchor extends EventEmitter {
    */
   async _checkConfirmations(regulator, transactionId, correlationId) {
     const config = this.regulators[regulator];
-    const endpoint =
-      this.environment === 'production'
-        ? `${config.production.primary}/confirmations/${transactionId}`
-        : `${config.sandbox.primary}/confirmations/${transactionId}`;
+    const endpoint = this.environment === 'production'
+      ? `${config.production.primary}/confirmations/${transactionId}`
+      : `${config.sandbox.primary}/confirmations/${transactionId}`;
 
     try {
       const response = await axios.get(endpoint, {
@@ -1995,7 +1979,7 @@ class BlockchainAnchor extends EventEmitter {
           correlationId,
           code: 'BLOCKCHAIN_SERVICE_004',
           timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-        }
+        },
       );
     }
   }
@@ -2039,7 +2023,7 @@ class BlockchainAnchor extends EventEmitter {
             confirmations: mostRecent.regulators.map((r) => r.confirmations),
             correlationId,
             verifiedAt: DateTime.now().toISO(), // ✅ DateTime now USED
-          }
+          },
         );
 
         this.performance.record({
@@ -2084,14 +2068,12 @@ class BlockchainAnchor extends EventEmitter {
     }
 
     const verificationResults = await Promise.allSettled(
-      regulators.map((regulator) =>
-        this._verifyWithRegulator(regulator, hash, {
-          minConfirmations,
-          timeout,
-          correlationId,
-          userId,
-        })
-      )
+      regulators.map((regulator) => this._verifyWithRegulator(regulator, hash, {
+        minConfirmations,
+        timeout,
+        correlationId,
+        userId,
+      })),
     );
 
     const successful = verificationResults
@@ -2102,8 +2084,7 @@ class BlockchainAnchor extends EventEmitter {
 
     const verified = successful.length >= regulators.length / 2;
 
-    const confidenceScore =
-      successful.length > 0 ? Math.round((successful.length / regulators.length) * 100) : 0;
+    const confidenceScore = successful.length > 0 ? Math.round((successful.length / regulators.length) * 100) : 0;
 
     if (verified && this.confirmationConfig.cacheResults) {
       const verificationRecord = {
@@ -2135,7 +2116,7 @@ class BlockchainAnchor extends EventEmitter {
         successfulRegulators: successful.map((r) => r.regulator),
         failedRegulators: failed.map((f) => f.regulator),
         timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-      }
+      },
     );
 
     this.performance.record({
@@ -2152,7 +2133,7 @@ class BlockchainAnchor extends EventEmitter {
 
     if (waitForConfirmations && successful.length > 0) {
       const anchor = Array.from(this.anchoredBlocks.values()).find(
-        (a) => a.hash === hash || a.hash === hash.substring(0, 128)
+        (a) => a.hash === hash || a.hash === hash.substring(0, 128),
       );
 
       if (anchor) {
@@ -2198,10 +2179,9 @@ class BlockchainAnchor extends EventEmitter {
    */
   async _verifyWithRegulator(regulator, hash, options) {
     const config = this.regulators[regulator];
-    const endpoint =
-      this.environment === 'production'
-        ? `${config.production.primary}/verify/${hash}`
-        : `${config.sandbox.primary}/verify/${hash}`;
+    const endpoint = this.environment === 'production'
+      ? `${config.production.primary}/verify/${hash}`
+      : `${config.sandbox.primary}/verify/${hash}`;
 
     try {
       const startTime = Date.now();
@@ -2372,12 +2352,10 @@ class BlockchainAnchor extends EventEmitter {
             openSince: circuitBreaker.openSince,
             nextRetryTimestamp: circuitBreaker.nextRetryTimestamp,
           },
-          pendingAnchors: Array.from(this.pendingAnchors.values()).filter((a) =>
-            a.regulators.some((r) => r.name === regulator)
-          ).length,
+          pendingAnchors: Array.from(this.pendingAnchors.values()).filter((a) => a.regulators.some((r) => r.name === regulator)).length,
           failed: this.failedRegulators.has(regulator),
         };
-      })
+      }),
     );
 
     const metrics = this.performance.getMetrics();
@@ -2392,7 +2370,7 @@ class BlockchainAnchor extends EventEmitter {
         regulatorsHealthy: regulatorStatus.filter((r) => r.healthy).length,
         regulatorsTotal: regulatorStatus.length,
         timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-      }
+      },
     );
 
     return {
@@ -2475,7 +2453,7 @@ class BlockchainAnchor extends EventEmitter {
         confirmedAt: anchor.confirmedAt,
         correlationId: anchor.correlationId,
         timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
-      }
+      },
     );
 
     return {
@@ -2583,25 +2561,23 @@ class BlockchainAnchor extends EventEmitter {
     const today = now.toFormat('yyyy-MM-dd');
 
     const anchorsToday = this.anchorHistory.filter(
-      (a) => a.timestamp.split('T')[0] === today
+      (a) => a.timestamp.split('T')[0] === today,
     ).length;
 
     const successfulAnchors = this.anchorHistory.filter(
-      (a) => a.status === 'CONFIRMED' || a.status === 'PENDING_CONFIRMATION'
+      (a) => a.status === 'CONFIRMED' || a.status === 'PENDING_CONFIRMATION',
     ).length;
 
     const failedAnchors = this.anchorHistory.filter(
-      (a) => a.status === 'FAILED' || a.status === 'EXPIRED'
+      (a) => a.status === 'FAILED' || a.status === 'EXPIRED',
     ).length;
 
-    const averageConfirmations =
-      Array.from(this.anchoredBlocks.values())
-        .filter((a) => a.regulators.length > 0)
-        .map(
-          (a) =>
-            a.regulators.reduce((sum, r) => sum + (r.confirmations || 0), 0) / a.regulators.length
-        )
-        .reduce((sum, val) => sum + val, 0) / (this.anchoredBlocks.size || 1);
+    const averageConfirmations = Array.from(this.anchoredBlocks.values())
+      .filter((a) => a.regulators.length > 0)
+      .map(
+        (a) => a.regulators.reduce((sum, r) => sum + (r.confirmations || 0), 0) / a.regulators.length,
+      )
+      .reduce((sum, val) => sum + val, 0) / (this.anchoredBlocks.size || 1);
 
     return {
       totalAnchors: this.anchorCount,
@@ -2628,22 +2604,16 @@ class BlockchainAnchor extends EventEmitter {
     const stats = {};
 
     for (const regulator of this.activeRegulators) {
-      const anchors = Array.from(this.anchoredBlocks.values()).filter((a) =>
-        a.regulators.some((r) => r.name === regulator)
-      );
+      const anchors = Array.from(this.anchoredBlocks.values()).filter((a) => a.regulators.some((r) => r.name === regulator));
 
-      const successful = anchors.filter((a) =>
-        a.regulators.some((r) => r.name === regulator && r.verified)
-      ).length;
+      const successful = anchors.filter((a) => a.regulators.some((r) => r.name === regulator && r.verified)).length;
 
       stats[regulator] = {
         totalAnchors: anchors.length,
         successful,
         failed: anchors.length - successful,
         successRate: anchors.length > 0 ? Math.round((successful / anchors.length) * 100) : 0,
-        pendingConfirmations: anchors.filter((a) =>
-          a.regulators.some((r) => r.name === regulator && !r.verified)
-        ).length,
+        pendingConfirmations: anchors.filter((a) => a.regulators.some((r) => r.name === regulator && !r.verified)).length,
         averageConfirmations:
           anchors
             .filter((a) => a.regulators.some((r) => r.name === regulator))
@@ -2710,7 +2680,7 @@ class BlockchainAnchor extends EventEmitter {
       {
         timestamp: DateTime.now().toISO(), // ✅ DateTime now USED
         environment: this.environment,
-      }
+      },
     );
 
     return {

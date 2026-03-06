@@ -9,10 +9,8 @@ try {
   let content = fs.readFileSync(verifyPath, 'utf8');
 
   // Find and fix the "EMPTY" message
-  const emptyLine =
-    "                console.log('⚠️  MIGRATION REGISTRY: COLLECTION EXISTS BUT EMPTY');";
-  const fixedLine =
-    '                console.log(`✅ MIGRATION REGISTRY: ${migrations.length} MIGRATION(S) FOUND`);';
+  const emptyLine = "                console.log('⚠️  MIGRATION REGISTRY: COLLECTION EXISTS BUT EMPTY');";
+  const fixedLine = '                console.log(`✅ MIGRATION REGISTRY: ${migrations.length} MIGRATION(S) FOUND`);';
 
   content = content.replace(emptyLine, fixedLine);
 

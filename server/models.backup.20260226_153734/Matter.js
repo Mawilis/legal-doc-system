@@ -1,9 +1,9 @@
 #!/* eslint-disable */
 /* eslint-disable no-underscore-dangle */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - MATTER MODEL v2.0 (FORENSIC-GRADE)                            ║
   ║ [POPIA §1 Data Subject | Companies Act §28 | LPC Rule 17.3]              ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Matter.js
@@ -226,7 +226,7 @@ const partySchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    set: function (v) {
+    set(v) {
       // Store encrypted in production
       return process.env.NODE_ENV === 'production'
         ? crypto.createHash('sha256').update(v).digest('hex')
@@ -236,28 +236,28 @@ const partySchema = new mongoose.Schema({
 
   idNumber: {
     type: String,
-    set: function (v) {
+    set(v) {
       return v ? '[REDACTED]' : v;
     },
   },
 
   email: {
     type: String,
-    set: function (v) {
-      return v ? v.split('@')[0] + '@[REDACTED]' : v;
+    set(v) {
+      return v ? `${v.split('@')[0]}@[REDACTED]` : v;
     },
   },
 
   phone: {
     type: String,
-    set: function (v) {
+    set(v) {
       return v ? v.replace(/\d(?=\d{4})/g, '*') : v;
     },
   },
 
   address: {
     type: String,
-    set: function (v) {
+    set(v) {
       return v ? '[REDACTED]' : v;
     },
   },
@@ -981,7 +981,7 @@ const matterSchema = new mongoose.Schema(
     minimize: false,
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         // Redact PII for API responses
         if (ret.parties) {
           ret.parties = ret.parties.map((party) => ({
@@ -1009,7 +1009,7 @@ const matterSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 // ============================================================================
@@ -1105,7 +1105,7 @@ matterSchema.methods.addTimelineEvent = async function (eventData, userId) {
     eventType: eventData.eventType,
     description: eventData.description,
     performedBy: {
-      userId: userId,
+      userId,
       name: eventData.userName,
       role: eventData.userRole,
     },
@@ -1128,7 +1128,7 @@ matterSchema.methods.addNote = async function (noteData, userId) {
   const note = {
     content: noteData.content,
     author: {
-      userId: userId,
+      userId,
       name: noteData.userName,
       role: noteData.userRole,
     },
@@ -1148,7 +1148,7 @@ matterSchema.methods.addNote = async function (noteData, userId) {
       description: `Note added: ${noteData.content.substring(0, 100)}...`,
       metadata: { noteId: note.noteId },
     },
-    userId
+    userId,
   );
 
   return this.save();
@@ -1175,7 +1175,7 @@ matterSchema.methods.addDocument = async function (documentId, category, userId)
       description: `Document added: ${category}`,
       metadata: { documentId },
     },
-    userId
+    userId,
   );
 
   return this.save();
@@ -1204,7 +1204,7 @@ matterSchema.methods.addDeadline = async function (deadlineData, userId) {
       description: `Deadline set: ${deadlineData.title}`,
       metadata: { dueDate: deadlineData.dueDate },
     },
-    userId
+    userId,
   );
 
   return this.save();
@@ -1233,7 +1233,7 @@ matterSchema.methods.updateStatus = async function (newStatus, reason, userId) {
         reason,
       },
     },
-    userId
+    userId,
   );
 
   return this.save();
@@ -1379,4 +1379,6 @@ const Matter = mongoose.model('Matter', matterSchema);
 export default Matter;
 
 // Re-export enums
-export { MATTER_TYPES, MATTER_STATUS, DATA_RESIDENCY, RETENTION_POLICIES };
+export {
+  MATTER_TYPES, MATTER_STATUS, DATA_RESIDENCY, RETENTION_POLICIES,
+};

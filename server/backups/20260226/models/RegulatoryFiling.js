@@ -1,50 +1,50 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ REGULATORY FILING MODEL - COMPETITION ACT & JSE COMPLIANCE ENGINE                     ║
   ║ [Production Grade | 18 Jurisdictions | Automated Section 10 | Forensic Traceability]  ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 const regulatoryFilingSchema = new mongoose.Schema({
   filingId: {
     type: String,
     required: true,
     unique: true,
-    default: () => `REG-${crypto.randomBytes(4).toString('hex').toUpperCase()}`
+    default: () => `REG-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
   },
 
   tenantId: {
     type: String,
     required: true,
-    index: true
+    index: true,
   },
 
   dealId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Deal',
-    required: true
+    required: true,
   },
 
   jurisdiction: {
     type: String,
     required: true,
-    enum: ['ZA', 'NA', 'BW', 'KE', 'NG', 'GB', 'EU', 'US', 'CN', 'IN']
+    enum: ['ZA', 'NA', 'BW', 'KE', 'NG', 'GB', 'EU', 'US', 'CN', 'IN'],
   },
 
   filingType: {
     type: String,
     required: true,
-    enum: ['merger_notification', 'competition_approval', 'jse_notification', 
-           'takeover_panel', 'sector_regulator', 'foreign_investment']
+    enum: ['merger_notification', 'competition_approval', 'jse_notification',
+      'takeover_panel', 'sector_regulator', 'foreign_investment'],
   },
 
   status: {
     type: String,
     enum: ['draft', 'preparing', 'submitted', 'under_review', 'additional_info',
-           'approved_with_conditions', 'approved', 'rejected', 'appealed'],
-    default: 'draft'
+      'approved_with_conditions', 'approved', 'rejected', 'appealed'],
+    default: 'draft',
   },
 
   // Filing Details
@@ -60,15 +60,15 @@ const regulatoryFilingSchema = new mongoose.Schema({
       url: String,
       version: Number,
       forensicHash: String,
-      submittedAt: Date
+      submittedAt: Date,
     }],
     fees: {
       amount: Number,
       currency: String,
       paid: Boolean,
       paidAt: Date,
-      receiptReference: String
-    }
+      receiptReference: String,
+    },
   },
 
   // Regulatory Review
@@ -81,14 +81,14 @@ const regulatoryFilingSchema = new mongoose.Schema({
       requestedAt: Date,
       grantedUntil: Date,
       reason: String,
-      approvedBy: String
+      approvedBy: String,
     }],
     requestsForInfo: [{
       requestedAt: Date,
       description: String,
       respondedAt: Date,
-      responseReference: String
-    }]
+      responseReference: String,
+    }],
   },
 
   // Decision
@@ -99,12 +99,12 @@ const regulatoryFilingSchema = new mongoose.Schema({
       type: String,
       deadline: Date,
       status: String,
-      complianceDate: Date
+      complianceDate: Date,
     }],
     reasons: String,
     appealDeadline: Date,
     appealFiled: Boolean,
-    finalOrder: Boolean
+    finalOrder: Boolean,
   },
 
   // Competition Act Specific
@@ -114,31 +114,31 @@ const regulatoryFilingSchema = new mongoose.Schema({
       targetTurnover: Number,
       acquirerTurnover: Number,
       combinedTurnover: Number,
-      assetValue: Number
+      assetValue: Number,
     },
     marketDefinition: {
       productMarkets: [String],
       geographicMarkets: [String],
       concentrationPre: Number,
       concentrationPost: Number,
-      deltaHHI: Number
+      deltaHHI: Number,
     },
     theoriesOfHarm: [{
       theory: String,
       analysis: String,
-      mitigation: String
+      mitigation: String,
     }],
     efficiencies: [{
       efficiency: String,
       quantification: String,
-      passOn: String
+      passOn: String,
     }],
     publicInterest: {
       employment: String,
       smme: String,
       transformation: String,
-      other: String
-    }
+      other: String,
+    },
   },
 
   // JSE Specific
@@ -146,24 +146,24 @@ const regulatoryFilingSchema = new mongoose.Schema({
     listingRequirements: [{
       section: String,
       compliance: Boolean,
-      notes: String
+      notes: String,
     }],
     shareholderApproval: {
       required: Boolean,
       obtained: Boolean,
       date: Date,
-      percentage: Number
+      percentage: Number,
     },
     circular: {
       approved: Boolean,
       date: Date,
-      reference: String
+      reference: String,
     },
     sponsor: {
       name: String,
       contact: String,
-      opinion: String
-    }
+      opinion: String,
+    },
   },
 
   // Timeline
@@ -171,7 +171,7 @@ const regulatoryFilingSchema = new mongoose.Schema({
     event: String,
     date: Date,
     description: String,
-    user: String
+    user: String,
   }],
 
   // Compliance
@@ -183,8 +183,8 @@ const regulatoryFilingSchema = new mongoose.Schema({
       regulator: String,
       checked: Boolean,
       compliant: Boolean,
-      notes: String
-    }]
+      notes: String,
+    }],
   },
 
   // Metadata
@@ -194,10 +194,10 @@ const regulatoryFilingSchema = new mongoose.Schema({
 
   forensicHash: String,
   previousHash: String,
-  chainPosition: Number
+  chainPosition: Number,
 }, {
   timestamps: true,
-  collection: 'regulatory_filings'
+  collection: 'regulatory_filings',
 });
 
 // Indexes
@@ -207,14 +207,14 @@ regulatoryFilingSchema.index({ 'filing.submissionDate': -1 });
 regulatoryFilingSchema.index({ 'decision.outcome': 1 });
 
 // Pre-save middleware
-regulatoryFilingSchema.pre('save', async function(next) {
+regulatoryFilingSchema.pre('save', async function (next) {
   // Update timeline
   if (this.isModified('status')) {
     this.timeline.push({
       event: 'status_change',
       date: new Date(),
       description: `Status changed to ${this.status}`,
-      user: this.updatedBy || this.createdBy
+      user: this.updatedBy || this.createdBy,
     });
   }
 
@@ -225,7 +225,7 @@ regulatoryFilingSchema.pre('save', async function(next) {
     jurisdiction: this.jurisdiction,
     status: this.status,
     updatedAt: new Date(),
-    previousHash: this.previousHash
+    previousHash: this.previousHash,
   });
 
   this.forensicHash = crypto
@@ -237,52 +237,52 @@ regulatoryFilingSchema.pre('save', async function(next) {
 });
 
 // Methods
-regulatoryFilingSchema.methods.calculateDaysRemaining = function() {
+regulatoryFilingSchema.methods.calculateDaysRemaining = function () {
   if (!this.review.targetDecisionDate) return null;
-  
+
   const today = new Date();
   const diffTime = this.review.targetDecisionDate - today;
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-regulatoryFilingSchema.methods.checkCompleteness = function() {
+regulatoryFilingSchema.methods.checkCompleteness = function () {
   const required = [
     this.filing.documents.length > 0,
     this.competitionAnalysis.marketDefinition.productMarkets.length > 0,
     this.competitionAnalysis.thresholds.combinedTurnover > 0,
-    this.jurisdiction
+    this.jurisdiction,
   ];
-  
+
   return {
     complete: required.every(Boolean),
-    missing: required.map((r, i) => !r ? i : null).filter(i => i !== null)
+    missing: required.map((r, i) => (!r ? i : null)).filter((i) => i !== null),
   };
 };
 
-regulatoryFilingSchema.methods.getNextDeadlines = function() {
+regulatoryFilingSchema.methods.getNextDeadlines = function () {
   const deadlines = [];
-  
+
   if (this.review.targetDecisionDate) {
     deadlines.push({
       type: 'regulatory_decision',
       date: this.review.targetDecisionDate,
-      daysRemaining: this.calculateDaysRemaining()
+      daysRemaining: this.calculateDaysRemaining(),
     });
   }
-  
+
   if (this.decision.conditions) {
-    this.decision.conditions.forEach(condition => {
+    this.decision.conditions.forEach((condition) => {
       if (condition.deadline && condition.status !== 'complied') {
         deadlines.push({
           type: 'condition_compliance',
           description: condition.condition,
           date: condition.deadline,
-          daysRemaining: Math.ceil((condition.deadline - new Date()) / (1000 * 60 * 60 * 24))
+          daysRemaining: Math.ceil((condition.deadline - new Date()) / (1000 * 60 * 60 * 24)),
         });
       }
     });
   }
-  
+
   return deadlines.sort((a, b) => a.date - b.date);
 };
 

@@ -58,12 +58,12 @@ import axios from 'axios.js';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv.js';
 
-// Load environment variables
-dotenv.config();
-
 // Internal dependencies
 import monitoring from '../utils/monitoring.js';
 import auditService from '../services/auditService.js';
+
+// Load environment variables
+dotenv.config();
 
 // Optional services (graceful degradation if not available)
 let riskScoringService = null;
@@ -166,7 +166,7 @@ const decryptFICAData = (encryptedData) => {
   const decipher = crypto.createDecipheriv(
     encryptedData.algorithm,
     key,
-    Buffer.from(encryptedData.iv, 'hex')
+    Buffer.from(encryptedData.iv, 'hex'),
   );
 
   decipher.setAuthTag(Buffer.from(encryptedData.tag, 'hex'));
@@ -316,7 +316,7 @@ const executeProviderRequest = async (provider, endpoint, data, options = {}) =>
         'X-Request-ID': requestId,
         'X-Client': 'Wilsy-OS-FICA',
       },
-      data: data,
+      data,
       timeout: options.timeout || provider.timeout,
       validateStatus: (status) => status >= 200 && status < 500,
     };
@@ -551,7 +551,7 @@ const compileIndividualResults = (results, verificationId) => {
 
   results.forEach((result, index) => {
     if (result.status === 'fulfilled' && result.value) {
-      const value = result.value;
+      const { value } = result;
 
       if (Array.isArray(value)) {
         value.forEach((check) => {
@@ -587,15 +587,15 @@ const compileIndividualResults = (results, verificationId) => {
 
   // Determine overall status
   const failedChecks = compiled.riskIndicators.filter(
-    (indicator) => indicator.type.includes('FAILURE') || indicator.type.includes('MATCH')
+    (indicator) => indicator.type.includes('FAILURE') || indicator.type.includes('MATCH'),
   );
 
   if (failedChecks.length > 0) {
     compiled.overallStatus = 'REQUIRES_REVIEW';
     compiled.recommendations.push('Manual review required due to verification issues');
   } else if (
-    compiled.checks.IDENTITY_DATANAMIX?.status === 'VERIFIED' &&
-    compiled.checks.ADDRESS_DATANAMIX?.status === 'VERIFIED'
+    compiled.checks.IDENTITY_DATANAMIX?.status === 'VERIFIED'
+    && compiled.checks.ADDRESS_DATANAMIX?.status === 'VERIFIED'
   ) {
     compiled.overallStatus = 'VERIFIED';
   } else {
@@ -655,7 +655,7 @@ export const verifyIndividual = async (individualData, context) => {
     if (riskScoringService) {
       verificationResult.riskScore = await riskScoringService.calculateIndividualRisk(
         individualData,
-        verificationResult
+        verificationResult,
       );
     }
 
@@ -669,7 +669,7 @@ export const verifyIndividual = async (individualData, context) => {
     }
 
     console.log(
-      `[FICA] Individual verification completed: ${verificationId}, Status: ${verificationResult.overallStatus}`
+      `[FICA] Individual verification completed: ${verificationId}, Status: ${verificationResult.overallStatus}`,
     );
 
     return {
@@ -879,7 +879,7 @@ const compileCorporateResults = (results, verificationId) => {
 
   results.forEach((result, index) => {
     if (result.status === 'fulfilled' && result.value) {
-      const value = result.value;
+      const { value } = result;
 
       if (Array.isArray(value)) {
         value.forEach((check) => {
@@ -996,7 +996,7 @@ export const verifyCorporate = async (corporateData, context) => {
     if (riskScoringService) {
       verificationResult.riskScore = await riskScoringService.calculateCorporateRisk(
         corporateData,
-        verificationResult
+        verificationResult,
       );
     }
 
@@ -1010,7 +1010,7 @@ export const verifyCorporate = async (corporateData, context) => {
     }
 
     console.log(
-      `[FICA] Corporate verification completed: ${verificationId}, Status: ${verificationResult.overallStatus}`
+      `[FICA] Corporate verification completed: ${verificationId}, Status: ${verificationResult.overallStatus}`,
     );
 
     return {
@@ -1096,8 +1096,7 @@ const calculateDateRange = (period) => {
  */
 export const getVerificationStatus = async (verificationId) => {
   try {
-    const FicaVerification =
-      mongoose.models.FicaVerification || (await import('../models/FicaVerification.js')).default;
+    const FicaVerification = mongoose.models.FicaVerification || (await import('../models/FicaVerification.js')).default;
 
     const record = await FicaVerification.findOne({ verificationId });
 
@@ -1155,8 +1154,7 @@ export const healthCheck = async () => {
     };
 
     const encryptionKey = process.env.FICA_ENCRYPTION_KEY;
-    healthChecks.checks.encryption.status =
-      encryptionKey && encryptionKey.length === 64 ? 'HEALTHY' : 'UNHEALTHY';
+    healthChecks.checks.encryption.status = encryptionKey && encryptionKey.length === 64 ? 'HEALTHY' : 'UNHEALTHY';
     healthChecks.checks.encryption.keyLength = encryptionKey ? encryptionKey.length : 0;
 
     healthChecks.checks.providers = {

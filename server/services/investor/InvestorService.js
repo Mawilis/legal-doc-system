@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR SERVICE - FORENSIC WORKER WITH 100-YEAR EVIDENCE CHAIN                       ║
   ║ R240M Revenue Protection | x-correlation-id Tracing | POPIA §19-22 Compliant          ║
   ║ SHA256 Hash Chain | Court-Admissible | Real-time Aggregation                           ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/investor/InvestorService.js
@@ -63,13 +63,14 @@
  *   end
  */
 
+import crypto from 'crypto';
 import SecurityLog from '../../models/securityLogModel.js';
 import Valuation from '../../models/Valuation.js';
 import Company from '../../models/Company.js';
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../../utils/auditLogger.js';
-import crypto from 'crypto';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // CONSTANTS
@@ -138,8 +139,12 @@ async function measureTime(fn, operation) {
  * @returns {string} Cache key
  */
 function generateCacheKey(params) {
-  const { tenantId, period, sections, userId } = params;
-  const data = { tenantId, period, sections, userId };
+  const {
+    tenantId, period, sections, userId,
+  } = params;
+  const data = {
+    tenantId, period, sections, userId,
+  };
   return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex').substring(0, 32);
 }
 
@@ -160,7 +165,9 @@ function generateCacheKey(params) {
  * @returns {Promise<Object>} Dashboard data with forensic metadata
  */
 export const getInvestorDashboardData = async (params, correlationId) => {
-  const { tenantId, period = '30d', sections = [], userId } = params;
+  const {
+    tenantId, period = '30d', sections = [], userId,
+  } = params;
   const startTime = Date.now();
 
   logger.info('InvestorService.getInvestorDashboardData started', {
@@ -174,36 +181,34 @@ export const getInvestorDashboardData = async (params, correlationId) => {
     // ========================================================================
     // STEP 1: FORENSIC LOGGING - Record Access with Hash Chain
     // ========================================================================
-    const [accessLog, logDuration] = await measureTime(async () => {
-      return await SecurityLog.forensicLog(
-        {
-          eventType: INVESTOR_EVENTS.DASHBOARD_ACCESS,
-          severity: SEVERITY_LEVELS.INFO,
-          tenantId,
-          userId: userId || 'anonymous',
-          correlationId,
-          requestId: correlationId, // Using correlationId as requestId for simplicity
-          ipAddress: params.ipAddress,
-          userAgent: params.userAgent,
-          endpoint: '/api/investor/dashboard',
-          method: 'GET',
-          details: {
-            period,
-            requestedSections: sections,
-            params: {
-              ...params,
-              // Remove sensitive data
-              ipAddress: undefined,
-              userAgent: undefined,
-            },
+    const [accessLog, logDuration] = await measureTime(async () => await SecurityLog.forensicLog(
+      {
+        eventType: INVESTOR_EVENTS.DASHBOARD_ACCESS,
+        severity: SEVERITY_LEVELS.INFO,
+        tenantId,
+        userId: userId || 'anonymous',
+        correlationId,
+        requestId: correlationId, // Using correlationId as requestId for simplicity
+        ipAddress: params.ipAddress,
+        userAgent: params.userAgent,
+        endpoint: '/api/investor/dashboard',
+        method: 'GET',
+        details: {
+          period,
+          requestedSections: sections,
+          params: {
+            ...params,
+            // Remove sensitive data
+            ipAddress: undefined,
+            userAgent: undefined,
           },
-          requiresBreachNotification: false,
-          dataSubjectsAffected: 0,
-          tags: ['investor', 'dashboard', `tenant:${tenantId}`],
         },
-        correlationId
-      );
-    }, 'FORENSIC_LOGGING_MS');
+        requiresBreachNotification: false,
+        dataSubjectsAffected: 0,
+        tags: ['investor', 'dashboard', `tenant:${tenantId}`],
+      },
+      correlationId,
+    ), 'FORENSIC_LOGGING_MS');
 
     logger.debug('Forensic access log created', {
       logId: accessLog._id,
@@ -320,7 +325,7 @@ export const getInvestorDashboardData = async (params, correlationId) => {
           requiresBreachNotification: false,
           tags: ['investor', 'valuations', `tenant:${tenantId}`],
         },
-        `${correlationId}-valuations`
+        `${correlationId}-valuations`,
       );
     }
 
@@ -379,7 +384,7 @@ export const getInvestorDashboardData = async (params, correlationId) => {
           requiresBreachNotification: false,
           tags: ['investor', 'companies', `tenant:${tenantId}`],
         },
-        `${correlationId}-companies`
+        `${correlationId}-companies`,
       );
     }
 
@@ -424,14 +429,16 @@ export const getInvestorDashboardData = async (params, correlationId) => {
           dataSubjectsAffected: materialityData.count,
           tags: ['investor', 'jse', 'materiality', `tenant:${tenantId}`],
         },
-        `${correlationId}-jse`
+        `${correlationId}-jse`,
       );
     }
 
     // ========================================================================
     // STEP 5: COMPILE DASHBOARD
     // ========================================================================
-    const cacheKey = generateCacheKey({ tenantId, period, sections, userId });
+    const cacheKey = generateCacheKey({
+      tenantId, period, sections, userId,
+    });
 
     const dashboard = {
       metadata: {
@@ -481,7 +488,7 @@ export const getInvestorDashboardData = async (params, correlationId) => {
     // Add industry breakdown if requested
     if (sections.includes('industry')) {
       dashboard.industryBreakdown = Object.entries(companyData.stats.byIndustry).map(
-        ([industry, count]) => ({ industry, count })
+        ([industry, count]) => ({ industry, count }),
       );
       dashboard.metadata.sections.push('industry');
     }
@@ -489,29 +496,27 @@ export const getInvestorDashboardData = async (params, correlationId) => {
     // ========================================================================
     // STEP 6: FINAL FORENSIC LOG - COMPLETION
     // ========================================================================
-    const [completionLog] = await measureTime(async () => {
-      return await SecurityLog.forensicLog(
-        {
-          eventType: INVESTOR_EVENTS.DASHBOARD_ACCESS + '_complete',
-          severity: SEVERITY_LEVELS.INFO,
-          tenantId,
-          userId: userId || 'anonymous',
-          correlationId,
-          requestId: correlationId,
-          details: {
-            generationTimeMs: Date.now() - startTime,
-            sectionsReturned: dashboard.metadata.sections,
-            totalValuations: dashboard.summary.totalValuations,
-            totalCompanies: dashboard.summary.totalCompanies,
-            cacheKey,
-          },
-          requiresBreachNotification: false,
-          previousCorrelationId: correlationId, // Link to start log
-          tags: ['investor', 'dashboard', 'complete', `tenant:${tenantId}`],
+    const [completionLog] = await measureTime(async () => await SecurityLog.forensicLog(
+      {
+        eventType: `${INVESTOR_EVENTS.DASHBOARD_ACCESS}_complete`,
+        severity: SEVERITY_LEVELS.INFO,
+        tenantId,
+        userId: userId || 'anonymous',
+        correlationId,
+        requestId: correlationId,
+        details: {
+          generationTimeMs: Date.now() - startTime,
+          sectionsReturned: dashboard.metadata.sections,
+          totalValuations: dashboard.summary.totalValuations,
+          totalCompanies: dashboard.summary.totalCompanies,
+          cacheKey,
         },
-        `${correlationId}-complete`
-      );
-    }, 'FORENSIC_LOGGING_MS');
+        requiresBreachNotification: false,
+        previousCorrelationId: correlationId, // Link to start log
+        tags: ['investor', 'dashboard', 'complete', `tenant:${tenantId}`],
+      },
+      `${correlationId}-complete`,
+    ), 'FORENSIC_LOGGING_MS');
 
     // Update dashboard with completion hash
     dashboard.metadata.completionHash = completionLog.forensicHash;
@@ -544,7 +549,7 @@ export const getInvestorDashboardData = async (params, correlationId) => {
           requiresBreachNotification: false,
           tags: ['investor', 'performance', 'anomaly', `tenant:${tenantId}`],
         },
-        `${correlationId}-performance`
+        `${correlationId}-performance`,
       );
     }
 
@@ -566,7 +571,7 @@ export const getInvestorDashboardData = async (params, correlationId) => {
           requiresBreachNotification: false,
           tags: ['investor', 'security', 'bulk-access', `tenant:${tenantId}`],
         },
-        `${correlationId}-bulk`
+        `${correlationId}-bulk`,
       );
     }
 
@@ -629,7 +634,7 @@ export const getInvestorDashboardData = async (params, correlationId) => {
           dataSubjectsAffected: error.message.includes('breach') ? 1 : 0,
           tags: ['investor', 'error', `tenant:${tenantId}`],
         },
-        `${correlationId}-error`
+        `${correlationId}-error`,
       );
     } catch (logError) {
       logger.error('Failed to log error to forensic chain', {
@@ -662,7 +667,7 @@ export const getForensicReport = async (correlationId) => {
     }
 
     // Verify chain integrity
-    const tenantId = logs[0].tenantId;
+    const { tenantId } = logs[0];
     const chainVerification = await SecurityLog.verifyHashChain(tenantId, logs[0].timestamp);
 
     return {
@@ -696,18 +701,14 @@ export const getForensicReport = async (correlationId) => {
  * @param {string} tenantId - Tenant ID
  * @returns {Promise<Object>} Verification result
  */
-export const verifyTenantChain = async (tenantId) => {
-  return await SecurityLog.verifyHashChain(tenantId);
-};
+export const verifyTenantChain = async (tenantId) => await SecurityLog.verifyHashChain(tenantId);
 
 /**
  * Anchors daily logs to blockchain
  * @param {string} tenantId - Tenant ID
  * @returns {Promise<Object>} Blockchain anchor
  */
-export const anchorToBlockchain = async (tenantId) => {
-  return await SecurityLog.anchorToBlockchain(tenantId);
-};
+export const anchorToBlockchain = async (tenantId) => await SecurityLog.anchorToBlockchain(tenantId);
 
 // ============================================================================
 // EXPORTS

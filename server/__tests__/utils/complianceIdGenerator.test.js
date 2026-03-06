@@ -77,7 +77,7 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
 
       expect(id).toBeDefined();
       expect(id).toMatch(
-        /^FICA-IND_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/
+        /^FICA-IND_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/,
       );
 
       // Validate format
@@ -99,7 +99,7 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
           action: 'COMPLIANCE_ID_GENERATED',
           tenantId: 'ACME_CORP',
           type: 'FICA_INDIVIDUAL',
-        })
+        }),
       );
     });
 
@@ -124,7 +124,7 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
       const id = generateComplianceId('POPIA_REQUEST');
 
       expect(id).toMatch(
-        /^POP-REQ_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/
+        /^POP-REQ_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/,
       );
       expect(getTenantContext).toHaveBeenCalled();
 
@@ -215,7 +215,7 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
       expect(auditLogger.audit).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'LEGACY_ID_GENERATED',
-        })
+        }),
       );
     });
 
@@ -291,7 +291,7 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
             successful: 4,
             failed: 0,
           }),
-        })
+        }),
       );
     });
 
@@ -330,7 +330,7 @@ describe('FORENSIC COMPLIANCE ID GENERATOR V6', () => {
       expect(RETENTION_POLICIES.COMPANIES_ACT_7_YEARS.legalReference).toMatch(/Companies Act/);
       expect(RETENTION_POLICIES.POPIA_1_YEAR.legalReference).toMatch(/POPIA/);
       expect(RETENTION_POLICIES.TRUST_PERPETUAL.legalReference).toMatch(
-        /Trust Property Control Act/
+        /Trust Property Control Act/,
       );
     });
   });

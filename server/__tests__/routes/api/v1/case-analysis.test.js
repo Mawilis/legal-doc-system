@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE ANALYSIS API TESTS - INVESTOR DUE DILIGENCE              ║
   ║ 100% coverage | API-First | Strategic Gateway                 ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/routes/api/v1/case-analysis.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -60,9 +60,7 @@ jest.mock('../../../../middleware/rateLimiter', () => ({
 
 jest.mock('../../../../middleware/validator', () => ({
   validateRequest:
-    (schema, source = 'body') =>
-    (req, res, next) =>
-      next(),
+    (schema, source = 'body') => (req, res, next) => next(),
 }));
 
 jest.mock('../../../../utils/logger', () => ({
@@ -161,7 +159,7 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
 
     it('should handle service errors gracefully', async () => {
       caseAnalysisService.analyzeCase.mockRejectedValueOnce(
-        new Error('Analysis service unavailable')
+        new Error('Analysis service unavailable'),
       );
 
       const response = await request(app)
@@ -390,7 +388,7 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
         expect.anything(),
         '507f1f77bcf86cd799439014', // tenantId
         expect.anything(),
-        expect.anything()
+        expect.anything(),
       );
     });
   });
@@ -412,7 +410,7 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
           action: 'CASE_ANALYSIS_API_REQUEST',
           tenantId: '507f1f77bcf86cd799439014',
           userId: '507f1f77bcf86cd799439013',
-        })
+        }),
       );
     });
 
@@ -431,7 +429,7 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
         expect.objectContaining({
           event: 'API_REQUEST',
           endpoint: '/api/v1/case-analysis/analyze',
-        })
+        }),
       );
     });
   });
@@ -483,7 +481,7 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'case-analysis-api-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       // Verify evidence
@@ -496,7 +494,7 @@ describe('Case Analysis API - Strategic Gateway Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'case-analysis-api-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);

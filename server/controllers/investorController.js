@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR CONTROLLER - FORENSIC GATEWAY WITH x-correlation-id TRACING                  ║
   ║ [Production Grade | POPIA Compliant | 100-Year Evidence Chain]                        ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/investorController.js
@@ -36,14 +36,15 @@
  * }
  */
 
+import crypto from 'crypto';
 import {
   getInvestorDashboardData,
   getForensicReport,
 } from '../services/investor/InvestorService.js';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../utils/auditLogger.js';
-import crypto from 'crypto';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -141,8 +142,8 @@ export const handleInvestorRequest = async (req, res) => {
         .json(
           formatError(
             new Error('X-Tenant-ID header is required for multi-tenant isolation'),
-            correlationId
-          )
+            correlationId,
+          ),
         );
     }
 

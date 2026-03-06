@@ -17,6 +17,7 @@ import { PerformanceMonitor } from '../utils/performance.js';
 import { RegulatoryCalendar } from './regulatoryCalendar.js';
 import CPDRecord from '../models/CPDRecord.js';
 import { ValidationError, ComplianceError } from '../utils/errors.js';
+
 class ComplianceEngine extends EventEmitter {
   constructor() {
     super();
@@ -698,29 +699,25 @@ class ComplianceEngine extends EventEmitter {
       },
 
       // ✅ AuthorizationError wrapper
-      handleAuthorizationError: (message, options = {}) => {
-        return new AuthorizationError(message, {
-          requiredRoles: options.requiredRoles,
-          userRoles: options.userRoles,
-          userId: options.userId,
-          resource: options.resource,
-          action: options.action,
-          code: options.code || 'COMPLIANCE_AUTH_001',
-          ...options,
-        });
-      },
+      handleAuthorizationError: (message, options = {}) => new AuthorizationError(message, {
+        requiredRoles: options.requiredRoles,
+        userRoles: options.userRoles,
+        userId: options.userId,
+        resource: options.resource,
+        action: options.action,
+        code: options.code || 'COMPLIANCE_AUTH_001',
+        ...options,
+      }),
 
       // ✅ NotFoundError wrapper
-      handleNotFoundError: (message, options = {}) => {
-        return new NotFoundError(message, {
-          resourceType: options.resourceType || 'ComplianceRecord',
-          resourceId: options.resourceId,
-          tenantId: options.tenantId,
-          searchCriteria: options.searchCriteria,
-          code: options.code || 'COMPLIANCE_NOT_FOUND_001',
-          ...options,
-        });
-      },
+      handleNotFoundError: (message, options = {}) => new NotFoundError(message, {
+        resourceType: options.resourceType || 'ComplianceRecord',
+        resourceId: options.resourceId,
+        tenantId: options.tenantId,
+        searchCriteria: options.searchCriteria,
+        code: options.code || 'COMPLIANCE_NOT_FOUND_001',
+        ...options,
+      }),
 
       // ✅ DataIntegrityError - NOW FULLY UTILIZED
       handleDataIntegrityError: (message, options = {}) => {
@@ -810,31 +807,27 @@ class ComplianceEngine extends EventEmitter {
       },
 
       // ✅ ConflictError wrapper
-      handleConflictError: (message, options = {}) => {
-        return new ConflictError(message, {
-          resourceType: options.resourceType || 'ComplianceRecord',
-          resourceId: options.resourceId,
-          currentState: options.currentState,
-          requestedState: options.requestedState,
-          conflictingResource: options.conflictingResource,
-          code: options.code || 'COMPLIANCE_CONFLICT_001',
-          ...options,
-        });
-      },
+      handleConflictError: (message, options = {}) => new ConflictError(message, {
+        resourceType: options.resourceType || 'ComplianceRecord',
+        resourceId: options.resourceId,
+        currentState: options.currentState,
+        requestedState: options.requestedState,
+        conflictingResource: options.conflictingResource,
+        code: options.code || 'COMPLIANCE_CONFLICT_001',
+        ...options,
+      }),
 
       // ✅ AuthenticationError wrapper
-      handleAuthenticationError: (message, options = {}) => {
-        return new AuthenticationError(message, {
-          userId: options.userId,
-          method: options.method || 'TOKEN',
-          attempts: options.attempts,
-          lockoutUntil: options.lockoutUntil,
-          mfaRequired: options.mfaRequired || false,
-          sessionExpired: options.sessionExpired || false,
-          code: options.code || 'COMPLIANCE_AUTH_002',
-          ...options,
-        });
-      },
+      handleAuthenticationError: (message, options = {}) => new AuthenticationError(message, {
+        userId: options.userId,
+        method: options.method || 'TOKEN',
+        attempts: options.attempts,
+        lockoutUntil: options.lockoutUntil,
+        mfaRequired: options.mfaRequired || false,
+        sessionExpired: options.sessionExpired || false,
+        code: options.code || 'COMPLIANCE_AUTH_002',
+        ...options,
+      }),
 
       // ✅ RateLimitError wrapper
       handleRateLimitError: (message, options = {}) => {
@@ -1027,7 +1020,7 @@ class ComplianceEngine extends EventEmitter {
           totalRules: this.ruleCache.size,
           timestamp: DateTime.now().toISO(),
           formattedTimestamp: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
-        }
+        },
       );
 
       console.log(`
@@ -1038,8 +1031,8 @@ class ComplianceEngine extends EventEmitter {
 ║  ✅ Initialized: ${DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')}                         ║
 ║  ⚖️  LPC Rules: ${Object.keys(this.lpcRules).length}                                        ║
 ║  🔒 POPIA Sections: ${
-        Object.keys(this.popiaSections).length
-      }                                      ║
+  Object.keys(this.popiaSections).length
+}                                      ║
 ║  🇪🇺 GDPR Articles: ${Object.keys(this.gdprArticles).length}                                      ║
 ║  💰 FICA Sections: ${Object.keys(this.ficaSections).length}                                      ║
 ║  🏦 SARB Guidance: ${Object.keys(this.sarbGuidance).length}                                      ║
@@ -1047,8 +1040,8 @@ class ComplianceEngine extends EventEmitter {
 ║  🕵️ AML Directives: ${Object.keys(this.amlDirectives).length}                                    ║
 ║  📊 Total Rules: ${this.ruleCache.size}                                       ║
 ║  🔒 Quantum-Resistant: ${
-        this.cryptoConfig.quantumResistant ? 'ENABLED' : 'DISABLED'
-      }                           ║
+  this.cryptoConfig.quantumResistant ? 'ENABLED' : 'DISABLED'
+}                           ║
 ║  📄 SAR Filing: FIC API v2 - 15-day deadline compliance     ║
 ╚══════════════════════════════════════════════════════════════╝
             `);
@@ -1081,15 +1074,9 @@ class ComplianceEngine extends EventEmitter {
     Object.values(this.popiaSections).forEach((section) => this.ruleCache.set(section.id, section));
     Object.values(this.gdprArticles).forEach((article) => this.ruleCache.set(article.id, article));
     Object.values(this.ficaSections).forEach((section) => this.ruleCache.set(section.id, section));
-    Object.values(this.sarbGuidance).forEach((guidance) =>
-      this.ruleCache.set(guidance.id, guidance)
-    );
-    Object.values(this.fscaStandards).forEach((standard) =>
-      this.ruleCache.set(standard.id, standard)
-    );
-    Object.values(this.amlDirectives).forEach((directive) =>
-      this.ruleCache.set(directive.id, directive)
-    );
+    Object.values(this.sarbGuidance).forEach((guidance) => this.ruleCache.set(guidance.id, guidance));
+    Object.values(this.fscaStandards).forEach((standard) => this.ruleCache.set(standard.id, standard));
+    Object.values(this.amlDirectives).forEach((directive) => this.ruleCache.set(directive.id, directive));
   }
 
   /*
@@ -1137,7 +1124,7 @@ class ComplianceEngine extends EventEmitter {
       const originalLength = this.errorRegistry.length;
 
       this.errorRegistry = this.errorRegistry.filter(
-        (e) => DateTime.fromISO(e.timestamp).toJSDate() > cutoff
+        (e) => DateTime.fromISO(e.timestamp).toJSDate() > cutoff,
       );
 
       if (originalLength !== this.errorRegistry.length) {
@@ -1162,7 +1149,7 @@ class ComplianceEngine extends EventEmitter {
       const originalLength = this.complianceHistory.length;
 
       this.complianceHistory = this.complianceHistory.filter(
-        (h) => DateTime.fromISO(h.timestamp).toJSDate() > cutoff
+        (h) => DateTime.fromISO(h.timestamp).toJSDate() > cutoff,
       );
 
       if (originalLength !== this.complianceHistory.length) {
@@ -1272,7 +1259,7 @@ class ComplianceEngine extends EventEmitter {
                   daysUntil,
                   complianceScore, // ✅ NOW USING score in errors
                   code: 'COMPLIANCE_DEADLINE_002',
-                }
+                },
               );
             }
           }
@@ -1310,7 +1297,7 @@ class ComplianceEngine extends EventEmitter {
                   daysOverdue > 30 ? 'CRITICAL' : daysOverdue > 14 ? 'HIGH' : 'MEDIUM',
                 regulatorNotified: daysOverdue > 30,
                 code: 'COMPLIANCE_DEADLINE_003',
-              }
+              },
             );
 
             this._trackError(deadlineError, {
@@ -1351,7 +1338,7 @@ class ComplianceEngine extends EventEmitter {
                   failureThreshold: 2,
                   timeoutMs: 86400000,
                   code: 'COMPLIANCE_CIRCUIT_002',
-                }
+                },
               );
             }
           }
@@ -1386,7 +1373,7 @@ class ComplianceEngine extends EventEmitter {
             penalty: d.penaltyAmount,
             complianceScore: d.complianceScore, // ✅ NOW USING score in audit
           })),
-        }
+        },
       );
     }
 
@@ -1450,10 +1437,10 @@ class ComplianceEngine extends EventEmitter {
         const result = await this.validateCompliance(
           assessment.entity,
           assessment.entityType,
-          assessment.context
+          assessment.context,
         );
 
-        const score = result.score;
+        const { score } = result;
 
         this.complianceScores.set(assessment.entityId, score);
         this.violationRegistry.set(assessment.entityId, result.violations);
@@ -1519,7 +1506,7 @@ class ComplianceEngine extends EventEmitter {
               lastError: error.message,
               entityId: assessment.entityId,
               code: 'COMPLIANCE_RETRY_002',
-            }
+            },
           );
         } else {
           // ✅ USING DataIntegrityError for persistent failures
@@ -1579,7 +1566,7 @@ class ComplianceEngine extends EventEmitter {
           penaltyAmount: rule.penaltyAmount,
           complianceScore: 0,
           code: 'COMPLIANCE_LPC_341_001',
-        }
+        },
       );
     }
 
@@ -1642,7 +1629,7 @@ class ComplianceEngine extends EventEmitter {
           penaltyAmount: rule.penaltyAmount,
           complianceScore: 0,
           code: 'COMPLIANCE_LPC_342_001',
-        }
+        },
       );
     }
 
@@ -1711,7 +1698,7 @@ class ComplianceEngine extends EventEmitter {
           penaltyAmount: rule.penaltyAmount,
           complianceScore: 0,
           code: 'COMPLIANCE_LPC_173_001',
-        }
+        },
       );
     }
 
@@ -1786,7 +1773,7 @@ class ComplianceEngine extends EventEmitter {
           penaltyAmount: rule.penaltyAmount,
           complianceScore: 0,
           code: 'COMPLIANCE_LPC_211_001',
-        }
+        },
       );
     }
 
@@ -1861,7 +1848,7 @@ class ComplianceEngine extends EventEmitter {
           action: 'GENERATE',
           complianceReference: rule.statutoryRef,
           code: 'COMPLIANCE_LPC_352_002',
-        }
+        },
       );
     }
 
@@ -1900,7 +1887,7 @@ class ComplianceEngine extends EventEmitter {
           action: 'ACCESS',
           complianceReference: rule.statutoryRef,
           code: 'COMPLIANCE_LPC_413_001',
-        }
+        },
       );
     }
 
@@ -1995,7 +1982,7 @@ class ComplianceEngine extends EventEmitter {
 
     if (certificate.expiryDate && new Date(certificate.expiryDate) < new Date()) {
       const daysOverdue = Math.ceil(
-        (new Date() - new Date(certificate.expiryDate)) / (1000 * 60 * 60 * 24)
+        (new Date() - new Date(certificate.expiryDate)) / (1000 * 60 * 60 * 24),
       );
 
       violations.push({
@@ -2120,7 +2107,7 @@ class ComplianceEngine extends EventEmitter {
             clientId: c.clientId,
             balance: c.balance,
             daysNegative: Math.ceil(
-              (new Date() - new Date(c.lastUpdated || Date.now())) / (1000 * 60 * 60 * 24)
+              (new Date() - new Date(c.lastUpdated || Date.now())) / (1000 * 60 * 60 * 24),
             ),
           })),
           deadline: this._calculateDeadline(rule.deadline),
@@ -2154,7 +2141,7 @@ class ComplianceEngine extends EventEmitter {
               totalNegativeAmount: negativeClients.reduce((sum, c) => sum + c.balance, 0),
             },
             code: 'COMPLIANCE_INTEGRITY_003',
-          }
+          },
         );
       }
     }
@@ -2208,7 +2195,7 @@ class ComplianceEngine extends EventEmitter {
             responsibleParty: audit.auditor || 'Unknown',
             remediationPlan: 'Schedule immediate compliance audit',
             code: 'COMPLIANCE_DEADLINE_004',
-          }
+          },
         );
       }
     }
@@ -2250,7 +2237,7 @@ class ComplianceEngine extends EventEmitter {
           dataSubjectId: userContext.userId,
           securityMeasures: 'ENCRYPTION_REQUIRED',
           code: 'COMPLIANCE_POPIA_19_001',
-        }
+        },
       );
     }
 
@@ -2280,7 +2267,7 @@ class ComplianceEngine extends EventEmitter {
         {
           section: '20',
           code: 'COMPLIANCE_POPIA_20_001',
-        }
+        },
       );
     }
 
@@ -2390,7 +2377,7 @@ class ComplianceEngine extends EventEmitter {
             totalPenalty: Math.floor((hoursSince - 72) / 24) * 100000,
             regulatoryRef: section.statutoryRef,
             code: 'COMPLIANCE_POPIA_21_001',
-          }
+          },
         );
       }
     }
@@ -2563,7 +2550,7 @@ class ComplianceEngine extends EventEmitter {
           processingPurpose: processing.purpose,
           legalBasis: null,
           code: 'COMPLIANCE_GDPR_6_001',
-        }
+        },
       );
     }
 
@@ -2781,7 +2768,7 @@ class ComplianceEngine extends EventEmitter {
           dataCategories: ['personal'],
           securityMeasures: 'ENCRYPTION_MISSING',
           code: 'COMPLIANCE_GDPR_32_001',
-        }
+        },
       );
     }
 
@@ -2869,7 +2856,7 @@ class ComplianceEngine extends EventEmitter {
             penaltyCurrency: 'EUR',
             regulatoryRef: article.statutoryRef,
             code: 'COMPLIANCE_GDPR_33_001',
-          }
+          },
         );
       }
     }
@@ -3010,7 +2997,7 @@ class ComplianceEngine extends EventEmitter {
           reportingDeadline: DateTime.now().plus({ days: 15 }).toISO(),
           riskScore: this._calculateTransactionRiskScore(transaction),
           code: 'COMPLIANCE_FICA_29_001',
-        }
+        },
       );
     }
 
@@ -3176,7 +3163,7 @@ class ComplianceEngine extends EventEmitter {
             deadline: directive.deadline,
             regulatoryRef: directive.statutoryRef,
             code: 'COMPLIANCE_AML_5_001',
-          }
+          },
         );
       }
     }
@@ -3266,7 +3253,7 @@ class ComplianceEngine extends EventEmitter {
             'Content-Type': 'application/json',
           },
           timeout: 15000,
-        }
+        },
       );
 
       // Update transaction with SAR reference and case number
@@ -3297,7 +3284,7 @@ class ComplianceEngine extends EventEmitter {
           filingDeadline: filingDeadline.toISO(),
           daysRemaining: 15,
           ficStatus: 'SUBMITTED',
-        }
+        },
       );
 
       // Record performance metrics
@@ -3357,7 +3344,7 @@ class ComplianceEngine extends EventEmitter {
           retryScheduled: true,
           nextRetry: detectionDate.plus({ hours: 1 }).toISO(),
           timestamp: detectionDate.toISO(),
-        }
+        },
       );
 
       throw this._errorHandler.handleRetryableError('SAR filing failed, queued for retry', {
@@ -3384,7 +3371,7 @@ class ComplianceEngine extends EventEmitter {
 
     const now = DateTime.now();
     const pendingRetries = this._sarRetryQueue.filter(
-      (entry) => entry.nextRetry <= now.toMillis() && entry.attempts < entry.maxAttempts
+      (entry) => entry.nextRetry <= now.toMillis() && entry.attempts < entry.maxAttempts,
     );
 
     for (const entry of pendingRetries) {
@@ -3394,7 +3381,7 @@ class ComplianceEngine extends EventEmitter {
 
         const result = await this._fileSuspiciousActivityReport(
           entry.transaction,
-          entry.userContext
+          entry.userContext,
         );
 
         // Success - remove from queue
@@ -3421,7 +3408,7 @@ class ComplianceEngine extends EventEmitter {
             reference: result.reference,
             caseNumber: result.caseNumber,
             timestamp: now.toISO(),
-          }
+          },
         );
       } catch (error) {
         entry.lastError = error.message;
@@ -3440,7 +3427,7 @@ class ComplianceEngine extends EventEmitter {
               maxAttempts: entry.maxAttempts,
               error: error.message,
               timestamp: now.toISO(),
-            }
+            },
           );
 
           this.performance.record({
@@ -3468,11 +3455,11 @@ class ComplianceEngine extends EventEmitter {
               amount: entry.transaction.amount,
               riskScore: entry.riskScore,
               code: 'FICA_SAR_ESCALATION_001',
-            }
+            },
           );
         } else {
           // Schedule next retry with exponential backoff
-          const backoffMultiplier = Math.pow(2, entry.attempts - 1);
+          const backoffMultiplier = 2 ** (entry.attempts - 1);
           entry.nextRetry = now.plus({ hours: 1 * backoffMultiplier }).toMillis();
 
           await this.auditService.recordAccess(
@@ -3486,7 +3473,7 @@ class ComplianceEngine extends EventEmitter {
               nextRetry: DateTime.fromMillis(entry.nextRetry).toISO(),
               error: error.message,
               timestamp: now.toISO(),
-            }
+            },
           );
 
           this.performance.record({
@@ -3591,7 +3578,7 @@ class ComplianceEngine extends EventEmitter {
           value: entityType,
           constraint: 'non-empty string',
           code: 'COMPLIANCE_VALIDATION_002',
-        }
+        },
       );
     }
 
@@ -3623,10 +3610,8 @@ class ComplianceEngine extends EventEmitter {
       case 'attorney':
         if (!skipRules.includes('LPC_55.1')) violations.push(...this._validateLPC551(entity));
         if (entity.fidelityFund) {
-          if (!skipRules.includes('LPC_55.2'))
-            violations.push(...this._validateLPC552(entity.fidelityFund));
-          if (!skipRules.includes('LPC_55.4'))
-            violations.push(...this._validateLPC554(entity.fidelityFund));
+          if (!skipRules.includes('LPC_55.2')) violations.push(...this._validateLPC552(entity.fidelityFund));
+          if (!skipRules.includes('LPC_55.4')) violations.push(...this._validateLPC554(entity.fidelityFund));
         }
         if (includePOPIA) {
           // POPIA validations for attorney data
@@ -3696,8 +3681,7 @@ class ComplianceEngine extends EventEmitter {
 
       case 'crypto_asset':
         if (includeFSCA) {
-          if (!skipRules.includes('FSCA_CAS2026'))
-            violations.push(...this._validateFSCACAS2026(entity));
+          if (!skipRules.includes('FSCA_CAS2026')) violations.push(...this._validateFSCACAS2026(entity));
         }
         break;
 
@@ -3721,7 +3705,7 @@ class ComplianceEngine extends EventEmitter {
 
     if (logResults) {
       console.log(
-        `Compliance validation for ${entityType}: ${violations.length} violations, score: ${score}`
+        `Compliance validation for ${entityType}: ${violations.length} violations, score: ${score}`,
       );
     }
 
@@ -3731,14 +3715,16 @@ class ComplianceEngine extends EventEmitter {
         entity.id || entity._id,
         entityType,
         score,
-        violations
+        violations,
       );
     }
 
     await this.auditService.recordAccess(
       'compliance-validation',
       entity.id || entity._id || 'unknown',
-      { userId, tenantId, roles: ['SYSTEM'], correlationId },
+      {
+        userId, tenantId, roles: ['SYSTEM'], correlationId,
+      },
       'VALIDATE_COMPLIANCE',
       {
         entityType,
@@ -3754,7 +3740,7 @@ class ComplianceEngine extends EventEmitter {
           fsca: includeFSCA,
           aml: includeAML,
         },
-      }
+      },
     );
 
     this.performance.record({
@@ -3817,14 +3803,30 @@ class ComplianceEngine extends EventEmitter {
    */
   _groupViolationsByFramework(violations) {
     const groups = {
-      LPC: { count: 0, critical: 0, high: 0, medium: 0, low: 0 },
-      POPIA: { count: 0, critical: 0, high: 0, medium: 0, low: 0 },
-      GDPR: { count: 0, critical: 0, high: 0, medium: 0, low: 0 },
-      FICA: { count: 0, critical: 0, high: 0, medium: 0, low: 0 },
-      SARB: { count: 0, critical: 0, high: 0, medium: 0, low: 0 },
-      FSCA: { count: 0, critical: 0, high: 0, medium: 0, low: 0 },
-      AML: { count: 0, critical: 0, high: 0, medium: 0, low: 0 },
-      OTHER: { count: 0, critical: 0, high: 0, medium: 0, low: 0 },
+      LPC: {
+        count: 0, critical: 0, high: 0, medium: 0, low: 0,
+      },
+      POPIA: {
+        count: 0, critical: 0, high: 0, medium: 0, low: 0,
+      },
+      GDPR: {
+        count: 0, critical: 0, high: 0, medium: 0, low: 0,
+      },
+      FICA: {
+        count: 0, critical: 0, high: 0, medium: 0, low: 0,
+      },
+      SARB: {
+        count: 0, critical: 0, high: 0, medium: 0, low: 0,
+      },
+      FSCA: {
+        count: 0, critical: 0, high: 0, medium: 0, low: 0,
+      },
+      AML: {
+        count: 0, critical: 0, high: 0, medium: 0, low: 0,
+      },
+      OTHER: {
+        count: 0, critical: 0, high: 0, medium: 0, low: 0,
+      },
     };
 
     violations.forEach((v) => {
@@ -4271,10 +4273,9 @@ class ComplianceEngine extends EventEmitter {
       });
     });
 
-    const averageScore =
-      entities.length > 0
-        ? Math.round(entities.reduce((sum, [_, score]) => sum + score, 0) / entities.length)
-        : 100;
+    const averageScore = entities.length > 0
+      ? Math.round(entities.reduce((sum, [_, score]) => sum + score, 0) / entities.length)
+      : 100;
 
     let forecast = null;
     if (includeForecast) {
@@ -4310,10 +4311,10 @@ class ComplianceEngine extends EventEmitter {
         remediationRate:
           filteredViolations.length > 0
             ? Math.round(
-                (filteredViolations.filter((v) => v.status === 'RESOLVED').length /
-                  filteredViolations.length) *
-                  100
-              )
+              (filteredViolations.filter((v) => v.status === 'RESOLVED').length
+                  / filteredViolations.length)
+                  * 100,
+            )
             : 100,
         // MERGED: SAR filing metrics
         sarFiled: metrics.sarFiled || 0,
@@ -4330,32 +4331,28 @@ class ComplianceEngine extends EventEmitter {
       forecast,
       deadlines: {
         upcoming: Array.from(this.violationRegistry.entries())
-          .flatMap(([id, violations]) =>
-            violations
-              .filter((v) => v.deadline && new Date(v.deadline) > new Date())
-              .map((v) => ({
-                entityId: id,
-                rule: v.rule,
-                deadline: v.deadline,
-                daysUntil: Math.ceil((new Date(v.deadline) - new Date()) / (1000 * 60 * 60 * 24)),
-                severity: v.severity,
-              }))
-          )
+          .flatMap(([id, violations]) => violations
+            .filter((v) => v.deadline && new Date(v.deadline) > new Date())
+            .map((v) => ({
+              entityId: id,
+              rule: v.rule,
+              deadline: v.deadline,
+              daysUntil: Math.ceil((new Date(v.deadline) - new Date()) / (1000 * 60 * 60 * 24)),
+              severity: v.severity,
+            })))
           .filter((d) => d.daysUntil <= 7)
           .sort((a, b) => a.daysUntil - b.daysUntil),
         missed: Array.from(this.violationRegistry.entries())
-          .flatMap(([id, violations]) =>
-            violations
-              .filter((v) => v.deadline && new Date(v.deadline) < new Date())
-              .map((v) => ({
-                entityId: id,
-                rule: v.rule,
-                deadline: v.deadline,
-                daysOverdue: Math.ceil((new Date() - new Date(v.deadline)) / (1000 * 60 * 60 * 24)),
-                severity: v.severity,
-                penalty: v.penalty,
-              }))
-          )
+          .flatMap(([id, violations]) => violations
+            .filter((v) => v.deadline && new Date(v.deadline) < new Date())
+            .map((v) => ({
+              entityId: id,
+              rule: v.rule,
+              deadline: v.deadline,
+              daysOverdue: Math.ceil((new Date() - new Date(v.deadline)) / (1000 * 60 * 60 * 24)),
+              severity: v.severity,
+              penalty: v.penalty,
+            })))
           .sort((a, b) => b.daysOverdue - a.daysOverdue),
       },
       performance: {
@@ -4602,7 +4599,7 @@ class ComplianceEngine extends EventEmitter {
         resolution,
         newScore: score,
         timestamp: DateTime.now().toISO(),
-      }
+      },
     );
 
     return {
@@ -4712,7 +4709,7 @@ class ComplianceEngine extends EventEmitter {
   _generateComplianceRecommendations(
     violations,
     options = {},
-    _version = this.cryptoConfig.complianceVersion
+    _version = this.cryptoConfig.complianceVersion,
   ) {
     const recommendations = [];
 
@@ -4757,7 +4754,7 @@ class ComplianceEngine extends EventEmitter {
     historicalScores,
     _windowSize = 30,
     _confidenceLevel = 0.95,
-    _algorithm = 'exponential-smoothing'
+    _algorithm = 'exponential-smoothing',
   ) {
     if (historicalScores.length < 2) {
       return {

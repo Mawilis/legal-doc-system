@@ -87,6 +87,7 @@ const TaxRecord = require('../../models/TaxRecord');
 const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
 const loggerRaw = require('../../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 
 // Service under test - create a mock version since we don't have the actual file yet

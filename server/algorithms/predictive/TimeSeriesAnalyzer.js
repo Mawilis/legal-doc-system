@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ TIME SERIES ANALYZER - FORENSIC EDITION                                   ║
   ║ Hybrid forecasting (LSTM + Seasonality + Trend)                           ║
   ║ Features: Memory safety (tf.tidy), Scaler persistence, Phase-shifted FFT  ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import * as tf from '@tensorflow/tfjs-node';
 import { createHash } from 'crypto';
@@ -24,7 +24,7 @@ export class TimeSeriesAnalyzer {
 
     if (!Array.isArray(data) || data.length < this.seqLength + 1) {
       throw new Error(
-        `Invalid input: minimum ${this.seqLength + 1} numeric points required for sequence window.`
+        `Invalid input: minimum ${this.seqLength + 1} numeric points required for sequence window.`,
       );
     }
 
@@ -63,8 +63,8 @@ export class TimeSeriesAnalyzer {
     const n = data.length;
     const fft = [];
     for (let k = 0; k < n; k++) {
-      let real = 0,
-        imag = 0;
+      let real = 0;
+      let imag = 0;
       for (let t = 0; t < n; t++) {
         const angle = (2 * Math.PI * k * t) / n;
         real += data[t] * Math.cos(angle);
@@ -113,8 +113,8 @@ export class TimeSeriesAnalyzer {
 
     const normalized = data.map((x) => (x - this.min) / (this.max - this.min));
 
-    const X = [],
-      y = [];
+    const X = [];
+    const y = [];
     for (let i = 0; i < normalized.length - this.seqLength; i++) {
       X.push(normalized.slice(i, i + this.seqLength));
       y.push(normalized[i + this.seqLength]);
@@ -139,7 +139,7 @@ export class TimeSeriesAnalyzer {
 
   async generateForecast(data, periods, seasonality, trend) {
     // Keep a running sequence of normalized values
-    let currentSeqArray = data
+    const currentSeqArray = data
       .slice(-this.seqLength)
       .map((x) => (x - this.min) / (this.max - this.min));
     const forecast = [];
@@ -157,8 +157,8 @@ export class TimeSeriesAnalyzer {
       // FORENSIC FIX: Phase shift `t` starts at `data.length + i` to continue the wave smoothly
       const t = data.length + i;
       const seasonalAdj = seasonality.hasSeasonality
-        ? seasonality.patterns[0].strength *
-          Math.sin((2 * Math.PI * t) / seasonality.patterns[0].period)
+        ? seasonality.patterns[0].strength
+          * Math.sin((2 * Math.PI * t) / seasonality.patterns[0].period)
         : 0;
 
       const trendAdj = trend.slope * (i + 1);
@@ -178,7 +178,7 @@ export class TimeSeriesAnalyzer {
     const residuals = data.slice(1).map((v, i) => v - data[i]);
     const meanError = residuals.reduce((a, b) => a + b, 0) / residuals.length;
     const stdError = Math.sqrt(
-      residuals.reduce((a, b) => a + Math.pow(b - meanError, 2), 0) / residuals.length
+      residuals.reduce((a, b) => a + (b - meanError) ** 2, 0) / residuals.length,
     );
 
     return forecast.map((_, i) => ({
@@ -191,8 +191,8 @@ export class TimeSeriesAnalyzer {
   async evaluateAccuracy(data) {
     if (!this.model) return null;
     const normalized = data.map((x) => (x - this.min) / (this.max - this.min));
-    const X = [],
-      y = [];
+    const X = [];
+    const y = [];
 
     for (let i = 0; i < normalized.length - this.seqLength; i++) {
       X.push(normalized.slice(i, i + this.seqLength));
@@ -226,8 +226,8 @@ export class TimeSeriesAnalyzer {
 
   async loadModel() {
     if (
-      fs.existsSync(`${this.modelPath}/model.json`) &&
-      fs.existsSync(`${this.modelPath}/scalers.json`)
+      fs.existsSync(`${this.modelPath}/model.json`)
+      && fs.existsSync(`${this.modelPath}/scalers.json`)
     ) {
       this.model = await tf.loadLayersModel(`file://${this.modelPath}/model.json`);
 

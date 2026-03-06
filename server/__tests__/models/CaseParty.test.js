@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE PARTY MODEL TESTS - INVESTOR DUE DILIGENCE               ║
   ║ 100% coverage | Quantum-safe | Forensic evidence              ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/models/CaseParty.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -42,17 +42,11 @@ jest.mock('../../utils/biometricUtils', () => ({
 }));
 
 jest.mock('../../utils/cryptoUtils', () => ({
-  sha256: jest.fn().mockImplementation((input) => {
-    return crypto.createHash('sha256').update(input).digest('hex');
-  }),
-  generateId: jest.fn().mockImplementation((length) => {
-    return 'test' + 'x'.repeat(length - 4);
-  }),
+  sha256: jest.fn().mockImplementation((input) => crypto.createHash('sha256').update(input).digest('hex')),
+  generateId: jest.fn().mockImplementation((length) => `test${'x'.repeat(length - 4)}`),
   encryptField: jest.fn().mockImplementation((val) => val),
   decryptField: jest.fn().mockImplementation((val) => val),
-  redactSensitive: jest.fn().mockImplementation((input) => {
-    return input ? '[REDACTED]' : input;
-  }),
+  redactSensitive: jest.fn().mockImplementation((input) => (input ? '[REDACTED]' : input)),
 }));
 
 const auditLogger = require('../../utils/auditLogger');
@@ -141,7 +135,7 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
 
       // Test hash uniqueness
       const anotherParty = new CaseParty({
-        tenantId: tenantId + '-2',
+        tenantId: `${tenantId}-2`,
         caseId: new mongoose.Types.ObjectId(),
         partyType: 'INDIVIDUAL_DEFENDANT',
         name: 'Jane Defendant',
@@ -240,7 +234,7 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
         expect.objectContaining({
           event: 'APPEARANCE_VERIFIED',
           partyId: testParty.partyId,
-        })
+        }),
       );
     });
 
@@ -533,7 +527,7 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
       // Canonicalize
       const canonicalized = JSON.stringify(
         auditEntries.sort((a, b) => a.partyId.localeCompare(b.partyId)),
-        Object.keys(auditEntries[0]).sort()
+        Object.keys(auditEntries[0]).sort(),
       );
 
       const hash = crypto.createHash('sha256').update(canonicalized).digest('hex');
@@ -553,7 +547,7 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'caseparty-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       // Verify evidence
@@ -566,7 +560,7 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'caseparty-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
@@ -584,8 +578,8 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
       console.log(
         '✓ Data Quality Score:',
         Math.round(
-          parsed.auditEntries.reduce((acc, e) => acc + (e.dataQuality || 0), 0) / parties.length
-        )
+          parsed.auditEntries.reduce((acc, e) => acc + (e.dataQuality || 0), 0) / parties.length,
+        ),
       );
     });
   });
@@ -606,7 +600,7 @@ describe('CaseParty Model - Revolutionary Due Diligence', () => {
 
       expect(CaseParty.RETENTION_POLICIES).toBeDefined();
       expect(CaseParty.RETENTION_POLICIES.LITIGATION_COMPLETE_5_YEARS).toBe(
-        'litigation_complete_5_years'
+        'litigation_complete_5_years',
       );
     });
   });

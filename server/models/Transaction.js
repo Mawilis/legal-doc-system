@@ -419,7 +419,7 @@ const transactionSchema = new mongoose.Schema(
 
     clientIdNumber: {
       type: String,
-      required: function () {
+      required() {
         return this.clientType === 'INDIVIDUAL';
       },
     },
@@ -427,14 +427,14 @@ const transactionSchema = new mongoose.Schema(
     clientIdType: {
       type: String,
       enum: ['SA_ID', 'PASSPORT', 'DRIVERS_LICENSE', 'OTHER'],
-      required: function () {
+      required() {
         return this.clientType === 'INDIVIDUAL';
       },
     },
 
     clientRegistrationNumber: {
       type: String,
-      required: function () {
+      required() {
         return this.clientType === 'COMPANY';
       },
     },
@@ -830,7 +830,7 @@ const transactionSchema = new mongoose.Schema(
 
     retentionExpiry: {
       type: Date,
-      default: function () {
+      default() {
         const date = new Date();
         date.setDate(date.getDate() + 3650); // 10 years
         return date;
@@ -879,7 +879,7 @@ const transactionSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret.__v;
         delete ret.forensicEvidence?.digitalSignature?.privateKey;
         delete ret.bankDetails?.accountNumber;
@@ -888,7 +888,7 @@ const transactionSchema = new mongoose.Schema(
     },
     toObject: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret.__v;
         delete ret.forensicEvidence?.digitalSignature?.privateKey;
         delete ret.bankDetails?.accountNumber;
@@ -897,7 +897,7 @@ const transactionSchema = new mongoose.Schema(
     },
     strict: true,
     versionKey: '__v',
-  }
+  },
 );
 
 // ====================================================================
@@ -951,11 +951,11 @@ transactionSchema.virtual('sarRequired').get(function () {
 
 transactionSchema.virtual('enhancedDueDiligenceRequired').get(function () {
   return (
-    this.amount > FICA_THRESHOLDS.ENHANCED_DUE_DILIGENCE ||
-    this.compliance.highRiskClient ||
-    this.compliance.pepRelated ||
-    this.compliance.internationalTransfer ||
-    this.clientRiskRating === 'CRITICAL'
+    this.amount > FICA_THRESHOLDS.ENHANCED_DUE_DILIGENCE
+    || this.compliance.highRiskClient
+    || this.compliance.pepRelated
+    || this.compliance.internationalTransfer
+    || this.clientRiskRating === 'CRITICAL'
   );
 });
 
@@ -1018,10 +1018,10 @@ transactionSchema.pre('save', async function (next) {
       this.previousBalance = previousTransaction?.balanceAfter || 0;
 
       if (
-        this.type === 'CREDIT' ||
-        this.type === 'DEPOSIT' ||
-        this.type === 'RECEIPT' ||
-        this.type === 'TRUST_TRANSFER'
+        this.type === 'CREDIT'
+        || this.type === 'DEPOSIT'
+        || this.type === 'RECEIPT'
+        || this.type === 'TRUST_TRANSFER'
       ) {
         this.balanceAfter = this.previousBalance + this.amount;
       } else {
@@ -1234,7 +1234,7 @@ transactionSchema.methods._calculateRiskScore = function () {
       factor: 'CTR_THRESHOLD_EXCEEDED',
       weight: 10,
       score: 10,
-      description: `Amount exceeds Currency Transaction Report threshold`,
+      description: 'Amount exceeds Currency Transaction Report threshold',
     });
   }
 
@@ -1367,8 +1367,7 @@ transactionSchema.methods._calculateRiskScore = function () {
   if (score >= 80) {
     this.amlMonitoring.flagged = true;
     this.amlMonitoring.flagSeverity = 'CRITICAL';
-    this.amlMonitoring.flaggedReason =
-      'Critical risk score detected - immediate investigation required';
+    this.amlMonitoring.flaggedReason = 'Critical risk score detected - immediate investigation required';
   } else if (score >= 60) {
     this.amlMonitoring.flagged = true;
     this.amlMonitoring.flagSeverity = 'HIGH';
@@ -1521,9 +1520,8 @@ transactionSchema.methods.submitSar = async function (sarData, userId) {
     .plus({ days: FICA_THRESHOLDS.REPORTING_DEADLINE_DAYS })
     .toJSDate();
 
-  const sarReference =
-    sarData.reference ||
-    `SAR-${now.getFullYear()}-${now.getTime().toString().slice(-8)}-${crypto
+  const sarReference = sarData.reference
+    || `SAR-${now.getFullYear()}-${now.getTime().toString().slice(-8)}-${crypto
       .randomBytes(4)
       .toString('hex')
       .toUpperCase()}`;
@@ -1673,10 +1671,10 @@ transactionSchema.methods.verifyIntegrity = function () {
     balanceHash: this.balanceCheckHash?.substring(0, 16),
     recomputedBalanceHash: this.balanceCheckHash
       ? crypto
-          .createHash(CRYPTO_CONFIG.HASH_ALGORITHM)
-          .update(`${this.accountNumber}:${this.balanceAfter}:${this.processedAt.toISOString()}`)
-          .digest('hex')
-          .substring(0, 16)
+        .createHash(CRYPTO_CONFIG.HASH_ALGORITHM)
+        .update(`${this.accountNumber}:${this.balanceAfter}:${this.processedAt.toISOString()}`)
+        .digest('hex')
+        .substring(0, 16)
       : null,
   };
 };
@@ -1772,17 +1770,16 @@ transactionSchema.statics.getComplianceStats = async function (tenantId, firmId 
   const averageValue = total > 0 ? totalValue / total : 0;
 
   // Calculate compliance rate
-  const complianceRate =
-    total > 0
-      ? ((await this.countDocuments({
-          ...query,
-          'compliance.lpcCompliant': true,
-          'compliance.ficaVerified': true,
-          'reconciliationStatus.isReconciled': true,
-        })) /
-          total) *
-        100
-      : 100;
+  const complianceRate = total > 0
+    ? ((await this.countDocuments({
+      ...query,
+      'compliance.lpcCompliant': true,
+      'compliance.ficaVerified': true,
+      'reconciliationStatus.isReconciled': true,
+    }))
+          / total)
+        * 100
+    : 100;
 
   // Format using DateTime - ✅ FIXED: LINE 1012
   const periodStart = DateTime.now().minus({ days }).toFormat('yyyy-MM-dd');
@@ -1865,7 +1862,9 @@ transactionSchema.statics.findByAccount = async function (accountNumber, tenantI
   sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const [transactions, total] = await Promise.all([
-    this.find(query).sort(sort).skip(skip).limit(limit).lean().exec(),
+    this.find(query).sort(sort).skip(skip).limit(limit)
+      .lean()
+      .exec(),
     this.countDocuments(query),
   ]);
 
@@ -1948,7 +1947,9 @@ transactionSchema.statics.findByMatter = async function (matterId, tenantId, opt
   sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const [transactions, total] = await Promise.all([
-    this.find(query).sort(sort).skip(skip).limit(limit).lean().exec(),
+    this.find(query).sort(sort).skip(skip).limit(limit)
+      .lean()
+      .exec(),
     this.countDocuments(query),
   ]);
 
@@ -1995,7 +1996,9 @@ transactionSchema.statics.findByMatter = async function (matterId, tenantId, opt
  * Returns transactions that require AML investigation
  */
 transactionSchema.statics.getSuspiciousTransactions = async function (tenantId, options = {}) {
-  const { days = 7, minRiskScore = 50, severity = null, limit = 100, skip = 0 } = options;
+  const {
+    days = 7, minRiskScore = 50, severity = null, limit = 100, skip = 0,
+  } = options;
 
   const query = {
     tenantId,
@@ -2048,8 +2051,8 @@ transactionSchema.statics.getSuspiciousTransactions = async function (tenantId, 
       totalValue: transactions.reduce((sum, t) => sum + t.zarEquivalent, 0),
       averageRiskScore:
         transactions.length > 0
-          ? transactions.reduce((sum, t) => sum + (t.compliance?.riskScore || 0), 0) /
-            transactions.length
+          ? transactions.reduce((sum, t) => sum + (t.compliance?.riskScore || 0), 0)
+            / transactions.length
           : 0,
       criticalCount: transactions.filter((t) => t.amlMonitoring?.flagSeverity === 'CRITICAL')
         .length,
@@ -2067,7 +2070,7 @@ transactionSchema.statics.getSuspiciousTransactions = async function (tenantId, 
  */
 transactionSchema.statics.getUnreconciledTransactions = async function (
   tenantId,
-  accountNumber = null
+  accountNumber = null,
 ) {
   const query = {
     tenantId,
@@ -2112,7 +2115,7 @@ transactionSchema.statics.getUnreconciledTransactions = async function (
 transactionSchema.statics.bulkReconcile = async function (
   transactionIds,
   reconciliationData,
-  userId
+  userId,
 ) {
   // ✅ FIXED: LINE 1382 - userId PARAMETER NOW USED
   const reconciliationId = reconciliationData.reconciliationId || `RECON-${uuidv4()}`;
@@ -2137,7 +2140,7 @@ transactionSchema.statics.bulkReconcile = async function (
 
   const result = await this.updateMany(
     { transactionId: { $in: transactionIds } },
-    { $set: updateData }
+    { $set: updateData },
   );
 
   // ✅ USING DateTime to format the reconciliation timestamp - ✅ FIXED: LINE 1405
@@ -2190,7 +2193,9 @@ transactionSchema.statics.bulkReconcile = async function (
  * Comprehensive transaction analytics for dashboard
  */
 transactionSchema.statics.getStatistics = async function (tenantId, options = {}) {
-  const { days = 30, interval = 'day', firmId = null, accountNumber = null } = options;
+  const {
+    days = 30, interval = 'day', firmId = null, accountNumber = null,
+  } = options;
 
   const query = {
     tenantId,

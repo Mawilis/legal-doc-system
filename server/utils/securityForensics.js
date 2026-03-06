@@ -40,8 +40,9 @@
 
 import crypto from 'crypto';
 import loggerRaw from './logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import auditLogger from './auditLogger.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 /**
  * Security Forensics Engine
@@ -108,7 +109,7 @@ class SecurityForensicsEngine {
       () => {
         this.cleanupExpiredEvidence();
       },
-      60 * 60 * 1000
+      60 * 60 * 1000,
     ); // Every hour
   }
 
@@ -166,7 +167,7 @@ class SecurityForensicsEngine {
     // Store for future reference
     this.forensicStore.set(analysis.analysisId, {
       timestamp: Date.now(),
-      analysis: analysis,
+      analysis,
     });
 
     return analysis;
@@ -214,7 +215,7 @@ class SecurityForensicsEngine {
         patterns: analysis.patterns,
         riskScore: analysis.riskScore,
       },
-      Object.keys.sort()
+      Object.keys.sort(),
     );
 
     return crypto.createHash(this.HASH_ALGORITHM).update(canonicalData).digest(this.HASH_ENCODING);
@@ -294,14 +295,14 @@ class SecurityForensicsEngine {
     // Check for unusual hours pattern
     const hour = timestamp.getHours();
     if (
-      hour < this.PATTERNS.UNUSUAL_HOURS.START_HOUR ||
-      hour > this.PATTERNS.UNUSUAL_HOURS.END_HOUR
+      hour < this.PATTERNS.UNUSUAL_HOURS.START_HOUR
+      || hour > this.PATTERNS.UNUSUAL_HOURS.END_HOUR
     ) {
       patterns.push({
         type: 'unusual_hours',
         confidence: this.PATTERNS.UNUSUAL_HOURS.CONFIDENCE,
         description: this.PATTERNS.UNUSUAL_HOURS.DESCRIPTION,
-        details: { hour: hour },
+        details: { hour },
       });
     }
 
@@ -317,8 +318,8 @@ class SecurityForensicsEngine {
 
     // Check for brute force pattern
     if (
-      event.failedAttempts &&
-      event.failedAttempts >= this.PATTERNS.BRUTE_FORCE.ATTEMPTS_THRESHOLD
+      event.failedAttempts
+      && event.failedAttempts >= this.PATTERNS.BRUTE_FORCE.ATTEMPTS_THRESHOLD
     ) {
       patterns.push({
         type: 'brute_force',
@@ -547,7 +548,7 @@ class SecurityForensicsEngine {
         anomalies.push({
           type: 'suspicious_user_agent',
           confidence: 0.7,
-          description: description,
+          description,
         });
       }
     });
@@ -563,7 +564,7 @@ class SecurityForensicsEngine {
   generateCaseReport(caseId) {
     const caseEvents = this.caseFiles.get(caseId) || [];
     const analyses = Array.from(this.forensicStore.values()).filter(
-      (item) => item.analysis.eventId === caseId
+      (item) => item.analysis.eventId === caseId,
     );
 
     const report = {
@@ -571,7 +572,7 @@ class SecurityForensicsEngine {
         .createHash(this.HASH_ALGORITHM)
         .update(`${caseId}-${Date.now()}`)
         .digest(this.HASH_ENCODING),
-      caseId: caseId,
+      caseId,
       generatedAt: new Date().toISOString(),
       generatedBy: this.VERSION,
       totalEvents: caseEvents.length,
@@ -592,7 +593,7 @@ class SecurityForensicsEngine {
         totalEvents: report.totalEvents,
         summary: report.summary,
       },
-      Object.keys.sort()
+      Object.keys.sort(),
     );
 
     report.forensicHash = crypto
@@ -650,8 +651,7 @@ class SecurityForensicsEngine {
     });
 
     summary.uniqueUsers = summary.uniqueUsers.size;
-    summary.averageRiskScore =
-      events.length > 0 ? Math.round((totalRiskScore / events.length) * 10) / 10 : 0;
+    summary.averageRiskScore = events.length > 0 ? Math.round((totalRiskScore / events.length) * 10) / 10 : 0;
 
     // Sort top patterns
     summary.topPatterns = Object.entries(summary.topPatterns)
@@ -711,7 +711,7 @@ class SecurityForensicsEngine {
       }
     });
 
-    if (patternCounts['brute_force'] > 5) {
+    if (patternCounts.brute_force > 5) {
       recommendations.push({
         priority: 1,
         recommendation: 'Implement additional rate limiting',
@@ -720,7 +720,7 @@ class SecurityForensicsEngine {
       });
     }
 
-    if (patternCounts['data_exfiltration'] > 0) {
+    if (patternCounts.data_exfiltration > 0) {
       recommendations.push({
         priority: 1,
         recommendation: 'Review data loss prevention controls',
@@ -789,7 +789,7 @@ class SecurityForensicsEngine {
         patterns: evidence.analysis.patterns,
         riskScore: evidence.analysis.riskScore,
       },
-      Object.keys.sort()
+      Object.keys.sort(),
     );
 
     const calculatedHash = crypto
@@ -800,10 +800,10 @@ class SecurityForensicsEngine {
     const verified = calculatedHash === evidence.analysis.forensicHash;
 
     return {
-      verified: verified,
-      evidenceId: evidenceId,
+      verified,
+      evidenceId,
       storedHash: evidence.analysis.forensicHash,
-      calculatedHash: calculatedHash,
+      calculatedHash,
       timestamp: evidence.analysis.timestamp,
       verificationTimestamp: new Date().toISOString(),
     };
@@ -827,14 +827,14 @@ class SecurityForensicsEngine {
       averageRiskScore:
         analyses.length > 0
           ? Math.round(
-              (analyses.reduce((sum, a) => sum + (a.riskScore || 0), 0) / analyses.length) * 10
-            ) / 10
+            (analyses.reduce((sum, a) => sum + (a.riskScore || 0), 0) / analyses.length) * 10,
+          ) / 10
           : 0,
       topEventTypes: Object.entries(
         analyses.reduce((acc, a) => {
           acc[a.eventType] = (acc[a.eventType] || 0) + 1;
           return acc;
-        }, {})
+        }, {}),
       )
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5),

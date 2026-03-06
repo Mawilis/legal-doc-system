@@ -6,6 +6,7 @@ import { extractTenant } from '../middleware/tenantContext.js';
 import { rateLimiter } from '../middleware/rateLimiter.js';
 import { auditLogger } from '../utils/auditLogger.js';
 import loggerRaw from '../utils/logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
 
 const router = express.Router();

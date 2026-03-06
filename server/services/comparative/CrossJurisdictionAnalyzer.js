@@ -75,10 +75,10 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ CROSS-JURISDICTION ANALYZER - INVESTOR-GRADE MODULE - $5B+ TOTAL VALUE  ║
   ║ 80% time savings | 50% accuracy boost | 50+ jurisdictions                ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 // =============================================================================
 // DEPENDENCIES & IMPORTS - Production-grade
@@ -90,6 +90,7 @@ const EventEmitter = require('events');
 const promClient = require('prom-client');
 const path = require('path');
 const natural = require('natural');
+
 const { TfIdf, WordTokenizer, PorterStemmer } = natural;
 const stopword = require('stopword');
 
@@ -491,7 +492,7 @@ class LegalPrincipleExtractor {
           holding.text,
           'holding',
           precedent,
-          holding
+          holding,
         );
         principles.push(...holdingPrinciples);
       }
@@ -639,7 +640,7 @@ class JurisdictionComparator {
 
       if (!sourceProfile || !targetProfile) {
         throw new Error(
-          `Unsupported jurisdiction: ${!sourceProfile ? sourceJurisdiction : targetJurisdiction}`
+          `Unsupported jurisdiction: ${!sourceProfile ? sourceJurisdiction : targetJurisdiction}`,
         );
       }
 
@@ -666,7 +667,7 @@ class JurisdictionComparator {
         targetProfile,
         comparison,
         conflicts,
-        harmonies
+        harmonies,
       );
 
       const duration = (performance.now() - startTime) / 1000;
@@ -843,7 +844,7 @@ class JurisdictionComparator {
           crossJurisdictionMetrics.conflictsDetected
             .labels(
               `${sourcePrinciple.precedent.jurisdiction}_${targetPrinciple.precedent.jurisdiction}`,
-              conflict.severity
+              conflict.severity,
             )
             .inc();
         }
@@ -853,7 +854,7 @@ class JurisdictionComparator {
     // Systemic conflicts (legal system differences)
     const systemicConflicts = await this.analyzeSystemicConflicts(
       sourcePrinciples,
-      targetPrinciples
+      targetPrinciples,
     );
     conflicts.push(...systemicConflicts);
 
@@ -1005,9 +1006,8 @@ class JurisdictionComparator {
     const recommendations = [];
 
     // Recommendation based on match rate
-    const matchRate =
-      comparison.statistics.totalMatches /
-      (comparison.matrix.length * (comparison.matrix[0]?.matches.length || 1));
+    const matchRate = comparison.statistics.totalMatches
+      / (comparison.matrix.length * (comparison.matrix[0]?.matches.length || 1));
 
     if (matchRate > 0.3) {
       recommendations.push({
@@ -1016,7 +1016,7 @@ class JurisdictionComparator {
         recommendation:
           'Significant principle overlap detected. Consider citing foreign precedents as persuasive authority.',
         rationale: `${(matchRate * 100).toFixed(
-          1
+          1,
         )}% of principles have equivalents in both jurisdictions.`,
       });
     }
@@ -1024,7 +1024,7 @@ class JurisdictionComparator {
     // Recommendation based on conflicts
     if (conflicts.length > 0) {
       const criticalConflicts = conflicts.filter(
-        (c) => c.severity === CROSS_JURISDICTION_CONSTANTS.CONFLICT_SEVERITY.CRITICAL
+        (c) => c.severity === CROSS_JURISDICTION_CONSTANTS.CONFLICT_SEVERITY.CRITICAL,
       );
 
       if (criticalConflicts.length > 0) {
@@ -1075,7 +1075,7 @@ class CrossJurisdictionAnalyzer extends EventEmitter {
     };
 
     console.log(
-      `🌍 CROSS-JURISDICTION ANALYZER INITIALIZED - Instance: ${this.instanceId.substr(0, 8)}`
+      `🌍 CROSS-JURISDICTION ANALYZER INITIALIZED - Instance: ${this.instanceId.substr(0, 8)}`,
     );
   }
 
@@ -1091,7 +1091,7 @@ class CrossJurisdictionAnalyzer extends EventEmitter {
         sourceJurisdiction,
         targetJurisdiction,
         topic,
-        options
+        options,
       );
 
       // Update metrics
@@ -1125,7 +1125,7 @@ class CrossJurisdictionAnalyzer extends EventEmitter {
   async analyzeMultiple(jurisdictions, topic, options = {}) {
     if (jurisdictions.length > CROSS_JURISDICTION_CONSTANTS.MAX_JURISDICTIONS_PER_ANALYSIS) {
       throw new Error(
-        `Too many jurisdictions. Max is ${CROSS_JURISDICTION_CONSTANTS.MAX_JURISDICTIONS_PER_ANALYSIS}`
+        `Too many jurisdictions. Max is ${CROSS_JURISDICTION_CONSTANTS.MAX_JURISDICTIONS_PER_ANALYSIS}`,
       );
     }
 
@@ -1204,9 +1204,8 @@ class CrossJurisdictionAnalyzer extends EventEmitter {
     // Significant divergences
     const allConflicts = results.flatMap((r) => r.conflicts);
     const significantConflicts = allConflicts.filter(
-      (c) =>
-        c.severity === CROSS_JURISDICTION_CONSTANTS.CONFLICT_SEVERITY.CRITICAL ||
-        c.severity === CROSS_JURISDICTION_CONSTANTS.CONFLICT_SEVERITY.HIGH
+      (c) => c.severity === CROSS_JURISDICTION_CONSTANTS.CONFLICT_SEVERITY.CRITICAL
+        || c.severity === CROSS_JURISDICTION_CONSTANTS.CONFLICT_SEVERITY.HIGH,
     );
 
     for (const conflict of significantConflicts) {

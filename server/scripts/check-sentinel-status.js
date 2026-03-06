@@ -45,7 +45,7 @@ async function checkStatus() {
     console.log(`\n🔒 QUARANTINED TENANTS: ${quarantined.length}`);
     quarantined.forEach((q) => {
       console.log(
-        `  🚫 ${q.tenantId}: ${q.quarantine.reason} (expires: ${q.quarantine.expiresAt})`
+        `  🚫 ${q.tenantId}: ${q.quarantine.reason} (expires: ${q.quarantine.expiresAt})`,
       );
     });
 

@@ -70,10 +70,10 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ TENANT RATE LIMITER - INVESTOR-GRADE MODULE - $50M RISK PREVENTION       ║
   ║ 99.9% abuse prevention | Sub-millisecond latency | Distributed            ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 const Redis = require('ioredis');
 const { performance } = require('perf_hooks');
@@ -185,9 +185,7 @@ redis.on('error', (error) => {
 
 // Circuit breaker for Redis operations
 const redisBreaker = new CircuitBreaker(
-  async (operation, ...args) => {
-    return await redis[operation](...args);
-  },
+  async (operation, ...args) => await redis[operation](...args),
   {
     timeout: CIRCUIT_BREAKER_TIMEOUT,
     errorThresholdPercentage: 50,
@@ -195,7 +193,7 @@ const redisBreaker = new CircuitBreaker(
     rollingCountTimeout: 60000,
     name: 'redis-rate-limiter',
     volumeThreshold: 10,
-  }
+  },
 );
 
 redisBreaker.on('open', () => {
@@ -450,7 +448,7 @@ async function cleanup(batchSize = 1000) {
         'MATCH',
         `${REDIS_KEY_PREFIX}*`,
         'COUNT',
-        batchSize
+        batchSize,
       );
       cursor = nextCursor;
 

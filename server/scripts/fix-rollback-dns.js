@@ -10,14 +10,13 @@ try {
 
   // Add better MongoDB connection options with retry and timeout handling
   const searchText = 'new MongoClient(this.config.MONGO_URI';
-  const replacement =
-    'new MongoClient(this.config.MONGO_URI, {\n' +
-    '            serverSelectionTimeoutMS: 10000,\n' +
-    '            connectTimeoutMS: 15000,\n' +
-    '            socketTimeoutMS: 45000,\n' +
-    '            retryWrites: true,\n' +
-    '            retryReads: true\n' +
-    '        }';
+  const replacement = 'new MongoClient(this.config.MONGO_URI, {\n'
+    + '            serverSelectionTimeoutMS: 10000,\n'
+    + '            connectTimeoutMS: 15000,\n'
+    + '            socketTimeoutMS: 45000,\n'
+    + '            retryWrites: true,\n'
+    + '            retryReads: true\n'
+    + '        }';
 
   content = content.replace(searchText, replacement);
 

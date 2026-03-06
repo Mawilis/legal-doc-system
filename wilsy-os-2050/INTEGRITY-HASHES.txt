@@ -1,0 +1,11 @@
+c5186d29ee0d57cccdc33aeef73595e21c289c4e73c621252fe7e84ed3061106  wilsy-os-2050/.quantum-manifest
+dfa9ad7e2ffb1fe5aeeb4eeceff90be728d0c8a1241ef94fff8c457cd204b22b  wilsy-os-2050/data/audit-logs/.quantum-metadata
+45891d945244ef26347d36a64898ff92ae25568fb4cac2ac09ba4390031e4b5d  wilsy-os-2050/data/redis/.quantum-metadata
+998e3abd16ebae9f972f3858b31d7593146eb5d6304fbab0462d4f486977df4b  wilsy-os-2050/data/grafana/.quantum-metadata
+704c5176ac2a08ab32e72eaec6a03703367db088cbb2f62cbd6badc8c602aede  wilsy-os-2050/data/models/.quantum-metadata
+0ab10606c86cac2991cb6acf47f790c00e9075fdd9b216de5ed98ee4c4aa826e  wilsy-os-2050/data/minio/.quantum-metadata
+0b61d99e37eb61bef2640fb0d522ac1a6829f563ea526399726fdd34b32b5a7f  wilsy-os-2050/data/etcd/.quantum-metadata
+14d04b20a51a3a29492da6020acd3bcd0d40b1e9eeb9bf578963635173728a86  wilsy-os-2050/data/forensic-evidence/.quantum-metadata
+3260e2339e0f9f28b5a1ef855f4d3574506be90bb67b11ec1906bf85e389411a  wilsy-os-2050/data/prometheus/.quantum-metadata
+d2a7aec35cfb0293f1722c28b43cb11b628dceaadcca43e99e52d4c2e1a7ff60  wilsy-os-2050/data/milvus/.quantum-metadata
+5dd240e6f343bd999ce59692a5fafbcdbb0241c6149797a2b00ac41914ea9cae  wilsy-os-2050/data/reports/.quantum-metadata

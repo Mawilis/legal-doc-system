@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ EMERGENCY KILL-SWITCH TESTS - $2.75B NUCLEAR SAFETY PROTOCOL VERIFICATION             ║
   ║ Validates instant tenant quarantine | Circuit Breaker Pattern | Forensic Logging       ║
   ║ 30ms activation | 99.999% system protection | POPIA §22 Compliance                    ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 import request from 'supertest.js';
 import express from 'express.js';
@@ -18,6 +18,9 @@ import emergencyKillSwitch, {
   getQuarantinedTenants,
   QUARANTINE_REASONS,
 } from '../../middleware/emergencyKillSwitch.js';
+
+import { redisClient } from '../../utils/redisClient.js';
+import { AuditLogger } from '../../utils/auditLogger.js';
 
 // Mock dependencies
 jest.mock('../../utils/redisClient.js', () => {
@@ -37,9 +40,6 @@ jest.mock('../../utils/logger.js', () => ({
   debug: jest.fn(),
 }));
 
-import { redisClient } from '../../utils/redisClient.js';
-import { AuditLogger } from '../../utils/auditLogger.js';
-
 // ============================================================================
 // TEST CONSTANTS
 // ============================================================================
@@ -49,7 +49,7 @@ const TEST_USER_ID = 'test-user-87654321';
 
 // ============================================================================
 // HELPER FUNCTIONS
-//=============================================================================
+//= ============================================================================
 
 const createTestApp = () => {
   const app = express();
@@ -152,7 +152,7 @@ describe('Emergency Kill-Switch - Nuclear Safety Protocol', () => {
       const result = await quarantineTenant(
         TEST_TENANT_ID,
         QUARANTINE_REASONS.SECURITY_BREACH,
-        3600 // 1 hour
+        3600, // 1 hour
       );
 
       expect(result.reason).toBe(QUARANTINE_REASONS.SECURITY_BREACH);
@@ -175,7 +175,7 @@ describe('Emergency Kill-Switch - Nuclear Safety Protocol', () => {
         null,
         expect.objectContaining({
           reason: QUARANTINE_REASONS.SECURITY_BREACH,
-        })
+        }),
       );
     });
 
@@ -262,7 +262,7 @@ describe('Emergency Kill-Switch - Nuclear Safety Protocol', () => {
       const start = Date.now();
 
       await Promise.all(
-        tenants.map((t) => quarantineTenant(t, QUARANTINE_REASONS.SECURITY_BREACH))
+        tenants.map((t) => quarantineTenant(t, QUARANTINE_REASONS.SECURITY_BREACH)),
       );
 
       const duration = Date.now() - start;
@@ -310,7 +310,7 @@ describe('Emergency Kill-Switch - Nuclear Safety Protocol', () => {
           ip: expect.any(String),
           userAgent: 'test-agent',
           path: '/api/test',
-        })
+        }),
       );
     });
   });

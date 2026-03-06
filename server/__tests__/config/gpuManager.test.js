@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ GPU MANAGER TESTS - INVESTOR DUE DILIGENCE - $100M ANNUAL VALUE          ║
   ║ 100% coverage | GPU orchestration | Parallel processing                  ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 const { expect } = require('chai');
 const sinon = require('sinon');
@@ -402,7 +402,7 @@ describe('GPUManager - Quantum Orchestrator Due Diligence', () => {
       console.log(`Cloud ML API cost (1B calls): $${(cloudCost / 1e3).toFixed(1)}M`);
       console.log(`Wilsy OS GPU cost: $${(internalCost / 1e3).toFixed(1)}M`);
       console.log(`Annual savings: $${(savings / 1e3).toFixed(1)}M`);
-      console.log(`Savings percentage: 85%`);
+      console.log('Savings percentage: 85%');
 
       const throughputValue = 40_000_000; // $40M
       const reliabilityValue = 10_000_000; // $10M

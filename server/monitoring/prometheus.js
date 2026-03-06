@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PROMETHEUS METRICS REGISTRY                                               ║
   ║ Lightweight metrics collection for /metrics endpoint                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 export class PrometheusRegistry {
   constructor() {
@@ -96,12 +96,12 @@ export class PrometheusRegistry {
     }
 
     // Add process metrics
-    output += `# HELP process_start_time_seconds Start time of the process\n`;
-    output += `# TYPE process_start_time_seconds gauge\n`;
+    output += '# HELP process_start_time_seconds Start time of the process\n';
+    output += '# TYPE process_start_time_seconds gauge\n';
     output += `process_start_time_seconds ${Math.floor(Date.now() / 1000)}\n\n`;
 
-    output += `# HELP process_memory_bytes Process memory usage\n`;
-    output += `# TYPE process_memory_bytes gauge\n`;
+    output += '# HELP process_memory_bytes Process memory usage\n';
+    output += '# TYPE process_memory_bytes gauge\n';
     const mem = process.memoryUsage();
     output += `process_memory_bytes{type="rss"} ${mem.rss}\n`;
     output += `process_memory_bytes{type="heapTotal"} ${mem.heapTotal}\n`;

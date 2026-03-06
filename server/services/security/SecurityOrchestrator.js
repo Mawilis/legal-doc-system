@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS: SECURITY ORCHESTRATOR - NUCLEAR OPTION FOR TENANT MANAGEMENT                ║
   ║ Powers the "Nuclear Option" for instant tenant quarantine                             ║
   ║ Integration with Recovery Sentinel | Emergency Kill-Switch | Forensic Ledger          ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/security/SecurityOrchestrator.js
@@ -24,16 +24,17 @@
  * • Audit trail for compliance
  */
 
+import crypto from 'crypto';
 import { redisClient } from '../../utils/redisClient.js';
 import { AuditLogger } from '../../utils/auditLogger.js';
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import {
   quarantineTenant,
   resetTenantQuarantine,
   QUARANTINE_REASONS,
 } from '../../middleware/emergencyKillSwitch.js';
-import crypto from 'crypto';
+
+const logger = loggerRaw.default || loggerRaw;
 
 class SecurityOrchestrator {
   /**
@@ -59,7 +60,7 @@ class SecurityOrchestrator {
       const quarantineDetails = await quarantineTenant(
         tenantId,
         reason,
-        metadata.ttl || 86400 // Default 24h
+        metadata.ttl || 86400, // Default 24h
       );
 
       // 2. Create an Immutable Forensic Record

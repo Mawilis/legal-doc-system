@@ -16,9 +16,9 @@ function fixRedisImports(dir) {
 
       if (stat.isDirectory()) {
         if (
-          !fullPath.includes('node_modules') &&
-          !fullPath.includes('.git') &&
-          !fullPath.includes('backups')
+          !fullPath.includes('node_modules')
+          && !fullPath.includes('.git')
+          && !fullPath.includes('backups')
         ) {
           fixRedisImports(fullPath);
         }
@@ -26,13 +26,12 @@ function fixRedisImports(dir) {
         let content = fs.readFileSync(fullPath, 'utf8');
 
         // Match standard default imports for Redis
-        const importRegex =
-          /import\s+([a-zA-Z0-9_]+)\s+from\s+['"]([^'"]*config\/redis(?:\.js)?)['"];?/g;
+        const importRegex = /import\s+([a-zA-Z0-9_]+)\s+from\s+['"]([^'"]*config\/redis(?:\.js)?)['"];?/g;
 
         if (importRegex.test(content)) {
           content = content.replace(
             importRegex,
-            "import * as $1_ns from '$2';\nconst $1 = $1_ns.default || $1_ns.redisClient || $1_ns.client || $1_ns;"
+            "import * as $1_ns from '$2';\nconst $1 = $1_ns.default || $1_ns.redisClient || $1_ns.client || $1_ns;",
           );
           fs.writeFileSync(fullPath, content);
           console.log(`✅ Patched strict Redis import in: ${fullPath}`);

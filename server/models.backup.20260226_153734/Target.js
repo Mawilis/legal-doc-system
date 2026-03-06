@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ TARGET MODEL - ACQUISITION TARGET WITH QUANTUM FEATURE VECTORS                        ║
   ║ [Production Grade | 127-Dimensional Analysis | Real-time Scoring]                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 import mongoose from 'mongoose';
 import crypto from 'crypto';
@@ -235,7 +235,7 @@ const targetSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: 'targets',
-  }
+  },
 );
 
 // Indexes
@@ -254,7 +254,7 @@ targetSchema.pre('save', async function (next) {
           return sum + Object.values(vec).reduce((s, v) => s + v * v, 0);
         }
         return sum;
-      }, 0)
+      }, 0),
     );
     this.quantumVectors.lastCalculated = new Date();
   }
@@ -280,13 +280,11 @@ targetSchema.methods.calculateSimilarity = function (otherTarget) {
   const dotProduct = Object.keys(this.quantumVectors).reduce((sum, key) => {
     if (typeof this.quantumVectors[key] === 'object' && otherTarget.quantumVectors[key]) {
       return (
-        sum +
-        Object.keys(this.quantumVectors[key]).reduce((s, subKey) => {
-          return (
-            s +
-            (this.quantumVectors[key][subKey] || 0) * (otherTarget.quantumVectors[key][subKey] || 0)
-          );
-        }, 0)
+        sum
+        + Object.keys(this.quantumVectors[key]).reduce((s, subKey) => (
+          s
+            + (this.quantumVectors[key][subKey] || 0) * (otherTarget.quantumVectors[key][subKey] || 0)
+        ), 0)
       );
     }
     return sum;

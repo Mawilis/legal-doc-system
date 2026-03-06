@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT MODEL TESTS - INVESTOR DUE DILIGENCE                ║
   ║ 100% coverage | Quantum-safe | Forensic evidence              ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/models/Precedent.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -34,12 +34,8 @@ jest.mock('../../utils/quantumLogger', () => ({
 }));
 
 jest.mock('../../utils/cryptoUtils', () => ({
-  sha256: jest.fn().mockImplementation((input) => {
-    return crypto.createHash('sha256').update(input).digest('hex');
-  }),
-  redactSensitive: jest.fn().mockImplementation((input) => {
-    return input ? '[REDACTED]' : input;
-  }),
+  sha256: jest.fn().mockImplementation((input) => crypto.createHash('sha256').update(input).digest('hex')),
+  redactSensitive: jest.fn().mockImplementation((input) => (input ? '[REDACTED]' : input)),
 }));
 
 const auditLogger = require('../../utils/auditLogger');
@@ -54,7 +50,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
   const tenantId = 'precedent-tenant-87654321';
   const createdBy = 'legal-admin-456';
   const citation = '[2023] ZACC 15';
-  const fullText = `In this landmark case, the Constitutional Court held that...`;
+  const fullText = 'In this landmark case, the Constitutional Court held that...';
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -113,7 +109,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
 
       // Test hash uniqueness
       const anotherPrecedent = new Precedent({
-        tenantId: tenantId + '-2',
+        tenantId: `${tenantId}-2`,
         citation: '[2023] ZACC 16',
         court: 'Constitutional Court',
         date: new Date('2023-05-16'),
@@ -296,15 +292,14 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
 
       expect(testPrecedent.retentionEnd).toBeDefined();
       expect(testPrecedent.retentionEnd.getFullYear()).toBeGreaterThan(
-        new Date().getFullYear() + 99
+        new Date().getFullYear() + 99,
       );
 
       // Test different policy
       testPrecedent.retentionPolicy = 'companies_act_10_years';
       await testPrecedent.save();
 
-      const yearsDiff =
-        testPrecedent.retentionEnd.getFullYear() - testPrecedent.retentionStart.getFullYear();
+      const yearsDiff = testPrecedent.retentionEnd.getFullYear() - testPrecedent.retentionStart.getFullYear();
       expect(yearsDiff).toBe(10);
     });
   });
@@ -366,7 +361,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
           resourceId: testPrecedent._id,
           userId: createdBy,
           retentionPolicy: testPrecedent.retentionPolicy,
-        })
+        }),
       );
 
       expect(quantumLogger.log).toHaveBeenCalledWith(
@@ -374,7 +369,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
           event: 'PRECEDENT_CREATED',
           resourceHash: testPrecedent.precedentHash,
           tenantId,
-        })
+        }),
       );
     });
   });
@@ -445,7 +440,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
       // Canonicalize
       const canonicalized = JSON.stringify(
         auditEntries.sort((a, b) => a.citation.localeCompare(b.citation)),
-        Object.keys(auditEntries[0]).sort()
+        Object.keys(auditEntries[0]).sort(),
       );
 
       const hash = crypto.createHash('sha256').update(canonicalized).digest('hex');
@@ -463,7 +458,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'precedent-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       // Verify evidence
@@ -476,7 +471,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'precedent-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
@@ -497,7 +492,7 @@ describe('Precedent Model - Revolutionary Due Diligence', () => {
     it('should export all required constants', () => {
       expect(Precedent.RETENTION_POLICIES).toBeDefined();
       expect(Precedent.RETENTION_POLICIES.CONSTITUTIONAL_PERMANENT).toBe(
-        'constitutional_permanent'
+        'constitutional_permanent',
       );
 
       expect(Precedent.ACCESS_LEVELS).toBeDefined();

@@ -1,7 +1,7 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ EVIDENCE GENERATOR - FORENSIC AUDIT PROOF                     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 
 import fs from 'fs';
 import path from 'path';
@@ -72,14 +72,12 @@ const evidence = {
 };
 
 // Canonicalize entries (sort keys for deterministic hash)
-evidence.auditEntries = evidence.auditEntries.map((entry) => {
-  return Object.keys(entry)
-    .sort()
-    .reduce((obj, key) => {
-      obj[key] = entry[key];
-      return obj;
-    }, {});
-});
+evidence.auditEntries = evidence.auditEntries.map((entry) => Object.keys(entry)
+  .sort()
+  .reduce((obj, key) => {
+    obj[key] = entry[key];
+    return obj;
+  }, {}));
 
 // Generate SHA256 hash of canonicalized entries
 const entriesHash = crypto
@@ -102,9 +100,9 @@ console.log('===============================');
 console.log(`📍 Location: ${evidencePath}`);
 console.log(`🔐 SHA256 Hash: ${evidence.hash}`);
 console.log(`📊 Audit Entries: ${evidence.auditEntries.length}`);
-console.log(`💰 Annual Savings: R420,000 per client`);
-console.log(`📈 ROI: 320%`);
-console.log(`✅ POPIA Compliance: Sections 14, 18, 19, 21 Verified`);
+console.log('💰 Annual Savings: R420,000 per client');
+console.log('📈 ROI: 320%');
+console.log('✅ POPIA Compliance: Sections 14, 18, 19, 21 Verified');
 
 // Verify hash
 const fileContent = fs.readFileSync(evidencePath, 'utf8');
@@ -115,8 +113,8 @@ const verifyHash = crypto
   .digest('hex');
 
 if (verifyHash === parsedEvidence.hash) {
-  console.log(`\n✅ Evidence Integrity: Verified (hash matches)`);
+  console.log('\n✅ Evidence Integrity: Verified (hash matches)');
 } else {
-  console.log(`\n❌ Evidence Integrity: FAILED - hash mismatch`);
+  console.log('\n❌ Evidence Integrity: FAILED - hash mismatch');
   process.exit(1);
 }

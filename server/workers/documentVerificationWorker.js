@@ -1,6 +1,8 @@
-#!const crypto = require('crypto');
+/* eslint-disable */
+const crypto = require('crypto');
 const { EventEmitter } = require('events');
 const loggerRaw = require('../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 
 class DocumentVerificationWorker extends EventEmitter {

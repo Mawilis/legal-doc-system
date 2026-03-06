@@ -6,7 +6,7 @@
  * @version 5.0.1
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import crypto from 'node:crypto.js';
 import { v4 as uuidv4 } from 'uuid.js';
 
@@ -78,8 +78,7 @@ const cpdRecordSchema = new Schema(
       index: true,
       immutable: true,
       validate: {
-        validator: (v) =>
-          /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v),
+        validator: (v) => /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v),
       },
     },
     activityId: {
@@ -102,8 +101,12 @@ const cpdRecordSchema = new Schema(
       index: true,
       validate: { validator: (v) => /^(LPC-\d{8}|\d{4}\/\d{4})$/.test(v) },
     },
-    firmId: { type: Schema.Types.ObjectId, ref: 'Firm', required: true, index: true },
-    activityName: { type: String, required: true, trim: true, maxlength: 500 },
+    firmId: {
+      type: Schema.Types.ObjectId, ref: 'Firm', required: true, index: true,
+    },
+    activityName: {
+      type: String, required: true, trim: true, maxlength: 500,
+    },
     activityDescription: { type: String, trim: true, maxlength: 2000 },
     activityDate: {
       type: Date,
@@ -116,7 +119,7 @@ const cpdRecordSchema = new Schema(
     year: {
       type: Number,
       required: true,
-      default: function () {
+      default() {
         return this.activityDate.getFullYear();
       },
       index: true,
@@ -130,7 +133,9 @@ const cpdRecordSchema = new Schema(
       max: 8,
       validate: { validator: (v) => v % 0.5 === 0 },
     },
-    category: { type: String, required: true, enum: Object.values(CPD_CATEGORIES), index: true },
+    category: {
+      type: String, required: true, enum: Object.values(CPD_CATEGORIES), index: true,
+    },
     subcategory: {
       type: String,
       enum: [
@@ -151,7 +156,9 @@ const cpdRecordSchema = new Schema(
       ],
     },
     provider: {
-      name: { type: String, required: true, trim: true, maxlength: 200 },
+      name: {
+        type: String, required: true, trim: true, maxlength: 200,
+      },
       type: { type: String, required: true, enum: Object.values(PROVIDER_TYPES) },
       accreditationNumber: {
         type: String,
@@ -165,7 +172,7 @@ const cpdRecordSchema = new Schema(
       verificationEndpoint: String,
       providerHash: {
         type: String,
-        default: function () {
+        default() {
           return crypto
             .createHash('sha3-512')
             .update(`${this.provider.name}:${this.provider.accreditationNumber || 'N/A'}`)
@@ -192,7 +199,7 @@ const cpdRecordSchema = new Schema(
       assessmentScore: { type: Number, min: 0, max: 100 },
       assessmentPassed: {
         type: Boolean,
-        default: function () {
+        default() {
           return this.assessmentScore >= 70;
         },
       },
@@ -231,22 +238,24 @@ const cpdRecordSchema = new Schema(
     learningOutcomes: { type: String, maxlength: 2000 },
     keyTakeaways: [{ type: String, maxlength: 500 }],
     practicalApplication: { type: String, maxlength: 2000 },
-    relevanceScore: { type: Number, min: 1, max: 5, default: 3 },
+    relevanceScore: {
+      type: Number, min: 1, max: 5, default: 3,
+    },
     compliance: {
       countsTowardsAnnual: { type: Boolean, default: true },
       countsTowardsEthics: {
         type: Boolean,
-        default: function () {
+        default() {
           return this.category === 'ETHICS';
         },
       },
       rolloverEligible: {
         type: Boolean,
-        default: function () {
+        default() {
           return (
-            this.hours <= 6 &&
-            ['VERIFIED', 'AUTO_VERIFIED'].includes(this.verificationStatus) &&
-            this.compliance.countsTowardsAnnual === true
+            this.hours <= 6
+            && ['VERIFIED', 'AUTO_VERIFIED'].includes(this.verificationStatus)
+            && this.compliance.countsTowardsAnnual === true
           );
         },
       },
@@ -260,7 +269,9 @@ const cpdRecordSchema = new Schema(
       appliedToYear: Number,
     },
     cost: {
-      amount: { type: Number, min: 0, default: 0, get: (v) => parseFloat(v.toFixed(2)) },
+      amount: {
+        type: Number, min: 0, default: 0, get: (v) => parseFloat(v.toFixed(2)),
+      },
       currency: { type: String, default: 'ZAR', enum: ['ZAR', 'USD', 'EUR', 'GBP'] },
       paidBy: { type: String, enum: ['ATTORNEY', 'FIRM', 'SCHOLARSHIP', 'PRO_BONO', 'EMPLOYER'] },
       receiptUrl: String,
@@ -278,7 +289,7 @@ const cpdRecordSchema = new Schema(
     quantumSignature: {
       type: String,
       required: true,
-      default: function () {
+      default() {
         const p = [
           this.activityId,
           this.attorneyLpcNumber,
@@ -298,7 +309,7 @@ const cpdRecordSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-      default: function () {
+      default() {
         return crypto
           .createHash('sha3-512')
           .update(
@@ -312,7 +323,7 @@ const cpdRecordSchema = new Schema(
               this.evidence.certificateHash,
               this.verificationCode || 'PENDING',
               this.year.toString(),
-            ].join(':')
+            ].join(':'),
           )
           .digest('hex');
       },
@@ -320,7 +331,7 @@ const cpdRecordSchema = new Schema(
     integrityHash: {
       type: String,
       unique: true,
-      default: function () {
+      default() {
         return crypto
           .createHash('sha3-512')
           .update(`${this._id || this.activityId}:${this.forensicHash}:${Date.now()}`)
@@ -352,20 +363,22 @@ const cpdRecordSchema = new Schema(
         newState: Schema.Types.Mixed,
         hash: {
           type: String,
-          default: function () {
+          default() {
             return crypto
               .createHash('sha3-512')
               .update(
                 `${this.action}:${this.performedAt.toISOString()}:${
                   this.performedBy
-                }:${JSON.stringify(this.changes)}`
+                }:${JSON.stringify(this.changes)}`,
               )
               .digest('hex');
           },
         },
       },
     ],
-    submissionDate: { type: Date, default: Date.now, immutable: true, index: true },
+    submissionDate: {
+      type: Date, default: Date.now, immutable: true, index: true,
+    },
     submittedBy: { type: String, required: true, immutable: true },
     lastUpdatedBy: String,
     complianceCertificate: {
@@ -384,7 +397,7 @@ const cpdRecordSchema = new Schema(
     retentionStart: { type: Date, default: Date.now, immutable: true },
     retentionExpiry: {
       type: Date,
-      default: function () {
+      default() {
         const d = new Date();
         d.setFullYear(d.getFullYear() + 7);
         return d;
@@ -402,7 +415,7 @@ const cpdRecordSchema = new Schema(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret.__v;
         delete ret.auditTrail;
         delete ret.quantumSignature;
@@ -413,7 +426,7 @@ const cpdRecordSchema = new Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 cpdRecordSchema.virtual('daysSinceSubmission').get(function () {
@@ -424,8 +437,8 @@ cpdRecordSchema.virtual('isVerified').get(function () {
 });
 cpdRecordSchema.virtual('isExpired').get(function () {
   return (
-    this.verificationStatus === 'EXPIRED' ||
-    (this.compliance.rolloverYear && this.compliance.rolloverYear < new Date().getFullYear() - 1)
+    this.verificationStatus === 'EXPIRED'
+    || (this.compliance.rolloverYear && this.compliance.rolloverYear < new Date().getFullYear() - 1)
   );
 });
 cpdRecordSchema.virtual('isEthics').get(function () {
@@ -456,7 +469,9 @@ cpdRecordSchema.virtual('yearsValidFor').get(function () {
   return this.compliance.rolloverYear ? this.compliance.rolloverYear - this.year : 1;
 });
 
-cpdRecordSchema.index({ tenantId: 1, attorneyId: 1, year: -1, activityDate: -1 });
+cpdRecordSchema.index({
+  tenantId: 1, attorneyId: 1, year: -1, activityDate: -1,
+});
 cpdRecordSchema.index({ tenantId: 1, verificationStatus: 1, year: 1 });
 cpdRecordSchema.index({ tenantId: 1, category: 1, year: 1 });
 cpdRecordSchema.index({ tenantId: 1, 'provider.accreditationNumber': 1 });
@@ -472,15 +487,13 @@ cpdRecordSchema.pre('save', async function (next) {
   try {
     if (!this.tenantId) throw new Error('TENANT_ISOLATION_VIOLATION: CPD record requires tenantId');
     if (this.activityDate && !this.year) this.year = this.activityDate.getFullYear();
-    if (this.category === 'ETHICS' && this.hours < 1)
-      throw new Error('ETHICS_HOURS_VIOLATION: Ethics CPD must be at least 1 hour');
-    if (this.hours > 8)
-      throw new Error('HOURS_LIMIT_VIOLATION: Single CPD activity cannot exceed 8 hours');
+    if (this.category === 'ETHICS' && this.hours < 1) throw new Error('ETHICS_HOURS_VIOLATION: Ethics CPD must be at least 1 hour');
+    if (this.hours > 8) throw new Error('HOURS_LIMIT_VIOLATION: Single CPD activity cannot exceed 8 hours');
     if (
-      this.provider.accreditationNumber &&
-      this.provider.accreditationExpiry &&
-      this.provider.accreditationExpiry > new Date() &&
-      this.verificationStatus === 'PENDING_VERIFICATION'
+      this.provider.accreditationNumber
+      && this.provider.accreditationExpiry
+      && this.provider.accreditationExpiry > new Date()
+      && this.verificationStatus === 'PENDING_VERIFICATION'
     ) {
       this.verificationStatus = 'AUTO_VERIFIED';
       this.verificationMethod = 'AUTOMATED';
@@ -488,7 +501,7 @@ cpdRecordSchema.pre('save', async function (next) {
       this.accreditation.isLpcAccredited = true;
       this.accreditation.accreditationReference = this.provider.accreditationNumber;
     }
-    if (!this.forensicHash)
+    if (!this.forensicHash) {
       this.forensicHash = crypto
         .createHash('sha3-512')
         .update(
@@ -502,9 +515,10 @@ cpdRecordSchema.pre('save', async function (next) {
             this.evidence.certificateHash,
             this.verificationCode || 'PENDING',
             this.year.toString(),
-          ].join(':')
+          ].join(':'),
         )
         .digest('hex');
+    }
     this.integrityHash = crypto
       .createHash('sha3-512')
       .update(`${this._id || this.activityId}:${this.forensicHash}:${Date.now()}`)
@@ -522,7 +536,7 @@ cpdRecordSchema.pre('save', async function (next) {
       .createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026')
       .update(payload)
       .digest('hex');
-    if (this.isNew)
+    if (this.isNew) {
       this.auditTrail.push({
         action: 'SUBMITTED',
         performedBy: this.submittedBy,
@@ -534,12 +548,13 @@ cpdRecordSchema.pre('save', async function (next) {
           provider: this.provider.name,
         },
       });
-    else
+    } else {
       this.auditTrail.push({
         action: 'UPDATED',
         performedBy: this.lastUpdatedBy || this.submittedBy,
         performedAt: new Date(),
       });
+    }
     next();
   } catch (error) {
     next(error);
@@ -628,7 +643,7 @@ cpdRecordSchema.statics = {
     const nonCompliant = [];
     for (const a of attorneys) {
       const s = await this.getAttorneySummary(a._id, tenantId, year);
-      if (!s.compliance.isCompliant)
+      if (!s.compliance.isCompliant) {
         nonCompliant.push({
           attorneyId: a._id,
           lpcNumber: a.lpcNumber,
@@ -638,6 +653,7 @@ cpdRecordSchema.statics = {
           ...s.requirements,
           ...s.compliance,
         });
+      }
     }
     return nonCompliant;
   },
@@ -692,14 +708,15 @@ cpdRecordSchema.statics = {
     ]);
   },
   async getComplianceTrends(attorneyId, tenantId, years = 5) {
-    const y = new Date().getFullYear(),
-      t = [];
-    for (let i = y - years + 1; i <= y; i++)
+    const y = new Date().getFullYear();
+    const t = [];
+    for (let i = y - years + 1; i <= y; i++) {
       t.push({
         year: i,
         ...(await this.getAttorneySummary(attorneyId, tenantId, i)).summary,
         ...(await this.getAttorneySummary(attorneyId, tenantId, i)).compliance,
       });
+    }
     return t;
   },
 };
@@ -726,7 +743,7 @@ cpdRecordSchema.methods = {
       const s = await this.constructor.getAttorneySummary(
         this.attorneyId,
         this.tenantId,
-        this.year
+        this.year,
       );
       attorney.cpd.hoursCompleted = s.summary.totalHours;
       attorney.cpd.ethicsHours = s.summary.ethicsHours;
@@ -768,19 +785,20 @@ cpdRecordSchema.methods = {
     };
   },
   async generateCertificate() {
-    if (this.certificateGenerated)
+    if (this.certificateGenerated) {
       return {
         success: false,
         message: 'Certificate already generated',
         certificateId: this.complianceCertificate?.certificateId,
       };
+    }
     if (!this.isVerified) throw new Error('CERTIFICATE_VERIFICATION_REQUIRED');
     const certificateId = `CPD-CERT-${this.year}-LPC-${crypto
       .randomBytes(4)
       .toString('hex')
       .toUpperCase()}`;
-    const issuedAt = new Date(),
-      expiresAt = new Date(this.year + 1, 11, 31);
+    const issuedAt = new Date();
+    const expiresAt = new Date(this.year + 1, 11, 31);
     const certificateHash = crypto
       .createHash('sha3-512')
       .update(
@@ -791,7 +809,7 @@ cpdRecordSchema.methods = {
           this.attorneyLpcNumber,
           this.hours.toString(),
           this.category,
-        ].join(':')
+        ].join(':'),
       )
       .digest('hex');
     const digitalSignature = crypto
@@ -820,12 +838,13 @@ cpdRecordSchema.methods = {
     return { success: true, certificateId, certificate: this.complianceCertificate };
   },
   async anchorToBlockchain() {
-    if (this.blockchain?.verified)
+    if (this.blockchain?.verified) {
       return {
         success: false,
         message: 'Already anchored to blockchain',
         anchorId: this.blockchain.anchorId,
       };
+    }
     if (!this.isVerified) throw new Error('BLOCKCHAIN_VERIFICATION_REQUIRED');
     const anchorId = `OTS-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
     const transactionHash = crypto
@@ -860,8 +879,8 @@ cpdRecordSchema.methods = {
     if (!this.compliance.rolloverEligible) throw new Error('ROLLOVER_INELIGIBLE');
     const excess = this.hours - 12;
     if (excess <= 0) throw new Error('ROLLOVER_NOT_REQUIRED');
-    const rolloverHours = Math.min(excess, 6),
-      rolloverYear = this.year + 1;
+    const rolloverHours = Math.min(excess, 6);
+    const rolloverYear = this.year + 1;
     this.compliance.rolloverHours = parseFloat(rolloverHours.toFixed(1));
     this.compliance.rolloverYear = rolloverYear;
     this.compliance.appliedToYear = rolloverYear;

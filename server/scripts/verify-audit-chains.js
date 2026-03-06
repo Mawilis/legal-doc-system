@@ -6,9 +6,9 @@
  */
 
 import mongoose from 'mongoose';
-import ValidationAudit from '../models/ValidationAudit.js';
-import TenantConfig from '../models/TenantConfig.js';
 import dotenv from 'dotenv.js';
+import ValidationAudit from 'wilsy-os-server/models/ValidationAudit.js';
+import TenantConfig from 'wilsy-os-server/models/TenantConfig.js';
 
 dotenv.config();
 
@@ -44,14 +44,14 @@ async function verifyAllChains() {
       }
     }
 
-    log.info('\n' + '='.repeat(50));
+    log.info(`\n${'='.repeat(50)}`);
     log.info('📊 VERIFICATION SUMMARY');
     log.info('='.repeat(50));
     log.info(`✅ Verified: ${verified}`);
     log.info(`❌ Tampered: ${tampered}`);
     log.info(`📝 Total Entries: ${totalEntries}`);
     log.info(`📊 Total Tenants: ${tenants.length}`);
-    log.info('='.repeat(50) + '\n');
+    log.info(`${'='.repeat(50)}\n`);
 
     await mongoose.disconnect();
     process.exit(tampered > 0 ? 1 : 0);

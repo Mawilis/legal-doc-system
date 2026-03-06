@@ -64,6 +64,39 @@ import { createServer } from 'http';
 import { createRequire } from 'module.js';
 import crypto from 'crypto';
 
+// API routes
+import apiRoutes from './routes/api.js';
+
+// Legal-specific routes
+import legalRoutes from './routes/legal/index.js';
+
+// Compliance routes
+import complianceRoutes from './routes/complianceRoutes.js';
+
+// Audit routes
+import auditRoutes from './routes/auditRoutes.js';
+
+// Tenant routes
+import tenantRoutes from './routes/tenantRoutes.js';
+
+// Document routes
+import documentRoutes from './routes/documentRoutes.js';
+
+// User routes
+import userRoutes from './routes/userRoutes.js';
+
+// Client routes
+import clientRoutes from './routes/clientRoutes.js';
+
+// Billing routes
+import billingRoutes from './routes/billingRoutes.js';
+
+// Admin routes (protected)
+import adminRoutes from './routes/adminRoutes.js';
+
+// Super admin routes (highly protected)
+import superAdminRoutes from './routes/superAdminRoutes.js';
+
 // ES Module compatibility for CommonJS imports
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -183,7 +216,7 @@ app.use(
       includeSubDomains: true,
       preload: true,
     },
-  })
+  }),
 );
 
 // CORS configuration
@@ -192,7 +225,7 @@ app.use(
     origin: config?.cors?.origins || ['https://app.wilsyos.com', 'https://api.wilsyos.com'],
     credentials: true,
     optionsSuccessStatus: 200,
-  })
+  }),
 );
 
 // Compression for responses
@@ -204,7 +237,7 @@ app.use(
       if (req.headers['x-no-compression']) return false;
       return compression.filter(req, res);
     },
-  })
+  }),
 );
 
 // Body parsing with size limits
@@ -215,14 +248,14 @@ app.use(
       // Optional: verify JSON structure
       req.rawBody = buf;
     },
-  })
+  }),
 );
 
 app.use(
   express.urlencoded({
     extended: true,
     limit: config?.bodyLimit || '10mb',
-  })
+  }),
 );
 
 // ============================================================================
@@ -231,10 +264,9 @@ app.use(
 
 // Request ID generation for traceability
 app.use((req, res, next) => {
-  req.id =
-    req.headers['x-request-id'] ||
-    req.headers['x-correlation-id'] ||
-    crypto.randomBytes(8).toString('hex');
+  req.id = req.headers['x-request-id']
+    || req.headers['x-correlation-id']
+    || crypto.randomBytes(8).toString('hex');
 
   res.setHeader('x-request-id', req.id);
   res.setHeader('x-response-time', Date.now());
@@ -280,11 +312,10 @@ app.use((req, res, next) => {
 app.use(async (req, res, next) => {
   try {
     // Extract tenant from header, subdomain, or JWT
-    const tenantId =
-      req.headers['x-tenant-id'] ||
-      req.headers['tenant'] ||
-      req.subdomains[0] ||
-      req.user?.tenantId;
+    const tenantId = req.headers['x-tenant-id']
+      || req.headers.tenant
+      || req.subdomains[0]
+      || req.user?.tenantId;
 
     if (tenantId) {
       req.tenantId = tenantId;
@@ -421,7 +452,7 @@ if (redisClient) {
             logger.info(`Processing job ${job.id} from ${name}`);
             // Job processing logic would go here
           },
-          { connection: redis }
+          { connection: redis },
         ),
       }));
 
@@ -514,52 +545,19 @@ app.get('/metrics', async (req, res) => {
   res.send(
     Object.entries(metrics)
       .map(([key, value]) => `${key} ${value}`)
-      .join('\n')
+      .join('\n'),
   );
 });
-
-// API routes
-import apiRoutes from './routes/api.js';
 app.use('/api', apiRoutes);
-
-// Legal-specific routes
-import legalRoutes from './routes/legal/index.js';
 app.use('/legal', legalRoutes);
-
-// Compliance routes
-import complianceRoutes from './routes/complianceRoutes.js';
 app.use('/compliance', complianceRoutes);
-
-// Audit routes
-import auditRoutes from './routes/auditRoutes.js';
 app.use('/audit', auditRoutes);
-
-// Tenant routes
-import tenantRoutes from './routes/tenantRoutes.js';
 app.use('/tenants', tenantRoutes);
-
-// Document routes
-import documentRoutes from './routes/documentRoutes.js';
 app.use('/documents', documentRoutes);
-
-// User routes
-import userRoutes from './routes/userRoutes.js';
 app.use('/users', userRoutes);
-
-// Client routes
-import clientRoutes from './routes/clientRoutes.js';
 app.use('/clients', clientRoutes);
-
-// Billing routes
-import billingRoutes from './routes/billingRoutes.js';
 app.use('/billing', billingRoutes);
-
-// Admin routes (protected)
-import adminRoutes from './routes/adminRoutes.js';
 app.use('/admin', adminRoutes);
-
-// Super admin routes (highly protected)
-import superAdminRoutes from './routes/superAdminRoutes.js';
 app.use('/superadmin', superAdminRoutes);
 
 // ============================================================================
@@ -695,7 +693,9 @@ process.on('unhandledRejection', (reason, promise) => {
 // EXPORT FOR CLUSTERING / SERVER.JS
 // ============================================================================
 
-export { app, server, appMetadata, mongooseConnection, redis, bullQueues };
+export {
+  app, server, appMetadata, mongooseConnection, redis, bullQueues,
+};
 
 // Export initialization function for testing
 export const initialize = async (options = {}) => {

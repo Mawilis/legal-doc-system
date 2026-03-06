@@ -99,7 +99,7 @@ export class NeuralPrecedentVectorizer {
     if (!text) return '';
 
     // Remove citations and legal boilerplate
-    let processed = text
+    const processed = text
       .replace(/\b\d{4}\s+JDR\s+\d{4}\b/g, '') // Remove JDR citations
       .replace(/\b\d{4}\s+\(\d+\)\s+SA\s+\d+\b/g, '') // Remove SA citations
       .replace(/\b\d{4}\s+\(\d+\)\s+ALL\s+SA\s+\d+\b/g, '') // Remove ALL SA citations
@@ -134,7 +134,9 @@ export class NeuralPrecedentVectorizer {
   async generateEmbedding(precedent) {
     await this.initialize();
 
-    const { caseName, citation, court, judgmentDate, summary, keyPrinciples, fullText } = precedent;
+    const {
+      caseName, citation, court, judgmentDate, summary, keyPrinciples, fullText,
+    } = precedent;
 
     // Create rich text representation
     const richText = `
@@ -194,8 +196,8 @@ export class NeuralPrecedentVectorizer {
           dimensions: VECTOR_DIMENSIONS,
         },
         null,
-        2
-      )
+        2,
+      ),
     );
 
     return embeddingId;
@@ -260,9 +262,7 @@ const vectorizer = new NeuralPrecedentVectorizer();
 
 export const worker = new Worker(
   'neural-vectorizer',
-  async (job) => {
-    return await vectorizer.processJob(job);
-  },
+  async (job) => await vectorizer.processJob(job),
   {
     connection: redis,
     concurrency: 4,
@@ -270,7 +270,7 @@ export const worker = new Worker(
       max: 10,
       duration: 1000,
     },
-  }
+  },
 );
 
 // Event handlers

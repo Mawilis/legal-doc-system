@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ REGULATORY FILING MODEL - COMPETITION ACT & JSE COMPLIANCE ENGINE                     ║
   ║ R850M risk elimination | Multi-jurisdictional | 10-year retention                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/RegulatoryFiling.js
@@ -358,7 +358,7 @@ const regulatoryFilingSchema = new mongoose.Schema(
 
     retentionEnd: {
       type: Date,
-      default: function () {
+      default() {
         const date = new Date();
         date.setFullYear(date.getFullYear() + 10);
         return date;
@@ -375,7 +375,7 @@ const regulatoryFilingSchema = new mongoose.Schema(
     collection: 'regulatory_filings',
     strict: true,
     minimize: false,
-  }
+  },
 );
 
 // ============================================================================
@@ -430,7 +430,7 @@ regulatoryFilingSchema.pre('save', async function (next) {
         filingType: null,
         status: null,
         previousHash: null,
-      }).sort()
+      }).sort(),
     );
 
     this.forensicHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -501,14 +501,13 @@ regulatoryFilingSchema.methods.recordDecision = async function (decision, userId
     date: new Date(),
   };
 
-  this.status =
-    decision.outcome === DECISION_OUTCOMES.APPROVED
-      ? FILING_STATUS.APPROVED
-      : decision.outcome === DECISION_OUTCOMES.APPROVED_WITH_CONDITIONS
-        ? FILING_STATUS.APPROVED_WITH_CONDITIONS
-        : decision.outcome === DECISION_OUTCOMES.REJECTED
-          ? FILING_STATUS.REJECTED
-          : this.status;
+  this.status = decision.outcome === DECISION_OUTCOMES.APPROVED
+    ? FILING_STATUS.APPROVED
+    : decision.outcome === DECISION_OUTCOMES.APPROVED_WITH_CONDITIONS
+      ? FILING_STATUS.APPROVED_WITH_CONDITIONS
+      : decision.outcome === DECISION_OUTCOMES.REJECTED
+        ? FILING_STATUS.REJECTED
+        : this.status;
 
   this.updatedBy = userId;
 
@@ -588,7 +587,7 @@ regulatoryFilingSchema.methods.verifyIntegrity = function () {
       filingType: null,
       status: null,
       previousHash: null,
-    }).sort()
+    }).sort(),
   );
 
   const calculatedHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -712,7 +711,7 @@ regulatoryFilingSchema.virtual('processingDays').get(function () {
   if (!this.filing.submissionDate || !this.review.actualDecisionDate) return null;
 
   return Math.ceil(
-    (this.review.actualDecisionDate - this.filing.submissionDate) / (1000 * 60 * 60 * 24)
+    (this.review.actualDecisionDate - this.filing.submissionDate) / (1000 * 60 * 60 * 24),
   );
 });
 
@@ -723,7 +722,7 @@ regulatoryFilingSchema.virtual('isOverdue').get(function () {
 
 regulatoryFilingSchema.virtual('requiresAction').get(function () {
   return [FILING_STATUS.DRAFT, FILING_STATUS.PREPARING, FILING_STATUS.ADDITIONAL_INFO].includes(
-    this.status
+    this.status,
   );
 });
 

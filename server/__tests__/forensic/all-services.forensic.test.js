@@ -145,20 +145,20 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
 ║                    ALL SERVICES - FORENSIC TEST SUMMARY                       ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  ✅ SA Legal Validators                    ${
-      serviceStatus['SA Legal Validators'] ? '✓' : '✗'
-    }                          
+  serviceStatus['SA Legal Validators'] ? '✓' : '✗'
+}                          
 ║  ✅ Compliance ID Generator                ${
-      serviceStatus['Compliance ID Generator'] ? '✓' : '✗'
-    }                          
+  serviceStatus['Compliance ID Generator'] ? '✓' : '✗'
+}                          
 ║  ✅ Encryption Service                     ${
-      serviceStatus['Encryption Service'] ? '✓' : '✗'
-    }                          
+  serviceStatus['Encryption Service'] ? '✓' : '✗'
+}                          
 ║  ✅ Client Onboarding Service              ${
-      serviceStatus['Client Onboarding Service'] ? '✓' : '✗'
-    }                          
+  serviceStatus['Client Onboarding Service'] ? '✓' : '✗'
+}                          
 ║  ✅ Notification Service                   ${
-      serviceStatus['Notification Service'] ? '✓' : '✗'
-    }                          
+  serviceStatus['Notification Service'] ? '✓' : '✗'
+}                          
 ║  ✅ Compliance Engine                      ${serviceStatus['Compliance Engine'] ? '✓' : '✗'}                          
 ║  ✅ Redaction Utils                        ${serviceStatus['Redaction Utils'] ? '✓' : '✗'}                          
 ║  ✅ Audit Logger                           ${serviceStatus['Audit Logger'] ? '✓' : '✗'}                          
@@ -264,7 +264,7 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
       });
 
       expect(id).toMatch(
-        /^FICA-IND_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/
+        /^FICA-IND_\d{14}_[A-F0-9]{8}_[A-F0-9]{4}_[A-F0-9]{4}_H[A-F0-9]{4}_P[A-F0-9]{4}_C\d$/,
       );
       expect(validateId(id)).toBe(true);
 
@@ -664,8 +664,7 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
       // Notification Service value
       const notificationValue = 400000;
 
-      const totalValue =
-        validatorValue + idGenValue + encryptionValue + onboardingValue + notificationValue;
+      const totalValue = validatorValue + idGenValue + encryptionValue + onboardingValue + notificationValue;
 
       expect(totalValue).toBe(9600000);
       expect(totalValue).toBe(economicMetrics.totalAnnualSavingsPerFirmZAR);
@@ -692,7 +691,7 @@ describe('WILSYS OS V6 — ALL SERVICES FORENSIC INTEGRATION TEST SUITE', () => 
       expect(totalRiskEliminated).toBe(economicMetrics.totalPenaltyRiskEliminatedZAR);
 
       console.log(
-        `  ✅ Economic Impact: Total risk eliminated R${totalRiskEliminated.toLocaleString()}`
+        `  ✅ Economic Impact: Total risk eliminated R${totalRiskEliminated.toLocaleString()}`,
       );
     });
 

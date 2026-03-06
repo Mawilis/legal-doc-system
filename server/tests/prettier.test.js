@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe('Prettier Code Formatting', function () {
+describe('Prettier Code Formatting', () => {
   const sourceDirs = ['models', 'controllers', 'routes', 'services', 'utils', 'middleware'];
 
   sourceDirs.forEach((dir) => {

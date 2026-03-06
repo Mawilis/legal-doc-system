@@ -8,7 +8,7 @@ export const DocuSignAdapter = {
     const ts = new Date().toISOString();
     const h = crypto
       .createHmac('sha256', process.env.PROVIDER_KEY || 'provider-test-key')
-      .update(normalized + '|' + (signer.id || signer.email) + '|' + ts)
+      .update(`${normalized}|${signer.id || signer.email}|${ts}`)
       .digest('hex');
 
     return {

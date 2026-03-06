@@ -8,13 +8,13 @@ try {
   // Unwrap an ESM import
   content = content.replace(
     /import\s+logger\s+from\s+['"]([^'"]+)['"];?/g,
-    "import loggerRaw from '$1';\nconst logger = loggerRaw.default || loggerRaw;"
+    "import loggerRaw from '$1';\nconst logger = loggerRaw.default || loggerRaw;",
   );
 
   // Unwrap a polyfilled require() just in case it's still using that format
   content = content.replace(
     /(?:const|let|var)\s+logger\s*=\s*require\(['"]([^'"]+)['"]\);?/g,
-    "const loggerRaw = require('$1');\nconst logger = loggerRaw.default || loggerRaw;"
+    "const loggerRaw = require('$1');\nconst logger = loggerRaw.default || loggerRaw;",
   );
 
   fs.writeFileSync(redisPath, content);

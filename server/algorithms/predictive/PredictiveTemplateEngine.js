@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PREDICTIVE TEMPLATE ENGINE - MASTER ORCHESTRATOR                          ║
   ║ Fuses TimeSeries, NLP Trend Detection, and TensorFlow Regulatory models   ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import TimeSeriesAnalyzer from './TimeSeriesAnalyzer.js';
 import LegalTrendDetector from './LegalTrendDetector.js';
@@ -40,7 +40,7 @@ export class PredictiveTemplateEngine {
     const futureVersions = await this.generateFutureVersions(
       template,
       regulatoryForecast,
-      emergingTrends
+      emergingTrends,
     );
 
     console.timeEnd('predictive-analysis');
@@ -107,8 +107,7 @@ export class PredictiveTemplateEngine {
       intervals.push(new Date(dates[i]) - new Date(dates[i - 1]));
     }
     const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-    const recentInterval =
-      intervals.slice(-3).reduce((a, b) => a + b, 0) / Math.min(3, intervals.length);
+    const recentInterval = intervals.slice(-3).reduce((a, b) => a + b, 0) / Math.min(3, intervals.length);
 
     if (recentInterval < avgInterval * 0.7) return 'accelerating';
     if (recentInterval > avgInterval * 1.3) return 'decelerating';
@@ -261,7 +260,7 @@ export class PredictiveTemplateEngine {
 
   calculateVariance(arr) {
     const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
-    return arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / arr.length;
+    return arr.reduce((a, b) => a + (b - mean) ** 2, 0) / arr.length;
   }
 
   getPrediction(templateId) {

@@ -17,7 +17,7 @@ try {
     let content = fs.readFileSync(redisPath, 'utf8');
     content = content.replace(
       /(?:const|let|var)\s+([^=\s]+)\s*=\s*require\(['"]([^'"]+metrics(?:\.js)?)['"]\);?/g,
-      "import $1 from '$2';"
+      "import $1 from '$2';",
     );
     fs.writeFileSync(redisPath, content);
     console.log('✅ Upgraded require() to import in config/redis.js');

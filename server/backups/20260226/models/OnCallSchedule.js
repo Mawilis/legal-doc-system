@@ -55,7 +55,7 @@ const OnCallSchedule = sequelize.define(
   {
     timestamps: true,
     tableName: 'oncall_schedules',
-  }
+  },
 );
 
 export default OnCallSchedule;

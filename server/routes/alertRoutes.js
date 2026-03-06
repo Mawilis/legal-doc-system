@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ ALERT ROUTES - INVESTOR-GRADE MODULE                          ║
   ║ Incident management | Real-time notifications                 ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/alertRoutes.js
  * INVESTOR VALUE PROPOSITION:
@@ -12,7 +12,9 @@
  */
 
 import express from 'express';
-import { body, query, param, validationResult } from 'express-validator.js';
+import {
+  body, query, param, validationResult,
+} from 'express-validator.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 
@@ -23,6 +25,7 @@ import { auditMiddleware } from '../middleware/audit.js';
 import alertService from '../services/alerting/AlertService.js';
 import { AppError } from '../utils/errorHandler.js';
 import loggerRaw from '../utils/logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
 
 const router = express.Router();
@@ -73,7 +76,7 @@ router.post(
     } catch (error) {
       next(new AppError(error.message, 500, 'ALERT_CREATION_FAILED'));
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -108,7 +111,7 @@ router.get(
     } catch (error) {
       next(new AppError(error.message, 500, 'ALERT_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -142,7 +145,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -173,7 +176,7 @@ router.post(
     } catch (error) {
       next(new AppError(error.message, 500, 'ACKNOWLEDGE_FAILED'));
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -204,7 +207,7 @@ router.post(
     } catch (error) {
       next(new AppError(error.message, 500, 'RESOLVE_FAILED'));
     }
-  }
+  },
 );
 
 // ============================================================================

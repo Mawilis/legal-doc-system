@@ -37,7 +37,9 @@ const {
   COMPLIANCE_PENALTIES,
   POPIA_RETENTION_PERIODS,
 } = require('../constants/complianceConstants');
-const { Payment, Invoice, Client, Matter, TrustAccount } = require('../models');
+const {
+  Payment, Invoice, Client, Matter, TrustAccount,
+} = require('../models');
 const { createAuditLog } = require('../utils/auditLogger');
 const { encryptField, decryptField } = require('../utils/cryptoQuantizer');
 const { validateFICAKYC, validatePOPIA } = require('../validators/complianceValidator');
@@ -110,7 +112,7 @@ class BillingService {
     const missing = requiredEnvVars.filter((varName) => !process.env[varName]);
     if (missing.length > 0) {
       throw new Error(
-        `Quantum Billing Configuration Breach: Missing env vars: ${missing.join(', ')}`
+        `Quantum Billing Configuration Breach: Missing env vars: ${missing.join(', ')}`,
       );
     }
 
@@ -313,7 +315,7 @@ class BillingService {
             unitPrice: Joi.number().positive().required(),
             vatRate: Joi.number().min(0).max(1).default(SARS_VAT_RATE),
             discount: Joi.number().min(0).max(100).default(0),
-          })
+          }),
         )
         .min(1)
         .required(),
@@ -331,7 +333,7 @@ class BillingService {
     const { error, value } = schema.validate(data, { abortEarly: false });
     if (error) {
       throw new Error(
-        `Invoice validation failed: ${error.details.map((d) => d.message).join(', ')}`
+        `Invoice validation failed: ${error.details.map((d) => d.message).join(', ')}`,
       );
     }
 
@@ -545,7 +547,7 @@ class BillingService {
     const { error } = schema.validate(paymentData, { abortEarly: false });
     if (error) {
       throw new Error(
-        `Payment validation failed: ${error.details.map((d) => d.message).join(', ')}`
+        `Payment validation failed: ${error.details.map((d) => d.message).join(', ')}`,
       );
     }
 
@@ -639,7 +641,7 @@ class BillingService {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           timeout: 30000,
-        }
+        },
       );
 
       return {
@@ -1028,7 +1030,9 @@ class BillingService {
 
   static testSuite() {
     if (process.env.NODE_ENV === 'test') {
-      const { describe, it, expect, beforeAll, jest } = require('@jest/globals');
+      const {
+        describe, it, expect, beforeAll, jest,
+      } = require('@jest/globals');
 
       describe('BillingService Quantum Gates', () => {
         let billingService;

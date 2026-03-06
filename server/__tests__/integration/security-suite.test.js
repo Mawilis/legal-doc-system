@@ -1,11 +1,11 @@
 #!/* eslint-disable */
 /* eslint-env jest */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ SECURITY SUITE INTEGRATION TEST - $2.75B AUTONOMOUS PROTECTION VERIFICATION           ║
   ║ Validates complete security pipeline:                                                  ║
   ║ Sentinel Detection → Circuit Breaker → Kill-Switch → Forensic Logging                 ║
   ║ End-to-end quarantine in < 100ms | POPIA §22 Compliance | JSE Ready                   ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 import request from 'supertest.js';
 import express from 'express.js';
@@ -14,7 +14,7 @@ import Redis from 'ioredis-mock.js';
 import { createHash } from 'crypto';
 
 // Import all security components
-import RecoverySentinel from '../../scripts/RecoverySentinel.js';
+import RecoverySentinel from 'wilsy-os-sentinel/RecoverySentinel.js';
 import SecurityOrchestrator from '../../services/security/SecurityOrchestrator.js';
 import emergencyKillSwitch, {
   quarantineTenant,
@@ -104,7 +104,7 @@ describe('Security Suite Integration - End-to-End Protection Pipeline', () => {
       // Calculate total pipeline time
       const totalTime = blockTime - detectionTime;
 
-      console.log('\n' + '='.repeat(70));
+      console.log(`\n${'='.repeat(70)}`);
       console.log('🔒 SECURITY PIPELINE PERFORMANCE');
       console.log('='.repeat(70));
       console.log(`🔍 Detection → Alert: ${alertTime - detectionTime}ms`);
@@ -128,7 +128,7 @@ describe('Security Suite Integration - End-to-End Protection Pipeline', () => {
         null,
         expect.objectContaining({
           reason: 'SUSPICIOUS_PATTERN_DETECTED',
-        })
+        }),
       );
     });
   });
@@ -194,7 +194,7 @@ describe('Security Suite Integration - End-to-End Protection Pipeline', () => {
         expect.objectContaining({
           service: 'MONGODB',
           strategy: 'Exponential Backoff',
-        })
+        }),
       );
     });
   });
@@ -248,7 +248,7 @@ describe('Security Suite Integration - End-to-End Protection Pipeline', () => {
         hash: createHash('sha256').update(`${incidentId}-${TEST_TENANT_ID}`).digest('hex'),
       };
 
-      console.log('\n' + '='.repeat(70));
+      console.log(`\n${'='.repeat(70)}`);
       console.log('🔐 FORENSIC EVIDENCE PACKAGE');
       console.log('='.repeat(70));
       console.log(`📋 Incident ID: ${forensicReport.incidentId}`);
@@ -272,7 +272,7 @@ describe('Security Suite Integration - End-to-End Protection Pipeline', () => {
 
       // Quarantine all tenants
       await Promise.all(
-        tenants.map((t) => SecurityOrchestrator.tripCircuitBreaker(t, 'PERF_TEST'))
+        tenants.map((t) => SecurityOrchestrator.tripCircuitBreaker(t, 'PERF_TEST')),
       );
 
       const quarantineTime = Date.now() - start;
@@ -282,7 +282,7 @@ describe('Security Suite Integration - End-to-End Protection Pipeline', () => {
       await Promise.all(tenants.map((t) => isTenantQuarantined(t)));
       const checkTime = Date.now() - checkStart;
 
-      console.log('\n' + '='.repeat(70));
+      console.log(`\n${'='.repeat(70)}`);
       console.log('📊 PERFORMANCE BENCHMARKS');
       console.log('='.repeat(70));
       console.log(`🚫 Quarantine 1000 tenants: ${quarantineTime}ms`);

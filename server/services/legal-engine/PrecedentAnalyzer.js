@@ -96,10 +96,10 @@
  * great equalizer, the ultimate legal mind, the indisputable future of law.
  */
 
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT ANALYZER - ENTERPRISE-GRADE MODULE - $3.75B ARR TARGET            ║
   ║ 93% cost reduction | $56B valuation | 70% market share potential            ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/legal-engine/PrecedentAnalyzer.js
  * INVESTOR VALUE PROPOSITION:
@@ -157,14 +157,15 @@
  * }
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Enterprise-grade dependencies
 const mongoose = require('mongoose');
 const { performance, PerformanceObserver } = require('perf_hooks');
 const crypto = require('crypto');
 const natural = require('natural');
-const { TfIdf, WordTokenizer, PorterStemmer, BayesClassifier } = natural;
+
+const {
+  TfIdf, WordTokenizer, PorterStemmer, BayesClassifier,
+} = natural;
 const stopword = require('stopword');
 const Redis = require('ioredis');
 const Bull = require('bull');
@@ -184,6 +185,7 @@ const Tenant = require('../../models/Tenant');
 
 // QUANTUM UTILITIES
 const loggerRaw = require('../../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../../utils/auditLogger');
 const quantumLogger = require('../../utils/quantumLogger');
@@ -423,7 +425,7 @@ const cacheLayers = {
     l1Hits: 0,
     l2Hits: 0,
     misses: 0,
-    getHitRatio: function () {
+    getHitRatio() {
       const total = this.l1Hits + this.l2Hits + this.misses;
       return total > 0 ? (this.l1Hits + this.l2Hits) / total : 0;
     },
@@ -520,7 +522,7 @@ const initializeAIServices = async (tenantId) => {
           await service.initialize(tenantId);
           legalBertService = service;
           logger.info('[PrecedentAnalyzer] Legal BERT service initialized');
-        })()
+        })(),
       );
     }
 
@@ -531,7 +533,7 @@ const initializeAIServices = async (tenantId) => {
           await service.initialize(tenantId);
           graphNeuralNetwork = service;
           logger.info('[PrecedentAnalyzer] Graph neural network initialized');
-        })()
+        })(),
       );
     }
 
@@ -542,7 +544,7 @@ const initializeAIServices = async (tenantId) => {
           await service.initialize(tenantId);
           crossLingualTransformer = service;
           logger.info('[PrecedentAnalyzer] Cross-lingual transformer initialized');
-        })()
+        })(),
       );
     }
 
@@ -553,7 +555,7 @@ const initializeAIServices = async (tenantId) => {
           await service.initialize();
           jurisdictionMapper = service;
           logger.info('[PrecedentAnalyzer] Jurisdiction mapper initialized');
-        })()
+        })(),
       );
     }
 
@@ -564,7 +566,7 @@ const initializeAIServices = async (tenantId) => {
           await service.initialize();
           complianceEngine = service;
           logger.info('[PrecedentAnalyzer] Compliance engine initialized');
-        })()
+        })(),
       );
     }
 
@@ -654,7 +656,7 @@ const analyzePrecedents = async (
   context = {},
   tenantId,
   depth = ANALYSIS_DEPTH.STANDARD,
-  options = {}
+  options = {},
 ) => {
   const startTime = performance.now();
   const analysisId = `PRECEDENT-${uuidv4()}`;
@@ -694,7 +696,7 @@ const analyzePrecedents = async (
             jurisdiction: context.jurisdiction || 'unknown',
             depth,
           },
-          duration / 1000
+          duration / 1000,
         );
 
         logger.info('[PrecedentAnalyzer] Cache hit', {
@@ -713,9 +715,9 @@ const analyzePrecedents = async (
 
     // STEP 3: Initialize AI services if needed
     if (
-      depth === ANALYSIS_DEPTH.DEEP ||
-      depth === ANALYSIS_DEPTH.COMPREHENSIVE ||
-      depth === ANALYSIS_DEPTH.FORENSIC
+      depth === ANALYSIS_DEPTH.DEEP
+      || depth === ANALYSIS_DEPTH.COMPREHENSIVE
+      || depth === ANALYSIS_DEPTH.FORENSIC
     ) {
       await initializeAIServices(tenantId);
     }
@@ -735,7 +737,7 @@ const analyzePrecedents = async (
       queryAnalysis,
       context,
       tenant,
-      depth
+      depth,
     );
 
     if (searchResults.total === 0) {
@@ -764,7 +766,7 @@ const analyzePrecedents = async (
       queryAnalysis,
       context,
       tenant,
-      depth
+      depth,
     );
 
     // STEP 8: Apply depth-based analysis
@@ -780,18 +782,14 @@ const analyzePrecedents = async (
       // Full analysis with concurrency control
       const topCandidates = rankedPrecedents.slice(0, MAX_PRECEDENTS_IN_ANALYSIS);
 
-      const analysisPromises = topCandidates.map((precedent) =>
-        concurrencyLimiter(() =>
-          analyzeSinglePrecedentDeep(
-            precedent.precedent,
-            query,
-            queryAnalysis,
-            context,
-            tenant,
-            depth
-          )
-        )
-      );
+      const analysisPromises = topCandidates.map((precedent) => concurrencyLimiter(() => analyzeSinglePrecedentDeep(
+        precedent.precedent,
+        query,
+        queryAnalysis,
+        context,
+        tenant,
+        depth,
+      )));
 
       const analyses = await Promise.all(analysisPromises);
 
@@ -805,7 +803,7 @@ const analyzePrecedents = async (
     const networkAnalysis = await analyzeCitationNetwork(
       analyzedPrecedents.map((p) => p.precedent._id),
       tenantId,
-      depth
+      depth,
     );
 
     // STEP 10: Extract key legal principles
@@ -820,7 +818,7 @@ const analyzePrecedents = async (
       query,
       queryAnalysis,
       context,
-      tenant
+      tenant,
     );
 
     // STEP 13: Generate outcome predictions (if enabled)
@@ -832,7 +830,7 @@ const analyzePrecedents = async (
     // STEP 14: Generate citation formats
     const citations = await generateCitationFormats(
       analyzedPrecedents,
-      tenant.preferences?.citationStyle || 'OSCOLA'
+      tenant.preferences?.citationStyle || 'OSCOLA',
     );
 
     // STEP 15: Build comprehensive result
@@ -934,7 +932,7 @@ const analyzePrecedents = async (
         jurisdiction: context.jurisdiction || 'unknown',
         depth,
       },
-      processingTime / 1000
+      processingTime / 1000,
     );
 
     precedentAnalyzerMetrics.precedentsAnalyzedTotal.inc(
@@ -942,7 +940,7 @@ const analyzePrecedents = async (
         tenant_id: tenantId,
         jurisdiction: context.jurisdiction || 'unknown',
       },
-      analyzedPrecedents.length
+      analyzedPrecedents.length,
     );
 
     // STEP 18: Audit logging
@@ -1022,7 +1020,7 @@ const parseQuery = async (query, context, tenant, depth) => {
 
   try {
     // Extract legal concepts
-    let concepts = await extractLegalConcepts(query, tenant);
+    const concepts = await extractLegalConcepts(query, tenant);
 
     // Detect legal area
     const legalArea = await detectLegalArea(query, concepts);
@@ -1048,7 +1046,7 @@ const parseQuery = async (query, context, tenant, depth) => {
             {
               service_name: 'legal-bert',
             },
-            (performance.now() - bertStart) / 1000
+            (performance.now() - bertStart) / 1000,
           );
 
           return result;
@@ -1101,7 +1099,7 @@ const searchPrecedentsMultiStrategy = async (query, queryAnalysis, context, tena
     name: 'fulltext',
     promise: Precedent.find(
       { tenantId, $text: { $search: query } },
-      { score: { $meta: 'textScore' } }
+      { score: { $meta: 'textScore' } },
     )
       .sort({ score: { $meta: 'textScore' } })
       .limit(200)
@@ -1166,7 +1164,7 @@ const searchPrecedentsMultiStrategy = async (query, queryAnalysis, context, tena
         'precedents',
         queryEmbedding,
         50,
-        { tenantId }
+        { tenantId },
       );
 
       if (semanticResults.length > 0) {
@@ -1195,7 +1193,7 @@ const searchPrecedentsMultiStrategy = async (query, queryAnalysis, context, tena
           {
             service_name: 'graph-neural',
           },
-          (performance.now() - gnStart) / 1000
+          (performance.now() - gnStart) / 1000,
         );
 
         return result;
@@ -1226,7 +1224,7 @@ const searchPrecedentsMultiStrategy = async (query, queryAnalysis, context, tena
         logger.warn(`[PrecedentAnalyzer] Strategy ${s.name} failed:`, error.message);
         return { name: s.name, precedents: [] };
       }
-    })
+    }),
   );
 
   // Merge and deduplicate results
@@ -1289,8 +1287,7 @@ const rankPrecedentsEnsemble = async (precedents, query, queryAnalysis, context,
 
   // Prepare TF-IDF
   const documents = precedents.map(
-    (p) =>
-      `${p.citation} ${p.ratio || ''} ${p.obiter || ''} ${p.metadata?.keywords?.join(' ') || ''}`
+    (p) => `${p.citation} ${p.ratio || ''} ${p.obiter || ''} ${p.metadata?.keywords?.join(' ') || ''}`,
   );
 
   documents.forEach((doc) => tfidf.addDocument(doc));
@@ -1310,11 +1307,8 @@ const rankPrecedentsEnsemble = async (precedents, query, queryAnalysis, context,
       const text = `${precedent.ratio || ''} ${precedent.obiter || ''} ${
         precedent.metadata?.keywords?.join(' ') || ''
       }`.toLowerCase();
-      const matchedConcepts = queryAnalysis.concepts.filter((concept) =>
-        text.includes(concept.toLowerCase())
-      );
-      scoreComponents.concept =
-        (matchedConcepts.length / Math.max(queryAnalysis.concepts.length, 1)) * 100;
+      const matchedConcepts = queryAnalysis.concepts.filter((concept) => text.includes(concept.toLowerCase()));
+      scoreComponents.concept = (matchedConcepts.length / Math.max(queryAnalysis.concepts.length, 1)) * 100;
 
       // Component 3: Recency (weight: 0.1)
       const yearsSince = (new Date() - new Date(precedent.date)) / (365 * 24 * 60 * 60 * 1000);
@@ -1325,8 +1319,7 @@ const rankPrecedentsEnsemble = async (precedents, query, queryAnalysis, context,
 
       // Component 5: Citation count (weight: 0.1)
       const maxCitations = Math.max(...precedents.map((p) => p.citationMetrics?.timesCited || 0));
-      scoreComponents.citations =
-        maxCitations > 0 ? ((precedent.citationMetrics?.timesCited || 0) / maxCitations) * 100 : 0;
+      scoreComponents.citations = maxCitations > 0 ? ((precedent.citationMetrics?.timesCited || 0) / maxCitations) * 100 : 0;
 
       // Component 6: Court hierarchy (weight: 0.1)
       const courtLevel = COURT_HIERARCHY[precedent.court]?.level || 50;
@@ -1334,18 +1327,16 @@ const rankPrecedentsEnsemble = async (precedents, query, queryAnalysis, context,
       scoreComponents.court = courtLevel >= contextCourtLevel ? 100 : 50;
 
       // Component 7: Jurisdiction match (weight: 0.1)
-      scoreComponents.jurisdiction =
-        precedent.jurisdiction?.country === context.jurisdiction ? 100 : 50;
+      scoreComponents.jurisdiction = precedent.jurisdiction?.country === context.jurisdiction ? 100 : 50;
 
       // Component 8: Semantic similarity (weight: 0.1) - if available
       let semanticScore = 50;
       if (depth >= ANALYSIS_DEPTH.DEEP && embeddingsService) {
         try {
           const queryEmbedding = await embeddingsService.generateEmbedding(query);
-          const precedentEmbedding =
-            precedent.ratioVector ||
-            (await embeddingsService.generateEmbedding(
-              `${precedent.ratio || ''} ${precedent.obiter || ''}`
+          const precedentEmbedding = precedent.ratioVector
+            || (await embeddingsService.generateEmbedding(
+              `${precedent.ratio || ''} ${precedent.obiter || ''}`,
             ));
           semanticScore = cosineSimilarity(queryEmbedding, precedentEmbedding) * 100;
         } catch (error) {
@@ -1392,7 +1383,7 @@ const rankPrecedentsEnsemble = async (precedents, query, queryAnalysis, context,
         scoreComponents,
         relevanceExplanation,
       };
-    })
+    }),
   );
 
   // Sort by relevance score
@@ -1412,7 +1403,7 @@ const analyzeSinglePrecedentDeep = async (
   queryAnalysis,
   context,
   tenant,
-  depth
+  depth,
 ) => {
   const startTime = performance.now();
 
@@ -1434,7 +1425,7 @@ const analyzeSinglePrecedentDeep = async (
       const ratioRelevance = await calculateTextRelevance(
         precedent.ratio,
         query,
-        queryAnalysis.concepts
+        queryAnalysis.concepts,
       );
 
       analysis.ratio = {
@@ -1452,7 +1443,7 @@ const analyzeSinglePrecedentDeep = async (
       const obiterRelevance = await calculateTextRelevance(
         precedent.obiter,
         query,
-        queryAnalysis.concepts
+        queryAnalysis.concepts,
       );
 
       analysis.obiter = {
@@ -1469,7 +1460,7 @@ const analyzeSinglePrecedentDeep = async (
         const holdingRelevance = await calculateTextRelevance(
           holding.text,
           query,
-          queryAnalysis.concepts
+          queryAnalysis.concepts,
         );
 
         return {
@@ -1494,7 +1485,7 @@ const analyzeSinglePrecedentDeep = async (
       analysis.keyPassages = await extractKeyPassagesAdvanced(
         precedent.fullText,
         queryAnalysis.concepts,
-        10
+        10,
       );
     }
 
@@ -1511,14 +1502,14 @@ const analyzeSinglePrecedentDeep = async (
       precedent,
       query,
       queryAnalysis,
-      context
+      context,
     );
 
     // STEP 8: Identify distinguishing factors
     analysis.distinguishingFactors = await identifyDistinguishingFactors(
       precedent,
       query,
-      queryAnalysis
+      queryAnalysis,
     );
 
     // STEP 9: Assess persuasive value for foreign/coordinate courts
@@ -1577,9 +1568,7 @@ const extractLegalConcepts = async (text, tenant) => {
     // Method 4: AI-powered extraction (if available)
     if (legalBertService) {
       try {
-        const aiConcepts = await aiServiceBreakers.legalBert.fire(async () => {
-          return await legalBertService.extractLegalConcepts(text, tenant._id);
-        });
+        const aiConcepts = await aiServiceBreakers.legalBert.fire(async () => await legalBertService.extractLegalConcepts(text, tenant._id));
 
         if (aiConcepts && Array.isArray(aiConcepts)) {
           aiConcepts.forEach((c) => concepts.add(c));
@@ -1683,8 +1672,7 @@ const extractLegalEntities = async (text) => {
   entities.caseReferences = text.match(casePattern) || [];
 
   // Extract dates
-  const datePattern =
-    /\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}|\d{4}-\d{2}-\d{2}/g;
+  const datePattern = /\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}|\d{4}-\d{2}-\d{2}/g;
   entities.dates = text.match(datePattern) || [];
 
   // Extract statute references
@@ -1751,7 +1739,7 @@ const generateRelevanceExplanation = (components, matchedConcepts) => {
     explanations.push('Same jurisdiction');
   }
 
-  return explanations.join('. ') + '.';
+  return `${explanations.join('. ')}.`;
 };
 
 /*
@@ -1797,7 +1785,7 @@ const summarizeText = async (text, maxLength) => {
   if (text.length <= maxLength) return text;
 
   // Simple truncation with ellipsis
-  return text.substring(0, maxLength - 3) + '...';
+  return `${text.substring(0, maxLength - 3)}...`;
 };
 
 /*
@@ -1900,10 +1888,10 @@ const extractLegalPrinciplesAdvanced = async (precedent) => {
 /*
  * Advanced factual matrix extraction
  */
-const extractFactualMatrixAdvanced = async (text) => {
+const extractFactualMatrixAdvanced = async (text) =>
   // In production, use NER and relationship extraction
-  return {
-    summary: text.substring(0, 500) + '...',
+  ({
+    summary: `${text.substring(0, 500)}...`,
     keyFacts: text
       .split(/[.!?]+/)
       .slice(0, 10)
@@ -1911,8 +1899,8 @@ const extractFactualMatrixAdvanced = async (text) => {
     parties: [], // Would be extracted
     dates: [], // Would be extracted
     locations: [], // Would be extracted
-  };
-};
+  })
+;
 
 /*
  * Advanced application analysis
@@ -1985,17 +1973,16 @@ const assessPersuasiveValue = async (precedent, context, tenant) => {
         value: 'BINDING',
         explanation: `Binding precedent from superior ${precedent.court}`,
       };
-    } else if (courtInfo.level === contextCourtLevel) {
+    } if (courtInfo.level === contextCourtLevel) {
       return {
         value: 'PERSUASIVE',
-        explanation: `Persuasive authority from coordinate court`,
-      };
-    } else {
-      return {
-        value: 'CONSIDER',
-        explanation: `May be considered but not binding`,
+        explanation: 'Persuasive authority from coordinate court',
       };
     }
+    return {
+      value: 'CONSIDER',
+      explanation: 'May be considered but not binding',
+    };
   }
 
   // Foreign jurisdiction
@@ -2105,7 +2092,7 @@ const analyzeCitationNetwork = async (precedentIds, tenantId, depth) => {
 
           // Check direct citation
           const direct = edges.find(
-            (e) => (e.source === id1 && e.target === id2) || (e.source === id2 && e.target === id1)
+            (e) => (e.source === id1 && e.target === id2) || (e.source === id2 && e.target === id1),
           );
 
           if (direct) {
@@ -2130,7 +2117,7 @@ const analyzeCitationNetwork = async (precedentIds, tenantId, depth) => {
       strongest: edges.sort((a, b) => b.strength - a.strength).slice(0, 10),
       paths: paths.slice(0, 10),
       gaps: Array.from(nodes).filter(
-        (id) => !edges.some((e) => e.source === id || e.target === id)
+        (id) => !edges.some((e) => e.source === id || e.target === id),
       ),
     };
   } catch (error) {
@@ -2153,7 +2140,7 @@ const extractKeyPrinciplesMultiTenant = async (analyzedPrecedents, tenantId) => 
   const principleMap = new Map();
 
   for (const item of analyzedPrecedents) {
-    const precedent = item.precedent;
+    const { precedent } = item;
 
     // Extract from ratio
     if (precedent.ratio) {
@@ -2311,7 +2298,7 @@ const generateStrategicRecommendations = async (
   query,
   queryAnalysis,
   context,
-  tenant
+  tenant,
 ) => {
   const recommendations = [];
 
@@ -2347,9 +2334,8 @@ const generateStrategicRecommendations = async (
 
   // Binding authorities
   const binding = analyzedPrecedents.filter(
-    (p) =>
-      COURT_HIERARCHY[p.precedent.court]?.level >= 80 &&
-      COURT_HIERARCHY[p.precedent.court]?.country === context.jurisdiction
+    (p) => COURT_HIERARCHY[p.precedent.court]?.level >= 80
+      && COURT_HIERARCHY[p.precedent.court]?.country === context.jurisdiction,
   );
 
   if (binding.length > 0) {
@@ -2357,7 +2343,7 @@ const generateStrategicRecommendations = async (
       type: 'BINDING_AUTHORITIES',
       priority: 'HIGH',
       title: `${binding.length} Binding Authorities Found`,
-      description: `These precedents from superior courts are binding and must be addressed.`,
+      description: 'These precedents from superior courts are binding and must be addressed.',
       precedents: binding.map((p) => p.precedent.citation),
       action: 'Ensure all binding authorities are cited and properly distinguished if adverse',
       timeframe: 'Before filing',
@@ -2392,13 +2378,10 @@ const generateStrategicRecommendations = async (
   }
 
   // Conflicting authorities
-  const conflicts = analyzedPrecedents.filter((p) =>
-    analyzedPrecedents.some(
-      (p2) =>
-        p2.precedent.overruledBy === p.precedent.citation ||
-        p.precedent.overruledBy === p2.precedent.citation
-    )
-  );
+  const conflicts = analyzedPrecedents.filter((p) => analyzedPrecedents.some(
+    (p2) => p2.precedent.overruledBy === p.precedent.citation
+        || p.precedent.overruledBy === p2.precedent.citation,
+  ));
 
   if (conflicts.length > 0) {
     recommendations.push({
@@ -2425,17 +2408,16 @@ const generateStrategicRecommendations = async (
   }
 
   // Settlement potential
-  const avgScore =
-    analyzedPrecedents.reduce((sum, p) => sum + p.relevanceScore, 0) / analyzedPrecedents.length;
+  const avgScore = analyzedPrecedents.reduce((sum, p) => sum + p.relevanceScore, 0) / analyzedPrecedents.length;
   if (avgScore < 40) {
     recommendations.push({
       type: 'SETTLEMENT_CONSIDERATION',
       priority: 'MEDIUM',
       title: 'Consider Settlement Discussions',
       description:
-        'With weak precedent support (average relevance ' +
-        Math.round(avgScore) +
-        '%), your case faces significant uncertainty.',
+        `With weak precedent support (average relevance ${
+          Math.round(avgScore)
+        }%), your case faces significant uncertainty.`,
       action: 'Evaluate settlement options while maintaining litigation readiness',
       timeframe: 'Within 30 days',
     });
@@ -2445,7 +2427,7 @@ const generateStrategicRecommendations = async (
       priority: 'MEDIUM',
       title: 'Strong Precedent Support',
       description: `Your position is supported by strong precedents (average relevance ${Math.round(
-        avgScore
+        avgScore,
       )}%).`,
       action: 'Consider aggressive litigation posture',
       timeframe: 'Ongoing',
@@ -2466,20 +2448,18 @@ const predictOutcomes = async (analyzedPrecedents, query, context, tenantId) => 
   try {
     const startTime = performance.now();
 
-    const prediction = await aiServiceBreakers.graphNeural.fire(async () => {
-      return await graphNeuralNetwork.predictOutcome(
-        analyzedPrecedents.map((p) => p.precedent),
-        query,
-        context,
-        tenantId
-      );
-    });
+    const prediction = await aiServiceBreakers.graphNeural.fire(async () => await graphNeuralNetwork.predictOutcome(
+      analyzedPrecedents.map((p) => p.precedent),
+      query,
+      context,
+      tenantId,
+    ));
 
     precedentAnalyzerMetrics.aiServiceLatency.observe(
       {
         service_name: 'graph-neural-prediction',
       },
-      (performance.now() - startTime) / 1000
+      (performance.now() - startTime) / 1000,
     );
 
     return prediction;
@@ -2507,9 +2487,8 @@ const generateCitationFormats = async (analyzedPrecedents, style = 'OSCOLA') => 
 
   if (style === 'OSCOLA') {
     formats.oscola = citations.map(
-      (c) =>
-        `${c.citation} (${c.court} ${c.date.getFullYear()})` +
-        (c.pinpoints.length > 0 ? ` [${c.pinpoints.join(', ')}]` : '')
+      (c) => `${c.citation} (${c.court} ${c.date.getFullYear()})${
+        c.pinpoints.length > 0 ? ` [${c.pinpoints.join(', ')}]` : ''}`,
     );
   } else if (style === 'BLUEBOOK') {
     formats.bluebook = citations.map((c) => `${c.citation} (${c.court} ${c.date.getFullYear()})`);
@@ -2592,7 +2571,7 @@ const determinePrecedentType = (precedent, context) => {
 
     if (courtInfo.level > contextCourtLevel) {
       return PRECEDENT_TYPES.BINDING;
-    } else if (courtInfo.level === contextCourtLevel) {
+    } if (courtInfo.level === contextCourtLevel) {
       return PRECEDENT_TYPES.PERSUASIVE;
     }
   }
@@ -2648,7 +2627,7 @@ const estimateQueryComplexity = (query) => {
   const words = query.split(/\s+/).length;
   const legalTermsCount = (
     query.match(
-      /(?:negligence|breach|contract|damages|liability|constitutional|rights|appeal|review|jurisdiction|procedure|evidence)/gi
+      /(?:negligence|breach|contract|damages|liability|constitutional|rights|appeal|review|jurisdiction|procedure|evidence)/gi,
     ) || []
   ).length;
 
@@ -2720,23 +2699,21 @@ const getHealth = async () => {
 /*
  * Gets performance metrics
  */
-const getMetrics = async () => {
-  return {
-    requestsTotal: await precedentAnalyzerMetrics.analysisRequestsTotal.get(),
-    errorsTotal: await precedentAnalyzerMetrics.errorsTotal.get(),
-    precedentsAnalyzed: await precedentAnalyzerMetrics.precedentsAnalyzedTotal.get(),
-    cacheHitRatio: cacheLayers.stats.getHitRatio(),
-    circuitBreakers: Object.fromEntries(
-      Object.entries(aiServiceBreakers).map(([name, breaker]) => [
-        name,
-        {
-          status: breaker.opened ? 'open' : 'closed',
-          stats: breaker.stats,
-        },
-      ])
-    ),
-  };
-};
+const getMetrics = async () => ({
+  requestsTotal: await precedentAnalyzerMetrics.analysisRequestsTotal.get(),
+  errorsTotal: await precedentAnalyzerMetrics.errorsTotal.get(),
+  precedentsAnalyzed: await precedentAnalyzerMetrics.precedentsAnalyzedTotal.get(),
+  cacheHitRatio: cacheLayers.stats.getHitRatio(),
+  circuitBreakers: Object.fromEntries(
+    Object.entries(aiServiceBreakers).map(([name, breaker]) => [
+      name,
+      {
+        status: breaker.opened ? 'open' : 'closed',
+        stats: breaker.stats,
+      },
+    ]),
+  ),
+});
 
 /* ---------------------------------------------------------------------------
    QUANTUM EXPORTS - Enterprise API

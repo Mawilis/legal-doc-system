@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ VALUATION MODEL - FORENSIC VALUATION PERSISTENCE              ║
   ║ [POPIA §19 | Companies Act §28 | IFRS 13 | JSE Compliant]     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Valuation.js
@@ -317,7 +317,7 @@ const valuationSchema = new mongoose.Schema(
         blockNumber: { type: Number },
         network: {
           type: String,
-          enum: ['ethereum', 'hyperledger', 'none'],
+          enum: ['ethereum', 'hyperledger', 'none', 'hyperledger-fabric-2.5'],
           default: 'none',
         },
         timestamp: { type: Date },
@@ -368,7 +368,7 @@ const valuationSchema = new mongoose.Schema(
     collection: 'valuations',
     strict: true,
     minimize: false,
-  }
+  },
 );
 
 // ============================================================================
@@ -434,10 +434,10 @@ valuationSchema.pre('save', async function (next) {
       finalValuation: this.finalValuation,
       monteCarlo: this.monteCarlo
         ? {
-            mean: this.monteCarlo.mean,
-            median: this.monteCarlo.median,
-            stdDev: this.monteCarlo.stdDev,
-          }
+          mean: this.monteCarlo.mean,
+          median: this.monteCarlo.median,
+          stdDev: this.monteCarlo.stdDev,
+        }
         : null,
       timestamp: this.audit.createdAt,
       version: '1.0.0',
@@ -491,10 +491,10 @@ valuationSchema.methods.verifyIntegrity = function () {
     finalValuation: this.finalValuation,
     monteCarlo: this.monteCarlo
       ? {
-          mean: this.monteCarlo.mean,
-          median: this.monteCarlo.median,
-          stdDev: this.monteCarlo.stdDev,
-        }
+        mean: this.monteCarlo.mean,
+        median: this.monteCarlo.median,
+        stdDev: this.monteCarlo.stdDev,
+      }
       : null,
     timestamp: this.audit.createdAt,
     version: '1.0.0',
@@ -613,7 +613,9 @@ valuationSchema.methods.scheduleArchival = async function (archiveDate) {
  * @returns {Promise<Array>} Valuations array
  */
 valuationSchema.statics.findByCompany = function (companyId, options = {}) {
-  const { limit = 10, skip = 0, sortBy = 'createdAt', sortOrder = -1 } = options;
+  const {
+    limit = 10, skip = 0, sortBy = 'createdAt', sortOrder = -1,
+  } = options;
 
   return this.find({ companyId })
     .sort({ [sortBy]: sortOrder })
@@ -709,7 +711,7 @@ valuationSchema.statics.bulkArchive = async function (valuationIds, userId) {
         'retention.archivedAt': new Date(),
         'audit.updatedBy': userId,
       },
-    }
+    },
   );
 
   return result;

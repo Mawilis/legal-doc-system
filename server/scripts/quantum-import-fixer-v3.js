@@ -25,7 +25,7 @@ const colors = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
-  cyan: '\x1b[36m'
+  cyan: '\x1b[36m',
 };
 
 console.log(`${colors.bright}${colors.magenta}╔════════════════════════════════════════════════════════════════╗${colors.reset}`);
@@ -36,16 +36,16 @@ console.log(`${colors.bright}${colors.magenta}╚══════════�
 // COMPREHENSIVE list of Node.js built-in modules and subpaths
 const BUILT_IN_PATTERNS = [
   // Core modules
-  'crypto', 'fs', 'path', 'http', 'https', 'url', 'util', 
+  'crypto', 'fs', 'path', 'http', 'https', 'url', 'util',
   'events', 'stream', 'buffer', 'assert', 'os', 'child_process',
   'cluster', 'dns', 'domain', 'http2', 'net', 'tls', 'zlib',
   'timers', 'console', 'process', 'readline', 'repl', 'vm',
   'worker_threads', 'perf_hooks', 'async_hooks', 'dgram',
-  
+
   // Subpaths - CRITICAL: fs/promises, stream/promises, etc.
   'fs/promises', 'stream/promises', 'timers/promises',
   'path/posix', 'path/win32', 'url/url', 'querystring',
-  
+
   // Node: protocol variants
   'node:crypto', 'node:fs', 'node:path', 'node:http', 'node:https',
   'node:url', 'node:util', 'node:events', 'node:stream', 'node:buffer',
@@ -54,7 +54,7 @@ const BUILT_IN_PATTERNS = [
   'node:zlib', 'node:timers', 'node:console', 'node:process',
   'node:readline', 'node:repl', 'node:vm', 'node:worker_threads',
   'node:perf_hooks', 'node:async_hooks', 'node:dgram',
-  'node:fs/promises', 'node:stream/promises', 'node:timers/promises'
+  'node:fs/promises', 'node:stream/promises', 'node:timers/promises',
 ];
 
 // Statistics
@@ -63,7 +63,7 @@ const stats = {
   filesModified: 0,
   importsFixed: 0,
   errors: 0,
-  brokenSymlinks: 0
+  brokenSymlinks: 0,
 };
 
 const fixedFiles = [];
@@ -82,22 +82,22 @@ function safeStat(filePath) {
 
 function scanDirectory(dir) {
   let results = [];
-  
+
   try {
     const list = fs.readdirSync(dir);
-    
-    list.forEach(file => {
+
+    list.forEach((file) => {
       const filePath = path.join(dir, file);
-      
-      if (filePath.includes('node_modules') || 
-          filePath.includes('.git') || 
-          filePath.includes('backups')) {
+
+      if (filePath.includes('node_modules')
+          || filePath.includes('.git')
+          || filePath.includes('backups')) {
         return;
       }
-      
+
       const stat = safeStat(filePath);
       if (!stat) return;
-      
+
       if (stat.isDirectory()) {
         results = results.concat(scanDirectory(filePath));
       } else if (stat.isFile() && (filePath.endsWith('.js') || filePath.endsWith('.mjs') || filePath.endsWith('.cjs'))) {
@@ -107,19 +107,19 @@ function scanDirectory(dir) {
   } catch (error) {
     console.log(`${colors.yellow}  ⚠️  Cannot scan directory ${dir}: ${error.message}${colors.reset}`);
   }
-  
+
   return results;
 }
 
 function fixImports(filePath) {
   try {
     let content = fs.readFileSync(filePath, 'utf8');
-    let originalContent = content;
+    const originalContent = content;
     let modified = false;
     let fileFixed = false;
-    
+
     // Fix ALL built-in module patterns
-    BUILT_IN_PATTERNS.forEach(module => {
+    BUILT_IN_PATTERNS.forEach((module) => {
       // Pattern: from 'node:module.js'
       const pattern1 = new RegExp(`from ['"]node:${module}\\.js['"]`, 'g');
       if (pattern1.test(content)) {
@@ -129,7 +129,7 @@ function fixImports(filePath) {
         fileFixed = true;
         content = content.replace(pattern1, `from 'node:${module}'`);
       }
-      
+
       // Pattern: from 'node:module/subpath.js'
       const pattern1a = new RegExp(`from ['"]node:${module.replace('/', '\/')}\\.js['"]`, 'g');
       if (pattern1a.test(content)) {
@@ -139,7 +139,7 @@ function fixImports(filePath) {
         fileFixed = true;
         content = content.replace(pattern1a, `from 'node:${module}'`);
       }
-      
+
       // Pattern: from 'module.js'
       const pattern2 = new RegExp(`from ['"]${module}\\.js['"]`, 'g');
       if (pattern2.test(content)) {
@@ -149,7 +149,7 @@ function fixImports(filePath) {
         fileFixed = true;
         content = content.replace(pattern2, `from '${module}'`);
       }
-      
+
       // Pattern: from 'module/subpath.js'
       const pattern2a = new RegExp(`from ['"]${module.replace('/', '\/')}\\.js['"]`, 'g');
       if (pattern2a.test(content)) {
@@ -159,7 +159,7 @@ function fixImports(filePath) {
         fileFixed = true;
         content = content.replace(pattern2a, `from '${module}'`);
       }
-      
+
       // Pattern: require('module.js')
       const pattern3 = new RegExp(`require\\(['"]${module}\\.js['"]\\)`, 'g');
       if (pattern3.test(content)) {
@@ -169,7 +169,7 @@ function fixImports(filePath) {
         fileFixed = true;
         content = content.replace(pattern3, `require('${module}')`);
       }
-      
+
       // Pattern: require('module/subpath.js')
       const pattern3a = new RegExp(`require\\(['"]${module.replace('/', '\/')}\\.js['"]\\)`, 'g');
       if (pattern3a.test(content)) {
@@ -179,7 +179,7 @@ function fixImports(filePath) {
         fileFixed = true;
         content = content.replace(pattern3a, `require('${module}')`);
       }
-      
+
       // Pattern: require('node:module.js')
       const pattern4 = new RegExp(`require\\(['"]node:${module}\\.js['"]\\)`, 'g');
       if (pattern4.test(content)) {
@@ -189,7 +189,7 @@ function fixImports(filePath) {
         fileFixed = true;
         content = content.replace(pattern4, `require('node:${module}')`);
       }
-      
+
       // Pattern: require('node:module/subpath.js')
       const pattern4a = new RegExp(`require\\(['"]node:${module.replace('/', '\/')}\\.js['"]\\)`, 'g');
       if (pattern4a.test(content)) {
@@ -200,7 +200,7 @@ function fixImports(filePath) {
         content = content.replace(pattern4a, `require('node:${module}')`);
       }
     });
-    
+
     // Fix any remaining .js patterns
     if (/\.js\.js/.test(content)) {
       const matches = content.match(/\.js\.js/g) || [];
@@ -209,7 +209,7 @@ function fixImports(filePath) {
       fileFixed = true;
       content = content.replace(/\.js\.js/g, '.js');
     }
-    
+
     if (/\.js\.js\.js/.test(content)) {
       const matches = content.match(/\.js\.js\.js/g) || [];
       stats.importsFixed += matches.length;
@@ -217,16 +217,15 @@ function fixImports(filePath) {
       fileFixed = true;
       content = content.replace(/\.js\.js\.js/g, '.js');
     }
-    
+
     if (modified) {
       fs.writeFileSync(filePath, content, 'utf8');
       stats.filesModified++;
       fixedFiles.push(filePath);
       return { modified: true, fileFixed };
     }
-    
+
     return { modified: false };
-    
   } catch (error) {
     stats.errors++;
     console.log(`${colors.red}  ❌ Error fixing ${filePath}: ${error.message}${colors.reset}`);
@@ -249,16 +248,16 @@ try {
 
   const batchSize = 50;
   let fixedCount = 0;
-  
+
   for (let i = 0; i < files.length; i += batchSize) {
     const batch = files.slice(i, i + batchSize);
-    
-    batch.forEach(filePath => {
+
+    batch.forEach((filePath) => {
       const relativePath = path.relative(rootDir, filePath);
       process.stdout.write(`  Processing: ${relativePath}... `);
-      
+
       const result = fixImports(filePath);
-      
+
       if (result.modified) {
         fixedCount++;
         console.log(`${colors.green}FIXED${colors.reset}`);
@@ -280,7 +279,7 @@ try {
   console.log(`  • Imports fixed: ${stats.importsFixed}`);
   console.log(`  • Broken symlinks: ${stats.brokenSymlinks}`);
   console.log(`  • Errors: ${stats.errors}`);
-  console.log(`  • Duration: ${duration}ms (${(duration/1000).toFixed(2)}s)`);
+  console.log(`  • Duration: ${duration}ms (${(duration / 1000).toFixed(2)}s)`);
 
   if (stats.importsFixed > 0) {
     console.log(`\n${colors.green}✅ ALL IMPORTS FIXED! WILSY OS IS NOW 100% PRODUCTION READY${colors.reset}`);
@@ -292,23 +291,22 @@ try {
   const evidence = {
     timestamp: new Date().toISOString(),
     stats,
-    fixedFiles: fixedFiles.map(f => path.relative(rootDir, f)),
+    fixedFiles: fixedFiles.map((f) => path.relative(rootDir, f)),
     system: {
       nodeVersion: process.version,
-      platform: process.platform
+      platform: process.platform,
     },
     hash: crypto.createHash('sha256')
       .update(JSON.stringify(stats))
-      .digest('hex')
+      .digest('hex'),
   };
 
   fs.writeFileSync(
     path.join(__dirname, '../quantum-import-fix-evidence-v3.json'),
-    JSON.stringify(evidence, null, 2)
+    JSON.stringify(evidence, null, 2),
   );
 
   console.log(`\n${colors.cyan}📄 Evidence saved to: quantum-import-fix-evidence-v3.json${colors.reset}`);
-
 } catch (error) {
   console.log(`${colors.red}❌ Fatal error: ${error.message}${colors.reset}`);
   process.exit(1);

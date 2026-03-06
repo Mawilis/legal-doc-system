@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ QUANTUM ANNEALING - QUANTUM-INSPIRED OPTIMIZATION FOR DEAL MATCHING                   ║
   ║ [94% Accuracy | 127 Dimensions | O(n log n) | Production Grade]                       ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * Quantum-Inspired Annealing Algorithm
@@ -23,7 +23,7 @@ export class quantumAnnealing {
   async optimize(featureVectors, weights) {
     let currentSolution = this.initializeRandom(featureVectors.length);
     let currentEnergy = this.calculateEnergy(currentSolution, featureVectors, weights);
-    let temperature = this.temperature;
+    let { temperature } = this;
 
     const history = [];
 

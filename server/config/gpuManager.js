@@ -72,10 +72,10 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ GPU MANAGER - INVESTOR-GRADE MODULE - $100M+ ANNUAL VALUE                ║
   ║ 85% cost reduction | 50K docs/sec | 99.99% uptime                        ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 // =============================================================================
 // DEPENDENCIES & IMPORTS - Production-grade
@@ -83,6 +83,7 @@
 
 const { exec } = require('child_process');
 const util = require('util');
+
 const execAsync = util.promisify(exec);
 const fs = require('fs').promises;
 const path = require('path');
@@ -349,8 +350,7 @@ class GPUDevice extends EventEmitter {
 
     // Check memory requirements
     const requiredMemory = job.requiredMemory || 0;
-    const availableMemory =
-      this.metrics.memoryTotal * GPU_CONSTANTS.MEMORY_FRACTION - this.metrics.memoryUsed;
+    const availableMemory = this.metrics.memoryTotal * GPU_CONSTANTS.MEMORY_FRACTION - this.metrics.memoryUsed;
 
     return availableMemory >= requiredMemory;
   }
@@ -563,31 +563,31 @@ class GPUManager extends EventEmitter {
       .labels('physical', 'nvidia')
       .set(
         Array.from(this.gpus.values()).filter((g) => g.vendor === GPU_CONSTANTS.VENDORS.NVIDIA)
-          .length
+          .length,
       );
     gpuMetrics.gpuCount
       .labels('physical', 'amd')
       .set(
-        Array.from(this.gpus.values()).filter((g) => g.vendor === GPU_CONSTANTS.VENDORS.AMD).length
+        Array.from(this.gpus.values()).filter((g) => g.vendor === GPU_CONSTANTS.VENDORS.AMD).length,
       );
     gpuMetrics.gpuCount
       .labels('physical', 'intel')
       .set(
         Array.from(this.gpus.values()).filter((g) => g.vendor === GPU_CONSTANTS.VENDORS.INTEL)
-          .length
+          .length,
       );
     gpuMetrics.gpuCount
       .labels('virtual', 'cpu')
       .set(
         Array.from(this.gpus.values()).filter((g) => g.vendor === GPU_CONSTANTS.VENDORS.CLOUD)
-          .length
+          .length,
       );
   }
 
   async discoverNVIDIA() {
     try {
       const { stdout } = await execAsync(
-        'nvidia-smi --query-gpu=index,name,memory.total,memory.free,temperature.gpu,power.draw,utilization.gpu --format=csv,noheader,nounits'
+        'nvidia-smi --query-gpu=index,name,memory.total,memory.free,temperature.gpu,power.draw,utilization.gpu --format=csv,noheader,nounits',
       );
 
       const lines = stdout.trim().split('\n');
@@ -631,7 +631,7 @@ class GPUManager extends EventEmitter {
   async discoverAMD() {
     try {
       const { stdout } = await execAsync(
-        'rocm-smi --showid --showproductname --showmeminfo vram --showtemp --showpower --showuse'
+        'rocm-smi --showid --showproductname --showmeminfo vram --showtemp --showpower --showuse',
       );
       // Parse ROCm output (simplified)
       // This would need proper parsing for production
@@ -707,7 +707,7 @@ class GPUManager extends EventEmitter {
 
   async updateNVIDIAMetrics(gpu) {
     const { stdout } = await execAsync(
-      `nvidia-smi --query-gpu=memory.used,memory.free,utilization.gpu,temperature.gpu,power.draw --format=csv,noheader,nounits -i ${gpu.index}`
+      `nvidia-smi --query-gpu=memory.used,memory.free,utilization.gpu,temperature.gpu,power.draw --format=csv,noheader,nounits -i ${gpu.index}`,
     );
 
     const [memoryUsed, memoryFree, utilization, temperature, power] = stdout
@@ -726,9 +726,7 @@ class GPUManager extends EventEmitter {
 
   async updateCPUMetrics(gpu) {
     const cpus = os.cpus();
-    const totalCpuTime = cpus.reduce((sum, cpu) => {
-      return sum + Object.values(cpu.times).reduce((s, t) => s + t, 0);
-    }, 0);
+    const totalCpuTime = cpus.reduce((sum, cpu) => sum + Object.values(cpu.times).reduce((s, t) => s + t, 0), 0);
 
     const idleTime = cpus.reduce((sum, cpu) => sum + cpu.times.idle, 0);
     const utilization = ((totalCpuTime - idleTime) / totalCpuTime) * 100;
@@ -764,7 +762,7 @@ class GPUManager extends EventEmitter {
 
     // Find available GPUs
     const availableGPUs = Array.from(this.gpus.values()).filter(
-      (gpu) => gpu.state === GPU_CONSTANTS.STATES.AVAILABLE
+      (gpu) => gpu.state === GPU_CONSTANTS.STATES.AVAILABLE,
     );
 
     if (availableGPUs.length === 0) return;
@@ -958,7 +956,7 @@ class GPUManager extends EventEmitter {
 
   getAvailableGPUs() {
     return Array.from(this.gpus.values()).filter(
-      (gpu) => gpu.state === GPU_CONSTANTS.STATES.AVAILABLE
+      (gpu) => gpu.state === GPU_CONSTANTS.STATES.AVAILABLE,
     );
   }
 
@@ -995,10 +993,10 @@ class GPUManager extends EventEmitter {
     const totalGPUs = this.gpus.size;
     const availableGPUs = this.getAvailableGPUs().length;
     const busyGPUs = Array.from(this.gpus.values()).filter(
-      (g) => g.state === GPU_CONSTANTS.STATES.BUSY
+      (g) => g.state === GPU_CONSTANTS.STATES.BUSY,
     ).length;
     const errorGPUs = Array.from(this.gpus.values()).filter(
-      (g) => g.state === GPU_CONSTANTS.STATES.ERROR
+      (g) => g.state === GPU_CONSTANTS.STATES.ERROR,
     ).length;
 
     return {
@@ -1011,15 +1009,15 @@ class GPUManager extends EventEmitter {
         error: errorGPUs,
         byVendor: {
           nvidia: Array.from(this.gpus.values()).filter(
-            (g) => g.vendor === GPU_CONSTANTS.VENDORS.NVIDIA
+            (g) => g.vendor === GPU_CONSTANTS.VENDORS.NVIDIA,
           ).length,
           amd: Array.from(this.gpus.values()).filter((g) => g.vendor === GPU_CONSTANTS.VENDORS.AMD)
             .length,
           intel: Array.from(this.gpus.values()).filter(
-            (g) => g.vendor === GPU_CONSTANTS.VENDORS.INTEL
+            (g) => g.vendor === GPU_CONSTANTS.VENDORS.INTEL,
           ).length,
           cloud: Array.from(this.gpus.values()).filter(
-            (g) => g.vendor === GPU_CONSTANTS.VENDORS.CLOUD
+            (g) => g.vendor === GPU_CONSTANTS.VENDORS.CLOUD,
           ).length,
         },
       },
@@ -1097,7 +1095,7 @@ class GPUManager extends EventEmitter {
 
     // Check temperature issues
     const hotGPUs = Array.from(this.gpus.values()).filter(
-      (g) => g.metrics.temperature > GPU_CONSTANTS.TEMPERATURE_LIMIT * 0.9
+      (g) => g.metrics.temperature > GPU_CONSTANTS.TEMPERATURE_LIMIT * 0.9,
     );
 
     if (hotGPUs.length > 0) {
@@ -1127,8 +1125,7 @@ class GPUManager extends EventEmitter {
     }
 
     // Check queue health
-    health.checks.queue =
-      this.jobQueue.length < this.config.queueSize * 0.9 ? 'healthy' : 'warning';
+    health.checks.queue = this.jobQueue.length < this.config.queueSize * 0.9 ? 'healthy' : 'warning';
 
     // Overall status
     if (unhealthyGPUs > 0) {

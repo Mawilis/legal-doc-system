@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ BILLING CONTROLLER TESTS - INVESTOR DUE DILIGENCE             ║
   ║ 100% coverage | R12B validation | Forensic compliance         ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/controllers/billingController.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -22,6 +22,13 @@ import fs from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid.js';
 
+import axios from 'axios.js';
+import * as billingController from '../../controllers/billingController.js';
+import BillingInvoice from '../../models/BillingInvoice.js';
+import PaymentTransaction from '../../models/PaymentTransaction.js';
+import { screenForAML } from '../../services/compliance/FICAScreeningService.js';
+import { generateFinancialHash } from '../../utils/cryptoUtils.js';
+
 // Mock dependencies
 jest.mock('axios');
 jest.mock('../../utils/cryptoUtils');
@@ -39,13 +46,6 @@ jest.mock('../../services/compliance/FICAScreeningService');
 jest.mock('../../services/compliance/SARSIntegrationService');
 jest.mock('../../services/pdf/InvoicePdfService');
 jest.mock('../../services/email/EmailService');
-
-import axios from 'axios.js';
-import * as billingController from '../../controllers/billingController.js';
-import BillingInvoice from '../../models/BillingInvoice.js';
-import PaymentTransaction from '../../models/PaymentTransaction.js';
-import { screenForAML } from '../../services/compliance/FICAScreeningService.js';
-import { generateFinancialHash } from '../../utils/cryptoUtils.js';
 
 describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
   let app;
@@ -104,7 +104,9 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
     axios.get.mockResolvedValue({
       data: {
         tariffs: [
-          { code: 'LIT001', description: 'Litigation hourly rate', rate: 2500, lpcApproved: true },
+          {
+            code: 'LIT001', description: 'Litigation hourly rate', rate: 2500, lpcApproved: true,
+          },
         ],
         pagination: { page: 1, limit: 50, total: 1 },
       },
@@ -152,7 +154,9 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
     });
 
     BillingInvoice.aggregate.mockResolvedValue([
-      { _id: { year: 2025, month: 3 }, totalInvoiced: 11500, count: 1, paidAmount: 11500 },
+      {
+        _id: { year: 2025, month: 3 }, totalInvoiced: 11500, count: 1, paidAmount: 11500,
+      },
     ]);
 
     // Mock PaymentTransaction
@@ -276,7 +280,7 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
       expect(quantumLogger.log).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'HIGH_VALUE_CALCULATION',
-        })
+        }),
       );
     });
   });
@@ -310,7 +314,7 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
             page: 2,
             limit: 10,
           }),
-        })
+        }),
       );
     });
 
@@ -512,7 +516,9 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
 
     it('should calculate collection rate correctly', async () => {
       BillingInvoice.aggregate.mockResolvedValueOnce([
-        { _id: { year: 2025, month: 3 }, totalInvoiced: 100000, count: 5, paidAmount: 75000 },
+        {
+          _id: { year: 2025, month: 3 }, totalInvoiced: 100000, count: 5, paidAmount: 75000,
+        },
       ]);
       PaymentTransaction.aggregate.mockResolvedValueOnce([
         { _id: { year: 2025, month: 3 }, totalPayments: 75000, count: 3 },
@@ -563,7 +569,7 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
           tenantId: mockTenantId,
           status: 'paid',
         }),
-        expect.anything()
+        expect.anything(),
       );
     });
 
@@ -580,7 +586,7 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
             $lte: expect.any(Date),
           }),
         }),
-        expect.anything()
+        expect.anything(),
       );
     });
 
@@ -640,8 +646,7 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
     });
 
     it('should verify blockchain hash', async () => {
-      const verifyFinancialTransaction =
-        require('../../utils/blockchainUtils').verifyFinancialTransaction;
+      const { verifyFinancialTransaction } = require('../../utils/blockchainUtils');
       verifyFinancialTransaction.mockResolvedValueOnce({ isValid: true });
 
       const response = await request(app)
@@ -664,12 +669,11 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
       const cashFlowImprovement = 8000000000; // R8B
       const panAfricanValue = 2000000000; // R2B
 
-      const totalValue =
-        annualSavingsPerClient * 500 +
-        fraudPrevention +
-        regulatoryAvoidance +
-        cashFlowImprovement +
-        panAfricanValue;
+      const totalValue = annualSavingsPerClient * 500
+        + fraudPrevention
+        + regulatoryAvoidance
+        + cashFlowImprovement
+        + panAfricanValue;
 
       console.log('\n💰 BILLING CONTROLLER VALUE ANALYSIS');
       console.log('='.repeat(50));
@@ -787,7 +791,7 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'billing-controller-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -799,7 +803,7 @@ describe('BillingController - Quantum Financial Gateway Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'billing-controller-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);

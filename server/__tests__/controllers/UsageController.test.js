@@ -1,14 +1,20 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ USAGE CONTROLLER TESTS - INVESTOR DUE DILIGENCE - $1.2B+ VALUE           ║
   ║ 100% coverage | Upsell automation | Executive intelligence               ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import request from 'supertest.js';
 import express from 'express.js';
 import { expect } from 'chai.js';
 import sinon from 'sinon.js';
 import { v4 as uuidv4 } from 'uuid.js';
+
+// Import after mocks
+import * as UsageController from '../../controllers/UsageController.js';
+import usageService from '../../services/monitoring/UsageService.js';
+import monitoringDashboard from '../../services/monitoring/MonitoringDashboard.js';
+import { QuantumLogger } from '../../utils/quantumLogger.js';
 
 // Mock dependencies
 jest.mock('../../services/monitoring/UsageService.js', () => ({
@@ -123,12 +129,6 @@ jest.mock('../../middleware/tenantGuard.js', () => ({
     next();
   },
 }));
-
-// Import after mocks
-import * as UsageController from '../../controllers/UsageController.js';
-import usageService from '../../services/monitoring/UsageService.js';
-import monitoringDashboard from '../../services/monitoring/MonitoringDashboard.js';
-import { QuantumLogger } from '../../utils/quantumLogger.js';
 
 describe('UsageController - Commercial Control Center Due Diligence', () => {
   let req;
@@ -294,21 +294,27 @@ describe('UsageController - Commercial Control Center Due Diligence', () => {
           tenantId: 'tenant1',
           tenantName: 'Firm A',
           tier: 'PREMIUM',
-          quota: { used: 450, total: 500, percentUsed: '90.00', status: 'CRITICAL' },
+          quota: {
+            used: 450, total: 500, percentUsed: '90.00', status: 'CRITICAL',
+          },
           timestamp: new Date().toISOString(),
         })
         .mockResolvedValueOnce({
           tenantId: 'tenant2',
           tenantName: 'Firm B',
           tier: 'BASIC',
-          quota: { used: 90, total: 100, percentUsed: '90.00', status: 'CRITICAL' },
+          quota: {
+            used: 90, total: 100, percentUsed: '90.00', status: 'CRITICAL',
+          },
           timestamp: new Date().toISOString(),
         })
         .mockResolvedValueOnce({
           tenantId: 'tenant3',
           tenantName: 'Firm C',
           tier: 'PROFESSIONAL',
-          quota: { used: 200, total: 300, percentUsed: '66.67', status: 'ACTIVE' },
+          quota: {
+            used: 200, total: 300, percentUsed: '66.67', status: 'ACTIVE',
+          },
           timestamp: new Date().toISOString(),
         });
 

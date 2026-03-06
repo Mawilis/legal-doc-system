@@ -1,10 +1,10 @@
 #!/* eslint-disable */
 /* eslint-env jest */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ REQUEST VALIDATOR TESTS - INVESTOR DUE DILIGENCE SUITE                                 ║
   ║ 100% coverage | OWASP Top 10 Validation | XSS Prevention | Injection Testing          ║
   ║ R850K/year risk reduction | POPIA Compliance | JSE Standards                           ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/middleware/requestValidator.test.js
@@ -22,9 +22,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 // Import middleware
 import {
   validateRequest,
@@ -34,6 +31,12 @@ import {
   DATA_TYPES,
   VALIDATION_MODES,
 } from '../../middleware/requestValidator.js';
+
+import loggerRaw from '../../utils/logger.js';
+import auditLogger from '../../utils/auditLogger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Mock dependencies
 jest.mock('../../utils/logger.js', () => ({
@@ -50,10 +53,7 @@ jest.mock('../../utils/auditLogger.js', () => ({
 jest.mock('../../utils/redactSensitive.js', () => ({
   redactSensitive: (data) => data,
 }));
-
-import loggerRaw from '../../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
-import auditLogger from '../../utils/auditLogger.js';
 
 // ============================================================================
 // TEST CONSTANTS
@@ -308,7 +308,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
         expect.objectContaining({
           type: 'https://api.wilsyos.com/errors/validation-failed',
           validationErrors: expect.arrayContaining([expect.stringContaining('tenantId')]),
-        })
+        }),
       );
       expect(next).not.toHaveBeenCalled();
     });
@@ -333,7 +333,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('period')]),
-        })
+        }),
       );
     });
 
@@ -357,7 +357,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('sections')]),
-        })
+        }),
       );
     });
   });
@@ -408,7 +408,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('registrationNumber')]),
-        })
+        }),
       );
     });
 
@@ -435,7 +435,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('contactPhone')]),
-        })
+        }),
       );
     });
 
@@ -462,7 +462,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('contactEmail')]),
-        })
+        }),
       );
     });
 
@@ -488,7 +488,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('industry')]),
-        })
+        }),
       );
     });
   });
@@ -550,7 +550,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('companyId')]),
-        })
+        }),
       );
     });
 
@@ -579,7 +579,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('revenue')]),
-        })
+        }),
       );
     });
   });
@@ -636,7 +636,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('requestId')]),
-        })
+        }),
       );
     });
 
@@ -666,7 +666,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('consentVerified')]),
-        })
+        }),
       );
     });
   });
@@ -723,7 +723,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('transactionValue')]),
-        })
+        }),
       );
     });
   });
@@ -796,7 +796,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('idNumber')]),
-        })
+        }),
       );
     });
 
@@ -823,7 +823,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('permissions')]),
-        })
+        }),
       );
     });
   });
@@ -878,7 +878,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
           error: expect.objectContaining({
             code: 'CUSTOM_VALIDATION_ERROR',
           }),
-        })
+        }),
       );
       expect(next).not.toHaveBeenCalled();
     });
@@ -911,7 +911,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
           schema: 'investor',
           valid: true,
           tenantId: TEST_TENANT_ID,
-        })
+        }),
       );
     });
 
@@ -939,7 +939,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
           valid: false,
           errorCount: expect.any(Number),
           errors: expect.any(Array),
-        })
+        }),
       );
     });
 
@@ -1027,7 +1027,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('depth')]),
-        })
+        }),
       );
     });
 
@@ -1060,7 +1060,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           validationErrors: expect.arrayContaining([expect.stringContaining('Array too large')]),
-        })
+        }),
       );
     });
 
@@ -1100,17 +1100,16 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       const breachProbabilityWithoutValidation = 0.15; // 15% annual probability
       const breachProbabilityWithValidation = 0.001; // 0.1% with validation
 
-      const riskReduction =
-        avgBreachCost * (breachProbabilityWithoutValidation - breachProbabilityWithValidation);
+      const riskReduction = avgBreachCost * (breachProbabilityWithoutValidation - breachProbabilityWithValidation);
 
       // Log for investor visibility
       console.log('💰 RISK REDUCTION METRIC: Annual Risk Reduction per Client');
       console.log(`   Average breach cost: R${avgBreachCost.toLocaleString()}`);
       console.log(
-        `   Breach probability without validation: ${breachProbabilityWithoutValidation * 100}%`
+        `   Breach probability without validation: ${breachProbabilityWithoutValidation * 100}%`,
       );
       console.log(
-        `   Breach probability with validation: ${breachProbabilityWithValidation * 100}%`
+        `   Breach probability with validation: ${breachProbabilityWithValidation * 100}%`,
       );
       console.log(`   ✅ Annual risk reduction: R${riskReduction.toLocaleString()}`);
 
@@ -1162,7 +1161,7 @@ describe('Request Validator - Investor Due Diligence Suite', () => {
       // Log for investor visibility
       console.log('🔐 FORENSIC EVIDENCE GENERATED (Request Validator):');
       console.log(
-        `   Evidence path: ${path.join(__dirname, '../evidence', 'request-validator-evidence.json')}`
+        `   Evidence path: ${path.join(__dirname, '../evidence', 'request-validator-evidence.json')}`,
       );
       console.log(`   Schemas validated: ${evidence.schemas.length}`);
       console.log(`   Security controls: ${evidence.securityControls.length}`);

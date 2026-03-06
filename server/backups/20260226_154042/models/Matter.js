@@ -1,21 +1,21 @@
 #!/* eslint-disable */
 /* eslint-disable no-underscore-dangle */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - MATTER MODEL v2.0 (FORENSIC-GRADE)                            ║
   ║ [POPIA §1 Data Subject | Companies Act §28 | LPC Rule 17.3]              ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Matter.js
  * VERSION: 2.0.0
  * CREATED: 2026-02-26
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R850K/year manual matter tracking for law firms
  * • Generates: R210K/year revenue @ 85% margin (500 firms × R350/month)
  * • Risk elimination: R2.1M in potential POPIA fines for data subject mismanagement
  * • Compliance: POPIA §1, Companies Act §28, LPC Rule 17.3, ECT Act §15
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "expectedConsumers": [
@@ -35,7 +35,7 @@
  *     "../utils/cryptoUtils.js"
  *   ]
  * }
- * 
+ *
  * MERMAID_INTEGRATION:
  * graph TD
  *   A[Matter Created] --> B{Tenant Isolation}
@@ -89,7 +89,7 @@ const MATTER_TYPES = {
   ARBITRATION: 'arbitration',
   INVESTIGATIONS: 'investigations',
   COMPLIANCE: 'compliance',
-  RISK_MANAGEMENT: 'risk_management'
+  RISK_MANAGEMENT: 'risk_management',
 };
 
 /**
@@ -119,7 +119,7 @@ const MATTER_STATUS = {
   DISCOVERY_PHASE: 'discovery_phase',
   TRIAL_PHASE: 'trial_phase',
   POST_TRIAL_PHASE: 'post_trial_phase',
-  ENFORCEMENT_PHASE: 'enforcement_phase'
+  ENFORCEMENT_PHASE: 'enforcement_phase',
 };
 
 /**
@@ -131,7 +131,7 @@ const DATA_RESIDENCY = {
   EU: 'EU', // European Union
   GB: 'GB', // United Kingdom
   AU: 'AU', // Australia
-  OTHER: 'OTHER'
+  OTHER: 'OTHER',
 };
 
 /**
@@ -143,43 +143,43 @@ const RETENTION_POLICIES = {
     duration: 7,
     unit: 'years',
     legalReference: 'Companies Act 71 of 2008 §28',
-    description: 'Standard business records'
+    description: 'Standard business records',
   },
   COMPANIES_ACT_10_YEARS: {
     id: 'companies_act_10_years',
     duration: 10,
     unit: 'years',
     legalReference: 'Companies Act 71 of 2008 §28 (Special)',
-    description: 'Long-term legal matters'
+    description: 'Long-term legal matters',
   },
   TAX_ACT_5_YEARS: {
     id: 'tax_act_5_years',
     duration: 5,
     unit: 'years',
     legalReference: 'Tax Administration Act 28 of 2011 §29',
-    description: 'Tax-related matters'
+    description: 'Tax-related matters',
   },
   POPIA_1_YEAR: {
     id: 'popia_1_year',
     duration: 1,
     unit: 'year',
     legalReference: 'POPIA §14(1)(a)',
-    description: 'Consent-based processing'
+    description: 'Consent-based processing',
   },
   LPC_7_YEARS: {
     id: 'lpc_7_years',
     duration: 7,
     unit: 'years',
     legalReference: 'LPC Rule 17.3',
-    description: 'Legal practice matters'
+    description: 'Legal practice matters',
   },
   PERMANENT: {
     id: 'permanent',
     duration: 100,
     unit: 'years',
     legalReference: 'Constitutional matters',
-    description: 'Permanent retention'
-  }
+    description: 'Permanent retention',
+  },
 };
 
 // ============================================================================
@@ -193,7 +193,7 @@ const partySchema = new mongoose.Schema({
   partyId: {
     type: String,
     default: () => crypto.randomBytes(16).toString('hex'),
-    index: true
+    index: true,
   },
 
   role: {
@@ -210,70 +210,70 @@ const partySchema = new mongoose.Schema({
       'plaintiff',
       'defendant',
       'appellant',
-      'respondent_appeal'
+      'respondent_appeal',
     ],
-    required: true
+    required: true,
   },
 
   // Reference to User if internal
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    sparse: true
+    sparse: true,
   },
 
   // External party details (redacted in logs)
   name: {
     type: String,
     required: true,
-    set: function (v) {
+    set(v) {
       // Store encrypted in production
-      return process.env.NODE_ENV === 'production' ?
-        crypto.createHash('sha256').update(v).digest('hex') : v;
-    }
+      return process.env.NODE_ENV === 'production'
+        ? crypto.createHash('sha256').update(v).digest('hex') : v;
+    },
   },
 
   idNumber: {
     type: String,
-    set: function (v) {
+    set(v) {
       return v ? '[REDACTED]' : v;
-    }
+    },
   },
 
   email: {
     type: String,
-    set: function (v) {
-      return v ? v.split('@')[0] + '@[REDACTED]' : v;
-    }
+    set(v) {
+      return v ? `${v.split('@')[0]}@[REDACTED]` : v;
+    },
   },
 
   phone: {
     type: String,
-    set: function (v) {
+    set(v) {
       return v ? v.replace(/\d(?=\d{4})/g, '*') : v;
-    }
+    },
   },
 
   address: {
     type: String,
-    set: function (v) {
+    set(v) {
       return v ? '[REDACTED]' : v;
-    }
+    },
   },
 
   representation: {
     firmName: String,
     attorneyId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'User',
     },
-    attorneyNumber: String
+    attorneyNumber: String,
   },
 
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 /**
@@ -282,7 +282,7 @@ const partySchema = new mongoose.Schema({
 const timelineEventSchema = new mongoose.Schema({
   eventId: {
     type: String,
-    default: () => crypto.randomBytes(16).toString('hex')
+    default: () => crypto.randomBytes(16).toString('hex'),
   },
 
   eventType: {
@@ -305,25 +305,25 @@ const timelineEventSchema = new mongoose.Schema({
       'SETTLEMENT_REACHED',
       'APPEAL_FILED',
       'ARCHIVED',
-      'RESTORED'
+      'RESTORED',
     ],
-    required: true
+    required: true,
   },
 
   description: {
     type: String,
     required: true,
-    maxlength: 2000
+    maxlength: 2000,
   },
 
   performedBy: {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: true,
     },
     name: String,
-    role: String
+    role: String,
   },
 
   metadata: {
@@ -331,18 +331,18 @@ const timelineEventSchema = new mongoose.Schema({
     newValue: mongoose.Schema.Types.Mixed,
     documentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Document'
+      ref: 'Document',
     },
     partyId: String,
     deadline: Date,
     courtReference: String,
-    caseNumber: String
+    caseNumber: String,
   },
 
   timestamp: {
     type: Date,
     default: Date.now,
-    immutable: true
+    immutable: true,
   },
 
   ipAddress: String,
@@ -350,8 +350,8 @@ const timelineEventSchema = new mongoose.Schema({
 
   forensicHash: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 timelineEventSchema.pre('save', function (next) {
@@ -361,7 +361,7 @@ timelineEventSchema.pre('save', function (next) {
     description: this.description,
     performedBy: this.performedBy.userId,
     timestamp: this.timestamp,
-    metadata: this.metadata
+    metadata: this.metadata,
   });
 
   this.forensicHash = crypto.createHash('sha256').update(data).digest('hex');
@@ -374,66 +374,66 @@ timelineEventSchema.pre('save', function (next) {
 const noteSchema = new mongoose.Schema({
   noteId: {
     type: String,
-    default: () => crypto.randomBytes(16).toString('hex')
+    default: () => crypto.randomBytes(16).toString('hex'),
   },
 
   content: {
     type: String,
     required: true,
-    maxlength: 10000
+    maxlength: 10000,
   },
 
   author: {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: true,
     },
     name: String,
-    role: String
+    role: String,
   },
 
   isConfidential: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   confidentialityLevel: {
     type: String,
     enum: ['standard', 'attorney_client', 'work_product', 'litigation'],
-    default: 'standard'
+    default: 'standard',
   },
 
   tags: [String],
 
   mentions: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
   }],
 
   documents: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Document'
+    ref: 'Document',
   }],
 
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
 
   updatedAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
 
   editedBy: [{
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'User',
     },
     editedAt: Date,
-    previousContent: String
-  }]
+    previousContent: String,
+  }],
 });
 
 noteSchema.pre('save', function (next) {
@@ -457,7 +457,7 @@ const matterSchema = new mongoose.Schema({
     required: true,
     unique: true,
     index: true,
-    default: () => `MAT-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+    default: () => `MAT-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
   },
 
   tenantId: {
@@ -465,14 +465,14 @@ const matterSchema = new mongoose.Schema({
     required: [true, 'tenantId is required for multi-tenant isolation'],
     index: true,
     match: /^[a-zA-Z0-9_-]{8,64}$/,
-    description: 'Multi-tenant isolation identifier'
+    description: 'Multi-tenant isolation identifier',
   },
 
   firmId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Firm',
     required: true,
-    index: true
+    index: true,
   },
 
   // ============================================================================
@@ -483,7 +483,7 @@ const matterSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Matter type is required for legal classification'],
     enum: Object.values(MATTER_TYPES),
-    index: true
+    index: true,
   },
 
   matterNumber: {
@@ -491,7 +491,7 @@ const matterSchema = new mongoose.Schema({
     required: true,
     unique: true,
     index: true,
-    description: 'Internal matter reference number'
+    description: 'Internal matter reference number',
   },
 
   title: {
@@ -499,13 +499,13 @@ const matterSchema = new mongoose.Schema({
     required: [true, 'Matter title is required'],
     maxlength: 500,
     trim: true,
-    index: true
+    index: true,
   },
 
   description: {
     type: String,
     maxlength: 5000,
-    trim: true
+    trim: true,
   },
 
   // ============================================================================
@@ -517,13 +517,13 @@ const matterSchema = new mongoose.Schema({
     required: [true, 'Matter status is required'],
     enum: Object.values(MATTER_STATUS),
     default: MATTER_STATUS.PENDING,
-    index: true
+    index: true,
   },
 
   priority: {
     type: String,
     enum: ['low', 'normal', 'high', 'urgent'],
-    default: 'normal'
+    default: 'normal',
   },
 
   stage: {
@@ -535,9 +535,9 @@ const matterSchema = new mongoose.Schema({
       'execution',
       'monitoring',
       'closure',
-      'post_closure'
+      'post_closure',
     ],
-    default: 'intake'
+    default: 'intake',
   },
 
   // ============================================================================
@@ -548,54 +548,54 @@ const matterSchema = new mongoose.Schema({
     type: Date,
     required: true,
     default: Date.now,
-    index: true
+    index: true,
   },
 
   closedDate: {
     type: Date,
     sparse: true,
-    index: true
+    index: true,
   },
 
   archivedDate: {
     type: Date,
-    sparse: true
+    sparse: true,
   },
 
   lastActivityDate: {
     type: Date,
     required: true,
     default: Date.now,
-    index: true
+    index: true,
   },
 
   deadlines: [{
     deadlineId: {
       type: String,
-      default: () => crypto.randomBytes(16).toString('hex')
+      default: () => crypto.randomBytes(16).toString('hex'),
     },
     title: {
       type: String,
-      required: true
+      required: true,
     },
     description: String,
     dueDate: {
       type: Date,
-      required: true
+      required: true,
     },
     completedDate: Date,
     status: {
       type: String,
       enum: ['pending', 'completed', 'overdue', 'waived'],
-      default: 'pending'
+      default: 'pending',
     },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'User',
     },
     courtOrder: Boolean,
     courtReference: String,
-    reminderDays: [Number]
+    reminderDays: [Number],
   }],
 
   // ============================================================================
@@ -608,34 +608,34 @@ const matterSchema = new mongoose.Schema({
     partyId: String,
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    }
+      ref: 'User',
+    },
   },
 
   responsibleAttorney: {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: true,
     },
     name: String,
-    attorneyNumber: String
+    attorneyNumber: String,
   },
 
   team: [{
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'User',
     },
     role: {
       type: String,
-      enum: ['lead_attorney', 'associate', 'paralegal', 'secretary', 'clerk']
+      enum: ['lead_attorney', 'associate', 'paralegal', 'secretary', 'clerk'],
     },
     assignedDate: Date,
     assignedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    }
+      ref: 'User',
+    },
   }],
 
   // ============================================================================
@@ -645,7 +645,7 @@ const matterSchema = new mongoose.Schema({
   financials: {
     feeArrangement: {
       type: String,
-      enum: ['hourly', 'fixed', 'contingency', 'pro_bono', 'retainer']
+      enum: ['hourly', 'fixed', 'contingency', 'pro_bono', 'retainer'],
     },
     hourlyRate: Number,
     fixedFee: Number,
@@ -653,30 +653,30 @@ const matterSchema = new mongoose.Schema({
     totalBilled: {
       type: Number,
       default: 0,
-      min: 0
+      min: 0,
     },
     totalPaid: {
       type: Number,
       default: 0,
-      min: 0
+      min: 0,
     },
     outstandingBalance: {
       type: Number,
       default: 0,
-      min: 0
+      min: 0,
     },
     estimatedValue: Number,
     currency: {
       type: String,
       default: 'ZAR',
-      enum: ['ZAR', 'USD', 'EUR', 'GBP']
+      enum: ['ZAR', 'USD', 'EUR', 'GBP'],
     },
     trustFunds: {
       type: Number,
       default: 0,
       min: 0,
-      description: 'Funds held in trust for this matter'
-    }
+      description: 'Funds held in trust for this matter',
+    },
   },
 
   // ============================================================================
@@ -698,8 +698,8 @@ const matterSchema = new mongoose.Schema({
         'land_claims_court',
         'equality_court',
         'childrens_court',
-        'maintenance_court'
-      ]
+        'maintenance_court',
+      ],
     },
     caseNumber: String,
     judge: String,
@@ -713,9 +713,9 @@ const matterSchema = new mongoose.Schema({
       summary: String,
       documentId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Document'
-      }
-    }]
+        ref: 'Document',
+      },
+    }],
   },
 
   // ============================================================================
@@ -726,7 +726,7 @@ const matterSchema = new mongoose.Schema({
     documentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Document',
-      required: true
+      required: true,
     },
     category: {
       type: String,
@@ -745,24 +745,24 @@ const matterSchema = new mongoose.Schema({
         'contract',
         'corporate_record',
         'financial_record',
-        'other'
-      ]
+        'other',
+      ],
     },
     uploadedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'User',
     },
     uploadedAt: {
       type: Date,
-      default: Date.now
+      default: Date.now,
     },
-    description: String
+    description: String,
   }],
 
   documentCount: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
   },
 
   // ============================================================================
@@ -785,7 +785,7 @@ const matterSchema = new mongoose.Schema({
       purposes: [String],
       withdrawalDate: Date,
       withdrawalReason: String,
-      dataCategories: [String]
+      dataCategories: [String],
     }],
 
     processingActivities: [{
@@ -796,8 +796,8 @@ const matterSchema = new mongoose.Schema({
       dataAccessed: [String],
       accessedBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      }
+        ref: 'User',
+      },
     }],
 
     objections: [{
@@ -806,10 +806,10 @@ const matterSchema = new mongoose.Schema({
       reason: String,
       status: {
         type: String,
-        enum: ['pending', 'resolved', 'escalated']
+        enum: ['pending', 'resolved', 'escalated'],
       },
       resolvedDate: Date,
-      resolution: String
+      resolution: String,
     }],
 
     dataBreaches: [{
@@ -823,9 +823,9 @@ const matterSchema = new mongoose.Schema({
       remediatedAt: Date,
       status: {
         type: String,
-        enum: ['detected', 'investigating', 'notified', 'resolved']
-      }
-    }]
+        enum: ['detected', 'investigating', 'notified', 'resolved'],
+      },
+    }],
   },
 
   // ============================================================================
@@ -836,12 +836,12 @@ const matterSchema = new mongoose.Schema({
     type: String,
     enum: Object.keys(RETENTION_POLICIES),
     default: 'COMPANIES_ACT_7_YEARS',
-    index: true
+    index: true,
   },
 
   retentionExpiryDate: {
     type: Date,
-    index: true
+    index: true,
   },
 
   retentionNotes: String,
@@ -854,7 +854,7 @@ const matterSchema = new mongoose.Schema({
     type: String,
     enum: Object.values(DATA_RESIDENCY),
     default: DATA_RESIDENCY.ZA,
-    required: true
+    required: true,
   },
 
   crossBorderTransfers: [{
@@ -865,8 +865,8 @@ const matterSchema = new mongoose.Schema({
     safeguards: String,
     authorizedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    }
+      ref: 'User',
+    },
   }],
 
   // ============================================================================
@@ -876,27 +876,27 @@ const matterSchema = new mongoose.Schema({
   isDeleted: {
     type: Boolean,
     default: false,
-    index: true
+    index: true,
   },
 
   deletionRequestedAt: Date,
   deletionRequestedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
   },
   deletionApprovedAt: Date,
   deletionApprovedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
   },
   deletionProof: {
     type: String,
-    description: 'Cryptographic proof of deletion'
+    description: 'Cryptographic proof of deletion',
   },
   deletedAt: Date,
   deletedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
   },
 
   // ============================================================================
@@ -906,7 +906,7 @@ const matterSchema = new mongoose.Schema({
   forensicHash: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
 
   previousHash: String,
@@ -918,23 +918,23 @@ const matterSchema = new mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
   },
 
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
   },
 
   createdAt: {
     type: Date,
     default: Date.now,
-    immutable: true
+    immutable: true,
   },
 
   updatedAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
 
   // ============================================================================
@@ -945,8 +945,8 @@ const matterSchema = new mongoose.Schema({
 
   metadata: {
     type: Map,
-    of: mongoose.Schema.Types.Mixed
-  }
+    of: mongoose.Schema.Types.Mixed,
+  },
 }, {
   timestamps: true,
   collection: 'matters',
@@ -954,23 +954,23 @@ const matterSchema = new mongoose.Schema({
   minimize: false,
   toJSON: {
     virtuals: true,
-    transform: function (doc, ret) {
+    transform(doc, ret) {
       // Redact PII for API responses
       if (ret.parties) {
-        ret.parties = ret.parties.map(party => ({
+        ret.parties = ret.parties.map((party) => ({
           ...party,
           idNumber: party.idNumber ? '[REDACTED]' : undefined,
           email: party.email ? party.email.replace(/^(.)(.*)(@.*)$/, '$1***$3') : undefined,
           phone: party.phone ? party.phone.replace(/\d(?=\d{4})/g, '*') : undefined,
-          address: party.address ? '[REDACTED]' : undefined
+          address: party.address ? '[REDACTED]' : undefined,
         }));
       }
 
       if (ret.notes) {
-        ret.notes = ret.notes.map(note => ({
+        ret.notes = ret.notes.map((note) => ({
           content: note.isConfidential ? '[CONFIDENTIAL]' : note.content,
           author: note.author,
-          createdAt: note.createdAt
+          createdAt: note.createdAt,
         }));
       }
 
@@ -980,8 +980,8 @@ const matterSchema = new mongoose.Schema({
       delete ret.deletionProof;
 
       return ret;
-    }
-  }
+    },
+  },
 });
 
 // ============================================================================
@@ -1041,7 +1041,7 @@ matterSchema.pre('save', async function (next) {
     responsibleAttorney: this.responsibleAttorney?.userId,
     partyCount: this.parties?.length || 0,
     documentCount: this.documentCount,
-    previousHash: this.previousHash
+    previousHash: this.previousHash,
   };
 
   const canonicalData = JSON.stringify(hashData, Object.keys(hashData).sort());
@@ -1052,7 +1052,7 @@ matterSchema.pre('save', async function (next) {
     const previousVersion = await this.constructor.findOne({
       matterNumber: this.matterNumber,
       tenantId: this.tenantId,
-      createdAt: { $lt: this.createdAt || new Date() }
+      createdAt: { $lt: this.createdAt || new Date() },
     }).sort({ createdAt: -1 });
 
     if (previousVersion) {
@@ -1075,13 +1075,13 @@ matterSchema.methods.addTimelineEvent = async function (eventData, userId) {
     eventType: eventData.eventType,
     description: eventData.description,
     performedBy: {
-      userId: userId,
+      userId,
       name: eventData.userName,
-      role: eventData.userRole
+      role: eventData.userRole,
     },
     metadata: eventData.metadata,
     ipAddress: eventData.ipAddress,
-    userAgent: eventData.userAgent
+    userAgent: eventData.userAgent,
   };
 
   this.timeline.push(event);
@@ -1098,14 +1098,14 @@ matterSchema.methods.addNote = async function (noteData, userId) {
   const note = {
     content: noteData.content,
     author: {
-      userId: userId,
+      userId,
       name: noteData.userName,
-      role: noteData.userRole
+      role: noteData.userRole,
     },
     isConfidential: noteData.isConfidential || false,
     confidentialityLevel: noteData.confidentialityLevel || 'standard',
     tags: noteData.tags || [],
-    mentions: noteData.mentions || []
+    mentions: noteData.mentions || [],
   };
 
   this.notes.push(note);
@@ -1115,7 +1115,7 @@ matterSchema.methods.addNote = async function (noteData, userId) {
   await this.addTimelineEvent({
     eventType: 'NOTE_ADDED',
     description: `Note added: ${noteData.content.substring(0, 100)}...`,
-    metadata: { noteId: note.noteId }
+    metadata: { noteId: note.noteId },
   }, userId);
 
   return this.save();
@@ -1129,7 +1129,7 @@ matterSchema.methods.addDocument = async function (documentId, category, userId)
     documentId,
     category,
     uploadedBy: userId,
-    uploadedAt: new Date()
+    uploadedAt: new Date(),
   });
 
   this.documentCount = this.documents.length;
@@ -1139,7 +1139,7 @@ matterSchema.methods.addDocument = async function (documentId, category, userId)
   await this.addTimelineEvent({
     eventType: 'DOCUMENT_ADDED',
     description: `Document added: ${category}`,
-    metadata: { documentId }
+    metadata: { documentId },
   }, userId);
 
   return this.save();
@@ -1156,7 +1156,7 @@ matterSchema.methods.addDeadline = async function (deadlineData, userId) {
     assignedTo: deadlineData.assignedTo,
     courtOrder: deadlineData.courtOrder || false,
     courtReference: deadlineData.courtReference,
-    reminderDays: deadlineData.reminderDays || [7, 3, 1]
+    reminderDays: deadlineData.reminderDays || [7, 3, 1],
   });
 
   this.lastActivityDate = new Date();
@@ -1165,7 +1165,7 @@ matterSchema.methods.addDeadline = async function (deadlineData, userId) {
   await this.addTimelineEvent({
     eventType: 'DEADLINE_SET',
     description: `Deadline set: ${deadlineData.title}`,
-    metadata: { dueDate: deadlineData.dueDate }
+    metadata: { dueDate: deadlineData.dueDate },
   }, userId);
 
   return this.save();
@@ -1190,8 +1190,8 @@ matterSchema.methods.updateStatus = async function (newStatus, reason, userId) {
     metadata: {
       previousValue: oldStatus,
       newValue: newStatus,
-      reason
-    }
+      reason,
+    },
   }, userId);
 
   return this.save();
@@ -1205,18 +1205,18 @@ matterSchema.methods.getRedactedVersion = function () {
 
   // Deep redaction of PII
   if (redacted.parties) {
-    redacted.parties = redacted.parties.map(party => ({
+    redacted.parties = redacted.parties.map((party) => ({
       role: party.role,
       name: party.name,
-      representation: party.representation
+      representation: party.representation,
     }));
   }
 
   if (redacted.notes) {
-    redacted.notes = redacted.notes.map(note => ({
+    redacted.notes = redacted.notes.map((note) => ({
       content: note.isConfidential ? '[CONFIDENTIAL]' : note.content,
       author: note.author,
-      createdAt: note.createdAt
+      createdAt: note.createdAt,
     }));
   }
 
@@ -1238,7 +1238,7 @@ matterSchema.methods.verifyIntegrity = function () {
     responsibleAttorney: this.responsibleAttorney?.userId,
     partyCount: this.parties?.length || 0,
     documentCount: this.documentCount,
-    previousHash: this.previousHash
+    previousHash: this.previousHash,
   };
 
   const canonicalData = JSON.stringify(hashData, Object.keys(hashData).sort());
@@ -1248,7 +1248,7 @@ matterSchema.methods.verifyIntegrity = function () {
     verified: calculatedHash === this.forensicHash,
     calculated: calculatedHash,
     stored: this.forensicHash,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 };
 
@@ -1267,7 +1267,7 @@ matterSchema.statics.findExpiringSoon = async function (tenantId, daysThreshold 
     tenantId,
     retentionExpiryDate: { $lte: threshold },
     isDeleted: false,
-    status: { $ne: 'deleted' }
+    status: { $ne: 'deleted' },
   }).sort({ retentionExpiryDate: 1 });
 };
 
@@ -1280,13 +1280,13 @@ matterSchema.statics.getFirmStatistics = async function (firmId) {
     {
       $facet: {
         byStatus: [
-          { $group: { _id: '$status', count: { $sum: 1 } } }
+          { $group: { _id: '$status', count: { $sum: 1 } } },
         ],
         byType: [
-          { $group: { _id: '$matterType', count: { $sum: 1 } } }
+          { $group: { _id: '$matterType', count: { $sum: 1 } } },
         ],
         byAttorney: [
-          { $group: { _id: '$responsibleAttorney.userId', count: { $sum: 1 } } }
+          { $group: { _id: '$responsibleAttorney.userId', count: { $sum: 1 } } },
         ],
         activityMetrics: [
           {
@@ -1295,19 +1295,19 @@ matterSchema.statics.getFirmStatistics = async function (firmId) {
               avgDocuments: { $avg: '$documentCount' },
               avgParties: { $avg: { $size: '$parties' } },
               totalOpen: {
-                $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
+                $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] },
               },
               totalClosed: {
-                $sum: { $cond: [{ $eq: ['$status', 'closed'] }, 1, 0] }
+                $sum: { $cond: [{ $eq: ['$status', 'closed'] }, 1, 0] },
               },
               totalArchived: {
-                $sum: { $cond: [{ $eq: ['$status', 'archived'] }, 1, 0] }
-              }
-            }
-          }
-        ]
-      }
-    }
+                $sum: { $cond: [{ $eq: ['$status', 'archived'] }, 1, 0] },
+              },
+            },
+          },
+        ],
+      },
+    },
   ]);
 
   return stats[0] || {};
@@ -1323,7 +1323,7 @@ matterSchema.virtual('ageInDays').get(function () {
 
 matterSchema.virtual('isOverdue').get(function () {
   if (!this.deadlines) return false;
-  return this.deadlines.some(d => d.status === 'pending' && new Date(d.dueDate) < new Date());
+  return this.deadlines.some((d) => d.status === 'pending' && new Date(d.dueDate) < new Date());
 });
 
 matterSchema.virtual('partyCount').get(function () {
@@ -1347,5 +1347,5 @@ export {
   MATTER_TYPES,
   MATTER_STATUS,
   DATA_RESIDENCY,
-  RETENTION_POLICIES
+  RETENTION_POLICIES,
 };

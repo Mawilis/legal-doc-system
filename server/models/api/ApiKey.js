@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ API KEY MODEL - SECURE ACCESS MANAGEMENT FOR EXTERNAL CLIENTS             ║
   ║ Tiered access | Usage tracking | 100-year audit trail | POPIA compliant   ║
   ║ R15k/month revenue per key | Multi-tenant isolation                        ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import mongoose from 'mongoose';
 import crypto from 'crypto';
@@ -157,7 +157,7 @@ const apiKeySchema = new mongoose.Schema(
 
     retentionEnd: {
       type: Date,
-      default: function () {
+      default() {
         const date = new Date();
         date.setFullYear(date.getFullYear() + 10);
         return date;
@@ -174,7 +174,7 @@ const apiKeySchema = new mongoose.Schema(
     collection: 'api_keys',
     strict: true,
     minimize: false,
-  }
+  },
 );
 
 // Indexes
@@ -220,7 +220,7 @@ apiKeySchema.pre('save', async function (next) {
         isActive: null,
         expiresAt: null,
         previousHash: null,
-      }).sort()
+      }).sort(),
     );
 
     this.forensicHash = crypto.createHash('sha256').update(canonicalData).digest('hex');

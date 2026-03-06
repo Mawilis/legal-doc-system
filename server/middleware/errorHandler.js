@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - ENTERPRISE ERROR HANDLER                                        ║
   ║ SOC2 compliant | Full audit trail | Zero production surprises            ║
   ║ Handles 50+ error types | Automatic reporting | Circuit breaker ready    ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import pino from 'pino';
 import { getCurrentContext } from './tenantContext.js';
@@ -162,8 +162,7 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   // Don't expose internal error details in production
-  const responseMessage =
-    process.env.NODE_ENV === 'production' && statusCode >= 500 ? 'Internal server error' : message;
+  const responseMessage = process.env.NODE_ENV === 'production' && statusCode >= 500 ? 'Internal server error' : message;
 
   // Send response
   res.status(statusCode).json({
@@ -195,21 +194,19 @@ const triggerAlert = (errorData) => {
 // ASYNC ERROR WRAPPER
 // ============================================================================
 
-export const catchAsync = (fn) => {
-  return (req, res, next) => {
-    Promise.resolve(fn(req, res, next)).catch((err) => {
-      // Enhance error with request context
-      err.requestContext = {
-        path: req.path,
-        method: req.method,
-        ip: req.ip,
-        headers: req.headers,
-        query: req.query,
-        params: req.params,
-      };
-      next(err);
-    });
-  };
+export const catchAsync = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch((err) => {
+    // Enhance error with request context
+    err.requestContext = {
+      path: req.path,
+      method: req.method,
+      ip: req.ip,
+      headers: req.headers,
+      query: req.query,
+      params: req.params,
+    };
+    next(err);
+  });
 };
 
 // ============================================================================
@@ -228,34 +225,32 @@ export const notFound = (req, res, next) => {
 // GRACEFUL SHUTDOWN HANDLER
 // ============================================================================
 
-export const shutdownHandler = (server) => {
-  return async (signal) => {
-    console.log(`\n${signal} received. Starting graceful shutdown...`);
+export const shutdownHandler = (server) => async (signal) => {
+  console.log(`\n${signal} received. Starting graceful shutdown...`);
 
-    server.close(() => {
-      console.log('HTTP server closed');
+  server.close(() => {
+    console.log('HTTP server closed');
 
-      // Close database connections
-      if (global.mongoose) {
-        global.mongoose.disconnect();
-        console.log('MongoDB disconnected');
-      }
+    // Close database connections
+    if (global.mongoose) {
+      global.mongoose.disconnect();
+      console.log('MongoDB disconnected');
+    }
 
-      if (global.redis) {
-        global.redis.quit();
-        console.log('Redis disconnected');
-      }
+    if (global.redis) {
+      global.redis.quit();
+      console.log('Redis disconnected');
+    }
 
-      console.log('Graceful shutdown complete');
-      process.exit(0);
-    });
+    console.log('Graceful shutdown complete');
+    process.exit(0);
+  });
 
-    // Force shutdown after timeout
-    setTimeout(() => {
-      console.error('Could not close connections in time, forcefully shutting down');
-      process.exit(1);
-    }, 10000);
-  };
+  // Force shutdown after timeout
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
 };
 
 // ============================================================================

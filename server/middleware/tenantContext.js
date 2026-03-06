@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - ENTERPRISE MULTI-TENANT CONTEXT                                ║
   ║ Complete tenant isolation | AsyncLocalStorage | Zero-overhead            ║
   ║ Supports 10,000+ concurrent tenants | Sub-millisecond latency            ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import { AsyncLocalStorage } from 'async_hooks';
 import { v4 as uuidv4 } from 'uuid';
@@ -45,15 +45,13 @@ export const getCurrentRequestId = () => {
 /**
  * Get full current context store
  */
-export const getCurrentContext = () => {
-  return (
-    tenantStorage.getStore() || {
-      tenantId: 'default',
-      userId: 'anonymous',
-      requestId: 'unknown',
-    }
-  );
-};
+export const getCurrentContext = () => (
+  tenantStorage.getStore() || {
+    tenantId: 'default',
+    userId: 'anonymous',
+    requestId: 'unknown',
+  }
+);
 
 /**
  * Set tenant context manually (for background jobs, etc.)
@@ -69,17 +67,15 @@ export const setCurrentTenant = (tenantId, userId = null) => {
 /**
  * Run function with specific tenant context
  */
-export const runWithTenant = (tenantId, userId, fn) => {
-  return tenantStorage.run(
-    {
-      tenantId,
-      userId,
-      requestId: uuidv4(),
-      startTime: Date.now(),
-    },
-    fn
-  );
-};
+export const runWithTenant = (tenantId, userId, fn) => tenantStorage.run(
+  {
+    tenantId,
+    userId,
+    requestId: uuidv4(),
+    startTime: Date.now(),
+  },
+  fn,
+);
 
 /**
  * Run function with multiple context values
@@ -101,12 +97,11 @@ export const runWithContext = (context, fn) => {
 
 export const tenantContext = (req, res, next) => {
   // Extract tenant from multiple sources with priority
-  const tenantId =
-    req.headers['x-tenant-id'] ||
-    req.headers['tenant-id'] ||
-    req.query.tenantId ||
-    req.body?.tenantId ||
-    'default';
+  const tenantId = req.headers['x-tenant-id']
+    || req.headers['tenant-id']
+    || req.query.tenantId
+    || req.body?.tenantId
+    || 'default';
 
   // Extract user if authenticated
   const userId = req.user?.id || req.headers['x-user-id'] || 'anonymous';
@@ -131,7 +126,7 @@ export const tenantContext = (req, res, next) => {
     },
     () => {
       next();
-    }
+    },
   );
 };
 
@@ -157,11 +152,9 @@ export const requireTenant = (req, res, next) => {
 // TENANT ISOLATION MIDDLEWARE for database queries
 // ============================================================================
 
-export const isolateTenant = (model) => {
-  return async (query = {}) => {
-    const tenantId = getCurrentTenant();
-    return model.find({ ...query, tenantId });
-  };
+export const isolateTenant = (model) => async (query = {}) => {
+  const tenantId = getCurrentTenant();
+  return model.find({ ...query, tenantId });
 };
 
 // ============================================================================

@@ -71,10 +71,10 @@
  * goes unrecorded, no compliance requirement unmet, and no truth lost to time.
  */
 
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ AUDIT CONTROLLER - INVESTOR-GRADE MODULE                       ║
   ║ 94% cost reduction | R18.5M risk elimination | 96% margins     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/auditController.js
  * INVESTOR VALUE PROPOSITION:
@@ -114,10 +114,9 @@
  * }
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Secure, Pinned Dependencies
 const express = require('express');
+
 const router = express.Router();
 const mongoose = require('mongoose');
 const crypto = require('crypto'); // Node.js built-in for quantum-grade operations
@@ -130,32 +129,31 @@ const Joi = require('joi');
 require('dotenv').config();
 
 // QUANTUM MONITORING: Performance and security telemetry
-const monitoring = require('../utils/monitoring');
 
 // QUANTUM RATE LIMITING: DDoS and abuse protection
 const rateLimit = require('express-rate-limit');
 const RedisStore = require('rate-limit-redis');
+const monitoring = require('../utils/monitoring');
 
 // QUANTUM MODELS: Forensic audit trail
 const ValidationAudit = require('../models/ValidationAudit.js');
 
 // QUANTUM UTILITIES: Logging and cryptography
 const loggerRaw = require('../utils/logger.js');
+
 const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../utils/auditLogger.js');
 const cryptoUtils = require('../utils/cryptoUtils.js');
 const quantumLogger = require('../utils/quantumLogger.js');
 
 // QUANTUM SERVICES: AI and blockchain integration
-const anomalyDetector =
-  process.env.ENABLE_AI_ANOMALY_DETECTION === 'true'
-    ? require('../services/anomalyDetectionService')
-    : null;
+const anomalyDetector = process.env.ENABLE_AI_ANOMALY_DETECTION === 'true'
+  ? require('../services/anomalyDetectionService')
+  : null;
 
-const blockchainService =
-  process.env.ENABLE_BLOCKCHAIN_AUDIT === 'true'
-    ? require('../services/blockchainAuditService')
-    : null;
+const blockchainService = process.env.ENABLE_BLOCKCHAIN_AUDIT === 'true'
+  ? require('../services/blockchainAuditService')
+  : null;
 
 /* ---------------------------------------------------------------------------
    QUANTUM ENVIRONMENT VALIDATION
@@ -177,8 +175,8 @@ const validateQuantumEnvironment = () => {
   if (missingVars.length > 0) {
     console.warn(
       `[Quantum Audit Controller] Missing environment variables: ${missingVars.join(
-        ', '
-      )}. Using defaults.`
+        ', ',
+      )}. Using defaults.`,
     );
   }
 
@@ -188,7 +186,7 @@ const validateQuantumEnvironment = () => {
     const keyBuffer = Buffer.from(key, 'hex');
     if (keyBuffer.length !== 32) {
       throw new Error(
-        '[Quantum Audit Controller] AUDIT_ENCRYPTION_KEY must be 64 hex characters (32 bytes) for AES-256'
+        '[Quantum Audit Controller] AUDIT_ENCRYPTION_KEY must be 64 hex characters (32 bytes) for AES-256',
       );
     }
   }
@@ -226,7 +224,7 @@ const quantumAuditEventSchema = Joi.object({
         'CLIENT',
         'COMPLIANCE_OFFICER',
         'SYSTEM_ADMIN',
-        'SYSTEM'
+        'SYSTEM',
       )
       .required()
       .description('Legal role for accountability'),
@@ -266,7 +264,7 @@ const quantumAuditEventSchema = Joi.object({
       'DOWNLOAD',
       'SHARE',
       'ARCHIVE',
-      'RESTORE'
+      'RESTORE',
     )
     .required()
     .description('Action performed'),
@@ -286,7 +284,7 @@ const quantumAuditEventSchema = Joi.object({
       'USER',
       'ROLE',
       'PERMISSION',
-      'AUDIT_LOG'
+      'AUDIT_LOG',
     )
     .required()
     .description('Type of legal resource involved'),
@@ -338,7 +336,7 @@ const quantumAuditEventSchema = Joi.object({
         'CONTRACT',
         'LEGAL_OBLIGATION',
         'PUBLIC_TASK',
-        'LEGITIMATE_INTERESTS'
+        'LEGITIMATE_INTERESTS',
       ),
       consentId: Joi.string().pattern(/^[a-f0-9]{24}$/),
       dataMinimized: Joi.boolean(),
@@ -432,9 +430,9 @@ const quantumRateLimiter = rateLimit({
   // QUANTUM SECURITY: Redis store for distributed rate limiting
   store: process.env.REDIS_URL
     ? new RedisStore({
-        redisURL: process.env.REDIS_URL,
-        prefix: 'wilsy:audit:ratelimit:',
-      })
+      redisURL: process.env.REDIS_URL,
+      prefix: 'wilsy:audit:ratelimit:',
+    })
     : undefined,
 
   // Custom handler for rate limit exceeded
@@ -478,10 +476,10 @@ const decryptQuantumPayload = (encryptedPayload) => {
   try {
     // QUANTUM SHIELD: Validate encrypted payload structure
     if (
-      !encryptedPayload ||
-      !encryptedPayload.ciphertext ||
-      !encryptedPayload.iv ||
-      !encryptedPayload.tag
+      !encryptedPayload
+      || !encryptedPayload.ciphertext
+      || !encryptedPayload.iv
+      || !encryptedPayload.tag
     ) {
       throw new Error('Invalid encrypted payload structure');
     }
@@ -492,7 +490,7 @@ const decryptQuantumPayload = (encryptedPayload) => {
     const decipher = crypto.createDecipheriv(
       algorithm,
       key,
-      Buffer.from(encryptedPayload.iv, 'hex')
+      Buffer.from(encryptedPayload.iv, 'hex'),
     );
 
     decipher.setAuthTag(Buffer.from(encryptedPayload.tag, 'hex'));
@@ -581,7 +579,7 @@ const quantumSanitize = (data, options = {}) => {
       }
 
       // Truncate long strings
-      return str.length > maxStringLength ? str.substring(0, maxStringLength) + '...' : str;
+      return str.length > maxStringLength ? `${str.substring(0, maxStringLength)}...` : str;
     }
 
     // Handle arrays
@@ -620,9 +618,8 @@ const quantumSanitize = (data, options = {}) => {
  */
 export const logValidation = async (req, res) => {
   const startTime = performance.now();
-  const correlationId =
-    req.headers['x-correlation-id'] ||
-    `AUDIT-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
+  const correlationId = req.headers['x-correlation-id']
+    || `AUDIT-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
 
   try {
     // QUANTUM MONITORING: Start performance tracking
@@ -793,9 +790,8 @@ export const logValidation = async (req, res) => {
  */
 const ingestQuantumBatch = async (req, res) => {
   const startTime = performance.now();
-  const correlationId =
-    req.headers['x-correlation-id'] ||
-    `BATCH-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
+  const correlationId = req.headers['x-correlation-id']
+    || `BATCH-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
 
   try {
     // QUANTUM MONITORING: Start performance tracking
@@ -830,7 +826,7 @@ const ingestQuantumBatch = async (req, res) => {
       {
         abortEarly: false,
         allowUnknown: false,
-      }
+      },
     );
 
     if (validationError) {
@@ -906,7 +902,7 @@ const processQuantumBatchAsync = async (
   tenantId,
   originalReq,
   correlationId,
-  startTime
+  startTime,
 ) => {
   let successCount = 0;
   let failureCount = 0;
@@ -915,7 +911,7 @@ const processQuantumBatchAsync = async (
 
   try {
     console.log(
-      `[Quantum Audit] Starting async processing: batchId=${validatedBatch.batchId}, events=${validatedBatch.events.length}`
+      `[Quantum Audit] Starting async processing: batchId=${validatedBatch.batchId}, events=${validatedBatch.events.length}`,
     );
 
     // Create processing context
@@ -943,7 +939,7 @@ const processQuantumBatchAsync = async (
         console.log(
           `[Quantum Audit] Processing batch ${batchIndex + 1}/${eventBatches.length}: ${
             eventBatch.length
-          } events`
+          } events`,
         );
 
         // Process events in parallel with controlled concurrency
@@ -975,7 +971,7 @@ const processQuantumBatchAsync = async (
                 if (anomalyResult.isAnomalous) {
                   anomalyCount++;
                   console.warn(
-                    `[Quantum Audit] Anomaly detected in event: score=${anomalyScore}, type=${anomalyResult.anomalyType}`
+                    `[Quantum Audit] Anomaly detected in event: score=${anomalyScore}, type=${anomalyResult.anomalyType}`,
                   );
 
                   // Trigger security alert for high-risk anomalies
@@ -1041,7 +1037,7 @@ const processQuantumBatchAsync = async (
               processingTimeMs: Math.round(performance.now() - eventStartTime),
             });
 
-            console.error(`[Quantum Audit] Event processing failed:`, eventError);
+            console.error('[Quantum Audit] Event processing failed:', eventError);
 
             return { status: 'FAILED', error: eventError.message };
           }
@@ -1053,7 +1049,7 @@ const processQuantumBatchAsync = async (
         console.log(
           `[Quantum Audit] Batch ${batchIndex + 1} completed: ${
             batchResults.filter((r) => r.status === 'fulfilled').length
-          } successful`
+          } successful`,
         );
 
         // Small delay between batches to prevent overwhelming the system
@@ -1101,7 +1097,7 @@ const processQuantumBatchAsync = async (
     // Catch-all error handling for async processing
     console.error(
       `[Quantum Audit] Critical batch processing failure: correlationId=${correlationId}`,
-      error
+      error,
     );
 
     monitoring.logError({
@@ -1132,8 +1128,8 @@ export const getAuditTrail = async (req, res) => {
   try {
     // QUANTUM SECURITY: Verify user has forensic access rights
     if (
-      !req.user ||
-      !['partner', 'admin', 'compliance_officer', 'auditor'].includes(req.user.role)
+      !req.user
+      || !['partner', 'admin', 'compliance_officer', 'auditor'].includes(req.user.role)
     ) {
       return res.status(403).json({
         status: 'error',
@@ -1162,7 +1158,7 @@ export const getAuditTrail = async (req, res) => {
     // Build filters
     const filters = {};
     if (action) filters.action = action;
-    if (status) filters['validationResult.valid'] = status === 'success' ? true : false;
+    if (status) filters['validationResult.valid'] = status === 'success';
     if (resourceType) filters.resourceType = resourceType;
     if (resourceId) filters.resourceId = resourceId;
     if (userId) filters.userId = userId;
@@ -1191,7 +1187,7 @@ export const getAuditTrail = async (req, res) => {
       downloadUrl: `${process.env.APP_URL}/api/audits/evidence/${entry.auditId}`,
     }));
 
-    logger.info(`📋 FORENSIC AUDIT TRAIL RETRIEVED`, {
+    logger.info('📋 FORENSIC AUDIT TRAIL RETRIEVED', {
       tenantId,
       recordCount: trail.length,
       accessedBy: req.user.email,
@@ -1230,8 +1226,8 @@ export const verifyTenantChain = async (req, res) => {
   try {
     // QUANTUM SECURITY: Verify user has verification rights
     if (
-      !req.user ||
-      !['partner', 'admin', 'compliance_officer', 'auditor'].includes(req.user.role)
+      !req.user
+      || !['partner', 'admin', 'compliance_officer', 'auditor'].includes(req.user.role)
     ) {
       return res.status(403).json({
         status: 'error',
@@ -1257,7 +1253,7 @@ export const verifyTenantChain = async (req, res) => {
           details: result,
           timestamp: new Date(),
         },
-        { riskScore: 100, anomalyType: 'CHAIN_TAMPERING' }
+        { riskScore: 100, anomalyType: 'CHAIN_TAMPERING' },
       );
     }
 
@@ -1376,8 +1372,8 @@ export const downloadEvidencePackage = async (req, res) => {
   try {
     // QUANTUM SECURITY: Verify user has evidence access rights
     if (
-      !req.user ||
-      !['partner', 'admin', 'compliance_officer', 'auditor'].includes(req.user.role)
+      !req.user
+      || !['partner', 'admin', 'compliance_officer', 'auditor'].includes(req.user.role)
     ) {
       return res.status(403).json({
         status: 'error',
@@ -1390,7 +1386,9 @@ export const downloadEvidencePackage = async (req, res) => {
     const tenantId = req.tenant?.tenantId || req.user?.tenantId;
 
     // Extract query parameters
-    const { from, to, caseId, matterNumber } = req.query;
+    const {
+      from, to, caseId, matterNumber,
+    } = req.query;
 
     // Build filters
     const filters = {};
@@ -1433,7 +1431,7 @@ export const downloadEvidencePackage = async (req, res) => {
       timestamp: new Date().toISOString(),
     });
 
-    logger.info(`📦 EVIDENCE PACKAGE EXPORTED`, {
+    logger.info('📦 EVIDENCE PACKAGE EXPORTED', {
       tenantId,
       exportId: evidence.exportId,
       recordCount: evidence.package.length,
@@ -1444,7 +1442,7 @@ export const downloadEvidencePackage = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="evidence-${evidence.exportId}.json"`
+      `attachment; filename="evidence-${evidence.exportId}.json"`,
     );
     res.setHeader('X-Evidence-Hash', evidence.overallHash);
     res.setHeader('X-Export-ID', evidence.exportId);
@@ -1650,12 +1648,10 @@ export const getQuantumHealth = async (req, res) => {
 
     try {
       const os = require('os');
-      healthChecks.checks.resources.details.memoryFree =
-        Math.round(os.freemem() / 1024 / 1024) + 'MB';
-      healthChecks.checks.resources.details.memoryTotal =
-        Math.round(os.totalmem() / 1024 / 1024) + 'MB';
+      healthChecks.checks.resources.details.memoryFree = `${Math.round(os.freemem() / 1024 / 1024)}MB`;
+      healthChecks.checks.resources.details.memoryTotal = `${Math.round(os.totalmem() / 1024 / 1024)}MB`;
       healthChecks.checks.resources.details.loadAverage = os.loadavg();
-      healthChecks.checks.resources.details.uptime = Math.round(os.uptime() / 3600) + ' hours';
+      healthChecks.checks.resources.details.uptime = `${Math.round(os.uptime() / 3600)} hours`;
       healthChecks.checks.resources.details.cpuCores = os.cpus().length;
       healthChecks.checks.resources.status = 'HEALTHY';
     } catch (resourceError) {
@@ -1675,10 +1671,10 @@ export const getQuantumHealth = async (req, res) => {
 
     // Determine overall status
     const allHealthy = Object.values(healthChecks.checks).every(
-      (check) => check.status === 'HEALTHY'
+      (check) => check.status === 'HEALTHY',
     );
     const hasWarnings = Object.values(healthChecks.checks).some(
-      (check) => check.status === 'WARNING'
+      (check) => check.status === 'WARNING',
     );
 
     healthChecks.status = allHealthy ? 'HEALTHY' : hasWarnings ? 'DEGRADED' : 'CRITICAL';
@@ -1758,7 +1754,7 @@ const anchorToBlockchainAsync = async (auditEntry) => {
             'blockchainProof.blockNumber': result.blockNumber,
             'blockchainProof.timestamp': new Date(),
           },
-        }
+        },
       );
     }
   } catch (error) {
@@ -1812,7 +1808,7 @@ const triggerSecurityAlert = async (event, anomalyResult) => {
     });
 
     console.warn(
-      `[Quantum Audit] Security alert triggered: eventId=${event.auditId}, riskScore=${anomalyResult.riskScore}`
+      `[Quantum Audit] Security alert triggered: eventId=${event.auditId}, riskScore=${anomalyResult.riskScore}`,
     );
   } catch (alertError) {
     console.error('[Quantum Audit] Security alert failed:', alertError);
@@ -1903,7 +1899,7 @@ router.post(
   '/log',
   quantumRateLimiter,
   express.json({ limit: process.env.AUDIT_MAX_PAYLOAD_SIZE || '10mb' }),
-  logValidation
+  logValidation,
 );
 
 // Batch ingestion endpoint
@@ -1911,7 +1907,7 @@ router.post(
   '/quantum-batch',
   quantumRateLimiter,
   express.json({ limit: process.env.AUDIT_MAX_PAYLOAD_SIZE || '10mb' }),
-  ingestQuantumBatch
+  ingestQuantumBatch,
 );
 
 // Forensic endpoints

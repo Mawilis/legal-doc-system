@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ PDF GENERATOR - INVESTOR-GRADE DOCUMENT ENGINE                                        ║
   ║ R2.5M/year manual document prep eliminated | Zero legal exposure from bad formatting  ║
   ║ 92% margin on automated PDF generation | POPIA §19, ECT Act §13(2) compliant          ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/pdfGenerator.js
@@ -56,14 +56,14 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // Internal imports with defensive error handling
-let auditLogger, logger, cryptoUtils, tenantContext;
+let auditLogger; let logger; let cryptoUtils; let
+  tenantContext;
 
 try {
-  auditLogger = require('../utils/auditLogger').default || require('../utils/auditLogger');
-  logger = require('../utils/logger').default || require('../utils/logger');
-  cryptoUtils = require('../utils/cryptoUtils').default || require('../utils/cryptoUtils');
-  tenantContext =
-    require('../middleware/tenantContext').default || require('../middleware/tenantContext');
+  auditLogger = require('./auditLogger').default || require('./auditLogger');
+  logger = require('./logger').default || require('./logger');
+  cryptoUtils = require('./cryptoUtils').default || require('./cryptoUtils');
+  tenantContext = require('../middleware/tenantContext').default || require('../middleware/tenantContext');
 } catch (importError) {
   console.error('Critical dependency import failed in PDFGenerator:', importError.message);
   // Provide minimal shim for catastrophic failure - prevents app crash but logs critical error
@@ -204,7 +204,7 @@ function validateTenantId(tenantId) {
   const tenantIdRegex = /^[a-zA-Z0-9_-]{8,64}$/;
   if (!tenantId || !tenantIdRegex.test(tenantId)) {
     throw new Error(
-      `Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`
+      `Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`,
     );
   }
 }
@@ -306,7 +306,7 @@ class PDFGenerator {
   async generate(data, template, options = {}) {
     const startTime = Date.now();
     const tenantContext = this.getTenantContext();
-    const tenantId = tenantContext.tenantId;
+    const { tenantId } = tenantContext;
 
     // Validate tenant ID
     validateTenantId(tenantId);
@@ -363,8 +363,8 @@ class PDFGenerator {
             'This document is electronically generated and legally binding under ECT Act §13(2)',
         },
         null,
-        2
-      )
+        2,
+      ),
     );
 
     // Verify size limits
@@ -520,10 +520,9 @@ class PDFGenerator {
    * @returns {Promise<Object>} - Generated document
    */
   async generateCourtDocument(courtData, options = {}) {
-    const template =
-      courtData.documentType === 'founding-affidavit'
-        ? 'founding-affidavit-template'
-        : 'court-filing-template';
+    const template = courtData.documentType === 'founding-affidavit'
+      ? 'founding-affidavit-template'
+      : 'court-filing-template';
 
     // Validate court data
     if (!courtData.caseNumber || !courtData.court) {
@@ -571,7 +570,7 @@ class PDFGenerator {
 
       // This is safe as documentHash is validated and not user-provided directly
       const { stdout } = await findPromise(
-        `find ${basePath} -name "${documentHash}-*.pdf" -type f | head -1`
+        `find ${basePath} -name "${documentHash}-*.pdf" -type f | head -1`,
       );
 
       const filePath = stdout.trim();

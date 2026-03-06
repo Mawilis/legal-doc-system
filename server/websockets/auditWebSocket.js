@@ -69,8 +69,6 @@
  * Africa's legal renaissance is built upon incorruptible financial foundations.
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Secure, Pinned Dependencies
 const crypto = require('crypto'); // Node.js built-in crypto for quantum-grade operations
 const axios = require('axios@^1.6.0');
@@ -87,14 +85,12 @@ const auditService = require('../services/auditService');
 // const complianceService = require("../services/complianceService"); // Unused variable
 
 // QUANTUM AI: Risk scoring and anomaly detection
-const riskScoringService =
-  process.env.ENABLE_AI_RISK_SCORING === 'true' ? require('../services/riskScoringService') : null;
+const riskScoringService = process.env.ENABLE_AI_RISK_SCORING === 'true' ? require('../services/riskScoringService') : null;
 
 // QUANTUM BLOCKCHAIN: Immutable verification anchoring
-const blockchainService =
-  process.env.ENABLE_BLOCKCHAIN_FICA === 'true'
-    ? require('../services/blockchainAuditService')
-    : null;
+const blockchainService = process.env.ENABLE_BLOCKCHAIN_FICA === 'true'
+  ? require('../services/blockchainAuditService')
+  : null;
 
 /* ---------------------------------------------------------------------------
    QUANTUM ENVIRONMENT VALIDATION
@@ -120,7 +116,7 @@ const validateQuantumEnvironment = () => {
   const key = Buffer.from(process.env.FICA_ENCRYPTION_KEY, 'hex');
   if (key.length !== 32) {
     throw new Error(
-      '[Quantum FICA Service] FICA_ENCRYPTION_KEY must be 64 hex characters (32 bytes) for AES-256'
+      '[Quantum FICA Service] FICA_ENCRYPTION_KEY must be 64 hex characters (32 bytes) for AES-256',
     );
   }
 
@@ -176,7 +172,7 @@ const decryptFICAData = (_encryptedData) => {
   const decipher = crypto.createDecipheriv(
     encryptedData.algorithm,
     key,
-    Buffer.from(encryptedData.iv, 'hex')
+    Buffer.from(encryptedData.iv, 'hex'),
   );
 
   decipher.setAuthTag(Buffer.from(encryptedData.tag, 'hex'));
@@ -267,7 +263,7 @@ const executeProviderRequest = async (provider, endpoint, data, options = {}) =>
         'X-Request-ID': requestId,
         'X-Client': 'Wilsy-OS-FICA-Quantum',
       },
-      data: data,
+      data,
       timeout: options.timeout || provider.timeout,
       validateStatus: (_status) => status >= 200 && status < 500,
     };
@@ -416,7 +412,7 @@ exports.verifyIndividual = async (individualData, context) => {
     if (riskScoringService) {
       verificationResult.riskScore = await riskScoringService.calculateIndividualRisk(
         individualData,
-        verificationResult
+        verificationResult,
       );
     }
 
@@ -445,7 +441,7 @@ exports.verifyIndividual = async (individualData, context) => {
     });
 
     console.log(
-      `[Quantum FICA] Individual verification completed: ${verificationId}, Status: ${verificationResult.overallStatus}`
+      `[Quantum FICA] Individual verification completed: ${verificationId}, Status: ${verificationResult.overallStatus}`,
     );
 
     return {
@@ -553,7 +549,7 @@ const verifyAddress = async (encryptedAddress, verificationId) => {
     const result = await executeProviderRequest(
       provider,
       provider.endpoints.individual, // Same endpoint for address verification
-      { ...payload, checkType: 'address' }
+      { ...payload, checkType: 'address' },
     );
 
     if (result.success && result.data.addressVerification) {
@@ -640,7 +636,7 @@ const compileIndividualResults = (results, verificationId) => {
 
   results.forEach((result, index) => {
     if (result.status === 'fulfilled' && result.value) {
-      const value = result.value;
+      const { value } = result;
 
       if (Array.isArray(value)) {
         // Handle array results (like sanctions checks)
@@ -678,15 +674,15 @@ const compileIndividualResults = (results, verificationId) => {
 
   // Determine overall status
   const failedChecks = compiled.riskIndicators.filter(
-    (_indicator) => indicator.type.includes('FAILURE') || indicator.type.includes('MATCH')
+    (_indicator) => indicator.type.includes('FAILURE') || indicator.type.includes('MATCH'),
   );
 
   if (failedChecks.length > 0) {
     compiled.overallStatus = 'REQUIRES_REVIEW';
     compiled.recommendations.push('Manual review required due to verification issues');
   } else if (
-    compiled.checks.IDENTITY_DATANAMIX?.status === 'VERIFIED' &&
-    compiled.checks.ADDRESS_DATANAMIX?.status === 'VERIFIED'
+    compiled.checks.IDENTITY_DATANAMIX?.status === 'VERIFIED'
+    && compiled.checks.ADDRESS_DATANAMIX?.status === 'VERIFIED'
   ) {
     compiled.overallStatus = 'VERIFIED';
   } else {
@@ -756,7 +752,7 @@ exports.verifyCorporate = async (corporateData, context) => {
     if (riskScoringService) {
       verificationResult.riskScore = await riskScoringService.calculateCorporateRisk(
         corporateData,
-        verificationResult
+        verificationResult,
       );
     }
 
@@ -785,7 +781,7 @@ exports.verifyCorporate = async (corporateData, context) => {
     });
 
     console.log(
-      `[Quantum FICA] Corporate verification completed: ${verificationId}, Status: ${verificationResult.overallStatus}`
+      `[Quantum FICA] Corporate verification completed: ${verificationId}, Status: ${verificationResult.overallStatus}`,
     );
 
     return {
@@ -1011,7 +1007,7 @@ const compileCorporateResults = (results, verificationId) => {
 
   results.forEach((result, index) => {
     if (result.status === 'fulfilled' && result.value) {
-      const value = result.value;
+      const { value } = result;
 
       if (Array.isArray(value)) {
         value.forEach((_check) => {
@@ -1087,8 +1083,8 @@ const compileCorporateResults = (results, verificationId) => {
     companyRegistered,
     directorsVerified,
     beneficialOwnersVerified:
-      compiled.checks.BENEFICIAL_OWNERS?.verifiedCount ===
-      compiled.checks.BENEFICIAL_OWNERS?.totalCount,
+      compiled.checks.BENEFICIAL_OWNERS?.verifiedCount
+      === compiled.checks.BENEFICIAL_OWNERS?.totalCount,
     sanctionsClear: noSanctionsMatches,
     ficaCompliant: compiled.overallStatus === 'VERIFIED',
   };
@@ -1188,8 +1184,7 @@ const createVerificationAudit = async (_auditData) => {
 const storeVerificationRecord = async (_recordData) => {
   try {
     // QUANTUM STORAGE: Use existing models or create new one
-    const FicaVerification =
-      mongoose.models.FicaVerification || require('../models/FicaVerification');
+    const FicaVerification = mongoose.models.FicaVerification || require('../models/FicaVerification');
 
     const verificationRecord = new FicaVerification({
       verificationId: recordData.verificationId,
@@ -1243,8 +1238,7 @@ const parseIdentityResult = (_providerData) => {
  */
 exports.getVerificationStatus = async (_verificationId) => {
   try {
-    const FicaVerification =
-      mongoose.models.FicaVerification || require('../models/FicaVerification');
+    const FicaVerification = mongoose.models.FicaVerification || require('../models/FicaVerification');
 
     const record = await FicaVerification.findOne({ verificationId });
 
@@ -1307,7 +1301,7 @@ exports.batchVerify = async (entities, entityType, context) => {
     const batchEntities = entities.slice(0, maxBatchSize);
 
     console.log(
-      `[Quantum FICA] Starting batch verification: ${batchId}, Type: ${entityType}, Count: ${batchEntities.length}`
+      `[Quantum FICA] Starting batch verification: ${batchId}, Type: ${entityType}, Count: ${batchEntities.length}`,
     );
 
     // Execute batch verification in parallel with concurrency control
@@ -1316,11 +1310,9 @@ exports.batchVerify = async (entities, entityType, context) => {
 
     for (let i = 0; i < batchEntities.length; i += concurrency) {
       const batchChunk = batchEntities.slice(i, i + concurrency);
-      const chunkPromises = batchChunk.map((_entity) =>
-        entityType === 'INDIVIDUAL'
-          ? this.verifyIndividual(entity, { ...context, batchId })
-          : this.verifyCorporate(entity, { ...context, batchId })
-      );
+      const chunkPromises = batchChunk.map((_entity) => (entityType === 'INDIVIDUAL'
+        ? this.verifyIndividual(entity, { ...context, batchId })
+        : this.verifyCorporate(entity, { ...context, batchId })));
 
       const chunkResults = await Promise.allSettled(chunkPromises);
       results.push(...chunkResults);
@@ -1338,7 +1330,7 @@ exports.batchVerify = async (entities, entityType, context) => {
       total: batchEntities.length,
       successful: results.filter((_r) => r.status === 'fulfilled' && r.value?.success).length,
       failed: results.filter(
-        (_r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value?.success)
+        (_r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value?.success),
       ).length,
       results: results.map((r, index) => ({
         entityIndex: index,
@@ -1367,7 +1359,7 @@ exports.batchVerify = async (entities, entityType, context) => {
     });
 
     console.log(
-      `[Quantum FICA] Batch verification completed: ${batchId}, Successful: ${batchResult.successful}/${batchResult.total}`
+      `[Quantum FICA] Batch verification completed: ${batchId}, Successful: ${batchResult.successful}/${batchResult.total}`,
     );
 
     return {
@@ -1406,8 +1398,7 @@ exports.batchVerify = async (entities, entityType, context) => {
  */
 exports.generateComplianceReport = async (tenantId, period = 'LAST_30_DAYS') => {
   try {
-    const FicaVerification =
-      mongoose.models.FicaVerification || require('../models/FicaVerification');
+    const FicaVerification = mongoose.models.FicaVerification || require('../models/FicaVerification');
 
     // Calculate date range based on period
     const dateRange = calculateDateRange(period);
@@ -1451,11 +1442,12 @@ exports.generateComplianceReport = async (tenantId, period = 'LAST_30_DAYS') => 
         requiresReview: acc.requiresReview + metric.requiresReview,
         failed: acc.failed + metric.failed,
       }),
-      { total: 0, verified: 0, requiresReview: 0, failed: 0 }
+      {
+        total: 0, verified: 0, requiresReview: 0, failed: 0,
+      },
     );
 
-    const complianceRate =
-      totalMetrics.total > 0 ? (totalMetrics.verified / totalMetrics.total) * 100 : 100;
+    const complianceRate = totalMetrics.total > 0 ? (totalMetrics.verified / totalMetrics.total) * 100 : 100;
 
     const report = {
       reportId: `FICA-REPORT-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
@@ -1608,13 +1600,13 @@ const generateComplianceRecommendations = (complianceRate, metrics) => {
 
   if (complianceRate < 95) {
     recommendations.push(
-      'Increase verification success rate to meet FICA compliance threshold of 95%'
+      'Increase verification success rate to meet FICA compliance threshold of 95%',
     );
   }
 
   if (metrics.requiresReview > metrics.total * 0.1) {
     recommendations.push(
-      'Reduce manual review requirements through improved verification processes'
+      'Reduce manual review requirements through improved verification processes',
     );
   }
 
@@ -1651,8 +1643,7 @@ exports.healthCheck = async () => {
     };
 
     const encryptionKey = process.env.FICA_ENCRYPTION_KEY;
-    healthChecks.checks.encryption.status =
-      encryptionKey && encryptionKey.length === 64 ? 'HEALTHY' : 'UNHEALTHY';
+    healthChecks.checks.encryption.status = encryptionKey && encryptionKey.length === 64 ? 'HEALTHY' : 'UNHEALTHY';
     healthChecks.checks.encryption.details.keyLength = encryptionKey ? encryptionKey.length : 0;
 
     // Check 2: Provider connectivity
@@ -1713,7 +1704,7 @@ exports.healthCheck = async () => {
 
     // Determine overall status
     const allHealthy = Object.values(healthChecks.checks).every(
-      (_check) => check.status === 'HEALTHY' || check.status === 'DEGRADED'
+      (_check) => check.status === 'HEALTHY' || check.status === 'DEGRADED',
     );
 
     healthChecks.status = allHealthy ? 'HEALTHY' : 'UNHEALTHY';

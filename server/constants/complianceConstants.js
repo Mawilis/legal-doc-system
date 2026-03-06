@@ -1727,8 +1727,7 @@ function getDocumentRetentionPeriod(documentType, jurisdiction = 'ZA') {
  */
 function calculateCompliancePenalty(breachType, severity = 'MINOR', jurisdiction = 'ZA') {
   const penalties = COMPLIANCE_PENALTIES;
-  const jurisdictionConfig =
-    AFRICAN_JURISDICTIONS[jurisdiction] || AFRICAN_JURISDICTIONS.SOUTH_AFRICA;
+  const jurisdictionConfig = AFRICAN_JURISDICTIONS[jurisdiction] || AFRICAN_JURISDICTIONS.SOUTH_AFRICA;
 
   switch (breachType.toUpperCase()) {
     case 'POPIA':
@@ -1823,8 +1822,7 @@ function validateLegalTimePeriod(timePeriodDays, periodType = 'NOTICE', jurisdic
  */
 function getLegalFeeCap(serviceType, jurisdiction = 'ZA') {
   const feeCaps = LEGAL_FEE_CAPS;
-  const jurisdictionConfig =
-    AFRICAN_JURISDICTIONS[jurisdiction] || AFRICAN_JURISDICTIONS.SOUTH_AFRICA;
+  const jurisdictionConfig = AFRICAN_JURISDICTIONS[jurisdiction] || AFRICAN_JURISDICTIONS.SOUTH_AFRICA;
 
   const serviceFeeMap = {
     ROAD_ACCIDENT: feeCaps.ROAD_ACCIDENT_FUND,
@@ -1847,13 +1845,12 @@ function getLegalFeeCap(serviceType, jurisdiction = 'ZA') {
  * Creates a compliance status report based on constants
  */
 function generateComplianceReport(jurisdiction = 'ZA') {
-  const jurisdictionConfig =
-    AFRICAN_JURISDICTIONS[jurisdiction] || AFRICAN_JURISDICTIONS.SOUTH_AFRICA;
+  const jurisdictionConfig = AFRICAN_JURISDICTIONS[jurisdiction] || AFRICAN_JURISDICTIONS.SOUTH_AFRICA;
 
   const report = {
     jurisdiction: jurisdictionConfig.CODE,
     jurisdictionName: Object.keys(AFRICAN_JURISDICTIONS).find(
-      (key) => AFRICAN_JURISDICTIONS[key].CODE === jurisdictionConfig.CODE
+      (key) => AFRICAN_JURISDICTIONS[key].CODE === jurisdictionConfig.CODE,
     ),
     generatedAt: new Date().toISOString(),
     complianceStatus: {
@@ -1947,14 +1944,14 @@ function validateDataProcessingCompliance(record) {
 
     if (record.processingPurpose.length < minLength) {
       validationResults.warnings.push(
-        `Processing purpose should be at least ${minLength} characters`
+        `Processing purpose should be at least ${minLength} characters`,
       );
       validationResults.complianceScore -= 5;
     }
 
     if (record.processingPurpose.length > maxLength) {
       validationResults.warnings.push(
-        `Processing purpose should not exceed ${maxLength} characters`
+        `Processing purpose should not exceed ${maxLength} characters`,
       );
       validationResults.complianceScore -= 5;
     }
@@ -1972,7 +1969,7 @@ function validateDataProcessingCompliance(record) {
     const pattern = DATA_PROCESSING_CONSTANTS.VALIDATION.RETENTION_PATTERN;
     if (!pattern.test(record.retentionPeriod)) {
       validationResults.warnings.push(
-        'Retention period format should be: X years/months/days [post-event]'
+        'Retention period format should be: X years/months/days [post-event]',
       );
       validationResults.complianceScore -= 10;
     }
@@ -2004,9 +2001,8 @@ function validateDataProcessingCompliance(record) {
  * Returns complete jurisdiction configuration
  */
 function getJurisdictionConfig(jurisdictionCode = 'ZA') {
-  const jurisdiction =
-    Object.values(AFRICAN_JURISDICTIONS).find((j) => j.CODE === jurisdictionCode) ||
-    AFRICAN_JURISDICTIONS.SOUTH_AFRICA;
+  const jurisdiction = Object.values(AFRICAN_JURISDICTIONS).find((j) => j.CODE === jurisdictionCode)
+    || AFRICAN_JURISDICTIONS.SOUTH_AFRICA;
 
   return {
     ...jurisdiction,

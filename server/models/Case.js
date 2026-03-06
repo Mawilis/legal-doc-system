@@ -99,7 +99,7 @@ const caseSchema = new mongoose.Schema(
       required: true,
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           // Accept both formats: tenant_test_12345678 and tenant_[8-32 chars]
           return /^tenant_[a-zA-Z0-9]{8,32}$/.test(v) || /^test-tenant-[a-zA-Z0-9]{8,64}$/.test(v);
         },
@@ -185,7 +185,7 @@ const caseSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // Virtual for court info
@@ -207,27 +207,24 @@ caseSchema.virtual('paiaDeadlineApproaching').get(function () {
   const now = new Date();
   const threeDaysFromNow = new Date(now.setDate(now.getDate() + 3));
   return this.paiaRequests.some(
-    (req) =>
-      req.statutoryDeadline &&
-      req.statutoryDeadline <= threeDaysFromNow &&
-      req.status === PAIA_REQUEST_STATUSES.PENDING
+    (req) => req.statutoryDeadline
+      && req.statutoryDeadline <= threeDaysFromNow
+      && req.status === PAIA_REQUEST_STATUSES.PENDING,
   );
 });
 
 // Virtual for has active PAIA requests
 caseSchema.virtual('hasActivePaiaRequests').get(function () {
   return (
-    this.paiaRequests?.some((req) =>
-      [PAIA_REQUEST_STATUSES.PENDING, PAIA_REQUEST_STATUSES.IN_REVIEW].includes(req.status)
-    ) || false
+    this.paiaRequests?.some((req) => [PAIA_REQUEST_STATUSES.PENDING, PAIA_REQUEST_STATUSES.IN_REVIEW].includes(req.status)) || false
   );
 });
 
 // Virtual for conflict free
 caseSchema.virtual('isConflictFree').get(function () {
   return (
-    this.conflictStatus?.checked &&
-    (!this.conflictStatus?.foundConflicts || this.conflictStatus.foundConflicts.length === 0)
+    this.conflictStatus?.checked
+    && (!this.conflictStatus?.foundConflicts || this.conflictStatus.foundConflicts.length === 0)
   );
 });
 

@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS: ADMIN THREAT ROUTES - THE WAR ROOM API                                      ║
   ║ Real-time threat intelligence endpoints for CISO and investors                        ║
   ║ Protected by Super Admin Guard - Only Wilson can see this                             ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/admin/threatRoutes.js
@@ -21,9 +21,10 @@ import SecurityOrchestrator from '../../services/security/SecurityOrchestrator.j
 import { superAdminGuard } from '../../middleware/superAdminGuard.js';
 import { auditLogger } from '../../utils/auditLogger.js';
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import { redisClient } from '../../utils/redisClient.js';
 import SecurityLog from '../../models/securityLogModel.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 const router = express.Router();
 
@@ -166,7 +167,7 @@ router.get('/threat/quarantines', superAdminGuard, async (req, res) => {
           tenantId,
           ...JSON.parse(data || '{}'),
         };
-      })
+      }),
     );
 
     res.json({

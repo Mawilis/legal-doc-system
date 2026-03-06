@@ -24,7 +24,7 @@ describe('RetentionPolicy Model', function () {
     createdBy: testUserId,
   };
 
-  before(async function () {
+  before(async () => {
     // Connect to test database
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect('mongodb://localhost:27017/wilsy_test', {
@@ -34,18 +34,18 @@ describe('RetentionPolicy Model', function () {
     }
   });
 
-  after(async function () {
+  after(async () => {
     // Clean up
     await mongoose.connection.dropDatabase();
     await mongoose.disconnect();
   });
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     await RetentionPolicy.deleteMany({});
   });
 
-  describe('Schema Validation', function () {
-    it('should create valid policy', async function () {
+  describe('Schema Validation', () => {
+    it('should create valid policy', async () => {
       const policy = new RetentionPolicy(validPolicyData);
       const saved = await policy.save();
 
@@ -55,7 +55,7 @@ describe('RetentionPolicy Model', function () {
       expect(saved.forensicHash).to.be.a('string').with.length(64);
     });
 
-    it('should require policy name', async function () {
+    it('should require policy name', async () => {
       const invalidData = { ...validPolicyData, policyName: undefined };
       const policy = new RetentionPolicy(invalidData);
 
@@ -67,7 +67,7 @@ describe('RetentionPolicy Model', function () {
       }
     });
 
-    it('should require tenant ID', async function () {
+    it('should require tenant ID', async () => {
       const invalidData = { ...validPolicyData, tenantId: undefined };
       const policy = new RetentionPolicy(invalidData);
 
@@ -79,7 +79,7 @@ describe('RetentionPolicy Model', function () {
       }
     });
 
-    it('should validate tenant ID format', async function () {
+    it('should validate tenant ID format', async () => {
       const invalidData = { ...validPolicyData, tenantId: 'invalid' };
       const policy = new RetentionPolicy(invalidData);
 
@@ -91,7 +91,7 @@ describe('RetentionPolicy Model', function () {
       }
     });
 
-    it('should validate matter type enum', async function () {
+    it('should validate matter type enum', async () => {
       const invalidData = { ...validPolicyData, matterType: 'invalid' };
       const policy = new RetentionPolicy(invalidData);
 
@@ -104,8 +104,8 @@ describe('RetentionPolicy Model', function () {
     });
   });
 
-  describe('Retention Calculations', function () {
-    it('should calculate retention end date correctly', function () {
+  describe('Retention Calculations', () => {
+    it('should calculate retention end date correctly', () => {
       const policy = new RetentionPolicy(validPolicyData);
       const startDate = new Date('2026-01-01');
       const endDate = policy.calculateRetentionEndDate(startDate);
@@ -113,7 +113,7 @@ describe('RetentionPolicy Model', function () {
       expect(endDate.getFullYear()).to.equal(2033); // 2026 + 7 years
     });
 
-    it('should handle months and days', function () {
+    it('should handle months and days', () => {
       const policy = new RetentionPolicy({
         ...validPolicyData,
         retentionYears: 1,
@@ -129,7 +129,7 @@ describe('RetentionPolicy Model', function () {
       expect(endDate.getDate()).to.equal(16); // +15 days from 1st
     });
 
-    it('should return retention in days virtual', function () {
+    it('should return retention in days virtual', () => {
       const policy = new RetentionPolicy({
         ...validPolicyData,
         retentionYears: 2,
@@ -142,15 +142,15 @@ describe('RetentionPolicy Model', function () {
     });
   });
 
-  describe('Forensic Integrity', function () {
-    it('should generate forensic hash on save', async function () {
+  describe('Forensic Integrity', () => {
+    it('should generate forensic hash on save', async () => {
       const policy = new RetentionPolicy(validPolicyData);
       const saved = await policy.save();
 
       expect(saved.forensicHash).to.be.a('string').with.length(64);
     });
 
-    it('should link versions with hash chain', async function () {
+    it('should link versions with hash chain', async () => {
       const policy = new RetentionPolicy(validPolicyData);
       const v1 = await policy.save();
 
@@ -160,14 +160,14 @@ describe('RetentionPolicy Model', function () {
       expect(v2.version).to.equal(2);
     });
 
-    it('should verify integrity', async function () {
+    it('should verify integrity', async () => {
       const policy = new RetentionPolicy(validPolicyData);
       const saved = await policy.save();
 
       expect(saved.verifyIntegrity()).to.be.true;
     });
 
-    it('should detect tampering', async function () {
+    it('should detect tampering', async () => {
       const policy = new RetentionPolicy(validPolicyData);
       const saved = await policy.save();
 
@@ -178,8 +178,8 @@ describe('RetentionPolicy Model', function () {
     });
   });
 
-  describe('Static Methods', function () {
-    it('getActivePolicy should return active policy', async function () {
+  describe('Static Methods', () => {
+    it('getActivePolicy should return active policy', async () => {
       const policy = new RetentionPolicy(validPolicyData);
       await policy.save();
 
@@ -189,7 +189,7 @@ describe('RetentionPolicy Model', function () {
       expect(active.policyName).to.equal(validPolicyData.policyName);
     });
 
-    it('getDefaultPolicy should return default policy', async function () {
+    it('getDefaultPolicy should return default policy', async () => {
       const policy = new RetentionPolicy({
         ...validPolicyData,
         isDefault: true,
@@ -202,7 +202,7 @@ describe('RetentionPolicy Model', function () {
       expect(defaultPolicy.isDefault).to.be.true;
     });
 
-    it('getExpiringPolicies should return policies needing review', async function () {
+    it('getExpiringPolicies should return policies needing review', async () => {
       const pastReview = new RetentionPolicy({
         ...validPolicyData,
         reviewDate: new Date(Date.now() - 86400000), // Yesterday
@@ -215,8 +215,8 @@ describe('RetentionPolicy Model', function () {
     });
   });
 
-  describe('Compliance Report', function () {
-    it('should generate compliance report', async function () {
+  describe('Compliance Report', () => {
+    it('should generate compliance report', async () => {
       await new RetentionPolicy(validPolicyData).save();
 
       const report = await RetentionPolicy.getComplianceReport(testTenantId);
@@ -228,8 +228,8 @@ describe('RetentionPolicy Model', function () {
     });
   });
 
-  describe('Error Handling', function () {
-    it('should handle duplicate policy names gracefully', async function () {
+  describe('Error Handling', () => {
+    it('should handle duplicate policy names gracefully', async () => {
       const policy1 = new RetentionPolicy(validPolicyData);
       await policy1.save();
 

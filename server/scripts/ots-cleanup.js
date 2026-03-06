@@ -19,6 +19,7 @@ const fsSync = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
 const loggerRaw = require('../config/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const { AuditLedger } = require('../models/AuditLedger');
 

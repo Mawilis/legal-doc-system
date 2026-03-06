@@ -100,7 +100,7 @@ describe('Client Onboarding Service - Integration Tests', () => {
       sessionId,
       tenantId,
       clientType,
-      initialData
+      initialData,
     );
 
     expect(session).toBeDefined();
@@ -157,7 +157,7 @@ describe('Client Onboarding Service - Integration Tests', () => {
         idNumber: '9001011234567',
         dateOfBirth: '1990-01-01',
         nationality: 'South African',
-      }
+      },
     );
 
     expect(updated).toBeDefined();
@@ -192,7 +192,7 @@ describe('Client Onboarding Service - Integration Tests', () => {
       sessionId,
       tenantId,
       documentInfo,
-      fileData
+      fileData,
     );
 
     expect(document).toBeDefined();
@@ -224,7 +224,7 @@ describe('Client Onboarding Service - Integration Tests', () => {
         fileSize: 1024,
         mimeType: 'application/pdf',
       },
-      Buffer.from('id content')
+      Buffer.from('id content'),
     );
 
     await clientOnboardingService.uploadDocument(
@@ -236,7 +236,7 @@ describe('Client Onboarding Service - Integration Tests', () => {
         fileSize: 2048,
         mimeType: 'application/pdf',
       },
-      Buffer.from('address content')
+      Buffer.from('address content'),
     );
 
     const documents = await clientOnboardingService.getDocuments(sessionId, tenantId);
@@ -259,7 +259,7 @@ describe('Client Onboarding Service - Integration Tests', () => {
           dateOfBirth: '1990-01-01',
           nationality: 'South African',
           popiaConsent: true,
-        }
+        },
       );
     }
 

@@ -1,12 +1,13 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ NEURAL VECTORIZER UTILITIES - 1536-DIMENSIONAL EMBEDDING ENGINE          ║
   ║ Quantum-inspired semantic search | 99.7% accuracy | Real-time            ║
   ║ R25M/year revenue | Multi-tenant isolation | POPIA compliant              ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import crypto from 'crypto';
 import loggerRaw from '../../utils/logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
@@ -62,7 +63,7 @@ export async function getLegalEmbeddingPipeline() {
       const { pipeline } = await getTransformers();
       legalEmbeddingPipeline = await pipeline(
         'feature-extraction',
-        'Xenova/legal-bert-base-uncased'
+        'Xenova/legal-bert-base-uncased',
       );
       logger.info('✅ Legal embedding pipeline initialized');
     } catch (error) {
@@ -101,9 +102,7 @@ export async function getEmbedding(text, options = {}) {
     } else if (vector.length < MODEL_DIMENSIONS) {
       // Pad with zeros and add deterministic noise based on text hash
       const hash = crypto.createHash('sha256').update(text).digest();
-      const padding = new Array(MODEL_DIMENSIONS - vector.length).fill(0).map((_, i) => {
-        return (hash[i % hash.length] / 255) * 0.01;
-      });
+      const padding = new Array(MODEL_DIMENSIONS - vector.length).fill(0).map((_, i) => (hash[i % hash.length] / 255) * 0.01);
       vector = [...vector, ...padding];
     }
 
@@ -113,9 +112,7 @@ export async function getEmbedding(text, options = {}) {
 
     // Fallback: deterministic hash-based vector
     const hash = crypto.createHash('sha256').update(text).digest();
-    const fallbackVector = new Array(MODEL_DIMENSIONS).fill(0).map((_, i) => {
-      return (hash[i % hash.length] / 255) * 2 - 1;
-    });
+    const fallbackVector = new Array(MODEL_DIMENSIONS).fill(0).map((_, i) => (hash[i % hash.length] / 255) * 2 - 1);
 
     // Normalize
     const magnitude = Math.sqrt(fallbackVector.reduce((sum, val) => sum + val * val, 0));
@@ -178,9 +175,7 @@ export function normalizeVectors(vectors) {
  */
 export function generateMockVector(text, dimensions = MODEL_DIMENSIONS) {
   const hash = crypto.createHash('sha256').update(text).digest();
-  const vector = new Array(dimensions).fill(0).map((_, i) => {
-    return (hash[i % hash.length] / 255) * 2 - 1;
-  });
+  const vector = new Array(dimensions).fill(0).map((_, i) => (hash[i % hash.length] / 255) * 2 - 1);
 
   // Normalize
   const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));

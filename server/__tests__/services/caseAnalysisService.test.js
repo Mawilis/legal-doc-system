@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE ANALYSIS SERVICE TESTS - INVESTOR DUE DILIGENCE          ║
   ║ 100% coverage | AI-Powered | Strategic Oracle                 ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/services/caseAnalysisService.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -54,9 +54,7 @@ jest.mock('../../utils/quantumLogger', () => ({
 }));
 
 jest.mock('../../utils/cryptoUtils', () => ({
-  sha256: jest.fn().mockImplementation((input) => {
-    return crypto.createHash('sha256').update(String(input)).digest('hex');
-  }),
+  sha256: jest.fn().mockImplementation((input) => crypto.createHash('sha256').update(String(input)).digest('hex')),
 }));
 
 // Mock AI services
@@ -74,7 +72,7 @@ jest.mock(
       similarCases: [{ citation: '[2020] ZACC 15', outcome: 'WIN', similarity: 0.92 }],
     }),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 jest.mock(
@@ -92,10 +90,12 @@ jest.mock(
         },
       ],
       keyPrinciples: ['Principle of legality requires rational connection'],
-      precedentStrength: { overall: 85, binding: 2, persuasive: 1, bindingRatio: 67 },
+      precedentStrength: {
+        overall: 85, binding: 2, persuasive: 1, bindingRatio: 67,
+      },
     }),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 // Import after mocks
@@ -201,7 +201,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(result).toBeDefined();
@@ -220,7 +220,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       Case.findOne.mockResolvedValue(null);
 
       await expect(caseAnalysisService.analyzeCase(mockCaseId, mockTenantId)).rejects.toThrow(
-        'Case not found'
+        'Case not found',
       );
     });
 
@@ -233,7 +233,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY,
       );
 
       expect(result.precedent).toBeDefined();
@@ -247,7 +247,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       expect(result.risk).toBeDefined();
@@ -262,7 +262,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY,
       );
 
       expect(result.strategy).toBeDefined();
@@ -277,7 +277,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY,
       );
 
       expect(result.settlement).toBeDefined();
@@ -293,7 +293,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(result.precedent.error).toBeDefined();
@@ -312,7 +312,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY,
       );
 
       expect(result.precedent.relevantPrecedents).toBeDefined();
@@ -330,7 +330,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY,
       );
 
       expect(result.precedent.keyPrinciples).toBeDefined();
@@ -350,7 +350,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY,
       );
 
       expect(result.precedent.precedentStrength).toBeDefined();
@@ -388,7 +388,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY,
       );
 
       // Should detect conflict or at least process both precedents
@@ -407,7 +407,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY,
       );
 
       expect(result.precedent.relevantPrecedents).toEqual([]);
@@ -431,7 +431,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       expect(result.risk.riskFactors).toBeDefined();
@@ -453,11 +453,11 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       const corporateFactor = result.risk.riskFactors.find(
-        (f) => f.factor === 'MULTIPLE_CORPORATE_ENTITIES'
+        (f) => f.factor === 'MULTIPLE_CORPORATE_ENTITIES',
       );
       expect(corporateFactor).toBeDefined();
     });
@@ -474,7 +474,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       const litigiousFactor = result.risk.riskFactors.find((f) => f.factor === 'LITIGIOUS_PARTIES');
@@ -490,7 +490,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       const multiJFactor = result.risk.riskFactors.find((f) => f.factor === 'MULTI_JURISDICTIONAL');
@@ -507,7 +507,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       const courtFactor = result.risk.riskFactors.find((f) => f.factor === 'UNFAVORABLE_COURT');
@@ -523,7 +523,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       const agedFactor = result.risk.riskFactors.find((f) => f.factor === 'AGED_CASE');
@@ -547,11 +547,11 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       const limitationFactor = result.risk.riskFactors.find(
-        (f) => f.factor === 'LIMITATION_EXPIRED'
+        (f) => f.factor === 'LIMITATION_EXPIRED',
       );
       expect(limitationFactor).toBeDefined();
       expect(limitationFactor.impact).toBe('CRITICAL');
@@ -569,7 +569,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       const highClaimFactor = result.risk.riskFactors.find((f) => f.factor === 'HIGH_CLAIM_AMOUNT');
@@ -585,7 +585,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       const counterClaimFactor = result.risk.riskFactors.find((f) => f.factor === 'COUNTER_CLAIM');
@@ -604,7 +604,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.RISK_ONLY,
       );
 
       expect(result.risk.overallRiskScore).toBeGreaterThan(50);
@@ -620,7 +620,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY,
       );
 
       expect(result.strategy.strategies).toBeDefined();
@@ -646,7 +646,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY,
       );
 
       const aggressiveStrategy = result.strategy.strategies.find((s) => s.type === 'AGGRESSIVE');
@@ -667,11 +667,11 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY,
       );
 
       const conservativeStrategy = result.strategy.strategies.find(
-        (s) => s.type === 'CONSERVATIVE'
+        (s) => s.type === 'CONSERVATIVE',
       );
       expect(conservativeStrategy.score).toBeGreaterThan(50);
     });
@@ -688,11 +688,11 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY,
       );
 
       const settlementStrategy = result.strategy.strategies.find(
-        (s) => s.type === 'SETTLEMENT_FOCUSED'
+        (s) => s.type === 'SETTLEMENT_FOCUSED',
       );
       expect(settlementStrategy.score).toBeGreaterThan(60);
     });
@@ -709,7 +709,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY,
       );
 
       const delayStrategy = result.strategy.strategies.find((s) => s.type === 'DELAY_BASED');
@@ -729,11 +729,11 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY,
       );
 
       const challengeStrategy = result.strategy.strategies.find(
-        (s) => s.type === 'PRECEDENT_CHALLENGE'
+        (s) => s.type === 'PRECEDENT_CHALLENGE',
       );
       expect(challengeStrategy.score).toBeGreaterThan(60);
     });
@@ -745,7 +745,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.STRATEGY_ONLY,
       );
 
       expect(result.strategy.recommendedStrategy).toBeDefined();
@@ -765,18 +765,18 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY,
       );
 
       expect(result.settlement.settlementRange).toBeDefined();
       expect(result.settlement.settlementRange.minimum).toBeLessThan(
-        result.settlement.settlementRange.maximum
+        result.settlement.settlementRange.maximum,
       );
       expect(result.settlement.settlementRange.optimal).toBeGreaterThanOrEqual(
-        result.settlement.settlementRange.minimum
+        result.settlement.settlementRange.minimum,
       );
       expect(result.settlement.settlementRange.optimal).toBeLessThanOrEqual(
-        result.settlement.settlementRange.maximum
+        result.settlement.settlementRange.maximum,
       );
       expect(result.settlement.settlementRange.percentageOfClaim).toBeGreaterThan(0);
     });
@@ -788,7 +788,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY,
       );
 
       expect(result.settlement.optimalTiming).toBeDefined();
@@ -803,7 +803,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY,
       );
 
       expect(result.settlement.batna).toBeDefined();
@@ -820,13 +820,13 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY,
       );
 
       expect(result.settlement.watna).toBeDefined();
       expect(result.settlement.watna.estimatedLoss).toBeGreaterThan(0);
       expect(result.settlement.watna.totalExposure).toBeGreaterThan(
-        result.settlement.watna.estimatedLoss
+        result.settlement.watna.estimatedLoss,
       );
     });
 
@@ -843,7 +843,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY,
       );
 
       expect(result.settlement.settlementProbability).toBeGreaterThan(60);
@@ -856,7 +856,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY,
       );
 
       expect(result.settlement.negotiationStrategy).toBeDefined();
@@ -874,7 +874,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.SETTLEMENT_ONLY,
       );
 
       expect(result.settlement.recommendations).toBeDefined();
@@ -897,7 +897,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(result.predictions).toBeDefined();
@@ -924,7 +924,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(result.predictions).toBeDefined();
@@ -945,7 +945,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY
+        caseAnalysisService.ANALYSIS_TYPES.PRECEDENT_ONLY,
       );
 
       expect(citationNetworkService.analyzeCasePrecedents).toHaveBeenCalled();
@@ -962,7 +962,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(result.metrics).toBeDefined();
@@ -983,7 +983,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(auditLogger.log).toHaveBeenCalledWith(
@@ -991,7 +991,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
           action: 'CASE_ANALYSIS_COMPLETED',
           tenantId: mockTenantId,
           resourceId: mockCaseId,
-        })
+        }),
       );
     });
 
@@ -1004,7 +1004,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(quantumLogger.log).toHaveBeenCalledWith(
@@ -1012,7 +1012,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
           event: 'CASE_ANALYSIS',
           caseId: mockCaseId,
           tenantId: mockTenantId,
-        })
+        }),
       );
     });
 
@@ -1026,7 +1026,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       expect(quantumLogger.log).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'CASE_ANALYSIS_FAILED',
-        })
+        }),
       );
     });
   });
@@ -1043,7 +1043,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(result).toBeDefined();
@@ -1059,11 +1059,11 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(result.settlement.settlementRange.minimum).toBeLessThan(
-        result.settlement.settlementRange.maximum
+        result.settlement.settlementRange.maximum,
       );
       expect(result.risk.riskFactors.some((f) => f.factor === 'HIGH_CLAIM_AMOUNT')).toBe(true);
     });
@@ -1077,7 +1077,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(result.settlement.settlementRange.minimum).toBe(0);
@@ -1093,7 +1093,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(result.risk.riskFactors.some((f) => f.factor === 'AGED_CASE')).toBe(true);
@@ -1108,7 +1108,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       expect(result).toBeDefined();
@@ -1152,7 +1152,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       const result = await caseAnalysisService.analyzeCase(
         mockCaseId,
         mockTenantId,
-        caseAnalysisService.ANALYSIS_TYPES.FULL
+        caseAnalysisService.ANALYSIS_TYPES.FULL,
       );
 
       // Generate evidence entry
@@ -1186,7 +1186,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'case-analysis-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       // Verify evidence
@@ -1199,7 +1199,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'case-analysis-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
@@ -1211,7 +1211,7 @@ describe('CaseAnalysisService - Strategic Oracle Due Diligence', () => {
       console.log('✓ Evidence Hash:', hash.substring(0, 8));
       console.log('✓ Analysis ID:', result.analysisId);
       console.log('✓ Recommended Strategy:', result.strategy?.recommendedStrategy);
-      console.log('✓ Win Probability:', result.predictions?.winProbability + '%');
+      console.log('✓ Win Probability:', `${result.predictions?.winProbability}%`);
     });
   });
 });

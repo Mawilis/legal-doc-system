@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE PARTY MODEL - INVESTOR-GRADE MODULE                       ║
   ║ 92% cost reduction | R12.5M risk elimination | 94% margins     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/CaseParty.js
  * INVESTOR VALUE PROPOSITION:
@@ -64,6 +64,7 @@
 const mongoose = require('mongoose');
 const auditLogger = require('../utils/auditLogger');
 const loggerRaw = require('../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const cryptoUtils = require('../utils/cryptoUtils');
 const quantumLogger = require('../utils/quantumLogger');
@@ -229,7 +230,7 @@ const casePartySchema = new mongoose.Schema(
       required: [true, 'Tenant ID is required for multi-tenant isolation'],
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[a-zA-Z0-9_-]{8,64}$/.test(v);
         },
         message: (props) => `${props.value} is not a valid tenant ID format`,
@@ -305,7 +306,7 @@ const casePartySchema = new mongoose.Schema(
         set: cryptoUtils.encryptField,
         get: cryptoUtils.decryptField,
         validate: {
-          validator: function (v) {
+          validator(v) {
             if (!v) return true;
             // SA ID number validation (13 digits)
             return /^\d{13}$/.test(v) || /^[A-Z0-9]{6,20}$/.test(v); // Passport format
@@ -377,7 +378,7 @@ const casePartySchema = new mongoose.Schema(
         set: cryptoUtils.encryptField,
         get: cryptoUtils.decryptField,
         validate: {
-          validator: function (v) {
+          validator(v) {
             if (!v) return true;
             return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v);
           },
@@ -389,7 +390,7 @@ const casePartySchema = new mongoose.Schema(
         set: cryptoUtils.encryptField,
         get: cryptoUtils.decryptField,
         validate: {
-          validator: function (v) {
+          validator(v) {
             if (!v) return true;
             return /^(\+27|0)[1-9][0-9]{8}$/.test(v.replace(/\s/g, ''));
           },
@@ -798,7 +799,7 @@ const casePartySchema = new mongoose.Schema(
     strict: 'throw',
     toJSON: { getters: true },
     toObject: { getters: true },
-  }
+  },
 );
 
 /*
@@ -843,7 +844,7 @@ casePartySchema.pre('save', async function (next) {
     // Generate firm hash if present
     if (this.representedBy?.firm && !this.representedBy.firmHash) {
       this.representedBy.firmHash = cryptoUtils.sha256(
-        `${this.representedBy.firm}:${this.representedBy.firmRegistration || ''}`
+        `${this.representedBy.firm}:${this.representedBy.firmRegistration || ''}`,
       );
       changes.push('Generated firm hash');
     }
@@ -910,7 +911,7 @@ casePartySchema.pre('save', async function (next) {
 /*
  * Post-save middleware for audit logging
  */
-casePartySchema.post('save', async function (doc) {
+casePartySchema.post('save', async (doc) => {
   try {
     const action = doc.isNew ? 'CASE_PARTY_CREATED' : 'CASE_PARTY_UPDATED';
 
@@ -1069,7 +1070,9 @@ casePartySchema.methods.redactForExport = function (accessLevel = 'PUBLIC') {
  */
 casePartySchema.methods.verifyAppearance = async function (appearanceData) {
   try {
-    const { biometricData, method, court, date } = appearanceData;
+    const {
+      biometricData, method, court, date,
+    } = appearanceData;
 
     // Verify biometrics
     const verification = await biometricUtils.verifyIdentity({
@@ -1163,8 +1166,8 @@ casePartySchema.statics.detectConflicts = async function (partyId, tenantId) {
 
     firmRepresentations.forEach((rep) => {
       if (
-        rep.caseId.toString() === party.caseId.toString() &&
-        rep.partyType.includes('DEFENDANT') !== party.partyType.includes('DEFENDANT')
+        rep.caseId.toString() === party.caseId.toString()
+        && rep.partyType.includes('DEFENDANT') !== party.partyType.includes('DEFENDANT')
       ) {
         conflicts.representationConflicts.push({
           caseId: rep.caseId,

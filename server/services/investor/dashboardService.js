@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR DASHBOARD SERVICE - REAL-TIME INVESTOR METRICS & ANALYTICS                   ║
   ║ R3.2M/year manual reporting eliminated | JSE Compliance | Real-time Portfolio Health  ║
   ║ 94% margin on analytics | SOC2 Type II | POPIA §19 Compliant                          ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/investor/dashboardService.js
@@ -70,11 +70,12 @@ import Valuation from '../../models/Valuation.js';
 import Comparable from '../../models/Comparable.js';
 import User from '../../models/User.js';
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../../utils/auditLogger.js';
 import cryptoUtils from '../../utils/cryptoUtils.js';
 import { redactSensitive } from '../../utils/redactSensitive.js';
 import tenantContext from '../../middleware/tenantContext.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // INTEGRATION_HINT: imports from models with relative paths, no side effects
 
@@ -146,7 +147,7 @@ function validateTenantId(tenantId) {
   const tenantIdRegex = /^[a-zA-Z0-9_-]{8,64}$/;
   if (!tenantId || !tenantIdRegex.test(tenantId)) {
     throw new Error(
-      `Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`
+      `Invalid tenant ID format: ${tenantId}. Must be 8-64 chars alphanumeric, underscore, hyphen.`,
     );
   }
 }
@@ -626,9 +627,9 @@ async function getRecentValuations(tenantId, limit = MAX_RECENT_VALUATIONS) {
     confidencePercent: formatPercentage(v.finalValuation?.confidence),
     createdBy: v.createdBy
       ? {
-          name: `${v.createdBy.firstName || ''} ${v.createdBy.lastName || ''}`.trim(),
-          id: v.createdBy._id,
-        }
+        name: `${v.createdBy.firstName || ''} ${v.createdBy.lastName || ''}`.trim(),
+        id: v.createdBy._id,
+      }
       : null,
     createdAt: v.createdAt,
     isJseMaterial: (v.finalValuation?.weightedAverage || 0) >= JSE_MATERIALITY_THRESHOLD,
@@ -731,7 +732,7 @@ async function getJSEComplianceMetrics(tenantId, startDate, endDate) {
       value: c.valuations?.averageValue,
       formattedValue: formatCurrency(c.valuations?.averageValue),
       percentOfThreshold:
-        (((c.valuations?.averageValue || 0) / JSE_MATERIALITY_THRESHOLD) * 100).toFixed(1) + '%',
+        `${(((c.valuations?.averageValue || 0) / JSE_MATERIALITY_THRESHOLD) * 100).toFixed(1)}%`,
     })),
     materialCount: materialValuations.length,
     approachingCount: approachingMateriality.length,
@@ -773,7 +774,7 @@ export async function getDashboard(tenantId, options = {}) {
     // if (!skipCache) { const cached = await redis.get(cacheKey); if (cached) return JSON.parse(cached); }
 
     logger.info('Generating investor dashboard', {
-      tenantId: tenantId.substring(0, 8) + '...',
+      tenantId: `${tenantId.substring(0, 8)}...`,
       userId: userId?.substring(0, 8),
       period,
       sections: sections.length,
@@ -805,7 +806,7 @@ export async function getDashboard(tenantId, options = {}) {
             byStatus: stats.byStatus,
           };
           dashboard.metadata.sections.push('overview');
-        })
+        }),
       );
     }
 
@@ -815,7 +816,7 @@ export async function getDashboard(tenantId, options = {}) {
         getValuationAnalytics(tenantId, startDate, endDate).then((analytics) => {
           dashboard.valuations = analytics;
           dashboard.metadata.sections.push('valuations');
-        })
+        }),
       );
     }
 
@@ -825,7 +826,7 @@ export async function getDashboard(tenantId, options = {}) {
         getComparableAnalytics(tenantId).then((analytics) => {
           dashboard.comparables = analytics;
           dashboard.metadata.sections.push('comparables');
-        })
+        }),
       );
     }
 
@@ -834,7 +835,7 @@ export async function getDashboard(tenantId, options = {}) {
       promises.push(
         getRecentValuations(tenantId).then((recent) => {
           dashboard.recentValuations = recent;
-        })
+        }),
       );
     }
 
@@ -844,7 +845,7 @@ export async function getDashboard(tenantId, options = {}) {
         getInvestorMetrics(tenantId, userId).then((metrics) => {
           dashboard.investorMetrics = metrics;
           dashboard.metadata.sections.push('investorMetrics');
-        })
+        }),
       );
     }
 
@@ -854,7 +855,7 @@ export async function getDashboard(tenantId, options = {}) {
         getJSEComplianceMetrics(tenantId, startDate, endDate).then((metrics) => {
           dashboard.jseCompliance = metrics;
           dashboard.metadata.sections.push('jseCompliance');
-        })
+        }),
       );
     }
 
@@ -934,7 +935,7 @@ export async function getDashboard(tenantId, options = {}) {
     }
 
     logger.info('Dashboard generated successfully', {
-      tenantId: tenantId.substring(0, 8) + '...',
+      tenantId: `${tenantId.substring(0, 8)}...`,
       sections: dashboard.metadata.sections.length,
       generationTimeMs: dashboard.metadata.generationTimeMs,
     });
@@ -942,7 +943,7 @@ export async function getDashboard(tenantId, options = {}) {
     return dashboard;
   } catch (error) {
     logger.error('Error generating dashboard', {
-      tenantId: tenantId.substring(0, 8) + '...',
+      tenantId: `${tenantId.substring(0, 8)}...`,
       userId: userId?.substring(0, 8),
       error: error.message,
       stack: error.stack,

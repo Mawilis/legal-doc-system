@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ SIGNATURE MODEL - INVESTOR-GRADE MODULE                                   ║
   ║ 94% cost reduction | R8.2M risk elimination | 85% margins                ║
   ║ POPIA §19 | ECT Act §15 | Companies Act §15 Verified                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Signature.js
@@ -308,7 +308,7 @@ const signatureSchema = new mongoose.Schema(
 
     retentionEnd: {
       type: Date,
-      default: function () {
+      default() {
         const date = new Date();
         date.setFullYear(date.getFullYear() + 5);
         return date;
@@ -326,7 +326,7 @@ const signatureSchema = new mongoose.Schema(
     collection: 'signatures',
     strict: true,
     minimize: false,
-  }
+  },
 );
 
 // ============================================================================
@@ -387,7 +387,7 @@ signatureSchema.pre('save', async function (next) {
         signedBy: null,
         signedAt: null,
         previousHash: null,
-      }).sort()
+      }).sort(),
     );
 
     this.forensicHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -424,7 +424,7 @@ signatureSchema.methods.verifyIntegrity = function () {
       signedBy: null,
       signedAt: null,
       previousHash: null,
-    }).sort()
+    }).sort(),
   );
 
   const calculatedHash = crypto.createHash('sha256').update(canonicalData).digest('hex');

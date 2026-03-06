@@ -1,74 +1,74 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL MODEL - QUANTUM M&A PIPELINE WITH FORENSIC TRACEABILITY                          ║
   ║ [Production Grade | Competition Act Compliant | 100-Year Evidence Chain]              ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 const dealSchema = new mongoose.Schema({
   dealId: {
     type: String,
     required: true,
     unique: true,
-    default: () => `DEAL-${crypto.randomBytes(4).toString('hex').toUpperCase()}`
+    default: () => `DEAL-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
   },
-  
+
   tenantId: {
     type: String,
     required: true,
     index: true,
     validate: {
-      validator: v => /^[a-zA-Z0-9_-]{8,64}$/.test(v),
-      message: 'Invalid tenant ID format'
-    }
+      validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v),
+      message: 'Invalid tenant ID format',
+    },
   },
 
   acquirer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
-    required: true
+    required: true,
   },
 
   target: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Target',
-    required: true
+    required: true,
   },
 
   dealType: {
     type: String,
-    enum: ['acquisition', 'merger', 'joint_venture', 'strategic_investment', 
-           'divestiture', 'spin_off', 'takeover', 'scheme_of_arrangement'],
-    required: true
+    enum: ['acquisition', 'merger', 'joint_venture', 'strategic_investment',
+      'divestiture', 'spin_off', 'takeover', 'scheme_of_arrangement'],
+    required: true,
   },
 
   stage: {
     type: String,
     enum: ['identification', 'screening', 'initial_contact', 'nda', 'preliminary_dd',
-           'indicative_offer', 'confirmatory_dd', 'final_agreement', 'regulatory_approval',
-           'shareholder_approval', 'closing', 'integration', 'completed', 'withdrawn'],
-    default: 'identification'
+      'indicative_offer', 'confirmatory_dd', 'final_agreement', 'regulatory_approval',
+      'shareholder_approval', 'closing', 'integration', 'completed', 'withdrawn'],
+    default: 'identification',
   },
 
   value: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
   },
 
   currency: {
     type: String,
     default: 'ZAR',
-    enum: ['ZAR', 'USD', 'EUR', 'GBP']
+    enum: ['ZAR', 'USD', 'EUR', 'GBP'],
   },
 
   consideration: {
     cash: { type: Number, default: 0 },
     shares: { type: Number, default: 0 },
     debt: { type: Number, default: 0 },
-    earnout: { type: Number, default: 0 }
+    earnout: { type: Number, default: 0 },
   },
 
   valuation: {
@@ -87,18 +87,18 @@ const dealSchema = new mongoose.Schema({
       toPrice: Number,
       recommendedPrice: Number,
       generatedAt: Date,
-      validUntil: Date
-    }
+      validUntil: Date,
+    },
   },
 
   synergyScore: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'SynergyScore'
+    ref: 'SynergyScore',
   },
 
   integrationSimulation: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'IntegrationSimulation'
+    ref: 'IntegrationSimulation',
   },
 
   timeline: {
@@ -106,7 +106,7 @@ const dealSchema = new mongoose.Schema({
     expectedClosing: Date,
     actualClosing: Date,
     dropDeadDate: Date,
-    extensionCount: { type: Number, default: 0 }
+    extensionCount: { type: Number, default: 0 },
   },
 
   regulatory: [{
@@ -116,7 +116,7 @@ const dealSchema = new mongoose.Schema({
     approvalDate: Date,
     status: String,
     conditions: [String],
-    filingReference: String
+    filingReference: String,
   }],
 
   documents: [{
@@ -124,13 +124,13 @@ const dealSchema = new mongoose.Schema({
     url: String,
     uploadedAt: Date,
     version: Number,
-    forensicHash: String
+    forensicHash: String,
   }],
 
   team: [{
     userId: String,
     role: String,
-    assignedAt: Date
+    assignedAt: Date,
   }],
 
   probability: {
@@ -138,7 +138,7 @@ const dealSchema = new mongoose.Schema({
     regulatory: { type: Number, min: 0, max: 100 },
     shareholder: { type: Number, min: 0, max: 100 },
     integration: { type: Number, min: 0, max: 100 },
-    lastCalculated: Date
+    lastCalculated: Date,
   },
 
   risks: [{
@@ -147,7 +147,7 @@ const dealSchema = new mongoose.Schema({
     impact: { type: String, enum: ['low', 'medium', 'high', 'critical'] },
     probability: { type: Number, min: 0, max: 100 },
     mitigation: String,
-    owner: String
+    owner: String,
   }],
 
   milestones: [{
@@ -155,27 +155,27 @@ const dealSchema = new mongoose.Schema({
     dueDate: Date,
     completedDate: Date,
     status: String,
-    dependents: [String]
+    dependents: [String],
   }],
 
   metadata: {
     createdBy: String,
     updatedBy: String,
     correlationId: String,
-    source: String
+    source: String,
   },
 
   forensicHash: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
 
   previousHash: String,
-  chainPosition: Number
+  chainPosition: Number,
 }, {
   timestamps: true,
-  collection: 'deals'
+  collection: 'deals',
 });
 
 // Indexes
@@ -186,7 +186,7 @@ dealSchema.index({ forensicHash: 1 });
 dealSchema.index({ previousHash: 1 });
 
 // Pre-save middleware for forensic hashing
-dealSchema.pre('save', async function(next) {
+dealSchema.pre('save', async function (next) {
   const canonicalData = JSON.stringify({
     dealId: this.dealId,
     tenantId: this.tenantId,
@@ -196,7 +196,7 @@ dealSchema.pre('save', async function(next) {
     value: this.value,
     stage: this.stage,
     updatedAt: new Date(),
-    previousHash: this.previousHash
+    previousHash: this.previousHash,
   });
 
   this.forensicHash = crypto
@@ -208,7 +208,7 @@ dealSchema.pre('save', async function(next) {
 });
 
 // Methods
-dealSchema.methods.verifyHash = function() {
+dealSchema.methods.verifyHash = function () {
   const canonicalData = JSON.stringify({
     dealId: this.dealId,
     tenantId: this.tenantId,
@@ -218,7 +218,7 @@ dealSchema.methods.verifyHash = function() {
     value: this.value,
     stage: this.stage,
     updatedAt: this.updatedAt,
-    previousHash: this.previousHash
+    previousHash: this.previousHash,
   });
 
   const calculated = crypto
@@ -229,7 +229,7 @@ dealSchema.methods.verifyHash = function() {
   return calculated === this.forensicHash;
 };
 
-dealSchema.methods.advanceStage = function(newStage, userId) {
+dealSchema.methods.advanceStage = function (newStage, userId) {
   const validTransitions = {
     identification: ['screening', 'withdrawn'],
     screening: ['initial_contact', 'withdrawn'],
@@ -244,7 +244,7 @@ dealSchema.methods.advanceStage = function(newStage, userId) {
     closing: ['integration', 'completed'],
     integration: ['completed'],
     completed: [],
-    withdrawn: []
+    withdrawn: [],
   };
 
   if (!validTransitions[this.stage]?.includes(newStage)) {
@@ -253,7 +253,7 @@ dealSchema.methods.advanceStage = function(newStage, userId) {
 
   this.stage = newStage;
   this.metadata.updatedBy = userId;
-  
+
   return this.save();
 };
 

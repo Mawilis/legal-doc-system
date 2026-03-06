@@ -1,16 +1,17 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ COURT SERVICE - COMPLETE SA JUDICIAL MANAGEMENT SYSTEM                    ║
   ║ WITH QUANTUM PRECEDENT MATCHING                                           ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
+import crypto from 'crypto';
 import { Court } from '../models/Court.js';
 import AuditLogger from '../utils/auditLogger.js';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import tenantContext from '../middleware/tenantContext.js';
 import QuantumPrecedentMatcher from '../utils/quantumPrecedentMatcher.js';
-import crypto from 'crypto';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // CONSTANTS - EXPORTED FOR TESTS
@@ -84,9 +85,7 @@ const RETENTION_POLICIES = {
 // HELPER FUNCTIONS
 // ============================================================================
 
-const generateCorrelationId = () => {
-  return `court-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
-};
+const generateCorrelationId = () => `court-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
 
 const applyRetentionPolicy = (auditEntry, policyKey = 'COURT_RECORDS') => {
   const policy = RETENTION_POLICIES[policyKey];
@@ -344,9 +343,9 @@ export class CourtService {
           result.requiresAppeal = true;
           result.appealCourt = appealCourt
             ? {
-                courtId: appealCourt.courtId,
-                name: appealCourt.name,
-              }
+              courtId: appealCourt.courtId,
+              name: appealCourt.name,
+            }
             : null;
         }
       }
@@ -423,8 +422,8 @@ export class CourtService {
         if (court.jurisdiction.criminal?.hasJurisdiction) {
           score += 20;
           if (
-            caseData.offence &&
-            court.jurisdiction.criminal.offences?.includes(caseData.offence)
+            caseData.offence
+            && court.jurisdiction.criminal.offences?.includes(caseData.offence)
           ) {
             score += 15;
           }
@@ -559,7 +558,7 @@ export class CourtService {
           processingTimeMs: Date.now() - startTime,
           timestamp: new Date().toISOString(),
         },
-        'JUDICIAL_OFFICER_RECORDS'
+        'JUDICIAL_OFFICER_RECORDS',
       );
 
       await AuditLogger.log('court-service', auditEntry);

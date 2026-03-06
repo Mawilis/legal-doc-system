@@ -33,7 +33,7 @@ const onboardingSessionSchema = new Schema(
   {
     timestamps: true,
     collection: 'onboardingsessions',
-  }
+  },
 );
 
 // ============================================================================
@@ -56,7 +56,7 @@ onboardingSessionSchema.methods.advanceStage = async function (stageId, data = {
 onboardingSessionSchema.methods.processDocumentWithAI = async function (
   documentId,
   textContent,
-  claimedType
+  claimedType,
 ) {
   // In a real app, this would call ClassificationService.classify()
   // For this integration test, we simulate the logic based on text content
@@ -129,5 +129,5 @@ onboardingSessionSchema.statics.findByTenant = function (tenantId) {
   return this.find({ tenantId });
 };
 
-export default mongoose.models.OnboardingSession ||
-  mongoose.model('OnboardingSession', onboardingSessionSchema);
+export default mongoose.models.OnboardingSession
+  || mongoose.model('OnboardingSession', onboardingSessionSchema);

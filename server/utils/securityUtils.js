@@ -42,8 +42,9 @@
 
 import crypto from 'crypto';
 import loggerRaw from './logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import auditLogger from './auditLogger.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 /**
  * Security Utilities Engine
@@ -124,7 +125,7 @@ class SecurityUtilsEngine {
         this.cleanupRateLimits();
         this.cleanupFailedAttempts();
       },
-      5 * 60 * 1000
+      5 * 60 * 1000,
     ); // Every 5 minutes
   }
 
@@ -195,9 +196,9 @@ class SecurityUtilsEngine {
     const hash = this.createHash(secret);
 
     return {
-      prefix: prefix,
-      secret: secret,
-      hash: hash,
+      prefix,
+      secret,
+      hash,
       key: `${prefix}.${secret}`,
     };
   }
@@ -267,9 +268,9 @@ class SecurityUtilsEngine {
 
     return items.map((item, index) => {
       const hashData = {
-        index: index,
+        index,
         data: item,
-        previousHash: previousHash,
+        previousHash,
         timestamp: Date.now(),
       };
 
@@ -278,8 +279,8 @@ class SecurityUtilsEngine {
 
       return {
         ...item,
-        hash: hash,
-        previousHash: previousHash,
+        hash,
+        previousHash,
       };
     });
   }
@@ -290,7 +291,7 @@ class SecurityUtilsEngine {
    * @returns {Object} Verification result
    */
   verifyHashChain(items) {
-    let previousHash = null;
+    const previousHash = null;
     const brokenLinks = [];
 
     for (let i = 0; i < items.length; i++) {
@@ -308,7 +309,7 @@ class SecurityUtilsEngine {
     return {
       verified: brokenLinks.length === 0,
       totalItems: items.length,
-      brokenLinks: brokenLinks,
+      brokenLinks,
     };
   }
 
@@ -573,8 +574,8 @@ class SecurityUtilsEngine {
     }
 
     return {
-      containsPII: containsPII,
-      findings: findings,
+      containsPII,
+      findings,
       confidence: containsPII ? 0.9 : 1.0,
     };
   }
@@ -635,7 +636,7 @@ class SecurityUtilsEngine {
 
       default:
         if (value.length > 8) {
-          return value.substring(0, 4) + '****' + value.substring(value.length - 4);
+          return `${value.substring(0, 4)}****${value.substring(value.length - 4)}`;
         }
         return '****';
     }
@@ -671,7 +672,7 @@ class SecurityUtilsEngine {
     return {
       allowed: record.count <= limit,
       current: record.count,
-      limit: limit,
+      limit,
       remaining: Math.max(0, limit - record.count),
       resetAt: record.resetAt,
       resetIn: record.resetAt - now,
@@ -703,7 +704,7 @@ class SecurityUtilsEngine {
       count: record.count,
       remaining: resetIn > 0 ? Infinity : 0,
       resetAt: record.resetAt,
-      resetIn: resetIn,
+      resetIn,
     };
   }
 
@@ -784,7 +785,7 @@ class SecurityUtilsEngine {
     const locked = record.lockedUntil && now < record.lockedUntil;
 
     return {
-      locked: locked,
+      locked,
       attempts: record.count,
       lockedUntil: record.lockedUntil,
       remainingLockout: locked ? record.lockedUntil - now : 0,
@@ -823,16 +824,16 @@ class SecurityUtilsEngine {
     const redactedMetadata = this.redactSensitive(metadata);
 
     logger.info(`Security event: ${action}`, {
-      action: action,
+      action,
       metadata: redactedMetadata,
-      requestId: requestId,
+      requestId,
       timestamp: new Date().toISOString(),
     });
 
     await auditLogger.log({
       action: `SECURITY_${action.toUpperCase()}`,
       metadata: redactedMetadata,
-      requestId: requestId,
+      requestId,
       timestamp: new Date().toISOString(),
       retentionPolicy: 'companies_act_10_years',
       dataResidency: 'ZA',
@@ -849,9 +850,9 @@ class SecurityUtilsEngine {
     const action = success ? 'AUTH_SUCCESS' : 'AUTH_FAILURE';
 
     await auditLogger.log({
-      action: action,
-      userId: userId,
-      requestId: requestId,
+      action,
+      userId,
+      requestId,
       timestamp: new Date().toISOString(),
       retentionPolicy: 'companies_act_10_years',
       dataResidency: 'ZA',
@@ -874,10 +875,10 @@ class SecurityUtilsEngine {
   async logDataAccess(userId, dataType, dataId, requestId) {
     await auditLogger.log({
       action: 'DATA_ACCESS',
-      userId: userId,
-      dataType: dataType,
-      dataId: dataId,
-      requestId: requestId,
+      userId,
+      dataType,
+      dataId,
+      requestId,
       timestamp: new Date().toISOString(),
       retentionPolicy: 'companies_act_10_years',
       dataResidency: 'ZA',
@@ -912,7 +913,7 @@ class SecurityUtilsEngine {
    */
   randomString(
     length = 16,
-    charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
   ) {
     const bytes = crypto.randomBytes(length);
     const result = new Array(length);

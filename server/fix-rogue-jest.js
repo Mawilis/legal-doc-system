@@ -1,7 +1,6 @@
 #!import fs from 'fs';
 
-const validatorPath =
-  '/Users/wilsonkhanyezi/legal-doc-system/server/validators/complianceValidator.js';
+const validatorPath = '/Users/wilsonkhanyezi/legal-doc-system/server/validators/complianceValidator.js';
 
 try {
   let content = fs.readFileSync(validatorPath, 'utf8');
@@ -10,7 +9,7 @@ try {
   if (content.includes('@jest/globals')) {
     content = content.replace(
       /.*['"]@jest\/globals['"].*/g,
-      '// FORENSIC FIX: Purged rogue IDE auto-import for @jest/globals'
+      '// FORENSIC FIX: Purged rogue IDE auto-import for @jest/globals',
     );
     fs.writeFileSync(validatorPath, content);
     console.log('✅ Purged rogue @jest/globals from complianceValidator.js');

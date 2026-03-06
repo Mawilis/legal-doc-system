@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL FLOW WEBSOCKET - REAL-TIME M&A PIPELINE UPDATES                                  ║
   ║ R3.5B/year deal flow | Live synergy scores | Instant regulatory alerts                ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/websocket/dealFlowUpdates.js
@@ -42,12 +42,12 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import jwt from 'jsonwebtoken';
 import { RateLimiter } from 'limiter';
 import { v4 as uuidv4 } from 'uuid';
-import { AuditLogger } from '../utils/auditLogger.js';
-import Logger from '../utils/logger.js';
-import tenantContext from '../middleware/tenantContext.js';
-import { Deal } from '../models/Deal.js';
-import { SynergyScore } from '../models/SynergyScore.js';
-import { RegulatoryFiling } from '../models/RegulatoryFiling.js';
+import { AuditLogger } from 'wilsy-os-server/utils/auditLogger.js';
+import Logger from 'wilsy-os-server/utils/logger.js';
+import tenantContext from 'wilsy-os-server/middleware/tenantContext.js';
+import { Deal } from 'wilsy-os-server/models/Deal.js';
+import { SynergyScore } from 'wilsy-os-server/models/SynergyScore.js';
+import { RegulatoryFiling } from 'wilsy-os-server/models/RegulatoryFiling.js';
 
 // ============================================================================
 // CONSTANTS
@@ -175,9 +175,8 @@ class DealFlowWebSocketManager {
    */
   async authenticate(socket, next) {
     try {
-      const token =
-        socket.handshake.auth.token ||
-        socket.handshake.headers.authorization?.replace('Bearer ', '');
+      const token = socket.handshake.auth.token
+        || socket.handshake.headers.authorization?.replace('Bearer ', '');
 
       if (!token) {
         return next(new Error('Authentication required'));
@@ -185,7 +184,7 @@ class DealFlowWebSocketManager {
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      const tenantId = socket.handshake.query.tenantId;
+      const { tenantId } = socket.handshake.query;
       if (tenantId && decoded.tenantId !== tenantId) {
         return next(new Error('Invalid tenant access'));
       }
@@ -481,7 +480,7 @@ class DealFlowWebSocketManager {
         type: updateType,
         dealId,
         data,
-      })
+      }),
     );
   }
 
@@ -574,8 +573,8 @@ class DealFlowWebSocketManager {
             value: deal.value,
           });
         } else if (
-          change.operationType === 'update' &&
-          change.updateDescription?.updatedFields?.stage
+          change.operationType === 'update'
+          && change.updateDescription?.updatedFields?.stage
         ) {
           this.broadcastDealUpdate(change.documentKey._id, MESSAGE_TYPES.DEAL_STAGE_CHANGE, {
             newStage: change.updateDescription.updatedFields.stage,
@@ -596,8 +595,8 @@ class DealFlowWebSocketManager {
     // Listen for regulatory filings
     RegulatoryFiling.watch().on('change', async (change) => {
       if (
-        change.operationType === 'insert' ||
-        (change.operationType === 'update' && change.updateDescription?.updatedFields?.status)
+        change.operationType === 'insert'
+        || (change.operationType === 'update' && change.updateDescription?.updatedFields?.status)
       ) {
         await this.broadcastRegulatoryAlert(change.documentKey._id);
       }

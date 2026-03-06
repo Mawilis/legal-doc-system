@@ -63,10 +63,10 @@
  * legal mind, available to every practitioner, in every moment of need.
  */
 
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE ANALYSIS SERVICE - INVESTOR-GRADE MODULE                 ║
   ║ 92% cost reduction | R45M risk elimination | 94% margins      ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/caseAnalysisService.js
  * INVESTOR VALUE PROPOSITION:
@@ -114,8 +114,6 @@
  * }
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Core dependencies
 const mongoose = require('mongoose');
 const { performance } = require('perf_hooks');
@@ -129,6 +127,7 @@ const CaseParty = require('../models/CaseParty');
 
 // QUANTUM UTILITIES
 const loggerRaw = require('../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../utils/auditLogger');
 const cryptoUtils = require('../utils/cryptoUtils');
@@ -258,7 +257,7 @@ const analyzeCase = async (caseId, tenantId, analysisType = ANALYSIS_TYPES.FULL,
     };
 
     // STEP 4: Execute analysis based on type
-    let analysis = {
+    const analysis = {
       caseId,
       caseNumber: caseData.caseNumber,
       title: caseData.title,
@@ -287,8 +286,7 @@ const analyzeCase = async (caseId, tenantId, analysisType = ANALYSIS_TYPES.FULL,
     }
 
     // Wait for all analyses to complete
-    const [precedentAnalysis, riskAnalysis, strategyAnalysis, settlementAnalysis] =
-      await Promise.allSettled(analysisPromises);
+    const [precedentAnalysis, riskAnalysis, strategyAnalysis, settlementAnalysis] = await Promise.allSettled(analysisPromises);
 
     // Compile results
     if (precedentAnalysis.status === 'fulfilled') {
@@ -361,8 +359,8 @@ const analyzeCase = async (caseId, tenantId, analysisType = ANALYSIS_TYPES.FULL,
     const processingTime = performance.now() - startTime;
     logger.info(
       `[CaseAnalysis] Analysis completed: analysisId=${analysisId}, time=${Math.round(
-        processingTime
-      )}ms`
+        processingTime,
+      )}ms`,
     );
 
     return analysis;
@@ -446,7 +444,7 @@ const analyzePrecedentNetwork = async (context) => {
       const networkAnalysis = await citationNetworkService.analyzeCasePrecedents(
         caseData._id,
         tenantId,
-        { maxDepth: options.precedentDepth || 3 }
+        { maxDepth: options.precedentDepth || 3 },
       );
 
       return {
@@ -653,7 +651,7 @@ const calculatePrecedentStrength = (precedents) => {
               totalStrength,
               precedents.length,
               bindingCount,
-              persuasiveCount
+              persuasiveCount,
             ),
             conflicting: true,
           };
@@ -693,11 +691,10 @@ const analyzeRisk = async (context) => {
     let overallRiskLevel = RISK_LEVELS.MEDIUM;
 
     // Factor 1: Precedent strength (inverse relationship)
-    const precedentStrength =
-      caseData.precedents?.length > 0
-        ? caseData.precedents.reduce((sum, p) => sum + (p.hierarchyLevel || 50), 0) /
-          caseData.precedents.length
-        : 50;
+    const precedentStrength = caseData.precedents?.length > 0
+      ? caseData.precedents.reduce((sum, p) => sum + (p.hierarchyLevel || 50), 0)
+          / caseData.precedents.length
+      : 50;
 
     if (precedentStrength < 30) {
       riskFactors.push({
@@ -784,10 +781,9 @@ const analyzePartyRisk = (caseData) => {
   let score = 0;
 
   // Check for pro se parties
-  const proSeParties =
-    caseData.parties?.filter(
-      (p) => !p.representedBy?.firm && p.partyType?.includes('INDIVIDUAL')
-    ) || [];
+  const proSeParties = caseData.parties?.filter(
+    (p) => !p.representedBy?.firm && p.partyType?.includes('INDIVIDUAL'),
+  ) || [];
 
   if (proSeParties.length > 0) {
     factors.push({
@@ -800,8 +796,7 @@ const analyzePartyRisk = (caseData) => {
   }
 
   // Check for corporate complexity
-  const corporateParties =
-    caseData.parties?.filter((p) => p.partyType?.includes('CORPORATE')) || [];
+  const corporateParties = caseData.parties?.filter((p) => p.partyType?.includes('CORPORATE')) || [];
 
   if (corporateParties.length > 2) {
     factors.push({
@@ -937,7 +932,7 @@ const analyzeFinancialRisk = (caseData) => {
       factor: 'HIGH_CLAIM_AMOUNT',
       impact: 'HIGH',
       description: `Claim amount of R${(caseData.claimAmount / 1000000).toFixed(
-        1
+        1,
       )}M - significant exposure`,
       score: 80,
     });
@@ -1191,26 +1186,24 @@ const calculateChallengeStrategyScore = (caseData, risk) => {
 /*
  * Generates rationale for recommended strategy
  */
-const generateStrategyRationale = (strategy, caseData) => {
-  return {
-    summary: `Based on comprehensive analysis, ${strategy.type} strategy is recommended with a confidence score of ${strategy.score}.`,
-    keyFactors: [
-      strategy.score > 70
-        ? 'Strong alignment with case characteristics'
-        : 'Moderate alignment with multiple factors',
-      caseData.claimAmount > 5000000
-        ? 'High stakes justify this approach'
-        : 'Proportional to claim value',
-      `Precedent strength of ${caseData.precedentStrength || 'moderate'} supports this strategy`,
-    ],
-    expectedOutcome:
+const generateStrategyRationale = (strategy, caseData) => ({
+  summary: `Based on comprehensive analysis, ${strategy.type} strategy is recommended with a confidence score of ${strategy.score}.`,
+  keyFactors: [
+    strategy.score > 70
+      ? 'Strong alignment with case characteristics'
+      : 'Moderate alignment with multiple factors',
+    caseData.claimAmount > 5000000
+      ? 'High stakes justify this approach'
+      : 'Proportional to claim value',
+    `Precedent strength of ${caseData.precedentStrength || 'moderate'} supports this strategy`,
+  ],
+  expectedOutcome:
       strategy.type === STRATEGY_TYPES.SETTLEMENT_FOCUSED
         ? 'Settlement within 3-6 months with 70-80% of claim value'
         : strategy.type === STRATEGY_TYPES.AGGRESSIVE
           ? 'Trial within 12-18 months with potential for full recovery'
           : 'Controlled litigation with multiple exit points',
-  };
-};
+});
 
 /*
  * Analyzes settlement potential
@@ -1365,25 +1358,23 @@ const calculateSettlementProbability = (caseData, risk) => {
 /*
  * Generates negotiation strategy
  */
-const generateNegotiationStrategy = (caseData, settlementRange) => {
-  return {
-    openingOffer: settlementRange.minimum,
-    targetPrice: settlementRange.optimal,
-    walkAwayPoint: settlementRange.maximum,
-    keyArguments: [
-      'Strength of legal position',
-      'Risk of adverse outcome',
-      'Cost of continued litigation',
-      'Business relationship considerations',
-    ],
-    concessions: [
-      'Flexibility on payment terms',
-      'Confidentiality agreement',
-      'Mutual releases',
-      'Structured settlement',
-    ],
-  };
-};
+const generateNegotiationStrategy = (caseData, settlementRange) => ({
+  openingOffer: settlementRange.minimum,
+  targetPrice: settlementRange.optimal,
+  walkAwayPoint: settlementRange.maximum,
+  keyArguments: [
+    'Strength of legal position',
+    'Risk of adverse outcome',
+    'Cost of continued litigation',
+    'Business relationship considerations',
+  ],
+  concessions: [
+    'Flexibility on payment terms',
+    'Confidentiality agreement',
+    'Mutual releases',
+    'Structured settlement',
+  ],
+});
 
 /*
  * Generates settlement recommendations
@@ -1406,7 +1397,7 @@ const generateSettlementRecommendations = (settlementRange, probability) => {
   }
 
   recommendations.push(
-    `Target settlement range: R${settlementRange.minimum.toLocaleString()} - R${settlementRange.maximum.toLocaleString()}`
+    `Target settlement range: R${settlementRange.minimum.toLocaleString()} - R${settlementRange.maximum.toLocaleString()}`,
   );
 
   return recommendations;

@@ -163,8 +163,7 @@ describe('SA LEGAL VALIDATORS — FORENSIC VALIDATION', () => {
     ];
 
     edgeCases.forEach(({ input, type }) => {
-      const result =
-        type === 'id' ? validateSAIDNumber(input) : validateBusinessRegistration(input);
+      const result = type === 'id' ? validateSAIDNumber(input) : validateBusinessRegistration(input);
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
     });

@@ -1,0 +1,222 @@
+# ============================================================================
+# WILSY OS 2050 - MILVUS ENTERPRISE CONFIGURATION
+# 10TH GENERATION | QUANTUM FORTRESS | FORTUNE 500
+# ============================================================================
+
+# ============================================================================
+# CLUSTER CONFIGURATION
+# ============================================================================
+etcd:
+  endpoints:
+    - etcd:2379
+  rootPath: milvus
+  metaSubPath: meta
+  kvSubPath: kv
+  use:
+    embed: false
+  ssl:
+    enabled: false
+  requestTimeout: 10
+
+# ============================================================================
+# MINIO STORAGE CONFIGURATION
+# ============================================================================
+minio:
+  address: minio
+  port: 9000
+  accessKeyID: ${MINIO_ACCESS_KEY:-minioadmin}
+  secretAccessKey: ${MINIO_SECRET_KEY:-minioadmin}
+  useSSL: false
+  bucketName: wilsy-milvus
+  rootPath: files
+  useIAM: false
+  cloudProvider: private
+  requestTimeoutMs: 10000
+  listObjectsMaxKeys: 1000
+
+# ============================================================================
+# MESSAGE STORAGE (PULSAR)
+# ============================================================================
+pulsar:
+  address: pulsar
+  port: 6650
+  webport: 8080
+  maxMessageSize: 5242880
+  tenant: public
+  namespace: default
+
+# ============================================================================
+# PROXY CONFIGURATION
+# ============================================================================
+proxy:
+  port: 19530
+  internalPort: 19529
+  grpc:
+    maxSendSize: 104857600
+    maxRecvSize: 104857600
+  http:
+    enabled: true
+    debug_mode: false
+    port: 19121
+    acceptTimeout: 30
+    readTimeout: 30
+    writeTimeout: 30
+    idleTimeout: 30
+  rateLimit:
+    enabled: true
+    quota: 1000
+    qps: 100
+
+# ============================================================================
+# ROOT COORDINATOR
+# ============================================================================
+rootCoord:
+  enableActiveStandby: true
+  maxPartitionNum: 4096
+  minSegmentSizeToEnableIndex: 4096
+  timetickInterval: 200
+  statistics:
+    enabled: true
+    interval: 600
+
+# ============================================================================
+# QUERY COORDINATOR
+# ============================================================================
+queryCoord:
+  enableActiveStandby: true
+  taskMergePoolSize: 8
+  taskExecutionCap: 256
+  autoHandoff: true
+  autoBalance: true
+  balanceIntervalSeconds: 60
+  overLoadedMemoryThresholdPercentage: 90
+  memoryUsageMaxDifferencePercentage: 30
+
+# ============================================================================
+# QUERY NODE
+# ============================================================================
+queryNode:
+  enableDisk: true
+  maxDiskUsagePercentage: 95
+  maxMemoryUsagePercentage: 90
+  flowGraphMaxQueueLength: 1024
+  flowGraphMaxParallelism: 1024
+  maxSegmentNum: 100
+  statsPublishInterval: 1000
+  segcore:
+    chunkRows: 1024
+    smallIndexNlist: 64
+    enableGrowingIndex: true
+
+# ============================================================================
+# DATA COORDINATOR
+# ============================================================================
+dataCoord:
+  enableActiveStandby: true
+  segment:
+    maxSize: 1024
+    sealProportion: 0.12
+    assignTaskInterval: 200
+    maxLife: 86400
+    watchdogInterval: 200
+  compaction:
+    enable: true
+    interval: 60
+    maxParallelTaskNum: 10
+
+# ============================================================================
+# DATA NODE
+# ============================================================================
+dataNode:
+  maxParallelSyncTaskNum: 16
+  flowGraphMaxQueueLength: 1024
+  flowGraphMaxParallelism: 1024
+  segment:
+    insertBufSize: 16777216
+    deleteBufBytes: 67108864
+    syncPeriod: 600
+
+# ============================================================================
+# INDEX COORDINATOR
+# ============================================================================
+indexCoord:
+  enableActiveStandby: true
+  gc:
+    enabled: true
+    interval: 1800
+    missingTolerance: 86400
+    dropTolerance: 86400
+
+# ============================================================================
+# INDEX NODE
+# ============================================================================
+indexNode:
+  maxDiskUsagePercentage: 95
+  maxMemoryUsagePercentage: 90
+  maxThreads: 16
+
+# ============================================================================
+# BLOB MANAGER
+# ============================================================================
+blobManager:
+  enableActiveStandby: true
+
+# ============================================================================
+# LOG CONFIGURATION
+# ============================================================================
+log:
+  level: info
+  format: json
+  file:
+    rootPath: /var/lib/milvus/logs
+    maxSize: 100
+    maxAge: 30
+    maxBackups: 20
+  grpcLog:
+    enable: true
+
+# ============================================================================
+# METRICS CONFIGURATION
+# ============================================================================
+metrics:
+  enabled: true
+  port: 9091
+  path: /metrics
+
+# ============================================================================
+# TRACE CONFIGURATION
+# ============================================================================
+trace:
+  enabled: false
+  exporter: jaeger
+  sampleFraction: 0.1
+  jaeger:
+    url: http://jaeger:14268/api/traces
+
+# ============================================================================
+# QUOTA & LIMITS CONFIGURATION
+# ============================================================================
+quotaAndLimits:
+  enabled: true
+  ddl:
+    enabled: false
+    collectionRate: 1
+    partitionRate: 1
+  ddlCollections:
+    enabled: true
+    collectionRate: 1
+    partitionRate: 1
+  indexRate:
+    enabled: true
+    max: 1
+  flushRate:
+    enabled: true
+    max: 1
+  compactionRate:
+    enabled: true
+    max: 1
+
+# ============================================================================
+# 🏛️ WILSY OS 2050 - Supreme Architect: Wilson Khanyezi
+# 10 Generations of Wealth | R 1,000,000,000,000,000 Target
+# ============================================================================

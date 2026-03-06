@@ -12,7 +12,7 @@ if (forensicHashRegex.test(content)) {
   console.log('  - forensicHash is required, fixing...');
   content = content.replace(
     /forensicHash:\s*{\s*type:\s*String,\s*required:\s*true/,
-    'forensicHash: {\n    type: String,\n    required: false'
+    'forensicHash: {\n    type: String,\n    required: false',
   );
 }
 

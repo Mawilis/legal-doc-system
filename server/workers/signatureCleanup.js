@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ SIGNATURE CLEANUP WORKER - INVESTOR-GRADE MODULE                          ║
   ║ Automated retention compliance | POPIA §19 | 100-year archival           ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/workers/signatureCleanup.js
@@ -32,6 +32,10 @@
  */
 
 import { Queue, Worker } from 'bullmq';
+import mongoose from 'mongoose';
+import crypto from 'crypto';
+import fs from 'fs/promises';
+import path from 'path';
 import ElectronicSignature, {
   SIGNATURE_STATUS,
   RETENTION_POLICIES,
@@ -41,10 +45,6 @@ import auditLogger from '../utils/auditLogger.js';
 import logger from '../utils/logger.js';
 import { redactSensitive } from '../utils/redactSensitive.js';
 import { getCurrentTenant } from '../middleware/tenantContext.js';
-import mongoose from 'mongoose';
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
 
 // ============================================================================
 // CONSTANTS
@@ -122,7 +122,7 @@ export class SignatureCleanupQueue {
           password: process.env.REDIS_PASSWORD,
         },
         concurrency: 5,
-      }
+      },
     );
 
     this.setupWorkerListeners();
@@ -156,7 +156,7 @@ export class SignatureCleanupQueue {
       {
         priority: CLEANUP_PRIORITIES.MEDIUM,
         jobId: `cleanup-${Date.now()}`,
-      }
+      },
     );
   }
 
@@ -172,7 +172,7 @@ export class SignatureCleanupQueue {
       {
         priority: CLEANUP_PRIORITIES.HIGH,
         jobId: `archive-${Date.now()}`,
-      }
+      },
     );
   }
 
@@ -189,7 +189,7 @@ export class SignatureCleanupQueue {
       {
         priority: CLEANUP_PRIORITIES.CRITICAL,
         jobId: `purge-${Date.now()}`,
-      }
+      },
     );
   }
 
@@ -204,7 +204,7 @@ export class SignatureCleanupQueue {
       {
         priority: CLEANUP_PRIORITIES.LOW,
         jobId: `notify-${Date.now()}`,
-      }
+      },
     );
   }
 
@@ -260,9 +260,9 @@ export class SignatureCleanupQueue {
 
           // Check if should notify about expiry
           if (
-            sig.status !== SIGNATURE_STATUS.SIGNED &&
-            sig.status !== SIGNATURE_STATUS.VERIFIED &&
-            sig.expiresAt
+            sig.status !== SIGNATURE_STATUS.SIGNED
+            && sig.status !== SIGNATURE_STATUS.VERIFIED
+            && sig.expiresAt
           ) {
             const daysUntilExpiry = Math.ceil((sig.expiresAt - new Date()) / (1000 * 60 * 60 * 24));
 
@@ -321,7 +321,7 @@ export class SignatureCleanupQueue {
             'cleanup.archivalDate': new Date(),
             'cleanup.archivalReason': 'retention_policy',
           },
-        }
+        },
       );
 
       // Create archival record
@@ -339,7 +339,7 @@ export class SignatureCleanupQueue {
       const archivalPath = path.join(
         process.env.ARCHIVAL_PATH || '/var/lib/wilsy/archives',
         `${signature.tenantId}`,
-        `${signature.signatureId}.json`
+        `${signature.signatureId}.json`,
       );
 
       await fs.mkdir(path.dirname(archivalPath), { recursive: true });
@@ -380,7 +380,7 @@ export class SignatureCleanupQueue {
             purgedAt: new Date().toISOString(),
             reason: 'retention_expired',
             forensicHash: signature.forensicHash,
-          })
+          }),
         )
         .digest('hex');
 
@@ -399,7 +399,7 @@ export class SignatureCleanupQueue {
       // Store purge certificate
       const purgePath = path.join(
         process.env.PURGE_CERTIFICATE_PATH || '/var/lib/wilsy/purge-certificates',
-        `${signature.signatureId}-purge.json`
+        `${signature.signatureId}-purge.json`,
       );
 
       await fs.mkdir(path.dirname(purgePath), { recursive: true });
@@ -417,7 +417,7 @@ export class SignatureCleanupQueue {
             'cleanup.purgeReason': 'retention_expired',
             'cleanup.purgeHash': purgeHash,
           },
-        }
+        },
       );
 
       // Audit log
@@ -466,7 +466,7 @@ export class SignatureCleanupQueue {
             status: 'sent',
           },
         },
-      }
+      },
     );
 
     // Log notification
@@ -500,7 +500,9 @@ export class SignatureCleanupQueue {
   }
 
   async purgeSignatures(data) {
-    const { signatureIds, reason, verificationHash, dryRun } = data;
+    const {
+      signatureIds, reason, verificationHash, dryRun,
+    } = data;
     const results = [];
 
     for (const signatureId of signatureIds) {
@@ -564,7 +566,7 @@ export class SignatureCleanupQueue {
           tz: 'Africa/Johannesburg',
         },
         jobId: 'daily-cleanup',
-      }
+      },
     );
 
     // Schedule weekly notification run on Mondays
@@ -580,7 +582,7 @@ export class SignatureCleanupQueue {
           tz: 'Africa/Johannesburg',
         },
         jobId: 'weekly-notifications',
-      }
+      },
     );
 
     logger.info('Scheduled recurring cleanup jobs');

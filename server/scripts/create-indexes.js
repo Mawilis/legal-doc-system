@@ -120,7 +120,7 @@ async function createIndexes() {
     await mongoose.connect(MONGODB_URI);
     console.log('✅ Connected to MongoDB\n');
 
-    const db = mongoose.connection.db;
+    const { db } = mongoose.connection;
     const collections = await db.listCollections().toArray();
     const collectionNames = collections.map((c) => c.name);
 
@@ -134,7 +134,7 @@ async function createIndexes() {
 
       if (!collectionNames.includes(collectionName)) {
         console.log(
-          `   ⚠️  Collection does not exist yet - will be created when first document inserted`
+          '   ⚠️  Collection does not exist yet - will be created when first document inserted',
         );
         skippedIndexes += indexes.length;
         continue;

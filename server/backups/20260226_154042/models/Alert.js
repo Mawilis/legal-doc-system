@@ -69,7 +69,7 @@ const Alert = sequelize.define(
         fields: ['source', 'createdAt'],
       },
     ],
-  }
+  },
 );
 
 export default Alert;

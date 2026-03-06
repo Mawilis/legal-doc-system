@@ -50,7 +50,7 @@ filesToFix.forEach((relativePath) => {
     // Fix 2: @param with double asterisks
     content = content.replace(
       /@param\s*\{[^}]+\}\s*(\[?\w+\]?)\s*-\s*(.*?)\*\*/g,
-      '@param {$1} - $2'
+      '@param {$1} - $2',
     );
 
     // Fix 3: @returns with double asterisks
@@ -63,13 +63,11 @@ filesToFix.forEach((relativePath) => {
     // Fix 5: Specific pattern for asyncHandler.js
     content = content.replace(
       /catch\s*\(\s*error\s*\)\s*\{\s*\/\*\/\s*\}/g,
-      'catch (error) { /* ignore */ }'
+      'catch (error) { /* ignore */ }',
     );
 
     // Fix 6: Specific pattern for caseFileModel.js
-    content = content.replace(/\/\*\*[\s\S]*?@description[\s\S]*?\*\*\//g, (match) =>
-      match.replace(/\*\*/g, '*')
-    );
+    content = content.replace(/\/\*\*[\s\S]*?@description[\s\S]*?\*\*\//g, (match) => match.replace(/\*\*/g, '*'));
 
     if (content !== original) {
       fs.writeFileSync(fullPath, content, 'utf8');
@@ -90,8 +88,7 @@ console.log(`   • Remaining issues: ${filesToFix.length - fixedCount}`);
 
 // Now verify
 console.log('\n🔍 VERIFYING...');
-const verifyCmd =
-  'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
+const verifyCmd = 'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
   -not -path "*/node_modules/*" \
   -not -path "*/coverage/*" \
   -not -path "*/dist/*" \

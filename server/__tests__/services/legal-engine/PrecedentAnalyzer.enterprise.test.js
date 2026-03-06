@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT ANALYZER ENTERPRISE TESTS - $3.75B ARR VALIDATION              ║
   ║ 100% coverage | Multi-tenant | Global Scale | No Competition             ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/services/legal-engine/PrecedentAnalyzer.enterprise.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -110,9 +110,7 @@ jest.mock('../../../utils/quantumLogger', () => ({
 }));
 
 jest.mock('../../../utils/cryptoUtils', () => ({
-  sha256: jest.fn().mockImplementation((input) => {
-    return crypto.createHash('sha256').update(String(input)).digest('hex');
-  }),
+  sha256: jest.fn().mockImplementation((input) => crypto.createHash('sha256').update(String(input)).digest('hex')),
 }));
 
 jest.mock('../../../utils/metricsCollector', () => ({
@@ -146,7 +144,7 @@ jest.mock(
       .fn()
       .mockResolvedValue(['legality', 'administrative action', 'judicial review']),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 jest.mock(
@@ -163,7 +161,7 @@ jest.mock(
       keyFactors: ['Strong precedent support', 'Favorable jurisdiction'],
     }),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 jest.mock(
@@ -172,7 +170,7 @@ jest.mock(
     initialize: jest.fn().mockResolvedValue(true),
     translate: jest.fn().mockResolvedValue('translated text'),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 jest.mock(
@@ -181,7 +179,7 @@ jest.mock(
     initialize: jest.fn().mockResolvedValue(true),
     mapJurisdiction: jest.fn().mockReturnValue('ZA'),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 jest.mock(
@@ -190,7 +188,7 @@ jest.mock(
     initialize: jest.fn().mockResolvedValue(true),
     checkCompliance: jest.fn().mockResolvedValue({ compliant: true }),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 // Import after mocks
@@ -213,8 +211,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
 
   describe('1. Core Analysis at Enterprise Scale', () => {
     it('should analyze precedents with comprehensive depth', async () => {
-      const query =
-        'What is the principle of legality in South African administrative law and how does it apply to judicial review of executive action?';
+      const query = 'What is the principle of legality in South African administrative law and how does it apply to judicial review of executive action?';
       const context = {
         jurisdiction: 'ZA',
         court: 'High Court',
@@ -226,7 +223,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         context,
         mockTenantId,
         PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE,
-        { correlationId: mockCorrelationId }
+        { correlationId: mockCorrelationId },
       );
 
       // Verify core structure
@@ -296,7 +293,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
       expect(result.exportFormats.json).toBe(true);
 
       console.log(
-        `✅ Enterprise analysis completed in ${result.metadata.processingTimeMs}ms with ${result.precedents.length} precedents`
+        `✅ Enterprise analysis completed in ${result.metadata.processingTimeMs}ms with ${result.precedents.length} precedents`,
       );
     }, 30000);
 
@@ -309,7 +306,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         query,
         context,
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.QUICK
+        PrecedentAnalyzer.ANALYSIS_DEPTH.QUICK,
       );
 
       expect(result1.fromCache).toBeUndefined();
@@ -320,7 +317,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         query,
         context,
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.QUICK
+        PrecedentAnalyzer.ANALYSIS_DEPTH.QUICK,
       );
 
       expect(result2.fromCache).toBe(true);
@@ -347,12 +344,12 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
       // Verify each call included the correct tenantId
       expect(findSpy).toHaveBeenCalledWith(
         expect.objectContaining({ tenantId: 'tenant1' }),
-        expect.anything()
+        expect.anything(),
       );
 
       expect(findSpy).toHaveBeenCalledWith(
         expect.objectContaining({ tenantId: 'tenant2' }),
-        expect.anything()
+        expect.anything(),
       );
     });
 
@@ -367,7 +364,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'test query',
         {},
         'tenant1',
-        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
+        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
       );
 
       expect(result.citations.bluebook).toBeDefined();
@@ -383,7 +380,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
           'test query',
           { jurisdiction },
           mockTenantId,
-          PrecedentAnalyzer.ANALYSIS_DEPTH.QUICK
+          PrecedentAnalyzer.ANALYSIS_DEPTH.QUICK,
         );
 
         expect(result.metadata.jurisdiction).toBe(jurisdiction);
@@ -400,13 +397,13 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'test query',
         context,
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
+        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
       );
 
       const bindingCount = result.precedents.filter((p) => p.authority.type === 'BINDING').length;
 
       const persuasiveCount = result.precedents.filter(
-        (p) => p.authority.type === 'PERSUASIVE' || p.authority.type === 'FOREIGN'
+        (p) => p.authority.type === 'PERSUASIVE' || p.authority.type === 'FOREIGN',
       ).length;
 
       console.log(`✅ Binding: ${bindingCount}, Persuasive: ${persuasiveCount}`);
@@ -425,8 +422,8 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
             `test query ${i}`,
             {},
             mockTenantId,
-            PrecedentAnalyzer.ANALYSIS_DEPTH.QUICK
-          )
+            PrecedentAnalyzer.ANALYSIS_DEPTH.QUICK,
+          ),
         );
       }
 
@@ -453,7 +450,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
           'test query for performance testing',
           {},
           mockTenantId,
-          depth
+          depth,
         );
 
         const duration = Date.now() - start;
@@ -472,7 +469,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'complex legal question about constitutional rights',
         {},
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.DEEP
+        PrecedentAnalyzer.ANALYSIS_DEPTH.DEEP,
       );
 
       expect(result.queryAnalysis.aiEnhanced).toBeDefined();
@@ -488,7 +485,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'test query',
         {},
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.DEEP
+        PrecedentAnalyzer.ANALYSIS_DEPTH.DEEP,
       );
 
       // Should still return results without AI enhancement
@@ -504,7 +501,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'test query',
         {},
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE
+        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE,
       );
 
       const criticalConflicts = result.conflicts.filter((c) => c.severity === 'CRITICAL');
@@ -521,7 +518,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'test query',
         {},
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE
+        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE,
       );
 
       const hierarchyConflicts = result.conflicts.filter((c) => c.type === 'HIERARCHY_CONFLICT');
@@ -539,7 +536,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'test query',
         {},
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE
+        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE,
       );
 
       expect(result.recommendations.length).toBeGreaterThan(0);
@@ -570,7 +567,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
           'test query',
           {},
           mockTenantId,
-          PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
+          PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
         );
 
         // Manually add settlement recommendation
@@ -590,11 +587,11 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'test query',
         {},
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
+        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
       );
 
       const settlementRec = result.recommendations.find(
-        (r) => r.type === 'SETTLEMENT_CONSIDERATION'
+        (r) => r.type === 'SETTLEMENT_CONSIDERATION',
       );
       if (settlementRec) {
         expect(settlementRec.priority).toBe('MEDIUM');
@@ -609,7 +606,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'test query',
         {},
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
+        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
       );
 
       expect(result.citations.oscola).toBeDefined();
@@ -630,7 +627,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'test query',
         {},
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
+        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
       );
 
       expect(result.citations.bluebook).toBeDefined();
@@ -641,7 +638,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'test query',
         {},
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE
+        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE,
       );
 
       const hasPinpoints = result.citations.oscola.some((c) => c.includes('[') && c.includes(']'));
@@ -689,7 +686,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         query,
         context,
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
+        PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
       );
 
       // Get initial metrics
@@ -702,7 +699,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
           query,
           context,
           mockTenantId,
-          PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD
+          PrecedentAnalyzer.ANALYSIS_DEPTH.STANDARD,
         );
       }
 
@@ -721,13 +718,13 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
       });
 
       await expect(
-        PrecedentAnalyzer.analyzePrecedents('test query', {}, mockTenantId)
+        PrecedentAnalyzer.analyzePrecedents('test query', {}, mockTenantId),
       ).rejects.toThrow('Precedent analysis failed');
     });
 
     it('should handle invalid queries', async () => {
       await expect(PrecedentAnalyzer.analyzePrecedents('short', {}, mockTenantId)).rejects.toThrow(
-        'Query too short'
+        'Query too short',
       );
     });
 
@@ -738,8 +735,8 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         PrecedentAnalyzer.analyzePrecedents(
           'valid query with sufficient length for testing',
           {},
-          'nonexistent-tenant'
-        )
+          'nonexistent-tenant',
+        ),
       ).rejects.toThrow('Tenant not found');
     });
 
@@ -757,7 +754,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
             'test query',
             {},
             mockTenantId,
-            PrecedentAnalyzer.ANALYSIS_DEPTH.DEEP
+            PrecedentAnalyzer.ANALYSIS_DEPTH.DEEP,
           );
         } catch (error) {
           // Ignore errors
@@ -782,13 +779,12 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         'complex legal research query with multiple jurisdictions and legal areas',
         { jurisdiction: 'ZA', court: 'Constitutional Court' },
         mockTenantId,
-        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE
+        PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE,
       );
       const automatedTimeSeconds = (Date.now() - start) / 1000;
       const automatedTimeMinutes = automatedTimeSeconds / 60;
 
-      const timeSavingsPercent =
-        ((manualTimeMinutes - automatedTimeMinutes) / manualTimeMinutes) * 100;
+      const timeSavingsPercent = ((manualTimeMinutes - automatedTimeMinutes) / manualTimeMinutes) * 100;
 
       console.log(`✅ Manual research: ${manualTimeMinutes} minutes`);
       console.log(`✅ Automated analysis: ${automatedTimeMinutes.toFixed(2)} minutes`);
@@ -834,7 +830,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
         context,
         mockTenantId,
         PrecedentAnalyzer.ANALYSIS_DEPTH.COMPREHENSIVE,
-        { correlationId: mockCorrelationId }
+        { correlationId: mockCorrelationId },
       );
 
       // Generate evidence entry
@@ -878,7 +874,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
 
       await fs.writeFile(
         path.join(__dirname, 'precedent-analyzer-enterprise-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -890,7 +886,7 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'precedent-analyzer-enterprise-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
@@ -907,11 +903,11 @@ describe('PrecedentAnalyzer - Enterprise Scale Validation ($3.75B ARR Target)', 
       console.log(`💡 Recommendations: ${result.recommendations.length}`);
       console.log(`🔐 Evidence Hash: ${hash.substring(0, 16)}...`);
       console.log('\n💰 ROI METRICS');
-      console.log(`📈 Time Savings: 70%`);
-      console.log(`💰 Cost Savings/Lawyer: R600,000/year`);
-      console.log(`🌍 Market Share Target: 25%`);
-      console.log(`💵 Projected ARR: $3.75B`);
-      console.log(`🏢 Valuation (15x): $56.25B`);
+      console.log('📈 Time Savings: 70%');
+      console.log('💰 Cost Savings/Lawyer: R600,000/year');
+      console.log('🌍 Market Share Target: 25%');
+      console.log('💵 Projected ARR: $3.75B');
+      console.log('🏢 Valuation (15x): $56.25B');
       console.log('='.repeat(50));
     }, 30000);
   });

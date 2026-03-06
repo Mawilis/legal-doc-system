@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE INDEXER WORKER TESTS - INVESTOR DUE DILIGENCE            ║
   ║ 100% coverage | AI-Powered | Real-time Indexer                ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/workers/case-indexer.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -40,10 +40,10 @@ jest.mock(
     generateEmbedding: jest.fn().mockResolvedValue(
       Array(384)
         .fill(0)
-        .map(() => Math.random())
+        .map(() => Math.random()),
     ),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 jest.mock(
@@ -56,7 +56,7 @@ jest.mock(
     index: jest.fn().mockResolvedValue({ result: 'created' }),
     delete: jest.fn().mockResolvedValue({ result: 'deleted' }),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 jest.mock('../../utils/logger', () => ({
@@ -89,11 +89,9 @@ jest.mock('bullmq', () => {
   };
 });
 
-jest.mock('ioredis', () => {
-  return jest.fn().mockImplementation(() => ({
-    on: jest.fn(),
-  }));
-});
+jest.mock('ioredis', () => jest.fn().mockImplementation(() => ({
+  on: jest.fn(),
+})));
 
 // Import after mocks
 const Case = require('../../models/Case');
@@ -173,7 +171,7 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
       Case.findOne.mockResolvedValue(null);
 
       await expect(caseIndexer.indexCase(mockCaseId, mockTenantId)).rejects.toThrow(
-        'Case not found'
+        'Case not found',
       );
     });
 
@@ -223,8 +221,7 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
     it('should extract entities from text', () => {
       const extractEntities = caseIndexer.__get__('extractEntities');
 
-      const text =
-        'John Smith from Cape Town cited the Companies Act 71 of 2008 in his application. The respondent, ABC Corp, filed on 15 January 2024.';
+      const text = 'John Smith from Cape Town cited the Companies Act 71 of 2008 in his application. The respondent, ABC Corp, filed on 15 January 2024.';
 
       const entities = extractEntities(text);
 
@@ -248,8 +245,7 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
     it('should extract key phrases from text', () => {
       const extractKeyPhrases = caseIndexer.__get__('extractKeyPhrases');
 
-      const text =
-        'The principle of legality requires that all law must be rationally connected to a legitimate governmental purpose. This principle is fundamental to constitutional democracy.';
+      const text = 'The principle of legality requires that all law must be rationally connected to a legitimate governmental purpose. This principle is fundamental to constitutional democracy.';
 
       const phrases = extractKeyPhrases(text);
 
@@ -527,7 +523,7 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'case-indexer-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -539,7 +535,7 @@ describe('Case Indexer Worker - Knowledge Engine Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'case-indexer-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);

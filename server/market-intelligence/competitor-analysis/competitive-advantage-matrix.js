@@ -1,6 +1,7 @@
 #!const auditLogger = require('../../utils/auditLogger');
 const cryptoUtils = require('../../utils/cryptoUtils');
 const loggerRaw = require('../../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 
 class CompetitiveAdvantageMatrix {

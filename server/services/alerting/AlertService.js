@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ ALERT SERVICE - INVESTOR-GRADE MODULE                          ║
   ║ 94% cost reduction | R45M risk elimination | 96% margins       ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/alerting/AlertService.js
  * INVESTOR VALUE PROPOSITION:
@@ -63,15 +63,13 @@
 import nodemailer from 'nodemailer.js';
 import axios from 'axios.js';
 import twilio from 'twilio.js';
-import pagerduty from '@pagerduty/pdjs.js';
-import { createClient } from '@pagerduty/pdjs.js';
+import pagerduty, { createClient } from '@pagerduty/pdjs.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 import cron from 'node-cron.js';
 
 // WILSY OS CORE IMPORTS
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../../utils/quantumLogger.js';
 import auditLogger from '../../utils/auditLogger.js';
 import { metrics, trackError } from '../../utils/metricsCollector.js';
@@ -81,6 +79,8 @@ import cryptoUtils from '../../utils/cryptoUtils.js';
 import Alert from '../../models/Alert.js';
 import Incident from '../../models/Incident.js';
 import OnCallSchedule from '../../models/OnCallSchedule.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 /*
  * MERMAID INTEGRATION DIAGRAM:
@@ -233,10 +233,9 @@ const emailTransporter = nodemailer.createTransport({
 });
 
 // Twilio configuration for SMS
-const twilioClient =
-  process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
-    ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-    : null;
+const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
+  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null;
 
 // PagerDuty client
 const pagerdutyClient = process.env.PAGERDUTY_API_KEY
@@ -510,8 +509,8 @@ class ChannelManager {
     }
 
     if (
-      alert.severity !== ALERT_CONSTANTS.SEVERITY.CRITICAL &&
-      alert.severity !== ALERT_CONSTANTS.SEVERITY.ERROR
+      alert.severity !== ALERT_CONSTANTS.SEVERITY.CRITICAL
+      && alert.severity !== ALERT_CONSTANTS.SEVERITY.ERROR
     ) {
       return; // Only send SMS for critical/error alerts
     }
@@ -617,8 +616,8 @@ class ChannelManager {
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
           .header { background: ${this.getHeaderColor(
-            alert.severity
-          )}; color: white; padding: 20px; }
+    alert.severity,
+  )}; color: white; padding: 20px; }
           .content { padding: 20px; }
           .field { margin: 10px 0; }
           .label { font-weight: bold; color: #666; }
@@ -644,15 +643,15 @@ class ChannelManager {
             <span class="value">${new Date().toLocaleString()}</span>
           </div>
           ${
-            alert.details
-              ? `
+  alert.details
+    ? `
             <div class="field">
               <span class="label">Details:</span>
               <pre class="value">${JSON.stringify(alert.details, null, 2)}</pre>
             </div>
           `
-              : ''
-          }
+    : ''
+}
           <div class="field">
             <span class="label">Alert ID:</span>
             <span class="value">${alert.id}</span>
@@ -877,11 +876,10 @@ class EscalationEngine {
     const hour = now.getHours();
 
     // Check if within business hours
-    const isBusinessHours =
-      hour >= ALERT_CONSTANTS.BUSINESS_HOURS.START &&
-      hour < ALERT_CONSTANTS.BUSINESS_HOURS.END &&
-      dayOfWeek >= 1 &&
-      dayOfWeek <= 5;
+    const isBusinessHours = hour >= ALERT_CONSTANTS.BUSINESS_HOURS.START
+      && hour < ALERT_CONSTANTS.BUSINESS_HOURS.END
+      && dayOfWeek >= 1
+      && dayOfWeek <= 5;
 
     // In production, this would query the on-call schedule
     return {
@@ -973,7 +971,7 @@ class IncidentManager {
         updatedAt: incident.updatedAt,
         timeline: incident.timeline,
       },
-      { where: { incidentId } }
+      { where: { incidentId } },
     );
 
     return incident;
@@ -1104,8 +1102,8 @@ class AlertService {
 
       // Start escalation if needed
       if (
-        alert.severity === ALERT_CONSTANTS.SEVERITY.CRITICAL ||
-        alert.severity === ALERT_CONSTANTS.SEVERITY.ERROR
+        alert.severity === ALERT_CONSTANTS.SEVERITY.CRITICAL
+        || alert.severity === ALERT_CONSTANTS.SEVERITY.ERROR
       ) {
         await this.escalationEngine.startEscalation(alert, routing.escalation);
       }

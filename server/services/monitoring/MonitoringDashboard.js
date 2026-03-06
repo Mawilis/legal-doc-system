@@ -71,10 +71,10 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ MONITORING DASHBOARD - INVESTOR-GRADE MODULE - $5B+ VALUATION ENABLER    ║
   ║ Executive metrics | Real-time insights | Strategic intelligence          ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
@@ -84,12 +84,13 @@ import os from 'os';
 import { redisClient } from '../../cache/redisClient.js';
 import { QuantumLogger } from '../../utils/quantumLogger.js';
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import { metrics } from '../../utils/metricsCollector.js';
 import { AuditLedger } from '../../models/AuditLedger.js';
 import { TenantConfig } from '../../models/TenantConfig.js';
 import { BillingSubscription } from '../../models/BillingSubscription.js';
 import usageService from './UsageService.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // =============================================================================
 // QUANTUM CONSTANTS
@@ -227,13 +228,12 @@ class MonitoringDashboard {
 
     try {
       // Parallel data fetching
-      const [globalMetrics, revenueMetrics, neuralPerformance, upsellOpportunities] =
-        await Promise.all([
-          this.getGlobalMetrics(),
-          this.calculateRevenueMetrics(),
-          this.getNeuralPerformance(),
-          this.countUpsellOpportunities(),
-        ]);
+      const [globalMetrics, revenueMetrics, neuralPerformance, upsellOpportunities] = await Promise.all([
+        this.getGlobalMetrics(),
+        this.calculateRevenueMetrics(),
+        this.getNeuralPerformance(),
+        this.countUpsellOpportunities(),
+      ]);
 
       const summary = {
         timestamp: new Date().toISOString(),
@@ -275,10 +275,10 @@ class MonitoringDashboard {
       const serviceHealth = await this.checkServiceHealth();
       const healthyServices = Object.values(serviceHealth).filter((s) => s === 'ACTIVE').length;
       const totalServices = Object.keys(serviceHealth).length;
-      const systemHealth = ((healthyServices / totalServices) * 100).toFixed(2) + '%';
+      const systemHealth = `${((healthyServices / totalServices) * 100).toFixed(2)}%`;
 
       return {
-        totalInvocations: this.formatNumber(totalInvocations) + '+',
+        totalInvocations: `${this.formatNumber(totalInvocations)}+`,
         activeTenants,
         systemHealth,
         healthyServices,
@@ -327,7 +327,7 @@ class MonitoringDashboard {
       return {
         projectedAnnualValue: this.formatCurrency(arr),
         breakdown: tierCounts,
-        costSavingsVsCloud: savingsPercentage + '%',
+        costSavingsVsCloud: `${savingsPercentage}%`,
         cloudCost: this.formatCurrency(cloudCost),
         internalCost: this.formatCurrency(internalCost),
         savingsAmount: this.formatCurrency(costSavings),
@@ -399,7 +399,7 @@ class MonitoringDashboard {
 
       return {
         count: extrapolated,
-        percentage: ((extrapolated / tenantIds.length) * 100).toFixed(1) + '%',
+        percentage: `${((extrapolated / tenantIds.length) * 100).toFixed(1)}%`,
         potentialRevenue: this.formatCurrency(extrapolated * 50000), // Rough estimate
       };
     } catch (error) {
@@ -421,7 +421,7 @@ class MonitoringDashboard {
     if (globalMetrics.activeTenants > 1000) {
       insights.push({
         type: 'GROWTH',
-        message: `Crossed 1000 active tenants milestone. Growth rate 45% YoY.`,
+        message: 'Crossed 1000 active tenants milestone. Growth rate 45% YoY.',
         priority: 'high',
       });
     }
@@ -441,7 +441,7 @@ class MonitoringDashboard {
       // $500M
       insights.push({
         type: 'REVENUE',
-        message: `On track to exceed $500M ARR milestone.`,
+        message: 'On track to exceed $500M ARR milestone.',
         priority: 'high',
       });
     }
@@ -616,13 +616,13 @@ class MonitoringDashboard {
    */
   formatNumber(num) {
     if (num >= 1e9) {
-      return (num / 1e9).toFixed(1) + 'B';
+      return `${(num / 1e9).toFixed(1)}B`;
     }
     if (num >= 1e6) {
-      return (num / 1e6).toFixed(1) + 'M';
+      return `${(num / 1e6).toFixed(1)}M`;
     }
     if (num >= 1e3) {
-      return (num / 1e3).toFixed(1) + 'K';
+      return `${(num / 1e3).toFixed(1)}K`;
     }
     return num.toString();
   }
@@ -632,15 +632,15 @@ class MonitoringDashboard {
    */
   formatCurrency(num) {
     if (num >= 1e9) {
-      return '$' + (num / 1e9).toFixed(1) + 'B';
+      return `$${(num / 1e9).toFixed(1)}B`;
     }
     if (num >= 1e6) {
-      return '$' + (num / 1e6).toFixed(1) + 'M';
+      return `$${(num / 1e6).toFixed(1)}M`;
     }
     if (num >= 1e3) {
-      return '$' + (num / 1e3).toFixed(1) + 'K';
+      return `$${(num / 1e3).toFixed(1)}K`;
     }
-    return '$' + num.toFixed(0);
+    return `$${num.toFixed(0)}`;
   }
 
   /*

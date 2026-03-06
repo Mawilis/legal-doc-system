@@ -48,7 +48,7 @@ async function finalizeMigrations() {
     await registry.updateOne(
       { migrationId: 'wilsy_os_production_ready' },
       { $set: finalMigration },
-      { upsert: true }
+      { upsert: true },
     );
 
     console.log('✅ Created final migration record');

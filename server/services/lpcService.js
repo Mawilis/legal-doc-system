@@ -5,6 +5,11 @@
  * Purpose: $10B Investor-Grade Legal Compliance Fortress
  */
 
+import crypto from 'node:crypto';
+import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid.js';
+import axios from 'axios.js';
+import { DateTime } from 'luxon.js';
 import {
   ValidationError,
   ComplianceError,
@@ -25,19 +30,13 @@ import {
   RegulatoryDeadlineError,
 } from '../utils/errors.js';
 
-import crypto from 'node:crypto';
-import mongoose from 'mongoose';
-import { v4 as uuidv4 } from 'uuid.js';
-import axios from 'axios.js';
-import { DateTime } from 'luxon.js';
-
 import auditLogger from '../utils/auditLogger.js';
 import cryptoUtils from '../utils/cryptoUtils.js';
 import { redactLPCData, detectPII } from '../utils/popiaRedaction.js';
 import { validateTenantId } from '../middleware/tenantContext.js';
-import AuditService from '../services/auditService.js';
-import ComplianceEngine from '../services/complianceEngine.js';
-import { BlockchainAnchor } from '../services/blockchainAnchor.js';
+import AuditService from './auditService.js';
+import ComplianceEngine from './complianceEngine.js';
+import { BlockchainAnchor } from './blockchainAnchor.js';
 
 // Model Imports (Standardized)
 import AttorneyProfile from '../models/AttorneyProfile.js';
@@ -159,9 +158,7 @@ class AuditChain {
     let leaves = [];
 
     if (block?.data?.transactions && Array.isArray(block.data.transactions)) {
-      leaves = block.data.transactions.map((tx) =>
-        crypto.createHash('sha3-512').update(JSON.stringify(tx)).digest('hex')
-      );
+      leaves = block.data.transactions.map((tx) => crypto.createHash('sha3-512').update(JSON.stringify(tx)).digest('hex'));
     } else {
       leaves = this.chain.slice(-8).map((b) => b.hash);
     }
@@ -221,9 +218,7 @@ class AuditChain {
     let transactionHashes = [];
 
     if (block.data?.transactions && Array.isArray(block.data.transactions)) {
-      transactionHashes = block.data.transactions.map((tx) =>
-        crypto.createHash('sha3-512').update(JSON.stringify(tx)).digest('hex')
-      );
+      transactionHashes = block.data.transactions.map((tx) => crypto.createHash('sha3-512').update(JSON.stringify(tx)).digest('hex'));
     } else {
       transactionHashes = this.chain.slice(-8).map((b) => b.hash);
     }
@@ -270,8 +265,8 @@ class AuditChain {
         sarbGuidance: 'GN6.2026',
         isCompliant: true,
         regulatorAnchor:
-          block.regulatorAnchor?.transactionId ||
-          `LPC-ANCHOR-${Date.now()}-${merkleRoot.substring(0, 8)}`,
+          block.regulatorAnchor?.transactionId
+          || `LPC-ANCHOR-${Date.now()}-${merkleRoot.substring(0, 8)}`,
         anchorVerified: block.regulatorAnchor?.verified || false,
       },
       forensicHash: this._generateEvidenceHash({ ...block, proof: null }),
@@ -778,7 +773,7 @@ class LpcService {
           },
         },
         'SYSTEM',
-        { anchorToRegulator: false }
+        { anchorToRegulator: false },
       );
 
       await this._auditService.recordAccess(
@@ -798,7 +793,7 @@ class LpcService {
           blockIndex: genesisBlock.index,
           duration: Date.now() - startTime,
           config: this._config,
-        }
+        },
       );
 
       this._initialized = true;
@@ -845,7 +840,7 @@ class LpcService {
         {
           method: 'CONFIG_VALIDATION',
           code: 'LPC_CONFIG_001',
-        }
+        },
       );
     }
     try {
@@ -867,7 +862,7 @@ class LpcService {
           expectedHash: 'length >= 64',
           actualHash: `length = ${config.encryptionKey.length}`,
           code: 'LPC_CONFIG_003',
-        }
+        },
       );
     }
     if (!/^[A-Za-z0-9\-_]{32,}$/.test(config.lpcApiKey)) {
@@ -876,7 +871,7 @@ class LpcService {
         {
           method: 'CONFIG_VALIDATION',
           code: 'LPC_CONFIG_004',
-        }
+        },
       );
     }
     if (config.jwtSecret.length < 32) {
@@ -888,7 +883,7 @@ class LpcService {
           expectedHash: 'length >= 32',
           actualHash: `length = ${config.jwtSecret.length}`,
           code: 'LPC_CONFIG_005',
-        }
+        },
       );
     }
   }
@@ -946,7 +941,7 @@ class LpcService {
           fallbackActive: true,
           retryAfter: 60,
           code: 'LPC_CACHE_003',
-        }
+        },
       );
     }
   }
@@ -954,22 +949,22 @@ class LpcService {
   _initializeComplianceMonitors() {
     this._reconciliationScheduler = setInterval(
       () => this._checkReconciliationRequirements(),
-      LPC_STATUTORY_LIMITS.MINIMUM_RECONCILIATION_DAYS * 24 * 60 * 60 * 1000
+      LPC_STATUTORY_LIMITS.MINIMUM_RECONCILIATION_DAYS * 24 * 60 * 60 * 1000,
     ).unref();
 
     this._cpdDeadlineMonitor = setInterval(
       () => this._checkCPDDeadlines(),
-      24 * 60 * 60 * 1000
+      24 * 60 * 60 * 1000,
     ).unref();
 
     this._certificateExpiryMonitor = setInterval(
       () => this._checkFidelityCertificateExpiry(),
-      24 * 60 * 60 * 1000
+      24 * 60 * 60 * 1000,
     ).unref();
 
     this._retentionEnforcer = setInterval(
       () => this._enforceRetentionPolicies(),
-      7 * 24 * 60 * 60 * 1000
+      7 * 24 * 60 * 60 * 1000,
     ).unref();
 
     this._metricsAggregator = setInterval(() => this._aggregateMetrics(), 60 * 60 * 1000).unref();
@@ -1023,7 +1018,7 @@ class LpcService {
         {
           service: 'LPCService',
           code: 'LPC_INIT_002',
-        }
+        },
       );
     }
   }
@@ -1039,8 +1034,7 @@ class LpcService {
       this._responseTimeHistory.shift();
     }
 
-    this._metrics.averageResponseTime =
-      this._responseTimeHistory.reduce((a, b) => a + b, 0) / this._responseTimeHistory.length;
+    this._metrics.averageResponseTime = this._responseTimeHistory.reduce((a, b) => a + b, 0) / this._responseTimeHistory.length;
 
     const sorted = [...this._responseTimeHistory].sort((a, b) => a - b);
     this._metrics.p95ResponseTime = sorted[Math.floor(sorted.length * 0.95)] || 0;
@@ -1200,7 +1194,7 @@ class LpcService {
           resourceId,
           userContext,
           'ACCESS_VERIFIED',
-          { tenantId, resourceFound: !!resource }
+          { tenantId, resourceFound: !!resource },
         );
       }
 
@@ -1320,7 +1314,7 @@ class LpcService {
         generatedBy: userContext.userId,
       },
       userContext.tenantId,
-      { anchorToRegulator: false }
+      { anchorToRegulator: false },
     );
 
     return {
@@ -1347,7 +1341,7 @@ class LpcService {
         tenantId: userContext.tenantId,
       },
       userContext.tenantId,
-      { anchorToRegulator: true }
+      { anchorToRegulator: true },
     );
 
     try {
@@ -1366,7 +1360,7 @@ class LpcService {
             expectedHash: 'unique',
             actualHash: 'duplicate',
             code: 'LPC_PROFILE_001',
-          }
+          },
         );
       }
 
@@ -1416,7 +1410,7 @@ class LpcService {
           lpcNumber: attorneyProfile.lpcNumber,
           practiceName: attorneyProfile.practice?.name,
           blockHash: evidenceBlock.hash,
-        }
+        },
       );
 
       this._metrics.complianceChecksPerformed++;
@@ -1451,7 +1445,7 @@ class LpcService {
           method: 'TENANT_VALIDATION',
           sessionExpired: false,
           code: 'LPC_AUTH_001',
-        }
+        },
       );
     }
 
@@ -1529,7 +1523,7 @@ class LpcService {
         responseTime: Date.now() - startTime,
       },
       tenantId,
-      { anchorToRegulator: false }
+      { anchorToRegulator: false },
     );
 
     this._metrics.auditBlocksCreated = this._auditChain.chain.length;
@@ -1633,7 +1627,7 @@ class LpcService {
       `query:${JSON.stringify(query)}`,
       userContext,
       'SEARCH',
-      { tenantId, resultCount: attorneys.length }
+      { tenantId, resultCount: attorneys.length },
     );
 
     return attorneys.map((a) => this.redactLPCData(a));
@@ -1664,7 +1658,7 @@ class LpcService {
           expectedHash: 'exists',
           actualHash: 'not_found',
           code: 'LPC_TRUST_001',
-        }
+        },
       );
     }
 
@@ -1684,7 +1678,7 @@ class LpcService {
           expectedHash: 'unique',
           actualHash: 'duplicate',
           code: 'LPC_TRUST_002',
-        }
+        },
       );
     }
 
@@ -1773,7 +1767,7 @@ class LpcService {
         status: 'PENDING_CONFIRMATION',
       },
       userContext.tenantId,
-      { anchorToRegulator: true }
+      { anchorToRegulator: true },
     );
 
     await this._auditService.recordAccess(
@@ -1786,7 +1780,7 @@ class LpcService {
         attorneyLpcNumber,
         status: 'PENDING_CONFIRMATION',
         blockHash: auditBlock.hash,
-      }
+      },
     );
 
     this._metrics.trustAccountsCreated++;
@@ -1805,7 +1799,7 @@ class LpcService {
         method: 'BANK_TRANSFER_VERIFICATION',
         verificationAmount,
         instructions: `Deposit exactly R${verificationAmount}.${verificationCode.slice(
-          -2
+          -2,
         )} into the account`,
       },
       blockHash: auditBlock.hash,
@@ -1848,7 +1842,7 @@ class LpcService {
     const isValid = await this._verifyBankConfirmation(
       accountNumber,
       confirmationData.code,
-      confirmationData.amount
+      confirmationData.amount,
     );
 
     if (!isValid) {
@@ -1895,7 +1889,7 @@ class LpcService {
         confirmationMethod: confirmationData.method,
       },
       userContext.tenantId,
-      { anchorToRegulator: true }
+      { anchorToRegulator: true },
     );
 
     await this._auditService.recordAccess(
@@ -1907,7 +1901,7 @@ class LpcService {
         accountNumber,
         status: 'ACTIVE',
         blockHash: auditBlock.hash,
-      }
+      },
     );
 
     this._metrics.trustAccountsConfirmed++;
@@ -1946,7 +1940,7 @@ class LpcService {
             expectedHash: 'exists',
             actualHash: 'not_found',
             code: 'LPC_TRUST_004',
-          }
+          },
         );
       }
 
@@ -1966,7 +1960,7 @@ class LpcService {
             expectedHash: 'exists',
             actualHash: 'not_found',
             code: 'LPC_TRUST_005',
-          }
+          },
         );
       }
 
@@ -1993,7 +1987,7 @@ class LpcService {
               sarRequired: transactionData.amount > 100000,
               clientId: transactionData.clientId,
               code: 'FICA_TRANSACTION_001',
-            }
+            },
           );
         }
       }
@@ -2019,7 +2013,7 @@ class LpcService {
         userContext.tenantId,
         {
           anchorToRegulator: transactionData.amount > 100000,
-        }
+        },
       );
 
       this._metrics.trustTransactionsProcessed++;
@@ -2036,7 +2030,7 @@ class LpcService {
           attorneyLpcNumber,
           accountNumber: trustAccount.accountNumber,
           blockHash: completionBlock.hash,
-        }
+        },
       );
 
       if (trustAccount.isOverdue) {
@@ -2092,7 +2086,7 @@ class LpcService {
           constraint: 'non-empty string',
           userId: userContext?.userId,
           code: 'LPC_VALIDATION_005',
-        }
+        },
       );
     }
 
@@ -2102,7 +2096,7 @@ class LpcService {
       tenantId,
       accountId,
       'trust_account',
-      userContext
+      userContext,
     );
     if (!hasAccess) {
       throw this._errorHandler.handleAuthenticationError(
@@ -2111,7 +2105,7 @@ class LpcService {
           userId: userContext?.userId,
           method: 'ACCESS_VERIFICATION',
           code: 'LPC_AUTH_002',
-        }
+        },
       );
     }
 
@@ -2216,7 +2210,7 @@ class LpcService {
         responseTime: Date.now() - startTime,
       },
       tenantId,
-      { anchorToRegulator: false }
+      { anchorToRegulator: false },
     );
 
     this._metrics.auditBlocksCreated = this._auditChain.chain.length;
@@ -2260,7 +2254,7 @@ class LpcService {
             expectedHash: 'exists',
             actualHash: 'not_found',
             code: 'LPC_TRUST_007',
-          }
+          },
         );
       }
 
@@ -2280,7 +2274,7 @@ class LpcService {
             expectedHash: 'exists',
             actualHash: 'not_found',
             code: 'LPC_TRUST_008',
-          }
+          },
         );
       }
 
@@ -2301,7 +2295,7 @@ class LpcService {
           ipAddress: userContext.ipAddress,
           userAgent: userContext.userAgent,
           reconciliationId,
-        }
+        },
       );
 
       const complianceAudit = new ComplianceAudit({
@@ -2375,7 +2369,7 @@ class LpcService {
         userContext.tenantId,
         {
           anchorToRegulator: !reconciliationResult.isReconciled,
-        }
+        },
       );
 
       this._metrics.auditBlocksCreated = this._auditChain.chain.length;
@@ -2392,7 +2386,7 @@ class LpcService {
           isReconciled: reconciliationResult.isReconciled,
           auditId: complianceAudit.auditId,
           blockHash: completionBlock.hash,
-        }
+        },
       );
 
       return {
@@ -2448,7 +2442,7 @@ class LpcService {
           expectedHash: 'exists',
           actualHash: 'not_found',
           code: 'LPC_NOT_FOUND_004',
-        }
+        },
       );
     }
 
@@ -2473,10 +2467,9 @@ class LpcService {
     const balanceCompliance = !trustAccount.hasNegativeBalances;
     const reportingCompliance = trustAccount.transactionCount > 0;
 
-    const overallCompliance =
-      ([reconciliationCompliance, balanceCompliance, reportingCompliance].filter(Boolean).length /
-        3) *
-      100;
+    const overallCompliance = ([reconciliationCompliance, balanceCompliance, reportingCompliance].filter(Boolean).length
+        / 3)
+      * 100;
 
     return {
       hasAccount: true,
@@ -2566,7 +2559,7 @@ class LpcService {
             expectedHash: 'exists',
             actualHash: 'not_found',
             code: 'LPC_CPD_001',
-          }
+          },
         );
       }
 
@@ -2579,7 +2572,7 @@ class LpcService {
             constraint: '≤ 8 hours',
             category: activityData.category,
             code: 'LPC_VALIDATION_006',
-          }
+          },
         );
       }
 
@@ -2619,8 +2612,8 @@ class LpcService {
         evidence: {
           certificateUrl: activityData.certificateUrl,
           certificateHash:
-            activityData.certificateHash ||
-            crypto
+            activityData.certificateHash
+            || crypto
               .createHash('sha3-512')
               .update(`${activityId}:${activityData.hours}:${Date.now()}`)
               .digest('hex'),
@@ -2646,7 +2639,7 @@ class LpcService {
       const cpdSummary = await CPDRecord.getAttorneySummary(
         attorney._id,
         userContext.tenantId,
-        new Date().getFullYear()
+        new Date().getFullYear(),
       );
 
       let certificate = null;
@@ -2654,7 +2647,7 @@ class LpcService {
         await attorney.updateCPDStatus(
           cpdSummary.summary.totalHours,
           cpdSummary.summary.ethicsHours,
-          userContext.userId
+          userContext.userId,
         );
 
         const activities = await CPDRecord.find({
@@ -2687,7 +2680,7 @@ class LpcService {
         userContext.tenantId,
         {
           anchorToRegulator: cpdSummary.compliance.isCompliant,
-        }
+        },
       );
 
       this._metrics.auditBlocksCreated = this._auditChain.chain.length;
@@ -2765,14 +2758,14 @@ class LpcService {
           expectedHash: 'exists',
           actualHash: 'not_found',
           code: 'LPC_NOT_FOUND_005',
-        }
+        },
       );
     }
 
     const summary = await CPDRecord.getAttorneySummary(
       attorney._id,
       tenantId,
-      year || new Date().getFullYear()
+      year || new Date().getFullYear(),
     );
 
     if (!summary.compliance.isCompliant) {
@@ -2877,7 +2870,7 @@ class LpcService {
             'X-Request-ID': uuidv4(),
             'X-Tenant-ID': 'SYSTEM',
           },
-        }
+        },
       );
 
       const verification = {
@@ -3003,7 +2996,7 @@ class LpcService {
         status: 'PENDING',
       },
       userContext.tenantId,
-      { anchorToRegulator: false }
+      { anchorToRegulator: false },
     );
 
     await this._auditService.recordAccess('cpd_exemption', exemptionId, userContext, 'APPLY', {
@@ -3058,23 +3051,21 @@ class LpcService {
       deleted: false,
     });
 
-    const avgHours =
-      historicalRecords.length > 0
-        ? historicalRecords.reduce((sum, r) => sum + r.hours, 0) / historicalRecords.length
-        : 8;
+    const avgHours = historicalRecords.length > 0
+      ? historicalRecords.reduce((sum, r) => sum + r.hours, 0) / historicalRecords.length
+      : 8;
 
-    const avgEthics =
-      historicalRecords
-        .filter((r) => r.category === 'ETHICS')
-        .reduce((sum, r) => sum + r.hours, 0) / (historicalRecords.length || 1);
+    const avgEthics = historicalRecords
+      .filter((r) => r.category === 'ETHICS')
+      .reduce((sum, r) => sum + r.hours, 0) / (historicalRecords.length || 1);
 
     const growthRate = 0.05;
     const ethicsGrowthRate = 0.03;
 
     for (let i = 0; i < years; i++) {
       const year = currentYear + i;
-      const projectedHours = Math.round(avgHours * Math.pow(1 + growthRate, i));
-      const projectedEthics = Math.round(avgEthics * Math.pow(1 + ethicsGrowthRate, i));
+      const projectedHours = Math.round(avgHours * (1 + growthRate) ** i);
+      const projectedEthics = Math.round(avgEthics * (1 + ethicsGrowthRate) ** i);
 
       const requiredHours = LPC_STATUTORY_LIMITS.CPD_ANNUAL_HOURS;
       const requiredEthics = LPC_STATUTORY_LIMITS.CPD_ETHICS_HOURS;
@@ -3082,8 +3073,7 @@ class LpcService {
       const surplus = projectedHours - requiredHours;
       const ethicsSurplus = projectedEthics - requiredEthics;
 
-      const riskLevel =
-        surplus < 0 ? 'HIGH' : surplus < 2 ? 'MEDIUM' : surplus < 4 ? 'LOW' : 'MINIMAL';
+      const riskLevel = surplus < 0 ? 'HIGH' : surplus < 2 ? 'MEDIUM' : surplus < 4 ? 'LOW' : 'MINIMAL';
 
       const recommendations = [];
 
@@ -3140,7 +3130,7 @@ class LpcService {
         forecastPeriod: `${currentYear} - ${currentYear + years - 1}`,
       },
       userContext.tenantId,
-      { anchorToRegulator: false }
+      { anchorToRegulator: false },
     );
 
     return {
@@ -3167,8 +3157,8 @@ class LpcService {
     this.validateTenantId(userContext.tenantId);
 
     if (
-      !userContext.roles?.includes('LPC_ADMIN') &&
-      !userContext.roles?.includes('COMPLIANCE_OFFICER')
+      !userContext.roles?.includes('LPC_ADMIN')
+      && !userContext.roles?.includes('COMPLIANCE_OFFICER')
     ) {
       throw this._errorHandler.handleAuthenticationError(
         'Bulk verification requires LPC_ADMIN or COMPLIANCE_OFFICER role',
@@ -3176,7 +3166,7 @@ class LpcService {
           userId: userContext.userId,
           method: 'ROLE_VALIDATION',
           code: 'LPC_AUTH_003',
-        }
+        },
       );
     }
 
@@ -3269,7 +3259,7 @@ class LpcService {
         duration: Date.now() - startTime,
       },
       userContext.tenantId,
-      { anchorToRegulator: false }
+      { anchorToRegulator: false },
     );
 
     this._metrics.cpdBulkVerifications++;
@@ -3287,7 +3277,7 @@ class LpcService {
         processedCount: activities.length,
         verifiedCount,
         blockHash: auditBlock.hash,
-      }
+      },
     );
 
     return {
@@ -3337,16 +3327,15 @@ class LpcService {
             expectedHash: 'exists',
             actualHash: 'not_found',
             code: 'LPC_FIDELITY_001',
-          }
+          },
         );
       }
 
-      const baseContribution =
-        annualTurnover * LPC_STATUTORY_LIMITS.FIDELITY_CONTRIBUTION_PERCENTAGE;
+      const baseContribution = annualTurnover * LPC_STATUTORY_LIMITS.FIDELITY_CONTRIBUTION_PERCENTAGE;
 
-      let contribution = Math.max(
+      const contribution = Math.max(
         LPC_STATUTORY_LIMITS.FIDELITY_MINIMUM_CONTRIBUTION,
-        Math.min(baseContribution, LPC_STATUTORY_LIMITS.FIDELITY_MAXIMUM_CONTRIBUTION)
+        Math.min(baseContribution, LPC_STATUTORY_LIMITS.FIDELITY_MAXIMUM_CONTRIBUTION),
       );
 
       const discounts = [];
@@ -3394,7 +3383,7 @@ class LpcService {
 
       const finalContribution = Math.max(
         LPC_STATUTORY_LIMITS.FIDELITY_MINIMUM_CONTRIBUTION,
-        Math.round((contribution - discountAmount) * 100) / 100
+        Math.round((contribution - discountAmount) * 100) / 100,
       );
 
       const calculation = {
@@ -3459,14 +3448,14 @@ class LpcService {
             expectedHash: 'exists',
             actualHash: 'not_found',
             code: 'LPC_FIDELITY_003',
-          }
+          },
         );
       }
 
       const calculation = await this.calculateFidelityFundContribution(
         attorneyLpcNumber,
         annualTurnover,
-        userContext
+        userContext,
       );
 
       const certificateId = `FFC-${DateTime.now().toFormat('yyyy')}-${crypto
@@ -3527,7 +3516,7 @@ class LpcService {
           turnoverDeclared: annualTurnover,
           status: 'PENDING_PAYMENT',
         },
-        userContext.userId
+        userContext.userId,
       );
 
       this._metrics.fidelityCertificatesIssued++;
@@ -3545,7 +3534,7 @@ class LpcService {
           status: 'PENDING_PAYMENT',
         },
         userContext.tenantId,
-        { anchorToRegulator: true }
+        { anchorToRegulator: true },
       );
 
       await this._auditService.recordAccess(
@@ -3557,7 +3546,7 @@ class LpcService {
           attorneyLpcNumber,
           contributionAmount: calculation.finalContribution,
           blockHash: auditBlock.hash,
-        }
+        },
       );
 
       return {
@@ -3676,7 +3665,7 @@ class LpcService {
         status: 'ISSUED',
       },
       userContext.tenantId,
-      { anchorToRegulator: true }
+      { anchorToRegulator: true },
     );
 
     this._metrics.fidelityCertificatesIssued++;
@@ -3712,7 +3701,7 @@ class LpcService {
           certificateId,
           userId: userContext?.userId,
           code: 'LPC_VALIDATION_012',
-        }
+        },
       );
     }
 
@@ -3725,7 +3714,7 @@ class LpcService {
       certificateId,
       userContext,
       'VERIFY',
-      { tenantId }
+      { tenantId },
     );
 
     this._trackApiCall(tenantId, Date.now() - startTime);
@@ -3758,7 +3747,7 @@ class LpcService {
         responseTime: Date.now() - startTime,
       },
       tenantId,
-      { anchorToRegulator: false }
+      { anchorToRegulator: false },
     );
 
     return {
@@ -3811,7 +3800,7 @@ class LpcService {
           expectedHash: 'exists',
           actualHash: 'not_found',
           code: 'LPC_NOT_FOUND_011',
-        }
+        },
       );
     }
 
@@ -3829,7 +3818,7 @@ class LpcService {
     const calculation = await this.calculateFidelityFundContribution(
       attorneyLpcNumber,
       annualTurnover,
-      userContext
+      userContext,
     );
 
     const renewalResult = await currentCertificate.renew(annualTurnover, {
@@ -3848,7 +3837,7 @@ class LpcService {
         contributionAmount: calculation.finalContribution,
       },
       userContext.tenantId,
-      { anchorToRegulator: true }
+      { anchorToRegulator: true },
     );
 
     this._metrics.fidelityCertificatesIssued++;
@@ -4000,7 +3989,7 @@ class LpcService {
               matterNumber: claim.matterNumber,
               description: claim.description,
             },
-            userContext
+            userContext,
           );
 
           claim.sarSubmitted = true;
@@ -4035,7 +4024,7 @@ class LpcService {
               matterNumber: claim.matterNumber,
               description: claim.description,
             },
-            userContext
+            userContext,
           );
 
           claim.sarSubmitted = false;
@@ -4073,7 +4062,7 @@ class LpcService {
         userContext.tenantId,
         {
           anchorToRegulator: claim.amount > LPC_STATUTORY_LIMITS.FICA_SAR_THRESHOLD,
-        }
+        },
       );
 
       this._metrics.fidelityClaimsSubmitted++;
@@ -4142,10 +4131,9 @@ class LpcService {
    */
   async _submitSARToFIC(claimData, userContext) {
     // FIC API integration with environment switching
-    const ficEndpoint =
-      this.environment === 'production'
-        ? 'https://report.fic.gov.za/api/v1/sar'
-        : 'https://sandbox.fic.gov.za/api/v1/sar';
+    const ficEndpoint = this.environment === 'production'
+      ? 'https://report.fic.gov.za/api/v1/sar'
+      : 'https://sandbox.fic.gov.za/api/v1/sar';
 
     try {
       // Validate FIC API configuration
@@ -4186,7 +4174,7 @@ class LpcService {
             'Content-Type': 'application/json',
           },
           timeout: this._config.fic.timeout || LPC_STATUTORY_LIMITS.FIC_API_TIMEOUT,
-        }
+        },
       );
 
       // Validate FIC response
@@ -4204,7 +4192,7 @@ class LpcService {
           caseNumber: response.data.caseNumber,
           reference: response.data.reference,
           timestamp: response.data.timestamp,
-        }
+        },
       );
 
       return {
@@ -4235,7 +4223,7 @@ class LpcService {
           timeout: isTimeout,
           networkError: isNetworkError,
           authError: isAuthError,
-        }
+        },
       );
 
       // Throw appropriate error based on failure type
@@ -4299,7 +4287,7 @@ class LpcService {
     this._retryQueue = [];
     this._retryQueueProcessor = setInterval(
       () => this._processSARRetryQueue(),
-      3600000 // 1 hour
+      3600000, // 1 hour
     ).unref();
   }
 
@@ -4343,7 +4331,7 @@ class LpcService {
           attempts: 0,
           maxAttempts: retryEntry.maxAttempts,
           nextRetry: new Date(retryEntry.nextRetry).toISOString(),
-        }
+        },
       )
       .catch(() => {});
   }
@@ -4359,7 +4347,7 @@ class LpcService {
 
     const now = Date.now();
     const pendingRetries = this._retryQueue.filter(
-      (entry) => entry.nextRetry <= now && entry.attempts < entry.maxAttempts
+      (entry) => entry.nextRetry <= now && entry.attempts < entry.maxAttempts,
     );
 
     for (const entry of pendingRetries) {
@@ -4400,7 +4388,7 @@ class LpcService {
             claimId: entry.data.claimId,
             attempts: entry.attempts,
             ficCaseNumber: sarResult.caseNumber,
-          }
+          },
         );
       } catch (error) {
         entry.lastError = error.message;
@@ -4419,7 +4407,7 @@ class LpcService {
               attempts: entry.attempts,
               maxAttempts: entry.maxAttempts,
               error: error.message,
-            }
+            },
           );
 
           // Trigger regulatory deadline error
@@ -4435,13 +4423,12 @@ class LpcService {
               responsibleParty: entry.data.attorneyLpcNumber,
               remediationPlan: 'Manual SAR submission required',
               code: 'FICA_RETRY_ESCALATION_001',
-            }
+            },
           );
         } else {
           // Schedule next retry with exponential backoff
-          const backoffMultiplier = Math.pow(2, entry.attempts - 1);
-          entry.nextRetry =
-            Date.now() + LPC_STATUTORY_LIMITS.FIC_RETRY_INTERVAL_MS * backoffMultiplier;
+          const backoffMultiplier = 2 ** (entry.attempts - 1);
+          entry.nextRetry = Date.now() + LPC_STATUTORY_LIMITS.FIC_RETRY_INTERVAL_MS * backoffMultiplier;
 
           await this._auditService.recordAccess(
             'sar_retry_queue',
@@ -4454,7 +4441,7 @@ class LpcService {
               maxAttempts: entry.maxAttempts,
               nextRetry: new Date(entry.nextRetry).toISOString(),
               error: error.message,
-            }
+            },
           );
         }
 
@@ -4498,7 +4485,7 @@ class LpcService {
               value: subjectType,
               constraint: 'attorney, trust_account, firm',
               code: 'LPC_VALIDATION_014',
-            }
+            },
           );
       }
 
@@ -4567,7 +4554,7 @@ class LpcService {
         userContext.tenantId,
         {
           anchorToRegulator: auditData.score < 70,
-        }
+        },
       );
 
       this._metrics.auditBlocksCreated = this._auditChain.chain.length;
@@ -4618,16 +4605,15 @@ class LpcService {
     const cpdSummary = await CPDRecord.getAttorneySummary(
       attorneyId,
       userContext.tenantId,
-      new Date().getFullYear()
+      new Date().getFullYear(),
     );
 
     if (!cpdSummary.compliance.isCompliant) {
-      const severity =
-        cpdSummary.summary.effectiveHours < 6
-          ? 'CRITICAL'
-          : cpdSummary.summary.effectiveHours < 9
-            ? 'HIGH'
-            : 'MEDIUM';
+      const severity = cpdSummary.summary.effectiveHours < 6
+        ? 'CRITICAL'
+        : cpdSummary.summary.effectiveHours < 9
+          ? 'HIGH'
+          : 'MEDIUM';
 
       findings.push({
         findingId: `FIND-${uuidv4()}`,
@@ -4689,8 +4675,8 @@ class LpcService {
         title: 'No Valid Fidelity Certificate',
         description: attorney.fidelityFund?.expiryDate
           ? `Certificate expired on ${new Date(
-              attorney.fidelityFund.expiryDate
-            ).toLocaleDateString()}`
+            attorney.fidelityFund.expiryDate,
+          ).toLocaleDateString()}`
           : 'No certificate ever issued',
         severity: 'CRITICAL',
         remediation: {
@@ -4801,7 +4787,7 @@ class LpcService {
   async _auditTrustAccount(accountId, userContext) {
     const trustAccount = await TrustAccount.findById(accountId).populate(
       'attorneyId',
-      'lpcNumber practice.name contact.email practiceNumber'
+      'lpcNumber practice.name contact.email practiceNumber',
     );
 
     if (!trustAccount) {
@@ -4976,11 +4962,11 @@ class LpcService {
     const activeAttorneys = attorneys.filter((a) => a.status === 'ACTIVE').length;
     const attorneysWithCPD = new Set(cpdRecords.map((r) => r.attorneyId.toString())).size;
     const attorneysWithFidelity = fidelityCertificates.filter(
-      (c) => c.status === 'ISSUED' && new Date(c.expiryDate) > new Date()
+      (c) => c.status === 'ISSUED' && new Date(c.expiryDate) > new Date(),
     ).length;
 
     const compliantAttorneys = attorneys.filter(
-      (a) => a.isCPDCompliant && a.isFidelityValid
+      (a) => a.isCPDCompliant && a.isFidelityValid,
     ).length;
 
     const overdueAccounts = trustAccounts.filter((a) => a.isOverdue).length;
@@ -4989,21 +4975,18 @@ class LpcService {
     const totalTrustBalance = trustAccounts.reduce((sum, a) => sum + (a.balances?.current || 0), 0);
     const totalFidelityContributions = fidelityCertificates.reduce(
       (sum, c) => sum + (c.contributionAmount || 0),
-      0
+      0,
     );
 
     const cpdComplianceRate = totalAttorneys > 0 ? (attorneysWithCPD / totalAttorneys) * 100 : 0;
 
-    const fidelityComplianceRate =
-      totalAttorneys > 0 ? (attorneysWithFidelity / totalAttorneys) * 100 : 0;
+    const fidelityComplianceRate = totalAttorneys > 0 ? (attorneysWithFidelity / totalAttorneys) * 100 : 0;
 
-    const trustComplianceRate =
-      trustAccounts.length > 0
-        ? ((trustAccounts.length - overdueAccounts) / trustAccounts.length) * 100
-        : 100;
+    const trustComplianceRate = trustAccounts.length > 0
+      ? ((trustAccounts.length - overdueAccounts) / trustAccounts.length) * 100
+      : 100;
 
-    const overallScore =
-      totalAttorneys > 0 ? Math.round((compliantAttorneys / totalAttorneys) * 100) : 0;
+    const overallScore = totalAttorneys > 0 ? Math.round((compliantAttorneys / totalAttorneys) * 100) : 0;
 
     const findings = [];
     const issues = [];
@@ -5073,7 +5056,7 @@ class LpcService {
         type: 'FIRM_FIDELITY_MANAGEMENT',
         title: 'Automate Fidelity Certificate Renewals',
         description: `${Math.round(
-          100 - fidelityComplianceRate
+          100 - fidelityComplianceRate,
         )}% of attorneys missing valid fidelity certificates`,
         priority: 'CRITICAL',
         estimatedEffort: 'MEDIUM',
@@ -5145,14 +5128,13 @@ class LpcService {
 
     await this.verifyTenantAccess(tenantId, tenantId, 'tenant', userContext);
 
-    const [attorneyStats, trustStats, fidelityStats, auditStats, cpdNonCompliant] =
-      await Promise.all([
-        AttorneyProfile.getComplianceStats(tenantId),
-        TrustAccount.getComplianceStats(tenantId),
-        FidelityFund.getComplianceStats(tenantId),
-        ComplianceAudit.getComplianceStats(tenantId, null, 90),
-        CPDRecord.findNonCompliant(tenantId),
-      ]);
+    const [attorneyStats, trustStats, fidelityStats, auditStats, cpdNonCompliant] = await Promise.all([
+      AttorneyProfile.getComplianceStats(tenantId),
+      TrustAccount.getComplianceStats(tenantId),
+      FidelityFund.getComplianceStats(tenantId),
+      ComplianceAudit.getComplianceStats(tenantId, null, 90),
+      CPDRecord.findNonCompliant(tenantId),
+    ]);
 
     const weights = {
       attorneys: 0.35,
@@ -5161,9 +5143,9 @@ class LpcService {
     };
 
     const overallScore = Math.round(
-      (attorneyStats.complianceRate || 0) * weights.attorneys +
-        (trustStats.complianceRate || 0) * weights.trust +
-        (fidelityStats.complianceRate || 0) * weights.fidelity
+      (attorneyStats.complianceRate || 0) * weights.attorneys
+        + (trustStats.complianceRate || 0) * weights.trust
+        + (fidelityStats.complianceRate || 0) * weights.fidelity,
     );
 
     let riskLevel = 'LOW';
@@ -5232,9 +5214,9 @@ class LpcService {
       },
       alerts: {
         critical:
-          (trustStats.overdueAccounts || 0) +
-          (fidelityStats.expired || 0) +
-          (cpdNonCompliant.length || 0),
+          (trustStats.overdueAccounts || 0)
+          + (fidelityStats.expired || 0)
+          + (cpdNonCompliant.length || 0),
         high: (trustStats.accountsWithDiscrepancies || 0) + (fidelityStats.expiringSoon || 0),
         medium: (fidelityStats.pendingPayment || 0) + (auditStats.openFindings || 0),
       },
@@ -5344,15 +5326,13 @@ class LpcService {
           constraint: 'non-empty string',
           userId: userContext?.userId,
           code: 'LPC_VALIDATION_015',
-        }
+        },
       );
     }
 
     this.validateTenantId(tenantId);
 
-    const hasExecutiveAccess = userContext?.roles?.some((role) =>
-      ['COMPLIANCE_OFFICER', 'LPC_ADMIN', 'MANAGING_PARTNER', 'DIRECTOR', 'AUDITOR'].includes(role)
-    );
+    const hasExecutiveAccess = userContext?.roles?.some((role) => ['COMPLIANCE_OFFICER', 'LPC_ADMIN', 'MANAGING_PARTNER', 'DIRECTOR', 'AUDITOR'].includes(role));
 
     if (!hasExecutiveAccess) {
       throw this._errorHandler.handleAuthenticationError(
@@ -5361,7 +5341,7 @@ class LpcService {
           userId: userContext?.userId,
           method: 'ROLE_VALIDATION',
           code: 'LPC_AUTH_004',
-        }
+        },
       );
     }
 
@@ -5413,25 +5393,25 @@ class LpcService {
     const [attorneyStats, trustStats, cpdStats, fidelityStats, auditStats] = await Promise.all([
       AttorneyProfile.getComplianceStats(
         reportFilters.tenantId,
-        reportFilters.firmId === 'ALL' ? null : reportFilters.firmId
+        reportFilters.firmId === 'ALL' ? null : reportFilters.firmId,
       ),
       TrustAccount.getComplianceStats(
         reportFilters.tenantId,
-        reportFilters.firmId === 'ALL' ? null : reportFilters.firmId
+        reportFilters.firmId === 'ALL' ? null : reportFilters.firmId,
       ),
       CPDRecord.getComplianceStats(
         reportFilters.tenantId,
         reportFilters.firmId === 'ALL' ? null : reportFilters.firmId,
-        new Date().getFullYear()
+        new Date().getFullYear(),
       ),
       FidelityFund.getComplianceStats(
         reportFilters.tenantId,
-        reportFilters.firmId === 'ALL' ? null : reportFilters.firmId
+        reportFilters.firmId === 'ALL' ? null : reportFilters.firmId,
       ),
       ComplianceAudit.getComplianceStats(
         reportFilters.tenantId,
         reportFilters.firmId === 'ALL' ? null : reportFilters.firmId,
-        365
+        365,
       ),
     ]);
 
@@ -5505,7 +5485,7 @@ class LpcService {
           categoryBreakdown: await this._getCPDCategoryBreakdown(
             tenantId,
             firmId,
-            new Date().getFullYear()
+            new Date().getFullYear(),
           ),
         },
         fidelityFundCompliance: {
@@ -5551,7 +5531,7 @@ class LpcService {
           articles: ['30', '32', '33', '35'],
         },
         sarb: {
-          compliant: trustStats.bankConfirmed ? true : false,
+          compliant: !!trustStats.bankConfirmed,
           score: trustStats.bankConfirmed ? 100 : 70,
           findings: auditStats.sarbFindings || [],
           guidance: ['GN6.2026'],
@@ -5583,7 +5563,7 @@ class LpcService {
       tenantId,
       {
         anchorToRegulator: overallScore < 80,
-      }
+      },
     );
 
     this._metrics.auditBlocksCreated = this._auditChain.chain.length;
@@ -5619,11 +5599,11 @@ class LpcService {
           userId: userContext?.userId,
           method: 'ROLE_VALIDATION',
           code: 'LPC_AUTH_006',
-        }
+        },
       );
     }
 
-    const tenantId = userContext.tenantId;
+    const { tenantId } = userContext;
     if (!tenantId) {
       throw this._errorHandler.handleValidationError(
         'Tenant ID required in user context for metrics access',
@@ -5633,7 +5613,7 @@ class LpcService {
           constraint: 'non-empty string',
           userId: userContext.userId,
           code: 'LPC_VALIDATION_016',
-        }
+        },
       );
     }
 
@@ -5665,7 +5645,8 @@ class LpcService {
     this._metrics.complianceChecksPerformed++;
     this._trackApiCall(tenantId, Date.now() - startTime);
 
-    let startDate, endDate;
+    let startDate; let
+      endDate;
     if (dateRange) {
       startDate = dateRange.start
         ? new Date(dateRange.start)
@@ -5715,7 +5696,7 @@ class LpcService {
       attorneyMetrics,
       trustMetrics,
       cpdMetrics,
-      fidelityMetrics
+      fidelityMetrics,
     );
     const popiaScore = this._calculatePOPIAComplianceScore(attorneyMetrics);
     const ficaScore = this._calculateFICAComplianceScore(trustMetrics);
@@ -5802,7 +5783,7 @@ class LpcService {
       tenantId,
       {
         anchorToRegulator: complianceScore < 80,
-      }
+      },
     );
 
     this._metrics.auditBlocksCreated = this._auditChain.chain.length;
@@ -5848,7 +5829,7 @@ class LpcService {
           userId: userContext?.userId,
           matterId,
           code: 'LPC_VALIDATION_017',
-        }
+        },
       );
     }
 
@@ -5934,7 +5915,7 @@ class LpcService {
           filterType: 'TRUST_ACCOUNT',
           accountNumber,
           complianceReference: 'LPC_RULE_21.1',
-        }
+        },
       );
     }
 
@@ -5950,11 +5931,10 @@ class LpcService {
       .reduce((sum, tx) => sum + (tx.amount || 0), 0);
     const debitTotal = transactions
       .filter(
-        (tx) =>
-          tx.type === 'DEBIT' ||
-          tx.type === 'WITHDRAWAL' ||
-          tx.type === 'PAYMENT' ||
-          tx.type === 'FEE'
+        (tx) => tx.type === 'DEBIT'
+          || tx.type === 'WITHDRAWAL'
+          || tx.type === 'PAYMENT'
+          || tx.type === 'FEE',
       )
       .reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
@@ -5989,7 +5969,7 @@ class LpcService {
         responseTime: Date.now() - startTime,
       },
       tenantId,
-      { anchorToRegulator: false }
+      { anchorToRegulator: false },
     );
 
     this._metrics.auditBlocksCreated = this._auditChain.chain.length;
@@ -6029,8 +6009,8 @@ class LpcService {
           retentionPolicy: LPC_RETENTION_POLICIES.TRUST_TRANSACTIONS,
           dataResidency: LPC_DATA_RESIDENCY.DEFAULT,
           retentionExpiry:
-            tx.retentionExpiry ||
-            DateTime.now()
+            tx.retentionExpiry
+            || DateTime.now()
               .plus({ days: LPC_STATUTORY_LIMITS.RETENTION_TRUST_TRANSACTIONS })
               .toISO(),
         },
@@ -6179,7 +6159,7 @@ class LpcService {
         enforcedAt: now.toISOString(),
       },
       'SYSTEM',
-      { anchorToRegulator: false }
+      { anchorToRegulator: false },
     );
 
     return retentionStats;
@@ -6194,7 +6174,7 @@ class LpcService {
 
     for (const account of overdueAccounts) {
       const daysOverdue = Math.floor(
-        (new Date() - new Date(account.compliance.nextReconciliationDue)) / (1000 * 60 * 60 * 24)
+        (new Date() - new Date(account.compliance.nextReconciliationDue)) / (1000 * 60 * 60 * 24),
       );
 
       await this._auditService.recordAccess(
@@ -6208,7 +6188,7 @@ class LpcService {
           daysOverdue,
           nextReconciliationDue: account.compliance.nextReconciliationDue,
           reconciliationScore: account.compliance.reconciliationScore,
-        }
+        },
       );
 
       if (daysOverdue > 14) {
@@ -6230,7 +6210,7 @@ class LpcService {
         action: 'MANUAL_INTERVENTION_REQUIRED',
       },
       trustAccount.tenantId,
-      { anchorToRegulator: true }
+      { anchorToRegulator: true },
     );
 
     trustAccount.compliance.escalationLevel = daysOverdue > 30 ? 'LEVEL_3' : 'LEVEL_2';
@@ -6266,7 +6246,7 @@ class LpcService {
             ethicsRemaining: attorney.requirements?.ethicsRemaining,
             daysUntilDeadline,
             deadline: deadline.toISOString(),
-          }
+          },
         );
 
         if (daysUntilDeadline <= 7) {
@@ -6299,7 +6279,7 @@ class LpcService {
         action: 'IMMEDIATE_COMPLETION_REQUIRED',
       },
       attorney.tenantId,
-      { anchorToRegulator: true }
+      { anchorToRegulator: true },
     );
 
     return escalationBlock;
@@ -6316,7 +6296,7 @@ class LpcService {
 
     for (const certificate of expiringCertificates) {
       const daysUntilExpiry = Math.ceil(
-        (new Date(certificate.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
+        (new Date(certificate.expiryDate) - new Date()) / (1000 * 60 * 60 * 24),
       );
 
       await certificate.sendRenewalReminder('EMAIL', daysUntilExpiry);
@@ -6332,7 +6312,7 @@ class LpcService {
           practiceName: certificate.attorneyId?.practice?.name,
           daysUntilExpiry,
           expiryDate: certificate.expiryDate,
-        }
+        },
       );
 
       if (daysUntilExpiry <= 7) {
@@ -6364,7 +6344,7 @@ class LpcService {
         action: 'IMMEDIATE_RENEWAL_REQUIRED',
       },
       certificate.tenantId,
-      { anchorToRegulator: true }
+      { anchorToRegulator: true },
     );
 
     return escalationBlock;
@@ -6464,9 +6444,9 @@ class LpcService {
         hitRate:
           this._metrics.cacheHits + this._metrics.cacheMisses > 0
             ? Math.round(
-                (this._metrics.cacheHits / (this._metrics.cacheHits + this._metrics.cacheMisses)) *
-                  100
-              )
+              (this._metrics.cacheHits / (this._metrics.cacheHits + this._metrics.cacheMisses))
+                  * 100,
+            )
             : 0,
       },
     });
@@ -6567,7 +6547,7 @@ class LpcService {
     });
 
     const criticalChecks = checks.filter(
-      (c) => c.status === 'UNHEALTHY' || c.status === 'COMPROMISED'
+      (c) => c.status === 'UNHEALTHY' || c.status === 'COMPROMISED',
     );
 
     const degradedChecks = checks.filter((c) => c.status === 'DEGRADED');
@@ -6587,7 +6567,7 @@ class LpcService {
         duration: Date.now() - startTime,
       },
       tenantId || 'SYSTEM',
-      { anchorToRegulator: false }
+      { anchorToRegulator: false },
     );
 
     this._metrics.auditBlocksCreated = this._auditChain.chain.length;
@@ -6803,7 +6783,7 @@ class LpcService {
           end: endDate?.toISOString(),
         },
         resultCount: total,
-      }
+      },
     );
 
     return {
@@ -6857,13 +6837,12 @@ class LpcService {
       if (endDate) query['compliance.lastReconciliationDate'].$lte = endDate;
     }
 
-    const [totalAccounts, activeAccounts, complianceStats, reconciliationHistory] =
-      await Promise.all([
-        TrustAccount.countDocuments(query),
-        TrustAccount.countDocuments({ ...query, status: 'ACTIVE' }),
-        TrustAccount.getComplianceStats(filters.tenantId, filters.firmId),
-        this._getReconciliationHistory(filters.tenantId, filters.firmId, 30),
-      ]);
+    const [totalAccounts, activeAccounts, complianceStats, reconciliationHistory] = await Promise.all([
+      TrustAccount.countDocuments(query),
+      TrustAccount.countDocuments({ ...query, status: 'ACTIVE' }),
+      TrustAccount.getComplianceStats(filters.tenantId, filters.firmId),
+      this._getReconciliationHistory(filters.tenantId, filters.firmId, 30),
+    ]);
 
     const overdueQuery = {
       ...query,
@@ -6877,8 +6856,7 @@ class LpcService {
     };
     const accountsWithDiscrepancies = await TrustAccount.countDocuments(discrepancyQuery);
 
-    const complianceRate =
-      totalAccounts > 0 ? ((totalAccounts - overdueAccounts) / totalAccounts) * 100 : 100;
+    const complianceRate = totalAccounts > 0 ? ((totalAccounts - overdueAccounts) / totalAccounts) * 100 : 100;
 
     return {
       totalAccounts,
@@ -6958,8 +6936,7 @@ class LpcService {
       CPDRecord.findNonCompliant(filters.tenantId, year).then((r) => r.length),
     ]);
 
-    const complianceRate =
-      totalActivities > 0 ? ((totalActivities - nonCompliant) / totalActivities) * 100 : 100;
+    const complianceRate = totalActivities > 0 ? ((totalActivities - nonCompliant) / totalActivities) * 100 : 100;
 
     return {
       totalActivities,
@@ -7171,12 +7148,10 @@ class LpcService {
     const duration = timeScope.end - timeScope.start;
     const apiCallsInPeriod = this._metrics.apiCallsTotal || 0;
 
-    const errorRate =
-      apiCallsInPeriod > 0 ? ((this._metrics.errorCount || 0) / apiCallsInPeriod) * 100 : 0;
+    const errorRate = apiCallsInPeriod > 0 ? ((this._metrics.errorCount || 0) / apiCallsInPeriod) * 100 : 0;
 
     const totalCacheRequests = (this._metrics.cacheHits || 0) + (this._metrics.cacheMisses || 0);
-    const cacheHitRate =
-      totalCacheRequests > 0 ? ((this._metrics.cacheHits || 0) / totalCacheRequests) * 100 : 0;
+    const cacheHitRate = totalCacheRequests > 0 ? ((this._metrics.cacheHits || 0) / totalCacheRequests) * 100 : 0;
 
     return {
       averageResponseTime: Math.round(this._metrics.averageResponseTime || 45),
@@ -7192,7 +7167,7 @@ class LpcService {
       cacheMisses: this._metrics.cacheMisses || 0,
       cacheEvictions: this._metrics.cacheEvictions || 0,
       uptime: this._formatDuration(
-        this._metrics.serviceStartTime ? Date.now() - this._metrics.serviceStartTime.getTime() : 0
+        this._metrics.serviceStartTime ? Date.now() - this._metrics.serviceStartTime.getTime() : 0,
       ),
       uptimeMs: this._metrics.serviceStartTime
         ? Date.now() - this._metrics.serviceStartTime.getTime()
@@ -7219,7 +7194,7 @@ class LpcService {
           value: { firmId, tenantId },
           constraint: 'both parameters required',
           code: 'LPC_VALIDATION_024',
-        }
+        },
       );
     }
 
@@ -7355,7 +7330,7 @@ class LpcService {
         category: 'ATTORNEY_COMPLIANCE',
         title: 'Improve Attorney Compliance Rate',
         description: `${(100 - metrics[0].complianceRate).toFixed(
-          1
+          1,
         )}% of attorneys require attention`,
         priority: metrics[0].complianceRate < 70 ? 'CRITICAL' : 'HIGH',
         impact: 'Regulatory compliance, Risk reduction',
@@ -7561,7 +7536,7 @@ class LpcService {
         category: 'ATTORNEY_COMPLIANCE',
         title: 'Improve Attorney Compliance Rate',
         description: `${(100 - metrics.attorneyMetrics.complianceRate).toFixed(
-          1
+          1,
         )}% of attorneys require attention`,
         impact: 'HIGH',
         effort: 'MEDIUM',
@@ -7757,7 +7732,7 @@ class LpcService {
     const cipher = crypto.createCipheriv(
       'aes-256-gcm',
       crypto.scryptSync(this._config?.encryptionKey || LPC_NAMESPACE.QUANTUM_SEED, 'salt', 32),
-      crypto.randomBytes(16)
+      crypto.randomBytes(16),
     );
 
     let encrypted = cipher.update(data, 'utf8', 'hex');
@@ -7772,7 +7747,7 @@ class LpcService {
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       crypto.scryptSync(this._config?.encryptionKey || LPC_NAMESPACE.QUANTUM_SEED, 'salt', 32),
-      crypto.randomBytes(16)
+      crypto.randomBytes(16),
     );
 
     decipher.setAuthTag(Buffer.from(authTag, 'hex'));
@@ -7920,7 +7895,7 @@ class LpcService {
       const trustCompliant = attorney.isTrustCompliant || false;
 
       const compliantCount = [cpdCompliant, fidelityCompliant, trustCompliant].filter(
-        Boolean
+        Boolean,
       ).length;
 
       if (compliantCount === 3) breakdown.fullyCompliant++;
@@ -8000,7 +7975,8 @@ class LpcService {
     };
     if (firmId) query.firmId = firmId;
 
-    return ComplianceAudit.find(query).sort({ auditDate: -1 }).limit(limit).lean().exec();
+    return ComplianceAudit.find(query).sort({ auditDate: -1 }).limit(limit).lean()
+      .exec();
   }
 
   _generateRiskMatrix(metrics) {
@@ -8110,7 +8086,7 @@ class LpcService {
       keyRisks.push(
         `${
           fidelityStats.expiringSoon + fidelityStats.expired
-        } fidelity certificates require attention`
+        } fidelity certificates require attention`,
       );
     }
 
@@ -8271,11 +8247,10 @@ class LpcService {
     const last = values[values.length - 1];
     const change = last - first;
 
-    const variance =
-      values.reduce(
-        (sum, val) => sum + Math.pow(val - values.reduce((a, b) => a + b, 0) / values.length, 2),
-        0
-      ) / values.length;
+    const variance = values.reduce(
+      (sum, val) => sum + (val - values.reduce((a, b) => a + b, 0) / values.length) ** 2,
+      0,
+    ) / values.length;
     const volatility = variance > 100 ? 'HIGH' : variance > 25 ? 'MEDIUM' : 'LOW';
 
     return {
@@ -8291,7 +8266,7 @@ class LpcService {
 
     Object.keys(trends).forEach((key) => {
       const values = trends[key].map(
-        (t) => t.complianceRate || t.renewalRate || t.averageScore || 0
+        (t) => t.complianceRate || t.renewalRate || t.averageScore || 0,
       );
       const ma7 = this._calculateSimpleMovingAverage(values, 7);
       const ma30 = this._calculateSimpleMovingAverage(values, 30);
@@ -8321,7 +8296,7 @@ class LpcService {
 
     Object.keys(trends).forEach((key) => {
       const values = trends[key].map(
-        (t) => t.complianceRate || t.renewalRate || t.averageScore || 0
+        (t) => t.complianceRate || t.renewalRate || t.averageScore || 0,
       );
 
       if (values.length < 3) {
@@ -8418,10 +8393,10 @@ class LpcService {
         sarSuccessRate:
           this._metrics.sarSubmissions && this._metrics.sarSubmissions > 0
             ? Math.round(
-                ((this._metrics.sarSubmissions - (this._metrics.sarFailures || 0)) /
-                  this._metrics.sarSubmissions) *
-                  100
-              )
+              ((this._metrics.sarSubmissions - (this._metrics.sarFailures || 0))
+                  / this._metrics.sarSubmissions)
+                  * 100,
+            )
             : 0,
       },
       fixes: {
@@ -8440,11 +8415,11 @@ class LpcService {
         reportFiltersUsed: this._metrics.complianceReportsGenerated > 0,
         metricsParametersUsed: {
           filters:
-            this._metrics.attorneyMetricsQueries +
-              this._metrics.trustMetricsQueries +
-              this._metrics.cpdMetricsQueries +
-              this._metrics.fidelityMetricsQueries >
-            0,
+            this._metrics.attorneyMetricsQueries
+              + this._metrics.trustMetricsQueries
+              + this._metrics.cpdMetricsQueries
+              + this._metrics.fidelityMetricsQueries
+            > 0,
           startDate: this._metrics.trendCalculations > 0,
           endDate: this._metrics.trendCalculations > 0,
           firmId: this._metrics.fidelityMetricsQueries > 0,
@@ -8512,7 +8487,7 @@ class LpcService {
           },
         },
         'SYSTEM',
-        { anchorToRegulator: false }
+        { anchorToRegulator: false },
       );
     } catch (error) {
       console.error('Metrics aggregation failed:', error.message);
@@ -8616,7 +8591,7 @@ class LpcService {
             severity: 'HIGH',
             deadline: 'immediate',
             code: 'LPC_ANOMALY_003',
-          }
+          },
         );
       }
 
@@ -8692,7 +8667,7 @@ class LpcService {
             sarRequired: true,
             reportingDeadline: DateTime.now().plus({ days: 15 }).toISO(),
             code: 'FICA_ANOMALY_001',
-          }
+          },
         );
       }
 
@@ -8705,7 +8680,7 @@ class LpcService {
             anomalies,
           },
           'SYSTEM',
-          { anchorToRegulator: true }
+          { anchorToRegulator: true },
         );
 
         for (const handler of this._anomalyAlertHandlers) {
@@ -8770,7 +8745,7 @@ class LpcService {
           value: accountNumber,
           constraint: 'non-empty string',
           code: 'LPC_VALIDATION_026',
-        }
+        },
       );
     }
 
@@ -8782,7 +8757,7 @@ class LpcService {
           value: code,
           constraint: 'non-empty string',
           code: 'LPC_VALIDATION_027',
-        }
+        },
       );
     }
 
@@ -8794,7 +8769,7 @@ class LpcService {
           value: amount,
           constraint: 'positive number',
           code: 'LPC_VALIDATION_028',
-        }
+        },
       );
     }
 
@@ -8825,8 +8800,8 @@ class LpcService {
     }
 
     if (
-      trustAccount.metadata.verificationExpiry &&
-      new Date(trustAccount.metadata.verificationExpiry) < new Date()
+      trustAccount.metadata.verificationExpiry
+      && new Date(trustAccount.metadata.verificationExpiry) < new Date()
     ) {
       throw this._errorHandler.handleValidationError('Verification code has expired', {
         field: 'verificationExpiry',
@@ -8843,8 +8818,7 @@ class LpcService {
     const isValid = code === storedCode && amount === storedAmount;
 
     if (isValid) {
-      trustAccount.metadata.verificationAttempts =
-        (trustAccount.metadata.verificationAttempts || 0) + 1;
+      trustAccount.metadata.verificationAttempts = (trustAccount.metadata.verificationAttempts || 0) + 1;
       trustAccount.metadata.lastVerificationAttempt = new Date();
       trustAccount.metadata.lastVerificationCode = code;
       trustAccount.metadata.lastVerificationAmount = amount;
@@ -8861,7 +8835,7 @@ class LpcService {
           verifiedAt: new Date().toISOString(),
           codeProvided: code,
           amountProvided: amount,
-        }
+        },
       );
 
       trustAccount.status = 'ACTIVE';
@@ -8886,15 +8860,14 @@ class LpcService {
           attorneyLpcNumber: trustAccount.attorneyLpcNumber,
           confirmedBy: 'SYSTEM',
           confirmationMethod: 'BANK_TRANSFER_VERIFICATION',
-          verificationCode: code.substring(0, 4) + '*',
+          verificationCode: `${code.substring(0, 4)}*`,
           verificationAmount: amount,
         },
         trustAccount.tenantId,
-        { anchorToRegulator: true }
+        { anchorToRegulator: true },
       );
     } else {
-      trustAccount.metadata.verificationAttempts =
-        (trustAccount.metadata.verificationAttempts || 0) + 1;
+      trustAccount.metadata.verificationAttempts = (trustAccount.metadata.verificationAttempts || 0) + 1;
       trustAccount.metadata.lastVerificationAttempt = new Date();
       trustAccount.metadata.lastVerificationCode = code;
       trustAccount.metadata.lastVerificationAmount = amount;
@@ -8912,9 +8885,9 @@ class LpcService {
           attempts: trustAccount.metadata.verificationAttempts,
           codeProvided: code,
           amountProvided: amount,
-          expectedCode: storedCode.substring(0, 4) + '*',
+          expectedCode: `${storedCode.substring(0, 4)}*`,
           expectedAmount: storedAmount,
-        }
+        },
       );
 
       if (trustAccount.metadata.verificationAttempts >= 3) {
@@ -8933,7 +8906,7 @@ class LpcService {
             accountNumber,
             lockedUntil: trustAccount.metadata.verificationLockedUntil,
             code: 'LPC_VALIDATION_031',
-          }
+          },
         );
       }
     }
@@ -8953,4 +8926,6 @@ const createLpcService = () => new LpcService();
 // ============================================================================
 const lpcServiceInstance = new LpcService();
 
-export { AuditChain, LpcService, LPC_STATUTORY_LIMITS, lpcServiceInstance as default };
+export {
+  AuditChain, LpcService, LPC_STATUTORY_LIMITS, lpcServiceInstance as default,
+};

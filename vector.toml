@@ -1,0 +1,200 @@
+# ============================================================================
+# WILSY OS 2050 - VECTOR LOG AGGREGATOR ENTERPRISE CONFIGURATION
+# 10TH GENERATION | QUANTUM FORTRESS | FORTUNE 500
+# ============================================================================
+
+[api]
+enabled = true
+address = "0.0.0.0:8686"
+playground = false
+
+# ============================================================================
+# GLOBAL OPTIONS
+# ============================================================================
+data_dir = "/vector-data-dir"
+expire_metrics_secs = 30
+
+# ============================================================================
+# SOURCES - INGEST LOGS FROM ALL SERVICES
+# ============================================================================
+
+[sources.wilsy_api_logs]
+type = "file"
+include = ["/Library/WilsyOS/data/audit-logs/wilsy-api-*.log"]
+read_from = "beginning"
+ignore_older_secs = 86400
+multiline.timeout_ms = 1000
+
+[sources.wilsy_worker_logs]
+type = "file"
+include = ["/Library/WilsyOS/data/audit-logs/wilsy-worker-*.log"]
+read_from = "beginning"
+ignore_older_secs = 86400
+
+[sources.nginx_access_logs]
+type = "file"
+include = ["/Library/WilsyOS/data/audit-logs/nginx-access.log"]
+read_from = "beginning"
+
+[sources.nginx_error_logs]
+type = "file"
+include = ["/Library/WilsyOS/data/audit-logs/nginx-error.log"]
+read_from = "beginning"
+
+[sources.docker_logs]
+type = "docker_logs"
+include_images = ["wilsy-os-2050", "redis", "milvus", "minio", "prometheus", "grafana"]
+include_labels = ["app=wilsy"]
+
+[sources.system_journal]
+type = "journald"
+include_units = ["docker.service", "containerd.service"]
+
+# ============================================================================
+# TRANSFORMS - PROCESS AND ENRICH LOGS
+# ============================================================================
+
+[transforms.parse_json]
+type = "remap"
+inputs = ["wilsy_api_logs", "wilsy_worker_logs"]
+source = '''
+. = parse_json!(.message) ?? .
+'''
+
+[transforms.add_metadata]
+type = "remap"
+inputs = ["parse_json", "nginx_access_logs", "nginx_error_logs", "docker_logs", "system_journal"]
+source = '''
+.environment = "production"
+.datacenter = "jhb-01"
+.generation = "10"
+.classification = "FORENSIC-GRADE"
+.host = get_hostname!()
+.timestamp = now()
+'''
+
+[transforms.filter_sensitive]
+type = "remap"
+inputs = ["add_metadata"]
+source = '''
+if exists(.password) { del(.password) }
+if exists(.token) { del(.token) }
+if exists(.secret) { del(.secret) }
+if exists(.api_key) { del(.api_key) }
+if exists(.credit_card) { del(.credit_card) }
+if exists(.private_key) { del(.private_key) }
+if exists(.biometric_data) { del(.biometric_data) }
+'''
+
+[transforms.route_logs]
+type = "route"
+inputs = ["filter_sensitive"]
+
+[transforms.route_logs.route.forensic]
+condition = '''
+contains(string!(.file), "audit") || contains(string!(.file), "forensic") || .level == "error" || .level == "fatal"
+'''
+
+[transforms.route_logs.route.application]
+condition = '''
+!contains(string!(.file), "audit") && .level != "error" && .level != "fatal"
+'''
+
+[transforms.route_logs.route.metrics]
+condition = '''
+.type == "metric" || .metric != null
+'''
+
+# ============================================================================
+# SINKS - DESTINATIONS FOR PROCESSED LOGS
+# ============================================================================
+
+[sinks.forensic_storage]
+type = "file"
+inputs = ["route_logs.forensic"]
+path = "/Library/WilsyOS/data/forensic-evidence/vector-forensic-%Y-%m-%d.log"
+encoding.codec = "json"
+compression = "gzip"
+
+[sinks.application_storage]
+type = "file"
+inputs = ["route_logs.application"]
+path = "/Library/WilsyOS/data/audit-logs/vector-application-%Y-%m-%d.log"
+encoding.codec = "json"
+compression = "gzip"
+
+[sinks.prometheus_metrics]
+type = "prometheus_exporter"
+inputs = ["route_logs.metrics"]
+address = "0.0.0.0:9598"
+default_namespace = "wilsy_vector"
+
+[[sinks.prometheus_metrics.histogram]]
+name = "log_processing_seconds"
+buckets = [0.1, 0.5, 1.0, 2.0, 5.0]
+
+[sinks.elasticsearch]
+type = "elasticsearch"
+inputs = ["route_logs.application", "route_logs.forensic"]
+endpoints = ["http://elasticsearch:9200"]
+bulk.index = "wilsy-logs-%Y-%m-%d"
+bulk.action = "index"
+encoding.codec = "json"
+auth.strategy = "basic"
+auth.user = "wilsy"
+auth.password = "${ELASTIC_PASSWORD}"
+compression = "gzip"
+
+[sinks.elasticsearch.healthcheck]
+enabled = true
+
+[sinks.elasticsearch.buffer]
+type = "disk"
+max_size = 1073741824
+when_full = "drop_newest"
+
+[sinks.s3_archive]
+type = "aws_s3"
+inputs = ["route_logs.forensic"]
+bucket = "wilsy-forensic-archive"
+region = "af-south-1"
+key_prefix = "logs/%Y/%m/%d/"
+encoding.codec = "json"
+compression = "gzip"
+
+[sinks.s3_archive.buffer]
+type = "disk"
+max_size = 10737418240  # 10GB
+when_full = "pause"
+
+[sinks.console_output]
+type = "console"
+inputs = ["route_logs.application"]
+target = "stdout"
+encoding.codec = "json"
+
+[sinks.console_output]
+type = "console"
+inputs = ["route_logs.forensic"]
+target = "stderr"
+encoding.codec = "json"
+
+# ============================================================================
+# ALERTING CONFIGURATION
+# ============================================================================
+
+[[tests]]
+name = "validate_forensic_pipeline"
+input = '''
+{
+  "message": "{\"level\":\"error\",\"message\":\"Unauthorized access attempt\",\"user\":\"unknown\",\"ip\":\"192.168.1.100\"}"
+}
+'''
+[[tests.outputs]]
+extract_from = "route_logs.forensic"
+condition = '.message == "Unauthorized access attempt"'
+
+# ============================================================================
+# 🏛️ WILSY OS 2050 - Supreme Architect: Wilson Khanyezi
+# 10 Generations of Wealth | R 1,000,000,000,000,000 Target
+# ============================================================================

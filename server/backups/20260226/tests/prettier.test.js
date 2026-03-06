@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const { promisify } = require('util');
+
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 const unlink = promisify(fs.unlink);
@@ -21,7 +22,7 @@ describe('Prettier Configuration - Wilsy OS Formatting Standards', function () {
   let originalConfig;
   let originalIgnore;
 
-  before(async function () {
+  before(async () => {
     // Save original files
     if (fs.existsSync(configPath)) {
       originalConfig = await readFile(configPath, 'utf8');
@@ -31,7 +32,7 @@ describe('Prettier Configuration - Wilsy OS Formatting Standards', function () {
     }
   });
 
-  after(async function () {
+  after(async () => {
     // Restore original files
     if (originalConfig) {
       await writeFile(configPath, originalConfig);
@@ -46,8 +47,8 @@ describe('Prettier Configuration - Wilsy OS Formatting Standards', function () {
     }
   });
 
-  describe('Configuration Validation', function () {
-    it('should have valid Prettier configuration', function () {
+  describe('Configuration Validation', () => {
+    it('should have valid Prettier configuration', () => {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
       // Verify all required properties exist
@@ -71,7 +72,7 @@ describe('Prettier Configuration - Wilsy OS Formatting Standards', function () {
       assert.strictEqual(config.endOfLine, 'lf', 'Unix line endings for cross-platform consistency');
     });
 
-    it('should have valid .prettierignore file', function () {
+    it('should have valid .prettierignore file', () => {
       const ignore = fs.readFileSync(ignorePath, 'utf8');
 
       // Check for critical ignore patterns
@@ -87,7 +88,7 @@ describe('Prettier Configuration - Wilsy OS Formatting Standards', function () {
     });
   });
 
-  describe('Code Formatting Rules', function () {
+  describe('Code Formatting Rules', () => {
     const testCases = [
       {
         name: 'semicolons',
@@ -123,7 +124,7 @@ describe('Prettier Configuration - Wilsy OS Formatting Standards', function () {
     ];
 
     testCases.forEach(({ name, input, expected }) => {
-      it(`should enforce ${name}`, function () {
+      it(`should enforce ${name}`, () => {
         // Write test file
         fs.writeFileSync(testFile, input);
 
@@ -146,7 +147,7 @@ describe('Prettier Configuration - Wilsy OS Formatting Standards', function () {
       });
     });
 
-    it('should handle complex nested structures', function () {
+    it('should handle complex nested structures', () => {
       const input = `
 function complexExample(param1,param2){
   if(param1){
@@ -185,8 +186,8 @@ function complexExample(param1,param2){
     });
   });
 
-  describe('Integration with ESLint', function () {
-    it('should work harmoniously with ESLint rules', function () {
+  describe('Integration with ESLint', () => {
+    it('should work harmoniously with ESLint rules', () => {
       // Create a file that satisfies both Prettier and ESLint
       const compliantCode = `/* eslint-env node */
 
@@ -228,8 +229,8 @@ module.exports = { compliantFunction };
     });
   });
 
-  describe('Evidence Generation', function () {
-    it('should generate deterministic evidence.json', async function () {
+  describe('Evidence Generation', () => {
+    it('should generate deterministic evidence.json', async () => {
       const evidence = {
         timestamp: new Date().toISOString(),
         config: JSON.parse(fs.readFileSync(configPath, 'utf8')),
@@ -288,8 +289,8 @@ module.exports = { compliantFunction };
     });
   });
 
-  describe('Performance Metrics', function () {
-    it('should format files within acceptable time limits', function () {
+  describe('Performance Metrics', () => {
+    it('should format files within acceptable time limits', () => {
       // Create a large test file
       const largeContent = Array(1000)
         .fill()

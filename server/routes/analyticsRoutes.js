@@ -63,7 +63,9 @@
  */
 
 import express from 'express';
-import { body, query, param, validationResult } from 'express-validator.js';
+import {
+  body, query, param, validationResult,
+} from 'express-validator.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 import cors from 'cors';
@@ -134,7 +136,7 @@ router.use(
       includeSubDomains: true,
       preload: true,
     },
-  })
+  }),
 );
 
 // CORS - Restrict to investor domains
@@ -149,7 +151,7 @@ router.use(
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Investor-Key', 'X-Correlation-ID'],
     credentials: true,
     maxAge: 86400,
-  })
+  }),
 );
 
 // Compression
@@ -158,10 +160,9 @@ router.use(express.json({ limit: '1mb' }));
 
 // Request tracking
 router.use((req, res, next) => {
-  req.correlationId =
-    req.headers['x-correlation-id'] ||
-    req.headers['x-request-id'] ||
-    `INVESTOR-${Date.now()}-${uuidv4().substring(0, 8)}`;
+  req.correlationId = req.headers['x-correlation-id']
+    || req.headers['x-request-id']
+    || `INVESTOR-${Date.now()}-${uuidv4().substring(0, 8)}`;
   req.startTime = performance.now();
 
   res.setHeader('X-Correlation-ID', req.correlationId);
@@ -199,7 +200,7 @@ const investorAuth = async (req, res, next) => {
     if (apiKey && INVESTOR_ROUTES_CONSTANTS.INVESTOR_API_KEYS.includes(apiKey)) {
       req.investorContext = {
         type: 'api_key',
-        key: apiKey.substring(0, 8) + '...',
+        key: `${apiKey.substring(0, 8)}...`,
         permissions: ['read', 'export'],
       };
       return next();
@@ -239,7 +240,7 @@ router.use(
     max: INVESTOR_ROUTES_CONSTANTS.RATE_LIMIT_MAX,
     message:
       'Investor rate limit exceeded. Please contact investor-relations@wilsy.os for higher limits.',
-  })
+  }),
 );
 
 // Audit logging for all investor actions
@@ -252,23 +253,21 @@ router.use(auditMiddleware('investor'));
 /*
  * Format success response with investor metadata
  */
-const formatSuccess = (data, metadata = {}) => {
-  return {
-    success: true,
-    data,
-    metadata: {
-      timestamp: new Date().toISOString(),
-      version: '42.0.0',
-      investor: true,
-      ...metadata,
-    },
-    links: {
-      self: metadata.self,
-      docs: 'https://docs.wilsy.os/investor-api',
-      irc: 'https://ir.wilsy.os',
-    },
-  };
-};
+const formatSuccess = (data, metadata = {}) => ({
+  success: true,
+  data,
+  metadata: {
+    timestamp: new Date().toISOString(),
+    version: '42.0.0',
+    investor: true,
+    ...metadata,
+  },
+  links: {
+    self: metadata.self,
+    docs: 'https://docs.wilsy.os/investor-api',
+    irc: 'https://ir.wilsy.os',
+  },
+});
 
 /*
  * Check investor permissions
@@ -291,7 +290,7 @@ router.get(
   cacheMiddleware({ ttl: INVESTOR_ROUTES_CONSTANTS.CACHE_TTL_VALUATION }),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
 
     try {
       const valuation = await investorIntelligenceService.getRealTimeValuation();
@@ -306,7 +305,7 @@ router.get(
           correlationId,
           valuation: valuation.formattedValuation?.usd,
           arr: valuation.revenue?.formattedARR,
-        }
+        },
       );
 
       const duration = performance.now() - startTime;
@@ -318,13 +317,13 @@ router.get(
           processingTimeMs: Math.round(duration),
           correlationId,
           cached: req.cached || false,
-        })
+        }),
       );
     } catch (error) {
       trackError('investor', error.code || 'valuation_error');
       next(new AppError(error.message, 500, 'VALUATION_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -340,7 +339,7 @@ router.get(
   cacheMiddleware({ ttl: INVESTOR_ROUTES_CONSTANTS.CACHE_TTL_DASHBOARD }),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
 
     try {
       const dashboard = await investorIntelligenceService.getInvestorDashboard();
@@ -353,13 +352,13 @@ router.get(
           processingTimeMs: Math.round(duration),
           correlationId,
           cached: req.cached || false,
-        })
+        }),
       );
     } catch (error) {
       trackError('investor', error.code || 'dashboard_error');
       next(new AppError(error.message, 500, 'DASHBOARD_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -379,7 +378,7 @@ router.get(
   cacheMiddleware({ ttl: INVESTOR_ROUTES_CONSTANTS.CACHE_TTL_REPORT }),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { type = 'standard', format = 'json' } = req.query;
 
     const errors = validationResult(req);
@@ -401,7 +400,7 @@ router.get(
           format,
           valuation: report.metrics?.formattedValuation?.usd,
           correlationId,
-        }
+        },
       );
 
       const duration = performance.now() - startTime;
@@ -412,7 +411,7 @@ router.get(
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="wilsy-investor-report-${report.reportId}.csv"`
+          `attachment; filename="wilsy-investor-report-${report.reportId}.csv"`,
         );
         return res.send(csvData);
       }
@@ -422,7 +421,7 @@ router.get(
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="wilsy-investor-report-${report.reportId}.pdf"`
+          `attachment; filename="wilsy-investor-report-${report.reportId}.pdf"`,
         );
         return res.send(pdfData);
       }
@@ -435,13 +434,13 @@ router.get(
           correlationId,
           reportType: type,
           cached: req.cached || false,
-        })
+        }),
       );
     } catch (error) {
       trackError('investor', error.code || 'report_error');
       next(new AppError(error.message, 500, 'REPORT_GENERATION_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -457,7 +456,7 @@ router.get(
   cacheMiddleware({ ttl: INVESTOR_ROUTES_CONSTANTS.CACHE_TTL_VALUATION }),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
 
     try {
       const valuation = await investorIntelligenceService.getRealTimeValuation();
@@ -479,13 +478,13 @@ router.get(
           self: req.originalUrl,
           processingTimeMs: Math.round(duration),
           correlationId,
-        })
+        }),
       );
     } catch (error) {
       trackError('investor', error.code || 'metrics_error');
       next(new AppError(error.message, 500, 'METRICS_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -501,7 +500,7 @@ router.get(
   cacheMiddleware({ ttl: INVESTOR_ROUTES_CONSTANTS.CACHE_TTL_VALUATION }),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
 
     try {
       const valuation = await investorIntelligenceService.getRealTimeValuation();
@@ -523,13 +522,13 @@ router.get(
           self: req.originalUrl,
           processingTimeMs: Math.round(duration),
           correlationId,
-        })
+        }),
       );
     } catch (error) {
       trackError('investor', error.code || 'arr_error');
       next(new AppError(error.message, 500, 'ARR_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -545,7 +544,7 @@ router.get(
   cacheMiddleware({ ttl: INVESTOR_ROUTES_CONSTANTS.CACHE_TTL_VALUATION }),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
 
     try {
       const valuation = await investorIntelligenceService.getRealTimeValuation();
@@ -567,13 +566,13 @@ router.get(
           self: req.originalUrl,
           processingTimeMs: Math.round(duration),
           correlationId,
-        })
+        }),
       );
     } catch (error) {
       trackError('investor', error.code || 'ltv_cac_error');
       next(new AppError(error.message, 500, 'LTV_CAC_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -589,7 +588,7 @@ router.get(
   cacheMiddleware({ ttl: INVESTOR_ROUTES_CONSTANTS.CACHE_TTL_VALUATION }),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
 
     try {
       const valuation = await investorIntelligenceService.getRealTimeValuation();
@@ -614,13 +613,13 @@ router.get(
           self: req.originalUrl,
           processingTimeMs: Math.round(duration),
           correlationId,
-        })
+        }),
       );
     } catch (error) {
       trackError('investor', error.code || 'growth_error');
       next(new AppError(error.message, 500, 'GROWTH_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -640,7 +639,7 @@ router.post(
   ],
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
 
     // Check export permission
     if (!checkPermission(req, 'export')) {
@@ -668,7 +667,7 @@ router.post(
           format,
           includeRawData,
           correlationId,
-        }
+        },
       );
 
       if (format === 'csv') {
@@ -676,7 +675,7 @@ router.post(
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="wilsy-investor-report-${report.reportId}.csv"`
+          `attachment; filename="wilsy-investor-report-${report.reportId}.csv"`,
         );
         return res.send(csvData);
       }
@@ -686,7 +685,7 @@ router.post(
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="wilsy-investor-report-${report.reportId}.pdf"`
+          `attachment; filename="wilsy-investor-report-${report.reportId}.pdf"`,
         );
         return res.send(pdfData);
       }
@@ -695,18 +694,18 @@ router.post(
       const responseData = includeRawData
         ? report
         : {
-            reportId: report.reportId,
-            generatedAt: report.generatedAt,
-            highlights: report.highlights,
-            investorSummary: report.investorSummary,
-            metrics: {
-              arr: report.metrics.revenue.formattedARR,
-              valuation: report.metrics.formattedValuation.usd,
-              ltvCac: report.metrics.customerEconomics.ltvCac.toFixed(2),
-              grossMargin: report.metrics.financial.formattedGrossMargin,
-              nrr: `${(report.metrics.financial.nrr * 100).toFixed(1)}%`,
-            },
-          };
+          reportId: report.reportId,
+          generatedAt: report.generatedAt,
+          highlights: report.highlights,
+          investorSummary: report.investorSummary,
+          metrics: {
+            arr: report.metrics.revenue.formattedARR,
+            valuation: report.metrics.formattedValuation.usd,
+            ltvCac: report.metrics.customerEconomics.ltvCac.toFixed(2),
+            grossMargin: report.metrics.financial.formattedGrossMargin,
+            nrr: `${(report.metrics.financial.nrr * 100).toFixed(1)}%`,
+          },
+        };
 
       const duration = performance.now() - startTime;
 
@@ -717,13 +716,13 @@ router.post(
           correlationId,
           reportType: type,
           format,
-        })
+        }),
       );
     } catch (error) {
       trackError('investor', error.code || 'export_error');
       next(new AppError(error.message, 500, 'EXPORT_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -756,7 +755,7 @@ router.get('/health', async (req, res) => {
  */
 router.get('/forensic-proof', async (req, res, next) => {
   const startTime = performance.now();
-  const correlationId = req.correlationId;
+  const { correlationId } = req;
 
   try {
     const valuation = await investorIntelligenceService.getRealTimeValuation();
@@ -777,7 +776,7 @@ router.get('/forensic-proof', async (req, res, next) => {
         self: req.originalUrl,
         processingTimeMs: Math.round(duration),
         correlationId,
-      })
+      }),
     );
   } catch (error) {
     trackError('investor', error.code || 'forensic_error');

@@ -1,8 +1,8 @@
 #!/* eslint-disable */
 /* eslint-env mocha */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ RETENTION AGENDA TESTS - SIMPLIFIED ES MODULE VERSION         ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 
 import { expect } from 'chai';
 import mongoose from 'mongoose';
@@ -26,7 +26,7 @@ describe('Retention Agenda - Investor Due Diligence', function () {
   let RetentionPolicy;
   let RetentionExecutionLog;
 
-  before(async function () {
+  before(async () => {
     // Setup MongoDB
     mongoServer = await MongoMemoryServer.create();
     mongoUri = mongoServer.getUri();
@@ -73,7 +73,7 @@ describe('Retention Agenda - Investor Due Diligence', function () {
     RetentionExecutionLog = mongoose.model('RetentionExecutionLog', logSchema);
   });
 
-  after(async function () {
+  after(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
 
@@ -82,7 +82,7 @@ describe('Retention Agenda - Investor Due Diligence', function () {
     }
   });
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     // Clear collections
     await mongoose.connection.db.dropDatabase();
 
@@ -133,7 +133,7 @@ describe('Retention Agenda - Investor Due Diligence', function () {
     ]);
   });
 
-  it('should calculate economic savings (R420K+/year)', function () {
+  it('should calculate economic savings (R420K+/year)', () => {
     const manualHoursPerMonth = 1000 * 0.5; // 1000 matters × 30 min
     const automatedHoursPerMonth = 5;
     const hoursSaved = manualHoursPerMonth - automatedHoursPerMonth;
@@ -144,7 +144,7 @@ describe('Retention Agenda - Investor Due Diligence', function () {
     expect(annualSavings).to.be.greaterThan(400000);
   });
 
-  it('should enforce tenant isolation', async function () {
+  it('should enforce tenant isolation', async () => {
     const tenantMatters = await Matter.find({ tenantId: testTenantId });
     expect(tenantMatters.length).to.equal(1);
 
@@ -154,7 +154,7 @@ describe('Retention Agenda - Investor Due Diligence', function () {
     console.log(`✓ Tenant Isolation: Verified for ${testTenantId}`);
   });
 
-  it('should generate forensic evidence with SHA256 hash', async function () {
+  it('should generate forensic evidence with SHA256 hash', async () => {
     const auditEntries = [
       {
         timestamp: new Date().toISOString(),
@@ -166,14 +166,12 @@ describe('Retention Agenda - Investor Due Diligence', function () {
     ];
 
     // Canonicalize
-    const canonicalEntries = auditEntries.map((entry) => {
-      return Object.keys(entry)
-        .sort()
-        .reduce((obj, key) => {
-          obj[key] = entry[key];
-          return obj;
-        }, {});
-    });
+    const canonicalEntries = auditEntries.map((entry) => Object.keys(entry)
+      .sort()
+      .reduce((obj, key) => {
+        obj[key] = entry[key];
+        return obj;
+      }, {}));
 
     const entriesHash = crypto
       .createHash('sha256')
@@ -200,7 +198,7 @@ describe('Retention Agenda - Investor Due Diligence', function () {
     console.log(`✓ Forensic Evidence: SHA256 hash verified (${recalcHash.substring(0, 16)}...)`);
   });
 
-  it('should comply with POPIA Section 14 (retention periods)', async function () {
+  it('should comply with POPIA Section 14 (retention periods)', async () => {
     const matters = await Matter.find({ tenantId: testTenantId });
     const policies = await RetentionPolicy.find({ tenantId: testTenantId });
 
@@ -221,7 +219,7 @@ describe('Retention Agenda - Investor Due Diligence', function () {
     expect(policy.retentionYears).to.equal(7); // Litigation matters: 7 years
   });
 
-  it('should track retention metadata in audit logs', async function () {
+  it('should track retention metadata in audit logs', async () => {
     const matter = await Matter.findOne({ tenantId: testTenantId });
     const policy = await RetentionPolicy.findOne({
       tenantId: testTenantId,

@@ -22,8 +22,7 @@ console.log('============================\n');
 // Find all project files with double asterisks
 console.log('🔍 Scanning for files with double asterisks...');
 
-const findCmd =
-  'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
+const findCmd = 'find . -type f \\( -name "*.js" -o -name "*.cjs" -o -name "*.mjs" \\) \
   -not -path "*/node_modules/*" \
   -not -path "*/coverage/*" \
   -not -path "*/dist/*" \
@@ -83,7 +82,7 @@ filesWithIssues.forEach((file) => {
     // Fix 2: @param with double asterisks
     content = content.replace(
       /@param\s*\{[^}]+\}\s*(\[?\w+\]?)\s*-\s*(.*?)\*\*/g,
-      '@param {$1} - $2'
+      '@param {$1} - $2',
     );
 
     // Fix 3: @returns with double asterisks
@@ -96,7 +95,7 @@ filesWithIssues.forEach((file) => {
     // Fix 5: Specific pattern for catch blocks
     content = content.replace(
       /catch\s*\(\s*error\s*\)\s*\{\s*\/\*\/\s*\}/g,
-      'catch (error) { /* ignore */ }'
+      'catch (error) { /* ignore */ }',
     );
 
     // Fix 6: Any remaining ** that might be in strings (preserve them)

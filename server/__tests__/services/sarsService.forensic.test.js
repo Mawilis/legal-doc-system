@@ -111,6 +111,7 @@ const auditLogger = require('../../utils/auditLogger');
 const { CircuitBreaker } = require('../../utils/circuitBreaker');
 const cryptoUtils = require('../../utils/cryptoUtils');
 const loggerRaw = require('../../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const { withRetry } = require('../../utils/retry');
 
@@ -157,7 +158,7 @@ describe('SARS SERVICE - CONSTANT VALIDATION', () => {
     const complianceFlagsCount = Object.keys(COMPLIANCE_FLAGS).length;
 
     console.log(
-      `  📊 Actual counts - FilingTypes: ${filingTypesCount}, FilingStatus: ${filingStatusCount}, TaxpayerTypes: ${taxpayerTypesCount}, ComplianceFlags: ${complianceFlagsCount}`
+      `  📊 Actual counts - FilingTypes: ${filingTypesCount}, FilingStatus: ${filingStatusCount}, TaxpayerTypes: ${taxpayerTypesCount}, ComplianceFlags: ${complianceFlagsCount}`,
     );
 
     expect(filingTypesCount).toBeGreaterThanOrEqual(6);
@@ -218,7 +219,7 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
                 periodMonths: 2,
               },
               rawResponse: {},
-            })
+            }),
           );
         }
         if (event === 'end') {
@@ -389,7 +390,7 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
       'SARS service initialized',
       expect.objectContaining({
         regulatoryTags: expect.arrayContaining(['TAX_ADMIN_ACT_§46', 'POPIA_§19']),
-      })
+      }),
     );
 
     console.log('  ✅ TC-001: Service initialized successfully');
@@ -425,7 +426,7 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
             processingReference: 'PROC-87654321',
             expectedProcessingDate: new Date(Date.now() + 86400000).toISOString(),
             status: 'SUBMITTED',
-          })
+          }),
         );
       }
       if (event === 'end') {
@@ -445,7 +446,7 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
       'SARS SUBMIT_FILING',
       expect.objectContaining({
         regulatoryTags: expect.arrayContaining(['TAX_ADMIN_ACT_§46', 'POPIA_§19', 'FICA_§28']),
-      })
+      }),
     );
 
     console.log('  ✅ TC-002: Tax filing submitted with forensic audit trail');
@@ -470,7 +471,7 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
               { status: 'SUBMITTED', timestamp: new Date().toISOString() },
               { status: 'VALIDATING', timestamp: new Date().toISOString() },
             ],
-          })
+          }),
         );
       }
       if (event === 'end') {
@@ -490,7 +491,7 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
       expect.objectContaining({
         status: 'PROCESSING',
         responseData: expect.any(Object),
-      })
+      }),
     );
 
     expect(withRetry).toHaveBeenCalled();
@@ -519,7 +520,7 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
             amountDue: 83000,
             paymentDueDate: new Date(Date.now() + 30 * 86400000).toISOString(),
             flags: ['LATE_FILING'],
-          })
+          }),
         );
       }
       if (event === 'end') {
@@ -563,7 +564,7 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
             confirmationCode: 'CONF-87654321',
             paymentDate: new Date().toISOString(),
             status: 'COMPLETED',
-          })
+          }),
         );
       }
       if (event === 'end') {
@@ -584,7 +585,7 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
       'SARS MAKE_PAYMENT',
       expect.objectContaining({
         regulatoryTags: expect.arrayContaining(['TAX_ADMIN_ACT_§46', 'FICA_§28']),
-      })
+      }),
     );
 
     console.log('  ✅ TC-005: Payment processed with cryptographic evidence');
@@ -606,7 +607,7 @@ describe('SARS eFILING SERVICE — FORENSIC VALIDATION [INVESTOR GRADE]', () => 
       expect.objectContaining({
         tenantId,
         taxpayerId,
-      })
+      }),
     );
 
     console.log('  ✅ TC-006: Tenant isolation verified');

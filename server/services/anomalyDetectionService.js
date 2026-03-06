@@ -80,10 +80,10 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ ANOMALY DETECTION SERVICE - INVESTOR-GRADE MODULE - $4B+ RISK PREVENTION ║
   ║ 95% fraud prevention | Real-time detection | AI-powered                  ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
@@ -94,12 +94,17 @@ import { IsolationForest } from 'isolation-forest.js';
 import { createHmac } from 'crypto';
 
 // WILSY OS CORE IMPORTS
+import mongoose from 'mongoose';
 import { QuantumLogger } from '../utils/quantumLogger.js';
 import { metrics, trackError } from '../utils/metricsCollector.js';
 import { redisClient } from '../cache/redisClient.js';
 import { AuditLedger } from '../models/AuditLedger.js';
 import { TenantConfig } from '../models/TenantConfig.js';
 import { User } from '../models/User.js';
+
+// =============================================================================
+// ANOMALY MODEL (for database storage)
+// =============================================================================
 
 // =============================================================================
 // PROMETHEUS METRICS
@@ -273,7 +278,7 @@ class StatisticalDetector {
 
     const values = history.map((h) => h.value);
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
+    const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length;
     const std = Math.sqrt(variance);
 
     this.stats.set(tenantId, { mean, std, count: history.length });
@@ -414,19 +419,19 @@ class AutoencoderDetector {
         units: 64,
         activation: 'relu',
         inputShape: [this.inputDim],
-      })
+      }),
     );
     model.add(
       tf.layers.dense({
         units: 32,
         activation: 'relu',
-      })
+      }),
     );
     model.add(
       tf.layers.dense({
         units: this.encodingDim,
         activation: 'relu',
-      })
+      }),
     );
 
     // Decoder
@@ -434,19 +439,19 @@ class AutoencoderDetector {
       tf.layers.dense({
         units: 32,
         activation: 'relu',
-      })
+      }),
     );
     model.add(
       tf.layers.dense({
         units: 64,
         activation: 'relu',
-      })
+      }),
     );
     model.add(
       tf.layers.dense({
         units: this.inputDim,
         activation: 'sigmoid',
-      })
+      }),
     );
 
     model.compile({
@@ -793,19 +798,19 @@ class AnomalyDetectionService extends EventEmitter {
     this.ensembleDetector = new EnsembleDetector();
     this.ensembleDetector.addDetector(
       this.statisticalDetector,
-      ANOMALY_CONSTANTS.METHODS.STATISTICAL
+      ANOMALY_CONSTANTS.METHODS.STATISTICAL,
     );
     this.ensembleDetector.addDetector(
       this.isolationForestDetector,
-      ANOMALY_CONSTANTS.METHODS.ISOLATION_FOREST
+      ANOMALY_CONSTANTS.METHODS.ISOLATION_FOREST,
     );
     this.ensembleDetector.addDetector(
       this.autoencoderDetector,
-      ANOMALY_CONSTANTS.METHODS.AUTOENCODER
+      ANOMALY_CONSTANTS.METHODS.AUTOENCODER,
     );
     this.ensembleDetector.addDetector(
       this.behavioralDetector,
-      ANOMALY_CONSTANTS.METHODS.BEHAVIORAL
+      ANOMALY_CONSTANTS.METHODS.BEHAVIORAL,
     );
 
     // Storage for detected anomalies
@@ -821,7 +826,7 @@ class AnomalyDetectionService extends EventEmitter {
     this.initialize();
 
     console.log(
-      `🔍 ANOMALY DETECTION SERVICE INITIALIZED - Instance: ${this.instanceId.substr(0, 8)}`
+      `🔍 ANOMALY DETECTION SERVICE INITIALIZED - Instance: ${this.instanceId.substr(0, 8)}`,
     );
   }
 
@@ -896,7 +901,9 @@ class AnomalyDetectionService extends EventEmitter {
     const startTime = performance.now();
     const detectionId = uuidv4();
 
-    const { tenantId, userId, value, features = [], type = 'unknown', source = 'system' } = data;
+    const {
+      tenantId, userId, value, features = [], type = 'unknown', source = 'system',
+    } = data;
 
     try {
       // Add to statistical detector
@@ -1063,7 +1070,7 @@ class AnomalyDetectionService extends EventEmitter {
         severity: anomaly.severity,
         score: anomaly.score,
         action: anomaly.action,
-      }
+      },
     );
   }
 
@@ -1113,7 +1120,7 @@ class AnomalyDetectionService extends EventEmitter {
         reason: 'anomaly_detection',
         anomalyId: anomaly.id,
         severity: anomaly.severity,
-      }
+      },
     );
   }
 
@@ -1245,7 +1252,7 @@ class AnomalyDetectionService extends EventEmitter {
     // Aggregate all tenants
     const total = Array.from(this.anomalyStats.values()).reduce(
       (sum, stats) => sum + stats.total,
-      0
+      0,
     );
 
     return {
@@ -1279,8 +1286,7 @@ class AnomalyDetectionService extends EventEmitter {
       ]);
 
       for (const tid of tenantIds) {
-        results.isolationForest =
-          results.isolationForest || (await this.isolationForestDetector.train(tid));
+        results.isolationForest = results.isolationForest || (await this.isolationForestDetector.train(tid));
         results.autoencoder = results.autoencoder || (await this.autoencoderDetector.train(tid));
       }
     }
@@ -1301,7 +1307,7 @@ class AnomalyDetectionService extends EventEmitter {
 
     // Remove old anomalies from memory
     this.anomalyHistory = this.anomalyHistory.filter(
-      (a) => new Date(a.timestamp).getTime() > cutoff
+      (a) => new Date(a.timestamp).getTime() > cutoff,
     );
 
     console.log(`🧹 Cleaned up anomaly history, ${this.anomalyHistory.length} remaining`);
@@ -1334,12 +1340,6 @@ class AnomalyDetectionService extends EventEmitter {
   }
 }
 
-// =============================================================================
-// ANOMALY MODEL (for database storage)
-// =============================================================================
-
-import mongoose from 'mongoose';
-
 const AnomalySchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
@@ -1360,7 +1360,7 @@ const AnomalySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 AnomalySchema.index({ tenantId: 1, timestamp: -1 });
@@ -1398,7 +1398,7 @@ const InvestigationSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Investigation = mongoose.model('Investigation', InvestigationSchema);

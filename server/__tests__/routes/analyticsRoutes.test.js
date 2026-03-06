@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR ANALYTICS ROUTES TESTS - INVESTOR DUE DILIGENCE - $5B VALUATION ║
   ║ 100% coverage | Real-time metrics | Investor-grade security               ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import request from 'supertest.js';
 import express from 'express.js';
@@ -10,6 +10,11 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { jest } from '@jest/globals.js';
+
+// Import after mocks
+import analyticsRoutes from '../../routes/analyticsRoutes.js';
+import investorIntelligenceService from '../../services/analytics/investorIntelligenceService.js';
+import { QuantumLogger } from '../../utils/quantumLogger.js';
 
 // Mock dependencies
 jest.mock('../../middleware/auth.js', () => ({
@@ -90,7 +95,9 @@ jest.mock('../../services/analytics/investorIntelligenceService.js', () => ({
       timestamp: new Date().toISOString(),
       tenants: {
         total: 500,
-        byTier: { enterprise: 100, professional: 200, basic: 150, free: 50, ultra: 0 },
+        byTier: {
+          enterprise: 100, professional: 200, basic: 150, free: 50, ultra: 0,
+        },
         dailyActive: 450,
         monthlyActive: 480,
       },
@@ -133,8 +140,12 @@ jest.mock('../../services/analytics/investorIntelligenceService.js', () => ({
         eur: '€9.0B',
       },
       targets: {
-        arr: { target: 650000000, current: 650000000, progress: 100, formatted: '100%' },
-        valuation: { target: 5000000000, current: 9750000000, progress: 195, formatted: '195%' },
+        arr: {
+          target: 650000000, current: 650000000, progress: 100, formatted: '100%',
+        },
+        valuation: {
+          target: 5000000000, current: 9750000000, progress: 195, formatted: '195%',
+        },
         ltvCac: { target: 3.2, current: 3.2, met: true },
         grossMargin: { target: 0.87, current: 0.87, met: true },
         nrr: { target: 1.2, current: 1.2, met: true },
@@ -143,7 +154,7 @@ jest.mock('../../services/analytics/investorIntelligenceService.js', () => ({
         auditChainLength: 1500000,
         integrityScore: '99.99%',
         lastAuditBlock: 'AUDIT-2025-02-23-001',
-        merkleRoot: '0x' + 'a'.repeat(64),
+        merkleRoot: `0x${'a'.repeat(64)}`,
       },
       performance: { calculationTime: '250ms', dataFreshness: 'realtime' },
       fromCache: false,
@@ -199,11 +210,6 @@ jest.mock('../../services/analytics/investorIntelligenceService.js', () => ({
   },
 }));
 
-// Import after mocks
-import analyticsRoutes from '../../routes/analyticsRoutes.js';
-import investorIntelligenceService from '../../services/analytics/investorIntelligenceService.js';
-import { QuantumLogger } from '../../utils/quantumLogger.js';
-
 describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
   let app;
 
@@ -234,7 +240,7 @@ describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
 
     it('should handle errors gracefully', async () => {
       investorIntelligenceService.getRealTimeValuation.mockRejectedValueOnce(
-        new Error('Database error')
+        new Error('Database error'),
       );
 
       const response = await request(app)
@@ -545,7 +551,7 @@ describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'investor-analytics-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -557,7 +563,7 @@ describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'investor-analytics-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
@@ -572,7 +578,7 @@ describe('Investor Analytics Routes - $5B Valuation Due Diligence', () => {
       console.log(`💎 Gross Margin: ${evidenceEntry.grossMargin}`);
       console.log(`🔐 Evidence Hash: ${hash.substring(0, 16)}...`);
       console.log('\n💰 VALUATION TARGET: $5B');
-      console.log(`🎯 CURRENT VALUATION: $9.75B (195% of target)`);
+      console.log('🎯 CURRENT VALUATION: $9.75B (195% of target)');
       console.log('='.repeat(60));
     });
   });

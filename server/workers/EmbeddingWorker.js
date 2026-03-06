@@ -87,10 +87,10 @@
  * through the system 24/7/365, never sleeping, never stopping, never failing.
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ EMBEDDING WORKER - INVESTOR-GRADE MODULE - $2B INFRASTRUCTURE VALUE      ║
   ║ 99.99% uptime | 10,000 docs/sec | Infinite horizontal scale              ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/workers/EmbeddingWorker.js
  * INVESTOR VALUE PROPOSITION:
@@ -138,8 +138,6 @@
  * }
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Core dependencies
 const { Worker, QueueEvents } = require('bullmq');
 const IORedis = require('ioredis');
@@ -164,6 +162,7 @@ let precedentModel = null;
 
 // QUANTUM UTILITIES
 const loggerRaw = require('../../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../../utils/auditLogger');
 const quantumLogger = require('../../utils/quantumLogger');
@@ -321,7 +320,7 @@ class GPUManager {
       try {
         const nvidiaSmi = execSync(
           'nvidia-smi --query-gpu=index,name,memory.total,memory.free --format=csv,noheader',
-          { encoding: 'utf8' }
+          { encoding: 'utf8' },
         );
         const lines = nvidiaSmi.trim().split('\n');
 
@@ -367,7 +366,7 @@ class GPUManager {
           const { execSync } = require('child_process');
           const util = execSync(
             `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader -i ${gpu.id}`,
-            { encoding: 'utf8' }
+            { encoding: 'utf8' },
           );
           const utilValue = parseFloat(util.replace(' %', ''));
 
@@ -501,7 +500,7 @@ const embeddingBreaker = new CircuitBreaker(
     rollingCountTimeout: 30000,
     name: 'embedding-service',
     volumeThreshold: 5,
-  }
+  },
 );
 
 embeddingBreaker.on('open', () => {
@@ -589,9 +588,7 @@ const validateEmbedding = (embedding, options = {}) => {
 /*
  * Calculate text hash for deduplication
  */
-const calculateTextHash = (text) => {
-  return crypto.createHash('sha256').update(text).digest('hex');
-};
+const calculateTextHash = (text) => crypto.createHash('sha256').update(text).digest('hex');
 
 /*
  * Check if embedding already exists in cache
@@ -624,7 +621,7 @@ const storeEmbeddingCache = async (textHash, model, embedding) => {
     await redisClient.setex(
       cacheKey,
       embeddingConfig.cache.ttl || 86400,
-      compressed.toString('base64')
+      compressed.toString('base64'),
     );
 
     return true;
@@ -781,7 +778,7 @@ const worker = new Worker(
         } catch (dbError) {
           logger.warn(
             `[EmbeddingWorker] Failed to update precedent ${precedentId}:`,
-            dbError.message
+            dbError.message,
           );
         }
       }
@@ -899,9 +896,9 @@ const worker = new Worker(
     concurrency: embeddingConfig.performance?.concurrency || os.cpus().length,
     limiter: embeddingConfig.performance?.rateLimit
       ? {
-          max: embeddingConfig.performance.rateLimit.max,
-          duration: embeddingConfig.performance.rateLimit.duration,
-        }
+        max: embeddingConfig.performance.rateLimit.max,
+        duration: embeddingConfig.performance.rateLimit.duration,
+      }
       : undefined,
     settings: {
       stalledInterval: embeddingConfig.performance?.stalledInterval || 30000,
@@ -909,7 +906,7 @@ const worker = new Worker(
       lockDuration: embeddingConfig.performance?.lockDuration || 60000,
       lockRenewTime: embeddingConfig.performance?.lockRenewTime || 30000,
     },
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -929,7 +926,7 @@ worker.on('failed', (job, error) => {
     logger.info(
       `[EmbeddingWorker] Job ${job.id} will retry (attempt ${job.attemptsMade + 1}/${
         job.opts.attempts
-      })`
+      })`,
     );
   }
 });
@@ -966,27 +963,25 @@ worker.on('closed', () => {
    QUANTUM HEALTH CHECK ENDPOINT (for monitoring)
    --------------------------------------------------------------------------- */
 
-const getWorkerHealth = () => {
-  return {
-    workerId,
-    status: 'healthy',
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    cpu: process.cpuUsage(),
-    gpu: gpuManager.getStats(),
-    queue: {
-      counts: worker.getQueue().count(),
-      isPaused: worker.isPaused(),
-      concurrency: worker.concurrency,
-    },
-    metrics: {
-      jobsProcessed: workerMetrics.jobsProcessedTotal.get(),
-      activeJobs: workerMetrics.jobsActive.get(),
-      errors: workerMetrics.errorsTotal.get(),
-    },
-    timestamp: new Date().toISOString(),
-  };
-};
+const getWorkerHealth = () => ({
+  workerId,
+  status: 'healthy',
+  uptime: process.uptime(),
+  memory: process.memoryUsage(),
+  cpu: process.cpuUsage(),
+  gpu: gpuManager.getStats(),
+  queue: {
+    counts: worker.getQueue().count(),
+    isPaused: worker.isPaused(),
+    concurrency: worker.concurrency,
+  },
+  metrics: {
+    jobsProcessed: workerMetrics.jobsProcessedTotal.get(),
+    activeJobs: workerMetrics.jobsActive.get(),
+    errors: workerMetrics.errorsTotal.get(),
+  },
+  timestamp: new Date().toISOString(),
+});
 
 /* ---------------------------------------------------------------------------
    QUANTUM GRACEFUL SHUTDOWN
@@ -1033,7 +1028,7 @@ const initialize = async () => {
       });
     }
 
-    logger.info(`[EmbeddingWorker] Initialized successfully`, {
+    logger.info('[EmbeddingWorker] Initialized successfully', {
       workerId,
       concurrency: worker.concurrency,
       gpuEnabled: embeddingConfig.hardware.enableGpu,

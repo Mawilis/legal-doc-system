@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ COURT MODEL - COMPLETE SA JUDICIAL HIERARCHY ENGINE                                   ║
   ║ R4.5M/year operational savings | Constitutional to Magistrate | 100-year precedent    ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Court.js
@@ -446,7 +446,7 @@ const courtSchema = new mongoose.Schema(
 
     retentionEnd: {
       type: Date,
-      default: function () {
+      default() {
         const date = new Date();
         date.setFullYear(date.getFullYear() + 10);
         return date;
@@ -463,7 +463,7 @@ const courtSchema = new mongoose.Schema(
     collection: 'courts',
     strict: true,
     minimize: false,
-  }
+  },
 );
 
 // ============================================================================
@@ -495,11 +495,9 @@ courtSchema.pre('save', async function (next) {
     if (this.judicialOfficers && this.judicialOfficers.length > 0) {
       this.officerStats.total = this.judicialOfficers.length;
       this.officerStats.permanent = this.judicialOfficers.filter(
-        (o) => !o.title?.includes('acting') && o.active
+        (o) => !o.title?.includes('acting') && o.active,
       ).length;
-      this.officerStats.acting = this.judicialOfficers.filter((o) =>
-        o.title?.includes('acting')
-      ).length;
+      this.officerStats.acting = this.judicialOfficers.filter((o) => o.title?.includes('acting')).length;
     }
 
     const canonicalData = JSON.stringify(
@@ -520,7 +518,7 @@ courtSchema.pre('save', async function (next) {
         tier: null,
         status: null,
         previousHash: null,
-      }).sort()
+      }).sort(),
     );
 
     this.forensicHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -539,7 +537,9 @@ courtSchema.pre('save', async function (next) {
  * Check if court has jurisdiction over case
  */
 courtSchema.methods.hasJurisdiction = function (caseData) {
-  const { type, value, location, subjectMatter } = caseData;
+  const {
+    type, value, location, subjectMatter,
+  } = caseData;
 
   // Geographic jurisdiction
   if (location && this.geographicJurisdiction) {
@@ -580,7 +580,7 @@ courtSchema.methods.hasJurisdiction = function (caseData) {
  */
 courtSchema.methods.getAppealPath = function () {
   const path = [];
-  let currentCourt = this;
+  const currentCourt = this;
 
   while (currentCourt.hierarchy?.appealTo) {
     path.push(currentCourt.hierarchy.appealTo);
@@ -671,7 +671,7 @@ courtSchema.methods.verifyIntegrity = function () {
       tier: null,
       status: null,
       previousHash: null,
-    }).sort()
+    }).sort(),
   );
 
   const calculatedHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -687,9 +687,7 @@ courtSchema.methods.verifyIntegrity = function () {
  * Find courts by jurisdiction
  */
 courtSchema.statics.findByJurisdiction = function (tenantId, caseData) {
-  return this.find({ tenantId }).then((courts) =>
-    courts.filter((court) => court.hasJurisdiction(caseData))
-  );
+  return this.find({ tenantId }).then((courts) => courts.filter((court) => court.hasJurisdiction(caseData)));
 };
 
 /**
@@ -698,16 +696,14 @@ courtSchema.statics.findByJurisdiction = function (tenantId, caseData) {
 courtSchema.statics.getHierarchy = async function (tenantId, tier) {
   const courts = await this.find({ tenantId, tier }).sort({ name: 1 });
 
-  const buildTree = (parentId = null) => {
-    return courts
-      .filter(
-        (c) => (c.hierarchy?.parentCourt?.toString() || null) === (parentId?.toString() || null)
-      )
-      .map((c) => ({
-        ...c.toObject(),
-        children: buildTree(c._id),
-      }));
-  };
+  const buildTree = (parentId = null) => courts
+    .filter(
+      (c) => (c.hierarchy?.parentCourt?.toString() || null) === (parentId?.toString() || null),
+    )
+    .map((c) => ({
+      ...c.toObject(),
+      children: buildTree(c._id),
+    }));
 
   return buildTree();
 };

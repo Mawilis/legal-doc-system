@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT EMBEDDING SERVICE TESTS - INVESTOR DUE DILIGENCE - $2B TARGET  ║
   ║ 100% coverage | AI Core | Legal Understanding | Unprecedented            ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/services/ai/PrecedentEmbeddingService.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -33,7 +33,7 @@ jest.mock('@xenova/transformers', () => ({
   pipeline: jest.fn().mockResolvedValue(
     jest.fn().mockResolvedValue({
       data: [0.1, 0.2, 0.3],
-    })
+    }),
   ),
   env: { cacheDir: '', localModelPath: '' },
 }));
@@ -54,9 +54,7 @@ jest.mock('../../../utils/quantumLogger', () => ({
 }));
 
 jest.mock('../../../utils/cryptoUtils', () => ({
-  sha256: jest.fn().mockImplementation((input) => {
-    return crypto.createHash('sha256').update(String(input)).digest('hex');
-  }),
+  sha256: jest.fn().mockImplementation((input) => crypto.createHash('sha256').update(String(input)).digest('hex')),
 }));
 
 jest.mock('../../../utils/metricsCollector', () => ({
@@ -122,8 +120,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
 
   describe('1. Core Embedding Generation', () => {
     it('should generate embedding for text', async () => {
-      const text =
-        'The principle of legality requires that all law must be rationally connected to a legitimate governmental purpose.';
+      const text = 'The principle of legality requires that all law must be rationally connected to a legitimate governmental purpose.';
 
       const embedding = await embeddingService.generateEmbedding(text, {
         tenantId: mockTenantId,
@@ -196,7 +193,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
 
   describe('3. Text Preprocessing', () => {
     it('should preprocess text correctly', () => {
-      const preprocessText = embeddingService.preprocessText;
+      const { preprocessText } = embeddingService;
 
       const text = '  This   is   a   test   with   multiple   spaces.  ';
       const processed = preprocessText(text);
@@ -205,7 +202,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     });
 
     it('should truncate long text', () => {
-      const preprocessText = embeddingService.preprocessText;
+      const { preprocessText } = embeddingService;
 
       const text = 'a'.repeat(20000);
       const processed = preprocessText(text, { maxLength: 100 });
@@ -214,7 +211,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     });
 
     it('should remove citations when requested', () => {
-      const preprocessText = embeddingService.preprocessText;
+      const { preprocessText } = embeddingService;
 
       const text = 'This case [2023] ZACC 15 established the principle.';
       const processed = preprocessText(text, { removeCitations: true });
@@ -223,7 +220,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     });
 
     it('should split into chunks', () => {
-      const splitIntoChunks = embeddingService.splitIntoChunks;
+      const { splitIntoChunks } = embeddingService;
 
       const text = 'Sentence one. Sentence two. Sentence three. Sentence four. Sentence five.';
       const chunks = splitIntoChunks(text, { chunkSize: 20, overlap: 5 });
@@ -234,7 +231,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
 
   describe('4. Similarity Operations', () => {
     it('should calculate cosine similarity', () => {
-      const cosineSimilarity = embeddingService.cosineSimilarity;
+      const { cosineSimilarity } = embeddingService;
 
       const vecA = [1, 0, 0];
       const vecB = [1, 0, 0];
@@ -245,7 +242,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     });
 
     it('should calculate dot product', () => {
-      const dotProduct = embeddingService.dotProduct;
+      const { dotProduct } = embeddingService;
 
       const vecA = [1, 2, 3];
       const vecB = [4, 5, 6];
@@ -254,7 +251,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     });
 
     it('should calculate Euclidean distance', () => {
-      const euclideanDistance = embeddingService.euclideanDistance;
+      const { euclideanDistance } = embeddingService;
 
       const vecA = [1, 2, 3];
       const vecB = [4, 5, 6];
@@ -284,7 +281,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
 
   describe('5. Advanced Operations', () => {
     it('should find analogies', async () => {
-      const findAnalogy = embeddingService.findAnalogy;
+      const { findAnalogy } = embeddingService;
 
       const a = [1, 0, 0];
       const b = [0, 1, 0];
@@ -302,7 +299,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     });
 
     it('should cluster embeddings', async () => {
-      const clusterEmbeddings = embeddingService.clusterEmbeddings;
+      const { clusterEmbeddings } = embeddingService;
 
       const embeddings = [
         [1, 0, 0],
@@ -320,7 +317,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     });
 
     it('should reduce dimensionality', async () => {
-      const reduceDimensionality = embeddingService.reduceDimensionality;
+      const { reduceDimensionality } = embeddingService;
 
       const embeddings = [
         [1, 0, 0, 0],
@@ -336,7 +333,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     });
 
     it('should detect outliers', async () => {
-      const detectOutliers = embeddingService.detectOutliers;
+      const { detectOutliers } = embeddingService;
 
       const embeddings = [
         [1, 0, 0],
@@ -362,7 +359,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
 
     it('should return model metadata', () => {
       const metadata = embeddingService.getModelMetadata(
-        embeddingService.EMBEDDING_MODELS.LEGAL_BERT
+        embeddingService.EMBEDDING_MODELS.LEGAL_BERT,
       );
 
       expect(metadata).toBeDefined();
@@ -371,7 +368,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
 
     it('should return model version', () => {
       const version = embeddingService.getModelVersion(
-        embeddingService.EMBEDDING_MODELS.LEGAL_BERT
+        embeddingService.EMBEDDING_MODELS.LEGAL_BERT,
       );
 
       expect(version).toBeDefined();
@@ -424,9 +421,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
     it('should handle concurrent requests', async () => {
       const texts = Array(10).fill('Concurrent test text.');
 
-      const promises = texts.map((text) =>
-        embeddingService.generateEmbedding(text, { tenantId: mockTenantId })
-      );
+      const promises = texts.map((text) => embeddingService.generateEmbedding(text, { tenantId: mockTenantId }));
 
       const results = await Promise.all(promises);
 
@@ -462,7 +457,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
       await expect(
         embeddingService.generateEmbedding('test', {
           model: 'non-existent-model',
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -531,14 +526,14 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
           service: 'PrecedentEmbeddingService',
           version: '42.0.0',
           modelVersion: embeddingService.getModelVersion(
-            embeddingService.EMBEDDING_MODELS.LEGAL_BERT
+            embeddingService.EMBEDDING_MODELS.LEGAL_BERT,
           ),
         },
       };
 
       await fs.writeFile(
         path.join(__dirname, 'embedding-service-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -550,7 +545,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'embedding-service-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
@@ -562,7 +557,7 @@ describe('PrecedentEmbeddingService - AI Core Due Diligence', () => {
       console.log(`📊 Sample: [${embedding.slice(0, 3).join(', ')}...]`);
       console.log(`🤖 Model: ${embeddingService.EMBEDDING_MODELS.LEGAL_BERT}`);
       console.log(
-        `📦 Model Version: ${embeddingService.getModelVersion(embeddingService.EMBEDDING_MODELS.LEGAL_BERT)}`
+        `📦 Model Version: ${embeddingService.getModelVersion(embeddingService.EMBEDDING_MODELS.LEGAL_BERT)}`,
       );
       console.log(`🔐 Evidence Hash: ${hash.substring(0, 16)}...`);
       console.log('\n💰 REVENUE TARGET: $650M ARR');

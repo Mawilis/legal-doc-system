@@ -135,8 +135,7 @@ describe('LPC RULE 35.2 — EXECUTIVE REPORTS [FORENSIC GRADE]', () => {
     expect(sameTenantAccess).toBe(true);
 
     // Cross tenant - should be denied
-    const crossTenantAccess =
-      tenant1.tenantId === tenant2.tenantId && tenant1.firmId === tenant2.firmId;
+    const crossTenantAccess = tenant1.tenantId === tenant2.tenantId && tenant1.firmId === tenant2.firmId;
     expect(crossTenantAccess).toBe(false);
 
     evidenceEntries.push({

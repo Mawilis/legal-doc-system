@@ -1,0 +1,42 @@
+{
+  "evidenceId": "EVD-163240EE307B99F4",
+  "timestamp": "2026-03-04T04:37:53.657Z",
+  "document": {
+    "id": "DOC-E8910890",
+    "hash": "ebe96e41637fbb2385b529cbccb2a04280b95f0b057460eec1216adeb3a20e582c84cf1e6e551853589ac0a8475ff884cd221ed67885262060e2561b5442dab9",
+    "templateId": "TMP-ZA-1",
+    "jurisdiction": "ZA"
+  },
+  "encryption": {
+    "keyId": "QKY-053BF4912E3508D22FCA898CB673EAD2",
+    "algorithm": "hybrid-aes-kyber",
+    "quantumSafe": true
+  },
+  "blockchain": {
+    "transactionId": "0x7400ff77892237bcd10cda03401875567dd9daee7d6200b376f72a8c8631be47",
+    "blockNumber": 1847291,
+    "merkleRoot": "285663d618a7985b96c59e208dad669c75e0a23171ecd436ed1a31ec9b00bfe5"
+  },
+  "pipeline": {
+    "neuralProcessing": 0,
+    "encryptionTime": 0.2,
+    "anchoringTime": 0,
+    "totalTime": 0.2,
+    "confidence": 0.983
+  },
+  "courtAdmissible": {
+    "jurisdiction": "International",
+    "actsComplied": [
+      "POPIA",
+      "ECT Act",
+      "GDPR",
+      "CCPA",
+      "NIST SP 800-175B"
+    ],
+    "evidenceType": "QUANTUM_GENERATED_DOCUMENT",
+    "authenticityProof": "d998fe4babdfde337459de2b150f7b85e34ad3d465086c4749d2bf5052c760e2a793a7343f7927d1adf11eefadcd41b670d749c0a2c8eb68536713777251edfb",
+    "timestampAuthority": "WILSY_OS_2050_CITADEL",
+    "notaryReady": true,
+    "retentionPeriod": "100 years"
+  }
+}

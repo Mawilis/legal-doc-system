@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL FLOW VALIDATORS - INVESTOR-GRADE REQUEST VALIDATION                              ║
   ║ R3.5B/year deal flow | Competition Act compliance | POPIA redaction                   ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/validators/dealFlowValidators.js
@@ -110,7 +110,8 @@ export const targetIdentificationSchema = Joi.object({
 
   excludeIds: Joi.array().items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/)),
 
-  limit: Joi.number().integer().min(1).max(100).default(50),
+  limit: Joi.number().integer().min(1).max(100)
+    .default(50),
 })
   .min(1)
   .message('At least one search criterion must be provided');
@@ -140,7 +141,7 @@ export const dealCreationSchema = Joi.object({
     .valid(...DEAL_TYPES)
     .required()
     .messages({
-      'any.only': 'Deal type must be one of: ' + DEAL_TYPES.join(', '),
+      'any.only': `Deal type must be one of: ${DEAL_TYPES.join(', ')}`,
       'any.required': 'Deal type is required',
     }),
 
@@ -177,7 +178,7 @@ export const dealCreationSchema = Joi.object({
       role: Joi.string()
         .valid('lead', 'financial', 'legal', 'tax', 'technical', 'advisor')
         .required(),
-    })
+    }),
   ),
 
   metadata: Joi.object({
@@ -195,7 +196,7 @@ export const stageUpdateSchema = Joi.object({
     .valid(...DEAL_STAGES)
     .required()
     .messages({
-      'any.only': 'Stage must be one of: ' + DEAL_STAGES.join(', '),
+      'any.only': `Stage must be one of: ${DEAL_STAGES.join(', ')}`,
       'any.required': 'Stage is required',
     }),
 
@@ -210,7 +211,8 @@ export const synergyCalculationSchema = Joi.object({
   options: Joi.object({
     includeDrivers: Joi.boolean().default(true),
     confidenceThreshold: Joi.number().min(0).max(100).default(50),
-    timelineYears: Joi.number().integer().min(1).max(10).default(5),
+    timelineYears: Joi.number().integer().min(1).max(10)
+      .default(5),
   }),
 });
 
@@ -230,7 +232,8 @@ export const regulatoryAssessmentSchema = Joi.object({
 // ============================================================================
 
 export const integrationSimulationSchema = Joi.object({
-  iterations: Joi.number().integer().min(100).max(100000).default(1000),
+  iterations: Joi.number().integer().min(100).max(100000)
+    .default(1000),
 
   parameters: Joi.object({
     discountRate: Joi.number().min(0).max(1).default(0.12),
@@ -262,7 +265,8 @@ export const dealListFiltersSchema = Joi.object({
   dealType: Joi.string().valid(...DEAL_TYPES),
   materiality: Joi.string().valid('EXEMPT', 'SMALL_MERGER', 'INTERMEDIATE_MERGER', 'LARGE_MERGER'),
   riskLevel: Joi.string().valid('LOW', 'MEDIUM', 'HIGH', 'CRITICAL'),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(100)
+    .default(20),
   offset: Joi.number().integer().min(0).default(0),
 });
 

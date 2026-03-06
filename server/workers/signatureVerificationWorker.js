@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ SIGNATURE VERIFICATION WORKER - INVESTOR-GRADE MODULE                     ║
   ║ Automated signature verification | Cryptographic proof | 100% integrity  ║
   ║ POPIA §19 | ECT Act §15 | Companies Act §15 Verified                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/workers/signatureVerificationWorker.js
@@ -35,8 +35,7 @@
  */
 
 import { Worker } from 'bullmq';
-import crypto from 'crypto';
-import { randomBytes, createHash, verify } from 'crypto';
+import crypto, { randomBytes, createHash, verify } from 'crypto';
 import ElectronicSignature, {
   SIGNATURE_STATUS,
   SIGNATURE_TYPES,
@@ -227,7 +226,7 @@ class SignatureVerificationWorker {
           max: 100,
           duration: 1000,
         },
-      }
+      },
     );
 
     this.setupEventHandlers();
@@ -361,7 +360,7 @@ class SignatureVerificationWorker {
         {
           verificationStatus: VERIFICATION_STATUS.FAILED,
           verificationError: error.message,
-        }
+        },
       );
 
       throw error;
@@ -376,8 +375,7 @@ class SignatureVerificationWorker {
 
     // 2. Certificate validation (if applicable)
     if (signature.signatureProof?.certificate) {
-      results[VERIFICATION_METHODS.CERTIFICATE_VALIDATION] =
-        await this.verifyCertificate(signature);
+      results[VERIFICATION_METHODS.CERTIFICATE_VALIDATION] = await this.verifyCertificate(signature);
     }
 
     // 3. Timestamp verification
@@ -387,8 +385,7 @@ class SignatureVerificationWorker {
 
     // 4. Provider verification
     if (signature.provider !== 'custom') {
-      results[VERIFICATION_METHODS.PROVIDER_VERIFICATION] =
-        await this.verifyWithProvider(signature);
+      results[VERIFICATION_METHODS.PROVIDER_VERIFICATION] = await this.verifyWithProvider(signature);
     }
 
     // 5. Chain of custody verification
@@ -396,8 +393,7 @@ class SignatureVerificationWorker {
 
     // 6. Blockchain anchor verification (if anchored)
     if (signature.blockchainAnchor) {
-      results[VERIFICATION_METHODS.BLOCKCHAIN_ANCHOR] =
-        await this.verifyBlockchainAnchor(signature);
+      results[VERIFICATION_METHODS.BLOCKCHAIN_ANCHOR] = await this.verifyBlockchainAnchor(signature);
     }
 
     return results;
@@ -421,7 +417,7 @@ class SignatureVerificationWorker {
             signerEmail: signature.signedBy,
             signedAt: signature.signedAt,
             documentId: signature.documentId,
-          })
+          }),
         )
         .digest('hex');
 
@@ -555,9 +551,7 @@ class SignatureVerificationWorker {
 
       // Check for missing events
       const requiredEvents = ['created', 'sent', 'viewed', 'signed'];
-      const hasRequired = requiredEvents.every((event) =>
-        auditEvents.some((e) => e.event.includes(event))
-      );
+      const hasRequired = requiredEvents.every((event) => auditEvents.some((e) => e.event.includes(event)));
 
       const passed = chronological && hasRequired;
 
@@ -637,7 +631,7 @@ class SignatureVerificationWorker {
 
       await ElectronicSignature.updateOne(
         { signatureId: signature.signatureId },
-        { blockchainAnchor: anchor }
+        { blockchainAnchor: anchor },
       );
 
       logger.info('Signature anchored to blockchain', {

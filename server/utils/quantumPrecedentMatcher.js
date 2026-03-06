@@ -1,13 +1,14 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ QUANTUM PRECEDENT MATCHER - REVOLUTIONARY LEGAL AI ENGINE                ║
   ║ 10x better than TikTok's algorithm | Quantum-inspired neural matching    ║
   ║ R25M/year value | 99.7% accuracy | Self-evolving                         ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import crypto from 'crypto';
 import AuditLogger from './auditLogger.js'; // Changed from { AuditLogger } to default import
 import loggerRaw from './logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
@@ -118,7 +119,7 @@ class QuantumLegalState {
 
     // Encode temporal factor
     const ageInYears = (Date.now() - this.timestamp) / (365 * 24 * 60 * 60 * 1000);
-    const temporalWeight = Math.pow(TEMPORAL_DECAY, ageInYears);
+    const temporalWeight = TEMPORAL_DECAY ** ageInYears;
     for (let i = 0; i < 10; i++) {
       this.vector[LEGAL_DIMENSIONS.TEMPORAL[i]] += temporalWeight * (0.5 + i * 0.05);
     }
@@ -127,8 +128,8 @@ class QuantumLegalState {
     if (precedent.jurisdiction) {
       const jurisdictionHash = crypto.createHash('sha256').update(precedent.jurisdiction).digest();
       for (let i = 0; i < 15; i++) {
-        this.vector[LEGAL_DIMENSIONS.JURISDICTION[i]] +=
-          jurisdictionHash[i % jurisdictionHash.length] / 255;
+        this.vector[LEGAL_DIMENSIONS.JURISDICTION[i]]
+          += jurisdictionHash[i % jurisdictionHash.length] / 255;
       }
     }
 
@@ -336,7 +337,7 @@ export class QuantumPrecedentMatcher {
     }
 
     const weightedStates = states.map((state) => {
-      const similarity = similar.find((s) => s.id === state.id).similarity;
+      const { similarity } = similar.find((s) => s.id === state.id);
       return {
         ...state,
         weight: similarity,
@@ -369,7 +370,7 @@ export class QuantumPrecedentMatcher {
 
     const totalWeight = Array.from(outcomeGroups.values()).reduce(
       (sum, g) => sum + g.totalWeight,
-      0
+      0,
     );
 
     const confidence = bestWeight / totalWeight;
@@ -396,7 +397,7 @@ export class QuantumPrecedentMatcher {
     }
 
     const ageInYears = (Date.now() - state.timestamp) / (365 * 24 * 60 * 60 * 1000);
-    confidence *= Math.pow(TEMPORAL_DECAY, ageInYears);
+    confidence *= TEMPORAL_DECAY ** ageInYears;
 
     confidence *= 1 + Math.log(state.citations + 1) * 0.05;
 
@@ -408,8 +409,8 @@ export class QuantumPrecedentMatcher {
       ...this.stats,
       cacheSize: this.cache.size,
       entanglementDensity:
-        this.stats.totalEntanglements /
-        ((this.stats.totalPrecedents * (this.stats.totalPrecedents - 1)) / 2),
+        this.stats.totalEntanglements
+        / ((this.stats.totalPrecedents * (this.stats.totalPrecedents - 1)) / 2),
     };
   }
 

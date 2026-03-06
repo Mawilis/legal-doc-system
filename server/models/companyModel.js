@@ -27,8 +27,6 @@
  * =======================================================================================
  */
 
-('use strict');
-
 /* eslint-disable no-undef */ // ESLint directive for test suite
 
 require('dotenv').config(); // Quantum Env Vault Activation
@@ -86,24 +84,24 @@ const { encryptField, decryptField } = require('../utils/cryptoUtils');
 /* Mermaid source begins
 flowchart TD
     A["API Request<br/>Company Creation"] --> B{"Tenant Context<br/>Exists?"}
-    
+
     B -->|Missing| C["403 Forbidden<br/>Fail-Closed Security"]
     C --> D["AuditLedger Entry<br/>Security Violation"]
-    
+
     B -->|Valid| E["Schema Validation<br/>Companies Act Compliance"]
     E --> F{"PII Fields Detected?"}
-    
+
     F -->|Yes| G["Field-Level Encryption<br/>AES-256-GCM"]
     F -->|No| H["Direct Storage<br/>Public Information"]
-    
+
     G --> I["Envelope Encryption<br/>Vault Transit Wrapped"]
     H --> J["MongoDB Storage<br/>tenantId Partition"]
     I --> J
-    
+
     J --> K["Audit Trail Creation<br/>RFC3161 Timestamp"]
     K --> L["Compliance Automation<br/>FICA/POPIA Triggers"]
     L --> M["DSAR Hooks Registration<br/>POPIA Section 23"]
-    
+
     subgraph Compliance["Legal Compliance Framework"]
         direction LR
         C1["POPIA Sec 11-22"]
@@ -111,12 +109,12 @@ flowchart TD
         C3["FICA/AML"]
         C4["ECT Act"]
     end
-    
+
     classDef security fill:#e53e3e,color:white
     classDef success fill:#38a169,color:white
     classDef process fill:#3182ce,color:white
     classDef decision fill:#d69e2e,color:white
-    
+
     class C security
     class M success
     class A,E,G,I,J,K,L process
@@ -220,7 +218,7 @@ const CompanySchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Incorporation Date required per Companies Act 2008'],
       validate: {
-        validator: function (date) {
+        validator(date) {
           return date <= new Date();
         },
         message: 'Incorporation date cannot be in the future',
@@ -232,7 +230,7 @@ const CompanySchema = new mongoose.Schema(
       required: true,
       default: '28 February',
       validate: {
-        validator: function (dateStr) {
+        validator(dateStr) {
           const validEndings = [
             '31 January',
             '28 February',
@@ -271,7 +269,7 @@ const CompanySchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
       validate: {
-        validator: function (vat) {
+        validator(vat) {
           if (!vat) return true;
           const vatRegex = /^4\d{9}$/;
           return vatRegex.test(vat);
@@ -297,7 +295,7 @@ const CompanySchema = new mongoose.Schema(
     ficaVerificationDate: {
       type: Date,
       validate: {
-        validator: function (date) {
+        validator(date) {
           if (!date) return true;
           return date <= new Date();
         },
@@ -436,7 +434,7 @@ const CompanySchema = new mongoose.Schema(
           lowercase: true,
           trim: true,
           validate: {
-            validator: function (email) {
+            validator(email) {
               if (!email) return true;
               const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
               return emailRegex.test(email);
@@ -448,7 +446,7 @@ const CompanySchema = new mongoose.Schema(
           type: String,
           trim: true,
           validate: {
-            validator: function (phone) {
+            validator(phone) {
               if (!phone) return true;
               const phoneRegex = /^(\+27|0)[1-9][0-9]{8}$/;
               return phoneRegex.test(phone);
@@ -581,7 +579,7 @@ const CompanySchema = new mongoose.Schema(
     deletionDate: {
       type: Date,
       validate: {
-        validator: function (date) {
+        validator(date) {
           if (!date) return true;
           return date > new Date();
         },
@@ -625,7 +623,7 @@ const CompanySchema = new mongoose.Schema(
 
     // Quantum Performance: Index optimization for multi-tenant queries
     autoIndex: process.env.NODE_ENV !== 'production', // Auto-index in development only
-  }
+  },
 );
 
 // ============================================================================
@@ -686,9 +684,9 @@ CompanySchema.virtual('nextAnnualReturnDue').get(function () {
  */
 CompanySchema.virtual('dsarReady').get(function () {
   return (
-    this.popiaConsent.granted &&
-    this.metadata.dsarMetadata &&
-    this.metadata.dsarMetadata.informationOfficerContact
+    this.popiaConsent.granted
+    && this.metadata.dsarMetadata
+    && this.metadata.dsarMetadata.informationOfficerContact
   );
 });
 
@@ -702,7 +700,7 @@ CompanySchema.pre('save', async function (next) {
     // Quantum Sentinel: Multi-tenant isolation validation
     if (!this.tenantId) {
       throw new Error(
-        'Quantum Violation: Company must belong to a tenant for multi-tenant isolation'
+        'Quantum Violation: Company must belong to a tenant for multi-tenant isolation',
       );
     }
 
@@ -744,7 +742,7 @@ CompanySchema.pre('save', async function (next) {
 
       if (existing) {
         throw new Error(
-          `Quantum Duplication: Company registration number ${this.companyRegistrationNumber} already exists for this tenant`
+          `Quantum Duplication: Company registration number ${this.companyRegistrationNumber} already exists for this tenant`,
         );
       }
     }
@@ -831,11 +829,11 @@ CompanySchema.post('save', async function (doc, next) {
 });
 
 // PRE-REMOVE: Prevent accidental deletion, implement soft delete
-CompanySchema.pre('remove', async function (next) {
+CompanySchema.pre('remove', async (next) => {
   // Quantum Immutability: Companies should never be hard deleted
   // Instead, mark for archival and schedule deletion per POPIA
   throw new Error(
-    'Quantum Protection: Companies cannot be hard deleted. Use status change to "de_registered" and archival instead.'
+    'Quantum Protection: Companies cannot be hard deleted. Use status change to "de_registered" and archival instead.',
   );
 });
 
@@ -855,7 +853,7 @@ CompanySchema.statics.findByTenant = function (tenantId, filters = {}) {
   // Quantum Performance: Select only necessary fields for list views
   return this.find(query)
     .select(
-      'quantumId companyRegistrationNumber companyName companyType status incorporationDate ficaStatus'
+      'quantumId companyRegistrationNumber companyName companyType status incorporationDate ficaStatus',
     )
     .sort({ incorporationDate: -1 })
     .lean(); // Lean for performance
@@ -914,8 +912,8 @@ CompanySchema.statics.getComplianceDashboard = async function (companyId) {
       licenseExpiry: company.complianceFlags.licenseExpiry,
       documentExpiries: company.documents
         ? company.documents
-            .filter((d) => d.expiryDate && d.expiryDate > new Date())
-            .map((d) => ({ document: d.documentName, expiry: d.expiryDate }))
+          .filter((d) => d.expiryDate && d.expiryDate > new Date())
+          .map((d) => ({ document: d.documentName, expiry: d.expiryDate }))
         : [],
     },
     riskIndicators: {
@@ -978,7 +976,7 @@ CompanySchema.statics.getDsarReadyCompanies = async function (tenantId) {
     'metadata.dsarMetadata.informationOfficerContact': { $exists: true, $ne: '' },
   })
     .select(
-      'quantumId companyName companyRegistrationNumber status popiaConsent.grantedDate metadata.dsarMetadata.lastAccessRequest'
+      'quantumId companyName companyRegistrationNumber status popiaConsent.grantedDate metadata.dsarMetadata.lastAccessRequest',
     )
     .lean();
 };
@@ -1002,16 +1000,14 @@ CompanySchema.methods.addFicaDocument = async function (documentData, verifiedBy
     ...documentData,
     verified: true,
     verificationDate: new Date(),
-    verifiedBy: verifiedBy,
+    verifiedBy,
   };
 
   this.ficaDocuments.push(document);
 
   // Update FICA status if all required documents are verified
   const requiredDocs = ['ProofOfAddress', 'ProofOfID', 'CK1/2'];
-  const hasAllRequired = requiredDocs.every((docType) =>
-    this.ficaDocuments.some((doc) => doc.documentType === docType && doc.verified)
-  );
+  const hasAllRequired = requiredDocs.every((docType) => this.ficaDocuments.some((doc) => doc.documentType === docType && doc.verified));
 
   if (hasAllRequired) {
     this.ficaStatus = 'verified';
@@ -1047,8 +1043,8 @@ CompanySchema.methods.updateStatus = async function (newStatus, reason, changedB
     tenantId: this.tenantId,
     action: 'status_updated',
     message: `Company status changed from ${oldStatus} to ${newStatus}`,
-    changedBy: changedBy,
-    reason: reason,
+    changedBy,
+    reason,
     timestamp: new Date(),
   });
 
@@ -1095,7 +1091,7 @@ CompanySchema.methods.registerDsarContact = async function (contactInfo, registe
 CompanySchema.plugin(mongooseFieldEncryption, {
   fields: ['taxReferenceNumber', 'vatRegistrationNumber', 'shareholders.identificationNumber'],
   secret: process.env.FIELD_ENCRYPTION_KEY,
-  saltGenerator: function (secret) {
+  saltGenerator(secret) {
     return require('crypto').randomBytes(16);
   },
 });

@@ -38,7 +38,7 @@ filesToFix.forEach((filePath) => {
       content = content.replace(/\/\*\/\s*([\n\r])/g, '/* */$1');
       content = content.replace(
         /\}\s+catch\s*\(\s*e\s*\)\s*\{\s*\/\*\/\s*\}/g,
-        '} catch (e) { /* ignore */ }'
+        '} catch (e) { /* ignore */ }',
       );
       content = content.replace(/\/\*\/\s*\}/g, '/* */ }');
 

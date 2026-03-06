@@ -121,7 +121,7 @@ describe('Production Code Quality (File Inspection)', () => {
 
     const serviceCode = fs.readFileSync(
       path.join(__dirname, '../../services/CaseComplianceService.js'),
-      'utf8'
+      'utf8',
     );
 
     expect(serviceCode).not.toMatch(/console\.log/);
@@ -134,7 +134,7 @@ describe('Production Code Quality (File Inspection)', () => {
 
     const serviceCode = fs.readFileSync(
       path.join(__dirname, '../../services/CaseComplianceService.js'),
-      'utf8'
+      'utf8',
     );
 
     // Check for essential compliance patterns

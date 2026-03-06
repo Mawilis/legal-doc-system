@@ -9,8 +9,9 @@
 import Case from '../../models/Case.js';
 import Precedent from '../../models/Precedent.js';
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import tenantContext from '../../middleware/tenantContext.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 export const caseAnalysisService = {
   /**

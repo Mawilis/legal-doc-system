@@ -17,15 +17,15 @@ function fixBullMQ(dir) {
 
       if (stat.isDirectory()) {
         if (
-          !fullPath.includes('node_modules') &&
-          !fullPath.includes('.git') &&
-          !fullPath.includes('backups')
+          !fullPath.includes('node_modules')
+          && !fullPath.includes('.git')
+          && !fullPath.includes('backups')
         ) {
           fixBullMQ(fullPath);
         }
       } else if (
-        stat.isFile() &&
-        (fullPath.endsWith('.js') || fullPath.endsWith('.cjs') || fullPath.endsWith('.mjs'))
+        stat.isFile()
+        && (fullPath.endsWith('.js') || fullPath.endsWith('.cjs') || fullPath.endsWith('.mjs'))
       ) {
         let content = fs.readFileSync(fullPath, 'utf8');
         if (content.includes('QueueScheduler')) {
@@ -34,13 +34,13 @@ function fixBullMQ(dir) {
           content = content.replace(/QueueScheduler\s*,/g, '');
           content = content.replace(
             /import\s*\{\s*QueueScheduler\s*\}\s*from\s*['"]bullmq['"];?/g,
-            ''
+            '',
           );
 
           // Comment out any instantiation lines to prevent execution crashes
           content = content.replace(
             /.*new\s+QueueScheduler.*/g,
-            '// FORENSIC FIX: QueueScheduler removed (Natively handled in BullMQ v3+)'
+            '// FORENSIC FIX: QueueScheduler removed (Natively handled in BullMQ v3+)',
           );
 
           fs.writeFileSync(fullPath, content);

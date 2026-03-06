@@ -38,11 +38,12 @@
  * }
  */
 
+import crypto from 'crypto';
 import loggerRaw from './logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import auditLogger from './auditLogger.js';
 import SecurityLogModel from '../models/securityLogModel.js';
-import crypto from 'crypto';
+
+const logger = loggerRaw.default || loggerRaw;
 
 /**
  * Security Alert Severity Levels
@@ -127,7 +128,7 @@ class SecurityAlert {
     const hash = crypto
       .createHash('sha256')
       .update(
-        `${this.type}-${this.timestamp.toISOString()}-${this.requestId}-${crypto.randomBytes(8).toString('hex')}`
+        `${this.type}-${this.timestamp.toISOString()}-${this.requestId}-${crypto.randomBytes(8).toString('hex')}`,
       )
       .digest('hex')
       .substring(0, 16);
@@ -152,9 +153,9 @@ class SecurityAlert {
 
     // Check for breach conditions
     if (
-      this.metadata.affectedDataSubjects > 0 ||
-      this.metadata.piiExposed === true ||
-      this.type === ALERT_TYPES.DATA_BREACH
+      this.metadata.affectedDataSubjects > 0
+      || this.metadata.piiExposed === true
+      || this.type === ALERT_TYPES.DATA_BREACH
     ) {
       return SECURITY_ALERT_LEVELS.BREACH;
     }
@@ -401,9 +402,7 @@ const triggerBreachNotificationWorkflow = async (alert, securityLog) => {
 /**
  * Trigger a critical security alert (immediate attention required)
  */
-export const triggerCriticalAlert = async (type, metadata, requestId) => {
-  return logSecurityAlert(type, { ...metadata, forceCritical: true }, requestId);
-};
+export const triggerCriticalAlert = async (type, metadata, requestId) => logSecurityAlert(type, { ...metadata, forceCritical: true }, requestId);
 
 /**
  * Check if an alert meets POPIA breach notification requirements
@@ -418,10 +417,10 @@ export const requiresBreachNotification = (type, metadata) => {
   ];
 
   return (
-    breachTypes.includes(type) &&
-    (metadata?.affectedDataSubjects > 0 ||
-      metadata?.piiExposed === true ||
-      metadata?.unauthorizedAccess === true)
+    breachTypes.includes(type)
+    && (metadata?.affectedDataSubjects > 0
+      || metadata?.piiExposed === true
+      || metadata?.unauthorizedAccess === true)
   );
 };
 

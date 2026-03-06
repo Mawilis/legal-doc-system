@@ -88,13 +88,15 @@
  * ============================================================================
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ INTERNATIONAL ROUTES - INVESTOR-GRADE MODULE - $5B VALUATION             ║
   ║ Premium endpoints | Global intelligence | Strategic gateway               ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import express from 'express';
-import { body, query, param, validationResult } from 'express-validator.js';
+import {
+  body, query, param, validationResult,
+} from 'express-validator.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 import cors from 'cors';
@@ -211,7 +213,7 @@ router.use(
       includeSubDomains: true,
       preload: true,
     },
-  })
+  }),
 );
 
 router.use(
@@ -230,7 +232,7 @@ router.use(
     ],
     credentials: true,
     maxAge: 86400,
-  })
+  }),
 );
 
 router.use(compression({ level: 6, threshold: 1024 }));
@@ -266,7 +268,7 @@ router.use(
     message:
       'Premium international rate limit exceeded. Please upgrade to enterprise for higher limits.',
     keyGenerator: (req) => `${req.tenantContext.id}:international`,
-  })
+  }),
 );
 
 // Audit middleware for all international operations
@@ -279,13 +281,11 @@ router.use(auditMiddleware('international'));
 /*
  * Generate correlation ID for request tracking
  */
-const generateCorrelationId = (req) => {
-  return (
-    req.headers['x-correlation-id'] ||
-    req.headers['x-request-id'] ||
-    `INTL-${Date.now()}-${uuidv4().substring(0, 8)}`
-  );
-};
+const generateCorrelationId = (req) => (
+  req.headers['x-correlation-id']
+    || req.headers['x-request-id']
+    || `INTL-${Date.now()}-${uuidv4().substring(0, 8)}`
+);
 
 /*
  * Calculate premium charge based on tier
@@ -323,47 +323,41 @@ const trackBilling = async (tenantId, userId, endpoint, tier, metadata = {}) => 
 /*
  * Get analyzer instance
  */
-const getAnalyzer = () => {
-  return CrossJurisdictionAnalyzerFactory.getAnalyzer();
-};
+const getAnalyzer = () => CrossJurisdictionAnalyzerFactory.getAnalyzer();
 
 /*
  * Format success response
  */
-const formatSuccess = (data, metadata = {}) => {
-  return {
-    success: true,
-    data,
-    metadata: {
-      timestamp: new Date().toISOString(),
-      version: '42.0.0',
-      ...metadata,
-    },
-    links: {
-      self: metadata.self,
-      docs: 'https://docs.wilsy.os/api/international',
-    },
-  };
-};
+const formatSuccess = (data, metadata = {}) => ({
+  success: true,
+  data,
+  metadata: {
+    timestamp: new Date().toISOString(),
+    version: '42.0.0',
+    ...metadata,
+  },
+  links: {
+    self: metadata.self,
+    docs: 'https://docs.wilsy.os/api/international',
+  },
+});
 
 /*
  * Format error response
  */
-const formatError = (error, correlationId) => {
-  return {
-    success: false,
-    error: {
-      code: error.code || 'INTERNATIONAL_ERROR',
-      message: error.message,
-      details: error.details,
-    },
-    metadata: {
-      timestamp: new Date().toISOString(),
-      correlationId,
-      version: '42.0.0',
-    },
-  };
-};
+const formatError = (error, correlationId) => ({
+  success: false,
+  error: {
+    code: error.code || 'INTERNATIONAL_ERROR',
+    message: error.message,
+    details: error.details,
+  },
+  metadata: {
+    timestamp: new Date().toISOString(),
+    correlationId,
+    version: '42.0.0',
+  },
+});
 
 // =============================================================================
 // ENDPOINT: GET /jurisdictions
@@ -380,7 +374,7 @@ router.get(
   cacheMiddleware({ ttl: CACHE_TTL.JURISDICTIONS }),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { id: tenantId } = req.tenantContext;
     const userId = req.user?.id;
 
@@ -409,7 +403,7 @@ router.get(
         INTERNATIONAL_TIERS.PREMIUM,
         {
           jurisdictionCount: jurisdictions.length,
-        }
+        },
       );
 
       // Forensic logging
@@ -430,13 +424,13 @@ router.get(
           correlationId,
           tier: INTERNATIONAL_TIERS.PREMIUM,
           charge,
-        })
+        }),
       );
     } catch (error) {
       trackError('international', error.code || 'jurisdictions_error');
       next(new AppError(error.message, 500, 'JURISDICTIONS_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -455,7 +449,7 @@ router.get(
   cacheMiddleware({ ttl: CACHE_TTL.PROFILE }),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { id: tenantId } = req.tenantContext;
     const userId = req.user?.id;
     const { code } = req.params;
@@ -481,7 +475,7 @@ router.get(
         INTERNATIONAL_TIERS.PREMIUM,
         {
           jurisdiction: code,
-        }
+        },
       );
 
       await QuantumLogger.logAction(tenantId, userId, 'INTL_PROFILE_VIEW', null, {
@@ -502,13 +496,13 @@ router.get(
           jurisdiction: code,
           tier: INTERNATIONAL_TIERS.PREMIUM,
           charge,
-        })
+        }),
       );
     } catch (error) {
       trackError('international', error.code || 'profile_error');
       next(error);
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -532,7 +526,7 @@ router.post(
   tieredRateLimiter('ultra_premium'),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { id: tenantId } = req.tenantContext;
     const userId = req.user?.id;
     const {
@@ -556,7 +550,7 @@ router.post(
         sourceJurisdiction.toUpperCase(),
         targetJurisdiction.toUpperCase(),
         legalArea,
-        { depth, principle }
+        { depth, principle },
       );
 
       // Track ultra premium billing
@@ -574,7 +568,7 @@ router.post(
           matchesFound: mapping.comparison?.statistics?.totalMatches || 0,
           conflictsFound: mapping.conflicts?.length || 0,
           harmoniesFound: mapping.harmonies?.length || 0,
-        }
+        },
       );
 
       // Forensic logging for investor audits
@@ -626,8 +620,8 @@ router.post(
             tier: INTERNATIONAL_TIERS.ULTRA_PREMIUM,
             charge,
             valuationContext: '$5B_GLOBAL_OS',
-          }
-        )
+          },
+        ),
       );
     } catch (error) {
       trackError('international', error.code || 'mapping_error');
@@ -638,7 +632,7 @@ router.post(
       });
       next(new AppError(error.message, 500, 'INTERNATIONAL_MAPPING_FAILURE'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -661,7 +655,7 @@ router.post(
   tieredRateLimiter('ultra_premium'),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { id: tenantId } = req.tenantContext;
     const userId = req.user?.id;
     const { jurisdictions, legalArea = 'general', depth = 'standard' } = req.body;
@@ -677,7 +671,7 @@ router.post(
       const comparison = await analyzer.analyzeMultiple(
         jurisdictions.map((j) => j.toUpperCase()),
         legalArea,
-        { depth }
+        { depth },
       );
 
       const charge = await trackBilling(
@@ -691,7 +685,7 @@ router.post(
           legalArea,
           depth,
           pairCount: comparison.pairResults?.length || 0,
-        }
+        },
       );
 
       await QuantumLogger.logAction(tenantId, userId, 'INTL_COMPARE_SYSTEMS', null, {
@@ -713,13 +707,13 @@ router.post(
           jurisdictions: jurisdictions.join(','),
           tier: INTERNATIONAL_TIERS.ULTRA_PREMIUM,
           charge,
-        })
+        }),
       );
     } catch (error) {
       trackError('international', error.code || 'compare_error');
       next(new AppError(error.message, 500, 'SYSTEM_COMPARISON_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -742,10 +736,12 @@ router.post(
   tieredRateLimiter('ultra_premium'),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { id: tenantId } = req.tenantContext;
     const userId = req.user?.id;
-    const { sourceJurisdiction, targetJurisdiction, legalArea, minSeverity = 'medium' } = req.body;
+    const {
+      sourceJurisdiction, targetJurisdiction, legalArea, minSeverity = 'medium',
+    } = req.body;
 
     try {
       const analyzer = getAnalyzer();
@@ -754,15 +750,16 @@ router.post(
         sourceJurisdiction.toUpperCase(),
         targetJurisdiction.toUpperCase(),
         legalArea,
-        { depth: 'deep' }
+        { depth: 'deep' },
       );
 
       // Filter conflicts by severity
-      const conflicts =
-        analysis.conflicts?.filter((c) => {
-          const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
-          return severityOrder[c.severity] >= severityOrder[minSeverity];
-        }) || [];
+      const conflicts = analysis.conflicts?.filter((c) => {
+        const severityOrder = {
+          low: 1, medium: 2, high: 3, critical: 4,
+        };
+        return severityOrder[c.severity] >= severityOrder[minSeverity];
+      }) || [];
 
       const charge = await trackBilling(
         tenantId,
@@ -776,7 +773,7 @@ router.post(
           minSeverity,
           totalConflicts: analysis.conflicts?.length || 0,
           filteredConflicts: conflicts.length,
-        }
+        },
       );
 
       await QuantumLogger.logAction(tenantId, userId, 'INTL_CONFLICT_ANALYSIS', null, {
@@ -814,14 +811,14 @@ router.post(
             target: targetJurisdiction,
             tier: INTERNATIONAL_TIERS.ULTRA_PREMIUM,
             charge,
-          }
-        )
+          },
+        ),
       );
     } catch (error) {
       trackError('international', error.code || 'conflict_error');
       next(new AppError(error.message, 500, 'CONFLICT_ANALYSIS_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -844,7 +841,7 @@ router.post(
   tieredRateLimiter('ultra_premium'),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { id: tenantId } = req.tenantContext;
     const userId = req.user?.id;
     const { jurisdictions, legalArea = 'general', minStrength = 'moderate' } = req.body;
@@ -855,16 +852,18 @@ router.post(
       const analysis = await analyzer.analyzeMultiple(
         jurisdictions.map((j) => j.toUpperCase()),
         legalArea,
-        { depth: 'deep' }
+        { depth: 'deep' },
       );
 
       // Extract harmonies from all pair analyses
       const allHarmonies = analysis.pairResults?.flatMap((r) => r.harmonies || []) || [];
 
       // Filter by strength
-      const strengthOrder = { weak: 1, moderate: 2, strong: 3, identical: 4 };
+      const strengthOrder = {
+        weak: 1, moderate: 2, strong: 3, identical: 4,
+      };
       const filteredHarmonies = allHarmonies.filter(
-        (h) => strengthOrder[h.strength] >= strengthOrder[minStrength]
+        (h) => strengthOrder[h.strength] >= strengthOrder[minStrength],
       );
 
       // Group by principle
@@ -897,7 +896,7 @@ router.post(
           totalHarmonies: allHarmonies.length,
           filteredHarmonies: filteredHarmonies.length,
           uniquePrinciples: Object.keys(principles).length,
-        }
+        },
       );
 
       const duration = performance.now() - startTime;
@@ -924,14 +923,14 @@ router.post(
             jurisdictions: jurisdictions.join(','),
             tier: INTERNATIONAL_TIERS.ULTRA_PREMIUM,
             charge,
-          }
-        )
+          },
+        ),
       );
     } catch (error) {
       trackError('international', error.code || 'harmony_error');
       next(new AppError(error.message, 500, 'HARMONY_CHECK_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -955,10 +954,12 @@ router.post(
   tieredRateLimiter('enterprise'),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { id: tenantId } = req.tenantContext;
     const userId = req.user?.id;
-    const { jurisdictions, caseType, claimAmount, clientProfile } = req.body;
+    const {
+      jurisdictions, caseType, claimAmount, clientProfile,
+    } = req.body;
 
     try {
       const analyzer = getAnalyzer();
@@ -967,7 +968,7 @@ router.post(
       const analysis = await analyzer.analyzeMultiple(
         jurisdictions.map((j) => j.toUpperCase()),
         caseType,
-        { depth: 'comprehensive' }
+        { depth: 'comprehensive' },
       );
 
       // Generate strategic recommendations
@@ -992,10 +993,9 @@ router.post(
       }
 
       // Analyze conflicts
-      const criticalConflicts =
-        analysis.pairResults?.flatMap(
-          (r) => r.conflicts?.filter((c) => c.severity === 'critical') || []
-        ) || [];
+      const criticalConflicts = analysis.pairResults?.flatMap(
+        (r) => r.conflicts?.filter((c) => c.severity === 'critical') || [],
+      ) || [];
 
       if (criticalConflicts.length > 0) {
         strategy.risks.push({
@@ -1013,11 +1013,9 @@ router.post(
       }
 
       // Identify opportunities from harmonies
-      const strongHarmonies =
-        analysis.pairResults?.flatMap(
-          (r) =>
-            r.harmonies?.filter((h) => h.strength === 'strong' || h.strength === 'identical') || []
-        ) || [];
+      const strongHarmonies = analysis.pairResults?.flatMap(
+        (r) => r.harmonies?.filter((h) => h.strength === 'strong' || h.strength === 'identical') || [],
+      ) || [];
 
       if (strongHarmonies.length > 0) {
         strategy.opportunities.push({
@@ -1050,7 +1048,7 @@ router.post(
           recommendationsCount: strategy.recommendations.length,
           risksCount: strategy.risks.length,
           opportunitiesCount: strategy.opportunities.length,
-        }
+        },
       );
 
       await QuantumLogger.logAction(tenantId, userId, 'INTL_STRATEGY_GENERATED', null, {
@@ -1073,13 +1071,13 @@ router.post(
           jurisdictions: jurisdictions.join(','),
           tier: INTERNATIONAL_TIERS.ENTERPRISE,
           charge,
-        })
+        }),
       );
     } catch (error) {
       trackError('international', error.code || 'strategy_error');
       next(new AppError(error.message, 500, 'STRATEGY_GENERATION_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -1102,10 +1100,12 @@ router.post(
   tieredRateLimiter('premium'),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { id: tenantId } = req.tenantContext;
     const userId = req.user?.id;
-    const { jurisdiction, caseType, estimatedValue, currency = 'USD' } = req.body;
+    const {
+      jurisdiction, caseType, estimatedValue, currency = 'USD',
+    } = req.body;
 
     try {
       // Get jurisdiction profile for fee structure
@@ -1145,7 +1145,7 @@ router.post(
         estimatedFees: {
           amount: estimatedFees,
           currency: 'USD',
-          converted: converted,
+          converted,
         },
         breakdown: {
           filingFees: estimatedFees * 0.1,
@@ -1168,7 +1168,7 @@ router.post(
           estimatedValue,
           currency,
           estimatedFees,
-        }
+        },
       );
 
       const duration = performance.now() - startTime;
@@ -1181,13 +1181,13 @@ router.post(
           jurisdiction,
           tier: INTERNATIONAL_TIERS.PREMIUM,
           charge,
-        })
+        }),
       );
     } catch (error) {
       trackError('international', error.code || 'cost_error');
       next(new AppError(error.message, 500, 'COST_ANALYSIS_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -1210,7 +1210,7 @@ router.get(
   cacheMiddleware({ ttl: CACHE_TTL.TRENDING }),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { id: tenantId } = req.tenantContext;
     const userId = req.user?.id;
     const { jurisdiction, limit = 20, days = 30 } = req.query;
@@ -1275,14 +1275,14 @@ router.get(
             jurisdiction: jurisdiction || 'global',
             tier: INTERNATIONAL_TIERS.PREMIUM,
             charge,
-          }
-        )
+          },
+        ),
       );
     } catch (error) {
       trackError('international', error.code || 'trending_error');
       next(new AppError(error.message, 500, 'TRENDING_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -1304,7 +1304,7 @@ router.post(
   tieredRateLimiter('enterprise'),
   async (req, res, next) => {
     const startTime = performance.now();
-    const correlationId = req.correlationId;
+    const { correlationId } = req;
     const { id: tenantId } = req.tenantContext;
     const userId = req.user?.id;
     const { operations } = req.body;
@@ -1324,14 +1324,14 @@ router.post(
                 op.params.sourceJurisdiction,
                 op.params.targetJurisdiction,
                 op.params.legalArea,
-                { depth: op.params.depth || 'standard' }
+                { depth: op.params.depth || 'standard' },
               );
               break;
             case 'compare':
               result = await analyzer.analyzeMultiple(
                 op.params.jurisdictions,
                 op.params.legalArea,
-                { depth: op.params.depth || 'standard' }
+                { depth: op.params.depth || 'standard' },
               );
               break;
             default:
@@ -1353,8 +1353,7 @@ router.post(
         }
       }
 
-      const totalCharge =
-        operations.length * BASE_QUERY_PRICE * PRICING_MULTIPLIERS[INTERNATIONAL_TIERS.ENTERPRISE];
+      const totalCharge = operations.length * BASE_QUERY_PRICE * PRICING_MULTIPLIERS[INTERNATIONAL_TIERS.ENTERPRISE];
 
       await trackBilling(tenantId, userId, 'batch', INTERNATIONAL_TIERS.ENTERPRISE, {
         operationCount: operations.length,
@@ -1388,14 +1387,14 @@ router.post(
             correlationId,
             tier: INTERNATIONAL_TIERS.ENTERPRISE,
             charge: totalCharge,
-          }
-        )
+          },
+        ),
       );
     } catch (error) {
       trackError('international', error.code || 'batch_error');
       next(new AppError(error.message, 500, 'BATCH_OPERATION_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================

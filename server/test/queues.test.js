@@ -91,7 +91,7 @@ describe('🔧 Queues Configuration Tests', function () {
         {
           delay: 1000,
           priority: 1,
-        }
+        },
       );
 
       assert.ok(job.id);

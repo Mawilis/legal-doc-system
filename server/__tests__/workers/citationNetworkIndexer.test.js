@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ CITATION NETWORK INDEXER TESTS - INVESTOR DUE DILIGENCE - $85M TARGET    ║
   ║ 100% coverage | Graph AI | Network Effects | Unassailable Moat           ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/workers/citationNetworkIndexer.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -54,9 +54,7 @@ jest.mock('../../utils/quantumLogger', () => ({
 }));
 
 jest.mock('../../utils/cryptoUtils', () => ({
-  sha256: jest.fn().mockImplementation((input) => {
-    return crypto.createHash('sha256').update(String(input)).digest('hex');
-  }),
+  sha256: jest.fn().mockImplementation((input) => crypto.createHash('sha256').update(String(input)).digest('hex')),
 }));
 
 jest.mock('../../utils/metricsCollector', () => ({
@@ -129,7 +127,7 @@ jest.mock(
     generateEdgeEmbedding: jest.fn().mockResolvedValue(Array(128).fill(0.1)),
     findSimilarNodes: jest.fn().mockResolvedValue([]),
   }),
-  { virtual: true }
+  { virtual: true },
 );
 
 // Import after mocks
@@ -220,7 +218,7 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
       Citation.findById.mockResolvedValue(null);
 
       await expect(
-        citationNetworkIndexer.indexCitation(mockCitationId, mockTenantId)
+        citationNetworkIndexer.indexCitation(mockCitationId, mockTenantId),
       ).rejects.toThrow('Citation not found');
     });
 
@@ -231,7 +229,7 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
       });
 
       await expect(
-        citationNetworkIndexer.indexCitation(mockCitationId, mockTenantId)
+        citationNetworkIndexer.indexCitation(mockCitationId, mockTenantId),
       ).rejects.toThrow('Citation missing source or target');
     });
   });
@@ -503,7 +501,7 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
     it('should queue citation for indexing', async () => {
       const result = await citationNetworkIndexer.queueCitationForIndexing(
         mockCitationId,
-        mockTenantId
+        mockTenantId,
       );
 
       expect(result.jobId).toBeDefined();
@@ -528,7 +526,7 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
         data: { operation: 'indexCitation' },
       };
 
-      const queue = citationNetworkIndexer.queue;
+      const { queue } = citationNetworkIndexer;
       queue.getJob.mockResolvedValue(mockJob);
 
       const status = await citationNetworkIndexer.getIndexingStatus('job-123');
@@ -696,7 +694,7 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
       const count = await Citation.countDocuments();
       const networkValue = count * valuePerConnection;
 
-      console.log(`✅ Network Value Calculation:`);
+      console.log('✅ Network Value Calculation:');
       console.log(`   Citations: ${count.toLocaleString()}`);
       console.log(`   Value per connection: R${valuePerConnection}`);
       console.log(`   Total network value: R${networkValue.toLocaleString()}`);
@@ -739,7 +737,7 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
 
       await fs.writeFile(
         path.join(__dirname, 'citation-network-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -751,7 +749,7 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'citation-network-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
@@ -765,11 +763,11 @@ describe('CitationNetworkIndexer - Enterprise Graph Engine Due Diligence', () =>
       console.log(`⏱️  Processing Time: ${result.processingTimeMs}ms`);
       console.log(`🔐 Evidence Hash: ${hash.substring(0, 16)}...`);
       console.log('\n💰 NETWORK VALUE METRICS');
-      console.log(`📚 Citations indexed: 1,000,000+ (target)`);
-      console.log(`💰 Value per connection: R85`);
-      console.log(`💵 Total network value: R85,000,000`);
-      console.log(`📈 5-year projection: R425,000,000`);
-      console.log(`🏢 Enterprise valuation contribution: $2B+`);
+      console.log('📚 Citations indexed: 1,000,000+ (target)');
+      console.log('💰 Value per connection: R85');
+      console.log('💵 Total network value: R85,000,000');
+      console.log('📈 5-year projection: R425,000,000');
+      console.log('🏢 Enterprise valuation contribution: $2B+');
       console.log('='.repeat(50));
     });
   });

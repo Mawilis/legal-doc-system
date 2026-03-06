@@ -319,7 +319,7 @@ export const tenantGuard = async (req, res, next) => {
     // STEP 5: Add Security Headers
     // =========================================================================
 
-    res.setHeader('X-Tenant-ID', tenantId.substring(0, 8) + '...');
+    res.setHeader('X-Tenant-ID', `${tenantId.substring(0, 8)}...`);
     res.setHeader('X-Tenant-Validated-At', new Date().toISOString());
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
@@ -404,9 +404,7 @@ export const clearTenantCache = (tenantId = null) => {
 /*
  * Get tenant guard metrics
  */
-export const getTenantGuardMetrics = () => {
-  return {
-    cacheSize: tenantCache.size,
-    uptime: process.uptime(),
-  };
-};
+export const getTenantGuardMetrics = () => ({
+  cacheSize: tenantCache.size,
+  uptime: process.uptime(),
+});

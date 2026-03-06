@@ -1,10 +1,10 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS: GLOBAL THREAT INTELLIGENCE (GTI) - THE WAR ROOM                             ║
   ║ Real-time visualization of system health and security posture for $5B+ infrastructure ║
   ║ PURPOSE: Zero-Downtime visibility for Gen 10 operations                               ║
   ║ TARGET: Meta/Google-scale observability with forensic precision                       ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/analytics/GlobalThreatIntel.js
@@ -26,15 +26,16 @@
  * • Investor-grade dashboards
  */
 
+import crypto from 'crypto';
+import { EventEmitter } from 'events';
 import { redisClient } from '../../utils/redisClient.js';
 import { AuditLedger } from '../../models/AuditLedger.js';
 import SecurityLog from '../../models/securityLogModel.js';
 import Deal from '../../models/Deal.js';
 import Tenant from '../../models/Tenant.js';
 import loggerRaw from '../../utils/logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
-import crypto from 'crypto';
-import { EventEmitter } from 'events';
 
 // ============================================================================
 // CONSTANTS - GTI CONFIGURATION
@@ -43,10 +44,18 @@ import { EventEmitter } from 'events';
 const GTI_CONFIG = {
   UPDATE_INTERVAL: 30000, // 30 seconds
   THREAT_LEVELS: {
-    CRITICAL: { min: 70, max: 100, color: '#FF0000', action: 'IMMEDIATE' },
-    ELEVATED: { min: 40, max: 69, color: '#FFA500', action: 'REVIEW' },
-    MODERATE: { min: 20, max: 39, color: '#FFFF00', action: 'MONITOR' },
-    STABLE: { min: 0, max: 19, color: '#00FF00', action: 'NORMAL' },
+    CRITICAL: {
+      min: 70, max: 100, color: '#FF0000', action: 'IMMEDIATE',
+    },
+    ELEVATED: {
+      min: 40, max: 69, color: '#FFA500', action: 'REVIEW',
+    },
+    MODERATE: {
+      min: 20, max: 39, color: '#FFFF00', action: 'MONITOR',
+    },
+    STABLE: {
+      min: 0, max: 19, color: '#00FF00', action: 'NORMAL',
+    },
   },
   WEIGHTS: {
     QUARANTINE: 15,
@@ -129,7 +138,7 @@ class GlobalThreatIntel extends EventEmitter {
             ...JSON.parse(data || '{}'),
             type: 'quarantine',
           };
-        })
+        }),
       );
 
       // 2. Fetch recent security events from Forensic Ledger
@@ -314,7 +323,7 @@ class GlobalThreatIntel extends EventEmitter {
 
     // Analyze security events for patterns
     const criticalEvents = metrics.securityEvents.filter(
-      (e) => e.severity === 'critical' || e.severity === 'breach'
+      (e) => e.severity === 'critical' || e.severity === 'breach',
     ).length;
 
     threatScore += criticalEvents * GTI_CONFIG.WEIGHTS.DATA_BREACH;
@@ -329,13 +338,12 @@ class GlobalThreatIntel extends EventEmitter {
   determineStatus(threatLevel) {
     if (threatLevel >= GTI_CONFIG.THREAT_LEVELS.CRITICAL.min) {
       return 'CRITICAL';
-    } else if (threatLevel >= GTI_CONFIG.THREAT_LEVELS.ELEVATED.min) {
+    } if (threatLevel >= GTI_CONFIG.THREAT_LEVELS.ELEVATED.min) {
       return 'ELEVATED';
-    } else if (threatLevel >= GTI_CONFIG.THREAT_LEVELS.MODERATE.min) {
+    } if (threatLevel >= GTI_CONFIG.THREAT_LEVELS.MODERATE.min) {
       return 'MODERATE';
-    } else {
-      return 'STABLE';
     }
+    return 'STABLE';
   }
 
   /**
@@ -681,8 +689,7 @@ class ThreatPredictor {
     // Simple trend analysis (would use time series models in production)
     const recent = history.slice(-10);
     const avg = recent.reduce((sum, h) => sum + h.threatLevel, 0) / recent.length;
-    const trend =
-      currentThreat > avg ? 'increasing' : currentThreat < avg ? 'decreasing' : 'stable';
+    const trend = currentThreat > avg ? 'increasing' : currentThreat < avg ? 'decreasing' : 'stable';
 
     return {
       nextHour: Math.round(currentThreat * 0.9 + avg * 0.1),
@@ -767,7 +774,7 @@ class ComplianceEngine {
 
   evaluatePOPIA(events) {
     const breaches = events.filter(
-      (e) => e.eventType === 'DATA_BREACH' && e.requiresBreachNotification === true
+      (e) => e.eventType === 'DATA_BREACH' && e.requiresBreachNotification === true,
     ).length;
 
     return {
@@ -780,7 +787,7 @@ class ComplianceEngine {
 
   evaluateGDPR(events) {
     const violations = events.filter(
-      (e) => e.eventType === 'CONSENT_VIOLATION' || e.eventType === 'DATA_EXFILTRATION_ATTEMPT'
+      (e) => e.eventType === 'CONSENT_VIOLATION' || e.eventType === 'DATA_EXFILTRATION_ATTEMPT',
     ).length;
 
     return {
@@ -792,7 +799,7 @@ class ComplianceEngine {
 
   evaluateJSE(events) {
     const dealAnomalies = events.filter(
-      (e) => e.eventType === 'DEAL_ANOMALY' || e.eventType === 'MATERIALITY_CHECK'
+      (e) => e.eventType === 'DEAL_ANOMALY' || e.eventType === 'MATERIALITY_CHECK',
     ).length;
 
     return {
@@ -804,7 +811,7 @@ class ComplianceEngine {
 
   evaluateSOC2(events) {
     const securityEvents = events.filter(
-      (e) => e.severity === 'critical' || e.severity === 'breach'
+      (e) => e.severity === 'critical' || e.severity === 'breach',
     ).length;
 
     return {
@@ -817,7 +824,7 @@ class ComplianceEngine {
   calculateOverallCompliance(events) {
     const totalEvents = events.length;
     const criticalEvents = events.filter(
-      (e) => e.severity === 'critical' || e.severity === 'breach'
+      (e) => e.severity === 'critical' || e.severity === 'breach',
     ).length;
 
     if (criticalEvents > 10) return 'CRITICAL';

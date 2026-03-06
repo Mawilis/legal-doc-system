@@ -5,7 +5,9 @@
  */
 
 import express from 'express';
-import { body, query, param, validationResult } from 'express-validator.js';
+import {
+  body, query, param, validationResult,
+} from 'express-validator.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 
@@ -74,7 +76,7 @@ router.get(
       trackError('usage', error.code || 'current_error');
       next(new AppError(error.message, 500, 'USAGE_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -98,7 +100,9 @@ router.get(
 
     try {
       const { id: tenantId } = req.tenantContext;
-      const { period = 'day', days = 30, startDate, endDate } = req.query;
+      const {
+        period = 'day', days = 30, startDate, endDate,
+      } = req.query;
 
       const history = await usageService.getUsageHistory(tenantId, {
         period,
@@ -121,7 +125,7 @@ router.get(
       trackError('usage', error.code || 'history_error');
       next(new AppError(error.message, 500, 'HISTORY_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -154,7 +158,7 @@ router.get(
       trackError('usage', error.code || 'prediction_error');
       next(new AppError(error.message, 500, 'PREDICTION_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -185,7 +189,7 @@ router.get(
       trackError('usage', error.code || 'alerts_error');
       next(new AppError(error.message, 500, 'ALERTS_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -223,7 +227,7 @@ router.post(
       trackError('usage', error.code || 'acknowledge_error');
       next(new AppError(error.message, 500, 'ACKNOWLEDGE_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -263,7 +267,7 @@ router.get(
       trackError('usage', error.code || 'recommendations_error');
       next(new AppError(error.message, 500, 'RECOMMENDATIONS_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -301,7 +305,7 @@ router.get(
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
         return res.send(exported);
-      } else if (format === 'pdf') {
+      } if (format === 'pdf') {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}.pdf"`);
         return res.send(exported);
@@ -318,7 +322,7 @@ router.get(
       trackError('usage', error.code || 'export_error');
       next(new AppError(error.message, 500, 'EXPORT_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================
@@ -353,7 +357,7 @@ router.get(
       trackError('usage', error.code || 'admin_error');
       next(new AppError(error.message, 500, 'ADMIN_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 // =============================================================================

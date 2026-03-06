@@ -21,7 +21,7 @@ const retentionPolicySchema = new mongoose.Schema(
       required: true,
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[a-zA-Z0-9_-]{8,64}$/.test(v);
         },
         message: 'Tenant ID must be 8-64 alphanumeric characters',
@@ -89,7 +89,7 @@ const retentionPolicySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Pre-save middleware to generate forensic hash
@@ -105,11 +105,11 @@ retentionPolicySchema.pre('save', function (next) {
         retentionYears: this.retentionYears,
         version: this.version,
         previousHash: this.previousHash || '',
-      })
+      }),
     );
     this.forensicHash = hash.digest('hex');
   }
-  next();
+  return;
 });
 
 // Add calculateRetentionEndDate method
@@ -138,7 +138,7 @@ retentionPolicySchema.methods.verifyIntegrity = function () {
       retentionYears: this.retentionYears,
       version: this.version,
       previousHash: this.previousHash || '',
-    })
+    }),
   );
   return hash.digest('hex') === this.forensicHash;
 };

@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ BILLING CONTROLLER - INVESTOR-GRADE MODULE                    ║
   ║ 91% cost reduction | R12B risk elimination | 94% margins      ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/billingController.js
  * INVESTOR VALUE PROPOSITION:
@@ -135,10 +135,11 @@ import { screenForAML } from '../services/compliance/FICAScreeningService.js';
 
 // Logger
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../utils/quantumLogger.js';
 import auditLogger from '../utils/auditLogger.js';
 import { metrics } from '../utils/metricsCollector.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // QUANTUM CONFIGURATION: FINANCIAL NEXUS PARAMETERS
@@ -162,13 +163,13 @@ requiredEnvVars.forEach((varName) => {
 });
 
 // Quantum constants
-const BILLING_SERVICE_URL = process.env.BILLING_SERVICE_URL;
+const { BILLING_SERVICE_URL } = process.env;
 const SERVICE_SECRET = process.env.BILLING_SERVICE_SECRET;
 const ENCRYPTION_KEY = process.env.FINANCIAL_ENCRYPTION_KEY;
 const VAT_NUMBER = process.env.COMPANY_VAT_NUMBER;
 const SARS_API_KEY = process.env.SARS_EFILING_API_KEY;
 const PAYMENT_GATEWAY_KEY = process.env.PAYMENT_GATEWAY_SECRET;
-const HSM_KEY_ID = process.env.HSM_KEY_ID;
+const { HSM_KEY_ID } = process.env;
 
 // Quantum Hyperledger: Billing Service Configuration with Multi-Layer Security
 const billingService = axios.create({
@@ -208,7 +209,7 @@ billingService.interceptors.request.use(
       config.data.encrypted = encryptSensitiveData(
         JSON.stringify(config.data.sensitive),
         ENCRYPTION_KEY,
-        { context: 'financial_transmission' }
+        { context: 'financial_transmission' },
       );
       delete config.data.sensitive;
     }
@@ -221,7 +222,7 @@ billingService.interceptors.request.use(
     config.headers['x-timestamp'] = new Date().toISOString();
     config.headers['x-quantum-signature'] = generateDigitalSignature(
       JSON.stringify(config.data),
-      SERVICE_SECRET
+      SERVICE_SECRET,
     );
 
     return config;
@@ -230,7 +231,7 @@ billingService.interceptors.request.use(
     logger.error('💥 QUANTUM INTERCEPTOR ERROR:', { error: error.message });
     metrics.increment('billing.interceptor.error', { type: 'request' });
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor for decryption and validation
@@ -241,7 +242,7 @@ billingService.interceptors.response.use(
     if (signature) {
       const expectedSignature = generateDigitalSignature(
         JSON.stringify(response.data),
-        SERVICE_SECRET
+        SERVICE_SECRET,
       );
       if (signature !== expectedSignature) {
         throw new Error('QUANTUM_SIGNATURE_MISMATCH: Response integrity compromised');
@@ -251,7 +252,7 @@ billingService.interceptors.response.use(
     // Decrypt sensitive data
     if (response.data && response.data.encrypted) {
       response.data.decrypted = JSON.parse(
-        decryptSensitiveData(response.data.encrypted, ENCRYPTION_KEY)
+        decryptSensitiveData(response.data.encrypted, ENCRYPTION_KEY),
       );
       delete response.data.encrypted;
     }
@@ -288,7 +289,7 @@ billingService.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 // ============================================================================
@@ -315,8 +316,8 @@ function validateFinancialCompliance(financialData) {
     if (variance > 0.01) {
       throw new Error(
         `SARS_VAT_DISCREPANCY: Expected R${expectedVAT.toFixed(
-          2
-        )}, got R${financialData.vatAmount.toFixed(2)}`
+          2,
+        )}, got R${financialData.vatAmount.toFixed(2)}`,
       );
     }
   }
@@ -463,7 +464,7 @@ export const calculateFees = [
           res,
           403,
           'Insufficient permissions for fee calculation',
-          'ERR_PERMISSION_DENIED'
+          'ERR_PERMISSION_DENIED',
         );
       }
 
@@ -652,7 +653,9 @@ export const getTariffs = [
   sanitizeFinancialInput,
   asyncHandler(async (req, res) => {
     const startTime = performance.now();
-    const { jurisdiction = 'ZA', serviceType, page = 1, limit = 50 } = req.query;
+    const {
+      jurisdiction = 'ZA', serviceType, page = 1, limit = 50,
+    } = req.query;
     const correlationId = req.correlationId || `TAR-${Date.now()}-${uuidv4().substring(0, 8)}`;
 
     try {
@@ -756,7 +759,7 @@ export const getTariffs = [
           res,
           503,
           'Tariff registry unavailable',
-          'ERR_TARIFF_SERVICE_UNAVAILABLE'
+          'ERR_TARIFF_SERVICE_UNAVAILABLE',
         );
       }
 
@@ -782,7 +785,9 @@ export const createInvoice = [
     const correlationId = req.correlationId || `INV-${Date.now()}-${uuidv4().substring(0, 8)}`;
 
     try {
-      const { matterId, clientId, items, paymentTerms = 'NET_30', dueDate, notes } = req.body;
+      const {
+        matterId, clientId, items, paymentTerms = 'NET_30', dueDate, notes,
+      } = req.body;
 
       // Validate required fields
       if (!matterId || !clientId || !items || !items.length) {
@@ -791,7 +796,7 @@ export const createInvoice = [
           res,
           400,
           'Missing required fields: matterId, clientId, items',
-          'ERR_INVOICE_VALIDATION'
+          'ERR_INVOICE_VALIDATION',
         );
       }
 
@@ -807,7 +812,7 @@ export const createInvoice = [
       const invoiceNumber = generateTaxInvoiceNumber(
         req.user.tenantId,
         invoiceCount + 1,
-        req.user.jurisdiction || 'ZA'
+        req.user.jurisdiction || 'ZA',
       );
 
       // Calculate totals
@@ -960,7 +965,9 @@ export const processPayment = [
     const correlationId = req.correlationId || `PAY-${Date.now()}-${uuidv4().substring(0, 8)}`;
 
     try {
-      const { invoiceId, amount, paymentMethod, paymentDetails, clientInfo } = req.body;
+      const {
+        invoiceId, amount, paymentMethod, paymentDetails, clientInfo,
+      } = req.body;
 
       // Validate required fields
       if (!invoiceId || !amount || !paymentMethod) {
@@ -969,7 +976,7 @@ export const processPayment = [
           res,
           400,
           'Missing required fields: invoiceId, amount, paymentMethod',
-          'ERR_PAYMENT_VALIDATION'
+          'ERR_PAYMENT_VALIDATION',
         );
       }
 
@@ -988,7 +995,7 @@ export const processPayment = [
         const ficaCheck = await verifyFICACompliance(
           req.user.tenantId,
           amount,
-          clientInfo || invoice.clientInfo
+          clientInfo || invoice.clientInfo,
         );
 
         if (!ficaCheck.compliant) {
@@ -998,7 +1005,7 @@ export const processPayment = [
             403,
             'FICA enhanced due diligence required',
             'ERR_FICA_ENHANCED_DD_REQUIRED',
-            { ficaCheck }
+            { ficaCheck },
           );
         }
       }
@@ -1007,7 +1014,7 @@ export const processPayment = [
       const encryptedDetails = encryptSensitiveData(
         JSON.stringify(paymentDetails || {}),
         ENCRYPTION_KEY,
-        { context: 'payment_processing' }
+        { context: 'payment_processing' },
       );
 
       const paymentData = {
@@ -1156,7 +1163,7 @@ export const processPayment = [
           res,
           403,
           'Payment flagged for potential fraud',
-          'ERR_FRAUD_DETECTED'
+          'ERR_FRAUD_DETECTED',
         );
       }
 
@@ -1178,7 +1185,9 @@ export const getFinancialAnalytics = [
   sanitizeFinancialInput,
   asyncHandler(async (req, res) => {
     const startTime = performance.now();
-    const { startDate, endDate, period = 'monthly', metrics: requestedMetrics = [] } = req.query;
+    const {
+      startDate, endDate, period = 'monthly', metrics: requestedMetrics = [],
+    } = req.query;
     const correlationId = req.correlationId || `ANA-${Date.now()}-${uuidv4().substring(0, 8)}`;
 
     try {
@@ -1245,10 +1254,10 @@ export const getFinancialAnalytics = [
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
       const currentMonthInvoice = invoiceStats.find(
-        (s) => s._id.month === currentMonth && s._id.year === currentYear
+        (s) => s._id.month === currentMonth && s._id.year === currentYear,
       );
       const currentMonthPayment = paymentStats.find(
-        (s) => s._id.month === currentMonth && s._id.year === currentYear
+        (s) => s._id.month === currentMonth && s._id.year === currentYear,
       );
 
       const processingTime = performance.now() - startTime;
@@ -1337,7 +1346,7 @@ export const getFinancialAnalytics = [
         res,
         500,
         'Failed to retrieve financial analytics',
-        'ERR_ANALYTICS_FAILED'
+        'ERR_ANALYTICS_FAILED',
       );
     }
   }),
@@ -1394,11 +1403,11 @@ export const getInvoices = [
         ...inv,
         clientInfo: inv.clientInfo
           ? {
-              ...inv.clientInfo,
-              email: inv.clientInfo.email ? '*@*.com' : undefined,
-              phone: inv.clientInfo.phone ? '*'.concat(inv.clientInfo.phone.slice(-4)) : undefined,
-              taxId: inv.clientInfo.taxId ? `*${inv.clientInfo.taxId.slice(-4)}` : undefined,
-            }
+            ...inv.clientInfo,
+            email: inv.clientInfo.email ? '*@*.com' : undefined,
+            phone: inv.clientInfo.phone ? '*'.concat(inv.clientInfo.phone.slice(-4)) : undefined,
+            taxId: inv.clientInfo.taxId ? `*${inv.clientInfo.taxId.slice(-4)}` : undefined,
+          }
           : undefined,
       }));
 
@@ -1411,7 +1420,9 @@ export const getInvoices = [
           if (inv.status === 'draft') acc.draftCount += 1;
           return acc;
         },
-        { totalAmount: 0, paidAmount: 0, overdueAmount: 0, draftCount: 0 }
+        {
+          totalAmount: 0, paidAmount: 0, overdueAmount: 0, draftCount: 0,
+        },
       );
 
       res.json({
@@ -1443,7 +1454,7 @@ export const getInvoices = [
         res,
         500,
         'Failed to retrieve invoices',
-        'ERR_INVOICE_FETCH_FAILED'
+        'ERR_INVOICE_FETCH_FAILED',
       );
     }
   }),
@@ -1476,7 +1487,7 @@ export const getInvoiceById = [
       // Verify hash integrity
       const verification = await verifyFinancialTransaction(
         { invoiceId: invoice.invoiceId, total: invoice.total },
-        invoice.blockchainHash
+        invoice.blockchainHash,
       );
 
       // Redact sensitive data
@@ -1484,15 +1495,15 @@ export const getInvoiceById = [
         ...invoice,
         clientInfo: invoice.clientInfo
           ? {
-              ...invoice.clientInfo,
-              email: invoice.clientInfo.email ? '*@*.com' : undefined,
-              phone: invoice.clientInfo.phone
-                ? '*'.concat(invoice.clientInfo.phone.slice(-4))
-                : undefined,
-              taxId: invoice.clientInfo.taxId
-                ? `*${invoice.clientInfo.taxId.slice(-4)}`
-                : undefined,
-            }
+            ...invoice.clientInfo,
+            email: invoice.clientInfo.email ? '*@*.com' : undefined,
+            phone: invoice.clientInfo.phone
+              ? '*'.concat(invoice.clientInfo.phone.slice(-4))
+              : undefined,
+            taxId: invoice.clientInfo.taxId
+              ? `*${invoice.clientInfo.taxId.slice(-4)}`
+              : undefined,
+          }
           : undefined,
       };
 

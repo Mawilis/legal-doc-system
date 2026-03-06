@@ -1,10 +1,10 @@
 #!/* eslint-disable */
 
 /* eslint-env jest */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ BILLING REPORT SERVICE TESTS - INVESTOR DUE DILIGENCE         ║
   ║ 100% coverage | Forensic traceability | Upsell validation     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/services/billing/BillingReportService.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -18,6 +18,17 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
+import TenantConfig from '../../../models/TenantConfig.js';
+import UsageHistory from '../../../models/UsageHistory.js';
+import BillingInvoice from '../../../models/BillingInvoice.js';
+import auditLogger from '../../../utils/auditLogger.js';
+import loggerRaw from '../../../utils/logger.js';
+import quantumLogger from '../../../utils/quantumLogger.js';
+import {
+  generateMonthlyBillingReport,
+  generateInvestorBillingSummary,
+} from '../../../services/billing/BillingReportService.js';
+
 // Mock dependencies
 jest.mock('../../../models/TenantConfig.js');
 jest.mock('../../../models/UsageHistory.js');
@@ -26,18 +37,7 @@ jest.mock('../../../utils/auditLogger.js');
 jest.mock('../../../utils/logger.js');
 jest.mock('../../../utils/quantumLogger.js');
 jest.mock('../../../utils/cryptoUtils.js');
-
-import TenantConfig from '../../../models/TenantConfig.js';
-import UsageHistory from '../../../models/UsageHistory.js';
-import BillingInvoice from '../../../models/BillingInvoice.js';
-import auditLogger from '../../../utils/auditLogger.js';
-import loggerRaw from '../../../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
-import quantumLogger from '../../../utils/quantumLogger.js';
-import {
-  generateMonthlyBillingReport,
-  generateInvestorBillingSummary,
-} from '../../../services/billing/BillingReportService.js';
 
 describe('BillingReportService - Forensic Billing Due Diligence', () => {
   let mockTenantId;
@@ -149,12 +149,12 @@ describe('BillingReportService - Forensic Billing Due Diligence', () => {
           userId: mockUserId,
           retentionPolicy: 'companies_act_10_years',
           dataResidency: 'ZA',
-        })
+        }),
       );
 
       // Log economic metric
       console.log(
-        `✓ Annual Savings/Client: R${(report.value.manualCostEquivalent / 1000).toFixed(0)}K`
+        `✓ Annual Savings/Client: R${(report.value.manualCostEquivalent / 1000).toFixed(0)}K`,
       );
       console.log(`✓ Report ROI: ${report.value.roi}%`);
       console.log(`✓ Time Savings: ${report.value.timeSavingsHours} hours/month`);
@@ -193,7 +193,7 @@ describe('BillingReportService - Forensic Billing Due Diligence', () => {
       TenantConfig.findOne.mockResolvedValue(null);
 
       await expect(generateMonthlyBillingReport('invalid-tenant', 'premium')).rejects.toThrow(
-        'Tenant not found'
+        'Tenant not found',
       );
     });
 
@@ -234,8 +234,8 @@ describe('BillingReportService - Forensic Billing Due Diligence', () => {
 
       const report = await generateMonthlyBillingReport(mockTenantId, 'premium');
 
-      const totalQueries = report.usage.totalQueries;
-      const daysInPeriod = report.period.daysInPeriod;
+      const { totalQueries } = report.usage;
+      const { daysInPeriod } = report.period;
 
       expect(report.usage.dailyAverage).toBe(Math.round(totalQueries / daysInPeriod));
     });
@@ -432,7 +432,7 @@ describe('BillingReportService - Forensic Billing Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'billing-report-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -444,7 +444,7 @@ describe('BillingReportService - Forensic Billing Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'billing-report-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);
@@ -452,7 +452,7 @@ describe('BillingReportService - Forensic Billing Due Diligence', () => {
       // Economic metrics
       console.log('✓ Annual Savings/Client: R765,000');
       console.log('✓ Upsell Revenue Increase: 15%');
-      console.log('✓ Report ROI:', report.value.roi.toFixed(1) + '%');
+      console.log('✓ Report ROI:', `${report.value.roi.toFixed(1)}%`);
       console.log('✓ Time Savings:', report.value.timeSavingsHours, 'hours/month');
       console.log('✓ Evidence Hash:', hash.substring(0, 8));
     });

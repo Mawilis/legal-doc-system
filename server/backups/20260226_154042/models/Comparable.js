@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - COMPARABLE COMPANY MODEL v1.0                                  ║
   ║ [Valuation Multiples | Industry Benchmarks | Market Data]                ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Comparable.js
@@ -10,8 +10,8 @@
  * CREATED: 2026-02-24
  */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 // ============================================================================
 // ENUMS & CONSTANTS
@@ -76,19 +76,29 @@ export const CONFIDENCE_LEVELS = {
 // ============================================================================
 
 const companyProfileSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true, index: true },
-  ticker: { type: String, uppercase: true, trim: true, sparse: true, index: true },
+  name: {
+    type: String, required: true, trim: true, index: true,
+  },
+  ticker: {
+    type: String, uppercase: true, trim: true, sparse: true, index: true,
+  },
   isin: {
     type: String,
     uppercase: true,
     trim: true,
     sparse: true,
-    validate: { validator: (v) => !v || /^[A-Z]{2}[A-Z0-9]{9}\d$/.test(v) }
+    validate: { validator: (v) => !v || /^[A-Z]{2}[A-Z0-9]{9}\d$/.test(v) },
   },
-  cusip: { type: String, uppercase: true, trim: true, sparse: true },
-  sedol: { type: String, uppercase: true, trim: true, sparse: true },
+  cusip: {
+    type: String, uppercase: true, trim: true, sparse: true,
+  },
+  sedol: {
+    type: String, uppercase: true, trim: true, sparse: true,
+  },
   market: { type: String, enum: Object.values(COMPARABLE_MARKETS), required: true },
-  country: { type: String, default: 'ZA', uppercase: true, maxlength: 2 },
+  country: {
+    type: String, default: 'ZA', uppercase: true, maxlength: 2,
+  },
   sector: { type: String, required: true, index: true },
   industry: { type: String, required: true, index: true },
   subIndustry: String,
@@ -106,7 +116,9 @@ const companyProfileSchema = new mongoose.Schema({
 const financialMultiplesSchema = new mongoose.Schema({
   asOfDate: { type: Date, required: true },
   fiscalYear: { type: Number, required: true },
-  currency: { type: String, enum: Object.values(COMPARABLE_CURRENCY), required: true, default: 'ZAR' },
+  currency: {
+    type: String, enum: Object.values(COMPARABLE_CURRENCY), required: true, default: 'ZAR',
+  },
 
   marketCap: { value: { type: Number, required: true }, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'high' } },
   enterpriseValue: { value: { type: Number, required: true }, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'high' } },
@@ -127,9 +139,15 @@ const financialMultiplesSchema = new mongoose.Schema({
   buybackYield: { value: Number, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'medium' } },
   fcfYield: { value: Number, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'medium' } },
 
-  revenueGrowth: { qoq: Number, yoy: Number, threeYearCAGR: Number, fiveYearCAGR: Number, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'medium' } },
-  ebitdaGrowth: { yoy: Number, threeYearCAGR: Number, fiveYearCAGR: Number, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'medium' } },
-  epsGrowth: { yoy: Number, threeYearCAGR: Number, fiveYearCAGR: Number, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'medium' } },
+  revenueGrowth: {
+    qoq: Number, yoy: Number, threeYearCAGR: Number, fiveYearCAGR: Number, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'medium' },
+  },
+  ebitdaGrowth: {
+    yoy: Number, threeYearCAGR: Number, fiveYearCAGR: Number, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'medium' },
+  },
+  epsGrowth: {
+    yoy: Number, threeYearCAGR: Number, fiveYearCAGR: Number, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'medium' },
+  },
 
   grossMargin: { value: Number, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'high' } },
   operatingMargin: { value: Number, confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'high' } },
@@ -158,12 +176,18 @@ const tradingDataSchema = new mongoose.Schema({
   price: { value: { type: Number, required: true }, currency: { type: String, enum: Object.values(COMPARABLE_CURRENCY), default: 'ZAR' } },
   sharesOutstanding: Number,
   volume: { daily: Number, average30Day: Number, average90Day: Number },
-  priceRange: { dayLow: Number, dayHigh: Number, week52Low: Number, week52High: Number },
+  priceRange: {
+    dayLow: Number, dayHigh: Number, week52Low: Number, week52High: Number,
+  },
   beta: { value: Number, period: { type: String, enum: ['1y', '3y', '5y'], default: '5y' } },
   volatility: { daily: Number, annualized: Number },
   shortInterest: { shares: Number, percentFloat: Number, ratio: Number },
-  analystCoverage: { count: Number, buy: Number, hold: Number, sell: Number, targetPrice: Number },
-  liquidity: { bid: Number, ask: Number, spread: Number, depth: Number }
+  analystCoverage: {
+    count: Number, buy: Number, hold: Number, sell: Number, targetPrice: Number,
+  },
+  liquidity: {
+    bid: Number, ask: Number, spread: Number, depth: Number,
+  },
 });
 
 const sourceMetadataSchema = new mongoose.Schema({
@@ -175,7 +199,7 @@ const sourceMetadataSchema = new mongoose.Schema({
   dataFreshness: { type: String, enum: ['real_time', 'daily', 'weekly', 'monthly', 'quarterly', 'annual'], required: true },
   confidence: { type: String, enum: Object.values(CONFIDENCE_LEVELS), default: 'medium' },
   notes: String,
-  rawData: mongoose.Schema.Types.Mixed
+  rawData: mongoose.Schema.Types.Mixed,
 });
 
 const peerComparisonSchema = new mongoose.Schema({
@@ -187,7 +211,7 @@ const peerComparisonSchema = new mongoose.Schema({
   peerMax: Number,
   percentileRank: Number,
   zScore: Number,
-  interpretation: String
+  interpretation: String,
 });
 
 // ============================================================================
@@ -200,14 +224,14 @@ const comparableSchema = new mongoose.Schema({
     required: true,
     unique: true,
     index: true,
-    default: () => `CMP-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+    default: () => `CMP-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
   },
 
   tenantId: {
     type: String,
     required: true,
     index: true,
-    validate: { validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v) }
+    validate: { validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v) },
   },
 
   company: { type: companyProfileSchema, required: true },
@@ -220,8 +244,12 @@ const comparableSchema = new mongoose.Schema({
   inclusionCriteria: [String],
   exclusionCriteria: [String],
 
-  comparabilityScore: { type: Number, min: 0, max: 100, default: 50 },
-  similarityScore: { type: Number, min: 0, max: 100, default: 50 },
+  comparabilityScore: {
+    type: Number, min: 0, max: 100, default: 50,
+  },
+  similarityScore: {
+    type: Number, min: 0, max: 100, default: 50,
+  },
 
   isActive: { type: Boolean, default: true, index: true },
   isPublic: { type: Boolean, default: true },
@@ -238,20 +266,22 @@ const comparableSchema = new mongoose.Schema({
     medianPE: Number,
     averageEVEBITDA: Number,
     medianEVEBITDA: Number,
-    asOfDate: Date
+    asOfDate: Date,
   },
 
   retention: {
     policy: { type: String, enum: ['market_data_1_year', 'companies_act_10_years', 'forensic_permanent'], default: 'market_data_1_year' },
     dataResidency: { type: String, enum: ['ZA', 'US', 'EU', 'GB', 'AU'], default: 'ZA' },
     retentionStart: { type: Date, default: Date.now },
-    retentionEnd: Date
+    retentionEnd: Date,
   },
 
   forensic: {
-    hash: { type: String, required: true, unique: true, match: /^[a-f0-9]{64}$/ },
+    hash: {
+      type: String, required: true, unique: true, match: /^[a-f0-9]{64}$/,
+    },
     previousHash: { type: String, match: /^[a-f0-9]{64}$/ },
-    chainVerified: { type: Boolean, default: false }
+    chainVerified: { type: Boolean, default: false },
   },
 
   audit: {
@@ -265,17 +295,17 @@ const comparableSchema = new mongoose.Schema({
       newValue: mongoose.Schema.Types.Mixed,
       changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       changedAt: Date,
-      reason: String
-    }]
+      reason: String,
+    }],
   },
 
-  version: { type: Number, default: 1 }
+  version: { type: Number, default: 1 },
 }, {
   timestamps: true,
   collection: 'comparables',
   strict: true,
   minimize: false,
-  toJSON: { virtuals: true, transform: (doc, ret) => { delete ret.forensic; return ret; } }
+  toJSON: { virtuals: true, transform: (doc, ret) => { delete ret.forensic; return ret; } },
 });
 
 // ============================================================================
@@ -298,7 +328,7 @@ comparableSchema.statics.calculateMedian = function (numbers) {
 comparableSchema.statics.calculateStdDev = function (numbers) {
   if (!numbers || numbers.length === 0) return 0;
   const mean = this.calculateAverage(numbers);
-  const squaredDiffs = numbers.map(v => Math.pow(v - mean, 2));
+  const squaredDiffs = numbers.map((v) => (v - mean) ** 2);
   const variance = this.calculateAverage(squaredDiffs);
   return Math.sqrt(variance);
 };
@@ -322,10 +352,12 @@ comparableSchema.index({
   'company.ticker': 'text',
   'company.sector': 'text',
   'company.industry': 'text',
-  tags: 'text'
+  tags: 'text',
 }, {
-  weights: { 'company.name': 10, 'company.ticker': 8, 'company.sector': 5, 'company.industry': 5, tags: 3 },
-  name: 'comparable_search_index'
+  weights: {
+    'company.name': 10, 'company.ticker': 8, 'company.sector': 5, 'company.industry': 5, tags: 3,
+  },
+  name: 'comparable_search_index',
 });
 
 // ============================================================================
@@ -349,13 +381,13 @@ comparableSchema.pre('save', async function (next) {
     if (this.financials && this.financials.length > 0) {
       this.statistics = {
         count: this.financials.length,
-        averageMarketCap: this.constructor.calculateAverage(this.financials.map(f => f.marketCap?.value).filter(v => v != null)),
-        medianMarketCap: this.constructor.calculateMedian(this.financials.map(f => f.marketCap?.value).filter(v => v != null)),
-        averagePE: this.constructor.calculateAverage(this.financials.map(f => f.peRatio?.ttm).filter(v => v != null)),
-        medianPE: this.constructor.calculateMedian(this.financials.map(f => f.peRatio?.ttm).filter(v => v != null)),
-        averageEVEBITDA: this.constructor.calculateAverage(this.financials.map(f => f.evEbitda?.ttm).filter(v => v != null)),
-        medianEVEBITDA: this.constructor.calculateMedian(this.financials.map(f => f.evEbitda?.ttm).filter(v => v != null)),
-        asOfDate: new Date()
+        averageMarketCap: this.constructor.calculateAverage(this.financials.map((f) => f.marketCap?.value).filter((v) => v != null)),
+        medianMarketCap: this.constructor.calculateMedian(this.financials.map((f) => f.marketCap?.value).filter((v) => v != null)),
+        averagePE: this.constructor.calculateAverage(this.financials.map((f) => f.peRatio?.ttm).filter((v) => v != null)),
+        medianPE: this.constructor.calculateMedian(this.financials.map((f) => f.peRatio?.ttm).filter((v) => v != null)),
+        averageEVEBITDA: this.constructor.calculateAverage(this.financials.map((f) => f.evEbitda?.ttm).filter((v) => v != null)),
+        medianEVEBITDA: this.constructor.calculateMedian(this.financials.map((f) => f.evEbitda?.ttm).filter((v) => v != null)),
+        asOfDate: new Date(),
       };
     }
 
@@ -367,7 +399,7 @@ comparableSchema.pre('save', async function (next) {
       ticker: this.company.ticker,
       peerGroup: this.peerGroup,
       latestFinancials: this.financials?.[0],
-      version: this.version
+      version: this.version,
     };
     const canonicalData = JSON.stringify(hashData, Object.keys(hashData).sort());
     this.forensic.hash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -376,7 +408,7 @@ comparableSchema.pre('save', async function (next) {
       const prev = await this.constructor.findOne({
         'company.ticker': this.company.ticker,
         tenantId: this.tenantId,
-        version: this.version - 1
+        version: this.version - 1,
       });
       if (prev) this.forensic.previousHash = prev.forensic.hash;
     }
@@ -408,7 +440,7 @@ comparableSchema.methods.getLatestTradingData = function () {
 
 comparableSchema.methods.getPeerComparison = async function (metric) {
   const peers = await this.constructor.find({ 'company.sector': this.company.sector, isActive: true, tenantId: this.tenantId });
-  const values = peers.map(p => p.getLatestFinancials()?.[metric]).filter(v => v != null && !isNaN(v));
+  const values = peers.map((p) => p.getLatestFinancials()?.[metric]).filter((v) => v != null && !isNaN(v));
 
   if (!values.length) return null;
 
@@ -422,7 +454,7 @@ comparableSchema.methods.getPeerComparison = async function (metric) {
 
   let percentileRank = 0;
   if (companyValue != null) {
-    const below = values.filter(v => v < companyValue).length;
+    const below = values.filter((v) => v < companyValue).length;
     percentileRank = (below / values.length) * 100;
   }
 
@@ -437,7 +469,7 @@ comparableSchema.methods.getPeerComparison = async function (metric) {
     peerMax: max,
     percentileRank,
     zScore,
-    interpretation: this.interpretZScore(zScore)
+    interpretation: this.interpretZScore(zScore),
   };
 };
 

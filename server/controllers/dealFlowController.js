@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL FLOW CONTROLLER - INVESTOR-GRADE M&A API ENDPOINTS                               ║
   ║ R3.5B/year deal flow | Real-time synergy scoring | Regulatory compliance              ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/dealFlowController.js
@@ -16,46 +16,40 @@
  * • Compliance: Competition Act 89 of 1998, JSE Listings §3.4
  */
 
+import crypto from 'crypto';
 import MergerAcquisitionService from '../services/mergerAcquisitionService.js';
 import { AuditLogger } from '../utils/auditLogger.js';
 import Logger from '../utils/logger.js';
 import tenantContext from '../middleware/tenantContext.js';
 import { Deal } from '../models/Deal.js';
 import { Target } from '../models/Target.js';
-import crypto from 'crypto';
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
-const generateCorrelationId = (req) => {
-  return (
-    req.headers['x-correlation-id'] || `deal-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
-  );
-};
+const generateCorrelationId = (req) => (
+  req.headers['x-correlation-id'] || `deal-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+);
 
-const formatSuccess = (data, correlationId, metadata = {}) => {
-  return {
-    success: true,
-    correlationId,
-    timestamp: new Date().toISOString(),
-    data,
-    metadata,
-  };
-};
+const formatSuccess = (data, correlationId, metadata = {}) => ({
+  success: true,
+  correlationId,
+  timestamp: new Date().toISOString(),
+  data,
+  metadata,
+});
 
-const formatError = (error, correlationId, statusCode = 500) => {
-  return {
-    success: false,
-    correlationId,
-    timestamp: new Date().toISOString(),
-    error: {
-      code: error.code || 'INTERNAL_ERROR',
-      message: error.message || 'An unexpected error occurred',
-      statusCode,
-    },
-  };
-};
+const formatError = (error, correlationId, statusCode = 500) => ({
+  success: false,
+  correlationId,
+  timestamp: new Date().toISOString(),
+  error: {
+    code: error.code || 'INTERNAL_ERROR',
+    message: error.message || 'An unexpected error occurred',
+    statusCode,
+  },
+});
 
 // ============================================================================
 // CONTROLLER METHODS
@@ -97,7 +91,7 @@ export const identifyTargets = async (req, res) => {
       formatSuccess(targets, correlationId, {
         count: targets.length,
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('dealFlowController.identifyTargets failed', {
@@ -148,7 +142,7 @@ export const createDeal = async (req, res) => {
     res.status(201).json(
       formatSuccess(deal, correlationId, {
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('dealFlowController.createDeal failed', {
@@ -202,7 +196,7 @@ export const calculateSynergy = async (req, res) => {
     res.status(200).json(
       formatSuccess(synergy, correlationId, {
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('dealFlowController.calculateSynergy failed', {
@@ -251,7 +245,7 @@ export const assessRegulatory = async (req, res) => {
     res.status(200).json(
       formatSuccess(assessments, correlationId, {
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('dealFlowController.assessRegulatory failed', {
@@ -303,7 +297,7 @@ export const simulateIntegration = async (req, res) => {
     res.status(200).json(
       formatSuccess(simulation, correlationId, {
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('dealFlowController.simulateIntegration failed', {
@@ -378,7 +372,7 @@ export const listDeals = async (req, res) => {
       formatSuccess(result.deals, correlationId, {
         pagination: result.pagination,
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('dealFlowController.listDeals failed', {
@@ -473,7 +467,7 @@ export const getTargets = async (req, res) => {
     res.status(200).json(
       formatSuccess(targets, correlationId, {
         count: targets.length,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('dealFlowController.getTargets failed', {

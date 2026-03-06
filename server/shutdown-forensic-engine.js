@@ -27,13 +27,13 @@ console.log('');
 console.log(
   `${colors.blue}═══════════════════════════════════════════════════════════════════════════════${
     colors.reset
-  }`
+  }`,
 );
 console.log(`${colors.yellow}                 SHUTTING DOWN WILSY OS${colors.reset}`);
 console.log(
   `${colors.blue}═══════════════════════════════════════════════════════════════════════════════${
     colors.reset
-  }`
+  }`,
 );
 console.log('');
 
@@ -71,7 +71,7 @@ async function main() {
   // Final cleanup
   try {
     execSync(
-      'pkill -f "node.*(server|precedentVectorizer|MonitoringDashboard)" 2>/dev/null || true'
+      'pkill -f "node.*(server|precedentVectorizer|MonitoringDashboard)" 2>/dev/null || true',
     );
   } catch (error) {
     // Ignore

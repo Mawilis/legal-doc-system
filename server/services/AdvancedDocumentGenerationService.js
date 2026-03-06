@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ ADVANCED DOCUMENT GENERATION ENGINE v3.0                                  ║
   ║ Neural + Quantum + Genetic + Predictive = UNSTOPPABLE                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import { NeuralTemplateEngine } from '../algorithms/neural/TemplateNeuralEngine.js';
 import { QuantumDocumentEngine } from '../algorithms/quantum/QuantumDocumentEngine.js';

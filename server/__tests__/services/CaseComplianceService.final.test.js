@@ -185,13 +185,12 @@ describe('Service Method Validation (Static Tests)', () => {
   test('TC-METHOD-003: Data Residency Calculation', () => {
     const calculateDisposalDate = (startDate, policyRule) => {
       const disposalDate = new Date(startDate);
-      const yearIncrement =
-        {
-          COMPANIES_ACT_7YR: 7,
-          LPC_6YR: 6,
-          PAIA_5YR: 5,
-          PERMANENT: 100,
-        }[policyRule] || 7;
+      const yearIncrement = {
+        COMPANIES_ACT_7YR: 7,
+        LPC_6YR: 6,
+        PAIA_5YR: 5,
+        PERMANENT: 100,
+      }[policyRule] || 7;
 
       disposalDate.setFullYear(disposalDate.getFullYear() + yearIncrement);
       return disposalDate;
@@ -212,7 +211,7 @@ describe('Production Code Quality (File Inspection)', () => {
 
     const serviceCode = fs.readFileSync(
       path.join(__dirname, '../../services/CaseComplianceService.js'),
-      'utf8'
+      'utf8',
     );
 
     expect(serviceCode).not.toMatch(/console\.log/);
@@ -225,7 +224,7 @@ describe('Production Code Quality (File Inspection)', () => {
 
     const serviceCode = fs.readFileSync(
       path.join(__dirname, '../../services/CaseComplianceService.js'),
-      'utf8'
+      'utf8',
     );
 
     // Check for essential compliance patterns
@@ -329,7 +328,7 @@ test('FINAL-ACCEPTANCE: All Investor Criteria Met', () => {
   };
 
   const allPass = Object.values(acceptanceCriteria).every(
-    (criterion) => criterion.status === 'PASS'
+    (criterion) => criterion.status === 'PASS',
   );
 
   console.log('\n=== FINAL ACCEPTANCE REPORT ===');

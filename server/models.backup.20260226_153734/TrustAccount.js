@@ -85,10 +85,10 @@ const trustAccountSchema = new Schema(
       index: true,
       immutable: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v);
         },
-        message: function (props) {
+        message(props) {
           return `${props.value} is not a valid tenant UUID`;
         },
       },
@@ -98,14 +98,14 @@ const trustAccountSchema = new Schema(
       required: [true, 'Trust account number is required'],
       unique: true,
       immutable: true,
-      default: function () {
+      default() {
         return `TRUST-${uuidv4().toUpperCase()}`;
       },
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^TRUST-[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$/.test(v);
         },
-        message: function (props) {
+        message(props) {
           return `${props.value} is not a valid trust account number`;
         },
       },
@@ -122,25 +122,27 @@ const trustAccountSchema = new Schema(
       required: true,
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^(LPC-\d{8}|\d{4}\/\d{4})$/.test(v);
         },
-        message: function (props) {
+        message(props) {
           return `${props.value} is not a valid LPC number`;
         },
       },
     },
-    firmId: { type: Schema.Types.ObjectId, ref: 'Firm', required: true, index: true },
+    firmId: {
+      type: Schema.Types.ObjectId, ref: 'Firm', required: true, index: true,
+    },
     bankDetails: {
       bankName: { type: String, required: true, enum: Object.values(BANKS) },
       branchCode: {
         type: String,
         required: true,
         validate: {
-          validator: function (v) {
+          validator(v) {
             return /^\d{6}$/.test(v);
           },
-          message: function (props) {
+          message(props) {
             return `${props.value} is not a valid branch code`;
           },
         },
@@ -150,10 +152,10 @@ const trustAccountSchema = new Schema(
         type: String,
         required: true,
         validate: {
-          validator: function (v) {
+          validator(v) {
             return /^\d{6,10}$/.test(v);
           },
-          message: function (props) {
+          message(props) {
             return `${props.value} is not a valid account number`;
           },
         },
@@ -162,7 +164,7 @@ const trustAccountSchema = new Schema(
       swiftCode: {
         type: String,
         validate: {
-          validator: function (v) {
+          validator(v) {
             return !v || /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(v);
           },
         },
@@ -179,10 +181,10 @@ const trustAccountSchema = new Schema(
         required: true,
         default: 0,
         min: 0,
-        get: function (v) {
+        get(v) {
           return parseFloat(v.toFixed(2));
         },
-        set: function (v) {
+        set(v) {
           return parseFloat(v.toFixed(2));
         },
       },
@@ -191,34 +193,34 @@ const trustAccountSchema = new Schema(
         required: true,
         default: 0,
         min: 0,
-        get: function (v) {
+        get(v) {
           return parseFloat(v.toFixed(2));
         },
-        set: function (v) {
+        set(v) {
           return parseFloat(v.toFixed(2));
         },
       },
       pending: {
         type: Number,
         default: 0,
-        get: function (v) {
+        get(v) {
           return parseFloat(v.toFixed(2));
         },
-        set: function (v) {
+        set(v) {
           return parseFloat(v.toFixed(2));
         },
       },
       interestEarned: {
         type: Number,
         default: 0,
-        get: function (v) {
+        get(v) {
           return parseFloat(v.toFixed(2));
         },
       },
       interestPaid: {
         type: Number,
         default: 0,
-        get: function (v) {
+        get(v) {
           return parseFloat(v.toFixed(2));
         },
       },
@@ -235,17 +237,17 @@ const trustAccountSchema = new Schema(
           type: Number,
           required: true,
           default: 0,
-          get: function (v) {
+          get(v) {
             return parseFloat(v.toFixed(2));
           },
-          set: function (v) {
+          set(v) {
             return parseFloat(v.toFixed(2));
           },
         },
         pending: {
           type: Number,
           default: 0,
-          get: function (v) {
+          get(v) {
             return parseFloat(v.toFixed(2));
           },
         },
@@ -270,7 +272,7 @@ const trustAccountSchema = new Schema(
           type: String,
           required: true,
           unique: true,
-          default: function () {
+          default() {
             return `TX-${uuidv4()}`;
           },
           index: true,
@@ -281,30 +283,34 @@ const trustAccountSchema = new Schema(
           type: Number,
           required: true,
           min: 0.01,
-          get: function (v) {
+          get(v) {
             return parseFloat(v.toFixed(2));
           },
-          set: function (v) {
+          set(v) {
             return parseFloat(v.toFixed(2));
           },
         },
         runningBalance: {
           type: Number,
           required: true,
-          get: function (v) {
+          get(v) {
             return parseFloat(v.toFixed(2));
           },
-          set: function (v) {
+          set(v) {
             return parseFloat(v.toFixed(2));
           },
         },
         clientId: { type: String, required: true, index: true },
         clientName: { type: String, required: true },
         matterReference: { type: String, required: true, index: true },
-        description: { type: String, required: true, trim: true, maxlength: 500 },
+        description: {
+          type: String, required: true, trim: true, maxlength: 500,
+        },
         reference: { type: String, required: true, trim: true },
         status: { type: String, enum: Object.values(TRANSACTION_STATUS), default: 'COMPLETED' },
-        processedAt: { type: Date, default: Date.now, immutable: true, index: true },
+        processedAt: {
+          type: Date, default: Date.now, immutable: true, index: true,
+        },
         processedBy: { type: String, required: true },
         ipAddress: String,
         userAgent: String,
@@ -313,7 +319,7 @@ const trustAccountSchema = new Schema(
         merkleProof: Schema.Types.Mixed,
         nonce: {
           type: String,
-          default: function () {
+          default() {
             return crypto.randomBytes(16).toString('hex');
           },
         },
@@ -331,7 +337,7 @@ const trustAccountSchema = new Schema(
           type: String,
           required: true,
           unique: true,
-          default: function () {
+          default() {
             return `RECON-${uuidv4()}`;
           },
         },
@@ -343,27 +349,27 @@ const trustAccountSchema = new Schema(
         systemBalance: {
           type: Number,
           required: true,
-          get: function (v) {
+          get(v) {
             return parseFloat(v.toFixed(2));
           },
         },
         bankBalance: {
           type: Number,
           required: true,
-          get: function (v) {
+          get(v) {
             return parseFloat(v.toFixed(2));
           },
         },
         discrepancy: {
           type: Number,
           default: 0,
-          get: function (v) {
+          get(v) {
             return parseFloat(v.toFixed(2));
           },
         },
         isReconciled: {
           type: Boolean,
-          default: function () {
+          default() {
             return Math.abs(this.discrepancy) <= 0.01;
           },
         },
@@ -386,7 +392,7 @@ const trustAccountSchema = new Schema(
         statementHash: {
           type: String,
           validate: {
-            validator: function (v) {
+            validator(v) {
               return !v || /^[a-f0-9]{64}$/i.test(v);
             },
           },
@@ -399,7 +405,9 @@ const trustAccountSchema = new Schema(
       },
     ],
     interestSettings: {
-      rate: { type: Number, default: 0.025, min: 0, max: 0.1 },
+      rate: {
+        type: Number, default: 0.025, min: 0, max: 0.1,
+      },
       calculationBasis: { type: String, enum: ['DAILY', 'MONTHLY', 'QUARTERLY'], default: 'DAILY' },
       paymentThreshold: { type: Number, default: 5000, min: 0 },
       minimumInterest: { type: Number, default: 1.0, min: 0 },
@@ -411,14 +419,16 @@ const trustAccountSchema = new Schema(
       lastReconciliationDate: Date,
       nextReconciliationDue: {
         type: Date,
-        default: function () {
+        default() {
           const d = new Date();
           d.setDate(d.getDate() + 7);
           return d;
         },
         index: true,
       },
-      reconciliationScore: { type: Number, min: 0, max: 100, default: 100 },
+      reconciliationScore: {
+        type: Number, min: 0, max: 100, default: 100,
+      },
       overdueReconciliations: { type: Number, default: 0 },
       consecutiveReconciliations: { type: Number, default: 0 },
       flags: [
@@ -478,13 +488,13 @@ const trustAccountSchema = new Schema(
         reconciliationId: String,
         hash: {
           type: String,
-          default: function () {
+          default() {
             return crypto
               .createHash('sha3-512')
               .update(
                 `${this.action}:${this.performedAt.toISOString()}:${
                   this.performedBy
-                }:${JSON.stringify(this.changes)}`
+                }:${JSON.stringify(this.changes)}`,
               )
               .digest('hex');
           },
@@ -494,7 +504,7 @@ const trustAccountSchema = new Schema(
     integrityHash: {
       type: String,
       unique: true,
-      default: function () {
+      default() {
         return crypto
           .createHash('sha3-512')
           .update(`${this.accountNumber}:${this.balances.current}:${this.updatedAt || Date.now()}`)
@@ -503,7 +513,7 @@ const trustAccountSchema = new Schema(
     },
     quantumSignature: {
       type: String,
-      default: function () {
+      default() {
         return crypto
           .createHmac('sha3-512', process.env.QUANTUM_SECRET || 'wilsy-os-quantum-secure-2026')
           .update(`${this._id}:${this.accountNumber}:${this.integrityHash}`)
@@ -528,7 +538,7 @@ const trustAccountSchema = new Schema(
     retentionStart: { type: Date, default: Date.now, immutable: true },
     retentionExpiry: {
       type: Date,
-      default: function () {
+      default() {
         const d = new Date();
         d.setFullYear(d.getFullYear() + 10);
         return d;
@@ -547,7 +557,7 @@ const trustAccountSchema = new Schema(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret.__v;
         delete ret.auditTrail;
         delete ret.integrityHash;
@@ -558,7 +568,7 @@ const trustAccountSchema = new Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 // ====================================================================
@@ -580,27 +590,19 @@ trustAccountSchema.virtual('isOverdue').get(function () {
 });
 
 trustAccountSchema.virtual('totalClientCount').get(function () {
-  return this.clientBalances.filter(function (c) {
-    return c.status === 'ACTIVE';
-  }).length;
+  return this.clientBalances.filter((c) => c.status === 'ACTIVE').length;
 });
 
 trustAccountSchema.virtual('averageClientBalance').get(function () {
-  const active = this.clientBalances.filter(function (c) {
-    return c.status === 'ACTIVE';
-  });
+  const active = this.clientBalances.filter((c) => c.status === 'ACTIVE');
   if (active.length === 0) return 0;
-  const sum = active.reduce(function (s, c) {
-    return s + c.balance;
-  }, 0);
+  const sum = active.reduce((s, c) => s + c.balance, 0);
   return parseFloat((sum / active.length).toFixed(2));
 });
 
 trustAccountSchema.virtual('hasNegativeBalances').get(function () {
   return (
-    this.clientBalances.some(function (c) {
-      return c.balance < 0;
-    }) || this.balances.current < 0
+    this.clientBalances.some((c) => c.balance < 0) || this.balances.current < 0
   );
 });
 
@@ -813,7 +815,7 @@ trustAccountSchema.methods = {
             prevHash,
             Date.now().toString(),
             crypto.randomBytes(16).toString('hex'),
-          ].join(':')
+          ].join(':'),
         )
         .digest('hex');
 
@@ -838,9 +840,7 @@ trustAccountSchema.methods = {
         nonce: crypto.randomBytes(16).toString('hex'),
       };
 
-      const ci = this.clientBalances.findIndex(function (c) {
-        return c.clientId === tx.clientId && c.matterReference === tx.matterReference;
-      });
+      const ci = this.clientBalances.findIndex((c) => c.clientId === tx.clientId && c.matterReference === tx.matterReference);
 
       if (ci >= 0) {
         this.clientBalances[ci].balance += ['DEPOSIT', 'INTEREST'].includes(tx.transactionType)
@@ -906,9 +906,7 @@ trustAccountSchema.methods = {
         runningBalance: this.balances.current,
         processedAt: transaction.processedAt,
         clientBalance:
-          this.clientBalances.find(function (c) {
-            return c.clientId === tx.clientId && c.matterReference === tx.matterReference;
-          })?.balance || 0,
+          this.clientBalances.find((c) => c.clientId === tx.clientId && c.matterReference === tx.matterReference)?.balance || 0,
       };
     } catch (e) {
       await session.abortTransaction();
@@ -924,11 +922,7 @@ trustAccountSchema.methods = {
       const sys = this.balances.current;
       const disc = parseFloat((bankBalance - sys).toFixed(2));
       const unreconciled = this.transactions.filter(
-        function (t) {
-          return !this.reconciliations.some(function (r) {
-            return r.verifiedTransactions?.includes(t.transactionId);
-          });
-        }.bind(this)
+        (t) => !this.reconciliations.some((r) => r.verifiedTransactions?.includes(t.transactionId)),
       );
 
       const rec = {
@@ -943,9 +937,7 @@ trustAccountSchema.methods = {
         discrepancy: disc,
         isReconciled: Math.abs(disc) <= 0.01,
         transactionCount: unreconciled.length,
-        verifiedTransactions: unreconciled.map(function (t) {
-          return t.transactionId;
-        }),
+        verifiedTransactions: unreconciled.map((t) => t.transactionId),
         statementDate: stmt.statementDate,
         statementReference: stmt.statementReference,
         statementHash: stmt.statementHash,
@@ -979,8 +971,7 @@ trustAccountSchema.methods = {
       this.reconciliations.push(rec);
       this.compliance.lastReconciliationDate = new Date();
       this.compliance.reconciliationScore = Math.max(0, 100 - Math.abs(disc) / 100);
-      this.compliance.consecutiveReconciliations =
-        Math.abs(disc) <= 0.01 ? (this.compliance.consecutiveReconciliations || 0) + 1 : 0;
+      this.compliance.consecutiveReconciliations = Math.abs(disc) <= 0.01 ? (this.compliance.consecutiveReconciliations || 0) + 1 : 0;
 
       const nd = new Date();
       nd.setDate(nd.getDate() + 7);
@@ -1025,9 +1016,7 @@ trustAccountSchema.methods = {
   },
 
   async calculateInterest() {
-    const active = this.clientBalances.filter(function (c) {
-      return c.status === 'ACTIVE' && c.balance > 0;
-    });
+    const active = this.clientBalances.filter((c) => c.status === 'ACTIVE' && c.balance > 0);
 
     let total = 0;
     const calc = [];
@@ -1036,9 +1025,9 @@ trustAccountSchema.methods = {
       const days = Math.max(
         30,
         Math.floor(
-          (Date.now() - (c.lastTransaction || Date.now() - 30 * 24 * 60 * 60 * 1000)) /
-            (1000 * 60 * 60 * 24)
-        )
+          (Date.now() - (c.lastTransaction || Date.now() - 30 * 24 * 60 * 60 * 1000))
+            / (1000 * 60 * 60 * 24),
+        ),
       );
       const years = days / 365;
       const interest = c.balance * this.interestSettings.rate * years;
@@ -1088,9 +1077,7 @@ trustAccountSchema.methods = {
   },
 
   async reverseTransaction(tid, reason, ctx) {
-    const tx = this.transactions.find(function (t) {
-      return t.transactionId === tid;
-    });
+    const tx = this.transactions.find((t) => t.transactionId === tid);
 
     if (!tx) throw new Error(`TRANSACTION_NOT_FOUND: ${tid}`);
     if (tx.isReversal) throw new Error('CANNOT_REVERSE_REVERSAL');
@@ -1109,7 +1096,7 @@ trustAccountSchema.methods = {
         isReversal: true,
         originalTransactionId: tid,
       },
-      ctx
+      ctx,
     );
 
     tx.status = 'REVERSED';
@@ -1132,20 +1119,14 @@ trustAccountSchema.methods = {
   },
 
   async generateAuditReport(sd, ed) {
-    const txs = this.transactions.filter(function (t) {
-      return t.processedAt >= sd && t.processedAt <= ed;
-    });
+    const txs = this.transactions.filter((t) => t.processedAt >= sd && t.processedAt <= ed);
 
-    const recs = this.reconciliations.filter(function (r) {
-      return r.startedAt >= sd && r.startedAt <= ed;
-    });
+    const recs = this.reconciliations.filter((r) => r.startedAt >= sd && r.startedAt <= ed);
 
     let ob = 0;
     this.transactions
-      .filter(function (t) {
-        return t.processedAt < sd;
-      })
-      .forEach(function (t) {
+      .filter((t) => t.processedAt < sd)
+      .forEach((t) => {
         ob += ['DEPOSIT', 'INTEREST'].includes(t.transactionType) ? t.amount : -t.amount;
       });
 
@@ -1174,66 +1155,46 @@ trustAccountSchema.methods = {
         netChange: parseFloat((this.balances.current - ob).toFixed(2)),
         totalTransactions: txs.length,
         totalDeposits: txs
-          .filter(function (t) {
-            return ['DEPOSIT', 'INTEREST'].includes(t.transactionType);
-          })
-          .reduce(function (s, t) {
-            return s + t.amount;
-          }, 0),
+          .filter((t) => ['DEPOSIT', 'INTEREST'].includes(t.transactionType))
+          .reduce((s, t) => s + t.amount, 0),
         totalWithdrawals: txs
-          .filter(function (t) {
-            return ['WITHDRAWAL', 'TRANSFER', 'FEE'].includes(t.transactionType);
-          })
-          .reduce(function (s, t) {
-            return s + t.amount;
-          }, 0),
+          .filter((t) => ['WITHDRAWAL', 'TRANSFER', 'FEE'].includes(t.transactionType))
+          .reduce((s, t) => s + t.amount, 0),
         uniqueClients: new Set(
-          txs.map(function (t) {
-            return t.clientId;
-          })
+          txs.map((t) => t.clientId),
         ).size,
         uniqueMatters: new Set(
-          txs.map(function (t) {
-            return t.matterReference;
-          })
+          txs.map((t) => t.matterReference),
         ).size,
       },
       clientBalances: this.clientBalances
-        .filter(function (c) {
-          return c.status === 'ACTIVE';
-        })
-        .map(function (c) {
-          return {
-            clientId: c.clientId,
-            clientName: c.clientName,
-            matterReference: c.matterReference,
-            balance: c.balance,
-            lastTransaction: c.lastTransaction,
-            transactionCount: c.transactionCount,
-          };
-        }),
-      reconciliations: recs.map(function (r) {
-        return {
-          reconciliationId: r.reconciliationId,
-          date: r.completedAt,
-          status: r.status,
-          systemBalance: r.systemBalance,
-          bankBalance: r.bankBalance,
-          discrepancy: r.discrepancy,
-          isReconciled: r.isReconciled,
-          verifiedBy: r.verifiedBy,
-        };
-      }),
+        .filter((c) => c.status === 'ACTIVE')
+        .map((c) => ({
+          clientId: c.clientId,
+          clientName: c.clientName,
+          matterReference: c.matterReference,
+          balance: c.balance,
+          lastTransaction: c.lastTransaction,
+          transactionCount: c.transactionCount,
+        })),
+      reconciliations: recs.map((r) => ({
+        reconciliationId: r.reconciliationId,
+        date: r.completedAt,
+        status: r.status,
+        systemBalance: r.systemBalance,
+        bankBalance: r.bankBalance,
+        discrepancy: r.discrepancy,
+        isReconciled: r.isReconciled,
+        verifiedBy: r.verifiedBy,
+      })),
       compliance: {
         reconciliationScore: this.compliance.reconciliationScore,
         overdueReconciliations: this.compliance.overdueReconciliations,
         nextReconciliationDue: this.compliance.nextReconciliationDue,
-        flags: this.compliance.flags.filter(function (f) {
-          return !f.resolvedAt;
-        }),
+        flags: this.compliance.flags.filter((f) => !f.resolvedAt),
       },
       integrity: {
-        chainValid: chainValid,
+        chainValid,
         brokenIndex: brokenIdx >= 0 ? brokenIdx : undefined,
         transactionCount: this.transactions.length,
         lastTransactionHash: this.transactions[this.transactions.length - 1]?.transactionHash,
@@ -1246,9 +1207,7 @@ trustAccountSchema.methods = {
   },
 
   verifyTransactionIntegrity(tid) {
-    const tx = this.transactions.find(function (t) {
-      return t.transactionId === tid;
-    });
+    const tx = this.transactions.find((t) => t.transactionId === tid);
 
     if (!tx) {
       return {
@@ -1269,13 +1228,11 @@ trustAccountSchema.methods = {
           tx.previousHash,
           tx.processedAt.getTime().toString(),
           tx.nonce,
-        ].join(':')
+        ].join(':'),
       )
       .digest('hex');
 
-    const idx = this.transactions.findIndex(function (t) {
-      return t.transactionId === tid;
-    });
+    const idx = this.transactions.findIndex((t) => t.transactionId === tid);
 
     let chainValid = true;
     if (idx > 0) {
@@ -1288,7 +1245,7 @@ trustAccountSchema.methods = {
       transactionHash: tx.transactionHash,
       recalculatedHash: recalc,
       hashValid: recalc === tx.transactionHash,
-      chainValid: chainValid,
+      chainValid,
       timestamp: new Date().toISOString(),
     };
   },
@@ -1299,9 +1256,7 @@ trustAccountSchema.methods = {
     }
 
     if (
-      this.transactions.some(function (t) {
-        return t.status === 'PENDING';
-      })
+      this.transactions.some((t) => t.status === 'PENDING')
     ) {
       throw new Error('PENDING_TRANSACTIONS: Resolve all pending transactions before closing');
     }
@@ -1314,7 +1269,7 @@ trustAccountSchema.methods = {
     this.closedBy = ctx.userId;
     this.closureReason = reason;
 
-    this.clientBalances.forEach(function (c) {
+    this.clientBalances.forEach((c) => {
       c.status = 'CLOSED';
       c.closedAt = new Date();
       c.closedBy = ctx.userId;
@@ -1345,8 +1300,7 @@ trustAccountSchema.methods = {
 // ============================================================================
 // SURGICAL EXPORTS FOR ESM COMPATIBILITY
 // ============================================================================
-const TrustAccount =
-  mongoose.models.TrustAccount || mongoose.model('TrustAccount', trustAccountSchema);
+const TrustAccount = mongoose.models.TrustAccount || mongoose.model('TrustAccount', trustAccountSchema);
 
 export {
   TRANSACTION_TYPES,

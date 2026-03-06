@@ -56,8 +56,8 @@
  *  - Last Updated: 2026-01-20 (Day of Document Sovereignty)
  */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 import mongoosePaginate from 'mongoose-paginate-v2.js';
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals.js';
 
@@ -95,7 +95,7 @@ const TimelineEventSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      required: function () {
+      required() {
         return this.eventType === 'STATUS_CHANGE';
       },
     },
@@ -125,7 +125,7 @@ const TimelineEventSchema = new mongoose.Schema(
         type: String,
         // Security: Logged for forensic investigation
         validate: {
-          validator: function (v) {
+          validator(v) {
             return !v || /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[A-Fa-f0-9:]+$/.test(v);
           },
         },
@@ -166,7 +166,7 @@ const TimelineEventSchema = new mongoose.Schema(
     _id: true,
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 
 /*
@@ -191,7 +191,7 @@ const DocumentReferenceSchema = new mongoose.Schema(
       required: true,
       maxlength: 255,
       // Security: Sanitize filename to prevent path traversal
-      set: function (v) {
+      set(v) {
         return v.replace(/[<>:"/\\|?*]/g, '_').substring(0, 255);
       },
     },
@@ -234,7 +234,7 @@ const DocumentReferenceSchema = new mongoose.Schema(
       type: String,
       required: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           const allowedMimes = [
             'application/pdf',
             'application/msword',
@@ -270,10 +270,10 @@ const DocumentReferenceSchema = new mongoose.Schema(
       type: String,
       required: true,
       // Security: Encrypted bucket name for additional protection
-      get: function (v) {
+      get(v) {
         return v; // Decryption handled at service layer
       },
-      set: function (v) {
+      set(v) {
         return v; // Encryption handled at service layer
       },
     },
@@ -282,10 +282,10 @@ const DocumentReferenceSchema = new mongoose.Schema(
       type: String,
       required: true,
       // Security: Encrypted storage key
-      get: function (v) {
+      get(v) {
         return v;
       },
-      set: function (v) {
+      set(v) {
         return v;
       },
     },
@@ -516,10 +516,10 @@ const DocumentReferenceSchema = new mongoose.Schema(
     fullTextContent: {
       type: String,
       // Security: OCR/extracted text (encrypted)
-      get: function (v) {
+      get(v) {
         return v; // Decryption handled at service layer
       },
-      set: function (v) {
+      set(v) {
         return v; // Encryption handled at service layer
       },
     },
@@ -545,7 +545,7 @@ const DocumentReferenceSchema = new mongoose.Schema(
     versionKey: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // =============================================================================
@@ -569,7 +569,7 @@ const CaseFileSchema = new mongoose.Schema(
       required: [true, 'Case file must belong to sovereign law firm tenant'],
       index: true,
       validate: {
-        validator: async function (v) {
+        async validator(v) {
           const Tenant = mongoose.model('Tenant');
           const tenant = await Tenant.findById(v);
           return tenant && tenant.status === 'ACTIVE';
@@ -583,7 +583,7 @@ const CaseFileSchema = new mongoose.Schema(
       required: [true, 'Case file must be associated with specific law firm'],
       index: true,
       validate: {
-        validator: async function (v) {
+        async validator(v) {
           if (!this.tenantId) return true;
           const Firm = mongoose.model('Firm');
           const firm = await Firm.findOne({ _id: v, tenantId: this.tenantId });
@@ -601,7 +601,7 @@ const CaseFileSchema = new mongoose.Schema(
       required: [true, 'Case file must be linked to legal matter'],
       index: true,
       validate: {
-        validator: async function (v) {
+        async validator(v) {
           if (!this.firmId) return true;
           const Case = mongoose.model('Case');
           const legalCase = await Case.findOne({ _id: v, firmId: this.firmId });
@@ -617,7 +617,7 @@ const CaseFileSchema = new mongoose.Schema(
       trim: true,
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[A-Z]{2,10}-\d{4}-\d{3,6}$/.test(v);
         },
       },
@@ -652,7 +652,7 @@ const CaseFileSchema = new mongoose.Schema(
       type: String,
       maxlength: 5000,
       // Security: Attorney-client privileged information
-      set: function (v) {
+      set(v) {
         return v ? v.substring(0, 5000).trim() : v;
       },
     },
@@ -886,7 +886,7 @@ const CaseFileSchema = new mongoose.Schema(
       courtReference: {
         type: String,
         validate: {
-          validator: function (v) {
+          validator(v) {
             return !v || /^\d{4}\/\d{5}$/.test(v) || /^A\d{3}\/\d{4}$/.test(v);
           },
         },
@@ -917,7 +917,7 @@ const CaseFileSchema = new mongoose.Schema(
         lowercase: true,
         trim: true,
         validate: {
-          validator: function (v) {
+          validator(v) {
             return /^[a-z0-9_-]+$/.test(v) && v.length <= 50;
           },
         },
@@ -1037,7 +1037,7 @@ const CaseFileSchema = new mongoose.Schema(
     versionKey: false,
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         // Security: Remove sensitive information from API responses
         delete ret.integrity;
         delete ret.documents?.encryption;
@@ -1050,7 +1050,7 @@ const CaseFileSchema = new mongoose.Schema(
     },
     toObject: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret.integrity;
         delete ret.documents?.encryption;
         delete ret.documents?.storageKey;
@@ -1062,7 +1062,7 @@ const CaseFileSchema = new mongoose.Schema(
     },
     minimize: false,
     collection: 'sovereign_case_files',
-  }
+  },
 );
 
 // =============================================================================
@@ -1073,7 +1073,9 @@ const CaseFileSchema = new mongoose.Schema(
  * @index Compound: Firm + Case + Status (Primary Dashboard)
  * @performance O(log n) for firm case file queries
  */
-CaseFileSchema.index({ firmId: 1, caseId: 1, status: 1, createdAt: -1 });
+CaseFileSchema.index({
+  firmId: 1, caseId: 1, status: 1, createdAt: -1,
+});
 
 /*
  * @index Compound: Client + Practice Area
@@ -1107,7 +1109,7 @@ CaseFileSchema.index(
       'compliance.legalHold.active': false,
       'compliance.retentionPolicy': 'STANDARD_5_YEARS',
     },
-  }
+  },
 );
 
 /*
@@ -1128,7 +1130,7 @@ CaseFileSchema.index(
     'courtIntegration.courtReference': 1,
     'courtIntegration.courtType': 1,
   },
-  { sparse: true }
+  { sparse: true },
 );
 
 // =============================================================================
@@ -1167,8 +1169,7 @@ CaseFileSchema.pre('save', async function (next) {
     if (this.isNew || this.isModified('documents')) {
       // Check for PII in documents
       const hasHighPII = this.documents.some(
-        (doc) =>
-          doc.classification.piiLevel === 'HIGH' || doc.classification.piiLevel === 'VERY_HIGH'
+        (doc) => doc.classification.piiLevel === 'HIGH' || doc.classification.piiLevel === 'VERY_HIGH',
       );
 
       this.security.piiPresent = hasHighPII;
@@ -1363,7 +1364,7 @@ CaseFileSchema.methods.verifyIntegrity = function () {
  */
 CaseFileSchema.methods.getDiscoveryDocuments = function () {
   return this.documents.filter(
-    (doc) => doc.discovery.isDiscoveryReady && !doc.discovery.privilegeClaimed
+    (doc) => doc.discovery.isDiscoveryReady && !doc.discovery.privilegeClaimed,
   );
 };
 
@@ -1379,7 +1380,9 @@ CaseFileSchema.methods.getDiscoveryDocuments = function () {
  * @returns {Promise<Array>} Case files array
  */
 CaseFileSchema.statics.findByCase = function (caseId, options = {}) {
-  const { status, practiceArea, page = 1, limit = 50, includeDocuments = false } = options;
+  const {
+    status, practiceArea, page = 1, limit = 50, includeDocuments = false,
+  } = options;
 
   const query = { caseId };
 
@@ -1444,7 +1447,7 @@ CaseFileSchema.statics.getComplianceReport = async function (firmId) {
     {
       $project: {
         _id: 0,
-        firmId: firmId,
+        firmId,
         generated: new Date(),
         summary: {
           totalCaseFiles: '$totalCaseFiles',
@@ -1494,9 +1497,9 @@ CaseFileSchema.statics.getComplianceReport = async function (firmId) {
  */
 CaseFileSchema.virtual('isLegallyProtected').get(function () {
   return (
-    this.compliance.legalHold.active ||
-    this.security.classification === 'RESTRICTED' ||
-    this.security.classification === 'SECRET'
+    this.compliance.legalHold.active
+    || this.security.classification === 'RESTRICTED'
+    || this.security.classification === 'SECRET'
   );
 });
 
@@ -1506,10 +1509,10 @@ CaseFileSchema.virtual('isLegallyProtected').get(function () {
  */
 CaseFileSchema.virtual('storageSizeHuman').get(function () {
   const bytes = this.totalSize;
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
-  if (bytes < 1073741824) return (bytes / 1048576).toFixed(2) + ' MB';
-  return (bytes / 1073741824).toFixed(2) + ' GB';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(2)} KB`;
+  if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(2)} MB`;
+  return `${(bytes / 1073741824).toFixed(2)} GB`;
 });
 
 /*

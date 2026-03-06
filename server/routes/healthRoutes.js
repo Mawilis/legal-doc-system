@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ HEALTH ROUTES - INVESTOR-GRADE MODULE                          ║
   ║ 99.99% uptime | Real-time telemetry | Forensic monitoring      ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/healthRoutes.js
  * INVESTOR VALUE PROPOSITION:
@@ -27,10 +27,11 @@ import { v4 as uuidv4 } from 'uuid.js';
 // WILSY OS CORE IMPORTS
 import { getSystemHealth } from '../services/system/HealthService.js';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../utils/quantumLogger.js';
 import { rateLimiter } from '../middleware/rateLimiter.js';
 import { metrics } from '../utils/metricsCollector.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 const router = express.Router();
 
@@ -66,8 +67,7 @@ router.get('/health', (req, res) => {
  */
 router.get('/sys/health', rateLimiter({ windowMs: 60000, max: 10 }), async (req, res) => {
   const startTime = performance.now();
-  const correlationId =
-    req.headers['x-correlation-id'] || `HLTH-${Date.now()}-${uuidv4().substring(0, 8)}`;
+  const correlationId = req.headers['x-correlation-id'] || `HLTH-${Date.now()}-${uuidv4().substring(0, 8)}`;
 
   try {
     // Verify health secret
@@ -254,7 +254,7 @@ router.get('/sys/health/workers', rateLimiter({ windowMs: 60000, max: 30 }), asy
 
   try {
     const { stdout } = await execAsync(
-      'ps aux | grep -E "precedentVectorizer|citationNetworkIndexer|EmbeddingWorker" | grep -v grep'
+      'ps aux | grep -E "precedentVectorizer|citationNetworkIndexer|EmbeddingWorker" | grep -v grep',
     );
 
     const lines = stdout

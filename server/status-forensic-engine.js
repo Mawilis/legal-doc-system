@@ -53,12 +53,12 @@ async function status() {
           console.log(
             `${colors.green}✅ ${pidFile.replace('.pid', '')} (PID: ${pid}) - RUNNING${
               colors.reset
-            }`
+            }`,
           );
           running++;
         } catch (e) {
           console.log(
-            `${colors.red}❌ ${pidFile.replace('.pid', '')} (PID: ${pid}) - STOPPED${colors.reset}`
+            `${colors.red}❌ ${pidFile.replace('.pid', '')} (PID: ${pid}) - STOPPED${colors.reset}`,
           );
           stopped++;
         }
@@ -68,7 +68,7 @@ async function status() {
     }
 
     console.log(
-      `${colors.cyan}\n📈 Summary: ${running} running, ${stopped} stopped${colors.reset}`
+      `${colors.cyan}\n📈 Summary: ${running} running, ${stopped} stopped${colors.reset}`,
     );
 
     // Check recent logs

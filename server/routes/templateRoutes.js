@@ -1,15 +1,14 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ TEMPLATE ROUTES - INVESTOR-GRADE MODULE                                   ║
   ║ Document template management for e-signature system                      ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { DocumentTemplate } from '../models/DocumentTemplate.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { tenantContext } from '../middleware/tenantContext.js';
-import { getCurrentTenant, getCurrentUser } from '../middleware/tenantContext.js';
-import { v4 as uuidv4 } from 'uuid';
+import { tenantContext, getCurrentTenant, getCurrentUser } from '../middleware/tenantContext.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();

@@ -104,10 +104,10 @@
  * is a quantum of justice, every request a step toward a more informed legal world.
  */
 
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ PRECEDENT ROUTES - INVESTOR-GRADE MODULE - $7.5B ARR TARGET              ║
   ║ 95% margins | 100M+ daily calls | Enterprise-grade security              ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/PrecedentRoutes.js
  * INVESTOR VALUE PROPOSITION:
@@ -141,10 +141,9 @@
  * ]
  */
 
-('use strict');
-
 // QUANTUM IMPORTS: Core dependencies
 const express = require('express');
+
 const router = express.Router();
 const compression = require('compression');
 const helmet = require('helmet');
@@ -176,6 +175,7 @@ const PrecedentController = require('../controllers/PrecedentController');
 
 // QUANTUM UTILITIES
 const loggerRaw = require('../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const auditLogger = require('../utils/auditLogger');
 const quantumLogger = require('../utils/quantumLogger');
@@ -361,7 +361,7 @@ router.use((req, res, next) => {
         req.method,
         req.route?.path || req.path,
         res.statusCode,
-        req.tenant?.tenantId || 'anonymous'
+        req.tenant?.tenantId || 'anonymous',
       )
       .inc();
 
@@ -395,7 +395,7 @@ if (process.env.NODE_ENV !== 'test') {
       validateResponses: true,
       validateSecurity: true,
       ignorePaths: /.*\/health|.*\/metrics/,
-    })
+    }),
   );
 }
 
@@ -563,7 +563,7 @@ router.get('/health', cacheMiddleware({ ttl: cacheTTL.health }), async (req, res
         const neo4j = require('neo4j-driver');
         const driver = neo4j.driver(
           process.env.NEO4J_URI,
-          neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)
+          neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD),
         );
         const session = driver.session();
         const neoStart = performance.now();
@@ -676,12 +676,24 @@ router.get(
   async (req, res, next) => {
     try {
       const jurisdictions = [
-        { code: 'ZA', name: 'South Africa', courts: 12, precedents: 150000, region: 'Africa' },
-        { code: 'NG', name: 'Nigeria', courts: 8, precedents: 80000, region: 'Africa' },
-        { code: 'KE', name: 'Kenya', courts: 6, precedents: 50000, region: 'Africa' },
-        { code: 'GH', name: 'Ghana', courts: 5, precedents: 35000, region: 'Africa' },
-        { code: 'UK', name: 'United Kingdom', courts: 15, precedents: 350000, region: 'Europe' },
-        { code: 'EU', name: 'European Union', courts: 5, precedents: 120000, region: 'Europe' },
+        {
+          code: 'ZA', name: 'South Africa', courts: 12, precedents: 150000, region: 'Africa',
+        },
+        {
+          code: 'NG', name: 'Nigeria', courts: 8, precedents: 80000, region: 'Africa',
+        },
+        {
+          code: 'KE', name: 'Kenya', courts: 6, precedents: 50000, region: 'Africa',
+        },
+        {
+          code: 'GH', name: 'Ghana', courts: 5, precedents: 35000, region: 'Africa',
+        },
+        {
+          code: 'UK', name: 'United Kingdom', courts: 15, precedents: 350000, region: 'Europe',
+        },
+        {
+          code: 'EU', name: 'European Union', courts: 5, precedents: 120000, region: 'Europe',
+        },
         {
           code: 'US',
           name: 'United States',
@@ -689,12 +701,24 @@ router.get(
           precedents: 1500000,
           region: 'North America',
         },
-        { code: 'CA', name: 'Canada', courts: 13, precedents: 250000, region: 'North America' },
-        { code: 'AU', name: 'Australia', courts: 9, precedents: 200000, region: 'Oceania' },
-        { code: 'NZ', name: 'New Zealand', courts: 5, precedents: 80000, region: 'Oceania' },
-        { code: 'IN', name: 'India', courts: 25, precedents: 500000, region: 'Asia' },
-        { code: 'SG', name: 'Singapore', courts: 4, precedents: 60000, region: 'Asia' },
-        { code: 'HK', name: 'Hong Kong', courts: 4, precedents: 45000, region: 'Asia' },
+        {
+          code: 'CA', name: 'Canada', courts: 13, precedents: 250000, region: 'North America',
+        },
+        {
+          code: 'AU', name: 'Australia', courts: 9, precedents: 200000, region: 'Oceania',
+        },
+        {
+          code: 'NZ', name: 'New Zealand', courts: 5, precedents: 80000, region: 'Oceania',
+        },
+        {
+          code: 'IN', name: 'India', courts: 25, precedents: 500000, region: 'Asia',
+        },
+        {
+          code: 'SG', name: 'Singapore', courts: 4, precedents: 60000, region: 'Asia',
+        },
+        {
+          code: 'HK', name: 'Hong Kong', courts: 4, precedents: 45000, region: 'Asia',
+        },
         {
           code: 'INT',
           name: 'International',
@@ -727,7 +751,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -741,8 +765,12 @@ router.get(
   tenantContext,
   tieredRateLimiter('basic'),
   validateQuery({
-    days: { type: 'integer', minimum: 1, maximum: 90, default: 30 },
-    limit: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
+    days: {
+      type: 'integer', minimum: 1, maximum: 90, default: 30,
+    },
+    limit: {
+      type: 'integer', minimum: 1, maximum: 50, default: 10,
+    },
     jurisdiction: { type: 'string', pattern: '^[A-Z]{2}$', optional: true },
     region: {
       type: 'string',
@@ -754,7 +782,9 @@ router.get(
   cacheMiddleware({ ttl: cacheTTL.trending }),
   async (req, res, next) => {
     try {
-      const { days = 30, limit = 10, jurisdiction, region, legalArea } = req.query;
+      const {
+        days = 30, limit = 10, jurisdiction, region, legalArea,
+      } = req.query;
 
       // Get trending from service
       const PrecedentController = require('../controllers/PrecedentController');
@@ -787,7 +817,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -810,14 +840,24 @@ router.post(
     limiter(req, res, next);
   },
   validateBody({
-    q: { type: 'string', required: true, minLength: 3, maxLength: 500 },
+    q: {
+      type: 'string', required: true, minLength: 3, maxLength: 500,
+    },
     jurisdiction: { type: 'string', pattern: '^[A-Z]{2}$', optional: true },
     court: { type: 'string', optional: true },
-    yearFrom: { type: 'integer', minimum: 1900, maximum: new Date().getFullYear(), optional: true },
-    yearTo: { type: 'integer', minimum: 1900, maximum: new Date().getFullYear(), optional: true },
+    yearFrom: {
+      type: 'integer', minimum: 1900, maximum: new Date().getFullYear(), optional: true,
+    },
+    yearTo: {
+      type: 'integer', minimum: 1900, maximum: new Date().getFullYear(), optional: true,
+    },
     legalArea: { type: 'string', optional: true },
-    minStrength: { type: 'integer', minimum: 0, maximum: 100, optional: true },
-    limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+    minStrength: {
+      type: 'integer', minimum: 0, maximum: 100, optional: true,
+    },
+    limit: {
+      type: 'integer', minimum: 1, maximum: 100, default: 20,
+    },
     offset: { type: 'integer', minimum: 0, default: 0 },
     sort: {
       type: 'string',
@@ -902,7 +942,7 @@ router.post(
       routeMetrics.errorsTotal.labels('POST', '/search', error.code || 'SEARCH_ERROR').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -930,14 +970,15 @@ router.get(
   }),
   cacheMiddleware({
     ttl: cacheTTL.precedent,
-    keyGenerator: (req) =>
-      `precedent:${req.params.id}:${req.query.includeCitations}:${req.query.includeAnalysis}:${req.tenant?.tenantId}`,
+    keyGenerator: (req) => `precedent:${req.params.id}:${req.query.includeCitations}:${req.query.includeAnalysis}:${req.tenant?.tenantId}`,
   }),
   circuitBreakerMiddleware('precedent', { timeout: 5000, threshold: 5 }),
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { includeCitations, includeAnalysis, depth, format } = req.query;
+      const {
+        includeCitations, includeAnalysis, depth, format,
+      } = req.query;
 
       // Call controller
       const PrecedentController = require('../controllers/PrecedentController');
@@ -999,7 +1040,7 @@ router.get(
       routeMetrics.errorsTotal.labels('GET', '/:id', error.code || 'PRECEDENT_ERROR').inc();
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -1017,7 +1058,7 @@ router.get(
       throw new AppError(
         'Professional tier required for network visualization',
         403,
-        'TIER_UPGRADE_REQUIRED'
+        'TIER_UPGRADE_REQUIRED',
       );
     }
     next();
@@ -1027,22 +1068,27 @@ router.get(
     id: { type: 'string', pattern: '^[0-9a-fA-F]{24}$', required: true },
   }),
   validateQuery({
-    depth: { type: 'integer', minimum: 1, maximum: 5, default: 2 },
+    depth: {
+      type: 'integer', minimum: 1, maximum: 5, default: 2,
+    },
     direction: { type: 'string', enum: ['incoming', 'outgoing', 'both'], default: 'both' },
-    minStrength: { type: 'integer', minimum: 0, maximum: 100, default: 30 },
+    minStrength: {
+      type: 'integer', minimum: 0, maximum: 100, default: 30,
+    },
     format: { type: 'string', enum: ['json', 'graphml', 'cypher', 'd3'], default: 'json' },
     includeMetadata: { type: 'boolean', default: true },
   }),
   cacheMiddleware({
     ttl: cacheTTL.network,
-    keyGenerator: (req) =>
-      `network:${req.params.id}:${req.query.depth}:${req.query.direction}:${req.query.minStrength}:${req.tenant?.tenantId}`,
+    keyGenerator: (req) => `network:${req.params.id}:${req.query.depth}:${req.query.direction}:${req.query.minStrength}:${req.tenant?.tenantId}`,
   }),
   circuitBreakerMiddleware('network', { timeout: 10000, threshold: 5 }),
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { depth, direction, minStrength, format, includeMetadata } = req.query;
+      const {
+        depth, direction, minStrength, format, includeMetadata,
+      } = req.query;
 
       // Call controller
       const PrecedentController = require('../controllers/PrecedentController');
@@ -1097,7 +1143,7 @@ router.get(
       routeMetrics.errorsTotal.labels('GET', '/:id/network', error.code || 'NETWORK_ERROR').inc();
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -1115,7 +1161,7 @@ router.get(
       throw new AppError(
         'Professional tier required for deep analysis',
         403,
-        'TIER_UPGRADE_REQUIRED'
+        'TIER_UPGRADE_REQUIRED',
       );
     }
     next();
@@ -1137,14 +1183,15 @@ router.get(
   }),
   cacheMiddleware({
     ttl: cacheTTL.analysis,
-    keyGenerator: (req) =>
-      `analysis:${req.params.id}:${req.query.depth}:${req.query.includePredictions}:${req.tenant?.tenantId}`,
+    keyGenerator: (req) => `analysis:${req.params.id}:${req.query.depth}:${req.query.includePredictions}:${req.tenant?.tenantId}`,
   }),
   circuitBreakerMiddleware('analysis', { timeout: 30000, threshold: 3 }),
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { depth, includePredictions, includeSimilar, includeConflicts, format } = req.query;
+      const {
+        depth, includePredictions, includeSimilar, includeConflicts, format,
+      } = req.query;
 
       // Call controller
       const PrecedentController = require('../controllers/PrecedentController');
@@ -1196,7 +1243,7 @@ router.get(
       routeMetrics.errorsTotal.labels('GET', '/:id/analysis', error.code || 'ANALYSIS_ERROR').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1243,7 +1290,9 @@ router.post(
   circuitBreakerMiddleware('compare', { timeout: 20000, threshold: 5 }),
   async (req, res, next) => {
     try {
-      const { precedentIds, aspects, includeSimilarity, includeVisualization, format } = req.body;
+      const {
+        precedentIds, aspects, includeSimilarity, includeVisualization, format,
+      } = req.body;
 
       // Call controller
       const PrecedentController = require('../controllers/PrecedentController');
@@ -1283,7 +1332,7 @@ router.post(
       routeMetrics.errorsTotal.labels('POST', '/compare', error.code || 'COMPARE_ERROR').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1305,7 +1354,7 @@ router.post(
       throw new AppError(
         'Enterprise tier required for batch operations',
         403,
-        'TIER_UPGRADE_REQUIRED'
+        'TIER_UPGRADE_REQUIRED',
       );
     }
     next();
@@ -1361,7 +1410,7 @@ router.post(
       routeMetrics.errorsTotal.labels('POST', '/batch', error.code || 'BATCH_ERROR').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1398,12 +1447,16 @@ router.get(
       },
     },
     jurisdiction: { type: 'string', pattern: '^[A-Z]{2}$', optional: true },
-    limit: { type: 'integer', minimum: 1, maximum: 10000, default: 1000 },
+    limit: {
+      type: 'integer', minimum: 1, maximum: 10000, default: 1000,
+    },
     sort: { type: 'string', enum: ['date', 'citations', 'authority'], default: 'date' },
   }),
   async (req, res, next) => {
     try {
-      const { format, ids, query, fields, jurisdiction, limit, sort } = req.query;
+      const {
+        format, ids, query, fields, jurisdiction, limit, sort,
+      } = req.query;
 
       // Validate that either ids or query is provided
       if (!ids && !query) {
@@ -1466,7 +1519,7 @@ router.get(
       routeMetrics.errorsTotal.labels('GET', '/export', error.code || 'EXPORT_ERROR').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1491,7 +1544,9 @@ router.post(
     },
     precedentId: { type: 'string', pattern: '^[0-9a-fA-F]{24}$', optional: true },
     searchQuery: { type: 'string', optional: true },
-    rating: { type: 'integer', minimum: 1, maximum: 5, optional: true },
+    rating: {
+      type: 'integer', minimum: 1, maximum: 5, optional: true,
+    },
     comment: { type: 'string', maxLength: 2000, optional: true },
     metadata: { type: 'object', optional: true },
   }),
@@ -1535,7 +1590,7 @@ router.post(
       routeMetrics.errorsTotal.labels('POST', '/feedback', error.code || 'FEEDBACK_ERROR').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1610,7 +1665,7 @@ router.get(
       routeMetrics.errorsTotal.labels('GET', '/stats', error.code || 'STATS_ERROR').inc();
       next(error);
     }
-  }
+  },
 );
 
 /* ---------------------------------------------------------------------------
@@ -1676,39 +1731,35 @@ const generateCypher = (network) => {
 /*
  * Generate D3.js format
  */
-const generateD3Format = (network) => {
-  return {
-    nodes: network.nodes.map((n) => ({
-      id: n.id,
-      label: n.citation,
-      group: n.type,
-      size: n.citations || 1,
-      court: n.court,
-    })),
-    links: network.edges.map((e) => ({
-      source: e.source,
-      target: e.target,
-      value: e.strength || 1,
-      type: e.type,
-    })),
-  };
-};
+const generateD3Format = (network) => ({
+  nodes: network.nodes.map((n) => ({
+    id: n.id,
+    label: n.citation,
+    group: n.type,
+    size: n.citations || 1,
+    court: n.court,
+  })),
+  links: network.edges.map((e) => ({
+    source: e.source,
+    target: e.target,
+    value: e.strength || 1,
+    type: e.type,
+  })),
+});
 
 /*
  * Generate CSV from export data
  */
 const generateCSV = (data, fields) => {
   const headers = fields.join(',');
-  const rows = data.map((item) =>
-    fields
-      .map((f) => {
-        const value = item[f];
-        if (value === null || value === undefined) return '';
-        if (typeof value === 'string') return `"${value.replace(/"/g, '""')}"`;
-        return value;
-      })
-      .join(',')
-  );
+  const rows = data.map((item) => fields
+    .map((f) => {
+      const value = item[f];
+      if (value === null || value === undefined) return '';
+      if (typeof value === 'string') return `"${value.replace(/"/g, '""')}"`;
+      return value;
+    })
+    .join(','));
   return [headers, ...rows].join('\n');
 };
 
@@ -1749,24 +1800,23 @@ const escapeXML = (value) => {
 /*
  * Generate PDF (placeholder)
  */
-const generatePDF = async (data) => {
+const generatePDF = async (data) =>
   // In production, integrate with PDF generation service
-  return Buffer.from(JSON.stringify(data));
-};
+  Buffer.from(JSON.stringify(data))
+;
 
 /*
  * Generate DOCX (placeholder)
  */
-const generateDOCX = async (data) => {
+const generateDOCX = async (data) =>
   // In production, integrate with DOCX generation service
-  return Buffer.from(JSON.stringify(data));
-};
+  Buffer.from(JSON.stringify(data))
+;
 
 /*
  * Render precedent as HTML
  */
-const renderPrecedentHTML = (precedent) => {
-  return `
+const renderPrecedentHTML = (precedent) => `
     <!DOCTYPE html>
     <html>
     <head>
@@ -1791,19 +1841,18 @@ const renderPrecedentHTML = (precedent) => {
         <p>${precedent.ratio || 'Not available'}</p>
       </div>
       ${
-        precedent.holdings
-          ? `
+  precedent.holdings
+    ? `
         <div class="holdings">
           <h3>Holdings</h3>
           ${precedent.holdings.map((h) => `<p>• ${h.text}</p>`).join('')}
         </div>
       `
-          : ''
-      }
+    : ''
+}
     </body>
     </html>
   `;
-};
 
 /*
  * Render precedent as plain text
@@ -1814,12 +1863,12 @@ const renderPrecedentText = (precedent) => {
   text += `Court: ${precedent.court}\n`;
   text += `Date: ${new Date(precedent.date).toLocaleDateString()}\n`;
   text += `Jurisdiction: ${precedent.jurisdiction}\n\n`;
-  text += `RATIO DECIDENDI\n`;
+  text += 'RATIO DECIDENDI\n';
   text += `${'-'.repeat(15)}\n`;
   text += `${precedent.ratio || 'Not available'}\n\n`;
 
   if (precedent.holdings) {
-    text += `HOLDINGS\n`;
+    text += 'HOLDINGS\n';
     text += `${'-'.repeat(8)}\n`;
     precedent.holdings.forEach((h) => {
       text += `• ${h.text}\n`;
@@ -1832,18 +1881,18 @@ const renderPrecedentText = (precedent) => {
 /*
  * Render analysis as HTML
  */
-const renderAnalysisHTML = (analysis) => {
+const renderAnalysisHTML = (analysis) =>
   // Similar to precedent HTML but with analysis sections
-  return '<html><body>Analysis HTML</body></html>';
-};
+  '<html><body>Analysis HTML</body></html>'
+;
 
 /*
  * Render comparison as HTML
  */
-const renderComparisonHTML = (comparison) => {
+const renderComparisonHTML = (comparison) =>
   // Render comparison table
-  return '<html><body>Comparison HTML</body></html>';
-};
+  '<html><body>Comparison HTML</body></html>'
+;
 
 /*
  * Generate comparison CSV
@@ -1865,26 +1914,16 @@ const generateComparisonCSV = (comparison) => {
    QUANTUM METRICS HELPER FUNCTIONS
    --------------------------------------------------------------------------- */
 
-const getRequestsByEndpoint = async () => {
+const getRequestsByEndpoint = async () =>
   // Aggregate from Prometheus metrics
-  return {};
-};
+  ({});
+const getRequestsByTenant = async () => ({});
 
-const getRequestsByTenant = async () => {
-  return {};
-};
+const getAverageLatency = async () => 0;
 
-const getAverageLatency = async () => {
-  return 0;
-};
+const getP95Latency = async () => 0;
 
-const getP95Latency = async () => {
-  return 0;
-};
-
-const getP99Latency = async () => {
-  return 0;
-};
+const getP99Latency = async () => 0;
 
 const getCacheHitRatio = async () => {
   const hits = (await routeMetrics.cacheHits.get()).values.reduce((a, b) => a + b, 0);
@@ -1892,17 +1931,11 @@ const getCacheHitRatio = async () => {
   return hits + misses > 0 ? hits / (hits + misses) : 0;
 };
 
-const getErrorsByType = async () => {
-  return {};
-};
+const getErrorsByType = async () => ({});
 
-const getBandwidthByEndpoint = async () => {
-  return {};
-};
+const getBandwidthByEndpoint = async () => ({});
 
-const getRateLimitHitsByTier = async () => {
-  return {};
-};
+const getRateLimitHitsByTier = async () => ({});
 
 /* ---------------------------------------------------------------------------
    QUANTUM ERROR HANDLING

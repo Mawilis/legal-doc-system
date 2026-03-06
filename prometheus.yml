@@ -1,0 +1,244 @@
+# ============================================================================
+# WILSY OS 2050 - PROMETHEUS ENTERPRISE CONFIGURATION
+# 10TH GENERATION | QUANTUM FORTRESS | FORTUNE 500
+# ============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  
+  external_labels:
+    environment: production
+    region: za-north
+    datacenter: jhb-01
+    cluster: wilsy-os-2050
+    system: quantum-fortress
+    generation: "10"
+
+# ============================================================================
+# ALERTING CONFIGURATION
+# ============================================================================
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+      scheme: http
+      timeout: 10s
+      api_version: v2
+
+# ============================================================================
+# RULE FILES
+# ============================================================================
+rule_files:
+  - /etc/prometheus/rules/*.yml
+  - /etc/prometheus/alerts/*.yml
+
+# ============================================================================
+# SCRAPE CONFIGURATIONS
+# ============================================================================
+scrape_configs:
+  # --------------------------------------------------------------------------
+  # WILSY OS CORE
+  # --------------------------------------------------------------------------
+  - job_name: 'wilsy-os-core'
+    scrape_interval: 10s
+    scrape_timeout: 8s
+    metrics_path: /metrics
+    scheme: http
+    
+    static_configs:
+      - targets: ['wilsy-os:9090']
+        labels:
+          service: core
+          component: api
+          tier: application
+    
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '(.*):.*'
+        replacement: '${1}'
+    
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'go_.*|process_.*|wilsy_.*'
+        action: keep
+
+  # --------------------------------------------------------------------------
+  # WILSY WORKER
+  # --------------------------------------------------------------------------
+  - job_name: 'wilsy-worker'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    
+    static_configs:
+      - targets: ['wilsy-worker:9091']
+        labels:
+          service: worker
+          component: background
+          tier: processing
+    
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: '.*queue.*|.*worker.*|.*job.*'
+        action: keep
+
+  # --------------------------------------------------------------------------
+  # REDIS
+  # --------------------------------------------------------------------------
+  - job_name: 'redis'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    static_configs:
+      - targets: ['redis:9121']
+        labels:
+          service: redis
+          component: cache
+          tier: data
+    
+    metrics_path: /metrics
+    
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'redis_.*'
+        action: keep
+
+  # --------------------------------------------------------------------------
+  # MILVUS VECTOR DATABASE
+  # --------------------------------------------------------------------------
+  - job_name: 'milvus'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    static_configs:
+      - targets: ['milvus:9091']
+        labels:
+          service: milvus
+          component: vector-db
+          tier: data
+    
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'milvus_.*|rocksdb_.*'
+        action: keep
+
+  # --------------------------------------------------------------------------
+  # ETCD
+  # --------------------------------------------------------------------------
+  - job_name: 'etcd'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    static_configs:
+      - targets: ['etcd:2379']
+        labels:
+          service: etcd
+          component: kv-store
+          tier: data
+    
+    metrics_path: /metrics
+    
+    scheme: http
+
+  # --------------------------------------------------------------------------
+  # MINIO OBJECT STORAGE
+  # --------------------------------------------------------------------------
+  - job_name: 'minio'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    static_configs:
+      - targets: ['minio:9000']
+        labels:
+          service: minio
+          component: storage
+          tier: data
+    
+    metrics_path: /minio/v2/metrics/cluster
+    
+    scheme: http
+
+  # --------------------------------------------------------------------------
+  # NGINX
+  # --------------------------------------------------------------------------
+  - job_name: 'nginx'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    static_configs:
+      - targets: ['nginx:9113']
+        labels:
+          service: nginx
+          component: proxy
+          tier: edge
+    
+    metrics_path: /metrics
+
+  # --------------------------------------------------------------------------
+  # NODE EXPORTER (HOST METRICS)
+  # --------------------------------------------------------------------------
+  - job_name: 'node'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    static_configs:
+      - targets: ['host.docker.internal:9100']
+        labels:
+          service: host
+          component: system
+          tier: infrastructure
+    
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'node_cpu_.*|node_memory_.*|node_disk_.*|node_filesystem_.*|node_network_.*'
+        action: keep
+
+  # --------------------------------------------------------------------------
+  # CADVISOR (CONTAINER METRICS)
+  # --------------------------------------------------------------------------
+  - job_name: 'cadvisor'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: docker
+          component: containers
+          tier: infrastructure
+
+# ============================================================================
+# STORAGE CONFIGURATION
+# ============================================================================
+storage:
+  tsdb:
+    path: /prometheus
+    retention:
+      time: 30d
+      size: 50GB
+    wal:
+      compression: true
+    out_of_order_time_window: 10m
+
+# ============================================================================
+# REMOTE WRITE (FOR LONG-TERM STORAGE)
+# ============================================================================
+# remote_write:
+#   - url: "https://thanos-receive.wilsy.os/api/v1/receive"
+#     queue_config:
+#       max_samples_per_send: 1000
+#       max_shards: 10
+#       capacity: 5000
+#     basic_auth:
+#       username: prometheus
+#       password: ${THANOS_PASSWORD}
+
+# ============================================================================
+# 🏛️ WILSY OS 2050 - Supreme Architect: Wilson Khanyezi
+# 10 Generations of Wealth | R 1,000,000,000,000,000 Target
+# ============================================================================

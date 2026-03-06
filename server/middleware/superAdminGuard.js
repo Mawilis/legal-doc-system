@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS: SUPER ADMIN GUARD - ONLY WILSON CAN PASS                                    ║
   ║ Protects the War Room and other sensitive endpoints                                    ║
   ║ Multi-factor authentication required for $5B+ infrastructure access                   ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/superAdminGuard.js
@@ -15,10 +15,11 @@
  */
 
 import jwt from 'jsonwebtoken.js';
+import crypto from 'crypto';
 import { redisClient } from '../utils/redisClient.js';
 import loggerRaw from '../utils/logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
-import crypto from 'crypto';
 
 const SUPER_ADMIN_EMAILS = [
   'wilson.khanyezi@wilsyos.com',
@@ -85,7 +86,7 @@ export const superAdminGuard = async (req, res, next) => {
           email: decoded.email,
           ip: req.ip,
           timestamp: new Date().toISOString(),
-        })
+        }),
       );
 
       return res.status(403).json({
@@ -108,7 +109,7 @@ export const superAdminGuard = async (req, res, next) => {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
         loginTime: new Date().toISOString(),
-      })
+      }),
     );
 
     // Add super admin flag to request

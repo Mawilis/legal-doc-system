@@ -244,7 +244,7 @@ describe('Precedent Vectorizer - Investor Due Diligence', () => {
       vectorizer.processJob({
         id: 'job-invalid-tenant',
         data: jobData,
-      })
+      }),
     ).rejects.toThrow('Invalid or inactive tenant');
 
     // Verify no precedent was saved

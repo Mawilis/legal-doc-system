@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - BETA AUTH MIDDLEWARE                                           ║
   ║ Temporary bypass for beta testing - REMOVE BEFORE PRODUCTION             ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 // BETA MODE: Allow all requests for testing
 export const authMiddleware = (req, res, next) => {
@@ -26,16 +26,12 @@ export const optionalAuthMiddleware = (req, res, next) => {
   next();
 };
 
-export const requireRoles = (allowedRoles) => {
-  return (req, res, next) => {
-    next();
-  };
+export const requireRoles = (allowedRoles) => (req, res, next) => {
+  next();
 };
 
-export const requirePermissions = (requiredPermissions) => {
-  return (req, res, next) => {
-    next();
-  };
+export const requirePermissions = (requiredPermissions) => (req, res, next) => {
+  next();
 };
 
 export const requireMFA = (req, res, next) => {

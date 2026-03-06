@@ -92,7 +92,7 @@ describe('Client Onboarding Service', () => {
         dateOfBirth: '1990-01-01',
         nationality: 'South African',
         popiaConsent: true,
-      }
+      },
     );
 
     expect(session).toBeDefined();

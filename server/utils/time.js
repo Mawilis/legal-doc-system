@@ -1,9 +1,9 @@
 #!/* eslint-disable */
-/*╔══════════════════════════════════════════════════════════════════════════════╗
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ TIME - QUANTUM TEMPORAL ORCHESTRATOR                                        ║
   ║ Chronosphere of Legal Certainty | Court-Admissible Timestamps              ║
   ║ POPIA §14 | Companies Act §28 | ECT Act §13 | High Court Rule 27            ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝*/
+  ╚══════════════════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/time.js
  * INVESTOR VALUE PROPOSITION:
@@ -51,7 +51,6 @@
  */
 
 /* eslint-env node */
-('use strict');
 
 // =============================================================================
 // QUANTUM ENVIRONMENT INITIALIZATION
@@ -93,12 +92,12 @@ const validateTemporalEnvironment = () => {
     if (process.env.NODE_ENV === 'production') {
       throw new Error(
         `QUANTUM TEMPORAL BREACH: Missing critical environment variables: ${missing.join(
-          ', '
-        )}. Add to /server/.env`
+          ', ',
+        )}. Add to /server/.env`,
       );
     } else {
       console.warn(
-        `⚠️ Missing temporal environment variables: ${missing.join(', ')}. Using defaults.`
+        `⚠️ Missing temporal environment variables: ${missing.join(', ')}. Using defaults.`,
       );
     }
   } else {
@@ -287,7 +286,7 @@ class QuantumTimeOrchestrator {
     // Initialize blockchain timestamp service if configured
     this.blockchainEnabled = !!process.env.BLOCKCHAIN_TIMESTAMP_API;
 
-    console.log('⏰ QUANTUM TIME: Chronosphere initialized for ' + TIME_QUANTUM.DEFAULT_TIMEZONE);
+    console.log(`⏰ QUANTUM TIME: Chronosphere initialized for ${TIME_QUANTUM.DEFAULT_TIMEZONE}`);
   }
 
   // =========================================================================
@@ -321,8 +320,8 @@ class QuantumTimeOrchestrator {
       if (!this.holidayCache.has(year.toString())) {
         // Use the year parameter to determine preloading strategy
         this.logTemporalOperation('PRELOADING_HOLIDAYS', {
-          year: year,
-          yearsToPreload: yearsToPreload,
+          year,
+          yearsToPreload,
           method: process.env.GOV_HOLIDAY_API ? 'api' : 'generation',
         });
 
@@ -342,7 +341,7 @@ class QuantumTimeOrchestrator {
     console.log(
       `📅 QUANTUM TIME: Loaded holidays for ${this.holidayCache.size} years (${currentYear} to ${
         currentYear + yearsToPreload
-      })`
+      })`,
     );
   }
 
@@ -355,7 +354,7 @@ class QuantumTimeOrchestrator {
    */
   async fetchOfficialHolidaysFromGovernment(year) {
     // Use the year parameter to fetch specific year's holidays
-    this.logTemporalOperation('FETCHING_OFFICIAL_HOLIDAYS', { year: year });
+    this.logTemporalOperation('FETCHING_OFFICIAL_HOLIDAYS', { year });
 
     if (!process.env.GOV_HOLIDAY_API) {
       throw new Error(`GOV_HOLIDAY_API not configured for year ${year}`);
@@ -369,7 +368,7 @@ class QuantumTimeOrchestrator {
       this.holidayCache.set(year.toString(), new Set(holidays));
 
       this.logTemporalOperation('OFFICIAL_HOLIDAYS_FETCHED', {
-        year: year,
+        year,
         count: holidays.length,
         source: process.env.GOV_HOLIDAY_API,
       });
@@ -377,7 +376,7 @@ class QuantumTimeOrchestrator {
       return holidays;
     } catch (error) {
       this.logTemporalOperation('HOLIDAY_FETCH_FAILED', {
-        year: year,
+        year,
         error: error.message,
       });
       throw error;
@@ -419,7 +418,7 @@ class QuantumTimeOrchestrator {
         observed.setDate(date.getDate() + 1);
         holidays.push(observed.toISOString().split('T')[0]);
         this.logTemporalOperation('HOLIDAY_OBSERVED', {
-          year: year,
+          year,
           holiday: holiday.name,
           originalDate: holiday.date,
           observedDate: observed.toISOString().split('T')[0],
@@ -430,7 +429,7 @@ class QuantumTimeOrchestrator {
         observed.setDate(date.getDate() + 2);
         holidays.push(observed.toISOString().split('T')[0]);
         this.logTemporalOperation('HOLIDAY_OBSERVED', {
-          year: year,
+          year,
           holiday: holiday.name,
           originalDate: holiday.date,
           observedDate: observed.toISOString().split('T')[0],
@@ -452,7 +451,7 @@ class QuantumTimeOrchestrator {
 
     // Log enhanced generation with year
     this.logTemporalOperation('ENHANCED_HOLIDAYS_GENERATED', {
-      year: year,
+      year,
       totalHolidays: uniqueHolidays.length,
       fixedHolidays: fixedHolidays.length,
       easterYear: year,
@@ -556,10 +555,10 @@ class QuantumTimeOrchestrator {
 
       const result = {
         timestamp: timestamp.toISOString(),
-        dataHash: dataHash,
-        timestampHash: timestampHash,
-        combinedHash: combinedHash,
-        signature: signature,
+        dataHash,
+        timestampHash,
+        combinedHash,
+        signature,
         algorithm: signatureAlgorithm,
         format: 'RFC 3161 compliant',
         legalAdmissibility: 'ECT Act Section 13 compliant',
@@ -586,7 +585,7 @@ class QuantumTimeOrchestrator {
 
       this.logTemporalOperation('TIMESTAMP_GENERATED', {
         dataLength: data.length,
-        operationTime: operationTime,
+        operationTime,
         blockchainAnchored: !!result.blockchainProof,
         algorithm: signatureAlgorithm,
       });
@@ -620,7 +619,7 @@ class QuantumTimeOrchestrator {
       const businessHoursOnly = options.businessHoursOnly === true;
       const includeGracePeriod = options.gracePeriod || 0;
 
-      let current = new Date(start);
+      const current = new Date(start);
       let daysAdded = 0;
       let courtDaysAdded = 0;
       const excludedDays = [];
@@ -653,8 +652,8 @@ class QuantumTimeOrchestrator {
 
       // Check if final date falls on excluded day
       while (
-        (excludeWeekends && this.isWeekend(current)) ||
-        (excludeHolidays && this.isPublicHoliday(current))
+        (excludeWeekends && this.isWeekend(current))
+        || (excludeHolidays && this.isPublicHoliday(current))
       ) {
         current.setDate(current.getDate() + 1);
         daysAdded++;
@@ -689,29 +688,29 @@ class QuantumTimeOrchestrator {
         calendarDays: totalDays,
         courtDays: days,
         excludedDays: excludedDays.length,
-        operationTime: operationTime,
+        operationTime,
         options: {
-          excludeWeekends: excludeWeekends,
-          excludeHolidays: excludeHolidays,
-          businessHoursOnly: businessHoursOnly,
-          includeGracePeriod: includeGracePeriod,
+          excludeWeekends,
+          excludeHolidays,
+          businessHoursOnly,
+          includeGracePeriod,
         },
       });
 
       return {
-        deadline: deadline,
+        deadline,
         startDate: start,
         calendarDays: totalDays,
         courtDays: days,
-        excludedDays: excludedDays,
+        excludedDays,
         cutoffTime: businessHoursOnly ? TIME_QUANTUM.COURT_BUSINESS_HOURS.FILING_DEADLINE : null,
         isPastDeadline: deadline < this.now(),
         warning: daysAdded > days ? `Extended by ${daysAdded - days} days due to exclusions` : null,
         legalReference: 'High Court Rule 27(1)',
         calculationOptions: {
-          excludeWeekends: excludeWeekends,
-          excludeHolidays: excludeHolidays,
-          businessHoursOnly: businessHoursOnly,
+          excludeWeekends,
+          excludeHolidays,
+          businessHoursOnly,
           gracePeriod: includeGracePeriod,
         },
       };
@@ -719,10 +718,10 @@ class QuantumTimeOrchestrator {
       const operationTime = performance.now() - startTime;
 
       this.logTemporalOperation('DEADLINE_CALCULATION_FAILED', {
-        startDate: startDate,
-        days: days,
+        startDate,
+        days,
         error: error.message,
-        operationTime: operationTime,
+        operationTime,
       });
 
       throw error;
@@ -777,7 +776,7 @@ class QuantumTimeOrchestrator {
           : isWithinMinRetention
             ? 'UNDER_RETENTION'
             : 'OVER_RETENTION',
-        operationTime: operationTime,
+        operationTime,
       });
 
       return {
@@ -788,11 +787,11 @@ class QuantumTimeOrchestrator {
           days: Math.floor((ageInYears * 365) % 365),
         },
         retention: {
-          minYears: minYears,
-          maxYears: maxYears,
-          isWithinMinRetention: isWithinMinRetention,
-          isBeyondMaxRetention: isBeyondMaxRetention,
-          isWithinRetentionWindow: isWithinRetentionWindow,
+          minYears,
+          maxYears,
+          isWithinMinRetention,
+          isBeyondMaxRetention,
+          isWithinRetentionWindow,
         },
         dates: {
           archivalEligibility: archivalEligibilityDate,
@@ -816,9 +815,9 @@ class QuantumTimeOrchestrator {
       const operationTime = performance.now() - startTime;
 
       this.logTemporalOperation('RETENTION_CHECK_FAILED', {
-        documentDate: documentDate,
+        documentDate,
         error: error.message,
-        operationTime: operationTime,
+        operationTime,
       });
 
       throw error;
@@ -869,19 +868,17 @@ class QuantumTimeOrchestrator {
     } else if (isDuringLunch) {
       minutesUntilChange = lunchEndMinutes - totalMinutes;
       nextState = 'LUNCH_END';
+    } else if (totalMinutes < lunchStartMinutes) {
+      minutesUntilChange = lunchStartMinutes - totalMinutes;
+      nextState = 'LUNCH_START';
     } else {
-      if (totalMinutes < lunchStartMinutes) {
-        minutesUntilChange = lunchStartMinutes - totalMinutes;
-        nextState = 'LUNCH_START';
-      } else {
-        minutesUntilChange = endMinutes - totalMinutes;
-        nextState = 'BUSINESS_HOURS_END';
-      }
+      minutesUntilChange = endMinutes - totalMinutes;
+      nextState = 'BUSINESS_HOURS_END';
     }
 
     return {
       isWithinBusinessHours: isWithinBusiness,
-      isDuringLunch: isDuringLunch,
+      isDuringLunch,
       isWithinOperatingHours: isWithinHours,
       currentTime: checkTime.toISOString(),
       businessHours: {
@@ -891,7 +888,7 @@ class QuantumTimeOrchestrator {
       },
       timing: {
         minutesUntilNextChange: minutesUntilChange,
-        nextState: nextState,
+        nextState,
         nextChangeIn: this.formatDuration(minutesUntilChange * 60 * 1000),
       },
       legalImplications: {
@@ -1093,11 +1090,11 @@ class QuantumTimeOrchestrator {
     const includeNotes = options.includeNotes !== false;
 
     this.logTemporalOperation('CALENDAR_OPTIONS', {
-      includeWeekends: includeWeekends,
-      includeHolidays: includeHolidays,
-      dateFormat: dateFormat,
-      businessHoursOnly: businessHoursOnly,
-      includeNotes: includeNotes,
+      includeWeekends,
+      includeHolidays,
+      dateFormat,
+      businessHoursOnly,
+      includeNotes,
     });
 
     const start = this.parseDate(startDate);
@@ -1129,10 +1126,10 @@ class QuantumTimeOrchestrator {
         date: new Date(current),
         formattedDate: this.formatDate(current, dateFormat),
         dayOfWeek: current.toLocaleDateString('en-US', { weekday: 'long' }),
-        isBusinessDay: isBusinessDay,
+        isBusinessDay,
         isCourtDay: isBusinessDay && !isHoliday,
-        isHoliday: isHoliday,
-        isWeekend: isWeekend,
+        isHoliday,
+        isWeekend,
         businessHours: isBusinessDay ? TIME_QUANTUM.COURT_BUSINESS_HOURS : null,
         notes: includeNotes ? this.getDateNotes(current) : null,
       });
@@ -1150,12 +1147,12 @@ class QuantumTimeOrchestrator {
       courtDays: calendar.filter((day) => day.isCourtDay).length,
       holidays: calendar.filter((day) => day.isHoliday).length,
       weekends: calendar.filter((day) => day.isWeekend).length,
-      calendar: calendar,
+      calendar,
       options: {
-        includeWeekends: includeWeekends,
-        includeHolidays: includeHolidays,
-        dateFormat: dateFormat,
-        businessHoursOnly: businessHoursOnly,
+        includeWeekends,
+        includeHolidays,
+        dateFormat,
+        businessHoursOnly,
       },
     };
 
@@ -1178,7 +1175,7 @@ class QuantumTimeOrchestrator {
    */
   calculateNextAvailableCourtDate(fromDate = null, minNoticeDays = 10) {
     const startDate = fromDate ? this.parseDate(fromDate) : this.now();
-    let current = new Date(startDate);
+    const current = new Date(startDate);
 
     // Move to next business day if starting on excluded day
     while (!this.isBusinessDay(current)) {
@@ -1224,15 +1221,13 @@ class QuantumTimeOrchestrator {
     };
 
     // Sort timeline by date
-    const sortedTimeline = [...timeline.events].sort((a, b) => {
-      return new Date(a.date) - new Date(b.date);
-    });
+    const sortedTimeline = [...timeline.events].sort((a, b) => new Date(a.date) - new Date(b.date));
 
     // Validate each event
     sortedTimeline.forEach((event, index) => {
       const eventDate = this.parseDate(event.date);
       const eventValidation = {
-        event: event,
+        event,
         date: eventDate,
         isValidDate: !!eventDate,
         isBusinessDay: this.isBusinessDay(eventDate),
@@ -1335,7 +1330,7 @@ class QuantumTimeOrchestrator {
 
     return {
       blockchain: 'ETHEREUM_MAINNET',
-      transactionHash: '0x' + crypto.randomBytes(32).toString('hex'),
+      transactionHash: `0x${crypto.randomBytes(32).toString('hex')}`,
       blockNumber: Math.floor(Math.random() * 10000000),
       timestamp: timestamp.toISOString(),
       anchoredHash: hash,
@@ -1431,17 +1426,16 @@ class QuantumTimeOrchestrator {
 
     if (days > 0) {
       return `${days} day${days !== 1 ? 's' : ''} ${hours % 24} hour${hours % 24 !== 1 ? 's' : ''}`;
-    } else if (hours > 0) {
+    } if (hours > 0) {
       return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes % 60} minute${
         minutes % 60 !== 1 ? 's' : ''
       }`;
-    } else if (minutes > 0) {
+    } if (minutes > 0) {
       return `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds % 60} second${
         seconds % 60 !== 1 ? 's' : ''
       }`;
-    } else {
-      return `${seconds} second${seconds !== 1 ? 's' : ''}`;
     }
+    return `${seconds} second${seconds !== 1 ? 's' : ''}`;
   }
 
   /*
@@ -1470,10 +1464,10 @@ class QuantumTimeOrchestrator {
 
     // Quarter ends
     if (
-      (month === 3 && day === 31) ||
-      (month === 6 && day === 30) ||
-      (month === 9 && day === 30) ||
-      (month === 12 && day === 31)
+      (month === 3 && day === 31)
+      || (month === 6 && day === 30)
+      || (month === 9 && day === 30)
+      || (month === 12 && day === 31)
     ) {
       return 'Quarter-end financial reporting';
     }
@@ -1506,7 +1500,7 @@ class QuantumTimeOrchestrator {
     if (process.env.NODE_ENV === 'production' && process.env.TEMPORAL_AUDIT_LOG === 'true') {
       const logEntry = {
         timestamp: new Date().toISOString(),
-        operation: operation,
+        operation,
         ...details,
         service: 'quantum-time-orchestrator',
       };
@@ -1605,8 +1599,8 @@ function calculateCompaniesActRetention(documentDate, category = 1) {
   return {
     documentDate: docDate,
     category: categoryInfo.description,
-    retentionYears: retentionYears,
-    retentionEnd: retentionEnd,
+    retentionYears,
+    retentionEnd,
     status: daysRemaining > 0 ? 'ACTIVE' : 'EXPIRED',
     daysRemaining: Math.max(0, daysRemaining),
     legalReference: 'Companies Act 2008, Regulation 29',
@@ -1658,29 +1652,28 @@ function calculateCourtDeadline(serviceDate, documentType) {
     },
   };
 
-  const deadlineConfig = deadlines[documentType] || deadlines['NOTICE_OF_MOTION'];
+  const deadlineConfig = deadlines[documentType] || deadlines.NOTICE_OF_MOTION;
 
   if (deadlineConfig.courtDays) {
     return timeOrchestrator.calculateLegalDeadline(service, deadlineConfig.courtDays);
-  } else {
-    // Simple calendar days calculation
-    const deadline = new Date(service);
-    deadline.setDate(deadline.getDate() + deadlineConfig.calendarDays);
-
-    // Adjust if falls on weekend/holiday
-    while (!timeOrchestrator.isBusinessDay(deadline)) {
-      deadline.setDate(deadline.getDate() + 1);
-    }
-
-    return {
-      deadline: deadline,
-      serviceDate: service,
-      days: deadlineConfig.calendarDays,
-      type: 'CALENDAR_DAYS',
-      rule: deadlineConfig.rule,
-      documentType: deadlineConfig.description,
-    };
   }
+  // Simple calendar days calculation
+  const deadline = new Date(service);
+  deadline.setDate(deadline.getDate() + deadlineConfig.calendarDays);
+
+  // Adjust if falls on weekend/holiday
+  while (!timeOrchestrator.isBusinessDay(deadline)) {
+    deadline.setDate(deadline.getDate() + 1);
+  }
+
+  return {
+    deadline,
+    serviceDate: service,
+    days: deadlineConfig.calendarDays,
+    type: 'CALENDAR_DAYS',
+    rule: deadlineConfig.rule,
+    documentType: deadlineConfig.description,
+  };
 }
 
 // =============================================================================

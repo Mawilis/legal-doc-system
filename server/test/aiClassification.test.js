@@ -93,7 +93,7 @@ describe('🤖 AI Document Classification Test Suite', function () {
 
       // Random text should fail classification
       assert.ok(
-        result.verificationStatus === 'MISMATCH' || result.verificationStatus === 'FLAGGED'
+        result.verificationStatus === 'MISMATCH' || result.verificationStatus === 'FLAGGED',
       );
     });
 
@@ -121,7 +121,7 @@ describe('🤖 AI Document Classification Test Suite', function () {
       await session.processDocumentWithAI(
         'DOC-1',
         'Identity Number: 800101 5009 087',
-        'ID_DOCUMENT'
+        'ID_DOCUMENT',
       );
 
       const updated = await OnboardingSession.findById(session._id);

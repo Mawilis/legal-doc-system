@@ -241,7 +241,7 @@ const validationAuditSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       required: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           // Ensure input data exists
           return v !== null && v !== undefined;
         },
@@ -344,7 +344,7 @@ const validationAuditSchema = new mongoose.Schema(
 
     retentionEnd: {
       type: Date,
-      default: function () {
+      default() {
         const endDate = new Date(this.retentionStart);
         switch (this.retentionPolicy) {
           case 'companies_act_10_years':
@@ -413,7 +413,7 @@ const validationAuditSchema = new mongoose.Schema(
     collection: 'validation_audits',
     strict: true,
     minimize: false,
-  }
+  },
 );
 
 /**
@@ -440,7 +440,7 @@ validationAuditSchema.pre('save', async function (next) {
     const lastValidation = await this.constructor.findOne(
       { tenantId: this.tenantId },
       { forensicHash: 1 },
-      { sort: { timestamp: -1 } }
+      { sort: { timestamp: -1 } },
     );
 
     if (lastValidation) {
@@ -462,7 +462,7 @@ validationAuditSchema.pre('save', async function (next) {
         failures: this.failures,
         previousHash: this.previousHash,
       },
-      Object.keys.sort()
+      Object.keys.sort(),
     );
 
     // Generate SHA256 hash
@@ -631,7 +631,9 @@ validationAuditSchema.statics.createAudit = async function (data) {
     targetId: data.targetId,
     targetVersion: data.targetVersion,
     rulesApplied: data.rulesApplied || [],
-    results: data.results || { passed: 0, failed: 0, warnings: 0, total: 0 },
+    results: data.results || {
+      passed: 0, failed: 0, warnings: 0, total: 0,
+    },
     failures: data.failures || [],
     warnings: data.warnings || [],
     inputData: data.inputData,

@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ REDACT SENSITIVE UTILITY - POPIA COMPLIANCE                               ║
   ║ Automatically redacts PII from logs and exports                          ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/redactSensitive.js
@@ -122,18 +122,15 @@ export const containsSensitive = (value, fields = []) => {
   const valueStr = JSON.stringify(value).toLowerCase();
 
   return allFields.some(
-    (field) =>
-      valueStr.includes(field.toLowerCase()) ||
-      REDACTION_PATTERNS.some(({ pattern }) => pattern.test(valueStr))
+    (field) => valueStr.includes(field.toLowerCase())
+      || REDACTION_PATTERNS.some(({ pattern }) => pattern.test(valueStr)),
   );
 };
 
 /**
  * Get all redaction patterns
  */
-export const getRedactionPatterns = () => {
-  return [...REDACTION_PATTERNS];
-};
+export const getRedactionPatterns = () => [...REDACTION_PATTERNS];
 
 // ============================================================================
 // EXPORTS - SINGLE EXPORT BLOCK

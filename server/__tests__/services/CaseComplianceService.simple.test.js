@@ -84,7 +84,7 @@ describe('CaseComplianceService - Basic Tests', () => {
 
     const disposalDate = service._calculateDisposalDate(
       new Date('2024-01-01'),
-      'COMPANIES_ACT_7YR'
+      'COMPANIES_ACT_7YR',
     );
 
     expect(disposalDate.getFullYear()).toBe(2031); // 2024 + 7

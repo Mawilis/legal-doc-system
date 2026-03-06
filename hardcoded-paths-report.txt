@@ -1,0 +1,27 @@
+WILSY OS 2050 - HARDCODED PATH SCAN REPORT
+Timestamp: Wed Mar  4 21:16:26 SAST 2026
+======================================
+
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/redis"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/audit-logs"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/forensic-evidence"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/reports"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/models"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/milvus"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/etcd"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/minio"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/prometheus"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/grafana"
+
+Scanning for hardcoded '/data/' in service configs...
+/Users/wilsonkhanyezi/legal-doc-system/server/routes/tenantAdminRoutes.js:  '/data/sovereignty/initiate',
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/redis"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/audit-logs"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/forensic-evidence"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/reports"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/models"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/milvus"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/etcd"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/minio"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/prometheus"
+/Users/wilsonkhanyezi/legal-doc-system/docker-compose.yml:      device: "/data/wilsy/grafana"

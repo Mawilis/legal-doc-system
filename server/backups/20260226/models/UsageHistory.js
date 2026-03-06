@@ -55,5 +55,5 @@ export const UsageHistory = sequelize.define(
         fields: ['tenantId', 'period', 'timestamp'],
       },
     ],
-  }
+  },
 );

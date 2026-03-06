@@ -1,66 +1,57 @@
-# ============================================================================
-# WILSY OS v3.0 - PRODUCTION DOCKERFILE
-# Multi-stage build | Security-hardened | Optimized for scale
-# ============================================================================
+# WILSY OS 2050 - Quantum Production Dockerfile
+# Version: 10.0.0-quantum-2050
 
-# Stage 1: Builder - Install dependencies and build native modules
-FROM node:20-slim AS builder
+FROM node:20-alpine AS builder
 
-WORKDIR /build
-
-# Install build essentials for native modules
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy package files
-COPY package*.json ./
-
-# Install ALL dependencies (including dev for building)
-RUN npm ci
-
-# Stage 2: Dependency layer - Only production dependencies
-FROM node:20-slim AS deps
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ git
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+COPY .env* ./
 
-# Install ONLY production dependencies
-RUN npm ci --only=production && \
-    npm cache clean --force
+# Install dependencies
+RUN npm ci --only=production
 
-# Stage 3: Runtime - Final production image
-FROM gcr.io/distroless/nodejs20-debian12 AS runtime
+# Copy source code
+COPY . .
+
+# Production stage
+FROM node:20-alpine
+
+# Install runtime dependencies
+RUN apk add --no-cache tini curl
+
+WORKDIR /app
 
 # Create non-root user
-USER nonroot:nonroot
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
-WORKDIR /app
+# Copy from builder
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --chown=nodejs:nodejs . .
 
-# Copy production dependencies
-COPY --from=deps --chown=nonroot:nonroot /app/node_modules ./node_modules
+# Create necessary directories
+RUN mkdir -p /var/log/wilsy-os && \
+    mkdir -p /app/data/forensic && \
+    mkdir -p /app/reports && \
+    chown -R nodejs:nodejs /var/log/wilsy-os /app/data /app/reports
 
-# Copy application code
-COPY --chown=nonroot:nonroot . .
+# Switch to non-root user
+USER nodejs
 
-# Create snapshots directory with proper permissions
-RUN mkdir -p /app/snapshots
+# Expose port
+EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD ["node", "/app/scripts/healthcheck.js"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
 
-# Expose application port
-EXPOSE 4000
+# Use tini as init
+ENTRYPOINT ["/sbin/tini", "--"]
 
-# Set production environment
-ENV NODE_ENV=production
-ENV PORT=4000
-
-# Run the application
-CMD ["/app/server.js"]
+# Start the server
+CMD ["node", "server.js"]

@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ METRICS COLLECTOR TESTS - INVESTOR DUE DILIGENCE - $49M ANNUAL VALUE     ║
   ║ 100% coverage | Real-time observability | Business intelligence          ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 const { expect } = require('chai');
 const sinon = require('sinon');
@@ -446,7 +446,7 @@ describe('MetricsCollector - Observability Nexus Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'metrics-collector-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -458,7 +458,7 @@ describe('MetricsCollector - Observability Nexus Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'metrics-collector-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).to.equal(hash);

@@ -20,7 +20,7 @@ if (fs.existsSync(filePath)) {
         status: 'generated',
         timestamp: new Date().toISOString()
     };
-}`
+}`,
   );
 
   fs.writeFileSync(filePath, content);

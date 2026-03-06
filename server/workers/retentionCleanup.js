@@ -19,6 +19,7 @@ const Document = require('../models/Document');
 const RetentionPolicy = require('../models/RetentionPolicy');
 const auditLogger = require('../utils/auditLogger');
 const loggerRaw = require('../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 
 /*
@@ -277,8 +278,7 @@ class RetentionCleanupWorker {
       // Calculate compliance metrics
       const totalDocuments = docStats.reduce((sum, stat) => sum + stat.totalDocuments, 0);
       const expiredDocuments = docStats.reduce((sum, stat) => sum + stat.expiredDocuments, 0);
-      const complianceRate =
-        totalDocuments > 0 ? ((totalDocuments - expiredDocuments) / totalDocuments) * 100 : 100;
+      const complianceRate = totalDocuments > 0 ? ((totalDocuments - expiredDocuments) / totalDocuments) * 100 : 100;
 
       // Calculate economic impact
       const storageCostPerGB = 250; // ZAR per GB per year
@@ -517,11 +517,11 @@ class RetentionCleanupWorker {
                     documentId: doc.documentId,
                     disposalDate: new Date().toISOString(),
                     method: disposalMethod,
-                  })
+                  }),
                 )
                 .digest('hex'),
             },
-          }
+          },
         );
 
         results.processed++;
@@ -588,10 +588,10 @@ class RetentionCleanupWorker {
         documents: policyStats?.totalDocuments || 0,
         percentage: policyStats
           ? Math.round(
-              (policyStats.totalDocuments /
-                docStats.reduce((sum, s) => sum + s.totalDocuments, 0)) *
-                100
-            )
+            (policyStats.totalDocuments
+                / docStats.reduce((sum, s) => sum + s.totalDocuments, 0))
+                * 100,
+          )
           : 0,
         compliant: policyStats ? policyStats.expiredDocuments === 0 : true,
       };
@@ -610,7 +610,7 @@ class RetentionCleanupWorker {
         priority: 'HIGH',
         action: 'Execute immediate retention cleanup',
         impact: `Free ${expiredDocuments} expired documents (${Math.round(
-          (expiredDocuments / totalDocuments) * 100
+          (expiredDocuments / totalDocuments) * 100,
         )}% of total)`,
         estimatedSavings: expiredDocuments * 150 * 0.85, // R150 per doc * 85% automation
         timeline: 'IMMEDIATE',
@@ -643,8 +643,7 @@ class RetentionCleanupWorker {
   }
 
   _getDisposalMethod(retentionRule) {
-    const policy =
-      this.RETENTION_POLICIES[retentionRule] || this.RETENTION_POLICIES.COMPANIES_ACT_7YR;
+    const policy = this.RETENTION_POLICIES[retentionRule] || this.RETENTION_POLICIES.COMPANIES_ACT_7YR;
     return policy.disposalMethod;
   }
 

@@ -1,19 +1,19 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ VALUATION MODEL - FORENSIC VALUATION PERSISTENCE              ║
   ║ [POPIA §19 | Companies Act §28 | IFRS 13 | JSE Compliant]     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Valuation.js
  * VERSION: 1.0.0
  * CREATED: 2026-02-24
- * 
+ *
  * INVESTOR VALUE PROPOSITION:
  * • Solves: R250K/manual valuation storage × 50 = R12.5M annual pain
  * • Generates: R50K/valuation revenue @ 85% margin
  * • Compliance: Companies Act §28, IFRS 13, POPIA §19
- * 
+ *
  * INTEGRATION MAP:
  * {
  *   "consumers": [
@@ -30,7 +30,7 @@
  *     "../utils/popiaUtils.js"
  *   ]
  * }
- * 
+ *
  * MERMAID INTEGRATION:
  * graph TD
  *   A[Valuation Request] --> B[Valuation Model]
@@ -46,8 +46,8 @@
  *   style H fill:#9f9,stroke:#333
  */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 // ============================================================================
 // SCHEMA DEFINITION
@@ -66,7 +66,7 @@ const valuationSchema = new mongoose.Schema({
     required: true,
     unique: true,
     index: true,
-    description: 'Unique valuation identifier (VAL-YYYYMMDD-XXXX)'
+    description: 'Unique valuation identifier (VAL-YYYYMMDD-XXXX)',
   },
 
   companyId: {
@@ -74,7 +74,7 @@ const valuationSchema = new mongoose.Schema({
     ref: 'Company',
     required: true,
     index: true,
-    description: 'Reference to the company being valued'
+    description: 'Reference to the company being valued',
   },
 
   tenantId: {
@@ -83,9 +83,9 @@ const valuationSchema = new mongoose.Schema({
     index: true,
     validate: {
       validator: (v) => /^[a-zA-Z0-9_-]{8,64}$/.test(v),
-      message: 'tenantId must be 8-64 alphanumeric characters'
+      message: 'tenantId must be 8-64 alphanumeric characters',
     },
-    description: 'Multi-tenant isolation identifier'
+    description: 'Multi-tenant isolation identifier',
   },
 
   /**
@@ -95,7 +95,7 @@ const valuationSchema = new mongoose.Schema({
     type: Map,
     of: mongoose.Schema.Types.Mixed,
     required: true,
-    description: 'Results from each valuation method applied'
+    description: 'Results from each valuation method applied',
   },
 
   methodCount: {
@@ -103,7 +103,7 @@ const valuationSchema = new mongoose.Schema({
     required: true,
     min: 1,
     max: 7,
-    description: 'Number of valuation methods successfully applied'
+    description: 'Number of valuation methods successfully applied',
   },
 
   /**
@@ -113,19 +113,19 @@ const valuationSchema = new mongoose.Schema({
     iterations: {
       type: Number,
       default: 10000,
-      description: 'Number of simulation iterations'
+      description: 'Number of simulation iterations',
     },
     mean: {
       type: Number,
-      description: 'Mean valuation from simulation'
+      description: 'Mean valuation from simulation',
     },
     median: {
       type: Number,
-      description: 'Median valuation from simulation'
+      description: 'Median valuation from simulation',
     },
     stdDev: {
       type: Number,
-      description: 'Standard deviation of valuations'
+      description: 'Standard deviation of valuations',
     },
     percentiles: {
       p5: { type: Number },
@@ -134,7 +134,7 @@ const valuationSchema = new mongoose.Schema({
       p50: { type: Number },
       p75: { type: Number },
       p90: { type: Number },
-      p95: { type: Number }
+      p95: { type: Number },
     },
     min: { type: Number },
     max: { type: Number },
@@ -142,14 +142,14 @@ const valuationSchema = new mongoose.Schema({
       normal: {
         isNormal: { type: Boolean },
         skewness: { type: Number },
-        kurtosis: { type: Number }
+        kurtosis: { type: Number },
       },
       lognormal: {
         isNormal: { type: Boolean },
         skewness: { type: Number },
-        kurtosis: { type: Number }
-      }
-    }
+        kurtosis: { type: Number },
+      },
+    },
   },
 
   /**
@@ -160,35 +160,35 @@ const valuationSchema = new mongoose.Schema({
     discountRate: [{
       delta: { type: Number },
       value: { type: Number },
-      change: { type: Number }
+      change: { type: Number },
     }],
     terminalGrowth: [{
       delta: { type: Number },
       value: { type: Number },
-      change: { type: Number }
+      change: { type: Number },
     }],
     revenueGrowth: [{
       delta: { type: Number },
       value: { type: Number },
-      change: { type: Number }
+      change: { type: Number },
     }],
     margin: [{
       delta: { type: Number },
       value: { type: Number },
-      change: { type: Number }
+      change: { type: Number },
     }],
     rankings: [{
       variable: { type: String },
       maxChange: { type: Number },
-      importance: { type: Number }
+      importance: { type: Number },
     }],
     tornado: [{
       variable: { type: String },
       low: { type: Number },
       high: { type: Number },
       base: { type: Number },
-      spread: { type: Number }
-    }]
+      spread: { type: Number },
+    }],
   },
 
   /**
@@ -204,7 +204,7 @@ const valuationSchema = new mongoose.Schema({
     monteCarloMedian: { type: Number },
     confidence: { type: Number, min: 0, max: 1 },
     range: { type: Number },
-    rangePercent: { type: Number }
+    rangePercent: { type: Number },
   },
 
   /**
@@ -230,7 +230,7 @@ const valuationSchema = new mongoose.Schema({
     workingCapitalPercent: { type: Number },
     capExPercent: { type: Number },
     depreciationPercent: { type: Number },
-    iterations: { type: Number }
+    iterations: { type: Number },
   },
 
   /**
@@ -241,7 +241,7 @@ const valuationSchema = new mongoose.Schema({
     options: { type: mongoose.Schema.Types.Mixed },
     createdBy: { type: String },
     updatedBy: { type: String },
-    version: { type: String }
+    version: { type: String },
   },
 
   /**
@@ -252,11 +252,11 @@ const valuationSchema = new mongoose.Schema({
     piiFields: [{
       field: { type: String },
       redacted: { type: Boolean },
-      category: { type: String }
+      category: { type: String },
     }],
     redactionApplied: { type: Boolean, default: false },
     consentVerified: { type: Boolean, default: false },
-    consentTimestamp: { type: Date }
+    consentTimestamp: { type: Date },
   },
 
   /**
@@ -266,18 +266,18 @@ const valuationSchema = new mongoose.Schema({
     policy: {
       type: String,
       enum: ['companies_act_10_years', 'popia_1_year', 'tax_act_5_years', 'forensic_permanent'],
-      default: 'companies_act_10_years'
+      default: 'companies_act_10_years',
     },
     dataResidency: {
       type: String,
       enum: ['ZA', 'US', 'EU', 'GB', 'AU'],
-      default: 'ZA'
+      default: 'ZA',
     },
     retentionStart: { type: Date, default: Date.now },
     retentionEnd: { type: Date },
     archivedAt: { type: Date },
     destroyedAt: { type: Date },
-    destructionCertificate: { type: String }
+    destructionCertificate: { type: String },
   },
 
   /**
@@ -289,28 +289,28 @@ const valuationSchema = new mongoose.Schema({
       required: true,
       unique: true,
       match: /^[a-f0-9]{64}$/,
-      description: 'SHA-256 hash of valuation data'
+      description: 'SHA-256 hash of valuation data',
     },
     previousHash: {
       type: String,
       match: /^[a-f0-9]{64}$/,
-      description: 'Previous version hash for chain of custody'
+      description: 'Previous version hash for chain of custody',
     },
     chainVerified: { type: Boolean, default: false },
     blockchainAnchor: {
       transactionId: { type: String },
       blockNumber: { type: Number },
-      network: { 
+      network: {
         type: String,
         enum: ['ethereum', 'hyperledger', 'none'],
-        default: 'none'
+        default: 'none',
       },
       timestamp: { type: Date },
-      verificationUrl: { type: String }
+      verificationUrl: { type: String },
     },
     signedBy: { type: String },
     signedAt: { type: Date },
-    signature: { type: String }
+    signature: { type: String },
   },
 
   /**
@@ -327,8 +327,8 @@ const valuationSchema = new mongoose.Schema({
       action: { type: String },
       userId: { type: String },
       timestamp: { type: Date },
-      details: { type: mongoose.Schema.Types.Mixed }
-    }]
+      details: { type: mongoose.Schema.Types.Mixed },
+    }],
   },
 
   /**
@@ -337,19 +337,19 @@ const valuationSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['draft', 'completed', 'archived', 'deleted', 'under_review'],
-    default: 'completed'
+    default: 'completed',
   },
 
   /**
    * Tags and Notes
    */
   tags: [String],
-  notes: String
+  notes: String,
 }, {
   timestamps: true,
   collection: 'valuations',
   strict: true,
-  minimize: false
+  minimize: false,
 });
 
 // ============================================================================
@@ -380,7 +380,7 @@ valuationSchema.index({ 'finalValuation.low': 1, 'finalValuation.high': 1 });
 /**
  * Pre-save middleware to generate forensic hash and set retention dates
  */
-valuationSchema.pre('save', async function(next) {
+valuationSchema.pre('save', async function (next) {
   try {
     // Update audit timestamp
     this.audit.updatedAt = new Date();
@@ -388,7 +388,7 @@ valuationSchema.pre('save', async function(next) {
     // Set retention end date based on policy
     if (!this.retention.retentionEnd) {
       const endDate = new Date(this.retention.retentionStart || Date.now());
-      
+
       switch (this.retention.policy) {
         case 'companies_act_10_years':
           endDate.setFullYear(endDate.getFullYear() + 10);
@@ -403,7 +403,7 @@ valuationSchema.pre('save', async function(next) {
           endDate.setFullYear(endDate.getFullYear() + 100);
           break;
       }
-      
+
       this.retention.retentionEnd = endDate;
     }
 
@@ -416,10 +416,10 @@ valuationSchema.pre('save', async function(next) {
       monteCarlo: this.monteCarlo ? {
         mean: this.monteCarlo.mean,
         median: this.monteCarlo.median,
-        stdDev: this.monteCarlo.stdDev
+        stdDev: this.monteCarlo.stdDev,
       } : null,
       timestamp: this.audit.createdAt,
-      version: '1.0.0'
+      version: '1.0.0',
     };
 
     const canonicalData = JSON.stringify(hashData, Object.keys(hashData).sort());
@@ -431,7 +431,7 @@ valuationSchema.pre('save', async function(next) {
       const previousValuation = await this.constructor.findOne({
         companyId: this.companyId,
         tenantId: this.tenantId,
-        'audit.createdAt': { $lt: this.audit.createdAt }
+        'audit.createdAt': { $lt: this.audit.createdAt },
       }).sort({ 'audit.createdAt': -1 });
 
       if (previousValuation) {
@@ -448,7 +448,7 @@ valuationSchema.pre('save', async function(next) {
 /**
  * Pre-update middleware
  */
-valuationSchema.pre('findOneAndUpdate', function() {
+valuationSchema.pre('findOneAndUpdate', function () {
   this.set({ 'audit.updatedAt': new Date() });
 });
 
@@ -460,7 +460,7 @@ valuationSchema.pre('findOneAndUpdate', function() {
  * Verify forensic hash integrity
  * @returns {Object} Verification result
  */
-valuationSchema.methods.verifyIntegrity = function() {
+valuationSchema.methods.verifyIntegrity = function () {
   const hashData = {
     valuationId: this.valuationId,
     companyId: this.companyId,
@@ -469,10 +469,10 @@ valuationSchema.methods.verifyIntegrity = function() {
     monteCarlo: this.monteCarlo ? {
       mean: this.monteCarlo.mean,
       median: this.monteCarlo.median,
-      stdDev: this.monteCarlo.stdDev
+      stdDev: this.monteCarlo.stdDev,
     } : null,
     timestamp: this.audit.createdAt,
-    version: '1.0.0'
+    version: '1.0.0',
   };
 
   const canonicalData = JSON.stringify(hashData, Object.keys(hashData).sort());
@@ -483,7 +483,7 @@ valuationSchema.methods.verifyIntegrity = function() {
     calculated: calculatedHash,
     stored: this.forensic.hash,
     chainVerified: this.forensic.chainVerified,
-    previousHash: this.forensic.previousHash
+    previousHash: this.forensic.previousHash,
   };
 };
 
@@ -491,7 +491,7 @@ valuationSchema.methods.verifyIntegrity = function() {
  * Generate forensic report for court evidence
  * @returns {Object} Forensic report
  */
-valuationSchema.methods.generateForensicReport = function() {
+valuationSchema.methods.generateForensicReport = function () {
   return {
     reportId: `FORENSIC-${this.valuationId}`,
     valuationId: this.valuationId,
@@ -502,7 +502,7 @@ valuationSchema.methods.generateForensicReport = function() {
     finalValue: this.finalValuation.weightedAverage,
     valueRange: {
       low: this.finalValuation.low,
-      high: this.finalValuation.high
+      high: this.finalValuation.high,
     },
     confidence: this.finalValuation.confidence,
     methods: Array.from(this.methods.keys()),
@@ -510,12 +510,12 @@ valuationSchema.methods.generateForensicReport = function() {
       hash: this.forensic.hash,
       previousHash: this.forensic.previousHash,
       chainVerified: this.forensic.chainVerified,
-      blockchainAnchor: this.forensic.blockchainAnchor
+      blockchainAnchor: this.forensic.blockchainAnchor,
     },
     retention: {
       policy: this.retention.policy,
-      expiresAt: this.retention.retentionEnd
-    }
+      expiresAt: this.retention.retentionEnd,
+    },
   };
 };
 
@@ -523,20 +523,20 @@ valuationSchema.methods.generateForensicReport = function() {
  * Get redacted version for external sharing
  * @returns {Object} Redacted valuation
  */
-valuationSchema.methods.getRedactedVersion = function() {
+valuationSchema.methods.getRedactedVersion = function () {
   const redacted = this.toObject();
-  
+
   // Remove sensitive fields
   delete redacted.forensic;
   delete redacted.audit;
   delete redacted.popia;
   delete redacted.metadata?.options;
-  
+
   // Redact company reference
   if (redacted.companyId) {
     redacted.companyId = '[REDACTED]';
   }
-  
+
   return redacted;
 };
 
@@ -546,22 +546,22 @@ valuationSchema.methods.getRedactedVersion = function() {
  * @param {string} userId - User placing the hold
  * @returns {Promise} Updated valuation
  */
-valuationSchema.methods.placeLegalHold = async function(reason, userId) {
+valuationSchema.methods.placeLegalHold = async function (reason, userId) {
   this.status = 'under_review';
   this.retention.policy = 'forensic_permanent';
-  
+
   // Extend retention end date
   const newEndDate = new Date();
   newEndDate.setFullYear(newEndDate.getFullYear() + 100);
   this.retention.retentionEnd = newEndDate;
-  
+
   this.audit.events.push({
     action: 'LEGAL_HOLD_PLACED',
     userId,
     timestamp: new Date(),
-    details: { reason }
+    details: { reason },
   });
-  
+
   return this.save();
 };
 
@@ -570,10 +570,10 @@ valuationSchema.methods.placeLegalHold = async function(reason, userId) {
  * @param {Date} archiveDate - Date to archive
  * @returns {Promise} Updated valuation
  */
-valuationSchema.methods.scheduleArchival = async function(archiveDate) {
+valuationSchema.methods.scheduleArchival = async function (archiveDate) {
   this.retention.archivedAt = archiveDate;
   this.status = 'archived';
-  
+
   return this.save();
 };
 
@@ -587,9 +587,11 @@ valuationSchema.methods.scheduleArchival = async function(archiveDate) {
  * @param {Object} options - Query options
  * @returns {Promise<Array>} Valuations array
  */
-valuationSchema.statics.findByCompany = function(companyId, options = {}) {
-  const { limit = 10, skip = 0, sortBy = 'createdAt', sortOrder = -1 } = options;
-  
+valuationSchema.statics.findByCompany = function (companyId, options = {}) {
+  const {
+    limit = 10, skip = 0, sortBy = 'createdAt', sortOrder = -1,
+  } = options;
+
   return this.find({ companyId })
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
@@ -602,7 +604,7 @@ valuationSchema.statics.findByCompany = function(companyId, options = {}) {
  * @param {string} companyId - Company ID
  * @returns {Promise<Object>} Statistics
  */
-valuationSchema.statics.getCompanyStats = async function(companyId) {
+valuationSchema.statics.getCompanyStats = async function (companyId) {
   const stats = await this.aggregate([
     { $match: { companyId } },
     {
@@ -613,9 +615,9 @@ valuationSchema.statics.getCompanyStats = async function(companyId) {
         minValue: { $min: '$finalValuation.weightedAverage' },
         maxValue: { $max: '$finalValuation.weightedAverage' },
         avgConfidence: { $avg: '$finalValuation.confidence' },
-        methodDistribution: { $push: '$methodCount' }
-      }
-    }
+        methodDistribution: { $push: '$methodCount' },
+      },
+    },
   ]);
 
   return stats[0] || {
@@ -624,7 +626,7 @@ valuationSchema.statics.getCompanyStats = async function(companyId) {
     minValue: 0,
     maxValue: 0,
     avgConfidence: 0,
-    methodDistribution: []
+    methodDistribution: [],
   };
 };
 
@@ -635,17 +637,17 @@ valuationSchema.statics.getCompanyStats = async function(companyId) {
  * @param {Object} options - Query options
  * @returns {Promise<Array>} Valuations array
  */
-valuationSchema.statics.findByDateRange = function(startDate, endDate, options = {}) {
+valuationSchema.statics.findByDateRange = function (startDate, endDate, options = {}) {
   const { tenantId, limit = 100 } = options;
-  
+
   const query = {
-    'audit.createdAt': { $gte: startDate, $lte: endDate }
+    'audit.createdAt': { $gte: startDate, $lte: endDate },
   };
-  
+
   if (tenantId) {
     query.tenantId = tenantId;
   }
-  
+
   return this.find(query)
     .sort({ 'audit.createdAt': -1 })
     .limit(limit)
@@ -657,13 +659,13 @@ valuationSchema.statics.findByDateRange = function(startDate, endDate, options =
  * @param {number} daysThreshold - Days threshold
  * @returns {Promise<Array>} Valuations array
  */
-valuationSchema.statics.getExpiringValuations = function(daysThreshold = 30) {
+valuationSchema.statics.getExpiringValuations = function (daysThreshold = 30) {
   const thresholdDate = new Date();
   thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
-  
+
   return this.find({
     'retention.retentionEnd': { $lte: thresholdDate },
-    status: { $ne: 'deleted' }
+    status: { $ne: 'deleted' },
   })
     .sort({ 'retention.retentionEnd': 1 })
     .limit(100)
@@ -676,18 +678,18 @@ valuationSchema.statics.getExpiringValuations = function(daysThreshold = 30) {
  * @param {string} userId - User performing archive
  * @returns {Promise} Update result
  */
-valuationSchema.statics.bulkArchive = async function(valuationIds, userId) {
+valuationSchema.statics.bulkArchive = async function (valuationIds, userId) {
   const result = await this.updateMany(
     { _id: { $in: valuationIds } },
     {
       $set: {
         status: 'archived',
         'retention.archivedAt': new Date(),
-        'audit.updatedBy': userId
-      }
-    }
+        'audit.updatedBy': userId,
+      },
+    },
   );
-  
+
   return result;
 };
 
@@ -696,13 +698,13 @@ valuationSchema.statics.bulkArchive = async function(valuationIds, userId) {
  * @param {string} companyId - Company ID
  * @returns {Promise<Object>} Chain verification result
  */
-valuationSchema.statics.verifyHashChain = async function(companyId) {
+valuationSchema.statics.verifyHashChain = async function (companyId) {
   const valuations = await this.find({ companyId })
     .sort({ 'audit.createdAt': 1 })
     .lean();
-  
+
   const brokenLinks = [];
-  
+
   for (let i = 1; i < valuations.length; i++) {
     const expectedHash = valuations[i - 1].forensic.hash;
     if (valuations[i].forensic.previousHash !== expectedHash) {
@@ -710,15 +712,15 @@ valuationSchema.statics.verifyHashChain = async function(companyId) {
         index: i,
         valuationId: valuations[i].valuationId,
         expected: expectedHash,
-        actual: valuations[i].forensic.previousHash
+        actual: valuations[i].forensic.previousHash,
       });
     }
   }
-  
+
   return {
     verified: brokenLinks.length === 0,
     totalValuations: valuations.length,
-    brokenLinks
+    brokenLinks,
   };
 };
 
@@ -729,14 +731,14 @@ valuationSchema.statics.verifyHashChain = async function(companyId) {
 /**
  * Get formatted value range
  */
-valuationSchema.virtual('valueRange').get(function() {
+valuationSchema.virtual('valueRange').get(function () {
   return `${this.finalValuation.low.toLocaleString()} - ${this.finalValuation.high.toLocaleString()}`;
 });
 
 /**
  * Get age in days
  */
-valuationSchema.virtual('ageInDays').get(function() {
+valuationSchema.virtual('ageInDays').get(function () {
   const age = Date.now() - this.audit.createdAt.getTime();
   return Math.floor(age / (1000 * 60 * 60 * 24));
 });
@@ -744,14 +746,14 @@ valuationSchema.virtual('ageInDays').get(function() {
 /**
  * Check if expired
  */
-valuationSchema.virtual('isExpired').get(function() {
+valuationSchema.virtual('isExpired').get(function () {
   return new Date() > this.retention.retentionEnd;
 });
 
 /**
  * Check if on legal hold
  */
-valuationSchema.virtual('isOnLegalHold').get(function() {
+valuationSchema.virtual('isOnLegalHold').get(function () {
   return this.retention.policy === 'forensic_permanent' || this.status === 'under_review';
 });
 

@@ -1,30 +1,30 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ TARGET MODEL - ACQUISITION TARGET WITH QUANTUM FEATURE VECTORS                        ║
   ║ [Production Grade | 127-Dimensional Analysis | Real-time Scoring]                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
-import mongoose from "mongoose";
-import crypto from "crypto";
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 const targetSchema = new mongoose.Schema({
   targetId: {
     type: String,
     required: true,
     unique: true,
-    default: () => `TGT-${crypto.randomBytes(4).toString('hex').toUpperCase()}`
+    default: () => `TGT-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
   },
 
   tenantId: {
     type: String,
     required: true,
-    index: true
+    index: true,
   },
 
   name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
 
   registrationNumber: {
@@ -32,34 +32,34 @@ const targetSchema = new mongoose.Schema({
     required: true,
     unique: true,
     validate: {
-      validator: v => /^\d{4}\/\d{6}\/\d{2}$/.test(v),
-      message: 'Invalid company registration number format'
-    }
+      validator: (v) => /^\d{4}\/\d{6}\/\d{2}$/.test(v),
+      message: 'Invalid company registration number format',
+    },
   },
 
   jurisdiction: {
     type: String,
     required: true,
-    enum: ['ZA', 'NA', 'BW', 'KE', 'NG', 'GB', 'EU', 'US', 'CN', 'IN']
+    enum: ['ZA', 'NA', 'BW', 'KE', 'NG', 'GB', 'EU', 'US', 'CN', 'IN'],
   },
 
   status: {
     type: String,
-    enum: ['identified', 'screened', 'contacted', 'nda_signed', 'dd_in_progress', 
-           'offered', 'negotiating', 'agreed', 'withdrawn', 'acquired'],
-    default: 'identified'
+    enum: ['identified', 'screened', 'contacted', 'nda_signed', 'dd_in_progress',
+      'offered', 'negotiating', 'agreed', 'withdrawn', 'acquired'],
+    default: 'identified',
   },
 
   // Quantum Feature Vectors (127 dimensions)
   quantumVectors: {
-    financial: mongoose.Schema.Types.Mixed,  // 32 dimensions
+    financial: mongoose.Schema.Types.Mixed, // 32 dimensions
     operational: mongoose.Schema.Types.Mixed, // 28 dimensions
-    market: mongoose.Schema.Types.Mixed,      // 24 dimensions
+    market: mongoose.Schema.Types.Mixed, // 24 dimensions
     technological: mongoose.Schema.Types.Mixed, // 18 dimensions
     humanCapital: mongoose.Schema.Types.Mixed, // 15 dimensions
-    regulatory: mongoose.Schema.Types.Mixed,   // 10 dimensions
+    regulatory: mongoose.Schema.Types.Mixed, // 10 dimensions
     magnitude: Number,
-    lastCalculated: Date
+    lastCalculated: Date,
   },
 
   // Financial Data
@@ -70,12 +70,12 @@ const targetSchema = new mongoose.Schema({
       current: Number,
       forecast: [{ year: Number, value: Number }],
       growth: Number,
-      historical: [Number]
+      historical: [Number],
     },
     ebitda: {
       current: Number,
       margin: Number,
-      historical: [Number]
+      historical: [Number],
     },
     netIncome: Number,
     totalAssets: Number,
@@ -85,7 +85,7 @@ const targetSchema = new mongoose.Schema({
     debt: Number,
     workingCapital: Number,
     capex: Number,
-    fcf: Number
+    fcf: Number,
   },
 
   // Market Data
@@ -97,11 +97,11 @@ const targetSchema = new mongoose.Schema({
     competitors: [String],
     customerConcentration: [{
       customerId: String,
-      percentage: Number
+      percentage: Number,
     }],
     geographicPresence: [String],
     marketGrowth: Number,
-    marketPosition: String
+    marketPosition: String,
   },
 
   // Operational Data
@@ -112,7 +112,7 @@ const targetSchema = new mongoose.Schema({
       type: String,
       location: String,
       size: Number,
-      owned: Boolean
+      owned: Boolean,
     }],
     capacity: mongoose.Schema.Types.Mixed,
     utilization: Number,
@@ -121,8 +121,8 @@ const targetSchema = new mongoose.Schema({
       patentNumber: String,
       filingDate: Date,
       expiryDate: Date,
-      jurisdiction: String
-    }]
+      jurisdiction: String,
+    }],
   },
 
   // Management Data
@@ -131,11 +131,11 @@ const targetSchema = new mongoose.Schema({
       name: String,
       tenure: Number,
       age: Number,
-      background: String
+      background: String,
     },
     cfo: {
       name: String,
-      tenure: Number
+      tenure: Number,
     },
     boardSize: Number,
     independentDirectors: Number,
@@ -143,15 +143,15 @@ const targetSchema = new mongoose.Schema({
       name: String,
       title: String,
       tenure: Number,
-      equity: Number
+      equity: Number,
     }],
     sentiment: {
       score: Number,
       confidence: Number,
       keyPhrases: [String],
       concerns: [String],
-      lastAnalyzed: Date
-    }
+      lastAnalyzed: Date,
+    },
   },
 
   // Cultural DNA
@@ -166,8 +166,8 @@ const targetSchema = new mongoose.Schema({
     compatibility: {
       withAcquirer: mongoose.Schema.Types.ObjectId,
       score: Number,
-      dimensions: mongoose.Schema.Types.Mixed
-    }
+      dimensions: mongoose.Schema.Types.Mixed,
+    },
   },
 
   // Synergy Scores
@@ -176,7 +176,7 @@ const targetSchema = new mongoose.Schema({
     score: Number,
     confidence: Number,
     breakdown: mongoose.Schema.Types.Mixed,
-    calculatedAt: Date
+    calculatedAt: Date,
   }],
 
   // Deal History
@@ -185,7 +185,7 @@ const targetSchema = new mongoose.Schema({
     acquirer: String,
     status: String,
     date: Date,
-    value: Number
+    value: Number,
   }],
 
   // Source Information
@@ -193,7 +193,7 @@ const targetSchema = new mongoose.Schema({
     type: { type: String, enum: ['database', 'scraped', 'network', 'inbound'] },
     url: String,
     confidence: Number,
-    lastVerified: Date
+    lastVerified: Date,
   },
 
   // Scoring Metadata
@@ -202,15 +202,15 @@ const targetSchema = new mongoose.Schema({
     scoringMethod: String,
     quantumIterations: Number,
     convergenceScore: Number,
-    featuresUsed: [String]
+    featuresUsed: [String],
   },
 
   forensicHash: String,
   previousHash: String,
-  chainPosition: Number
+  chainPosition: Number,
 }, {
   timestamps: true,
-  collection: 'targets'
+  collection: 'targets',
 });
 
 // Indexes
@@ -221,7 +221,7 @@ targetSchema.index({ 'synergyScores.score': -1 });
 targetSchema.index({ registrationNumber: 1 });
 
 // Pre-save middleware
-targetSchema.pre('save', async function(next) {
+targetSchema.pre('save', async function (next) {
   if (this.isModified('quantumVectors') || !this.quantumVectors?.magnitude) {
     this.quantumVectors.magnitude = Math.sqrt(
       Object.values(this.quantumVectors || {}).reduce((sum, vec) => {
@@ -229,7 +229,7 @@ targetSchema.pre('save', async function(next) {
           return sum + Object.values(vec).reduce((s, v) => s + (v * v), 0);
         }
         return sum;
-      }, 0)
+      }, 0),
     );
     this.quantumVectors.lastCalculated = new Date();
   }
@@ -241,7 +241,7 @@ targetSchema.pre('save', async function(next) {
     jurisdiction: this.jurisdiction,
     status: this.status,
     updatedAt: new Date(),
-    previousHash: this.previousHash
+    previousHash: this.previousHash,
   });
 
   this.forensicHash = crypto
@@ -253,13 +253,11 @@ targetSchema.pre('save', async function(next) {
 });
 
 // Methods
-targetSchema.methods.calculateSimilarity = function(otherTarget) {
+targetSchema.methods.calculateSimilarity = function (otherTarget) {
   // Cosine similarity between quantum vectors
   const dotProduct = Object.keys(this.quantumVectors).reduce((sum, key) => {
     if (typeof this.quantumVectors[key] === 'object' && otherTarget.quantumVectors[key]) {
-      return sum + Object.keys(this.quantumVectors[key]).reduce((s, subKey) => {
-        return s + (this.quantumVectors[key][subKey] || 0) * (otherTarget.quantumVectors[key][subKey] || 0);
-      }, 0);
+      return sum + Object.keys(this.quantumVectors[key]).reduce((s, subKey) => s + (this.quantumVectors[key][subKey] || 0) * (otherTarget.quantumVectors[key][subKey] || 0), 0);
     }
     return sum;
   }, 0);
@@ -267,13 +265,13 @@ targetSchema.methods.calculateSimilarity = function(otherTarget) {
   return dotProduct / (this.quantumVectors.magnitude * otherTarget.quantumVectors.magnitude);
 };
 
-targetSchema.methods.updateSynergyScore = function(acquirerId, score, breakdown) {
+targetSchema.methods.updateSynergyScore = function (acquirerId, score, breakdown) {
   this.synergyScores.push({
     acquirerId,
     score,
     breakdown,
     confidence: this.calculateConfidence(breakdown),
-    calculatedAt: new Date()
+    calculatedAt: new Date(),
   });
 
   // Keep only last 10 scores per acquirer
@@ -282,10 +280,10 @@ targetSchema.methods.updateSynergyScore = function(acquirerId, score, breakdown)
     .slice(0, 10);
 };
 
-targetSchema.methods.calculateConfidence = function(breakdown) {
+targetSchema.methods.calculateConfidence = function (breakdown) {
   // Calculate confidence based on data completeness
   const requiredFields = ['financial', 'operational', 'market', 'management'];
-  const presentFields = requiredFields.filter(f => breakdown[f] !== undefined);
+  const presentFields = requiredFields.filter((f) => breakdown[f] !== undefined);
   return (presentFields.length / requiredFields.length) * 100;
 };
 

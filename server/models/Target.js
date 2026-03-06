@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ TARGET MODEL - ACQUISITION TARGET WITH QUANTUM SCORING                                ║
   ║ R3.5B/year deal flow | 94% predictive accuracy | Multi-tenant isolation               ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Target.js
@@ -401,7 +401,7 @@ const targetSchema = new mongoose.Schema(
 
     retentionEnd: {
       type: Date,
-      default: function () {
+      default() {
         const date = new Date();
         date.setFullYear(date.getFullYear() + 10);
         return date;
@@ -418,7 +418,7 @@ const targetSchema = new mongoose.Schema(
     collection: 'targets',
     strict: true,
     minimize: false,
-  }
+  },
 );
 
 // ============================================================================
@@ -448,16 +448,14 @@ targetSchema.pre('save', async function (next) {
 
     // Calculate financial growth if revenue data exists
     if (this.financials?.revenue?.current && this.financials?.revenue?.previous) {
-      this.financials.revenue.growth =
-        ((this.financials.revenue.current - this.financials.revenue.previous) /
-          this.financials.revenue.previous) *
-        100;
+      this.financials.revenue.growth = ((this.financials.revenue.current - this.financials.revenue.previous)
+          / this.financials.revenue.previous)
+        * 100;
     }
 
     // Calculate EBITDA margin
     if (this.financials?.ebitda?.current && this.financials?.revenue?.current) {
-      this.financials.ebitda.margin =
-        (this.financials.ebitda.current / this.financials.revenue.current) * 100;
+      this.financials.ebitda.margin = (this.financials.ebitda.current / this.financials.revenue.current) * 100;
     }
 
     const canonicalData = JSON.stringify(
@@ -480,7 +478,7 @@ targetSchema.pre('save', async function (next) {
         industry: null,
         status: null,
         previousHash: null,
-      }).sort()
+      }).sort(),
     );
 
     this.forensicHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -533,7 +531,7 @@ targetSchema.methods.addSynergyScore = function (acquirerId, score, confidence, 
  */
 targetSchema.methods.getBestSynergyScore = function (acquirerId) {
   const scores = this.synergyScores.filter(
-    (s) => s.acquirerId?.toString() === acquirerId?.toString()
+    (s) => s.acquirerId?.toString() === acquirerId?.toString(),
   );
 
   if (scores.length === 0) return null;
@@ -565,7 +563,7 @@ targetSchema.methods.verifyIntegrity = function () {
       industry: null,
       status: null,
       previousHash: null,
-    }).sort()
+    }).sort(),
   );
 
   const calculatedHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
@@ -713,6 +711,8 @@ targetSchema.virtual('hasFinancialData').get(function () {
 
 const Target = mongoose.model('Target', targetSchema);
 
-export { Target, INDUSTRY_SECTORS, TARGET_STATUS, DATA_SOURCES, CURRENCIES };
+export {
+  Target, INDUSTRY_SECTORS, TARGET_STATUS, DATA_SOURCES, CURRENCIES,
+};
 
 export default Target;

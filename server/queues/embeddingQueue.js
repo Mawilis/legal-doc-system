@@ -323,7 +323,7 @@ export const addEmbeddingJob = async (data, options = {}) => {
         removeOnFail: options.removeOnFail || {
           age: FAILED_JOBS_TTL,
         },
-      }
+      },
     );
 
     // Update metrics
@@ -394,7 +394,7 @@ export const addBatchEmbeddingJobs = async (items, options = {}) => {
 
     const duration = performance.now() - startTime;
     console.log(
-      `[EmbeddingQueue] Batch added: ${batchId} (${items.length} jobs in ${duration.toFixed(2)}ms)`
+      `[EmbeddingQueue] Batch added: ${batchId} (${items.length} jobs in ${duration.toFixed(2)}ms)`,
     );
 
     return added;
@@ -410,18 +410,14 @@ export const addBatchEmbeddingJobs = async (items, options = {}) => {
  * @param {Object} data - Job data
  * @returns {Promise<Object>} Added job
  */
-export const addHighPriorityJob = async (data) => {
-  return addEmbeddingJob(data, { priority: 1 });
-};
+export const addHighPriorityJob = async (data) => addEmbeddingJob(data, { priority: 1 });
 
 /*
  * Helper function to add low-priority embedding job
  * @param {Object} data - Job data
  * @returns {Promise<Object>} Added job
  */
-export const addLowPriorityJob = async (data) => {
-  return addEmbeddingJob(data, { priority: 5 });
-};
+export const addLowPriorityJob = async (data) => addEmbeddingJob(data, { priority: 5 });
 
 /*
  * Get queue status with detailed metrics
@@ -711,9 +707,7 @@ export const getQueueHealth = async () => {
  * Get Prometheus metrics
  * @returns {Promise<string>} Prometheus metrics
  */
-export const getMetrics = async () => {
-  return promClient.register.metrics();
-};
+export const getMetrics = async () => promClient.register.metrics();
 
 // Graceful shutdown handler
 export const close = async () => {

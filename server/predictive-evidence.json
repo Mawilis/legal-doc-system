@@ -1,0 +1,29 @@
+{
+  "evidenceId": "EVD-24F1556B461D450E",
+  "timestamp": "2026-03-04T14:00:24.000Z",
+  "predictions": {
+    "totalValue": 1248948000,
+    "totalDocuments": 34693,
+    "confidence": 0.983
+  },
+  "auditEntries": [
+    {
+      "totalDocuments": 34693,
+      "totalValue": 1248948000,
+      "confidence": 0.983,
+      "timestamp": "2026-03-04T14:00:24.000Z"
+    }
+  ],
+  "hash": "47ee3d5de5420de6f0a1810bb49ab6f56b9a71034893bb356f060362efa096e4",
+  "courtAdmissible": {
+    "jurisdiction": "South Africa",
+    "actsComplied": [
+      "POPIA",
+      "ECT Act",
+      "Companies Act"
+    ],
+    "authenticityProof": "5e0481300446b88d94fdbb9d1b6fb98261cb4672b5204744f010a71f16325dd406729ca5b5d4a9531e29e7d486a58c511ee9a654f8807ef7802e32bb47639e0c",
+    "timestampAuthority": "WILSY_OS_2050",
+    "quantumVerified": true
+  }
+}

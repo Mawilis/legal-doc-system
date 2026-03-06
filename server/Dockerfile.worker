@@ -1,0 +1,34 @@
+# ============================================================================
+# WILSY OS 2050 - WORKER DOCKERFILE
+# VERSION: 42.0.0 | GENERATION: 10
+# ============================================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY yarn.lock* ./
+
+# Install dependencies
+RUN yarn install --frozen-lockfile --production
+
+# Copy source code
+COPY . .
+
+# Create worker entrypoint
+RUN echo '#!/bin/sh\n\
+NODE_ENV=production node src/workers/index.js\n\
+' > /usr/local/bin/start-worker && chmod +x /usr/local/bin/start-worker
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))" || exit 1
+
+# Start worker
+CMD ["start-worker"]
+
+# ============================================================================
+# WILSY OS - The Global Legal Operating System
+# ============================================================================

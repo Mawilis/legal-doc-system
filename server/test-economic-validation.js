@@ -29,13 +29,13 @@ if (eliminatedRisk >= 2400000) {
   console.log(
     `  Calculation: R${maxFine.toLocaleString()} max fine × ${
       breachLikelihood * 100
-    }% likelihood × ${riskReduction * 100}% reduction`
+    }% likelihood × ${riskReduction * 100}% reduction`,
   );
 } else {
   console.log(
     `✗ Risk Elimination: R${Math.round(
-      eliminatedRisk
-    ).toLocaleString()} (FAILED - Below R2.4M claim)`
+      eliminatedRisk,
+    ).toLocaleString()} (FAILED - Below R2.4M claim)`,
   );
   process.exit(1);
 }

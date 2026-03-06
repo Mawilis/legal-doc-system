@@ -1,7 +1,7 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ CIRCUIT BREAKER - FAULT TOLERANCE                                         ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 class CircuitBreaker {
   constructor(name, options = {}) {
@@ -31,9 +31,7 @@ class CircuitBreaker {
     try {
       const result = await Promise.race([
         fn(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout')), this.options.timeout)
-        ),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), this.options.timeout)),
       ]);
 
       this.onSuccess();

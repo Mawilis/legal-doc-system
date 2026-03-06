@@ -1,10 +1,10 @@
 #!/* eslint-disable */
 /* eslint-env jest */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ INVESTOR DASHBOARD SERVICE TESTS - INVESTOR DUE DILIGENCE SUITE                       ║
   ║ 100% coverage | JSE Compliance Verification | Real-time Analytics Testing             ║
   ║ R950K/year savings validated | Materiality Threshold Testing | Tenant Isolation       ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/services/investor/dashboardService.test.js
@@ -22,9 +22,6 @@ import { createHash } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Import service
 import {
@@ -44,10 +41,13 @@ import User from '../../../models/User.js';
 
 // Import utilities for mocking
 import loggerRaw from '../../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import auditLogger from '../../../utils/auditLogger.js';
 import cryptoUtils from '../../../utils/cryptoUtils.js';
 import tenantContext from '../../../middleware/tenantContext.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const logger = loggerRaw.default || loggerRaw;
 
 // ============================================================================
 // MOCK SETUP
@@ -361,9 +361,7 @@ beforeEach(() => {
   });
 
   // Setup crypto utils mock
-  cryptoUtils.hash.mockImplementation((data) =>
-    createHash('sha256').update(JSON.stringify(data)).digest('hex')
-  );
+  cryptoUtils.hash.mockImplementation((data) => createHash('sha256').update(JSON.stringify(data)).digest('hex'));
 
   // Setup Company model mocks
   Company.aggregate.mockImplementation((pipeline) => {
@@ -388,10 +386,18 @@ beforeEach(() => {
             },
           ],
           byIndustry: [
-            { _id: 'Technology', count: 1, avgValuation: 45000000, totalValuations: 5 },
-            { _id: 'Legal', count: 1, avgValuation: 12500000, totalValuations: 3 },
-            { _id: 'Financial Services', count: 1, avgValuation: 85000000, totalValuations: 2 },
-            { _id: 'Healthcare', count: 1, avgValuation: 0, totalValuations: 0 },
+            {
+              _id: 'Technology', count: 1, avgValuation: 45000000, totalValuations: 5,
+            },
+            {
+              _id: 'Legal', count: 1, avgValuation: 12500000, totalValuations: 3,
+            },
+            {
+              _id: 'Financial Services', count: 1, avgValuation: 85000000, totalValuations: 2,
+            },
+            {
+              _id: 'Healthcare', count: 1, avgValuation: 0, totalValuations: 0,
+            },
           ],
           bySize: [
             { _id: 0, count: 1 }, // 0-10M
@@ -424,8 +430,8 @@ beforeEach(() => {
       query['watchlist.userIds']
         ? [MOCK_COMPANIES[0], MOCK_COMPANIES[2]] // Watchlist
         : MOCK_COMPANIES.filter(
-            (c) => query.tenantId === c.tenantId && (!query.status || c.status === query.status)
-          )
+          (c) => query.tenantId === c.tenantId && (!query.status || c.status === query.status),
+        ),
     ),
   }));
 
@@ -446,14 +452,18 @@ beforeEach(() => {
         {
           trends: [
             {
-              _id: { year: 2026, month: 2, day: 15, week: 7 },
+              _id: {
+                year: 2026, month: 2, day: 15, week: 7,
+              },
               count: 1,
               averageValue: 45000000,
               medianValue: 44500000,
               totalValue: 45000000,
             },
             {
-              _id: { year: 2026, month: 2, day: 14, week: 7 },
+              _id: {
+                year: 2026, month: 2, day: 14, week: 7,
+              },
               count: 1,
               averageValue: 12500000,
               medianValue: 12300000,
@@ -461,9 +471,15 @@ beforeEach(() => {
             },
           ],
           byMethod: [
-            { _id: 'DCF', count: 3, avgValue: 56000000, totalValue: 168000000 },
-            { _id: 'Comparables', count: 1, avgValue: 12500000, totalValue: 12500000 },
-            { _id: 'Asset-Based', count: 1, avgValue: 52000000, totalValue: 52000000 },
+            {
+              _id: 'DCF', count: 3, avgValue: 56000000, totalValue: 168000000,
+            },
+            {
+              _id: 'Comparables', count: 1, avgValue: 12500000, totalValue: 12500000,
+            },
+            {
+              _id: 'Asset-Based', count: 1, avgValue: 52000000, totalValue: 52000000,
+            },
           ],
           byConfidence: [
             { _id: 0.85, count: 1, avgValue: 12500000 },
@@ -472,7 +488,7 @@ beforeEach(() => {
             { _id: 0.92, count: 1, avgValue: 45000000 },
           ],
           jseMaterial: MOCK_VALUATIONS.filter(
-            (v) => v.finalValuation.weightedAverage >= JSE_MATERIALITY_THRESHOLD
+            (v) => v.finalValuation.weightedAverage >= JSE_MATERIALITY_THRESHOLD,
           ).map((v) => ({
             valuationId: v.valuationId,
             companyName: 'FinTech Innovations (Pty) Ltd',
@@ -514,10 +530,9 @@ beforeEach(() => {
     populate: jest.fn().mockReturnThis(),
     lean: jest.fn().mockResolvedValue(
       MOCK_VALUATIONS.filter(
-        (v) =>
-          v.tenantId === query.tenantId &&
-          (!query.createdAt ||
-            (v.createdAt >= query.createdAt.$gte && v.createdAt <= query.createdAt.$lte))
+        (v) => v.tenantId === query.tenantId
+          && (!query.createdAt
+            || (v.createdAt >= query.createdAt.$gte && v.createdAt <= query.createdAt.$lte)),
       ).map((v) => ({
         ...v,
         companyId: {
@@ -531,7 +546,7 @@ beforeEach(() => {
           firstName: 'John',
           lastName: 'Doe',
         },
-      }))
+      })),
     ),
   }));
 
@@ -631,7 +646,7 @@ describe('Investor Dashboard Service - Investor Due Diligence Suite', () => {
     test('should validate tenant ID format', async () => {
       // Act & Assert - invalid tenant ID
       await expect(getDashboard('invalid', { userId: TEST_USER_ID })).rejects.toThrow(
-        'Invalid tenant ID format'
+        'Invalid tenant ID format',
       );
 
       // Valid tenant ID should work
@@ -645,16 +660,12 @@ describe('Investor Dashboard Service - Investor Due Diligence Suite', () => {
 
       // Assert - Company.aggregate should be called with tenantId filter
       expect(Company.aggregate).toHaveBeenCalled();
-      const companyAggregateCall = Company.aggregate.mock.calls.find((call) =>
-        JSON.stringify(call).includes('tenantId')
-      );
+      const companyAggregateCall = Company.aggregate.mock.calls.find((call) => JSON.stringify(call).includes('tenantId'));
       expect(companyAggregateCall).toBeDefined();
 
       // Valuation.aggregate should be called with tenantId filter
       expect(Valuation.aggregate).toHaveBeenCalled();
-      const valuationAggregateCall = Valuation.aggregate.mock.calls.find((call) =>
-        JSON.stringify(call).includes('tenantId')
-      );
+      const valuationAggregateCall = Valuation.aggregate.mock.calls.find((call) => JSON.stringify(call).includes('tenantId'));
       expect(valuationAggregateCall).toBeDefined();
     });
 
@@ -692,7 +703,7 @@ describe('Investor Dashboard Service - Investor Due Diligence Suite', () => {
       const result = await getDashboardSection(
         TEST_TENANT_ID,
         DASHBOARD_SECTIONS_CONST.VALUATIONS,
-        { period: '30d', userId: TEST_USER_ID }
+        { period: '30d', userId: TEST_USER_ID },
       );
 
       // Assert
@@ -737,7 +748,7 @@ describe('Investor Dashboard Service - Investor Due Diligence Suite', () => {
       // Generate evidence
       const evidence = await generateEvidenceFile(
         { result, auditEntries: [result.metadata] },
-        'Investor Dashboard Test'
+        'Investor Dashboard Test',
       );
 
       // Assert

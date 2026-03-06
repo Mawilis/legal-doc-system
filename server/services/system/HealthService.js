@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ HEALTH SERVICE - INVESTOR-GRADE MODULE                         ║
   ║ 99.99% uptime enablement | R12.5B risk elimination            ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/system/HealthService.js
  * INVESTOR VALUE PROPOSITION:
@@ -55,7 +55,6 @@
  * }
  */
 
-import { redisClient } from '../../cache/redisClient.js';
 import mongoose from 'mongoose';
 import cron from 'node-cron.js';
 import os from 'os';
@@ -66,19 +65,21 @@ import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { redisClient } from '../../cache/redisClient.js';
 
 // WILSY OS CORE IMPORTS
 import loggerRaw from '../../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../../utils/quantumLogger.js';
 import auditLogger from '../../utils/auditLogger.js';
 import { metrics, trackError } from '../../utils/metricsCollector.js';
 
 // Service imports
-import milvusClient from '../../services/vector/milvusClient.js';
+import milvusClient from '../vector/milvusClient.js';
 
 // Config
 import { GATEWAY_CONFIG } from '../../config/gatewayConfig.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -405,12 +406,11 @@ async function checkRedis(health, depth, correlationId) {
 
     // Check memory usage
     const memoryPercent = calculateMemoryPercent(redisInfo);
-    const memoryStatus =
-      memoryPercent > HEALTH_CONSTANTS.THRESHOLDS.MEMORY_CRITICAL
-        ? 'CRITICAL'
-        : memoryPercent > HEALTH_CONSTANTS.THRESHOLDS.MEMORY_WARNING
-          ? 'WARNING'
-          : 'OK';
+    const memoryStatus = memoryPercent > HEALTH_CONSTANTS.THRESHOLDS.MEMORY_CRITICAL
+      ? 'CRITICAL'
+      : memoryPercent > HEALTH_CONSTANTS.THRESHOLDS.MEMORY_WARNING
+        ? 'WARNING'
+        : 'OK';
 
     if (memoryStatus === 'CRITICAL') {
       health.issues.push({
@@ -528,12 +528,11 @@ async function checkDatabase(health, depth, correlationId) {
       3: 'disconnecting',
     };
 
-    const status =
-      dbState === 1
-        ? HEALTH_CONSTANTS.STATUS.HEALTHY
-        : dbState === 2
-          ? HEALTH_CONSTANTS.STATUS.DEGRADED
-          : HEALTH_CONSTANTS.STATUS.CRITICAL;
+    const status = dbState === 1
+      ? HEALTH_CONSTANTS.STATUS.HEALTHY
+      : dbState === 2
+        ? HEALTH_CONSTANTS.STATUS.DEGRADED
+        : HEALTH_CONSTANTS.STATUS.CRITICAL;
 
     // Test query performance
     let queryTime = null;
@@ -646,8 +645,7 @@ async function checkScheduler(health, depth, correlationId) {
     const taskPatterns = taskList.map((t) => t.pattern).join(' ');
     const missingTasks = expectedTasks.filter((name) => !taskPatterns.includes(name));
 
-    const status =
-      tasks.size > 0 ? HEALTH_CONSTANTS.STATUS.HEALTHY : HEALTH_CONSTANTS.STATUS.DEGRADED;
+    const status = tasks.size > 0 ? HEALTH_CONSTANTS.STATUS.HEALTHY : HEALTH_CONSTANTS.STATUS.DEGRADED;
 
     if (missingTasks.length > 0) {
       health.warnings.push({
@@ -687,7 +685,7 @@ async function checkWorkers(health, depth, correlationId) {
   try {
     // Get worker processes
     const { stdout } = await execAsync(
-      'ps aux | grep -E "precedentVectorizer|citationNetworkIndexer|EmbeddingWorker" | grep -v grep'
+      'ps aux | grep -E "precedentVectorizer|citationNetworkIndexer|EmbeddingWorker" | grep -v grep',
     );
 
     const lines = stdout
@@ -710,21 +708,18 @@ async function checkWorkers(health, depth, correlationId) {
     });
 
     const vectorizerCount = workers.filter((w) => w.command.includes('precedentVectorizer')).length;
-    const citationCount = workers.filter((w) =>
-      w.command.includes('citationNetworkIndexer')
-    ).length;
+    const citationCount = workers.filter((w) => w.command.includes('citationNetworkIndexer')).length;
     const embeddingCount = workers.filter((w) => w.command.includes('EmbeddingWorker')).length;
 
     const expectedVectorizers = parseInt(process.env.WORKER_COUNT) || 4;
     const expectedCitation = 1;
     const expectedEmbedding = parseInt(process.env.EMBEDDING_WORKER_COUNT) || 2;
 
-    const status =
-      vectorizerCount >= expectedVectorizers &&
-      citationCount >= expectedCitation &&
-      embeddingCount >= expectedEmbedding
-        ? HEALTH_CONSTANTS.STATUS.HEALTHY
-        : HEALTH_CONSTANTS.STATUS.DEGRADED;
+    const status = vectorizerCount >= expectedVectorizers
+      && citationCount >= expectedCitation
+      && embeddingCount >= expectedEmbedding
+      ? HEALTH_CONSTANTS.STATUS.HEALTHY
+      : HEALTH_CONSTANTS.STATUS.DEGRADED;
 
     if (vectorizerCount < expectedVectorizers) {
       health.warnings.push({
@@ -737,7 +732,7 @@ async function checkWorkers(health, depth, correlationId) {
       health.issues.push({
         component,
         severity: 'CRITICAL',
-        message: `Citation network indexer not running`,
+        message: 'Citation network indexer not running',
       });
     }
 
@@ -784,10 +779,9 @@ async function checkVectorDB(health, depth, correlationId) {
   try {
     const milvusHealth = await milvusClient.healthCheck();
 
-    const status =
-      milvusHealth.status === 'healthy'
-        ? HEALTH_CONSTANTS.STATUS.HEALTHY
-        : HEALTH_CONSTANTS.STATUS.DEGRADED;
+    const status = milvusHealth.status === 'healthy'
+      ? HEALTH_CONSTANTS.STATUS.HEALTHY
+      : HEALTH_CONSTANTS.STATUS.DEGRADED;
 
     if (milvusHealth.status !== 'healthy') {
       health.warnings.push({
@@ -848,12 +842,11 @@ async function checkFileSystem(health, depth, correlationId) {
     const used = total - free;
     const percent = (used / total) * 100;
 
-    const status =
-      percent > HEALTH_CONSTANTS.THRESHOLDS.DISK_CRITICAL
-        ? HEALTH_CONSTANTS.STATUS.CRITICAL
-        : percent > HEALTH_CONSTANTS.THRESHOLDS.DISK_WARNING
-          ? HEALTH_CONSTANTS.STATUS.DEGRADED
-          : HEALTH_CONSTANTS.STATUS.HEALTHY;
+    const status = percent > HEALTH_CONSTANTS.THRESHOLDS.DISK_CRITICAL
+      ? HEALTH_CONSTANTS.STATUS.CRITICAL
+      : percent > HEALTH_CONSTANTS.THRESHOLDS.DISK_WARNING
+        ? HEALTH_CONSTANTS.STATUS.DEGRADED
+        : HEALTH_CONSTANTS.STATUS.HEALTHY;
 
     if (percent > HEALTH_CONSTANTS.THRESHOLDS.DISK_CRITICAL) {
       health.issues.push({
@@ -946,12 +939,11 @@ async function checkNetwork(health, depth, correlationId) {
     }
 
     const reachableCount = results.filter((r) => r.reachable).length;
-    const status =
-      reachableCount >= 3
-        ? HEALTH_CONSTANTS.STATUS.HEALTHY
-        : reachableCount >= 1
-          ? HEALTH_CONSTANTS.STATUS.DEGRADED
-          : HEALTH_CONSTANTS.STATUS.CRITICAL;
+    const status = reachableCount >= 3
+      ? HEALTH_CONSTANTS.STATUS.HEALTHY
+      : reachableCount >= 1
+        ? HEALTH_CONSTANTS.STATUS.DEGRADED
+        : HEALTH_CONSTANTS.STATUS.CRITICAL;
 
     if (reachableCount < 3) {
       health.warnings.push({
@@ -991,7 +983,7 @@ async function checkGPU(health, depth, correlationId) {
     let gpuInfo = null;
     try {
       const { stdout } = await execAsync(
-        'nvidia-smi --query-gpu=index,name,temperature.gpu,utilization.gpu,memory.total,memory.used --format=csv,noheader,nounits'
+        'nvidia-smi --query-gpu=index,name,temperature.gpu,utilization.gpu,memory.total,memory.used --format=csv,noheader,nounits',
       );
 
       const lines = stdout.trim().split('\n');
@@ -1297,10 +1289,10 @@ function determineOverallStatus(health) {
   const services = Object.values(health.services);
 
   const criticalCount = services.filter(
-    (s) => s.status === HEALTH_CONSTANTS.STATUS.CRITICAL
+    (s) => s.status === HEALTH_CONSTANTS.STATUS.CRITICAL,
   ).length;
   const degradedCount = services.filter(
-    (s) => s.status === HEALTH_CONSTANTS.STATUS.DEGRADED
+    (s) => s.status === HEALTH_CONSTANTS.STATUS.DEGRADED,
   ).length;
   const optimalCount = services.filter((s) => s.status === HEALTH_CONSTANTS.STATUS.OPTIMAL).length;
   const healthyCount = services.filter((s) => s.status === HEALTH_CONSTANTS.STATUS.HEALTHY).length;
@@ -1414,7 +1406,7 @@ function updateHealthMetrics(health) {
           ? 2
           : health.status === HEALTH_CONSTANTS.STATUS.CRITICAL
             ? 1
-            : 0
+            : 0,
   );
 
   metrics.gauge('health.issues.count', health.issues.length);

@@ -75,6 +75,7 @@ const request = require('supertest');
 const healthRoutes = require('../../routes/health');
 const auditLogger = require('../../utils/auditLogger');
 const loggerRaw = require('../../utils/logger');
+
 const logger = loggerRaw.default || loggerRaw;
 const metrics = require('../../utils/metrics');
 
@@ -179,7 +180,7 @@ describe('Health Routes - Investor Grade Tests', () => {
         expect.objectContaining({
           action: 'HEALTH_CHECK',
           status: 'healthy',
-        })
+        }),
       );
 
       // Verify metrics
@@ -295,7 +296,7 @@ describe('Health Routes - Investor Grade Tests', () => {
         expect.objectContaining({
           action: 'HEALTH_CHECK',
           status: 'healthy',
-        })
+        }),
       );
     });
 
@@ -353,7 +354,7 @@ describe('Health Routes - Investor Grade Tests', () => {
       // Generate hash
       const canonicalJson = JSON.stringify(
         evidence.auditEntries,
-        Object.keys(evidence.auditEntries[0] || {}).sort()
+        Object.keys(evidence.auditEntries[0] || {}).sort(),
       );
       evidence.hash = crypto.createHash('sha256').update(canonicalJson).digest('hex');
 

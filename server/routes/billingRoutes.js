@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ BILLING ROUTES - INVESTOR-GRADE MODULE                        ║
   ║ 92% cost reduction | R4.8B risk elimination | 94% margins     ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/routes/billingRoutes.js
  * INVESTOR VALUE PROPOSITION:
@@ -63,7 +63,9 @@
  */
 
 import express from 'express';
-import { body, query, param, validationResult } from 'express-validator.js';
+import {
+  body, query, param, validationResult,
+} from 'express-validator.js';
 import { performance } from 'perf_hooks';
 import { v4 as uuidv4 } from 'uuid.js';
 import crypto from 'crypto';
@@ -104,11 +106,12 @@ import TenantConfig from '../models/TenantConfig.js';
 // Utils
 import auditLogger from '../utils/auditLogger.js';
 import loggerRaw from '../utils/logger.js';
-const logger = loggerRaw.default || loggerRaw;
 import quantumLogger from '../utils/quantumLogger.js';
 import { metrics, trackRequest, trackError } from '../utils/metricsCollector.js';
 import { AppError } from '../utils/errorHandler.js';
 import { redactSensitive } from '../utils/cryptoUtils.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 const router = express.Router();
 
@@ -310,7 +313,9 @@ router.get(
     try {
       const { id: tenantId } = req.tenantContext;
       const tier = req.tenantContext.tier || req.user?.subscription?.tier || 'professional';
-      const { month, year, format = 'json', currency = 'ZAR', includeUpsell = true } = req.query;
+      const {
+        month, year, format = 'json', currency = 'ZAR', includeUpsell = true,
+      } = req.query;
 
       logger.info('Billing report requested', {
         tenantId,
@@ -370,7 +375,7 @@ router.get(
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="billing-report-${report.reportId}.pdf"`
+          `attachment; filename="billing-report-${report.reportId}.pdf"`,
         );
         res.setHeader('X-Report-ID', report.reportId);
         res.setHeader('X-Report-Hash', report.forensicProof.reportHash);
@@ -382,7 +387,7 @@ router.get(
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="billing-report-${report.reportId}.csv"`
+          `attachment; filename="billing-report-${report.reportId}.csv"`,
         );
         res.setHeader('X-Report-ID', report.reportId);
         res.setHeader('X-Report-Hash', report.forensicProof.reportHash);
@@ -393,11 +398,11 @@ router.get(
         const excelBuffer = await convertReportToExcel(report);
         res.setHeader(
           'Content-Type',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         );
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="billing-report-${report.reportId}.xlsx"`
+          `attachment; filename="billing-report-${report.reportId}.xlsx"`,
         );
         res.setHeader('X-Report-ID', report.reportId);
         res.setHeader('X-Report-Hash', report.forensicProof.reportHash);
@@ -459,7 +464,7 @@ router.get(
 
       next(new AppError(error.message, 500, 'BILLING_REPORT_FAILED'));
     }
-  }
+  },
 );
 
 /*
@@ -622,7 +627,7 @@ router.get(
 
       next(new AppError(error.message, 500, 'USAGE_SUMMARY_FAILED'));
     }
-  }
+  },
 );
 
 /*
@@ -644,7 +649,9 @@ router.get(
   async (req, res, next) => {
     try {
       const { id: tenantId } = req.tenantContext;
-      const { limit = 20, offset = 0, status, fromDate, toDate } = req.query;
+      const {
+        limit = 20, offset = 0, status, fromDate, toDate,
+      } = req.query;
 
       // Build query filters
       const filters = { tenantId };
@@ -681,7 +688,7 @@ router.get(
           if (inv.status === 'overdue') acc.overdueAmount += inv.total || 0;
           return acc;
         },
-        { totalAmount: 0, paidAmount: 0, overdueAmount: 0 }
+        { totalAmount: 0, paidAmount: 0, overdueAmount: 0 },
       );
 
       res.json({
@@ -715,7 +722,7 @@ router.get(
       trackError('billing', error.code || 'invoices_error');
       next(new AppError(error.message, 500, 'INVOICE_FETCH_FAILED'));
     }
-  }
+  },
 );
 
 /*
@@ -792,7 +799,7 @@ router.get(
       trackError('billing', error.code || 'invoice_detail_error');
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -845,7 +852,7 @@ router.get(
       trackError('billing', error.code || 'invoice_pdf_error');
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -894,7 +901,7 @@ router.get(
       trackError('billing', error.code || 'verify_error');
       next(error);
     }
-  }
+  },
 );
 
 /*
@@ -1003,7 +1010,7 @@ router.get(
 
       next(new AppError(error.message, 500, 'UPSELL_ANALYSIS_FAILED'));
     }
-  }
+  },
 );
 
 /*
@@ -1111,7 +1118,7 @@ router.post(
       trackError('billing', error.code || 'upgrade_error');
       next(error);
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -1149,18 +1156,18 @@ router.get(
       if (includeValuation) {
         summary.valuation = {
           conservative: formatCurrency(
-            summary.metrics.annualRecurringRevenue *
-              BILLING_CONSTANTS.VALUATION_MULTIPLES.conservative,
-            currency
+            summary.metrics.annualRecurringRevenue
+              * BILLING_CONSTANTS.VALUATION_MULTIPLES.conservative,
+            currency,
           ),
           base: formatCurrency(
             summary.metrics.annualRecurringRevenue * BILLING_CONSTANTS.VALUATION_MULTIPLES.base,
-            currency
+            currency,
           ),
           aggressive: formatCurrency(
-            summary.metrics.annualRecurringRevenue *
-              BILLING_CONSTANTS.VALUATION_MULTIPLES.aggressive,
-            currency
+            summary.metrics.annualRecurringRevenue
+              * BILLING_CONSTANTS.VALUATION_MULTIPLES.aggressive,
+            currency,
           ),
           multiples: BILLING_CONSTANTS.VALUATION_MULTIPLES,
         };
@@ -1206,7 +1213,7 @@ router.get(
 
       next(new AppError(error.message, 500, 'INVESTOR_SUMMARY_FAILED'));
     }
-  }
+  },
 );
 
 /*
@@ -1228,7 +1235,9 @@ router.get(
   ],
   async (req, res, next) => {
     try {
-      const { limit = 50, offset = 0, sortBy = 'revenue', tier } = req.query;
+      const {
+        limit = 50, offset = 0, sortBy = 'revenue', tier,
+      } = req.query;
 
       // Build query
       const query = {};
@@ -1257,7 +1266,7 @@ router.get(
               estimatedMRR: BILLING_CONSTANTS.TIER_PRICES[tenant.plan] / 12 || 0,
             },
           };
-        })
+        }),
       );
 
       // Sort
@@ -1288,7 +1297,7 @@ router.get(
       trackError('billing', error.code || 'admin_tenants_error');
       next(new AppError(error.message, 500, 'TENANT_LIST_FAILED'));
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -1443,18 +1452,18 @@ const convertReportToCSV = (report) => {
 /*
  * Convert report to Excel (placeholder)
  */
-const convertReportToExcel = async (report) => {
+const convertReportToExcel = async (report) =>
   // In production, use a library like exceljs
-  return Buffer.from(JSON.stringify(report));
-};
+  Buffer.from(JSON.stringify(report))
+;
 
 /*
  * Generate invoice PDF (placeholder)
  */
-const generateInvoicePDF = async (report) => {
+const generateInvoicePDF = async (report) =>
   // In production, use a library like pdfkit
-  return Buffer.from(JSON.stringify(report));
-};
+  Buffer.from(JSON.stringify(report))
+;
 
 /*
  * Handle payment succeeded webhook

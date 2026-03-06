@@ -3,17 +3,19 @@
    ║ AUDIT LEDGER MODEL - INVESTOR-GRADE MODULE                                  ║
    ║ Immutable audit trail | SHA256 hashed | Multi-tenant isolation              ║
    ║ Standard: ES Module (Surgically Standardized)                               ║
-   ╚══════════════════════════════════════════════════════════════════════════════╝*/
+   ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/AuditLedger.js
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import crypto from 'node:crypto.js';
 
 const AuditEntrySchema = new mongoose.Schema({
-  timestamp: { type: Date, default: Date.now, required: true, index: true },
+  timestamp: {
+    type: Date, default: Date.now, required: true, index: true,
+  },
   action: { type: String, required: true, index: true },
   userId: { type: String, required: true, index: true },
   tenantId: { type: String, required: true, index: true },
@@ -71,7 +73,7 @@ AuditEntrySchema.methods.verifyIntegrity = function () {
         sessionId: this.sessionId,
         correlationId: this.correlationId,
         regulatoryTags: this.regulatoryTags,
-      })
+      }),
     )
     .digest('hex');
 
@@ -84,12 +86,15 @@ AuditEntrySchema.methods.verifyIntegrity = function () {
 
 AuditEntrySchema.statics.findByTenant = async function (tenantId, options = {}) {
   const query = { tenantId };
-  const { action, resource, limit = 100, skip = 0 } = options;
+  const {
+    action, resource, limit = 100, skip = 0,
+  } = options;
 
   if (action) query.action = action;
   if (resource) query.resource = resource;
 
-  return this.find(query).sort({ timestamp: -1 }).skip(skip).limit(limit).lean();
+  return this.find(query).sort({ timestamp: -1 }).skip(skip).limit(limit)
+    .lean();
 };
 
 AuditEntrySchema.statics.getChainOfCustody = async function (entryId) {

@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ INTERNATIONAL ROUTES TESTS - INVESTOR DUE DILIGENCE - $5B VALUATION      ║
   ║ 100% coverage | Premium endpoints | Global legal intelligence            ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import request from 'supertest.js';
 import express from 'express.js';
@@ -11,6 +11,12 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { jest } from '@jest/globals.js';
+
+// Import after mocks
+import internationalRoutes from '../../routes/internationalRoutes.js';
+import { CrossJurisdictionAnalyzerFactory } from '../../services/comparative/CrossJurisdictionAnalyzer.js';
+import { QuantumLogger } from '../../utils/quantumLogger.js';
+import { BillingService } from '../../services/billing/billingService.js';
 
 // Mock dependencies
 jest.mock('../../middleware/tenantGuard.js', () => ({
@@ -153,12 +159,6 @@ jest.mock('../../services/financial/currencyConverter.js', () => ({
   },
 }));
 
-// Import after mocks
-import internationalRoutes from '../../routes/internationalRoutes.js';
-import { CrossJurisdictionAnalyzerFactory } from '../../services/comparative/CrossJurisdictionAnalyzer.js';
-import { QuantumLogger } from '../../utils/quantumLogger.js';
-import { BillingService } from '../../services/billing/billingService.js';
-
 describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
   let app;
   let mockAnalyzer;
@@ -264,7 +264,7 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
           target: 'UK',
           tier: 'ultra_premium',
           valuationContext: '$5B_GLOBAL_OS',
-        })
+        }),
       );
     });
 
@@ -556,7 +556,7 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
       console.log('='.repeat(50));
       console.log(`Daily premium queries: ${dailyQueries.toLocaleString()}`);
       console.log(
-        `Premium price per query: $${premiumPrice} (${premiumPrice / basePrice}x domestic)`
+        `Premium price per query: $${premiumPrice} (${premiumPrice / basePrice}x domestic)`,
       );
       console.log(`Daily premium revenue: $${(dailyRevenue / 1e3).toFixed(1)}K`);
       console.log(`Annual premium revenue: $${(annualRevenue / 1e6).toFixed(1)}M`);
@@ -564,7 +564,7 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
       console.log('='.repeat(50));
       console.log(`TOTAL ANNUAL REVENUE: $${(totalRevenue / 1e6).toFixed(1)}M`);
       console.log(
-        `VALUATION (10x revenue): $${((totalRevenue * 10) / 1e6).toFixed(1)}M ($5B target)`
+        `VALUATION (10x revenue): $${((totalRevenue * 10) / 1e6).toFixed(1)}M ($5B target)`,
       );
 
       expect(totalRevenue).toBeCloseTo(500e6, -7); // $500M target
@@ -626,7 +626,7 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
 
       await fs.writeFile(
         path.join(__dirname, 'international-routes-evidence.json'),
-        JSON.stringify(evidence, null, 2)
+        JSON.stringify(evidence, null, 2),
       );
 
       const fileExists = await fs
@@ -638,7 +638,7 @@ describe('InternationalRoutes - Global Legal Gateway Due Diligence', () => {
 
       const fileContent = await fs.readFile(
         path.join(__dirname, 'international-routes-evidence.json'),
-        'utf8'
+        'utf8',
       );
       const parsed = JSON.parse(fileContent);
       expect(parsed.hash).toBe(hash);

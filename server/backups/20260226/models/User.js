@@ -26,9 +26,9 @@
  * =================================================================================
  */
 
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 import bcrypt from 'bcrypt.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 import validator from 'validator.js';
 import dotenv from 'dotenv.js';
 
@@ -53,12 +53,12 @@ const validateUserEnvironment = () => {
 
   if (missingVars.length > 0) {
     console.error(
-      `[User Model] CRITICAL: Missing environment variables: ${missingVars.join(', ')}`
+      `[User Model] CRITICAL: Missing environment variables: ${missingVars.join(', ')}`,
     );
 
     if (process.env.NODE_ENV === 'development') {
       console.warn(
-        '[User Model] Development mode: Using fallback values. THIS IS INSECURE FOR PRODUCTION!'
+        '[User Model] Development mode: Using fallback values. THIS IS INSECURE FOR PRODUCTION!',
       );
 
       if (!process.env.USER_ENCRYPTION_KEY) {
@@ -69,7 +69,7 @@ const validateUserEnvironment = () => {
       }
     } else {
       throw new Error(
-        `CRITICAL: Missing user security environment variables: ${missingVars.join(', ')}`
+        `CRITICAL: Missing user security environment variables: ${missingVars.join(', ')}`,
       );
     }
   }
@@ -139,7 +139,7 @@ class UserEncryptionService {
       const iv = Buffer.from(encryptedObj.iv, 'hex');
       const authTag = Buffer.from(encryptedObj.tag, 'hex');
 
-      let key = this.key;
+      let { key } = this;
       if (encryptedObj.keyVersion === 'v2' && process.env.USER_ENCRYPTION_KEY_V2) {
         key = Buffer.from(process.env.USER_ENCRYPTION_KEY_V2, 'hex');
       }
@@ -192,14 +192,14 @@ const UserSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           const email = v || this.get('email');
           return validator.isEmail(email);
         },
         message: 'Please provide a valid email address (POPIA Section 1: Personal Information)',
       },
       index: true,
-      set: function (v) {
+      set(v) {
         if (!v) return v;
         const normalized = validator.normalizeEmail(v, {
           gmail_remove_dots: false,
@@ -207,7 +207,7 @@ const UserSchema = new mongoose.Schema(
         });
         return userEncryption.encryptField(normalized);
       },
-      get: function (v) {
+      get(v) {
         return userEncryption.decryptField(v);
       },
     },
@@ -219,16 +219,16 @@ const UserSchema = new mongoose.Schema(
       minlength: [2, 'First name must be at least 2 characters'],
       maxlength: [50, 'First name cannot exceed 50 characters'],
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[A-Za-zÀ-ÿ\s'-]+$/.test(v);
         },
         message: 'First name contains invalid characters',
       },
-      set: function (v) {
+      set(v) {
         if (!v) return v;
         return userEncryption.encryptField(v.trim());
       },
-      get: function (v) {
+      get(v) {
         return userEncryption.decryptField(v);
       },
     },
@@ -239,11 +239,11 @@ const UserSchema = new mongoose.Schema(
       trim: true,
       minlength: [2, 'Last name must be at least 2 characters'],
       maxlength: [50, 'Last name cannot exceed 50 characters'],
-      set: function (v) {
+      set(v) {
         if (!v) return v;
         return userEncryption.encryptField(v.trim());
       },
-      get: function (v) {
+      get(v) {
         return userEncryption.decryptField(v);
       },
     },
@@ -251,17 +251,17 @@ const UserSchema = new mongoose.Schema(
     phoneNumber: {
       type: String,
       validate: {
-        validator: function (v) {
+        validator(v) {
           const phone = v || this.get('phoneNumber');
           return /^(\+27|0)[1-9]\d{8}$/.test(phone?.replace(/\s/g, ''));
         },
         message: 'Please provide a valid South African phone number',
       },
-      set: function (v) {
+      set(v) {
         if (!v) return v;
         return userEncryption.encryptField(v.replace(/\s/g, ''));
       },
-      get: function (v) {
+      get(v) {
         return userEncryption.decryptField(v);
       },
     },
@@ -269,7 +269,7 @@ const UserSchema = new mongoose.Schema(
     idNumber: {
       type: String,
       validate: {
-        validator: function (v) {
+        validator(v) {
           if (!/^\d{13}$/.test(v)) return false;
           const month = parseInt(v.substring(2, 4));
           const day = parseInt(v.substring(4, 6));
@@ -278,11 +278,11 @@ const UserSchema = new mongoose.Schema(
         },
         message: 'Invalid South African ID number format',
       },
-      set: function (v) {
+      set(v) {
         if (!v) return v;
         return userEncryption.encryptField(v);
       },
-      get: function (v) {
+      get(v) {
         return userEncryption.decryptField(v);
       },
     },
@@ -293,7 +293,7 @@ const UserSchema = new mongoose.Schema(
       required: [true, 'Tenant ID is required for multi-tenant data sovereignty'],
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return mongoose.Types.ObjectId.isValid(v);
         },
         message: 'Invalid tenant ID format',
@@ -347,7 +347,7 @@ const UserSchema = new mongoose.Schema(
         type: Date,
         index: true,
         validate: {
-          validator: function (v) {
+          validator(v) {
             return !v || v <= new Date();
           },
           message: 'Registration date cannot be in the future',
@@ -372,7 +372,7 @@ const UserSchema = new mongoose.Schema(
         type: String,
         index: true,
         validate: {
-          validator: function (v) {
+          validator(v) {
             return !v || v.startsWith('BIOMETRIC_CONSENT_');
           },
           message: 'Invalid consent ID format',
@@ -400,7 +400,7 @@ const UserSchema = new mongoose.Schema(
         lastSecurityReview: Date,
         nextSecurityReview: {
           type: Date,
-          default: function () {
+          default() {
             const next = new Date();
             next.setDate(next.getDate() + 90);
             return next;
@@ -500,7 +500,7 @@ const UserSchema = new mongoose.Schema(
         grantedAt: {
           type: Date,
           validate: {
-            validator: function (v) {
+            validator(v) {
               return !v || v <= new Date();
             },
           },
@@ -597,7 +597,7 @@ const UserSchema = new mongoose.Schema(
       minlength: [12, 'Password must be at least 12 characters (Cybersecurity Best Practice)'],
       select: false,
       validate: {
-        validator: function (v) {
+        validator(v) {
           const hasUpper = /[A-Z]/.test(v);
           const hasLower = /[a-z]/.test(v);
           const hasDigit = /\d/.test(v);
@@ -605,20 +605,19 @@ const UserSchema = new mongoose.Schema(
           const noSpaces = !/\s/.test(v);
           const noSequential = !/(.)\1{2,}/.test(v);
           const noCommon = !/(password|123456|qwerty|admin|letmein|welcome|monkey)/i.test(v);
-          const noPersonalInfo =
-            !new RegExp(this.firstName || '', 'i').test(v) &&
-            !new RegExp(this.lastName || '', 'i').test(v);
+          const noPersonalInfo = !new RegExp(this.firstName || '', 'i').test(v)
+            && !new RegExp(this.lastName || '', 'i').test(v);
 
           return (
-            hasUpper &&
-            hasLower &&
-            hasDigit &&
-            hasSpecial &&
-            noSpaces &&
-            noSequential &&
-            noCommon &&
-            noPersonalInfo &&
-            v.length >= 12
+            hasUpper
+            && hasLower
+            && hasDigit
+            && hasSpecial
+            && noSpaces
+            && noSequential
+            && noCommon
+            && noPersonalInfo
+            && v.length >= 12
           );
         },
         message:
@@ -641,7 +640,7 @@ const UserSchema = new mongoose.Schema(
 
     passwordExpiresAt: {
       type: Date,
-      default: function () {
+      default() {
         const expires = new Date();
         expires.setDate(expires.getDate() + 90);
         return expires;
@@ -721,17 +720,17 @@ const UserSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[A-Z]\d{5}\/\d{4}$/.test(v);
         },
         message: 'Invalid attorney number format (expected: A12345/2020) - LPC Rule 3.5',
       },
       index: true,
-      set: function (v) {
+      set(v) {
         if (!v) return v;
         return userEncryption.encryptField(v);
       },
-      get: function (v) {
+      get(v) {
         return userEncryption.decryptField(v);
       },
     },
@@ -843,10 +842,10 @@ const UserSchema = new mongoose.Schema(
         },
         documentUrl: {
           type: String,
-          set: function (v) {
+          set(v) {
             return userEncryption.encryptField(v);
           },
-          get: function (v) {
+          get(v) {
             return userEncryption.decryptField(v);
           },
         },
@@ -894,10 +893,10 @@ const UserSchema = new mongoose.Schema(
           userAgent: String,
           ipAddress: {
             type: String,
-            set: function (v) {
+            set(v) {
               return userEncryption.encryptField(v);
             },
-            get: function (v) {
+            get(v) {
               return userEncryption.decryptField(v);
             },
           },
@@ -1197,7 +1196,7 @@ const UserSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret.password;
         delete ret.passwordHistory;
         delete ret.passwordResetToken;
@@ -1215,7 +1214,7 @@ const UserSchema = new mongoose.Schema(
         delete ret.version;
 
         if (ret.email) {
-          const email = ret.email;
+          const { email } = ret;
           const [local, domain] = email.split('@');
           if (local && domain) {
             ret.email = `${local.charAt(0)}*@${domain}`;
@@ -1255,7 +1254,7 @@ const UserSchema = new mongoose.Schema(
     collection: 'users',
     strict: 'throw',
     optimisticConcurrency: true,
-  }
+  },
 );
 
 // =================================================================================
@@ -1264,7 +1263,9 @@ const UserSchema = new mongoose.Schema(
 UserSchema.index({ email: 1, tenantId: 1 }, { unique: true });
 UserSchema.index({ attorneyNumber: 1 }, { sparse: true, unique: true });
 UserSchema.index({ 'metadata.searchableName': 1 });
-UserSchema.index({ tenantId: 1, legalFirmId: 1, role: 1, status: 1 });
+UserSchema.index({
+  tenantId: 1, legalFirmId: 1, role: 1, status: 1,
+});
 UserSchema.index({ tenantId: 1, lastActivityAt: -1 });
 UserSchema.index({ legalFirmId: 1, status: 1, role: 1 });
 UserSchema.index({ 'biometric.registered': 1, 'biometric.status': 1, status: 1 });
@@ -1296,21 +1297,21 @@ UserSchema.index(
     },
     name: 'user_search_index',
     default_language: 'english',
-  }
+  },
 );
 UserSchema.index(
   { deletedAt: 1 },
   {
     expireAfterSeconds: 0,
     partialFilterExpression: { isDeleted: true },
-  }
+  },
 );
 UserSchema.index(
   { 'sessions.expiresAt': 1 },
   {
     expireAfterSeconds: 0,
     partialFilterExpression: { 'sessions.active': true },
-  }
+  },
 );
 
 // =================================================================================
@@ -1441,7 +1442,7 @@ UserSchema.pre('save', async function (next) {
 
       if (!this.passwordHistory) this.passwordHistory = [];
       this.passwordHistory.push({
-        hash: hash,
+        hash,
         changedAt: new Date(),
         usedBefore: await this.checkPasswordHistory(this.password),
       });
@@ -1484,7 +1485,7 @@ UserSchema.pre('save', async function (next) {
   next();
 });
 
-UserSchema.post('save', async function (doc) {
+UserSchema.post('save', async (doc) => {
   try {
     const LegalFirm = mongoose.model('LegalFirm');
     await LegalFirm.findByIdAndUpdate(doc.legalFirmId, {
@@ -1746,7 +1747,7 @@ UserSchema.statics.findUsersNeedingAttention = async function (legalFirmId) {
     ],
   })
     .select(
-      'firstName lastName email role status lastActivityAt passwordExpiresAt accountLockedUntil suspiciousActivityDetected'
+      'firstName lastName email role status lastActivityAt passwordExpiresAt accountLockedUntil suspiciousActivityDetected',
     )
     .sort({ status: 1, lastActivityAt: 1 })
     .limit(50);

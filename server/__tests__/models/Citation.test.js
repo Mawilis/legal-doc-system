@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CITATION MODEL TESTS - INVESTOR DUE DILIGENCE                 ║
   ║ 100% coverage | POPIA compliant | Forensic evidence           ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/__tests__/models/Citation.test.js
  * INVESTOR VALUE PROPOSITION:
@@ -30,12 +30,8 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 jest.mock('../../utils/cryptoUtils', () => ({
-  sha256: jest.fn().mockImplementation((input) => {
-    return crypto.createHash('sha256').update(input).digest('hex');
-  }),
-  redactSensitive: jest.fn().mockImplementation((input) => {
-    return input ? '[REDACTED]' : input;
-  }),
+  sha256: jest.fn().mockImplementation((input) => crypto.createHash('sha256').update(input).digest('hex')),
+  redactSensitive: jest.fn().mockImplementation((input) => (input ? '[REDACTED]' : input)),
 }));
 
 const auditLogger = require('../../utils/auditLogger');
@@ -150,9 +146,9 @@ describe('Citation Model - Forensic Due Diligence', () => {
       expect(findByPrecedentSpy).toHaveBeenCalledWith(
         {
           citedPrecedent: citedPrecedentId,
-          tenantId: tenantId,
+          tenantId,
         },
-        expect.anything()
+        expect.anything(),
       );
     });
 
@@ -182,8 +178,7 @@ describe('Citation Model - Forensic Due Diligence', () => {
       expect(testCitation.retentionEnd).toBeDefined();
       expect(testCitation.retentionEnd.getTime()).toBeGreaterThan(beforeSave.getTime());
 
-      const yearsDiff =
-        testCitation.retentionEnd.getFullYear() - testCitation.retentionStart.getFullYear();
+      const yearsDiff = testCitation.retentionEnd.getFullYear() - testCitation.retentionStart.getFullYear();
       expect(yearsDiff).toBe(10); // companies_act_10_years
     });
 
@@ -208,7 +203,7 @@ describe('Citation Model - Forensic Due Diligence', () => {
           userId: createdBy,
           retentionPolicy: testCitation.retentionPolicy,
           dataResidency: testCitation.dataResidency,
-        })
+        }),
       );
     });
 

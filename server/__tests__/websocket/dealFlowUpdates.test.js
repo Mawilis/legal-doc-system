@@ -1,10 +1,10 @@
 #!/* eslint-disable */
 /* eslint-env jest */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL FLOW WEBSOCKET TESTS - REAL-TIME M&A PIPELINE VERIFICATION                       ║
   ║ 100% coverage | 1M+ Connections | Redis Pub/Sub | Horizontal Scaling                  ║
   ║ R350M/year value validation | Video Conferencing | Presence Testing                   ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 import { createServer } from 'http';
 import { io as Client } from 'socket.io-client.js';
@@ -12,7 +12,7 @@ import jwt from 'jsonwebtoken.js';
 import { v4 as uuidv4 } from 'uuid.js';
 import Redis from 'ioredis-mock.js';
 
-import { createDealFlowWebSocket, getDealFlowWebSocket } from '../../websocket/dealFlowUpdates.js';
+import { createDealFlowWebSocket, getDealFlowWebSocket } from 'wilsy-os-websocket/dealFlowUpdates.js';
 import Deal from '../../models/Deal.js';
 import SecurityLog from '../../models/securityLogModel.js';
 
@@ -63,19 +63,17 @@ describe('DealFlow WebSocket - Real-time M&A Pipeline', () => {
     await new Promise((resolve) => httpServer.close(resolve));
   });
 
-  const connectClient = (customToken = testToken) => {
-    return new Promise((resolve, reject) => {
-      const socket = Client(`http://localhost:${httpServer.address().port}`, {
-        auth: { token: customToken },
-        query: { tenantId: testUser.tenantId },
-        transports: ['websocket'],
-        forceNew: true,
-      });
-
-      socket.on('connect', () => resolve(socket));
-      socket.on('connect_error', reject);
+  const connectClient = (customToken = testToken) => new Promise((resolve, reject) => {
+    const socket = Client(`http://localhost:${httpServer.address().port}`, {
+      auth: { token: customToken },
+      query: { tenantId: testUser.tenantId },
+      transports: ['websocket'],
+      forceNew: true,
     });
-  };
+
+    socket.on('connect', () => resolve(socket));
+    socket.on('connect_error', reject);
+  });
 
   test('should authenticate valid JWT token', async () => {
     clientSocket = await connectClient();

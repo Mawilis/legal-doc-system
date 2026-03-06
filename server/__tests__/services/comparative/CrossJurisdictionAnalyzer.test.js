@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ CROSS-JURISDICTION ANALYZER TESTS - INVESTOR DUE DILIGENCE - $5B+ VALUE  ║
   ║ 100% coverage | Global legal intelligence | Comparative analysis          ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 const { expect } = require('chai');
 const sinon = require('sinon');
@@ -152,7 +152,7 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
 
   describe('5. Conflict Detection', () => {
     it('should detect direct conflicts', async () => {
-      const comparator = analyzer.comparator;
+      const { comparator } = analyzer;
 
       const sourcePrinciple = {
         id: 'source1',
@@ -173,7 +173,7 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
     });
 
     it('should detect systemic conflicts', async () => {
-      const comparator = analyzer.comparator;
+      const { comparator } = analyzer;
 
       const sourcePrinciples = [
         { precedent: { court: 'Supreme Court' } },
@@ -187,7 +187,7 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
 
       const conflicts = await comparator.analyzeSystemicConflicts(
         sourcePrinciples,
-        targetPrinciples
+        targetPrinciples,
       );
 
       expect(conflicts).to.be.an('array');
@@ -197,7 +197,7 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
 
   describe('6. Harmony Detection', () => {
     it('should find harmonious principles', async () => {
-      const comparator = analyzer.comparator;
+      const { comparator } = analyzer;
 
       const comparison = {
         matrix: [
@@ -220,7 +220,7 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
 
   describe('7. Insight Generation', () => {
     it('should generate insights from comparison', async () => {
-      const comparator = analyzer.comparator;
+      const { comparator } = analyzer;
 
       const sourceProfile = {
         name: 'South Africa',
@@ -239,7 +239,7 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
         targetProfile,
         { statistics: { totalMatches: 5 } },
         [{ severity: 'high' }],
-        [{ strength: 'strong' }]
+        [{ strength: 'strong' }],
       );
 
       expect(insights).to.be.an('array');
@@ -249,12 +249,12 @@ describe('CrossJurisdictionAnalyzer - Global Legal Intelligence Due Diligence', 
 
   describe('8. Recommendation Generation', () => {
     it('should generate recommendations', async () => {
-      const comparator = analyzer.comparator;
+      const { comparator } = analyzer;
 
       const recommendations = await comparator.generateRecommendations(
         { statistics: { totalMatches: 10 }, matrix: [{ matches: [{ similarity: 0.7 }] }] },
         [{ severity: 'critical' }],
-        [{}, {}, {}, {}, {}] // 5 harmonies
+        [{}, {}, {}, {}, {}], // 5 harmonies
       );
 
       expect(recommendations).to.be.an('array');

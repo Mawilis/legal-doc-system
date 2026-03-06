@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ COURT CONTROLLER - COMPLETE SA JUDICIAL MANAGEMENT API                                ║
   ║ R4.5M/year operational savings | Jurisdiction AI | Appeal Routing                     ║
-  ╚═══════════════════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝ */
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/courtController.js
@@ -10,45 +10,39 @@
  * CREATED: 2026-02-28
  */
 
+import crypto from 'crypto';
 import CourtService from '../services/courtService.js';
 import { AuditLogger } from '../utils/auditLogger.js';
 import Logger from '../utils/logger.js';
 import tenantContext from '../middleware/tenantContext.js';
-import crypto from 'crypto';
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
-const generateCorrelationId = (req) => {
-  return (
-    req.headers['x-correlation-id'] ||
-    `court-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
-  );
-};
+const generateCorrelationId = (req) => (
+  req.headers['x-correlation-id']
+    || `court-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`
+);
 
-const formatSuccess = (data, correlationId, metadata = {}) => {
-  return {
-    success: true,
-    correlationId,
-    timestamp: new Date().toISOString(),
-    data,
-    metadata,
-  };
-};
+const formatSuccess = (data, correlationId, metadata = {}) => ({
+  success: true,
+  correlationId,
+  timestamp: new Date().toISOString(),
+  data,
+  metadata,
+});
 
-const formatError = (error, correlationId, statusCode = 500) => {
-  return {
-    success: false,
-    correlationId,
-    timestamp: new Date().toISOString(),
-    error: {
-      code: error.code || 'INTERNAL_ERROR',
-      message: error.message || 'An unexpected error occurred',
-      statusCode,
-    },
-  };
-};
+const formatError = (error, correlationId, statusCode = 500) => ({
+  success: false,
+  correlationId,
+  timestamp: new Date().toISOString(),
+  error: {
+    code: error.code || 'INTERNAL_ERROR',
+    message: error.message || 'An unexpected error occurred',
+    statusCode,
+  },
+});
 
 // ============================================================================
 // CONTROLLER METHODS
@@ -75,7 +69,7 @@ export const createCourt = async (req, res) => {
     res.status(201).json(
       formatSuccess(court, correlationId, {
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('courtController.createCourt failed', {
@@ -138,7 +132,7 @@ export const updateCourt = async (req, res) => {
     res.status(200).json(
       formatSuccess(court, correlationId, {
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('courtController.updateCourt failed', {
@@ -184,7 +178,7 @@ export const listCourts = async (req, res) => {
       formatSuccess(result.courts, correlationId, {
         pagination: result.pagination,
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('courtController.listCourts failed', {
@@ -217,7 +211,7 @@ export const checkJurisdiction = async (req, res) => {
     res.status(200).json(
       formatSuccess(result, correlationId, {
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('courtController.checkJurisdiction failed', {
@@ -279,7 +273,7 @@ export const addJudicialOfficer = async (req, res) => {
     res.status(201).json(
       formatSuccess(officer, correlationId, {
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('courtController.addJudicialOfficer failed', {
@@ -365,7 +359,7 @@ export const addPracticeDirective = async (req, res) => {
     res.status(201).json(
       formatSuccess(directive, correlationId, {
         responseTimeMs: responseTime,
-      })
+      }),
     );
   } catch (error) {
     Logger.error('courtController.addPracticeDirective failed', {

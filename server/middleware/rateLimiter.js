@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ WILSY OS - RATE LIMITER MIDDLEWARE                                        ║
   ║ Protects API from abuse | DDoS prevention | Production grade             ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 import rateLimit from 'express-rate-limit';
 
@@ -20,10 +20,10 @@ export const rateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
+  skip: (req) =>
     // Skip rate limiting for health checks
-    return req.path === '/health' || req.path.startsWith('/health/');
-  },
+    req.path === '/health' || req.path.startsWith('/health/')
+  ,
 });
 
 /**

@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
+/* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ QUANTUM DOCUMENT ENGINE - INSTANTANEOUS GENERATION                        ║
   ║ Uses quantum-inspired algorithms for O(1) document generation             ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+  ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
 // Note: quantum-circuit is not actually installed, using mock for now
 // In production, we would use a real quantum computing library

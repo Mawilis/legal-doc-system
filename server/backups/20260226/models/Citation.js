@@ -1,8 +1,8 @@
 #!/* eslint-disable */
-/*╔════════════════════════════════════════════════════════════════╗
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CITATION MODEL - INVESTOR-GRADE MODULE                         ║
   ║ 85% cost reduction | R3.2M risk elimination | 90% margins      ║
-  ╚════════════════════════════════════════════════════════════════╝*/
+  ╚════════════════════════════════════════════════════════════════╝ */
 /*
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/Citation.js
  * INVESTOR VALUE PROPOSITION:
@@ -72,7 +72,7 @@ const citationSchema = new mongoose.Schema(
       required: [true, 'Tenant ID is required for multi-tenant isolation'],
       index: true,
       validate: {
-        validator: function (v) {
+        validator(v) {
           return /^[a-zA-Z0-9_-]{8,64}$/.test(v);
         },
         message: (props) => `${props.value} is not a valid tenant ID format`,
@@ -109,7 +109,7 @@ const citationSchema = new mongoose.Schema(
       trim: true,
       maxlength: [5000, 'Reasoning cannot exceed 5000 characters'],
       validate: {
-        validator: function (v) {
+        validator(v) {
           if (!v) return true;
           // Ensure no PII in reasoning (basic check)
           return !/(?:id number|identity|passport|id ?\d{13}|email|phone|cell)/i.test(v);
@@ -227,7 +227,7 @@ const citationSchema = new mongoose.Schema(
     timestamps: true,
     collection: 'citations',
     strict: 'throw',
-  }
+  },
 );
 
 /*
@@ -265,7 +265,7 @@ citationSchema.pre('save', async function (next) {
 /*
  * Post-save middleware for audit logging
  */
-citationSchema.post('save', async function (doc) {
+citationSchema.post('save', async (doc) => {
   try {
     await auditLogger.log({
       action: 'CITATION_CREATED',
@@ -331,7 +331,7 @@ citationSchema.methods.redactForExport = function () {
 citationSchema.statics.findByPrecedent = function (precedentId, tenantId) {
   return this.find({
     citedPrecedent: precedentId,
-    tenantId: tenantId,
+    tenantId,
   }).populate('citingCase', 'caseNumber title court');
 };
 
@@ -344,7 +344,7 @@ citationSchema.statics.findByPrecedent = function (precedentId, tenantId) {
 citationSchema.statics.calculatePrecedentStrength = async function (precedentId, tenantId) {
   const citations = await this.find({
     citedPrecedent: precedentId,
-    tenantId: tenantId,
+    tenantId,
   });
 
   if (citations.length === 0) {
