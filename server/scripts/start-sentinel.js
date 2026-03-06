@@ -9,5 +9,19 @@
  * VERSION: 1.0.0-QUANTUM-2100
  */
 
-console.log('🚀 Starting Sentinel...');
-// ... rest of your file content
+import RecoverySentinel from './RecoverySentinel.js';
+
+async function start() {
+  console.log('🚀 Starting Sentinel...');
+  const sentinel = RecoverySentinel;
+  
+  // Start monitoring
+  setInterval(async () => {
+    const status = await sentinel.monitor();
+    console.log('📊 Sentinel Status:', status);
+  }, 30000);
+  
+  console.log('✅ Sentinel is now active');
+}
+
+start().catch(console.error);

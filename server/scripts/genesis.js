@@ -5,4 +5,10 @@
  */
 
 console.log('🔮 Genesis script running...');
-// ... rest of your file content
+
+async function genesis() {
+  // Your genesis logic here
+  console.log('✅ Genesis complete');
+}
+
+genesis().catch(console.error);

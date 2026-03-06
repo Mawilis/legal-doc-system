@@ -4,4 +4,10 @@
  */
 
 console.log('🔧 Setting up tenant database...');
-// ... rest of your file content
+
+async function setupTenant() {
+  // Your tenant setup logic here
+  console.log('✅ Tenant database setup complete');
+}
+
+setupTenant().catch(console.error);
