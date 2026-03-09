@@ -35,8 +35,8 @@ services:
       DATACENTER: "${DATACENTER:-jhb-01}"
       
       # 🗄️ DATABASE - Your Production Atlas
-      PROD_MONGODB_URI: "mongodb+srv://wilsonkhanyezi:Mawilis8596@legaldocsystem.knucgy2.mongodb.net/?retryWrites=true&w=majority&appName=legalDocSystem"
-      TEST_MONGODB_URI: "mongodb+srv://wilsonkhanyezi:Mawilis8596@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test"
+      PROD_MONGODB_URI: "${PROD_MONGODB_URI:-REDACTED}"
+      TEST_MONGODB_URI: "${TEST_MONGODB_URI:-REDACTED}"
       ACTIVE_DATABASE: "${ACTIVE_DB:-production}"
       
       # MongoDB Pool Configuration
@@ -258,8 +258,8 @@ services:
       APP_VERSION: "42.0.0"
       
       # Database
-      PROD_MONGODB_URI: "mongodb+srv://wilsonkhanyezi:Mawilis8596@legaldocsystem.knucgy2.mongodb.net/?retryWrites=true&w=majority&appName=legalDocSystem"
-      TEST_MONGODB_URI: "mongodb+srv://wilsonkhanyezi:Mawilis8596@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test"
+      PROD_MONGODB_URI: "${PROD_MONGODB_URI:-REDACTED}"
+      TEST_MONGODB_URI: "${TEST_MONGODB_URI:-REDACTED}"
       ACTIVE_DATABASE: "${ACTIVE_DB:-production}"
       
       # Redis
@@ -525,7 +525,7 @@ services:
       JWT_SECRET: test-jwt-secret
       JWT_REFRESH_SECRET: test-refresh-secret
       ADMIN_EMAIL: wilsonkhanyezi@gmail.com
-      ADMIN_PASSWORD: Mawilis8596
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-REDACTED}
       TEST_MONGODB_URI: mongodb://test-mongo:27017/wilsy-test
       REDIS_URI: redis://test-redis:6379
       NODE_OPTIONS: --experimental-vm-modules

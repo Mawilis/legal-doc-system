@@ -63,7 +63,7 @@ try {
 // ================================================================================================================
 /*
  * QUANTUM ENV ADDITIONS REQUIRED:
- * COMPLIANCE_RULE_DB_URI=mongodb://user:pass@host:27017/compliance_rules
+ * COMPLIANCE_RULE_DB_URI=process.env.MONGODB_URI
  * RULE_CACHE_REDIS_URL=redis://user:pass@host:6379/2
  * RULE_EVALUATION_TIMEOUT=5000
  * MAX_CONCURRENT_EVALUATIONS=100

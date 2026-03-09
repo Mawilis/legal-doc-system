@@ -1,35 +1,28 @@
 {
-  "name": "wilsy-os-server",
-  "version": "2026.01.19",
-  "private": true,
+  "name": "legal-doc-system",
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "start": "node server/index.js",
-    "dev": "nodemon server/index.js",
-    "test": "NODE_ENV=test jest",
-    "test:watch": "NODE_ENV=test jest --watch",
-    "test:coverage": "NODE_ENV=test jest --coverage",
-    "test:sars": "NODE_ENV=test jest server/__tests__/services/sarsService.forensic.test.js",
-    "test:compliance": "NODE_ENV=test jest server/__tests__/services/sarsComplianceService.test.js",
-    "lint": "eslint server/",
-    "lint:fix": "eslint server/ --fix"
-  },
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.0.0",
-    "@sentry/node": "^7.0.0",
-    "axios": "^1.13.5",
-    "bullmq": "^5.0.0",
-    "crypto-js": "^4.0.0",
-    "dotenv": "^16.0.0",
-    "express": "^4.18.0",
-    "express-async-handler": "^1.2.0",
-    "ioredis": "^5.0.0",
-    "luxon": "^3.0.0",
-    "mongoose": "^8.21.1",
-    "uuid": "^13.0.0"
+    "test": "NODE_OPTIONS='--experimental-specifier-resolution=node' mocha --require jsdom-global/register 'tests/**/*.test.js' --exit --timeout 60000",
+    "test:client": "NODE_OPTIONS='--experimental-specifier-resolution=node' mocha --require jsdom-global/register 'tests/client/**/*.test.js' --exit --timeout 60000",
+    "test:evidence": "cd tests/evidence && for f in *.json; do echo \"Verifying $f\"; jq -r '.auditHash' $f; done",
+    "pretest": "npm install",
+    "clean:evidence": "rm -f tests/evidence/*.json"
   },
   "devDependencies": {
-    "eslint": "^4.1.1",
-    "jest": "^30.2.0",
-    "nodemon": "^3.0.0"
+    "chai": "^5.1.0",
+    "jsdom": "^24.0.0",
+    "jsdom-global": "^3.0.2",
+    "mocha": "^10.3.0",
+    "sinon": "^17.0.1",
+    "@testing-library/react": "^15.0.2",
+    "@testing-library/react-hooks": "^8.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "jq": "^1.7.2"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }

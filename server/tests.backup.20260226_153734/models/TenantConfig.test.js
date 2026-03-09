@@ -10,25 +10,7 @@ describe('TenantConfig Model - Multi-Tenant Configuration', function() {
 
   before(async () => {
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/legal_doc_test');
-    }
-    await TenantConfig.deleteMany({});
-  });
-
-  after(async () => {
-    await TenantConfig.deleteMany({});
-  });
-
-  beforeEach(async () => {
-    await TenantConfig.deleteMany({});
-  });
-
-  describe('🏗️ Tenant Provisioning', function() {
-    it('should create a valid tenant with minimal fields', async function() {
-      const tenant = new TenantConfig({
-        tenantId: testTenantId,
-        name: 'Test Law Firm',
-        contactEmail: 'info@testlaw.co.za',
+      await mongoose.connect(process.env.MONGODB_URI || process.env.MONGODB_URI,
       });
 
       const saved = await tenant.save();

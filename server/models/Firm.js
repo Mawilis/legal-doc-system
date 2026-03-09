@@ -2722,7 +2722,7 @@ export default Firm;
  * MANDATORY SECURITY VARIABLES:
  * ENCRYPTION_KEY=64_character_hex_string_for_aes_256_gcm (32 bytes)
  * ENCRYPTION_IV=24_character_hex_string_for_aes_gcm (12 bytes)
- * MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+ * MONGO_URI=process.env.MONGODB_URI
  *
  * GENERATION COMMANDS FOR PRODUCTION:
  * node -e "console.log('ENCRYPTION_KEY=' + require('crypto').randomBytes(32).toString('hex'))"

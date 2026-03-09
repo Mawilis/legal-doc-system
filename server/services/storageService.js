@@ -1215,7 +1215,7 @@ RUNBOOK: Deploy StorageService
    node_modules/.bin/mmdc -i docs/diagrams/storage-service.mmd -o docs/diagrams/storage-service.png
 
 6. Run tests:
-   MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
+   MONGO_URI_TEST=${TEST_MONGODB_URI:-REDACTED}
    npm test -- services/storageService.test.js
 
 7. Integration test with mocked providers:

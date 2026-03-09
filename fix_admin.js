@@ -1,15 +1,7 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/legal-tech';
-
-async function forcePromote() {
-    try {
-        await mongoose.connect(MONGO_URI);
-        console.log('🔌 Connected to DB...');
-
-        // REPLACE THIS WITH YOUR EMAIL
-        const email = 'wilsonkhanyezi@gmail.com';
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
 
         const result = await mongoose.connection.db.collection('users').updateOne(
             { email: email },

@@ -1343,7 +1343,7 @@ STEP-BY-STEP .env CONFIGURATION FOR DATA PROCESSING RECORDS:
 3. Add the following model-specific variables:
 
    # MongoDB Configuration (Already exists - verify)
-   MONGO_URI=mongodb+srv://wilsonkhanyezi:*@legaldocsystem.knucgy2.mongodb.net/wilsy?retryWrites=true&w=majority&appName=legalDocSystem
+   MONGO_URI=${PROD_MONGODB_URI:-REDACTED}
 
    # Data Processing Record Specific
    MAX_RETENTION_YEARS=10

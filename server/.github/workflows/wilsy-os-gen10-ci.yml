@@ -201,15 +201,7 @@ jobs:
           --health-retries 5
 
     env:
-      MONGODB_URI: mongodb://localhost:27017/wilsy_test
-      REDIS_URL: redis://localhost:6379
-      NODE_ENV: test
-      JWT_SECRET: wilsy-ci-cd-secure-key-2026-gen10
-      FORENSIC_MODE: true
-
-    steps:
-      - name: ⬇️ Checkout Gen 10 Repository
-        uses: actions/checkout@v4
+      MONGODB_URI: "${MONGODB_URI}"
         with:
           fetch-depth: 0
 

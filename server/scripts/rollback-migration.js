@@ -42,24 +42,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 // Configuration constants
 const CONFIG = {
   // Database configuration
-  MONGO_URI: process.env.MONGO_URI || 'mongodb://localhost:27017/wilsy',
-  MONGO_URI_TEST: process.env.MONGO_URI_TEST || 'mongodb://localhost:27017/wilsy_test',
-
-  // Migration settings
-  MIGRATION_VERSION: process.env.MIGRATION_VERSION || 'latest',
-  ROLLBACK_TARGET: process.env.ROLLBACK_TARGET || 'previous',
-  MAX_ROLLBACK_ATTEMPTS: 3,
-
-  // Backup settings
-  BACKUP_DIR: process.env.BACKUP_DIR || '/var/backups/wilsy/migrations',
-  BACKUP_RETENTION_DAYS: 30,
-
-  // Compliance settings
-  COMPLIANCE_REQUIREMENTS: ['POPIA §14', 'Companies Act 71/2008 §24', 'ECT Act 25/2002'],
-  DATA_RESIDENCY: 'SA_RESIDENT',
-
-  // Notification settings
-  NOTIFICATION_EMAIL: process.env.ADMIN_EMAIL || 'wilsy.wk@gmail.com',
+  MONGO_URI: process.env.MONGO_URI || process.env.MONGODB_URI,
   ADMIN_PHONE: process.env.ADMIN_PHONE || '+27 69 046 5710',
 };
 

@@ -2343,7 +2343,7 @@ DEFAULT_INFORMATION_OFFICER_PHONE=+27 11 123 4567
 COMPANY_ADDRESS="1 Justice Street, Sandton, 2196"
 
 # Digital Signatures
-REPORT_SIGNING_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
+REPORT_SIGNING_PRIVATE_KEY=process.env.PRIVATE_KEY
 
 🚀 Installation Steps:
 1. Add above variables to /server/.env

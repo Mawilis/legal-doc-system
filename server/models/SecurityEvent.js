@@ -702,7 +702,7 @@ export default mongoose.models.SecurityEvent ||
  *    - GDPR Article 5: Storage limitation principle
  *    - Adjust per jurisdiction: 180 days (SA), 30 days (some EU)
  *
- * 4. MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/wilsy_prod
+ * 4. MONGO_URI=process.env.MONGODB_URI
  *    - Use TLS 1.3 enforced connection
  *    - Enable encryption at rest in MongoDB Atlas
  *

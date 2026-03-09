@@ -2237,39 +2237,7 @@ if (process.env.NODE_ENV === 'test') {
  * NOTIFICATION_ENCRYPTION_KEY=your_64_char_hex_string_here_generated_securely
  *
  * # Database Configuration (already in your .env)
- * DATABASE_URL=mongodb://localhost:27017/wilsy_os
- *
- * # Delivery Service Integrations
- * EMAIL_SERVICE_KEY=your_email_service_key
- * SMS_SERVICE_KEY=your_sms_service_key
- * WHATSAPP_API_KEY=your_whatsapp_business_key
- * PUSH_NOTIFICATION_KEY=your_push_service_key
- *
- * # Compliance Service Integrations
- * POPIA_CONSENT_DB=popia_consent_database_url
- * ECTA_TIMESTAMP_AUTHORITY=your_timestamp_authority_url
- * FICA_VERIFICATION_API=your_fica_verification_url
- *
- * STEP 3: Generate Encryption Key:
- * - Run: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
- * - Copy 64-character output to NOTIFICATION_ENCRYPTION_KEY
- *
- * STEP 4: Restart server and verify:
- * - Check logs for "NOTIFICATION_ENCRYPTION_KEY loaded successfully"
- * - Test encryption/decryption in test suite
- *
- * SECURITY NOTES:
- * - NEVER commit .env to version control
- * - Rotate NOTIFICATION_ENCRYPTION_KEY every 90 days using rotateEncryptionKeys()
- * - Use different keys for production/staging/development
- * - Store backup keys in secure password manager
- */
-
-// ============================================================================
-// TESTING IMPERATIVE - DIVINE QUALITY ASSURANCE
-// ============================================================================
-/*
- * @testImperative Notification Model Test Suite
+ * DATABASE_URL=process.env.MONGODB_URI Notification Model Test Suite
  * @description Comprehensive testing requirements for production deployment
  *
  * UNIT TESTS (Jest/Supertest - 95%+ coverage required):

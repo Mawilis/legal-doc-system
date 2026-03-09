@@ -1340,7 +1340,7 @@ const User = mongoose.model('User', UserSchema);
  *
  * Run Commands:
  * cd /Users/wilsonkhanyezi/legal-doc-system/server
- * MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
+ * MONGO_URI_TEST=${TEST_MONGODB_URI:-REDACTED}
  * npm test -- tests/unit/models/userModel.test.js
  */
 

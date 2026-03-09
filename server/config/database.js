@@ -68,12 +68,7 @@ class DatabaseConfig {
         host: DB_HOST,
         port: DB_PORT,
       });
-      return `mongodb://${DB_HOST}:${DB_PORT}/${DB_NAME}`;
-    }
-
-    let uri = `mongodb://${encodeURIComponent(DB_USERNAME)}:${encodeURIComponent(
-      DB_PASSWORD
-    )}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=${DB_AUTH_SOURCE}`;
+      return process.env.MONGODB_URI;
 
     if (DB_REPLICA_SET) {
       uri += `&replicaSet=${DB_REPLICA_SET}`;

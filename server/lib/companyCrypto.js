@@ -556,7 +556,7 @@ export default {
  * # Copy this file content
  *
  * # 4. Run tests
- * MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
+ * MONGO_URI_TEST=${TEST_MONGODB_URI:-REDACTED}
  * FIELD_ENCRYPTION_KEY="your-test-key-here" \
  * npm test -- tests/unit/lib/companyCrypto.test.js
  *

@@ -1,0 +1,36 @@
+{
+  "testSuite": "POPIA Redaction",
+  "timestamp": "2026-03-09T17:04:28.391Z",
+  "redactionTests": [
+    {
+      "test": "phone_redaction",
+      "passed": true,
+      "timestamp": "2026-03-09T17:04:28.390Z",
+      "normalizedTimestamp": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "test": "id_redaction",
+      "passed": true,
+      "timestamp": "2026-03-09T17:04:28.390Z",
+      "normalizedTimestamp": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "test": "nested_redaction",
+      "passed": true,
+      "timestamp": "2026-03-09T17:04:28.390Z",
+      "normalizedTimestamp": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "test": "array_redaction",
+      "passed": true,
+      "timestamp": "2026-03-09T17:04:28.390Z",
+      "normalizedTimestamp": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "economicMetrics": {
+    "annualSavingsPerClient": 650000,
+    "costReduction": "99%",
+    "riskElimination": "R4.1M"
+  },
+  "auditHash": "0bc2cbb6f6e9f86ae5e4faf73a9b33a446b3d5648993335477f50516bfa48099"
+}

@@ -2308,38 +2308,7 @@ if (process.env.NODE_ENV === 'test') {
  * ENCRYPTION_KEY=your_64_char_hex_string_here_generated_securely
  *
  * # Database Configuration (already in your .env)
- * DATABASE_URL=mongodb://localhost:27017/wilsy_os
- *
- * # Court API Integrations (configure as needed)
- * CIPC_API_KEY=your_cipc_api_key
- * CASELINES_API_KEY=your_caselines_key
- * ECOURT_API_URL=https://api.ecourt.gov.za
- *
- * # Compliance Service Integrations
- * DATANAMIX_API_KEY=your_aml_kyc_key
- * LEXISNEXIS_API_KEY=your_legal_research_key
- * LAWS_AFRICA_API_KEY=your_statutes_key
- *
- * STEP 3: Generate Encryption Key:
- * - Run: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
- * - Copy 64-character output to ENCRYPTION_KEY
- *
- * STEP 4: Restart server and verify:
- * - Check logs for "ENCRYPTION_KEY loaded successfully"
- * - Test encryption/decryption in test suite
- *
- * SECURITY NOTES:
- * - NEVER commit .env to version control
- * - Rotate ENCRYPTION_KEY every 90 days using rotateEncryptionKeys()
- * - Use different keys for production/staging/development
- * - Store backup keys in secure password manager
- */
-
-// ============================================================================
-// TESTING IMPERATIVE - DIVINE QUALITY ASSURANCE
-// ============================================================================
-/*
- * @testImperative Litigation Model Test Suite
+ * DATABASE_URL=process.env.MONGODB_URI Litigation Model Test Suite
  * @description Comprehensive testing requirements for production deployment
  *
  * UNIT TESTS (Jest/Supertest - 95%+ coverage required):

@@ -97,7 +97,7 @@ const QuantumEncryption = require('./quantumEncryption');
  * LOG_SIEM_INTEGRATION_ENABLED=false
  *
  * # MongoDB Log Database (Separate from main DB for security)
- * MONGO_LOG_URI=mongodb+srv://<username>:<password>@<cluster>/wilsy_logs?retryWrites=true&w=majority
+ * MONGO_LOG_URI=process.env.MONGODB_URI
  *
  * # Alerting Configuration
  * ALERT_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL

@@ -20,68 +20,7 @@ const winston = require('winston');
 
 // --- CONFIGURATION ---
 const PORT = process.env.STANDARDS_PORT || 6100;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/legal-tech';
-
-// --- LOGGER ---
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.printf(({ timestamp, level, message }) => `[${timestamp}] ${level.toUpperCase()}: ${message}`)
-    ),
-    transports: [new winston.transports.Console()]
-});
-
-// --- DATA MODEL: COURT RULES ---
-const ruleSchema = new mongoose.Schema({
-    courtType: { type: String, required: true, unique: true }, // e.g., 'High Court'
-    requiredFields: [String], // ['caseNumber', 'plaintiff']
-    regexPatterns: { type: Map, of: String } // { "caseNumber": "^\\d{4}/\\d{4}$" }
-});
-const Rule = mongoose.model('Rule', ruleSchema);
-
-// --- APP INIT ---
-const app = express();
-app.use(express.json());
-app.use(cors({
-    origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ['http://localhost:3000', 'http://127.0.0.1:3000'],
-    credentials: true
-}));
-
-// --- DATABASE & SEEDING ---
-mongoose.connect(MONGO_URI)
-    .then(() => {
-        logger.info('✅ [Standards] Connected to Rulebook DB');
-        seedDefaults();
-    })
-    .catch(err => {
-        logger.error('❌ [Standards] DB Error:', err.message);
-        process.exit(1);
-    });
-
-async function seedDefaults() {
-    const count = await Rule.countDocuments();
-    if (count === 0) {
-        logger.info('🌱 [Standards] Seeding Default Court Rules...');
-        await Rule.create([
-            {
-                courtType: 'High Court',
-                requiredFields: ['title', 'caseNumber', 'plaintiff', 'serviceAddress'],
-                regexPatterns: { caseNumber: '^\\d{4}/\\d{4}$' } // 2023/1234
-            },
-            {
-                courtType: 'Magistrate Court',
-                requiredFields: ['caseNumber', 'court', 'clerkName'],
-                regexPatterns: { caseNumber: '^[A-Z]{3}-\\d{4}$' } // JHB-1234
-            }
-        ]);
-    }
-}
-
-// --- ROUTES ---
-
-/**
- * @route   POST /validate
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI   POST /validate
  * @desc    Validate a document payload against active court rules
  */
 app.post('/validate', async (req, res) => {

@@ -1791,7 +1791,7 @@ complianceRecordSchema.virtual('regulatoryStatus').get(function () {
  * MANDATORY VARIABLES:
  *
  * # MongoDB Connection (Production)
- * MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/wilsy?retryWrites=true&w=majority
+ * MONGO_URI=process.env.MONGODB_URI
  *
  * # Quantum Security Layer
  * QUANTUM_KEY_DERIVATION_SECRET=your-super-secure-32-byte-base64-key-here

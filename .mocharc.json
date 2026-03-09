@@ -1,0 +1,9 @@
+{
+  "extension": ["js"],
+  "spec": ["tests/**/*.test.js"],
+  "require": ["jsdom-global/register"],
+  "timeout": 60000,
+  "exit": true,
+  "recursive": true,
+  "reporter": "spec"
+}

@@ -744,8 +744,8 @@ export default DisposalCertificate;
  * cd /Users/wilsonkhanyezi/legal-doc-system/server
  *
  * # Set up environment variables
- * export MONGO_URI="mongodb+srv://wilsonkhanyezi:*@legaldocsystem.knucgy2.mongodb.net/wilsy?retryWrites=true&w=majority&appName=legalDocSystem"
- * export MONGO_URI_TEST="mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test"
+ * export MONGO_URI="${PROD_MONGODB_URI:-REDACTED}"
+ * export MONGO_URI_TEST="${TEST_MONGODB_URI:-REDACTED}"
  *
  * # Install required dependencies
  * npm install mongoose crypto

@@ -1558,7 +1558,7 @@ describe('Fee Model Quantum Tests', () => {
  *    FEE_AUDIT_SECRET=32_character_secret_for_HMAC
  *
  * 2. DATABASE CONFIGURATION:
- *    MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/wilsy_prod
+ *    MONGO_URI=process.env.MONGODB_URI
  *    MONGO_URI_TEST=mongodb://localhost:27017/wilsy_test
  *
  * 3. CURRENCY & TAX:

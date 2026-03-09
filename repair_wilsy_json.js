@@ -29,11 +29,8 @@ async function seedSuperAdmin() {
   console.log('🏛️ WILSY OS: PARALLEL IDENTITY PROVISIONING');
   console.log('----------------------------------------------------');
   // CRITICAL: Ensure this URI matches the one in your server logs!
-  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/wilsy';
-
-  // We use a new email to bypass the 'Identity not found' / 'Secret mismatch' loop
-  const superEmail = 'architect@wilsy.os';
-  const superPassword = 'Mawilis8596'; // CHANGE THIS TO A SECURE PASSWORD BEFORE RUNNING IN PRODUCTION
+  const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
+  const superPassword = '${ADMIN_PASSWORD:-REDACTED}'; // CHANGE THIS TO A SECURE PASSWORD BEFORE RUNNING IN PRODUCTION
   const normalizedEmail = superEmail.toLowerCase().trim();
   try {
     console.log(`Connecting to Infrastructure: ${uri}`);

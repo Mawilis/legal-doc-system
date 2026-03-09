@@ -3732,7 +3732,7 @@ async function calculateComplianceRate() {
 ║ 2. Add these REQUIRED variables:                                            ║
 ║                                                                              ║
 ║    # MongoDB Configuration                                                   ║
-║    MONGO_URI=mongodb+srv://wilsonkhanyezi:*@legaldocsystem.knucgy2║
+║    MONGO_URI=process.env.MONGODB_URI║
 ║    .mongodb.net/wilsy?retryWrites=true&w=majority&appName=legalDocSystem    ║
 ║                                                                              ║
 ║    # JWT Configuration                                                       ║

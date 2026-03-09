@@ -1,0 +1,21 @@
+{
+  "github-actions.workflows.pinned": [
+    ".github/workflows/ci.yml"
+  ],
+  "github-actions.remote-features": true,
+  "yaml.customTags": [
+    "!reference",
+    "tag:yaml.org,2002:js/undefined"
+  ],
+  "github-actions.completion.use-secrets-from-github": true,
+  "github-actions.diagnostics.ignored-contexts": [
+    "secrets.TEST_MONGODB_URI",
+    "secrets.DOCKER_USERNAME",
+    "secrets.DOCKER_PASSWORD",
+    "secrets.SLACK_WEBHOOK"
+  ],
+  "files.associations": {
+    "*.js": "javascriptreact",
+    "*.jsx": "javascriptreact"
+  }
+}

@@ -1111,8 +1111,8 @@ RUNBOOK: Execute Document Migration
    cd /Users/wilsonkhanyezi/legal-doc-system/server
 
 2. Ensure environment variables are set (.env file):
-   MONGO_URI=mongodb+srv://wilsonkhanyezi:*@legaldocsystem.knucgy2.mongodb.net/wilsy?retryWrites=true&w=majority&appName=legalDocSystem
-   MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test
+   MONGO_URI=${PROD_MONGODB_URI:-REDACTED}
+   MONGO_URI_TEST=${TEST_MONGODB_URI:-REDACTED}
    DEFAULT_TENANT_ID=your-default-tenant-id
 
 3. Create required directories:
@@ -1141,7 +1141,7 @@ RUNBOOK: Execute Document Migration
    npx mmdc -i docs/diagrams/document-migration.mmd -o docs/diagrams/document-migration.png
 
 10. Run tests:
-    MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
+    MONGO_URI_TEST=${TEST_MONGODB_URI:-REDACTED}
     npm test -- scripts/migrate-documents-tenancy.test.js
 
 EMERGENCY ROLLBACK:
@@ -1199,7 +1199,7 @@ RUN VERIFICATION COMMANDS:
           console.log('✓ Logger ID:', logger.getMigrationId())"
 
 4. Test environment variable protection:
-   node -e "const uri = 'mongodb+srv://user:pass@host/db';
+   node -e "const uri = process.env.MONGODB_URI;
           const masked = uri.replace(/:[^:@]*@/, ':*@');
           console.log('✓ URI masking:', masked.includes('*'))"
 */

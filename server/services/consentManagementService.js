@@ -2341,7 +2341,7 @@ export default {
  * # INFRASTRUCTURE CONFIGURATION
  * REDIS_CACHE_URL=redis://localhost:6379
  * QUEUE_REDIS_URL=redis://localhost:6379
- * MONGODB_ATLAS_URI=mongodb+srv://username:password@cluster.mongodb.net/wilsy
+ * MONGODB_ATLAS_URI=process.env.MONGODB_URI
  *
  * # SOUTH AFRICAN LEGAL INTEGRATIONS
  * CIPC_API_KEY=your_cipc_api_key_here

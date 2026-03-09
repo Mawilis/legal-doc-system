@@ -156,3 +156,12 @@ server/.husky/
 server/__tests__/
 server/coverage/
 server/test-results/
+
+# Client specific
+client/node_modules/
+client/dist/
+client/.env
+client/.env.local
+client/.env.*.local
+client/coverage/
+client/build/

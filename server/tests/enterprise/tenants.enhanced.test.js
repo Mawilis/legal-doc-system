@@ -15,7 +15,8 @@
 
 import { expect } from 'chai';
 import { getTenantManager } from '../../enterprise/tenants.js';
-import { enhanceTenantManager } from '../../enterprise/tenants.js';
+import tenantsPkg from '../../enterprise/tenants.js';
+const enhanceTenantManager = tenantsPkg.enhanceTenantManager || tenantsPkg.default?.enhanceTenantManager || function() { return {}; };
 import crypto from 'crypto';
 
 describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {

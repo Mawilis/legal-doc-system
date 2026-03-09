@@ -587,45 +587,7 @@ if (process.env.NODE_ENV === 'test') {
 /*
  * .ENV ADDITIONS REQUIRED:
  * # AUDIT LOGGER SPECIFIC
- * AUDIT_DB_URI=mongodb+srv://.../wilsy_audit?retryWrites=true&w=majority # (Optional: Dedicated DB)
- * AUDIT_HASH_SALT=your_audit_log_hashing_salt_here
- *
- * # ENSURE THESE EXIST FROM PRIOR SETUP
- * MONGO_URI=your_main_database_uri
- * NODE_ENV=production
- *
- * ADD TO EXISTING .env FILE - DO NOT DUPLICATE EXISTING VARIABLES.
- *
- * STEP-BY-STEP GUIDE:
- * 1. Open your terminal and navigate to your project's server directory: `cd /server`
- * 2. Open the .env file for editing: `nano .env` or use your preferred editor.
- * 3. Add the new variables listed above in the relevant section.
- * 4. Generate a secure salt: Run `openssl rand -hex 32` in your terminal and copy the output as the value for `AUDIT_HASH_SALT`.
- * 5. Save the file and exit.
- * 6. Restart your Node.js application for the changes to take effect.
- */
-
-// ====================================================================================
-// VIII. FORENSIC TEST SUMMARY & COMPLIANCE VALIDATION
-// ====================================================================================
-
-/*
- * REQUIRED TEST FILES:
- * 1. /server/tests/unit/middleware/auditLogger.test.js
- * 2. /server/tests/integration/auditTrail.test.js
- * 3. /server/tests/security/auditIntegrity.test.js
- *
- * CRITICAL SOUTH AFRICAN LAW COMPLIANCE TESTS:
- * | Test Category          | Specific Test Cases                                                                 | SA Law Validation Point               |
- * |------------------------|-------------------------------------------------------------------------------------|---------------------------------------|
- * | Integrity & Non-Repudiation | 1. Verify event hash is generated for every log entry and is unique.<br>2. Tamper detection: Alter a logged field and verify hash mismatch. | ECT Act (Non-Repudiation), Cybercrimes Act (Data Integrity) |
- * | Data Minimization & Retention | 1. Verify no raw PII (ID numbers, full names) is written to plaintext logs.<br>2. Test automatic deletion of debug logs after 30 days (simulated). | POPIA (Sections 13, 14), PAIA |
- * | Forensic Readiness     | 1. Simulate a security incident and verify all relevant `forensic` level logs were captured.<br>2. Test querying the `AuditTrail` collection for a specific user's timeline. | Cybercrimes Act (Sections 3, 17), FICA |
- * | Performance Under Load | 1. Verify logger does not block HTTP response (>1000 concurrent requests).<br>2. Ensure MongoDB capped collection prevents unbounded growth. | General System Reliability |
- *
- * DEPENDENCIES TO INSTALL:
- *    cd /server
- *    npm install winston@^3.11.0 winston-mongodb@^5.1.1
+ * AUDIT_DB_URI=process.env.MONGODB_URI winston-mongodb@^5.1.1
  *
  * RELATED FILES NEEDED:
  * 1. /server/models/AuditTrail.js (Mongoose schema for structured querying)

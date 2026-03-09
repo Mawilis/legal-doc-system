@@ -21,57 +21,7 @@ const cors = require('cors');
 
 // --- CONFIGURATION ---
 const PORT = process.env.LEDGER_PORT || 6000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/legal-tech';
-
-// --- DATABASE SCHEMA (The Chain) ---
-const entrySchema = new mongoose.Schema({
-  index: { type: Number, required: true, index: true }, // Sequence Number
-  timestamp: { type: Date, default: Date.now },
-  eventType: { type: String, required: true }, // e.g., 'DOC_SERVED', 'LOGIN_ATTEMPT'
-  actor: { type: String, required: true },       // Who did it? (User ID / Name)
-  tenantId: { type: String, required: true },
-  payload: { type: Object, required: true },     // The data (e.g., GPS coords)
-  prevHash: { type: String, required: true },    // Link to previous block
-  hash: { type: String, required: true, unique: true }, // Current block hash
-  nonce: { type: Number, default: 0 }            // For future Proof-of-Work if needed
-}, { strict: true });
-
-const LedgerEntry = mongoose.model('LedgerEntry', entrySchema);
-
-// --- APP INIT ---
-const app = express();
-
-app.use(cors({
-  origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ['http://localhost:3000', 'http://127.0.0.1:3000'],
-  credentials: true,
-  methods: ['GET', 'POST']
-}));
-app.use(express.json());
-
-// --- CONNECT DB ---
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ [Ledger] Connected to Immutable Storage'))
-  .catch(err => {
-    console.error('❌ [Ledger] DB Connection Failed:', err.message);
-    process.exit(1);
-  });
-
-// --- HELPER: Calculate Hash ---
-const calculateHash = (index, prevHash, timestamp, data, nonce = 0) => {
-  return crypto.createHash('sha256')
-    .update(index + prevHash + timestamp + JSON.stringify(data) + nonce)
-    .digest('hex');
-};
-
-// --- HELPER: Get Last Block ---
-const getLastBlock = async () => {
-  return await LedgerEntry.findOne().sort({ index: -1 });
-};
-
-// --- ROUTES ---
-
-/**
- * @route   POST /seal
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI   POST /seal
  * @desc    Cryptographically seal an event into the ledger
  */
 app.post('/seal', async (req, res) => {

@@ -2548,11 +2548,7 @@ class QuantumComplianceReportGenerator {
  * # EXISTING VARIABLES (From previous files)
  * BASE_URL=https://wilsy.os
  * REDIS_URL=redis://localhost:6379
- * MONGODB_URI=mongodb+srv://...
- *
- * STEP 2: INSTALL DEPENDENCIES:
- * cd /server/
- * npm install exceljs@^4.4.0 pdfkit@^0.14.0 chart.js@^4.4.0
+ * MONGODB_URI=process.env.MONGODB_URI pdfkit@^0.14.0 chart.js@^4.4.0
  * npm install moment@^2.29.4 lodash@^4.17.21
  * npm install handlebars@^4.7.8 puppeteer@^21.0.0 html-pdf@^3.0.1
  * npm install csv-writer@^1.6.0

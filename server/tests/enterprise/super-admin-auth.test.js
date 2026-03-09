@@ -27,7 +27,7 @@ describe('🏛️ WILSY OS 2050 - SUPER ADMIN AUTHENTICATION SUITE', function ()
 
   let mockReq, mockRes, nextCalled;
   const adminEmail = process.env.ADMIN_EMAIL || 'wilsonkhanyezi@gmail.com';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'Mawilis8596';
+  const adminPassword = process.env.ADMIN_PASSWORD || '${ADMIN_PASSWORD:-REDACTED}';
 
   // Full login + MFA helper (required because mfaRequired = true)
   async function fullLogin(testName) {

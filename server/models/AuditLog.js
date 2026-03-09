@@ -2723,8 +2723,8 @@ BACKUP_DATA_REGION=aws-us-east-1
 # ============================================
 # DATABASE CONFIGURATION
 # ============================================
-MONGO_URI=mongodb+srv://wilsonkhanyezi:*@legaldocsystem.knucgy2.mongodb.net/wilsy?retryWrites=true&w=majority&appName=legalDocSystem
-MONGO_TEST_URI=mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test
+MONGO_URI=${PROD_MONGODB_URI:-REDACTED}
+MONGO_TEST_URI=${TEST_MONGODB_URI:-REDACTED}
 
 # ============================================
 # SUPREME ARCHITECT CONFIGURATION

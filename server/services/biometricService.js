@@ -1807,8 +1807,8 @@ export default {
  * JWT_EXPIRY=24h
  *
  * # Database Configuration
- * MONGODB_URI=mongodb+srv://wilsonkhanyezi:*@legaldocsystem.knucgy2.mongodb.net/wilsy?retryWrites=true&w=majority&appName=legalDocSystem
- * MONGODB_TEST_URI=mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test
+ * MONGODB_URI=${PROD_MONGODB_URI:-REDACTED}
+ * MONGODB_TEST_URI=${TEST_MONGODB_URI:-REDACTED}
  *
  * # Encryption Configuration
  * ENCRYPTION_KEY=32_character_minimum_encryption_key_here

@@ -23,70 +23,7 @@ const mongoose = require('mongoose');
 
 // --- CONFIGURATION ---
 const PORT = process.env.AUTH_PORT || 4000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/legal-tech';
-const JWT_SECRET = process.env.JWT_SECRET || 'wilsy_billion_dollar_secret';
-
-// --- DATA MODEL (Standalone Definition) ---
-// We define this here to ensure the service works independently of the monolith.
-const userSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
-    password: { type: String, required: true }, // Hashed
-    role: {
-        type: String,
-        enum: ['super_admin', 'admin', 'lawyer', 'paralegal', 'sheriff', 'finance', 'associate'],
-        default: 'lawyer'
-    },
-    tenantId: { type: String, default: 'default' },
-    permissions: [{ type: String }],
-    lastLogin: { type: Date }
-}, { timestamps: true });
-
-// Prevent model recompilation error if using nodemon
-const User = mongoose.models.User || mongoose.model('User', userSchema);
-
-// --- APP INIT ---
-const app = express();
-
-// --- MIDDLEWARE ---
-app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'http://localhost:3001'
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-}));
-app.use(express.json());
-app.use(cookieParser());
-
-// --- DATABASE ---
-mongoose.connect(MONGO_URI)
-    .then(() => console.log('✅ [Auth Service] Connected to Identity Database'))
-    .catch(err => {
-        console.error('❌ [Auth Service] DB Connection Failed:', err.message);
-        process.exit(1);
-    });
-
-// --- HELPER: Generate Token ---
-const generateToken = (user) => {
-    return jwt.sign(
-        {
-            id: user._id,
-            email: user.email,
-            role: user.role,
-            tenantId: user.tenantId
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-    );
-};
-
-// --- ROUTES ---
-
-/**
- * @route   POST /register
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI   POST /register
  * @desc    Create a new account (Bootstrap)
  */
 app.post('/register', async (req, res) => {

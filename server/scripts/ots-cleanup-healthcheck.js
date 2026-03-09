@@ -785,7 +785,7 @@ if (process.env.NODE_ENV === 'test') {
 
     test('should handle database connectivity check', async () => {
       // Mock environment for test
-      process.env.MONGO_URI_TEST = 'mongodb://test:test@localhost:27017/test';
+      process.env.MONGO_URI_TEST = process.env.MONGODB_URI;
 
       // This will fail but test the error handling
       await checkDatabaseConnectivity(result);
@@ -808,7 +808,7 @@ ACCEPTANCE TESTS:
 1. Validate script syntax: node -c /Users/wilsonkhanyezi/legal-doc-system/server/scripts/ots-cleanup-healthcheck.js
 2. Test health check execution: TENANT_ID=test-tenant-001 node /Users/wilsonkhanyezi/legal-doc-system/server/scripts/ots-cleanup-healthcheck.js | jq '.overallStatus'
 3. Test fail-closed security: REQUIRE_TENANT_CONTEXT=true FAIL_CLOSED_ON_MISSING_CONTEXT=true node /Users/wilsonkhanyezi/legal-doc-system/server/scripts/ots-cleanup-healthcheck.js | jq '.exitCode'
-4. Test database check: MONGO_URI_TEST="mongodb+srv://test:*@test.mongodb.net/test" node -e "const {checkDatabaseConnectivity} = require('./scripts/ots-cleanup-healthcheck.js'); const {HealthCheckResult} = require('./scripts/ots-cleanup-healthcheck.js'); const r=new HealthCheckResult(); checkDatabaseConnectivity(r).then(()=>console.log(r.checks.has('database_connectivity')))"
+4. Test database check: MONGO_URI_TEST=process.env.MONGODB_URI node -e "const {checkDatabaseConnectivity} = require('./scripts/ots-cleanup-healthcheck.js'); const {HealthCheckResult} = require('./scripts/ots-cleanup-healthcheck.js'); const r=new HealthCheckResult(); checkDatabaseConnectivity(r).then(()=>console.log(r.checks.has('database_connectivity')))"
 5. Test compliance check: node -e "const {checkComplianceRequirements} = require('./scripts/ots-cleanup-healthcheck.js'); const {HealthCheckResult} = require('./scripts/ots-cleanup-healthcheck.js'); const r=new HealthCheckResult(); checkComplianceRequirements(r).then(()=>console.log(r.checks.has('compliance_verification')))"
 6. Test Docker health check format: node /Users/wilsonkhanyezi/legal-doc-system/server/scripts/ots-cleanup-healthcheck.js --format=docker
 

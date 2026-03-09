@@ -77,7 +77,7 @@ const cryptoEngine = new pkijs.CryptoEngine({
 //  ===============================================================================================
 /*
  * ENV ADDITIONS REQUIRED (Add to /server/.env):
- * ECT_SIGNATURE_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----
+ * ECT_SIGNATURE_PRIVATE_KEY=process.env.PRIVATE_KEY
  * ECT_SIGNATURE_PUBLIC_KEY=-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----
  * ECT_SIGNATURE_CERTIFICATE=-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----
  * ECT_JWT_SECRET=jwt_secret_for_signature_tokens_min_32_chars

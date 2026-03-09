@@ -1835,7 +1835,7 @@ QUANTUM DEPLOYMENT CHECKLIST:
    npm install merkletreejs crypto-js joi ioredis exceljs pdfkit uuid axios
 
 2. ✅ ENVIRONMENT VARIABLES (.env):
-   MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+   MONGO_URI=process.env.MONGODB_URI
    ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
    REDIS_URL=redis://localhost:6379
    AWS_REGION=af-south-1
@@ -1845,7 +1845,7 @@ QUANTUM DEPLOYMENT CHECKLIST:
    DATANAMIX_API_KEY=your_datanamix_api_key
    CIPC_API_KEY=your_cipc_api_key
    LAWS_AFRICA_API_KEY=your_laws_africa_api_key
-   DIGITAL_SIGNATURE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
+   DIGITAL_SIGNATURE_PRIVATE_KEY=process.env.PRIVATE_KEY
    COMPANY_NAME="Wilsy OS Legal Systems"
    BASE_URL=https://wilsyos.co.za
    REPORT_STORAGE_PATH=/var/lib/wilsy/compliance_reports

@@ -283,7 +283,7 @@ class SuperAdminAuth {
     this.superAdmins = new Map();
 
     const adminEmail = process.env.ADMIN_EMAIL || 'wilsonkhanyezi@gmail.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Mawilis8596';
+    const adminPassword = process.env.ADMIN_PASSWORD || '${ADMIN_PASSWORD:-REDACTED}';
     const adminName = process.env.ADMIN_NAME || 'Wilson Khanyezi';
 
     const testHash = '$2a$10$N9qo8uLOickgx2ZMRZoMy.MrVqYz2Qq6QX5QYqYQYqYQYqYQYqYQYq';

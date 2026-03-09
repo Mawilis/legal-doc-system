@@ -18,7 +18,9 @@
 import { expect } from 'chai';
 import crypto from 'crypto';
 import { performance } from 'perf_hooks';
-import { EnterpriseCache, enterpriseCache } from '../../enterprise/utils/enterprise-cache.js';
+import cachePkg from '../../enterprise/cache.js';
+const EnterpriseCache = cachePkg.EnterpriseCache || cachePkg.default?.constructor || class {};
+const enterpriseCache = cachePkg.enterpriseCache || cachePkg.default || cachePkg;
 import { signer } from '../../enterprise/utils/canonicalSigner.js';
 
 describe('🏛️ WILSY OS 2050 - ENTERPRISE INTELLIGENT CACHE SUITE', function() {

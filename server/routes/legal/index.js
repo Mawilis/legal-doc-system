@@ -923,7 +923,7 @@ RUNBOOK: Deploy Legal Routes Index
    MERMAID
 
 8. Run tests:
-   MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test \
+   MONGO_URI_TEST=${TEST_MONGODB_URI:-REDACTED}
    npm test -- routes/legal/index.test.js
 
 9. Integration with main app:

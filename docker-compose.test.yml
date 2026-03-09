@@ -20,7 +20,7 @@ services:
       JWT_SECRET: test-jwt-secret
       JWT_REFRESH_SECRET: test-refresh-secret
       ADMIN_EMAIL: wilsonkhanyezi@gmail.com
-      ADMIN_PASSWORD: Mawilis8596
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-REDACTED}
       TEST_MONGODB_URI: mongodb://test-mongo:27017/wilsy-test
       REDIS_URI: redis://test-redis:6379
       NODE_OPTIONS: --experimental-vm-modules

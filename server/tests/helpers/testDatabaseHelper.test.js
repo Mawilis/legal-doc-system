@@ -296,7 +296,7 @@ class QuantumTestFortress {
 
         this.startHealthCheck();
         this.logger.log(FORENSIC_EVENTS.CONNECTION_ESTABLISHED, {
-          uri: uri.replace(/mongodb:\/\/[^@]+@/, 'mongodb://***:***@'),
+          uri: uri.replace(/mongodb:\/\/[^@]+@/, 'mongodb://${MONGO_USER}:${MONGO_PASS}@'),
           database: mongoose.connection.name,
           models: Object.keys(mongoose.models).length,
           replicaSet: 'rs0'

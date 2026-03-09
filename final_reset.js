@@ -6,19 +6,7 @@ const bcrypt = require('bcryptjs');
  * Since your local scan showed 'legal-tech' as the active 1.06MB database,
  * we are targeting that specifically.
  */
-const URI = 'mongodb://127.0.0.1:27017/legal-tech';
-
-async function godMode() {
-    console.log('---------------------------------------------------');
-    console.log('🚀 [Wilsy OS] IDENTITY OVERRIDE INITIATED');
-    console.log(`🔌 TARGET: ${URI}`);
-    console.log('---------------------------------------------------');
-
-    try {
-        await mongoose.connect(URI);
-        console.log('✅ Connection Established.');
-
-        const email = 'wilsonkhanyezi@gmail.com';
+const URI = process.env.MONGODB_URI;
 
         // 1. Clear any existing Wilson record to fix hash mismatches
         const del = await mongoose.connection.db.collection('users').deleteMany({
