@@ -1,0 +1,62 @@
+# ============================================================================
+# WILSY OS 2050 - TEST DOCKERFILE
+# Multi-stage build for optimal test execution
+# ============================================================================
+
+FROM node:20-slim AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY server/package*.json ./server/
+COPY server/package-lock.json ./server/
+
+# Install dependencies
+WORKDIR /app/server
+RUN npm ci
+
+# ============================================================================
+# Test Runner Stage
+# ============================================================================
+FROM node:20-slim
+
+# Install dependencies for native modules
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app/server
+
+# Copy node_modules from builder
+COPY --from=builder /app/server/node_modules ./node_modules
+
+# Copy test files and configs
+COPY server/.mocharc.test.json ./
+COPY server/tests ./tests
+COPY server/package*.json ./
+
+# Create test results directory
+RUN mkdir -p /app/test-results
+
+# Set environment variables
+ENV NODE_ENV=test
+ENV NODE_OPTIONS=--experimental-vm-modules
+
+# Default command (can be overridden)
+CMD ["sh", "-c", "npx mocha --config .mocharc.test.json tests/enterprise/*.test.js --timeout 60000 --exit"]
+
+# ============================================================================
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD node -e "process.exit(0)" || exit 1
+
+# ============================================================================
+# Labels for container registry
+LABEL org.opencontainers.image.title="WILSY OS 2050 Test Runner"
+LABEL org.opencontainers.image.description="Executes the 41/41 test suite"
+LABEL org.opencontainers.image.version="42.0.0"
+LABEL org.opencontainers.image.vendor="WILSY OS"
+LABEL org.opencontainers.image.authors="Wilson Khanyezi"

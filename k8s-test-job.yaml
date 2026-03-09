@@ -1,0 +1,147 @@
+# ============================================================================
+# WILSY OS 2050 - KUBERNETES TEST JOB
+# Run: kubectl apply -f k8s-test-job.yaml
+# ============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wilsy-os-test
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wilsy-test-config
+  namespace: wilsy-os-test
+data:
+  NODE_ENV: "test"
+  FORENSIC_HMAC_KEY: "test-key-for-signature-verification"
+  JWT_SECRET: "test-jwt-secret"
+  JWT_REFRESH_SECRET: "test-refresh-secret"
+  ADMIN_EMAIL: "wilsonkhanyezi@gmail.com"
+  ADMIN_PASSWORD: "Mawilis8596"
+  TEST_MONGODB_URI: "mongodb://test-mongo:27017/wilsy-test"
+  REDIS_URI: "redis://test-redis:6379"
+  NODE_OPTIONS: "--experimental-vm-modules"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-mongo
+  namespace: wilsy-os-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-mongo
+  template:
+    metadata:
+      labels:
+        app: test-mongo
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:7-jammy
+        ports:
+        - containerPort: 27017
+        readinessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-mongo
+  namespace: wilsy-os-test
+spec:
+  selector:
+    app: test-mongo
+  ports:
+  - port: 27017
+    targetPort: 27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-redis
+  namespace: wilsy-os-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-redis
+  template:
+    metadata:
+      labels:
+        app: test-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-redis
+  namespace: wilsy-os-test
+spec:
+  selector:
+    app: test-redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wilsy-test-runner
+  namespace: wilsy-os-test
+spec:
+  template:
+    spec:
+      containers:
+      - name: test-runner
+        image: node:20
+        envFrom:
+        - configMapRef:
+            name: wilsy-test-config
+        workingDir: /app/server
+        command:
+        - sh
+        - -c
+        - |
+          npm ci &&
+          npx mocha --config .mocharc.test.json \
+            tests/enterprise/forensic-fix.test.js &&
+          npx mocha --config .mocharc.test.json \
+            tests/enterprise/tenants.enhanced-complete.test.js &&
+          npx mocha --config .mocharc.test.json \
+            tests/enterprise/end-to-end.tampering.test.js &&
+          npx mocha --config .mocharc.test.json \
+            tests/enterprise/enterprise-cache.test.js &&
+          npx mocha --config .mocharc.test.json \
+            tests/enterprise/super-admin-auth.test.js
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+      volumes:
+      - name: app-code
+        hostPath:
+          path: /Users/wilsonkhanyezi/legal-doc-system
+          type: Directory
+      restartPolicy: Never
+  backoffLimit: 2

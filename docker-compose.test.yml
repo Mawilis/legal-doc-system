@@ -1,0 +1,112 @@
+# ============================================================================
+# WILSY OS 2050 - TEST DOCKER COMPOSE OVERRIDE
+# Run: docker-compose -f docker-compose.yml -f docker-compose.test.yml up test-runner
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # TEST RUNNER - Executes the 41/41 test suite
+  # ============================================================================
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: wilsy-test-runner
+    environment:
+      NODE_ENV: test
+      FORENSIC_HMAC_KEY: test-key-for-signature-verification
+      JWT_SECRET: test-jwt-secret
+      JWT_REFRESH_SECRET: test-refresh-secret
+      ADMIN_EMAIL: wilsonkhanyezi@gmail.com
+      ADMIN_PASSWORD: Mawilis8596
+      TEST_MONGODB_URI: mongodb://test-mongo:27017/wilsy-test
+      REDIS_URI: redis://test-redis:6379
+      NODE_OPTIONS: --experimental-vm-modules
+    volumes:
+      - ./server:/app/server
+      - ./test-results:/app/test-results
+    working_dir: /app/server
+    command: >
+      sh -c "
+        npm ci &&
+        npx mocha --config .mocharc.test.json
+        tests/enterprise/forensic-fix.test.js &&
+        npx mocha --config .mocharc.test.json
+        tests/enterprise/tenants.enhanced-complete.test.js &&
+        npx mocha --config .mocharc.test.json
+        tests/enterprise/end-to-end.tampering.test.js &&
+        npx mocha --config .mocharc.test.json
+        tests/enterprise/enterprise-cache.test.js &&
+        npx mocha --config .mocharc.test.json
+        tests/enterprise/super-admin-auth.test.js
+      "
+    depends_on:
+      test-mongo:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+    networks:
+      - wilsy-test-network
+
+  # ============================================================================
+  # TEST DATABASE
+  # ============================================================================
+  test-mongo:
+    image: mongo:7-jammy
+    container_name: wilsy-test-mongo
+    ports:
+      - "27018:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - test_mongo_data:/data/db
+    networks:
+      - wilsy-test-network
+
+  # ============================================================================
+  # TEST REDIS
+  # ============================================================================
+  test-redis:
+    image: redis:7-alpine
+    container_name: wilsy-test-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - test_redis_data:/data
+    networks:
+      - wilsy-test-network
+
+# ============================================================================
+# TEST NETWORKS & VOLUMES
+# ============================================================================
+networks:
+  wilsy-test-network:
+    driver: bridge
+
+volumes:
+  test_mongo_data:
+  test_redis_data:
+
+# ============================================================================
+# USAGE INSTRUCTIONS
+# ============================================================================
+# Run all tests:
+#   docker-compose -f docker-compose.yml -f docker-compose.test.yml up test-runner --abort-on-container-exit
+#
+# Run with clean environment:
+#   docker-compose -f docker-compose.yml -f docker-compose.test.yml down -v && \
+#   docker-compose -f docker-compose.yml -f docker-compose.test.yml up test-runner --abort-on-container-exit
+#
+# View test results:
+#   ls -la ./test-results/
+# ============================================================================

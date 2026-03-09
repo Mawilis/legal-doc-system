@@ -1,0 +1,10 @@
+{
+  "reporter": "spec",
+  "recursive": true,
+  "timeout": 60000,
+  "exit": true,
+  "extension": ["js"],
+  "spec": ["tests/enterprise/**/*.test.js"],
+  "require": ["@babel/register"],
+  "file": ["tests/setup.cjs"]
+}

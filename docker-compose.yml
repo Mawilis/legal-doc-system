@@ -61,7 +61,7 @@ services:
       REDIS_CACHE_DB: "1"
       REDIS_SESSION_DB: "2"
       REDIS_QUEUE_DB: "3"
-      REDIS_KEY_PREFIX: "wilsy:prod:"  # QUOTED to fix YAML error
+      REDIS_KEY_PREFIX: "wilsy:prod:" 
       REDIS_TLS_ENABLED: "false"
       REDIS_CLUSTER_MODE: "false"
       
@@ -273,35 +273,6 @@ services:
       WORKER_STALLED_INTERVAL: "30000"
       WORKER_LOCK_DURATION: "60000"
       
-      # Embedding Worker
-      EMBEDDING_WORKER_COUNT: "2"
-      EMBEDDING_WORKER_BATCH_SIZE: "64"
-      EMBEDDING_WORKER_QUEUE_SIZE: "5000"
-      
-      # Vectorizer Worker
-      VECTORIZER_WORKERS: "2"
-      VECTORIZER_BATCH_SIZE: "32"
-      VECTORIZER_QUEUE_SIZE: "10000"
-      
-      # Citation Worker
-      CITATION_WORKERS: "1"
-      CITATION_BATCH_SIZE: "100"
-      CITATION_INDEX_INTERVAL: "3600"
-      
-      # Queue Names
-      EMBEDDING_QUEUE: "embedding-queue"
-      VECTORIZATION_QUEUE: "vectorization-queue"
-      CITATION_QUEUE: "citation-queue"
-      NOTIFICATION_QUEUE: "notification-queue"
-      BILLING_QUEUE: "billing-queue"
-      
-      # Queue Settings
-      QUEUE_CONCURRENCY: "10"
-      QUEUE_MAX_RETRIES: "3"
-      QUEUE_BACKOFF_DELAY: "1000"
-      QUEUE_COMPLETED_TTL: "86400"
-      QUEUE_FAILED_TTL: "604800"
-      
       # Neural Engine
       EMBEDDING_MODEL: "legal-bert"
       EMBEDDING_DIMENSION: "768"
@@ -483,7 +454,7 @@ services:
       - with-proxy
 
   # ============================================================================
-  # 📊 PROMETHEUS - Metrics Collection (Optional)
+  # 📊 PROMETHEUS & GRAFANA - Metrics Collection (Optional)
   # ============================================================================
   prometheus:
     image: prom/prometheus:latest
@@ -495,9 +466,6 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'
     ports:
       - "9090:9090"
     networks:
@@ -511,11 +479,9 @@ services:
     restart: unless-stopped
     environment:
       GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_PASSWORD:-admin}"
-      GF_INSTALL_PLUGINS: "grafana-piechart-panel"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
     ports:
       - "3001:3000"
     networks:
@@ -544,6 +510,66 @@ services:
     profiles:
       - dev-tools
 
+  # ============================================================================
+  # 🧪 TEST PROFILE - CI/CD Automated Testing
+  # ============================================================================
+  test-runner:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: wilsy-test-runner
+    environment:
+      NODE_ENV: test
+      FORENSIC_HMAC_KEY: test-key-for-signature-verification
+      JWT_SECRET: test-jwt-secret
+      JWT_REFRESH_SECRET: test-refresh-secret
+      ADMIN_EMAIL: wilsonkhanyezi@gmail.com
+      ADMIN_PASSWORD: Mawilis8596
+      TEST_MONGODB_URI: mongodb://test-mongo:27017/wilsy-test
+      REDIS_URI: redis://test-redis:6379
+      NODE_OPTIONS: --experimental-vm-modules
+    volumes:
+      - ./server:/app/server
+      - ./test-results:/app/test-results
+    working_dir: /app/server
+    command: ["sh", "-c", "npm ci && npx mocha --config .mocharc.test.json tests/enterprise/*.test.js --timeout 60000 --exit"]
+    depends_on:
+      test-mongo:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+    networks:
+      - wilsy-network
+
+  test-mongo:
+    profiles: ["test"]
+    image: mongo:7-jammy
+    container_name: wilsy-test-mongo
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - test_mongo_data:/data/db
+    networks:
+      - wilsy-network
+
+  test-redis:
+    profiles: ["test"]
+    image: redis:7-alpine
+    container_name: wilsy-test-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - test_redis_data:/data
+    networks:
+      - wilsy-network
+
 # ============================================================================
 # 🌐 NETWORKS
 # ============================================================================
@@ -553,105 +579,99 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
-    driver_opts:
-      com.docker.network.bridge.name: "wilsy-bridge"
-      com.docker.network.bridge.enable_icc: "true"
-      com.docker.network.bridge.enable_ip_masquerade: "true"
 
 # ============================================================================
-# 💾 VOLUMES
+# 💾 VOLUMES (Unified and De-duplicated)
 # ============================================================================
 volumes:
   redis_data:
     driver: local
     driver_opts:
       type: "none"
-      device: "${WILSY_DATA_PATH}/redis"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/redis"
       o: "bind"
   
   audit_logs:
     driver: local
     driver_opts:
       type: "none"
-      device: "${WILSY_DATA_PATH}/audit-logs"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/audit-logs"
       o: "bind"
   
   forensic_data:
     driver: local
     driver_opts:
       type: "none"
-      device: "${WILSY_DATA_PATH}/forensic-evidence"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/forensic-evidence"
       o: "bind"
   
   reports:
     driver: local
     driver_opts:
       type: "none"
-      device: "${WILSY_DATA_PATH}/reports"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/reports"
       o: "bind"
   
   model_cache:
     driver: local
     driver_opts:
       type: "none"
-      device: "${WILSY_DATA_PATH}/models"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/models"
       o: "bind"
   
   milvus_data:
     driver: local
     driver_opts:
       type: "none"
-      device: "${WILSY_DATA_PATH}/milvus"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/milvus"
       o: "bind"
   
   etcd_data:
     driver: local
     driver_opts:
       type: "none"
-      device: "${WILSY_DATA_PATH}/etcd"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/etcd"
       o: "bind"
   
   minio_data:
     driver: local
     driver_opts:
       type: "none"
-      device: "${WILSY_DATA_PATH}/minio"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/minio"
       o: "bind"
   
   prometheus_data:
     driver: local
     driver_opts:
       type: "none"
-      device: "${WILSY_DATA_PATH}/prometheus"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/prometheus"
       o: "bind"
   
   grafana_data:
     driver: local
     driver_opts:
       type: "none"
-      device: "${WILSY_DATA_PATH}/grafana"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/grafana"
+      o: "bind"
+
+  test_mongo_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/test-mongo"
+      o: "bind"
+
+  test_redis_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/test-redis"
       o: "bind"
 
 # ============================================================================
 # 📋 USAGE INSTRUCTIONS
-# ============================================================================
 # Start with all services:
 #   docker-compose --profile with-workers --profile with-vector-db --profile with-proxy --profile with-monitoring up -d
-#
-# Start minimal (core only):
-#   docker-compose up -d
-#
-# Start with specific profiles:
-#   docker-compose --profile with-workers up -d
-#   docker-compose --profile with-vector-db up -d
-#   docker-compose --profile with-monitoring up -d
-#
-# Environment file required:
-#   .env.docker - Copy from template and fill with your values
-#
-# ============================================================================
-# WILSY OS - The Global Legal Operating System
-# "Law knows no borders. Wilsy OS has no limits."
-# 10 Generations of Wealth | R 1,000,000,000,000,000 Target
-# Wilson Khanyezi - Supreme Architect
+# Run tests:
+#   docker-compose --profile test up --build
 # ============================================================================

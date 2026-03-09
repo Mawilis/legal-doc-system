@@ -1,0 +1,131 @@
+# ============================================================================
+# WILSY OS 2050 - PRODUCTION DOCKER COMPOSE
+# 10TH GENERATION | QUANTUM FORTRESS | PRODUCTION READY
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # ⚡ WILSY OS CORE - Your Production Server
+  # ==========================================================================
+  wilsy-os:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wilsy-os-2050:${BUILD_VERSION:-latest}
+    container_name: wilsy-os-server
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - API_PORT=9095
+      - INVESTOR_PORT=9096
+      - METRICS_PORT=9090
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - FORENSIC_HMAC_KEY=${FORENSIC_HMAC_KEY}
+    env_file:
+      - ./server/.env.production
+    ports:
+      - "3000:3000"
+      - "9095:9095"
+      - "9096:9096"
+      - "9090:9090"
+    volumes:
+      - audit_logs:/var/log/wilsy-os
+      - forensic_data:/app/data/forensic
+      - reports:/app/reports
+      - ./config:/app/config:ro
+      - ./ssl:/app/ssl:ro
+    networks:
+      - wilsy-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ==========================================================================
+  # 📦 REDIS - Caching & Session Management
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: wilsy-redis
+    restart: unless-stopped
+    command: >
+      redis-server --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-RedisProd2026!}
+      --maxmemory 4gb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - wilsy-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-RedisProd2026!}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ==========================================================================
+  # 🔧 WILSY WORKER - Background Jobs
+  # ==========================================================================
+  wilsy-worker:
+    build:
+      context: .
+      dockerfile: server/Dockerfile.worker
+    image: wilsy-worker-2050:${BUILD_VERSION:-latest}
+    container_name: wilsy-worker
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - REDIS_URI=redis://:${REDIS_PASSWORD:-RedisProd2026!}@redis:6379
+      - MONGODB_URI=${MONGODB_URI}
+    env_file:
+      - ./server/.env.production
+    volumes:
+      - forensic_data:/app/data/forensic
+      - reports:/app/reports
+      - model_cache:/app/models
+    networks:
+      - wilsy-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      wilsy-os:
+        condition: service_healthy
+
+# ============================================================================
+# 🌐 NETWORKS
+# ============================================================================
+networks:
+  wilsy-network:
+    driver: bridge
+
+# ============================================================================
+# 💾 VOLUMES
+# ============================================================================
+volumes:
+  redis_data:
+    driver: local
+  audit_logs:
+    driver: local
+  forensic_data:
+    driver: local
+  reports:
+    driver: local
+  model_cache:
+    driver: local

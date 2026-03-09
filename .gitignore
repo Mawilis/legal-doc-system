@@ -24,3 +24,87 @@ coverage
 .env.local
 .env.*.local
 server/tests_legacy_backup/
+
+# Production environment files
+.env.production
+
+# Additional security files
+.env.*
+*.key
+*.pem
+*.crt
+secrets/
+k8s/secrets.yaml
+
+# ============================================================================
+# 🔐 WILSY OS 2050 - SECURITY ENHANCED GITIGNORE
+# ============================================================================
+
+# Environment files - NEVER COMMIT
+.env
+.env.*
+!.env.example
+!.env.template
+.env.production
+.env.staging
+.env.test
+.env.local
+.env.development
+
+# Secrets and keys
+*.key
+*.pem
+*.crt
+*.csr
+*.p12
+*.pfx
+secrets/
+**/secrets/
+**/secrets.json
+**/credentials.json
+**/service-account.json
+k8s/secrets.yaml
+k8s/*-secrets.yaml
+ssl/
+certificates/
+
+# Forensic and audit data
+/forensic/evidence/
+/forensic/court-*.json
+/forensic/quantum-*.json
+/data/forensic/
+/audit-logs/
+*.log
+
+# Test outputs
+/test-results/
+/coverage/
+.nyc_output/
+junit.xml
+test-results/
+
+# Quantum keys
+**/quantum-keys/
+**/pqc-keys/
+*.pqc
+*.qkey
+
+# Neural models
+/models/neural/
+/neural-models/
+*.h5
+*.onnx
+*.pb
+*.tflite
+
+# Docker sensitive
+docker-compose.override.yml
+*.env.docker
+
+# Backup files - DON'T COMMIT BACKUPS
+*.bak
+*.backup
+*.backup-*
+*~
+*.swp
+*.swo

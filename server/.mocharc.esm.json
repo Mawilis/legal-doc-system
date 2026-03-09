@@ -1,0 +1,12 @@
+{
+  "reporter": "spec",
+  "recursive": true,
+  "timeout": 60000,
+  "exit": true,
+  "extension": ["js"],
+  "spec": ["tests/enterprise/super-admin-auth.test.js"],
+  "node-option": [
+    "experimental-specifier-resolution=node",
+    "no-warnings"
+  ]
+}
