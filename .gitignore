@@ -108,3 +108,51 @@ docker-compose.override.yml
 *~
 *.swp
 *.swo
+
+# ============================================================================
+# DEVELOPMENT & DEBUG FILES - NEVER COMMIT
+# ============================================================================
+
+# Debug scripts
+server/debug-*.js
+server/diagnose-*.js
+server/inspect-*.js
+server/fix-*.js
+server/fix-*.sh
+server/*.bak.*
+server/*.backup.*
+server/test-*.js
+server/test-*.sh
+server/__tests__/
+server/tests_backup/
+
+# Script directories
+server/scripts/audit/
+server/scripts/vetting/
+server/scripts/emergency/
+server/k8s/
+
+# Model backups
+server/models/*.backup*
+server/models/*.bak
+server/models/*.ai-backup
+server/models/*.working.js
+server/models/*.minimal.js
+
+# Quantum metadata
+wilsy-os-2050/
+*.quantum-manifest
+*.quantum-metadata
+
+# Investment suite (keep local only)
+WILSY-OS-INVESTMENT-READY/
+WILSY-OS-INVESTMENT-SUITE/
+
+# Husky hooks
+.husky/
+server/.husky/
+
+# Test artifacts
+server/__tests__/
+server/coverage/
+server/test-results/
