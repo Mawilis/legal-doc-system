@@ -1,28 +1,32 @@
 {
-  "name": "legal-doc-system",
-  "version": "1.0.0",
-  "type": "module",
+  "name": "wilsyos",
+  "version": "2.1.0",
+  "description": "Wilsy OS - Fortune 500 Legal Document System",
   "scripts": {
-    "test": "NODE_OPTIONS='--experimental-specifier-resolution=node' mocha --require jsdom-global/register 'tests/**/*.test.js' --exit --timeout 60000",
-    "test:client": "NODE_OPTIONS='--experimental-specifier-resolution=node' mocha --require jsdom-global/register 'tests/client/**/*.test.js' --exit --timeout 60000",
-    "test:evidence": "cd tests/evidence && for f in *.json; do echo \"Verifying $f\"; jq -r '.auditHash' $f; done",
-    "pretest": "npm install",
-    "clean:evidence": "rm -f tests/evidence/*.json"
+    "dev": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "preview": "cd client && npm run preview",
+    "test": "cd client && npm run test",
+    "test:ui": "cd client && npm run test:ui",
+    "test:client": "cd client && vitest --ui --open",
+    "install:all": "npm install && cd client && npm install"
   },
+  "keywords": [
+    "legal-tech",
+    "popia",
+    "compliance",
+    "fortune500"
+  ],
+  "author": "Wilsy OS",
+  "license": "UNLICENSED",
   "devDependencies": {
-    "chai": "^5.1.0",
-    "jsdom": "^24.0.0",
-    "jsdom-global": "^3.0.2",
-    "mocha": "^10.3.0",
-    "sinon": "^17.0.1",
-    "@testing-library/react": "^15.0.2",
+    "@testing-library/react": "^16.3.2",
     "@testing-library/react-hooks": "^8.0.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "jq": "^1.7.2"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "chai": "^6.2.2",
+    "jsdom": "^28.1.0",
+    "jsdom-global": "^3.0.2",
+    "mocha": "^11.7.5",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   }
 }
