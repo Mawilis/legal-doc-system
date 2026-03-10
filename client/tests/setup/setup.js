@@ -1,19 +1,24 @@
 /* eslint-disable */
 /**
- * client/tests/setup.js
+ * client/tests/setup/setup.js
  * ESM bootstrap for Vitest
  * - idempotent
- * - Map-backed storage
+ * - jsdom initialization with graceful error message
+ * - testing-library matchers and cleanup
+ * - Map-backed localStorage/sessionStorage
  * - performance, raf, fetch shims
- * - uses jsdom when available
+ * - __resetTestEnvironment helper
  */
 
+import { afterEach, expect } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect'; // extends expect with jest-dom matchers
 import { JSDOM } from 'jsdom';
 
 if (typeof globalThis.__vitest_setup_done === 'undefined') {
   globalThis.__vitest_setup_done = true;
 
-  // Create DOM only if missing
+  // Initialize JSDOM if no window exists
   try {
     if (typeof globalThis.window === 'undefined') {
       const dom = new JSDOM('<!doctype html><html><body></body></html>', {
@@ -27,10 +32,10 @@ if (typeof globalThis.__vitest_setup_done === 'undefined') {
       globalThis.Node = dom.window.Node;
     }
   } catch (err) {
-    // If jsdom fails to initialize, throw a clear error for DOM tests
-    // Vitest will show this; non-DOM tests can still run if they don't import this file
+    // Clear, actionable error for missing or broken jsdom
+    // Vitest will show this; non-DOM tests can still run if they don't import DOM features
     // eslint-disable-next-line no-console
-    console.error('client/tests/setup.js: jsdom initialization failed. Install jsdom as a dev dependency.');
+    console.error('client/tests/setup/setup.js: jsdom initialization failed. Install jsdom as a dev dependency.');
     throw err;
   }
 
@@ -92,4 +97,15 @@ if (typeof globalThis.__vitest_setup_done === 'undefined') {
       } catch (e) { /* ignore */ }
     };
   }
+
+  // Ensure testing-library cleanup runs after each test
+  afterEach(() => {
+    try {
+      cleanup();
+      // reset storage between tests for isolation
+      globalThis.__resetTestEnvironment();
+    } catch (e) {
+      // swallow cleanup errors to avoid masking test failures
+    }
+  });
 }

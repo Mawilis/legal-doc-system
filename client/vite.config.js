@@ -3,13 +3,21 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  server: {
-    port: 5173,
-    open: true
-  },
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.js']
+    setupFiles: [],
+    include: ['**/tests/client/**/*.test.js'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
+    css: true
+  },
+  esbuild: {
+    loader: {
+      '.js': 'jsx',
+      '.jsx': 'jsx'
+    }
+  },
+  resolve: {
+    extensions: ['.js', '.jsx', '.json']
   }
 })

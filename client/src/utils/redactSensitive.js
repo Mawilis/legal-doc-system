@@ -5,29 +5,12 @@
   ║ 98% cost reduction | R4.7M risk elimination | 85% margins                  ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-/**
- * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/utils/redactSensitive.js
- * VERSION: 3.0.0-PRODUCTION
- * CREATED: 2026-03-09
- *
- * COLLABORATION NOTES:
- * - This utility is central to POPIA/GDPR compliance. Treat it as a critical security artifact.
- * - Always update SENSITIVE_FIELDS when new PII categories are introduced.
- * - Keep MAX_DEPTH conservative to avoid recursion attacks.
- * - Use forensic hashing for audit trails; masking for UI display.
- * - Future developers: extend helper functions for new PII types (e.g., DNA, voiceprints).
- */
-
 import { hash as cryptoHash } from './cryptoUtils.js';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-/**
- * List of sensitive fields that must be redacted.
- * Collaboration: Add new fields here when new PII categories are identified.
- */
 const SENSITIVE_FIELDS = [
   'email', 'phone', 'cell', 'mobile',
   'idNumber', 'id_number', 'passport', 'passportNumber',
@@ -39,10 +22,6 @@ const SENSITIVE_FIELDS = [
   'biometricData', 'fingerprint', 'faceData'
 ];
 
-/**
- * Redaction options for masking and hashing.
- * Collaboration: Adjust MASK string or HASH_PREFIX if compliance standards change.
- */
 const REDACTION_OPTIONS = {
   MASK: '[REDACTED]',
   HASH_PREFIX: 'hash:',
@@ -54,20 +33,25 @@ const REDACTION_OPTIONS = {
 // ============================================================================
 
 /**
- * Mask an email address, preserving domain.
- * Example: john.doe@example.com → jo****@example.com
+ * Mask an email address, preserving first and last character of local part,
+ * and always preserving domain.
+ * Examples:
+ *   test@example.com → t***t@example.com
+ *   ab@domain.com → a***b@domain.com
+ *   a@b.co.za → a***@b.co.za
  */
 const maskEmail = (email) => {
   if (!email || typeof email !== 'string') return email;
   const [local, domain] = email.split('@');
   if (!domain) return REDACTION_OPTIONS.MASK;
-  const maskedLocal = local.substring(0, 2) + '*'.repeat(Math.max(0, local.length - 2));
-  return `${maskedLocal}@${domain}`;
+
+  if (local.length <= 1) return `${local}***@${domain}`;
+  if (local.length === 2) return `${local[0]}***@${domain}`;
+  return `${local[0]}***${local[local.length - 1]}@${domain}`;
 };
 
 /**
  * Mask a phone number, preserving last 4 digits.
- * Example: +27 82 123 4567 → ********4567
  */
 const maskPhone = (phone) => {
   if (!phone || typeof phone !== 'string') return phone;
@@ -79,7 +63,6 @@ const maskPhone = (phone) => {
 
 /**
  * Mask an ID number, preserving first 2 and last 4 digits.
- * Example: 8001015009087 → 80****9087
  */
 const maskIdNumber = (id) => {
   if (!id || typeof id !== 'string') return id;
@@ -91,7 +74,6 @@ const maskIdNumber = (id) => {
 
 /**
  * Hash a value for forensic tracking.
- * Collaboration: Always use cryptoHash from cryptoUtils.js for consistency.
  */
 const hashValue = (value) => {
   if (!value) return value;
@@ -102,16 +84,6 @@ const hashValue = (value) => {
 // CORE REDACTION FUNCTION
 // ============================================================================
 
-/**
- * Redact sensitive information from an object or value.
- * Collaboration: This is the main entry point. Always call this for PII sanitization.
- *
- * @param {any} data - The data to redact
- * @param {Object} options - Redaction options
- * @param {boolean} options.hash - Whether to hash values instead of masking
- * @param {number} options.depth - Current recursion depth
- * @returns {any} - Redacted data
- */
 const redactSensitive = (data, options = {}) => {
   const { hash: shouldHash = false, depth = 0 } = options;
   
@@ -166,10 +138,6 @@ const redactSensitive = (data, options = {}) => {
 // UTILITY FUNCTIONS
 // ============================================================================
 
-/**
- * Check if a value contains sensitive information.
- * Collaboration: Extend regex patterns for new PII formats.
- */
 const containsSensitive = (value, fields = []) => {
   const allFields = [...SENSITIVE_FIELDS, ...fields];
   
@@ -189,16 +157,7 @@ const containsSensitive = (value, fields = []) => {
   return false;
 };
 
-/**
- * Get list of sensitive fields.
- * Collaboration: Useful for UI display or audits.
- */
 const getSensitiveFields = () => [...SENSITIVE_FIELDS];
-
-/**
- * Get redaction options.
- * Collaboration: Useful for debugging or compliance reports.
- */
 const getRedactionOptions = () => ({ ...REDACTION_OPTIONS });
 
 // ============================================================================
