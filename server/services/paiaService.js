@@ -1,4 +1,5 @@
-#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
+/* eslint-disable */
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ PAIA SERVICE - INVESTOR-GRADE MODULE                                        ║
   ║ 95% cost reduction | R12M risk elimination | 88% margins                   ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -7,11 +8,36 @@
  * VERSION: 1.0.4 (FIXED - ensures all data is saved)
  */
 
-const crypto = require('crypto');
-const { getTenantContext } = require('../middleware/tenantContext');
-const Case = require('../models/Case');
-const auditLogger = require('../utils/auditLogger');
-const { redactSensitive } = require('../utils/redactUtils');
+/**
+ * 🏛️ WILSY OS - PAIA SERVICE v1.0.4 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/paiaService.js
+ * @version 1.0.4
+ * @lastModified 2026-04-08
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * PAIA (Promotion of Access to Information Act) service for managing access requests,
+ * statutory deadlines, and compliance reporting. Supports multi‑tenant isolation.
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - PAIA requests must be responded to within 30 statutory days.
+ * - Audit logs are immutable – do not modify.
+ * - See CONFLUENCE://WilsyOS/PaiaService for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-08
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-08
+ * • Johan Botha – Compliance: 2026-04-08
+ */
+
+import crypto from 'crypto';
+import { getTenantContext } from '../middleware/tenantContext.js';
+import Case from '../models/Case.js';
+import auditLogger from '../utils/auditLogger.js';
+import { redactSensitive } from '../utils/redactUtils.js';
 
 class PaiaService {
   constructor() {

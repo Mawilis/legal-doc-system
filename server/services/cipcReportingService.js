@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║  ██████╗ ██╗██████╗  ██████╗     ██████╗ ███████╗██████╗  ██████╗ ██████╗ ████████╗██╗███╗   ██╗ ██████╗     ║
  * ║  ██╔══██╗██║██╔══██╗██╔════╝     ██╔══██╗██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██║████╗  ██║██╔════╝     ║
@@ -45,13 +46,19 @@
  */
 
 // Core Quantum Modules
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
-const crypto = require('crypto');
-const axios = require('axios');
-const jwt = require('jsonwebtoken');
-const moment = require('moment');
-const NodeCache = require('node-cache');
-const { v4: uuidv4 } = require('uuid');
+import dotenv from 'dotenv';
+import path from 'path';
+import crypto from 'crypto';
+import axios from 'axios';
+import jwt from 'jsonwebtoken';
+import moment from 'moment';
+import NodeCache from 'node-cache';
+import { v4 as uuidv4 } from 'uuid';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 //  ===============================================================================================
 //  ENVIRONMENT VALIDATION - QUANTUM SECURITY CITADEL
@@ -901,13 +908,13 @@ class CIPCAPIClient {
  */
 
 // Test stubs for immediate implementation
-if (process.env.NODE_ENV === 'test') {
-  module.exports.testStubs = {
-    QuantumEncryptionService,
-    CIPCAPIClient,
-    QUANTUM_CONFIG,
-  };
-}
+export const testStubs = process.env.NODE_ENV === 'test'
+  ? {
+      QuantumEncryptionService,
+      CIPCAPIClient,
+      QUANTUM_CONFIG,
+    }
+  : undefined;
 
 //  ===============================================================================================
 //  QUANTUM EXPORT - ETERNAL SERVICE MANIFESTATION

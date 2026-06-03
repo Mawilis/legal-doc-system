@@ -47,7 +47,7 @@ const clientController = require('../controllers/clientController');
 
 // Quantum Security Middleware Stack
 const { auditLog } = require('../middleware/auditMiddleware');
-const { protect, verify2FA } = require('../middleware/authMiddleware');
+const { protect, verify2FA } = require('../middleware/auth');
 const { cacheMiddleware, clearCache } = require('../middleware/cacheMiddleware');
 const { validateCompliance } = require('../middleware/complianceMiddleware');
 const { rateLimit, burstLimit } = require('../middleware/rateLimitMiddleware');

@@ -1,0 +1,391 @@
+/* 🏛️ WILSY OS - IDENTITY AUTH MODULE v8.1 (FIXED ALIGNMENT) */
+
+.authWrapper {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 50%, #050505 0%, #000000 100%);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.citadelCard {
+  width: 100%;
+  max-width: 550px;
+  background: #0a0a0a;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 8px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+}
+
+.logoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(212,175,55,0.15);
+  background: #050505;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.logoContainer {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 2px solid #D4AF37;
+}
+
+.statusContainer {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.syncStatus {
+  display: block;
+  color: #10b981;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.nodeStatus {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(212,175,55,0.1);
+  color: #D4AF37;
+  border: 1px solid rgba(212,175,55,0.3);
+}
+
+.contentArea {
+  padding: 32px 28px 28px;
+  text-align: center;
+}
+
+.mainTitle {
+  color: white;
+  font-size: 32px;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin: 0 0 12px 0;
+  line-height: 1.2;
+}
+
+@media (max-width: 550px) {
+  .mainTitle {
+    font-size: 24px;
+  }
+}
+
+.goldAccent {
+  color: #D4AF37;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.subTitle {
+  color: #D4AF37;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 0 0 28px 0;
+  opacity: 0.8;
+}
+
+.errorAlert {
+  background: rgba(220,38,38,0.1);
+  border: 1px solid rgba(220,38,38,0.4);
+  color: #ef4444;
+  padding: 10px;
+  margin-bottom: 24px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  border-radius: 4px;
+}
+
+.pulseContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  margin: 20px 0;
+  position: relative;
+}
+
+.pulseRing1, .pulseRing2, .pulseRing3 {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(212,175,55,0.3);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.pulseRing1 {
+  width: 160px;
+  height: 160px;
+  animation: pulseRing 2s ease-out infinite;
+}
+
+.pulseRing2 {
+  width: 140px;
+  height: 140px;
+  animation: pulseRing 2s ease-out infinite 0.3s;
+}
+
+.pulseRing3 {
+  width: 120px;
+  height: 120px;
+  animation: pulseRing 2s ease-out infinite 0.6s;
+}
+
+.pulseCore {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(212,175,55,0.2), #000000);
+  border: 2px solid rgba(212,175,55,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 10;
+}
+
+.pulseCore:hover {
+  transform: scale(1.05);
+  border-color: #D4AF37;
+  box-shadow: 0 0 40px rgba(212,175,55,0.3);
+}
+
+.pulseIcon {
+  width: 45px;
+  height: 45px;
+  color: #D4AF37;
+}
+
+.pulseText {
+  color: #D4AF37;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 28px;
+}
+
+.formContainer {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.inputGroup {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.inputLabel {
+  display: block;
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.inputField {
+  width: 100%;
+  background: #111111;
+  border: 1px solid rgba(212,175,55,0.25);
+  color: white;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-family: monospace;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.inputField:focus {
+  outline: none;
+  border-color: #D4AF37;
+  background: #1a1a1a;
+}
+
+.submitButton {
+  width: 100%;
+  background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
+  color: black;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #E5C04B 0%, #D4AF37 100%);
+}
+
+.submitButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(212,175,55,0.1);
+  background: #050505;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.switchModeButton {
+  background: transparent;
+  border: 1px solid rgba(212,175,55,0.4);
+  color: #D4AF37;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.switchModeButton:hover {
+  background: rgba(212,175,55,0.1);
+  border-color: #D4AF37;
+}
+
+.footerTimestamp {
+  font-family: monospace;
+  font-size: 9px;
+  color: #10b981;
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 550px) {
+  .logoHeader {
+    padding: 16px;
+  }
+
+  .logoContainer {
+    width: 48px;
+    height: 48px;
+  }
+
+  .syncStatus {
+    font-size: 8px;
+  }
+
+  .nodeStatus {
+    font-size: 7px;
+    padding: 3px 8px;
+  }
+
+  .contentArea {
+    padding: 24px 20px;
+  }
+
+  .mainTitle {
+    font-size: 22px;
+  }
+
+  .subTitle {
+    font-size: 9px;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+  }
+
+  .pulseCore {
+    width: 80px;
+    height: 80px;
+  }
+
+  .pulseRing1 {
+    width: 130px;
+    height: 130px;
+  }
+
+  .pulseRing2 {
+    width: 115px;
+    height: 115px;
+  }
+
+  .pulseRing3 {
+    width: 100px;
+    height: 100px;
+  }
+
+  .pulseIcon {
+    width: 35px;
+    height: 35px;
+  }
+
+  .pulseText {
+    font-size: 9px;
+    margin-top: 20px;
+  }
+
+  .inputField {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .submitButton {
+    padding: 12px;
+    font-size: 10px;
+  }
+
+  .footer {
+    padding: 12px 16px;
+    flex-direction: column;
+    text-align: center;
+  }
+}

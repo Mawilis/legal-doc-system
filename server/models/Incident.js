@@ -1,74 +1,80 @@
-#!/* eslint-disable */
-import { DataTypes } from 'sequelize.js';
-import { sequelize } from '../config/database.js';
+/* eslint-disable */
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - SOVEREIGN INCIDENT MODEL - FORTUNE 500 EDITION                ║
+ * ║ [FORENSIC INCIDENT MANAGEMENT | BREACH TRACKING | COMPLIANCE]            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
+ */
 
-const Incident = sequelize.define(
-  'Incident',
-  {
-    incidentId: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    alertId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: {
-        model: 'alerts',
-        key: 'alertId',
-      },
-    },
-    title: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-    },
-    severity: {
-      type: DataTypes.ENUM('critical', 'error', 'warning', 'info'),
-      allowNull: false,
-      index: true,
-    },
-    status: {
-      type: DataTypes.ENUM('open', 'investigating', 'mitigated', 'resolved', 'closed'),
-      defaultValue: 'open',
-      index: true,
-    },
-    timeline: {
-      type: DataTypes.JSONB,
-      defaultValue: [],
-    },
-    assignedTo: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-    },
-    resolvedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    resolution: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    postmortem: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    metrics: {
-      type: DataTypes.JSONB,
-      allowNull: true,
-    },
-  },
-  {
-    timestamps: true,
-    tableName: 'incidents',
-    indexes: [
-      {
-        fields: ['severity', 'status'],
-      },
-      {
-        fields: ['createdAt'],
-      },
-    ],
-  },
-);
+import mongoose from 'mongoose';
+import crypto from 'crypto';
 
+const incidentSchema = new mongoose.Schema({
+  incidentId: {
+    type: String,
+    default: () => crypto.randomUUID(),
+    unique: true,
+    required: true,
+  },
+
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+
+  description: {
+    type: String,
+    required: true,
+  },
+
+  severity: {
+    type: String,
+    enum: ['critical', 'high', 'medium', 'low'],
+    required: true,
+  },
+
+  status: {
+    type: String,
+    enum: ['open', 'investigating', 'mitigated', 'resolved', 'closed'],
+    default: 'open',
+  },
+
+  alerts: [{
+    type: String,
+    ref: 'Alert',
+  }],
+
+  timeline: [{
+    action: String,
+    timestamp: { type: Date, default: Date.now },
+    userId: String,
+    notes: String,
+  }],
+
+  forensicHash: {
+    type: String,
+    required: true,
+  },
+
+}, {
+  timestamps: true,
+});
+
+incidentSchema.pre('save', async function(next) {
+  if (this.isNew) {
+    const hashData = {
+      incidentId: this.incidentId,
+      title: this.title,
+      timestamp: new Date().toISOString(),
+    };
+    this.forensicHash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(hashData))
+      .digest('hex');
+  }
+  next();
+});
+
+const Incident = mongoose.model('Incident', incidentSchema);
 export default Incident;

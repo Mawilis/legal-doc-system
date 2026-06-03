@@ -1,0 +1,144 @@
+/* 🏛️ WILSY OS - SOVEREIGN COVENANT STYLES v5.0
+ * GRADE: FORTUNE_500_PRODUCTION
+ * DESIGN_LANGUAGE: INSTITUTIONAL_IMMUTABILITY
+ *
+ * Architecture Fixes:
+ * - Absolute zero-overlap strictness enforced via stacking contexts.
+ * - Scanline overlay explicitly pushed behind all content (pointer-events disabled).
+ * - Scrollbar path padded to prevent legal text clipping.
+ * - Signature pad interactive layer isolated.
+ */
+
+:root {
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+/* 🏛️ MASTER CONTAINER */
+.covenantContainer {
+  position: relative;
+  background: linear-gradient(165deg, #050505 0%, #000000 100%);
+  display: flex;
+  flex-direction: column;
+  animation: vaultEntry 1s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  box-shadow: 0 0 120px rgba(0, 0, 0, 0.9), inset 0 0 2px rgba(202, 138, 4, 0.15);
+  overflow: hidden;
+  /* Establishes the primary stacking context */
+  isolation: isolate;
+}
+
+/* Ensure all direct content layers sit above the background effects */
+.covenantContainer > * {
+  position: relative;
+  z-index: 10;
+}
+
+/* HIGH-END TYPOGRAPHY */
+.goldHeader {
+  color: #ca8a04; /* Tailwind yellow-600 match */
+  text-shadow: 0 0 40px rgba(202, 138, 4, 0.2);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.4em;
+}
+
+/* 📜 FORENSIC SCROLLBAR REFINEMENT */
+.covenantContainer :global(.scrollbar-thin) {
+  position: relative;
+  z-index: 10;
+  padding-right: 1.5rem; /* Prevents text from overlapping the scroll track */
+}
+
+.covenantContainer :global(.scrollbar-thin)::-webkit-scrollbar {
+  width: 4px;
+}
+
+.covenantContainer :global(.scrollbar-thin)::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.covenantContainer :global(.scrollbar-thin)::-webkit-scrollbar-thumb {
+  background: rgba(202, 138, 4, 0.3);
+  border-radius: 0px;
+}
+
+.covenantContainer :global(.scrollbar-thin)::-webkit-scrollbar-thumb:hover {
+  background: rgba(202, 138, 4, 0.6);
+}
+
+/* ✍️ SIGNATURE PAD: FORENSIC DEPTH */
+.signaturePad {
+  background: #020202;
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="%23ca8a04"/></svg>') 12 12, crosshair;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 1), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transition: border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+  z-index: 20; /* Ensures canvas captures all mouse events without overlap interference */
+}
+
+/* PROGRESS & SEALING BAR */
+.progressBar {
+  height: 100%;
+  background: linear-gradient(90deg, #854d0e 0%, #ca8a04 50%, #854d0e 100%);
+  box-shadow: 0 0 25px rgba(202, 138, 4, 0.5);
+  transition: width 0.1s linear;
+}
+
+.sealButton {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.sealButton:not(:disabled):hover {
+  background: #eab308;
+  letter-spacing: 0.6em;
+  box-shadow: 0 0 60px rgba(202, 138, 4, 0.25);
+}
+
+/* 🎬 ANIMATIONS */
+@keyframes vaultEntry {
+  0% {
+    opacity: 0;
+    transform: scale(0.97) translateY(20px);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* 📡 SCANLINE EFFECT (Institutional overlay) */
+.covenantContainer::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%),
+              linear-gradient(90deg, rgba(255, 0, 0, 0.015), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.015));
+  z-index: 1; /* Explicitly forced to the background */
+  background-size: 100% 3px, 4px 100%;
+  pointer-events: none; /* Critical: prevents overlay from blocking clicks */
+  opacity: 0.1;
+}
+
+/* MOBILE ADAPTATION */
+@media (max-width: 768px) {
+  .covenantContainer {
+    max-height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+  }
+
+  .goldHeader {
+    letter-spacing: 0.2em;
+  }
+
+  .covenantContainer :global(.scrollbar-thin) {
+    padding-right: 1rem;
+  }
+}

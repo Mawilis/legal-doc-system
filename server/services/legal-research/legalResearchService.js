@@ -1,4 +1,4 @@
-#!/* eslint-disable */
+/* eslint-disable */
 /* ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
   ║ LEGAL RESEARCH SERVICE - INVESTOR-GRADE MODULE                                                           ║
   ║ 90% cost reduction | R12M risk elimination | 85% margins | Multi-jurisdictional                          ║
@@ -61,16 +61,15 @@
  *     Evidence --> InvestorMetrics[Investor Metrics]
  */
 
-const { tenantContext } = require('../../middleware/tenantContext');
-const auditLogger = require('../../utils/auditLogger');
-const loggerRaw = require('../../utils/logger');
-
+import { tenantContext } from '../../middleware/tenantContext.js';
+import auditLogger from '../../utils/auditLogger.js';
+import loggerRaw from '../../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
-const cryptoUtils = require('../../utils/cryptoUtils');
-const { redactSensitive, REDACT_FIELDS } = require('../../utils/popiaUtils');
-const ResearchQuery = require('../models/ResearchQuery');
-const LegalPrecedent = require('../models/LegalPrecedent');
-const Citation = require('../models/Citation');
+import * as cryptoUtils from '../../utils/cryptoUtils.js';
+import { redactSensitive, REDACT_FIELDS } from '../../utils/popiaUtils.js';
+import ResearchQuery from '../models/ResearchQuery.js';
+import LegalPrecedent from '../models/LegalPrecedent.js';
+import Citation from '../models/Citation.js';
 
 // ============================================================================
 // ASSUMPTIONS & DEFAULTS

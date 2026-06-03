@@ -1,0 +1,69 @@
+# ============================================================================
+#  WILSY OS - PRODUCTION SOVEREIGN OVERRIDES [V34.0.0-OMEGA-FINAL]
+# ============================================================================
+# FORTUNE 500 GRADE | INVESTOR-READY | ZERO-STRIP POLICY
+# VERSION: 34.0.0-OMEGA | PRODUCTION READY | BIBLICAL WORTH BILLIONS
+# EPITOME: NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | LIVE DOMINANCE
+# ============================================================================
+
+# 🛡️ INVESTOR-GRADE HIGH AVAILABILITY
+replicaCount: 5   # Escalated to 5 pods for the production launch
+
+# 🛡️ AUTOSCALING: Dynamic Sovereign Growth
+autoscaling:
+  enabled: true
+  minReplicas: 5
+  maxReplicas: 25
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# 🛡️ PRODUCTION RESOURCE HARDENING
+resources:
+  requests:
+    cpu: 1000m
+    memory: 1Gi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+
+# ----------------------------------------------------------------------------
+# 🌐 SOVEREIGN INGRESS & TLS (SSL)
+# ----------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  hosts:
+    - host: api.wilsyos.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: wilsy-os-tls-prod
+      hosts:
+        - api.wilsyos.com
+
+# ----------------------------------------------------------------------------
+# 🗝️ PRODUCTION SECRET INJECTION
+# ----------------------------------------------------------------------------
+blockchain:
+  network: "mainnet"
+  rpcProvider: "https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}"
+  # 🛡️ Private keys are NEVER committed; they are injected via CI/CD secrets
+  walletKey: "${PROD_WALLET_PRIVATE_KEY}"
+
+# 📊 MONITORING: Production Scrape
+serviceMonitor:
+  enabled: true
+  interval: 15s
+  scrapeTimeout: 10s
+
+# ----------------------------------------------------------------------------
+# END OF CONFIGURATION
+# ----------------------------------------------------------------------------
+# Wilsy OS - The Global Legal Operating System
+# Wilson Khanyezi - Supreme Architect
+# ============================================================================

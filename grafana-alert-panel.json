@@ -1,0 +1,57 @@
+{
+  "type": "alertlist",
+  "title": "🏛️ Active Sovereign Alerts (Critical Strikes)",
+  "gridPos": {
+    "x": 0,
+    "y": 36,
+    "w": 24,
+    "h": 8
+  },
+  "targets": [
+    {
+      "expr": "ALERTS{alertstate=\"firing\"}",
+      "instant": true
+    }
+  ],
+  "options": {
+    "show": "current",
+    "sortOrder": "Severity",
+    "columns": [
+      {
+        "text": "Institutional Alert",
+        "value": "alertname"
+      },
+      {
+        "text": "Sovereign System",
+        "value": "system"
+      },
+      {
+        "text": "Severity Level",
+        "value": "severity"
+      },
+      {
+        "text": "Forensic Summary",
+        "value": "summary"
+      },
+      {
+        "text": "Executive Description",
+        "value": "description"
+      }
+    ]
+  },
+  "fieldConfig": {
+    "defaults": {
+      "color": {
+        "mode": "thresholds"
+      },
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "green", "value": 0 },
+          { "color": "yellow", "value": 1 },
+          { "color": "red", "value": 2 }
+        ]
+      }
+    }
+  }
+}

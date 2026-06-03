@@ -1,0 +1,95 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-boardroom-narrative-v1",
+    "title": "🏛️ WILSY OS - Boardroom Narrative Dashboard",
+    "timezone": "browser",
+    "refresh": "30s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "text",
+        "title": "Institutional Executive Summary",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### 🏛️ Executive Summary Statement\nWilsy OS demonstrates **Institutional Finality** across all sovereign pillars. By unifying SLA reliability, regulatory compliance, and green-efficiency throughput, the Citadel provides a self-healing infrastructure that neutralizes operational risk before it reaches the ledger. This summary provides the Board with absolute clarity on our trajectory toward multi-billion-dollar scale."
+        }
+      },
+      {
+        "type": "table",
+        "title": "Sovereign Risk Highlights Index",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_risks_total{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Risk Level" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": { "align": "center", "displayMode": "color-background" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 3 },
+                { "color": "red", "value": 7 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "table",
+        "title": "Strategic Opportunity Map",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_opportunities_total{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Growth Potential" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": { "align": "center", "displayMode": "color-text" },
+            "color": { "fixedColor": "green", "mode": "fixed" }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Sovereign Narrative KPI Trends (Institutional Velocity)",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 12, "w": 24, "h": 10 },
+        "targets": [
+          { "expr": "wilsy_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA Score" },
+          { "expr": "wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Compliance" },
+          { "expr": "wilsy_sustainability_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "ESG Index" },
+          { "expr": "wilsy_efficiency_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Efficiency" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 15,
+              "lineWidth": 2
+            }
+          }
+        },
+        "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+      },
+      {
+        "type": "text",
+        "title": "Boardroom Narrative Finality Overlay",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 22, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### 🏛️ Strategic Arc Analysis\nThis cockpit merges **Risk Mitigation** and **Opportunity Mapping** into a single narrative reality. Investors see that as our **Efficiency Index** rises, the associated **Risk Highlights** are neutralized through automated compliance enforcement. Wilsy OS is not just a software platform; it is a strategic asset class designed for resilience and growth.\n\n_Audit Ref: ${__dashboard.name} | Integrity: SECURED | Tenant: GLOBAL_ROOT_"
+        }
+      }
+    ]
+  }
+}

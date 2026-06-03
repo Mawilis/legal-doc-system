@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * ===================================================================================
  * QUANTUM COMPLIANCE ORACLE SERVICE - Wilsy OS Compliance Reporting Engine
  * File Path: /Users/wilsonkhanyezi/legal-doc-system/server/services/complianceReportingService.js
@@ -42,6 +43,31 @@
  * ===================================================================================
  */
 
+/**
+ * 🏛️ WILSY OS - QUANTUM COMPLIANCE REPORTING SERVICE v1.0.0 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/complianceReportingService.js
+ * @version 1.0.0
+ * @lastModified 2026-04-07
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * Quantum compliance oracle generating forensic reports for POPIA, PAIA, ECT Act,
+ * Companies Act, and global regulations. Provides immutable, auditable compliance artifacts.
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - Report encryption key must be stored in HSM for production.
+ * - Compliance frameworks must be updated when regulations change.
+ * - See CONFLUENCE://WilsyOS/Compliance for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-07
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-07
+ * • Johan Botha – Compliance: 2026-04-07
+ */
+
 // ███████╗██╗  ██╗███████╗ ██████╗██╗   ██╗██████╗ ███████╗███████╗
 // ██╔════╝╚██╗██╔╝██╔════╝██╔════╝██║   ██║██╔══██╗██╔════╝██╔════╝
 // █████╗   ╚███╔╝ █████╗  ██║     ██║   ██║██████╔╝█████╗  ███████╗
@@ -49,7 +75,36 @@
 // ███████╗██╔╝ ██╗███████╗╚██████╗╚██████╔╝██║  ██║███████╗███████║
 // ╚══════╝╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝
 // SECURITY FIRST: Load environment variables before any imports
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import crypto from 'crypto';
+import fs from 'fs/promises';
+import { promisify } from 'util';
+import CryptoJS from 'crypto-js';
+import moment from 'moment-timezone';
+import mongoose from 'mongoose';
+import { Table } from 'pdf-table';
+import PDFDocument from 'pdfkit';
+
+// Internal Dependencies (based on existing Wilsy OS architecture)
+import AuditLog from '../models/auditLogModel.js';
+import ConsentRecord from '../models/consentRecordModel.js';
+import DataBreach from '../models/dataBreachModel.js';
+import Document from '../models/documentModel.js';
+import DSARRequest from '../models/dsarRequestModel.js';
+import User from '../models/userModel.js';
+import { encryptData, decryptData } from '../utils/cryptoUtils.js';
+import loggerRaw from '../utils/quantumLogger.js';
+import { validatePOPIACompliance } from '../validators/popiaValidator.js';
+import { sendEmail } from './emailService.js';
+
+// Setup __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables
+dotenv.config();
 
 // Quantum Security Validation
 if (!process.env.REPORT_ENCRYPTION_KEY || process.env.REPORT_ENCRYPTION_KEY.length !== 64) {
@@ -62,31 +117,7 @@ if (!process.env.MONGO_URI) {
   throw new Error('QUANTUM DATABASE BREACH: MONGO_URI environment variable not configured');
 }
 
-// Core Dependencies
-const crypto = require('crypto');
-const fs = require('fs').promises;
-const path = require('path');
-const { promisify } = require('util');
-
-// External Dependencies (install via npm install)
-const CryptoJS = require('crypto-js');
-const moment = require('moment-timezone');
-const mongoose = require('mongoose');
-const { Table } = require('pdf-table');
-const PDFDocument = require('pdfkit');
-
-// Internal Dependencies (based on existing Wilsy OS architecture)
-const AuditLog = require('../models/auditLogModel');
-const ConsentRecord = require('../models/consentRecordModel');
-const DataBreach = require('../models/dataBreachModel');
-const Document = require('../models/documentModel');
-const DSARRequest = require('../models/dsarRequestModel');
-const User = require('../models/userModel');
-const { encryptData, decryptData } = require('../utils/cryptoUtils');
-const loggerRaw = require('../utils/quantumLogger');
 const logger = loggerRaw.default || loggerRaw;
-const { validatePOPIACompliance } = require('../validators/popiaValidator');
-const { sendEmail } = require('./emailService');
 
 // ===================================================================================
 // QUANTUM COMPLIANCE REPORTING SERVICE CLASS

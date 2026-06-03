@@ -1,4 +1,5 @@
-#!// ============================================================================
+/* eslint-disable */
+/* ============================================================================
 // QUANTUM ORACLE OF LINGUISTIC JUSTICE: WILSY OS LANGUAGE SERVICE
 // ============================================================================
 // This quantum nexus transmutes linguistic chaos into harmonic compliance,
@@ -24,36 +25,61 @@
 //                           ║  Portuguese | Arabic   ║
 //                           ╚════════════════════════╝
 // ============================================================================
+*/
 
-require('dotenv').config();
-const path = require('path');
-const fs = require('fs').promises;
-const crypto = require('crypto');
-const { createHash } = require('crypto');
+/**
+ * 🏛️ WILSY OS - LANGUAGE SERVICE v1.0.0 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/languageService.js
+ * @version 1.0.0
+ * @lastModified 2026-04-08
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * Enterprise‑grade internationalization service with support for 11 South African official languages,
+ * date/locale formatting, translation caching, AI‑assisted translation, and compliance with
+ * POPIA, ECT Act, and the South African Constitution (Section 6).
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - Translation files must be encrypted at rest.
+ * - AI translations are logged for audit and ethics compliance.
+ * - See CONFLUENCE://WilsyOS/LanguageService for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-08
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-08
+ * • Johan Botha – Compliance: 2026-04-08
+ */
 
-// Core i18n libraries - lightweight and battle-tested
-const axios = require('axios');
-const {
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs/promises';
+import crypto from 'crypto';
+import { createHash } from 'crypto';
+import axios from 'axios';
+import {
   format, formatDistance, formatRelative, parseISO,
-} = require('date-fns');
-const {
+} from 'date-fns';
+import {
   enZA, af, zu, xh, nso, tn, ts, ss, ve, nr, fr, pt, ar,
-} = require('date-fns/locale');
-const rateLimit = require('express-rate-limit');
-const i18next = require('i18next');
-const i18nextFsBackend = require('i18next-fs-backend');
-const i18nextMiddleware = require('i18next-http-middleware');
+} from 'date-fns/locale';
+import rateLimit from 'express-rate-limit';
+import i18next from 'i18next';
+import i18nextFsBackend from 'i18next-fs-backend';
+import i18nextMiddleware from 'i18next-http-middleware';
+import { Redis } from 'ioredis';
+import Joi from 'joi';
+import { sanitize } from 'xss';
+import { createAuditLog } from '../utils/auditLogger.js';
+import { validatePOPIAConsent } from '../validators/complianceValidator.js';
 
-// Translation memory and AI enhancement
-const { Redis } = require('ioredis');
+dotenv.config();
 
-// Security and validation
-const Joi = require('joi');
-const { sanitize } = require('xss');
-
-// Compliance tracking
-const { createAuditLog } = require('../utils/auditLogger');
-const { validatePOPIAConsent } = require('../validators/complianceValidator');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ============================================================================
 // QUANTUM INITIALIZATION: IMMORTAL LINGUISTIC FABRIC
@@ -142,7 +168,6 @@ class LanguageService {
           legalWeight: 1.0,
         },
       ],
-      // Additional SA languages
       [
         'nso-ZA',
         {
@@ -150,6 +175,7 @@ class LanguageService {
           nativeName: 'Sesotho sa Leboa',
           direction: 'ltr',
           dateLocale: nso,
+          isConstitutional: true,
         },
       ],
       [
@@ -159,6 +185,7 @@ class LanguageService {
           nativeName: 'Setswana',
           direction: 'ltr',
           dateLocale: tn,
+          isConstitutional: true,
         },
       ],
       [
@@ -168,6 +195,37 @@ class LanguageService {
           nativeName: 'Xitsonga',
           direction: 'ltr',
           dateLocale: ts,
+          isConstitutional: true,
+        },
+      ],
+      [
+        'ss-ZA',
+        {
+          name: 'Siswati',
+          nativeName: 'Siswati',
+          direction: 'ltr',
+          dateLocale: ss,
+          isConstitutional: true,
+        },
+      ],
+      [
+        've-ZA',
+        {
+          name: 'Tshivenda',
+          nativeName: 'Tshivenda',
+          direction: 'ltr',
+          dateLocale: ve,
+          isConstitutional: true,
+        },
+      ],
+      [
+        'nr-ZA',
+        {
+          name: 'isiNdebele',
+          nativeName: 'isiNdebele',
+          direction: 'ltr',
+          dateLocale: nr,
+          isConstitutional: true,
         },
       ],
       // Pan-African expansion
@@ -217,23 +275,16 @@ class LanguageService {
         .use(i18nextFsBackend)
         .use(i18nextMiddleware.LanguageDetector)
         .init({
-          // Quantum Security: Preload all languages for performance
           preload: Array.from(this.supportedLocales.keys()),
-
-          // Compliance Quantum: Fallback chain ensures legal clarity
           fallbackLng: {
             zu: ['en-ZA'],
             xh: ['en-ZA'],
             af: ['en-ZA'],
             default: ['en-ZA'],
           },
-
-          // Performance Alchemy: Cache translations
           backend: {
             loadPath: path.join(__dirname, '../locales/{{lng}}/{{ns}}.json'),
             addPath: path.join(__dirname, '../locales/{{lng}}/{{ns}}.missing.json'),
-
-            // Quantum Security: Encrypt translation files at rest
             parse: async (data, filePath) => {
               const decrypted = await this.decryptTranslationFile(data, filePath);
               return JSON.parse(decrypted);
@@ -243,8 +294,6 @@ class LanguageService {
               return encrypted;
             },
           },
-
-          // Detection quanta: Comprehensive locale detection
           detection: {
             order: ['querystring', 'cookie', 'header', 'session', 'htmlTag'],
             caches: ['cookie'],
@@ -252,8 +301,6 @@ class LanguageService {
             lookupCookie: 'i18next',
             lookupHeader: 'accept-language',
             lookupSession: 'lng',
-
-            // Compliance Quantum: Log language detection for audit
             onDetect: (req, lng, detectionOrder) => {
               createAuditLog({
                 action: 'LANGUAGE_DETECTION',
@@ -268,10 +315,8 @@ class LanguageService {
               });
             },
           },
-
-          // Security Quantum: XSS protection for all translations
           interpolation: {
-            escapeValue: false, // React already escapes
+            escapeValue: false,
             format: (value, format, lng) => {
               if (format === 'uppercase') return value.toUpperCase();
               if (format === 'lowercase') return value.toLowerCase();
@@ -279,31 +324,22 @@ class LanguageService {
               return value;
             },
           },
-
-          // Performance: Optimized loading
           load: 'languageOnly',
           cleanCode: true,
           saveMissing: this.aiTranslationEnabled,
           missingKeyHandler: async (lng, ns, key, fallbackValue) => {
             await this.handleMissingTranslation(lng, ns, key, fallbackValue);
           },
-
-          // Compliance Quantum: Legal term validation
           postProcess: ['legalTermValidator'],
-
-          // Quantum Legacy: Future-proof configuration
           returnObjects: true,
           returnEmptyString: false,
           returnNull: false,
           keySeparator: false,
           nsSeparator: false,
-
-          // Default namespace for legal documents
           defaultNS: 'legal',
           ns: ['legal', 'ui', 'compliance', 'notifications'],
         });
 
-      // Initialize Redis cache for translation memory
       await this.initializeTranslationCache();
 
       return {
@@ -313,7 +349,6 @@ class LanguageService {
         t: i18nInstance.t.bind(i18nInstance),
       };
     } catch (error) {
-      // Resilient Error Orchestration: Fallback to English with audit
       console.error('Quantum Linguistic Fabric Disruption:', error);
       createAuditLog({
         action: 'I18N_INIT_FAILURE',
@@ -321,8 +356,6 @@ class LanguageService {
         metadata: { error: error.message },
         compliance: ['POPIA', 'INCIDENT_RESPONSE'],
       });
-
-      // Return emergency fallback
       return this.createEmergencyFallback();
     }
   }
@@ -343,7 +376,6 @@ class LanguageService {
           const content = await fs.readFile(filePath, 'utf8');
           const hash = createHash('sha256').update(content).digest('hex');
 
-          // Compare with stored hash in secure env
           const storedHash = process.env[`TRANSLATION_HASH_${file.toUpperCase()}`];
           if (storedHash && hash !== storedHash) {
             throw new Error(`Translation file integrity breach: ${file}`);
@@ -406,15 +438,12 @@ class LanguageService {
 
       return decrypted;
     } catch (error) {
-      // Compliance Quantum: Log decryption failures
       createAuditLog({
         action: 'TRANSLATION_DECRYPTION_FAILURE',
         severity: 'HIGH',
         metadata: { filePath, error: error.message },
         compliance: ['POPIA', 'CYBERCRIMES_ACT'],
       });
-
-      // Return fallback English translations
       return JSON.stringify({ error: 'translation_unavailable' });
     }
   }
@@ -430,7 +459,6 @@ class LanguageService {
     if (!this.aiTranslationEnabled) return;
 
     try {
-      // Check cache first
       const cacheKey = `translation:${lng}:${ns}:${key}`;
       const cached = await this.translationCache.get(cacheKey);
 
@@ -439,17 +467,12 @@ class LanguageService {
         return;
       }
 
-      // AI translation via secure API
       const translated = await this.translateWithAI(fallbackValue, 'en', lng);
 
       if (translated) {
-        // Cache for future use
-        await this.translationCache.setex(cacheKey, 86400, translated); // 24 hours
-
-        // Save to missing translations file
+        await this.translationCache.setex(cacheKey, 86400, translated);
         await this.saveTranslationToFile(lng, ns, key, translated);
 
-        // Compliance Quantum: Log AI translation for audit
         createAuditLog({
           action: 'AI_TRANSLATION_GENERATED',
           metadata: {
@@ -464,7 +487,6 @@ class LanguageService {
       }
     } catch (error) {
       console.error('AI Translation Quantum Disruption:', error);
-      // Fail silently - system will use fallback
     }
   }
 
@@ -476,7 +498,6 @@ class LanguageService {
    * @returns {Promise<string|null>} Translated text
    */
   async translateWithAI(text, sourceLang, targetLang) {
-    // Security Quantum: Validate input
     const schema = Joi.string().max(5000).required();
     const { error } = schema.validate(text);
     if (error) throw new Error('Invalid translation input');
@@ -497,14 +518,12 @@ class LanguageService {
             'Content-Type': 'application/json',
           },
           timeout: 10000,
-          // Security Quantum: Validate SSL
-          httpsAgent: new (require('https').Agent)({
+          httpsAgent: new (await import('https')).Agent({
             rejectUnauthorized: true,
           }),
         },
       );
 
-      // Security Quantum: Sanitize AI output
       return sanitize(response.data.translatedText);
     } catch (error) {
       console.error('AI Translation API Error:', error.message);
@@ -521,11 +540,9 @@ class LanguageService {
         const delay = Math.min(times * 50, 2000);
         return delay;
       },
-      // Security Quantum: Redis encryption
       tls: process.env.NODE_ENV === 'production' ? {} : undefined,
     });
 
-    // Monitor cache health
     this.translationCache.on('error', (error) => {
       console.error('Translation Cache Quantum Disruption:', error);
       createAuditLog({
@@ -550,11 +567,9 @@ class LanguageService {
         const content = await fs.readFile(filePath, 'utf8');
         translations = JSON.parse(content);
       } catch (error) {
-        // File doesn't exist, create directory
         await fs.mkdir(path.dirname(filePath), { recursive: true });
       }
 
-      // Update translation
       const keys = key.split('.');
       let current = translations;
 
@@ -565,7 +580,6 @@ class LanguageService {
 
       current[keys[keys.length - 1]] = value;
 
-      // Encrypt before saving
       const encrypted = await this.encryptTranslationData(translations);
       await fs.writeFile(filePath, encrypted);
     } catch (error) {
@@ -586,9 +600,7 @@ class LanguageService {
 
     return {
       i18n: {
-        t: (key, options) =>
-          // Simple fallback with basic English
-          fallbackTranslations[key] || key,
+        t: (key, options) => fallbackTranslations[key] || key,
       },
       middleware: (req, res, next) => {
         req.i18n = { language: 'en-ZA' };
@@ -608,9 +620,8 @@ class LanguageService {
   formatDateForLocale(date, locale = 'en-ZA', formatType = 'legal') {
     const localeConfig = this.supportedLocales.get(locale) || this.supportedLocales.get('en-ZA');
 
-    // Compliance Quantum: SA Companies Act requires specific date formats
     const formats = {
-      legal: 'dd MMMM yyyy', // 15 January 2024 - SA legal standard
+      legal: 'dd MMMM yyyy',
       short: 'dd/MM/yyyy',
       long: 'EEEE, dd MMMM yyyy',
       timestamp: "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
@@ -630,8 +641,6 @@ class LanguageService {
    */
   formatCurrencyForLocale(amount, locale = 'en-ZA', currency = 'ZAR') {
     const localeCode = locale.replace('-ZA', '').replace('-', '_');
-
-    // Compliance Quantum: SARS VAT formatting requirements
     const formatter = new Intl.NumberFormat(localeCode, {
       style: 'currency',
       currency,
@@ -639,7 +648,6 @@ class LanguageService {
       maximumFractionDigits: 2,
       currencyDisplay: 'symbol',
     });
-
     return formatter.format(amount);
   }
 
@@ -688,7 +696,6 @@ class LanguageService {
         retention: 'Rekords word gehou ingevolge die Maatskappywet 71 van 2008.',
       },
     };
-
     return disclaimers[locale] || disclaimers['en-ZA'];
   }
 
@@ -698,8 +705,8 @@ class LanguageService {
    */
   createLanguageSelectorMiddleware() {
     return rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 100, // Limit each IP to 100 requests per windowMs
+      windowMs: 15 * 60 * 1000,
+      max: 100,
       message: async (req, res) => {
         const locale = req.query.lng || 'en-ZA';
         const translations = await this.getTranslations(locale);
@@ -707,8 +714,6 @@ class LanguageService {
       },
       standardHeaders: true,
       legacyHeaders: false,
-
-      // Compliance Quantum: Log rate limit hits
       handler: (req, res) => {
         createAuditLog({
           action: 'LANGUAGE_SELECTION_RATE_LIMIT',
@@ -720,7 +725,6 @@ class LanguageService {
           },
           compliance: ['POPIA', 'CYBERCRIMES_ACT'],
         });
-
         res.status(429).json({
           error: 'rate_limit_exceeded',
           message: 'Too many language change requests',
@@ -739,11 +743,9 @@ class LanguageService {
     const cacheKey = `translations:${locale}`;
 
     try {
-      // Try cache first
       const cached = await this.translationCache.get(cacheKey);
       if (cached) return JSON.parse(cached);
 
-      // Load from filesystem
       const translations = {};
       const namespaces = ['legal', 'ui', 'compliance', 'notifications'];
 
@@ -754,14 +756,11 @@ class LanguageService {
           const decrypted = await this.decryptTranslationFile(content, filePath);
           translations[ns] = JSON.parse(decrypted);
         } catch (error) {
-          // Use fallback namespace
           translations[ns] = {};
         }
       }
 
-      // Cache for 1 hour
       await this.translationCache.setex(cacheKey, 3600, JSON.stringify(translations));
-
       return translations;
     } catch (error) {
       console.error('Translation Load Quantum Disruption:', error);
@@ -788,18 +787,15 @@ class LanguageService {
     };
 
     try {
-      // Check Redis connection
       if (this.translationCache) {
         await this.translationCache.ping();
         status.checks.push({ name: 'redis', status: 'healthy' });
       }
 
-      // Check locale files
       const localesPath = path.join(__dirname, '../locales');
       await fs.access(localesPath);
       status.checks.push({ name: 'locale-files', status: 'healthy' });
 
-      // Check default locale
       if (this.supportedLocales.has(this.defaultLocale)) {
         status.checks.push({ name: 'default-locale', status: 'healthy' });
       }
@@ -814,7 +810,7 @@ class LanguageService {
 }
 
 // ============================================================================
-// SENTINEL BEACONS: EVOLUTION QUANTA
+// SENTINEL BEACONS: EVOLUTION QUANTA (preserved)
 // ============================================================================
 
 // Quantum Leap: Integrate with Laws.Africa for statute translations
@@ -824,18 +820,18 @@ class LanguageService {
 // Performance Alchemy: WebAssembly-accelerated translation engine
 
 // ============================================================================
-// VALUATION QUANTUM FOOTER
+// VALUATION QUANTUM FOOTER (preserved)
 // ============================================================================
-// This linguistic quantum bastion dismantles Africa's Tower of Babel,
-// unleashing Wilsy's pan-continental conquest. By mastering 11 official
-// tongues and 54 sovereign lexicons, we eliminate 90% of localization
-// friction, accelerating market penetration by 300%. Each translated
-// legal artifact becomes a compliance fortress in its native tongue,
-// generating $2.4M ARR per language vertical. The AI translation layer
-// reduces localization costs by 80% while maintaining 99.9% legal
-// accuracy—propelling Wilsy to unicorn status in 8 quarters.
-// ============================================================================
-
-export default new LanguageService();
+/*
+ * This linguistic quantum bastion dismantles Africa's Tower of Babel,
+ * unleashing Wilsy's pan-continental conquest. By mastering 11 official
+ * tongues and 54 sovereign lexicons, we eliminate 90% of localization
+ * friction, accelerating market penetration by 300%. Each translated
+ * legal artifact becomes a compliance fortress in its native tongue,
+ * generating $2.4M ARR per language vertical. The AI translation layer
+ * reduces localization costs by 80% while maintaining 99.9% legal
+ * accuracy—propelling Wilsy to unicorn status in 8 quarters.
+ */
 
 // Wilsy Touching Lives Eternally
+export default new LanguageService();

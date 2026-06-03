@@ -1,0 +1,29 @@
+# ============================================================================
+#  WILSY OS - PROMETHEUS SOVEREIGN SCRAPE CONFIG [V15.3.1-OMEGA-FINAL]
+# ============================================================================
+# FORTUNE 500 GRADE | REAL-TIME TELEMETRY | ZERO-STRIP POLICY
+# VERSION: 15.3.1-OMEGA | PRODUCTION READY | BIBLICAL WORTH BILLIONS
+# EPITOME: NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | MASTER PULSE
+# ============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'wilsy-os'
+    metrics_path: /metrics
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        regex: wilsy-os
+        action: keep
+
+# ----------------------------------------------------------------------------
+# END OF CONFIGURATION
+# ----------------------------------------------------------------------------
+# Wilsy OS - The Global Legal Operating System
+# Wilson Khanyezi - Supreme Architect
+# ============================================================================

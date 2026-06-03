@@ -1,0 +1,203 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  💰 WEALTH VISION PAGE - WILSY OS 2050                                   ║
+  ║  10th Generation Wealth Visualization Dashboard                          ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-wealth-page {
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--sa-bg-primary), var(--sa-wealth-900));
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-wealth-page::before {
+  content: '10G';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20vw;
+  font-weight: var(--sa-weight-black);
+  color: rgba(245, 158, 11, 0.03);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 0;
+}
+
+.sa-wealth-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.sa-wealth-title {
+  font-size: var(--sa-text-h1);
+  font-weight: var(--sa-weight-black);
+  background: linear-gradient(135deg, var(--sa-wealth-400), #ffd700);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sa-wealth-total {
+  font-size: var(--sa-text-display);
+  font-weight: var(--sa-weight-black);
+  color: var(--sa-wealth-400);
+  text-shadow: 0 0 30px var(--sa-wealth-500);
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-wealth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-wealth-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-wealth-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--sa-wealth-500);
+  box-shadow: 0 20px 40px -10px var(--sa-wealth-500);
+}
+
+.sa-wealth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 0%,
+    rgba(245, 158, 11, 0.1) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.sa-wealth-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-wealth-card-title {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-wealth-400);
+}
+
+.sa-wealth-card-value {
+  font-size: var(--sa-text-h2);
+  font-weight: var(--sa-weight-black);
+  color: var(--sa-text-primary);
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-wealth-card-growth {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--sa-text-small);
+  color: var(--sa-success-500);
+  position: relative;
+  z-index: 1;
+}
+
+.sa-wealth-timeline {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-wealth-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sa-wealth-timeline-title {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-wealth-400);
+}
+
+.sa-wealth-generation {
+  font-size: var(--sa-text-large);
+  color: var(--sa-text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.sa-wealth-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  margin: 1rem 0;
+  overflow: hidden;
+}
+
+.sa-wealth-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sa-wealth-500), #ffd700);
+  width: 0%;
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-wealth-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: wealth-shimmer 2s linear infinite;
+}
+
+@keyframes wealth-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

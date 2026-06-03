@@ -1,0 +1,75 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📝 SUPER ADMIN TYPOGRAPHY TOKENS - WILSY OS 2050                        ║
+  ║  Supreme Command Center Typography                                       ║
+  ║  Supreme Architect: Wilson Khanyezi                                      ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+:root {
+  /* Font Families */
+  --sa-font-command: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --sa-font-quantum: 'Syncopate', 'Montserrat', sans-serif;
+  --sa-font-forensic: 'JetBrains Mono', 'Fira Code', monospace;
+  --sa-font-wealth: 'Georgia', 'Times New Roman', serif;
+
+  /* Font Sizes */
+  --sa-text-micro: 0.625rem;
+  --sa-text-small: 0.75rem;
+  --sa-text-base: 0.875rem;
+  --sa-text-large: 1rem;
+  --sa-text-h4: 1.125rem;
+  --sa-text-h3: 1.25rem;
+  --sa-text-h2: 1.5rem;
+  --sa-text-h1: 1.875rem;
+  --sa-text-display: 2.25rem;
+  --sa-text-quantum: 3rem;
+
+  /* Font Weights */
+  --sa-weight-regular: 400;
+  --sa-weight-medium: 500;
+  --sa-weight-semibold: 600;
+  --sa-weight-bold: 700;
+  --sa-weight-black: 900;
+
+  /* Line Heights */
+  --sa-leading-tight: 1.1;
+  --sa-leading-normal: 1.2;
+  --sa-leading-relaxed: 1.4;
+
+  /* Letter Spacing */
+  --sa-tracking-normal: 0;
+  --sa-tracking-wide: 0.05em;
+  --sa-tracking-wider: 0.1em;
+  --sa-tracking-widest: 0.15em;
+}
+
+/* Utility Classes */
+.sa-text-command {
+  font-family: var(--sa-font-command);
+  font-weight: var(--sa-weight-semibold);
+  letter-spacing: var(--sa-tracking-wide);
+  text-transform: uppercase;
+}
+
+.sa-text-quantum {
+  font-family: var(--sa-font-quantum);
+  font-weight: var(--sa-weight-bold);
+  letter-spacing: var(--sa-tracking-widest);
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--sa-quantum-400), var(--sa-quantum-600));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sa-text-forensic {
+  font-family: var(--sa-font-forensic);
+  font-weight: var(--sa-weight-medium);
+  letter-spacing: var(--sa-tracking-normal);
+  color: var(--sa-forensic-400);
+}
+
+.sa-text-wealth {
+  font-family: var(--sa-font-wealth);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-wealth-400);
+}

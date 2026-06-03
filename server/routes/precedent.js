@@ -1,4 +1,4 @@
-#!/* eslint-disable */
+/* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/routes/precedent.js
  * PATH: /server/routes/precedent.js
@@ -109,19 +109,19 @@
  *
  * INTEGRATION_HINT: imports -> [
  *   'express',
- *   '../models/Precedent',
- *   '../models/Citation',
- *   '../services/legal-engine/PrecedentAnalyzer',
- *   '../workers/citationNetworkIndexer',
- *   '../middleware/auth',
- *   '../middleware/tenantContext',
- *   '../middleware/rateLimiter',
- *   '../middleware/validator',
- *   '../utils/logger',
- *   '../utils/auditLogger',
- *   '../utils/quantumLogger',
- *   '../utils/cache',
- *   '../config/swagger'
+ *   '../models/Precedent.js',
+ *   '../models/Citation.js',
+ *   '../services/legal-engine/PrecedentAnalyzer.js',
+ *   '../workers/citationNetworkIndexer.js',
+ *   '../middleware/auth.js',
+ *   '../middleware/tenantContext.js',
+ *   '../middleware/rateLimiter.js',
+ *   '../middleware/validator.js',
+ *   '../utils/logger.js',
+ *   '../utils/auditLogger.js',
+ *   '../utils/quantumLogger.js',
+ *   '../utils/cache.js',
+ *   '../config/swagger.js'
  * ]
  *
  * INTEGRATION_MAP: {
@@ -135,57 +135,55 @@
  *     "academic-institutions"
  *   ],
  *   "expectedProviders": [
- *     "../models/Precedent",
- *     "../models/Citation",
- *     "../services/legal-engine/PrecedentAnalyzer",
- *     "../workers/citationNetworkIndexer",
- *     "../middleware/auth",
- *     "../middleware/tenantContext",
- *     "../middleware/rateLimiter",
- *     "../utils/logger",
- *     "../utils/auditLogger",
- *     "../utils/quantumLogger"
+ *     "../models/Precedent.js",
+ *     "../models/Citation.js",
+ *     "../services/legal-engine/PrecedentAnalyzer.js",
+ *     "../workers/citationNetworkIndexer.js",
+ *     "../middleware/auth.js",
+ *     "../middleware/tenantContext.js",
+ *     "../middleware/rateLimiter.js",
+ *     "../utils/logger.js",
+ *     "../utils/auditLogger.js",
+ *     "../utils/quantumLogger.js"
  *   ]
  * }
  */
 
 // QUANTUM IMPORTS: Core dependencies
-const express = require('express');
-
+import express from 'express';
 const router = express.Router();
-const { performance } = require('perf_hooks');
-const crypto = require('crypto');
-const compression = require('compression');
-const helmet = require('helmet');
-const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
-const promClient = require('prom-client');
+import { performance } from 'perf_hooks';
+import crypto from 'crypto';
+import compression from 'compression';
+import helmet from 'helmet';
+import cors from 'cors';
+import { v4 as uuidv4 } from 'uuid';
+import promClient from 'prom-client';
 
 // QUANTUM MODELS
-const Precedent = require('../models/Precedent');
-const Citation = require('../models/Citation');
+import Precedent from '../models/Precedent.js';
+import Citation from '../models/Citation.js';
 
 // QUANTUM SERVICES
-const PrecedentAnalyzer = require('../services/legal-engine/PrecedentAnalyzer');
-const citationNetworkIndexer = require('../workers/citationNetworkIndexer');
+import PrecedentAnalyzer from '../services/legal-engine/PrecedentAnalyzer.js';
+import citationNetworkIndexer from '../workers/citationNetworkIndexer.js';
 
 // QUANTUM MIDDLEWARE
-const { authenticate, optionalAuthenticate } = require('../middleware/auth');
-const { tenantContext } = require('../middleware/tenantContext');
-const { rateLimiter, apiKeyRateLimiter } = require('../middleware/rateLimiter');
-const { validateRequest, validateParams, validateQuery } = require('../middleware/validator');
-const { cacheMiddleware, clearCache } = require('../middleware/cache');
-const { auditMiddleware } = require('../middleware/audit');
-const { metricsMiddleware } = require('../middleware/metrics');
+import { authenticate, optionalAuthenticate } from '../middleware/auth.js';
+import { tenantContext } from '../middleware/tenantContext.js';
+import { rateLimiter, apiKeyRateLimiter } from '../middleware/rateLimiter.js';
+import { validateRequest, validateParams, validateQuery } from '../middleware/validator.js';
+import { cacheMiddleware, clearCache } from '../middleware/cache.js';
+import { auditMiddleware } from '../middleware/audit.js';
+import { metricsMiddleware } from '../middleware/metrics.js';
 
 // QUANTUM UTILITIES
-const loggerRaw = require('../utils/logger');
-
+import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
-const auditLogger = require('../utils/auditLogger');
-const quantumLogger = require('../utils/quantumLogger');
-const { AppError, errorHandler } = require('../utils/errorHandler');
-const { redisClient } = require('../cache/redisClient');
+import auditLogger from '../utils/auditLogger.js';
+import quantumLogger from '../utils/quantumLogger.js';
+import { AppError, errorHandler } from '../utils/errorHandler.js';
+import { redisClient } from '../cache/redisClient.js';
 
 /* ---------------------------------------------------------------------------
    QUANTUM METRICS
@@ -219,7 +217,7 @@ const apiMetrics = {
 
   cacheMisses: new promClient.Counter({
     name: 'precedent_api_cache_misses',
-    help: 'Cache misses', // Removed the stray ' after help and added a comma
+    help: 'Cache misses',
     labelNames: ['endpoint'],
   }),
   errorsTotal: new promClient.Counter({
@@ -846,7 +844,7 @@ router.get('/health', async (req, res) => {
 
     // Check Neo4j (if available)
     try {
-      const citationNetworkIndexer = require('../workers/citationNetworkIndexer');
+      const citationNetworkIndexer = require('../workers/citationNetworkIndexer.js');
       const health = await citationNetworkIndexer.getHealth();
       checks.graph = health.checks.neo4j === 'connected';
     } catch (error) {

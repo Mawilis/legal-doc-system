@@ -1,0 +1,65 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🏗️ BASE STYLES - WILSY OS 2050                                           ║
+  ║  Fundamental HTML element styles                                          ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--wilsy-font-sans);
+  color: var(--wilsy-text-primary);
+  background-color: var(--wilsy-bg-primary);
+  line-height: var(--wilsy-leading-normal);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--wilsy-font-bold);
+  line-height: var(--wilsy-leading-tight);
+  color: var(--wilsy-text-primary);
+}
+
+h1 { font-size: var(--wilsy-text-4xl); }
+h2 { font-size: var(--wilsy-text-3xl); }
+h3 { font-size: var(--wilsy-text-2xl); }
+h4 { font-size: var(--wilsy-text-xl); }
+h5 { font-size: var(--wilsy-text-lg); }
+h6 { font-size: var(--wilsy-text-base); }
+
+/* Links */
+a {
+  color: var(--wilsy-primary-600);
+  text-decoration: none;
+  transition: color var(--wilsy-duration-150) var(--wilsy-ease-in-out);
+}
+
+a:hover {
+  color: var(--wilsy-primary-800);
+}
+
+/* Selection */
+::selection {
+  background-color: var(--wilsy-primary-200);
+  color: var(--wilsy-primary-900);
+}
+
+/* Focus outline for accessibility */
+:focus-visible {
+  outline: 2px solid var(--wilsy-primary-500);
+  outline-offset: 2px;
+}

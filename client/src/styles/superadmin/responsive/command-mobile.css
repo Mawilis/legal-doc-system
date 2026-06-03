@@ -1,0 +1,67 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📱 MOBILE COMMAND CENTER - WILSY OS 2050                                ║
+  ║  Responsive styles for screens < 640px                                   ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+@media (max-width: 639px) {
+  .sa-command-center {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "main"
+      "footer";
+  }
+
+  .sa-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .sa-header-title h1 {
+    font-size: 1.125rem;
+  }
+
+  .sa-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .sa-stat-card {
+    padding: 1rem;
+  }
+
+  .sa-stat-value {
+    font-size: 1.5rem;
+  }
+
+  .sa-risk-meter,
+  .sa-timeline,
+  .sa-wealth-widget {
+    margin: 1rem;
+    padding: 1rem;
+  }
+
+  .sa-timeline-item {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .sa-timeline-time {
+    min-width: auto;
+  }
+
+  .sa-actions {
+    grid-template-columns: 1fr;
+    margin: 1rem;
+  }
+
+  .sa-wealth-value {
+    font-size: 1.5rem;
+  }
+
+  .sa-wealth-growth {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

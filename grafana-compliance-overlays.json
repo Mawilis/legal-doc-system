@@ -1,0 +1,46 @@
+{
+  "type": "barchart",
+  "title": "Institutional Compliance Overlays (Live Ratio)",
+  "gridPos": {
+    "x": 12,
+    "y": 18,
+    "w": 12,
+    "h": 8
+  },
+  "targets": [
+    {
+      "expr": "wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}",
+      "legendFormat": "{{overlay}} Compliance"
+    }
+  ],
+  "fieldConfig": {
+    "defaults": {
+      "unit": "percent",
+      "min": 0,
+      "max": 100,
+      "color": {
+        "mode": "thresholds"
+      },
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "red", "value": 0 },
+          { "color": "orange", "value": 75 },
+          { "color": "green", "value": 90 }
+        ]
+      }
+    }
+  },
+  "options": {
+    "orientation": "vertical",
+    "displayMode": "gradient",
+    "legend": {
+      "showLegend": true,
+      "placement": "bottom"
+    },
+    "tooltip": {
+      "mode": "single",
+      "sort": "desc"
+    }
+  }
+}

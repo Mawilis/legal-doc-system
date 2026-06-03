@@ -1,0 +1,91 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-anomaly-hud",
+    "title": "🏛️ WILSY OS - Sovereign Anomaly Detection",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Latency Volatility Strike (Δ Latency > 200ms)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "delta(wilsy_latency_telemetry_replay_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.95\"}[5m]) > 200",
+            "legendFormat": "Critical Latency Spike (p95)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "orange", "value": 100 },
+                { "color": "red", "value": 200 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Regulatory Erosion Detection (Δ Compliance < -5%)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 18, "h": 8 },
+        "targets": [
+          {
+            "expr": "delta(wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}[10m]) < -5",
+            "legendFormat": "Compliance Drop: {{overlay}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": -2 },
+                { "color": "orange", "value": -5 },
+                { "color": "red", "value": -10 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Forensic Seal Ingress (Last 5m)",
+        "id": 3,
+        "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+        "targets": [
+          {
+            "expr": "increase(wilsy_counter_forensics_errors{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "New Seal Failures"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "red", "value": 1 }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

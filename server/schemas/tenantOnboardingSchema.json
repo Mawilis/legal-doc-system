@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WILSY OS - Sovereign Tenant Onboarding Schema",
+  "description": "Strict validation schema for new tenant onboarding with CIPC/SARS/POPIA compliance",
+  "type": "object",
+  "required": [
+    "tenantId",
+    "legalName",
+    "registrationNumber",
+    "taxNumber",
+    "latitude",
+    "longitude",
+    "regionCode"
+  ],
+  "properties": {
+    "tenantId": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_]{3,}$",
+      "minLength": 3,
+      "maxLength": 50,
+      "description": "Unique uppercase identifier (e.g., ACME_CORP)"
+    },
+    "legalName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 150,
+      "description": "Official registered legal name"
+    },
+    "tradingName": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "businessType": {
+      "type": "string",
+      "enum": [
+        "Private Company",
+        "Public Company",
+        "Sole Prop",
+        "Partnership",
+        "Trust",
+        "NPO",
+        "Cooperative",
+        "Foreign Entity",
+        "Government",
+        "Other"
+      ]
+    },
+    "registrationNumber": {
+      "type": "string",
+      "minLength": 5
+    },
+    "taxNumber": {
+      "type": "string",
+      "minLength": 5
+    },
+    "vatNumber": {
+      "type": "string"
+    },
+    "incorporationDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "businessStartDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "financialYearEnd": {
+      "type": "string"
+    },
+    "legalStatus": {
+      "type": "string",
+      "default": "In Business"
+    },
+    "registeredAddress": { "type": "string" },
+    "physicalAddress": { "type": "string" },
+    "postalAddress": { "type": "string" },
+    "contactEmail": {
+      "type": "string",
+      "format": "email"
+    },
+    "phoneNumber": { "type": "string" },
+    "website": {
+      "type": "string",
+      "format": "uri"
+    },
+    "latitude": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90
+    },
+    "longitude": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180
+    },
+    "regionCode": {
+      "type": "string",
+      "pattern": "^[A-Z0-9-]+$",
+      "description": "e.g., ZAF-GP-MIDRAND"
+    },
+    "directors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["fullName", "idNumber", "role"],
+        "properties": {
+          "fullName": { "type": "string", "minLength": 3 },
+          "idNumber": { "type": "string", "minLength": 5 },
+          "ownership": { "type": "number", "minimum": 0, "maximum": 100 },
+          "role": { "type": "string" },
+          "appointmentDate": { "type": "string", "format": "date" }
+        }
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "properties": {
+        "popia": { "enum": ["SECURE", "IN_PROGRESS", "PENDING", "NON_COMPLIANT"] },
+        "gdpr": { "enum": ["SECURE", "IN_PROGRESS", "PENDING", "UNKNOWN"] },
+        "tax": { "enum": ["VERIFIED", "PENDING", "OUTSTANDING"] },
+        "cipc": { "enum": ["REGISTERED", "PENDING", "EXPIRED"] }
+      }
+    },
+    "sicCode": { "type": "string" },
+    "employees": { "type": "integer", "minimum": 0 },
+    "annualTurnover": { "type": "number", "minimum": 0 },
+    "branding": {
+      "type": "object",
+      "properties": {
+        "primaryColor": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "secondaryColor": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "logoUrl": { "type": "string", "format": "uri" }
+      }
+    }
+  },
+  "additionalProperties": false
+}

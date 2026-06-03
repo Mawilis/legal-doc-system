@@ -1,0 +1,12 @@
+{
+  "extension": ["js"],
+  "spec": "tests/**/*.test.js",
+  "loader": "node-loader",
+  "node-option": [
+    "experimental-specifier-resolution=node",
+    "no-warnings"
+  ],
+  "recursive": true,
+  "timeout": 15000,
+  "exit": true
+}

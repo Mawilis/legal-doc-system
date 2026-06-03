@@ -1,0 +1,107 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  ⚡ QUANTUM PULSE ANIMATIONS - WILSY OS 2050                              ║
+  ║  Supreme motion design for command center                                ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+@keyframes quantum-ripple {
+  0% {
+    box-shadow: 0 0 0 0 var(--sa-quantum-500),
+                0 0 0 0 var(--sa-quantum-300);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(51, 133, 255, 0.2),
+                0 0 0 20px rgba(51, 133, 255, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 20px rgba(51, 133, 255, 0),
+                0 0 0 30px rgba(51, 133, 255, 0);
+  }
+}
+
+@keyframes quantum-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes quantum-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px var(--sa-quantum-400),
+                 0 0 20px var(--sa-quantum-300),
+                 0 0 30px var(--sa-quantum-200);
+  }
+  50% {
+    text-shadow: 0 0 20px var(--sa-quantum-500),
+                 0 0 40px var(--sa-quantum-400),
+                 0 0 60px var(--sa-quantum-300);
+  }
+}
+
+.quantum-ripple {
+  animation: quantum-ripple 2s infinite;
+}
+
+.quantum-spin {
+  animation: quantum-spin 3s linear infinite;
+}
+
+.quantum-glow {
+  animation: quantum-glow 2s ease-in-out infinite;
+}
+
+@keyframes forensic-scan {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.forensic-scan {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--sa-forensic-500) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: forensic-scan 2s linear infinite;
+}
+
+@keyframes risk-wave {
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+.risk-wave {
+  position: relative;
+  overflow: hidden;
+}
+
+.risk-wave::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--sa-critical-500),
+    transparent
+  );
+  animation: risk-wave 2s ease-out infinite;
+  pointer-events: none;
+}

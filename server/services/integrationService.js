@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * File: server/services/integrationService.js
  * STATUS: PRODUCTION-READY | EPITOME | INTEGRATION ORCHESTRATOR
  * -----------------------------------------------------------------------------
@@ -22,17 +23,18 @@
  * -----------------------------------------------------------------------------
  */
 
-const { v4: uuidv4 } = require('uuid');
-const AuditEvent = require('../models/auditEventModel');
-const Integration = require('../models/integrationModel');
-const loggerRaw = require('../utils/logger');
+import { v4 as uuidv4 } from 'uuid';
+import AuditEvent from '../models/auditEventModel.js';
+import Integration from '../models/integrationModel.js';
+import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 
 // Optional KMS resolver. Provide a concrete implementation in production.
 // Expected API: resolveSecret(reference) => Promise<string|null>
 let KMS = null;
 try {
-  KMS = require('../services/kmsService');
+  const kmsModule = await import('../services/kmsService.js');
+  KMS = kmsModule.default || kmsModule;
 } catch (e) {
   KMS = null;
 }

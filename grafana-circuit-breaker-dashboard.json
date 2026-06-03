@@ -1,0 +1,128 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-circuit-breaker",
+    "title": "🏛️ WILSY OS - Sovereign Circuit Breaker HUD",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 2,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Database Nucleus Link State",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_breaker_state{tenantId=\"GLOBAL_ROOT\", component=\"DATABASE\"}", "legendFormat": "State" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": {
+                "0": { "text": "CLOSED (OPERATIONAL)", "color": "green" },
+                "1": { "text": "OPEN (FAILOVER ACTIVE)", "color": "red" },
+                "2": { "text": "HALF-OPEN (RECOVERING)", "color": "yellow" }
+              }}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 2 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "API Gateway Sovereign Circuit",
+        "id": 2,
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_breaker_state{tenantId=\"GLOBAL_ROOT\", component=\"API_GATEWAY\"}", "legendFormat": "State" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": {
+                "0": { "text": "CLOSED (OPERATIONAL)", "color": "green" },
+                "1": { "text": "OPEN (FAILOVER ACTIVE)", "color": "red" },
+                "2": { "text": "HALF-OPEN (RECOVERING)", "color": "yellow" }
+              }}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 2 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Institutional Failover History (Strikes)",
+        "id": 3,
+        "gridPos": { "x": 0, "y": 6, "w": 24, "h": 8 },
+        "targets": [
+          { "expr": "increase(wilsy_counter_failover_events_total{tenantId=\"GLOBAL_ROOT\"}[1h])", "legendFormat": "{{component}} Failovers" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": { "drawStyle": "bars" },
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Breaker Execution Latency (ms)",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 14, "w": 12, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_latency_request_latency{tenantId=\"GLOBAL_ROOT\", metric=\"breaker_response\"}", "legendFormat": "{{component}}" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Telemetry Broadcast Velocity",
+        "id": 6,
+        "gridPos": { "x": 12, "y": 14, "w": 12, "h": 6 },
+        "targets": [
+          { "expr": "increase(wilsy_counter_telemetry_events_total{tenantId=\"GLOBAL_ROOT\"}[5m])", "legendFormat": "{{eventType}}" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "type": "text",
+        "title": "Circuit Breaker Narrative Overlay",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 20, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### 🏛️ Sovereign Resilience Report\nThis HUD visualizes the **Failover State** of the Wilsy OS Core. A **CLOSED** state indicates total institutional stability. An **OPEN** state triggers the automated re‑anchoring protocol, isolating the fracture from the billion‑dollar ledger while the system executes a recovery sequence.\n\n_Audit Ref: ${__dashboard.name} | Refresh: ${__interval} | Tenant: GLOBAL_ROOT_"
+        }
+      }
+    ]
+  }
+}

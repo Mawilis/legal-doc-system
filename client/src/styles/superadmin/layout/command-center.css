@@ -1,0 +1,80 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🏛️  COMMAND CENTER LAYOUT - WILSY OS 2050                               ║
+  ║  Supreme Command Center Grid System                                      ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-command-center {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header header header"
+    "nav main aside"
+    "footer footer footer";
+  min-height: 100vh;
+  background: var(--sa-bg-primary);
+  color: var(--sa-text-primary);
+}
+
+.sa-command-header {
+  grid-area: header;
+  position: sticky;
+  top: 0;
+  z-index: var(--sa-z-sticky);
+  background: rgba(10, 10, 15, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--sa-border-quantum);
+  padding: 1rem 2rem;
+}
+
+.sa-command-nav {
+  grid-area: nav;
+  background: var(--sa-bg-secondary);
+  border-right: 1px solid var(--sa-border-primary);
+  padding: 2rem 1rem;
+  overflow-y: auto;
+}
+
+.sa-command-main {
+  grid-area: main;
+  padding: 2rem;
+  overflow-y: auto;
+  background: var(--sa-bg-primary);
+}
+
+.sa-command-aside {
+  grid-area: aside;
+  background: var(--sa-bg-secondary);
+  border-left: 1px solid var(--sa-border-primary);
+  padding: 2rem 1rem;
+  overflow-y: auto;
+}
+
+.sa-command-footer {
+  grid-area: footer;
+  background: var(--sa-bg-tertiary);
+  border-top: 1px solid var(--sa-border-primary);
+  padding: 1rem 2rem;
+}
+
+/* Responsive Command Center */
+@media (max-width: 1200px) {
+  .sa-command-center {
+    grid-template-columns: 240px 1fr 280px;
+  }
+}
+
+@media (max-width: 992px) {
+  .sa-command-center {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "main"
+      "footer";
+  }
+
+  .sa-command-nav,
+  .sa-command-aside {
+    display: none;
+  }
+}

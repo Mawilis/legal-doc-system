@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * =================================================================================
  * ⚖️ QUANTUM COMPLIANCE SENTINEL NEXUS - IMMUTABLE LEGAL VALIDATION FORGER ⚖️
  * =================================================================================
@@ -39,34 +40,52 @@
  * =================================================================================
  */
 
-/* eslint-env node */
+/**
+ * 🏛️ WILSY OS - QUANTUM COMPLIANCE SENTINEL v3.0.0 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/middleware/complianceMiddleware.js
+ * @version 3.0.0
+ * @lastModified 2026-04-07
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * Quantum Compliance Sentinel – real‑time legal validation for POPIA, ECT Act,
+ * Companies Act, SARS, LPC, and 54 African jurisdictions. Provides blockchain
+ * audit trails and quantum‑resistant cryptography.
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - SA legal checks must be updated when regulations change.
+ * - Blockchain audit trails are immutable – do not modify.
+ * - See CONFLUENCE://WilsyOS/ComplianceMiddleware for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-07
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-07
+ * • Johan Botha – Compliance: 2026-04-07
+ */
 
 // ================================================================================
 // QUANTUM IMPORTS & ENVIRONMENT CONFIGURATION
 // ================================================================================
-require('dotenv').config(); // Quantum Env Vault Loading
-
-// Core Security & Cryptography
-const crypto = require('crypto'); // Node.js Crypto (Native)
-
-// Validation & Security Libraries
-const rateLimit = require('express-rate-limit');
-
-// Performance & Caching
-const Redis = require('ioredis');
-const Joi = require('joi');
-const { v4: uuidv4 } = require('uuid');
-
-// Blockchain Integration
+import dotenv from 'dotenv';
+import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
+import Redis from 'ioredis';
+import Joi from 'joi';
+import { v4 as uuidv4 } from 'uuid';
 
 // SA Legal Services Integration
-const { validateCIPCCompany } = require('../services/cipcService');
-const { checkLPCTrustAccount } = require('../services/lpcService');
-const { verifySARSCompliance } = require('../services/sarsService');
+import { validateCIPCCompany } from '../services/cipcService.js';
+import { checkLPCTrustAccount } from '../services/lpcService.js';
+import { verifySARSCompliance } from '../services/sarsService.js';
 
 // Quantum Audit Logger
-const { getQuantumAuditLogger } = require('../utils/auditUtils');
-const { QuantumBlockchain, createLegalOperation } = require('../utils/blockchainUtils');
+import { getQuantumAuditLogger } from '../utils/auditUtils.js';
+import { QuantumBlockchain, createLegalOperation } from '../utils/blockchainUtils.js';
+
+dotenv.config();
 
 /*
  * ⚠️ DEPENDENCIES INSTALLATION PATH:

@@ -1,0 +1,155 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-forensics-hud",
+    "title": "🏛️ WILSY OS - Sovereign Forensics HUD",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Cryptographic Integrity State",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_breaker_state{tenantId=\"GLOBAL_ROOT\", component=\"CRYPTO\"}", "legendFormat": "Crypto State" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": {
+                "0": { "text": "CLOSED (Integrity Verified)", "color": "green" },
+                "1": { "text": "OPEN (Integrity Breach)", "color": "red" },
+                "2": { "text": "HALF-OPEN (Recovering)", "color": "yellow" }
+              }}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 2 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Threat Vector State",
+        "id": 2,
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_breaker_state{tenantId=\"GLOBAL_ROOT\", component=\"THREAT_VECTORS\"}", "legendFormat": "Threat State" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": {
+                "0": { "text": "CLOSED (No Threats)", "color": "green" },
+                "1": { "text": "OPEN (Active Threat)", "color": "red" },
+                "2": { "text": "HALF-OPEN (Mitigating)", "color": "yellow" }
+              }}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 2 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Isolation State",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_breaker_state{tenantId=\"GLOBAL_ROOT\", component=\"ISOLATION\"}", "legendFormat": "Isolation State" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": {
+                "0": { "text": "CLOSED (Isolated)", "color": "green" },
+                "1": { "text": "OPEN (Isolation Breach)", "color": "red" },
+                "2": { "text": "HALF-OPEN (Recovering)", "color": "yellow" }
+              }}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 2 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Seal Status",
+        "id": 4,
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_breaker_state{tenantId=\"GLOBAL_ROOT\", component=\"SEAL\"}", "legendFormat": "Seal State" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": {
+                "0": { "text": "CLOSED (Seal Intact)", "color": "green" },
+                "1": { "text": "OPEN (Seal Breach)", "color": "red" },
+                "2": { "text": "HALF-OPEN (Re-Sealing)", "color": "yellow" }
+              }}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 2 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Forensics Failover History (Institutional Strikes)",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 6, "w": 24, "h": 8 },
+        "targets": [
+          { "expr": "increase(wilsy_counter_failover_events_total{tenantId=\"GLOBAL_ROOT\", component=~\"CRYPTO|THREAT_VECTORS|ISOLATION|SEAL\"}[1h])", "legendFormat": "{{component}} Failovers" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "type": "text",
+        "title": "Forensics Executive Narrative Overlay",
+        "id": 6,
+        "gridPos": { "x": 0, "y": 14, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### 🏛️ Sovereign Forensics Report\nThis cockpit visualizes **cryptographic integrity, threat vectors, isolation, and seal status**. A **CLOSED** state indicates total forensic finality. An **OPEN** state signals an institutional breach requiring immediate strike-remediation. A **HALF‑OPEN** state shows mathematical mitigation in progress.\n\n_Audit Ref: ${__dashboard.name} | Last Refreshed: ${__last_refresh_time} | Tenant: GLOBAL_ROOT_"
+        }
+      }
+    ]
+  }
+}

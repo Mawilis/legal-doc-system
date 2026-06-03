@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * =================================================================================
  * QUANTUM CONSENT ORCHESTRATION NEXUS - IMMORTAL LEGAL SOVEREIGNTY
  * =================================================================================
@@ -47,57 +48,66 @@
  * =================================================================================
  */
 
+/**
+ * 🏛️ WILSY OS - QUANTUM CONSENT MANAGEMENT SERVICE v1.0.0 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/consentManagementService.js
+ * @version 1.0.0
+ * @lastModified 2026-04-07
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * Quantum consent management service for POPIA, ECT Act, PAIA, Companies Act compliance.
+ * Handles consent capture (with biometric verification), withdrawal cascades, DSAR reports,
+ * cross‑border transfers, and immutable audit trails.
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - Consent records are immutable – do not modify.
+ * - Cross‑border transfers must follow POPIA §72.
+ * - See CONFLUENCE://WilsyOS/ConsentManagementService for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-07
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-07
+ * • Johan Botha – Compliance: 2026-04-07
+ */
+
 // =================================================================================
 // QUANTUM DEPENDENCIES - PINNED FOR ETERNAL STABILITY
 // =================================================================================
-/*
- * Install Dependencies:
- * 1. Core ODM: npm install mongoose@7.5.0
- * 2. Quantum Encryption: npm install crypto-js@4.1.1
- * 3. WebAuthn Integration: npm install @simplewebauthn/server@7.2.0
- * 4. Redis Cache: npm install redis@4.6.8 bull@4.11.2
- * 5. Compliance Validators: npm install joi@17.9.2
- * 6. Environmental Security: npm install dotenv@16.3.1
- * 7. SA Legal APIs: npm install @labs-africa/laws-africa-client@2.1.0
- * 8. Queue Management: npm install bull@4.11.2
- *
- * Security Note: Run npm audit --production --audit-level=critical before deployment
- */
-
-require('dotenv').config(); // QUANTUM SHIELD: Environmental fortress activation
-const crypto = require('crypto'); // QUANTUM BASTION: Node's native crypto arsenal
-const { WebAuthn } = require('@simplewebauthn/server');
-const Bull = require('bull');
-const mongoose = require('mongoose');
-const { createClient } = require('redis');
-const { v4: uuidv4 } = require('uuid');
+import dotenv from 'dotenv';
+import crypto from 'crypto';
+import { WebAuthn } from '@simplewebauthn/server';
+import Bull from 'bull';
+import mongoose from 'mongoose';
+import { createClient } from 'redis';
+import { v4 as uuidv4 } from 'uuid';
 
 // =================================================================================
 // QUANTUM MODEL IMPORTS - LEGAL ENTITY SYMPHONY
 // =================================================================================
-const BiometricAudit = require('../models/BiometricAudit');
-const Consent = require('../models/Consent');
-const LegalFirm = require('../models/LegalFirm');
-const PAIARequest = require('../models/PAIARequest');
-const User = require('../models/User');
+import BiometricAudit from '../models/BiometricAudit.js';
+import Consent from '../models/Consent.js';
+import LegalFirm from '../models/LegalFirm.js';
+import PAIARequest from '../models/PAIARequest.js';
+import User from '../models/User.js';
 
 // =================================================================================
 // QUANTUM UTILITY IMPORTS - OPERATIONAL ORCHESTRATION
 // =================================================================================
-const { AuditLogger } = require('../utils/auditLogger');
-const { generatePOPIAReport } = require('../utils/complianceReportGenerator');
-const { encryptData, decryptData } = require('../utils/quantumEncryption');
-const { sendBreachAlert } = require('../utils/securityAlerts');
-const { validatePOPIAConsent } = require('../validators/popiaValidator');
+import { AuditLogger } from '../utils/auditLogger.js';
+import { generatePOPIAReport } from '../utils/complianceReportGenerator.js';
+import { encryptData, decryptData } from '../utils/quantumEncryption.js';
+import { sendBreachAlert } from '../utils/securityAlerts.js';
+import { validatePOPIAConsent } from '../validators/popiaValidator.js';
+
+dotenv.config();
 
 // =================================================================================
 // ENVIRONMENT VALIDATION - QUANTUM FORTRESS INTEGRITY
 // =================================================================================
-/*
- * QUANTUM SHIELD: Validate all environment variables before service initiation
- * Threat Model: STRIDE - Spoofing, Tampering, Repudiation, Information Disclosure,
- *               Denial of Service, Elevation of Privilege
- */
 const validateQuantumEnvironment = () => {
   const REQUIRED_ENV = [
     'CONSENT_ENCRYPTION_KEY', // AES-256-GCM key for consent encryption
@@ -154,28 +164,22 @@ validateQuantumEnvironment();
 // =================================================================================
 // QUANTUM CONSTANTS - IMMUTABLE LEGAL CANONS
 // =================================================================================
-/*
- * POPIA §11: Eight Lawful Processing Conditions
- * ECT Act §13: Advanced Electronic Signature Requirements
- * Companies Act 2008: Record Retention Periods
- * Cybercrimes Act §2: Digital Evidence Standards
- */
 const CONSENT_TYPES = {
-  DATA_PROCESSING: 'data_processing', // POPIA §11 Condition 1: Consent
-  CONTRACTUAL: 'contractual', // POPIA §11 Condition 2: Contract
-  LEGAL_OBLIGATION: 'legal_obligation', // POPIA §11 Condition 3: Legal Duty
-  VITAL_INTERESTS: 'vital_interests', // POPIA §11 Condition 4: Vital Interests
-  PUBLIC_INTEREST: 'public_interest', // POPIA §11 Condition 5: Public Function
-  LEGITIMATE_INTERESTS: 'legitimate_interests', // POPIA §11 Condition 6: Legitimate Interests
-  MARKETING: 'marketing', // POPIA §11 Condition 7: Direct Marketing
-  AUTOMATED_DECISION: 'automated_decision', // POPIA §11 Condition 8: Automated Processing
-  THIRD_PARTY_SHARING: 'third_party_sharing', // POPIA §11: Third-party transfers
-  BIOMETRIC_DATA: 'biometric_data', // POPIA §19: Special Personal Information
-  CROSS_BORDER_TRANSFER: 'cross_border_transfer', // POPIA §72: Transborder transfers
-  COOKIES_TECHNICAL: 'cookies_technical', // ECT Act §2: Electronic communications
-  COOKIES_ANALYTICS: 'cookies_analytics', // POPIA: Analytics data
-  COOKIES_MARKETING: 'cookies_marketing', // POPIA: Marketing cookies
-  RESEARCH_HISTORICAL: 'research_historical', // National Archives Act: Research
+  DATA_PROCESSING: 'data_processing',
+  CONTRACTUAL: 'contractual',
+  LEGAL_OBLIGATION: 'legal_obligation',
+  VITAL_INTERESTS: 'vital_interests',
+  PUBLIC_INTEREST: 'public_interest',
+  LEGITIMATE_INTERESTS: 'legitimate_interests',
+  MARKETING: 'marketing',
+  AUTOMATED_DECISION: 'automated_decision',
+  THIRD_PARTY_SHARING: 'third_party_sharing',
+  BIOMETRIC_DATA: 'biometric_data',
+  CROSS_BORDER_TRANSFER: 'cross_border_transfer',
+  COOKIES_TECHNICAL: 'cookies_technical',
+  COOKIES_ANALYTICS: 'cookies_analytics',
+  COOKIES_MARKETING: 'cookies_marketing',
+  RESEARCH_HISTORICAL: 'research_historical',
 };
 
 const JURISDICTIONS = {
@@ -217,30 +221,25 @@ const JURISDICTIONS = {
 };
 
 const CONSENT_STATUS = {
-  PENDING: 'pending', // Consent requested but not yet granted
-  GRANTED: 'granted', // Explicit consent granted
-  IMPLIED: 'implied', // Implied consent per POPIA §11(1)(b)
-  WITHDRAWN: 'withdrawn', // Consent withdrawn per POPIA §14
-  EXPIRED: 'expired', // Consent expired naturally
-  SUSPENDED: 'suspended', // Consent suspended (legal hold)
-  ARCHIVED: 'archived', // Archived per Companies Act
-  LEGAL_HOLD: 'legal_hold', // Under legal preservation order
+  PENDING: 'pending',
+  GRANTED: 'granted',
+  IMPLIED: 'implied',
+  WITHDRAWN: 'withdrawn',
+  EXPIRED: 'expired',
+  SUSPENDED: 'suspended',
+  ARCHIVED: 'archived',
+  LEGAL_HOLD: 'legal_hold',
 };
 
 // =================================================================================
 // QUANTUM INFRASTRUCTURE INITIALIZATION
 // =================================================================================
-/*
- * REDIS CACHE: For consent state management and performance optimization
- * BULL QUEUE: For async consent cascade operations and compliance workflows
- */
 let redisClient = null;
 let consentQueue = null;
 let complianceQueue = null;
 
 const initializeQuantumInfrastructure = async () => {
   try {
-    // Initialize Redis cache for consent state
     redisClient = createClient({
       url: process.env.REDIS_CACHE_URL,
       socket: {
@@ -256,18 +255,15 @@ const initializeQuantumInfrastructure = async () => {
 
     redisClient.on('error', (err) => {
       console.error('QUANTUM ALERT: Redis Client Error', err);
-      // Fallback to in-memory cache if Redis fails
       console.warn('⚠️  Falling back to in-memory consent cache');
     });
 
     await redisClient.connect();
     console.log('✅ QUANTUM CACHE: Redis connection established');
 
-    // Initialize Bull queues for async operations
     consentQueue = new Bull('consent-operations', process.env.QUEUE_REDIS_URL);
     complianceQueue = new Bull('compliance-workflows', process.env.QUEUE_REDIS_URL);
 
-    // Configure queue event listeners
     consentQueue.on('failed', (job, err) => {
       console.error(`QUANTUM ALERT: Consent job ${job.id} failed:`, err);
       sendBreachAlert({
@@ -285,26 +281,20 @@ const initializeQuantumInfrastructure = async () => {
     console.log('✅ QUANTUM QUEUES: BullMQ queues initialized');
   } catch (error) {
     console.error('QUANTUM WARNING: Infrastructure initialization failed:', error.message);
-    // Service will operate in degraded mode but remain functional
     console.warn('⚠️  Operating in degraded mode - some features may be limited');
   }
 };
 
-// Initialize infrastructure on module load
+// Initialize infrastructure on module load (fire and forget)
 initializeQuantumInfrastructure();
 
 // =================================================================================
 // PRIVATE UTILITY FUNCTIONS - QUANTUM ENCRYPTION & VALIDATION
 // =================================================================================
 
-/*
- * QUANTUM SHIELD: AES-256-GCM Consent Data Encryption
- * @param {Object} consentData - Plaintext consent data
- * @returns {Object} - Encrypted consent with metadata
- */
 const encryptConsentQuantum = (consentData) => {
   try {
-    const iv = crypto.randomBytes(12); // GCM requires 12-byte IV
+    const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv(
       'aes-256-gcm',
       Buffer.from(process.env.CONSENT_ENCRYPTION_KEY, 'hex'),
@@ -331,11 +321,6 @@ const encryptConsentQuantum = (consentData) => {
   }
 };
 
-/*
- * QUANTUM SHIELD: AES-256-GCM Consent Data Decryption
- * @param {Object} encryptedRecord - Encrypted consent record
- * @returns {Object} - Decrypted consent data
- */
 const decryptConsentQuantum = (encryptedRecord) => {
   try {
     const decipher = crypto.createDecipheriv(
@@ -352,7 +337,6 @@ const decryptConsentQuantum = (encryptedRecord) => {
     return JSON.parse(decrypted);
   } catch (error) {
     console.error('QUANTUM DECRYPTION FAILED:', error);
-    // Security violation - possible tampering detected
     AuditLogger.logSecurityIncident({
       type: 'DECRYPTION_FAILURE',
       severity: 'CRITICAL',
@@ -365,11 +349,6 @@ const decryptConsentQuantum = (encryptedRecord) => {
   }
 };
 
-/*
- * POPIA COMPLIANCE: Generate Human-Readable Consent Summary
- * @param {Object} consentArtifact - Consent data object
- * @returns {String} - Human-readable summary
- */
 const generateConsentSummary = (consentArtifact) => {
   const jurisdiction = JURISDICTIONS[consentArtifact.jurisdiction] || { name: 'Unknown' };
 
@@ -400,11 +379,6 @@ const generateConsentSummary = (consentArtifact) => {
   return summary.trim();
 };
 
-/*
- * POPIA §11: Map Data Categories to Processing Activities
- * @param {String} consentType - Type of consent
- * @returns {Array} - Data categories array
- */
 const mapDataCategories = (consentType) => {
   const categoryMap = {
     [CONSENT_TYPES.DATA_PROCESSING]: [
@@ -435,11 +409,6 @@ const mapDataCategories = (consentType) => {
   return categoryMap[consentType] || ['GENERAL_PERSONAL_INFORMATION'];
 };
 
-/*
- * POPIA §11: Determine Lawful Basis for Processing
- * @param {Object} consent - Consent object
- * @returns {Object} - Legal basis documentation
- */
 const determineLegalBasis = (consent) => {
   const basisMap = {
     ZA: {
@@ -476,15 +445,9 @@ const determineLegalBasis = (consent) => {
   };
 };
 
-/*
- * COMPANIES ACT 2008: Determine Retention Exceptions
- * @param {Object} consent - Consent object
- * @returns {Array} - Retention exceptions array
- */
 const getRetentionExceptions = (consent) => {
   const exceptions = [];
 
-  // Companies Act 2008 - 7 year retention for business records
   if (
     consent.type === CONSENT_TYPES.DATA_PROCESSING &&
     consent.purposes.includes('COMPLIANCE_REPORTING')
@@ -499,7 +462,6 @@ const getRetentionExceptions = (consent) => {
     });
   }
 
-  // FICA - 5 year retention for KYC records
   if (consent.purposes.includes('KYC_VERIFICATION')) {
     exceptions.push({
       act: 'Financial Intelligence Centre Act, 2001',
@@ -511,7 +473,6 @@ const getRetentionExceptions = (consent) => {
     });
   }
 
-  // National Archives Act - Permanent retention for historical records
   if (consent.type === CONSENT_TYPES.RESEARCH_HISTORICAL) {
     exceptions.push({
       act: 'National Archives and Records Service Act, 1996',
@@ -539,16 +500,24 @@ class ConsentManagementService {
     this.consentQueue = consentQueue;
     this.complianceQueue = complianceQueue;
 
-    // Initialize CIPC client for entity verification
+    // Initialize CIPC client for entity verification (dynamic import)
     this.cipcClient = null;
     if (process.env.CIPC_API_KEY) {
-      this.cipcClient = require('../integrations/cipcClient');
+      import('../integrations/cipcClient.js')
+        .then((module) => {
+          this.cipcClient = module.default;
+        })
+        .catch((err) => console.warn('CIPC client not available:', err.message));
     }
 
     // Initialize Laws.Africa client for statute validation
     this.lawsAfricaClient = null;
     if (process.env.LAWS_AFRICA_API_KEY) {
-      this.lawsAfricaClient = require('../integrations/lawsAfricaClient');
+      import('../integrations/lawsAfricaClient.js')
+        .then((module) => {
+          this.lawsAfricaClient = module.default;
+        })
+        .catch((err) => console.warn('Laws.Africa client not available:', err.message));
     }
 
     console.log('⚡ QUANTUM CONSENT SERVICE: Immortal orchestration engine initialized');
@@ -556,10 +525,6 @@ class ConsentManagementService {
 
   /*
    * POPIA §11: QUANTUM CONSENT CAPTURE WITH BIOMETRIC VERIFICATION
-   * @param {String} userId - User ID
-   * @param {Object} consentConfig - Consent configuration
-   * @param {Object} biometricData - Biometric verification data
-   * @returns {Object} - Consent recording result
    */
   async recordConsent(userId, consentConfig, biometricData = null) {
     const transactionId = `CONSENT_TX_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
@@ -569,7 +534,6 @@ class ConsentManagementService {
         `🧬 QUANTUM CONSENT: Recording consent for user ${userId}, transaction ${transactionId}`
       );
 
-      // 1. QUANTUM VALIDATION: Input and POPIA compliance
       if (!userId || typeof userId !== 'string') {
         throw new Error('Invalid userId parameter - POPIA accountability requirement');
       }
@@ -578,7 +542,6 @@ class ConsentManagementService {
         throw new Error('Invalid userId format - Must be valid MongoDB ObjectId');
       }
 
-      // 2. POPIA §11 VALIDATION: Eight lawful processing conditions
       const popiaValidation = await validatePOPIAConsent(consentConfig);
       if (!popiaValidation.valid) {
         await this.logComplianceViolation('POPIA_S11_VIOLATION', userId, popiaValidation.errors);
@@ -586,12 +549,10 @@ class ConsentManagementService {
         throw new Error(`POPIA §11 Violation: ${popiaValidation.errors.join(', ')}`);
       }
 
-      // 3. BIOMETRIC VERIFICATION: For explicit consent if required
       let biometricProof = null;
       if (biometricData && process.env.ENABLE_BIOMETRIC_CONSENT === 'true') {
         biometricProof = await this.validateBiometricConsent(biometricData, userId);
 
-        // Log biometric audit trail
         await BiometricAudit.create({
           userId,
           evidenceId: crypto.randomBytes(32).toString('hex'),
@@ -604,13 +565,11 @@ class ConsentManagementService {
         });
       }
 
-      // 4. CIPC ENTITY VERIFICATION: For business consents
       let entityVerification = null;
       if (consentConfig.entityRegistrationNumber) {
         entityVerification = await this.verifyCIPCEntity(consentConfig.entityRegistrationNumber);
       }
 
-      // 5. CONSTRUCT QUANTUM CONSENT ARTIFACT
       const consentArtifact = {
         userId,
         consentId: `CONSENT_${crypto.randomBytes(8).toString('hex').toUpperCase()}`,
@@ -629,7 +588,7 @@ class ConsentManagementService {
           biometricProof,
         }),
         dataCategories: mapDataCategories(consentConfig.type),
-        retentionPeriod: '7 years', // Companies Act default
+        retentionPeriod: '7 years',
         metadata: {
           ipAddress: consentConfig.ipAddress,
           userAgent: consentConfig.userAgent,
@@ -639,10 +598,8 @@ class ConsentManagementService {
         },
       };
 
-      // 6. QUANTUM ENCRYPTION: AES-256-GCM protection
       const encryptedConsent = encryptConsentQuantum(consentArtifact);
 
-      // 7. DATABASE PERSISTENCE: Immutable record creation
       const consentRecord = await Consent.create({
         userId,
         consentId: consentArtifact.consentId,
@@ -672,18 +629,17 @@ class ConsentManagementService {
           },
         ],
         retentionSchedule: {
-          reviewDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
-          archiveDate: new Date(Date.now() + 7 * 365 * 24 * 60 * 60 * 1000), // 7 years
+          reviewDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          archiveDate: new Date(Date.now() + 7 * 365 * 24 * 60 * 60 * 1000),
           exceptions: getRetentionExceptions(consentArtifact),
         },
       });
 
-      // 8. REDIS CACHE: Update consent state cache
       if (this.redisClient) {
         const cacheKey = `consent:${userId}:${consentArtifact.type}`;
         await this.redisClient.setEx(
           cacheKey,
-          86400, // 24 hours TTL
+          86400,
           JSON.stringify({
             status: 'GRANTED',
             consentId: consentArtifact.consentId,
@@ -693,10 +649,8 @@ class ConsentManagementService {
         );
       }
 
-      // 9. UPDATE PAIA REGISTER: For POPIA compliance
       await this.updatePAIARegister(userId, 'CONSENT_RECORDED', consentArtifact);
 
-      // 10. UPDATE USER CONSENT HISTORY
       await User.findByIdAndUpdate(userId, {
         $push: {
           consentHistory: {
@@ -713,7 +667,6 @@ class ConsentManagementService {
         },
       });
 
-      // 11. AUDIT LOGGING: Immutable audit trail
       await AuditLogger.logConsentEvent({
         userId,
         consentId: consentArtifact.consentId,
@@ -726,7 +679,6 @@ class ConsentManagementService {
         timestamp: new Date(),
       });
 
-      // 12. QUEUE COMPLIANCE WORKFLOWS: Async processing
       if (this.complianceQueue) {
         await this.complianceQueue.add(
           'process-consent-compliance',
@@ -760,7 +712,6 @@ class ConsentManagementService {
     } catch (error) {
       console.error(`❌ QUANTUM CONSENT FAILED: Transaction ${transactionId}`, error);
 
-      // Critical security breach alert
       await sendBreachAlert({
         severity: 'CRITICAL',
         component: 'ConsentManagement',
@@ -776,10 +727,6 @@ class ConsentManagementService {
 
   /*
    * POPIA §14: QUANTUM CONSENT WITHDRAWAL WITH CASCADE
-   * @param {String} userId - User ID
-   * @param {String} consentId - Consent ID
-   * @param {String} reason - Withdrawal reason
-   * @returns {Object} - Withdrawal result
    */
   async withdrawConsent(userId, consentId, reason = 'USER_REQUEST') {
     const withdrawalId = `WITHDRAWAL_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
@@ -789,7 +736,6 @@ class ConsentManagementService {
         `🔄 QUANTUM WITHDRAWAL: Processing withdrawal ${withdrawalId} for consent ${consentId}`
       );
 
-      // 1. VALIDATE AND RETRIEVE CONSENT
       const consent = await Consent.findOne({
         userId,
         consentId,
@@ -800,13 +746,11 @@ class ConsentManagementService {
         throw new Error(`Active consent ${consentId} not found for user ${userId}`);
       }
 
-      // 2. DECRYPT CONSENT DETAILS
       const decryptedConsent = decryptConsentQuantum({
         encryptedData: consent.encryptedData,
         encryptionMetadata: consent.encryptionMetadata,
       });
 
-      // 3. UPDATE CONSENT STATUS
       consent.status = CONSENT_STATUS.WITHDRAWN;
       consent.withdrawnAt = new Date();
       consent.withdrawalReason = reason;
@@ -820,7 +764,6 @@ class ConsentManagementService {
 
       await consent.save();
 
-      // 4. INITIATE CASCADE OPERATIONS VIA QUEUE
       const cascadeJob = await this.consentQueue.add(
         'consent-cascade',
         {
@@ -839,23 +782,19 @@ class ConsentManagementService {
         }
       );
 
-      // 5. SCHEDULE DATA DELETION
       if (decryptedConsent.type === CONSENT_TYPES.DATA_PROCESSING) {
         await this.scheduleDataDeletion(userId, decryptedConsent, withdrawalId);
       }
 
-      // 6. NOTIFY INFORMATION OFFICER (POPIA requirement)
       if (decryptedConsent.jurisdiction === 'ZA') {
         await this.notifyInformationOfficer(userId, consentId, 'WITHDRAWN', withdrawalId);
       }
 
-      // 7. UPDATE CACHE
       if (this.redisClient) {
         const cacheKey = `consent:${userId}:${decryptedConsent.type}`;
         await this.redisClient.del(cacheKey);
       }
 
-      // 8. LOG AUDIT TRAIL
       await AuditLogger.logConsentEvent({
         userId,
         consentId,
@@ -898,9 +837,6 @@ class ConsentManagementService {
 
   /*
    * PAIA §14: AUTOMATED CONSENT HISTORY REPORT FOR DSAR
-   * @param {String} userId - User ID
-   * @param {String} requestor - Requestor identification
-   * @returns {Object} - Comprehensive consent report
    */
   async generateConsentReport(userId, requestor = 'USER') {
     const reportId = `DSAR_REPORT_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
@@ -908,7 +844,6 @@ class ConsentManagementService {
     try {
       console.log(`📊 QUANTUM DSAR: Generating consent report ${reportId} for user ${userId}`);
 
-      // 1. RBAC VALIDATION: Ensure authorized access
       if (requestor !== 'USER') {
         const hasDPOPermission = await this.validateDPOAccess(requestor);
         if (!hasDPOPermission) {
@@ -916,10 +851,8 @@ class ConsentManagementService {
         }
       }
 
-      // 2. RETRIEVE ALL CONSENTS
       const consents = await Consent.find({ userId }).sort({ grantedAt: -1 });
 
-      // 3. GENERATE COMPREHENSIVE REPORT
       const report = {
         reportId,
         userId,
@@ -941,7 +874,6 @@ class ConsentManagementService {
         paiaFormatted: null,
       };
 
-      // 4. PROCESS EACH CONSENT
       for (const consent of consents) {
         const decrypted = decryptConsentQuantum({
           encryptedData: consent.encryptedData,
@@ -960,12 +892,11 @@ class ConsentManagementService {
           legalBasis: determineLegalBasis(decrypted),
           retentionPeriod: decrypted.retentionPeriod || '7 years',
           withdrawalAvailable: consent.status === CONSENT_STATUS.GRANTED,
-          auditTrail: consent.auditTrail.slice(-5), // Last 5 audit entries
+          auditTrail: consent.auditTrail.slice(-5),
         };
 
         report.consents.push(consentEntry);
 
-        // Update statistics
         report.statistics.byType[decrypted.type] =
           (report.statistics.byType[decrypted.type] || 0) + 1;
         report.statistics.byJurisdiction[decrypted.jurisdiction] =
@@ -978,14 +909,11 @@ class ConsentManagementService {
         if (consent.status === CONSENT_STATUS.EXPIRED) report.statistics.expired++;
       }
 
-      // 5. COMPLIANCE ANALYSIS
       report.complianceAnalysis = await this.analyzeComplianceGaps(userId, report.consents);
 
-      // 6. PAIA FORMATTING (South African requirement)
       if (report.consents.some((c) => c.jurisdiction === 'ZA')) {
         report.paiaFormatted = this.formatForPAIA(report);
 
-        // Log PAIA request
         await PAIARequest.create({
           requestId: reportId,
           userId,
@@ -997,12 +925,10 @@ class ConsentManagementService {
         });
       }
 
-      // 7. LEGAL VALIDATION
       if (this.lawsAfricaClient) {
         report.legalValidation = await this.validateAgainstStatutes(report.consents);
       }
 
-      // 8. AUDIT LOGGING
       await AuditLogger.logDSAREvent({
         userId,
         requestor,
@@ -1034,10 +960,6 @@ class ConsentManagementService {
 
   /*
    * POPIA §72: CROSS-BORDER CONSENT MAPPING & SAFEGUARDS
-   * @param {String} userId - User ID
-   * @param {String} sourceJurisdiction - Source jurisdiction code
-   * @param {String} targetJurisdiction - Target jurisdiction code
-   * @returns {Object} - Mapping result with safeguards
    */
   async mapCrossBorderConsent(userId, sourceJurisdiction, targetJurisdiction) {
     const mappingId = `X_BORDER_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
@@ -1047,11 +969,9 @@ class ConsentManagementService {
         `🌍 QUANTUM CROSS-BORDER: Mapping consent ${mappingId} from ${sourceJurisdiction} to ${targetJurisdiction}`
       );
 
-      // 1. CHECK ADEQUACY DECISION
       const adequacy = await this.checkAdequacyDecision(sourceJurisdiction, targetJurisdiction);
 
       if (!adequacy.approved) {
-        // 2. IMPLEMENT TRANSFER SAFEGUARDS
         const safeguards = await this.implementTransferSafeguards(
           userId,
           sourceJurisdiction,
@@ -1072,21 +992,18 @@ class ConsentManagementService {
         };
       }
 
-      // 3. RETRIEVE SOURCE CONSENTS
       const sourceConsents = await Consent.find({
         userId,
         jurisdiction: sourceJurisdiction,
         status: CONSENT_STATUS.GRANTED,
       });
 
-      // 4. CREATE JURISDICTION MAPPINGS
       const mappedConsents = [];
       for (const consent of sourceConsents) {
         const mapped = await this.createJurisdictionMapping(consent, targetJurisdiction, mappingId);
         mappedConsents.push(mapped);
       }
 
-      // 5. LOG CROSS-BORDER TRANSFER
       await AuditLogger.logCrossBorderTransfer({
         userId,
         sourceJurisdiction,
@@ -1107,7 +1024,7 @@ class ConsentManagementService {
         mappedConsentsCount: mappedConsents.length,
         adequacyDecision: adequacy.reference,
         requiresUserNotification: adequacy.requiresNotification,
-        nextReviewDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+        nextReviewDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
       };
     } catch (error) {
       console.error(`❌ QUANTUM CROSS-BORDER FAILED: ${mappingId}`, error);
@@ -1130,9 +1047,6 @@ class ConsentManagementService {
   // PRIVATE METHODS - QUANTUM IMPLEMENTATION DETAILS
   // =================================================================================
 
-  /*
-   * LOG COMPLIANCE VIOLATION WITH SEVERITY GRADING
-   */
   async logComplianceViolation(type, userId, errors, severity = 'HIGH') {
     const violationId = `VIOLATION_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
 
@@ -1146,7 +1060,6 @@ class ConsentManagementService {
       status: 'REPORTED',
     });
 
-    // Escalate to Information Officer for South African violations
     if (type.includes('POPIA') && this.informationOfficerEmail) {
       await this.notifyInformationOfficer(userId, violationId, 'COMPLIANCE_VIOLATION', {
         errors,
@@ -1154,7 +1067,6 @@ class ConsentManagementService {
       });
     }
 
-    // Trigger automated remediation if configured
     if (process.env.AUTO_REMEDIATION === 'true' && severity === 'CRITICAL') {
       await this.triggerRemediation(violationId, type, userId);
     }
@@ -1162,13 +1074,9 @@ class ConsentManagementService {
     return violationId;
   }
 
-  /*
-   * UPDATE PAIA REGISTER WITH CONSENT ACTIVITY
-   */
   async updatePAIARegister(userId, action, consentDetails = null) {
     const updateId = `PAIA_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
 
-    // In production, this would update the PAIA manual database
     const paiaUpdate = {
       updateId,
       userId,
@@ -1180,7 +1088,6 @@ class ConsentManagementService {
       automated: true,
     };
 
-    // Log PAIA update for audit trail
     await AuditLogger.logPAIAEvent(paiaUpdate);
 
     return {
@@ -1191,9 +1098,6 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * VALIDATE BIOMETRIC CONSENT WITH WEBAUTHN
-   */
   async validateBiometricConsent(biometricData, userId) {
     try {
       const verification = await WebAuthn.verifyAuthenticationResponse({
@@ -1216,7 +1120,7 @@ class ConsentManagementService {
           timestamp: new Date(),
           verificationMethod: 'WEBAUTHN_FIDO2',
           biometricType: biometricData.type || 'UNKNOWN',
-          confidenceScore: 0.95, // High confidence threshold
+          confidenceScore: 0.95,
           compliance: ['POPIA_S19', 'ECT_ACT_S13'],
         };
       }
@@ -1224,26 +1128,18 @@ class ConsentManagementService {
       throw new Error('Biometric verification failed - insufficient confidence');
     } catch (error) {
       console.warn(`Biometric verification failed for user ${userId}:`, error.message);
-
-      // Fallback to OTP verification
       return await this.fallbackVerification(userId);
     }
   }
 
-  /*
-   * GET EXPECTED CHALLENGE FOR WEBAUTHN
-   */
   async getExpectedChallenge(userId) {
-    // Retrieve stored challenge from Redis or database
     if (this.redisClient) {
       const challenge = await this.redisClient.get(`webauthn_challenge:${userId}`);
       if (challenge) return challenge;
     }
 
-    // Generate new challenge
     const newChallenge = crypto.randomBytes(32).toString('base64url');
 
-    // Store in Redis with 5 minute TTL
     if (this.redisClient) {
       await this.redisClient.setEx(`webauthn_challenge:${userId}`, 300, newChallenge);
     }
@@ -1251,24 +1147,14 @@ class ConsentManagementService {
     return newChallenge;
   }
 
-  /*
-   * FALLBACK VERIFICATION WITH OTP
-   */
   async fallbackVerification(userId) {
-    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
 
-    // Store OTP hash with expiry
     if (this.redisClient) {
-      await this.redisClient.setEx(
-        `otp_verification:${userId}`,
-        300, // 5 minute expiry
-        otpHash
-      );
+      await this.redisClient.setEx(`otp_verification:${userId}`, 300, otpHash);
     }
 
-    // In production, send OTP via SMS/email
     console.log(`📱 FALLBACK OTP for user ${userId}: ${otp}`);
 
     return {
@@ -1277,22 +1163,14 @@ class ConsentManagementService {
       otpRequired: true,
       otpDelivery: 'SIMULATED',
       timestamp: new Date(),
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     };
   }
 
-  /*
-   * INITIATE CONSENT CASCADE VIA QUEUE
-   */
   async initiateConsentCascade(userId, consentDetails, reason, withdrawalId) {
     const cascadeTasks = [
       this.flagDataForDeletion(userId, consentDetails.type, withdrawalId),
-      this.notifyThirdParties(
-        userId,
-        consentDetails.thirdParties,
-        'CONSENT_WITHDRAWN',
-        withdrawalId
-      ),
+      this.notifyThirdParties(userId, consentDetails.thirdParties, 'CONSENT_WITHDRAWN', withdrawalId),
       this.updateMarketingPreferences(userId, 'OPT_OUT', withdrawalId),
       this.clearUserCookies(userId, withdrawalId),
       this.archiveConsentRecord(userId, consentDetails.consentId, withdrawalId),
@@ -1303,9 +1181,9 @@ class ConsentManagementService {
 
     const deletionSchedule = {
       immediate: new Date(),
-      thirdPartyNotification: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      dataPurge: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-      finalArchive: new Date(Date.now() + 7 * 365 * 24 * 60 * 60 * 1000), // 7 years
+      thirdPartyNotification: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      dataPurge: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      finalArchive: new Date(Date.now() + 7 * 365 * 24 * 60 * 60 * 1000),
     };
 
     return {
@@ -1319,16 +1197,13 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * FLAG DATA FOR DELETION PER POPIA §14
-   */
   async flagDataForDeletion(userId, consentType, referenceId) {
     await User.findByIdAndUpdate(userId, {
       $set: {
         dataMarkedForDeletion: true,
         deletionConsentType: consentType,
         deletionReference: referenceId,
-        deletionScheduled: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        deletionScheduled: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
 
@@ -1339,15 +1214,11 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * NOTIFY THIRD PARTIES OF CONSENT WITHDRAWAL
-   */
   async notifyThirdParties(userId, thirdParties, action, referenceId) {
     if (!thirdParties || thirdParties.length === 0) {
       return { success: true, notified: 0, referenceId };
     }
 
-    // In production, this would integrate with third-party APIs
     const notifications = thirdParties.map((party) => ({
       partyId: party.id || party,
       action,
@@ -1367,9 +1238,6 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * UPDATE MARKETING PREFERENCES
-   */
   async updateMarketingPreferences(userId, status, referenceId) {
     await User.findByIdAndUpdate(userId, {
       $set: {
@@ -1387,11 +1255,7 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * CLEAR USER COOKIES VIA API
-   */
   async clearUserCookies(userId, referenceId) {
-    // This would integrate with frontend or cookie service
     const cookieClearance = {
       userId,
       referenceId,
@@ -1410,9 +1274,6 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * ARCHIVE CONSENT RECORD
-   */
   async archiveConsentRecord(userId, consentId, referenceId) {
     await Consent.findOneAndUpdate(
       { userId, consentId },
@@ -1433,11 +1294,7 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * UPDATE DATA INVENTORY
-   */
   async updateDataInventory(userId, action, referenceId) {
-    // Update data inventory for tracking
     const inventoryUpdate = {
       userId,
       action,
@@ -1456,16 +1313,12 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * SCHEDULE DATA DELETION JOB
-   */
   async scheduleDataDeletion(userId, consentDetails, referenceId) {
-    // Integration with scheduled job service (Bull)
     const deletionJob = {
       userId,
       consentType: consentDetails.type,
       consentId: consentDetails.consentId,
-      scheduleFor: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      scheduleFor: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       legalBasis: 'POPIA_S14',
       exceptions: getRetentionExceptions(consentDetails),
       referenceId,
@@ -1475,38 +1328,34 @@ class ConsentManagementService {
     if (this.consentQueue) {
       await this.consentQueue.add('data-deletion', deletionJob, {
         jobId: `deletion_${referenceId}`,
-        delay: 30 * 24 * 60 * 60 * 1000, // 30 days
+        delay: 30 * 24 * 60 * 60 * 1000,
         attempts: 3,
-        backoff: { type: 'fixed', delay: 60000 }, // 1 minute retry
+        backoff: { type: 'fixed', delay: 60000 },
       });
     }
 
     return deletionJob;
   }
 
-  /*
-   * NOTIFY INFORMATION OFFICER
-   */
   async notifyInformationOfficer(userId, consentId, action, metadata = {}) {
-    // In production, integrate with email service
     const notification = {
       to: this.informationOfficerEmail,
       subject: `Consent ${action} - User ${userId}`,
       body: `
             POPIA NOTIFICATION - CONSENT ${action}
-            
+
             User ID: ${userId}
             Consent ID: ${consentId}
             Action: ${action}
             Timestamp: ${new Date().toISOString()}
-            
+
             ${metadata.errors ? `Errors: ${JSON.stringify(metadata.errors)}` : ''}
             ${metadata.referenceId ? `Reference: ${metadata.referenceId}` : ''}
-            
+
             Compliance Status: ${
               action === 'WITHDRAWN' ? 'POPIA §14 Processed' : 'POPIA §11 Recorded'
             }
-            
+
             Action Required: ${
               action === 'COMPLIANCE_VIOLATION' ? 'Immediate review required' : 'For records only'
             }
@@ -1524,14 +1373,10 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * VALIDATE DPO ACCESS
-   */
   async validateDPOAccess(requestorId) {
     const requestor = await User.findById(requestorId);
     if (!requestor) return false;
 
-    // Check for DPO role or Information Officer designation
     const hasRole =
       requestor.roles &&
       (requestor.roles.includes('DPO') ||
@@ -1539,7 +1384,6 @@ class ConsentManagementService {
         requestor.roles.includes('COMPLIANCE_OFFICER') ||
         requestor.roles.includes('SUPER_ADMIN'));
 
-    // Additional check for firm-level permissions
     if (requestor.firmId) {
       const firm = await LegalFirm.findById(requestor.firmId);
       if (firm && firm.informationOfficer === requestorId) {
@@ -1550,13 +1394,9 @@ class ConsentManagementService {
     return hasRole;
   }
 
-  /*
-   * ANALYZE COMPLIANCE GAPS
-   */
   async analyzeComplianceGaps(userId, consents) {
     const gaps = [];
 
-    // Check for missing required consents per jurisdiction
     const jurisdictionGaps = {
       ZA: [CONSENT_TYPES.DATA_PROCESSING],
       EU: [CONSENT_TYPES.DATA_PROCESSING, CONSENT_TYPES.COOKIES_ANALYTICS],
@@ -1564,7 +1404,6 @@ class ConsentManagementService {
       NG: [CONSENT_TYPES.DATA_PROCESSING],
     };
 
-    // Analyze by jurisdiction
     Object.keys(jurisdictionGaps).forEach((jurisdiction) => {
       const jurisdictionConsents = consents.filter((c) => c.jurisdiction === jurisdiction);
       const existingTypes = jurisdictionConsents.map((c) => c.type);
@@ -1590,7 +1429,6 @@ class ConsentManagementService {
       });
     });
 
-    // Check for expired consents
     consents.forEach((consent) => {
       if (
         consent.status === 'GRANTED' &&
@@ -1608,7 +1446,6 @@ class ConsentManagementService {
       }
     });
 
-    // Check for third-party sharing without explicit consent
     consents.forEach((consent) => {
       if (
         consent.thirdParties &&
@@ -1628,9 +1465,6 @@ class ConsentManagementService {
     return gaps;
   }
 
-  /*
-   * FORMAT FOR PAIA MANUAL
-   */
   formatForPAIA(consentReport) {
     return {
       paiaSection: '5.3 - Records of Personal Information',
@@ -1653,9 +1487,6 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * VERIFY CIPC ENTITY
-   */
   async verifyCIPCEntity(registrationNumber) {
     if (!this.cipcClient) {
       return { verified: false, reason: 'CIPC client not configured' };
@@ -1678,9 +1509,6 @@ class ConsentManagementService {
     }
   }
 
-  /*
-   * VALIDATE AGAINST STATUTES
-   */
   async validateAgainstStatutes(consents) {
     if (!this.lawsAfricaClient) {
       return { validated: false, reason: 'Laws.Africa client not configured' };
@@ -1713,9 +1541,6 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * CHECK ADEQUACY DECISION
-   */
   async checkAdequacyDecision(source, target) {
     const sourceJurisdiction = JURISDICTIONS[source];
     const targetJurisdiction = JURISDICTIONS[target];
@@ -1748,11 +1573,7 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * IMPLEMENT TRANSFER SAFEGUARDS
-   */
   async implementTransferSafeguards(userId, source, target, referenceId) {
-    // Implement Standard Contractual Clauses or Binding Corporate Rules
     const safeguards = {
       sccImplemented: true,
       sccVersion: '2021/914',
@@ -1774,7 +1595,6 @@ class ConsentManagementService {
       },
     };
 
-    // Log safeguard implementation
     await AuditLogger.logCrossBorderTransfer({
       userId,
       sourceJurisdiction: source,
@@ -1785,7 +1605,6 @@ class ConsentManagementService {
       complianceMarkers: ['POPIA_S72', 'GDPR_CHAPTER_V', 'SCC_2021'],
     });
 
-    // Queue safeguard implementation tasks
     if (this.complianceQueue) {
       await this.complianceQueue.add(
         'implement-safeguards',
@@ -1807,17 +1626,12 @@ class ConsentManagementService {
     return safeguards;
   }
 
-  /*
-   * CREATE JURISDICTION MAPPING
-   */
   async createJurisdictionMapping(consent, targetJurisdiction, mappingId) {
-    // Decrypt original consent
     const decrypted = decryptConsentQuantum({
       encryptedData: consent.encryptedData,
       encryptionMetadata: consent.encryptionMetadata,
     });
 
-    // Create mapped consent with new jurisdiction
     const mappedConsent = {
       ...decrypted,
       originalConsentId: consent.consentId,
@@ -1833,10 +1647,8 @@ class ConsentManagementService {
       adequacyDecision: await this.checkAdequacyDecision(consent.jurisdiction, targetJurisdiction),
     };
 
-    // Encrypt mapped consent
     const encryptedMapped = encryptConsentQuantum(mappedConsent);
 
-    // Save mapped consent
     const newConsentId = `MAPPED_${consent.consentId}_${targetJurisdiction}`;
     await Consent.create({
       userId: consent.userId,
@@ -1872,13 +1684,9 @@ class ConsentManagementService {
     };
   }
 
-  /*
-   * TRIGGER AUTOMATED REMEDIATION
-   */
   async triggerRemediation(violationId, violationType, userId) {
     console.log(`🔄 Triggering automated remediation for violation ${violationId}`);
 
-    // Queue remediation task
     if (this.complianceQueue) {
       await this.complianceQueue.add(
         'remediate-violation',
@@ -1890,7 +1698,7 @@ class ConsentManagementService {
         },
         {
           jobId: `remediate_${violationId}`,
-          priority: 1, // High priority for critical violations
+          priority: 1,
           attempts: 3,
           backoff: { type: 'exponential', delay: 5000 },
         }
@@ -1909,9 +1717,6 @@ class ConsentManagementService {
   // QUANTUM HEALTH CHECKS & MONITORING
   // =================================================================================
 
-  /*
-   * SERVICE HEALTH CHECK
-   */
   async healthCheck() {
     const health = {
       service: 'ConsentManagementService',
@@ -1922,12 +1727,10 @@ class ConsentManagementService {
     };
 
     try {
-      // Database connection check
       const dbStatus = mongoose.connection.readyState;
       health.components.database = dbStatus === 1 ? 'HEALTHY' : 'UNHEALTHY';
       health.metrics.dbConnection = dbStatus;
 
-      // Redis cache check
       if (this.redisClient) {
         const redisPing = await this.redisClient.ping();
         health.components.redis = redisPing === 'PONG' ? 'HEALTHY' : 'UNHEALTHY';
@@ -1935,7 +1738,6 @@ class ConsentManagementService {
         health.components.redis = 'NOT_CONFIGURED';
       }
 
-      // Queue health check
       if (this.consentQueue) {
         const queueCounts = await this.consentQueue.getJobCounts();
         health.components.consentQueue = 'HEALTHY';
@@ -1945,7 +1747,6 @@ class ConsentManagementService {
         health.components.consentQueue = 'NOT_CONFIGURED';
       }
 
-      // Compliance queue health check
       if (this.complianceQueue) {
         const compQueueCounts = await this.complianceQueue.getJobCounts();
         health.components.complianceQueue = 'HEALTHY';
@@ -1954,7 +1755,6 @@ class ConsentManagementService {
         health.components.complianceQueue = 'NOT_CONFIGURED';
       }
 
-      // Encryption health check
       const testData = { test: 'health_check' };
       const encrypted = encryptConsentQuantum(testData);
       const decrypted = decryptConsentQuantum({
@@ -1969,7 +1769,6 @@ class ConsentManagementService {
       health.components.encryption =
         JSON.stringify(decrypted) === JSON.stringify(testData) ? 'HEALTHY' : 'UNHEALTHY';
 
-      // Overall status determination
       const unhealthyComponents = Object.values(health.components).filter(
         (status) => status === 'UNHEALTHY'
       ).length;
@@ -1996,9 +1795,6 @@ class ConsentManagementService {
     }
   }
 
-  /*
-   * PERFORMANCE METRICS
-   */
   async getPerformanceMetrics() {
     const metrics = {
       timestamp: new Date(),
@@ -2026,7 +1822,6 @@ class ConsentManagementService {
     };
 
     try {
-      // Calculate metrics from database
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
       metrics.consentOperations.recordedLastHour = await Consent.countDocuments({
@@ -2047,7 +1842,6 @@ class ConsentManagementService {
         status: CONSENT_STATUS.EXPIRED,
       });
 
-      // Queue metrics
       if (this.consentQueue) {
         const counts = await this.consentQueue.getJobCounts();
         metrics.queueMetrics.consentQueueLength = counts.waiting;
@@ -2061,64 +1855,10 @@ class ConsentManagementService {
       return metrics;
     } catch (error) {
       console.error('Performance metrics calculation failed:', error);
-      return metrics; // Return empty metrics structure
+      return metrics;
     }
   }
 }
-
-// =================================================================================
-// QUANTUM TEST SUITE - PRODUCTION VALIDATION
-// =================================================================================
-/*
- * Forensic Test Requirements for South African Legal Compliance:
- *
- * 1. POPIA Compliance Tests:
- *    - test/services/popia-compliance.test.js
- *    - Validate 8 lawful processing conditions (POPIA §11)
- *    - Test consent withdrawal cascade (POPIA §14)
- *    - Verify special personal information handling (POPIA §19)
- *    - Test cross-border transfer safeguards (POPIA §72)
- *
- * 2. ECT Act Compliance Tests:
- *    - test/services/ect-act-compliance.test.js
- *    - Validate advanced electronic signature requirements (ECT Act §13)
- *    - Test biometric consent verification
- *    - Verify non-repudiation mechanisms
- *
- * 3. PAIA Compliance Tests:
- *    - test/services/paia-compliance.test.js
- *    - Test DSAR report generation (PAIA §14)
- *    - Validate Information Officer notifications
- *    - Test manual update procedures
- *
- * 4. Companies Act Compliance Tests:
- *    - test/services/companies-act.test.js
- *    - Validate 7-year retention periods
- *    - Test record archiving procedures
- *    - Verify entity verification via CIPC API
- *
- * 5. Security Penetration Tests:
- *    - test/security/consent-security.test.js
- *    - OWASP Top 10 vulnerability testing
- *    - AES-256-GCM encryption strength validation
- *    - RBAC/ABAC access control testing
- *    - Injection attack prevention
- *
- * 6. Performance Load Tests:
- *    - test/performance/consent-load.test.js
- *    - 10,000 concurrent consent recordings
- *    - 5,000 concurrent consent withdrawals
- *    - Queue processing under load
- *    - Redis cache performance validation
- *
- * 7. Integration Tests:
- *    - test/integration/consent-integration.test.js
- *    - MongoDB Atlas connection testing
- *    - Redis cache integration
- *    - BullMQ queue integration
- *    - CIPC API integration
- *    - Laws.Africa integration
- */
 
 ConsentManagementService.runQuantumTests = async () => {
   console.log('🧪 QUANTUM TEST SUITE: Initiating comprehensive validation...');
@@ -2253,7 +1993,6 @@ ConsentManagementService.runQuantumTests = async () => {
 
     testResults.total = testResults.passed + testResults.failed;
 
-    // Calculate compliance status
     testResults.complianceStatus = {
       popia: testResults.tests
         .filter((t) => t.compliance && t.compliance.includes('POPIA'))
@@ -2264,10 +2003,9 @@ ConsentManagementService.runQuantumTests = async () => {
       companiesAct: testResults.tests
         .filter((t) => t.compliance && t.compliance.includes('COMPANIES'))
         .every((t) => t.status === 'PASSED'),
-      overall: testResults.passed / testResults.total >= 0.95, // 95% pass rate required
+      overall: testResults.passed / testResults.total >= 0.95,
     };
 
-    // Calculate security status
     testResults.securityStatus = {
       encryption: testResults.tests
         .filter((t) => t.security && t.security.includes('AES'))
@@ -2323,125 +2061,6 @@ export default {
   getRetentionExceptions,
   validateQuantumEnvironment,
 };
-
-// =================================================================================
-// ENVIRONMENT VARIABLES GUIDE - QUANTUM FORTRESS CONFIGURATION
-// =================================================================================
-/*
- * CRITICAL: Add these to /server/.env file:
- *
- * # QUANTUM ENCRYPTION CONFIGURATION
- * CONSENT_ENCRYPTION_KEY=your_64_char_hex_key_here  # Generate: openssl rand -hex 32
- * CONSENT_ENCRYPTION_IV=your_24_char_hex_iv_here    # Generate: openssl rand -hex 12
- *
- * # POPIA COMPLIANCE CONFIGURATION
- * POPIA_IO_EMAIL=information.officer@yourfirm.co.za
- * POPIA_DEPUTY_IO_EMAIL=deputy.io@yourfirm.co.za
- *
- * # INFRASTRUCTURE CONFIGURATION
- * REDIS_CACHE_URL=redis://localhost:6379
- * QUEUE_REDIS_URL=redis://localhost:6379
- * MONGODB_ATLAS_URI=process.env.MONGODB_URI
- *
- * # SOUTH AFRICAN LEGAL INTEGRATIONS
- * CIPC_API_KEY=your_cipc_api_key_here
- * LAWS_AFRICA_API_KEY=your_laws_africa_key_here
- * AWS_SA_REGION=af-south-1  # Data residency enforcement
- *
- * # WEBAUTHN CONFIGURATION
- * WEBAUTHN_RP_ID=wilsyos.com
- * WEBAUTHN_ORIGIN=https://wilsyos.com
- * ENABLE_BIOMETRIC_CONSENT=true
- *
- * # SECURITY CONFIGURATION
- * AUTO_REMEDIATION=true
- * ENABLE_REALTIME_ANALYTICS=true
- *
- * Generation Commands:
- * 1. Generate encryption key: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
- * 2. Generate IV: node -e "console.log(require('crypto').randomBytes(12).toString('hex'))"
- * 3. Test environment: node -e "require('./server/services/consentManagementService').validateQuantumEnvironment()"
- */
-
-// =================================================================================
-// RELATED FILES FOR COMPLETE IMPLEMENTATION
-// =================================================================================
-/*
- * Required Companion Files:
- *
- * 1. /server/models/Consent.js
- *    - Quantum consent schema with encryption metadata
- *    - POPIA compliance fields and audit trails
- *    - Retention schedules and legal holds
- *
- * 2. /server/models/PAIARequest.js
- *    - PAIA manual request tracking
- *    - Information Officer assignment
- *    - Response timelines and compliance
- *
- * 3. /server/validators/popiaValidator.js
- *    - POPIA §11 8 lawful conditions validation
- *    - Special personal information validation
- *    - Cross-border transfer validation
- *
- * 4. /server/utils/auditLogger.js
- *    - Immutable audit trail generation
- *    - Compliance event logging
- *    - Security incident recording
- *
- * 5. /server/utils/quantumEncryption.js
- *    - AES-256-GCM encryption/decryption utilities
- *    - Key rotation management
- *    - Cryptographic integrity verification
- *
- * 6. /server/integrations/cipcClient.js
- *    - CIPC API integration for entity verification
- *    - Companies Act 2008 compliance validation
- *    - Entity status monitoring
- *
- * 7. /server/integrations/lawsAfricaClient.js
- *    - Laws.Africa API integration
- *    - Statute validation and reference
- *    - Legal compliance checking
- *
- * 8. /server/queues/consentQueue.js
- *    - BullMQ queue configuration
- *    - Consent cascade job processing
- *    - Retry and failure handling
- */
-
-// =================================================================================
-// VALUATION QUANTUM FOOTER
-// =================================================================================
-/*
- * MARKET IMPACT METRICS:
- * - Reduces POPIA compliance costs by 89% for South African legal firms
- * - Accelerates DSAR fulfillment from 30 days to 15 minutes
- * - Eliminates R2.1M average fines for consent violations
- * - Creates R8.5M annual value per large law firm
- * - Positions Wilsy OS as the only POPIA-certified consent management system
- *
- * LEGAL SIGNIFICANCE:
- * - First SA-developed system meeting all 8 POPIA lawful conditions
- * - Only system with built-in ECT Act §13 advanced electronic consent
- * - PAIA manual automation reduces Information Officer workload by 76%
- * - Companies Act 2008 retention fully automated and compliant
- * - Cybercrimes Act §2 digital evidence standards exceeded
- *
- * AFRICAN EXPANSION VECTOR:
- * - Modular jurisdiction adapters for Kenya DPA 2019
- * - Nigeria NDPA 2023 compliance pre-built
- * - Ghana DPA 2012 integration ready
- * - Pan-African adequacy decision mapping engine
- * - Cross-border transfer safeguard automation
- *
- * SECURITY SUPERIORITY:
- * - Quantum-resistant AES-256-GCM encryption for all consent data
- * - Biometric verification integration (WebAuthn/FIDO2)
- * - Immutable blockchain-like audit trails
- * - Zero-trust architecture with RBAC/ABAC enforcement
- * - Automated vulnerability scanning and remediation
- */
 
 // =================================================================================
 // QUANTUM INVOCATION

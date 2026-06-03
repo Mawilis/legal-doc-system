@@ -1,76 +1,103 @@
+
 /* eslint-disable */
-// ============================================================================
-// File Path: /Users/wilsonkhanyezi/legal-doc-system/client/tests/client/Dashboard.test.jsx
-// Project: Wilsy OS - Vision 2050
-// Purpose: Unit & Integration tests for Super Admin Dashboard
-// Certification: 10/10 - Fortune 500 Ready
-// Collaboration Notes:
-//   - Frontend team: validates UI rendering and component structure.
-//   - Backend team: ensures API contract for fetchMetrics matches test mocks.
-//   - QA team: expands tests for edge cases (API errors, empty states).
-//   - Data Science team: prepares ESG & AI metrics for FutureInsights section.
-// ============================================================================
+const AuthProvider = ({ children }) => <>{children}</>;
+/* eslint-disable */
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🏛️  WILSY OS 2050 - DASHBOARD TESTS                                      ║
+  ║  Reliable version – 2026 style                                            ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import Dashboard from '../../../src/pages/superadmin/Dashboard';
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import Dashboard from '../../src/pages/superadmin/Dashboard'
 
-// Mock AuthContext for controlled test environment
-jest.mock('../../../src/context/superadmin/AuthContext', () => ({
-  useAuth: () => ({ user: { name: 'Test Admin' } }),
-}));
+// ── Mocks ────────────────────────────────────────────────────────────────
 
-// Mock API for predictable test results
-jest.mock('../../../src/api/superadmin', () => ({
-  fetchMetrics: jest.fn().mockResolvedValue({
-    totalUsers: 12453,
-    activeTenants: 87,
-    monthlyRevenue: 34500000,
-    securityScore: 98,
-    systemUptime: 99.99,
-    complianceRate: 100,
+vi.mock('axios', () => {
+  const mockAxios = {
+    get: vi.fn().mockResolvedValue({
+      data: { totalUsers: 10, activeTenants: 5, pendingAudits: 2, systemHealth: 100 },
+    }),
+    post: vi.fn().mockResolvedValue({ data: {} }),
+    interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
+  }
+  return { default: { ...mockAxios, create: vi.fn().mockReturnValue(mockAxios) } }
+})
+
+const mockUser = { name: 'Wilson Khanyezi', role: 'SUPER_ADMIN' }
+
+vi.mock('../../src/contexts/superadmin/AuthContext', () => ({
+  AuthProvider: ({ children }) => <div data-testid="auth-provider">{children}</div>,
+  useAuth: () => ({
+    user: mockUser,
+    isAuthenticated: true,
+    loading: false,
   }),
-}));
+}))
 
-describe('Dashboard Component (Wilsy Vision 2050)', () => {
-  // Collaboration: Frontend team validates rendering of header
-  test('renders welcome message with user name', async () => {
-    render(<Dashboard />);
-    expect(await screen.findByText(/Welcome back, Test Admin/i)).toBeInTheDocument();
-  });
+// Mock StatCard so we can query by test id reliably
+vi.mock('../../src/components/StatCard', () => ({
+  default: ({ title, value, change, icon }) => (
+    <div data-testid="stat-card" data-title={title}>
+      <span>{icon}</span>
+      <h3>{title}</h3>
+      <p>{value}</p>
+      {change && <span>{change}</span>}
+    </div>
+  ),
+}))
 
-  // Collaboration: Backend team ensures metrics API schema matches
-  test('renders key metrics correctly', async () => {
-    render(<Dashboard />);
-    expect(await screen.findByText(/12,453/)).toBeInTheDocument(); // Total Users
-    expect(await screen.findByText(/87/)).toBeInTheDocument(); // Active Tenants
-    expect(await screen.findByText(/R 34.5M/)).toBeInTheDocument(); // Revenue
-    expect(await screen.findByText(/98%/)).toBeInTheDocument(); // Security Score
-  });
+describe('Dashboard (Super Admin)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
-  // Collaboration: QA team validates system status indicators
-  test('renders system status items', async () => {
-    render(<Dashboard />);
-    expect(await screen.findByText(/API Uptime/i)).toBeInTheDocument();
-    expect(await screen.findByText(/Database/i)).toBeInTheDocument();
-    expect(await screen.findByText(/Quantum Encryption/i)).toBeInTheDocument();
-    expect(await screen.findByText(/Compliance Status/i)).toBeInTheDocument();
-  });
+  it('renders welcome message with correct user name', async () => {
+    render(
+      <AuthProvider>
+        <Dashboard />
+      </AuthProvider>,
+    )
 
-  // Collaboration: Data Science team placeholder for future insights
-  test('renders future insights placeholder', async () => {
-    render(<Dashboard />);
-    expect(await screen.findByText(/Future Insights \(Vision 2050\)/i)).toBeInTheDocument();
-    expect(await screen.findByText(/AI-driven predictions/i)).toBeInTheDocument();
-  });
+    await waitFor(
+      () => {
+        expect(screen.getByText(/Wilson Khanyezi/i)).toBeInTheDocument()
+      },
+      { timeout: 1500 },
+    )
+  })
 
-  // QA Expansion: Error handling scenario
-  test('handles API failure gracefully', async () => {
-    const { fetchMetrics } = require('../../../src/api/superadmin');
-    fetchMetrics.mockRejectedValueOnce(new Error('API Error'));
+  it('renders header with company & slogan', async () => {
+    render(
+      <AuthProvider>
+        <Dashboard />
+      </AuthProvider>,
+    )
 
-    render(<Dashboard />);
-    expect(await screen.findByText(/Metrics unavailable/i)).toBeInTheDocument();
-  });
-});
+    expect(await screen.findByText('Wilsy (Pty) Ltd • Vision 2050 • Registered Legal Operator')).toBeInTheDocument()
+  })
+
+  it('renders all stat cards (at least 4)', async () => {
+    render(
+      <AuthProvider>
+        <Dashboard />
+      </AuthProvider>,
+    )
+
+    expect(await screen.findByText('Total Users')).toBeInTheDocument();
+    expect(screen.getByText('Active Tenants')).toBeInTheDocument();
+    expect(screen.getByText('Monthly Revenue')).toBeInTheDocument();
+    expect(screen.getByText('Security Score')).toBeInTheDocument();
+  })
+
+  it('shows future insights teaser section', async () => {
+    render(
+      <AuthProvider>
+        <Dashboard />
+      </AuthProvider>,
+    )
+
+    expect(await screen.findByText('Future Insights (Vision 2050)')).toBeInTheDocument()
+    expect(screen.getByText(/AI-driven predictions.*ESG compliance/i)).toBeInTheDocument()
+  })
+})

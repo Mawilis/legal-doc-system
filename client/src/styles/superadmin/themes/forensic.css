@@ -1,0 +1,32 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🔍 FORENSIC THEME - WILSY OS 2050                                       ║
+  ║  Audit and Investigation Theme                                           ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+[data-theme="forensic"] {
+  --theme-primary: #ef4444;
+  --theme-secondary: #dc2626;
+  --theme-gradient: linear-gradient(135deg, #b91c1c, #ef4444);
+  --theme-glow: 0 0 20px #ef4444;
+
+  --theme-bg-primary: #1f1a1a;
+  --theme-bg-secondary: #2a1f1f;
+  --theme-bg-tertiary: #352a2a;
+
+  --theme-text-primary: #fecaca;
+  --theme-text-secondary: #fca5a5;
+  --theme-text-accent: #ffffff;
+
+  --theme-border: #ef444440;
+  --theme-border-glow: #ef444480;
+}
+
+.theme-forensic .sa-audit-stream {
+  font-family: var(--sa-font-forensic);
+  border-color: #ef4444;
+}
+
+.theme-forensic .sa-forensic-link {
+  background: #1f1a1a;
+  border-color: #ef4444;
+}

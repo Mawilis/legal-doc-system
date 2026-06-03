@@ -1,4 +1,5 @@
-#!/* ╔════════════════════════════════════════════════════════════════╗
+/* eslint-disable */
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ RETENTION POLICY ENFORCER - INVESTOR-GRADE MODULE             ║
   ║ [90% cost reduction | R10M risk elimination | 85% margins]    ║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -11,7 +12,7 @@
  * • Risk Elimination: R10M+ POPIA fines per client via automated enforcement
  */
 
-// INTEGRATION_HINT: imports -> ["../utils/auditLogger", "../middleware/tenantContext", "../utils/logger", "../models/RetentionPolicy", "../models/RetentionLogger"]
+// INTEGRATION_HINT: imports -> ["../utils/auditLogger.js", "../middleware/tenantContext.js", "../utils/logger.js", "../models/RetentionPolicy.js", "../models/RetentionLogger.js"]
 
 /*
 INTEGRATION MAP (JSON):
@@ -23,12 +24,12 @@ INTEGRATION MAP (JSON):
     "services/auditService.js"
   ],
   "expectedProviders": [
-    "../utils/auditLogger",
-    "../middleware/tenantContext",
-    "../utils/logger",
-    "../models/RetentionPolicy",
-    "../models/RetentionLogger",
-    "../utils/cryptoUtils"
+    "../utils/auditLogger.js",
+    "../middleware/tenantContext.js",
+    "../utils/logger.js",
+    "../models/RetentionPolicy.js",
+    "../models/RetentionLogger.js",
+    "../utils/cryptoUtils.js"
   ]
 }
 
@@ -42,9 +43,10 @@ flowchart TD
     B --> G[POPIA Report Generator]
 */
 
-const auditLogger = require('../utils/auditLogger');
-const { REDACT_FIELDS, redactSensitive } = require('../utils/auditUtils');
-const loggerRaw = require('../utils/logger');
+import crypto from 'crypto';
+import auditLogger from '../utils/auditLogger.js';
+import { REDACT_FIELDS, redactSensitive } from '../utils/auditUtils.js';
+import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
 
 // Retention policies aligned with South African law
@@ -223,10 +225,7 @@ function generateDisposalCertificate(disposedRecords, tenantId, disposedBy) {
     legalAuthority: 'Companies Act 71 of 2008, Section 24',
     disposalMethod: 'secure_shred_audited',
     witness: 'Wilsy OS Automated Compliance Engine',
-    hash: require('crypto')
-      .createHash('sha256')
-      .update(JSON.stringify(disposedRecords))
-      .digest('hex'),
+    hash: crypto.createHash('sha256').update(JSON.stringify(disposedRecords)).digest('hex'),
 
     // Retention metadata for audit chain
     retentionMetadata: {

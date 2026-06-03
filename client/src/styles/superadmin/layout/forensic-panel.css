@@ -1,0 +1,190 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🔍 FORENSIC PANEL LAYOUT - WILSY OS 2050                                ║
+  ║  Audit Trail and Forensic Analysis Interface                             ║
+  ║  Supreme Architect: Wilson Khanyezi - 10th Generation                    ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-forensic-panel {
+  background: var(--sa-bg-secondary);
+  border: 1px solid var(--sa-border-forensic);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-forensic-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--sa-forensic-500),
+    transparent
+  );
+  animation: forensic-scan 3s linear infinite;
+}
+
+.sa-forensic-panel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+    rgba(239, 68, 68, 0.05) 0%,
+    transparent 50%,
+    rgba(239, 68, 68, 0.05) 100%
+  );
+  pointer-events: none;
+}
+
+.sa-forensic-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--sa-border-forensic);
+  position: relative;
+  z-index: 1;
+}
+
+.sa-forensic-title {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-forensic-400);
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wider);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sa-forensic-title::before {
+  content: '🔍';
+  font-size: 1.2rem;
+  filter: drop-shadow(0 0 5px var(--sa-forensic-500));
+}
+
+.sa-forensic-timestamp {
+  font-family: var(--sa-font-forensic);
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-tertiary);
+  padding: 0.25rem 0.75rem;
+  background: var(--sa-bg-tertiary);
+  border-radius: 20px;
+  border: 1px solid var(--sa-border-forensic);
+}
+
+.sa-forensic-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-forensic-chain::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sa-forensic-chain::-webkit-scrollbar-track {
+  background: var(--sa-bg-tertiary);
+}
+
+.sa-forensic-chain::-webkit-scrollbar-thumb {
+  background: var(--sa-forensic-500);
+  border-radius: 2px;
+}
+
+.sa-forensic-link {
+  display: grid;
+  grid-template-columns: 80px 120px 1fr 100px;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 6px;
+  font-family: var(--sa-font-forensic);
+  font-size: var(--sa-text-micro);
+  transition: all 0.2s ease;
+  position: relative;
+  animation: forensic-fade-in 0.3s ease;
+}
+
+.sa-forensic-link:hover {
+  border-color: var(--sa-forensic-500);
+  transform: translateX(5px);
+  background: var(--sa-bg-elevated);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+.sa-forensic-link::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  width: 15px;
+  height: 2px;
+  background: var(--sa-forensic-500);
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sa-forensic-link:hover::before {
+  opacity: 1;
+}
+
+.sa-forensic-hash {
+  color: var(--sa-forensic-400);
+  font-weight: var(--sa-weight-bold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-forensic-previous {
+  color: var(--sa-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-forensic-data {
+  color: var(--sa-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-forensic-verify {
+  color: var(--sa-success-500);
+  text-align: right;
+  font-weight: var(--sa-weight-bold);
+}
+
+.sa-forensic-verify.failed {
+  color: var(--sa-critical-500);
+}
+
+@keyframes forensic-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes forensic-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

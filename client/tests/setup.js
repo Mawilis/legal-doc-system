@@ -1,95 +1,70 @@
 /* eslint-disable */
-/**
- * client/tests/setup.js
- * ESM bootstrap for Vitest
- * - idempotent
- * - Map-backed storage
- * - performance, raf, fetch shims
- * - uses jsdom when available
- */
+import '@testing-library/jest-dom';
+import { cleanup } from '@testing-library/react';
+import { afterEach, vi } from 'vitest';
 
-import { JSDOM } from 'jsdom';
+// 🛡️ ENHANCED NAVIGATION & ENVIRONMENT MOCKS
+const noop = () => {};
 
-if (typeof globalThis.__vitest_setup_done === 'undefined') {
-  globalThis.__vitest_setup_done = true;
+// Mock matchMedia (Required for responsive UI/Sidebars)
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
 
-  // Create DOM only if missing
-  try {
-    if (typeof globalThis.window === 'undefined') {
-      const dom = new JSDOM('<!doctype html><html><body></body></html>', {
-        url: 'http://localhost',
-        pretendToBeVisual: true
-      });
-      globalThis.window = dom.window;
-      globalThis.document = dom.window.document;
-      globalThis.navigator = dom.window.navigator || { userAgent: 'jsdom' };
-      globalThis.HTMLElement = dom.window.HTMLElement;
-      globalThis.Node = dom.window.Node;
-    }
-  } catch (err) {
-    // If jsdom fails to initialize, throw a clear error for DOM tests
-    // Vitest will show this; non-DOM tests can still run if they don't import this file
-    // eslint-disable-next-line no-console
-    console.error('client/tests/setup.js: jsdom initialization failed. Install jsdom as a dev dependency.');
-    throw err;
+// Robust Location Mocking
+const locationMock = {
+  ...window.location,
+  assign: vi.fn(),
+  replace: vi.fn(),
+  reload: vi.fn(),
+  href: 'http://localhost:3000/',
+};
+
+delete window.location;
+window.location = locationMock;
+
+// 🚀 SILENCE NOISY LOGS
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  if (typeof args[0] === 'string' && (
+    args[0].includes('React Router Future Flag Warning') ||
+    args[0].includes('The width') ||
+    args[0].includes('the height')
+  )) return;
+  originalWarn(...args);
+};
+
+// 📊 RESIZE OBSERVER
+class ResizeObserverMock {
+  constructor(cb) { this.cb = cb; }
+  observe() {
+    if (this.cb) this.cb([{ contentRect: { width: 1024, height: 768 } }]);
   }
-
-  // Ensure navigator.userAgent exists
-  if (typeof globalThis.navigator === 'object' && !globalThis.navigator.userAgent) {
-    globalThis.navigator.userAgent = 'jsdom';
-  }
-
-  // performance.now shim
-  if (typeof globalThis.performance === 'undefined') {
-    globalThis.performance = { now: () => Date.now() };
-  } else if (typeof globalThis.performance.now !== 'function') {
-    globalThis.performance.now = () => Date.now();
-  }
-
-  // requestAnimationFrame / cancelAnimationFrame shims
-  if (typeof globalThis.requestAnimationFrame === 'undefined') {
-    globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
-  }
-  if (typeof globalThis.cancelAnimationFrame === 'undefined') {
-    globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
-  }
-
-  // Minimal fetch polyfill (non-networking stub)
-  if (typeof globalThis.fetch === 'undefined') {
-    globalThis.fetch = async () => ({
-      ok: false,
-      status: 501,
-      json: async () => ({}),
-      text: async () => ''
-    });
-  }
-
-  // Map-backed storage factory
-  const makeStorage = () => {
-    const store = new Map();
-    return {
-      getItem: (k) => (store.has(String(k)) ? store.get(String(k)) : null),
-      setItem: (k, v) => store.set(String(k), String(v)),
-      removeItem: (k) => store.delete(String(k)),
-      clear: () => store.clear(),
-      _store: store
-    };
-  };
-
-  if (typeof globalThis.localStorage === 'undefined') {
-    globalThis.localStorage = makeStorage();
-  }
-  if (typeof globalThis.sessionStorage === 'undefined') {
-    globalThis.sessionStorage = makeStorage();
-  }
-
-  // Helper to reset test environment between tests
-  if (typeof globalThis.__resetTestEnvironment !== 'function') {
-    globalThis.__resetTestEnvironment = () => {
-      try {
-        globalThis.localStorage?.clear();
-        globalThis.sessionStorage?.clear();
-      } catch (e) { /* ignore */ }
-    };
-  }
+  unobserve() {}
+  disconnect() {}
 }
+window.ResizeObserver = ResizeObserverMock;
+
+// 🧪 CANVAS MOCK
+HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+  beginPath: noop, moveTo: noop, lineTo: noop, stroke: noop,
+  clearRect: noop, fillRect: noop, fill: noop,
+  getImageData: (x, y, w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+  putImageData: noop, setTransform: noop, drawImage: noop,
+  save: noop, restore: noop, canvas: { width: 1000, height: 500 },
+}));
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});

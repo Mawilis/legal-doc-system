@@ -1,0 +1,173 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-investor-hud-final",
+    "title": "🏛️ WILSY OS - Investor Presentation Dashboard",
+    "timezone": "browser",
+    "refresh": "30s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "SLA Performance Scorecard",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+        "targets": [{ "expr": "wilsy_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA Score" }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "#d4af37", "value": 98 },
+                { "color": "green", "value": 99.99 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Compliance Enforcement Ratio",
+        "id": 2,
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+        "targets": [{ "expr": "wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Compliance" }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "#d4af37", "value": 99 },
+                { "color": "green", "value": 100 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Sustainability Index (ESG)",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
+        "targets": [{ "expr": "wilsy_sustainability_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Sustainability" }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 75 },
+                { "color": "green", "value": 90 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Institutional Efficiency Index",
+        "id": 4,
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 },
+        "targets": [{ "expr": "wilsy_efficiency_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Efficiency" }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "#d4af37", "value": 0.8 },
+                { "color": "green", "value": 0.95 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Investor KPI Trends (Growth Velocity)",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 6, "w": 24, "h": 10 },
+        "targets": [
+          { "expr": "wilsy_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA Score" },
+          { "expr": "wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Compliance" },
+          { "expr": "wilsy_sustainability_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "ESG Index" },
+          { "expr": "wilsy_efficiency_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Efficiency" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 20,
+              "lineWidth": 3
+            }
+          }
+        },
+        "options": { "legend": { "displayMode": "table", "placement": "right" } }
+      },
+      {
+        "type": "stat",
+        "title": "Investor Confidence Index",
+        "id": 6,
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 6 },
+        "targets": [{ "expr": "wilsy_investor_confidence{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Confidence" }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "yellow", "value": 85 },
+                { "color": "green", "value": 95 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "barchart",
+        "title": "Compliance Impact: Penalties Avoided (Sovereign Savings)",
+        "id": 7,
+        "gridPos": { "x": 12, "y": 16, "w": 12, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_compliance_penalties_avoided_total{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Savings" },
+          { "expr": "wilsy_compliance_penalties_enforced_total{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Loss" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyZAR",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "type": "text",
+        "title": "Investor Narrative Overlay",
+        "id": 8,
+        "gridPos": { "x": 0, "y": 22, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### 🏛️ Sovereign Investment Analysis\nThis cockpit provides the **Institutional Finality** required for Wilsy OS stakeholder delivery. The **Investor Confidence Index** remains in the green-tier, driven by high SLA scores and the successful avoidance of regulatory penalties through automated compliance enforcement. Our **Sustainability Index** proves our commitment to green compute, ensuring a future-proof investment in the South African and East African markets.\n\n_Audit Reference: ${__dashboard.name} | Refresh Rate: ${__interval} | Tenant: GLOBAL_ROOT_"
+        }
+      }
+    ]
+  }
+}

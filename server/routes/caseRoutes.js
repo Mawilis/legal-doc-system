@@ -69,7 +69,7 @@ const rateLimit = require('express-rate-limit');
 const caseController = require('../controllers/caseController');
 
 // QUANTUM SECURITY MIDDLEWARE: The Indestructible Bastion
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/auth');
 const { validatePOPIAConsent } = require('../middleware/complianceMiddleware');
 const { tenantGuard, restrictTo } = require('../middleware/security');
 

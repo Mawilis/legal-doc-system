@@ -1,0 +1,64 @@
+# ============================================================================
+#  WILSY OS - ALERTMANAGER SOVEREIGN ROUTING [V15.3.1-OMEGA-FINAL]
+# ============================================================================
+# FORTUNE 500 GRADE | MULTI-CHANNEL ESCALATION | ZERO-STRIP POLICY
+# VERSION: 15.3.1-OMEGA | PRODUCTION READY | BIBLICAL WORTH BILLIONS
+# EPITOME: NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | COMMUNICATIONS HUB
+# ============================================================================
+
+global:
+  resolve_timeout: 5m
+
+# ----------------------------------------------------------------------------
+# 🎯 SOVEREIGN ROUTING TREE
+# ----------------------------------------------------------------------------
+route:
+  receiver: 'wilsy-default'
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 2m
+  repeat_interval: 1h
+
+# ----------------------------------------------------------------------------
+# 📡 SOVEREIGN RECEIVERS
+# ----------------------------------------------------------------------------
+receivers:
+  - name: 'wilsy-default'
+    # 🛠️ SLACK: Sovereign Ops Channel #wilsy-ops
+    slack_configs:
+      - channel: '#wilsy-ops'
+        send_resolved: true
+        username: 'Wilsy Sovereign Monitor'
+        api_url: ${SLACK_WEBHOOK_URL}
+
+    # 📈 EMAIL: Boardroom & Investor Distribution
+    email_configs:
+      - to: 'boardroom@wilsyos.com'
+        from: 'alerts@wilsyos.com'
+        smarthost: 'smtp.office365.com:587'
+        auth_username: ${SMTP_USER}
+        auth_password: ${SMTP_PASS}
+        send_resolved: true
+
+    # 📱 PAGERDUTY: Instant Sovereign Escalation
+    pagerduty_configs:
+      - service_key: ${PAGERDUTY_KEY}
+        severity: 'critical'
+        send_resolved: true
+
+# ----------------------------------------------------------------------------
+# 🛡️ INHIBIT RULES: SUPPRESS NOISE DURING CRITICAL FRACTURES
+# ----------------------------------------------------------------------------
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']
+
+# ----------------------------------------------------------------------------
+# END OF CONFIGURATION
+# ----------------------------------------------------------------------------
+# Wilsy OS - The Global Legal Operating System
+# Wilson Khanyezi - Supreme Architect
+# ============================================================================

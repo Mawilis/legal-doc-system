@@ -7,7 +7,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import { ApiKey } from '../../models/api/ApiKey.js';
-import { generateApiKey } from '../../middleware/api/authMiddleware.js';
+import { generateApiKey } from '../../middleware/api/auth.js';
 import { superAdminGuard } from '../../middleware/superAdminGuard.js';
 import { auditMiddleware } from '../../middleware/auditLogger.js';
 import loggerRaw from '../../utils/logger.js';

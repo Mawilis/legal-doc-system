@@ -1,0 +1,233 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🗺️ JURISDICTION HEATMAP WIDGET - WILSY OS 2050                          ║
+  ║  Global Legal Compliance Visualization                                   ║
+  ║  Supreme Architect: Wilson Khanyezi - 10th Generation                    ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-heatmap-widget {
+  background: var(--sa-bg-secondary);
+  border: 1px solid var(--sa-border-forensic);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  min-height: 400px;
+  overflow: hidden;
+}
+
+.sa-heatmap-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 50%,
+    rgba(239, 68, 68, 0.1) 0%,
+    rgba(99, 102, 241, 0.1) 50%,
+    rgba(245, 158, 11, 0.1) 100%
+  );
+  opacity: 0.5;
+}
+
+.sa-heatmap-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(rgba(239, 68, 68, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(239, 68, 68, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.2;
+}
+
+.sa-heatmap-point {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: var(--sa-z-content);
+}
+
+.sa-heatmap-point::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  animation: heatmap-pulse 2s infinite;
+  z-index: -1;
+}
+
+.sa-heatmap-point.level-1 {
+  background: rgba(34, 197, 94, 0.8);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+}
+
+.sa-heatmap-point.level-1::before {
+  background: rgba(34, 197, 94, 0.3);
+}
+
+.sa-heatmap-point.level-2 {
+  background: rgba(245, 158, 11, 0.8);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+}
+
+.sa-heatmap-point.level-2::before {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+.sa-heatmap-point.level-3 {
+  background: rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
+
+.sa-heatmap-point.level-3::before {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.sa-heatmap-point.level-4 {
+  background: rgba(139, 92, 246, 0.8);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+}
+
+.sa-heatmap-point.level-4::before {
+  background: rgba(139, 92, 246, 0.3);
+}
+
+.sa-heatmap-point.level-5 {
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+.sa-heatmap-point.level-5::before {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.sa-heatmap-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--sa-bg-elevated);
+  border: 1px solid var(--sa-border-forensic);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  white-space: nowrap;
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-primary);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  margin-bottom: 8px;
+  z-index: var(--sa-z-tooltip);
+}
+
+.sa-heatmap-point:hover .sa-heatmap-tooltip {
+  opacity: 1;
+}
+
+.sa-heatmap-legend {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-forensic);
+  border-radius: 8px;
+  padding: 1rem;
+  z-index: var(--sa-z-controls);
+}
+
+.sa-heatmap-legend-title {
+  font-size: var(--sa-text-small);
+  color: var(--sa-text-secondary);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wide);
+}
+
+.sa-heatmap-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-secondary);
+}
+
+.sa-heatmap-legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.sa-heatmap-legend-color.level-1 { background: rgba(34, 197, 94, 0.8); }
+.sa-heatmap-legend-color.level-2 { background: rgba(245, 158, 11, 0.8); }
+.sa-heatmap-legend-color.level-3 { background: rgba(239, 68, 68, 0.8); }
+.sa-heatmap-legend-color.level-4 { background: rgba(139, 92, 246, 0.8); }
+.sa-heatmap-legend-color.level-5 { background: rgba(0, 0, 0, 0.8); }
+
+@keyframes heatmap-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+.sa-heatmap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-heatmap-title {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-forensic-400);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sa-heatmap-title::before {
+  content: '🌍';
+  font-size: 1.2rem;
+}
+
+.sa-heatmap-stats {
+  display: flex;
+  gap: 1rem;
+}
+
+.sa-heatmap-stat {
+  text-align: right;
+}
+
+.sa-heatmap-stat-label {
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-tertiary);
+  text-transform: uppercase;
+}
+
+.sa-heatmap-stat-value {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-forensic-400);
+}

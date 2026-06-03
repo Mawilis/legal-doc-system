@@ -1,0 +1,69 @@
+# ============================================================================
+#  WILSY OS - GRAFANA SOVEREIGN ALERT RULES [V15.3.1-OMEGA-FINAL]
+# ============================================================================
+# FORTUNE 500 GRADE | FRACTURE DETECTION | ZERO-STRIP POLICY
+# VERSION: 15.3.1-OMEGA | PRODUCTION READY | BIBLICAL WORTH BILLIONS
+# EPITOME: NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | RISK SENTINEL
+# ============================================================================
+
+apiVersion: 1
+groups:
+  - name: wilsy-os-alerts
+    interval: 30s
+    rules:
+      # 🛡️ SLA UPTIME FRACTURE: Triggers if uptime < 99.5%
+      - alert: SLA_Uptime_Fracture
+        expr: wilsy_sla_score < 99.5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SLA uptime dropped below 99.5%"
+          description: "Wilsy OS SLA score is {{ $value }}. Immediate failover required."
+
+      # 🛡️ COMPLIANCE BREACH: Triggers if compliance < 90%
+      - alert: Compliance_Breach
+        expr: wilsy_compliance_ratio < 90
+        for: 1m
+        labels:
+          severity: high
+        annotations:
+          summary: "Compliance ratio below 90%"
+          description: "Wilsy OS compliance ratio is {{ $value }}. Forensic audit trail initiated."
+
+      # 🛡️ LATENCY FRACTURE: Triggers if latency > 200ms
+      - alert: Latency_Fracture
+        expr: wilsy_latency_avg > 200
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latency exceeded 200ms"
+          description: "Wilsy OS latency is {{ $value }}ms. Optimizing edge compute nodes."
+
+      # 🛡️ RECOVERY TIME BREACH: Triggers if recovery > 5s
+      - alert: Recovery_Time_Breach
+        expr: wilsy_recovery_time > 5000
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Recovery time exceeded 5s"
+          description: "Wilsy OS recovery time is {{ $value }}ms. SLA threshold breached."
+
+      # 🛡️ FORENSIC SEAL MISMATCH: Triggers if blockchain seal fails
+      - alert: Forensic_Seal_Mismatch
+        expr: wilsy_forensic_seal_valid == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Forensic seal mismatch detected"
+          description: "Wilsy OS forensic seal integrity failed. Blockchain notarization check in progress."
+
+# ----------------------------------------------------------------------------
+# END OF CONFIGURATION
+# ----------------------------------------------------------------------------
+# Wilsy OS - The Global Legal Operating System
+# Wilson Khanyezi - Supreme Architect
+# ============================================================================

@@ -1,32 +1,58 @@
 {
   "name": "wilsyos",
   "version": "2.1.0",
-  "description": "Wilsy OS - Fortune 500 Legal Document System",
+  "description": "Wilsy OS - Fortune 500 Sovereign Legal Document System",
+  "author": "Wilsy OS (PTY) LTD",
+  "license": "UNLICENSED",
+  "private": true,
   "scripts": {
     "dev": "cd client && npm run dev",
     "build": "cd client && npm run build",
     "preview": "cd client && npm run preview",
     "test": "cd client && npm run test",
-    "test:ui": "cd client && npm run test:ui",
+    "test:ui": "cd client && vitest --ui --open",
     "test:client": "cd client && vitest --ui --open",
-    "install:all": "npm install && cd client && npm install"
+    "install:all": "npm install && cd client && npm install",
+    "server:dev": "cd server && nodemon --exec node --import ./preload-shield.js --experimental-specifier-resolution=node --trace-warnings server.js",
+    "server:start": "cd server && node server.js",
+    "docs:guard": "node scripts/wilsy-documentation-guard.js",
+    "secrets:guard": "node scripts/wilsy-secret-guard.js",
+    "pm2:deploy": "cd server && pm2 start ecosystem.config.js",
+    "pm2:stop": "cd server && pm2 delete all && pm2 kill",
+    "pm2:status": "pm2 status"
   },
   "keywords": [
     "legal-tech",
     "popia",
     "compliance",
-    "fortune500"
+    "fortune500",
+    "sovereign"
   ],
-  "author": "Wilsy OS",
-  "license": "UNLICENSED",
   "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/register": "^7.28.6",
     "@testing-library/react": "^16.3.2",
     "@testing-library/react-hooks": "^8.0.1",
     "chai": "^6.2.2",
     "jsdom": "^28.1.0",
     "jsdom-global": "^3.0.2",
     "mocha": "^11.7.5",
+    "nodemon": "^3.1.9",
+    "pm2": "^5.4.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
+  },
+  "dependencies": {
+    "@fidm/x509": "^1.2.1",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "ioredis": "^5.10.1",
+    "mongoose": "^9.6.2",
+    "node-cache": "^5.1.2",
+    "prom-client": "^15.1.3",
+    "qrcode": "^1.5.4",
+    "uuid": "^14.0.0"
   }
 }

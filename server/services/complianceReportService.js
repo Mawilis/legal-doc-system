@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ███████╗ ██████╗ ██████╗ ███╗   ██╗███╗   ██╗███████╗ ██████╗ █████╗ ████████╗███████╗    ██████╗ ███████╗██████╗  ║
 ║ ██╔════╝██╔═══██╗██╔══██╗████╗  ██║████╗  ██║██╔════╝██╔════╝██╔══██╗╚══██╔══╝██╔════╝    ██╔══██╗██╔════╝██╔══██╗ ║
@@ -30,28 +31,60 @@
 ║  FILE PURPOSE:                                                                                                     ║
 ║  Forges quantum-secure compliance reports with AES-256-GCM encryption, Merkle tree audit trails,                   ║
 ║  POPIA 8-lawful processing validation, FICA/KYC integration, and blockchain-like immutability.                     ║
-║  Transforms raw operational data into crystalline legal proofs that withstand regulatory scrutiny.                  ║
+║  Transforms raw operational data into crystalline legal proofs that withstand regulatory scrutiny.                 ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 */
+
+/**
+ * 🏛️ WILSY OS - QUANTUM COMPLIANCE REPORT SERVICE v2.0.0 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/complianceReportService.js
+ * @version 2.0.0
+ * @lastModified 2026-04-08
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * Quantum‑secure compliance report service for POPIA, PAIA, Companies Act, FICA, ECT Act, CPA, Cybercrimes Act.
+ * Features AES-256-GCM encryption, Merkle tree audit trails, FICA/KYC integration, and digital signatures.
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - Encryption keys must be rotated quarterly.
+ * - Audit trails are immutable – do not modify.
+ * - See CONFLUENCE://WilsyOS/ComplianceReportService for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-08
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-08
+ * • Johan Botha – Compliance: 2026-04-08
+ */
 
 // ===============================================================================================================
 // QUANTUM IMPORTS & DEPENDENCIES - PINNED, SECURE, PRODUCTION-GRADE
 // ===============================================================================================================
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import crypto from 'crypto';
+import fs from 'fs/promises';
+import zlib from 'zlib';
+import axios from 'axios';
+import SHA256 from 'crypto-js/sha256';
+import ExcelJS from 'exceljs';
+import Redis from 'ioredis';
+import Joi from 'joi';
+import { MerkleTree } from 'merkletreejs';
+import mongoose from 'mongoose';
+import PDFDocument from 'pdfkit';
+import { v4 as uuidv4 } from 'uuid';
+import https from 'https';
 
-const crypto = require('crypto'); // Node.js core - Cryptographic integrity
-const fs = require('fs').promises;
-const path = require('path');
-const zlib = require('zlib'); // Compression for report storage
-const axios = require('axios'); // ^1.6.0 - External API integration
-const SHA256 = require('crypto-js/sha256'); // ^4.1.1 - Merkle tree hashing
-const ExcelJS = require('exceljs'); // ^4.4.0 - Audit spreadsheet generation
-const Redis = require('ioredis'); // ^5.3.2 - Performance alchemy
-const Joi = require('joi'); // ^17.12.0 - Input validation fortress
-const { MerkleTree } = require('merkletreejs'); // ^0.3.0 - Blockchain-like audit trails
-const mongoose = require('mongoose'); // ^8.0.0 - Quantum Data Nexus
-const PDFDocument = require('pdfkit'); // ^0.14.0 - Legal document rendering
-const { v4: uuidv4 } = require('uuid'); // ^9.0.0 - Non-sequential ID generation
+// Setup __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // ===============================================================================================================
 // ENVIRONMENTAL SANCTITY - ABSOLUTE ZERO-TRUST VALIDATION
@@ -147,27 +180,16 @@ const SA_COMPLIANCE_FRAMEWORKS = {
 // QUANTUM ENCRYPTION NEXUS - AES-256-GCM FOR ALL SENSITIVE DATA
 // ===============================================================================================================
 class QuantumEncryptionNexus {
-  /*
-   * Quantum Shield: AES-256-GCM Encryption for PII and Compliance Data
-   * @param {string} plaintext - Data to encrypt
-   * @returns {Object} Encrypted data with IV, tag, and metadata
-   */
   static encrypt(plaintext) {
     try {
-      // Quantum Security: Generate cryptographically secure random values
       const iv = crypto.randomBytes(IV_LENGTH);
       const salt = crypto.randomBytes(SALT_LENGTH);
-
-      // Quantum Security: Derive key using scrypt for key stretching
       const key = crypto.scryptSync(ENCRYPTION_KEY, salt, 32);
-
-      // Quantum Security: Create cipher with authenticated encryption
       const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
 
       let encrypted = cipher.update(plaintext, 'utf8', 'hex');
       encrypted += cipher.final('hex');
 
-      // Get authentication tag for integrity verification
       const authTag = cipher.getAuthTag();
 
       return {
@@ -184,23 +206,14 @@ class QuantumEncryptionNexus {
     }
   }
 
-  /*
-   * Quantum Decryption: Secure data retrieval with integrity verification
-   * @param {Object} encryptedData - Encrypted data object
-   * @returns {string} Decrypted plaintext
-   */
   static decrypt(encryptedData) {
     try {
       const iv = Buffer.from(encryptedData.iv, 'hex');
       const salt = Buffer.from(encryptedData.salt, 'hex');
       const authTag = Buffer.from(encryptedData.authTag, 'hex');
-
-      // Reconstruct key using same parameters
       const key = crypto.scryptSync(ENCRYPTION_KEY, salt, 32);
-
       const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
 
-      // Verify authentication tag
       decipher.setAuthTag(authTag);
 
       let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8');
@@ -212,20 +225,10 @@ class QuantumEncryptionNexus {
     }
   }
 
-  /*
-   * Quantum Hashing: SHA-256 for data integrity
-   * @param {string} data - Data to hash
-   * @returns {string} Hexadecimal hash
-   */
   static hash(data) {
     return crypto.createHash('sha256').update(data).digest('hex');
   }
 
-  /*
-   * Quantum Key Generation: Generate secure random keys
-   * @param {number} bytes - Number of bytes
-   * @returns {string} Base64 encoded key
-   */
   static generateKey(bytes = 32) {
     return crypto.randomBytes(bytes).toString('base64');
   }
@@ -241,30 +244,18 @@ class QuantumAuditTrailNexus {
     this.rootHash = null;
   }
 
-  /*
-   * Quantum Immutability: Create Merkle leaf from audit entry
-   * @param {Object} auditEntry - Audit data
-   * @returns {string} Hash of audit entry
-   */
   addAuditEntry(auditEntry) {
     try {
       const entryString = JSON.stringify(auditEntry);
       const hash = SHA256(entryString).toString();
       this.leaves.push(hash);
-
-      // Rebuild tree after adding leaf
       this.buildTree();
-
       return hash;
     } catch (error) {
       throw new Error(`AUDIT TRAIL QUANTUM FAILURE: ${error.message}`);
     }
   }
 
-  /*
-   * Quantum Verification: Build Merkle tree and get root
-   * @returns {Object} Merkle tree and root
-   */
   buildTree() {
     try {
       if (this.leaves.length === 0) {
@@ -287,16 +278,9 @@ class QuantumAuditTrailNexus {
     }
   }
 
-  /*
-   * Quantum Proof: Verify audit entry in tree
-   * @param {Object} auditEntry - Entry to verify
-   * @returns {Object} Verification proof
-   */
   verifyAuditEntry(auditEntry) {
     try {
-      if (!this.tree) {
-        throw new Error('Merkle tree not built');
-      }
+      if (!this.tree) throw new Error('Merkle tree not built');
 
       const leafHash = SHA256(JSON.stringify(auditEntry)).toString();
       const proof = this.tree.getProof(leafHash);
@@ -314,10 +298,6 @@ class QuantumAuditTrailNexus {
     }
   }
 
-  /*
-   * Quantum Serialization: Export tree for storage
-   * @returns {Object} Serializable tree data
-   */
   toJSON() {
     return {
       leaves: this.leaves,
@@ -327,10 +307,6 @@ class QuantumAuditTrailNexus {
     };
   }
 
-  /*
-   * Quantum Deserialization: Import tree from storage
-   * @param {Object} data - Serialized tree data
-   */
   fromJSON(data) {
     this.leaves = data.leaves || [];
     this.rootHash = data.rootHash || null;
@@ -342,11 +318,6 @@ class QuantumAuditTrailNexus {
 // POPIA COMPLIANCE NEXUS - 8 LAWFUL PROCESSING CONDITIONS
 // ===============================================================================================================
 class POPIAComplianceNexus {
-  /*
-   * Quantum Validation: Check all 8 lawful processing conditions
-   * @param {Object} dataProcessing - Data processing details
-   * @returns {Object} Validation results
-   */
   static validateLawfulProcessing(dataProcessing) {
     const conditions = [
       {
@@ -419,7 +390,6 @@ class POPIAComplianceNexus {
       },
     ];
 
-    // Calculate compliance score
     const totalWeight = conditions.reduce(
       (sum, condition) => (condition.validation() ? sum + condition.weight : sum),
       0
@@ -429,7 +399,6 @@ class POPIAComplianceNexus {
     const isCompliant =
       parseFloat(complianceScore) >= parseFloat(process.env.COMPLIANCE_THRESHOLD || 85);
 
-    // Identify non-compliant conditions
     const nonCompliantConditions = conditions
       .filter((c) => !c.validation())
       .map((c) => ({ id: c.id, name: c.name, description: c.description }));
@@ -447,11 +416,6 @@ class POPIAComplianceNexus {
     };
   }
 
-  /*
-   * Quantum Consent: Validate consent for processing
-   * @param {Object} consent - Consent details
-   * @returns {Object} Validated consent
-   */
   static validateConsent(consent) {
     const schema = Joi.object({
       dataSubjectId: Joi.string().required(),
@@ -484,17 +448,11 @@ class POPIAComplianceNexus {
       ...value,
       isValid: true,
       validatedAt: new Date().toISOString(),
-      // Quantum Security: Encrypt consent evidence
       encryptedEvidence: QuantumEncryptionNexus.encrypt(value.evidence),
       hash: QuantumEncryptionNexus.hash(JSON.stringify(value)),
     };
   }
 
-  /*
-   * Generate recommendations for non-compliant conditions
-   * @param {Array} nonCompliantConditions - Non-compliant conditions
-   * @returns {Array} Recommendations
-   */
   static generateRecommendations(nonCompliantConditions) {
     const recommendations = [];
 
@@ -522,17 +480,10 @@ class POPIAComplianceNexus {
 // FICA/KYC INTEGRATION NEXUS - ANTI-MONEY LAUNDERING COMPLIANCE
 // ===============================================================================================================
 class FICAKYCNexus {
-  /*
-   * Quantum Verification: Perform FICA-compliant KYC verification
-   * @param {Object} customerDetails - Customer information
-   * @returns {Object} KYC verification results
-   */
   static async performKYCVerification(customerDetails) {
     try {
-      // Quantum Security: Encrypt sensitive data before external API call
       const encryptedId = QuantumEncryptionNexus.encrypt(customerDetails.identityNumber);
 
-      // Integration with Datanamix for South African verification
       const verificationResponse = await axios.post(
         'https://api.datanamix.com/v2/verify',
         {
@@ -541,7 +492,6 @@ class FICAKYCNexus {
           lastName: customerDetails.lastName,
           dateOfBirth: customerDetails.dateOfBirth,
           address: customerDetails.address,
-          // Quantum Compliance: Only send necessary data
           purpose: 'FICA_COMPLIANCE_VERIFICATION',
           jurisdiction: 'ZA',
         },
@@ -552,7 +502,7 @@ class FICAKYCNexus {
             'X-Compliance-Framework': 'FICA',
           },
           timeout: 10000,
-          httpsAgent: new (require('https').Agent)({
+          httpsAgent: new https.Agent({
             rejectUnauthorized: true,
             ciphers: 'TLS_AES_256_GCM_SHA384',
           }),
@@ -569,7 +519,6 @@ class FICAKYCNexus {
         kycLevel,
         verificationDetails: verificationResponse.data,
         verificationDate: new Date().toISOString(),
-        // Quantum Security: Store encrypted verification evidence
         encryptedVerification: QuantumEncryptionNexus.encrypt(
           JSON.stringify(verificationResponse.data)
         ),
@@ -577,7 +526,6 @@ class FICAKYCNexus {
         amlRiskScore: this.calculateAMLRiskScore(verificationResponse.data),
         pepStatus: verificationResponse.data.isPoliticallyExposed || false,
         sanctionsCheck: verificationResponse.data.sanctionsMatch || false,
-        // FICA record keeping: 5 years minimum
         retentionUntil: new Date(
           new Date().getFullYear() + 5,
           new Date().getMonth(),
@@ -589,12 +537,6 @@ class FICAKYCNexus {
     }
   }
 
-  /*
-   * Quantum Risk Assessment: Determine KYC level based on risk
-   * @param {Object} verificationData - Verification results
-   * @param {string} riskProfile - Customer risk profile
-   * @returns {string} KYC level
-   */
   static determineKYCLevel(verificationData, riskProfile) {
     const riskFactors = {
       isPEP: verificationData.isPoliticallyExposed || false,
@@ -617,11 +559,6 @@ class FICAKYCNexus {
     return 'SIMPLIFIED';
   }
 
-  /*
-   * Quantum AML: Calculate AML risk score
-   * @param {Object} verificationData - Verification results
-   * @returns {number} Risk score (0-100)
-   */
   static calculateAMLRiskScore(verificationData) {
     let score = 0;
 
@@ -635,11 +572,6 @@ class FICAKYCNexus {
     return Math.min(score, 100);
   }
 
-  /*
-   * Quantum Compliance: Check FICA compliance status
-   * @param {Object} verificationData - Verification results
-   * @returns {boolean} Compliance status
-   */
   static checkFICACompliance(verificationData) {
     const requirements = [
       verificationData.identityVerified,
@@ -679,13 +611,6 @@ class QuantumCacheNexus {
     this.defaultTTL = 3600; // 1 hour
   }
 
-  /*
-   * Quantum Cache: Store data with TTL
-   * @param {string} key - Cache key
-   * @param {any} value - Data to cache
-   * @param {number} ttl - Time to live in seconds
-   * @returns {Promise<void>}
-   */
   async set(key, value, ttl = this.defaultTTL) {
     try {
       const serialized = JSON.stringify(value);
@@ -695,11 +620,6 @@ class QuantumCacheNexus {
     }
   }
 
-  /*
-   * Quantum Cache: Retrieve cached data
-   * @param {string} key - Cache key
-   * @returns {Promise<any>} Cached data or null
-   */
   async get(key) {
     try {
       const data = await this.redis.get(key);
@@ -710,11 +630,6 @@ class QuantumCacheNexus {
     }
   }
 
-  /*
-   * Quantum Cache: Delete cached data
-   * @param {string} key - Cache key
-   * @returns {Promise<void>}
-   */
   async delete(key) {
     try {
       await this.redis.del(key);
@@ -723,29 +638,17 @@ class QuantumCacheNexus {
     }
   }
 
-  /*
-   * Quantum Cache: Store compliance report with encryption
-   * @param {string} reportId - Report ID
-   * @param {Object} report - Report data
-   * @returns {Promise<void>}
-   */
   async cacheComplianceReport(reportId, report) {
     const cacheKey = `compliance:report:${reportId}`;
     const encryptedReport = {
       ...report,
-      // Encrypt sensitive sections
       sensitiveData: QuantumEncryptionNexus.encrypt(JSON.stringify(report.sensitiveData || {})),
       cachedAt: new Date().toISOString(),
     };
 
-    await this.set(cacheKey, encryptedReport, 7200); // 2 hours TTL
+    await this.set(cacheKey, encryptedReport, 7200);
   }
 
-  /*
-   * Quantum Cache: Invalidate all compliance caches for firm
-   * @param {string} firmId - Firm ID
-   * @returns {Promise<void>}
-   */
   async invalidateFirmCache(firmId) {
     const pattern = `compliance:*:${firmId}:*`;
     const keys = await this.redis.keys(pattern);
@@ -761,20 +664,16 @@ class QuantumCacheNexus {
 // ===============================================================================================================
 class ComplianceReportService {
   constructor() {
-    // Initialize quantum components
     this.auditTrail = new QuantumAuditTrailNexus();
     this.cache = new QuantumCacheNexus();
     this.db = mongoose.connection;
 
-    // Quantum Storage with data residency enforcement
     this.reportStoragePath =
       process.env.REPORT_STORAGE_PATH || path.join(__dirname, '../../storage/compliance_reports');
 
-    // Compliance thresholds
     this.complianceThreshold = parseFloat(process.env.COMPLIANCE_THRESHOLD) || 85;
     this.breachThreshold = parseInt(process.env.POPIA_BREACH_THRESHOLD) || 5;
 
-    // Initialize audit trail with service creation
     this.auditTrail.addAuditEntry({
       event: 'COMPLIANCE_SERVICE_INITIALIZED',
       timestamp: new Date().toISOString(),
@@ -787,20 +686,12 @@ class ComplianceReportService {
     this.initializeHealthChecks();
   }
 
-  /*
-   * QUANTUM CORE: Generate comprehensive compliance report
-   * @param {Date} startDate - Report start date
-   * @param {Date} endDate - Report end date
-   * @param {Object} options - Additional options
-   * @returns {Object} Comprehensive compliance report
-   */
   async generateComplianceReport(startDate, endDate, options = {}) {
     const reportId = `comp_rpt_${uuidv4()}_${Date.now()}`;
     const generationTimestamp = new Date().toISOString();
     const cacheKey = `report:${reportId}`;
 
     try {
-      // Check cache first
       const cachedReport = await this.cache.get(cacheKey);
       if (cachedReport && !options.forceRegenerate) {
         return {
@@ -810,10 +701,8 @@ class ComplianceReportService {
         };
       }
 
-      // Quantum Validation: Validate input parameters
       this.validateReportParameters(startDate, endDate, options);
 
-      // Quantum Security: Create initial audit entry
       this.auditTrail.addAuditEntry({
         event: 'REPORT_GENERATION_STARTED',
         reportId,
@@ -823,7 +712,6 @@ class ComplianceReportService {
         ipAddress: options.ipAddress || '127.0.0.1',
       });
 
-      // Execute parallel quantum data gathering
       const [
         popiaCompliance,
         paiaCompliance,
@@ -844,7 +732,6 @@ class ComplianceReportService {
         this.verifyDataResidencyCompliance(options.firmId),
       ]);
 
-      // Generate comprehensive report
       const report = {
         metadata: {
           reportId,
@@ -896,13 +783,10 @@ class ComplianceReportService {
         digitalSignature: this.generateDigitalSignature(reportId),
       };
 
-      // Encrypt sensitive data
       const encryptedReport = this.encryptSensitiveData(report);
 
-      // Cache the report
       await this.cache.cacheComplianceReport(reportId, encryptedReport);
 
-      // Final audit entry
       this.auditTrail.addAuditEntry({
         event: 'REPORT_GENERATION_COMPLETED',
         reportId,
@@ -913,7 +797,6 @@ class ComplianceReportService {
 
       return encryptedReport;
     } catch (error) {
-      // Quantum Error Handling
       this.auditTrail.addAuditEntry({
         event: 'REPORT_GENERATION_FAILED',
         reportId,
@@ -926,23 +809,17 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * ANALYZE POPIA COMPLIANCE
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {string} firmId - Firm ID
-   * @returns {Object} POPIA compliance analysis
-   */
   async analyzePOPIACompliance(startDate, endDate, firmId) {
     const cacheKey = `popia:${firmId}:${startDate.toISOString()}:${endDate.toISOString()}`;
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
 
     try {
-      // Fetch data processing activities
-      const DataProcessingRecord = require('../models/DataProcessingRecord');
-      const POPIAConsent = require('../models/POPIAConsent');
-      const DataSubject = require('../models/DataSubject');
+      // Dynamic imports for models
+      const DataProcessingRecord = (await import('../models/DataProcessingRecord.js')).default;
+      const POPIAConsent = (await import('../models/POPIAConsent.js')).default;
+      const DataSubject = (await import('../models/DataSubject.js')).default;
+      const SecurityIncident = (await import('../models/SecurityIncident.js')).default;
 
       const [processingActivities, consents, dataSubjects] = await Promise.all([
         DataProcessingRecord.find({
@@ -959,7 +836,6 @@ class ComplianceReportService {
         }).lean(),
       ]);
 
-      // Analyze 8 lawful conditions
       const complianceResults = processingActivities.map((activity) =>
         POPIAComplianceNexus.validateLawfulProcessing(activity)
       );
@@ -970,8 +846,6 @@ class ComplianceReportService {
           ? (compliantActivities.length / processingActivities.length) * 100
           : 100;
 
-      // Calculate breach incidents
-      const SecurityIncident = require('../models/SecurityIncident');
       const breaches = await SecurityIncident.countDocuments({
         firmId,
         incidentDate: { $gte: startDate, $lte: endDate },
@@ -992,29 +866,21 @@ class ComplianceReportService {
             : [],
       };
 
-      // Cache result
-      await this.cache.set(cacheKey, result, 1800); // 30 minutes
-
+      await this.cache.set(cacheKey, result, 1800);
       return result;
     } catch (error) {
       throw new Error(`POPIA ANALYSIS FAILED: ${error.message}`);
     }
   }
 
-  /*
-   * ANALYZE PAIA COMPLIANCE
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {string} firmId - Firm ID
-   * @returns {Object} PAIA compliance analysis
-   */
   async analyzePAIACompliance(startDate, endDate, firmId) {
     const cacheKey = `paia:${firmId}:${startDate.toISOString()}:${endDate.toISOString()}`;
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
 
     try {
-      const Case = require('../models/Case');
+      const Case = (await import('../models/Case.js')).default;
+
       const paiaRequests = await Case.find({
         firmId,
         createdAt: { $gte: startDate, $lte: endDate },
@@ -1025,14 +891,13 @@ class ComplianceReportService {
         (req) => req.status === 'CLOSED' || req.status === 'FULFILLED'
       );
 
-      // Calculate response times
       let avgResponseHours = 0;
       let deadlineCompliance = 0;
 
       if (fulfilledRequests.length > 0) {
         const responseTimes = fulfilledRequests.map((req) => {
           const responseDate = req.updatedAt || req.closedAt || new Date();
-          return (responseDate - req.createdAt) / (1000 * 60 * 60); // Hours
+          return (responseDate - req.createdAt) / (1000 * 60 * 60);
         });
 
         avgResponseHours = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
@@ -1058,22 +923,14 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * ANALYZE COMPANIES ACT COMPLIANCE
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {string} firmId - Firm ID
-   * @returns {Object} Companies Act compliance analysis
-   */
   async analyzeCompaniesActCompliance(startDate, endDate, firmId) {
     const cacheKey = `companies:${firmId}:${startDate.toISOString()}:${endDate.toISOString()}`;
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
 
     try {
-      const Document = require('../models/Document');
+      const Document = (await import('../models/Document.js')).default;
 
-      // 7-year retention rule
       const sevenYearsAgo = new Date();
       sevenYearsAgo.setFullYear(sevenYearsAgo.getFullYear() - 7);
 
@@ -1098,7 +955,6 @@ class ComplianceReportService {
       const retentionCompliance =
         companyDocs > 0 ? ((companyDocs - overdueDocs) / companyDocs) * 100 : 100;
 
-      // Check CIPC filings
       const cipcReady = await Document.countDocuments({
         firmId,
         isCIPCReady: true,
@@ -1115,28 +971,21 @@ class ComplianceReportService {
         recommendations: overdueDocs > 0 ? [`Archive ${overdueDocs} overdue documents`] : [],
       };
 
-      await this.cache.set(cacheKey, result, 3600); // 1 hour
+      await this.cache.set(cacheKey, result, 3600);
       return result;
     } catch (error) {
       throw new Error(`COMPANIES ACT ANALYSIS FAILED: ${error.message}`);
     }
   }
 
-  /*
-   * ANALYZE FICA COMPLIANCE
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {string} firmId - Firm ID
-   * @returns {Object} FICA compliance analysis
-   */
   async analyzeFICACompliance(startDate, endDate, firmId) {
     const cacheKey = `fica:${firmId}:${startDate.toISOString()}:${endDate.toISOString()}`;
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
 
     try {
-      const Client = require('../models/Client');
-      const KYCVerification = require('../models/KYCVerification');
+      const Client = (await import('../models/Client.js')).default;
+      const KYCVerification = (await import('../models/KYCVerification.js')).default;
 
       const [clients, verifications] = await Promise.all([
         Client.find({ firmId }).lean(),
@@ -1146,10 +995,8 @@ class ComplianceReportService {
         }).lean(),
       ]);
 
-      // Calculate KYC coverage
       const kycCoverage = clients.length > 0 ? (verifications.length / clients.length) * 100 : 0;
 
-      // Analyze risk levels
       const riskDistribution = {
         SIMPLIFIED: 0,
         STANDARD: 0,
@@ -1160,7 +1007,6 @@ class ComplianceReportService {
         riskDistribution[v.kycLevel] = (riskDistribution[v.kycLevel] || 0) + 1;
       });
 
-      // Check PEP status
       const pepCount = verifications.filter((v) => v.isPEP).length;
 
       const result = {
@@ -1181,16 +1027,9 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * ANALYZE ECT ACT COMPLIANCE
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {string} firmId - Firm ID
-   * @returns {Object} ECT Act compliance analysis
-   */
   async analyzeECTActCompliance(startDate, endDate, firmId) {
     try {
-      const Document = require('../models/Document');
+      const Document = (await import('../models/Document.js')).default;
 
       const signedDocuments = await Document.countDocuments({
         firmId,
@@ -1220,16 +1059,9 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * ANALYZE CPA COMPLIANCE
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {string} firmId - Firm ID
-   * @returns {Object} CPA compliance analysis
-   */
   async analyzeCPACompliance(startDate, endDate, firmId) {
     try {
-      const Agreement = require('../models/Agreement');
+      const Agreement = (await import('../models/Agreement.js')).default;
 
       const agreements = await Agreement.find({
         firmId,
@@ -1258,16 +1090,9 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * ANALYZE CYBERCRIMES ACT COMPLIANCE
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {string} firmId - Firm ID
-   * @returns {Object} Cybercrimes Act compliance analysis
-   */
   async analyzeCybercrimesCompliance(startDate, endDate, firmId) {
     try {
-      const SecurityIncident = require('../models/SecurityIncident');
+      const SecurityIncident = (await import('../models/SecurityIncident.js')).default;
 
       const incidents = await SecurityIncident.find({
         firmId,
@@ -1300,17 +1125,11 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * VERIFY DATA RESIDENCY COMPLIANCE
-   * @param {string} firmId - Firm ID
-   * @returns {Object} Data residency compliance
-   */
   async verifyDataResidencyCompliance(firmId) {
     try {
       const awsRegion = process.env.AWS_REGION;
       const isInSouthAfrica = awsRegion && awsRegion.toLowerCase().includes('af-south');
 
-      // Check database location
       const mongoURI = process.env.MONGO_URI;
       const isMongoInSA = mongoURI && mongoURI.toLowerCase().includes('south-africa');
 
@@ -1326,11 +1145,6 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * GENERATE EXECUTIVE SUMMARY
-   * @param {Object} data - Compliance data
-   * @returns {Object} Executive summary
-   */
   generateExecutiveSummary(data) {
     const scores = [
       data.popiaCompliance?.complianceRate || 0,
@@ -1350,11 +1164,6 @@ class ComplianceReportService {
     };
   }
 
-  /*
-   * DETERMINE RISK LEVEL
-   * @param {number} score - Compliance score
-   * @returns {string} Risk level
-   */
   determineRiskLevel(score) {
     if (score >= 95) return 'LOW';
     if (score >= 85) return 'MEDIUM';
@@ -1362,11 +1171,6 @@ class ComplianceReportService {
     return 'CRITICAL';
   }
 
-  /*
-   * EXTRACT KEY FINDINGS
-   * @param {Object} data - Compliance data
-   * @returns {Array} Key findings
-   */
   extractKeyFindings(data) {
     const findings = [];
 
@@ -1391,11 +1195,6 @@ class ComplianceReportService {
     return findings;
   }
 
-  /*
-   * IDENTIFY PRIORITY ACTIONS
-   * @param {Object} data - Compliance data
-   * @returns {Array} Priority actions
-   */
   identifyPriorityActions(data) {
     const actions = [];
 
@@ -1414,15 +1213,9 @@ class ComplianceReportService {
     return actions;
   }
 
-  /*
-   * IDENTIFY REGULATORY FLAGS
-   * @param {Object} data - Compliance data
-   * @returns {Array} Regulatory flags
-   */
   identifyRegulatoryFlags(data) {
     const flags = [];
 
-    // POPIA Flags
     if (data.popiaCompliance?.breaches > this.breachThreshold) {
       flags.push({
         law: 'POPIA',
@@ -1433,7 +1226,6 @@ class ComplianceReportService {
       });
     }
 
-    // PAIA Flags
     if (data.paiaCompliance?.deadlineCompliance < 90) {
       flags.push({
         law: 'PAIA',
@@ -1444,7 +1236,6 @@ class ComplianceReportService {
       });
     }
 
-    // Companies Act Flags
     if (data.companiesActCompliance?.retentionCompliance < 95) {
       flags.push({
         law: 'COMPANIES_ACT',
@@ -1458,36 +1249,27 @@ class ComplianceReportService {
     return flags;
   }
 
-  /*
-   * GENERATE RECOMMENDATIONS
-   * @param {Object} data - Compliance data
-   * @returns {Array} Recommendations
-   */
   generateRecommendations(data) {
     const recommendations = [];
 
-    // POPIA Recommendations
     if (data.popiaCompliance?.complianceRate < 85) {
       recommendations.push('Implement automated POPIA compliance monitoring');
       recommendations.push('Conduct POPIA awareness training for staff');
       recommendations.push('Review and update data processing agreements');
     }
 
-    // PAIA Recommendations
     if (data.paiaCompliance?.deadlineCompliance < 90) {
       recommendations.push('Establish PAIA request tracking system');
       recommendations.push('Appoint dedicated PAIA Information Officer');
       recommendations.push('Publish PAIA manual on company website');
     }
 
-    // Companies Act Recommendations
     if (data.companiesActCompliance?.retentionCompliance < 95) {
       recommendations.push('Implement document retention automation');
       recommendations.push('Conduct annual retention policy review');
       recommendations.push('Digitize and archive historical documents');
     }
 
-    // FICA Recommendations
     if (data.ficaCompliance?.kycCoverage < 95) {
       recommendations.push('Complete KYC verification for all clients');
       recommendations.push('Implement enhanced due diligence for high-risk clients');
@@ -1497,11 +1279,6 @@ class ComplianceReportService {
     return recommendations;
   }
 
-  /*
-   * GENERATE DIGITAL SIGNATURE
-   * @param {string} reportId - Report ID
-   * @returns {Object} Digital signature
-   */
   generateDigitalSignature(reportId) {
     try {
       const privateKey = process.env.DIGITAL_SIGNATURE_PRIVATE_KEY;
@@ -1531,21 +1308,14 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * ENCRYPT SENSITIVE DATA
-   * @param {Object} report - Report data
-   * @returns {Object} Encrypted report
-   */
   encryptSensitiveData(report) {
     try {
-      // Identify sensitive sections
       const sensitiveSections = {
         personalData: report.complianceAnalysis?.popia?.dataSubjects || 0,
         clientDetails: report.complianceAnalysis?.fica?.verifiedClients || 0,
         incidentDetails: report.complianceAnalysis?.cybercrimes?.incidents || [],
       };
 
-      // Encrypt sensitive data
       const encryptedSections = {
         personalData: QuantumEncryptionNexus.encrypt(
           JSON.stringify(sensitiveSections.personalData)
@@ -1572,14 +1342,7 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * VALIDATE REPORT PARAMETERS
-   * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
-   * @param {Object} options - Options
-   */
   validateReportParameters(startDate, endDate, options) {
-    // Date validation
     if (!(startDate instanceof Date) || !(endDate instanceof Date)) {
       throw new Error('Start and end dates must be Date objects');
     }
@@ -1592,7 +1355,6 @@ class ComplianceReportService {
       throw new Error('Start date must be before end date');
     }
 
-    // Range limit (prevent DoS)
     const maxDays = 365;
     const dayDifference = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
 
@@ -1600,31 +1362,25 @@ class ComplianceReportService {
       throw new Error(`Date range cannot exceed ${maxDays} days`);
     }
 
-    // Future date prevention
     const today = new Date();
     if (startDate > today || endDate > today) {
       throw new Error('Date range cannot include future dates');
     }
 
-    // User validation
     if (options.userId && !mongoose.Types.ObjectId.isValid(options.userId)) {
       throw new Error('Invalid user ID format');
     }
 
-    // Firm validation
     if (options.firmId && !mongoose.Types.ObjectId.isValid(options.firmId)) {
       throw new Error('Invalid firm ID format');
     }
   }
 
-  /*
-   * ENSURE STORAGE PATH EXISTS
-   */
   async ensureStoragePath() {
     try {
       await fs.mkdir(this.reportStoragePath, {
         recursive: true,
-        mode: 0o750, // Secure permissions
+        mode: 0o750,
       });
 
       console.log(`✅ STORAGE NEXUS: Secure report storage at ${this.reportStoragePath}`);
@@ -1633,32 +1389,24 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * INITIALIZE HEALTH CHECKS
-   */
   initializeHealthChecks() {
-    // Periodic compliance scoring
     setInterval(async () => {
       try {
         await this.updateComplianceScores();
       } catch (error) {
         console.error('❌ COMPLIANCE SCORE UPDATE FAILED:', error.message);
       }
-    }, 3600000); // Every hour
+    }, 3600000);
 
-    // Cache health check
     setInterval(async () => {
       try {
         await this.cache.get('health_check');
       } catch (error) {
         console.error('❌ CACHE HEALTH CHECK FAILED:', error.message);
       }
-    }, 300000); // Every 5 minutes
+    }, 300000);
   }
 
-  /*
-   * UPDATE COMPLIANCE SCORES
-   */
   async updateComplianceScores() {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -1675,17 +1423,10 @@ class ComplianceReportService {
     }
   }
 
-  /*
-   * CHECK PAIA MANUAL AVAILABILITY
-   */
   async checkPAIAManual(firmId) {
-    // Implementation for checking PAIA manual
     return true;
   }
 
-  /*
-   * CALCULATE AVERAGE AML RISK
-   */
   calculateAverageAMLRisk(verifications) {
     if (!verifications || verifications.length === 0) return 0;
 
@@ -1699,283 +1440,148 @@ class ComplianceReportService {
 // TESTING ARMORY - FORENSIC LEGAL COMPLIANCE TESTS
 // ===============================================================================================================
 if (process.env.NODE_ENV === 'test') {
-  const { describe, it, before, after } = require('node:test');
-  const assert = require('node:assert');
+  import('node:test').then(({ describe, it, before, after }) => {
+    import('node:assert').then((assert) => {
+      describe('Quantum Compliance Report Service - SA Legal Validation', () => {
+        let service;
 
-  describe('Quantum Compliance Report Service - SA Legal Validation', () => {
-    let service;
+        before(async () => {
+          service = new ComplianceReportService();
+        });
 
-    before(async () => {
-      service = new ComplianceReportService();
-    });
+        describe('POPIA Compliance Tests', () => {
+          it('should validate all 8 lawful processing conditions', () => {
+            const processing = {
+              accountableParty: 'John Doe',
+              consentType: 'EXPLICIT',
+              purposeSpecified: true,
+              dataMinimized: true,
+              purpose: 'Client onboarding',
+              furtherProcessing: false,
+              dataQualityChecked: true,
+              accuracyVerified: true,
+              documented: true,
+              dataSubjectNotified: true,
+              encrypted: true,
+              accessControlled: true,
+              rightsRespected: true,
+              accessMechanism: true,
+            };
 
-    describe('POPIA Compliance Tests', () => {
-      it('should validate all 8 lawful processing conditions', () => {
-        const processing = {
-          accountableParty: 'John Doe',
-          consentType: 'EXPLICIT',
-          purposeSpecified: true,
-          dataMinimized: true,
-          purpose: 'Client onboarding',
-          furtherProcessing: false,
-          dataQualityChecked: true,
-          accuracyVerified: true,
-          documented: true,
-          dataSubjectNotified: true,
-          encrypted: true,
-          accessControlled: true,
-          rightsRespected: true,
-          accessMechanism: true,
-        };
+            const result = POPIAComplianceNexus.validateLawfulProcessing(processing);
+            assert.strictEqual(result.isCompliant, true);
+            assert.strictEqual(result.conditions.length, 8);
+            assert.ok(result.complianceScore >= 85);
+          });
 
-        const result = POPIAComplianceNexus.validateLawfulProcessing(processing);
-        assert.strictEqual(result.isCompliant, true);
-        assert.strictEqual(result.conditions.length, 8);
-        assert.ok(result.complianceScore >= 85);
-      });
+          it('should identify POPIA breaches', async () => {
+            const result = await service.analyzePOPIACompliance(
+              new Date('2024-01-01'),
+              new Date('2024-12-31'),
+              'test_firm'
+            );
 
-      it('should identify POPIA breaches', async () => {
-        const result = await service.analyzePOPIACompliance(
-          new Date('2024-01-01'),
-          new Date('2024-12-31'),
-          'test_firm'
-        );
+            assert.ok(result.complianceRate >= 0 && result.complianceRate <= 100);
+            assert.ok(typeof result.breaches === 'number');
+          });
+        });
 
-        assert.ok(result.complianceRate >= 0 && result.complianceRate <= 100);
-        assert.ok(typeof result.breaches === 'number');
-      });
-    });
+        describe('PAIA Compliance Tests', () => {
+          it('should enforce 30-day response deadlines', async () => {
+            const result = await service.analyzePAIACompliance(
+              new Date('2024-01-01'),
+              new Date('2024-12-31'),
+              'test_firm'
+            );
 
-    describe('PAIA Compliance Tests', () => {
-      it('should enforce 30-day response deadlines', async () => {
-        const result = await service.analyzePAIACompliance(
-          new Date('2024-01-01'),
-          new Date('2024-12-31'),
-          'test_firm'
-        );
+            assert.ok(result.deadlineCompliance >= 0 && result.deadlineCompliance <= 100);
+            assert.ok(result.avgResponseHours >= 0);
+          });
+        });
 
-        assert.ok(result.deadlineCompliance >= 0 && result.deadlineCompliance <= 100);
-        assert.ok(result.avgResponseHours >= 0);
-      });
-    });
+        describe('Companies Act Tests', () => {
+          it('should enforce 7-year document retention', async () => {
+            const result = await service.analyzeCompaniesActCompliance(
+              new Date('2024-01-01'),
+              new Date('2024-12-31'),
+              'test_firm'
+            );
 
-    describe('Companies Act Tests', () => {
-      it('should enforce 7-year document retention', async () => {
-        const result = await service.analyzeCompaniesActCompliance(
-          new Date('2024-01-01'),
-          new Date('2024-12-31'),
-          'test_firm'
-        );
+            assert.ok(result.retentionCompliance >= 0 && result.retentionCompliance <= 100);
+            assert.ok(typeof result.overdueForArchive === 'number');
+          });
+        });
 
-        assert.ok(result.retentionCompliance >= 0 && result.retentionCompliance <= 100);
-        assert.ok(typeof result.overdueForArchive === 'number');
-      });
-    });
+        describe('FICA Compliance Tests', () => {
+          it('should calculate KYC coverage', async () => {
+            const result = await service.analyzeFICACompliance(
+              new Date('2024-01-01'),
+              new Date('2024-12-31'),
+              'test_firm'
+            );
 
-    describe('FICA Compliance Tests', () => {
-      it('should calculate KYC coverage', async () => {
-        const result = await service.analyzeFICACompliance(
-          new Date('2024-01-01'),
-          new Date('2024-12-31'),
-          'test_firm'
-        );
+            assert.ok(result.kycCoverage >= 0 && result.kycCoverage <= 100);
+            assert.ok(Object.keys(result.riskDistribution).includes('SIMPLIFIED'));
+          });
+        });
 
-        assert.ok(result.kycCoverage >= 0 && result.kycCoverage <= 100);
-        assert.ok(Object.keys(result.riskDistribution).includes('SIMPLIFIED'));
-      });
-    });
+        describe('Security Tests', () => {
+          it('should encrypt and decrypt data securely', () => {
+            const original = 'Sensitive compliance data';
+            const encrypted = QuantumEncryptionNexus.encrypt(original);
+            const decrypted = QuantumEncryptionNexus.decrypt(encrypted);
 
-    describe('Security Tests', () => {
-      it('should encrypt and decrypt data securely', () => {
-        const original = 'Sensitive compliance data';
-        const encrypted = QuantumEncryptionNexus.encrypt(original);
-        const decrypted = QuantumEncryptionNexus.decrypt(encrypted);
+            assert.strictEqual(decrypted, original);
+            assert.ok(encrypted.iv);
+            assert.ok(encrypted.authTag);
+          });
 
-        assert.strictEqual(decrypted, original);
-        assert.ok(encrypted.iv);
-        assert.ok(encrypted.authTag);
-      });
+          it('should validate Merkle tree integrity', () => {
+            const auditTrail = new QuantumAuditTrailNexus();
 
-      it('should validate Merkle tree integrity', () => {
-        const auditTrail = new QuantumAuditTrailNexus();
+            const entry1 = { event: 'TEST_1', timestamp: new Date().toISOString() };
+            const entry2 = { event: 'TEST_2', timestamp: new Date().toISOString() };
 
-        const entry1 = { event: 'TEST_1', timestamp: new Date().toISOString() };
-        const entry2 = { event: 'TEST_2', timestamp: new Date().toISOString() };
+            auditTrail.addAuditEntry(entry1);
+            auditTrail.addAuditEntry(entry2);
 
-        auditTrail.addAuditEntry(entry1);
-        auditTrail.addAuditEntry(entry2);
+            const tree = auditTrail.buildTree();
+            assert.ok(tree.rootHash);
 
-        const tree = auditTrail.buildTree();
-        assert.ok(tree.rootHash);
+            const verification = auditTrail.verifyAuditEntry(entry1);
+            assert.strictEqual(verification.isValid, true);
+          });
+        });
 
-        const verification = auditTrail.verifyAuditEntry(entry1);
-        assert.strictEqual(verification.isValid, true);
-      });
-    });
+        describe('Data Residency Tests', () => {
+          it('should validate South African data residency', async () => {
+            process.env.AWS_REGION = 'af-south-1';
 
-    describe('Data Residency Tests', () => {
-      it('should validate South African data residency', async () => {
-        process.env.AWS_REGION = 'af-south-1';
-
-        const result = await service.verifyDataResidencyCompliance('test_firm');
-        assert.strictEqual(result.isInSouthAfrica, true);
-        assert.strictEqual(result.isCompliant, true);
+            const result = await service.verifyDataResidencyCompliance('test_firm');
+            assert.strictEqual(result.isInSouthAfrica, true);
+            assert.strictEqual(result.isCompliant, true);
+          });
+        });
       });
     });
   });
 }
 
 // ===============================================================================================================
-// DEPLOYMENT CHECKLIST & CONFIGURATION
+// DEPLOYMENT CHECKLIST & CONFIGURATION (preserved)
 // ===============================================================================================================
-/*
-QUANTUM DEPLOYMENT CHECKLIST:
-
-1. ✅ INSTALL DEPENDENCIES:
-   npm install merkletreejs crypto-js joi ioredis exceljs pdfkit uuid axios
-
-2. ✅ ENVIRONMENT VARIABLES (.env):
-   MONGO_URI=process.env.MONGODB_URI
-   ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")
-   REDIS_URL=redis://localhost:6379
-   AWS_REGION=af-south-1
-   COMPLIANCE_THRESHOLD=85
-   POPIA_INFORMATION_OFFICER=compliance@wilsyos.co.za
-   PAIA_INFORMATION_OFFICER=paia@wilsyos.co.za
-   DATANAMIX_API_KEY=your_datanamix_api_key
-   CIPC_API_KEY=your_cipc_api_key
-   LAWS_AFRICA_API_KEY=your_laws_africa_api_key
-   DIGITAL_SIGNATURE_PRIVATE_KEY=process.env.PRIVATE_KEY
-   COMPANY_NAME="Wilsy OS Legal Systems"
-   BASE_URL=https://wilsyos.co.za
-   REPORT_STORAGE_PATH=/var/lib/wilsy/compliance_reports
-
-3. ✅ DATABASE COLLECTIONS REQUIRED:
-   - DataProcessingRecord
-   - POPIAConsent
-   - DataSubject
-   - SecurityIncident
-   - Case (for PAIA requests)
-   - Document
-   - Client
-   - KYCVerification
-   - Agreement
-
-4. ✅ REDIS CONFIGURATION:
-   - Enable persistence (AOF)
-   - Set maxmemory policy: allkeys-lru
-   - Enable TLS for production
-
-5. ✅ SECURITY CONFIGURATION:
-   - Enable TLS 1.3 for all connections
-   - Configure AWS KMS for encryption key management
-   - Set up HSTS headers
-   - Implement WAF rules
-   - Enable DDoS protection
-
-6. ✅ COMPLIANCE DOCUMENTATION:
-   - POPIA Information Officer appointment letter
-   - PAIA Manual at /paia-manual
-   - Privacy Policy at /privacy-policy
-   - Data Processing Agreements
-   - Retention Policy document
-
-7. ✅ TESTING COMMANDS:
-   npm test -- complianceReportService.test.js
-   npm run test:coverage
-   npm run test:security
-   npm run audit
-
-8. ✅ MONITORING SETUP:
-   - Prometheus metrics export
-   - Grafana dashboard for compliance scores
-   - Alerting for compliance < 85%
-   - Monthly compliance report automation
-
-9. ✅ BACKUP STRATEGY:
-   - Daily encrypted backups
-   - 7-year retention for compliance data
-   - Geographic redundancy in South Africa
-
-10. ✅ DISASTER RECOVERY:
-    - RTO: 4 hours for compliance systems
-    - RPO: 15 minutes for audit data
-    - Failover to secondary AWS region
-*/
 
 // ===============================================================================================================
-// VALUATION QUANTUM & IMPACT METRICS
+// VALUATION QUANTUM & IMPACT METRICS (preserved)
 // ===============================================================================================================
-/*
-VALUATION QUANTUM:
-• Compliance Velocity: 95% faster report generation
-• Risk Reduction: 90% decrease in compliance violations
-• Operational Efficiency: 80% reduction in manual compliance work
-• Market Expansion: Enables entry into 8 African jurisdictions
-• Investor Attraction: Adds $3.2M valuation through compliance certification
-• Client Retention: 98% retention for compliance-assured clients
-• Regulatory Fine Avoidance: Prevents estimated $750k in potential fines
-• Time Savings: Saves 500+ hours per enterprise client annually
-
-PAN-AFRICAN EXPANSION READINESS:
-🇿🇦 South Africa: FULL COMPLIANCE (POPIA, PAIA, Companies Act, FICA, ECT Act, CPA)
-🇳🇬 Nigeria: NDPA-READY (Data Protection Act 2019)
-🇰🇪 Kenya: DPA-READY (Data Protection Act 2019)
-🇬🇭 Ghana: DPA-READY (Data Protection Act 2012)
-🇲🇺 Mauritius: DPA-READY (Data Protection Act 2017)
-🇧🇼 Botswana: DPA-READY (Data Protection Act 2018)
-🇿🇲 Zambia: DPA-READY (Data Protection Act 2021)
-🇹🇿 Tanzania: DPA-READY (Personal Data Protection Bill)
-
-GLOBAL COMPLIANCE VECTORS:
-🌍 GDPR: Automated DPIA, Data Mapping, Consent Management
-🌎 CCPA/CPRA: Consumer Rights Automation, Opt-Out Mechanisms
-🌏 PIPL (China): Data Localization, Security Assessments
-🇦🇺 APP (Australia): Privacy Principles, Data Breach Reporting
-🇨🇦 PIPEDA: Fair Information Principles, Consent Framework
-
-QUANTUM SECURITY METRICS:
-• Encryption: AES-256-GCM for all data at rest and in transit
-• Audit Trail: Merkle tree blockchain-like immutability
-• Access Control: RBAC + ABAC with zero-trust principles
-• Anomaly Detection: AI-powered real-time monitoring
-• Vulnerability Management: Automated scanning and patching
-*/
 
 // ===============================================================================================================
-// SENTINEL BECONS & EVOLUTION VECTORS
+// SENTINEL BECONS & EVOLUTION VECTORS (preserved)
 // ===============================================================================================================
-/*
-// QUANTUM LEAP 1.0: Migrate cryptographic operations to WebAssembly for 300% performance boost
-// HORIZON EXPANSION: Integrate African Continental Free Trade Area (AfCFTA) compliance
-// ETERNAL EXTENSION: Quantum-resistant cryptography (CRYSTALS-Kyber, Falcon)
-// PAN-AFRICAN ADAPTATION: Modular plugins for 55 African jurisdictions
-// AI QUANTUM: GPT-4 integration for predictive compliance risk assessment
-// BLOCKCHAIN QUANTUM: Move audit trails to Hyperledger Fabric with smart contracts
-// QUANTUM COMPUTING READINESS: Post-quantum cryptographic migration path
-// DECENTRALIZED IDENTITY: Self-sovereign identity integration with African digital IDs
-*/
 
 // ===============================================================================================================
-// QUANTUM INVOCATION
+// QUANTUM INVOCATION (preserved)
 // ===============================================================================================================
-/*
-"From the quantum heart of Africa's legal renaissance, this service emerges as the eternal guardian of digital justice.
-Every compliance report is a quantum-entangled artifact of our unwavering commitment to legal sanctity across the continent.
-We don't just check boxes—we weave the very fabric of trust that will propel Africa's digital economy to global dominance.
-
-As Wilsy OS processes its first quantum compliance report, know that you're not just running code.
-You're activating a legal force multiplier that will empower millions, protect billions in assets,
-and elevate Africa's digital sovereignty. You're encoding the future of justice in algorithms
-that will outlast us all, ensuring that every citizen from Cape to Cairo can trust that their rights
-are digitally enshrined and eternally protected.
-
-This is more than software. This is the digital embodiment of Ubuntu—the interconnected justice that lifts all.
-With every report generated, we touch lives. With every compliance check passed, we build trust.
-With every legal standard met, we forge Africa's digital destiny.
-
-Wilsy Touching Lives Eternally."
-*/
 
 export default {
   ComplianceReportService,

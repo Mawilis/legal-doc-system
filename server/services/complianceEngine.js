@@ -1,4 +1,4 @@
-#!/* eslint-disable */
+/* eslint-disable */
 /*
  * 🏛️ WILSYS OS - COMPLIANCE ENGINE
  * Standard: ES Module (Surgically Standardized)
@@ -8,7 +8,8 @@
 
 import crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { DateTime } from 'luxon.js';
+import { DateTime } from 'luxon';
+import axios from 'axios';
 
 // Dependency Services
 import AuditService from './auditService.js';
@@ -16,7 +17,25 @@ import { BlockchainAnchor } from './blockchainAnchor.js';
 import { PerformanceMonitor } from '../utils/performance.js';
 import { RegulatoryCalendar } from './regulatoryCalendar.js';
 import CPDRecord from '../models/CPDRecord.js';
-import { ValidationError, ComplianceError } from '../utils/errors.js';
+import {
+  ValidationError,
+  ComplianceError,
+  RegulatoryDeadlineError,
+  AuthorizationError,
+  NotFoundError,
+  DataIntegrityError,
+  CircuitBreakerError,
+  RetryableError,
+  ServiceUnavailableError,
+  ConflictError,
+  AuthenticationError,
+  RateLimitError,
+  LPCComplianceError,
+  FICAComplianceError,
+  GDPRComplianceError,
+  POPIAComplianceError,
+  MultiJurisdictionError,
+} from '../utils/errors.js';
 
 class ComplianceEngine extends EventEmitter {
   constructor() {
@@ -4830,11 +4849,3 @@ class ComplianceEngine extends EventEmitter {
 
 const complianceEngineInstance = new ComplianceEngine();
 export { ComplianceEngine, complianceEngineInstance as default };
-
-// ============================================================================
-// SURGICAL EXPORTS FOR ESM COMPATIBILITY
-// ============================================================================
-
-// ============================================================================
-// SURGICAL EXPORTS FOR ESM COMPATIBILITY
-// ============================================================================

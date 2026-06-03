@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * File: server/services/permissionService.js
  * STATUS: PRODUCTION-READY | EPITOME | PERMISSION ORCHESTRATOR
  * -----------------------------------------------------------------------------
@@ -16,7 +17,7 @@
  * - Non-fatal: on DB errors returns best-effort result (empty array) and logs.
  *
  * USAGE:
- * const permissionService = require('../services/permissionService');
+ * import permissionService from '../services/permissionService.js';
  * const perms = await permissionService.computeEffectivePermissions(user, { tenantId, logger });
  *
  * COLLABORATION:
@@ -25,8 +26,8 @@
  * -----------------------------------------------------------------------------
  */
 
-const { v4: uuidv4 } = require('uuid');
-const Role = require('../models/roleModel');
+import { v4 as uuidv4 } from 'uuid';
+import Role from '../models/roleModel.js';
 
 // Simple structured logger fallback
 const defaultLogger = {

@@ -1,0 +1,93 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-predictive-hud",
+    "title": "🏛️ WILSY OS - Sovereign Predictive Analytics",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "SLA Trajectory Forecast (p95 Latency +10m)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "predict_linear(wilsy_latency_telemetry_replay_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.95\"}[30m], 600)",
+            "legendFormat": "Predicted p95 Latency (10m Lead)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 300 },
+                { "color": "red", "value": 500 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Regulatory Erosion Forecast (Compliance +30m)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 18, "h": 8 },
+        "targets": [
+          {
+            "expr": "predict_linear(wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}[1h], 1800)",
+            "legendFormat": "Predicted {{overlay}} Ratio (30m Lead)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 75 },
+                { "color": "green", "value": 90 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Forensic Fracture Probability (1h Forecast)",
+        "id": 3,
+        "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+        "targets": [
+          {
+            "expr": "predict_linear(wilsy_counter_forensics_errors{tenantId=\"GLOBAL_ROOT\"}[1h], 3600) > 0",
+            "legendFormat": "Predicted Failures"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "red", "value": 1 }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

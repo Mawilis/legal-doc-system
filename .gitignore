@@ -5,6 +5,8 @@ node_modules/
 **/.envnode_modules/
 logs/
 *.log
+*.rdb
+dump.rdb
 # .gitignore
 .env
 .env.local
@@ -119,6 +121,24 @@ server/diagnose-*.js
 server/inspect-*.js
 server/fix-*.js
 server/fix-*.sh
+server/fixUser.js
+server/final_*.js
+server/final_*.sh
+server/forensic_*_fix.sh
+server/m2_*_fix.sh
+server/rectify_*.js
+server/rectify_*.sh
+server/repair_identity.js
+server/restore_founder.js
+server/sovereign_*_anchor.sh
+server/sovereign_*_fix.sh
+server/sync_master_auth.sh
+server/testAuth*.js
+server/seed_root_organization.js
+server/scripts/forceReset.js
+server/scripts/seed/*.js
+server/scripts/seedProductionTenant.js
+server/scripts/seedSovereignUser.js
 server/*.bak.*
 server/*.backup.*
 server/test-*.js

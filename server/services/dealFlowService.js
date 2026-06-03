@@ -1,4 +1,4 @@
-#!/* eslint-disable */
+/* eslint-disable */
 /* ╔═══════════════════════════════════════════════════════════════════════════════════════╗
   ║ DEAL FLOW SERVICE - QUANTUM M&A PIPELINE WITH PREDICTIVE INTELLIGENCE                 ║
   ║ R1.2B/year Deal Flow | 94% Predictive Accuracy | Quantum-Inspired Algorithms         ║
@@ -58,11 +58,11 @@
 
 import mongoose from 'mongoose';
 import crypto from 'crypto';
-import { OpenAI } from 'openai.js';
-import natural from 'natural.js';
-import { XMLParser } from 'fast-xml-parser.js';
-import axios from 'axios.js';
-import * as cheerio from 'cheerio.js';
+import OpenAI from 'openai';
+import natural from 'natural';
+import { XMLParser } from 'fast-xml-parser';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 
 // Internal imports
 import SecurityLog from '../models/securityLogModel.js';

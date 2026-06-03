@@ -1,0 +1,91 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🛡️ SECURITY BADGE - WILSY OS 2050                                       ║
+  ║  Security Clearance and Compliance Badges                                ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-security-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: var(--sa-text-micro);
+  font-weight: var(--sa-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wide);
+  border: 1px solid;
+  transition: all 0.2s ease;
+}
+
+.sa-security-badge.level-1 {
+  background: linear-gradient(135deg, var(--sa-success-500), var(--sa-success-600));
+  border-color: var(--sa-success-400);
+  color: white;
+  box-shadow: 0 0 10px var(--sa-success-500);
+}
+
+.sa-security-badge.level-2 {
+  background: linear-gradient(135deg, var(--sa-quantum-500), var(--sa-quantum-600));
+  border-color: var(--sa-quantum-400);
+  color: white;
+  box-shadow: 0 0 10px var(--sa-quantum-500);
+}
+
+.sa-security-badge.level-3 {
+  background: linear-gradient(135deg, var(--sa-wealth-500), var(--sa-wealth-600));
+  border-color: var(--sa-wealth-400);
+  color: white;
+  box-shadow: 0 0 10px var(--sa-wealth-500);
+}
+
+.sa-security-badge.level-4 {
+  background: linear-gradient(135deg, var(--sa-forensic-500), var(--sa-forensic-600));
+  border-color: var(--sa-forensic-400);
+  color: white;
+  box-shadow: 0 0 10px var(--sa-forensic-500);
+}
+
+.sa-security-badge.level-5 {
+  background: linear-gradient(135deg, #000000, #333333);
+  border-color: #666666;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-security-badge.level-5::before {
+  content: '⚡';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 100%;
+  text-align: center;
+  opacity: 0.1;
+  font-size: 2rem;
+  pointer-events: none;
+}
+
+.sa-security-badge.fips {
+  background: linear-gradient(135deg, #1a237e, #283593);
+  border-color: #5c6bc0;
+  color: white;
+}
+
+.sa-security-badge.soc2 {
+  background: linear-gradient(135deg, #1b5e20, #2e7d32);
+  border-color: #66bb6a;
+  color: white;
+}
+
+.sa-security-badge.iso {
+  background: linear-gradient(135deg, #b71c1c, #c62828);
+  border-color: #ef5350;
+  color: white;
+}
+
+.sa-security-badge.popia {
+  background: linear-gradient(135deg, #4a148c, #6a1b9a);
+  border-color: #ab47bc;
+  color: white;
+}

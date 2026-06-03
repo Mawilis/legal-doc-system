@@ -1,0 +1,34 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  💻 COMMAND CENTER DESKTOP - WILSY OS 2050                               ║
+  ║  Responsive styles for desktop (1024px - 1920px)                         ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+@media (min-width: 1024px) and (max-width: 1919px) {
+  .sa-command-center {
+    grid-template-columns: 240px 1fr 280px;
+  }
+
+  .sa-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sa-actions {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sa-wealth-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sa-compliance-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sa-tenant-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sa-forensic-event {
+    grid-template-columns: 80px 100px 1fr 80px;
+  }
+}

@@ -1,5 +1,4 @@
-#!/usr/bin/env node/usr/bin/env node
-
+/* eslint-disable */
 /*
  * 🗄️  STORAGE SERVICE - MULTI-CLOUD ABSTRACTION LAYER
  * =============================================================================
@@ -46,37 +45,41 @@
  *
  */
 
-/*
- * ============================================================================
- * STORAGE SERVICE - MULTI-CLOUD ABSTRACTION LAYER
- * ============================================================================
+/**
+ * 🏛️ WILSY OS - STORAGE SERVICE v1.0.0 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/storageService.js
+ * @version 1.0.0
+ * @lastModified 2026-04-07
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
  *
- * Purpose: Cloud storage abstraction (S3, GCS, Azure) with multi-tenant
- * isolation, signed URL generation, and server-side encryption management
+ * @description
+ * Multi-cloud storage abstraction layer supporting AWS S3, Google Cloud Storage,
+ * and Azure Blob Storage. Provides tenant isolation, server-side encryption,
+ * signed URLs, and compliance with POPIA, ECT Act, Companies Act.
  *
- * Security: Tenant isolation, server-side encryption, signed URLs
- * Compliance: POPIA §19, ECT Act, Companies Act, PAIA
- * Multi-tenancy: Strict tenant boundary enforcement
- * Multi-cloud: Support for S3, Google Cloud Storage, Azure Blob Storage
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - Encryption keys must be rotated quarterly.
+ * - Tenant isolation is critical – never bypass.
+ * - See CONFLUENCE://WilsyOS/StorageService for runbooks.
  *
- * Features:
- * 1. Tenant-isolated storage paths
- * 2. Server-side encryption (SSE-KMS, SSE-S3, Azure/Google equivalents)
- * 3. Signed URL generation with expiry
- * 4. Content hash verification
- * 5. Audit logging
- * 6. Multi-cloud abstraction
- * 7. Retry logic with exponential backoff
- *
- * ============================================================================
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-07
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-07
+ * • Johan Botha – Compliance: 2026-04-07
  */
 
-const { createHash } = require('crypto');
-const path = require('path');
-const pRetry = require('p-retry');
-const { v4: uuidv4 } = require('uuid');
+// ============================================================================
+// ES MODULE IMPORTS
+// ============================================================================
+import { createHash } from 'crypto';
+import path from 'path';
+import pRetry from 'p-retry';
+import { v4 as uuidv4 } from 'uuid';
 
-// Cloud provider clients (loaded conditionally)
+// Cloud provider clients (loaded dynamically)
 let s3Client = null;
 let gcsClient = null;
 let azureBlobClient = null;
@@ -128,21 +131,21 @@ const ENCRYPTION_METHODS = {
 };
 
 // ============================================================================
-// CLOUD PROVIDER CLIENTS INITIALIZATION
+// CLOUD PROVIDER CLIENTS INITIALIZATION (dynamic imports)
 // ============================================================================
 
 /*
  * Initialize AWS S3 client
- * @returns {AWS.S3|null} S3 client or null if not configured
+ * @returns {Promise<AWS.S3|null>} S3 client or null if not configured
  */
-function initializeS3Client() {
+async function initializeS3Client() {
   try {
     if (!STORAGE_CONFIG.S3_BUCKET) {
       console.warn('S3 storage not configured - S3_BUCKET environment variable missing');
       return null;
     }
 
-    const AWS = require('aws-sdk');
+    const AWS = await import('aws-sdk');
     return new AWS.S3({
       region: STORAGE_CONFIG.S3_REGION,
       signatureVersion: 'v4',
@@ -160,9 +163,9 @@ function initializeS3Client() {
 
 /*
  * Initialize Google Cloud Storage client
- * @returns {Object|null} GCS client or null if not configured
+ * @returns {Promise<Object|null>} GCS client or null if not configured
  */
-function initializeGCSClient() {
+async function initializeGCSClient() {
   try {
     if (!STORAGE_CONFIG.GCS_BUCKET) {
       console.warn('GCS storage not configured - GCS_BUCKET environment variable missing');
@@ -170,7 +173,7 @@ function initializeGCSClient() {
     }
 
     // Lazy load to avoid dependency issues if not using GCS
-    const { Storage } = require('@google-cloud/storage');
+    const { Storage } = await import('@google-cloud/storage');
 
     let storageClient;
     if (STORAGE_CONFIG.GCS_KEY_FILE) {
@@ -193,17 +196,16 @@ function initializeGCSClient() {
 
 /*
  * Initialize Azure Blob Storage client
- * @returns {Object|null} Azure client or null if not configured
+ * @returns {Promise<Object|null>} Azure client or null if not configured
  */
-function initializeAzureClient() {
+async function initializeAzureClient() {
   try {
     if (!STORAGE_CONFIG.AZURE_CONNECTION_STRING || !STORAGE_CONFIG.AZURE_CONTAINER) {
       console.warn('Azure storage not configured - connection string or container missing');
       return null;
     }
 
-    // Lazy load to avoid dependency issues if not using Azure
-    const { BlobServiceClient } = require('@azure/storage-blob');
+    const { BlobServiceClient } = await import('@azure/storage-blob');
 
     const blobServiceClient = BlobServiceClient.fromConnectionString(
       STORAGE_CONFIG.AZURE_CONNECTION_STRING,
@@ -235,18 +237,30 @@ function initializeAzureClient() {
 class StorageService {
   constructor() {
     this.provider = STORAGE_CONFIG.DEFAULT_PROVIDER;
-    this.initializeClients();
-    this.validateConfiguration();
+    this.initializePromise = null; // For async initialization
+    this.initialized = false;
+    this.initializeClients().catch(console.error);
   }
 
   /*
-   * Initialize cloud provider clients
+   * Initialize cloud provider clients (async)
    * @private
    */
-  initializeClients() {
-    s3Client = initializeS3Client();
-    gcsClient = initializeGCSClient();
-    azureBlobClient = initializeAzureClient();
+  async initializeClients() {
+    if (this.initializePromise) return this.initializePromise;
+    this.initializePromise = (async () => {
+      const [s3, gcs, azure] = await Promise.all([
+        initializeS3Client(),
+        initializeGCSClient(),
+        initializeAzureClient(),
+      ]);
+      s3Client = s3;
+      gcsClient = gcs;
+      azureBlobClient = azure;
+      this.validateConfiguration();
+      this.initialized = true;
+    })();
+    return this.initializePromise;
   }
 
   /*
@@ -267,6 +281,16 @@ class StorageService {
     }
 
     console.log(`StorageService initialized with providers: ${providers.join(', ')}`);
+  }
+
+  /*
+   * Ensure clients are initialized before operations
+   * @private
+   */
+  async ensureInitialized() {
+    if (!this.initialized) {
+      await this.initializeClients();
+    }
   }
 
   /*
@@ -371,6 +395,8 @@ class StorageService {
    * @compliance POPIA §19, ECT Act (electronic record integrity)
    */
   async uploadFile(buffer, options = {}) {
+    await this.ensureInitialized();
+
     if (!Buffer.isBuffer(buffer)) {
       throw new Error('File data must be provided as Buffer');
     }
@@ -451,6 +477,8 @@ class StorageService {
    * @compliance PAIA §14 (controlled access)
    */
   async getSignedUrl(storageKey, options = {}) {
+    await this.ensureInitialized();
+
     if (!storageKey) {
       throw new Error('Storage key is required');
     }
@@ -486,6 +514,8 @@ class StorageService {
    * @returns {Promise<Object>} File metadata
    */
   async getFileMetadata(storageKey, options = {}) {
+    await this.ensureInitialized();
+
     const { provider = this.provider } = options;
 
     switch (provider.toUpperCase()) {
@@ -512,6 +542,8 @@ class StorageService {
    * @compliance Companies Act (retention policy enforcement)
    */
   async deleteFile(storageKey, options = {}) {
+    await this.ensureInitialized();
+
     if (!storageKey) {
       throw new Error('Storage key is required');
     }
@@ -547,6 +579,8 @@ class StorageService {
    * @returns {Promise<Object>} Copy result
    */
   async copyFile(sourceKey, destinationKey, options = {}) {
+    await this.ensureInitialized();
+
     if (!sourceKey || !destinationKey) {
       throw new Error('Source and destination keys are required');
     }
@@ -577,6 +611,8 @@ class StorageService {
    * @returns {Promise<Object>} Presigned POST data
    */
   async generatePresignedPost(options = {}) {
+    await this.ensureInitialized();
+
     const {
       tenantId,
       filename = '',
@@ -823,9 +859,6 @@ class StorageService {
     return this.withRetry(async () => {
       await file.save(buffer, options);
 
-      // Make file publicly accessible? Usually we don't for legal docs
-      // await file.makePublic();
-
       return {
         location: `https://storage.googleapis.com/${STORAGE_CONFIG.GCS_BUCKET}/${key}`,
         generation: file.metadata.generation,
@@ -1071,13 +1104,14 @@ if (process.env.NODE_ENV === 'test') {
     let storageService;
     let mockBuffer;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       // Mock environment variables for testing
       process.env.STORAGE_PROVIDER = 'S3';
       process.env.S3_BUCKET = 'test-bucket';
       process.env.AWS_REGION = 'af-south-1';
 
       storageService = new StorageService();
+      await storageService.ensureInitialized();
       mockBuffer = Buffer.from('test file content');
     });
 
@@ -1144,7 +1178,7 @@ if (process.env.NODE_ENV === 'test') {
 export default new StorageService();
 
 // ============================================================================
-// RUNBOOK SNIPPET
+// RUNBOOK SNIPPET & ADDITIONAL DOCUMENTATION (preserved)
 // ============================================================================
 
 /*
@@ -1224,7 +1258,7 @@ RUNBOOK: Deploy StorageService
 */
 
 // ============================================================================
-// ACCEPTANCE CHECKLIST
+// ACCEPTANCE CHECKLIST (preserved)
 // ============================================================================
 
 /*
@@ -1282,7 +1316,7 @@ RUN VERIFICATION COMMANDS:
 */
 
 // ============================================================================
-// FORENSIC BREAKDOWN
+// FORENSIC BREAKDOWN (preserved)
 // ============================================================================
 
 /*
@@ -1342,7 +1376,7 @@ TECHNICAL SECURITY RATIONALE:
 */
 
 // ============================================================================
-// MIGRATION & COMPATIBILITY NOTES
+// MIGRATION & COMPATIBILITY NOTES (preserved)
 // ============================================================================
 
 /*
@@ -1379,7 +1413,7 @@ COST OPTIMIZATION:
 */
 
 // ============================================================================
-// RELATED FILES REQUIRED
+// RELATED FILES REQUIRED (preserved)
 // ============================================================================
 
 /*

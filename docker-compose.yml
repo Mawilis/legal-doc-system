@@ -1,8 +1,9 @@
 # ============================================================================
 # WILSY OS 2050 - QUANTUM PRODUCTION DOCKER COMPOSE
 # 10TH GENERATION FORENSIC ENGINE | QUANTUM FORTRESS
-# VERSION: 42.0.0 | GENERATION: 10 | ATLAS-OPTIMIZED
+# VERSION: 42.0.1 | GENERATION: 10 | ATLAS-OPTIMIZED
 # INVESTOR-GRADE | POPIA COMPLIANT | SOC2 READY
+# [RECTIFIED: PORT 4000 ALIGNMENT FOR SHIELD INTEGRATION]
 # ============================================================================
 
 version: '3.8'
@@ -23,9 +24,9 @@ services:
       # Application Core
       NODE_ENV: "production"
       APP_NAME: "Wilsy OS"
-      APP_VERSION: "42.0.0"
+      APP_VERSION: "42.0.1"
       API_VERSION: "v1"
-      PORT: "3000"
+      PORT: "4000" # 🛡️ RECTIFIED
       API_PORT: "9095"
       INVESTOR_PORT: "9096"
       METRICS_PORT: "9090"
@@ -33,12 +34,12 @@ services:
       INSTANCE_ID: "${HOSTNAME:-wilsy-prod-001}"
       REGION: "ZA"
       DATACENTER: "${DATACENTER:-jhb-01}"
-      
+
       # 🗄️ DATABASE - Your Production Atlas
       PROD_MONGODB_URI: "${PROD_MONGODB_URI:-REDACTED}"
       TEST_MONGODB_URI: "${TEST_MONGODB_URI:-REDACTED}"
       ACTIVE_DATABASE: "${ACTIVE_DB:-production}"
-      
+
       # MongoDB Pool Configuration
       MONGODB_POOL_MIN: "5"
       MONGODB_POOL_MAX: "50"
@@ -51,7 +52,7 @@ services:
       MONGODB_WRITE_CONCERN: "majority"
       MONGODB_READ_CONCERN: "majority"
       MONGODB_SSL: "true"
-      
+
       # 📦 REDIS Configuration
       REDIS_URI: "redis://:${REDIS_PASSWORD:-changeme}@redis:6379"
       REDIS_HOST: "redis"
@@ -61,10 +62,10 @@ services:
       REDIS_CACHE_DB: "1"
       REDIS_SESSION_DB: "2"
       REDIS_QUEUE_DB: "3"
-      REDIS_KEY_PREFIX: "wilsy:prod:" 
+      REDIS_KEY_PREFIX: "wilsy:prod:"
       REDIS_TLS_ENABLED: "false"
       REDIS_CLUSTER_MODE: "false"
-      
+
       # 🔐 JWT Configuration
       JWT_SECRET: "${JWT_SECRET}"
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET}"
@@ -72,7 +73,7 @@ services:
       JWT_REFRESH_EXPIRY: "7d"
       JWT_ISSUER: "wilsy.os"
       JWT_AUDIENCE: "api.wilsy.os"
-      
+
       # 🔐 Encryption Keys
       USER_ENCRYPTION_KEY: "${USER_ENCRYPTION_KEY}"
       AUDIT_ENCRYPTION_KEY: "${AUDIT_ENCRYPTION_KEY}"
@@ -82,19 +83,19 @@ services:
       BIOMETRIC_ENCRYPTION_KEY: "${BIOMETRIC_ENCRYPTION_KEY}"
       BIOMETRIC_ENCRYPTION_IV: "${BIOMETRIC_ENCRYPTION_IV}"
       HSM_KEY_ID: "wilsy-hsm-2026-001"
-      
+
       # Password & Session
       PASSWORD_HASH_SALT_ROUNDS: "12"
       MAX_CONCURRENT_SESSIONS: "5"
       MAX_LOGIN_ATTEMPTS: "5"
       WEBAUTHN_RP_ID: "api.wilsy.os"
-      
+
       # 🚦 Rate Limiting
       RATE_LIMIT_ENABLED: "true"
       RATE_LIMIT_WINDOW_MS: "60000"
       RATE_LIMIT_MAX_REQUESTS: "100"
       RATE_LIMIT_BURST: "20"
-      
+
       # 📊 Metrics & Monitoring
       METRICS_PATH: "/metrics"
       METRICS_AUTH_TOKEN: "${METRICS_AUTH_TOKEN}"
@@ -102,7 +103,7 @@ services:
       ENABLE_DB_METRICS: "true"
       ENABLE_QUEUE_METRICS: "true"
       ENABLE_GPU_METRICS: "${ENABLE_GPU_METRICS:-false}"
-      
+
       # 📝 Logging
       LOG_LEVEL: "info"
       LOG_FORMAT: "json"
@@ -112,7 +113,7 @@ services:
       LOG_MAX_FILES: "10"
       LOG_ENCRYPT_SENSITIVE: "true"
       LOG_TIMEZONE: "Africa/Johannesburg"
-      
+
       # 🧠 Neural Engine
       ENABLE_SEMANTIC_SEARCH: "true"
       ENABLE_CITATION_NETWORK: "true"
@@ -123,7 +124,7 @@ services:
       EMBEDDING_DIMENSION: "768"
       EMBEDDING_BATCH_SIZE: "${EMBEDDING_BATCH_SIZE:-32}"
       EMBEDDING_MAX_TEXT_LENGTH: "10000"
-      
+
       # 🔍 Vector Database (Milvus)
       MILVUS_ENABLED: "${MILVUS_ENABLED:-false}"
       MILVUS_HOST: "milvus"
@@ -133,7 +134,7 @@ services:
       MILVUS_PASSWORD: "${MILVUS_PASSWORD:-}"
       MILVUS_DEFAULT_INDEX: "IVF_FLAT"
       MILVUS_DEFAULT_METRIC: "COSINE"
-      
+
       # 📧 Notifications
       SMTP_HOST: "${SMTP_HOST}"
       SMTP_PORT: "${SMTP_PORT}"
@@ -145,7 +146,7 @@ services:
       SLACK_WEBHOOK_URL: "${SLACK_WEBHOOK_URL}"
       SLACK_CRITICAL_CHANNEL: "#wilsy-critical"
       SLACK_ERROR_CHANNEL: "#wilsy-errors"
-      
+
       # 🔗 Hyperledger Fabric
       HYPERLEDGER_ENABLED: "${HYPERLEDGER_ENABLED:-false}"
       HYPERLEDGER_CHANNEL: "wilsy-channel"
@@ -153,7 +154,7 @@ services:
       HYPERLEDGER_MSP_ID: "Org1MSP"
       HYPERLEDGER_TIMEOUT: "300"
       HYPERLEDGER_RETRIES: "3"
-      
+
       # 🔐 Compliance (POPIA/GDPR)
       POPIA_COMPLIANT: "true"
       GDPR_COMPLIANT: "true"
@@ -164,50 +165,50 @@ services:
       ENABLE_FORENSIC_LOGGING: "true"
       ENABLE_QUANTUM_LOGGING: "true"
       AUDIT_RETENTION_DAYS: "3650"
-      
+
       # 👤 Information Officer
       POPIA_INFORMATION_OFFICER: "Wilson Khanyezi"
       POPIA_DEPUTY_OFFICER: "contact@wilsy.os"
-      
+
       # 💰 FICA/AML
       FICA_ENABLED: "true"
       FICA_THRESHOLD: "25000"
       FICA_ENHANCED_DUE_DILIGENCE: "100000"
       FICA_AML_MONITORING: "true"
-      
+
       # 🏦 SARS Tax
       SARS_VAT_RATE: "0.15"
       COMPANY_VAT_NUMBER: "${COMPANY_VAT_NUMBER}"
       TAX_YEAR_START: "2025-03-01"
       TAX_YEAR_END: "2026-02-28"
-      
+
       # ⚖️ Legal Compliance
       LPC_COMPLIANT: "true"
       ECT_ACT_COMPLIANT: "true"
       COMPANIES_ACT_COMPLIANT: "true"
       CYBERCRIMES_ACT_COMPLIANT: "true"
-      
+
       # 💲 Currency
       BASE_CURRENCY: "ZAR"
       ZAR_TO_USD: "0.054"
       ZAR_TO_EUR: "0.050"
       ZAR_TO_GBP: "0.043"
-      
+
       # 🚀 Feature Flags
       ENABLE_BILLING: "${ENABLE_BILLING:-false}"
       ENABLE_INVESTOR_API: "${ENABLE_INVESTOR_API:-false}"
       ENABLE_HEALTH_CHECKS: "true"
       ENABLE_BLOCKCHAIN_AUDIT: "${ENABLE_BLOCKCHAIN_AUDIT:-false}"
       ENABLE_QUANTUM_ENCRYPTION: "${ENABLE_QUANTUM_ENCRYPTION:-false}"
-      
+
       # Quantum Features
       QUANTUM_ENABLED: "true"
       NEURAL_ENABLED: "true"
       REGULATORY_ENABLED: "true"
       PQC_ENABLED: "true"
-      
+
     ports:
-      - "3000:3000"
+      - "4000:4000" # 🛡️ RECTIFIED
       - "9095:9095"
       - "9096:9096"
       - "9090:9090"
@@ -231,7 +232,7 @@ services:
           cpus: '2'
           memory: 4G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"] # 🛡️ RECTIFIED
       interval: 30s
       timeout: 10s
       retries: 3
@@ -255,16 +256,16 @@ services:
     environment:
       NODE_ENV: "production"
       APP_NAME: "Wilsy Worker"
-      APP_VERSION: "42.0.0"
-      
+      APP_VERSION: "42.0.1"
+
       # Database
       PROD_MONGODB_URI: "${PROD_MONGODB_URI:-REDACTED}"
       TEST_MONGODB_URI: "${TEST_MONGODB_URI:-REDACTED}"
       ACTIVE_DATABASE: "${ACTIVE_DB:-production}"
-      
+
       # Redis
       REDIS_URI: "redis://:${REDIS_PASSWORD:-changeme}@redis:6379"
-      
+
       # Worker Configuration
       WORKER_COUNT: "4"
       WORKER_CONCURRENCY: "4"
@@ -272,16 +273,16 @@ services:
       WORKER_MAX_JOBS: "1000"
       WORKER_STALLED_INTERVAL: "30000"
       WORKER_LOCK_DURATION: "60000"
-      
+
       # Neural Engine
       EMBEDDING_MODEL: "legal-bert"
       EMBEDDING_DIMENSION: "768"
       ENABLE_GPU_ACCELERATION: "${ENABLE_GPU:-false}"
-      
+
       # Logging
       LOG_LEVEL: "info"
       LOG_FORMAT: "json"
-      
+
     volumes:
       - forensic_data:/app/data/forensic
       - reports:/app/reports
@@ -314,9 +315,9 @@ services:
     container_name: wilsy-redis
     restart: unless-stopped
     command: >
-      redis-server --appendonly yes 
-      --requirepass ${REDIS_PASSWORD:-changeme} 
-      --maxmemory 4gb 
+      redis-server --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-changeme}
+      --maxmemory 4gb
       --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
@@ -386,7 +387,7 @@ services:
       ETCD_AUTO_COMPACTION_RETENTION: "1000"
       ETCD_QUOTA_BACKEND_BYTES: "4294967296"
       ETCD_SNAPSHOT_COUNT: "50000"
-    command: 
+    command:
       - etcd
       - --advertise-client-urls=http://0.0.0.0:2379
       - --listen-client-urls=http://0.0.0.0:2379
@@ -590,63 +591,63 @@ volumes:
       type: "none"
       device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/redis"
       o: "bind"
-  
+
   audit_logs:
     driver: local
     driver_opts:
       type: "none"
       device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/audit-logs"
       o: "bind"
-  
+
   forensic_data:
     driver: local
     driver_opts:
       type: "none"
       device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/forensic-evidence"
       o: "bind"
-  
+
   reports:
     driver: local
     driver_opts:
       type: "none"
       device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/reports"
       o: "bind"
-  
+
   model_cache:
     driver: local
     driver_opts:
       type: "none"
       device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/models"
       o: "bind"
-  
+
   milvus_data:
     driver: local
     driver_opts:
       type: "none"
       device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/milvus"
       o: "bind"
-  
+
   etcd_data:
     driver: local
     driver_opts:
       type: "none"
       device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/etcd"
       o: "bind"
-  
+
   minio_data:
     driver: local
     driver_opts:
       type: "none"
       device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/minio"
       o: "bind"
-  
+
   prometheus_data:
     driver: local
     driver_opts:
       type: "none"
       device: "${WILSY_DATA_PATH:-/tmp/wilsy_data}/prometheus"
       o: "bind"
-  
+
   grafana_data:
     driver: local
     driver_opts:

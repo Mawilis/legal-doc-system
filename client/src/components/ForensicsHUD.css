@@ -1,0 +1,68 @@
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - FORENSIC SHADER [V32.0.0-FORENSIC-PHYSICS]                                                                                  ║
+ * ║ [CARBON MESH OVERLAYS | KINETIC SCANLINE SHADERS | TACTICAL GRID STABILIZATION]                                                        ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+.forensics-hud-container {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(212, 175, 55, 0.02) 1px, transparent 0);
+  background-size: 40px 40px;
+}
+
+/* 🛡️ TACTICAL GRID ALIGNMENT */
+.forensics-hud-container .bg-\[\#050505\] {
+  box-shadow:
+    0 30px 60px -15px rgba(0, 0, 0, 0.95),
+    inset 0 0 100px rgba(212, 175, 55, 0.01);
+}
+
+/* 🧬 SHIMMER ANIMATION FOR DATA-FLOW */
+@keyframes shimmer {
+  0% { left: -100%; opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { left: 100%; opacity: 0; }
+}
+
+/* 🖋️ INSTITUTIONAL TYPEFACE */
+.forensics-hud-container {
+  font-family: 'JetBrains Mono', 'Inter', monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 🔬 SCANNING RETICLE PULSE */
+.forensics-hud-container .animate-pulse {
+  animation: forensicPulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes forensicPulse {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.6; filter: brightness(1.4); }
+}
+
+/* 🧩 RESPONSIVE COCKPIT ALIGNMENT */
+@media (max-width: 1024px) {
+  .grid-cols-1.md\:grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 💎 DATA-DNA OVERLAY */
+.forensics-hud-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    transparent,
+    transparent 2px,
+    rgba(212, 175, 55, 0.01) 2px,
+    rgba(212, 175, 55, 0.01) 4px
+  );
+  pointer-events: none;
+  z-index: 5;
+}

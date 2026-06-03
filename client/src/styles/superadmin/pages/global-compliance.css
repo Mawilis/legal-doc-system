@@ -1,0 +1,147 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  ⚖️ GLOBAL COMPLIANCE PAGE - WILSY OS 2050                               ║
+  ║  Multi-Jurisdiction Compliance Dashboard                                 ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-compliance-page {
+  padding: 2rem;
+  background: var(--sa-bg-primary);
+  min-height: 100vh;
+}
+
+.sa-compliance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--sa-border-forensic);
+}
+
+.sa-compliance-title {
+  font-size: var(--sa-text-h2);
+  font-weight: var(--sa-weight-bold);
+  background: linear-gradient(135deg, var(--sa-forensic-400), var(--sa-critical-400));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sa-compliance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.sa-compliance-card {
+  background: var(--sa-bg-secondary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.sa-compliance-score {
+  font-size: var(--sa-text-display);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-text-primary);
+  margin: 1rem 0;
+}
+
+.sa-compliance-score.success { color: var(--sa-success-500); }
+.sa-compliance-score.warning { color: var(--sa-warning-500); }
+.sa-compliance-score.critical { color: var(--sa-critical-500); }
+
+.sa-compliance-meter {
+  height: 8px;
+  background: var(--sa-bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.sa-compliance-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.sa-compliance-fill.success { background: var(--sa-success-500); }
+.sa-compliance-fill.warning { background: var(--sa-warning-500); }
+.sa-compliance-fill.critical { background: var(--sa-critical-500); }
+
+.sa-jurisdiction-map {
+  background: var(--sa-bg-secondary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  min-height: 400px;
+  position: relative;
+}
+
+.sa-compliance-frameworks {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.sa-framework-card {
+  background: var(--sa-bg-secondary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sa-framework-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--sa-bg-tertiary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--sa-text-quantum);
+}
+
+.sa-framework-info {
+  flex: 1;
+}
+
+.sa-framework-name {
+  font-size: var(--sa-text-large);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.sa-framework-status {
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sa-framework-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: var(--sa-weight-bold);
+}
+
+.sa-framework-badge.compliant {
+  background: var(--sa-success-500);
+  color: white;
+}
+
+.sa-framework-badge.non-compliant {
+  background: var(--sa-critical-500);
+  color: white;
+}

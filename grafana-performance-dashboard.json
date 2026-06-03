@@ -1,0 +1,129 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-performance-hud",
+    "title": "🏛️ WILSY OS - Sovereign Performance Dashboard",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Institutional Throughput (Strike Velocity)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_system_requests_total{tenantId=\"GLOBAL_ROOT\"}[1m])",
+            "legendFormat": "Requests / Sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 100 },
+                { "color": "green", "value": 500 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "heatmap",
+        "title": "End-to-End Request Latency (Quantile Density)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 18, "h": 10 },
+        "targets": [
+          {
+            "expr": "wilsy_latency_request_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.5\"}",
+            "legendFormat": "Median (p50)"
+          },
+          {
+            "expr": "wilsy_latency_request_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.95\"}",
+            "legendFormat": "High (p95)"
+          },
+          {
+            "expr": "wilsy_latency_request_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.99\"}",
+            "legendFormat": "Critical (p99)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 300 },
+                { "color": "red", "value": 500 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "calculate": false,
+          "color": { "mode": "opacity", "scheme": "GnBu" }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Transaction Success Integrity",
+        "id": 3,
+        "gridPos": { "x": 18, "y": 8, "w": 6, "h": 5 },
+        "targets": [
+          {
+            "expr": "(wilsy_counter_transactions_success_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_transactions_total{tenantId=\"GLOBAL_ROOT\"}) * 100",
+            "legendFormat": "Success Ratio"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 98 },
+                { "color": "green", "value": 99.9 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Inbound Error Velocity (5m Rate)",
+        "id": 4,
+        "gridPos": { "x": 18, "y": 13, "w": 6, "h": 5 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_request_errors_total{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "Errors/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "orange", "value": 5 },
+                { "color": "red", "value": 10 }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

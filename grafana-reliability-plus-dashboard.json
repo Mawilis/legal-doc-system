@@ -1,0 +1,118 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-sla-scorecard",
+    "title": "🏛️ WILSY OS - Reliability+ SLA Dashboard",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Institutional Unified SLA Score",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "(avg(wilsy_availability_ratio{tenantId=\"GLOBAL_ROOT\"}) + (1 - rate(wilsy_counter_system_errors_total{tenantId=\"GLOBAL_ROOT\"}[5m])) * 100 + (wilsy_counter_correlated_events_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_total_events_total{tenantId=\"GLOBAL_ROOT\"}) * 100) / 3",
+            "legendFormat": "Unified Sovereign Score"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 95 },
+                { "color": "#d4af37", "value": 98 },
+                { "color": "green", "value": 99.9 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "textMode": "value_and_name",
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "center"
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Reliability Shards (Availability & Error Velocity)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "avg(wilsy_availability_ratio{tenantId=\"GLOBAL_ROOT\"})",
+            "legendFormat": "Global Availability %"
+          },
+          {
+            "expr": "rate(wilsy_counter_system_errors_total{tenantId=\"GLOBAL_ROOT\"}[5m]) * 100",
+            "legendFormat": "Error Impact %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Resilience & Recovery (Failover Events)",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_availability_ratio{tenantId=\"GLOBAL_ROOT\", region=\"AFRICA\"}",
+            "legendFormat": "Local Shard Uptime"
+          },
+          {
+            "expr": "increase(wilsy_counter_telemetry_replay_attempts_total{tenantId=\"GLOBAL_ROOT\"}[1h])",
+            "legendFormat": "Recovery Strikes"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Observability Correlation Finality",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "(wilsy_counter_correlated_events_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_total_events_total{tenantId=\"GLOBAL_ROOT\"}) * 100",
+            "legendFormat": "Correlation Completeness %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 90 },
+                { "color": "green", "value": 95 }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

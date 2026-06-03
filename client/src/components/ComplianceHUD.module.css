@@ -1,0 +1,1185 @@
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - COMPLIANCE SENTINEL PHYSICS [V33.0.4-FINAL-NO-TRUNCATION]                                                                  ║
+ * ║ [FORTIFIED HEADER ISOLATION | ACTIVE ICON PULSING | SOVEREIGN Z-INDEXING | RESPONSIVE GRID]                                           ║
+ * ║ [FINAL FIX: Removed overflow‑x from hudContainer, added .no‑truncate rules]                                                           ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 33.0.4-REFACTORED | PRODUCTION READY | BIBLICAL WORTH BILLIONS                                                               ║
+ * ║ IDENTITY ANCHORED: WILSON KHANYEZI | SOVEREIGN ARCHITECT | REFACTORED: COMPLETE CSS FORTIFICATION                                     ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+/* 🔥 ABSOLUTE GRID-LOCK: Enforce box-sizing globally to prevent padding/border component bleed */
+* {
+  box-sizing: border-box;
+}
+
+.hudContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+  padding: 15px;
+  isolation: isolate;
+  /* 🔥 FIX: Remove overflow-x: hidden to prevent header clipping */
+  overflow-x: visible;
+  width: 100%;
+}
+
+.hudContainerEmbedded {
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  padding: 8px 10px 24px;
+  gap: 12px;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.72) rgba(0, 0, 0, 0.34);
+}
+
+.hudContainerEmbedded::-webkit-scrollbar {
+  width: 8px;
+}
+
+.hudContainerEmbedded::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.hudContainerEmbedded::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.72);
+  border-radius: 999px;
+}
+
+.hudContainerEmbedded > * {
+  min-width: 0;
+}
+
+.hudContainerEmbedded :global(.nuclear-header) {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(140px, auto) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 14px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(212, 175, 55, 0.16) !important;
+  border-radius: 8px !important;
+  overflow: visible !important;
+  min-height: 66px !important;
+}
+
+.hudContainerEmbedded :global(.nuclear-header .title-area),
+.hudContainerEmbedded :global(.nuclear-header .status) {
+  min-width: 0 !important;
+}
+
+.hudContainerEmbedded :global(.nuclear-header .title-small) {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.hudContainerEmbedded :global(.nuclear-header .title-main) {
+  font-size: clamp(0.95rem, 1.45vw, 1.28rem) !important;
+  line-height: 1.08 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.hudContainerEmbedded :global(.nuclear-header .tabs) {
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+}
+
+.hudContainerEmbedded :global(.nuclear-header .tab) {
+  min-width: 88px !important;
+  min-height: 32px !important;
+  padding: 6px 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.hudContainerEmbedded :global(.nuclear-header .status) {
+  min-width: 132px !important;
+  text-align: right !important;
+}
+
+.hudContainerEmbedded :global(.nuclear-header .status-label),
+.hudContainerEmbedded :global(.nuclear-header .status-value) {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.hudContainerEmbedded .complianceViewPlane {
+  gap: 12px;
+  scroll-margin-top: 0;
+}
+
+.hudContainerEmbedded .complianceEvidenceStack {
+  grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr);
+  gap: 12px;
+}
+
+.hudContainerEmbedded .neuralIntegrityPanel,
+.hudContainerEmbedded .sentinelStreamPanel {
+  min-height: 220px;
+  padding: 16px;
+}
+
+.hudContainerEmbedded .neuralIntegrityHero {
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.62fr);
+  gap: 12px;
+}
+
+.hudContainerEmbedded .neuralIntegrityScore {
+  font-size: clamp(1.9rem, 3.2vw, 3.2rem);
+  letter-spacing: -0.07em;
+}
+
+.hudContainerEmbedded .neuralAccordPanel {
+  align-items: flex-end;
+}
+
+.hudContainerEmbedded .neuralStatGrid {
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.hudContainerEmbedded .neuralStatCard {
+  padding: 10px 8px;
+}
+
+/* 🛡️ LOADING & ERROR STATES */
+.loadingScreen, .errorScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+  background: rgba(5, 5, 5, 0.8);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 8px;
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.errorScreen {
+  border-color: rgba(255, 51, 51, 0.3);
+}
+
+/* 🛡️ HEADER PHYSICS - TOTAL SEPARATION LOCK */
+/* 🔥 FIX: Give title column more width to prevent truncation */
+.headerShard {
+  display: grid;
+  grid-template-columns: 8px minmax(420px, 1fr) minmax(220px, auto);
+  gap: 50px;
+  align-items: center;
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 25px 35px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  min-height: 110px;
+  position: relative;
+  isolation: isolate;
+  transition: all 0.3s ease;
+}
+
+.headerShard:hover {
+  background: rgba(15, 15, 15, 0.7);
+  border-color: rgba(212, 175, 55, 0.15);
+}
+
+.headerContentWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0;
+}
+
+.headerStatusWrapper {
+  text-align: right;
+  border-left: 2px solid rgba(212, 175, 55, 0.25);
+  padding-left: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.topographyLabel {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* 🔥 FIX: Keep title horizontal – no forced wrapping */
+.titanTitle {
+  font-size: 32px;
+  font-weight: 950;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.goldAccent {
+  color: #D4AF37;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+.statusLabel {
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: #555;
+}
+
+.statusDisplay {
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #00ff66;
+}
+
+.statusDisplayGold {
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: 3px;
+  color: #D4AF37;
+  text-transform: uppercase;
+}
+
+/* 🛡️ HEADER ANCHORS */
+.headerAnchorGreen {
+  background: linear-gradient(180deg, #00ff66, #00aa44);
+  width: 8px;
+  height: 100%;
+  border-radius: 4px;
+  box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);
+}
+
+.headerAnchorGold {
+  background: linear-gradient(180deg, #D4AF37, #8a6d1a);
+  width: 8px;
+  height: 100%;
+  border-radius: 4px;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+/* 🛡️ ACTIVE ICON PULSE - ENHANCED */
+.activeIcon {
+  animation: synapticActivePulse 2s infinite ease-in-out;
+  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.8));
+}
+
+@keyframes synapticActivePulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.25); opacity: 1; filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.9)); }
+}
+
+/* 🛡️ BIOMETRIC RETICLE */
+.biometricReticle {
+  background: radial-gradient(circle at 30% 20%, rgba(0, 255, 102, 0.03), rgba(5, 5, 5, 0.95));
+  border: 1px solid rgba(0, 255, 102, 0.15);
+  padding: 45px;
+  border-radius: 8px;
+  min-height: 450px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 🛡️ GAUGE PHYSICS */
+.gaugeContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.scoreWrapper {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.bigScore {
+  font-size: 100px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 0.8;
+  letter-spacing: -6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.percentageSymbol {
+  font-size: 24px;
+  font-weight: 900;
+  color: #D4AF37;
+}
+
+/* 🛡️ ACCORD SECTION */
+.accordContainer {
+  text-align: right;
+}
+
+.statutoryLabel {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #00ff66;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.progressBarRail {
+  background: rgba(255, 255, 255, 0.05);
+  height: 3px;
+  width: 180px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressBarActive {
+  background: linear-gradient(90deg, #D4AF37, #00ff66);
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* 🛡️ STAT GRID */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  margin-top: 40px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 30px;
+}
+
+.statMiniCard {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 20px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.statMiniCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+}
+
+.cardLabel {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #666;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.cardLabelSmall {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+/* 🛡️ ALERT SHIELD */
+.alertShield {
+  background: rgba(5, 5, 5, 0.8);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.alertHeader {
+  background: rgba(212, 175, 55, 0.05);
+  padding: 15px 20px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #D4AF37;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alertScrollContainer {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 300px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alertEntry {
+  border-left: 2px solid #D4AF37;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.2s ease;
+}
+
+.alertEntry:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(2px);
+}
+
+/* 🛡️ SYNC BUTTON */
+.syncButtonLarge {
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.1), rgba(0, 0, 0, 0.8));
+  border: none;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  padding: 15px 20px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #D4AF37;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.syncButtonLarge:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.15);
+  color: #fff;
+  letter-spacing: 3px;
+}
+
+.syncButtonLarge:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 🛡️ METRIC CARD FORTRESS */
+.metricCardFortress {
+  background: rgba(5, 5, 5, 0.9);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  padding: 30px;
+  border-radius: 4px;
+  position: relative;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.cardContentLayer {
+  position: relative;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.metricCardFortress:hover {
+  background: rgba(15, 15, 15, 1);
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: inset 0 0 30px rgba(212, 175, 55, 0.05), 0 30px 60px rgba(0, 0, 0, 1);
+  transform: translateY(-4px);
+}
+
+.metricCardFortress:hover .cardContentLayer {
+  color: #fff;
+}
+
+/* 🛡️ SHIMMER RAIL */
+.shimmerRail {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(212, 175, 55, 0.1);
+  z-index: 5;
+}
+
+.shimmerActive {
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #D4AF37, transparent);
+  animation: shimmerMove 2s infinite;
+}
+
+@keyframes shimmerMove {
+  0% { transform: translateX(-100%); width: 30%; }
+  50% { width: 70%; }
+  100% { transform: translateX(500%); width: 30%; }
+}
+
+/* 🛡️ SPINNING RINGS */
+.spinningRingOuter {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-top: 1px solid #D4AF37;
+  animation: spin 3s linear infinite;
+}
+
+.spinningRingInner {
+  position: absolute;
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 255, 102, 0.2);
+  border-bottom: 1px solid #00ff66;
+  animation: spinReverse 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinReverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+/* 🛡️ GRID PHYSICS - 🔥 FIX: Changed flex bounds to strict fr bounds */
+.metricGridTwoColumn {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 40px;
+  width: 100%;
+}
+
+.complianceViewPlane {
+  display: grid;
+  gap: 24px;
+  width: 100%;
+  min-width: 0;
+  scroll-margin-top: clamp(96px, 14vh, 168px);
+}
+
+.complianceEvidenceStack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.complianceEvidenceStack > * {
+  min-width: 0;
+}
+
+.neuralIntegrityPanel,
+.sentinelStreamPanel {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(110, 240, 189, 0.16);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(110, 240, 189, 0.045), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(0, 0, 0, 0.16)),
+    #000;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 48px rgba(0, 0, 0, 0.32);
+}
+
+.neuralIntegrityPanel {
+  position: relative;
+  min-height: 300px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.neuralIntegrityHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 0.72fr);
+  gap: 18px;
+  align-items: start;
+  width: 100%;
+}
+
+.neuralIntegrityScore {
+  max-width: 100%;
+  color: #fff;
+  font-size: clamp(2.4rem, 5.2vw, 4.2rem);
+  font-weight: 950;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 0.95;
+  letter-spacing: -0.08em;
+  overflow-wrap: anywhere;
+}
+
+.neuralAccordPanel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.neuralAccordText {
+  max-width: 100%;
+  color: #66ff99;
+  font-size: clamp(0.62rem, 0.8vw, 0.74rem);
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.neuralStatGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.neuralStatCard {
+  min-width: 0;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.46);
+}
+
+.sentinelStreamPanel {
+  min-height: 300px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.metricGridFourColumn {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 25px;
+  width: 100%;
+}
+
+.metricTokenCard {
+  position: relative;
+  min-width: 0;
+  min-height: 230px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-content: start;
+  gap: 18px;
+  padding: 22px;
+  overflow: hidden;
+  border: 1px solid #141414;
+  border-radius: 8px;
+  background: #000;
+}
+
+.metricTokenLabel {
+  max-width: 100%;
+  color: #686868;
+  font-size: clamp(0.62rem, 0.82vw, 0.72rem);
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
+}
+
+.metricTokenValueRow {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.metricTokenValueRow svg {
+  flex: 0 0 auto;
+}
+
+.metricTokenValue {
+  min-width: 0;
+  max-width: 100%;
+  font-size: clamp(1.1rem, 1.9vw, 1.55rem);
+  font-weight: 950;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: normal;
+}
+
+.metricTokenSub {
+  min-width: 0;
+  padding-top: 10px;
+  color: #5f5f5f;
+  border-top: 1px solid #0a0a0a;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* 🚀 REVOLUTIONARY FEATURE CARDS */
+.breachRadar, .remediationPanel, .horizonPanel, .panAfricanPanel, .peerBenchPanel {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  padding: 16px;
+  border-radius: 4px;
+  transition: border-color 0.3s ease;
+}
+
+.breachRadar:hover, .remediationPanel:hover, .horizonPanel:hover {
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+.horizonPanel {
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.panAfricanPanel, .peerBenchPanel {
+  border-color: #1a1a1a;
+}
+
+/* Breach radar per-statute bars */
+.breachBarContainer {
+  width: 100%;
+  height: 8px;
+  background: #111;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.breachBarFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.7s ease-in-out;
+}
+
+/* Remediation playbook cards */
+.playbookCard {
+  background: #111;
+  border: 1px solid #222;
+  padding: 12px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.playbookCard:hover {
+  border-color: rgba(212, 175, 55, 0.3);
+  background: #161616;
+}
+
+.playbookPriorityBadge {
+  padding: 2px 8px;
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-radius: 2px;
+}
+
+.playbookPriorityImmediate {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff4444;
+  border: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.playbookPriorityHigh {
+  background: rgba(255, 165, 0, 0.2);
+  color: #ff9444;
+  border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+.playbookPriorityLow {
+  background: rgba(0, 255, 0, 0.2);
+  color: #44ff44;
+  border: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+/* Horizon scan cards */
+.horizonCard {
+  background: #111;
+  border: 1px solid #222;
+  padding: 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: all 0.3s ease;
+}
+
+.horizonCard:hover {
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+.horizonImpactDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.horizonImpactCritical {
+  background: #ff4444;
+  animation: pulse 2s infinite;
+}
+
+.horizonImpactHigh {
+  background: #ff9444;
+}
+
+.horizonImpactMedium {
+  background: #ffdd44;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(255, 68, 68, 0.6); }
+  50% { opacity: 0.5; box-shadow: 0 0 12px rgba(255, 68, 68, 0.9); }
+}
+
+/* Pan-African posture bars */
+.panAfricanBar {
+  width: 64px;
+  height: 4px;
+  background: #111;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.panAfricanBarFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.panAfricanBarHigh { background: #44ff44; }
+.panAfricanBarMedium { background: #ffdd44; }
+.panAfricanBarLow { background: #ff4444; }
+
+/* Voice query styles */
+.voiceButton {
+  padding: 4px 8px;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.voiceButton:hover {
+  color: #888;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.voiceButtonActive {
+  border-color: #D4AF37;
+  color: #D4AF37;
+  background: rgba(212, 175, 55, 0.1);
+  animation: pulse 2s infinite;
+}
+
+.voiceResponseBox {
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+/* View mode toggle buttons */
+.viewModeButton {
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.viewModeButton:hover {
+  color: #888;
+}
+
+.viewModeButtonActive {
+  border-color: #D4AF37;
+  color: #D4AF37;
+  background: rgba(212, 175, 55, 0.1);
+}
+
+/* Export audit button */
+.exportAuditButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #D4AF37;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.exportAuditButton:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.5);
+  color: #fff;
+}
+
+/* Notification toggle button */
+.notificationButton {
+  padding: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.notificationButton:hover {
+  color: #888;
+}
+
+.notificationButtonActive {
+  border-color: rgba(212, 175, 55, 0.3);
+  color: #D4AF37;
+}
+
+/* Scrollable container */
+.scrollableContainer {
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
+}
+
+.scrollableContainer::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollableContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollableContainer::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.2);
+  border-radius: 2px;
+}
+
+/* 🛡️ RESPONSIVE BREAKPOINTS */
+@media (max-width: 1400px) {
+  .titanTitle {
+    font-size: 28px;
+    letter-spacing: 2px;
+  }
+
+  .bigScore {
+    font-size: 80px;
+    letter-spacing: -4px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .metricGridTwoColumn {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .headerShard {
+    grid-template-columns: 8px 1fr auto;
+    gap: 30px;
+    padding: 20px 25px;
+  }
+
+  .headerStatusWrapper {
+    padding-left: 25px;
+  }
+
+  .titanTitle {
+    font-size: 24px;
+    letter-spacing: 1.5px;
+  }
+
+  .statGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+  }
+}
+
+@media (max-width: 992px) {
+  /* Allow title to wrap only when screen becomes too narrow */
+  .titanTitle {
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 768px) {
+  .metricGridFourColumn {
+    grid-template-columns: 1fr;
+  }
+
+  .headerShard {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .headerStatusWrapper {
+    text-align: center;
+    border-left: none;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    padding-left: 0;
+    padding-top: 15px;
+    white-space: normal;
+  }
+
+  .headerContentWrapper {
+    text-align: center;
+  }
+
+  .statGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .biometricReticle {
+    padding: 25px;
+  }
+
+  .bigScore {
+    font-size: 60px;
+  }
+
+  .titanTitle {
+    font-size: 20px;
+    letter-spacing: 1px;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .topographyLabel {
+    justify-content: center;
+  }
+
+  .viewModeButton {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+/* Additional small fix: ensure view buttons are not squashed on medium screens */
+@media (max-width: 1000px) {
+  .headerShard {
+    gap: 20px;
+  }
+  .viewModeButton {
+    padding: 4px 8px;
+    font-size: 9px;
+  }
+}
+
+/* ============================================================================
+   🔥 FINAL OVERRIDE – FORCE NO TRUNCATION ON THE NEW HEADER
+   ============================================================================ */
+.no-truncate,
+.no-truncate * {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+}
+
+/* On narrow screens, allow the header to wrap gracefully */
+@media (max-width: 900px) {
+  .no-truncate,
+  .no-truncate * {
+    white-space: normal !important;
+  }
+  .no-truncate .header-buttons {
+    flex-wrap: wrap !important;
+  }
+}
+
+/* ============================================================================
+   🚀 ULTIMATE OVERRIDE – FORCE HEADER VISIBILITY & CLICKABILITY
+   ============================================================================ */
+.no-truncate,
+.no-truncate * {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  pointer-events: auto !important;
+  z-index: 100000 !important;
+  position: relative !important;
+}
+
+/* Ensure the header container itself is not clipped by any parent */
+.hudContainer {
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  max-width: none !important;
+}
+
+.hudContainer.hudContainerEmbedded {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+
+/* On narrow screens (tablet/mobile) allow wrapping */
+@media (max-width: 900px) {
+  .no-truncate,
+  .no-truncate * {
+    white-space: normal !important;
+  }
+  .no-truncate .header-buttons {
+    flex-wrap: wrap !important;
+  }
+}

@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
  * ╔══════════════════════════════════════════════════════════════════════╗
  * ║                 WILSY OS - QUANTUM DATA SUBJECT SERVICE              ║
@@ -36,20 +37,48 @@
  * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
  */
 
+/**
+ * 🏛️ WILSY OS - QUANTUM DATA SUBJECT SERVICE v1.0.0 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/dataSubjectService.js
+ * @version 1.0.0
+ * @lastModified 2026-04-07
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * Quantum Data Subject Service for DSAR lifecycle management, PII orchestration,
+ * and compliance automation. Handles POPIA, GDPR, and pan‑African regulations.
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - DSAR encryption keys must be rotated quarterly.
+ * - Audit logs are immutable – do not modify.
+ * - See CONFLUENCE://WilsyOS/DataSubjectService for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-07
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-07
+ * • Johan Botha – Compliance: 2026-04-07
+ */
+
 // QUANTUM IMPORTS: PRECISION-PINNED DEPENDENCIES
-require('dotenv').config(); // Env Vault Loading - MANDATORY
-const crypto = require('crypto');
-const redis = require('../config/redis');
-const { AuditTrail } = require('../models/AuditTrail');
-const { User } = require('../models/User');
-const { ComplianceRule } = require('../models/complianceRule');
-const { DataSubjectRequest } = require('../models/dataSubjectRequest');
-const { encryptData, decryptData } = require('../utils/cryptoEngine');
-const { sendSecureNotification } = require('../utils/notificationService');
-const loggerRaw = require('../utils/quantumLogger.js');
+import dotenv from 'dotenv';
+import crypto from 'crypto';
+import redis from '../config/redis.js';
+import { AuditTrail } from '../models/AuditTrail.js';
+import { User } from '../models/User.js';
+import { ComplianceRule } from '../models/complianceRule.js';
+import { DataSubjectRequest } from '../models/dataSubjectRequest.js';
+import { encryptData, decryptData } from '../utils/cryptoEngine.js';
+import { sendSecureNotification } from '../utils/notificationService.js';
+import loggerRaw from '../utils/quantumLogger.js';
+import { generateDSARReport } from '../utils/reportGenerator.js';
+import { validatePOPIAConsent } from '../validators/popiaValidator.js';
+
+dotenv.config();
+
 const logger = loggerRaw.default || loggerRaw;
-const { generateDSARReport } = require('../utils/reportGenerator');
-const { validatePOPIAConsent } = require('../validators/popiaValidator');
 
 // QUANTUM CONSTANTS: IMMUTABLE COMPLIANCE PARAMETERS
 const DSAR_TIMELINES = {
@@ -641,7 +670,7 @@ class DataSubjectService {
 
   async validateProcessorPermission(processorId, permission) {
     const user = await User.findById(processorId);
-    return user && user.permissions.includes(permission);
+    return user && user.permissions && user.permissions.includes(permission);
   }
 
   async validateSeniorOfficer(officerId) {

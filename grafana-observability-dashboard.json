@@ -1,0 +1,145 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-observability-sovereign-v1",
+    "title": "🏛️ WILSY OS - Sovereign Observability HUD",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 2,
+    "panels": [
+      {
+        "type": "logs",
+        "title": "Institutional System Logs (Loki / DB Forensic Stream)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "{tenantId=\"GLOBAL_ROOT\"}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showTime": true,
+          "enableLogDetails": true,
+          "sortOrder": "Descending"
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Sovereign Correlation (Nucleus Load vs Latency)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 18, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_system_load",
+            "legendFormat": "System Load"
+          },
+          {
+            "expr": "wilsy_latency_request_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.95\"}",
+            "legendFormat": "p95 Latency (ms)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 70 },
+                { "color": "red", "value": 90 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Correlation Index",
+        "id": 3,
+        "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+        "targets": [
+          {
+            "expr": "(wilsy_counter_correlated_events_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_total_events_total{tenantId=\"GLOBAL_ROOT\"}) * 100",
+            "legendFormat": "Completeness %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 85 },
+                { "color": "green", "value": 98 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "System Fracture Rate (Sovereign Error Strike)",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_telemetry_integrity_failures_total{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "Fractures/Sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "pps",
+            "color": { "fixedColor": "red", "mode": "fixed" }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Latency Shards (p50 | p95 | p99 Finality)",
+        "id": 6,
+        "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_latency_request_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.50\"}", "legendFormat": "p50 (Median)" },
+          { "expr": "wilsy_latency_request_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.95\"}", "legendFormat": "p95 (Critical)" },
+          { "expr": "wilsy_latency_request_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.99\"}", "legendFormat": "p99 (Outlier)" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "custom": { "fillOpacity": 15, "lineInterpolation": "smooth" }
+          }
+        }
+      },
+      {
+        "type": "debug",
+        "title": "Distributed Trace Visualization (Tempo / Jaeger)",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 24, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "{tenantId=\"GLOBAL_ROOT\"}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "title": "Observability Executive Narrative",
+        "id": 7,
+        "gridPos": { "x": 0, "y": 32, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### 🏛️ Sovereign Observability Report\nThis cockpit unifies **Logs, Metrics, and Traces** into a single biblical reality. The **Fracture Rate** monitors for integrity failures, while the **Latency Shards** prove that the OS executes institutional strikes with sub-millisecond precision ($p50$). Any load/latency divergence is caught by the **Correlation Index**, ensuring total visibility for the Boardroom."
+        }
+      }
+    ]
+  }
+}

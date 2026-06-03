@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * ============================================================================
  * QUANTUM SENTINEL: COMPLIANCE PREDICTOR SERVICE - AI-POWERED JURISPRUDENCE ENGINE
  * ============================================================================
@@ -53,29 +54,49 @@
  * 6. Quantum-Resilient Encryption for model weights
  */
 
+/**
+ * 🏛️ WILSY OS - QUANTUM COMPLIANCE PREDICTOR v2.0.0 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/compliancePredictor.js
+ * @version 2.0.0
+ * @lastModified 2026-04-07
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * AI-powered compliance risk predictor using TensorFlow.js, NLP, and explainable AI.
+ * Predicts violations for POPIA, FICA, Companies Act, and other South African frameworks.
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - Model retraining must be logged and audited.
+ * - Training data must be anonymized per POPIA.
+ * - See CONFLUENCE://WilsyOS/CompliancePredictor for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-07
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-07
+ * • Johan Botha – Compliance: 2026-04-07
+ */
+
 // ============================================================================
 // QUANTUM IMPORTS: AI/ML Dependencies from the Eternal Forge
 // ============================================================================
-require('dotenv').config();
-const natural = require('natural');
+import dotenv from 'dotenv';
+import natural from 'natural';
+import crypto from 'crypto';
+import tf from '@tensorflow/tfjs-node';
+import brain from 'brain.js';
+import compromise from 'compromise';
+import mongoose from 'mongoose';
+import User from '../models/User.js';
+import ComplianceEvent from '../models/complianceEvent.js';
+import LegalDocument from '../models/legalDocument.js';
+import Regulation from '../models/regulation.js';
+import AuditLogger from '../utils/auditLogger.js';
 
-// Quantum Security: Cryptographic utilities for model encryption
-const crypto = require('crypto');
-const tf = require('@tensorflow/tfjs-node');
-const brain = require('brain.js');
-const compromise = require('compromise');
+dotenv.config();
 
-const { createCipheriv, createDecipheriv, randomBytes, scryptSync } = crypto;
-
-// Internal quantum dependencies
-const mongoose = require('mongoose');
-const User = require('../models/User');
-const ComplianceEvent = require('../models/complianceEvent');
-const LegalDocument = require('../models/legalDocument');
-const Regulation = require('../models/regulation.js');
-const AuditLogger = require('../utils/auditLogger');
-
-// Database utilities
 const { ObjectId } = mongoose.Types;
 
 // Quantum Shield: Validate environment variables
@@ -151,7 +172,7 @@ const AI_CONFIG = {
     TOKENIZER: new natural.WordTokenizer(),
     STEMMER: natural.PorterStemmer,
     SENTIMENT_ANALYZER: new natural.SentimentAnalyzer('English', natural.PorterStemmer, 'afinn'),
-    LEGAL_TERMS_CORPUS: require('../data/legal-terms-corpus.json'), // Path to legal terminology
+    LEGAL_TERMS_CORPUS: [], // Will be loaded dynamically
   },
 
   // Data Retention - POPIA Compliance
@@ -252,7 +273,7 @@ class CompliancePredictor {
   deriveEncryptionKey(baseKey) {
     // Quantum Security: Use scrypt for key derivation (memory-hard)
     const salt = 'WilsyOS-CompliancePredictor-Salt-2024'; // Would be stored securely in production
-    return scryptSync(baseKey, salt, 32); // 32 bytes for AES-256
+    return crypto.scryptSync(baseKey, salt, 32); // 32 bytes for AES-256
   }
 
   /*
@@ -296,8 +317,8 @@ class CompliancePredictor {
    */
   async loadModels() {
     try {
-      const fs = require('fs').promises;
-      const path = require('path');
+      const fs = await import('fs/promises');
+      const path = await import('path');
 
       // Check if model files exist
       const modelPath = path.join(AI_CONFIG.MODEL_SAVE_PATH, 'risk-predictor-encrypted.json');
@@ -1466,9 +1487,9 @@ class CompliancePredictor {
    * @returns {string} Compliance notice
    */
   generateComplianceNotice(context, prediction) {
-    return `This AI prediction is provided for informational purposes based on machine learning analysis of historical compliance data. 
-        It does not constitute legal advice. Organizations must consult qualified legal professionals for compliance decisions. 
-        All predictions are logged for audit purposes in compliance with POPIA Section 17 and the ECT Act. 
+    return `This AI prediction is provided for informational purposes based on machine learning analysis of historical compliance data.
+        It does not constitute legal advice. Organizations must consult qualified legal professionals for compliance decisions.
+        All predictions are logged for audit purposes in compliance with POPIA Section 17 and the ECT Act.
         Confidence level: ${(prediction.confidence * 100).toFixed(2)}%.`;
   }
 
@@ -1843,8 +1864,8 @@ class CompliancePredictor {
    */
   async saveModels() {
     try {
-      const fs = require('fs').promises;
-      const path = require('path');
+      const fs = await import('fs/promises');
+      const path = await import('path');
 
       // Create models directory if it doesn't exist
       await fs.mkdir(AI_CONFIG.MODEL_SAVE_PATH, { recursive: true });
@@ -1887,8 +1908,8 @@ class CompliancePredictor {
    */
   encryptModel(modelJson) {
     try {
-      const iv = randomBytes(16); // Initialization vector
-      const cipher = createCipheriv(AI_CONFIG.MODEL_ENCRYPTION_ALGORITHM, this.encryptionKey, iv);
+      const iv = crypto.randomBytes(16); // Initialization vector
+      const cipher = crypto.createCipheriv(AI_CONFIG.MODEL_ENCRYPTION_ALGORITHM, this.encryptionKey, iv);
 
       let encrypted = cipher.update(modelJson, 'utf8', 'hex');
       encrypted += cipher.final('hex');
@@ -1921,7 +1942,7 @@ class CompliancePredictor {
       const iv = Buffer.from(modelData.iv, 'hex');
       const authTag = Buffer.from(modelData.authTag, 'hex');
 
-      const decipher = createDecipheriv(
+      const decipher = crypto.createDecipheriv(
         AI_CONFIG.MODEL_ENCRYPTION_ALGORITHM,
         this.encryptionKey,
         iv

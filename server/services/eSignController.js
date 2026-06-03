@@ -1,5 +1,4 @@
-#!/* eslint-disable */
-const require = _createRequire(import.meta.url);
+/* eslint-disable */
 /* ╔════════════════════════════════════════════════════════════════╗
   ║ E-SIGNATURE QUANTUM CONTROLLER - INVESTOR-GRADE MODULE        ║
   ║ [95% validation accuracy | R3M risk elimination | 90% margins]║
@@ -11,6 +10,16 @@ const require = _createRequire(import.meta.url);
  * • Generates: R300K/year revenue @ 90% margin
  * • Compliance: ECT Act §13, POPIA §19 Verified
  */
+
+// ============================================================================
+// QUANTUM IMPORTS - ES MODULE CONVERSION
+// ============================================================================
+import auditLogger from '../utils/auditLogger.js';
+import cryptoUtils from '../utils/cryptoUtils.js';
+import loggerRaw from '../utils/logger.js';
+import quantumCrypto from '../utils/quantumCryptoEngine.js';
+
+const logger = loggerRaw.default || loggerRaw;
 
 // INTEGRATION_HINT: imports -> [../utils/auditLogger, ../utils/logger, ../utils/cryptoUtils, ../utils/quantumCryptoEngine]
 // Integration Map:
@@ -32,13 +41,6 @@ graph TD
     I[controllers/documentController.js] --> B
     J[workers/signatureCleanup.js] --> B
 */
-
-const auditLogger = require('../utils/auditLogger');
-const cryptoUtils = require('../utils/cryptoUtils');
-const loggerRaw = require('../utils/logger');
-
-const logger = loggerRaw.default || loggerRaw;
-const quantumCrypto = require('../utils/quantumCryptoEngine');
 
 // Assumptions based on ECT Act Section 13 requirements:
 // - ElectronicSignature model exists with fields: _id, tenantId, documentId, signatoryId, signatureType,
@@ -603,5 +605,5 @@ class ESignController {
   }
 }
 
-// Export singleton instance with no top-level side effects
+// Export singleton instance with no top-level side effects (ES MODULE)
 export default new ESignController();

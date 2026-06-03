@@ -1,0 +1,504 @@
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - SOVEREIGN NODE REGISTRY STYLES [V23.1.0-SINGULARITY-FINALITY]                                                               ║
+ * ║ [NEURAL PHYSICS | MACHINED OBSIDIAN | SINGULARITY MODE | INSPECTOR CERTIFICATE]                                                       ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 23.1.0-SINGULARITY | PRODUCTION READY | BILLION DOLLAR SPEC                                                                   ║
+ * ║ EPITOME: NO CHILD'S PLACE | INSTITUTIONAL FINALITY | BIBLICAL WORTH BILLIONS                                                           ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/Sovereign_Node_Registry.module.css               ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated zero-ghost policy. Refined lone-node Singularity aesthetic.                          ║
+ * ║ • AI Engineering (Gemini) - RECTIFIED: Implemented warning pulse for zero-node states and certificate styling for inspector.           ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 760px;
+  height: auto;
+  background: #000;
+  padding: clamp(18px, 2vw, 30px);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 150px rgba(0,0,0,1);
+  font-family: 'JetBrains Mono', monospace;
+  border-radius: 8px;
+  min-width: 0;
+}
+
+/* 🛰️ COMMANDER BRIDGE HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 25px;
+  border-bottom: 1px solid #111;
+  padding-bottom: 25px;
+  flex-shrink: 0;
+}
+
+.titleArea { display: flex; align-items: center; gap: 20px; min-width: 0; }
+
+.iconHandoff {
+  width: 78px;
+  min-width: 78px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  background:
+    linear-gradient(180deg, rgba(212, 175, 55, 0.08), rgba(0, 0, 0, 0)),
+    #030303;
+  box-shadow: inset 0 0 32px rgba(212, 175, 55, 0.08);
+}
+
+.title {
+  font-size: clamp(1.1rem, 1.65vw, 1.6rem);
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  color: #fff;
+  text-transform: uppercase;
+  margin: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.subtitle {
+  font-size: 0.6rem;
+  font-weight: 950;
+  color: #444;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin-top: 5px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.goldText { color: #D4AF37; }
+
+.liveStatusArea {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  min-width: 230px;
+  text-align: right;
+}
+
+.pulseDot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #10b981;
+  animation: beacon 1.5s infinite;
+}
+
+.pulseDotWarning {
+  width: 8px;
+  height: 8px;
+  background: #ff3333;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #ff3333;
+  animation: beacon 0.8s infinite;
+}
+
+@keyframes beacon {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.statusText {
+  font-size: 0.7rem;
+  color: #10b981;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.lastSync { font-size: 0.55rem; color: #333; font-weight: 700; }
+
+/* 📊 NEURAL METRICS GRID */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+  flex-shrink: 0;
+}
+
+.metricCard {
+  background: linear-gradient(180deg, #0a0a0a 0%, #000 100%);
+  border: 1px solid #151515;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  min-height: 128px;
+}
+
+.metricLabel {
+  font-size: 0.55rem;
+  color: #777;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+.metricValue {
+  font-size: clamp(1.25rem, 1.9vw, 1.8rem);
+  color: #fff;
+  font-weight: 950;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+.metricUnit { font-size: 0.7rem; color: #444; margin-left: 5px; }
+.metricSub { font-size: 0.5rem; color: #333; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
+
+.metricTrack {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #111;
+}
+
+.metricFill {
+  height: 100%;
+  background: #D4AF37;
+  box-shadow: 0 0 10px #D4AF37;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 🔍 ACTION LAYER */
+.actionRow {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+  align-items: stretch;
+}
+
+.searchPlate {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #050505;
+  border: 1px solid #111;
+  padding: 15px 25px;
+}
+
+.searchInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #D4AF37;
+  font-size: 0.8rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  outline: none;
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 0;
+}
+
+.refreshBtn {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  color: #555;
+  padding: 0 25px;
+  font-size: 0.65rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s;
+}
+
+.refreshBtn:hover { border-color: #D4AF37; color: #fff; }
+
+/* 📋 MACHINED LEDGER (TABLE) */
+.ledgerArea {
+  flex: 1;
+  min-height: 390px;
+  background: #020202;
+  border: 1px solid #0a0a0a;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.35) rgba(255, 255, 255, 0.04);
+}
+
+.nodeTable {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+
+.nodeTable th {
+  background: #050505;
+  color: #333;
+  font-size: 0.55rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  padding: 15px 25px;
+  text-align: left;
+  border-bottom: 1px solid #111;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.nodeRow {
+  border-bottom: 1px solid #080808;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.nodeRow:hover { background: #080808; }
+
+.nodeTable td {
+  padding: 20px 25px;
+  font-size: 0.7rem;
+  color: #555;
+  vertical-align: middle;
+}
+
+.nodeId { color: #fff !important; font-weight: 950; }
+.nodeId span { display: inline-block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+.entity { min-width: 160px; }
+.regionText { color: #c7c0aa !important; font-weight: 800; letter-spacing: 0.06em; }
+
+.shardBadge {
+  background: #000;
+  border: 1px solid #1a1a1a;
+  padding: 4px 10px;
+  color: #D4AF37;
+  font-size: 0.6rem;
+  font-weight: 950;
+  display: inline-block;
+  letter-spacing: 1px;
+}
+
+/* 📉 LATENCY PLATE PHYSICS */
+.latencyPlate {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 20px;
+}
+
+.latencyBar {
+  width: 2px;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  transition: height 0.5s ease;
+}
+
+/* 🧬 HASH PULSE */
+.hashCell { position: relative; }
+.hashPulse { display: flex; align-items: center; gap: 10px; }
+.fingerprintPulse { color: #D4AF37; animation: scan 2s infinite linear; }
+.hashText {
+  display: inline-block;
+  max-width: 320px;
+  font-size: 0.6rem;
+  color: #777;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}
+
+@keyframes scan {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* 🛡️ INSPECTOR OVERLAY (AWE FEATURE) */
+.inspectorOverlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.9);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 50px;
+}
+
+.inspectorCard {
+  width: 100%;
+  max-width: 550px;
+  background: #050505;
+  border: 1px solid #D4AF37;
+  box-shadow: 0 30px 60px rgba(0,0,0,1), 0 0 40px rgba(212, 175, 55, 0.1);
+  padding: 45px;
+  position: relative;
+}
+
+.inspectorCard::before {
+  content: "AUTHENTICITY_VERIFIED";
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 0.45rem;
+  color: #D4AF37;
+  opacity: 0.3;
+  letter-spacing: 2px;
+}
+
+.inspectorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 35px;
+  border-bottom: 1px solid #111;
+  padding-bottom: 20px;
+}
+
+.inspectorTitle {
+  font-size: 0.85rem;
+  font-weight: 950;
+  color: #fff;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+}
+
+.closeBtn { background: none; border: none; color: #333; font-size: 1.5rem; cursor: pointer; transition: color 0.2s; }
+.closeBtn:hover { color: #fff; }
+
+.inspectorBody { display: flex; flex-direction: column; gap: 20px; }
+.certRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  font-size: 0.7rem;
+  font-weight: 950;
+  color: #444;
+  letter-spacing: 0.1em;
+  align-items: flex-start;
+}
+
+.certRow span:last-child {
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.certFooter {
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 1px solid #111;
+  text-align: center;
+  font-size: 0.55rem;
+  color: #222;
+  font-weight: 950;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* 🌀 STATES */
+.loadingState, .emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #D4AF37;
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0.4em;
+  gap: 20px;
+  text-align: center;
+  padding: 30px;
+}
+
+.emptyState span { color: #ff3333; }
+
+.footer {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #111;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.55rem;
+  color: #222;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  gap: 16px;
+}
+
+.footerMeta { display: flex; align-items: center; gap: 8px; }
+.footerHash { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 52%; }
+
+@media (max-width: 1100px) {
+  .header,
+  .actionRow,
+  .footer {
+    flex-direction: column;
+  }
+
+  .liveStatusArea {
+    align-items: flex-start;
+    text-align: left;
+    min-width: 0;
+  }
+
+  .refreshBtn {
+    min-height: 48px;
+    justify-content: center;
+  }
+
+  .footerHash {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .container {
+    min-height: 680px;
+  }
+
+  .titleArea {
+    align-items: flex-start;
+  }
+
+  .iconHandoff {
+    width: 54px;
+    min-width: 54px;
+  }
+
+  .searchPlate {
+    min-width: 0;
+    padding: 14px 16px;
+  }
+
+  .inspectorOverlay {
+    padding: 18px;
+  }
+
+  .inspectorCard {
+    padding: 28px 20px;
+  }
+
+  .certRow {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .certRow span:last-child {
+    text-align: left;
+  }
+}

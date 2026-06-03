@@ -1,0 +1,183 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  ⚠️ THREAT INDICATOR COMPONENT - WILSY OS 2050                           ║
+  ║  Real-time Threat Level Visualization                                    ║
+  ║  Supreme Architect: Wilson Khanyezi - 10th Generation                    ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-threat-indicator {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-critical);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-threat-indicator::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--sa-critical-500),
+    var(--sa-warning-500),
+    var(--sa-success-500)
+  );
+  animation: threat-scan 3s linear infinite;
+}
+
+.sa-threat-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 50%,
+    rgba(239, 68, 68, 0.1) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.sa-threat-level {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  animation: threat-pulse 2s infinite;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-threat-level.critical {
+  background: var(--sa-critical-500);
+  box-shadow: 0 0 20px var(--sa-critical-500);
+}
+
+.sa-threat-level.high {
+  background: var(--sa-warning-500);
+  box-shadow: 0 0 20px var(--sa-warning-500);
+}
+
+.sa-threat-level.moderate {
+  background: #f97316;
+  box-shadow: 0 0 20px #f97316;
+}
+
+.sa-threat-level.low {
+  background: var(--sa-success-500);
+  box-shadow: 0 0 20px var(--sa-success-500);
+}
+
+.sa-threat-info {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-threat-title {
+  font-size: var(--sa-text-small);
+  color: var(--sa-text-secondary);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wide);
+}
+
+.sa-threat-value {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-text-primary);
+}
+
+.sa-threat-meter-container {
+  position: relative;
+  z-index: 1;
+  width: 100px;
+}
+
+.sa-threat-meter {
+  width: 100%;
+  height: 4px;
+  background: var(--sa-bg-primary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.sa-threat-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.sa-threat-fill.critical {
+  background: linear-gradient(90deg, var(--sa-critical-500), #ff6b6b);
+  box-shadow: 0 0 10px var(--sa-critical-500);
+}
+
+.sa-threat-fill.high {
+  background: linear-gradient(90deg, var(--sa-warning-500), #ffb347);
+  box-shadow: 0 0 10px var(--sa-warning-500);
+}
+
+.sa-threat-fill.moderate {
+  background: linear-gradient(90deg, #f97316, #ffa726);
+  box-shadow: 0 0 10px #f97316;
+}
+
+.sa-threat-fill.low {
+  background: linear-gradient(90deg, var(--sa-success-500), #4ecdc4);
+  box-shadow: 0 0 10px var(--sa-success-500);
+}
+
+.sa-threat-timestamp {
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-tertiary);
+  font-family: var(--sa-font-forensic);
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes threat-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes threat-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.sa-threat-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--sa-border-critical);
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-tertiary);
+  position: relative;
+  z-index: 1;
+}
+
+.sa-threat-source {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sa-threat-source::before {
+  content: '🔍';
+  font-size: 0.75rem;
+}

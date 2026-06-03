@@ -1,0 +1,101 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-sla-heatmap",
+    "title": "🏛️ WILSY OS - SLA Compliance Heatmap",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "heatmap",
+        "title": "Sovereign Replay Latency Distribution (p50/p95/p99)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 10 },
+        "targets": [
+          {
+            "expr": "wilsy_latency_telemetry_replay_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.5\"}",
+            "legendFormat": "Median (p50)"
+          },
+          {
+            "expr": "wilsy_latency_telemetry_replay_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.95\"}",
+            "legendFormat": "High (p95)"
+          },
+          {
+            "expr": "wilsy_latency_telemetry_replay_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.99\"}",
+            "legendFormat": "Critical (p99)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "custom": {
+              "hideFrom": { "tooltip": false, "viz": false, "legend": false }
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 300 },
+                { "color": "red", "value": 500 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "calculate": false,
+          "color": {
+            "mode": "opacity",
+            "scheme": "GnBu",
+            "steps": 64
+          },
+          "yAxis": {
+            "axisPlacement": "left",
+            "unit": "ms"
+          }
+        }
+      },
+      {
+        "type": "heatmap",
+        "title": "Regulatory Compliance Velocity (Overlays)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 10, "w": 24, "h": 10 },
+        "targets": [
+          {
+            "expr": "wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "{{overlay}} Compliance %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 75 },
+                { "color": "green", "value": 90 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "calculate": false,
+          "color": {
+            "mode": "scheme",
+            "scheme": "YlGn",
+            "steps": 64
+          },
+          "yAxis": {
+            "axisPlacement": "left",
+            "unit": "percent"
+          }
+        }
+      }
+    ]
+  }
+}

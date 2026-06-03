@@ -1,0 +1,33 @@
+{
+  "info": {
+    "name": "WILSY OS - Sovereign Tenant Onboarding",
+    "description": "Official API collection for WILSY OS Tenant Onboarding",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Onboard New Tenant",
+      "method": "POST",
+      "header": [
+        { "key": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mode": "raw",
+        "raw": "{\n  \"data\": {\n    \"tenantId\": \"ACME_CORP\",\n    \"legalName\": \"Acme Corporation (Pty) Ltd\",\n    \"tradingName\": \"Acme Tech Solutions\",\n    \"businessType\": \"Private Company\",\n    \"registrationNumber\": \"2025/123456/07\",\n    \"taxNumber\": \"9876543210\",\n    \"latitude\": -26.1075,\n    \"longitude\": 28.0542,\n    \"regionCode\": \"ZAF-GP-SANDTON\",\n    \"directors\": [\n      {\n        \"fullName\": \"Johnathan Smith\",\n        \"idNumber\": \"8503124789087\",\n        \"ownership\": 55,\n        \"role\": \"Director\"\n      }\n    ]\n  }\n}"
+      },
+      "url": {
+        "raw": "{{base_url}}/api/tenants/onboard",
+        "host": ["{{base_url}}"],
+        "path": ["api", "tenants", "onboard"]
+      }
+    },
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "url": "{{base_url}}/health"
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:4000" }
+  ]
+}

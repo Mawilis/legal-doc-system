@@ -1,4 +1,4 @@
-#!/* eslint-disable */
+/* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/services/legal-engine/PrecedentAnalyzer.js
  * PATH: /server/services/legal-engine/PrecedentAnalyzer.js

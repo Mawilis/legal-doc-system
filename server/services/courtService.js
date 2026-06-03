@@ -1,4 +1,4 @@
-#!/* eslint-disable */
+/* eslint-disable */
 /* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ COURT SERVICE - COMPLETE SA JUDICIAL MANAGEMENT SYSTEM                    ║
   ║ WITH QUANTUM PRECEDENT MATCHING                                           ║

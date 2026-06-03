@@ -1,0 +1,141 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-investor-presentation",
+    "title": "🏛️ WILSY OS - Sovereign Investor Presentation",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Executive SLA Scorecard",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 8, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_gauge_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA %" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 98 },
+                { "color": "green", "value": 99.9 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Compliance Scorecard",
+        "id": 2,
+        "gridPos": { "x": 8, "y": 0, "w": 8, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_gauge_compliance_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Compliance %" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 90 },
+                { "color": "green", "value": 95 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Sustainability Scorecard",
+        "id": 3,
+        "gridPos": { "x": 16, "y": 0, "w": 8, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_gauge_sustainability_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "ESG Mix %" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 75 },
+                { "color": "green", "value": 92.5 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Institutional KPI Trend Summary (Q-on-Q Velocity)",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 6, "w": 24, "h": 10 },
+        "targets": [
+          { "expr": "wilsy_gauge_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA Score" },
+          { "expr": "wilsy_gauge_compliance_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Compliance Index" },
+          { "expr": "wilsy_gauge_investor_confidence_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Confidence Index" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "palette-classic" },
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+          }
+        }
+      },
+      {
+        "type": "barchart",
+        "title": "Sovereign Asset Comparison",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA" },
+          { "expr": "wilsy_gauge_compliance_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "GOV" },
+          { "expr": "wilsy_gauge_efficiency_index{tenantId=\"GLOBAL_ROOT\"} * 10", "legendFormat": "EFF (x10)" }
+        ],
+        "options": { "orientation": "horizontal", "displayMode": "gradient" }
+      },
+      {
+        "type": "stat",
+        "title": "Investor Confidence Index (The Wilsy Strike)",
+        "id": 6,
+        "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_investor_confidence_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "CONFIDENCE INDEX" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "#d4af37", "value": 95 },
+                { "color": "green", "value": 98 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center" }
+      }
+    ]
+  }
+}

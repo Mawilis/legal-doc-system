@@ -1,0 +1,933 @@
+/* ============================================================================
+   WILSY OS - BOARDROOM HUD STYLES [V52.2.0-MARS-PROTOCOL-ENHANCED]
+   [GLASSMORPHISM | CUSTOM SCROLLBARS | ANIMATIONS | DASHBOARD REGISTRY NAVIGATION]
+   ============================================================================
+   ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/BoardroomHUD.module.css
+   ============================================================================
+   COMPETITIVE EDGE:
+   - Glassmorphism overlays with backdrop blur, creating a modern, translucent HUD.
+   - Gold (#D4AF37) and black theme exudes authority and wealth.
+   - Custom scrollbars that match the sovereign aesthetic – not default browser scrollbars.
+   - Subtle animations (pulse, shine, fade) that convey live data without distraction.
+   - Hardware-accelerated transitions for smooth expansion/collapse.
+   - Responsive adjustments for mobile and tablet boardroom access.
+   - Dashboard registry navigation tabs with sovereign gold hover effects.
+   ============================================================================
+   👥 COLLABORATION:
+   • Wilson Khanyezi (CEO/Lead Architect) - Mandated institutional-grade visual design.
+   • AI Engineering (DeepSeek) - ENGINEERED: Glassmorphism, custom scrollbars, animations.
+   • AI Engineering (DeepSeek) - ENHANCED: Added dashboard registry navigation styles.
+   ============================================================================
+*/
+
+/* ----------------------------------------------------------------------------
+   CUSTOM SCROLLBAR (Sovereign Gold theme)
+   -------------------------------------------------------------------------- */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  background-color: #1a1a1a;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #111;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #D4AF37;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #f0c45a;
+}
+
+/* Firefox support */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #D4AF37 #111;
+}
+
+/* ----------------------------------------------------------------------------
+   SHADOWS & EFFECTS (Institutional)
+   -------------------------------------------------------------------------- */
+.shadow-citadel {
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(212, 175, 55, 0.1);
+}
+
+.shadow-gold-glow {
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+  transition: box-shadow 0.2s ease;
+}
+
+.shadow-gold-glow:hover {
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+.shadow-forensic-inset {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ----------------------------------------------------------------------------
+   ANIMATIONS
+   -------------------------------------------------------------------------- */
+@keyframes pulse-gold {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-gold {
+  animation: pulse-gold 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in-right 0.3s ease-out forwards;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.2s ease-out forwards;
+}
+
+/* ----------------------------------------------------------------------------
+   GLASSMORPHISM OVERLAY (Backdrop blur + semi-transparent background)
+   -------------------------------------------------------------------------- */
+.glass-panel {
+  background: rgba(10, 10, 10, 0.85);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+}
+
+/* ----------------------------------------------------------------------------
+   DASHBOARD REGISTRY NAVIGATION (NEW - for 15 dashboard tabs)
+   -------------------------------------------------------------------------- */
+.dashboard-nav {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background-color: #111;
+  border: 1px solid #222;
+  border-radius: 0.5rem;
+  scrollbar-width: thin;
+}
+
+.dashboard-nav-button {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 9px;
+  font-family: monospace;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background-color: rgba(0, 0, 0, 0.4);
+  color: #9ca3af;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dashboard-nav-button:hover {
+  background-color: rgba(212, 175, 55, 0.15);
+  color: #D4AF37;
+}
+
+.dashboard-nav-button-active {
+  background-color: #D4AF37;
+  color: #000000;
+  font-weight: bold;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+}
+
+.dashboard-nav-button-active:hover {
+  background-color: #e6c45a;
+  color: #000000;
+}
+
+/* ----------------------------------------------------------------------------
+   CHART CONTAINER ADJUSTMENTS (Prevent overflow)
+   -------------------------------------------------------------------------- */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+}
+
+/* Ensure canvas respects parent height */
+.chart-container canvas {
+  max-height: 100%;
+  width: auto !important;
+}
+
+/* ----------------------------------------------------------------------------
+   RESPONSIVE BEHAVIOR (Mobile & Tablet)
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .hud-toggle-button {
+    margin-top: 0.75rem;
+    margin-right: 0.75rem;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .divine-oracle-feed {
+    max-height: 28vh;
+  }
+
+  /* Smaller fonts on mobile for readability */
+  .text-\[10px\] {
+    font-size: 8px;
+  }
+
+  .text-\[9px\] {
+    font-size: 7px;
+  }
+
+  button .text-\[10px\] {
+    font-size: 8px;
+  }
+
+  /* Dashboard navigation on mobile – smaller buttons */
+  .dashboard-nav-button {
+    padding: 0.25rem 0.5rem;
+    font-size: 7px;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   BIOMETRIC LOCKOUT OVERLAY (Full-screen emergency gate)
+   -------------------------------------------------------------------------- */
+.biometric-lockout {
+  background: rgba(120, 0, 0, 0.85);
+  backdrop-filter: blur(16px);
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ----------------------------------------------------------------------------
+   DIVINE ORACLE FEED (Scroll ticker effect)
+   -------------------------------------------------------------------------- */
+.divine-oracle-item {
+  border-left: 2px solid #D4AF37;
+  transition: all 0.2s ease;
+}
+
+.divine-oracle-item:hover {
+  background: rgba(212, 175, 55, 0.1);
+  transform: translateX(2px);
+}
+
+.boardroomShell {
+  width: 100%;
+  min-height: auto;
+  padding: clamp(18px, 2.1vw, 34px);
+  color: #f5f0dc;
+  background:
+    linear-gradient(180deg, rgba(212, 175, 55, 0.08), transparent 22%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.025), rgba(255,255,255,0.025) 1px, transparent 1px, transparent 5px),
+    #050505;
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  border-radius: 8px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255,255,255,0.03);
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.commandHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 22px;
+  align-items: start;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+.commandHeader h1,
+.panelHeader h2,
+.deckNarrative h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.commandHeader h1 {
+  font-size: clamp(32px, 4vw, 58px);
+  line-height: 0.95;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.commandHeader p,
+.deckNarrative p {
+  max-width: 760px;
+  margin: 10px 0 0;
+  color: #a7a7a7;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.eyebrow {
+  color: #D4AF37;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.statusRail {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.statusBadge,
+.focusButton {
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.statusBadge {
+  color: #06110b;
+}
+
+.badgeGreen {
+  background: #10B981;
+}
+
+.badgeRed {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.focusButton {
+  cursor: pointer;
+  color: #D4AF37;
+  background: #0d0d0d;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0 14px;
+}
+
+.metricTile {
+  min-height: 118px;
+  padding: 18px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.metricTile::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #D4AF37;
+}
+
+.metricTile span,
+.metricTile small {
+  display: block;
+  color: #8d8d8d;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.metricTile strong {
+  display: block;
+  margin: 12px 0 8px;
+  color: #ffffff;
+  font-size: clamp(22px, 2.2vw, 34px);
+  line-height: 1;
+  font-weight: 900;
+}
+
+.tonegreen::before {
+  background: #10B981;
+}
+
+.toneblue::before {
+  background: #38BDF8;
+}
+
+.tonered::before {
+  background: #EF4444;
+}
+
+.dashboardNav {
+  display: grid;
+  grid-template-columns: repeat(11, minmax(92px, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.dashboardNav button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  color: #9a9a9a;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dashboardNav button:hover,
+.dashboardNav .navActive {
+  color: #050505;
+  background: #D4AF37;
+  border-color: #D4AF37;
+}
+
+.commandGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.primaryPanel,
+.oraclePanel,
+.panelDeck,
+.chartPanel {
+  border-radius: 6px;
+  background: rgba(10, 10, 10, 0.82);
+  border: 1px solid rgba(212, 175, 55, 0.18);
+}
+
+.primaryPanel,
+.oraclePanel {
+  padding: 18px;
+  min-height: 520px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.panelHeader h2 {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.live,
+.offline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.live {
+  color: #10B981;
+}
+
+.offline {
+  color: #facc15;
+}
+
+.panelDeck {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  gap: 18px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+.deckNarrative h2 {
+  margin-top: 6px;
+  color: #D4AF37;
+  font-size: clamp(24px, 3vw, 44px);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.deckRows {
+  display: grid;
+  gap: 8px;
+}
+
+.deckRow,
+.connectedStack div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 38px;
+  padding: 0 12px;
+  background: rgba(255,255,255,0.045);
+  border: 1px solid rgba(255,255,255,0.055);
+  border-radius: 4px;
+}
+
+.deckRow span,
+.connectedStack span {
+  color: #8f8f8f;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.deckRow strong,
+.connectedStack strong {
+  color: #D4AF37;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.protocolConsole {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.08), transparent 36%),
+    rgba(0, 0, 0, 0.42);
+}
+
+.protocolHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.protocolHeader h2 {
+  margin: 6px 0 0;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.protocolProgress {
+  min-width: 124px;
+  padding: 10px 12px;
+  text-align: right;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.protocolProgress strong,
+.protocolProgress span {
+  display: block;
+}
+
+.protocolProgress strong {
+  color: #10B981;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.protocolProgress span {
+  margin-top: 5px;
+  color: #9a9a9a;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.protocolGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.protocolCard {
+  min-height: 286px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.035);
+  border-radius: 4px;
+}
+
+.protocolCard[data-active="true"] {
+  border-color: rgba(16, 185, 129, 0.44);
+  box-shadow: 0 0 28px rgba(16, 185, 129, 0.08);
+}
+
+.protocolCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #D4AF37;
+}
+
+.protocolCardTop span {
+  color: #888;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.protocolCard h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.protocolCard p {
+  margin: 0;
+  color: #aaa;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.protocolCard ol {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 5px;
+  color: #858585;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.protocolCard button {
+  min-height: 36px;
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #050505;
+  background: #D4AF37;
+  border: 1px solid #D4AF37;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.protocolCard button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.protocolLog {
+  min-height: 100px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.32);
+  border-radius: 4px;
+  display: grid;
+  gap: 8px;
+}
+
+.protocolLog > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #D4AF37;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.protocolLog > p {
+  margin: 0;
+  color: #777;
+  font-size: 11px;
+}
+
+.protocolLog div {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding-left: 10px;
+  border-left: 2px solid rgba(212, 175, 55, 0.55);
+}
+
+.protocolLog div[data-state="COMPLETE"] {
+  border-left-color: rgba(16, 185, 129, 0.75);
+}
+
+.protocolLog strong {
+  color: #D4AF37;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.protocolLog div p {
+  margin: 0;
+  color: #ddd;
+  font-size: 11px;
+}
+
+.chartGrid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 0.85fr;
+  gap: 12px;
+}
+
+.chartPanel {
+  padding: 14px;
+  min-height: 240px;
+}
+
+.chartTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #D4AF37;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.chartBox {
+  height: 185px;
+  min-height: 185px;
+}
+
+.oraclePanel {
+  display: flex;
+  flex-direction: column;
+}
+
+.oracleFeed {
+  display: grid;
+  gap: 10px;
+  min-height: 180px;
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.emptyFeed,
+.oracleItem {
+  padding: 14px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.04);
+  border-left: 3px solid #D4AF37;
+}
+
+.emptyFeed {
+  color: #878787;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.oracleItem strong,
+.oracleItem span,
+.oracleItem small {
+  display: block;
+}
+
+.oracleItem strong {
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.oracleItem span {
+  margin-top: 4px;
+  color: #D4AF37;
+  font-size: 10px;
+}
+
+.oracleItem small {
+  margin-top: 8px;
+  color: #666;
+  font-size: 10px;
+}
+
+.connectedStack {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.biometricOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: rgba(70, 0, 0, 0.86);
+  backdrop-filter: blur(16px);
+  pointer-events: auto;
+}
+
+@media (max-width: 1180px) {
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .commandGrid,
+  .panelDeck,
+  .chartGrid,
+  .protocolGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .boardroomShell {
+    padding: 14px;
+  }
+
+  .commandHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .statusRail {
+    justify-content: flex-start;
+  }
+
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   TOP RESILIENCE BANNER (Critical status indicator)
+   -------------------------------------------------------------------------- */
+.resilience-banner {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+  transition: background 0.3s ease;
+}
+
+/* ----------------------------------------------------------------------------
+   HUD TOGGLE BUTTON (Active/Standby visual feedback)
+   -------------------------------------------------------------------------- */
+.hud-toggle-button-active {
+  background: #D4AF37;
+  color: #000;
+  border-color: #D4AF37;
+}
+
+.hud-toggle-button-active svg {
+  animation: pulse-gold 1s infinite;
+}
+
+/* ----------------------------------------------------------------------------
+   CHART CUSTOMISATION (Overrides for chart.js defaults)
+   -------------------------------------------------------------------------- */
+.chartjs-tooltip {
+  background: #0a0a0a !important;
+  border: 1px solid #D4AF37 !important;
+  border-radius: 4px !important;
+  color: #D4AF37 !important;
+  font-family: monospace !important;
+  font-size: 10px !important;
+  padding: 4px 8px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   UTILITY CLASSES (Consistent spacing)
+   -------------------------------------------------------------------------- */
+.mt-2 { margin-top: 0.5rem; }
+.mr-4 { margin-right: 1rem; }
+.overflow-y-auto { overflow-y: auto; }
+.bg-\[\#0a0a0a\]\/95 { background-color: rgba(10, 10, 10, 0.95); }
+.backdrop-blur-xl { backdrop-filter: blur(16px); }
+.rounded-lg { border-radius: 0.5rem; }
+.p-4 { padding: 1rem; }
+.gap-4 { gap: 1rem; }
+.grid { display: grid; }
+
+/* Additional smoothness for expand/collapse */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Force hardware acceleration for smoother animations */
+.force-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}

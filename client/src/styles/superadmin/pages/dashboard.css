@@ -1,0 +1,446 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📊 SUPER ADMIN DASHBOARD - WILSY OS 2050                                 ║
+  ║  Supreme Command Center Interface                                        ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-dashboard {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--sa-bg-primary) 0%, var(--sa-bg-secondary) 100%);
+  color: var(--sa-text-primary);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Quantum Grid Background */
+.sa-dashboard::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(var(--sa-border-quantum) 1px, transparent 1px),
+    linear-gradient(90deg, var(--sa-border-quantum) 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Command Header */
+.sa-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 10, 15, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--sa-border-quantum);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sa-header-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sa-header-title h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--sa-quantum-400) 0%, var(--sa-wealth-400) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: 1px;
+}
+
+.sa-header-badge {
+  background: var(--sa-quantum-500);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Quantum Stats Grid */
+.sa-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-stat-card {
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--sa-quantum-500), var(--sa-wealth-500));
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.sa-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--sa-border-quantum);
+  box-shadow: 0 10px 30px -10px var(--sa-quantum-500);
+}
+
+.sa-stat-card:hover::before {
+  transform: scaleX(1);
+}
+
+.sa-stat-label {
+  font-size: 0.875rem;
+  color: var(--sa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+.sa-stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--sa-text-primary) 0%, var(--sa-quantum-400) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.sa-stat-trend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.sa-trend-up { color: var(--sa-success-500); }
+.sa-trend-down { color: var(--sa-critical-500); }
+
+/* Risk Meter */
+.sa-risk-meter {
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem 2rem;
+}
+
+.sa-risk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sa-risk-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--sa-text-primary);
+}
+
+.sa-risk-level {
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--sa-critical-500);
+  color: white;
+}
+
+.sa-risk-bar {
+  height: 8px;
+  background: var(--sa-bg-primary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.sa-risk-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--sa-success-500), var(--sa-warning-500), var(--sa-critical-500));
+  transition: width 0.5s ease;
+}
+
+.sa-risk-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--sa-text-tertiary);
+}
+
+/* Forensic Timeline */
+.sa-timeline {
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem;
+}
+
+.sa-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.sa-timeline-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--sa-text-primary);
+}
+
+.sa-timeline-filter {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sa-timeline-filter button {
+  background: var(--sa-bg-primary);
+  border: 1px solid var(--sa-border-primary);
+  color: var(--sa-text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sa-timeline-filter button:hover {
+  border-color: var(--sa-border-quantum);
+  color: var(--sa-text-quantum);
+}
+
+.sa-timeline-filter button.active {
+  background: var(--sa-quantum-500);
+  border-color: var(--sa-quantum-500);
+  color: white;
+}
+
+.sa-timeline-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sa-timeline-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--sa-bg-primary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.sa-timeline-item:hover {
+  border-color: var(--sa-border-quantum);
+  transform: translateX(5px);
+}
+
+.sa-timeline-time {
+  font-family: monospace;
+  color: var(--sa-text-tertiary);
+  font-size: 0.875rem;
+  min-width: 80px;
+}
+
+.sa-timeline-event {
+  flex: 1;
+  color: var(--sa-text-primary);
+}
+
+.sa-timeline-event strong {
+  color: var(--sa-quantum-400);
+  font-weight: 600;
+}
+
+.sa-timeline-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sa-status-success {
+  background: var(--sa-success-500);
+  color: white;
+}
+
+.sa-status-warning {
+  background: var(--sa-warning-500);
+  color: white;
+}
+
+.sa-status-critical {
+  background: var(--sa-critical-500);
+  color: white;
+}
+
+.sa-status-audit {
+  background: var(--sa-forensic-500);
+  color: white;
+}
+
+/* Quick Actions */
+.sa-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 2rem;
+}
+
+.sa-action-btn {
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--sa-text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.sa-action-btn:hover {
+  border-color: var(--sa-border-quantum);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px -5px var(--sa-quantum-500);
+}
+
+.sa-action-btn.quantum {
+  background: var(--sa-quantum-500);
+  border-color: var(--sa-quantum-500);
+}
+
+.sa-action-btn.quantum:hover {
+  background: var(--sa-quantum-600);
+}
+
+.sa-action-btn.forensic {
+  background: var(--sa-forensic-500);
+  border-color: var(--sa-forensic-500);
+}
+
+.sa-action-btn.wealth {
+  background: var(--sa-wealth-500);
+  border-color: var(--sa-wealth-500);
+}
+
+/* Wealth Vision Widget */
+.sa-wealth-widget {
+  background: linear-gradient(135deg, var(--sa-wealth-900) 0%, var(--sa-wealth-700) 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-wealth-widget::before {
+  content: '10G';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  font-size: 8rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.sa-wealth-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-wealth-value {
+  font-size: 3rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-wealth-growth {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-growth-indicator {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sa-stats-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .sa-timeline {
+    margin: 1rem;
+  }
+
+  .sa-actions {
+    grid-template-columns: 1fr;
+    margin: 1rem;
+  }
+
+  .sa-wealth-widget {
+    margin: 1rem;
+  }
+
+  .sa-wealth-value {
+    font-size: 2rem;
+  }
+}
+
+@media (min-width: 2560px) {
+  .sa-stats-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .sa-actions {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}

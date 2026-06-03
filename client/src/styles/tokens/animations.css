@@ -1,0 +1,370 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🎬 MASTER ANIMATION TOKENS - WILSY OS 2050                              ║
+  ║  Supreme Motion System - 10th Generation                                 ║
+  ║  Fortune 500 · Quantum Ready · Multi-Tenant                              ║
+  ║  Supreme Architect: Wilson Khanyezi                                      ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+:root {
+  /* ==========================================================================
+     DURATIONS
+     ========================================================================== */
+  --wilsy-duration-instant: 0ms;
+  --wilsy-duration-faster: 75ms;
+  --wilsy-duration-fast: 100ms;
+  --wilsy-duration-normal: 150ms;
+  --wilsy-duration-slow: 200ms;
+  --wilsy-duration-slower: 300ms;
+  --wilsy-duration-slowest: 500ms;
+  --wilsy-duration-pulse: 1000ms;
+  --wilsy-duration-scan: 2000ms;
+  --wilsy-duration-wave: 3000ms;
+
+  /* ==========================================================================
+     TIMING FUNCTIONS
+     ========================================================================== */
+  --wilsy-ease-linear: cubic-bezier(0, 0, 1, 1);
+  --wilsy-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --wilsy-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --wilsy-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --wilsy-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --wilsy-ease-elastic: cubic-bezier(0.68, -0.55, 0.735, 1.55);
+
+  /* ==========================================================================
+     DELAYS
+     ========================================================================== */
+  --wilsy-delay-0: 0ms;
+  --wilsy-delay-100: 100ms;
+  --wilsy-delay-200: 200ms;
+  --wilsy-delay-300: 300ms;
+  --wilsy-delay-500: 500ms;
+  --wilsy-delay-700: 700ms;
+  --wilsy-delay-1000: 1000ms;
+  --wilsy-delay-2000: 2000ms;
+  --wilsy-delay-3000: 3000ms;
+}
+
+/* ==========================================================================
+   KEYFRAME ANIMATIONS
+   ========================================================================== */
+
+/* Fade Animations */
+@keyframes wilsy-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wilsy-fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes wilsy-fade-scale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Slide Animations */
+@keyframes wilsy-slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes wilsy-slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes wilsy-slide-in-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes wilsy-slide-in-down {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+/* Quantum Animations */
+@keyframes wilsy-quantum-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 20px var(--wilsy-quantum-500);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+    box-shadow: 0 0 40px var(--wilsy-quantum-500);
+  }
+}
+
+@keyframes wilsy-quantum-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes wilsy-quantum-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px var(--wilsy-quantum-400),
+                 0 0 20px var(--wilsy-quantum-300);
+  }
+  50% {
+    text-shadow: 0 0 20px var(--wilsy-quantum-500),
+                 0 0 40px var(--wilsy-quantum-400),
+                 0 0 60px var(--wilsy-quantum-300);
+  }
+}
+
+/* Forensic Animations */
+@keyframes wilsy-forensic-scan {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes wilsy-forensic-glitch {
+  0% {
+    transform: translate(0);
+    opacity: 1;
+  }
+  20% {
+    transform: translate(-2px, 2px);
+    opacity: 0.8;
+  }
+  40% {
+    transform: translate(2px, -2px);
+    opacity: 0.9;
+  }
+  60% {
+    transform: translate(-1px, 1px);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translate(1px, -1px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes wilsy-forensic-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Wealth Animations */
+@keyframes wilsy-wealth-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes wilsy-wealth-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--wilsy-wealth-500);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--wilsy-wealth-500);
+  }
+}
+
+/* Risk Animations */
+@keyframes wilsy-risk-wave {
+  0% {
+    transform: scaleX(0);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+@keyframes wilsy-risk-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px currentColor;
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 40px currentColor;
+  }
+}
+
+/* Terminal Animations */
+@keyframes wilsy-terminal-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes wilsy-terminal-typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes wilsy-terminal-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* ==========================================================================
+   ANIMATION UTILITY CLASSES
+   ========================================================================== */
+
+/* Fade */
+.animate-fade-in {
+  animation: wilsy-fade-in var(--wilsy-duration-slower) var(--wilsy-ease-out);
+}
+.animate-fade-out {
+  animation: wilsy-fade-out var(--wilsy-duration-slower) var(--wilsy-ease-in);
+}
+.animate-fade-scale {
+  animation: wilsy-fade-scale var(--wilsy-duration-slower) var(--wilsy-ease-out);
+}
+
+/* Slide */
+.animate-slide-in-left {
+  animation: wilsy-slide-in-left var(--wilsy-duration-slowest) var(--wilsy-ease-out);
+}
+.animate-slide-in-right {
+  animation: wilsy-slide-in-right var(--wilsy-duration-slowest) var(--wilsy-ease-out);
+}
+.animate-slide-in-up {
+  animation: wilsy-slide-in-up var(--wilsy-duration-slowest) var(--wilsy-ease-out);
+}
+.animate-slide-in-down {
+  animation: wilsy-slide-in-down var(--wilsy-duration-slowest) var(--wilsy-ease-out);
+}
+
+/* Quantum */
+.animate-quantum-pulse {
+  animation: wilsy-quantum-pulse var(--wilsy-duration-pulse) var(--wilsy-ease-in-out) infinite;
+}
+.animate-quantum-spin {
+  animation: wilsy-quantum-spin var(--wilsy-duration-slowest) linear infinite;
+}
+.animate-quantum-glow {
+  animation: wilsy-quantum-glow var(--wilsy-duration-slowest) var(--wilsy-ease-in-out) infinite;
+}
+
+/* Forensic */
+.animate-forensic-scan {
+  background: linear-gradient(90deg,
+    transparent,
+    var(--wilsy-forensic-500),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: wilsy-forensic-scan var(--wilsy-duration-scan) linear infinite;
+}
+.animate-forensic-glitch {
+  animation: wilsy-forensic-glitch var(--wilsy-duration-slow) ease-in-out infinite;
+}
+.animate-forensic-reveal {
+  animation: wilsy-forensic-reveal var(--wilsy-duration-slower) ease-out forwards;
+}
+
+/* Wealth */
+.animate-wealth-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.animate-wealth-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: wilsy-wealth-shimmer var(--wilsy-duration-scan) linear infinite;
+}
+.animate-wealth-glow {
+  animation: wilsy-wealth-glow var(--wilsy-duration-slowest) ease-in-out infinite;
+}
+
+/* Risk */
+.animate-risk-wave {
+  position: relative;
+  overflow: hidden;
+}
+.animate-risk-wave::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--wilsy-critical-500),
+    transparent
+  );
+  animation: wilsy-risk-wave var(--wilsy-duration-wave) ease-out infinite;
+  pointer-events: none;
+}
+.animate-risk-pulse {
+  animation: wilsy-risk-pulse var(--wilsy-duration-slowest) ease-in-out infinite;
+}
+
+/* Terminal */
+.animate-terminal-blink {
+  animation: wilsy-terminal-blink var(--wilsy-duration-normal) step-end infinite;
+}
+.animate-terminal-typing {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: wilsy-terminal-typing var(--wilsy-duration-scan) steps(40, end);
+}
+.animate-terminal-scan {
+  position: relative;
+  overflow: hidden;
+}
+.animate-terminal-scan::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--wilsy-quantum-500),
+    transparent
+  );
+  animation: wilsy-terminal-scan var(--wilsy-duration-scan) linear infinite;
+}
+
+/* Delay Utilities */
+.delay-100 { animation-delay: var(--wilsy-delay-100); }
+.delay-200 { animation-delay: var(--wilsy-delay-200); }
+.delay-300 { animation-delay: var(--wilsy-delay-300); }
+.delay-500 { animation-delay: var(--wilsy-delay-500); }
+.delay-700 { animation-delay: var(--wilsy-delay-700); }
+.delay-1000 { animation-delay: var(--wilsy-delay-1000); }
+.delay-2000 { animation-delay: var(--wilsy-delay-2000); }
+.delay-3000 { animation-delay: var(--wilsy-delay-3000); }

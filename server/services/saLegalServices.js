@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * ================================================================================================
  * FILE: server/services/saLegalServices.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/saLegalServices.js
@@ -27,10 +28,10 @@
  * ================================================================================================
  */
 
-const crypto = require('crypto');
-const axios = require('axios');
-const cheerio = require('cheerio');
-const { XMLParser } = require('fast-xml-parser');
+import crypto from 'crypto';
+import axios from 'axios';
+import cheerio from 'cheerio';
+import { XMLParser } from 'fast-xml-parser';
 
 /*
  * SA Legal Services - Sovereign Integration with South African Legal Ecosystem

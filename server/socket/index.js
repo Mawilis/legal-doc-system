@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * File: server/socket/index.js
  * -----------------------------------------------------------------------------
  * STATUS: EPITOME | Real-Time Nervous System (Secure & Isolated)
@@ -10,14 +11,65 @@
  * -----------------------------------------------------------------------------
  */
 
-const jwt = require('jsonwebtoken');
-const { Server } = require('socket.io');
+import jwt from 'jsonwebtoken';
+import { Server } from 'socket.io';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-export default (httpServer) => {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+/**
+ * @function readSocketEnvList
+ * @description Reads comma-separated websocket origin keys from server/.env.
+ * @param {Array<string>} keys - Candidate environment keys.
+ * @returns {Array<string>} Allowed origin list.
+ * @collaboration Keeps realtime CORS policy deployment-owned instead of hardcoded in the socket source.
+ */
+const readSocketEnvList = (keys = []) => {
+  const key = keys.find(candidate => process.env[candidate]);
+  return key ? process.env[key].split(',').map(origin => origin.trim()).filter(Boolean) : [];
+};
+
+/**
+ * @function requireSocketEnv
+ * @description Resolves a mandatory socket secret from server/.env.
+ * @param {string} key - Required environment key.
+ * @returns {string} Environment value.
+ * @collaboration Websocket authentication must never fall back to a source-code JWT secret.
+ */
+const requireSocketEnv = (key) => {
+  const value = process.env[key];
+  if (!value) throw new Error(`Missing required server/.env key: ${key}`);
+  return value;
+};
+
+/**
+ * @function resolveSocketOrigins
+ * @description Resolves allowed websocket origins from server/.env with development-only local fallback.
+ * @returns {Array<string>} Allowed websocket origins.
+ * @collaboration Production tenants must connect through declared origins only.
+ */
+const resolveSocketOrigins = () => {
+  const origins = readSocketEnvList(['CLIENT_URL', 'CORS_ORIGIN', 'CORS_ORIGINS']);
+  if (origins.length) return origins;
+  if (process.env.NODE_ENV !== 'production') return ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  throw new Error('Missing CLIENT_URL or CORS_ORIGIN in server/.env for production websocket CORS.');
+};
+
+/**
+ * @function createSocketServer
+ * @description Creates the tenant-isolated websocket server with JWT authentication.
+ * @param {import('http').Server} httpServer - HTTP server instance.
+ * @returns {Server} Socket.IO server.
+ * @collaboration Realtime Wilsy OS events must be tenant-isolated, role-aware and backed by env-owned secrets.
+ */
+const createSocketServer = (httpServer) => {
   // 1. CONFIGURATION
-  const allowedOrigins = process.env.CLIENT_URL
-    ? [process.env.CLIENT_URL]
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  const allowedOrigins = resolveSocketOrigins();
 
   const io = new Server(httpServer, {
     cors: {
@@ -39,7 +91,7 @@ export default (httpServer) => {
 
     try {
       // Verify Token against Secret
-      const secret = process.env.JWT_SECRET || 'wilsy_secret_key_2025';
+      const secret = requireSocketEnv('JWT_SECRET');
       const decoded = jwt.verify(token, secret);
 
       // Attach Identity to Socket Session
@@ -84,3 +136,5 @@ export default (httpServer) => {
 
   return io;
 };
+
+export default createSocketServer;

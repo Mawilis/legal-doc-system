@@ -1,0 +1,129 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-telemetry-singularity-v1",
+    "title": "🏛️ WILSY OS - Telemetry & Observability [SINGULARITY]",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Institutional Packet Flow Rate (Sovereign PPS)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_telemetry_packets_total{tenantId=\"GLOBAL_ROOT\"}[1m])",
+            "legendFormat": "Packet Velocity (PPS)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "pps",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "#d4af37", "value": 500 },
+                { "color": "green", "value": 1000 }
+              ]
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 20
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Sovereign Packet Loss (Dropped Telemetry Velocity)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 16, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_telemetry_packets_dropped_total{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "Dropped PPS"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "pps",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 10 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Correlation Completeness",
+        "id": 3,
+        "gridPos": { "x": 16, "y": 8, "w": 8, "h": 8 },
+        "targets": [
+          {
+            "expr": "(wilsy_counter_correlated_events_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_total_events_total{tenantId=\"GLOBAL_ROOT\"}) * 100",
+            "legendFormat": "Completeness Ratio"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 90 },
+                { "color": "green", "value": 99.9 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Telemetry Event Type Distribution (Sovereign Strikes)",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum by (eventType) (rate(wilsy_counter_telemetry_events_total{tenantId=\"GLOBAL_ROOT\"}[5m]))",
+            "legendFormat": "{{eventType}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "drawStyle": "bars",
+              "stacking": { "mode": "normal" }
+            }
+          }
+        }
+      },
+      {
+        "type": "text",
+        "title": "Sovereign Observability Narrative",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 24, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### 🏛️ Observability Finality Report\nThis cockpit visualizes the **Singularity Telemetry Core**. Investors see real-time packet flow and **Correlation Completeness**, proving that logs, metrics, and traces are unified into a single forensic reality. Dropped packets are monitored within strict sovereign thresholds to ensure no institutional signal is lost."
+        }
+      }
+    ]
+  }
+}

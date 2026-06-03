@@ -1,0 +1,202 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-sovereign-master-v1",
+    "title": "🏛️ WILSY OS - Sovereign Master Cockpit [SINGULARITY]",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 2,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Unified SLA Score",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 4, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_gauge_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Global SLA" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 95 },
+                { "color": "#d4af37", "value": 98 },
+                { "color": "green", "value": 99.9 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Compliance Index",
+        "id": 2,
+        "gridPos": { "x": 4, "y": 0, "w": 4, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_gauge_compliance_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Governance Index" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 90 },
+                { "color": "green", "value": 100 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Sustainability Index",
+        "id": 3,
+        "gridPos": { "x": 8, "y": 0, "w": 4, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_gauge_sustainability_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "ESG Mix" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 80 },
+                { "color": "green", "value": 92.5 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Efficiency Index",
+        "id": 4,
+        "gridPos": { "x": 12, "y": 0, "w": 4, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_gauge_efficiency_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SEI Value" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 5 },
+                { "color": "green", "value": 10 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Security & Forensics",
+        "id": 5,
+        "gridPos": { "x": 16, "y": 0, "w": 4, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_breaker_state{tenantId=\"GLOBAL_ROOT\", component=\"CRYPTO\"}", "legendFormat": "Forensic Seal" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": { "0": { "text": "INTACT", "color": "green" }, "1": { "text": "BREACHED", "color": "red" } } }
+            ]
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Governance & Audit",
+        "id": 6,
+        "gridPos": { "x": 20, "y": 0, "w": 4, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_counter_telemetry_audit_entries_verified_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_telemetry_audit_entries_total{tenantId=\"GLOBAL_ROOT\"} * 100", "legendFormat": "Audit %" }
+        ],
+        "fieldConfig": { "defaults": { "unit": "percent", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": 0 }, { "color": "green", "value": 99.9 }] } } },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Institutional Reliability & Resilience (SLA Velocity)",
+        "id": 11,
+        "gridPos": { "x": 0, "y": 6, "w": 24, "h": 8 },
+        "targets": [
+          { "expr": "avg(wilsy_availability_ratio{tenantId=\"GLOBAL_ROOT\"})", "legendFormat": "Availability %" },
+          { "expr": "rate(wilsy_counter_system_errors_total{tenantId=\"GLOBAL_ROOT\"}[5m]) * 100", "legendFormat": "Error Rate %" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "custom": { "fillOpacity": 20, "lineInterpolation": "smooth" }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Security & Forensic Chain Integrity",
+        "id": 12,
+        "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "rate(wilsy_counter_intrusion_attempts_total{tenantId=\"GLOBAL_ROOT\"}[5m])", "legendFormat": "Intrusion Velocity" },
+          { "expr": "wilsy_counter_forensics_chain_integrity_failures_total{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Chain Fractures" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "red", "value": 1 }] }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Telemetry Velocity & Observability Correlation",
+        "id": 13,
+        "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "rate(wilsy_counter_telemetry_packets_total{tenantId=\"GLOBAL_ROOT\"}[1m])", "legendFormat": "PPS Flow" },
+          { "expr": "(wilsy_counter_correlated_events_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_total_events_total{tenantId=\"GLOBAL_ROOT\"}) * 100", "legendFormat": "Correlation %" }
+        ],
+        "fieldConfig": { "defaults": { "unit": "pps", "custom": { "drawStyle": "bars" } } }
+      },
+      {
+        "type": "timeseries",
+        "title": "Executive KPI Growth Trends (Unified Boardroom Arc)",
+        "id": 14,
+        "gridPos": { "x": 0, "y": 22, "w": 24, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA Score" },
+          { "expr": "wilsy_gauge_compliance_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Compliance Index" },
+          { "expr": "wilsy_gauge_investor_confidence_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Investor Confidence" }
+        ],
+        "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 3 } } }
+      },
+      {
+        "type": "text",
+        "title": "Sovereign Boardroom Narrative Overlay",
+        "id": 15,
+        "gridPos": { "x": 0, "y": 30, "w": 24, "h": 6 },
+        "options": {
+          "mode": "markdown",
+          "content": "# 🏛️ Boardroom Intelligence Finality\nWilsy OS demonstrates **Institutional Finality**. All core KPIs (SLA, Compliance, Sustainability, Efficiency) are anchored within target thresholds. **Risk Index** remains low via real-time forensic sealing, while **Opportunity Index** suggests aggressive regional expansion is supported by current resource efficiency. This Cockpit represents the absolute source of truth for all stakeholders.\n\n_Ref: ${__dashboard.name} | Security: OMEGA-FINAL | Tenant: GLOBAL_ROOT_"
+        }
+      }
+    ]
+  }
+}

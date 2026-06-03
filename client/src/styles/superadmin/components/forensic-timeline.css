@@ -1,0 +1,125 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  ⏳ FORENSIC TIMELINE - WILSY OS 2050                                    ║
+  ║  Temporal Event Visualization Component                                  ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-forensic-timeline {
+  background: var(--sa-bg-secondary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+}
+
+.sa-timeline-track {
+  position: relative;
+  height: 4px;
+  background: var(--sa-bg-tertiary);
+  border-radius: 2px;
+  margin: 3rem 0;
+}
+
+.sa-timeline-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--sa-quantum-500), var(--sa-forensic-500));
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.sa-timeline-marker {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--sa-bg-elevated);
+  border: 2px solid var(--sa-border-quantum);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: var(--sa-z-content);
+}
+
+.sa-timeline-marker:hover {
+  transform: translateY(-50%) scale(1.5);
+  border-color: var(--sa-quantum-500);
+  box-shadow: 0 0 20px var(--sa-quantum-500);
+}
+
+.sa-timeline-marker::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 30px;
+  background: var(--sa-border-quantum);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sa-timeline-marker::after {
+  content: attr(data-time);
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--sa-bg-elevated);
+  border: 1px solid var(--sa-border-quantum);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--sa-font-forensic);
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-primary);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sa-timeline-marker:hover::before,
+.sa-timeline-marker:hover::after {
+  opacity: 1;
+}
+
+.sa-timeline-marker.quantum {
+  background: var(--sa-quantum-500);
+  border-color: var(--sa-quantum-500);
+}
+
+.sa-timeline-marker.forensic {
+  background: var(--sa-forensic-500);
+  border-color: var(--sa-forensic-500);
+}
+
+.sa-timeline-marker.wealth {
+  background: var(--sa-wealth-500);
+  border-color: var(--sa-wealth-500);
+}
+
+.sa-timeline-controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.sa-timeline-control {
+  padding: 0.5rem 1rem;
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 6px;
+  color: var(--sa-text-secondary);
+  font-size: var(--sa-text-small);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sa-timeline-control:hover {
+  border-color: var(--sa-border-quantum);
+  color: var(--sa-text-quantum);
+}

@@ -1,0 +1,44 @@
+{
+  "type": "barchart",
+  "title": "Institutional Revenue Allocations",
+  "gridPos": {
+    "x": 0,
+    "y": 18,
+    "w": 12,
+    "h": 8
+  },
+  "targets": [
+    {
+      "expr": "wilsy_revenue_streams{tenantId=\"GLOBAL_ROOT\"}",
+      "legendFormat": "{{stream}}"
+    }
+  ],
+  "fieldConfig": {
+    "defaults": {
+      "unit": "currencyUSD",
+      "color": {
+        "mode": "thresholds"
+      },
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "red", "value": null },
+          { "color": "orange", "value": 1000 },
+          { "color": "green", "value": 1000000 }
+        ]
+      }
+    }
+  },
+  "options": {
+    "orientation": "horizontal",
+    "displayMode": "gradient",
+    "legend": {
+      "showLegend": true,
+      "placement": "bottom"
+    },
+    "tooltip": {
+      "mode": "single",
+      "sort": "desc"
+    }
+  }
+}

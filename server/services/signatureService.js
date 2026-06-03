@@ -1,47 +1,51 @@
-#!/*
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║                                                                                                      ║
-║    ███████╗██╗ ██████╗ ███╗    ██╗ █████╗ ████████╗██╗   ██╗██████╗ ███████╗                         ║
-║    ██╔════╝██║██╔════╝ ████╗   ██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██╔════╝                         ║
-║    ███████╗██║██║   ███╗██╔██╗ ██║███████║   ██║   ██║   ██║██████╔╝█████╗                           ║
-║    ╚════██║██║██║   ██║██║╚██╗██║██╔══██║   ██║   ██║   ██║██╔══██╗██╔══╝                           ║
-║    ███████║██║╚██████╔╝██║ ╚████║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗                         ║
-║    ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝                         ║
-║                                                                                                      ║
-║    ELECTRONIC SIGNATURE QUANTUM SERVICE - THE DIGITAL COVENANT SENTINEL                              ║
-║    This divine service orchestrates the sacred act of electronic signature,                          ║
-║    transmuting legal intent into immutable digital evidence with quantum precision.                  ║
-║    Each signature is an eternal quantum bond, compliant with South African ECT Act,                  ║
-║    POPIA, and global standards, creating unbreakable chains of legal accountability.                  ║
-║                                                                                                      ║
-║    File: /server/services/signatureService.js                                                        ║
-║    Chief Architect: Wilson Khanyezi                                                                  ║
-║    Quantum Version: 1.0.0                                                                            ║
-║    Legal Compliance: ECT Act §13, §15, POPIA §6-11, Companies Act 2008, CPA §22                      ║
-║                                                                                                      ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
-
-⚖️  LEGAL QUANTUM: This service encodes the sacred principles of the ECT Act—non-repudiation,
-    authentication, integrity, and consent—into every digital signature, creating legally
-    binding quantum artifacts that withstand the most rigorous South African court scrutiny.
-*/
+/* eslint-disable */
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║                                                                                                      ║
+ * ║    ███████╗██╗ ██████╗ ███╗    ██╗ █████╗ ████████╗██╗   ██╗██████╗ ███████╗                         ║
+ * ║    ██╔════╝██║██╔════╝ ████╗   ██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██╔════╝                         ║
+ * ║    ███████╗██║██║   ███╗██╔██╗ ██║███████║   ██║   ██║   ██║██████╔╝█████╗                           ║
+ * ║    ╚════██║██║██║   ██║██║╚██╗██║██╔══██║   ██║   ██║   ██║██╔══██╗██╔══╝                           ║
+ * ║    ███████║██║╚██████╔╝██║ ╚████║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗                         ║
+ * ║    ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝                         ║
+ * ║                                                                                                      ║
+ * ║    ELECTRONIC SIGNATURE QUANTUM SERVICE - THE DIGITAL COVENANT SENTINEL                              ║
+ * ║    This divine service orchestrates the sacred act of electronic signature,                          ║
+ * ║    transmuting legal intent into immutable digital evidence with quantum precision.                  ║
+ * ║    Each signature is an eternal quantum bond, compliant with South African ECT Act,                  ║
+ * ║    POPIA, and global standards, creating unbreakable chains of legal accountability.                  ║
+ * ║                                                                                                      ║
+ * ║    File: /server/services/signatureService.js                                                        ║
+ * ║    Chief Architect: Wilson Khanyezi                                                                  ║
+ * ║    Quantum Version: 1.0.0                                                                            ║
+ * ║    Legal Compliance: ECT Act §13, §15, POPIA §6-11, Companies Act 2008, CPA §22                      ║
+ * ║                                                                                                      ║
+ * ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ *
+ * ⚖️  LEGAL QUANTUM: This service encodes the sacred principles of the ECT Act—non-repudiation,
+ *     authentication, integrity, and consent—into every digital signature, creating legally
+ *     binding quantum artifacts that withstand the most rigorous South African court scrutiny.
+ */
 
 // ============================================================================
-// QUANTUM DEPENDENCIES - SECURELY PINNED FOR PRODUCTION
+// QUANTUM DEPENDENCIES - SECURELY PINNED FOR PRODUCTION (ES MODULE)
 // ============================================================================
-const crypto = require('crypto');
-const axios = require('axios');
-const jwt = require('jsonwebtoken');
-const moment = require('moment-timezone');
-const mongoose = require('mongoose');
-const forge = require('node-forge');
-const { v4: uuidv4 } = require('uuid');
-const { globalQuantumLogger } = require('../utils/quantumLogger');
-const AuditTrailService = require('./auditTrailService');
-const EncryptionService = require('./encryptionService');
-const LegalComplianceEngine = require('./legalComplianceEngine');
-const NotificationService = require('./notificationService');
-require('dotenv').config({ path: '/server/.env' });
+import crypto from 'crypto';
+import axios from 'axios';
+import jwt from 'jsonwebtoken';
+import moment from 'moment-timezone';
+import mongoose from 'mongoose';
+import forge from 'node-forge';
+import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
+
+import { globalQuantumLogger } from '../utils/quantumLogger.js';
+import AuditTrailService from './auditTrailService.js';
+import EncryptionService from './encryptionService.js';
+import LegalComplianceEngine from './legalComplianceEngine.js';
+import NotificationService from './notificationService.js';
+
+dotenv.config({ path: '/server/.env' });
 
 // ============================================================================
 // QUANTUM CONSTANTS & ENVIRONMENT VALIDATION
@@ -125,11 +129,6 @@ validateSignatureEnvironment();
 // QUANTUM SIGNATURE CERTIFICATE AUTHORITY
 // ============================================================================
 class QuantumCertificateAuthority {
-  /*
-   * Collaboration Comment: This class handles RSA key generation and X.509 certificate
-   * issuance to ensure Advanced Electronic Signatures (AES) under the ECT Act.
-   * Fixed: Moved assignments into constructor to avoid 'Unexpected token =' error.
-   */
   constructor() {
     this.caPrivateKey = null;
     this.caCertificate = null;
@@ -284,10 +283,6 @@ class QuantumCertificateAuthority {
 // QUANTUM SIGNATURE PROVIDER ABSTRACTION
 // ============================================================================
 class SignatureProvider {
-  /*
-   * Collaborative Comment: Orchestrates external APIs (DocuSign/SignRequest)
-   * or the Internal Quantum CA.
-   */
   constructor(providerType) {
     this.providerType = providerType;
     this.config = this.loadProviderConfig();
@@ -461,6 +456,10 @@ class SignatureProvider {
   }
 }
 
+// ============================================================================
+// QUANTUM EXPORTS (ES MODULE)
+// ============================================================================
+export { SignatureProvider, QuantumCertificateAuthority, QUANTUM_CONSTANTS };
 export default {
   SignatureProvider,
   QuantumCertificateAuthority,

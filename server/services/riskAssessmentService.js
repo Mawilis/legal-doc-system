@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * ============================================================================
  * ⚠️ RISK ASSESSMENT SERVICE QUANTUM SCROLL: AI-POWERED LEGAL RISK ORACLE ⚠️
  * ============================================================================
@@ -64,15 +65,17 @@
  */
 
 // 🔷 QUANTUM IMPORTS: DEPENDENCY ENTANGLEMENT
-require('dotenv').config(); // Env Vault Mandate
-const crypto = require('crypto');
-const tf = require('@tensorflow/tfjs-node');
-const axios = require('axios');
-const Queue = require('bull');
-const nlp = require('compromise');
-const mongoose = require('mongoose');
-const natural = require('natural');
-const redis = require('redis');
+import dotenv from 'dotenv';
+import crypto from 'crypto';
+import * as tf from '@tensorflow/tfjs-node';
+import axios from 'axios';
+import Queue from 'bull';
+import nlp from 'compromise';
+import mongoose from 'mongoose';
+import natural from 'natural';
+import redis from 'redis';
+
+dotenv.config(); // Env Vault Mandate
 
 // 🛡️ QUANTUM SECURITY: ENVIRONMENT VALIDATION
 const REQUIRED_ENV_VARS = [
@@ -90,13 +93,13 @@ REQUIRED_ENV_VARS.forEach((envVar) => {
 });
 
 // Import existing models
-const AuditLog = require('../models/auditLogModel');
-const ComplianceReport = require('../models/complianceReportModel');
-const Document = require('../models/documentModel');
-const Firm = require('../models/firmModel');
-const RiskAssessment = require('../models/riskAssessmentModel');
-const User = require('../models/userModel');
-const { ApiError } = require('../utils/apiError');
+import AuditLog from '../models/auditLogModel.js';
+import ComplianceReport from '../models/complianceReportModel.js';
+import Document from '../models/documentModel.js';
+import Firm from '../models/firmModel.js';
+import RiskAssessment from '../models/riskAssessmentModel.js';
+import User from '../models/userModel.js';
+import { ApiError } from '../utils/apiError.js';
 
 // Initialize Redis client for risk caching
 const redisClient = redis.createClient({

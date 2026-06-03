@@ -1,0 +1,32 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📐 MASTER Z-INDEX TOKENS - WILSY OS 2050 [V10.1.0-TITAN-STABLE]         ║
+  ║  Supreme Layer Management - RECTIFIED FOR BOARDROOM PRESENTATION         ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+:root {
+  /* 🌑 BACKGROUND LAYERS */
+  --z-negative-10: -10;
+  --z-negative-5: -5;
+  --z-negative-1: -1;
+
+  /* 🧱 CONTENT LAYERS */
+  --z-base: 0;
+  --z-content: 10;
+  --z-content-elevated: 20;
+
+  /* 🏛️ NAVIGATION LAYERS */
+  --z-nav: 100;
+  --z-nav-fixed: 130;
+
+  /* 🛡️ OVERLAY & MODAL LAYERS */
+  --z-overlay-backdrop: 190;
+  --z-overlay: 200;
+  --z-modal-backdrop: 290;
+  --z-modal: 300;
+
+  /* 🚀 SUPREME AUTHORITY LAYERS */
+  --z-toast: 400;
+  --z-loading: 600;
+  --z-debug: 1000;
+  --z-quantum-override: 999999;
+}

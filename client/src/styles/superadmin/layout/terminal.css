@@ -1,0 +1,128 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  💻 TERMINAL LAYOUT - WILSY OS 2050                                      ║
+  ║  Quantum Command Terminal Interface                                      ║
+  ║  Supreme Architect: Wilson Khanyezi - 10th Generation                    ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-terminal {
+  background: var(--sa-bg-primary);
+  border: 1px solid var(--sa-border-quantum);
+  border-radius: 8px;
+  font-family: var(--sa-font-forensic);
+  color: var(--sa-text-quantum);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-terminal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--sa-quantum-500),
+    var(--sa-wealth-500),
+    var(--sa-quantum-500),
+    transparent
+  );
+  animation: terminal-scan 3s linear infinite;
+}
+
+.sa-terminal::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.sa-terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--sa-border-quantum);
+}
+
+.sa-terminal-title {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-text-quantum);
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wider);
+}
+
+.sa-terminal-status {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sa-success-500);
+  box-shadow: 0 0 10px var(--sa-success-500);
+  animation: terminal-pulse 2s infinite;
+}
+
+.sa-terminal-content {
+  font-size: var(--sa-text-small);
+  line-height: var(--sa-leading-relaxed);
+}
+
+.sa-terminal-line {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--sa-border-primary);
+  font-family: var(--sa-font-forensic);
+}
+
+.sa-terminal-prompt {
+  color: var(--sa-quantum-400);
+  font-weight: var(--sa-weight-bold);
+}
+
+.sa-terminal-command {
+  color: var(--sa-text-secondary);
+}
+
+.sa-terminal-output {
+  color: var(--sa-text-quantum);
+  margin-left: auto;
+}
+
+.sa-terminal-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: var(--sa-quantum-500);
+  animation: terminal-blink 1s step-end infinite;
+}
+
+@keyframes terminal-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes terminal-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes terminal-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

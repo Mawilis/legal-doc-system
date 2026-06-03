@@ -57,10 +57,10 @@ let riskAssessmentValidator;
 
 try {
   // Authentication middleware
-  const authMiddleware = require('../middleware/authMiddleware');
-  authenticateJWT = authMiddleware.authenticateJWT || ((req, res, next) => next());
-  authorizeRole = authMiddleware.authorizeRole || ((roles) => (req, res, next) => next());
-  requireMFA = authMiddleware.requireMFA || ((req, res, next) => next());
+  const auth = require('../middleware/auth');
+  authenticateJWT = auth.authenticateJWT || ((req, res, next) => next());
+  authorizeRole = auth.authorizeRole || ((roles) => (req, res, next) => next());
+  requireMFA = auth.requireMFA || ((req, res, next) => next());
 } catch (error) {
   // Fallback implementations
   authenticateJWT = (req, res, next) => {

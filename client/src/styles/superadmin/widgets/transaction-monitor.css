@@ -1,0 +1,242 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  💰 TRANSACTION MONITOR WIDGET - WILSY OS 2050                           ║
+  ║  Real-time Financial Transaction Surveillance                            ║
+  ║  Supreme Architect: Wilson Khanyezi - 10th Generation                    ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-transaction-monitor {
+  background: var(--sa-bg-secondary);
+  border: 1px solid var(--sa-border-wealth);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-transaction-monitor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--sa-wealth-500),
+    var(--sa-quantum-500),
+    transparent
+  );
+  animation: transaction-scan 3s linear infinite;
+}
+
+.sa-transaction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--sa-border-wealth);
+}
+
+.sa-transaction-title {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-wealth-400);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wide);
+}
+
+.sa-transaction-title::before {
+  content: '💰';
+  font-size: 1.2rem;
+  filter: drop-shadow(0 0 5px var(--sa-wealth-500));
+}
+
+.sa-transaction-total {
+  font-family: var(--sa-font-wealth);
+  font-size: var(--sa-text-h3);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-wealth-400);
+  text-shadow: 0 0 10px var(--sa-wealth-500);
+}
+
+.sa-transaction-stream {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.sa-transaction-stream::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sa-transaction-stream::-webkit-scrollbar-track {
+  background: var(--sa-bg-tertiary);
+}
+
+.sa-transaction-stream::-webkit-scrollbar-thumb {
+  background: var(--sa-wealth-500);
+  border-radius: 2px;
+}
+
+.sa-transaction-item {
+  display: grid;
+  grid-template-columns: 100px 120px 1fr 120px;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  font-family: var(--sa-font-forensic);
+  font-size: var(--sa-text-small);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  animation: transaction-fade-in 0.3s ease;
+}
+
+.sa-transaction-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(to bottom,
+    var(--sa-wealth-500),
+    var(--sa-quantum-500)
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sa-transaction-item:hover {
+  transform: translateX(5px);
+  border-color: var(--sa-wealth-500);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+}
+
+.sa-transaction-item:hover::before {
+  opacity: 1;
+}
+
+.sa-transaction-time {
+  color: var(--sa-text-tertiary);
+  font-family: var(--sa-font-forensic);
+}
+
+.sa-transaction-id {
+  color: var(--sa-wealth-400);
+  font-weight: var(--sa-weight-bold);
+  font-family: var(--sa-font-forensic);
+  letter-spacing: 0.5px;
+}
+
+.sa-transaction-details {
+  color: var(--sa-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sa-transaction-amount {
+  font-family: var(--sa-font-wealth);
+  font-weight: var(--sa-weight-bold);
+  text-align: right;
+}
+
+.sa-transaction-amount.positive {
+  color: var(--sa-success-500);
+  text-shadow: 0 0 5px var(--sa-success-500);
+}
+
+.sa-transaction-amount.negative {
+  color: var(--sa-critical-500);
+  text-shadow: 0 0 5px var(--sa-critical-500);
+}
+
+.sa-transaction-amount.pending {
+  color: var(--sa-warning-500);
+  text-shadow: 0 0 5px var(--sa-warning-500);
+}
+
+.sa-transaction-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sa-border-wealth);
+}
+
+.sa-transaction-stat {
+  text-align: center;
+}
+
+.sa-transaction-stat-label {
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wide);
+  margin-bottom: 0.25rem;
+}
+
+.sa-transaction-stat-value {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-wealth-400);
+}
+
+@keyframes transaction-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes transaction-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sa-transaction-alert {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--sa-critical-500);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: alert-pulse 2s infinite;
+}
+
+.sa-transaction-alert::before {
+  content: '⚠️';
+  font-size: 1.2rem;
+}
+
+.sa-transaction-alert-text {
+  color: var(--sa-critical-400);
+  font-size: var(--sa-text-small);
+  font-family: var(--sa-font-forensic);
+}
+
+@keyframes alert-pulse {
+  0%, 100% {
+    opacity: 1;
+    border-color: var(--sa-critical-500);
+  }
+  50% {
+    opacity: 0.7;
+    border-color: var(--sa-warning-500);
+  }
+}

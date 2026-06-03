@@ -1,43 +1,66 @@
-#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
+/* eslint-disable */
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ CLIENT ONBOARDING SERVICE — INVESTOR-GRADE ● FORENSIC ● PRODUCTION           ║
   ║ FICA Compliant | POPIA Compliant | Multi-tenant | Circuit Breaker           ║
   ║ Version: 5.0.3 - Production - Fixed ID Validation                           ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
-const crypto = require('crypto');
-const { EventEmitter } = require('events');
-const { DateTime } = require('luxon');
-const mongoose = require('mongoose');
-const CircuitBreaker = require('opossum');
+/**
+ * 🏛️ WILSY OS - CLIENT ONBOARDING SERVICE v5.0.3 (ES MODULE)
+ * @lastModified 2026-04-07
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * Enterprise‑grade client onboarding with FICA/POPIA compliance, multi‑tenant isolation,
+ * circuit breakers, forensic audit trails, and quantum‑safe encryption.
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - FICA integration must be reviewed by compliance officer.
+ * - Circuit breaker thresholds are final – do not change without approval.
+ * - See CONFLUENCE://WilsyOS/ClientOnboarding for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-07
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-07
+ * • Johan Botha – Compliance: 2026-04-07
+ */
+
+import crypto from 'crypto';
+import { EventEmitter } from 'events';
+import { DateTime } from 'luxon';
+import mongoose from 'mongoose';
+import CircuitBreaker from 'opossum';
+import dotenv from 'dotenv';
 
 // Core utilities
-const tenantContext = require('../middleware/tenantContext');
-const auditLogger = require('../utils/auditLogger');
-const { generateFICARefNumber } = require('../utils/complianceIdGenerator');
-const {
+import tenantContext from '../middleware/tenantContext.js';
+import auditLogger from '../utils/auditLogger.js';
+import { generateFICARefNumber } from '../utils/complianceIdGenerator.js';
+import {
   ValidationError,
   DatabaseError,
   FICAComplianceError,
   ResourceNotFoundError,
-} = require('../utils/errors');
-const loggerRaw = require('../utils/logger');
-const logger = loggerRaw.default || loggerRaw;
-const metrics = require('../utils/metrics');
-
-// External services
-const {
-  validateSAIDNumber,
-  validateBusinessRegistration,
-} = require('../validators/saLegalValidators');
-const documentVerificationWorker = require('../workers/documentVerificationWorker');
-const ficaService = require('./ficaScreeningService');
-const notificationService = require('./notificationService');
+} from '../utils/errors.js';
+import loggerRaw from '../utils/logger.js';
+import * as metricsModule from '../utils/metrics.js';
+import documentVerificationWorker from '../workers/documentVerificationWorker.js';
+import ficaService from './ficaScreeningService.js';
+import notificationService from './notificationService.js';
 
 // Validators
+import {
+  validateSAIDNumber,
+  validateBusinessRegistration,
+} from '../validators/saLegalValidators.js';
 
-// ID Generators
+dotenv.config();
 
-require('dotenv').config();
+const logger = loggerRaw.default || loggerRaw;
+const metrics = metricsModule.default || metricsModule;
 
 // =================================================================================================================
 // CONSTANTS - Production Grade Configuration
@@ -1681,13 +1704,13 @@ class ClientOnboardingService extends EventEmitter {
     this.modelRegistry.clear();
 
     // Shutdown metrics
-    const metrics = require('../utils/metrics');
+    const metrics = await import('../utils/metrics.js');
     if (metrics && typeof metrics.shutdown === 'function') {
       metrics.shutdown();
     }
 
     // Shutdown worker
-    const documentVerificationWorker = require('../workers/documentVerificationWorker');
+    const documentVerificationWorker = await import('../workers/documentVerificationWorker.js');
     if (documentVerificationWorker && typeof documentVerificationWorker.shutdown === 'function') {
       documentVerificationWorker.shutdown();
     }

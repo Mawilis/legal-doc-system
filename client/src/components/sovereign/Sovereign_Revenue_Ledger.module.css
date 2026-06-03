@@ -1,0 +1,1976 @@
+/* eslint-disable */
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - LEDGER MATRIX PHYSICS [V55.2.0-MARS-FINAL]                                                                               ║
+ * ║ [SUB-ATOMIC OBSIDIAN | CHROMATIC GOLD | NEURAL SCANLINE PHYSICS | TITAN CARD CONTAINMENT | TACTICAL ACTION COMMANDS]                 ║
+ * ║ [COMPETITIVE OBLITERATION: No other dashboard has this combination of visual physics, legal‑grade containment, and live animations.]   ║
+ * ║ [ADDED: Native skeleton loader styles for production hydration – no external Tailwind required.]                                      ║
+ * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 55.2.0-MARS-FINAL | PRODUCTION READY | BIBLICAL WORTH BILLIONS                                                              ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                        ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/Sovereign_Revenue_Ledger.module.css              ║
+ * ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated zero visual friction. Labels must be anchored, commands must have visual weight.   ║
+ * ║ • AI Engineering (DeepSeek) - FINAL: Added skeleton loader CSS, bumped version to MARS-FINAL.                                         ║
+ * ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+/* ============================================================================
+   🏛️ LEDGER SHARD – The Sovereign Container
+   ============================================================================ */
+
+.ledgerShard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 2;
+  background: radial-gradient(circle at 50% 0%, #0c0c0c 0%, #000 100%);
+  backdrop-filter: blur(40px) saturate(150%);
+  border: 1px solid rgba(31, 31, 31, 0.8);
+  border-radius: 4px;
+  box-shadow:
+    0 50px 100px rgba(0,0,0,1),
+    inset 0 0 80px rgba(0,0,0,0.9),
+    inset 0 1px 0 rgba(212, 175, 55, 0.1);
+  overflow: hidden;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ledgerShard:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+/* ============================================================================
+   🧬 CARBON-MESH TOPOGRAPHY – The "Living Grid" Background
+   ============================================================================ */
+
+.ledgerShard::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    radial-gradient(circle at 2px 2px, rgba(212, 175, 55, 0.03) 1px, transparent 0);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+/* ============================================================================
+   📊 TITAN METRIC SHARDS – The Institutional Cards
+   ============================================================================ */
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  width: 100%;
+  margin-bottom: 30px;
+  box-sizing: border-box;
+}
+
+.titanCard {
+  background: linear-gradient(145deg, #080808, #030303);
+  padding: 25px;
+  border: 1px solid #111;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 0.3s ease;
+  min-width: 0;
+}
+
+.titanCard:hover {
+  border-color: #D4AF37;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+}
+
+.titanLabel {
+  font-size: 0.52rem;
+  color: #444;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 8px;
+}
+
+.titanValue {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -1px;
+  word-break: break-all;
+}
+
+.titanTrend {
+  font-size: 0.6rem;
+  font-weight: 900;
+  color: #00ff00;
+  letter-spacing: 1px;
+  margin-top: 5px;
+}
+
+/* ============================================================================
+   🗂️ MULTI-HUD NAVIGATION (TABS)
+   ============================================================================ */
+
+.tabContainer {
+  display: flex;
+  background: #000;
+  border-bottom: 1px solid #111;
+  padding: 0 15px;
+  position: relative;
+  z-index: 10;
+  overflow-x: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hudTab {
+  background: transparent;
+  border: none;
+  padding: 18px 25px;
+  color: #333;
+  border-bottom: 2px solid transparent;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 2.5px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.4s;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hudTabActive {
+  color: #D4AF37;
+  border-bottom: 2px solid #D4AF37;
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.05) 0%, transparent 100%);
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+  animation: goldPulse 2s infinite ease-in-out;
+}
+
+@keyframes goldPulse {
+  0%, 100% { text-shadow: 0 0 8px rgba(212, 175, 55, 0.3); }
+  50% { text-shadow: 0 0 16px rgba(212, 175, 55, 0.6); }
+}
+
+/* ============================================================================
+   📄 HUD CONTENT AREA
+   ============================================================================ */
+
+.hudContent {
+  padding: 40px;
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hudContent::-webkit-scrollbar { width: 4px; }
+.hudContent::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+.hudContent::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 2px; }
+.hudContent:hover::-webkit-scrollbar-thumb { background: #D4AF37; }
+
+/* ============================================================================
+   🛡️ LIVE PROOF COMMAND SURFACES – Compliance/ESG without ceremonial zeros
+   ============================================================================ */
+
+.sourceCommandSurface {
+  min-height: min(620px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: clamp(20px, 2.6vw, 34px);
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01)),
+    rgba(0,0,0,0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.045),
+    0 24px 64px rgba(0,0,0,0.55);
+  overflow: hidden;
+}
+
+.sourceCommandSurface[data-tone="esg"] {
+  border-color: rgba(0, 255, 136, 0.22);
+  background:
+    linear-gradient(135deg, rgba(0, 255, 136, 0.08), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,0.034), rgba(255,255,255,0.01)),
+    rgba(0,0,0,0.9);
+}
+
+.sourceCommandHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.32fr);
+  align-items: stretch;
+  gap: 16px;
+}
+
+.sourceCommandTitle,
+.sourceCommandScore,
+.sourceProofCard,
+.sourceNarrative,
+.sourceChecklist,
+.sourceProofGrid article {
+  min-width: 0;
+}
+
+.sourceCommandTitle {
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  padding: clamp(18px, 2vw, 24px);
+  border-left: 4px solid #D4AF37;
+  background: rgba(0,0,0,0.34);
+}
+
+.sourceCommandTitle span,
+.sourceCommandTitle h3,
+.sourceCommandTitle p,
+.sourceCommandScore span,
+.sourceCommandScore strong,
+.sourceCommandScore small,
+.sourceCommandActions button,
+.sourceProofGrid span,
+.sourceProofGrid strong,
+.sourceProofGrid small,
+.sourceNarrative span,
+.sourceNarrative p,
+.sourceChecklist span,
+.sourceChecklist li {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.sourceCommandTitle span,
+.sourceCommandScore span,
+.sourceProofGrid span,
+.sourceNarrative span,
+.sourceChecklist span {
+  color: #D4AF37;
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.sourceCommandSurface[data-tone="esg"] .sourceCommandTitle span,
+.sourceCommandSurface[data-tone="esg"] .sourceCommandScore span,
+.sourceCommandSurface[data-tone="esg"] .sourceProofGrid span,
+.sourceCommandSurface[data-tone="esg"] .sourceNarrative span,
+.sourceCommandSurface[data-tone="esg"] .sourceChecklist span {
+  color: #00ff88;
+}
+
+.sourceCommandTitle span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sourceCommandTitle h3 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.45rem, 2.8vw, 3.2rem);
+  font-weight: 950;
+  line-height: 1.02;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.sourceCommandTitle p {
+  max-width: 78ch;
+  margin: 0;
+  color: rgba(255,255,255,0.68);
+  font-size: clamp(0.78rem, 0.9vw, 0.95rem);
+  line-height: 1.55;
+  letter-spacing: 0;
+}
+
+.sourceCommandScore {
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.52);
+}
+
+.sourceCommandScore strong {
+  color: #fff;
+  font-size: clamp(1.45rem, 3vw, 3rem);
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.sourceCommandScore[data-silent="true"] strong {
+  color: #D4AF37;
+  font-size: clamp(1rem, 1.7vw, 1.7rem);
+  line-height: 1.15;
+}
+
+.sourceCommandSurface[data-tone="esg"] .sourceCommandScore[data-silent="true"] strong {
+  color: #00ff88;
+}
+
+.sourceCommandScore small {
+  color: rgba(255,255,255,0.52);
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.sourceCommandActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sourceCommandActions button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 15px;
+  border: 1px solid rgba(212, 175, 55, 0.34);
+  border-radius: 6px;
+  background: rgba(212, 175, 55, 0.1);
+  color: #D4AF37;
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sourceCommandSurface[data-tone="esg"] .sourceCommandActions button {
+  border-color: rgba(0, 255, 136, 0.28);
+  background: rgba(0, 255, 136, 0.065);
+  color: #00ff88;
+}
+
+.sourceCommandActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sourceProofGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sourceProofGrid article {
+  min-height: 118px;
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  padding: 15px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: 3px solid rgba(212, 175, 55, 0.55);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.42);
+}
+
+.sourceProofGrid article[data-status="LIVE"],
+.sourceProofGrid article[data-status="BOUND"] {
+  border-left-color: rgba(0, 255, 136, 0.72);
+}
+
+.sourceProofGrid article[data-status="MISSING"],
+.sourceProofGrid article[data-status="SYNC REQUIRED"],
+.sourceProofGrid article[data-status="SOURCE SILENT"] {
+  border-left-color: rgba(255, 204, 102, 0.72);
+}
+
+.sourceProofGrid strong {
+  color: #fff;
+  font-size: clamp(0.84rem, 1.1vw, 1.05rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.sourceProofGrid small {
+  color: rgba(255,255,255,0.48);
+  font-size: 0.54rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.sourceNarrativeGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr);
+  gap: 14px;
+}
+
+.sourceNarrative,
+.sourceChecklist {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.36);
+}
+
+.sourceNarrative p {
+  margin: 0;
+  color: rgba(255,255,255,0.78);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.sourceChecklist ul {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sourceChecklist li {
+  position: relative;
+  padding-left: 18px;
+  color: rgba(255,255,255,0.72);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.sourceChecklist li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #D4AF37;
+}
+
+.sourceCommandSurface[data-tone="esg"] .sourceChecklist li::before {
+  background: #00ff88;
+}
+
+/* ============================================================================
+   🧠 NEURAL SCANLINE PHYSICS (Animated Sweep)
+   ============================================================================ */
+
+.scanlineOverlay {
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.01), rgba(0, 255, 102, 0.03), rgba(212, 175, 55, 0.01), transparent);
+  pointer-events: none;
+  animation: neuralSweep 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  z-index: 5;
+}
+
+@keyframes neuralSweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* ============================================================================
+   ⚙️ SKELETON LOADER (Native – No Tailwind Required)
+   ============================================================================ */
+
+.skeleton {
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+}
+
+@keyframes skeletonPulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeletonText {
+  height: 1rem;
+  width: 100%;
+  background: #1a1a1a;
+  border-radius: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.skeletonTitle {
+  height: 2rem;
+  width: 75%;
+  margin-bottom: 1rem;
+}
+
+.skeletonCard {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* ============================================================================
+   🖥️ FORENSIC TERMINAL FORMATTING
+   ============================================================================ */
+
+.terminalWindow {
+  background: #030303;
+  border: 1px solid #111;
+  padding: 25px;
+  font-family: 'JetBrains Mono', monospace;
+  box-shadow: inset 0 0 50px #000;
+}
+
+.terminalLine {
+  border-bottom: 1px solid #080808;
+  padding: 10px 0;
+  font-size: 0.7rem;
+  color: #444;
+}
+
+/* ============================================================================
+   🚀 TACTICAL ACTION COMMANDS – SPACEX-CLASS BUTTONS
+   ============================================================================ */
+
+.actionBtnGold {
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #D4AF37;
+  border-radius: 4px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 0 10px rgba(212, 175, 55, 0);
+}
+
+.actionBtnGold:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: #D4AF37;
+  box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.2), 0 0 15px rgba(212, 175, 55, 0.3);
+  transform: translateY(-1px);
+}
+
+.actionBtnGold:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: rgba(212, 175, 55, 0.1);
+}
+
+.actionBtnRed {
+  background: rgba(255, 51, 51, 0.05);
+  border: 1px solid rgba(255, 51, 51, 0.3);
+  color: #ff3333;
+  border-radius: 4px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.actionBtnRed:hover:not(:disabled) {
+  background: rgba(255, 51, 51, 0.15);
+  border-color: #ff3333;
+  box-shadow: inset 0 0 20px rgba(255, 51, 51, 0.2), 0 0 15px rgba(255, 51, 51, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ============================================================================
+   🚨 ALERTS & TOOLTIPS
+   ============================================================================ */
+
+.tooltip {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #D4AF37;
+  color: #000;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  z-index: 10000;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  animation: fadeInOut 3s ease-in-out forwards;
+  pointer-events: none;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(10px); visibility: hidden; }
+}
+
+.anomalyBanner {
+  background: rgba(255, 51, 51, 0.1);
+  border-left: 4px solid #ff3333;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 4px;
+  animation: pulseRed 2s infinite;
+}
+
+@keyframes pulseRed {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; box-shadow: 0 0 8px rgba(255, 51, 51, 0.3); }
+}
+
+/* ============================================================================
+   🧠 AI ANSWER BRIEF – structured revenue intelligence, not chat transcript
+   ============================================================================ */
+
+.aiAnswerBrief {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  padding: clamp(18px, 2vw, 24px);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  border-left: 4px solid #D4AF37;
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01)),
+    #030303;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 18px 48px rgba(0,0,0,0.54);
+}
+
+.aiAnswerHeader,
+.aiAnswerBody,
+.aiEvidenceGrid,
+.aiEvidenceList {
+  display: grid;
+}
+
+.aiAnswerHeader {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+}
+
+.aiAnswerHeader span,
+.aiAnswerHeader h3,
+.aiAnswerSeal small,
+.aiAnswerSeal strong,
+.aiAnswerPrimary span,
+.aiAnswerPrimary p,
+.aiAnswerProjection span,
+.aiAnswerProjection strong,
+.aiAnswerProjection p,
+.aiEvidenceGrid span,
+.aiEvidenceGrid strong,
+.aiEvidenceList span,
+.aiEvidenceList code,
+.aiSealWarning span {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.aiAnswerHeader span,
+.aiAnswerPrimary span,
+.aiAnswerProjection span,
+.aiEvidenceGrid span,
+.aiEvidenceList span {
+  color: #D4AF37;
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.aiAnswerHeader span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aiAnswerHeader h3 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: clamp(1.1rem, 1.6vw, 1.7rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.aiAnswerSeal {
+  min-width: 190px;
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 255, 136, 0.045);
+}
+
+.aiAnswerSeal small {
+  color: rgba(255,255,255,0.48);
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.aiAnswerSeal strong {
+  color: #00ff88;
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.aiAnswerBody {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.34fr);
+  gap: 16px;
+}
+
+.aiAnswerPrimary,
+.aiAnswerProjection,
+.aiEvidenceGrid article {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.42);
+}
+
+.aiAnswerPrimary,
+.aiAnswerProjection {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.aiAnswerPrimary p,
+.aiAnswerProjection p {
+  margin: 0;
+  color: rgba(255,255,255,0.82);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.aiAnswerProjection {
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
+.aiAnswerProjection strong {
+  color: #fff;
+  font-size: clamp(1.2rem, 2vw, 2.1rem);
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.aiEvidenceGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.aiEvidenceGrid article {
+  display: grid;
+  gap: 8px;
+  min-height: 82px;
+  padding: 13px;
+}
+
+.aiEvidenceGrid strong {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.aiEvidenceList {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.aiEvidenceList > span {
+  grid-column: 1 / -1;
+}
+
+.aiEvidenceChip {
+  min-height: 74px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 13px 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: 3px solid rgba(212, 175, 55, 0.68);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.055), transparent 54%),
+    rgba(255,255,255,0.026);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
+}
+
+.aiEvidenceChip small,
+.aiEvidenceChip strong {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.aiEvidenceChip small {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.54rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.aiEvidenceChip strong {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.aiSealWarning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 204, 102, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 204, 102, 0.055);
+  color: #ffcc66;
+}
+
+.aiSealWarning span {
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+/* ============================================================================
+   🧠 AI FOCUS COMMAND – Revenue decisions with evidence, not disposable chat
+   ============================================================================ */
+
+.aiFocusCommand {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 24px;
+  padding: clamp(20px, 2.2vw, 28px);
+  border: 1px solid rgba(212, 175, 55, 0.26);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012)),
+    rgba(2, 2, 2, 0.94);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 22px 48px rgba(0,0,0,0.5);
+}
+
+.aiFocusHeader,
+.aiFocusActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.aiFocusHeader span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #D4AF37;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.aiFocusHeader h3 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: clamp(1.45rem, 2.7vw, 2.8rem);
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.aiFocusScore {
+  min-width: 124px;
+  min-height: 74px;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  border: 1px solid rgba(0, 255, 136, 0.24);
+  border-radius: 8px;
+  background: rgba(0, 255, 136, 0.06);
+}
+
+.aiFocusScore small,
+.aiFocusScore strong,
+.aiPacketTop span,
+.aiPacketTop em,
+.aiPacket h4,
+.aiPacket p,
+.aiPacket small,
+.aiDecisionLedger strong,
+.aiDecisionLedger span,
+.aiDecisionLedger p,
+.aiDecisionLedger small {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.aiFocusScore small {
+  color: rgba(255,255,255,0.54);
+  font-size: 0.54rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.aiFocusScore strong {
+  color: #00ff88;
+  font-size: 1.65rem;
+  font-weight: 950;
+}
+
+.aiPacketGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.aiPacket {
+  min-height: 250px;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: 3px solid rgba(212, 175, 55, 0.65);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.42);
+}
+
+.aiPacket[data-status="HIGH"],
+.aiPacket[data-status="ACTION_REQUIRED"],
+.aiPacket[data-status="CONTRACTION"] {
+  border-left-color: #ff6666;
+}
+
+.aiPacket[data-status="LOW"],
+.aiPacket[data-status="EXPANSION"],
+.aiPacket[data-status="STABLE"] {
+  border-left-color: #00ff88;
+}
+
+.aiPacketTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.aiPacketTop span,
+.aiPacketTop em {
+  color: rgba(255,255,255,0.52);
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.aiPacketTop em {
+  color: #D4AF37;
+  font-style: normal;
+}
+
+.aiPacket h4 {
+  margin: 0;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 950;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.aiPacket p {
+  margin: 0;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.aiPacket small {
+  display: block;
+  color: rgba(212, 175, 55, 0.78);
+  font-size: 0.66rem;
+  line-height: 1.55;
+}
+
+.aiPacket button {
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 0.58rem;
+}
+
+.aiFocusActions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.aiFocusActions button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  font-size: 0.6rem;
+}
+
+.aiDecisionLedger {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.3);
+}
+
+.aiDecisionLedger strong {
+  color: #D4AF37;
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.aiDecisionLedger div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.aiDecisionLedger span {
+  color: rgba(255,255,255,0.44);
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.aiDecisionLedger p {
+  margin: 0;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.aiDecisionLedger small {
+  color: rgba(255,255,255,0.56);
+  font-size: 0.64rem;
+  line-height: 1.45;
+}
+
+/* ============================================================================
+   🧭 FOUNDER REVENUE DOCTRINE – executable live-source operating sequence
+   ============================================================================ */
+
+.revenueDoctrineCommand {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 24px;
+  padding: clamp(20px, 2.2vw, 30px);
+  border: 1px solid rgba(0, 255, 136, 0.18);
+  border-left: 4px solid rgba(212, 175, 55, 0.9);
+  border-radius: 10px;
+  background:
+    linear-gradient(120deg, rgba(0, 255, 136, 0.085), transparent 42%),
+    linear-gradient(180deg, rgba(212, 175, 55, 0.065), rgba(0, 0, 0, 0.2)),
+    rgba(2, 2, 2, 0.9);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 24px 52px rgba(0,0,0,0.45);
+}
+
+.revenueDoctrineHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 210px);
+  align-items: start;
+  gap: 22px;
+}
+
+.revenueDoctrineHeader span,
+.revenueDoctrineHeader h3,
+.revenueDoctrineHeader p,
+.revenueDoctrineSignal,
+.revenueDoctrineRail article,
+.revenueDoctrineTimeline article {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.revenueDoctrineHeader span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #9fffd0;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.revenueDoctrineHeader h3 {
+  margin: 9px 0 0;
+  color: #fff;
+  font-size: clamp(1.5rem, 2.8vw, 3rem);
+  line-height: 1.02;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.revenueDoctrineHeader p {
+  max-width: 860px;
+  margin: 12px 0 0;
+  color: rgba(255,255,255,0.64);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.revenueDoctrineSignal {
+  min-height: 112px;
+  display: grid;
+  place-items: center;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid rgba(0, 255, 136, 0.25);
+  border-radius: 8px;
+  background: rgba(0, 255, 136, 0.07);
+  text-align: center;
+}
+
+.revenueDoctrineSignal[data-risk="SOURCE_GAPS"],
+.revenueDoctrineSignal[data-risk="HIGH"] {
+  border-color: rgba(255, 102, 102, 0.32);
+  background: rgba(255, 102, 102, 0.07);
+}
+
+.revenueDoctrineSignal small,
+.revenueDoctrineSignal em,
+.revenueDoctrineRail span,
+.revenueDoctrineRail small,
+.revenueDoctrineTimeline span,
+.revenueDoctrineTimeline small {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.54rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.revenueDoctrineSignal strong {
+  color: #00ff88;
+  font-size: 1.65rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.revenueDoctrineSignal[data-risk="SOURCE_GAPS"] strong,
+.revenueDoctrineSignal[data-risk="HIGH"] strong {
+  color: #ff8888;
+}
+
+.revenueDoctrineSignal em {
+  color: #D4AF37;
+  font-style: normal;
+}
+
+.revenueDoctrineRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.revenueDoctrineRail article {
+  min-height: 110px;
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.42);
+}
+
+.revenueDoctrineRail strong {
+  color: #fff;
+  font-size: clamp(0.95rem, 1.4vw, 1.35rem);
+  font-weight: 950;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.revenueDoctrineRail small {
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.revenueDoctrineTimeline {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.revenueDoctrineTimeline article {
+  min-height: 270px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-top: 3px solid rgba(212, 175, 55, 0.72);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(212, 175, 55, 0.055), transparent),
+    rgba(0, 0, 0, 0.5);
+}
+
+.revenueDoctrineTimeline article[data-status="LIVE"],
+.revenueDoctrineTimeline article[data-status="MOUNTED"],
+.revenueDoctrineTimeline article[data-status="READY"],
+.revenueDoctrineTimeline article[data-status="LOW"] {
+  border-top-color: #00ff88;
+}
+
+.revenueDoctrineTimeline article[data-status="SOURCE_SILENT"],
+.revenueDoctrineTimeline article[data-status="DRAFT_REQUIRED"],
+.revenueDoctrineTimeline article[data-status="NO_REVENUE_BASE"],
+.revenueDoctrineTimeline article[data-status="HIGH"] {
+  border-top-color: #ff6666;
+}
+
+.revenueDoctrineTimeline h4 {
+  margin: 9px 0 0;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 950;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.revenueDoctrineTimeline p {
+  margin: 10px 0 0;
+  color: rgba(212, 175, 55, 0.82);
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.revenueDoctrineTimeline small {
+  display: block;
+  margin-top: 10px;
+  color: rgba(255,255,255,0.58);
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.revenueDoctrineTimeline button {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  font-size: 0.56rem;
+}
+
+.revenueOpsConsole {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 24px;
+  padding: 22px;
+  border: 1px solid rgba(0, 255, 136, 0.14);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(0, 255, 136, 0.055), transparent 42%),
+    rgba(0, 0, 0, 0.46);
+}
+
+.statementPeriodConsole {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.09), transparent 42%),
+    rgba(0, 0, 0, 0.52);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.statementPeriodBrief,
+.statementPeriodGrid label {
+  min-width: 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.statementPeriodBrief {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  padding: 14px 16px;
+  border-left: 3px solid #D4AF37;
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.statementPeriodBrief span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #D4AF37;
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.statementPeriodBrief h3 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(0.95rem, 1.25vw, 1.25rem);
+  line-height: 1.18;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.statementPeriodBrief p {
+  margin: 0;
+  color: rgba(255,255,255,0.62);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.statementPeriodGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.statementPeriodGrid label {
+  display: grid;
+  gap: 7px;
+}
+
+.statementPeriodGrid span {
+  color: rgba(255,255,255,0.52);
+  font-size: 0.52rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.statementPeriodGrid input,
+.statementPeriodGrid select {
+  width: 100%;
+  min-height: 42px;
+  padding: 11px 12px;
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  border-radius: 6px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.07), transparent 44%),
+    rgba(0,0,0,0.68);
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  outline: none;
+}
+
+.statementPeriodGrid input:focus,
+.statementPeriodGrid select:focus {
+  border-color: rgba(0, 255, 136, 0.52);
+  box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.16);
+}
+
+.invoiceCommandDeck {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(140px, 190px);
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.075), transparent 45%),
+    rgba(0, 0, 0, 0.38);
+}
+
+.invoiceCommandBrief,
+.invoiceReadinessGauge,
+.invoiceMetricRail article,
+.invoiceChecklist article,
+.invoiceCommandActions button {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.invoiceCommandBrief span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #9fffd0;
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.invoiceCommandBrief h3 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: clamp(1rem, 1.7vw, 1.55rem);
+  line-height: 1.15;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.invoiceCommandBrief p {
+  max-width: 860px;
+  margin: 10px 0 0;
+  color: rgba(255,255,255,0.62);
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.invoiceReadinessGauge {
+  min-height: 118px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid rgba(0, 255, 136, 0.22);
+  border-radius: 8px;
+  background: rgba(0, 255, 136, 0.065);
+  text-align: center;
+}
+
+.invoiceReadinessGauge small,
+.invoiceReadinessGauge em,
+.invoiceMetricRail span,
+.invoiceMetricRail small,
+.invoiceChecklist small {
+  color: rgba(255,255,255,0.52);
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.invoiceReadinessGauge strong {
+  color: #00ff88;
+  font-size: 1.75rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.invoiceReadinessGauge em {
+  color: #D4AF37;
+  font-style: normal;
+}
+
+.invoiceMetricRail {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.invoiceMetricRail article {
+  min-height: 96px;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.46);
+}
+
+.invoiceMetricRail strong {
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.invoiceChecklist {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.invoiceChecklist article {
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 102, 102, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 102, 102, 0.045);
+  color: #ff8888;
+}
+
+.invoiceChecklist article[data-live="true"] {
+  border-color: rgba(0, 255, 136, 0.22);
+  background: rgba(0, 255, 136, 0.055);
+  color: #00ff88;
+}
+
+.invoiceChecklist strong {
+  display: block;
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 950;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.invoiceChecklist small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.invoiceCommandActions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.invoiceCommandActions button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 6px;
+  background: rgba(212, 175, 55, 0.1);
+  color: #D4AF37;
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.revenueOpsHeader,
+.revenueOpsGrid,
+.revenueOpsActions,
+.revenueOpsStatusGrid,
+.revenueOpsErrors {
+  display: grid;
+}
+
+.revenueOpsHeader {
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 18px;
+}
+
+.revenueOpsHeader span,
+.revenueOpsHeader h3,
+.revenueOpsForm span,
+.revenueOpsStatusGrid span,
+.revenueOpsStatusGrid strong,
+.revenueOpsStatusGrid small,
+.revenueOpsErrors strong,
+.revenueOpsErrors span {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.revenueOpsHeader span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #00ff88;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.revenueOpsHeader h3 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.revenueOpsGrid {
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 18px;
+}
+
+.revenueOpsForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.revenueOpsForm label {
+  display: grid;
+  gap: 8px;
+}
+
+.revenueOpsForm span {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.revenueOpsForm input,
+.revenueOpsForm select,
+.revenueOpsForm textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 12px 13px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  background: rgba(0,0,0,0.58);
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  outline: none;
+}
+
+.revenueOpsForm select {
+  appearance: none;
+  cursor: pointer;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.09), transparent 45%),
+    rgba(0,0,0,0.58);
+}
+
+.revenueOpsForm textarea {
+  min-height: 76px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.revenueOpsForm input:focus,
+.revenueOpsForm select:focus,
+.revenueOpsForm textarea:focus {
+  border-color: rgba(0, 255, 136, 0.48);
+  box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.16);
+}
+
+.revenueOpsWide {
+  grid-column: 1 / -1;
+}
+
+.revenueOpsActions {
+  gap: 10px;
+  align-content: start;
+}
+
+.revenueOpsActions button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 0 14px;
+  border: 1px solid rgba(212, 175, 55, 0.34);
+  border-radius: 6px;
+  background: rgba(212, 175, 55, 0.12);
+  color: #D4AF37;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.revenueOpsActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.operationReceiptRail {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.operationReceiptPrimary,
+.operationReceiptStack article {
+  min-width: 0;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.075), transparent 46%),
+    rgba(0,0,0,0.48);
+}
+
+.operationReceiptPrimary {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 16px;
+  border-left: 3px solid rgba(212, 175, 55, 0.76);
+}
+
+.operationReceiptStack {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.operationReceiptStack article {
+  min-height: 92px;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  padding: 13px;
+  border-left: 3px solid rgba(255, 204, 102, 0.64);
+}
+
+.operationReceiptStack article[data-status="LIVE"] {
+  border-left-color: rgba(0, 255, 136, 0.72);
+}
+
+.operationReceiptStack article[data-status="QUEUED_FOR_BACKEND"] {
+  border-left-color: rgba(0, 170, 255, 0.72);
+}
+
+.operationReceiptPrimary span,
+.operationReceiptPrimary strong,
+.operationReceiptPrimary small,
+.operationReceiptStack span,
+.operationReceiptStack strong,
+.operationReceiptStack small {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.operationReceiptPrimary span,
+.operationReceiptStack span {
+  color: #D4AF37;
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.operationReceiptPrimary strong,
+.operationReceiptStack strong {
+  color: #fff;
+  font-size: clamp(0.78rem, 1vw, 1rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.operationReceiptPrimary small,
+.operationReceiptStack small {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.58rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.revenueOpsStatusGrid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.revenueOpsStatusGrid article {
+  display: grid;
+  gap: 8px;
+  min-height: 104px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: 3px solid rgba(0, 255, 136, 0.45);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.42);
+}
+
+.revenueOpsStatusGrid span {
+  color: rgba(255,255,255,0.48);
+  font-size: 0.54rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.revenueOpsStatusGrid strong {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.revenueOpsStatusGrid small {
+  color: #00ff88;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.revenueOpsErrors {
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid rgba(255, 102, 102, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 51, 51, 0.04);
+}
+
+.revenueOpsErrors strong {
+  color: #ff8888;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.revenueOpsErrors span {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.64rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================================
+   📱 RESPONSIVE SAFEGUARDS (Mobile Boardrooms)
+   ============================================================================ */
+
+@media (max-width: 1280px) {
+  .aiPacketGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .revenueDoctrineTimeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .invoiceChecklist {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .statementPeriodConsole {
+    grid-template-columns: 1fr;
+  }
+
+  .sourceProofGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .metricGrid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .aiFocusHeader,
+  .aiFocusActions,
+  .revenueOpsHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .aiPacketGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .revenueOpsGrid,
+  .revenueOpsForm,
+  .revenueOpsStatusGrid,
+  .revenueDoctrineHeader,
+  .revenueDoctrineRail,
+  .revenueDoctrineTimeline,
+  .invoiceCommandDeck,
+  .invoiceMetricRail,
+  .invoiceChecklist,
+  .statementPeriodGrid,
+  .operationReceiptRail,
+  .operationReceiptStack,
+  .aiAnswerHeader,
+  .aiAnswerBody,
+  .aiEvidenceGrid,
+  .aiEvidenceList,
+  .sourceCommandHero,
+  .sourceProofGrid,
+  .sourceNarrativeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sourceCommandSurface {
+    padding: 18px;
+  }
+
+  .sourceCommandActions button {
+    width: 100%;
+  }
+
+  .titanValue {
+    font-size: 1.4rem;
+  }
+
+  .hudTab {
+    padding: 12px 18px;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+  }
+
+  .hudContent {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .titanValue {
+    font-size: 1.5rem;
+  }
+
+  .hudContent {
+    padding: 30px;
+  }
+}

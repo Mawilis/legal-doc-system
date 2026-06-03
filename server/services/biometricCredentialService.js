@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * =================================================================================
  * QUANTUM BIOMETRIC CREDENTIAL NEXUS - IMMORTAL AUTHENTICATION FORTRESS
  * =================================================================================
@@ -8,29 +9,56 @@
  * Production-ready, error-fixed version
  */
 
-require('dotenv').config();
-const crypto = require('crypto');
-const {
+/**
+ * 🏛️ WILSY OS - BIOMETRIC CREDENTIAL SERVICE v1.0.0 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/biometricCredentialService.js
+ * @version 1.0.0
+ * @lastModified 2026-04-07
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * Biometric credential service for WebAuthn/FIDO2, fingerprint, facial recognition.
+ * Handles registration, authentication, revocation, and compliance with ECT Act, POPIA.
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - Biometric templates must be encrypted at rest.
+ * - Consent records are immutable – do not modify.
+ * - See CONFLUENCE://WilsyOS/BiometricCredentialService for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-07
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-07
+ * • Johan Botha – Compliance: 2026-04-07
+ */
+
+import dotenv from 'dotenv';
+import crypto from 'crypto';
+import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
-} = require('@simplewebauthn/server');
-const bcrypt = require('bcrypt');
-const Bull = require('bull');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-const { createClient } = require('redis');
-const { v4: uuidv4 } = require('uuid');
+} from '@simplewebauthn/server';
+import bcrypt from 'bcrypt';
+import Bull from 'bull';
+import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
+import { createClient } from 'redis';
+import { v4 as uuidv4 } from 'uuid';
 
 // =================================================================================
 // MODEL IMPORTS
 // =================================================================================
-const BiometricAudit = require('../models/BiometricAudit');
-const BiometricCredential = require('../models/BiometricCredential');
-const Consent = require('../models/Consent');
-const LegalFirm = require('../models/LegalFirm');
-const User = require('../models/User');
+import BiometricAudit from '../models/BiometricAudit.js';
+import BiometricCredential from '../models/BiometricCredential.js';
+import Consent from '../models/Consent.js';
+import LegalFirm from '../models/LegalFirm.js';
+import User from '../models/User.js';
+
+dotenv.config();
 
 // =================================================================================
 // ENVIRONMENT VALIDATION
@@ -151,7 +179,7 @@ const initializeBiometricInfrastructure = async () => {
   }
 };
 
-// Initialize infrastructure
+// Initialize infrastructure (fire and forget)
 initializeBiometricInfrastructure();
 
 // =================================================================================

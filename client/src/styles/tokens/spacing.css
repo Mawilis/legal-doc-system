@@ -1,0 +1,121 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📏 MASTER SPACING TOKENS - WILSY OS 2050                                ║
+  ║  Supreme Spacing System - 10th Generation                                ║
+  ║  Fortune 500 · Quantum Ready · Multi-Tenant                              ║
+  ║  Supreme Architect: Wilson Khanyezi                                      ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+:root {
+  /* ==========================================================================
+     BASE SPACING UNIT (4px system)
+     ========================================================================== */
+  --wilsy-space-0: 0;
+  --wilsy-space-1: 0.25rem;   /* 4px */
+  --wilsy-space-2: 0.5rem;    /* 8px */
+  --wilsy-space-3: 0.75rem;   /* 12px */
+  --wilsy-space-4: 1rem;      /* 16px */
+  --wilsy-space-5: 1.25rem;   /* 20px */
+  --wilsy-space-6: 1.5rem;    /* 24px */
+  --wilsy-space-7: 1.75rem;   /* 28px */
+  --wilsy-space-8: 2rem;      /* 32px */
+  --wilsy-space-9: 2.25rem;   /* 36px */
+  --wilsy-space-10: 2.5rem;   /* 40px */
+  --wilsy-space-11: 2.75rem;  /* 44px */
+  --wilsy-space-12: 3rem;     /* 48px */
+  --wilsy-space-14: 3.5rem;   /* 56px */
+  --wilsy-space-16: 4rem;     /* 64px */
+  --wilsy-space-18: 4.5rem;   /* 72px */
+  --wilsy-space-20: 5rem;     /* 80px */
+  --wilsy-space-24: 6rem;     /* 96px */
+  --wilsy-space-28: 7rem;     /* 112px */
+  --wilsy-space-32: 8rem;     /* 128px */
+  --wilsy-space-36: 9rem;     /* 144px */
+  --wilsy-space-40: 10rem;    /* 160px */
+  --wilsy-space-44: 11rem;    /* 176px */
+  --wilsy-space-48: 12rem;    /* 192px */
+  --wilsy-space-52: 13rem;    /* 208px */
+  --wilsy-space-56: 14rem;    /* 224px */
+  --wilsy-space-60: 15rem;    /* 240px */
+  --wilsy-space-64: 16rem;    /* 256px */
+
+  /* ==========================================================================
+     CONTAINER DIMENSIONS
+     ========================================================================== */
+  --wilsy-container-sm: 640px;
+  --wilsy-container-md: 768px;
+  --wilsy-container-lg: 1024px;
+  --wilsy-container-xl: 1280px;
+  --wilsy-container-2xl: 1536px;
+
+  /* ==========================================================================
+     LAYOUT SPECIFIC
+     ========================================================================== */
+  --wilsy-header-height: 4rem;
+  --wilsy-sidebar-width: 280px;
+  --wilsy-sidebar-collapsed: 80px;
+  --wilsy-footer-height: 3rem;
+
+  /* ==========================================================================
+     COMPONENT SPECIFIC
+     ========================================================================== */
+  --wilsy-card-padding: var(--wilsy-space-6);
+  --wilsy-modal-padding: var(--wilsy-space-8);
+  --wilsy-input-padding: var(--wilsy-space-3);
+  --wilsy-button-padding: var(--wilsy-space-3) var(--wilsy-space-6);
+  --wilsy-table-cell-padding: var(--wilsy-space-4);
+
+  /* ==========================================================================
+     GRID SYSTEM
+     ========================================================================== */
+  --wilsy-grid-gutter: var(--wilsy-space-4);
+  --wilsy-grid-columns: 12;
+}
+
+/* ==========================================================================
+   SPACING UTILITY CLASSES
+   ========================================================================== */
+
+/* Margin */
+.m-0 { margin: var(--wilsy-space-0); }
+.m-1 { margin: var(--wilsy-space-1); }
+.m-2 { margin: var(--wilsy-space-2); }
+.m-3 { margin: var(--wilsy-space-3); }
+.m-4 { margin: var(--wilsy-space-4); }
+.m-5 { margin: var(--wilsy-space-5); }
+.m-6 { margin: var(--wilsy-space-6); }
+.m-8 { margin: var(--wilsy-space-8); }
+.m-10 { margin: var(--wilsy-space-10); }
+.m-12 { margin: var(--wilsy-space-12); }
+.m-16 { margin: var(--wilsy-space-16); }
+
+/* Padding */
+.p-0 { padding: var(--wilsy-space-0); }
+.p-1 { padding: var(--wilsy-space-1); }
+.p-2 { padding: var(--wilsy-space-2); }
+.p-3 { padding: var(--wilsy-space-3); }
+.p-4 { padding: var(--wilsy-space-4); }
+.p-5 { padding: var(--wilsy-space-5); }
+.p-6 { padding: var(--wilsy-space-6); }
+.p-8 { padding: var(--wilsy-space-8); }
+.p-10 { padding: var(--wilsy-space-10); }
+.p-12 { padding: var(--wilsy-space-12); }
+.p-16 { padding: var(--wilsy-space-16); }
+
+/* Gap */
+.gap-1 { gap: var(--wilsy-space-1); }
+.gap-2 { gap: var(--wilsy-space-2); }
+.gap-3 { gap: var(--wilsy-space-3); }
+.gap-4 { gap: var(--wilsy-space-4); }
+.gap-5 { gap: var(--wilsy-space-5); }
+.gap-6 { gap: var(--wilsy-space-6); }
+.gap-8 { gap: var(--wilsy-space-8); }
+.gap-10 { gap: var(--wilsy-space-10); }
+
+/* Responsive Spacing */
+@media (max-width: 640px) {
+  :root {
+    --wilsy-card-padding: var(--wilsy-space-4);
+    --wilsy-modal-padding: var(--wilsy-space-6);
+    --wilsy-grid-gutter: var(--wilsy-space-3);
+  }
+}

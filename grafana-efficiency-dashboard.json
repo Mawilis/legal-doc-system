@@ -1,0 +1,120 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-efficiency-hud",
+    "title": "🏛️ WILSY OS - Sovereign Efficiency Dashboard",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Institutional Cost per Transaction",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+        "targets": [
+          {
+            "expr": "wilsy_counter_system_cost_usd_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_transactions_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "USD / TX"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "decimals": 3,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 0.05 },
+                { "color": "red", "value": 0.10 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Throughput Strike Velocity per CPU Core",
+        "id": 2,
+        "gridPos": { "x": 6, "y": 0, "w": 18, "h": 6 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_system_requests_total{tenantId=\"GLOBAL_ROOT\"}[1m]) / wilsy_system_cpu_cores",
+            "legendFormat": "Req/s per Core"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 200 },
+                { "color": "green", "value": 500 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Data Density Efficiency (Throughput per GB RAM)",
+        "id": 3,
+        "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_system_requests_total{tenantId=\"GLOBAL_ROOT\"}[1m]) / (wilsy_system_total_mem_bytes / 1073741824)",
+            "legendFormat": "Req/s per GB"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 500 },
+                { "color": "green", "value": 1000 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Sovereign Efficiency Index (SEI)",
+        "id": 4,
+        "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_transactions_success_total{tenantId=\"GLOBAL_ROOT\"}[5m]) / wilsy_system_load",
+            "legendFormat": "Value produced / Load"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 2,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 5 },
+                { "color": "green", "value": 10 }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

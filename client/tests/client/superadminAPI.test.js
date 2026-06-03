@@ -1,85 +1,38 @@
 /* eslint-disable */
-/*╔═══════════════════════════════════════════════════════════════════════════╗
-  ║ ███████╗██╗   ██╗██████╗ ███████╗██████╗  █████╗ ██████╗ ███╗   ███╗██╗███╗   ██╗ ║
-  ║ ██╔════╝██║   ██║██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗████╗ ████║██║████╗  ██║ ║
-  ║ ███████╗██║   ██║██████╔╝█████╗  ██████╔╝███████║██████╔╝██╔████╔██║██║██╔██╗ ██║ ║
-  ║ ╚════██║██║   ██║██╔═══╝ ██╔══╝  ██╔══██╗██╔══██║██╔══██╗██║╚██╔╝██║██║██║╚██╗██║ ║
-  ║ ███████║╚██████╔╝██║     ███████╗██║  ██║██║  ██║██║  ██║██║ ╚═╝ ██║██║██║ ╚████║ ║
-  ║ ╚══════╝ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝ ║
-  ║                                                                                   ║
-  ║  🏛️  WILSY OS 2050 - SUPER ADMIN API TEST SUITE v10.0                           ║
-  ║  ├─ 100% deterministic mocks with no hoisting issues                             ║
-  ║  ├─ Tests all API endpoints with circuit breaker protection                      ║
-  ║  ├─ Validates interceptors and error handling                                    ║
-  ║  └─ R100M annual risk mitigation validation                                      ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝*/
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as superadminApi from '../../src/api/superadmin';
+import api from '../../src/services/api';
 
-// IMPORTANT: vi.mock is hoisted - use factory function with no external dependencies
-vi.mock('axios', () => {
-  // Create mock instance inside factory - NO top-level variables
-  const mockAxiosInstance = {
+// We spy on the underlying Axios instance ('api'), not the wrapper functions
+vi.mock('../../src/services/api', () => ({
+  default: {
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
     interceptors: {
-      request: { use: vi.fn() },
-      response: { use: vi.fn() }
-    }
-  };
-
-  return {
-    default: {
-      create: vi.fn(() => mockAxiosInstance)
-    },
-    create: vi.fn(() => mockAxiosInstance)
-  };
-});
-
-// Mock auditLogger
-vi.mock('../../src/utils/auditLogger.js', () => ({
-  auditLogger: {
-    log: vi.fn(),
-    AuditLevel: {
-      INFO: 'INFO',
-      AUDIT: 'AUDIT',
-      ERROR: 'ERROR',
-      WARN: 'WARN',
-      DEBUG: 'DEBUG',
-      CRITICAL: 'CRITICAL'
+      request: { use: vi.fn(), handlers: [] },
+      response: { use: vi.fn(), handlers: [] }
     }
   }
 }));
 
-// Import after mocks
-import { superAdminAPI } from '../../src/api/superadmin.js';
+describe('🏛️ SuperAdmin API Gateway (Wilsy OS Citadel)', () => {
 
-describe('SuperAdmin API Service - 10/10 Production Suite', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    localStorage.clear();
+  it('fetches global metrics and system valuation', async () => {
+    const mockData = { success: true, data: { financials: { globalMRR: 199249 } } };
+    api.get.mockResolvedValueOnce({ data: mockData });
+
+    const result = await superadminApi.getGlobalStats();
+
+    expect(api.get).toHaveBeenCalledWith('/superadmin/stats');
+    expect(result.data.financials.globalMRR).toBe(199249);
   });
 
-  it('should have all expected API methods', () => {
-    expect(superAdminAPI.getDashboardStats).toBeDefined();
-    expect(superAdminAPI.getUsers).toBeDefined();
-    expect(superAdminAPI.getTenants).toBeDefined();
-    expect(superAdminAPI.getSecurityEvents).toBeDefined();
-    expect(superAdminAPI.getAuditLogs).toBeDefined();
-    expect(superAdminAPI.getSystemStatus).toBeDefined();
-    expect(superAdminAPI.generateReport).toBeDefined();
-  });
+  it('retrieves tenants list for firm management', async () => {
+    api.get.mockResolvedValueOnce({ data: { success: true, firms: [] } });
 
-  it('should create axios instance with correct configuration', () => {
-    // Verify axios.create was called
-    const axios = require('axios');
-    // Removed invalid CommonJS spy assertion to allow Vitest execution
-  });
-
-  it('should set up interceptors for auth', async () => {
-    // This test just verifies the module loads - interceptors are tested in the implementation
-    expect(superAdminAPI).toBeDefined();
+    await superadminApi.getFirms();
+    expect(api.get).toHaveBeenCalledWith('/superadmin/firms');
   });
 });

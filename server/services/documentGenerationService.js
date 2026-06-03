@@ -1,4 +1,4 @@
-#!/* eslint-disable */
+/* eslint-disable */
 /* ╔═══════════════════════════════════════════════════════════════════════════╗
   ║ DOCUMENT GENERATION ENGINE - LEGAL DOCUMENT AUTOMATION                    ║
   ║ R12.5M/year revenue | 94% automation | 100-year retention                 ║

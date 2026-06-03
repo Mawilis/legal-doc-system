@@ -1,0 +1,80 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-availability-hud",
+    "title": "🏛️ WILSY OS - Sovereign Availability Dashboard",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Global Regional Uptime (SLA 99.9%)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_availability_ratio{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "{{region}} Shard"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 95,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 99 },
+                { "color": "green", "value": 99.9 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "barchart",
+        "title": "Tenant Resilience (Success vs Failovers)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_availability_ratio{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Uptime %"
+          },
+          {
+            "expr": "increase(wilsy_failover_events_total{tenantId=\"GLOBAL_ROOT\"}[1h])",
+            "legendFormat": "Failover Strikes"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "palette-classic" }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient"
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Institutional Failover Timeline",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_failover_events_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Cumulative Failovers"
+          }
+        ],
+        "fieldConfig": { "defaults": { "unit": "short", "color": { "fixedColor": "red", "mode": "fixed" } } }
+      }
+    ]
+  }
+}

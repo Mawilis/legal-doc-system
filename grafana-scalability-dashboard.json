@@ -1,0 +1,96 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-scalability-hud",
+    "title": "🏛️ WILSY OS - Sovereign Scalability Dashboard",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Institutional Horizontal Scaling (Auto-Expansion Events)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_counter_scaling_events_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Scaling Strikes"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 5 },
+                { "color": "orange", "value": 10 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Active Logic Containers (Provisioned Shards)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_gauge_active_containers{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Containers"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "orange", "value": 50 },
+                { "color": "red", "value": 100 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Cluster Resource Saturation (%)",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "(wilsy_system_load / wilsy_system_cpu_cores) * 100",
+            "legendFormat": "CPU Saturation"
+          },
+          {
+            "expr": "((wilsy_system_total_mem_bytes - wilsy_system_free_mem_bytes) / wilsy_system_total_mem_bytes) * 100",
+            "legendFormat": "Memory Saturation"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "orange", "value": 75 },
+                { "color": "red", "value": 90 }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

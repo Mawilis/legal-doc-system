@@ -1,0 +1,930 @@
+* {
+  box-sizing: border-box;
+}
+
+.hudContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+  min-height: 100vh;
+  background: radial-gradient(circle at 30% 20%, #0a0a0f 0%, #000000 100%);
+  color: #e0e0e0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.hudContainerEmbedded {
+  height: 100%;
+  min-height: 0;
+  gap: 8px;
+  padding: 6px 10px 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.72) rgba(0, 0, 0, 0.34);
+}
+
+.hudContainerEmbedded::-webkit-scrollbar {
+  width: 8px;
+}
+
+.hudContainerEmbedded::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.hudContainerEmbedded::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.72);
+  border-radius: 999px;
+}
+
+.hudContainerEmbedded > * {
+  min-width: 0;
+}
+
+.forensicCard {
+  display: grid;
+  gap: 16px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.08), transparent 34%),
+    rgba(10, 10, 15, 0.95);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 16px;
+  padding: 18px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.hudContainerEmbedded .forensicCard {
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.forensicCardHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, auto);
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.forensicBrand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.forensicBrandRail {
+  width: 4px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, #D4AF37, #00ff66);
+}
+
+.forensicEyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  color: #aaa;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forensicEyebrow svg {
+  flex: 0 0 auto;
+  color: #D4AF37;
+}
+
+.forensicTabs {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.forensicTabs button {
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 12px;
+  color: rgba(255, 255, 255, 0.68);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forensicTabs button[data-active="true"] {
+  color: #050505;
+  border-color: rgba(255, 239, 157, 0.72);
+  background: linear-gradient(180deg, #fff0a3, #d4af37 62%, #8f741f);
+  box-shadow: 0 10px 24px rgba(212, 175, 55, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.hudContainerEmbedded .forensicCardHeader {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.metricGridTwoColumn {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  width: 100%;
+  scroll-margin-top: clamp(6rem, 14vh, 11rem);
+}
+
+.threatIncidentRow, .aiCertRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+.alertShield {
+  background: rgba(5,5,5,0.85);
+  border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 350px;
+  height: 100%;
+  overflow: hidden;
+  scroll-margin-top: clamp(6rem, 14vh, 11rem);
+}
+
+.hudContainerEmbedded .alertShield {
+  min-height: 0;
+  height: auto;
+  border-radius: 14px;
+  scroll-margin-top: 0;
+}
+
+.alertScrollContainer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.evidenceControlGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+  align-content: start;
+}
+
+.evidenceControlCard {
+  min-width: 0;
+  min-height: 118px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 14px;
+  text-align: center;
+  color: #D4AF37;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(212, 175, 55, 0.08), rgba(212, 175, 55, 0.015)),
+    rgba(12, 12, 12, 0.88);
+}
+
+.evidenceControlCard svg {
+  color: #D4AF37;
+}
+
+.evidenceControlCard div {
+  max-width: 100%;
+  font-size: clamp(0.72rem, 1vw, 0.95rem);
+  overflow-wrap: anywhere;
+}
+
+.metricMiniGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.hudContainerEmbedded .metricMiniGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.titanTitleCompact {
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin: 4px 0 0;
+  line-height: 1.2;
+}
+
+.hudContainerEmbedded .titanTitleCompact {
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  line-height: 1;
+}
+
+/* Fix header text wrapping */
+.topographyLabel {
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #aaa;
+  margin-bottom: 4px;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.bottomSentinel {
+  text-align: right;
+  padding-top: 10px;
+  border-top: 1px solid #1a1a1a;
+  font-size: clamp(0.9rem, 4vw, 1.3rem);
+  font-weight: 900;
+  color: #D4AF37;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.auditFortressPanel {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+  min-height: min(760px, calc(100vh - 170px));
+  padding: clamp(20px, 3vw, 30px);
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.36);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.16), transparent 34%),
+    radial-gradient(circle at 84% 10%, rgba(32, 227, 138, 0.16), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018)),
+    rgba(5, 5, 5, 0.92);
+  box-shadow:
+    0 28px 70px rgba(0,0,0,0.62),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.hudContainerEmbedded .auditFortressPanel {
+  min-height: auto;
+  gap: 8px;
+  padding: clamp(10px, 1.15vw, 14px);
+  overflow: visible;
+  border-radius: 14px;
+}
+
+.hudContainerEmbedded .auditFortressHeader {
+  grid-template-columns: minmax(0, 1fr) minmax(128px, auto);
+  gap: 10px;
+  align-items: center;
+}
+
+.hudContainerEmbedded .auditFortressHeader span {
+  font-size: clamp(1rem, 1.55vw, 1.32rem);
+  letter-spacing: 0.1em;
+  line-height: 0.96;
+}
+
+.hudContainerEmbedded .auditFortressHeader p {
+  max-width: 100%;
+  margin-top: 4px;
+  font-size: 0.6rem;
+  line-height: 1.25;
+}
+
+.hudContainerEmbedded .auditFortressHeader strong {
+  min-height: 26px;
+  max-width: 184px;
+  padding: 0 8px;
+  font-size: 0.47rem;
+}
+
+.auditFortressPanel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 8px);
+  opacity: 0.42;
+}
+
+.auditFortressPanel > * {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.auditFortressHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, max-content);
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.auditFortressHeader span {
+  display: block;
+  color: #f6d76b;
+  font-size: clamp(1.3rem, 2.6vw, 2.25rem);
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.auditFortressHeader p {
+  max-width: 720px;
+  margin: 10px 0 0;
+  color: rgba(255,255,255,0.78);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.auditFortressHeader strong {
+  max-width: min(100%, 250px);
+  justify-content: center;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  color: #03150c;
+  background: linear-gradient(180deg, #8affc3, #20e38a 62%, #0d7c4c);
+  border: 1px solid rgba(178, 255, 214, 0.62);
+  border-radius: 8px;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.11em;
+  line-height: 1.25;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 12px 28px rgba(32,227,138,0.16);
+}
+
+.auditFortressGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.hudContainerEmbedded .auditFortressGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.auditFortressMetric {
+  min-height: 104px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px;
+  background: rgba(0,0,0,0.44);
+}
+
+.hudContainerEmbedded .auditFortressMetric {
+  min-height: 58px;
+  gap: 4px;
+  padding: 8px 9px;
+  border-radius: 10px;
+}
+
+.hudContainerEmbedded .auditFortressMetric svg {
+  width: 13px;
+  height: 13px;
+}
+
+.auditFortressMetric svg {
+  color: #f6d76b;
+}
+
+.auditFortressMetric span {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hudContainerEmbedded .auditFortressMetric span {
+  font-size: 0.43rem;
+  letter-spacing: 0.1em;
+}
+
+.auditFortressMetric strong {
+  color: #fff;
+  font-size: clamp(0.88rem, 1.05vw, 1.08rem);
+  font-weight: 950;
+  line-height: 1.2;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.hudContainerEmbedded .auditFortressMetric strong {
+  font-size: clamp(0.62rem, 0.78vw, 0.8rem);
+}
+
+.auditFortressStream {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(212,175,55,0.18);
+  border-radius: 12px;
+  background: rgba(0,0,0,0.34);
+}
+
+.hudContainerEmbedded .auditFortressStream {
+  gap: 6px;
+  padding: 9px;
+  border-radius: 10px;
+}
+
+.hudContainerEmbedded .auditFortressStreamHeader {
+  padding-bottom: 7px;
+}
+
+.hudContainerEmbedded .auditFortressStreamHeader span {
+  font-size: 0.52rem;
+}
+
+.hudContainerEmbedded .auditFortressStreamHeader button {
+  min-height: 26px;
+  padding: 0 9px;
+  font-size: 0.48rem;
+}
+
+.auditFortressStreamHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.auditFortressStreamHeader span {
+  color: #f6d76b;
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.auditFortressStreamHeader button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  color: #050505;
+  background: linear-gradient(180deg, #fff0a3, #d4af37 58%, #8d741f);
+  border: 1px solid rgba(255,240,163,0.56);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auditFortressStreamHeader button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.auditFortressEntry {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 12px;
+  border-left: 3px solid #20e38a;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+}
+
+.hudContainerEmbedded .auditFortressEntry {
+  gap: 8px;
+  padding: 7px 9px;
+}
+
+.hudContainerEmbedded .auditFortressEntry span {
+  font-size: 0.56rem;
+}
+
+.hudContainerEmbedded .auditFortressEntry strong,
+.hudContainerEmbedded .auditFortressEntry small {
+  font-size: 0.5rem;
+}
+
+.auditFortressEntry span {
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 900;
+  word-break: break-word;
+}
+
+.auditFortressEntry strong,
+.auditFortressEntry small {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.auditFortressEntry strong {
+  color: #6bf7ff;
+  font-size: 0.62rem;
+  word-break: break-word;
+}
+
+.auditFortressEntry small {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.58rem;
+}
+
+.auditFortressEmpty {
+  padding: 18px;
+  color: rgba(255,255,255,0.82);
+  border: 1px dashed rgba(212,175,55,0.25);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.035);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.auditFortressCommandGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.hudContainerEmbedded .auditFortressCommandGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.auditFortressSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #f6d76b;
+  font-size: 0.64rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.auditFortressSectionTitle svg {
+  color: #20e38a;
+  flex-shrink: 0;
+}
+
+.auditFortressReadiness,
+.auditFortressRouteMap,
+.auditFortressCommandCard {
+  min-height: 188px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.018)),
+    rgba(0,0,0,0.38);
+}
+
+.hudContainerEmbedded .auditFortressReadiness,
+.hudContainerEmbedded .auditFortressRouteMap,
+.hudContainerEmbedded .auditFortressCommandCard {
+  min-height: 104px;
+  padding: 9px;
+  border-radius: 10px;
+}
+
+.hudContainerEmbedded .auditFortressSectionTitle {
+  font-size: 0.48rem;
+  letter-spacing: 0.1em;
+}
+
+.auditFortressReadinessRows {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.hudContainerEmbedded .auditFortressReadinessRows {
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.auditFortressReadinessRow {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.34);
+}
+
+.hudContainerEmbedded .auditFortressReadinessRow {
+  min-height: 28px;
+  padding: 0 8px;
+}
+
+.hudContainerEmbedded .auditFortressReadinessRow span,
+.hudContainerEmbedded .auditFortressReadinessRow strong {
+  font-size: 0.5rem;
+}
+
+.auditFortressReadinessRow span,
+.auditFortressReadinessRow strong {
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auditFortressReadinessRow span {
+  color: rgba(255,255,255,0.72);
+}
+
+.auditFortressReadinessRow strong {
+  color: #f6d76b;
+  text-align: right;
+}
+
+.auditFortressReadinessRow[data-tone="green"] strong {
+  color: #6cff9e;
+}
+
+.auditFortressReadinessRow[data-tone="red"] strong {
+  color: #ff7777;
+}
+
+.auditFortressRouteMap {
+  display: grid;
+  align-content: start;
+}
+
+.auditFortressRouteLine {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.hudContainerEmbedded .auditFortressRouteLine {
+  gap: 8px;
+  margin-top: 11px;
+}
+
+.auditFortressRouteLine::before {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  background: linear-gradient(90deg, #20e38a, #f6d76b, rgba(246,215,107,0.18));
+  opacity: 0.7;
+}
+
+.auditFortressRouteNode {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.auditFortressRouteNode i {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(246,215,107,0.52);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle, rgba(32,227,138,0.9) 0 4px, transparent 5px),
+    rgba(0,0,0,0.7);
+  box-shadow: 0 0 18px rgba(32,227,138,0.14);
+  z-index: 1;
+}
+
+.hudContainerEmbedded .auditFortressRouteNode i {
+  width: 20px;
+  height: 20px;
+}
+
+.auditFortressRouteNode span {
+  color: rgba(255,255,255,0.72);
+  font-size: 0.54rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hudContainerEmbedded .auditFortressRouteNode span {
+  font-size: 0.42rem;
+}
+
+.auditFortressRouteNode strong {
+  color: #fff;
+  font-size: 0.64rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.hudContainerEmbedded .auditFortressRouteNode strong {
+  font-size: 0.5rem;
+}
+
+.auditFortressCommandCard {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, auto);
+  gap: 18px;
+  align-items: center;
+  min-height: 132px;
+  overflow: hidden;
+}
+
+.hudContainerEmbedded .auditFortressCommandCard {
+  min-height: 100px;
+  grid-template-columns: minmax(0, 1fr) minmax(148px, auto);
+  gap: 9px;
+}
+
+.auditFortressPackCopy {
+  min-width: 0;
+}
+
+.auditFortressPackCopy p {
+  margin: 10px 0 0;
+  max-width: 62ch;
+  color: rgba(255,255,255,0.86);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.hudContainerEmbedded .auditFortressPackCopy p {
+  margin-top: 5px;
+  font-size: 0.56rem;
+  line-height: 1.32;
+}
+
+.auditFortressPackAction {
+  display: grid;
+  gap: 10px;
+  justify-items: stretch;
+  min-width: 0;
+}
+
+.hudContainerEmbedded .auditFortressPackAction {
+  gap: 8px;
+}
+
+.auditFortressPackAction span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  color: #f6d76b;
+  border: 1px solid rgba(246,215,107,0.22);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.34);
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  line-height: 1.25;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: normal;
+}
+
+.hudContainerEmbedded .auditFortressPackAction span {
+  min-height: 24px;
+  font-size: 0.44rem;
+  letter-spacing: 0.08em;
+}
+
+.auditFortressCommandCard button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 16px;
+  color: #050505;
+  background: linear-gradient(180deg, #fff0a3, #d4af37 58%, #8d741f);
+  border: 1px solid rgba(255,240,163,0.56);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.52), inset 0 -3px 0 rgba(0,0,0,0.22);
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.hudContainerEmbedded .auditFortressCommandCard button {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 0.47rem;
+}
+
+@media (max-width: 1180px) {
+  .hudContainerEmbedded .auditFortressGrid,
+  .hudContainerEmbedded .auditFortressCommandGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.auditFortressCommandCard button:disabled {
+  cursor: not-allowed;
+  color: rgba(255,255,255,0.72);
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .forensicCardHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .forensicTabs {
+    border-radius: 12px;
+  }
+
+  .forensicTabs button {
+    min-height: 32px;
+    border-radius: 8px;
+    font-size: 0.54rem;
+  }
+
+  .auditFortressHeader,
+  .auditFortressEntry {
+    grid-template-columns: 1fr;
+  }
+
+  .auditFortressGrid,
+  .auditFortressCommandGrid,
+  .auditFortressCommandCard {
+    grid-template-columns: 1fr;
+  }
+
+  .auditFortressCommandCard {
+    align-items: stretch;
+  }
+
+  .auditFortressHeader strong {
+    max-width: 100%;
+  }
+
+  .auditFortressRouteLine {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .evidenceControlGrid {
+    grid-template-columns: 1fr;
+  }
+}

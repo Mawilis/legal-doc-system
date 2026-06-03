@@ -1,4 +1,4 @@
-#!/* eslint-disable */
+/* eslint-disable */
 /*
  * File: /Users/wilsonkhanyezi/legal-doc-system/server/services/caseAnalysisService.js
  * PATH: /server/services/caseAnalysisService.js
@@ -85,10 +85,10 @@
  *   '../utils/auditLogger.js',
  *   '../utils/cryptoUtils.js',
  *   '../utils/quantumLogger.js',
- *   '../services/ai/embeddingsService',
- *   '../services/ai/outcomePredictor',
- *   '../services/citationNetworkService',
- *   '../middleware/tenantContext'
+ *   '../services/ai/embeddingsService.js',
+ *   '../services/ai/outcomePredictor.js',
+ *   '../services/citationNetworkService.js',
+ *   '../middleware/tenantContext.js'
  * ]
  *
  * INTEGRATION_MAP: {
@@ -101,37 +101,36 @@
  *     "services/client/ClientPortalService.js"
  *   ],
  *   "expectedProviders": [
- *     "../models/Case",
- *     "../models/Precedent",
- *     "../models/Citation",
- *     "../models/CaseParty",
- *     "../utils/logger",
- *     "../utils/auditLogger",
- *     "../utils/quantumLogger",
- *     "../services/ai/embeddingsService",
- *     "../services/ai/outcomePredictor"
+ *     "../models/Case.js",
+ *     "../models/Precedent.js",
+ *     "../models/Citation.js",
+ *     "../models/CaseParty.js",
+ *     "../utils/logger.js",
+ *     "../utils/auditLogger.js",
+ *     "../utils/quantumLogger.js",
+ *     "../services/ai/embeddingsService.js",
+ *     "../services/ai/outcomePredictor.js"
  *   ]
  * }
  */
 
 // QUANTUM IMPORTS: Core dependencies
-const mongoose = require('mongoose');
-const { performance } = require('perf_hooks');
-const crypto = require('crypto');
+import mongoose from 'mongoose';
+import { performance } from 'perf_hooks';
+import crypto from 'crypto';
 
 // QUANTUM MODELS
-const Case = require('../models/Case');
-const Precedent = require('../models/Precedent');
-const Citation = require('../models/Citation');
-const CaseParty = require('../models/CaseParty');
+import Case from '../models/Case.js';
+import Precedent from '../models/Precedent.js';
+import Citation from '../models/Citation.js';
+import CaseParty from '../models/CaseParty.js';
 
 // QUANTUM UTILITIES
-const loggerRaw = require('../utils/logger');
-
+import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
-const auditLogger = require('../utils/auditLogger');
-const cryptoUtils = require('../utils/cryptoUtils');
-const quantumLogger = require('../utils/quantumLogger');
+import auditLogger from '../utils/auditLogger.js';
+import * as cryptoUtils from '../utils/cryptoUtils.js';
+import quantumLogger from '../utils/quantumLogger.js';
 
 // QUANTUM AI SERVICES (lazy loaded)
 let embeddingsService = null;
@@ -188,7 +187,8 @@ const STRATEGY_TYPES = {
 const initializeAIServices = async () => {
   if (ENABLE_AI_PREDICTIONS && !outcomePredictor) {
     try {
-      outcomePredictor = require('../services/ai/outcomePredictor');
+      const outcomePredictorModule = await import('../services/ai/outcomePredictor.js');
+      outcomePredictor = outcomePredictorModule.default || outcomePredictorModule;
       logger.info('[CaseAnalysis] AI outcome predictor initialized');
     } catch (error) {
       logger.warn('[CaseAnalysis] Failed to load outcome predictor:', error.message);
@@ -197,7 +197,8 @@ const initializeAIServices = async () => {
 
   if (ENABLE_SEMANTIC_SEARCH && !embeddingsService) {
     try {
-      embeddingsService = require('../services/ai/embeddingsService');
+      const embeddingsModule = await import('../services/ai/embeddingsService.js');
+      embeddingsService = embeddingsModule.default || embeddingsModule;
       logger.info('[CaseAnalysis] Semantic search service initialized');
     } catch (error) {
       logger.warn('[CaseAnalysis] Failed to load embeddings service:', error.message);
@@ -206,7 +207,8 @@ const initializeAIServices = async () => {
 
   if (!citationNetworkService) {
     try {
-      citationNetworkService = require('../services/citationNetworkService');
+      const citationModule = await import('../services/citationNetworkService.js');
+      citationNetworkService = citationModule.default || citationModule;
       logger.info('[CaseAnalysis] Citation network service initialized');
     } catch (error) {
       logger.warn('[CaseAnalysis] Failed to load citation network service:', error.message);

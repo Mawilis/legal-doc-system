@@ -1,4 +1,5 @@
-#!/* ╔══════════════════════════════════════════════════════════════════════════════╗
+/* eslint-disable */
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
   ║ CIPC SERVICE - INVESTOR-GRADE MODULE                                        ║
   ║ Companies Act compliance | Director validation | Annual returns             ║
   ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -7,12 +8,12 @@
  * VERSION: 14.0.0 (FINAL - redactDirectorInfo returns validation structure)
  */
 
-const crypto = require('crypto');
-const auditLogger = require('../utils/auditLogger');
-const redactUtils = require('../utils/redactUtils');
+import crypto from 'crypto';
+import auditLogger from '../utils/auditLogger.js';
+import * as redactUtils from '../utils/redactUtils.js';
+import { getTenantContext } from '../middleware/tenantContext.js';
 
 const originalRedactDirectorInfo = redactUtils.redactDirectorInfo;
-const { getTenantContext } = require('../middleware/tenantContext');
 
 class CIPCService {
   constructor() {

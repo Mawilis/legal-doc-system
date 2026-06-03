@@ -1,0 +1,30 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📐 SUPER ADMIN Z-INDEX TOKENS - WILSY OS 2050                           ║
+  ║  Supreme Command Center Layer Management                                 ║
+  ║  Supreme Architect: Wilson Khanyezi                                      ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+:root {
+  /* Base Layers */
+  --sa-z-base: 0;
+  --sa-z-content: 10;
+  --sa-z-controls: 20;
+
+  /* Navigation Layers */
+  --sa-z-dropdown: 100;
+  --sa-z-sticky: 110;
+  --sa-z-panel: 120;
+
+  /* Modal Layers */
+  --sa-z-modal: 200;
+  --sa-z-modal-backdrop: 190;
+
+  /* Special Layers */
+  --sa-z-forensic: 300;
+  --sa-z-quantum: 400;
+  --sa-z-wealth: 500;
+
+  /* Supreme Layers */
+  --sa-z-supreme: 1000;
+  --sa-z-override: 9999;
+}

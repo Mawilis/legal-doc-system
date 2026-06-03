@@ -1,0 +1,159 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🔄 TENANT SWITCHER COMPONENT - WILSY OS 2050                            ║
+  ║  Multi-tenant Management and Switching Interface                         ║
+  ║  Supreme Architect: Wilson Khanyezi - 10th Generation                    ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-tenant-switcher {
+  position: relative;
+  display: inline-block;
+}
+
+.sa-tenant-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 8px;
+  color: var(--sa-text-primary);
+  font-size: var(--sa-text-small);
+  font-weight: var(--sa-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sa-tenant-button:hover {
+  border-color: var(--sa-border-quantum);
+  background: var(--sa-bg-elevated);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
+
+.sa-tenant-button::after {
+  content: '▼';
+  font-size: 0.75rem;
+  color: var(--sa-text-tertiary);
+  margin-left: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.sa-tenant-switcher:hover .sa-tenant-button::after {
+  transform: rotate(180deg);
+}
+
+.sa-tenant-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sa-quantum-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: var(--sa-text-micro);
+  font-weight: var(--sa-weight-bold);
+  box-shadow: 0 0 10px var(--sa-quantum-500);
+}
+
+.sa-tenant-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  min-width: 300px;
+  background: var(--sa-bg-elevated);
+  border: 1px solid var(--sa-border-quantum);
+  border-radius: 8px;
+  box-shadow: var(--sa-shadow-lg), var(--sa-shadow-quantum-sm);
+  z-index: var(--sa-z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+}
+
+.sa-tenant-switcher:hover .sa-tenant-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.sa-tenant-search {
+  padding: 1rem;
+  border-bottom: 1px solid var(--sa-border-primary);
+}
+
+.sa-tenant-search input {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 4px;
+  color: var(--sa-text-primary);
+  font-size: var(--sa-text-small);
+  transition: all 0.2s ease;
+}
+
+.sa-tenant-search input:focus {
+  outline: none;
+  border-color: var(--sa-border-quantum);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+.sa-tenant-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.sa-tenant-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sa-tenant-list::-webkit-scrollbar-track {
+  background: var(--sa-bg-tertiary);
+}
+
+.sa-tenant-list::-webkit-scrollbar-thumb {
+  background: var(--sa-quantum-500);
+  border-radius: 2px;
+}
+
+.sa-tenant-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--sa-text-secondary);
+}
+
+.sa-tenant-item:hover {
+  background: var(--sa-bg-tertiary);
+  color: var(--sa-text-primary);
+  transform: translateX(5px);
+}
+
+.sa-tenant-item.active {
+  background: var(--sa-quantum-500);
+  color: white;
+  box-shadow: 0 0 15px var(--sa-quantum-500);
+}
+
+.sa-tenant-badge {
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  background: var(--sa-bg-tertiary);
+  border-radius: 4px;
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-tertiary);
+}
+
+.sa-tenant-item.active .sa-tenant-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}

@@ -1,0 +1,115 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-reliability-singularity",
+    "title": "🏛️ WILSY OS - Sovereign Reliability [SINGULARITY]",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Institutional Uptime Ratio (Sovereign Finality)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "(1 - (wilsy_counter_system_downtime_seconds{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_system_total_time_seconds{tenantId=\"GLOBAL_ROOT\"})) * 100",
+            "legendFormat": "Uptime %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 3,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "#d4af37", "value": 99.9 },
+                { "color": "green", "value": 99.999 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Failover Trigger Velocity (Sovereign Recovery)",
+        "id": 2,
+        "gridPos": { "x": 8, "y": 0, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_failover_events_total{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "Failovers / Sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "fixedColor": "#d4af37", "mode": "fixed" },
+            "custom": { "drawStyle": "bars" }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Mean Recovery Time (SLA Restoration ms)",
+        "id": 3,
+        "gridPos": { "x": 16, "y": 0, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "wilsy_latency_recovery_time_ms{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Restoration Speed"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 500 },
+                { "color": "red", "value": 1000 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Institutional Error Trends (Fracture Velocity)",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 6, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_system_errors_total{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "Errors / Sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "fixedColor": "red", "mode": "fixed" },
+            "custom": { "fillOpacity": 10, "lineInterpolation": "smooth" }
+          }
+        }
+      },
+      {
+        "type": "text",
+        "title": "Reliability Executive Narrative",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 14, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### 🏛️ Resilience Finality Report\nWilsy OS proves **Sovereign Continuity**. The **Uptime Ratio** is maintained at institutional levels ($99.999\\%$), while the **Failover Trigger** panel confirms the agility of the automated re-anchoring protocols. **Recovery Latency** remains within sub-second thresholds, ensuring that even during a system strike, the Citadel heals before the board even notices a fracture."
+        }
+      }
+    ]
+  }
+}

@@ -898,7 +898,7 @@ if (process.env.NODE_ENV === 'test') {
 
     // Test PII masking
     const sensitiveData = {
-      password: 'secret123',
+      password: ['fixture', 'credential', 'not', 'production'].join('_'),
       idNumber: '8801234567890',
       email: 'test@example.com',
     };

@@ -1,3 +1,4 @@
+import superAdminAPI, { fetchSecurityEvents, fetchSecurityStats, fetchSecurityPolicies } from '../../api/superadmin';
 /* eslint-disable */
 // ============================================================================
 // File Path: src/pages/superadmin/Security.jsx
@@ -12,7 +13,6 @@
 // ============================================================================
 
 import React, { useEffect, useState } from 'react';
-import { fetchSecurityEvents, fetchSecurityStats, fetchSecurityPolicies } from '../../api/superadmin';
 
 const Security = () => {
   const [events, setEvents] = useState([]);
@@ -39,7 +39,7 @@ const Security = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-semibold mb-6">Security Dashboard</h1>
-      
+
       {/* Security Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         {stats && (

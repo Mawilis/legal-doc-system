@@ -1,4 +1,5 @@
-#!/* ╔════════════════════════════════════════════════════════════════╗
+/* eslint-disable */
+/* ╔════════════════════════════════════════════════════════════════╗
   ║ CASE COMPLIANCE SERVICE - INVESTOR-GRADE MODULE              ║
   ║ [90% PAIA compliance cost reduction | R5M risk elimination]  ║
   ╚════════════════════════════════════════════════════════════════╝ */
@@ -17,9 +18,10 @@
 //   "expectedProviders": ["../utils/auditLogger", "../utils/logger", "../models/Case"]
 // }
 
-const auditLogger = require('../utils/auditLogger');
-const loggerRaw = require('../utils/logger');
+import auditLogger from '../utils/auditLogger.js';
+import loggerRaw from '../utils/logger.js';
 const logger = loggerRaw.default || loggerRaw;
+import mongoose from 'mongoose';
 
 class CaseComplianceService {
   constructor() {
@@ -247,7 +249,6 @@ class CaseComplianceService {
   _getCaseModel() {
     // Lazy load to avoid circular dependencies
     if (!this._CaseModel) {
-      const mongoose = require('mongoose');
       this._CaseModel = mongoose.model('Case');
     }
     return this._CaseModel;

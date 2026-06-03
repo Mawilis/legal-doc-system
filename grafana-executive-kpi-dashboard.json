@@ -1,0 +1,144 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-executive-kpi-finality",
+    "title": "🏛️ WILSY OS - Executive KPI Cockpit [OMEGA]",
+    "timezone": "browser",
+    "refresh": "15s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "SLA Performance Score",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA Score" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "#d4af37", "value": 95 },
+                { "color": "green", "value": 99.9 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Compliance Adherence Ratio",
+        "id": 2,
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Compliance" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "#d4af37", "value": 98 },
+                { "color": "green", "value": 100 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Sustainability Index (Green Compute)",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_sustainability_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Sustainability" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "#d4af37", "value": 80 },
+                { "color": "green", "value": 90 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Throughput Efficiency Index",
+        "id": 4,
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_efficiency_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Efficiency" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 50 },
+                { "color": "green", "value": 85 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Sovereign KPI Trend Analysis (Boardroom Velocity)",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 6, "w": 24, "h": 10 },
+        "targets": [
+          { "expr": "wilsy_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA Score" },
+          { "expr": "wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Compliance" },
+          { "expr": "wilsy_sustainability_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Sustainability" },
+          { "expr": "wilsy_efficiency_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Efficiency" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 15,
+              "lineWidth": 2
+            }
+          }
+        },
+        "options": { "legend": { "displayMode": "table", "placement": "right" } }
+      },
+      {
+        "type": "text",
+        "title": "Executive KPI Narrative Overlay",
+        "id": 6,
+        "gridPos": { "x": 0, "y": 16, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### 🏛️ Executive Portfolio Summary\nThis cockpit provides the **Institutional Finality** required for Wilsy OS boardroom oversight. The **SLA Performance Score** proves our reliability covenant, while the **Compliance Ratio** ensures GDPR, POPIA, and SOC2 adherence. The **Sustainability and Efficiency Indices** demonstrate our commitment to post-quantum green compute and resource-optimized strike execution.\n\n_Audit Ref: ${__dashboard.name} | Security Tier: OMEGA | Tenant: GLOBAL_ROOT_"
+        }
+      }
+    ]
+  }
+}

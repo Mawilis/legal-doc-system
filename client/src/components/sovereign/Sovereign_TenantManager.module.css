@@ -1,0 +1,219 @@
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - TENANT MANAGER SHADER [V55.0.0-TITAN-PHYSICS]                                                                               ║
+ * ║ [SUB-ATOMIC OBSIDIAN | CHROMATIC GOLD | NEURAL SCANLINE PHYSICS | AEROSPACE BEZELS | MARS-SPEC]                                       ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 55.0.0-TITAN-PHYSICS | PRODUCTION READY | TRILLION DOLLAR SPEC                                                                ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/Sovereign_TenantManager.module.css              ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated CSS that obliterates competition. Deep Matrix, Sovereign glow, full authority.       ║
+ * ║ • AI Engineering (Gemini) - ENGINEERED: Shard-instantiation scanlines, machined depth-maps, and kinetic command-states. [2026-05-13]     ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+.managerShard {
+  background: radial-gradient(circle at 50% 0%, #0c0c0c 0%, #000 100%);
+  border: 1px solid rgba(31, 31, 31, 0.8);
+  border-left: 3px solid #D4AF37;
+  border-radius: 0; /* Aerospace strict-edges */
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 40px 80px rgba(0,0,0,1),
+    inset 0 0 60px rgba(0,0,0,0.9);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.managerShard:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 50px 100px rgba(0,0,0,1), inset 0 0 30px rgba(212, 175, 55, 0.02);
+}
+
+/* 🧬 CARBON-MESH TOPOGRAPHY */
+.internalGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(212, 175, 55, 0.04) 1px, transparent 0);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.6;
+}
+
+/* ⚡ NEURAL SCANLINE: Active during Shard Instantiation */
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #D4AF37, #00ff66, #D4AF37, transparent);
+  animation: neuralSweep 3s linear infinite;
+  z-index: 10;
+  filter: blur(1px);
+}
+
+@keyframes neuralSweep {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(500%); opacity: 0; }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 5;
+  margin-bottom: 25px;
+  border-bottom: 1px solid #111;
+  padding-bottom: 15px;
+}
+
+.iconBezel {
+  background: linear-gradient(145deg, #0f0f0f, #050505);
+  border: 1px solid #1a1a1a;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 4px 4px 10px rgba(0,0,0,0.5), inset 1px 1px 2px rgba(255,255,255,0.05);
+}
+
+.goldIcon { color: #D4AF37; filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4)); }
+.title { font-size: 0.75rem; font-weight: 950; color: #fff; letter-spacing: 4px; text-transform: uppercase; }
+.goldText { color: #D4AF37; }
+.subtitle { font-size: 0.55rem; color: #444; letter-spacing: 2px; margin-top: 4px; font-weight: 900; }
+
+.contentArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 5;
+  position: relative;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 15px;
+  color: #222;
+  transition: color 0.3s;
+}
+
+.input {
+  width: 100%;
+  background: #000;
+  border: 1px solid #111;
+  color: #fff;
+  padding: 15px 15px 15px 45px;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+  box-shadow: inset 0 4px 10px rgba(0,0,0,0.8);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input:focus {
+  outline: none;
+  border-color: #D4AF37;
+  box-shadow: inset 0 4px 10px rgba(0,0,0,0.9), 0 0 20px rgba(212, 175, 55, 0.1);
+}
+
+.input:focus + .inputIcon { color: #D4AF37; }
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.provisionBtn, .suspendBtn {
+  padding: 16px;
+  font-size: 0.7rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s;
+  border-radius: 0;
+}
+
+.provisionBtn {
+  background: #000;
+  color: #D4AF37;
+  border: 1px solid #D4AF37;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.provisionBtn:hover:not(:disabled) {
+  background: #D4AF37;
+  color: #000;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+  transform: translateY(-2px);
+}
+
+.suspendBtn {
+  background: #000;
+  color: #ff3333;
+  border: 1px solid #330000;
+}
+
+.suspendBtn:hover:not(:disabled) {
+  background: #ff3333;
+  color: #fff;
+  border-color: #ff3333;
+  box-shadow: 0 0 30px rgba(255, 51, 51, 0.3);
+  transform: translateY(-2px);
+}
+
+.footer {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #111;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
+}
+
+.statusActive {
+  color: #00ff66;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 102, 0.5));
+  animation: statusPulse 2s infinite alternate;
+}
+
+@keyframes statusPulse {
+  0% { opacity: 0.4; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1.1); }
+}
+
+.bezelGlow {
+  position: absolute;
+  bottom: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 2;
+}

@@ -1,0 +1,42 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📱 COMMAND CENTER TABLET - WILSY OS 2050                                ║
+  ║  Responsive styles for tablets (640px - 1024px)                          ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+@media (min-width: 640px) and (max-width: 1024px) {
+  .sa-command-center {
+    grid-template-columns: 200px 1fr;
+    grid-template-areas:
+      "header header"
+      "nav main"
+      "footer footer";
+  }
+
+  .sa-command-aside {
+    display: none;
+  }
+
+  .sa-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sa-actions {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sa-wealth-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sa-compliance-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sa-tenant-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sa-tenant-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -53,7 +53,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const crypto = require('crypto');
 const DataProcessingRecordController = require('../controllers/dataProcessingRecordController');
-const authMiddleware = require('../middleware/authMiddleware');
+const auth = require('../middleware/auth');
 
 // ============================================================================
 // QUANTUM SECURITY: Rate Limiting & Protection
@@ -421,8 +421,8 @@ router.post(
   '/',
   [
     // Quantum Security: Authentication and Authorization
-    authMiddleware.authenticateJWT,
-    authMiddleware.authorize(['INFORMATION_OFFICER', 'COMPLIANCE_OFFICER', 'SYSTEM_ADMIN']),
+    auth.authenticateJWT,
+    auth.authorize(['INFORMATION_OFFICER', 'COMPLIANCE_OFFICER', 'SYSTEM_ADMIN']),
 
     // Quantum Protection: Rate limiting
     processingRecordLimiter,
@@ -511,8 +511,8 @@ router.get(
   '/',
   [
     // Quantum Security: Authentication and Authorization
-    authMiddleware.authenticateJWT,
-    authMiddleware.authorize(['INFORMATION_OFFICER', 'SYSTEM_ADMIN', 'DATA_PROTECTION_OFFICER']),
+    auth.authenticateJWT,
+    auth.authorize(['INFORMATION_OFFICER', 'SYSTEM_ADMIN', 'DATA_PROTECTION_OFFICER']),
 
     // Quantum Protection: Jurisdiction rate limiting
     jurisdictionLimiter,
@@ -625,7 +625,7 @@ router.get(
   '/:id',
   [
     // Quantum Security: Authentication
-    authMiddleware.authenticateJWT,
+    auth.authenticateJWT,
 
     // Quantum Protection: Rate limiting
     processingRecordLimiter,
@@ -701,8 +701,8 @@ router.put(
   '/:id',
   [
     // Quantum Security: Authentication and Authorization
-    authMiddleware.authenticateJWT,
-    authMiddleware.authorize(['INFORMATION_OFFICER']),
+    auth.authenticateJWT,
+    auth.authorize(['INFORMATION_OFFICER']),
 
     // Quantum Protection: Rate limiting
     processingRecordLimiter,
@@ -768,8 +768,8 @@ router.post(
   '/reports/popia',
   [
     // Quantum Security: Authentication and Authorization
-    authMiddleware.authenticateJWT,
-    authMiddleware.authorize([
+    auth.authenticateJWT,
+    auth.authorize([
       'INFORMATION_OFFICER',
       'COMPLIANCE_OFFICER',
       'DATA_PROTECTION_OFFICER',
@@ -836,8 +836,8 @@ router.get(
   '/dsar/:dataSubjectId',
   [
     // Quantum Security: Authentication and Authorization
-    authMiddleware.authenticateJWT,
-    authMiddleware.authorize(['DATA_PROTECTION_OFFICER', 'SYSTEM_ADMIN', 'INFORMATION_OFFICER']),
+    auth.authenticateJWT,
+    auth.authorize(['DATA_PROTECTION_OFFICER', 'SYSTEM_ADMIN', 'INFORMATION_OFFICER']),
 
     // Quantum Protection: Strict DSAR rate limiting
     dsarLimiter,
@@ -915,9 +915,9 @@ router.get(
   '/admin/compliance-status',
   [
     // Quantum Security: Admin-only with IP whitelist
-    authMiddleware.authenticateJWT,
-    authMiddleware.authorize(['SYSTEM_ADMIN']),
-    authMiddleware.ipWhitelist(process.env.ADMIN_IP_WHITELIST?.split(',') || []),
+    auth.authenticateJWT,
+    auth.authorize(['SYSTEM_ADMIN']),
+    auth.ipWhitelist(process.env.ADMIN_IP_WHITELIST?.split(',') || []),
 
     // Quantum Security: Additional admin headers
     helmet.hidePoweredBy(),
@@ -976,10 +976,10 @@ router.post(
   '/admin/bulk-export',
   [
     // Quantum Security: Regulator/SysAdmin with IP whitelist and special token
-    authMiddleware.authenticateJWT,
-    authMiddleware.authorize(['SYSTEM_ADMIN']),
-    authMiddleware.ipWhitelist(process.env.REGULATOR_IP_WHITELIST?.split(',') || []),
-    authMiddleware.validateRegulatorToken,
+    auth.authenticateJWT,
+    auth.authorize(['SYSTEM_ADMIN']),
+    auth.ipWhitelist(process.env.REGULATOR_IP_WHITELIST?.split(',') || []),
+    auth.validateRegulatorToken,
 
     // Quantum Validation: Export parameters
     body('format').isIn(['JSON', 'CSV', 'XML', 'PDF']).withMessage('Invalid export format'),

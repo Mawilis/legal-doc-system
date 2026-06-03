@@ -1,0 +1,41 @@
+// Add this at the top of AlertService.js after the imports
+import { sendSMS, sendBulkSMS } from '../../utils/mockSMS.js';
+
+// Then modify the sendSMS method to check for actual credentials
+// In the ChannelManager class, replace the sendSMS method with:
+async sendSMS(alert) {
+  // Check if Twilio is configured
+  const isConfigured = process.env.TWILIO_ACCOUNT_SID &&
+                       process.env.TWILIO_AUTH_TOKEN &&
+                       process.env.TWILIO_PHONE_NUMBER;
+
+  if (!isConfigured) {
+    logger.warn('SMS not configured, using mock mode', { alertId: alert.id });
+    return await sendSMS(this.getSMSRecipients(alert)[0],
+      `[WILSY OS ${alert.severity.toUpperCase()}] ${alert.title}`);
+  }
+
+  // Original Twilio implementation
+  if (!twilioClient) {
+    throw new Error('Twilio not configured');
+  }
+
+  if (alert.severity !== ALERT_CONSTANTS.SEVERITY.CRITICAL &&
+      alert.severity !== ALERT_CONSTANTS.SEVERITY.ERROR) {
+    return; // Only send SMS for critical/error alerts
+  }
+
+  const recipients = this.getSMSRecipients(alert);
+  const messages = [];
+
+  for (const to of recipients) {
+    const message = await twilioClient.messages.create({
+      body: `[WILSY OS ${alert.severity.toUpperCase()}] ${alert.title}`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to,
+    });
+    messages.push({ to, sid: message.sid });
+  }
+
+  return messages;
+}

@@ -27,7 +27,7 @@ const bundleController = require('../controllers/bundleController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
 const { emitAudit } = require('../middleware/auditMiddleware');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/auth');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
 const validate = require('../middleware/validationMiddleware');
 

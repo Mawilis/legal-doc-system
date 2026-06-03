@@ -58,7 +58,7 @@ const popiaController = require('../controllers/popiaController');
 // QUANTUM MIDDLEWARE: The Celestial Privacy Stack
 // ============================================================================
 const { emitAudit, createPrivacyAuditTrail } = require('../middleware/auditMiddleware');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/auth');
 const { encryptPII, decryptPII } = require('../middleware/encryptionMiddleware');
 const { validateDataSubjectIdentity } = require('../middleware/identityMiddleware');
 const { rateLimitPOPIA } = require('../middleware/rateLimitMiddleware');

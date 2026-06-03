@@ -1,0 +1,418 @@
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - SOVEREIGN DISCOVERY STYLING [V50.1.0-MARS-ALIGNED]                                                                          ║
+ * ║ [MARS-SPEC | HUD VIEWPORT OPTIMIZATION | PQE-256 AESTHETICS | ZERO-OVERFLOW]                                                           ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 50.1.0-MARS | PRODUCTION READY | BIBLICAL WORTH BILLIONS                                                                      ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | BOARDROOM FINALITY                                     ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/TenantDiscovery.module.css                       ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
+ * ║ • Wilson Khanyezi (CEO/Architect) - Mandated Mars-tier aesthetics, zero-scrolling UI, and boardroom finality. [2026-05-13]            ║
+ * ║ • AI Engineering (DeepSeek) - ALIGNED: Updated CSS classes to match TenantDiscovery.jsx component structure. [2026-05-17]              ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+.discoveryWrapper {
+  background: #000;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'JetBrains Mono', 'Inter', sans-serif;
+  overflow: hidden;
+  position: relative;
+  perspective: 1500px;
+}
+
+/* 🪐 NEBULA DATA CLOUD: Background Depth */
+.discoveryWrapper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.05) 0%, transparent 70%),
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.01) 0, rgba(255, 255, 255, 0.01) 1px, transparent 1px, transparent 4px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.nebulaOverlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 40%, rgba(212,175,55,0.02) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, transparent 50%, rgba(212,175,55,0.02) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 2;
+  animation: scanMove 8s linear infinite;
+  opacity: 0.3;
+}
+
+@keyframes scanMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+.discoveryCard {
+  width: clamp(320px, 90vw, 520px);
+  max-height: 95vh;
+  background: rgba(5, 5, 5, 0.9);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 4px;
+  padding: clamp(20px, 5vh, 60px);
+  box-shadow: 0 50px 100px rgba(0, 0, 0, 0.9), 0 0 20px rgba(212, 175, 55, 0.1);
+  backdrop-filter: blur(50px) saturate(200%);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  animation: cardEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+}
+
+.kineticBorder {
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  border-image: linear-gradient(135deg, #d4af37, #856514, #d4af37) 1;
+  pointer-events: none;
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(30px) rotateX(-10deg) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) rotateX(0) scale(1); }
+}
+
+.discoveryLogoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: clamp(20px, 4vh, 50px);
+}
+
+.logoGroup {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logoBezel {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  background: #000;
+  border: 1px solid #d4af37;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logoHalo {
+  position: absolute;
+  inset: -2px;
+  background: radial-gradient(circle, rgba(212,175,55,0.3) 0%, transparent 70%);
+  filter: blur(4px);
+  z-index: 0;
+}
+
+.discoveryLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(1.2) contrast(1.1);
+  position: relative;
+  z-index: 1;
+}
+
+.brandTitle {
+  display: flex;
+  flex-direction: column;
+}
+
+.mainBrand {
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.shardTag {
+  font-size: 0.55rem;
+  letter-spacing: 2px;
+  color: #d4af37;
+  opacity: 0.7;
+}
+
+.telemetryStack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0,0,0,0.5);
+  padding: 6px 12px;
+  border-left: 1px solid #d4af37;
+}
+
+.teleLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.teleText {
+  color: #aaa;
+}
+
+.goldText {
+  color: #d4af37;
+  filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.4));
+}
+
+.redText {
+  color: #ff3333;
+  text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+  animation: fracturePulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes fracturePulse {
+  from { opacity: 1; }
+  to { opacity: 0.6; }
+}
+
+.discoveryContentArea {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.titleBlock {
+  margin-bottom: clamp(10px, 2vh, 20px);
+}
+
+.discoveryTitle {
+  font-size: clamp(24px, 5vw, 42px);
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: clamp(6px, 2vw, 14px);
+  line-height: 1;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.discoveryGoldAccent {
+  color: #d4af37;
+  background: linear-gradient(180deg, #d4af37, #856514);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.2));
+  font-weight: 900;
+  font-size: clamp(18px, 4vw, 28px);
+}
+
+.institutionalDivider {
+  width: 60px;
+  height: 2px;
+  background: #d4af37;
+  margin: clamp(15px, 3vh, 35px) 0;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+}
+
+.dividerGlow {
+  width: 100%;
+  height: 100%;
+  background: #d4af37;
+  filter: blur(2px);
+}
+
+.discoverySubtitle {
+  color: #666;
+  font-size: 9px;
+  letter-spacing: 2px;
+  line-height: 1.6;
+  margin-bottom: clamp(20px, 4vh, 45px);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.discoveryForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.inputContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.discoveryLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #444;
+  font-size: 9px;
+  letter-spacing: 3px;
+  font-weight: 900;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.inputFocusGroup {
+  position: relative;
+  width: 100%;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #d4af37;
+  opacity: 0.6;
+}
+
+.discoveryInput {
+  width: 100%;
+  background: #000;
+  border: 1px solid #1a1a1a;
+  border-radius: 0;
+  padding: 18px 16px 18px 48px;
+  color: #d4af37;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 4px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.discoveryInput:focus {
+  outline: none;
+  border-color: #d4af37;
+  background: #030303;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.1);
+}
+
+.discoveryButton {
+  width: 100%;
+  background: #d4af37;
+  border: none;
+  padding: 18px;
+  color: #000;
+  font-weight: 900;
+  letter-spacing: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.discoveryButton:hover:not(:disabled) {
+  background: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+}
+
+.discoveryButton:disabled {
+  opacity: 0.3;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.loadingFlex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.spin {
+  animation: deterministicRotation 1.2s linear infinite;
+}
+
+@keyframes deterministicRotation {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.discoveryError {
+  background: rgba(255, 51, 51, 0.05);
+  border: 1px solid rgba(255, 51, 51, 0.3);
+  padding: 12px;
+  color: #ff3333;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.discoveryFooter {
+  margin-top: clamp(20px, 5vh, 60px);
+  border-top: 1px solid #111;
+  padding-top: 25px;
+}
+
+.hudGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.hudItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #333;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.specTag {
+  text-align: right;
+  margin-top: 16px;
+  font-size: 7px;
+  color: #222;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.backgroundBranding {
+  position: absolute;
+  bottom: 4vh;
+  right: 4vw;
+  color: rgba(255, 255, 255, 0.01);
+  font-size: 11px;
+  letter-spacing: 20px;
+  font-weight: 900;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 0;
+  white-space: nowrap;
+}
+
+/* 🧪 TITAN-HUD SCROLLBAR */
+.discoveryCard::-webkit-scrollbar { width: 3px; }
+.discoveryCard::-webkit-scrollbar-track { background: #111; }
+.discoveryCard::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 0; }

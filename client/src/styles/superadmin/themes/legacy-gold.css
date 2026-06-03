@@ -1,0 +1,32 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  👑 LEGACY GOLD THEME - WILSY OS 2050                                    ║
+  ║  10th Generation Wealth Theme                                            ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+[data-theme="legacy-gold"] {
+  --theme-primary: #f59e0b;
+  --theme-secondary: #d97706;
+  --theme-gradient: linear-gradient(135deg, #b45309, #fbbf24);
+  --theme-glow: 0 0 30px #f59e0b;
+
+  --theme-bg-primary: #1f1a0a;
+  --theme-bg-secondary: #2a1f0a;
+  --theme-bg-tertiary: #352a0a;
+
+  --theme-text-primary: #fef3c7;
+  --theme-text-secondary: #fde68a;
+  --theme-text-accent: #ffffff;
+
+  --theme-border: #f59e0b40;
+  --theme-border-glow: #f59e0b80;
+}
+
+.theme-legacy-gold .sa-wealth-card {
+  background: linear-gradient(135deg, #1f1a0a, #2a1f0a);
+  border-color: #f59e0b;
+  box-shadow: 0 10px 30px -10px #f59e0b;
+}
+
+.theme-legacy-gold .sa-wealth-value {
+  text-shadow: 0 0 20px #fbbf24;
+}

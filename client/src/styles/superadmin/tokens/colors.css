@@ -1,0 +1,102 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🎨 SUPER ADMIN COLOR TOKENS - WILSY OS 2050                             ║
+  ║  Supreme Command Center Color System                                     ║
+  ║  Supreme Architect: Wilson Khanyezi                                      ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+:root {
+  /* Quantum Primary */
+  --sa-quantum-50: #eef2ff;
+  --sa-quantum-100: #e0e7ff;
+  --sa-quantum-200: #c7d2fe;
+  --sa-quantum-300: #a5b4fc;
+  --sa-quantum-400: #818cf8;
+  --sa-quantum-500: #6366f1;
+  --sa-quantum-600: #4f46e5;
+  --sa-quantum-700: #4338ca;
+  --sa-quantum-800: #3730a3;
+  --sa-quantum-900: #312e81;
+
+  /* Forensic Audit */
+  --sa-forensic-50: #fef2f2;
+  --sa-forensic-100: #fee2e2;
+  --sa-forensic-200: #fecaca;
+  --sa-forensic-300: #fca5a5;
+  --sa-forensic-400: #f87171;
+  --sa-forensic-500: #ef4444;
+  --sa-forensic-600: #dc2626;
+  --sa-forensic-700: #b91c1c;
+  --sa-forensic-800: #991b1b;
+  --sa-forensic-900: #7f1d1d;
+
+  /* Wealth Gold */
+  --sa-wealth-50: #fffbeb;
+  --sa-wealth-100: #fef3c7;
+  --sa-wealth-200: #fde68a;
+  --sa-wealth-300: #fcd34d;
+  --sa-wealth-400: #fbbf24;
+  --sa-wealth-500: #f59e0b;
+  --sa-wealth-600: #d97706;
+  --sa-wealth-700: #b45309;
+  --sa-wealth-800: #92400e;
+  --sa-wealth-900: #78350f;
+
+  /* Success */
+  --sa-success-50: #f0fdf4;
+  --sa-success-100: #dcfce7;
+  --sa-success-200: #bbf7d0;
+  --sa-success-300: #86efac;
+  --sa-success-400: #4ade80;
+  --sa-success-500: #22c55e;
+  --sa-success-600: #16a34a;
+  --sa-success-700: #15803d;
+  --sa-success-800: #166534;
+  --sa-success-900: #14532d;
+
+  /* Warning */
+  --sa-warning-50: #fefce8;
+  --sa-warning-100: #fef9c3;
+  --sa-warning-200: #fef08a;
+  --sa-warning-300: #fde047;
+  --sa-warning-400: #facc15;
+  --sa-warning-500: #eab308;
+  --sa-warning-600: #ca8a04;
+  --sa-warning-700: #a16207;
+  --sa-warning-800: #854d0e;
+  --sa-warning-900: #713f12;
+
+  /* Critical */
+  --sa-critical-50: #fef2f2;
+  --sa-critical-100: #fee2e2;
+  --sa-critical-200: #fecaca;
+  --sa-critical-300: #fca5a5;
+  --sa-critical-400: #f87171;
+  --sa-critical-500: #ef4444;
+  --sa-critical-600: #dc2626;
+  --sa-critical-700: #b91c1c;
+  --sa-critical-800: #991b1b;
+  --sa-critical-900: #7f1d1d;
+
+  /* Dark Ops Backgrounds */
+  --sa-bg-primary: #0a0a0f;
+  --sa-bg-secondary: #14141f;
+  --sa-bg-tertiary: #1e1e2f;
+  --sa-bg-elevated: #2a2a3a;
+  --sa-bg-hover: #32324a;
+
+  /* Text Colors */
+  --sa-text-primary: #ffffff;
+  --sa-text-secondary: #b0b0c0;
+  --sa-text-tertiary: #808090;
+  --sa-text-quantum: #818cf8;
+  --sa-text-wealth: #fbbf24;
+  --sa-text-forensic: #f87171;
+  --sa-text-critical: #ef4444;
+
+  /* Border Colors */
+  --sa-border-primary: #2a2a3a;
+  --sa-border-quantum: #818cf840;
+  --sa-border-wealth: #fbbf2440;
+  --sa-border-forensic: #f8717140;
+  --sa-border-critical: #ef444440;
+}

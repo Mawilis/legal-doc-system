@@ -1,4 +1,4 @@
-#!/* eslint-disable */
+/* eslint-disable */
 /*
  * WILSY OS: TENANT RATE LIMITER - INTELLIGENT TRAFFIC CONTROLLER
  * ============================================================================
@@ -75,11 +75,14 @@
   ║ 99.9% abuse prevention | Sub-millisecond latency | Distributed            ║
   ╚═══════════════════════════════════════════════════════════════════════════╝ */
 
-const Redis = require('ioredis');
-const { performance } = require('perf_hooks');
-const crypto = require('crypto');
-const promClient = require('prom-client');
-const CircuitBreaker = require('opossum');
+// ============================================================================
+// QUANTUM IMPORTS - ES MODULE CONVERSION
+// ============================================================================
+import Redis from 'ioredis';
+import { performance } from 'perf_hooks';
+import crypto from 'crypto';
+import promClient from 'prom-client';
+import CircuitBreaker from 'opossum';
 
 // QUANTUM CONSTANTS
 const DEFAULT_WINDOW_MS = Number(process.env.TENANT_RATE_LIMIT_WINDOW || 60000);
@@ -563,21 +566,19 @@ tenantRateLimiter.getMetrics = async function () {
   return promClient.register.metrics();
 };
 
-// Export the main function (CommonJS style)
+// ============================================================================
+// QUANTUM EXPORTS - ES MODULE ONLY
+// ============================================================================
 export default tenantRateLimiter;
-module.exports.default = tenantRateLimiter;
-
-// Also export as named exports for ES modules
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports.tenantRateLimiter = tenantRateLimiter;
-  module.exports.checkRateLimit = checkRateLimit;
-  module.exports.decrementTokens = decrementTokens;
-  module.exports.resetLimit = resetLimit;
-  module.exports.getStatus = getStatus;
-  module.exports.cleanup = cleanup;
-  module.exports.rateLimiterMiddleware = rateLimiterMiddleware;
-  module.exports.TENANT_TIERS = TENANT_TIERS;
-}
+export {
+  checkRateLimit,
+  decrementTokens,
+  resetLimit,
+  getStatus,
+  cleanup,
+  rateLimiterMiddleware,
+  TENANT_TIERS,
+};
 
 /* ---------------------------------------------------------------------------
    ENV ADDITIONS REQUIRED - Enterprise Rate Limiter Configuration

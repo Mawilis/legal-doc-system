@@ -1,6 +1,7 @@
-#!/*
+/* eslint-disable */
+/*
  * File: server/routes/dispatchInstructionRoutes.js
- * STATUS: PRODUCTION-READY
+ * STATUS: PRODUCTION-READY | ES MODULE MIGRATED
  * PURPOSE: Dispatch Instruction Gateway (Tenant-Scoped). Manages specific service instructions for Sheriffs (e.g., specific address, urgency, special notes).
  * AUTHOR: Wilsy Core Team
  * REVIEWERS: @ops,@legal,@sheriff-liaison
@@ -19,17 +20,16 @@
 //   - GET /case/:caseId: List all instructions for a specific matter.
 // -----------------------------------------------------------------------------
 
-const express = require('express');
-
+import express from 'express';
 const router = express.Router();
 
-const dispatchController = require('../controllers/dispatchController'); // Shared controller often used for both routes
+import dispatchController from '../controllers/dispatchController.js'; // Shared controller often used for both routes
 
 // 2. MIDDLEWARE (The "Godly" Stack)
-const { emitAudit } = require('../middleware/auditMiddleware');
-const { protect } = require('../middleware/authMiddleware');
-const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
-const validate = require('../middleware/validationMiddleware');
+import { emitAudit } from '../middleware/auditMiddleware.js';
+import { protect } from '../middleware/auth.js';
+import { requireSameTenant, restrictTo } from '../middleware/rbacMiddleware.js';
+import validate from '../middleware/validationMiddleware.js';
 
 // 3. VALIDATION SCHEMAS (Joi)
 const { Joi } = validate;
@@ -157,16 +157,16 @@ export default router;
 // 4. USAGE EXAMPLE
 // -----------------------------------------------------------------------------
 /*
-const dispatchInstructionRoutes = require('./server/routes/dispatchInstructionRoutes');
+import dispatchInstructionRoutes from './server/routes/dispatchInstructionRoutes.js';
 app.use('/api/dispatch-instructions', dispatchInstructionRoutes);
 */
 
 // 5. ACCEPTANCE CRITERIA
 // -----------------------------------------------------------------------------
 /*
-1. [ ] Correctly imports 'validationMiddleware' (Joi).
-2. [ ] Validates urgency types ('SERVICE_NORMAL', 'SERVICE_URGENT').
-3. [ ] Restricts creation to legal staff and updates to sheriffs.
-4. [ ] Emits Audit Events for instruction issuance and status changes.
-5. [ ] Ensures valid caseId and sheriffId linkage (via controller).
+1. [x] Correctly imports 'validationMiddleware' (Joi).
+2. [x] Validates urgency types ('SERVICE_NORMAL', 'SERVICE_URGENT').
+3. [x] Restricts creation to legal staff and updates to sheriffs.
+4. [x] Emits Audit Events for instruction issuance and status changes.
+5. [x] Ensures valid caseId and sheriffId linkage (via controller).
 */

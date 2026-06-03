@@ -1,0 +1,91 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📊 RISK METER - WILSY OS 2050                                           ║
+  ║  Real-time Risk Assessment Visualization                                 ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-risk-meter-container {
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+.sa-risk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.sa-risk-title {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-semibold);
+  color: var(--sa-text-primary);
+}
+
+.sa-risk-badge {
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  font-size: var(--sa-text-small);
+  font-weight: var(--sa-weight-bold);
+  text-transform: uppercase;
+}
+
+.sa-risk-badge.low { background: var(--sa-success-500); color: white; }
+.sa-risk-badge.moderate { background: var(--sa-warning-500); color: white; }
+.sa-risk-badge.high { background: var(--sa-critical-500); color: white; }
+.sa-risk-badge.critical { background: var(--sa-forensic-500); color: white; }
+
+.sa-risk-meter {
+  position: relative;
+  height: 8px;
+  background: var(--sa-bg-primary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.sa-risk-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg,
+    var(--sa-success-500) 0%,
+    var(--sa-warning-500) 50%,
+    var(--sa-critical-500) 100%
+  );
+  transition: width 0.5s var(--wilsy-ease-out);
+}
+
+.sa-risk-markers {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-size: var(--sa-text-micro);
+  color: var(--sa-text-tertiary);
+}
+
+.sa-risk-value {
+  position: absolute;
+  top: -20px;
+  transform: translateX(-50%);
+  background: var(--sa-bg-elevated);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: var(--sa-text-micro);
+  color: white;
+  border: 1px solid var(--sa-border-quantum);
+}
+
+.sa-risk-value::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--sa-border-quantum);
+}

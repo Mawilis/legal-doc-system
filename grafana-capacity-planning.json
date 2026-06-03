@@ -1,0 +1,92 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-capacity-hud",
+    "title": "🏛️ WILSY OS - Sovereign Capacity Planning",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Nucleus Load Forecast (Next 30m Lead)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "predict_linear(wilsy_system_load[30m], 1800)",
+            "legendFormat": "Predicted System Load"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 1.5 },
+                { "color": "red", "value": 2.5 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Memory Consumption Forecast (Next 1h Lead)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "predict_linear((wilsy_system_total_mem_bytes - wilsy_system_free_mem_bytes)[1h:1m], 3600)",
+            "legendFormat": "Predicted Used Memory (Bytes)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "orange", "value": 12884901888 },
+                { "color": "red", "value": 15032385536 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "CPU Core Utilization Forecast (Next 1h Lead)",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "predict_linear(wilsy_system_cpu_cores[1h], 3600)",
+            "legendFormat": "Predicted Active Cores"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "orange", "value": 4 },
+                { "color": "red", "value": 7 }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

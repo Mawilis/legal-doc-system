@@ -7,17 +7,15 @@
 
 /**
  * ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/models/DocumentTemplate.js
- * VERSION: 2.0.0-FORENSIC
+ * VERSION: 2.0.1-FORENSIC-ENHANCED
  * CREATED: 2026-02-28
- * LAST UPDATED: 2026-03-02
- * 
- * INVESTOR VALUE PROPOSITION:
+ * LAST UPDATED: 2026-03-21
+ * * INVESTOR VALUE PROPOSITION:
  * • Automation: R12.5M/year in legal document generation
  * • Compliance: 100% POPIA Section 19 adherence
  * • Retention: 100-year archival with Companies Act compliance
  * • ROI Multiple: 94.3x | Payback Period: 11 days
- * 
- * COMPETITIVE ANALYSIS:
+ * * COMPETITIVE ANALYSIS:
  * ┌─────────────────┬────────────┬────────────┬────────────┬────────────┐
  * │ Feature         │ Deloitte   │ LexisNexis │ Aderant    │ WILSY OS   │
  * ├─────────────────┼────────────┼────────────┼────────────┼────────────┤
@@ -27,32 +25,6 @@
  * │ Variable Types  │ ⚠️ Basic   │ ✅ 12      │ ⚠️ 8       │ ✅ 16      │
  * │ Retention       │ 7 years    │ 5 years    │ 10 years   │ 100 years  │
  * └─────────────────┴────────────┴────────────┴────────────┴────────────┘
- * 
- * INTEGRATION_MAP: {
- *   "expectedConsumers": [
- *     "services/document-generation/DocumentGenerator.js",
- *     "controllers/document/DocumentController.js",
- *     "workers/document/CompilationWorker.js"
- *   ],
- *   "expectedProviders": [
- *     "../utils/auditLogger.js",
- *     "../utils/cryptoUtils.js",
- *     "../utils/redactSensitive.js",
- *     "../middleware/tenantContext.js"
- *   ],
- *   "tenantIsolation": "STRICT - tenantId required",
- *   "retentionPolicy": "companies_act_10_years",
- *   "dataResidency": "ZA"
- * }
- * 
- * MERMAID_INTEGRATION: graph TD
- *   A[DocumentTemplate] --> B[(MongoDB)]
- *   A --> C[AuditLogger]
- *   A --> D[CryptoUtils]
- *   E[DocumentGenerator] --> A
- *   F[DocumentController] --> A
- *   G[CompilationWorker] --> A
- *   style A fill:#f9f,stroke:#333,stroke-width:4px
  */
 
 import mongoose from 'mongoose';
@@ -95,8 +67,8 @@ const TEMPLATE_STATUS = {
   DEPRECATED: 'deprecated',
   ARCHIVED: 'archived',
   UNDER_REVIEW: 'under_review',
-  EXPIRED: 'expired',           // Added for retention
-  LEGAL_HOLD: 'legal_hold',      // Added for court orders
+  EXPIRED: 'expired',
+  LEGAL_HOLD: 'legal_hold',
 };
 
 const VARIABLE_TYPES = {
@@ -113,8 +85,8 @@ const VARIABLE_TYPES = {
   NAME: 'name',
   SELECT: 'select',
   TEXTAREA: 'textarea',
-  SIGNATURE: 'signature',        // Added for e-signatures
-  WITNESS: 'witness',             // Added for witness fields
+  SIGNATURE: 'signature',
+  WITNESS: 'witness',
 };
 
 const OUTPUT_FORMATS = {
@@ -122,10 +94,9 @@ const OUTPUT_FORMATS = {
   DOCX: 'docx',
   HTML: 'html',
   TXT: 'txt',
-  PDF_A: 'pdf_a',                 // Added for archival
+  PDF_A: 'pdf_a',
 };
 
-// Retention Policies (Companies Act 2008)
 const RETENTION_POLICIES = {
   COMPANIES_ACT_7_YEARS: {
     duration: 7 * 365 * 24 * 60 * 60 * 1000,
@@ -141,7 +112,6 @@ const RETENTION_POLICIES = {
   },
 };
 
-// Data Residency (POPIA Section 72)
 const DATA_RESIDENCY = {
   ZA: 'south_africa',
   ZA_BACKUP: 'south_africa_backup',
@@ -153,7 +123,6 @@ const DATA_RESIDENCY = {
 
 const documentTemplateSchema = new mongoose.Schema(
   {
-    // Core Identifiers
     templateId: {
       type: String,
       required: true,
@@ -161,7 +130,6 @@ const documentTemplateSchema = new mongoose.Schema(
       immutable: true,
       default: () => `TMP-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
     },
-
     tenantId: {
       type: String,
       required: [true, 'Tenant ID is required for multi-tenant isolation'],
@@ -170,49 +138,39 @@ const documentTemplateSchema = new mongoose.Schema(
         message: 'Tenant ID must be 8-64 alphanumeric characters',
       },
     },
-
-    // Template Metadata
     name: {
       type: String,
       required: [true, 'Template name is required'],
       trim: true,
-      },
-
+    },
     description: {
       type: String,
       maxlength: 1000,
     },
-
     templateType: {
       type: String,
       required: [true, 'Template type is required'],
       enum: Object.values(TEMPLATE_TYPES),
-      },
-
+    },
     practiceArea: {
       type: String,
       required: [true, 'Practice area is required'],
       enum: Object.values(PRACTICE_AREAS),
-      },
-
+    },
     jurisdiction: {
       type: String,
       default: 'ZA',
-      },
-
+    },
     version: {
       type: Number,
       default: 1,
       min: 1,
     },
-
     status: {
       type: String,
       enum: Object.values(TEMPLATE_STATUS),
       default: TEMPLATE_STATUS.DRAFT,
-      },
-
-    // Template Content
+    },
     content: {
       raw: {
         type: String,
@@ -220,7 +178,7 @@ const documentTemplateSchema = new mongoose.Schema(
       },
       compiled: {
         type: String,
-        select: false, // Don't return compiled version by default
+        select: false,
       },
       format: {
         type: String,
@@ -228,26 +186,18 @@ const documentTemplateSchema = new mongoose.Schema(
         default: 'handlebars',
       },
     },
-
-    // Variables
     variables: [
       {
-        name: {
-          type: String,
-          required: true,
-        },
+        name: { type: String, required: true },
         label: String,
         type: {
           type: String,
           enum: Object.values(VARIABLE_TYPES),
           required: true,
         },
-        required: {
-          type: Boolean,
-          default: false,
-        },
+        required: { type: Boolean, default: false },
         defaultValue: mongoose.Schema.Types.Mixed,
-        options: [String], // For select type
+        options: [String],
         validation: {
           pattern: String,
           minLength: Number,
@@ -257,60 +207,29 @@ const documentTemplateSchema = new mongoose.Schema(
         },
         description: String,
         placeholder: String,
-        order: {
-          type: Number,
-          default: 0,
-        },
-        // POPIA sensitive flag
-        isPII: {
-          type: Boolean,
-          default: false,
-        },
-        // Redaction pattern
+        order: { type: Number, default: 0 },
+        isPII: { type: Boolean, default: false },
         redactionPattern: String,
       },
     ],
-
-    // Output Configuration
     output: {
-      formats: [
-        {
-          type: String,
-          enum: Object.values(OUTPUT_FORMATS),
-        },
-      ],
+      formats: [{ type: String, enum: Object.values(OUTPUT_FORMATS) }],
       defaultFormat: {
         type: String,
         enum: Object.values(OUTPUT_FORMATS),
         default: OUTPUT_FORMATS.PDF,
       },
-      pageSize: {
-        type: String,
-        enum: ['A4', 'LETTER', 'LEGAL'],
-        default: 'A4',
-      },
-      orientation: {
-        type: String,
-        enum: ['portrait', 'landscape'],
-        default: 'portrait',
-      },
+      pageSize: { type: String, enum: ['A4', 'LETTER', 'LEGAL'], default: 'A4' },
+      orientation: { type: String, enum: ['portrait', 'landscape'], default: 'portrait' },
       margins: {
         top: { type: Number, default: 25 },
         right: { type: Number, default: 25 },
         bottom: { type: Number, default: 25 },
         left: { type: Number, default: 25 },
       },
-      fontFamily: {
-        type: String,
-        default: 'Arial',
-      },
-      fontSize: {
-        type: Number,
-        default: 11,
-      },
+      fontFamily: { type: String, default: 'Arial' },
+      fontSize: { type: Number, default: 11 },
     },
-
-    // Clauses Library
     clauses: [
       {
         clauseId: {
@@ -324,40 +243,29 @@ const documentTemplateSchema = new mongoose.Schema(
         order: Number,
       },
     ],
-
-    // Conditional Logic
     conditionalLogic: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
-
-    // Signatures
     signatureRequirements: [
       {
         role: String,
         required: Boolean,
         order: Number,
         emailNotification: Boolean,
-        // Added for forensic
         biometricRequired: Boolean,
         dualKeyRequired: Boolean,
       },
     ],
-
-    // Witness Requirements
     witnessRequirements: {
       required: Boolean,
       count: { type: Number, default: 0 },
       independent: { type: Boolean, default: false },
     },
-
-    // Notary Requirements
     notaryRequired: {
       type: Boolean,
       default: false,
     },
-
-    // Usage Statistics
     usageStats: {
       timesUsed: { type: Number, default: 0 },
       lastUsedAt: Date,
@@ -366,12 +274,10 @@ const documentTemplateSchema = new mongoose.Schema(
       errorCount: { type: Number, default: 0 },
       lastErrorAt: Date,
     },
-
-    // Version History
     versionHistory: [
       {
         version: Number,
-        contentHash: String, // Store hash, not content for space
+        contentHash: String,
         variables: [String],
         createdBy: String,
         createdAt: { type: Date, default: Date.now },
@@ -379,64 +285,41 @@ const documentTemplateSchema = new mongoose.Schema(
         forensicHash: String,
       },
     ],
-
-    // Approvals
     approvals: [
       {
         userId: String,
         role: String,
-        status: {
-          type: String,
-          enum: ['pending', 'approved', 'rejected'],
-        },
+        status: { type: String, enum: ['pending', 'approved', 'rejected'] },
         comment: String,
         timestamp: { type: Date, default: Date.now },
         signature: String,
       },
     ],
-
-    // Tags
     tags: [String],
-
-    // Categories
     categories: [String],
-
-    // Audit Trail
     audit: {
       createdBy: { type: String, required: true },
       createdAt: { type: Date, default: Date.now, immutable: true },
       updatedBy: String,
       updatedAt: { type: Date, default: Date.now },
     },
-
-    // Metadata
     metadata: {
       correlationId: String,
       source: { type: String, default: 'api' },
     },
-
-    // Forensic Integrity
     forensicHash: {
       type: String,
-      unique: true,
-      },
-
+      unique: true, // This acts as the index. No need to duplicate it below.
+    },
     previousHash: String,
-
-    timestampProof: String, // For blockchain anchoring
-
-    // Retention (POPIA Section 14)
+    timestampProof: String,
     retention: {
       policy: {
         type: String,
         enum: Object.keys(RETENTION_POLICIES),
         default: 'COMPANIES_ACT_10_YEARS',
       },
-      startDate: {
-        type: Date,
-        default: Date.now,
-        immutable: true,
-      },
+      startDate: { type: Date, default: Date.now, immutable: true },
       endDate: Date,
       legalHolds: [
         {
@@ -449,23 +332,15 @@ const documentTemplateSchema = new mongoose.Schema(
           reason: String,
           courtOrderNumber: String,
           expiresAt: Date,
-          status: {
-            type: String,
-            enum: ['active', 'released'],
-            default: 'active',
-          },
+          status: { type: String, enum: ['active', 'released'], default: 'active' },
         },
       ],
     },
-
-    // Data Residency
     dataResidency: {
       type: String,
       enum: Object.values(DATA_RESIDENCY),
       default: DATA_RESIDENCY.ZA,
     },
-
-    // Schema Version
     schemaVersion: {
       type: String,
       default: '2.0.0',
@@ -479,14 +354,12 @@ const documentTemplateSchema = new mongoose.Schema(
     toJSON: {
       virtuals: true,
       transform: function (doc, ret) {
-        // Remove sensitive fields
         delete ret.content?.compiled;
         delete ret.forensicHash;
         delete ret.previousHash;
         delete ret.__v;
         delete ret._id;
 
-        // Redact PII in variable examples
         if (ret.variables) {
           ret.variables = ret.variables.map((v) => {
             if (v.isPII && v.defaultValue) {
@@ -495,7 +368,6 @@ const documentTemplateSchema = new mongoose.Schema(
             return v;
           });
         }
-
         return ret;
       },
     },
@@ -503,18 +375,17 @@ const documentTemplateSchema = new mongoose.Schema(
 );
 
 // ============================================================================
-// INDEXES - Performance Optimized
+// INDEXES - Performance Optimized (Removed Duplicates)
 // ============================================================================
 
 documentTemplateSchema.index({ tenantId: 1, templateType: 1, status: 1 });
 documentTemplateSchema.index({ tenantId: 1, practiceArea: 1 });
 documentTemplateSchema.index({ tenantId: 1, name: 1 });
 documentTemplateSchema.index({ 'usageStats.timesUsed': -1 });
-documentTemplateSchema.index({ forensicHash: 1 });
+// documentTemplateSchema.index({ forensicHash: 1 }); <-- REMOVED: Redundant due to unique:true on schema field
 documentTemplateSchema.index({ 'retention.endDate': 1 }, { sparse: true });
 documentTemplateSchema.index({ 'retention.legalHolds.status': 1 });
 
-// Text index for search
 documentTemplateSchema.index(
   {
     name: 'text',
@@ -523,12 +394,7 @@ documentTemplateSchema.index(
     categories: 'text',
   },
   {
-    weights: {
-      name: 10,
-      tags: 5,
-      categories: 3,
-      description: 2,
-    },
+    weights: { name: 10, tags: 5, categories: 3, description: 2 },
     name: 'DocumentTemplateTextIndex',
   }
 );
@@ -561,21 +427,17 @@ documentTemplateSchema.virtual('retentionEndDate').get(function () {
 });
 
 // ============================================================================
-// ASYNC MIDDLEWARE - SINGLE CLEAN PRE-SAVE HOOK
+// ASYNC MIDDLEWARE
 // ============================================================================
 
-// Pre-save middleware - ONE clean hook (not multiple)
 documentTemplateSchema.pre('save', async function () {
-  // Update audit timestamp
   this.audit.updatedAt = new Date();
 
-  // Get previous hash from history or use genesis
   const previousHash =
     this.versionHistory && this.versionHistory.length > 0
       ? this.versionHistory[this.versionHistory.length - 1].forensicHash
       : '0'.repeat(64);
 
-  // Create canonical data for hashing
   const hashData = {
     templateId: this.templateId,
     tenantId: this.tenantId,
@@ -589,30 +451,20 @@ documentTemplateSchema.pre('save', async function () {
     previousHash,
   };
 
-  // Sort keys for deterministic hashing
   const canonicalData = JSON.stringify(hashData, Object.keys(hashData).sort());
 
-  // Generate SHA-256 forensic hash
-  this.forensicHash = crypto
-    .createHash('sha256')
-    .update(canonicalData)
-    .digest('hex');
-
+  this.forensicHash = crypto.createHash('sha256').update(canonicalData).digest('hex');
   this.previousHash = previousHash;
 
-  // Generate timestamp proof for blockchain anchoring
   this.timestampProof = crypto
     .createHash('sha256')
     .update(this.forensicHash + Date.now() + this.tenantId)
     .digest('hex');
 
-  // Compile template if content changed
   if (this.isModified('content.raw') && this.content?.format === 'handlebars') {
-    // In production, this would use Handlebars.compile()
     this.content.compiled = this.content.raw;
   }
 
-  // Calculate retention end date
   if (this.retention && !this.retention.endDate) {
     const policy = RETENTION_POLICIES[this.retention.policy];
     if (policy && policy.duration !== -1) {
@@ -622,7 +474,6 @@ documentTemplateSchema.pre('save', async function () {
     }
   }
 
-  // Auto-expire if retention period exceeded (and no active legal holds)
   if (this.retention?.endDate && this.retention.endDate < new Date()) {
     const hasActiveHold = this.retention.legalHolds?.some((h) => h.status === 'active');
     if (!hasActiveHold) {
@@ -630,7 +481,7 @@ documentTemplateSchema.pre('save', async function () {
     }
   }
 
-  // Add to version history if new version
+  // Strict boolean check for isNew
   if (this.isNew === false && this.isModified('content.raw')) {
     if (!this.versionHistory) this.versionHistory = [];
     this.versionHistory.push({
@@ -642,7 +493,6 @@ documentTemplateSchema.pre('save', async function () {
       forensicHash: this.forensicHash,
     });
 
-    // Limit version history to last 100
     if (this.versionHistory.length > 100) {
       this.versionHistory = this.versionHistory.slice(-100);
     }
@@ -653,11 +503,7 @@ documentTemplateSchema.pre('save', async function () {
 // INSTANCE METHODS
 // ============================================================================
 
-/**
- * Render template with provided variables
- */
 documentTemplateSchema.methods.render = async function (variables = {}) {
-  // Validate required variables
   const missing = this.variables
     .filter((v) => v.required && !variables[v.name])
     .map((v) => v.name);
@@ -666,23 +512,18 @@ documentTemplateSchema.methods.render = async function (variables = {}) {
     throw new Error(`Missing required variables: ${missing.join(', ')}`);
   }
 
-  // Start timing for performance metrics
   const startTime = Date.now();
 
   try {
-    // In production, this would use Handlebars.compile()
     let rendered = this.content.raw;
 
-    // Simple variable replacement (placeholder - replace with proper compiler)
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`{{${key}}}`, 'g');
-      // Redact PII if needed
       const variableDef = this.variables.find((v) => v.name === key);
       const displayValue = variableDef?.isPII ? '[REDACTED]' : value;
       rendered = rendered.replace(regex, displayValue);
     });
 
-    // Update usage stats
     this.usageStats.timesUsed += 1;
     this.usageStats.lastUsedAt = new Date();
     this.usageStats.averageGenerationTime =
@@ -703,9 +544,6 @@ documentTemplateSchema.methods.render = async function (variables = {}) {
   }
 };
 
-/**
- * Create new version
- */
 documentTemplateSchema.methods.createVersion = async function (updates, userId, changelog) {
   const newVersion = new this.constructor({
     ...this.toObject(),
@@ -721,7 +559,6 @@ documentTemplateSchema.methods.createVersion = async function (updates, userId, 
     versionHistory: [],
   });
 
-  // Deprecate current version
   this.status = TEMPLATE_STATUS.DEPRECATED;
   this.audit.updatedBy = userId;
   await this.save();
@@ -729,9 +566,6 @@ documentTemplateSchema.methods.createVersion = async function (updates, userId, 
   return newVersion.save();
 };
 
-/**
- * Validate template integrity
- */
 documentTemplateSchema.methods.validateIntegrity = function () {
   const hashData = {
     templateId: this.templateId,
@@ -757,9 +591,6 @@ documentTemplateSchema.methods.validateIntegrity = function () {
   };
 };
 
-/**
- * Place legal hold on template
- */
 documentTemplateSchema.methods.placeLegalHold = function (holdData) {
   if (!this.retention.legalHolds) {
     this.retention.legalHolds = [];
@@ -776,7 +607,6 @@ documentTemplateSchema.methods.placeLegalHold = function (holdData) {
     status: 'active',
   });
 
-  // Override status to show legal hold
   if (this.status !== TEMPLATE_STATUS.LEGAL_HOLD) {
     this.status = TEMPLATE_STATUS.LEGAL_HOLD;
   }
@@ -784,9 +614,6 @@ documentTemplateSchema.methods.placeLegalHold = function (holdData) {
   return holdId;
 };
 
-/**
- * Release legal hold
- */
 documentTemplateSchema.methods.releaseLegalHold = function (holdId, releasedBy) {
   const hold = this.retention.legalHolds?.find((h) => h.holdId === holdId);
   if (hold) {
@@ -794,20 +621,15 @@ documentTemplateSchema.methods.releaseLegalHold = function (holdId, releasedBy) 
     hold.releasedAt = new Date();
     hold.releasedBy = releasedBy;
 
-    // Check if any holds remain
     const hasActiveHolds = this.retention.legalHolds.some((h) => h.status === 'active');
     if (!hasActiveHolds && this.status === TEMPLATE_STATUS.LEGAL_HOLD) {
       this.status = TEMPLATE_STATUS.ACTIVE;
     }
-
     return true;
   }
   return false;
 };
 
-/**
- * Generate forensic evidence package
- */
 documentTemplateSchema.methods.generateForensicEvidence = function () {
   const evidenceId = `EVD-${uuidv4().split('-')[0].toUpperCase()}`;
 
@@ -842,20 +664,13 @@ documentTemplateSchema.methods.generateForensicEvidence = function () {
 // STATIC METHODS
 // ============================================================================
 
-/**
- * Find templates by tenant with filtering
- */
 documentTemplateSchema.statics.findByTenant = function (tenantId, filters = {}, pagination = {}) {
   const query = { tenantId, ...filters };
   const limit = pagination.limit || 20;
   const skip = pagination.offset || 0;
-
   return this.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit);
 };
 
-/**
- * Get templates by type
- */
 documentTemplateSchema.statics.getByType = function (tenantId, templateType) {
   return this.find({
     tenantId,
@@ -864,9 +679,6 @@ documentTemplateSchema.statics.getByType = function (tenantId, templateType) {
   }).sort({ name: 1 });
 };
 
-/**
- * Get most used templates
- */
 documentTemplateSchema.statics.getMostUsed = function (tenantId, limit = 10) {
   return this.find({
     tenantId,
@@ -876,9 +688,6 @@ documentTemplateSchema.statics.getMostUsed = function (tenantId, limit = 10) {
     .limit(limit);
 };
 
-/**
- * Search templates
- */
 documentTemplateSchema.statics.search = function (tenantId, query, filters = {}) {
   return this.find({
     tenantId,
@@ -888,9 +697,6 @@ documentTemplateSchema.statics.search = function (tenantId, query, filters = {})
   }).sort({ score: { $meta: 'textScore' } });
 };
 
-/**
- * Get template statistics
- */
 documentTemplateSchema.statics.getStats = async function (tenantId) {
   const [summary, byType, byPracticeArea, retention] = await Promise.all([
     this.aggregate([
@@ -899,9 +705,7 @@ documentTemplateSchema.statics.getStats = async function (tenantId) {
         $group: {
           _id: null,
           totalTemplates: { $sum: 1 },
-          activeTemplates: {
-            $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] },
-          },
+          activeTemplates: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
           totalUsage: { $sum: '$usageStats.timesUsed' },
           avgSuccessRate: { $avg: '$usageStats.successRate' },
         },
@@ -909,21 +713,11 @@ documentTemplateSchema.statics.getStats = async function (tenantId) {
     ]),
     this.aggregate([
       { $match: { tenantId } },
-      {
-        $group: {
-          _id: '$templateType',
-          count: { $sum: 1 },
-        },
-      },
+      { $group: { _id: '$templateType', count: { $sum: 1 } } },
     ]),
     this.aggregate([
       { $match: { tenantId } },
-      {
-        $group: {
-          _id: '$practiceArea',
-          count: { $sum: 1 },
-        },
-      },
+      { $group: { _id: '$practiceArea', count: { $sum: 1 } } },
     ]),
     this.aggregate([
       { $match: { tenantId } },
@@ -971,7 +765,7 @@ documentTemplateSchema.statics.getStats = async function (tenantId) {
   ]);
 
   return {
-    summary: summary[0] || { totalTemplates: 0, totalUsage: 0, avgSuccessRate: 100 },
+    summary: summary[0] || { totalTemplates: 0, totalUsage: 0, avgSuccessRate: 100, activeTemplates: 0 },
     byType: byType || [],
     byPracticeArea: byPracticeArea || [],
     retention: retention[0] || { expiringSoon: 0, onLegalHold: 0 },
@@ -979,16 +773,8 @@ documentTemplateSchema.statics.getStats = async function (tenantId) {
   };
 };
 
-// ============================================================================
-// MODEL CREATION
-// ============================================================================
-
 const DocumentTemplate =
   mongoose.models.DocumentTemplate || mongoose.model('DocumentTemplate', documentTemplateSchema);
-
-// ============================================================================
-// EXPORTS - SINGLE EXPORT BLOCK
-// ============================================================================
 
 export {
   DocumentTemplate,
@@ -1002,43 +788,3 @@ export {
 };
 
 export default DocumentTemplate;
-
-// ============================================================================
-// ASSUMPTIONS & DEFAULTS
-// ============================================================================
-
-/**
- * ASSUMPTIONS BLOCK:
- * 
- * 1. TENANT ID FORMAT:
- *    - Regex: ^[a-zA-Z0-9_-]{8,64}$
- *    - Required for multi-tenant isolation
- * 
- * 2. DEFAULT RETENTION POLICY:
- *    - companies_act_10_years (10 years)
- *    - Based on Companies Act 2008, Section 24(3)
- * 
- * 3. DATA RESIDENCY:
- *    - Default: ZA (South Africa)
- *    - All data stored in South Africa
- * 
- * 4. POPIA COMPLIANCE:
- *    - PII variables marked with isPII flag
- *    - Automatic redaction in JSON output
- * 
- * 5. FORENSIC HASHING:
- *    - SHA-256 for forensic evidence
- *    - SHA-256 for timestamp proofs
- * 
- * 6. VERSION HISTORY:
- *    - Maximum 100 versions retained
- *    - Stores hash, not content
- * 
- * 7. LEGAL HOLDS:
- *    - Court orders override retention
- *    - Status changes to LEGAL_HOLD
- * 
- * 8. PERFORMANCE:
- *    - Text search indexes for discovery
- *    - Compound indexes for common queries
- */

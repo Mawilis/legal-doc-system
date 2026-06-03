@@ -1,0 +1,114 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-compliance-enforcement",
+    "title": "🏛️ WILSY OS - Sovereign Compliance Enforcement",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Sovereign Compliance Ratio (POPIA/GDPR)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_compliance_ratio{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Global Ratio %" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "#d4af37", "value": 90 },
+                { "color": "green", "value": 98 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Critical Audit Strikes (Governance Fractures)",
+        "id": 2,
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_counter_governance_violations_total{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Strikes" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 5 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Remediation Latency (SLA Enforcement Speed)",
+        "id": 3,
+        "gridPos": { "x": 0, "y": 6, "w": 24, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_latency_request_latency{tenantId=\"GLOBAL_ROOT\", quantile=\"0.95\"}", "legendFormat": "Remediation Latency (ms)" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "color": { "fixedColor": "blue", "mode": "fixed" },
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+          }
+        }
+      },
+      {
+        "type": "barchart",
+        "title": "Capital Preservation: Penalties Avoided (USD)",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_compliance_penalties_avoided_usd_total{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "USD Saved" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "color": { "fixedColor": "green", "mode": "fixed" }
+          }
+        },
+        "options": { "displayMode": "gradient", "orientation": "horizontal" }
+      },
+      {
+        "type": "table",
+        "title": "Active Regulatory Overlays (POPIA/GDPR/FICA/SOX)",
+        "id": 5,
+        "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_client_compliance_state{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "{{company}}" }
+        ],
+        "options": { "showHeader": true }
+      },
+      {
+        "type": "text",
+        "title": "Boardroom Compliance Narrative",
+        "id": 6,
+        "gridPos": { "x": 0, "y": 22, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### Judicial Finality Report\nWilsy OS is enforcing regulatory overlays with **Institutional Precision**. The current **Compliance Ratio** reflects real-time DB verification of identities and data isolation. **Penalties Avoided** represents a direct contribution to shareholder value, while the **Remediation Latency** proves that the OS identifies and heals governance fractures within sub-second thresholds."
+        }
+      }
+    ]
+  }
+}

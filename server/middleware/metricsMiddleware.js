@@ -1,90 +1,122 @@
-#!/*
- * File: server/middleware/metricsMiddleware.js
- * STATUS: PRODUCTION-READY | OBSERVABILITY & SCALE GRADE
- * -----------------------------------------------------------------------------
- * PURPOSE:
- * Instrumenting the Wilsy API for real-time monitoring. It tracks the "Golden Signals":
- * Latency, Traffic, Errors, and Saturation.
+/* eslint-disable */
+/**
+ * ####################################################################################################
+ * # WILSY OS - SOVEREIGN METRICS MIDDLEWARE [OMEGA SINGULARITY]                                      #
+ * # ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/middleware/metricsMiddleware.js    #
+ * ####################################################################################################
+ * # [PERFORMANCE METRICS | SYSTEM MONITORING | FORENSIC DATA]                                       #
+ * # EPITOME: BIBLICAL WORTH BILLIONS | INSTITUTIONAL GRADE                                           #
+ * ####################################################################################################
  *
- * KEY FEATURES FOR FUTURE ENGINEERS:
- * 1. Prometheus Integration: Exposes standard metrics for Grafana dashboards.
- * 2. Path Normalization: Prevents high-cardinality issues by masking IDs.
- * 3. Performance Profiling: Uses high-resolution timers (hrtime) for accuracy.
- * 4. Tenant Analytics: Track which firms are consuming the most resources.
- * -----------------------------------------------------------------------------
+ * 👥 COLLABORATION:
+ * • Wilson Khanyezi (Lead Architect) - Metrics design
+ * • Gemini (AI Engineering) - ESM hardening
+ *
+ * @last_verified: 2026-04-10
  */
 
-const client = require('prom-client');
+// Metrics store
+const metrics = {
+  totalRequests: 0,
+  requestsByMethod: {},
+  requestsByEndpoint: {},
+  responseTimes: [],
+  statusCodes: {},
+  startTime: Date.now()
+};
 
-// 1. REGISTRY & DEFAULT METRICS
-// Collects Node.js health (CPU, Memory, Event Loop Lag) automatically.
-const register = new client.Registry();
-client.collectDefaultMetrics({ register, prefix: 'wilsy_' });
-
-// 2. CUSTOM HTTP METRICS
-const httpRequestsTotal = new client.Counter({
-  name: 'wilsy_api_requests_total',
-  help: 'Total number of HTTP requests processed',
-  labelNames: ['method', 'route', 'status', 'tenant_id'],
-});
-
-const httpRequestDuration = new client.Histogram({
-  name: 'wilsy_api_request_duration_seconds',
-  help: 'Latency of API requests in seconds',
-  labelNames: ['method', 'route', 'status', 'tenant_id'],
-  buckets: [0.1, 0.3, 0.5, 0.7, 1, 2, 5], // Focused on legal document processing times
-});
-
-// 3. PATH NORMALIZATION UTILITY
-// Prevents /cases/1 and /cases/2 from becoming two different metric lines.
-const normalizePath = (req) => (req.route ? req.route.path : req.originalUrl.split('?')[0]);
-
-/*
- * METRICS MIDDLEWARE
+/**
+ * Metrics collection middleware
+ * Tracks request metrics for monitoring and forensics
  */
-const metricsMiddleware = (req, res, next) => {
+export const metricsMiddleware = (req, res, next) => {
+  // Increment total requests
+  metrics.totalRequests++;
+
+  // Track by method
+  const method = req.method;
+  metrics.requestsByMethod[method] = (metrics.requestsByMethod[method] || 0) + 1;
+
+  // Track by endpoint (sanitized - remove IDs)
+  let endpoint = req.route?.path || req.path;
+  endpoint = endpoint.replace(/\/[0-9a-f]{24,}/gi, '/:id').replace(/\/[0-9]+/g, '/:id');
+  metrics.requestsByEndpoint[endpoint] = (metrics.requestsByEndpoint[endpoint] || 0) + 1;
+
+  // Track start time for response time calculation
   const start = process.hrtime();
 
-  // The 'finish' event triggers after the response is sent to the client.
-  res.on('finish', () => {
+  // Capture response
+  const originalEnd = res.end;
+
+  res.end = function(chunk, encoding) {
+    // Calculate response time
     const diff = process.hrtime(start);
-    const durationSeconds = diff[0] + diff[1] / 1e9;
+    const responseTime = (diff[0] * 1e3 + diff[1] / 1e6);
 
-    const labels = {
-      method: req.method,
-      route: normalizePath(req),
-      status: res.statusCode,
-      tenant_id: req.user?.tenantId || 'anonymous',
-    };
-
-    // RECORD METRICS
-    httpRequestsTotal.labels(labels).inc();
-    httpRequestDuration.labels(labels).observe(durationSeconds);
-
-    // FORENSIC ALERT: Log extremely slow requests to the audit trail
-    if (durationSeconds > 5 && req.logAudit) {
-      req.logAudit('PERFORMANCE_SLA_VIOLATION', {
-        duration: `${durationSeconds.toFixed(2)}s`,
-        path: req.originalUrl,
-        userId: req.user?._id,
-      });
+    // Store response time (keep last 1000)
+    metrics.responseTimes.push({
+      time: responseTime,
+      timestamp: Date.now()
+    });
+    if (metrics.responseTimes.length > 1000) {
+      metrics.responseTimes.shift();
     }
-  });
+
+    // Track status code
+    const statusCode = res.statusCode;
+    metrics.statusCodes[statusCode] = (metrics.statusCodes[statusCode] || 0) + 1;
+
+    originalEnd.call(this, chunk, encoding);
+  };
+
+  // Attach metrics to request for route handlers
+  req.metrics = {
+    getSummary: () => getMetricsSummary()
+  };
 
   next();
 };
 
-/*
- * SCRAPE ENDPOINT
- * This is where Prometheus "calls" your server to get the latest numbers.
- * Protected via internal IP whitelist or basic auth in production.
+/**
+ * Get metrics summary
+ * @returns {Object} Metrics summary
  */
-const metricsEndpoint = async (req, res) => {
-  res.set('Content-Type', register.contentType);
-  res.end(await register.metrics());
+export const getMetricsSummary = () => {
+  const now = Date.now();
+  const uptime = now - metrics.startTime;
+
+  // Calculate average response time
+  const avgResponseTime = metrics.responseTimes.length > 0
+    ? metrics.responseTimes.reduce((sum, r) => sum + r.time, 0) / metrics.responseTimes.length
+    : 0;
+
+  // Calculate requests per second (last minute)
+  const oneMinuteAgo = now - 60000;
+  const recentRequests = metrics.responseTimes.filter(r => r.timestamp > oneMinuteAgo).length;
+  const rps = recentRequests / 60;
+
+  return {
+    uptime,
+    totalRequests: metrics.totalRequests,
+    requestsPerSecond: rps.toFixed(2),
+    averageResponseTime: avgResponseTime.toFixed(2),
+    requestsByMethod: metrics.requestsByMethod,
+    requestsByEndpoint: metrics.requestsByEndpoint,
+    statusCodes: metrics.statusCodes,
+    timestamp: new Date().toISOString()
+  };
 };
 
-export default {
-  metricsMiddleware,
-  metricsEndpoint,
+/**
+ * Metrics endpoint handler
+ * @param {Object} req - Express request
+ * @param {Object} res - Express response
+ */
+export const metricsHandler = (req, res) => {
+  res.json({
+    success: true,
+    data: getMetricsSummary()
+  });
 };
+
+export default metricsMiddleware;

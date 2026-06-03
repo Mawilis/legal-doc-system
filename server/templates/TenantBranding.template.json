@@ -1,0 +1,32 @@
+{
+    "tenantId": "TEMPLATE_ID_REQUIRED",
+    "tenantName": "TEMPLATE_TENANT_NAME",
+    "mission": "INSTITUTIONAL_MISSION_STATEMENT",
+    "footer": "INSTITUTIONAL_GRADE_FOOTER",
+    "address": "",
+    "vatNumber": "",
+    "registrationNumber": "",
+    "bankDetails": {
+        "accountName": "",
+        "bankName": "",
+        "accountNumber": "",
+        "branchCode": "",
+        "iban": "",
+        "swift": ""
+    },
+    "colors": {
+        "primary": "#D4AF37",
+        "secondary": "#1a1a1a",
+        "success": "#00ff66",
+        "danger": "#ff3333",
+        "warning": "#facc15"
+    },
+    "headers": {
+        "dashboardReport": "MASTER INTELLIGENCE REPORT",
+        "predictive": "NEURAL FORECAST",
+        "auditTimeline": "TIMELINE LEDGER",
+        "forensicReport": "FORENSIC AUDIT REPORT",
+        "invoice": "TAX INVOICE",
+        "statement": "ACCOUNT STATEMENT"
+    }
+}

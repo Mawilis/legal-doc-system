@@ -1,5 +1,5 @@
 # WILSY OS 2050 - Quantum Production Dockerfile
-# Version: 10.0.0-quantum-2050
+# Version: 10.0.1-quantum-2050 [RECTIFIED: SHIELD INTEGRATION]
 
 FROM node:20-alpine AS builder
 
@@ -43,15 +43,16 @@ RUN mkdir -p /var/log/wilsy-os && \
 # Switch to non-root user
 USER nodejs
 
-# Expose port
-EXPOSE 3000
+# 🛡️ RECTIFIED: Aligning Port to Wilsy OS Standard (4000)
+ENV PORT=4000
+EXPOSE 4000
 
-# Health check
+# 🛡️ RECTIFIED: Health check now monitors the correct port
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+  CMD curl -f http://localhost:4000/health || exit 1
 
 # Use tini as init
 ENTRYPOINT ["/sbin/tini", "--"]
 
-# Start the server
-CMD ["node", "server.js"]
+# 🛡️ RECTIFIED: Enforcing the Preload Shield
+CMD ["node", "--import", "./preload-shield.js", "server.js"]

@@ -1,127 +1,35 @@
-#!/* eslint-disable */
-/*
- * 🏛️ WILSYS OS - ERROR HANDLING ENGINE
- * Standard: ES Module (Surgically Standardized)
- * Purpose: Forensic Error Tracking & Compliance Enforcement
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - FORENSIC ERROR NUCLEUS [V1.1.0-SINGULARITY]                                                                                 ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-export class AppError extends Error {
-  constructor(message, statusCode, code, details = {}) {
+export class WilsyBaseError extends Error {
+  constructor(message, options = {}) {
     super(message);
-    this.statusCode = statusCode;
-    this.code = code;
-    this.details = details;
-    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
-    this.isOperational = true;
-    this.timestamp = new Date().toISOString();
-    Error.captureStackTrace(this, this.constructor);
+    this.options = options;
+    this.code = options.code || 'ERR_WILSY_INTERNAL';
+    this.status = options.status || 500;
   }
 }
 
-export class ValidationError extends AppError {
-  constructor(message, details = {}) {
-    super(message, 400, 'VALIDATION_ERROR', details);
-  }
-}
-
-export class AuthenticationError extends AppError {
-  constructor(message = 'Authentication failed', details = {}) {
-    super(message, 401, 'AUTHENTICATION_ERROR', details);
-  }
-}
-
-export class AuthorizationError extends AppError {
-  constructor(message = 'Permission denied', details = {}) {
-    super(message, 403, 'AUTHORIZATION_ERROR', details);
-  }
-}
-
-export class NotFoundError extends AppError {
-  constructor(message = 'Resource not found', details = {}) {
-    super(message, 404, 'NOT_FOUND_ERROR', details);
-  }
-}
-
-export class ConflictError extends AppError {
-  constructor(message, details = {}) {
-    super(message, 409, 'CONFLICT_ERROR', details);
-  }
-}
-
-export class RateLimitError extends AppError {
-  constructor(message = 'Too many requests', details = {}) {
-    super(message, 429, 'RATE_LIMIT_ERROR', details);
-  }
-}
-
-export class ComplianceError extends AppError {
-  constructor(message, details = {}) {
-    super(message, 451, 'COMPLIANCE_VIOLATION', details);
-  }
-}
-
-export class RetryableError extends AppError {
-  constructor(message, details = {}) {
-    super(message, 503, 'RETRYABLE_SERVICE_ERROR', details);
-  }
-}
-
-export class ServiceUnavailableError extends AppError {
-  constructor(message, details = {}) {
-    super(message, 503, 'SERVICE_UNAVAILABLE', details);
-  }
-}
-
-export class DataIntegrityError extends AppError {
-  constructor(message, details = {}) {
-    super(message, 500, 'DATA_INTEGRITY_FAILURE', details);
-  }
-}
-
-export class CircuitBreakerError extends AppError {
-  constructor(message, details = {}) {
-    super(message, 503, 'CIRCUIT_BREAKER_OPEN', details);
-  }
-}
-
-// ============================================================================
-// BLOCKCHAIN & REGULATORY SPECIALIZED ERRORS
-// ============================================================================
-
-export class BlockchainAnchorError extends AppError {
-  constructor(message, details = {}) {
-    super(message, 502, 'BLOCKCHAIN_ANCHOR_FAILURE', details);
-  }
-}
-
+export class ValidationError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 400 }); } }
+export class ComplianceError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 403 }); } }
+export class RegulatoryDeadlineError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 403 }); } }
+export class AuthorizationError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 403 }); } }
+export class NotFoundError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 404 }); } }
+export class DataIntegrityError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 500 }); } }
+export class CircuitBreakerError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 503 }); } }
+export class RetryableError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 503 }); } }
+export class ServiceUnavailableError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 503 }); } }
+export class ConflictError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 409 }); } }
+export class AuthenticationError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 401 }); } }
+export class RateLimitError extends WilsyBaseError { constructor(m, o) { super(m, { ...o, status: 429 }); } }
 export class LPCComplianceError extends ComplianceError {}
 export class FICAComplianceError extends ComplianceError {}
 export class GDPRComplianceError extends ComplianceError {}
 export class POPIAComplianceError extends ComplianceError {}
-export class RegulatoryDeadlineError extends AppError {
-  constructor(message, details = {}) {
-    super(message, 403, 'REGULATORY_DEADLINE_EXCEEDED', details);
-  }
-}
-
-/*
- * Investor-Grade Error Factory
- */
-export const ErrorFactory = {
-  create(type, message, details) {
-    switch (type) {
-      case 'AUTH':
-        return new AuthenticationError(message, details);
-      case 'VALIDATION':
-        return new ValidationError(message, details);
-      case 'COMPLIANCE':
-        return new ComplianceError(message, details);
-      case 'BLOCKCHAIN':
-        return new BlockchainAnchorError(message, details);
-      default:
-        return new AppError(message, 500, 'INTERNAL_SERVER_ERROR', details);
-    }
-  },
-};
-
-export default AppError;
+export class MultiJurisdictionError extends ComplianceError {}
+export class BlockchainAnchorError extends WilsyBaseError {}
+export class QuantumSecurityError extends WilsyBaseError {}

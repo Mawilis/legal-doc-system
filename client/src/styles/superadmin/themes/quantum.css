@@ -1,0 +1,23 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  ⚡ QUANTUM THEME - WILSY OS 2050                                         ║
+  ║  Quantum State Visualization Theme                                       ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+[data-theme="quantum"] {
+  --theme-primary: var(--sa-quantum-500);
+  --theme-secondary: var(--sa-quantum-300);
+  --theme-gradient: linear-gradient(135deg, var(--sa-quantum-600), var(--sa-quantum-400));
+  --theme-glow: 0 0 20px var(--sa-quantum-500);
+
+  --theme-bg-primary: #0a0f1a;
+  --theme-bg-secondary: #0f1420;
+  --theme-bg-tertiary: #141a2a;
+
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: #b0c0ff;
+  --theme-text-accent: #66a3ff;
+}
+
+.theme-quantum .sa-quantum-glow {
+  animation: quantum-glow 2s ease-in-out infinite;
+}

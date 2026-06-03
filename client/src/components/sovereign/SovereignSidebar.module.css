@@ -1,0 +1,267 @@
+/* * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - TRILLION-DOLLAR TITAN SIDEBAR [V55.0.0-SPACEX-CLASS]                                                                        ║
+ * ║ [CARBON FIBER MATRIX | BIOMETRIC LASER SCANNER | NEURAL PHOSPHOR GLOW | ORBITAL RADIO PHYSICS]                                         ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 55.0.0-SPACEX | PRODUCTION READY | TRILLION DOLLAR SPEC                                                                       ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+.sidebarContainer {
+  width: 340px;
+  height: 100dvh;
+  background: radial-gradient(circle at 0% 0%, #0c0c0c 0%, #000 100%);
+  border-right: 1px solid rgba(212, 175, 55, 0.2);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 25px 0 60px rgba(0, 0, 0, 1);
+  z-index: 100;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Carbon Mesh Overlay - Defines the industrial texture */
+.sidebarContainer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 12px);
+  pointer-events: none;
+}
+
+.identityBlock {
+  height: 95px;
+  padding: 0 28px;
+  background: linear-gradient(180deg, #0a0a0a 0%, #000 100%);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  display: flex;
+  align-items: center;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.navSection {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #D4AF37 #000;
+}
+
+.navLabel {
+  font-family: sans-serif;
+  font-size: 0.5rem;
+  font-weight: 900;
+  color: #333;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  margin: 10px 0 5px 10px;
+}
+
+.navItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  background: #050505;
+  border: 1px solid #151515;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 900;
+  font-size: 0.65rem;
+}
+
+.navItem:hover {
+  background: #0a0a0a;
+  border-color: rgba(212, 175, 55, 0.4);
+  color: #D4AF37;
+  transform: translateX(4px);
+}
+
+.navItemActive {
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.1) 0%, transparent 100%);
+  border-left: 2px solid #D4AF37;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+}
+
+.iconWrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  border-radius: 4px;
+  border: 1px solid #222;
+}
+
+.navItemActive .iconWrapper {
+  border-color: #D4AF37;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.killSwitch {
+  width: 100%;
+  padding: 16px;
+  background: #0a0000;
+  border: 1px solid #550000;
+  color: #ff3333;
+  text-transform: uppercase;
+  font-weight: 900;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.killSwitch:hover {
+  background: #ff1a1a;
+  color: #fff;
+  border-color: #ff1a1a;
+  box-shadow: 0 0 20px rgba(255, 26, 26, 0.5);
+}
+WILSYEOFcat > /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/SovereignSidebar.module.css << 'WILSYEOF'
+/* * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - TRILLION-DOLLAR TITAN SIDEBAR [V55.0.0-SPACEX-CLASS]                                                                        ║
+ * ║ [CARBON FIBER MATRIX | BIOMETRIC LASER SCANNER | NEURAL PHOSPHOR GLOW | ORBITAL RADIO PHYSICS]                                         ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 55.0.0-SPACEX | PRODUCTION READY | TRILLION DOLLAR SPEC                                                                       ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+.sidebarContainer {
+  width: 340px;
+  height: 100dvh;
+  background: radial-gradient(circle at 0% 0%, #0c0c0c 0%, #000 100%);
+  border-right: 1px solid rgba(212, 175, 55, 0.2);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 25px 0 60px rgba(0, 0, 0, 1);
+  z-index: 100;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Carbon Mesh Overlay - Defines the industrial texture */
+.sidebarContainer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 12px);
+  pointer-events: none;
+}
+
+.identityBlock {
+  height: 95px;
+  padding: 0 28px;
+  background: linear-gradient(180deg, #0a0a0a 0%, #000 100%);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  display: flex;
+  align-items: center;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.navSection {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #D4AF37 #000;
+}
+
+.navLabel {
+  font-family: sans-serif;
+  font-size: 0.5rem;
+  font-weight: 900;
+  color: #333;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  margin: 10px 0 5px 10px;
+}
+
+.navItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  background: #050505;
+  border: 1px solid #151515;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 900;
+  font-size: 0.65rem;
+}
+
+.navItem:hover {
+  background: #0a0a0a;
+  border-color: rgba(212, 175, 55, 0.4);
+  color: #D4AF37;
+  transform: translateX(4px);
+}
+
+.navItemActive {
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.1) 0%, transparent 100%);
+  border-left: 2px solid #D4AF37;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+}
+
+.iconWrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  border-radius: 4px;
+  border: 1px solid #222;
+}
+
+.navItemActive .iconWrapper {
+  border-color: #D4AF37;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.killSwitch {
+  width: 100%;
+  padding: 16px;
+  background: #0a0000;
+  border: 1px solid #550000;
+  color: #ff3333;
+  text-transform: uppercase;
+  font-weight: 900;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.killSwitch:hover {
+  background: #ff1a1a;
+  color: #fff;
+  border-color: #ff1a1a;
+  box-shadow: 0 0 20px rgba(255, 26, 26, 0.5);
+}

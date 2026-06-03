@@ -1,0 +1,246 @@
+# ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+# ║ WILSY OS - PROMETHEUS SOVEREIGN ALERT RULES [V36.3.0-BOARDROOM-NEXUS]                                                                    ║
+# ║ [INSTITUTIONAL MONITORING | CORRELATION CHAIN AUDIT | REGULATOR LIFECYCLE | PDF RESILIENCE]                                               ║
+# ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+# ║ VERSION: 36.3.0-BOARDROOM-NEXUS | PRODUCTION READY | BILLION DOLLAR SPEC                                                                 ║
+# ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                            ║
+# ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/monitoring/prometheus/rules/wilsy_sovereign_alerts.yaml                             ║
+# ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+# ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                   ║
+# ║ • Wilson Khanyezi (CEO/Lead Architect) – Mandated real‑time boardroom alerting for token refresh failures and regulator lifecycles.      ║
+# ║ • AI Engineering (DeepSeek) – FORTIFIED: Added correlation chain validation, exponential backoff monitoring, and full YAML comments.      ║
+# ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+#
+# 🔍 WHY THESE RULES OBLITERATE COMPETITION:
+#   - **Correlation Chain Validation**: Detects when PDF generation requests are initiated but never completed,
+#     identifying authentication fractures or silent refresh failures before directors notice.
+#   - **Exponential Backoff Monitoring**: Alerts when refresh attempts exceed thresholds, helping diagnose
+#     refresh endpoint instability or network issues.
+#   - **Regulator Lifecycle Auditing**: Tracks regulator account state transitions (ACTIVE → SUSPENDED → TERMINATED)
+#     with correlation IDs, providing forensic evidence for compliance reviews.
+#   - **Boardroom‑Ready Annotations**: Every alert includes actionable descriptions, severity labels, and
+#     direct links to Grafana dashboards for immediate investigation.
+#
+# 🏛️ INSTRUMENTATION REQUIRED:
+#   The following metrics must be exposed by the WILSY OS backend and frontend telemetry collectors:
+#   - pdf_refresh_attempts_total{tenantId, outcome="success|error"}
+#   - pdf_request_failure_total{tenantId}
+#   - pdf_request_events_total{eventType="REQUEST_INIT|REQUEST_SUCCESS|REQUEST_RETRY_SUCCESS|REQUEST_FAILURE"}
+#   - pdf_refresh_backoff_delay_seconds{tenantId, attempt}
+#   - regulator_access_failure_total{tenantId, regulatorId, outcome}
+#   - regulator_lifecycle_transitions_total{tenantId, regulatorId, correlationId, newState}
+
+groups:
+  # ============================================================================
+  # 📄 PDF AUTHENTICATION & RESILIENCE ALERTS
+  # ============================================================================
+  - name: PDFAuthAlerts
+    interval: 30s
+    rules:
+      # ------------------------------------------------------------------------
+      # ExcessiveRefreshAttempts
+      # ------------------------------------------------------------------------
+      - alert: ExcessiveRefreshAttempts
+        expr: sum by (tenantId) (pdf_refresh_attempts_total{outcome="error"}) > 3
+        for: 1m
+        labels:
+          severity: warning
+          service: wilsy-pdf-generator
+          category: authentication
+        annotations:
+          summary: "Tenant {{ $labels.tenantId }} exceeded refresh attempts"
+          description: |
+            More than 3 token refresh attempts failed in the last minute for tenant {{ $labels.tenantId }}.
+            This may indicate a stale refresh token, network issues to the auth endpoint, or a misconfigured JWT secret.
+            Action: Check /auth/refresh-token endpoint latency and error rates. Verify that refresh tokens are
+            stored correctly in localStorage and not expired.
+          runbook_url: "https://docs.wilsy.ai/runbooks/excessive-refresh-attempts"
+          dashboard_url: "https://grafana.wilsy.ai/d/pdf-resilience"
+          severity_icon: "⚠️"
+          forensic_notes: |
+            Each failed refresh attempt is logged with correlationId. Use Grafana to trace the chain from
+            expired JWT → refresh failure → eventual director notification.
+
+      # ------------------------------------------------------------------------
+      # RefreshFailureCascade
+      # ------------------------------------------------------------------------
+      - alert: RefreshFailureCascade
+        expr: sum by (tenantId) (pdf_request_failure_total) > 5
+        for: 5m
+        labels:
+          severity: critical
+          service: wilsy-pdf-generator
+          category: availability
+        annotations:
+          summary: "Tenant {{ $labels.tenantId }} experiencing repeated PDF failures"
+          description: |
+            More than 5 PDF request failures in the last 5 minutes for tenant {{ $labels.tenantId }}.
+            This likely correlates with failed token refresh attempts and may prevent directors from
+            generating forensic audit reports, invoices, or compliance statements.
+          action: "Immediately check refresh token validity and auth endpoint health. If the refresh endpoint is down, restart the auth service."
+          runbook_url: "https://docs.wilsy.ai/runbooks/pdf-failure-cascade"
+          dashboard_url: "https://grafana.wilsy.ai/d/pdf-failures"
+          severity_icon: "🔥"
+
+      # ------------------------------------------------------------------------
+      # CorrelationChainBroken
+      # ------------------------------------------------------------------------
+      - alert: CorrelationChainBroken
+        expr: |
+          count(pdf_request_events_total{eventType="REQUEST_INIT"})
+          - count(pdf_request_events_total{eventType="REQUEST_SUCCESS"}
+          or pdf_request_events_total{eventType="REQUEST_RETRY_SUCCESS"}) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: wilsy-pdf-generator
+          category: audit
+        annotations:
+          summary: "Correlation chain broken – PDF requests initiated but not completed"
+          description: |
+            Some correlation IDs were initiated but never completed within 5 minutes.
+            This indicates an authentication fracture, a server‑side crash, or a network partition.
+            Every incomplete correlation ID represents a director who attempted to generate a PDF but failed.
+          action: "Check backend logs for PDF generation errors, verify database connectivity, and ensure the token refresh flow is working."
+          forensic_notes: |
+            Use the correlation IDs to query telemetry:
+            `SELECT * FROM telemetry WHERE correlationId IN (SELECT correlationId FROM pdf_requests WHERE status='INIT' AND timestamp < now()-5m)`
+          dashboard_url: "https://grafana.wilsy.ai/d/correlation-chain"
+          severity_icon: "🔗"
+
+      # ------------------------------------------------------------------------
+      # RefreshBackoffExhaustion
+      # ------------------------------------------------------------------------
+      - alert: RefreshBackoffExhaustion
+        expr: sum by (tenantId) (pdf_refresh_backoff_delay_seconds) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: wilsy-pdf-generator
+          category: performance
+        annotations:
+          summary: "Tenant {{ $labels.tenantId }} experiencing extended refresh backoff"
+          description: |
+            Refresh backoff delay exceeded 10 seconds, meaning the frontend is retrying token refresh
+            with exponential delays (typically after multiple failures). Directors may experience delays
+            before PDF generation succeeds or fails gracefully.
+          action: "Investigate refresh endpoint latency and error rates. Consider increasing refresh token expiry or adding a dedicated refresh retry queue."
+
+  # ============================================================================
+  # 👤 REGULATOR LIFECYCLE ALERTS (POPIA / GDPR Compliance)
+  # ============================================================================
+  - name: RegulatorLifecycleAlerts
+    interval: 30s
+    rules:
+      # ------------------------------------------------------------------------
+      # RegulatorAuthFailureCascade
+      # ------------------------------------------------------------------------
+      - alert: RegulatorAuthFailureCascade
+        expr: sum by (tenantId, regulatorId) (regulator_access_failure_total{outcome="FAILURE"}) > 3
+        for: 5m
+        labels:
+          severity: critical
+          service: wilsy-compliance
+          category: security
+          compliance: POPIA, GDPR
+        annotations:
+          summary: "Regulator {{ $labels.regulatorId }} Authentication Failure Cascade"
+          description: |
+            Regulator {{ $labels.regulatorId }} (tenant {{ $labels.tenantId }}) failed authentication 3 times in 5 minutes.
+            The account is automatically suspended to prevent unauthorised access to sensitive compliance data.
+            This may indicate a brute‑force attack, a compromised credential, or a misconfigured regulator portal.
+          action: |
+            1. Immediately revoke all access tokens for this regulator.
+            2. Notify the compliance officer.
+            3. Review audit logs for the regulator's recent access attempts.
+          runbook_url: "https://docs.wilsy.ai/runbooks/regulator-auth-failure"
+          forensic_notes: |
+            Use correlationId to trace all failed attempts. Check if the IP address matches known regulator ranges.
+          severity_icon: "🚨"
+
+      # ------------------------------------------------------------------------
+      # RegulatorTerminated
+      # ------------------------------------------------------------------------
+      - alert: RegulatorTerminated
+        expr: sum by (tenantId, regulatorId, correlationId) (regulator_lifecycle_transitions_total{newState="TERMINATED"}) > 0
+        for: 0s  # instant alert
+        labels:
+          severity: critical
+          service: wilsy-compliance
+          category: audit
+        annotations:
+          summary: "Regulator account terminated"
+          description: |
+            Regulator {{ $labels.regulatorId }} (tenant {{ $labels.tenantId }}) transitioned to TERMINATED state.
+            Correlation ID: {{ $labels.correlationId }}. This event is irrevocable and permanently revokes
+            all access for this regulator.
+          action: |
+            Verify if this termination was authorised by the compliance officer. If unauthorised,
+            escalate to incident response immediately.
+          forensic_notes: |
+            The termination event is cryptographically sealed in the ForensicLog collection.
+            Use the correlationId to retrieve the full event chain.
+          dashboard_url: "https://grafana.wilsy.ai/d/regulator-lifecycle"
+          severity_icon: "⚰️"
+
+      # ------------------------------------------------------------------------
+      # RegulatorSuspended (additional useful alert)
+      # ------------------------------------------------------------------------
+      - alert: RegulatorSuspended
+        expr: sum by (tenantId, regulatorId) (regulator_lifecycle_transitions_total{newState="SUSPENDED"}) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: wilsy-compliance
+          category: security
+        annotations:
+          summary: "Regulator account suspended"
+          description: |
+            Regulator {{ $labels.regulatorId }} (tenant {{ $labels.tenantId }}) has been suspended.
+            Suspension is reversible, but requires compliance officer override.
+          action: "Review the reason for suspension. If due to failed authentication, consider resetting credentials."
+
+  # ============================================================================
+  # 🏛️ BOARDROOM HEALTH ALERTS (SLA / Performance)
+  # ============================================================================
+  - name: BoardroomSLAAlerts
+    interval: 1m
+    rules:
+      # ------------------------------------------------------------------------
+      # PDFGenerationSlowdown
+      # ------------------------------------------------------------------------
+      - alert: PDFGenerationSlowdown
+        expr: histogram_quantile(0.95, sum by (le) (pdf_generation_duration_seconds_bucket)) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: wilsy-pdf-generator
+          category: performance
+        annotations:
+          summary: "PDF generation P95 latency exceeds 5 seconds"
+          description: |
+            The 95th percentile PDF generation latency is above 5 seconds for the last 5 minutes.
+            This may impact director experience during boardroom sessions.
+          action: "Check CPU/memory of the PDF generator service. Consider scaling horizontally or optimising PDFKit rendering."
+          dashboard_url: "https://grafana.wilsy.ai/d/pdf-performance"
+
+      # ------------------------------------------------------------------------
+      # RefreshTokenExpiryHigh
+      # ------------------------------------------------------------------------
+      - alert: RefreshTokenExpiryHigh
+        expr: avg by (tenantId) (refresh_token_expiry_seconds) < 86400
+        for: 1m
+        labels:
+          severity: warning
+          service: wilsy-auth
+          category: security
+        annotations:
+          summary: "Refresh token expiry less than 24 hours"
+          description: |
+            Refresh tokens for tenant {{ $labels.tenantId }} are expiring in less than 24 hours.
+            Configure longer expiry or implement automatic renewal before expiry.
+          action: "Increase JWT_REFRESH_EXPIRY environment variable or set up a background renewal job."
+
+# ============================================================================
+# 📈 END OF ALERT RULES – WILSY OS FORTIFIED FOR MARS
+# ============================================================================

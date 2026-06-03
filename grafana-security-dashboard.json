@@ -1,0 +1,126 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-security-hud",
+    "title": "🏛️ WILSY OS - Sovereign Security Dashboard",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Institutional Intrusion Strikes (Rate/5m)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_intrusion_attempts_total{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "Attempts / Sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 1 },
+                { "color": "red", "value": 5 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Post-Quantum Encryption Integrity",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "(wilsy_counter_encryption_validations_success_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_encryption_validations_total{tenantId=\"GLOBAL_ROOT\"}) * 100",
+            "legendFormat": "Validation Success"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 98 },
+                { "color": "green", "value": 99.99 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Audit Log Finality Failures",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_audit_log_failures_total{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "Log Fractures"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "red", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Sovereign Forensic Chain Validation (Valid vs Fractured)",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_counter_forensics_chain_validations_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Seals Validated"
+          },
+          {
+            "expr": "wilsy_counter_forensics_chain_failures_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Seals Fractured"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "drawStyle": "bars",
+              "stacking": { "mode": "normal" }
+            }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Seals Fractured" },
+              "properties": [ { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } } ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "Seals Validated" },
+              "properties": [ { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } } ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/**
  * ============================================================================
  * QUANTUM SENTINEL: REGULATION SYNCHRONIZATION ENGINE
  * ============================================================================
@@ -36,30 +37,32 @@
  * Compliance Jurisdiction: All SA statutes + Pan-African + Global frameworks
  * Security Classification: Quantum-Resilient (TLS 1.3 + HMAC-SHA384)
  * Dependencies: axios@^1.6.0, node-cron@^3.0.3, cheerio@^1.0.0, natural@^6.6.0
- * Install: npm install axios@^1.6.0 node-cron@^3.0.3 cheerio@^1.0.0 natural@^6.6.0
  */
 
 // ============================================================================
-// QUANTUM IMPORTS: Dependencies from the Eternal Forge
+// QUANTUM IMPORTS: Dependencies from the Eternal Forge (ES MODULE)
 // ============================================================================
-require('dotenv').config();
-const crypto = require('crypto');
-
-const { createHash, createHmac } = crypto;
-const axios = require('axios');
-const cheerio = require('cheerio');
-const { diffWords } = require('diff');
-const mongoose = require('mongoose');
-const natural = require('natural');
-const cron = require('node-cron');
+import dotenv from 'dotenv';
+import crypto from 'crypto';
+import axios from 'axios';
+import cheerio from 'cheerio';
+import { diffWords } from 'diff';
+import mongoose from 'mongoose';
+import natural from 'natural';
+import cron from 'node-cron';
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
 
 // Internal quantum dependencies
-const ComplianceRule = require('../models/complianceRule');
-const Regulation = require('../models/regulation.js');
-const AuditLogger = require('../utils/auditLogger');
-const { encryptData, decryptData } = require('../utils/cryptoUtils');
-const { validateRegulation } = require('../validators/regulationValidator');
-const NotificationService = require('./notificationService');
+import ComplianceRule from '../models/complianceRule.js';
+import Regulation from '../models/regulation.js';
+import AuditLogger from '../utils/auditLogger.js';
+import { encryptData, decryptData } from '../utils/cryptoUtils.js';
+import { validateRegulation } from '../validators/regulationValidator.js';
+import NotificationService from './notificationService.js';
+
+dotenv.config();
 
 // ============================================================================
 // QUANTUM CONSTANTS: Immutable Configuration Parameters
@@ -438,7 +441,7 @@ class RegulationSyncEngine {
         'User-Agent': 'WilsyOS-RegulationSync/1.0.0',
         'Accept-Encoding': 'gzip, deflate, br',
       },
-      httpsAgent: new (require('https').Agent)({
+      httpsAgent: new https.Agent({
         secureProtocol: 'TLSv1_3_method',
         rejectUnauthorized: true,
       }),
@@ -1887,8 +1890,6 @@ class RegulationSyncEngine {
 
       // Save to backup location
       const backupPath = process.env.REGULATION_BACKUP_PATH || './backups/regulations';
-      const fs = require('fs');
-      const path = require('path');
 
       // Ensure backup directory exists
       if (!fs.existsSync(backupPath)) {
@@ -1937,9 +1938,6 @@ class RegulationSyncEngine {
    */
   cleanupOldBackups(backupPath) {
     try {
-      const fs = require('fs');
-      const path = require('path');
-
       const files = fs.readdirSync(backupPath);
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -2084,7 +2082,7 @@ class RegulationSyncEngine {
       source: data.source,
     });
 
-    return createHash('sha256').update(hashInput).digest('hex').substring(0, 16); // Short hash for readability
+    return crypto.createHash('sha256').update(hashInput).digest('hex').substring(0, 16); // Short hash for readability
   }
 
   /*
@@ -2096,7 +2094,7 @@ class RegulationSyncEngine {
         ? regulation.content
         : JSON.stringify(regulation.content);
 
-    return createHash('sha384').update(hashInput).digest('hex');
+    return crypto.createHash('sha384').update(hashInput).digest('hex');
   }
 
   /*
@@ -2107,7 +2105,7 @@ class RegulationSyncEngine {
       data = JSON.stringify(data);
     }
 
-    return createHash('sha384').update(data).digest('hex');
+    return crypto.createHash('sha384').update(data).digest('hex');
   }
 
   /*
@@ -2202,7 +2200,7 @@ class RegulationSyncEngine {
 }
 
 // ============================================================================
-// QUANTUM EXPORT: Make Sync Engine Available
+// QUANTUM EXPORT: Make Sync Engine Available (ES MODULE)
 // ============================================================================
 
 // Singleton instance
@@ -2219,6 +2217,7 @@ function getRegulationSyncEngine() {
   return syncEngineInstance;
 }
 
+export { RegulationSyncEngine, getRegulationSyncEngine, REGULATION_SOURCES, SA_LEGAL_FRAMEWORKS, SYNC_CONFIG };
 export default {
   RegulationSyncEngine,
   getRegulationSyncEngine,
@@ -2266,45 +2265,3 @@ if (process.env.NODE_ENV === 'test') {
   // Run test if called directly in test environment
   testEngine().catch(console.error);
 }
-
-// ============================================================================
-// QUANTUM FOOTER: Eternal Legacy
-// ============================================================================
-
-/*
- * VALUATION QUANTUM:
- * This regulation synchronization engine eliminates regulatory blind spots,
- * reduces compliance research time by 95%, and ensures Wilsy clients are
- * always operating within current legal frameworks. Projected to save
- * South African businesses R500M annually in compliance-related costs and
- * position Wilsy as the definitive legal intelligence platform across Africa.
- *
- * COMPLIANCE IMPACT:
- * - POPIA: Real-time updates to 8 lawful processing conditions
- * - PAIA: Automated tracking of access request procedure changes
- * - Companies Act: Immediate detection of record-keeping requirement amendments
- * - ECT Act: Continuous monitoring of electronic signature standards
- * - FICA: Live updates to AML/KYC requirements
- * - International: Cross-border regulation synchronization
- *
- * AFRICAN EXPANSION VECTORS:
- * - Nigeria: NDPA and CBN regulations synchronization
- * - Kenya: Data Protection Act and CMA regulations
- * - Ghana: Data Protection Act and Companies Act
- * - Mauritius: Data Protection Act and Financial Services Act
- * - Rwanda: Data Protection Law and RDB regulations
- *
- * QUANTUM INVOCATION: Wilsy Touching Lives Eternally.
- */
-
-/*
- * QUANTUM REFLECTION:
- * "The law is not a set of static rules but a living, breathing entity
- * that evolves with society. Our duty is not just to know the law,
- * but to anticipate its evolution." - Wilson Khanyezi, Chief Architect
- *
- * This engine ensures Wilsy OS not only knows the law but anticipates
- * its evolution, creating a proactive compliance paradigm that transforms
- * legal obligations from burdens into strategic advantages.
- * Wilsy OS: Where Law Meets Intelligence.
- */

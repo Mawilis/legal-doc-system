@@ -1,0 +1,100 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-boardroom-narrative",
+    "title": "🏛️ WILSY OS - Sovereign Boardroom Narrative",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "text",
+        "title": "Institutional Executive Summary",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "# Executive Summary\nWilsy OS is operating at **Institutional Finality**. Global SLA remains anchored at **99.99%** with a regulatory compliance index of **95%+**. Our infrastructure is currently scaling with **92.5% renewable energy** mix, fulfilling the ESG mandate of our primary investors. Risks are mitigated via real-time tamper detection, and capital preservation through penalty avoidance remains at peak velocity."
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Risk Highlights Index",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_risk_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Risk Level %" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 20 },
+                { "color": "red", "value": 50 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "Opportunity Map Index",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_opportunity_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Growth Potential %" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 50 },
+                { "color": "green", "value": 85 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Narrative KPI Velocity (Trends)",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA Score" },
+          { "expr": "wilsy_gauge_compliance_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Compliance Index" },
+          { "expr": "wilsy_gauge_efficiency_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Efficiency Index" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "palette-classic" },
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+          }
+        }
+      },
+      {
+        "type": "text",
+        "title": "Boardroom Strategic Overlay",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 20, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### Strategic Direction\n**Opportunities:** Immediate expansion into US/APAC shards is supported by current efficiency benchmarks. High penalty avoidance rates suggest room for increased transaction volume without regulatory friction.\n\n**Risks:** While low, system load trends warrant the activation of the next container shard if throughput increases by >15% over the next 30-day cycle."
+        }
+      }
+    ]
+  }
+}

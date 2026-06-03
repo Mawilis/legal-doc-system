@@ -9,7 +9,7 @@
  * • Solves: R1.9M/year integration maintenance
  * • Generates: R3.8M/year automation value
  * • Compliance: POPIA §19, SOC2, ISO 27001
- * 
+ *
  * @module tenantApi
  * @description Enterprise tenant API service with circuit breakers,
  * retry logic, PII redaction, and forensic request logging.
@@ -20,14 +20,15 @@ import { auditLogger, AuditLevel } from '../../utils/auditLogger.js';
 import { generateHash, randomBytes } from '../../utils/cryptoUtils.js';
 import logger from '../../utils/logger.js';
 import redactSensitive from '../../utils/redactSensitive.js';
+import { getClientApiBaseUrl, getClientApiTimeout } from '../../config/environment.js';
 
 // ════════════════════════════════════════════════════════════════════════
 // CONSTANTS
 // ════════════════════════════════════════════════════════════════════════
 
 const API_VERSION = 'v2';
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-const TIMEOUT = 30000; // 30 seconds
+const BASE_URL = getClientApiBaseUrl();
+const TIMEOUT = getClientApiTimeout();
 const RETRY_ATTEMPTS = 3;
 const RETRY_DELAY = 1000; // 1 second
 const CIRCUIT_BREAKER_THRESHOLD = 5;
@@ -139,7 +140,7 @@ class TenantApiClient {
     this.client.interceptors.response.use(
       (response) => {
         const duration = Date.now() - (response.config.metadata?.startTime || Date.now());
-        
+
         logger.debug('API_RESPONSE', {
           status: response.status,
           url: response.config.url,
@@ -152,7 +153,7 @@ class TenantApiClient {
       },
       (error) => {
         this.circuitBreaker.recordFailure();
-        
+
         logger.error('API_RESPONSE_ERROR', {
           status: error.response?.status,
           url: error.config?.url,
@@ -223,7 +224,7 @@ class TenantApiClient {
     const requestId = randomBytes(16);
 
     return this._executeWithRetry(async () => {
-      const response = await this.client.get('/tenants', { 
+      const response = await this.client.get('/tenants', {
         params,
         headers: { 'X-Request-ID': requestId }
       });

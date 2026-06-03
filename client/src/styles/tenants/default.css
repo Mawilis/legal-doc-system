@@ -1,0 +1,30 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🏢 DEFAULT TENANT THEME - WILSY OS 2050                                  ║
+  ║  Base theme applied when no tenant context                                ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+[data-tenant="default"] {
+  --tenant-primary-50: #f5f3ff;
+  --tenant-primary-100: #ede9fe;
+  --tenant-primary-200: #ddd6fe;
+  --tenant-primary-300: #c4b5fd;
+  --tenant-primary-400: #a78bfa;
+  --tenant-primary-500: #8b5cf6;
+  --tenant-primary-600: #7c3aed;
+  --tenant-primary-700: #6d28d9;
+  --tenant-primary-800: #5b21b6;
+  --tenant-primary-900: #4c1d95;
+
+  --tenant-secondary-50: #eff6ff;
+  --tenant-secondary-100: #dbeafe;
+  --tenant-secondary-200: #bfdbfe;
+  --tenant-secondary-300: #93c5fd;
+  --tenant-secondary-400: #60a5fa;
+  --tenant-secondary-500: #3b82f6;
+  --tenant-secondary-600: #2563eb;
+  --tenant-secondary-700: #1d4ed8;
+  --tenant-secondary-800: #1e40af;
+  --tenant-secondary-900: #1e3a8a;
+
+  --tenant-logo: url('/logos/wilsy-default.svg');
+}

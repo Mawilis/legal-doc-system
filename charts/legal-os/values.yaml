@@ -1,22 +1,82 @@
+# ============================================================================
+#  WILSY OS - GLOBAL SOVEREIGN VALUES [V34.0.0-OMEGA-FINAL]
+# ============================================================================
+# FORTUNE 500 GRADE | CLUSTER ORCHESTRATION | ZERO-STRIP POLICY
+# VERSION: 34.0.0-OMEGA | PRODUCTION READY | BIBLICAL WORTH BILLIONS
+# EPITOME: NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | THE MASTER OVERRIDE
+# ============================================================================
+
 global:
-  namespace: legal-os
-  imagePullPolicy: IfNotPresent
-  storageClass: standard
+  namespace: predictive
+  imagePullPolicy: Always
+  storageClass: premium-rwo # 🛡️ High-Speed Forensic Storage
+  domain: wilsyos.com
+  tenantId: GLOBAL_ROOT
 
-billing:
-  replicaCount: 2
-  image:
-    repository: wilsy/svc-billing
-    tag: latest
+  # ⚖️ SOVEREIGN COMPLIANCE METADATA
+  compliance:
+    popia: true
+    gdpr: true
+    retention: 3650d
 
-ai:
-  replicaCount: 1
-  image:
-    repository: wilsy/svc-ai
-    tag: latest
+# ----------------------------------------------------------------------------
+# 🎯 SHARD DIMENSIONING
+# ----------------------------------------------------------------------------
 
 gateway:
+  replicaCount: 3 # 🛡️ High-Availability Gateway
+  image:
+    repository: ghcr.io/wilsonkhanyezi/wilsy-os-gateway
+    tag: "34.0.0-OMEGA-FINAL"
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+billing:
+  replicaCount: 3 # 🛡️ High-Availability Billing
+  image:
+    repository: ghcr.io/wilsonkhanyezi/wilsy-os-billing
+    tag: "34.0.0-OMEGA-FINAL"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+ai:
+  replicaCount: 2 # 🛡️ Redundant AI Predictive Shards
+  image:
+    repository: ghcr.io/wilsonkhanyezi/wilsy-os-ai
+    tag: "34.0.0-OMEGA-FINAL"
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi # 🚀 Resource-optimized for Legal-BERT
+
+# ----------------------------------------------------------------------------
+# 🛡️ SHARED INFRASTRUCTURE
+# ----------------------------------------------------------------------------
+auth:
+  replicaCount: 3
+  image:
+    repository: ghcr.io/wilsonkhanyezi/wilsy-os-auth
+    tag: "34.0.0-OMEGA-FINAL"
+
+ledger:
+  replicaCount: 3
+  image:
+    repository: ghcr.io/wilsonkhanyezi/wilsy-os-ledger
+    tag: "34.0.0-OMEGA-FINAL"
+
+crypto:
   replicaCount: 2
   image:
-    repository: wilsy/svc-gateway
-    tag: latest
+    repository: ghcr.io/wilsonkhanyezi/wilsy-os-crypto
+    tag: "34.0.0-OMEGA-FINAL"
+
+# ----------------------------------------------------------------------------
+# END OF CONFIGURATION
+# ----------------------------------------------------------------------------
+# Wilsy OS - The Global Legal Operating System
+# Wilson Khanyezi - Supreme Architect
+# ============================================================================

@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * Wilsy OS - Document Template Registry
  * =======================================
  * FORENSIC-GRADE DOCUMENT ONTOLOGY ENGINE
@@ -961,6 +962,9 @@ class DocumentTemplateRegistry {
    * Get registry version
    * @returns {string} Registry version
    */
+  getVersion() {
+    return this._version;
+  }
 
   /*
    * Get registry statistics

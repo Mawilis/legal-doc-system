@@ -1,0 +1,121 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-sustainability-hud",
+    "title": "🏛️ WILSY OS - Sovereign Sustainability Dashboard",
+    "timezone": "browser",
+    "refresh": "30s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Institutional Energy Intake (kWh Rate)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_energy_consumption_kwh_total{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "kWh / 5m"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "kwh",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 5000 },
+                { "color": "red", "value": 10000 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Carbon Output Strike (kg CO2e)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 18, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_carbon_emissions_kg_total{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "kg CO2e"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "masskg",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "orange", "value": 500 },
+                { "color": "red", "value": 1000 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Green Efficiency (TX/kWh)",
+        "id": 3,
+        "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_counter_transactions_success_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_energy_consumption_kwh_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Value per Watt"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 2,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 0.5 },
+                { "color": "green", "value": 1.0 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "gauge",
+        "title": "Renewable Energy Mix (%)",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 16, "w": 24, "h": 6 },
+        "targets": [
+          {
+            "expr": "wilsy_gauge_renewable_energy_ratio{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Renewable Share"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 50 },
+                { "color": "green", "value": 90 }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

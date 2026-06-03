@@ -1,0 +1,119 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-forensic-hud",
+    "title": "🏛️ WILSY OS - Sovereign Forensic Dashboard",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Forensic Seal Verification Strike (Success vs Failure)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_counter_forensics_seal_validations_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Seals Validated"
+          },
+          {
+            "expr": "wilsy_counter_forensics_seal_failures_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Seal Fractures"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "drawStyle": "bars",
+              "stacking": { "mode": "normal" }
+            }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Seal Fractures" },
+              "properties": [ { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } } ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "Seals Validated" },
+              "properties": [ { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } } ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Tamper Ingress Velocity (Rate/5m)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 18, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(wilsy_counter_tamper_detection_events_total{tenantId=\"GLOBAL_ROOT\"}[5m])",
+            "legendFormat": "Tamper Events / Sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 1 },
+                { "color": "red", "value": 3 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Cryptographic Integrity Ratio",
+        "id": 3,
+        "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+        "targets": [
+          {
+            "expr": "(wilsy_counter_crypto_verifications_success_total{tenantId=\"GLOBAL_ROOT\"} / wilsy_counter_crypto_verifications_total{tenantId=\"GLOBAL_ROOT\"}) * 100",
+            "legendFormat": "Success Ratio"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 98 },
+                { "color": "green", "value": 99.99 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Forensic Chain Integrity Failures",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 16, "w": 24, "h": 6 },
+        "targets": [
+          {
+            "expr": "wilsy_counter_forensics_chain_integrity_failures_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Chain Fractures"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "fixedColor": "red", "mode": "fixed" }
+          }
+        }
+      }
+    ]
+  }
+}

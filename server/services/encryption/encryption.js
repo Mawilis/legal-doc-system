@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * ╔══════════════════════════════════════════════════════════════════════════════════════╗
  * ║                                                                                      ║
  * ║  ██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ███████╗███╗   ██╗ ██████╗██████╗        ║
@@ -115,20 +116,15 @@
 // SECTION 1: PRODUCTION DEPENDENCIES - VERSION-LOCKED, SECURITY-AUDITED
 // =============================================================================
 
-const crypto = require('crypto');
-const { promisify } = require('util');
+import crypto from 'crypto';
+import { promisify } from 'util';
+import fs from 'fs/promises';
+import path from 'path';
+import AWS from 'aws-sdk';
+import { performance, PerformanceObserver } from 'perf_hooks';
 
 const { createCipheriv, createDecipheriv, createHmac, randomBytes, scrypt, timingSafeEqual } =
   crypto;
-const { performance, PerformanceObserver } = require('perf_hooks');
-const fs = require('fs').promises;
-const path = require('path');
-
-// Production: AWS KMS for master key management
-const AWS = require('aws-sdk');
-
-// Production: HashiCorp Vault for key storage (alternative)
-// const vault = require('node-vault')({ endpoint: process.env.VAULT_ADDR, token: process.env.VAULT_TOKEN });
 
 // =============================================================================
 // SECTION 2: PRODUCTION CONFIGURATION - IMMUTABLE, SECURE

@@ -1,0 +1,136 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🔮 QUANTUM BUTTON - WILSY OS 2050                                        ║
+  ║  Supreme Authority Action Component                                      ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-quantum-btn {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--sa-quantum-600), var(--sa-quantum-400));
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.sa-quantum-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+  z-index: -1;
+}
+
+.sa-quantum-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px var(--sa-quantum-500);
+}
+
+.sa-quantum-btn:hover::before {
+  left: 100%;
+}
+
+.sa-quantum-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 10px -5px var(--sa-quantum-500);
+}
+
+.sa-quantum-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Button Variants */
+.sa-quantum-btn.forensic {
+  background: linear-gradient(135deg, var(--sa-forensic-600), var(--sa-forensic-400));
+}
+
+.sa-quantum-btn.forensic:hover {
+  box-shadow: 0 10px 20px -5px var(--sa-forensic-500);
+}
+
+.sa-quantum-btn.wealth {
+  background: linear-gradient(135deg, var(--sa-wealth-600), var(--sa-wealth-400));
+}
+
+.sa-quantum-btn.wealth:hover {
+  box-shadow: 0 10px 20px -5px var(--sa-wealth-500);
+}
+
+.sa-quantum-btn.critical {
+  background: linear-gradient(135deg, var(--sa-critical-600), var(--sa-critical-400));
+}
+
+.sa-quantum-btn.critical:hover {
+  box-shadow: 0 10px 20px -5px var(--sa-critical-500);
+}
+
+/* Button Sizes */
+.sa-quantum-btn.sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+}
+
+.sa-quantum-btn.lg {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+}
+
+.sa-quantum-btn.xl {
+  padding: 1.25rem 2.5rem;
+  font-size: 1.125rem;
+}
+
+/* Pulse Effect */
+.sa-quantum-btn.pulse {
+  animation: quantum-pulse 2s infinite;
+}
+
+@keyframes quantum-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--sa-quantum-500);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(51, 133, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(51, 133, 255, 0);
+  }
+}
+
+/* Loading State */
+.sa-quantum-btn.loading {
+  color: transparent;
+  pointer-events: none;
+}
+
+.sa-quantum-btn.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: button-spin 0.6s linear infinite;
+}
+
+@keyframes button-spin {
+  to { transform: rotate(360deg); }
+}

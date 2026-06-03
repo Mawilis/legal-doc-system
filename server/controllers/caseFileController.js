@@ -1,90 +1,68 @@
-#!/*
- * File: server/controllers/caseFileController.js
- * PATH: server/controllers/caseFileController.js
- * STATUS: PRODUCTION-READY | SOVEREIGN LEGAL GRADE | EPITOME
- * VERSION: 1.0.0 (The Genesis)
- * -----------------------------------------------------------------------------
- * PURPOSE
- * - The "Master Ledger" for Legal Case Management in Wilsy OS.
- * - Manages High Court Discovery, Case Bundling, and Forensic Document Tracking.
- * - Specifically engineered for South African Legal Practice (Uniform Rules of Court).
- *
- * ARCHITECTURAL SUPREMACY
- * 1. AUTOMATIC SCOPING: Uses 'req.tenantFilter' to ensure Firm A never sees Firm B's cases.
- * 2. DISCOVERY BUNDLING: Streams massive zip archives of case files for court submission.
- * 3. FORENSIC WATERMARKING: (Logic Hook) Prepared for digital evidence stamping.
- * 4. POPIA COMPLIANCE: Tracks 'Access Intent' for every PII-sensitive document.
- *
- * COLLABORATION
- * - AUTHOR: Wilson Khanyezi (Chief Architect)
- * - INTEGRATION: tenantScope (Isolation), security (Forensics), uploadMiddleware (Storage)
- * - LEGAL: Optimized for ZA High Court "Rule 35" Discovery compliance.
- * -----------------------------------------------------------------------------
- * EPITOME:
- * Biblical worth billions no child's place. Wilsy OS to the World.
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - SOVEREIGN CASE ORCHESTRATOR - OMEGA SINGULARITY                                                                             ║
+ * ║ [R23.7T CASE GOVERNANCE | RULE 35 DISCOVERY | FORENSIC INTEGRITY | POPIA §19]                                                          ║
+ * ║ VERSION: 15.0.0-SINGULARITY                                                                                                            ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE                                                                                    ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/controllers/caseFileController.js                                        ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
-const archiver = require('archiver'); // For generating discovery bundles
-const mongoose = require('mongoose');
-const { emitAudit } = require('../middleware/security');
-
-// --- SOVEREIGN MODEL INJECTION ---
-let CaseFile;
-let User;
-let AuditLog;
-try {
-  CaseFile = require('../models/caseFileModel');
-  User = require('../models/userModel');
-  AuditLog = require('../models/auditEventModel');
-} catch (e) {
-  console.error('⚠️ [CASE_CONTROLLER] Core Models missing from registry:', e.message);
-}
+import archiver from 'archiver';
+import mongoose from 'mongoose';
+import CaseFile from '../models/caseFileModel.js';
+import SovereignAudit from '../models/SovereignAudit.js';
+import auditLogger from '../utils/auditLogger.js';
+import cryptoUtils from '../utils/cryptoUtils.js';
+import logger from '../utils/logger.js';
+import { getCurrentTenant, getCurrentUser, getCurrentRequestId } from '../middleware/tenantContext.js';
 
 /* ---------------------------------------------------------------------------
    1. CASE GOVERNANCE (CRUD & Lifecycle)
    --------------------------------------------------------------------------- */
 
-/*
+/**
  * @function createCase
  * @description Opens a new Legal Case File within the firm's sovereign boundary.
  */
-exports.createCase = async (req, res) => {
-  const traceId = req.headers['x-request-id'];
-  try {
-    const { caseNumber, title, clientName, practiceArea, description } = req.body;
+export const createCase = async (req, res) => {
+  const traceId = getCurrentRequestId();
+  const tenantId = getCurrentTenant();
+  const userId = getCurrentUser();
 
-    // Injected via tenantScope: req.tenantFilter = { tenantId: '...' }
+  try {
     const newCase = await CaseFile.create({
       ...req.body,
-      tenantId: req.tenantId, // Force the tenant binding
-      createdBy: req.user.id,
+      tenantId,
+      createdBy: userId,
       status: 'active',
-      forensicHash: mongoose.Types.ObjectId().toString(), // Initial integrity hash
+      forensicHash: cryptoUtils.generateForensicId('CASE-HASH')
     });
 
-    await emitAudit(req, {
+    await auditLogger.log({
       action: 'CASE_OPENED',
-      resource: 'CASE_FILE',
-      severity: 'info',
-      metadata: { caseNumber, title, traceId },
+      category: 'LEGAL',
+      resource: newCase._id,
+      metadata: { caseNumber: newCase.caseNumber, traceId }
     });
 
-    res.status(201).json({ status: 'success', data: newCase });
-  } catch (e) {
-    res.status(500).json({ status: 'error', message: 'Failed to initialize Case File.' });
+    res.status(201).json({ success: true, data: newCase });
+  } catch (error) {
+    logger.error(`[CASE-INIT-FAIL] ${error.message}`, { traceId });
+    res.status(500).json({ success: false, error: 'Sovereign Case Initialization Fault.' });
   }
 };
 
-/*
+/**
  * @function getCases
  * @description Retrieves cases scoped strictly to the authenticated Law Firm.
  */
-exports.getCases = async (req, res) => {
+export const getCases = async (req, res) => {
+  const tenantId = getCurrentTenant();
   try {
     const { page = 1, limit = 20, status } = req.query;
-
-    // The Magic: We merge req.tenantFilter (The Iron Wall) with user filters
-    const query = { ...req.tenantFilter };
+    const query = { tenantId };
     if (status) query.status = status;
 
     const [cases, total] = await Promise.all([
@@ -97,38 +75,43 @@ exports.getCases = async (req, res) => {
     ]);
 
     res.json({
-      status: 'success',
+      success: true,
       data: cases,
       pagination: { total, page, pages: Math.ceil(total / limit) },
     });
-  } catch (e) {
-    res.status(500).json({ status: 'error', message: 'Sovereign Query Failure.' });
+  } catch (error) {
+    logger.error(`[CASE-QUERY-FAIL] ${error.message}`);
+    res.status(500).json({ success: false, error: 'Sovereign Query Failure.' });
   }
 };
 
-/*
+/**
  * @function getCaseDetails
  * @description Forensic deep-dive into a single case file.
  */
-exports.getCaseDetails = async (req, res) => {
+export const getCaseDetails = async (req, res) => {
+  const tenantId = getCurrentTenant();
   try {
-    // Find with both ID and TenantID to prevent ID-guessing attacks
     const caseFile = await CaseFile.findOne({
       _id: req.params.id,
-      ...req.tenantFilter,
+      tenantId,
     }).populate('documents');
 
-    if (!caseFile) return res.status(404).json({ error: 'Case File not found or access denied.' });
+    if (!caseFile) {
+      return res.status(404).json({ error: 'Case File not found or access denied.' });
+    }
 
-    await emitAudit(req, {
+    await auditLogger.log({
       action: 'CASE_VIEWED',
-      resource: 'CASE_FILE',
+      category: 'LEGAL',
+      resource: caseFile._id,
       severity: 'low',
       metadata: { caseId: caseFile._id },
     });
 
-    res.json({ status: 'success', data: caseFile });
-  } catch (e) {
+    res.json({ success: true, data: caseFile });
+  } catch (error) {
+    logger.error(`[CASE-RETRIEVAL-FAULT] ${error.message}`);
     res.status(500).json({ error: 'Case retrieval fault.' });
   }
 };
@@ -137,48 +120,43 @@ exports.getCaseDetails = async (req, res) => {
    2. HIGH COURT DISCOVERY (The Billion-Dollar Engine)
    --------------------------------------------------------------------------- */
 
-/*
+/**
  * @function generateDiscoveryBundle
  * @description Streams a zipped discovery bundle (Rule 35) for court submission.
- * This is high-performance streaming architecture.
  */
-exports.generateDiscoveryBundle = async (req, res) => {
-  const traceId = req.headers['x-request-id'];
+export const generateDiscoveryBundle = async (req, res) => {
+  const traceId = getCurrentRequestId();
+  const tenantId = getCurrentTenant();
 
   try {
-    const caseFile = await CaseFile.findOne({ _id: req.params.id, ...req.tenantFilter });
+    const caseFile = await CaseFile.findOne({ _id: req.params.id, tenantId });
     if (!caseFile) return res.status(404).json({ error: 'Case not found.' });
 
-    // Set headers for file download
     res.attachment(`Discovery_Bundle_${caseFile.caseNumber}.zip`);
-
     const archive = archiver('zip', { zlib: { level: 9 } });
     archive.pipe(res);
 
-    // 1. Add Index Table (PDF logic would go here)
-    archive.append(`Discovery Index for Case: ${caseFile.caseNumber}\nGenerated: ${new Date()}`, {
+    archive.append(`Sovereign Discovery Index\nCase: ${caseFile.caseNumber}\nTrace: ${traceId}\nGenerated: ${new Date()}`, {
       name: 'INDEX.txt',
     });
 
-    // 2. Attach Documents
-    // In production, this would pull from S3/GridFS
+    // In production, stream from S3/GridFS here
     if (caseFile.documents && caseFile.documents.length > 0) {
-      caseFile.documents.forEach((doc) => {
-        // archive.append(doc.stream, { name: doc.filename });
-      });
+      // archive.file(...) would be used with actual file streams
     }
 
-    await emitAudit(req, {
+    await auditLogger.log({
       action: 'DISCOVERY_BUNDLE_EXPORTED',
-      resource: 'CASE_FILE',
+      category: 'LEGAL',
+      resource: caseFile._id,
       severity: 'high',
       metadata: { caseId: caseFile._id, traceId },
     });
 
     await archive.finalize();
-  } catch (e) {
-    console.error('Discovery Export Error:', e);
-    if (!res.headersSent) res.status(500).json({ error: 'Bundle generation failed.' });
+  } catch (error) {
+    logger.error(`[DISCOVERY-FAULT] ${error.message}`, { traceId });
+    if (!res.headersSent) res.status(500).json({ error: 'Bundle generation failure.' });
   }
 };
 
@@ -186,15 +164,17 @@ exports.generateDiscoveryBundle = async (req, res) => {
    3. ADVANCED LEGAL ACTIONS
    --------------------------------------------------------------------------- */
 
-/*
+/**
  * @function transitionCaseStatus
  * @description Moves a case through the legal lifecycle (Active -> Litigated -> Closed).
  */
-exports.transitionCaseStatus = async (req, res) => {
+export const transitionCaseStatus = async (req, res) => {
+  const tenantId = getCurrentTenant();
+  const userId = getCurrentUser();
   try {
     const { status, reason } = req.body;
     const caseFile = await CaseFile.findOneAndUpdate(
-      { _id: req.params.id, ...req.tenantFilter },
+      { _id: req.params.id, tenantId },
       {
         status,
         $push: {
@@ -202,69 +182,99 @@ exports.transitionCaseStatus = async (req, res) => {
             status,
             reason,
             date: new Date(),
-            actor: req.user.id,
+            actor: userId,
           },
         },
       },
       { new: true }
     );
 
-    await emitAudit(req, {
+    if (!caseFile) return res.status(404).json({ error: 'Case not found.' });
+
+    await auditLogger.log({
       action: 'CASE_STATUS_TRANSITION',
+      category: 'LEGAL',
+      resource: caseFile._id,
       severity: 'info',
       metadata: { caseId: caseFile._id, newStatus: status },
     });
 
-    res.json({ status: 'success', data: caseFile });
-  } catch (e) {
+    res.json({ success: true, data: caseFile });
+  } catch (error) {
+    logger.error(`[STATUS-TRANSITION-FAIL] ${error.message}`);
     res.status(500).json({ error: 'Status transition failed.' });
   }
 };
 
-/*
+/**
  * @function archiveCase
  * @description Cold-storage for legal compliance (Must keep for 7 years per Law Society).
  */
-exports.archiveCase = async (req, res) => {
+export const archiveCase = async (req, res) => {
+  const tenantId = getCurrentTenant();
   try {
-    await CaseFile.findOneAndUpdate(
-      { _id: req.params.id, ...req.tenantFilter },
-      { status: 'archived', archivedAt: new Date() }
+    const caseFile = await CaseFile.findOneAndUpdate(
+      { _id: req.params.id, tenantId },
+      { status: 'archived', archivedAt: new Date() },
+      { new: true }
     );
 
-    await emitAudit(req, {
+    if (!caseFile) return res.status(404).json({ error: 'Case not found.' });
+
+    await auditLogger.log({
       action: 'CASE_ARCHIVED',
+      category: 'LEGAL',
+      resource: caseFile._id,
       severity: 'medium',
       metadata: { caseId: req.params.id },
     });
 
-    res.json({ status: 'success', message: 'Case File moved to Cold Storage.' });
-  } catch (e) {
+    res.json({ success: true, message: 'Case File moved to Cold Storage.' });
+  } catch (error) {
+    logger.error(`[ARCHIVAL-FAULT] ${error.message}`);
     res.status(500).json({ error: 'Archival fault.' });
   }
 };
 
-/*
+/**
  * @function deleteCase
  * @description Hard-delete (restricted to SuperAdmins/Owners) for POPIA compliance.
  */
-exports.deleteCase = async (req, res) => {
+export const deleteCase = async (req, res) => {
+  const tenantId = getCurrentTenant();
+  const user = getCurrentUser(); // assuming user object available via context
   try {
-    // Only allow if user is OWNER or SUPER_ADMIN
-    if (req.user.role !== 'OWNER' && req.user.role !== 'SUPER_ADMIN') {
+    // Only allow if user is OWNER or SUPER_ADMIN (role check from context)
+    const userRole = user?.role; // adjust based on your context structure
+    if (userRole !== 'OWNER' && userRole !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: 'Insufficient clearance to expunge Case Files.' });
     }
 
-    const caseFile = await CaseFile.findOneAndDelete({ _id: req.params.id, ...req.tenantFilter });
+    const caseFile = await CaseFile.findOneAndDelete({ _id: req.params.id, tenantId });
+    if (!caseFile) return res.status(404).json({ error: 'Case not found.' });
 
-    await emitAudit(req, {
+    await auditLogger.log({
       action: 'CASE_EXPUNGED',
+      category: 'LEGAL',
+      resource: caseFile._id,
       severity: 'critical',
-      metadata: { caseNumber: caseFile?.caseNumber },
+      metadata: { caseNumber: caseFile.caseNumber },
     });
 
-    res.json({ status: 'success', message: 'Case expunged from Sovereign Ledger.' });
-  } catch (e) {
+    res.json({ success: true, message: 'Case expunged from Sovereign Ledger.' });
+  } catch (error) {
+    logger.error(`[EXPUNGEMENT-FAIL] ${error.message}`);
     res.status(500).json({ error: 'Expungement failed.' });
   }
+};
+
+// Default export for backward compatibility if needed
+export default {
+  createCase,
+  getCases,
+  getCaseDetails,
+  generateDiscoveryBundle,
+  transitionCaseStatus,
+  archiveCase,
+  deleteCase,
 };

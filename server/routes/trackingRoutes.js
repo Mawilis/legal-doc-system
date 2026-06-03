@@ -25,7 +25,7 @@ const router = express.Router();
 const trackingController = require('../controllers/trackingController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/auth');
 const { requireSameTenant } = require('../middleware/rbacMiddleware');
 const validate = require('../middleware/validationMiddleware');
 

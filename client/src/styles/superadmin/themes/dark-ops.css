@@ -1,0 +1,36 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🌑 DARK OPS THEME - WILSY OS 2050                                       ║
+  ║  Stealth Mode Command Center Theme                                       ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+[data-theme="dark-ops"] {
+  --theme-primary: #00ff00;
+  --theme-secondary: #00cc00;
+  --theme-gradient: linear-gradient(135deg, #00aa00, #00ff00);
+  --theme-glow: 0 0 20px #00ff00;
+
+  --theme-bg-primary: #0a0a0a;
+  --theme-bg-secondary: #1a1a1a;
+  --theme-bg-tertiary: #2a2a2a;
+
+  --theme-text-primary: #00ff00;
+  --theme-text-secondary: #00aa00;
+  --theme-text-accent: #ffffff;
+
+  --theme-border: #00ff0040;
+  --theme-border-glow: #00ff0080;
+}
+
+.theme-dark-ops .sa-terminal {
+  background: #000000;
+  color: #00ff00;
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 5px #00ff00;
+}
+
+.theme-dark-ops .sa-quantum-btn {
+  background: #000000;
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  text-shadow: 0 0 5px #00ff00;
+}

@@ -1,4 +1,5 @@
-#!/* ███████╗██╗    ██╗██╗██╗  ██╗███████╗██╗   ██╗    ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ██╗      █████╗ ███╗   ██╗ ██████╗███████╗     ██████╗ ██╗   ██╗██╗     ███████╗     ███████╗███╗   ██╗ ██████╗ ██╗███╗   ██╗███████╗
+/* eslint-disable */
+/* ███████╗██╗    ██╗██╗██╗  ██╗███████╗██╗   ██╗    ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ██╗      █████╗ ███╗   ██╗ ██████╗███████╗     ██████╗ ██╗   ██╗██╗     ███████╗     ███████╗███╗   ██╗ ██████╗ ██╗███╗   ██╗███████╗
 ██╔════╝██║    ██║██║██║ ██╔╝██╔════╝╚██╗ ██╔╝    ██╔════╝██╔═══██╗████╗ ████║██╔══██╗██║     ██║     ██╔══██╗████╗  ██║██╔════╝██╔════╝    ██╔═══██╗██║   ██║██║     ██╔════╝    ██╔════╝████╗  ██║██╔════╝ ██║████╗  ██║██╔════╝
 ███████╗██║ █╗ ██║██║█████╔╝ ███████╗ ╚████╔╝     ██║     ██║   ██║██╔████╔██║██████╔╝██║     ██║     ███████║██╔██╗ ██║██║     █████╗      ██║   ██║██║   ██║██║     █████╗      █████╗  ██╔██╗ ██║██║  ███╗██║██╔██╗ ██║█████╗
 ╚════██║██║███╗██║██║██╔═██╗ ╚════██║  ╚██╔╝      ██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██║     ██║     ██╔══██║██║╚██╗██║██║     ██╔══╝      ██║   ██║██║   ██║██║     ██╔══╝      ██╔══╝  ██║╚██╗██║██║   ██║██║██║╚██╗██║██╔══╝
@@ -18,42 +19,45 @@
  compliant across all jurisdictions, propelling the platform to trillion-dollar valuations through omniscient
  compliance orchestration.
 
- FILE: complianceRuleEngine.js (ERROR-CORRECTED VERSION)
+ FILE: complianceRuleEngine.js (ERROR-CORRECTED VERSION - ES MODULE)
  PATH: /server/services/complianceRuleEngine.js
  AUTHOR: Wilson Khanyezi, Chief Architect & Quantum Sentinel
  VERSION: 1.0.1 | QUANTUM HASH: Qx9c8a3b7d5e2f4g6-corrected
- CREATED: 2026-01-24 | LAST QUANTUM SYNC: 2026-01-24 18:30:00 UTC
+ CREATED: 2026-01-24 | LAST QUANTUM SYNC: 2026-04-08
  ERROR CORRECTION: All missing methods implemented, security vulnerabilities fixed, performance optimizations applied
 =============================================================================================================================================================================== */
 
 // ================================================================================================================
 // QUANTUM IMPORTS & ENVIRONMENT CONFIGURATION
 // ================================================================================================================
-require('dotenv').config({ path: `${__dirname}/../.env` });
-const crypto = require('crypto');
-const EventEmitter = require('events');
-const axios = require('axios');
-const jsonata = require('jsonata');
-const moment = require('moment');
-const fs = require('fs').promises;
-const path = require('path');
+import dotenv from 'dotenv';
+import crypto from 'crypto';
+import EventEmitter from 'events';
+import axios from 'axios';
+import jsonata from 'jsonata';
+import moment from 'moment';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '../.env') });
 
 // Quantum Sentinel: Optional dependencies for enhanced capabilities
 let Redis;
 let BullMQ;
 let mongoose;
 try {
-  Redis = require('ioredis');
+  Redis = (await import('ioredis')).default;
 } catch (e) {
   console.warn('⚠️  Quantum Note: ioredis not installed. Rule caching disabled.');
 }
 try {
-  BullMQ = require('bullmq');
+  BullMQ = (await import('bullmq')).default;
 } catch (e) {
   console.warn('⚠️  Quantum Note: bullmq not installed. Async rule processing disabled.');
 }
 try {
-  mongoose = require('mongoose');
+  mongoose = (await import('mongoose')).default;
 } catch (e) {
   console.warn('⚠️  Quantum Note: mongoose not installed. MongoDB rule persistence disabled.');
 }
@@ -1047,8 +1051,6 @@ class ComplianceRuleEngine extends EventEmitter {
     if (mongoose && this.config.dbUri) {
       try {
         await mongoose.connect(this.config.dbUri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
           serverSelectionTimeoutMS: 5000,
           maxPoolSize: 10,
         });

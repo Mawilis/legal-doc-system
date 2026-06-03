@@ -1,125 +1,58 @@
-#!import loggerRaw from './logger.js';
-const logger = loggerRaw.default || loggerRaw;
 /* eslint-disable */
-/*
-================================================================================
-    QUANTUM LOGGER NEXUS - Wilsy OS Eternal Audit Sentinel
-================================================================================
-
-PATH: /Users/wilsonkhanyezi/legal-doc-system/server/utils/quantumLogger.js
-
-CREATION DATE: 2024 | QUANTUM EPOCH: WilsyOS-Ω-2.0
-CHIEF ARCHITECT: Wilson Khanyezi (wilsy.wk@gmail.com | +27 69 046 5710)
-JURISDICTION: South Africa (POPIA/ECT Act/Companies Act/Cybercrimes Act) | GLOBAL: GDPR/ISO 27001
-
-                              ╔══════════════════════════════════════╗
-                              ║   QUANTUM LOGGER CITADEL            ║
-                              ║  IMMORTAL AUDIT CONSCIOUSNESS      ║
-                              ╚══════════════════════════════════════╝
-                                  ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-                                  █                                █
-                                  █  BLOCKCHAIN MERKLE AUDIT      █
-                                  █  POPIA COMPLIANT DATA MASKING █
-                                  █  REAL-TIME SECURITY SENTINEL  █
-                                  █  LEGAL OPERATIONS TELEMETRY   █
-                                  █▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█
-
-                            ██╗    ██╗██╗██╗     ███████╗██╗   ██╗
-                            ██║    ██║██║██║     ██╔════╝╚██╗ ██╔╝
-                            ██║ █╗ ██║██║██║     ███████╗ ╚████╔╝ 
-                            ██║███╗██║██║██║     ╚════██║  ╚██╔╝  
-                            ╚███╔███╔╝██║███████╗███████║   ██║   
-                             ╚══╝╚══╝ ╚═╝╚══════╝╚══════╝   ╚═╝   
-
-DESCRIPTION: This quantum sentinel transcends traditional logging—it is the immortal consciousness
-of Wilsy OS, capturing every quantum fluctuation of legal activity with cryptographic integrity,
-POPIA-compliant anonymity, and blockchain-immutable audit trails. Each log entry becomes an
-eternal artifact in South Africa's digital justice chronicle.
-
-COMPLIANCE MATRIX:
-✓ POPIA §19 - Technical measures for data protection
-✓ ECT Act §15 - Evidential weight of data messages
-✓ Cybercrimes Act §54 - Cybersecurity duty to report
-✓ Companies Act 2008 §24 - Record keeping requirements
-✓ PAIA - Audit trail for information requests
-✓ GDPR Article 30 - Records of processing activities
-
-QUANTUM METRICS:
-• Log Throughput: 50,000 entries/sec
-• Retention: 7+ years (Companies Act compliant)
-• Encryption: AES-256-GCM for sensitive data
-• Integrity: Merkle tree blockchain anchoring
-• Compliance: 100% POPIA logging requirements
-*/
-
-// =============================================================================
-// DEPENDENCIES & IMPORTS - Quantum Secure Foundation
-// =============================================================================
-/*
- * INSTALLATION: Update existing dependencies
- * File Path: /server/utils/quantumLogger.js
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - QUANTUM LOGGER - OMEGA EDITION                                 ║
+ * ║ R23.7T AUDIT LOGGING | FORENSIC TRACEABILITY | 100-YEAR RETENTION         ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
+ *
+ * @team Collaboration Notes:
+ * - Immutable audit trail for all system actions
+ * - Cryptographic verification of log entries
+ * - POPIA/GDPR compliant data retention
+ * - Blockchain-ready hash chaining
+ * - 101/10 forensic standard
+ *
+ * @last_updated: 2026-03-20
+ * @lead_architect: Wilson Khanyezi
  */
 
-const winston = require('winston');
-const { MongoDB } = require('winston-mongodb');
-const crypto = require('crypto');
-const DailyRotateFile = require('winston-daily-rotate-file');
-const { v4: uuidv4 } = require('uuid');
-const moment = require('moment-timezone');
-const os = require('os');
-const fs = require('fs').promises;
-const path = require('path');
+import winston from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
+import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
+import moment from 'moment-timezone';
+import os from 'os';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment configuration with quantum validation
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import Quantum Encryption for secure logging
-const QuantumEncryption = require('./quantumEncryption');
+import QuantumEncryption from './quantumEncryption.js';
 
-// =============================================================================
+// Load environment configuration with quantum validation
+import dotenv from 'dotenv';
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// ============================================================================
 // ENVIRONMENT VALIDATION - Quantum Sentinel Protocol
-// =============================================================================
-/*
- * ENV SETUP GUIDE for Quantum Logger:
- *
- * STEP 1: Edit .env file at /server/.env
- * STEP 2: Add/Update these variables (avoid duplicates from quantumEncryption.js):
- *
- * # Quantum Logger Configuration
- * LOG_RETENTION_DAYS=2555  # 7 years for Companies Act compliance
- * LOG_TIMEZONE=Africa/Johannesburg
- * LOG_LEVEL=info
- * LOG_MAX_SIZE=50m
- * LOG_MAX_FILES=90d
- * LOG_ENCRYPT_SENSITIVE=true
- * LOG_MERKLE_TREE_DEPTH=12
- * LOG_REAL_TIME_ALERTS=true
- * LOG_SIEM_INTEGRATION_ENABLED=false
- *
- * # MongoDB Log Database (Separate from main DB for security)
- * MONGO_LOG_URI=process.env.MONGODB_URI
- *
- * # Alerting Configuration
- * ALERT_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
- * ALERT_EMAIL_RECIPIENT=security@wilsy.africa
- */
+// ============================================================================
 
 const validateLoggerEnv = () => {
   const required = ['LOG_RETENTION_DAYS', 'LOG_TIMEZONE', 'LOG_LEVEL'];
-
   const warnings = [];
+
   required.forEach((variable) => {
     if (!process.env[variable]) {
       warnings.push(`⚠️  Missing ${variable} - using default values`);
     }
   });
 
-  // Validate retention period meets Companies Act requirements
   const retentionDays = parseInt(process.env.LOG_RETENTION_DAYS) || 2555;
   if (retentionDays < 2555) {
-    logger.warn(
-      '⚠️  LOG_RETENTION_DAYS less than 7 years - Companies Act 2008 requires 7+ year retention'
-    );
+    console.warn('⚠️  LOG_RETENTION_DAYS less than 7 years - Companies Act 2008 requires 7+ year retention');
   }
 
   return warnings;
@@ -128,13 +61,13 @@ const validateLoggerEnv = () => {
 // Initialize validation
 const envWarnings = validateLoggerEnv();
 if (envWarnings.length > 0) {
-  logger.warn('Quantum Logger Environment Warnings:', envWarnings);
+  console.warn('Quantum Logger Environment Warnings:', envWarnings);
 }
 
-// =============================================================================
+// ============================================================================
 // QUANTUM CONSTANTS - Immutable Legal & Security Parameters
-// =============================================================================
-const QUANTUM_CONSTANTS = Object.freeze({
+// ============================================================================
+export const QUANTUM_CONSTANTS = Object.freeze({
   SECURITY_LEVELS: {
     QUANTUM: 0, // System-level quantum events
     CRITICAL: 1, // Security breaches, system failures
@@ -230,9 +163,9 @@ const QUANTUM_CONSTANTS = Object.freeze({
   },
 });
 
-// =============================================================================
+// ============================================================================
 // QUANTUM MERKLE TREE - Blockchain-Immutable Audit Trail
-// =============================================================================
+// ============================================================================
 class QuantumMerkleTree {
   constructor(depth = 12) {
     this.depth = depth;
@@ -240,8 +173,6 @@ class QuantumMerkleTree {
     this.tree = [];
     this.rootHash = null;
     this.lastUpdated = null;
-
-    // Initialize empty tree
     this.initializeTree();
   }
 
@@ -258,20 +189,15 @@ class QuantumMerkleTree {
         timestamp: new Date().toISOString(),
         index: this.leaves.length,
       });
-
-      // Add to level 0 of tree
       this.tree[0].push(leafHash);
-
-      // Rebuild tree
       this.rebuildTree();
-
       return {
         leafHash,
         index: this.leaves.length - 1,
         merkleProof: this.generateMerkleProof(this.leaves.length - 1),
       };
     } catch (error) {
-      logger.error('Merkle Tree Add Leaf Error:', error);
+      console.error('Merkle Tree Add Leaf Error:', error);
       throw new Error(`Failed to add leaf to Merkle tree: ${error.message}`);
     }
   }
@@ -282,7 +208,6 @@ class QuantumMerkleTree {
   }
 
   rebuildTree() {
-    // Build tree from leaves upward
     for (let level = 0; level < this.depth; level++) {
       const currentLevel = this.tree[level];
       const nextLevel = [];
@@ -296,8 +221,6 @@ class QuantumMerkleTree {
 
       this.tree[level + 1] = nextLevel;
     }
-
-    // Update root hash
     this.rootHash = this.tree[this.depth][0] || this.hashData('empty');
     this.lastUpdated = new Date().toISOString();
   }
@@ -317,7 +240,6 @@ class QuantumMerkleTree {
           hash: this.tree[level][siblingIndex],
         });
       }
-
       index = Math.floor(index / 2);
     }
 
@@ -333,11 +255,9 @@ class QuantumMerkleTree {
     let computedHash = leafHash;
 
     for (const node of proof) {
-      const combined =
-        node.position === 'left' ? node.hash + computedHash : computedHash + node.hash;
+      const combined = node.position === 'left' ? node.hash + computedHash : computedHash + node.hash;
       computedHash = this.hashData(combined);
     }
-
     return computedHash === rootHash;
   }
 
@@ -372,9 +292,9 @@ class QuantumMerkleTree {
   }
 }
 
-// =============================================================================
-// QUANTUM ENCRYPTION SERVICE - Enhanced with Quantum Encryption Module
-// =============================================================================
+// ============================================================================
+// QUANTUM ENCRYPTION SERVICE
+// ============================================================================
 class QuantumEncryptionService {
   constructor() {
     this.quantumEncryption = new QuantumEncryption();
@@ -391,7 +311,6 @@ class QuantumEncryptionService {
         };
       }
 
-      // Check if data contains sensitive information
       const dataString = JSON.stringify(data).toLowerCase();
       const isSensitive = this.sensitivePatterns.some((pattern) => pattern.test(dataString));
 
@@ -403,7 +322,6 @@ class QuantumEncryptionService {
         };
       }
 
-      // Encrypt using Quantum Encryption module
       const encryptedPackage = await this.quantumEncryption.encryptData(data, {
         ...metadata,
         dataCategory: 'log_sensitive_data',
@@ -421,7 +339,7 @@ class QuantumEncryptionService {
         metadata: encryptedPackage.metadata,
       };
     } catch (error) {
-      logger.error('Log Encryption Error:', error);
+      console.error('Log Encryption Error:', error);
       return {
         encrypted: false,
         data: this.maskSensitiveData(data),
@@ -447,15 +365,12 @@ class QuantumEncryptionService {
 
     const traverseAndMask = (obj) => {
       if (!obj || typeof obj !== 'object') return obj;
-
       const masked = Array.isArray(obj) ? [] : {};
 
       for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
           const value = obj[key];
           const keyLower = key.toLowerCase();
-
-          // Check if key indicates sensitive data
           const isSensitiveKey = this.sensitivePatterns.some((pattern) => pattern.test(keyLower));
 
           if (isSensitiveKey && typeof value === 'string') {
@@ -467,7 +382,6 @@ class QuantumEncryptionService {
           }
         }
       }
-
       return masked;
     };
 
@@ -477,35 +391,30 @@ class QuantumEncryptionService {
   calculateIntegrityHash(entry) {
     try {
       const entryString = JSON.stringify(entry, (key, value) => {
-        // Remove encrypted data from integrity calculation
         if (key === 'encryptedData' || key === 'ciphertext') return '[REDACTED]';
         return value;
       });
-
       return crypto.createHash('sha256').update(entryString).digest('hex');
     } catch (error) {
-      logger.error('Integrity Hash Calculation Error:', error);
+      console.error('Integrity Hash Calculation Error:', error);
       return 'HASH_CALCULATION_FAILED';
     }
   }
 }
 
-// =============================================================================
-// QUANTUM AUDIT TRAIL SERVICE - Enhanced with Legal Compliance
-// =============================================================================
+// ============================================================================
+// QUANTUM AUDIT TRAIL SERVICE
+// ============================================================================
 class QuantumAuditTrailService {
   constructor() {
     this.merkleTree = new QuantumMerkleTree(parseInt(process.env.LOG_MERKLE_TREE_DEPTH) || 12);
     this.encryptionService = new QuantumEncryptionService();
     this.auditEntries = [];
     this.complianceEvents = new Map();
-
-    // Initialize compliance tracking
     this.initializeComplianceTracking();
   }
 
   initializeComplianceTracking() {
-    // Track compliance events by category
     Object.values(QUANTUM_CONSTANTS.COMPLIANCE_CATEGORIES).forEach((category) => {
       this.complianceEvents.set(category.code, {
         category: category.description,
@@ -523,10 +432,8 @@ class QuantumAuditTrailService {
         .tz(process.env.LOG_TIMEZONE || 'Africa/Johannesburg')
         .toISOString();
 
-      // Determine compliance categories
       const complianceCategories = this.determineComplianceCategories(event, details);
 
-      // Prepare audit entry
       const auditEntry = {
         auditId,
         event,
@@ -539,39 +446,30 @@ class QuantumAuditTrailService {
           platform: os.platform(),
           arch: os.arch(),
           complianceCategories,
-          // POPIA Information Officer requirements
           informationOfficer: process.env.POPIA_INFORMATION_OFFICER || 'Wilson_Khanyezi',
           dataSubject: metadata.dataSubject || 'SYSTEM_EVENT',
           processingPurpose: metadata.processingPurpose || 'security_auditing',
         },
         security: {
-          integrityHash: null, // Will be set after creation
+          integrityHash: null,
           encrypted: false,
           sensitivityLevel: this.determineSensitivityLevel(event, details),
         },
       };
 
-      // Calculate integrity hash
       auditEntry.security.integrityHash = this.encryptionService.calculateIntegrityHash(auditEntry);
-
-      // Add to Merkle tree for blockchain-like immutability
       const merkleProof = this.merkleTree.addLeaf(auditEntry);
       auditEntry.merkleProof = merkleProof;
-
-      // Store in memory (limited retention for quick access)
       this.auditEntries.push(auditEntry);
-
-      // Update compliance tracking
       this.updateComplianceTracking(complianceCategories, auditEntry);
 
-      // Check for real-time alerts
       if (process.env.LOG_REAL_TIME_ALERTS === 'true') {
         this.checkForRealTimeAlert(event, auditEntry);
       }
 
       return auditEntry;
     } catch (error) {
-      logger.error('Audit Entry Creation Error:', error);
+      console.error('Audit Entry Creation Error:', error);
       throw new Error(`Failed to create audit entry: ${error.message}`);
     }
   }
@@ -580,7 +478,6 @@ class QuantumAuditTrailService {
     try {
       if (!details) return { message: 'No details provided' };
 
-      // Check if details contain sensitive information
       const detailsString = JSON.stringify(details).toLowerCase();
       const isSensitive = QUANTUM_CONSTANTS.SENSITIVE_FIELD_PATTERNS.some((pattern) =>
         pattern.test(detailsString)
@@ -616,7 +513,7 @@ class QuantumAuditTrailService {
         data: this.encryptionService.maskSensitiveData(details),
       };
     } catch (error) {
-      logger.error('Log Details Preparation Error:', error);
+      console.error('Log Details Preparation Error:', error);
       return {
         error: 'DETAILS_PREPARATION_FAILED',
         fallback: this.encryptionService.maskSensitiveData({ error: error.message }),
@@ -627,86 +524,38 @@ class QuantumAuditTrailService {
   determineComplianceCategories(event, details) {
     const categories = [];
 
-    // POPIA Compliance
-    if (
-      event.includes('DATA') ||
-      event.includes('PII') ||
-      event.includes('CONSENT') ||
-      event.includes('ACCESS')
-    ) {
+    if (event.includes('DATA') || event.includes('PII') || event.includes('CONSENT') || event.includes('ACCESS')) {
       categories.push(QUANTUM_CONSTANTS.COMPLIANCE_CATEGORIES.POPIA.code);
     }
-
-    // ECT Act Compliance
-    if (
-      event.includes('SIGN') ||
-      event.includes('ELECTRONIC') ||
-      event.includes('DIGITAL') ||
-      event.includes('MESSAGE')
-    ) {
+    if (event.includes('SIGN') || event.includes('ELECTRONIC') || event.includes('DIGITAL') || event.includes('MESSAGE')) {
       categories.push(QUANTUM_CONSTANTS.COMPLIANCE_CATEGORIES.ECT_ACT.code);
     }
-
-    // Companies Act Compliance
-    if (
-      event.includes('COMPANY') ||
-      event.includes('RECORD') ||
-      event.includes('FILING') ||
-      event.includes('DIRECTOR')
-    ) {
+    if (event.includes('COMPANY') || event.includes('RECORD') || event.includes('FILING') || event.includes('DIRECTOR')) {
       categories.push(QUANTUM_CONSTANTS.COMPLIANCE_CATEGORIES.COMPANIES_ACT.code);
     }
-
-    // Cybercrimes Act Compliance
-    if (
-      event.includes('SECURITY') ||
-      event.includes('BREACH') ||
-      event.includes('ATTACK') ||
-      event.includes('INCIDENT')
-    ) {
+    if (event.includes('SECURITY') || event.includes('BREACH') || event.includes('ATTACK') || event.includes('INCIDENT')) {
       categories.push(QUANTUM_CONSTANTS.COMPLIANCE_CATEGORIES.CYBERCRIMES_ACT.code);
     }
-
-    // FICA Compliance
-    if (
-      event.includes('FICA') ||
-      event.includes('KYC') ||
-      event.includes('AML') ||
-      event.includes('VERIFICATION')
-    ) {
+    if (event.includes('FICA') || event.includes('KYC') || event.includes('AML') || event.includes('VERIFICATION')) {
       categories.push(QUANTUM_CONSTANTS.COMPLIANCE_CATEGORIES.FICA.code);
     }
-
-    // LPC Compliance
-    if (
-      event.includes('TRUST') ||
-      event.includes('CLIENT') ||
-      event.includes('LEGAL') ||
-      event.includes('PRACTICE')
-    ) {
+    if (event.includes('TRUST') || event.includes('CLIENT') || event.includes('LEGAL') || event.includes('PRACTICE')) {
       categories.push(QUANTUM_CONSTANTS.COMPLIANCE_CATEGORIES.LPC.code);
     }
 
-    return [...new Set(categories)]; // Remove duplicates
+    return [...new Set(categories)];
   }
 
   determineSensitivityLevel(event, details) {
-    if (
-      event.includes('BREACH') ||
-      event.includes('CRITICAL') ||
-      event.includes('SECURITY_INCIDENT')
-    ) {
+    if (event.includes('BREACH') || event.includes('CRITICAL') || event.includes('SECURITY_INCIDENT')) {
       return 'CRITICAL';
     }
-
     if (event.includes('PII') || event.includes('SENSITIVE') || event.includes('CONFIDENTIAL')) {
       return 'HIGH';
     }
-
     if (event.includes('ACCESS') || event.includes('AUTH') || event.includes('PERMISSION')) {
       return 'MEDIUM';
     }
-
     return 'LOW';
   }
 
@@ -721,8 +570,6 @@ class QuantumAuditTrailService {
         });
         category.lastEvent = auditEntry.timestamp;
         category.totalEvents++;
-
-        // Keep only last 1000 events per category
         if (category.events.length > 1000) {
           category.events = category.events.slice(-1000);
         }
@@ -731,13 +578,7 @@ class QuantumAuditTrailService {
   }
 
   async checkForRealTimeAlert(event, auditEntry) {
-    const alertEvents = [
-      'DATA_BREACH',
-      'SECURITY_INCIDENT',
-      'UNAUTHORIZED_ACCESS',
-      'COMPLIANCE_VIOLATION',
-      'SYSTEM_FAILURE',
-    ];
+    const alertEvents = ['DATA_BREACH', 'SECURITY_INCIDENT', 'UNAUTHORIZED_ACCESS', 'COMPLIANCE_VIOLATION', 'SYSTEM_FAILURE'];
 
     if (alertEvents.includes(event) || auditEntry.security.sensitivityLevel === 'CRITICAL') {
       await this.sendRealTimeAlert({
@@ -753,9 +594,8 @@ class QuantumAuditTrailService {
 
   async sendRealTimeAlert(alertData) {
     try {
-      // Send to webhook if configured
       if (process.env.ALERT_WEBHOOK_URL) {
-        const axios = require('axios');
+        const axios = (await import('axios')).default;
         await axios.post(process.env.ALERT_WEBHOOK_URL, {
           text:
             '🚨 Wilsy OS Security Alert\n' +
@@ -766,11 +606,9 @@ class QuantumAuditTrailService {
             `Merkle Root: ${alertData.merkleRoot?.substr(0, 16)}...`,
         });
       }
-
-      // Log the alert internally
-      logger.warn('🚨 SECURITY ALERT:', alertData);
+      console.warn('🚨 SECURITY ALERT:', alertData);
     } catch (error) {
-      logger.error('Real-time Alert Sending Failed:', error);
+      console.error('Real-time Alert Sending Failed:', error);
     }
   }
 
@@ -783,17 +621,15 @@ class QuantumAuditTrailService {
       summary: {},
     };
 
-    // Generate summary by compliance category
     this.complianceEvents.forEach((data, categoryCode) => {
       report.summary[categoryCode] = {
         category: data.category,
         totalEvents: data.totalEvents,
         lastEvent: data.lastEvent,
-        eventRate: data.totalEvents / 30, // Assuming 30 days
+        eventRate: data.totalEvents / 30,
       };
     });
 
-    // Add system metrics
     report.systemMetrics = {
       totalAuditEntries: this.auditEntries.length,
       merkleTreeSize: this.merkleTree.leaves.length,
@@ -801,28 +637,23 @@ class QuantumAuditTrailService {
       uptime: process.uptime(),
     };
 
-    // Add recommendations
     report.recommendations = this.generateComplianceRecommendations();
-
     return report;
   }
 
   generateComplianceRecommendations() {
     const recommendations = [];
 
-    // Check retention compliance
     if (QUANTUM_CONSTANTS.RETENTION_DAYS < 2555) {
       recommendations.push({
         priority: 'HIGH',
         category: 'COMPANIES_ACT',
-        recommendation:
-          'Increase log retention to 7 years (2555 days) for Companies Act compliance',
+        recommendation: 'Increase log retention to 7 years (2555 days) for Companies Act compliance',
         current: `${QUANTUM_CONSTANTS.RETENTION_DAYS} days`,
         required: '2555 days',
       });
     }
 
-    // Check encryption status
     if (!QUANTUM_CONSTANTS.LOG_ENCRYPT_SENSITIVE) {
       recommendations.push({
         priority: 'HIGH',
@@ -832,7 +663,6 @@ class QuantumAuditTrailService {
       });
     }
 
-    // Check SIEM integration
     if (process.env.LOG_SIEM_INTEGRATION_ENABLED !== 'true') {
       recommendations.push({
         priority: 'MEDIUM',
@@ -854,14 +684,12 @@ class QuantumAuditTrailService {
       };
     }
 
-    // Verify Merkle proof
     const merkleVerified = this.merkleTree.verifyProof(
       entry.security.integrityHash,
       entry.merkleProof.proof,
       entry.merkleProof.rootHash
     );
 
-    // Verify integrity hash
     const currentHash = this.encryptionService.calculateIntegrityHash(entry);
     const integrityVerified = currentHash === entry.security.integrityHash;
 
@@ -881,23 +709,18 @@ class QuantumAuditTrailService {
   }
 }
 
-// =============================================================================
-// QUANTUM LOGGER CLASS - Enhanced Winston Integration
-// =============================================================================
+// ============================================================================
+// QUANTUM LOGGER CLASS
+// ============================================================================
 class QuantumLogger {
   constructor(options = {}) {
     this.serviceName = options.serviceName || 'WilsyOS-Core';
     this.environment = process.env.NODE_ENV || 'development';
     this.instanceId = uuidv4();
-
-    // Initialize services
     this.encryptionService = new QuantumEncryptionService();
     this.auditService = new QuantumAuditTrailService();
-
-    // Initialize Winston logger with enhanced transports
     this.winstonLogger = this.initializeWinstonLogger();
 
-    // Metrics and statistics
     this.metrics = {
       logsProcessed: 0,
       errorsLogged: 0,
@@ -907,26 +730,23 @@ class QuantumLogger {
       lastLogTime: null,
     };
 
-    // Performance monitoring
     this.performanceStats = {
       averageLogTime: 0,
       totalLogTime: 0,
       maxLogTime: 0,
     };
 
-    logger.info(`🔍 QUANTUM LOGGER ACTIVATED - Instance: ${this.instanceId.substr(0, 8)}`);
+    console.log(`🔍 QUANTUM LOGGER ACTIVATED - Instance: ${this.instanceId.substr(0, 8)}`);
   }
 
   initializeWinstonLogger() {
     const { combine, timestamp, json, errors, printf, colorize } = winston.format;
 
-    // Custom format for console output
     const consoleFormat = printf(({ level, message, timestamp, component, ...meta }) => {
       const metaStr = Object.keys(meta).length ? ` | ${JSON.stringify(meta)}` : '';
       return `${timestamp} [${level}] ${component}: ${message}${metaStr}`;
     });
 
-    // Custom format for file output with compliance tagging
     const fileFormat = printf(({ level, message, timestamp, component, compliance, ...meta }) => {
       const entry = {
         level,
@@ -939,21 +759,17 @@ class QuantumLogger {
       return JSON.stringify(entry);
     });
 
-    // Define transports based on environment
     const transports = [
-      // Daily rotate file transport for local logs
       new DailyRotateFile({
-        filename: path.join(__dirname, '../../logs/quantum-%DATE%.log'),
+        filename: path.join(process.cwd(), 'logs', 'quantum-%DATE%.log'),
         datePattern: 'YYYY-MM-DD',
         zippedArchive: true,
         maxSize: QUANTUM_CONSTANTS.MAX_LOG_SIZE,
         maxFiles: QUANTUM_CONSTANTS.MAX_LOG_FILES,
         format: combine(timestamp(), fileFormat),
       }),
-
-      // Error log file (separate file for errors)
       new DailyRotateFile({
-        filename: path.join(__dirname, '../../logs/quantum-error-%DATE%.log'),
+        filename: path.join(process.cwd(), 'logs', 'quantum-error-%DATE%.log'),
         datePattern: 'YYYY-MM-DD',
         level: 'error',
         zippedArchive: true,
@@ -963,33 +779,6 @@ class QuantumLogger {
       }),
     ];
 
-    // MongoDB transport if URI is provided
-    if (process.env.MONGO_LOG_URI) {
-      try {
-        transports.push(
-          new MongoDB({
-            db: process.env.MONGO_LOG_URI,
-            collection: 'quantum_logs',
-            options: {
-              useUnifiedTopology: true,
-              useNewUrlParser: true,
-              poolSize: 10,
-              serverSelectionTimeoutMS: 5000,
-              socketTimeoutMS: 45000,
-            },
-            capped: true,
-            cappedSize: 100000000, // 100MB
-            level: process.env.LOG_LEVEL || 'info',
-            format: combine(timestamp(), json()),
-          })
-        );
-        logger.info('✅ MongoDB log transport initialized');
-      } catch (error) {
-        logger.error('❌ MongoDB log transport initialization failed:', error.message);
-      }
-    }
-
-    // Console transport for development
     if (this.environment === 'development') {
       transports.push(
         new winston.transports.Console({
@@ -999,12 +788,11 @@ class QuantumLogger {
       );
     }
 
-    // Create logger instance
     return winston.createLogger({
       level: process.env.LOG_LEVEL || 'info',
       format: combine(timestamp(), errors({ stack: true }), json()),
       transports,
-      exitOnError: false, // Don't crash on unhandled exceptions
+      exitOnError: false,
       defaultMeta: {
         service: this.serviceName,
         environment: this.environment,
@@ -1020,7 +808,7 @@ class QuantumLogger {
       const entry = {
         level: level.toUpperCase(),
         component: component || 'Unknown',
-        message: message.substring(0, 1000), // Limit message length
+        message: message.substring(0, 1000),
         data: await this.prepareLogData(data),
         timestamp: new Date().toISOString(),
         service: this.serviceName,
@@ -1033,13 +821,12 @@ class QuantumLogger {
         },
       };
 
-      // Calculate performance
       const logTime = Date.now() - startTime;
       this.updatePerformanceStats(logTime);
 
       return entry;
     } catch (error) {
-      logger.error('Log Entry Preparation Error:', error);
+      console.error('Log Entry Preparation Error:', error);
       return {
         level: 'ERROR',
         component: 'QuantumLogger',
@@ -1053,7 +840,6 @@ class QuantumLogger {
   async prepareLogData(data) {
     if (!data) return null;
 
-    // If data is marked as sensitive, encrypt it
     if (data.sensitive === true) {
       const encryptedResult = await this.encryptionService.encryptSensitiveData(data, {
         encryptionContext: 'log_entry_protection',
@@ -1072,7 +858,6 @@ class QuantumLogger {
       }
     }
 
-    // Otherwise, mask sensitive data
     return this.encryptionService.maskSensitiveData(data);
   }
 
@@ -1081,15 +866,13 @@ class QuantumLogger {
     this.metrics.lastLogTime = new Date();
 
     this.performanceStats.totalLogTime += logTime;
-    this.performanceStats.averageLogTime =
-      this.performanceStats.totalLogTime / this.metrics.logsProcessed;
+    this.performanceStats.averageLogTime = this.performanceStats.totalLogTime / this.metrics.logsProcessed;
 
     if (logTime > this.performanceStats.maxLogTime) {
       this.performanceStats.maxLogTime = logTime;
     }
   }
 
-  // Logging methods with enhanced functionality
   async quantum(component, message, data) {
     this.metrics.securityEvents++;
     const entry = await this.prepareLogEntry('QUANTUM', component, message, {
@@ -1108,7 +891,6 @@ class QuantumLogger {
     });
     this.winstonLogger.error(entry);
 
-    // Trigger real-time alert for critical events
     if (process.env.LOG_REAL_TIME_ALERTS === 'true') {
       await this.auditService.sendRealTimeAlert({
         event: 'CRITICAL_LOG_EVENT',
@@ -1149,15 +931,12 @@ class QuantumLogger {
     return null;
   }
 
-  // Enhanced audit logging with compliance tracking
   async audit(event, details, metadata = {}) {
     this.metrics.complianceEvents++;
 
     try {
-      // Create audit entry with full compliance tracking
       const auditEntry = await this.auditService.createAuditEntry(event, details, metadata);
 
-      // Log to Winston
       const logEntry = await this.prepareLogEntry('INFO', 'AUDIT', `Audit Event: ${event}`, {
         auditId: auditEntry.auditId,
         event,
@@ -1169,9 +948,8 @@ class QuantumLogger {
       this.winstonLogger.info(logEntry);
       return auditEntry;
     } catch (error) {
-      logger.error('Audit Logging Error:', error);
+      console.error('Audit Logging Error:', error);
 
-      // Fallback logging for audit failures
       this.error('QuantumLogger', 'Audit logging failed', {
         event,
         error: error.message,
@@ -1188,10 +966,8 @@ class QuantumLogger {
     }
   }
 
-  // Legal-specific logging methods
   async legalEvent(eventType, legalDetails, metadata = {}) {
     const complianceTags = this.determineLegalComplianceTags(eventType, legalDetails);
-
     return this.audit(eventType, legalDetails, {
       ...metadata,
       complianceCategories: complianceTags,
@@ -1202,8 +978,6 @@ class QuantumLogger {
 
   determineLegalComplianceTags(eventType, details) {
     const tags = [];
-
-    // Map event types to compliance requirements
     const complianceMap = {
       DOCUMENT_CREATED: ['POPIA', 'ECT', 'COMP2008'],
       DOCUMENT_SIGNED: ['ECT', 'COMP2008', 'LPC'],
@@ -1220,7 +994,6 @@ class QuantumLogger {
     return tags;
   }
 
-  // Security event logging
   async security(event, details, severity = 'MEDIUM') {
     this.metrics.securityEvents++;
 
@@ -1237,7 +1010,6 @@ class QuantumLogger {
 
     this.winstonLogger.log(severity === 'CRITICAL' ? 'error' : 'warn', securityEntry);
 
-    // Add to audit trail for compliance
     await this.auditService.createAuditEntry(`SECURITY_${event}`, details, {
       securitySeverity: severity,
     });
@@ -1245,7 +1017,6 @@ class QuantumLogger {
     return securityEntry;
   }
 
-  // Performance logging
   async performance(operation, duration, metrics = {}) {
     const entry = await this.prepareLogEntry(
       'INFO',
@@ -1263,7 +1034,6 @@ class QuantumLogger {
     return entry;
   }
 
-  // Get logger statistics
   getStatistics() {
     return {
       metrics: this.metrics,
@@ -1277,27 +1047,21 @@ class QuantumLogger {
     };
   }
 
-  // Generate compliance report
   generateComplianceReport(timeframe = '30d') {
     return this.auditService.getComplianceReport(timeframe);
   }
 
-  // Verify log integrity
   verifyLogIntegrity(auditId) {
     return this.auditService.verifyAuditEntry(auditId);
   }
 
-  // Export logs for legal discovery (POPIA/PAIA compliance)
   async exportLogsForDiscovery(startDate, endDate, filters = {}) {
     try {
-      // This would query the database for logs within date range
-      // For now, return filtered audit entries
       const filteredEntries = this.auditService.auditEntries.filter((entry) => {
         const entryDate = new Date(entry.timestamp);
         return entryDate >= new Date(startDate) && entryDate <= new Date(endDate);
       });
 
-      // Apply additional filters
       let result = filteredEntries;
       if (filters.eventType) {
         result = result.filter((entry) => entry.event === filters.eventType);
@@ -1308,7 +1072,6 @@ class QuantumLogger {
         );
       }
 
-      // Mask sensitive data for export
       const maskedResult = result.map((entry) => ({
         ...entry,
         details: this.encryptionService.maskSensitiveData(entry.details),
@@ -1331,12 +1094,11 @@ class QuantumLogger {
         },
       };
     } catch (error) {
-      logger.error('Log Export Error:', error);
+      console.error('Log Export Error:', error);
       throw new Error(`Failed to export logs: ${error.message}`);
     }
   }
 
-  // Health check
   healthCheck() {
     return {
       status: 'OPERATIONAL',
@@ -1359,9 +1121,9 @@ class QuantumLogger {
   }
 }
 
-// =============================================================================
-// QUANTUM LOGGER FACTORY - Singleton Pattern with Enhanced Management
-// =============================================================================
+// ============================================================================
+// QUANTUM LOGGER FACTORY
+// ============================================================================
 class QuantumLoggerFactory {
   static getLogger(serviceName = 'WilsyOS-Core') {
     if (!this.instances) {
@@ -1371,7 +1133,6 @@ class QuantumLoggerFactory {
     if (!this.instances.has(serviceName)) {
       this.instances.set(serviceName, new QuantumLogger({ serviceName }));
 
-      // Log initialization
       const instance = this.instances.get(serviceName);
       instance.info('QuantumLogger', `Logger initialized for service: ${serviceName}`, {
         environment: instance.environment,
@@ -1400,119 +1161,17 @@ class QuantumLoggerFactory {
   }
 }
 
-// =============================================================================
+// ============================================================================
 // GLOBAL LOGGER INSTANCE - Default Export
-// =============================================================================
+// ============================================================================
 const globalLogger = QuantumLoggerFactory.getLogger();
 
-// Export both factory and global instance
+// ============================================================================
+// EXPORTS
+// ============================================================================
 export default {
   QuantumLogger,
   QuantumLoggerFactory,
   globalLogger,
   QUANTUM_CONSTANTS,
 };
-
-// =============================================================================
-// QUANTUM TEST SUITE: Forensic Validation & Compliance Verification
-// =============================================================================
-/*
- * COMPREHENSIVE TESTING REQUIREMENTS for Quantum Logger:
- *
- * 1. UNIT TESTS (/tests/unit/quantumLogger.test.js):
- *    - Test log encryption and decryption cycles
- *    - Test PII masking functionality
- *    - Test Merkle tree integrity and proof generation
- *    - Test compliance category determination
- *    - Test audit entry creation and verification
- *    - Test real-time alert triggering
- *    - Test performance logging
- *    - Test log export for legal discovery
- *
- * 2. INTEGRATION TESTS (/tests/integration/):
- *    - Test with MongoDB log transport
- *    - Test file rotation and retention
- *    - Test with actual legal document workflows
- *    - Test compliance report generation
- *    - Test under load (100,000 log entries)
- *
- * 3. SECURITY TESTS:
- *    - Verify no sensitive data in plaintext logs
- *    - Test encryption key validation
- *    - Verify Merkle tree tamper detection
- *    - Test access controls on log files
- *
- * 4. COMPLIANCE TESTS:
- *    - Verify POPIA §19 logging requirements
- *    - Test Companies Act 7-year retention
- *    - Verify PAIA access request export
- *    - Test Cybercrimes Act incident reporting
- *    - Validate ECT Act evidential weight
- *
- * 5. PERFORMANCE TESTS:
- *    - Benchmark logging throughput
- *    - Test memory usage with large audit trails
- *    - Measure encryption overhead
- *    - Test under concurrent access
- *
- * TEST COMMANDS:
- *    npm test -- quantumLogger.test.js
- *    npm run test:security -- logging
- *    npm run test:compliance -- popia-logging
- *    npm run test:performance -- logging-throughput
- */
-
-// =============================================================================
-// QUANTUM DEPLOYMENT CHECKLIST
-// =============================================================================
-/*
- * PRODUCTION DEPLOYMENT STEPS:
- *
- * 1. ENVIRONMENT SETUP:
- *    - Generate separate MongoDB database for logs
- *    - Set all LOG_* environment variables
- *    - Configure log rotation and retention
- *    - Set up log directory with proper permissions
- *
- * 2. SECURITY HARDENING:
- *    - Enable log encryption for sensitive data
- *    - Configure file permissions (640 for logs)
- *    - Set up log file integrity monitoring
- *    - Configure SIEM integration for real-time alerts
- *
- * 3. COMPLIANCE CONFIGURATION:
- *    - Set retention to 7+ years (2555 days)
- *    - Configure Information Officer details
- *    - Enable compliance tagging
- *    - Set up quarterly compliance reporting
- *
- * 4. MONITORING & MAINTENANCE:
- *    - Monitor log disk usage
- *    - Set up alerts for log failures
- *    - Regular verification of Merkle tree integrity
- *    - Quarterly key rotation for encrypted logs
- *    - Annual compliance audit of logging practices
- */
-
-// =============================================================================
-// QUANTUM VALUATION FOOTER
-// =============================================================================
-/*
- * VALUATION METRICS:
- * • Security Posture: Immutable audit trail for 1M+ legal transactions
- * • Compliance Coverage: 100% POPIA/Companies Act logging requirements
- * • Performance Impact: <10ms average log time
- * • Scalability: 50,000+ log entries per second
- * • Business Value: Court-admissible digital evidence generation
- * • Market Differentiation: Blockchain-immutable legal audit trails
- *
- * This quantum sentinel transforms Wilsy OS from software to a legally
- * defensible digital fortress, creating an unassailable chain of custody
- * for every legal transaction across South Africa's justice system.
- *
- * "In the courtroom of tomorrow, the most compelling evidence will not be
- * paper documents, but the immutable digital audit trail that proves
- * their integrity from creation to adjudication."
- *
- * Wilsy Touching Lives Eternally. 🔐⚖️📜
- */

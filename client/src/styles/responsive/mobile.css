@@ -1,0 +1,22 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📱 MOBILE STYLES - WILSY OS 2050                                         ║
+  ║  Styles for screens < 640px                                               ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+@media (max-width: 639px) {
+  .login-card {
+    padding: var(--wilsy-space-6);
+  }
+
+  .login-title {
+    font-size: var(--wilsy-text-2xl);
+  }
+
+  .login-subtitle {
+    font-size: var(--wilsy-text-xs);
+  }
+
+  .login-input {
+    padding: var(--wilsy-space-2);
+  }
+}

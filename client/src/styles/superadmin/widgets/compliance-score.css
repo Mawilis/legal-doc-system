@@ -1,0 +1,191 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📊 COMPLIANCE SCORE WIDGET - WILSY OS 2050                              ║
+  ║  Real-time Regulatory Compliance Monitoring                              ║
+  ║  Supreme Architect: Wilson Khanyezi - 10th Generation                    ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+.sa-compliance-widget {
+  background: var(--sa-bg-secondary);
+  border: 1px solid var(--sa-border-quantum);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-compliance-widget::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+  animation: compliance-pulse 4s ease-in-out infinite;
+}
+
+.sa-compliance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-compliance-header h3 {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-quantum-400);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wide);
+}
+
+.sa-compliance-header h3::before {
+  content: '⚖️';
+  font-size: 1.2rem;
+  filter: drop-shadow(0 0 5px var(--sa-quantum-500));
+}
+
+.sa-compliance-score-large {
+  font-family: var(--sa-font-wealth);
+  font-size: var(--sa-text-display);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-quantum-400);
+  text-shadow: 0 0 20px var(--sa-quantum-500);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-compliance-label {
+  font-size: var(--sa-text-small);
+  color: var(--sa-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wide);
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-compliance-meter {
+  height: 8px;
+  background: var(--sa-bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 1rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-compliance-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg,
+    var(--sa-critical-500) 0%,
+    var(--sa-warning-500) 50%,
+    var(--sa-success-500) 100%
+  );
+  transition: width 0.5s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sa-compliance-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: compliance-shimmer 2s linear infinite;
+}
+
+.sa-compliance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sa-compliance-item {
+  background: var(--sa-bg-tertiary);
+  border: 1px solid var(--sa-border-primary);
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+.sa-compliance-item:hover {
+  border-color: var(--sa-border-quantum);
+  transform: translateY(-2px);
+}
+
+.sa-compliance-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.sa-compliance-item-name {
+  font-size: var(--sa-text-small);
+  color: var(--sa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wide);
+}
+
+.sa-compliance-item-score {
+  font-size: var(--sa-text-h4);
+  font-weight: var(--sa-weight-bold);
+  color: var(--sa-text-primary);
+}
+
+.sa-compliance-item-bar {
+  height: 4px;
+  background: var(--sa-bg-primary);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.sa-compliance-item-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.sa-compliance-item-fill.passed { background: var(--sa-success-500); }
+.sa-compliance-item-fill.warning { background: var(--sa-warning-500); }
+.sa-compliance-item-fill.failed { background: var(--sa-critical-500); }
+
+.sa-compliance-item-status {
+  font-size: var(--sa-text-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tracking-wide);
+}
+
+.sa-compliance-item-status.passed { color: var(--sa-success-500); }
+.sa-compliance-item-status.warning { color: var(--sa-warning-500); }
+.sa-compliance-item-status.failed { color: var(--sa-critical-500); }
+
+@keyframes compliance-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+@keyframes compliance-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

@@ -1,0 +1,492 @@
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - CRISIS COMMAND STYLING [V18.0.0-SINGULARITY-OMEGA]                                                                          ║
+ * ║ [DEFCON AMBIENT LIGHTING | CRT TERMINAL PHYSICS | HARDWARE-GRADE TOGGLES | HOLOGRAPHIC SHIELDS]                                        ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 18.0.0-OMEGA | PRODUCTION READY | BILLION DOLLAR SPEC                                                                         ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/Sovereign_Crisis_Command.module.css              ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated "Magic" - a UI that proves to investors this is an Autonomous Neural Fortress.       ║
+ * ║ • AI Engineering (Gemini) - ELEVATED: Engineered DEFCON-reactive ambient lighting and CRT scanline physics. [2026-05-12]               ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+:root {
+  --scc-gold: #D4AF37;
+  --scc-gold-glow: rgba(212, 175, 55, 0.5);
+  --scc-red: #ff3333;
+  --scc-red-glow: rgba(255, 51, 51, 0.6);
+  --scc-green: #00ff66;
+  --scc-cyan: #00d4ff;
+  --scc-bg: #050505;
+  --scc-panel: rgba(12, 12, 12, 0.85);
+  --scc-border: rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================================================
+   1. GLOBAL CONTAINER & DEFCON AMBIENT LIGHTING
+   ========================================================================== */
+.crisisContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: 100%;
+  width: 100%;
+  font-family: 'JetBrains Mono', monospace;
+  position: relative;
+  transition: all 0.5s ease-in-out;
+  padding: 5px;
+  border-radius: 12px;
+}
+
+/* 🛡️ DEFCON STATES: The UI literally bleeds color based on the threat level */
+.crisisContainer[data-defcon="5"], .crisisContainer[data-defcon="4"] {
+  box-shadow: inset 0 0 100px rgba(212, 175, 55, 0.02);
+}
+
+.crisisContainer[data-defcon="3"] {
+  box-shadow: inset 0 0 150px rgba(255, 165, 0, 0.05);
+}
+
+.crisisContainer[data-defcon="2"] {
+  box-shadow: inset 0 0 200px rgba(255, 51, 51, 0.08);
+  animation: defconWarningPulse 2s infinite alternate;
+}
+
+.crisisContainer[data-defcon="1"] {
+  box-shadow: inset 0 0 300px rgba(255, 51, 51, 0.15), 0 0 50px rgba(255, 51, 51, 0.1);
+  animation: defconCriticalPulse 0.8s infinite alternate;
+}
+
+@keyframes defconWarningPulse {
+  0% { box-shadow: inset 0 0 150px rgba(255, 51, 51, 0.05); }
+  100% { box-shadow: inset 0 0 200px rgba(255, 51, 51, 0.1); }
+}
+
+@keyframes defconCriticalPulse {
+  0% { box-shadow: inset 0 0 200px rgba(255, 51, 51, 0.1); border-color: rgba(255, 51, 51, 0.2); }
+  100% { box-shadow: inset 0 0 350px rgba(255, 51, 51, 0.25); border-color: rgba(255, 51, 51, 0.5); }
+}
+
+/* ==========================================================================
+   2. WAR-ROOM HEADER
+   ========================================================================== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--scc-panel);
+  backdrop-filter: blur(20px);
+  padding: 20px 30px;
+  border-radius: 12px;
+  border: 1px solid var(--scc-border);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.titleArea {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mainTitle {
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  margin: 0;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+.goldText {
+  color: var(--scc-gold);
+  text-shadow: 0 0 15px var(--scc-gold-glow);
+}
+
+.subtitle {
+  font-size: 0.65rem;
+  color: #888;
+  letter-spacing: 2px;
+  margin: 4px 0 0 0;
+  text-transform: uppercase;
+}
+
+.emergencyActions {
+  display: flex;
+  gap: 16px;
+}
+
+/* 🎛️ HARDWARE-GRADE TOGGLES */
+.toggleBtn, .lockdownBtn, .restoreBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  outline: none;
+}
+
+.toggleBtn {
+  background: linear-gradient(180deg, #111, #050505);
+  border-color: #333;
+  color: #666;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+}
+
+.toggleBtn.activeGreen {
+  color: var(--scc-green);
+  border-color: rgba(0, 255, 102, 0.5);
+  background: linear-gradient(180deg, rgba(0, 255, 102, 0.1), #050505);
+  box-shadow: inset 0 0 15px rgba(0, 255, 102, 0.2), 0 0 20px rgba(0, 255, 102, 0.1);
+  text-shadow: 0 0 8px var(--scc-green);
+}
+
+.toggleBtn:hover { filter: brightness(1.2); }
+
+.lockdownBtn {
+  background: linear-gradient(180deg, #3a0a0a, #1f0000);
+  color: #ff6666;
+  border-color: #550000;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.lockdownBtn:hover {
+  background: linear-gradient(180deg, #5a0a0a, #3f0000);
+  color: #fff;
+  border-color: var(--scc-red);
+  box-shadow: 0 0 25px var(--scc-red-glow);
+  transform: translateY(-2px);
+}
+
+.restoreBtn {
+  background: linear-gradient(180deg, #0a2a1a, #001f0f);
+  color: #66ff66;
+  border-color: #005500;
+}
+
+.restoreBtn:hover {
+  background: linear-gradient(180deg, #0a3a1a, #002f0f);
+  color: #fff;
+  border-color: var(--scc-green);
+  box-shadow: 0 0 25px rgba(0,255,102,0.4);
+}
+
+/* ===========================================================================
+   3. STEM TELEMETRY HUD
+   =========================================================================== */
+.telemetryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.teleCard {
+  background: var(--scc-panel);
+  backdrop-filter: blur(15px);
+  border: 1px solid var(--scc-border);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s;
+}
+
+.teleCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--scc-gold);
+  opacity: 0.5;
+}
+
+.teleCard[data-critical="true"] {
+  border-color: rgba(255, 51, 51, 0.5);
+  box-shadow: inset 0 0 30px rgba(255, 51, 51, 0.1);
+}
+.teleCard[data-critical="true"]::before { background: var(--scc-red); opacity: 1; box-shadow: 0 0 10px var(--scc-red); }
+
+.teleCard[data-warning="true"] {
+  border-color: rgba(255, 165, 0, 0.5);
+  box-shadow: inset 0 0 30px rgba(255, 165, 0, 0.1);
+}
+.teleCard[data-warning="true"]::before { background: orange; opacity: 1; }
+
+.teleLabel {
+  font-size: 0.65rem;
+  color: #888;
+  letter-spacing: 2px;
+  font-weight: 800;
+}
+
+.teleValue {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 15px rgba(255,255,255,0.2);
+  letter-spacing: 1px;
+}
+
+.teleValueSmall {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--scc-cyan);
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+  text-align: center;
+}
+
+/* ===========================================================================
+   4. OPERATIONAL GRID (CONTROLS & FORENSICS)
+   =========================================================================== */
+.mainOperationalGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 24px;
+  flex: 1;
+  min-height: 400px;
+}
+
+.controlSection, .forensicSection {
+  background: var(--scc-panel);
+  border: 1px solid var(--scc-border);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+}
+
+.sectionTitle {
+  font-size: 0.8rem;
+  color: var(--scc-gold);
+  letter-spacing: 3px;
+  margin: 0 0 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  padding-bottom: 10px;
+}
+
+/* 🛡️ CONTAINMENT VECTORS (Cards) */
+.protocolCard {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #1f1f1f;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.3s;
+}
+
+.protocolCard[data-active="true"] {
+  border-color: rgba(212, 175, 55, 0.4);
+  background: rgba(212, 175, 55, 0.03);
+}
+
+.protocolHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.protocolHeader h4 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #fff;
+  flex: 1;
+  letter-spacing: 1px;
+}
+
+.protocolCard p {
+  margin: 0;
+  font-size: 0.65rem;
+  color: #777;
+  line-height: 1.5;
+}
+
+.badge {
+  font-size: 0.55rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #111;
+  border: 1px solid #333;
+  color: #888;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.protocolCard[data-active="true"] .badge {
+  background: rgba(255, 51, 51, 0.1);
+  border-color: var(--scc-red);
+  color: var(--scc-red);
+  box-shadow: 0 0 10px rgba(255,51,51,0.2);
+}
+
+.microBtn {
+  background: transparent;
+  border: 1px solid var(--scc-gold);
+  color: var(--scc-gold);
+  padding: 4px 10px;
+  font-size: 0.55rem;
+  font-family: inherit;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.microBtn:hover:not(:disabled) {
+  background: var(--scc-gold);
+  color: #000;
+  box-shadow: 0 0 10px var(--scc-gold-glow);
+}
+
+.microBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #555;
+  color: #555;
+}
+
+.hashText {
+  color: var(--scc-cyan);
+  font-family: monospace;
+  letter-spacing: 1px;
+  background: rgba(0, 212, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  animation: dataGlitch 5s infinite alternate;
+}
+
+/* ===========================================================================
+   5. CRT FORENSIC TERMINAL (THE MAGIC)
+   =========================================================================== */
+.terminalWindow {
+  flex: 1;
+  background: #020202;
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  box-shadow: inset 0 0 30px rgba(0,0,0,1);
+}
+
+/* CRT Scanline Effect */
+.terminalWindow::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 2;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+}
+
+.terminalWindow::-webkit-scrollbar { width: 6px; }
+.terminalWindow::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+.logEntry {
+  font-size: 0.65rem;
+  line-height: 1.4;
+  display: flex;
+  gap: 12px;
+  z-index: 3;
+  opacity: 0.9;
+  animation: terminalFadeIn 0.3s ease-out forwards;
+}
+
+@keyframes terminalFadeIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 0.9; transform: translateX(0); } }
+
+.logTime { color: #666; flex-shrink: 0; }
+.logTrace { color: #555; flex-shrink: 0; }
+.logMessage { flex: 1; text-shadow: 0 0 5px currentColor; }
+
+.info .logMessage { color: #aaa; }
+.success .logMessage { color: var(--scc-green); }
+.warn .logMessage { color: orange; }
+.critical .logMessage { color: var(--scc-red); font-weight: bold; }
+
+/* ===========================================================================
+   6. CRITICAL GLOBAL ALERT
+   =========================================================================== */
+.globalAlert {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid var(--scc-red);
+  padding: 16px 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 0 30px rgba(255, 51, 51, 0.2);
+  animation: slideUpAlert 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpAlert { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.alertText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alertText strong {
+  color: var(--scc-red);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255,51,51,0.5);
+}
+
+.alertText span {
+  color: #fff;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+}
+
+/* UTILS */
+.pulseRed { color: var(--scc-red); animation: pulseRedAnim 1.5s infinite; filter: drop-shadow(0 0 8px var(--scc-red)); }
+.pulseGold { color: var(--scc-gold); animation: pulseGoldAnim 2s infinite; filter: drop-shadow(0 0 8px var(--scc-gold)); }
+
+@keyframes pulseRedAnim { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.05); } }
+@keyframes pulseGoldAnim { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.02); } }
+
+@keyframes dataGlitch {
+  0%, 100% { transform: translate(0); }
+  33% { transform: translate(-1px, 1px); }
+  66% { transform: translate(1px, -1px); }
+}
+
+@media (max-width: 1200px) {
+  .mainOperationalGrid { grid-template-columns: 1fr; }
+  .telemetryGrid { grid-template-columns: repeat(2, 1fr); }
+  .header { flex-direction: column; align-items: flex-start; gap: 20px; }
+}

@@ -1,0 +1,84 @@
+# ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+# ║ WILSY OS - ALERTMANAGER CONFIGURATION [V1.0.0-SOVEREIGN-SINGULARITY-OMEGA]                                                             ║
+# ║ [BOARDROOM ESCALATION | OPS ROUTING | SMS GATEWAY | INHIBITION PROTOCOLS]                                                              ║
+# ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+# ║ VERSION: 1.0.0-SINGULARITY | PRODUCTION READY | BILLION DOLLAR SPEC                                                                    ║
+# ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
+# ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/server/config/alertmanager.yml                                                   ║
+# ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+# ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
+# ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated zero-latency escalation for boardroom stakeholders.                                  ║
+# ║ • AI Engineering (Gemini) - ENGINEERED: Multi-channel routing for Forensics, Revenue, and SLA Breaches. [2026-05-10]                   ║
+# ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'smtp.office365.com:587'
+  smtp_from: 'alerts@wilsyos.com'
+  smtp_auth_username: 'alerts@wilsyos.com'
+  smtp_auth_password: 'YOUR_INSTITUTIONAL_SMTP_PASSWORD' # 🛡️ REPLACE WITH SECURE SECRET
+
+route:
+  group_by: ['alertname', 'system', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: 'ops-slack' # Default fallback
+
+  routes:
+    # 🚨 EMERGENCY: Forensic Seal Fractures
+    # Direct strike to Boardroom Email and SMS Gateway immediately.
+    - match:
+        system: 'forensics'
+        severity: 'emergency'
+      receiver: 'boardroom-critical-path'
+      group_wait: 0s # ZERO LATENCY for forensic integrity
+
+    # 🏛️ CRITICAL: SLA Breaches & Revenue Breakers
+    # Routed to the Boardroom for investor visibility.
+    - match:
+        severity: 'critical'
+      receiver: 'boardroom-email'
+
+    # 🛠️ WARNING: Hardware Saturation & Minor Latency
+    # Routed to the Ops team for technical remediation.
+    - match:
+        severity: 'warning'
+      receiver: 'ops-slack'
+
+receivers:
+  - name: 'boardroom-critical-path'
+    email_configs:
+      - to: 'investors@wilsyos.com'
+        send_resolved: true
+    webhook_configs:
+      - url: 'https://sms-gateway.wilsyos.com/send' # 🏹 SMS STRIKE
+        send_resolved: true
+
+  - name: 'boardroom-email'
+    email_configs:
+      - to: 'investors@wilsyos.com'
+        send_resolved: true
+
+  - name: 'ops-slack'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK' # 🛡️ REPLACE WITH SECURE WEBHOOK
+        channel: '#ops-alerts'
+        send_resolved: true
+        title: '🏛️ WILSY OS: Operational Alert'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}'
+
+inhibit_rules:
+  # 🛡️ NOISE REDUCTION: Suppress warnings if a critical alert for the same system is already firing.
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'system']
+
+  # 🛡️ SUPREME SUPPRESSION: Suppress everything if the Forensic link is in Emergency mode.
+  - source_match:
+      severity: 'emergency'
+    target_match:
+      severity: 'critical'
+    equal: ['system']

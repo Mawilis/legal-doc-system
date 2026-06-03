@@ -12,7 +12,7 @@ import {
   getSimilarPrecedents,
   getSearchStats,
 } from '../../controllers/api/precedentApiController.js';
-import { validateApiKey, requireTier } from '../../middleware/api/authMiddleware.js';
+import { validateApiKey, requireTier } from '../../middleware/api/auth.js';
 import { validateRequest } from '../../middleware/requestValidator.js';
 import auditMiddleware from '../../middleware/auditLogger.js';
 

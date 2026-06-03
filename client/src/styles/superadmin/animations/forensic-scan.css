@@ -1,0 +1,86 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🔍 FORENSIC SCAN ANIMATIONS - WILSY OS 2050                             ║
+  ║  Audit Trail and Investigation Animations                                ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+@keyframes forensic-scan {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes forensic-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 20px var(--sa-forensic-500);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 40px var(--sa-forensic-500);
+  }
+}
+
+@keyframes forensic-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes forensic-glitch {
+  0% {
+    transform: translate(0);
+    opacity: 1;
+  }
+  20% {
+    transform: translate(-2px, 2px);
+    opacity: 0.8;
+  }
+  40% {
+    transform: translate(2px, -2px);
+    opacity: 0.9;
+  }
+  60% {
+    transform: translate(-1px, 1px);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translate(1px, -1px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(0);
+    opacity: 1;
+  }
+}
+
+.forensic-scan {
+  background: linear-gradient(90deg,
+    transparent,
+    var(--sa-forensic-500),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: forensic-scan 2s linear infinite;
+}
+
+.forensic-pulse {
+  animation: forensic-pulse 2s ease-in-out infinite;
+}
+
+.forensic-reveal {
+  animation: forensic-reveal 0.5s ease-out forwards;
+}
+
+.forensic-glitch {
+  animation: forensic-glitch 0.3s ease-in-out infinite;
+}

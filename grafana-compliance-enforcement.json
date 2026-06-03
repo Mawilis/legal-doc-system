@@ -1,0 +1,84 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-enforcement-hud",
+    "title": "🏛️ WILSY OS - Sovereign Compliance Enforcement",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Institutional Enforcement Strikes (Cumulative)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_compliance_enforcement_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Actions Taken"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "#d4af37", "value": 100 },
+                { "color": "orange", "value": 500 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Capital Preserved (Penalties Avoided)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_compliance_penalties_avoided_usd_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "USD Saved"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "color": { "mode": "continuous-GrYlRd" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 500000 },
+                { "color": "green", "value": 1000000 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Sovereign Remediation Velocity",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "wilsy_compliance_violations_resolved_total{tenantId=\"GLOBAL_ROOT\"}",
+            "legendFormat": "Resolved Violations"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      }
+    ]
+  }
+}

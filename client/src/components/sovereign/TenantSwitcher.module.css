@@ -1,0 +1,125 @@
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - GATEWAY SHADER [V54.0.0-SINGULARITY-PHYSICS]                                                                                ║
+ * ║ [MACHINED OBSIDIAN | NEURAL HANDSHAKE PULSE | CARBON-MESH TOPOGRAPHY | MARS-SPEC]                                                      ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 54.0.0-PHYSICS | PRODUCTION READY | TRILLION DOLLAR SPEC                                                                      ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/TenantSwitcher.module.css                        ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated zero-latency visual feedback and institutional finality.                             ║
+ * ║ • AI Engineering (Gemini) - ENGINEERED: Shard-transition scanlines, holographic depth-maps, and kinetic state-changes.                 ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+.gatewayContainer {
+  background: rgba(5, 5, 5, 0.9);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 40px 80px rgba(0, 0, 0, 0.9),
+    inset 0 0 40px rgba(0, 0, 0, 0.8);
+  font-family: 'JetBrains Mono', 'Inter', monospace;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 🧬 CARBON-MESH OVERLAY: The Wilsy OS Signature */
+.gatewayContainer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(212, 175, 55, 0.05) 1px, transparent 0);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ⚡ NEURAL HANDSHAKE SCANLINE */
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #D4AF37, transparent);
+  animation: gatewayScan 4s linear infinite;
+  z-index: 10;
+  filter: blur(1px);
+}
+
+@keyframes gatewayScan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.5; }
+  90% { opacity: 0.5; }
+  100% { transform: translateY(400%); opacity: 0; }
+}
+
+/* 🛡️ STATE INDICATORS */
+.stateActive {
+  color: #00ff66;
+  text-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+}
+
+.stateTransitioning {
+  color: #D4AF37;
+  text-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+  animation: pulseBrightness 2s infinite alternate;
+}
+
+@keyframes pulseBrightness {
+  0% { filter: brightness(1); }
+  100% { filter: brightness(1.5); }
+}
+
+/* 🧱 MACHINED BUTTONS */
+.gatewayBtn {
+  background: #000;
+  border: 1px solid #D4AF37;
+  color: #D4AF37;
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 2px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.gatewayBtn:hover:not(:disabled) {
+  background: #D4AF37;
+  color: #000;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+  transform: translateY(-2px);
+}
+
+.gatewayBtn:disabled {
+  opacity: 0.3;
+  cursor: wait;
+}
+
+/* 🖋️ INPUT FIELD TOPOGRAPHY */
+.gatewayInput {
+  background: #000;
+  border: 1px solid #111;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.3s;
+}
+
+.gatewayInput:focus {
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: inset 0 0 10px rgba(212, 175, 55, 0.05);
+}
+
+/* 🧩 RESPONSIVE BEZELS */
+@media (max-width: 1024px) {
+  .gatewayContainer {
+    bottom: 20px;
+    left: 20px;
+    padding: 15px;
+  }
+}

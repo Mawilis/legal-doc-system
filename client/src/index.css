@@ -1,0 +1,99 @@
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - SOVEREIGN DESIGN SYSTEM [V28.5.0-TITAN-FINALITY]                                                                            ║
+ * ║ [UNIFIED GRID PHYSICS | STACKING ISOLATION | INSTITUTIONAL SCROLLBARS | PRODUCTION READY]                                              ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 28.5.0-TITAN | PRODUCTION READY | TRILLION DOLLAR SPEC                                                                        ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | BOARDROOM READY                                        ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+@import "tailwindcss";
+/* 🛡️ RECTIFIED: Importing the Unified Z-Index Shard */
+@import "./styles/tokens/z-index.css";
+
+:root {
+  --color-gold: #d4af37;
+  --color-gold-light: #f1d592;
+  --color-gold-dark: #9a7b1a;
+  --color-obsidian: #020202;
+  --shadow-gold-aura: 0 0 25px rgba(212, 175, 55, 0.2);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-obsidian);
+    color: #d1d5db;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden; /* 🛡️ RECTIFIED: Absolute containment to prevent double scrollbars */
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    isolation: isolate; /* 🔒 RECTIFIED: Anchors all body::before/after layers */
+  }
+
+  /* 🛡️ THE SINGULARITY MASK: Unified 40px Tactical Grid */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background-image:
+      linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px; /* 🛡️ RECTIFIED: Aligned with Singularity component grid */
+
+    -webkit-mask-image: radial-gradient(circle at center, black, transparent 80%);
+    mask-image: radial-gradient(circle at center, black, transparent 80%);
+
+    animation: grid-drift 180s linear infinite;
+    z-index: var(--z-negative-5); /* 🛡️ RECTIFIED: Uses token authority */
+    pointer-events: none;
+  }
+
+  /* 🌑 VIGNETTE & SOVEREIGN IDENTIFIER */
+  body::after {
+    content: "WILSY OS — LEGAL SOVEREIGN STANDARD";
+    position: fixed;
+    bottom: 20px;
+    right: 30px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--color-gold-dark);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: var(--z-base); /* 🛡️ RECTIFIED: Moved below content but above grid */
+  }
+}
+
+@keyframes grid-drift {
+  from { transform: translate(-2%, -2%); }
+  to { transform: translate(0%, 0%); }
+}
+
+/* ⚙️ INSTITUTIONAL SCROLLBAR AUTHORITY (The Elon-Grade Fix) */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a1a1a;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
+  box-shadow: 0 0 10px var(--color-gold);
+}
+
+.text-gold { color: var(--color-gold); }
+.bg-obsidian { background-color: var(--color-obsidian); }
+.border-gold { border-color: var(--color-gold); }

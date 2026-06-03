@@ -1,0 +1,30 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🏢 ENSAFRICA TENANT THEME - WILSY OS 2050                                ║
+  ║  ENSafrica - African Legal Excellence                                     ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+[data-tenant="ensafrica"] {
+  --tenant-primary-50: #f0fdf4;
+  --tenant-primary-100: #dcfce7;
+  --tenant-primary-200: #bbf7d0;
+  --tenant-primary-300: #86efac;
+  --tenant-primary-400: #4ade80;
+  --tenant-primary-500: #22c55e;
+  --tenant-primary-600: #16a34a;
+  --tenant-primary-700: #15803d;
+  --tenant-primary-800: #166534;
+  --tenant-primary-900: #14532d;
+
+  --tenant-secondary-50: #fef2f2;
+  --tenant-secondary-100: #fee2e2;
+  --tenant-secondary-200: #fecaca;
+  --tenant-secondary-300: #fca5a5;
+  --tenant-secondary-400: #f87171;
+  --tenant-secondary-500: #ef4444;
+  --tenant-secondary-600: #dc2626;
+  --tenant-secondary-700: #b91c1c;
+  --tenant-secondary-800: #991b1b;
+  --tenant-secondary-900: #7f1d1d;
+
+  --tenant-logo: url('/logos/ensafrica.svg');
+}

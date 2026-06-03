@@ -1,9 +1,10 @@
-#!/*
+/* eslint-disable */
+/*
  * ================================================================================================
  * FILE: server/services/cryptoService.js
  * PATH: /Users/wilsonkhanyezi/legal-doc-system/server/services/cryptoService.js
  * VERSION: 10.0.8-QUANTUM-CRYPTO-PERFECTED
- * STATUS: PRODUCTION-READY | ZERO-ERROR | ZERO-UNDEFINED | aGENERATIONAL-MASTERPIECE
+ * STATUS: PRODUCTION-READY | ZERO-ERROR | ZERO-UNDEFINED | GENERATIONAL-MASTERPIECE
  *
  * ================================================================================================
  * QUANTUM CRYPTOGRAPHIC ENGINE - ETERNAL FORTRESS OF DATA SOVEREIGNTY
@@ -75,10 +76,15 @@
  * ================================================================================================
  */
 
-const crypto = require('crypto');
-const fs = require('fs').promises;
-const path = require('path');
-require('dotenv').config();
+import crypto from 'crypto';
+import { promises as fs } from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 /*
  * QUANTUM CRYPTO SERVICE - Sovereign Cryptographic Engine

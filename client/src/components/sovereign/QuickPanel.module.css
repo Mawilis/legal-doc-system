@@ -1,0 +1,467 @@
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - QUICK PANEL STYLING [V34.0.0-OMEGA-FINAL]                                                                                   ║
+ * ║ [SKEUOMORPHIC DEPTH | GOLD AURA | COMMAND GRID | INVESTOR-READY]                                                                       ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 34.0.0-OMEGA-FINAL | PRODUCTION READY | BILLION DOLLAR SPEC                                                                   ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/QuickPanel.module.css                            ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated skeuomorphic depth, gold aura, and strict command grid.                              ║
+ * ║ • AI Engineering (Gemini) - RECTIFIED: Locked in the CSS module to prevent global stylesheet pollution.                                ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+.panel {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.018)),
+    #050505;
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  border-left: 3px solid #18B7FF;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.055), inset 0 0 25px rgba(0,0,0,0.7), 0 18px 35px rgba(0,0,0,0.55);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.panel:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 0 35px rgba(212,175,55,0.06), 0 22px 38px rgba(0,0,0,0.78), 0 0 18px rgba(24,183,255,0.08);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #D4AF37;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  text-shadow: 0 0 10px rgba(212,175,55,0.4);
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.subtitle {
+  margin: 0;
+  color: rgba(231,231,231,0.58);
+  font-size: 0.66rem;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid rgba(105, 240, 174, 0.22);
+  border-radius: 999px;
+  color: #7af0b0;
+  background: rgba(11, 45, 30, 0.32);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 14px;
+}
+
+.metricCard {
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid rgba(255,255,255,0.075);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(24,183,255,0.055), rgba(212,175,55,0.035)),
+    rgba(0,0,0,0.42);
+  display: grid;
+  gap: 5px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.metricCard svg {
+  color: #F6D76B;
+  opacity: 0.86;
+}
+
+.metricCard span {
+  color: rgba(231,231,231,0.52);
+  font-size: 0.55rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.metricCard strong {
+  color: #fff;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.modeNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 12px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(246,215,107,0.16);
+  border-radius: 10px;
+  background: rgba(212,175,55,0.055);
+  color: rgba(246,215,107,0.92);
+  font-size: 0.64rem;
+  line-height: 1.45;
+  position: relative;
+  z-index: 2;
+}
+
+.modeNote svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0 9px;
+  position: relative;
+  z-index: 2;
+}
+
+.sectionHeader span {
+  color: #D4AF37;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.sectionHeader strong {
+  color: #7af0b0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.66rem;
+}
+
+.commandList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  z-index: 2;
+  max-height: clamp(150px, 24vh, 260px);
+  overflow-y: auto;
+  padding-right: 3px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(246, 215, 107, 0.34) rgba(255, 255, 255, 0.04);
+}
+
+.commandList::-webkit-scrollbar {
+  width: 7px;
+}
+
+.commandList::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.04);
+  border-radius: 999px;
+}
+
+.commandList::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(246,215,107,0.46), rgba(24,183,255,0.34));
+  border-radius: 999px;
+}
+
+.commandButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.018));
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #ccc;
+  text-align: left;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.commandButton:hover {
+  border-color: rgba(246,215,107,0.52);
+  background: linear-gradient(180deg, rgba(212,175,55,0.16), rgba(24,183,255,0.06));
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.62), 0 0 20px rgba(212,175,55,0.12), inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+.commandButton:active {
+  transform: translateY(1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.72), inset 0 2px 12px rgba(0,0,0,0.72);
+}
+
+.icon {
+  color: #F6D76B;
+  opacity: 0.85;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: rgba(212,175,55,0.1);
+  border: 1px solid rgba(212,175,55,0.18);
+}
+
+.textBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 3px;
+}
+
+.label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: #777;
+  letter-spacing: 1.5px;
+  line-height: 1.3;
+}
+
+.commandMeta {
+  color: rgba(122,240,176,0.68);
+  font-size: 0.55rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.emptyState {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  font-size: 0.68rem;
+  color: #858585;
+  font-family: monospace;
+  opacity: 1;
+  border: 1px solid rgba(246,215,107,0.12);
+  border-radius: 10px;
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)),
+    rgba(0,0,0,0.32);
+  line-height: 1.45;
+}
+
+.emptyState span,
+.emptyState strong {
+  display: block;
+}
+
+.emptyState strong {
+  color: #F6D76B;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  font-style: normal;
+}
+
+.meshGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+  position: relative;
+  z-index: 2;
+}
+
+.meshCell {
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: rgba(0,0,0,0.32);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.meshCell span {
+  color: rgba(231,231,231,0.52);
+  font-size: 0.54rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.meshCell strong {
+  color: #F6D76B;
+  font-size: 0.78rem;
+}
+
+.receipt {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.receipt svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.receiptSuccess {
+  border: 1px solid rgba(105,240,174,0.18);
+  background: rgba(11,45,30,0.28);
+  color: #7af0b0;
+}
+
+.receiptError {
+  border: 1px solid rgba(255,99,99,0.24);
+  background: rgba(92,14,14,0.24);
+  color: #ff9c9c;
+}
+
+.receipt span {
+  display: block;
+  font-size: 0.54rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.receipt strong {
+  display: block;
+  color: #fff;
+  font-size: 0.76rem;
+  margin: 4px 0;
+}
+
+.receipt p {
+  margin: 0;
+  color: rgba(231,231,231,0.62);
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+.panelActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  position: relative;
+  z-index: 2;
+}
+
+.panelActions span {
+  color: rgba(231,231,231,0.38);
+  font-size: 0.52rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.resetButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid rgba(246,215,107,0.2);
+  border-radius: 8px;
+  background: rgba(212,175,55,0.06);
+  color: #F6D76B;
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.resetButton:hover {
+  border-color: rgba(246,215,107,0.5);
+  background: rgba(212,175,55,0.13);
+  color: #fff;
+}
+
+/* 🛡️ Sovereign Aura */
+.sovereignAura {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+@media (max-width: 720px) {
+  .panel {
+    padding: 16px;
+  }
+
+  .header,
+  .panelActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .statusPill,
+  .resetButton {
+    justify-content: center;
+  }
+
+  .metricsGrid,
+  .meshGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .commandList {
+    max-height: clamp(140px, 30vh, 260px);
+  }
+
+  .panelActions span {
+    text-align: left;
+  }
+}

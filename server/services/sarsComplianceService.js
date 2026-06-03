@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
 ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ███████╗ █████╗ ██████╗ ███████╗    ██████╗ ██████╗ ███╗   ███╈█████╗███╗   ██╗██████╗ ██╗     ███████╗ ║
 ║ ██╔════╝██╔══██╗██╔══██╗██╔════╝   ██╔════╝██╔═══██╗████╗ ████╔═══██╗████╗  ██║██╔══██╗██║     ██╔════╝ ║
@@ -35,18 +36,19 @@
 // File Path: /server/services/sarsComplianceService.js
 // Dependencies Installation: npm install axios crypto-js xml2js pdfkit node-cache moment jsrsasign
 
-const crypto = require('crypto');
-const axios = require('axios');
-const CryptoJS = require('crypto-js');
-const jsrsasign = require('jsrsasign');
-const moment = require('moment');
-const mongoose = require('mongoose');
-const NodeCache = require('node-cache');
-const PDFDocument = require('pdfkit');
-const xml2js = require('xml2js');
+import crypto from 'crypto';
+import axios from 'axios';
+import CryptoJS from 'crypto-js';
+import jsrsasign from 'jsrsasign';
+import moment from 'moment';
+import mongoose from 'mongoose';
+import NodeCache from 'node-cache';
+import PDFDocument from 'pdfkit';
+import xml2js from 'xml2js';
+import dotenv from 'dotenv';
 
 // Load environment variables
-require('dotenv').config();
+dotenv.config();
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 // ║                               QUANTUM CONFIGURATION & CONSTANTS                                      ║

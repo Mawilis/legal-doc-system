@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * @file billingAuth.js
  * @module BillingAuthorizationMiddleware
  * @description Quantum-secure middleware for billing operations authorization and compliance enforcement.

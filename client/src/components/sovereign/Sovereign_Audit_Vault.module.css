@@ -1,0 +1,659 @@
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - SOVEREIGN AUDIT VAULT STYLES [V34.0.0-SINGULARITY-PHYSICS]                                                                  ║
+ * ║ [MACHINED AEROSPACE TOPOGRAPHY | KINETIC NEURAL HUD | OMEGA-LEVEL FINALITY]                                                            ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 34.0.0-PHYSICS | PRODUCTION READY | TRILLION DOLLAR SPEC                                                                      ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | MACHINED HARDWARE PHYSICS | ELON-READY ENGINEERING                                                ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/Sovereign_Audit_Vault.module.css                 ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+.vaultContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #000;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', 'Inter', monospace;
+}
+
+.vaultHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 50px;
+  border-bottom: 1px solid #111;
+  padding-bottom: 40px;
+}
+
+.titleArea { display: flex; align-items: center; gap: 35px; }
+
+.iconWrapper {
+  width: 70px;
+  height: 70px;
+  background: #050505;
+  border: 1px solid #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #D4AF37;
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 15px 30px rgba(0,0,0,1);
+}
+
+.iconWrapper:hover, .verifying {
+  border-color: #D4AF37;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+  transform: scale(1.05);
+}
+
+.title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  color: #fff;
+  margin: 0;
+  text-transform: uppercase;
+  font-style: italic;
+}
+
+.subtitle {
+  font-size: 0.6rem;
+  font-weight: 900;
+  color: #333;
+  letter-spacing: 0.65em;
+  margin-top: 12px;
+  text-transform: uppercase;
+}
+
+.goldText { color: #D4AF37; }
+.greenText { color: #00ff66; text-shadow: 0 0 10px rgba(0, 255, 102, 0.2); }
+
+.teleItem {
+  background: #050505;
+  border: 1px solid #111;
+  padding: 16px 25px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: #444;
+}
+
+.searchBar {
+  position: relative;
+  margin-bottom: 50px;
+  background: #050505;
+  border: 1px solid #111;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #222;
+}
+
+.searchInput {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 25px 25px 25px 85px;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  outline: none;
+  text-transform: uppercase;
+}
+
+.ledgerArea {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.auditTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 15px;
+}
+
+.auditTable th {
+  padding: 15px 20px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  color: #444;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.auditRow td {
+  background: #080808;
+  border: 1px solid #111;
+  padding: 25px 20px;
+  font-size: 0.85rem;
+  color: #666;
+  transition: all 0.4s;
+}
+
+.auditRow:hover td {
+  background: #0d0d0d;
+  color: #fff;
+  border-color: #D4AF37;
+  transform: translateY(-2px);
+}
+
+.statusBadge {
+  color: #00ff66;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+.hashText {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: #222;
+}
+
+.auditRow:hover .hashText { color: #D4AF37; }
+
+.vaultFooter {
+  margin-top: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 40px;
+  background: #030303;
+  border: 1px solid #111;
+}
+
+.footerInfo {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: #333;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+}
+
+.generateBtn {
+  background: #D4AF37;
+  border: none;
+  color: #000;
+  padding: 20px 50px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  cursor: pointer;
+  transition: all 0.4s;
+  text-transform: uppercase;
+}
+
+.generateBtn:hover:not(:disabled) {
+  background: #fff;
+  box-shadow: 0 0 50px rgba(212, 175, 55, 0.4);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  border: 1px solid #111;
+}
+
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: #D4AF37;
+  letter-spacing: 0.8em;
+  gap: 20px;
+}
+
+/* ============================================================================
+   V35 BOARDROOM VAULT LAYOUT PATCH
+   Current JSX exposes a richer cockpit than the legacy stylesheet covered.
+   These rules prevent the Audit Vault from collapsing inside FounderDashboard.
+   ============================================================================ */
+
+.vaultContainer {
+  width: 100%;
+  min-width: 0;
+  min-height: 720px;
+  height: auto;
+  gap: 20px;
+  padding: clamp(18px, 2vw, 30px);
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(212, 175, 55, 0.09), transparent 32%),
+    linear-gradient(145deg, rgba(8, 10, 9, 0.96), rgba(1, 1, 1, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 24px 60px rgba(0,0,0,0.46);
+}
+
+.fullscreen {
+  position: fixed;
+  inset: 16px;
+  z-index: 9999;
+  min-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.complianceHeader {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.metricCard {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px solid rgba(212, 175, 55, 0.16);
+  background: rgba(255,255,255,0.035);
+  color: #7d775f;
+}
+
+.metricCard span,
+.verified span,
+.unverified span {
+  display: block;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.metricCard strong,
+.verified strong,
+.unverified strong {
+  display: block;
+  margin-top: 3px;
+  color: #f5f0dc;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.verified,
+.unverified {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.verified { color: #19e68c; }
+.unverified { color: #ff5f57; }
+
+.fullscreenBtn,
+.exportBtn,
+.notifyBtn,
+.refreshBtn,
+.sortBtn,
+.retryBtn {
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  background: rgba(212, 175, 55, 0.08);
+  color: #D4AF37;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.fullscreenBtn {
+  width: 100%;
+}
+
+.fullscreenBtn:hover,
+.exportBtn:hover,
+.notifyBtn:hover,
+.refreshBtn:hover,
+.sortBtn:hover,
+.retryBtn:hover {
+  border-color: rgba(212, 175, 55, 0.65);
+  background: rgba(212, 175, 55, 0.16);
+  color: #fff4c2;
+}
+
+.vaultHeader {
+  gap: 18px;
+  margin-bottom: 0;
+  padding-bottom: 18px;
+  border-bottom-color: rgba(212, 175, 55, 0.14);
+}
+
+.titleArea {
+  min-width: 0;
+  gap: 18px;
+}
+
+.iconWrapper {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
+.title {
+  font-size: clamp(1.18rem, 2.1vw, 2rem);
+  letter-spacing: 0.14em;
+  line-height: 1.1;
+}
+
+.subtitle {
+  letter-spacing: 0.28em;
+  color: #756b4c;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.active {
+  background: #D4AF37;
+  color: #060606;
+}
+
+.pulse {
+  animation: pulse-gold-vault 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-gold-vault {
+  0%, 100% { opacity: 0.55; transform: rotate(0deg); }
+  50% { opacity: 1; transform: rotate(180deg); }
+}
+
+.anomalyBar,
+.alertBar {
+  border: 1px solid rgba(255, 193, 7, 0.2);
+  background: rgba(64, 44, 0, 0.22);
+  color: #ffd56a;
+  overflow: hidden;
+}
+
+.alertBar {
+  border-color: rgba(0, 198, 255, 0.22);
+  background: rgba(0, 47, 64, 0.22);
+  color: #7ddeff;
+}
+
+.anomalyHeader,
+.alertHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.rotated { transform: rotate(180deg); }
+
+.anomalyList,
+.alertList {
+  display: grid;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.anomalyItem,
+.alertItem {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.7fr) minmax(180px, 1.4fr) minmax(120px, 0.7fr);
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.24);
+  border: 1px solid rgba(255,255,255,0.06);
+  font-size: 0.68rem;
+}
+
+.anomalyType,
+.alertCourt {
+  color: #fff4c2;
+  font-weight: 900;
+}
+
+.searchBar {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 0;
+  border-color: rgba(212, 175, 55, 0.14);
+  background: rgba(0,0,0,0.34);
+}
+
+.searchInput {
+  min-width: 0;
+  padding: 18px 18px 18px 58px;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: none;
+  text-overflow: ellipsis;
+}
+
+.searchIcon {
+  left: 20px;
+  color: #D4AF37;
+  opacity: 0.65;
+}
+
+.filterControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 10px;
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  min-height: 42px;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  background: #060606;
+  color: #f5f0dc;
+  padding: 0 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ledgerArea {
+  min-height: 360px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.auditTable {
+  min-width: 980px;
+  border-spacing: 0 8px;
+}
+
+.auditTable th {
+  color: #9c8751;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+.auditRow td {
+  border-left: 0;
+  border-right: 0;
+  border-color: rgba(212, 175, 55, 0.1);
+  color: #d8d2bf;
+  vertical-align: middle;
+}
+
+.auditRow td:first-child {
+  border-left: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.auditRow td:last-child {
+  border-right: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.monoText,
+.boldText {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.boldText {
+  color: #f5f0dc;
+  font-weight: 900;
+}
+
+.statusAnchored {
+  color: #19e68c;
+}
+
+.statusPending {
+  color: #ffd56a;
+}
+
+.severityBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 78px;
+  padding: 6px 9px;
+  color: #020202;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hashText {
+  max-width: 260px;
+  color: #9c8751;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.errorState,
+.emptyState,
+.loader {
+  min-height: 360px;
+  height: auto;
+  text-align: center;
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 1px solid rgba(255, 95, 87, 0.18);
+  background: rgba(80, 0, 0, 0.1);
+}
+
+.vaultFooter {
+  margin-top: 0;
+  padding: 16px;
+  border-color: rgba(212, 175, 55, 0.14);
+  background: rgba(0,0,0,0.34);
+}
+
+.footerStats {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.stat {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #b6a56e;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1100px) {
+  .complianceHeader,
+  .footerStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .searchBar {
+    grid-template-columns: 1fr;
+  }
+
+  .filterControls {
+    padding: 0 12px 12px;
+  }
+}
+
+@media (max-width: 680px) {
+  .vaultContainer {
+    padding: 14px;
+  }
+
+  .vaultHeader,
+  .titleArea,
+  .headerActions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .complianceHeader,
+  .footerStats,
+  .anomalyItem,
+  .alertItem {
+    grid-template-columns: 1fr;
+  }
+
+  .exportBtn,
+  .notifyBtn,
+  .refreshBtn {
+    width: 100%;
+  }
+}

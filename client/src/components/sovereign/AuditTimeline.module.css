@@ -1,0 +1,262 @@
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - FORENSIC AUDIT TIMELINE STYLES [V33.6.0-SOVEREIGN-ALIGNMENT]                                                                ║
+ * ║ [INSTITUTIONAL GRADE | NEURAL GLOW | SOVEREIGN GOLD | PRODUCTION READY]                                                                ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 33.6.0-SOVEREIGN | PRODUCTION READY | BILLION DOLLAR SPEC                                                                     ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/AuditTimeline.module.css                         ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated Validator ID visibility and high-contrast boardroom summaries.                      ║
+ * ║ • AI Engineering (Gemini) - RECTIFIED: Aligned class mapping to V33.6.0 JSX. Injected animated itemGlow and statusBadge physics.      ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+.auditTimeline {
+  background: rgba(5, 5, 5, 0.9);
+  border: 1px solid #1a1a1a;
+  border-radius: 8px;
+  padding: 25px;
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+/* 🏛️ HEADER & BOARDROOM SUMMARY */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25px;
+  border-bottom: 1px solid #222;
+  padding-bottom: 15px;
+}
+
+.titleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #D4AF37;
+  letter-spacing: 2px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.auditSummary {
+  display: flex;
+  gap: 15px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.summaryItem { color: #888; }
+.alertItem { color: #ff3333; text-shadow: 0 0 10px rgba(255,51,51,0.3); }
+
+/* 🛡️ ROOT CA CHAIN STATUS */
+.chainStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.chainLabel {
+  font-size: 0.55rem;
+  color: #555;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.statusAuthentic {
+  color: #00ff00;
+  background: rgba(0, 255, 0, 0.1);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 255, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  font-weight: 900;
+}
+
+.statusTampered {
+  color: #ff3333;
+  background: rgba(255, 51, 51, 0.1);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 51, 51, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  font-weight: 900;
+}
+
+/* 📜 THE FORENSIC LIST */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auditItem {
+  background: rgba(10, 10, 10, 0.5);
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.auditItem:hover {
+  border-color: #D4AF37;
+  transform: translateX(5px);
+  background: rgba(212, 175, 55, 0.03);
+}
+
+.itemGlow {
+  position: absolute;
+  top: 0; left: 0; bottom: 0; width: 3px;
+  background: #D4AF37;
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}
+
+.auditItem:hover .itemGlow {
+  opacity: 1;
+  box-shadow: 0 0 15px #D4AF37;
+}
+
+.itemMain {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.meta {
+  display: flex;
+  gap: 20px;
+  font-size: 0.6rem;
+  color: #666;
+  font-weight: 700;
+}
+
+.date { display: flex; align-items: center; gap: 5px; color: #888; }
+.trace { color: #555; }
+
+.seal, .validator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+}
+
+.hashLabel, .validatorLabel { color: #444; font-weight: 900; }
+.hashValue { color: #00ff00; font-family: monospace; }
+.validatorId { color: #D4AF37; font-weight: 900; }
+
+/* 🛡️ STATUS BADGES */
+.statusBadgeAuthentic {
+  color: #00ff00;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.statusBadgeTampered {
+  color: #ff3333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+/* 🛰️ FOOTER TELEMETRY */
+.footer {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #1a1a1a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.telemetryTag {
+  font-size: 0.55rem;
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 1px;
+}
+
+.hashProof {
+  font-size: 0.55rem;
+  color: #222;
+  font-weight: 900;
+}
+
+/* 🌀 LOADING & EMPTY STATES */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  gap: 15px;
+}
+
+.loadingText {
+  font-size: 0.7rem;
+  color: #D4AF37;
+  letter-spacing: 2px;
+  font-weight: 900;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  100% { transform: scale(1.05); opacity: 1; }
+}
+
+.pulseIcon {
+  color: #D4AF37;
+  animation: pulse 1s infinite alternate;
+}
+
+.emptyState {
+  padding: 40px;
+  text-align: center;
+  color: #444;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  border: 1px dashed #222;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .header { flex-direction: column; gap: 15px; }
+  .chainStatus { align-items: flex-start; }
+  .auditItem { flex-direction: column; align-items: flex-start; gap: 15px; }
+  .statusBadgeAuthentic, .statusBadgeTampered { align-self: flex-end; }
+}

@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                                                              ║
 ║  ██████╗ ███████╗ ██████╗ ██╗   ██╗██╗      █████╗ ████████╗ ██████╗ ██████╗ ██████╗ ███████╗██████╗                        ║
@@ -30,22 +31,23 @@
 // npm install @aws-sdk/client-kms@^3.490.0 @aws-sdk/kms-http-signer@^3.490.0
 // npm install winston@^3.11.0 winston-daily-rotate-file@^4.7.1 joi@^17.10.0
 
-const crypto = require('crypto');
-const path = require('path');
-const { KMSClient, SignCommand } = require('@aws-sdk/client-kms');
-const axios = require('axios');
-const CryptoJS = require('crypto-js');
-const ExcelJS = require('exceljs');
-const FormData = require('form-data');
-const Joi = require('joi');
-const moment = require('moment-timezone');
-const PDFDocument = require('pdfkit');
-const { v4: uuidv4 } = require('uuid');
-const winston = require('winston');
-const xml2js = require('xml2js');
+import crypto from 'crypto';
+import path from 'path';
+import { KMSClient, SignCommand } from '@aws-sdk/client-kms';
+import axios from 'axios';
+import CryptoJS from 'crypto-js';
+import ExcelJS from 'exceljs';
+import FormData from 'form-data';
+import Joi from 'joi';
+import moment from 'moment-timezone';
+import PDFDocument from 'pdfkit';
+import { v4 as uuidv4 } from 'uuid';
+import winston from 'winston';
+import xml2js from 'xml2js';
+import dotenv from 'dotenv';
 
 // Quantum Shield: Environment Configuration
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 // ============================================================================
 // QUANTUM LOGGER CONFIGURATION - IMMUTABLE AUDIT TRAIL

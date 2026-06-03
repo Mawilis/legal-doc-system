@@ -1,0 +1,80 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  🖥️ COMMAND CENTER ULTRAWIDE - WILSY OS 2050                             ║
+  ║  Responsive styles for ultrawide displays (> 1920px)                     ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+@media (min-width: 1920px) {
+  .sa-command-center {
+    grid-template-columns: 300px 1fr 350px;
+    max-width: 2560px;
+    margin: 0 auto;
+  }
+
+  .sa-stats-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .sa-actions {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .sa-wealth-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sa-compliance-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sa-tenant-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sa-header {
+    padding: 1.5rem 3rem;
+  }
+
+  .sa-header-title h1 {
+    font-size: 2rem;
+  }
+
+  .sa-stat-value {
+    font-size: 3rem;
+  }
+
+  .sa-wealth-value {
+    font-size: 4rem;
+  }
+
+  .sa-terminal {
+    font-size: var(--sa-text-base);
+  }
+
+  .sa-forensic-event {
+    grid-template-columns: 100px 150px 1fr 120px;
+    padding: 1rem;
+    font-size: var(--sa-text-small);
+  }
+}
+
+@media (min-width: 2560px) {
+  .sa-command-center {
+    max-width: 3440px;
+  }
+
+  .sa-stats-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+
+  .sa-actions {
+    grid-template-columns: repeat(8, 1fr);
+  }
+
+  .sa-wealth-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sa-header-title h1 {
+    font-size: 2.5rem;
+  }
+}

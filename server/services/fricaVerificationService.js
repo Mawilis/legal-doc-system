@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
 ╔═══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ ███████╗██╗ ██████╗ █████╗    ██╗   ██╗███████╗██████╗ ██╗██████╗ ██╗ █████╗ ██████╗ ██╗ █████╗     ║
 ║ ██╔════╝██║██╔════╝██╔══██╗   ██║   ██║██╔════╝██╔══██╗██║██╔══██╗██║██╔══██╗██╔══██╗██║██╔══██╗    ║
@@ -35,19 +36,20 @@
 // File Path: /server/services/fricaVerificationService.js
 // Dependencies Installation: npm install axios crypto-js bcryptjs node-cache pdf-parse mammoth exceljs xml2js
 
-const crypto = require('crypto');
-const axios = require('axios');
-const bcrypt = require('bcryptjs');
-const CryptoJS = require('crypto-js');
-const ExcelJS = require('exceljs');
-const mammoth = require('mammoth');
-const mongoose = require('mongoose');
-const NodeCache = require('node-cache');
-const pdf = require('pdf-parse');
-const xml2js = require('xml2js');
+import crypto from 'crypto';
+import axios from 'axios';
+import bcrypt from 'bcryptjs';
+import CryptoJS from 'crypto-js';
+import ExcelJS from 'exceljs';
+import mammoth from 'mammoth';
+import mongoose from 'mongoose';
+import NodeCache from 'node-cache';
+import pdf from 'pdf-parse';
+import xml2js from 'xml2js';
+import dotenv from 'dotenv';
 
 // Load environment variables
-require('dotenv').config();
+dotenv.config();
 
 // ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
 // ║                               QUANTUM CONFIGURATION & CONSTANTS                                      ║

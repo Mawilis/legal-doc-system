@@ -1,0 +1,257 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📝 MASTER TYPOGRAPHY TOKENS - WILSY OS 2050                             ║
+  ║  Supreme Typography System - 10th Generation                             ║
+  ║  Fortune 500 · Quantum Ready · Multi-Tenant                              ║
+  ║  Supreme Architect: Wilson Khanyezi                                      ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+:root {
+  /* ==========================================================================
+     FONT FAMILIES - Supreme Command
+     ========================================================================== */
+
+  /* Quantum Sans - Primary interface font */
+  --wilsy-font-quantum: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                        Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Forensic Mono - Audit trails, code, forensic data */
+  --wilsy-font-forensic: 'JetBrains Mono', 'Fira Code', 'Cascadia Code',
+                         'Source Code Pro', 'Courier New', monospace;
+
+  /* Wealth Serif - Financial values, wealth indicators */
+  --wilsy-font-wealth: 'Georgia', 'Times New Roman', 'Cormorant Garamond',
+                       'Playfair Display', serif;
+
+  /* Command Display - Headings and authority text */
+  --wilsy-font-command: 'Syncopate', 'Avenir', 'Montserrat',
+                        'Poppins', sans-serif;
+
+  /* ==========================================================================
+     FONT SIZES - Responsive Scale (clamp() for fluid typography)
+     ========================================================================== */
+
+  /* Micro - Labels, metadata, forensic timestamps */
+  --wilsy-size-micro: clamp(0.625rem, 1vw, 0.75rem);
+
+  /* Small - Secondary information, helper text */
+  --wilsy-size-small: clamp(0.75rem, 1.5vw, 0.875rem);
+
+  /* Base - Body copy, primary text */
+  --wilsy-size-base: clamp(0.875rem, 2vw, 1rem);
+
+  /* Large - Important information, metrics */
+  --wilsy-size-large: clamp(1rem, 2.5vw, 1.125rem);
+
+  /* H4 - Section titles */
+  --wilsy-size-h4: clamp(1.125rem, 3vw, 1.25rem);
+
+  /* H3 - Major sections */
+  --wilsy-size-h3: clamp(1.25rem, 3.5vw, 1.5rem);
+
+  /* H2 - Page titles */
+  --wilsy-size-h2: clamp(1.5rem, 4vw, 1.875rem);
+
+  /* H1 - Dashboard titles, supreme declarations */
+  --wilsy-size-h1: clamp(1.875rem, 5vw, 2.25rem);
+
+  /* Display - Hero sections, wealth vision */
+  --wilsy-size-display: clamp(2.25rem, 6vw, 3rem);
+
+  /* Quantum - Supreme authority markers */
+  --wilsy-size-quantum: clamp(3rem, 8vw, 4rem);
+
+  /* ==========================================================================
+     FONT WEIGHTS - Precision Grading
+     ========================================================================== */
+
+  --wilsy-weight-thin: 100;
+  --wilsy-weight-light: 300;
+  --wilsy-weight-regular: 400;
+  --wilsy-weight-medium: 500;
+  --wilsy-weight-semibold: 600;
+  --wilsy-weight-bold: 700;
+  --wilsy-weight-extrabold: 800;
+  --wilsy-weight-black: 900;
+
+  /* ==========================================================================
+     LINE HEIGHTS - Optimal Readability
+     ========================================================================== */
+
+  --wilsy-leading-none: 1;
+  --wilsy-leading-tight: 1.1;
+  --wilsy-leading-snug: 1.2;
+  --wilsy-leading-normal: 1.4;
+  --wilsy-leading-relaxed: 1.5;
+  --wilsy-leading-loose: 1.6;
+
+  /* Specialized line heights */
+  --wilsy-leading-forensic: 1.2;  /* For code and audit trails */
+  --wilsy-leading-wealth: 1.1;    /* For financial displays */
+  --wilsy-leading-quantum: 1;     /* For display text */
+
+  /* ==========================================================================
+     LETTER SPACING - Precision Kerning
+     ========================================================================== */
+
+  --wilsy-tracking-tighter: -0.05em;
+  --wilsy-tracking-tight: -0.025em;
+  --wilsy-tracking-normal: 0;
+  --wilsy-tracking-wide: 0.025em;
+  --wilsy-tracking-wider: 0.05em;
+  --wilsy-tracking-widest: 0.1em;
+
+  /* Specialized tracking */
+  --wilsy-tracking-forensic: 0.02em;  /* For code */
+  --wilsy-tracking-quantum: 0.15em;   /* For display text */
+  --wilsy-tracking-wealth: 0.05em;    /* For financials */
+
+  /* ==========================================================================
+     TEXT TRANSFORMATIONS - Authority Levels
+     ========================================================================== */
+
+  --wilsy-case-normal: none;
+  --wilsy-case-upper: uppercase;
+  --wilsy-case-lower: lowercase;
+  --wilsy-case-capital: capitalize;
+
+  /* Supreme authority - All caps with special tracking */
+  --wilsy-case-supreme: uppercase;
+  --wilsy-case-supreme-tracking: 0.2em;
+
+  /* ==========================================================================
+     FONT FEATURES - OpenType Capabilities
+     ========================================================================== */
+
+  /* Enable ligatures for forensic font */
+  --wilsy-feature-forensic: 'liga', 'calt';
+
+  /* Enable tabular numbers for wealth display */
+  --wilsy-feature-wealth: 'tnum';
+
+  /* Enable small caps for authority text */
+  --wilsy-feature-supreme: 'smcp';
+}
+
+/* ==========================================================================
+   TYPOGRAPHY UTILITY CLASSES
+   ========================================================================== */
+
+/* Font Families */
+.wilsy-font-quantum { font-family: var(--wilsy-font-quantum); }
+.wilsy-font-forensic { font-family: var(--wilsy-font-forensic); }
+.wilsy-font-wealth { font-family: var(--wilsy-font-wealth); }
+.wilsy-font-command { font-family: var(--wilsy-font-command); }
+
+/* Text Sizes */
+.wilsy-text-micro { font-size: var(--wilsy-size-micro); }
+.wilsy-text-small { font-size: var(--wilsy-size-small); }
+.wilsy-text-base { font-size: var(--wilsy-size-base); }
+.wilsy-text-large { font-size: var(--wilsy-size-large); }
+.wilsy-text-h4 { font-size: var(--wilsy-size-h4); }
+.wilsy-text-h3 { font-size: var(--wilsy-size-h3); }
+.wilsy-text-h2 { font-size: var(--wilsy-size-h2); }
+.wilsy-text-h1 { font-size: var(--wilsy-size-h1); }
+.wilsy-text-display { font-size: var(--wilsy-size-display); }
+.wilsy-text-quantum { font-size: var(--wilsy-size-quantum); }
+
+/* Font Weights */
+.wilsy-weight-thin { font-weight: var(--wilsy-weight-thin); }
+.wilsy-weight-light { font-weight: var(--wilsy-weight-light); }
+.wilsy-weight-regular { font-weight: var(--wilsy-weight-regular); }
+.wilsy-weight-medium { font-weight: var(--wilsy-weight-medium); }
+.wilsy-weight-semibold { font-weight: var(--wilsy-weight-semibold); }
+.wilsy-weight-bold { font-weight: var(--wilsy-weight-bold); }
+.wilsy-weight-extrabold { font-weight: var(--wilsy-weight-extrabold); }
+.wilsy-weight-black { font-weight: var(--wilsy-weight-black); }
+
+/* Line Heights */
+.wilsy-leading-none { line-height: var(--wilsy-leading-none); }
+.wilsy-leading-tight { line-height: var(--wilsy-leading-tight); }
+.wilsy-leading-snug { line-height: var(--wilsy-leading-snug); }
+.wilsy-leading-normal { line-height: var(--wilsy-leading-normal); }
+.wilsy-leading-relaxed { line-height: var(--wilsy-leading-relaxed); }
+.wilsy-leading-loose { line-height: var(--wilsy-leading-loose); }
+.wilsy-leading-forensic { line-height: var(--wilsy-leading-forensic); }
+.wilsy-leading-wealth { line-height: var(--wilsy-leading-wealth); }
+.wilsy-leading-quantum { line-height: var(--wilsy-leading-quantum); }
+
+/* Letter Spacing */
+.wilsy-tracking-tighter { letter-spacing: var(--wilsy-tracking-tighter); }
+.wilsy-tracking-tight { letter-spacing: var(--wilsy-tracking-tight); }
+.wilsy-tracking-normal { letter-spacing: var(--wilsy-tracking-normal); }
+.wilsy-tracking-wide { letter-spacing: var(--wilsy-tracking-wide); }
+.wilsy-tracking-wider { letter-spacing: var(--wilsy-tracking-wider); }
+.wilsy-tracking-widest { letter-spacing: var(--wilsy-tracking-widest); }
+.wilsy-tracking-forensic { letter-spacing: var(--wilsy-tracking-forensic); }
+.wilsy-tracking-quantum { letter-spacing: var(--wilsy-tracking-quantum); }
+.wilsy-tracking-wealth { letter-spacing: var(--wilsy-tracking-wealth); }
+
+/* Text Transform */
+.wilsy-case-normal { text-transform: var(--wilsy-case-normal); }
+.wilsy-case-upper { text-transform: var(--wilsy-case-upper); }
+.wilsy-case-lower { text-transform: var(--wilsy-case-lower); }
+.wilsy-case-capital { text-transform: var(--wilsy-case-capital); }
+.wilsy-case-supreme {
+  text-transform: var(--wilsy-case-supreme);
+  letter-spacing: var(--wilsy-case-supreme-tracking);
+}
+
+/* Gradient Text Effects */
+.wilsy-text-gradient-quantum {
+  background: linear-gradient(135deg, var(--wilsy-quantum-500), var(--wilsy-quantum-300));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: var(--wilsy-weight-bold);
+}
+
+.wilsy-text-gradient-wealth {
+  background: linear-gradient(135deg, var(--wilsy-wealth-500), var(--wilsy-wealth-300));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: var(--wilsy-weight-bold);
+}
+
+.wilsy-text-gradient-forensic {
+  background: linear-gradient(135deg, var(--wilsy-forensic-500), var(--wilsy-forensic-300));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: var(--wilsy-font-forensic);
+}
+
+/* Responsive Typography */
+@media (min-width: 640px) {
+  :root {
+    --wilsy-size-h1: 2.5rem;
+    --wilsy-size-display: 3.5rem;
+    --wilsy-size-quantum: 4.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --wilsy-size-h1: 3rem;
+    --wilsy-size-display: 4rem;
+    --wilsy-size-quantum: 5rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --wilsy-size-h1: 3.5rem;
+    --wilsy-size-display: 4.5rem;
+    --wilsy-size-quantum: 6rem;
+  }
+}
+
+/* Print Typography */
+@media print {
+  .wilsy-text-gradient-quantum,
+  .wilsy-text-gradient-wealth,
+  .wilsy-text-gradient-forensic {
+    background: none;
+    color: black;
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-escalation-ledger",
+    "title": "🏛️ WILSY OS - Sovereign Escalation Dashboard",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Boardroom Escalation Strike (Email/Critical)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(ALERTS{severity=\"critical\", alertstate=\"firing\"}) by (system)",
+            "legendFormat": "{{system}} Breach"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "drawStyle": "bars",
+              "fillOpacity": 80
+            },
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Operational Routing (Slack/Warning)",
+        "id": 2,
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(ALERTS{severity=\"warning\", alertstate=\"firing\"}) by (system)",
+            "legendFormat": "{{system}} Warning"
+          }
+        ],
+        "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "palette-classic" } } }
+      },
+      {
+        "type": "stat",
+        "title": "Emergency SMS Strikes (Forensics)",
+        "id": 3,
+        "gridPos": { "x": 12, "y": 8, "w": 6, "h": 8 },
+        "targets": [
+          {
+            "expr": "ALERTS{severity=\"emergency\", system=\"forensics\", alertstate=\"firing\"}",
+            "legendFormat": "SMS TRIPPED"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "red", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Active Resolve Cycle",
+        "id": 4,
+        "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(ALERTS{alertstate=\"firing\"})",
+            "legendFormat": "Unresolved Issues"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "orange", "value": 5 },
+                { "color": "red", "value": 10 }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}

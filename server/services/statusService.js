@@ -1,5 +1,4 @@
-#!// server/services/statusService.js
-
+/* eslint-disable */
 const ALLOWED_TRANSITIONS = new Set([
   'Draft->Pending',
   'Pending->Approved',

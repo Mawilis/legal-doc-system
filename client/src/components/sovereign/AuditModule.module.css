@@ -1,0 +1,231 @@
+/* eslint-disable */
+/**
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - UNIFIED AUDIT STYLING [V33.9.0-OMEGA-UNIFIED]                                                                               ║
+ * ║ [SOVEREIGN GOLD | FRACTURE ALERTS | BOARD-READY TOPOGRAPHY | QR INTEGRATION]                                                           ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ VERSION: 33.9.0-OMEGA | PRODUCTION READY | BILLION DOLLAR SPEC                                                                         ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/sovereign/AuditModule.module.css                           ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated the Unified Sovereign Styling block. Zero logic omission permitted.                  ║
+ * ║ • AI Engineering (Gemini) - RECTIFIED: Injected exact CSS values (.sovereign, .cert-block, .verify-btn, etc.) into the module logic.   ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ */
+
+/* 🛡️ EXACT MATCH: .sovereign (Mapped to .container for JSX binding) */
+.container {
+  background: #0a0a0a;
+  border: 1px solid #d4af37;
+  padding: 1.5rem;
+  border-radius: 10px;
+  color: #d4af37;
+  /* Retained Structural Integrity */
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid #1f1f1f;
+  padding-bottom: 15px;
+  margin-bottom: 25px;
+}
+
+.iconGold { color: #d4af37; }
+
+.title {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #d4af37;
+  letter-spacing: 2px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.timestamp {
+  font-size: 0.65rem;
+  color: #888;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+/* 🛡️ SHARED DATA GRIDS & BLOCKS */
+.cryptoBlock {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 25px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.cryptoItem { display: flex; flex-direction: column; gap: 6px; }
+.cryptoLabel { font-size: 0.6rem; color: #666; font-weight: 800; letter-spacing: 1.5px; }
+.cryptoValue { font-size: 0.75rem; color: #fff; font-family: monospace; }
+
+.dataGrid { display: flex; flex-direction: column; }
+.dataRow { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-bottom: 1px solid #111; }
+.label { font-size: 0.6rem; color: #666; font-weight: 800; letter-spacing: 1.5px; display: flex; align-items: center; gap: 6px; }
+.value { font-size: 0.8rem; color: #e0e0e0; }
+.valueHash { font-size: 0.65rem; color: #d4af37; word-break: break-all; background: #111; padding: 8px; border-radius: 4px; border: 1px solid #1f1f1f; }
+
+/* 🛡️ COMPLIANCE ESCALATION */
+.complianceAlert {
+  background: linear-gradient(90deg, #3a0a0a, #1a0000);
+  border: 1px solid #ff4444;
+  border-radius: 6px;
+  padding: 15px;
+  color: #ff6666;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.complianceFooter {
+  margin-top: 30px;
+  padding: 15px;
+  background: #080808;
+  border: 1px solid #1f1f1f;
+  border-radius: 6px;
+}
+
+.section { margin-bottom: 25px; }
+.sectionTitle { font-size: 0.75rem; color: #d4af37; font-weight: 900; letter-spacing: 2px; margin-bottom: 15px; border-bottom: 1px solid #1f1f1f; padding-bottom: 8px; }
+
+/* 🛡️ TIMELINE */
+.timeline { display: flex; flex-direction: column; gap: 10px; }
+.timelineItem { background: #111; border: 1px solid #1f1f1f; border-radius: 4px; padding: 15px; transition: background 0.2s; }
+.timelineItem:hover { background: #151515; border-color: #333; }
+.timelineMeta { display: flex; justify-content: space-between; font-size: 0.65rem; color: #888; margin-bottom: 8px; }
+.timelineDate { display: flex; align-items: center; gap: 6px; }
+.timelineTrace { font-family: monospace; color: #aaa; }
+.timelineSeal { font-size: 0.6rem; color: #555; font-family: monospace; display: flex; align-items: center; gap: 6px; }
+
+/* 🛡️ EXACT MATCH: .timeline-item.authentic & .timeline-item.tampered */
+.statusAuthentic, .statusTampered { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 900; }
+.statusAuthentic { color: #d4af37; }
+.statusTampered { color: #ff4444; }
+
+/* 🛡️ EXACT MATCH: .drilldown-link */
+.drilldownLink {
+  color: #d4af37;
+  text-decoration: none;
+  margin-left: 1rem;
+  /* Structural additions to maintain layout within module */
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drilldownLink:hover {
+  text-decoration: underline;
+}
+
+/* 🛡️ EXACT MATCH: .qr-code */
+.qrSection { display: flex; flex-direction: column; align-items: center; margin-top: 25px; padding-top: 25px; border-top: 1px dashed #222; }
+.qrSectionInline { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #222; display: flex; flex-direction: column; align-items: center; }
+
+.qrCode, .qrCodeInline {
+  display: block;
+  margin: 0.5rem auto;
+  border: 2px solid #d4af37;
+  border-radius: 8px;
+  width: 120px;
+  height: 120px;
+}
+
+/* 🛡️ EXACT MATCH: .qr-label */
+.qrLabel, .qrLabelInline {
+  text-align: center;
+  color: #d4af37;
+  font-size: 12px;
+  /* Structural additions */
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* 🛡️ EXACT MATCH: .cert-block */
+.certContainer { display: flex; flex-direction: column; gap: 10px; }
+.certBlock {
+  font-size: 10px;
+  margin-bottom: 0.5rem;
+  color: #d4af37;
+  background: #111;
+  padding: 0.5rem;
+  border-radius: 4px;
+  /* Structural additions */
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* 🛡️ EXACT MATCH: .verify-btn */
+.verifyBtn {
+  display: block;
+  margin: 1rem auto;
+  padding: 0.5rem 1rem;
+  background: #d4af37;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  /* Structural additions */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.verifyBtn:hover:not(:disabled) {
+  background: #b38f2f;
+}
+
+.verifyBtn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+/* 🛡️ EXACT MATCH: .verification-result */
+.verificationResult {
+  text-align: center;
+  margin-top: 0.5rem;
+  font-weight: bold;
+  white-space: pre-wrap;
+  /* Structural additions */
+  background: #050505;
+  border: 1px solid #1f1f1f;
+  padding: 15px;
+  border-radius: 4px;
+}
+
+.verificationValid { border-color: #d4af37; color: #d4af37; }
+.verificationInvalid { border-color: #ff4444; color: #ff4444; }
+
+.loading, .error, .noData {
+  text-align: center;
+  padding: 30px;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  font-weight: 800;
+}
+
+.loading { color: #d4af37; }
+.error { color: #ff4444; display: flex; justify-content: center; align-items: center; gap: 10px; }
+.noData { color: #666; font-style: italic; }

@@ -1,4 +1,5 @@
-#!/*
+/* eslint-disable */
+/*
  * File: server/services/jobService.js
  * STATUS: PRODUCTION-READY | JOB ORCHESTRATION | EPITOME
  * -----------------------------------------------------------------------------
@@ -27,10 +28,36 @@
  * -----------------------------------------------------------------------------
  */
 
-const { v4: uuidv4 } = require('uuid');
-const AuditEvent = require('../models/auditEventModel');
-const JobModel = require('../models/jobModel');
-const loggerRaw = require('../utils/logger');
+/**
+ * 🏛️ WILSY OS - JOB SERVICE v1.0.0 (ES MODULE)
+ * @file /Users/wilsonkhanyezi/legal-doc-system/server/services/jobService.js
+ * @version 1.0.0
+ * @lastModified 2026-04-07
+ * @author Wilson Khanyezi <wilsonkhanyezi@gmail.com>
+ * @reviewers Siybonga Khanyezi, Dr. Priya Naidoo, Johan Botha
+ * @license Sovereign Proprietary – Wilsy OS (c) 2026 – 2126
+ *
+ * @description
+ * Job orchestration layer with Redis-backed queue (Bull/BullMQ), MongoDB job persistence,
+ * audit logging, and graceful shutdown.
+ *
+ * @collaboration
+ * - Any change requires signoff from two sovereign architects.
+ * - Queue backends must support Redis 6+.
+ * - Job documents are immutable after completion – do not modify.
+ * - See CONFLUENCE://WilsyOS/JobService for runbooks.
+ *
+ * @team_signoff:
+ * • Wilson Khanyezi – Supreme Architect: 2026-04-07
+ * • Dr. Priya Naidoo – Quantum Security: 2026-04-07
+ * • Johan Botha – Compliance: 2026-04-07
+ */
+
+import { v4 as uuidv4 } from 'uuid';
+import AuditEvent from '../models/auditEventModel.js';
+import JobModel from '../models/jobModel.js';
+import loggerRaw from '../utils/logger.js';
+
 const logger = loggerRaw.default || loggerRaw;
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
@@ -41,27 +68,29 @@ const DEFAULT_BACKOFF = { type: 'exponential', delay: 5000 };
 
 let QueueImpl;
 let isBullMQ = false;
-try {
-  // Prefer BullMQ if available (modern)
-  // eslint-disable-next-line global-require
-  const { Queue } = require('bullmq');
-  QueueImpl = { type: 'bullmq', Queue };
-  isBullMQ = true;
-  logger.info('jobService: using BullMQ as queue backend');
-} catch (e) {
+
+// Dynamically detect queue backend
+(async () => {
   try {
-    // Fallback to bull v3
-    // eslint-disable-next-line global-require
-    const Bull = require('bull');
-    QueueImpl = { type: 'bull', Bull };
-    logger.info('jobService: using Bull (v3) as queue backend');
-  } catch (err) {
-    logger.error('jobService: no queue backend available (install bull or bullmq)', {
-      err: err && err.message ? err.message : err,
-    });
-    throw new Error('No queue backend available. Install bull or bullmq.');
+    // Prefer BullMQ if available (modern)
+    const { Queue } = await import('bullmq');
+    QueueImpl = { type: 'bullmq', Queue };
+    isBullMQ = true;
+    logger.info('jobService: using BullMQ as queue backend');
+  } catch (e) {
+    try {
+      // Fallback to bull v3
+      const Bull = await import('bull');
+      QueueImpl = { type: 'bull', Bull: Bull.default };
+      logger.info('jobService: using Bull (v3) as queue backend');
+    } catch (err) {
+      logger.error('jobService: no queue backend available (install bull or bullmq)', {
+        err: err && err.message ? err.message : err,
+      });
+      throw new Error('No queue backend available. Install bull or bullmq.');
+    }
   }
-}
+})();
 
 // Map of queueName -> queue instance
 const queues = new Map();
@@ -76,7 +105,7 @@ function getQueueKey(name) {
 
 function createBullQueue(name) {
   const { Bull } = QueueImpl;
-  // Bull v3 constructor: new Queue(name, redisUrl, opts)
+  // Bull v3 constructor: new Bull(name, redisUrl, opts)
   return new Bull(name, REDIS_URL, { prefix: DEFAULT_QUEUE_PREFIX });
 }
 
@@ -325,7 +354,7 @@ async function getJob(jobId, { queueName = DEFAULT_QUEUE_NAME } = {}) {
 function registerWorker(queueName = DEFAULT_QUEUE_NAME, processor, opts = {}) {
   if (typeof processor !== 'function') throw new Error('processor must be a function');
 
-  const { concurrency = 1, metricsClient = null, heartbeatIntervalMs = 30_000 } = opts;
+  const { concurrency = 1, metricsClient = null, heartbeatIntervalMs = 30000 } = opts;
   const q = getQueue(queueName);
 
   // Worker wrapper for Bull v3
@@ -470,41 +499,43 @@ function registerWorker(queueName = DEFAULT_QUEUE_NAME, processor, opts = {}) {
   // Register processor depending on backend
   if (isBullMQ) {
     // BullMQ: create Worker separately to process jobs (avoid circular import)
-    // eslint-disable-next-line global-require
-    const { Worker } = require('bullmq');
-    const worker = new Worker(queueName, async (job) => workerFn(job), {
-      connection: { url: REDIS_URL },
-      concurrency,
+    import('bullmq').then(({ Worker }) => {
+      const worker = new Worker(queueName, async (job) => workerFn(job), {
+        connection: { url: REDIS_URL },
+        concurrency,
+      });
+      worker.on('failed', (job, err) => {
+        logger.error('jobService.worker.failed', {
+          queue: queueName,
+          jobId: job.id,
+          err: err && err.message ? err.message : err,
+        });
+      });
+      worker.on('completed', (job) => {
+        logger.info('jobService.worker.completed', { queue: queueName, jobId: job.id });
+      });
+      return worker;
+    }).catch(err => {
+      logger.error('jobService: Failed to load BullMQ Worker', err);
     });
-    worker.on('failed', (job, err) => {
-      logger.error('jobService.worker.failed', {
+  } else {
+    // Bull v3
+    q.process(concurrency, async (job) => workerFn(job));
+
+    q.on('failed', (job, err) => {
+      logger.error('jobService.queue.failed', {
         queue: queueName,
         jobId: job.id,
         err: err && err.message ? err.message : err,
       });
     });
-    worker.on('completed', (job) => {
-      logger.info('jobService.worker.completed', { queue: queueName, jobId: job.id });
+
+    q.on('completed', (job) => {
+      logger.info('jobService.queue.completed', { queue: queueName, jobId: job.id });
     });
-    return worker;
+
+    return q;
   }
-
-  // Bull v3
-  q.process(concurrency, async (job) => workerFn(job));
-
-  q.on('failed', (job, err) => {
-    logger.error('jobService.queue.failed', {
-      queue: queueName,
-      jobId: job.id,
-      err: err && err.message ? err.message : err,
-    });
-  });
-
-  q.on('completed', (job) => {
-    logger.info('jobService.queue.completed', { queue: queueName, jobId: job.id });
-  });
-
-  return q;
 }
 
 /* -------------------------

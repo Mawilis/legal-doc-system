@@ -21,7 +21,8 @@ if [ ! -f ".env.test" ]; then
 NODE_ENV=test
 
 # MongoDB Test Database
-MONGO_URI_TEST=mongodb+srv://wilsonkhanyezi:*******@legal-doc-test.xmlpwmq.mongodb.net/?retryWrites=true&w=majority&appName=legal-doc-test
+# Provide MONGO_URI_TEST from CI secrets or local .env.test overrides.
+MONGO_URI_TEST=${MONGO_URI_TEST:-mongodb://127.0.0.1:27017/wilsy_os_test}
 
 # Test JWT Secret
 JWT_SECRET=test_jwt_secret_do_not_use_in_production

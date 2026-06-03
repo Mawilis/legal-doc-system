@@ -1,0 +1,92 @@
+{
+  "type": "table",
+  "title": "Institutional Forensic Chain Entries",
+  "gridPos": {
+    "x": 0,
+    "y": 26,
+    "w": 24,
+    "h": 10
+  },
+  "targets": [
+    {
+      "expr": "wilsy_forensic_entry_info{tenantId=\"GLOBAL_ROOT\"}",
+      "format": "table",
+      "instant": true
+    }
+  ],
+  "fieldConfig": {
+    "defaults": {
+      "custom": {
+        "align": "auto",
+        "cellOptions": {
+          "type": "auto"
+        },
+        "inspect": false
+      },
+      "mappings": [],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "green", "value": null }
+        ]
+      }
+    },
+    "overrides": [
+      {
+        "matcher": { "id": "byName", "options": "validation" },
+        "properties": [
+          {
+            "id": "custom.cellOptions",
+            "value": { "type": "color-background" }
+          },
+          {
+            "id": "mappings",
+            "value": [
+              {
+                "type": "value",
+                "options": {
+                  "VALID": { "color": "green", "index": 0 },
+                  "INVALID": { "color": "red", "index": 1 }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "options": {
+    "showHeader": true,
+    "footer": { "show": false },
+    "sortBy": [
+      { "displayName": "entryId", "desc": true }
+    ]
+  },
+  "transformations": [
+    {
+      "id": "labelsToFields",
+      "options": {}
+    },
+    {
+      "id": "organize",
+      "options": {
+        "excludeByName": {
+          "Time": true,
+          "Value": true,
+          "tenantId": true,
+          "__name__": true
+        },
+        "renameByName": {
+          "entryId": "Entry ID",
+          "traceId": "Trace ID",
+          "action": "Action",
+          "performer": "Performer",
+          "sealHash": "Seal Hash",
+          "signature": "Signature",
+          "narrative": "Narrative",
+          "validation": "Validation Status"
+        }
+      }
+    }
+  ]
+}

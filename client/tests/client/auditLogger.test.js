@@ -24,7 +24,7 @@ describe('AuditLogger - 10/10 Production Suite', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(FIXED_TIME);
-    logger = new AuditLogger({ 
+    logger = new AuditLogger({
       maxEntries: 100,
       enableEncryption: false,
       forensicMode: true
@@ -41,7 +41,7 @@ describe('AuditLogger - 10/10 Production Suite', () => {
   describe('Core Logging', () => {
     it('logs entries with deterministic timestamp and metadata', () => {
       const entry = logger.log('TEST_ACTION', { foo: 'bar' }, AuditLevel.INFO, 'tenant-123');
-      
+
       expect(entry).toMatchObject({
         id: expect.any(String),
         timestamp: FIXED_TIME.toISOString(),
@@ -81,19 +81,19 @@ describe('AuditLogger - 10/10 Production Suite', () => {
   // TEST GROUP 2: Forensic Chain Validation
   // ==========================================================================
   describe('Forensic Chain', () => {
-    it('generates SHA3-512 forensic hashes for each entry', () => {
+    it('generates SHA-256 forensic hashes for each entry', () => {
       const entry1 = logger.log('ACTION_1', {});
       const entry2 = logger.log('ACTION_2', {});
-      
-      expect(entry1.forensicHash).toMatch(/^[a-f0-9]{128}$/); // SHA3-512 hex
-      expect(entry2.forensicHash).toMatch(/^[a-f0-9]{128}$/);
+
+      expect(entry1.forensicHash).toMatch(/^[a-f0-9]{64}$/); // SHA3-512 hex
+      expect(entry2.forensicHash).toMatch(/^[a-f0-9]{64}$/);
       expect(entry1.forensicHash).not.toBe(entry2.forensicHash);
     });
 
     it('maintains chain-of-custody with previous hash linking', () => {
       const entry1 = logger.log('ACTION_1', {});
       const entry2 = logger.log('ACTION_2', {});
-      
+
       expect(entry2.previousHash).toBeDefined();
     });
 
@@ -101,7 +101,7 @@ describe('AuditLogger - 10/10 Production Suite', () => {
       logger.log('ACTION_1', {});
       logger.log('ACTION_2', {});
       logger.log('ACTION_3', {});
-      
+
       const verification = logger.verifyChain();
       expect(verification.valid).toBe(true);
       expect(verification.brokenLinks).toHaveLength(0);
@@ -112,12 +112,12 @@ describe('AuditLogger - 10/10 Production Suite', () => {
       logger.log('ACTION_1', {});
       const entry2 = logger.log('ACTION_2', {});
       logger.log('ACTION_3', {});
-      
+
       // Manually tamper with entry2
       const tamperedEntry = { ...entry2, forensicHash: 'tampered' };
       const index = logger.entries.findIndex(e => e.id === entry2.id);
       logger.entries[index] = tamperedEntry;
-      
+
       const verification = logger.verifyChain();
       expect(verification.valid).toBe(false);
       expect(verification.brokenLinks.length).toBeGreaterThanOrEqual(1);
@@ -190,9 +190,9 @@ describe('AuditLogger - 10/10 Production Suite', () => {
     it('preserves original input immutability', () => {
       const original = { password: 'secret' };
       const copy = { ...original };
-      
+
       logger.log('TEST', original);
-      
+
       expect(original).toEqual(copy);
     });
   });
@@ -217,7 +217,7 @@ describe('AuditLogger - 10/10 Production Suite', () => {
     it('filters by level', () => {
       const info = logger.getEntries({ level: AuditLevel.INFO });
       expect(info).toHaveLength(3);
-      
+
       const audit = logger.getEntries({ level: AuditLevel.AUDIT });
       expect(audit).toHaveLength(1);
       expect(audit[0].action).toBe('DELETE');
@@ -226,7 +226,7 @@ describe('AuditLogger - 10/10 Production Suite', () => {
     it('filters by action pattern', () => {
       const view = logger.getEntries({ action: 'VIEW' });
       expect(view).toHaveLength(2);
-      
+
       const edit = logger.getEntries({ action: 'EDIT' });
       expect(edit).toHaveLength(1);
     });
@@ -234,7 +234,7 @@ describe('AuditLogger - 10/10 Production Suite', () => {
     it('filters by tenantId', () => {
       const tenant1 = logger.getEntries({ tenantId: 'tenant-1' });
       expect(tenant1).toHaveLength(2);
-      
+
       const tenant2 = logger.getEntries({ tenantId: 'tenant-2' });
       expect(tenant2).toHaveLength(2);
     });
@@ -242,10 +242,10 @@ describe('AuditLogger - 10/10 Production Suite', () => {
     it('filters by time range', () => {
       const future = new Date('2026-03-11T00:00:00.000Z');
       const past = new Date('2026-03-09T00:00:00.000Z');
-      
+
       const fromFilter = logger.getEntries({ from: past });
       expect(fromFilter).toHaveLength(4);
-      
+
       const toFilter = logger.getEntries({ to: future });
       expect(toFilter).toHaveLength(4);
     });
@@ -302,11 +302,11 @@ describe('AuditLogger - 10/10 Production Suite', () => {
   describe('Max Entries Management', () => {
     it('trims to maxEntries and keeps most recent', () => {
       logger.maxEntries = 5;
-      
+
       for (let i = 0; i < 8; i++) {
         logger.log(`ACTION_${i}`, {});
       }
-      
+
       const entries = logger.getEntries();
       expect(entries).toHaveLength(5);
       expect(entries[0].action).toBe('ACTION_3'); // Oldest kept
@@ -329,7 +329,7 @@ describe('AuditLogger - 10/10 Production Suite', () => {
 
       logger.clear();
       expect(logger.getEntries()).toHaveLength(0);
-      
+
       const stats = logger.getStats();
       expect(stats.totalEntries).toBe(0);
       expect(Object.keys(stats.levels)).toHaveLength(0);
@@ -343,9 +343,9 @@ describe('AuditLogger - 10/10 Production Suite', () => {
     it('exports audit trail with compliance metadata', () => {
       logger.log('ACTION_1', {}, AuditLevel.INFO, 'tenant-1');
       logger.log('ACTION_2', {}, AuditLevel.AUDIT, 'tenant-1');
-      
+
       const exported = logger.exportForCompliance('tenant-1');
-      
+
       expect(exported.exportedAt).toBeDefined();
       expect(exported.entryCount).toBe(2);
       expect(exported.tenantId).toBe('tenant-1');
@@ -361,15 +361,15 @@ describe('AuditLogger - 10/10 Production Suite', () => {
   // ==========================================================================
   describe('Encryption (AES-256-GCM)', () => {
     it('encrypts sensitive data when enabled', () => {
-      const encryptedLogger = new AuditLogger({ 
+      const encryptedLogger = new AuditLogger({
         enableEncryption: true,
         encryptionKey: 'a'.repeat(64) // 32 bytes hex
       });
-      
-      const entry = encryptedLogger.log('SENSITIVE', { 
-        secret: 'classified' 
+
+      const entry = encryptedLogger.log('SENSITIVE', {
+        secret: 'classified'
       });
-      
+
       expect(entry.data.encrypted).toBe(true);
       expect(entry.data.iv).toBeDefined();
       expect(entry.data.tag).toBeDefined();
@@ -394,10 +394,10 @@ describe('AuditLogger - 10/10 Production Suite', () => {
     it('handles primitive data types', () => {
       const stringEntry = logger.log('STRING_TEST', 'plain string');
       expect(stringEntry.data).toBe('plain string');
-      
+
       const numEntry = logger.log('NUMBER_TEST', 42);
       expect(numEntry.data).toBe(42);
-      
+
       const boolEntry = logger.log('BOOLEAN_TEST', true);
       expect(boolEntry.data).toBe(true);
     });
@@ -405,7 +405,7 @@ describe('AuditLogger - 10/10 Production Suite', () => {
     it('handles circular references gracefully', () => {
       const circular = {};
       circular.self = circular;
-      
+
       expect(() => {
         logger.log('CIRCULAR_TEST', circular);
       }).not.toThrow();

@@ -1,0 +1,126 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-compliance-hud",
+    "title": "🏛️ WILSY OS - Sovereign Compliance HUD",
+    "timezone": "browser",
+    "refresh": "10s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "GDPR Circuit State",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 8, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_breaker_state{tenantId=\"GLOBAL_ROOT\", component=\"GDPR\"}", "legendFormat": "GDPR State" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": {
+                "0": { "text": "CLOSED (Compliant)", "color": "green" },
+                "1": { "text": "OPEN (Violation)", "color": "red" },
+                "2": { "text": "HALF-OPEN (Recovering)", "color": "yellow" }
+              }}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 2 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "POPIA Circuit State",
+        "id": 2,
+        "gridPos": { "x": 8, "y": 0, "w": 8, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_breaker_state{tenantId=\"GLOBAL_ROOT\", component=\"POPIA\"}", "legendFormat": "POPIA State" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": {
+                "0": { "text": "CLOSED (Compliant)", "color": "green" },
+                "1": { "text": "OPEN (Violation)", "color": "red" },
+                "2": { "text": "HALF-OPEN (Recovering)", "color": "yellow" }
+              }}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 2 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "stat",
+        "title": "SOC2 Circuit State",
+        "id": 3,
+        "gridPos": { "x": 16, "y": 0, "w": 8, "h": 6 },
+        "targets": [
+          { "expr": "wilsy_breaker_state{tenantId=\"GLOBAL_ROOT\", component=\"SOC2\"}", "legendFormat": "SOC2 State" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": {
+                "0": { "text": "CLOSED (Compliant)", "color": "green" },
+                "1": { "text": "OPEN (Violation)", "color": "red" },
+                "2": { "text": "HALF-OPEN (Recovering)", "color": "yellow" }
+              }}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": 0 },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 2 }
+              ]
+            }
+          }
+        },
+        "options": { "colorMode": "background", "justifyMode": "center" }
+      },
+      {
+        "type": "timeseries",
+        "title": "Compliance Failover History",
+        "id": 4,
+        "gridPos": { "x": 0, "y": 6, "w": 24, "h": 8 },
+        "targets": [
+          { "expr": "increase(wilsy_counter_failover_events_total{tenantId=\"GLOBAL_ROOT\", component=~\"GDPR|POPIA|SOC2\"}[1h])", "legendFormat": "{{component}} Failovers" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "type": "text",
+        "title": "Compliance Narrative Overlay",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 14, "w": 24, "h": 4 },
+        "options": {
+          "mode": "markdown",
+          "content": "### Sovereign Compliance Report\nThis HUD visualizes the **GDPR, POPIA, and SOC2 breaker states**. A **CLOSED** state indicates full institutional compliance. An **OPEN** state signals a regulatory fracture requiring immediate strike-remediation. A **HALF‑OPEN** state shows that recovery is mathematically in progress.\n\n_Ref: ${__dashboard.name} | Update: ${__last_refresh_time} | Tenant: GLOBAL_ROOT_"
+        }
+      }
+    ]
+  }
+}

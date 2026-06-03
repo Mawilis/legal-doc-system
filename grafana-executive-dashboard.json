@@ -1,0 +1,142 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "wilsy-executive-cockpit",
+    "title": "🏛️ WILSY OS - Sovereign Executive KPI Cockpit",
+    "timezone": "browser",
+    "refresh": "5s",
+    "theme": "dark",
+    "schemaVersion": 36,
+    "version": 1,
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Unified SLA Score (Institutional Uptime)",
+        "id": 1,
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Global SLA %" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 95 },
+                { "color": "#d4af37", "value": 98 },
+                { "color": "green", "value": 99.9 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "textMode": "value_and_name",
+          "colorMode": "background",
+          "justifyMode": "center"
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Institutional Compliance Index",
+        "id": 2,
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_compliance_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Policy Adherence %" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 85 },
+                { "color": "green", "value": 95 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "textMode": "value_and_name",
+          "colorMode": "background",
+          "justifyMode": "center"
+        }
+      },
+      {
+        "type": "stat",
+        "title": "ESG Sustainability Score",
+        "id": 3,
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_sustainability_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Renewable Mix %" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 70 },
+                { "color": "green", "value": 92.5 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "background",
+          "justifyMode": "center"
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Sovereign Efficiency Index (SEI)",
+        "id": 4,
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_efficiency_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Output / Resource" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "orange", "value": 5 },
+                { "color": "green", "value": 10 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "background",
+          "justifyMode": "center"
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Executive KPI Trend Velocity (Q-on-Q)",
+        "id": 5,
+        "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+        "targets": [
+          { "expr": "wilsy_gauge_sla_score{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "SLA Score" },
+          { "expr": "wilsy_gauge_compliance_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Compliance Index" },
+          { "expr": "wilsy_gauge_sustainability_index{tenantId=\"GLOBAL_ROOT\"}", "legendFormat": "Sustainability Index" }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -27,7 +27,7 @@ const storageController = require('../controllers/storageController');
 
 // 2. MIDDLEWARE (The "Godly" Stack)
 const { emitAudit } = require('../middleware/auditMiddleware');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/auth');
 const { requireSameTenant, restrictTo } = require('../middleware/rbacMiddleware');
 const validate = require('../middleware/validationMiddleware');
 // Note: Actual file parsing is handled by 'uploadMiddleware' (Multer/Busboy) in the controller or route chain.

@@ -1,0 +1,39 @@
+/*╔═══════════════════════════════════════════════════════════════════════════╗
+  ║  📏 SUPER ADMIN SPACING TOKENS - WILSY OS 2050                           ║
+  ║  Supreme Command Center Spacing System                                   ║
+  ║  Supreme Architect: Wilson Khanyezi                                      ║
+  ╚═══════════════════════════════════════════════════════════════════════════╝*/
+
+:root {
+  /* Base Spacing */
+  --sa-space-0: 0;
+  --sa-space-1: 0.25rem;
+  --sa-space-2: 0.5rem;
+  --sa-space-3: 0.75rem;
+  --sa-space-4: 1rem;
+  --sa-space-5: 1.25rem;
+  --sa-space-6: 1.5rem;
+  --sa-space-8: 2rem;
+  --sa-space-10: 2.5rem;
+  --sa-space-12: 3rem;
+  --sa-space-16: 4rem;
+  --sa-space-20: 5rem;
+  --sa-space-24: 6rem;
+  --sa-space-32: 8rem;
+  --sa-space-40: 10rem;
+  --sa-space-48: 12rem;
+  --sa-space-56: 14rem;
+  --sa-space-64: 16rem;
+
+  /* Layout Specific */
+  --sa-header-height: 4rem;
+  --sa-sidebar-width: 280px;
+  --sa-sidebar-collapsed: 80px;
+  --sa-footer-height: 3rem;
+
+  /* Component Specific */
+  --sa-card-padding: var(--sa-space-6);
+  --sa-modal-padding: var(--sa-space-8);
+  --sa-input-padding: var(--sa-space-3);
+  --sa-button-padding: var(--sa-space-3) var(--sa-space-6);
+}

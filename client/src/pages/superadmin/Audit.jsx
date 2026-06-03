@@ -1,3 +1,4 @@
+import superAdminAPI, { getAuditLogs } from '../../api/superadmin';
 /* eslint-disable */
 // ============================================================================
 // File Path: src/pages/superadmin/Audit.jsx
@@ -12,14 +13,13 @@
 // ============================================================================
 
 import React, { useEffect, useState } from 'react';
-import { fetchAuditLogs } from '../../api/superadmin';
 
 const Audit = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchAuditLogs()
+    getAuditLogs()
       .then(data => {
         setLogs(data);
         setLoading(false);

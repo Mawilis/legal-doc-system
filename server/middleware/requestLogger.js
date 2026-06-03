@@ -1,166 +1,66 @@
-#!/* eslint-disable */
-/* ╔═══════════════════════════════════════════════════════════════════════════╗
-  ║ WILSY OS - ENTERPRISE REQUEST LOGGER                                      ║
-  ║ Full audit trail | GDPR compliant | Real-time monitoring                 ║
-  ╚═══════════════════════════════════════════════════════════════════════════╝ */
+/* eslint-disable */
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - SOVEREIGN REQUEST LOGGER MIDDLEWARE                           ║
+ * ║ [FORENSIC LOGGING | AUDIT TRAIL | PERFORMANCE MONITORING]                ║
+ * ║ EPITOME: BIBLICAL WORTH BILLIONS | INSTITUTIONAL GRADE                   ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
+ */
 
-import pino from 'pino';
-import { getCurrentContext } from './tenantContext.js';
+import crypto from 'crypto';
 
-// ============================================================================
-// LOGGER CONFIGURATION
-// ============================================================================
-
-const logger = pino({
-  name: 'wilsy-os-http',
-  level: process.env.LOG_LEVEL || 'info',
-  formatters: {
-    level: (label) => ({ level: label }),
-    bindings: () => ({}),
-    log: (obj) => {
-      // Sanitize sensitive data
-      const sanitized = { ...obj };
-      if (sanitized.headers?.authorization) {
-        sanitized.headers.authorization = '[REDACTED]';
-      }
-      if (sanitized.headers?.cookie) {
-        sanitized.headers.cookie = '[REDACTED]';
-      }
-      return sanitized;
-    },
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-  transport: {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: 'SYS:standard',
-      ignore: 'pid,hostname',
-    },
-  },
-});
-
-// ============================================================================
-// METRICS COLLECTOR
-// ============================================================================
-
-const metrics = {
-  requests: 0,
-  responses: 0,
-  errors: 0,
-  totalLatency: 0,
-  endpoints: new Map(),
-};
-
-// ============================================================================
-// REQUEST LOGGER MIDDLEWARE - MAIN EXPORT
-// ============================================================================
-
+/**
+ * Request logging middleware
+ * Logs all incoming requests with forensic detail
+ */
 export const requestLogger = (req, res, next) => {
-  const start = Date.now();
-  metrics.requests++;
+  // Generate unique request ID if not already present
+  if (!req.id) {
+    req.id = `req_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
+  }
 
-  // Store original end function
+  // Add timestamp
+  req.timestamp = new Date().toISOString();
+
+  // Log request details (sanitized)
+  const logEntry = {
+    id: req.id,
+    timestamp: req.timestamp,
+    method: req.method,
+    url: req.originalUrl || req.url,
+    ip: req.ip || req.connection.remoteAddress,
+    userAgent: req.headers['user-agent'] || 'unknown',
+    userId: req.user?.id || 'unauthenticated',
+    tenantId: req.tenantId || 'none',
+    correlationId: req.headers['x-correlation-id'] || req.id
+  };
+
+  // Log to console (in production, this would go to a logging service)
+  console.log(`[REQUEST] ${JSON.stringify(logEntry)}`);
+
+  // Capture response data
   const originalEnd = res.end;
-  const chunks = [];
+  const startTime = process.hrtime();
 
-  // Override end function to capture response
-  res.end = function (chunk, encoding, callback) {
-    if (chunk) {
-      chunks.push(chunk);
-    }
+  res.end = function(chunk, encoding) {
+    // Calculate response time
+    const diff = process.hrtime(startTime);
+    const responseTime = (diff[0] * 1e3 + diff[1] / 1e6).toFixed(2);
 
-    const responseTime = Date.now() - start;
-    const context = getCurrentContext();
-
-    // Calculate response size
-    const responseSize = chunks.reduce((acc, chunk) => acc + (chunk.length || 0), 0);
-
-    // Update metrics
-    metrics.responses++;
-    metrics.totalLatency += responseTime;
-
-    const endpoint = `${req.method} ${req.route?.path || req.path}`;
-    const endpointMetrics = metrics.endpoints.get(endpoint) || { count: 0, latency: 0 };
-    endpointMetrics.count++;
-    endpointMetrics.latency += responseTime;
-    metrics.endpoints.set(endpoint, endpointMetrics);
-
-    // Log the request
-    const logData = {
-      method: req.method,
-      url: req.url,
-      path: req.path,
-      status: res.statusCode,
+    // Log response
+    const responseLog = {
+      id: req.id,
+      statusCode: res.statusCode,
       responseTime: `${responseTime}ms`,
-      responseSize: `${responseSize} bytes`,
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-      referer: req.get('referer'),
-      requestId: context.requestId,
-      tenantId: context.tenantId,
-      userId: context.userId,
+      contentLength: res.getHeader('content-length') || 'unknown'
     };
 
-    if (res.statusCode >= 400) {
-      metrics.errors++;
-      logger.warn(logData, 'Request completed with error');
-    } else {
-      logger.info(logData, 'Request completed successfully');
-    }
+    console.log(`[RESPONSE] ${JSON.stringify(responseLog)}`);
 
-    // Call original end function
-    originalEnd.call(this, chunk, encoding, callback);
+    originalEnd.call(this, chunk, encoding);
   };
 
   next();
 };
-
-// ============================================================================
-// METRICS ENDPOINT
-// ============================================================================
-
-export const getMetrics = (req, res) => {
-  const averageLatency = metrics.responses > 0 ? metrics.totalLatency / metrics.responses : 0;
-
-  const endpointStats = Array.from(metrics.endpoints.entries()).map(([endpoint, data]) => ({
-    endpoint,
-    count: data.count,
-    averageLatency: data.latency / data.count,
-  }));
-
-  res.json({
-    requests: metrics.requests,
-    responses: metrics.responses,
-    errors: metrics.errors,
-    errorRate:
-      metrics.responses > 0 ? `${((metrics.errors / metrics.responses) * 100).toFixed(2)}%` : '0%',
-    averageLatency: `${averageLatency.toFixed(2)}ms`,
-    endpoints: endpointStats,
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-  });
-};
-
-// ============================================================================
-// HEALTH CHECK ENDPOINT
-// ============================================================================
-
-export const healthCheck = (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    version: process.env.npm_package_version || '3.0.0',
-    metrics: {
-      requests: metrics.requests,
-      errors: metrics.errors,
-    },
-  });
-};
-
-// ============================================================================
-// DEFAULT EXPORT
-// ============================================================================
 
 export default requestLogger;
