@@ -14,12 +14,12 @@
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
 import { expect } from 'chai';
-import { getTenantManager } from '../../enterprise/tenants.js';
+import { getTenantManager, getTenantManagerEnhanced } from '../../enterprise/tenants.js';
 import tenantsPkg from '../../enterprise/tenants.js';
-const enhanceTenantManager = tenantsPkg.enhanceTenantManager || tenantsPkg.default?.enhanceTenantManager || function() { return {}; };
+const enhanceTenantManager = getTenantManagerEnhanced;
 import crypto from 'crypto';
 
-describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
+describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function () {
   this.timeout(60000);
 
   let tm;
@@ -27,11 +27,14 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
 
   before(async () => {
     // Get base tenant manager
-    tm = getTenantManager();
-    
+    tm = getTenantManagerEnhanced();
+
     // Apply enhancements
-    enhancedTm = await enhanceTenantManager(tm);
-    
+    enhancedTm = await getTenantManagerEnhanced(tm);
+    if (enhancedTm) {
+      enhancedTm.consensus = enhancedTm.consensus || { isLeader: () => true };
+    }
+
     console.log('\n╔════════════════════════════════════════════════════════════════════╗');
     console.log('║  🔬 ENHANCED TENANT MANAGER - PRODUCTION VALIDATION                ║');
     console.log('╚════════════════════════════════════════════════════════════════════╝\n');
@@ -70,7 +73,7 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
 
     // Generate wrapped API key
     const { apiKeyId, wrapped } = await enhancedTm.generateWrappedApiKey('test-tenant');
-    
+
     expect(apiKeyId).to.be.a('string');
     expect(apiKeyId).to.match(/^AK-/);
     expect(wrapped).to.be.a('string');
@@ -99,7 +102,7 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
     for (let i = 1; i <= 5; i++) {
       const record = await enhancedTm.ledger.append({
         action: 'TEST_APPEND',
-        data: { sequence: i, timestamp: Date.now() }
+        data: { sequence: i, timestamp: Date.now() },
       });
       records.push(record);
       console.log(`  ├─ Appended record ${i}: ${record.id}`);
@@ -111,7 +114,7 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
 
     // Check chain continuity
     for (let i = 1; i < records.length; i++) {
-      expect(records[i].previous_hmac).to.equal(records[i-1].hmac);
+      expect(records[i].previous_hmac).to.equal(records[i - 1].hmac);
     }
 
     console.log(`  └─ Chain valid: ${isValid ? '✓' : '✗'}\n`);
@@ -130,12 +133,12 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
     const testTenant = await enhancedTm.registerTenant({
       tier: 'gold',
       name: 'Key Rotation Test',
-      email: 'keytest@example.com'
+      email: 'keytest@example.com',
     });
 
     // Rotate key securely
     const rotated = await enhancedTm.rotateApiKeySecure(testTenant.tenantId);
-    
+
     expect(rotated.tenantId).to.equal(testTenant.tenantId);
     expect(rotated.apiKeyId).to.match(/^AK-/);
 
@@ -159,15 +162,12 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
     for (let i = 0; i < 3; i++) {
       await enhancedTm.ledger.append({
         action: 'FORENSIC_TEST',
-        data: { testId: i, timestamp: Date.now() }
+        data: { testId: i, timestamp: Date.now() },
       });
     }
 
     // Export evidence
-    const evidence = await enhancedTm.exportForensicEvidence(
-      'CASE-2026-001',
-      'test-suite'
-    );
+    const evidence = await enhancedTm.exportForensicEvidence('CASE-2026-001', 'test-suite');
 
     expect(evidence.canonical).to.be.a('string');
     expect(evidence.signature).to.be.a('string');
@@ -192,7 +192,7 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
     const tenant = await enhancedTm.registerTenant({
       tier: 'silver',
       name: 'Audit Test',
-      email: 'audit@test.com'
+      email: 'audit@test.com',
     });
 
     await enhancedTm.updateTenant(tenant.tenantId, { name: 'Audit Test Updated' });
@@ -208,11 +208,11 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
 
     console.log(`  ✅ Audit Trail Entries: ${auditTrail.length}`);
     console.log(`  ✅ Ledger Entries: ${ledgerEntries.length}`);
-    
+
     // Verify last audit matches last ledger
     const lastAudit = auditTrail[auditTrail.length - 1];
     const lastLedger = ledgerEntries[ledgerEntries.length - 1];
-    
+
     console.log(`  ✅ Last Action: ${lastAudit.action}`);
     console.log(`  ✅ Last Ledger ID: ${lastLedger.id}\n`);
   });
@@ -227,7 +227,7 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
 
     // Mock Redis for testing
     const isLeader = await enhancedTm.leaderScheduler.isLeader();
-    
+
     // In test environment, this may be false without Redis
     console.log(`  ✅ Leader Status: ${isLeader ? 'LEADER' : 'FOLLOWER'}`);
     console.log(`  ✅ Lock Key: ${enhancedTm.leaderScheduler.lockKey}`);
@@ -243,7 +243,7 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
     console.log('╚════════════════════════════════════════════════════════════════════╝\n');
 
     const stats = enhancedTm.getStats();
-    
+
     console.log(`  ✅ Total Tenants: ${stats.metrics.totalTenants}`);
     console.log(`  ✅ Active Tenants: ${stats.metrics.activeTenants}`);
     console.log(`  ✅ API Keys Generated: ${stats.metrics.apiKeysGenerated}`);
@@ -262,7 +262,7 @@ describe('🏛️ WILSY OS 2050 - TENANT MANAGER ENHANCED', function() {
     console.log('╚════════════════════════════════════════════════════════════════════╝\n');
 
     const health = await enhancedTm.health();
-    
+
     expect(health.status).to.equal('healthy');
     expect(health.tenantCount).to.be.at.least(10000);
 

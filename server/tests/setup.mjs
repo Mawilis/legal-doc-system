@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 
 let mongod;
 
@@ -8,9 +8,14 @@ before(async function() {
   mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
   await mongoose.connect(uri);
-  console.log('🚀 Starting MongoDB memory server...');
+  console.log('🚀 Starting MongoDB memory server via Native ESM...');
   console.log('✅ Test MongoDB connected');
 });
+beforeEach(async () => {
+  const collections = mongoose.connection.collections;
+  for (const key in collections) { await collections[key].deleteMany({}); }
+});
+
 
 after(async function() {
   await mongoose.disconnect();

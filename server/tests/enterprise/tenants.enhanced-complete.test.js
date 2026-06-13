@@ -21,12 +21,8 @@
 import { expect } from 'chai';
 import crypto from 'crypto';
 import { performance } from 'perf_hooks';
-import { 
-  getTenantManager, 
-  getTenantManagerEnhanced, 
-  registry 
-} from '../../enterprise/tenants.js';
-import { tenantBilling } from '../../services/tenantBilling.js';
+import { getTenantManager, getTenantManagerEnhanced, registry } from '../../enterprise/tenants.js';
+import tenantBilling from '../../services/tenantBilling.js';
 import { tenantQuota } from '../../services/tenantQuota.js';
 import canonicalSigner from '../../enterprise/utils/canonicalSigner.js';
 
@@ -62,10 +58,10 @@ class MockPostgresLedger {
       this.lastSignature,
       process.env.FORENSIC_HMAC_KEY
     );
-    
+
     this.entries.push(chainEntry);
     this.lastSignature = chainEntry.signature;
-    
+
     return chainEntry;
   }
 
@@ -115,9 +111,9 @@ function constantTimeEqual(a, b) {
 // ============================================================================
 // UNIT TESTS - INVOICE GENERATION
 // ============================================================================
-describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', function() {
+describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', function () {
   this.timeout(30000);
-  
+
   let billing;
   let testInvoice;
   let testSignature;
@@ -127,7 +123,7 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
     console.log('\n╔════════════════════════════════════════════════════════════════════╗');
     console.log('║  🔬 UNIT TESTS - BILLING & FORENSIC                                 ║');
     console.log('╚════════════════════════════════════════════════════════════════════╝\n');
-    
+
     billing = tenantBilling;
   });
 
@@ -143,12 +139,12 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
       tenantId: TEST_TENANT_ID,
       amount: 15_000_000, // R15M
       jurisdiction: 'ZA',
-      description: 'Monthly subscription - Platinum Tier'
+      description: 'Monthly subscription - Platinum Tier',
     };
 
     console.log(`  📄 Generating first invoice for ${TEST_TENANT_ID}...`);
     const invoice1 = await billing.generateInvoice(TEST_TENANT_ID, invoiceDetails);
-    
+
     console.log(`  ├─ Invoice ID: ${invoice1.invoiceId}`);
     console.log(`  ├─ Amount: R${(invoice1.amount / 1e6).toFixed(0)}M`);
     console.log(`  ├─ Tax (VAT 15%): R${(invoice1.tax / 1e6).toFixed(0)}M`);
@@ -164,7 +160,7 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
 
     console.log(`\n  📄 Generating second invoice (should have different ID)...`);
     const invoice2 = await billing.generateInvoice(TEST_TENANT_ID, invoiceDetails);
-    
+
     console.log(`  ├─ Invoice ID: ${invoice2.invoiceId}`);
     console.log(`  ├─ Hash: ${invoice2.hash.substring(0, 32)}...`);
 
@@ -173,14 +169,14 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
     expect(invoice1.amount).to.equal(invoice2.amount);
     expect(invoice1.tax).to.equal(invoice2.tax);
     expect(invoice1.total).to.equal(invoice2.total);
-    
+
     // Hashes should be different because IDs are different
     expect(invoice1.hash).to.not.equal(invoice2.hash);
 
     console.log(`\n  ✅ Invoice generation idempotent with unique IDs\n`);
-    
+
     testInvoice = invoice1;
-    
+
     // Generate a signature using the canonical signer
     const payload = {
       invoiceId: testInvoice.invoiceId,
@@ -189,11 +185,13 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
       tax: testInvoice.tax,
       total: testInvoice.total,
       currency: testInvoice.currency || 'ZAR',
-      jurisdiction: testInvoice.jurisdiction || 'ZA'
+      jurisdiction: testInvoice.jurisdiction || 'ZA',
     };
-    
+
     testSignature = canonicalSigner.sign(payload, TEST_SECRET);
-    console.log(`  🔐 Test signature generated (via canonical signer): ${testSignature.substring(0, 32)}...\n`);
+    console.log(
+      `  🔐 Test signature generated (via canonical signer): ${testSignature.substring(0, 32)}...\n`
+    );
   });
 
   // ==========================================================================
@@ -207,7 +205,7 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
 
     console.log(`  🔍 Verifying invoice ${testInvoice.invoiceId}...`);
     console.log(`  ├─ Using stable fields only (excluding createdAt, dueDate, etc.)`);
-    
+
     // Create payload with stable fields
     const payload = {
       invoiceId: testInvoice.invoiceId,
@@ -216,19 +214,19 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
       tax: testInvoice.tax,
       total: testInvoice.total,
       currency: testInvoice.currency || 'ZAR',
-      jurisdiction: testInvoice.jurisdiction || 'ZA'
+      jurisdiction: testInvoice.jurisdiction || 'ZA',
     };
-    
+
     // Show canonical form
     const canonical = canonicalSigner.canonicalize(payload);
     console.log(`  ├─ Canonical payload (${canonical.length} chars):`);
     console.log(`  ${canonical.substring(0, 80)}...`);
-    
+
     // Verify the signature using canonical signer
     const isValid = canonicalSigner.verify(payload, testSignature, TEST_SECRET);
-    
+
     console.log(`  ├─ Original signature: ${testSignature.substring(0, 32)}...`);
-    
+
     // Recalculate to show it matches
     const recalculated = canonicalSigner.sign(payload, TEST_SECRET);
     console.log(`  ├─ Recalculated: ${recalculated.substring(0, 32)}...`);
@@ -240,7 +238,7 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
     console.log(`\n  🔧 Tampering with invoice amount...`);
     const tamperedPayload = { ...payload, amount: 16_000_000 };
     const isValidTampered = canonicalSigner.verify(tamperedPayload, testSignature, TEST_SECRET);
-    
+
     console.log(`  ├─ Original signature: ${testSignature.substring(0, 32)}...`);
     console.log(`  ├─ Tampered verification: ${isValidTampered}`);
     console.log(`  └─ Valid: ${isValidTampered}`);
@@ -263,7 +261,7 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
       amount: testInvoice.total,
       method: 'wire_transfer',
       reference: `REF-${Date.now()}`,
-      tenantId: TEST_TENANT_ID
+      tenantId: TEST_TENANT_ID,
     };
 
     console.log(`  💳 Processing payment of R${(payment.amount / 1e6).toFixed(0)}M...`);
@@ -294,7 +292,7 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
     const failureInvoice = await billing.generateInvoice(TEST_TENANT_ID, {
       amount: 5_000_000,
       jurisdiction: 'ZA',
-      description: 'Failure test invoice'
+      description: 'Failure test invoice',
     });
 
     const payment = {
@@ -302,11 +300,11 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
       amount: failureInvoice.total,
       method: 'insufficient_funds',
       reference: `FAIL-${Date.now()}`,
-      tenantId: TEST_TENANT_ID
+      tenantId: TEST_TENANT_ID,
     };
 
     console.log(`  💳 Processing payment that will fail...`);
-    
+
     // Simulate failure
     let result;
     if (payment.method === 'insufficient_funds') {
@@ -318,7 +316,7 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
         method: payment.method,
         status: 'failed',
         failureReason: 'Insufficient funds',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
     } else {
       result = await billing.processPayment(TEST_TENANT_ID, payment);
@@ -352,8 +350,8 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
       caseId: TEST_CASE_ID,
       entries: [
         { data: 'test1', id: 'entry-1' },
-        { id: 'entry-2', data: 'test2' }
-      ]
+        { id: 'entry-2', data: 'test2' },
+      ],
     };
 
     console.log(`  📦 Original object (unsorted keys):`);
@@ -361,7 +359,7 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
 
     // Canonicalize with the signer
     const canonical = canonicalSigner.canonicalize(evidence);
-    
+
     console.log(`\n  📦 Canonicalized (sorted keys):`);
     console.log(`  ${canonical.substring(0, 80)}...`);
 
@@ -379,8 +377,8 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
       exportedBy: TEST_EXPORTER,
       entries: [
         { id: 'entry-1', data: 'test1' },
-        { data: 'test2', id: 'entry-2' }
-      ]
+        { data: 'test2', id: 'entry-2' },
+      ],
     };
 
     const canonical2 = canonicalSigner.canonicalize(evidence2);
@@ -405,9 +403,9 @@ describe('🏛️ WILSY OS 2050 - UNIT TESTS [INVOICE | PAYMENT | FORENSIC]', fu
 // ============================================================================
 // INTEGRATION TESTS - POSTGRES LEDGER
 // ============================================================================
-describe('🏛️ WILSY OS 2050 - INTEGRATION TESTS [POSTGRES LEDGER]', function() {
+describe('🏛️ WILSY OS 2050 - INTEGRATION TESTS [POSTGRES LEDGER]', function () {
   this.timeout(60000);
-  
+
   let ledger;
   let enhanced;
 
@@ -418,13 +416,13 @@ describe('🏛️ WILSY OS 2050 - INTEGRATION TESTS [POSTGRES LEDGER]', function
 
     // Initialize mock ledger with v2.0 signer
     ledger = new MockPostgresLedger();
-    
+
     // Get enhanced tenant manager with ledger
-    enhanced = getTenantManagerEnhanced({ 
+    enhanced = getTenantManagerEnhanced({
       enableEnhancements: true,
-      bootstrapRegistry: false
+      bootstrapRegistry: false,
     });
-    
+
     // Inject mock ledger
     enhanced.ledger = ledger;
 
@@ -446,10 +444,10 @@ describe('🏛️ WILSY OS 2050 - INTEGRATION TESTS [POSTGRES LEDGER]', function
         action: 'INTEGRATION_TEST',
         sequence: i,
         timestamp: Date.now(),
-        data: { test: `data-${i}` }
+        data: { test: `data-${i}` },
       });
       entries.push(entry);
-      console.log(`  ├─ Appended entry ${i+1}: ${entry.id}`);
+      console.log(`  ├─ Appended entry ${i + 1}: ${entry.id}`);
       console.log(`      ├─ Signature: ${entry.signature.substring(0, 16)}...`);
       if (entry.prevHash) {
         console.log(`      └─ Prev Hash: ${entry.prevHash.substring(0, 16)}...`);
@@ -461,11 +459,11 @@ describe('🏛️ WILSY OS 2050 - INTEGRATION TESTS [POSTGRES LEDGER]', function
     // Verify entries were persisted
     const allEntries = await ledger.getAll();
     expect(allEntries.length).to.be.at.least(3);
-    
+
     console.log(`\n  📊 Ledger stats:`);
     console.log(`  ├─ Total entries: ${allEntries.length}`);
     console.log(`  ├─ First entry: ${allEntries[0].id}`);
-    console.log(`  └─ Last entry: ${allEntries[allEntries.length-1].id}`);
+    console.log(`  └─ Last entry: ${allEntries[allEntries.length - 1].id}`);
 
     // Verify HMAC chain using canonical signer
     const isValid = await ledger.verifyChain();
@@ -486,31 +484,32 @@ describe('🏛️ WILSY OS 2050 - INTEGRATION TESTS [POSTGRES LEDGER]', function
 
     // Clear and add fresh entries
     await ledger.clear();
-    
+
     for (let i = 0; i < 5; i++) {
       await ledger.append({
         action: 'CHAIN_TEST',
         sequence: i,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
     // Verify chain integrity
     const isValid = await ledger.verifyChain();
     expect(isValid).to.be.true;
-    
+
     console.log(`  ✅ Initial chain integrity: ${isValid}`);
 
     // Tamper with an entry by modifying its signature
     const allEntries = await ledger.getAll();
     const tamperedIndex = 2;
     const originalSignature = allEntries[tamperedIndex].signature;
-    allEntries[tamperedIndex].signature = 'tampered' + allEntries[tamperedIndex].signature.substring(7);
-    
+    allEntries[tamperedIndex].signature =
+      'tampered' + allEntries[tamperedIndex].signature.substring(7);
+
     console.log(`  🔧 Tampered entry at index ${tamperedIndex}:`);
     console.log(`      ├─ Original: ${originalSignature.substring(0, 16)}...`);
     console.log(`      └─ Tampered: ${allEntries[tamperedIndex].signature.substring(0, 16)}...`);
-    
+
     // Re-verify (should fail)
     const isTamperedValid = await ledger.verifyChain();
     expect(isTamperedValid).to.be.false;
@@ -536,19 +535,21 @@ describe('🏛️ WILSY OS 2050 - INTEGRATION TESTS [POSTGRES LEDGER]', function
 
     const appendPromises = [];
     for (let i = 0; i < CONCURRENT_APPENDS; i++) {
-      appendPromises.push(ledger.append({
-        action: 'CONCURRENT_TEST',
-        index: i,
-        timestamp: Date.now()
-      }));
+      appendPromises.push(
+        ledger.append({
+          action: 'CONCURRENT_TEST',
+          index: i,
+          timestamp: Date.now(),
+        })
+      );
     }
 
     const results = await Promise.all(appendPromises);
-    
+
     expect(results).to.have.length(CONCURRENT_APPENDS);
-    
+
     // Verify all entries have unique IDs
-    const ids = results.map(r => r.id);
+    const ids = results.map((r) => r.id);
     const uniqueIds = new Set(ids);
     expect(uniqueIds.size).to.equal(CONCURRENT_APPENDS);
 
@@ -567,9 +568,9 @@ describe('🏛️ WILSY OS 2050 - INTEGRATION TESTS [POSTGRES LEDGER]', function
 // ============================================================================
 // END-TO-END TESTS - BILLING → PAYMENT → FORENSIC
 // ============================================================================
-describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORENSIC]', function() {
+describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORENSIC]', function () {
   this.timeout(60000);
-  
+
   let enhanced;
   let billing;
   let ledger;
@@ -586,10 +587,10 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
     // Initialize components
     ledger = new MockPostgresLedger();
     billing = tenantBilling;
-    
-    enhanced = getTenantManagerEnhanced({ 
+
+    enhanced = getTenantManagerEnhanced({
       enableEnhancements: true,
-      bootstrapRegistry: false
+      bootstrapRegistry: false,
     });
     enhanced.ledger = ledger;
 
@@ -608,15 +609,15 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
     const invoiceDetails = {
       amount: 15_000_000,
       jurisdiction: 'ZA',
-      description: 'E2E Test Invoice - Platinum Tier'
+      description: 'E2E Test Invoice - Platinum Tier',
     };
 
     console.log(`  📄 Step 1: Generating invoice for ${tenantId}...`);
     testInvoice = await billing.generateInvoice(tenantId, invoiceDetails);
-    
+
     expect(testInvoice.invoiceId).to.match(/^INV-/);
     expect(testInvoice.status).to.equal('pending');
-    
+
     console.log(`  ├─ Invoice ID: ${testInvoice.invoiceId}`);
     console.log(`  ├─ Amount: R${(testInvoice.amount / 1e6).toFixed(0)}M`);
     console.log(`  ├─ Tax: R${(testInvoice.tax / 1e6).toFixed(0)}M`);
@@ -629,11 +630,11 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
       amount: testInvoice.total,
       method: 'wire_transfer',
       reference: `E2E-${Date.now()}`,
-      tenantId
+      tenantId,
     };
 
     testPayment = await billing.processPayment(tenantId, payment);
-    
+
     expect(testPayment.status).to.equal('completed');
     expect(testPayment.invoiceId).to.equal(testInvoice.invoiceId);
 
@@ -644,7 +645,7 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
 
     // Verify invoice status updated
     const outstanding = billing.getOutstandingInvoices(tenantId);
-    const paidInvoice = outstanding.find(i => i.invoiceId === testInvoice.invoiceId);
+    const paidInvoice = outstanding.find((i) => i.invoiceId === testInvoice.invoiceId);
     expect(paidInvoice).to.be.undefined; // Should be paid, not outstanding
 
     console.log(`\n  ✅ Full billing cycle completed\n`);
@@ -660,7 +661,7 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
     console.log('╚════════════════════════════════════════════════════════════════════╝\n');
 
     console.log(`  📦 Step 1: Creating test ledger entry...`);
-    
+
     // Create a test chain entry using the signer
     const testEntry = canonicalSigner.createChainEntry(
       { action: 'TEST_E002', timestamp: Date.now() },
@@ -668,21 +669,21 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
       null,
       TEST_SECRET
     );
-    
+
     expect(testEntry).to.have.property('id');
     expect(testEntry).to.have.property('signature');
     expect(testEntry.signature).to.be.a('string').with.lengthOf(128); // SHA3-512
-    
+
     console.log(`  ├─ Entry ID: ${testEntry.id}`);
     console.log(`  ├─ Signature: ${testEntry.signature.substring(0, 32)}...`);
 
     console.log(`\n  📦 Step 2: Exporting forensic evidence using ledger...`);
-    
+
     // Add the entry to ledger
     await ledger.append(testEntry.data);
-    
+
     const evidence = await ledger.exportEvidence(TEST_CASE_ID, TEST_EXPORTER);
-    
+
     // Verify evidence structure
     expect(evidence).to.have.property('caseId');
     expect(evidence).to.have.property('exportedBy');
@@ -700,11 +701,11 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
     console.log(`  ├─ Signature: ${evidence.signature.substring(0, 32)}...`);
 
     console.log(`\n  🔐 Step 3: Verifying signature using canonical signer...`);
-    
+
     // Verify the evidence signature
     const { signature, ...evidenceWithoutSignature } = evidence;
     const isValid = canonicalSigner.verify(evidenceWithoutSignature, signature, TEST_SECRET);
-    
+
     expect(isValid).to.be.true;
 
     console.log(`  └─ Signature valid: ${isValid}`);
@@ -727,11 +728,11 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
     // Operation 1: Register tenant
     console.log(`  ├─ Operation 1: Register tenant`);
     const tenantEntry = canonicalSigner.createChainEntry(
-      { 
+      {
         action: 'TENANT_REGISTERED',
         tenantId: 'f500-gold-audit-001',
         tier: 'gold',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       },
       null,
       null,
@@ -746,7 +747,7 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
         action: 'INVOICE_GENERATED',
         invoiceId: 'INV-AUDIT-001',
         amount: 10_000_000,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       },
       tenantEntry.id,
       tenantEntry.signature,
@@ -763,7 +764,7 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
         invoiceId: 'INV-AUDIT-001',
         amount: 10_000_000,
         status: 'completed',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       },
       invoiceEntry.id,
       invoiceEntry.signature,
@@ -775,15 +776,15 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
 
     // Get all ledger entries
     const entries = await ledger.getAll();
-    
+
     // Create audit trail object
     const auditTrail = {
       operations: [tenantEntry, invoiceEntry, paymentEntry],
       entries: entries,
       entryCount: entries.length,
-      chainValid: true
+      chainValid: true,
     };
-    
+
     console.log(`  📊 Audit trail summary:`);
     console.log(`  ├─ Total entries: ${auditTrail.entryCount}`);
     console.log(`  ├─ Tenant registration: ✓`);
@@ -801,10 +802,7 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
 
     // Export final forensic package using ledger
     console.log(`\n  📦 Exporting final forensic package...`);
-    const finalEvidence = await ledger.exportEvidence(
-      'AUDIT-COMPLETE-001',
-      'test-suite'
-    );
+    const finalEvidence = await ledger.exportEvidence('AUDIT-COMPLETE-001', 'test-suite');
 
     expect(finalEvidence.caseId).to.equal('AUDIT-COMPLETE-001');
     expect(finalEvidence.entryCount).to.be.at.least(3);
@@ -815,12 +813,12 @@ describe('🏛️ WILSY OS 2050 - END-TO-END TESTS [BILLING → PAYMENT → FORE
     console.log(`  ├─ Entries in export: ${finalEvidence.entryCount}`);
     console.log(`  ├─ Chain valid: ${finalEvidence.chainValid}`);
     console.log(`  ├─ Signature: ${finalEvidence.signature.substring(0, 32)}...`);
-    
+
     // Verify the evidence signature
     const { signature, ...evidenceWithoutSignature } = finalEvidence;
     const isValid = canonicalSigner.verify(evidenceWithoutSignature, signature, TEST_SECRET);
     expect(isValid).to.be.true;
-    
+
     console.log(`  └─ Evidence signature valid: ${isValid}`);
 
     console.log(`\n  ✅ Complete audit trail maintained with chain integrity\n`);

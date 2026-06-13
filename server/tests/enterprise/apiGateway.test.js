@@ -16,13 +16,13 @@
  */
 
 import { expect } from 'chai';
-import { EnterpriseGateway } from '../../enterprise/apiGateway.js';
+import EnterpriseGateway from '../../enterprise/apiGateway.js';
 import crypto from 'crypto';
 import { performance } from 'perf_hooks';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
+describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function () {
   this.timeout(120000);
 
   let gateway;
@@ -52,7 +52,7 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
       defaultQpsLimit: 1000,
       decayInterval: 100000,
       activeRegions: ['ZA', 'EU', 'US'],
-      initialRegion: 'ZA'
+      initialRegion: 'ZA',
     });
 
     // Capture existing tenants (they're already created in constructor)
@@ -134,7 +134,9 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
 
     console.log(`  📋 FIRST 10 TENANTS:`);
     firstTen.forEach((tenant, index) => {
-      console.log(`  ${index + 1}. ${tenant.id} (${tenant.tier}) - R${(tenant.annualValue / 1e6).toFixed(0)}M/year`);
+      console.log(
+        `  ${index + 1}. ${tenant.id} (${tenant.tier}) - R${(tenant.annualValue / 1e6).toFixed(0)}M/year`
+      );
     });
     console.log('');
 
@@ -180,7 +182,9 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
     console.log(`\n  ✅ DILITHIUM-5 RESULTS:`);
     console.log(`  ├─ Success Rate: 100%`);
     console.log(`  ├─ Avg Latency: ${avgAuthTime.toFixed(3)}ms`);
-    console.log(`  ├─ Avg Signature Size: ${avgSigSize} chars (${Math.floor(avgSigSize / 2)} bytes)`);
+    console.log(
+      `  ├─ Avg Signature Size: ${avgSigSize} chars (${Math.floor(avgSigSize / 2)} bytes)`
+    );
     console.log(`  └─ NIST Level 5: ✓\n`);
 
     testResults.f500003 = true;
@@ -206,7 +210,7 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
     console.log(`  ├─ Capacity: ${limit} requests per second`);
     console.log(`  ├─ Expected allowed: ${limit}`);
     console.log(`  ├─ Expected blocked: ${burst - limit}`);
-    console.log(`  └─ Expected error rate: ${((burst - limit) / burst * 100).toFixed(2)}%\n`);
+    console.log(`  └─ Expected error rate: ${(((burst - limit) / burst) * 100).toFixed(2)}%\n`);
 
     for (let i = 0; i < burst; i++) {
       const result = gateway.checkRateLimit(tenantId);
@@ -265,13 +269,15 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
     }
     console.log(`  ✅ Warmup complete - frequency sketch populated\n`);
 
-    console.log(`  🚀 Main Test Phase: Processing ${CACHE_TEST_REQUESTS.toLocaleString()} requests...\n`);
+    console.log(
+      `  🚀 Main Test Phase: Processing ${CACHE_TEST_REQUESTS.toLocaleString()} requests...\n`
+    );
 
     for (let i = 0; i < CACHE_TEST_REQUESTS; i++) {
       const usePopular = Math.random() < 0.8;
       const qId = usePopular
         ? popularQueries[Math.floor(Math.random() * 200)]
-        : Math.floor(Math.random() * 100);   // 100 uniques, not 1000!
+        : Math.floor(Math.random() * 100); // 100 uniques, not 1000!
 
       const result = gateway.getCachedResult(qId);
 
@@ -283,8 +289,10 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
       }
 
       if ((i + 1) % 20000 === 0) {
-        const currentHitRate = (hits / (i + 1) * 100).toFixed(2);
-        process.stdout.write(`  ⏳ Progress: ${(i + 1).toLocaleString()}/${CACHE_TEST_REQUESTS} | Hit Rate: ${currentHitRate}%\r`);
+        const currentHitRate = ((hits / (i + 1)) * 100).toFixed(2);
+        process.stdout.write(
+          `  ⏳ Progress: ${(i + 1).toLocaleString()}/${CACHE_TEST_REQUESTS} | Hit Rate: ${currentHitRate}%\r`
+        );
       }
     }
 
@@ -331,16 +339,20 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
     for (let batch = 0; batch < batches; batch++) {
       const batchSize_current = Math.min(batchSize, CONCURRENT_USERS - batch * batchSize);
 
-      await Promise.all(Array.from({ length: batchSize_current }, async () => {
-        for (let req = 0; req < REQUESTS_PER_USER; req++) {
-          const reqStart = performance.now();
-          completed++;
-          latencies.push(performance.now() - reqStart);
-        }
-      }));
+      await Promise.all(
+        Array.from({ length: batchSize_current }, async () => {
+          for (let req = 0; req < REQUESTS_PER_USER; req++) {
+            const reqStart = performance.now();
+            completed++;
+            latencies.push(performance.now() - reqStart);
+          }
+        })
+      );
 
       if ((batch + 1) % 2 === 0) {
-        process.stdout.write(`  ⏳ Progress: ${Math.min((batch + 1) * batchSize, CONCURRENT_USERS).toLocaleString()}/${CONCURRENT_USERS} users\r`);
+        process.stdout.write(
+          `  ⏳ Progress: ${Math.min((batch + 1) * batchSize, CONCURRENT_USERS).toLocaleString()}/${CONCURRENT_USERS} users\r`
+        );
       }
     }
 
@@ -442,7 +454,7 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
     const newGateway = new EnterpriseGateway({
       cacheSizeLimit: 300,
       windowSize: 30,
-      defaultQpsLimit: 1000
+      defaultQpsLimit: 1000,
     });
 
     const restoreStart = performance.now();
@@ -452,8 +464,12 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
     console.log(`  📋 Recovery Metrics:`);
     console.log(`  ├─ State Restore: ${restoreTime.toFixed(0)}ms`);
     console.log(`  ├─ Target RTO: 5000ms`);
-    console.log(`  ├─ Main Cache Size: ${newGateway.mainCache.size} (original: ${gateway.mainCache.size})`);
-    console.log(`  ├─ Window Cache Size: ${newGateway.windowCache.size} (original: ${gateway.windowCache.size})`);
+    console.log(
+      `  ├─ Main Cache Size: ${newGateway.mainCache.size} (original: ${gateway.mainCache.size})`
+    );
+    console.log(
+      `  ├─ Window Cache Size: ${newGateway.windowCache.size} (original: ${gateway.windowCache.size})`
+    );
     console.log(`  └─ RPO Achieved: 0 (no data loss)\n`);
 
     expect(newGateway.mainCache.size).to.equal(gateway.mainCache.size);
@@ -535,7 +551,9 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
     // DEBUG OUTPUT - Capture exact values for forensic analysis
     console.log('  🔍 DEBUG certification inputs:');
     console.log(`  ├─ allTestsPassed: ${allTestsPassed} (${Object.keys(testResults).length}/11)`);
-    console.log(`  ├─ cacheHitRate: ${(cacheHitRate * 100).toFixed(2)}% (target: ${CACHE_HIT_TARGET * 100}%)`);
+    console.log(
+      `  ├─ cacheHitRate: ${(cacheHitRate * 100).toFixed(2)}% (target: ${CACHE_HIT_TARGET * 100}%)`
+    );
     console.log(`  ├─ p99: ${p99Value}ms (target: <${MAX_LATENCY_P99}ms)`);
     console.log(`  ├─ postQuantumOk: ${postQuantumOk}`);
     console.log(`  ├─ multiRegionOk: ${multiRegionOk}`);
@@ -599,24 +617,33 @@ describe('WILSY OS 2050 - QUANTUM SOVEREIGN GATEWAY v8.0', function() {
     console.log(`  └─ 10-Year Value: R${(metrics.estimated10YearValue / 1e12).toFixed(2)}T\n`);
 
     const evidencePath = path.join('/tmp', `f500-certification-v8-final-${Date.now()}.json`);
-    await fs.writeFile(evidencePath, JSON.stringify({
-      certification: {
-        id: 'F500-2026-03-08-001',
-        grantedAt: new Date().toISOString(),
-        expiresAt: '2036-03-08',
-        version: '2050.14.0',
-        value: 'R2.3 Trillion',
-        quantum: 'Dilithium-5',
-        regions: ['ZA', 'EU', 'US']
-      },
-      metrics,
-      testResults,
-      timestamp: new Date().toISOString()
-    }, null, 2));
+    await fs.writeFile(
+      evidencePath,
+      JSON.stringify(
+        {
+          certification: {
+            id: 'F500-2026-03-08-001',
+            grantedAt: new Date().toISOString(),
+            expiresAt: '2036-03-08',
+            version: '2050.14.0',
+            value: 'R2.3 Trillion',
+            quantum: 'Dilithium-5',
+            regions: ['ZA', 'EU', 'US'],
+          },
+          metrics,
+          testResults,
+          timestamp: new Date().toISOString(),
+        },
+        null,
+        2
+      )
+    );
 
     console.log(`  💾 Forensic Evidence Saved:`);
     console.log(`  ├─ Path: ${evidencePath}`);
-    console.log(`  └─ Size: ${(JSON.stringify({ metrics, testResults }).length / 1024).toFixed(1)} KB\n`);
+    console.log(
+      `  └─ Size: ${(JSON.stringify({ metrics, testResults }).length / 1024).toFixed(1)} KB\n`
+    );
 
     console.log('╔════════════════════════════════════════════════════════════════════╗');
     console.log('║  🏆 WILSY OS 2050 v8.0 - FORTUNE 500 CERTIFIED                     ║');

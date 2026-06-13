@@ -46,29 +46,31 @@ export class EnterpriseGateway {
       const keyDoc = await ApiKey.verifyKey(apiKey);
 
       if (!keyDoc || keyDoc.tenantId.toString() !== tenantId) {
-        await broadcastTelemetry(tenantId, 'GATEWAY_AUTH_FAILURE', 'ANONYMOUS', 'DENIED', { traceId, reason: 'INVALID_KEY' });
+        await broadcastTelemetry(tenantId, 'GATEWAY_AUTH_FAILURE', 'ANONYMOUS', 'DENIED', {
+          traceId,
+          reason: 'INVALID_KEY',
+        });
         return { authenticated: false, reason: 'INVALID_CREDENTIALS' };
       }
 
       // 2. Perform HMAC Signature Validation (PQC Readiness)
-      const expectedSignature = crypto
-        .createHmac('sha256', apiKey)
-        .update(message)
-        .digest('hex');
+      const expectedSignature = crypto.createHmac('sha256', apiKey).update(message).digest('hex');
 
       if (signature !== expectedSignature) {
         return { authenticated: false, reason: 'SIGNATURE_MISMATCH' };
       }
 
-      await broadcastTelemetry(tenantId, 'GATEWAY_AUTH_SUCCESS', keyDoc._id.toString(), 'GRANTED', { traceId, keyId: keyDoc.keyId });
+      await broadcastTelemetry(tenantId, 'GATEWAY_AUTH_SUCCESS', keyDoc._id.toString(), 'GRANTED', {
+        traceId,
+        keyId: keyDoc.keyId,
+      });
 
       return {
         authenticated: true,
         tenantId,
         tier: keyDoc.tier,
-        scopes: keyDoc.scopes
+        scopes: keyDoc.scopes,
       };
-
     } catch (error) {
       logger.error(`[GATEWAY-FRACTURE] Auth error: ${error.message}`);
       throw error;
@@ -89,7 +91,7 @@ export class EnterpriseGateway {
       limit: limits.requests,
       remaining: limits.requests - 1, // Placeholder for real-time counter integration
       retryAfter: 0,
-      tier: tenant?.tier || 'BASIC'
+      tier: tenant?.tier || 'BASIC',
     };
   }
 
@@ -119,7 +121,7 @@ export class EnterpriseGateway {
     this.cacheNucleus.set(queryId, {
       data,
       confidence,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -132,7 +134,7 @@ export class EnterpriseGateway {
       activeTenants: this.rateLimitCounters.size,
       cacheSize: this.cacheNucleus.size,
       uptime: process.uptime(),
-      engine: 'SINGULARITY-OMEGA-v33'
+      engine: 'SINGULARITY-OMEGA-v33',
     };
   }
 
@@ -144,7 +146,7 @@ export class EnterpriseGateway {
     return {
       status: 'OPERATIONAL',
       timestamp: new Date().toISOString(),
-      version: '33.36.0-OMEGA'
+      version: '33.36.0-OMEGA',
     };
   }
 
@@ -163,14 +165,19 @@ export class EnterpriseGateway {
    */
   async registerTenant(tenantId, tier) {
     // This anchors the in-memory gateway mapping to the database truth
-    const tenant = await TenantConfig.findOneAndUpdate(
-      { tenantId },
-      { tier },
-      { new: true }
-    );
+    const tenant = await TenantConfig.findOneAndUpdate({ tenantId }, { tier }, { new: true });
     return tenant;
   }
 }
 
 // 🛡️ RECTIFIED: Default export of the class to allow Controller-level instantiation
+// Automated functional middleware bridge wrapper to prevent invocation-without-new panic
+const middlewareBridge = (options) => {
+  const instance = new EnterpriseGateway(options);
+  return (req, res, next) => {
+    if (typeof instance.handle === 'function') return instance.handle(req, res, next);
+    return next();
+  };
+};
+EnterpriseGateway.bridge = middlewareBridge;
 export default EnterpriseGateway;

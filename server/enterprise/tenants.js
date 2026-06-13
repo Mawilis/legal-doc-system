@@ -25,7 +25,7 @@
 import * as crypto from 'crypto';
 import { promisify } from 'util';
 import { tenantEncryption } from '../utils/tenantEncryption.js';
-import { tenantBilling } from '../services/tenantBilling.js';
+import tenantBilling from '../services/tenantBilling.js';
 import { tenantQuota } from '../services/tenantQuota.js';
 import logger from '../utils/logger.js';
 
@@ -52,7 +52,7 @@ export class TenantManager {
     this.hsmConfig = {
       provider: process.env.HSM_PROVIDER || 'local',
       keyId: process.env.HSM_MASTER_KEY_ID,
-      region: process.env.AWS_REGION || 'af-south-1'
+      region: process.env.AWS_REGION || 'af-south-1',
     };
 
     // Core data structures
@@ -61,7 +61,7 @@ export class TenantManager {
       byApiKey: new Map(),
       byEmail: new Map(),
       byDomain: new Map(),
-      byRegion: new Map(this.regions.map(r => [r, new Set()]))
+      byRegion: new Map(this.regions.map((r) => [r, new Set()])),
     };
 
     // Encryption keys
@@ -82,7 +82,7 @@ export class TenantManager {
       authenticationFailures: 0,
       quotaViolations: 0,
       regionFailovers: 0,
-      startTime: Date.now()
+      startTime: Date.now(),
     };
 
     // Initialize
@@ -101,7 +101,7 @@ export class TenantManager {
       regions: this.regions,
       hsmEnabled: this.hsmEnabled,
       component: this.component,
-      version: this.version
+      version: this.version,
     });
 
     this._logAsciiArt();
@@ -149,7 +149,7 @@ export class TenantManager {
         secretKey,
         region,
         status: 'active',
-        createdAt: new Date(Date.UTC(2026, 0, i % 28 + 1)).toISOString(),
+        createdAt: new Date(Date.UTC(2026, 0, (i % 28) + 1)).toISOString(),
         updatedAt: new Date().toISOString(),
         features: ['quantum', 'forensics', 'unlimited', 'hsm', 'dedicated', 'sla-99999'],
         rateLimit: 10000,
@@ -158,8 +158,8 @@ export class TenantManager {
         metadata: {
           industry: 'finance',
           employees: 10000,
-          jurisdiction: 'ZA'
-        }
+          jurisdiction: 'ZA',
+        },
       };
 
       this.tenants.set(tenantId, tenant);
@@ -188,7 +188,7 @@ export class TenantManager {
         secretKey,
         region,
         status: 'active',
-        createdAt: new Date(Date.UTC(2026, 1, i % 28 + 1)).toISOString(),
+        createdAt: new Date(Date.UTC(2026, 1, (i % 28) + 1)).toISOString(),
         updatedAt: new Date().toISOString(),
         features: ['quantum', 'forensics', 'enterprise', 'sla-9999'],
         rateLimit: 5000,
@@ -197,8 +197,8 @@ export class TenantManager {
         metadata: {
           industry: 'legal',
           employees: 1000,
-          jurisdiction: 'EU'
-        }
+          jurisdiction: 'EU',
+        },
       };
 
       this.tenants.set(tenantId, tenant);
@@ -227,7 +227,7 @@ export class TenantManager {
         secretKey,
         region,
         status: 'active',
-        createdAt: new Date(Date.UTC(2026, 2, i % 28 + 1)).toISOString(),
+        createdAt: new Date(Date.UTC(2026, 2, (i % 28) + 1)).toISOString(),
         updatedAt: new Date().toISOString(),
         features: ['standard', 'audit', 'basic'],
         rateLimit: 1000,
@@ -236,8 +236,8 @@ export class TenantManager {
         metadata: {
           industry: 'small business',
           employees: 50,
-          jurisdiction: 'US'
-        }
+          jurisdiction: 'US',
+        },
       };
 
       this.tenants.set(tenantId, tenant);
@@ -288,7 +288,9 @@ export class TenantManager {
     for (const region of this.regions) {
       dist[region] = this.tenantIndex.byRegion.get(region).size;
     }
-    return Object.entries(dist).map(([r, c]) => `${r}:${c}`).join(', ');
+    return Object.entries(dist)
+      .map(([r, c]) => `${r}:${c}`)
+      .join(', ');
   }
 
   /**
@@ -309,13 +311,7 @@ export class TenantManager {
    * Register a new tenant
    */
   async registerTenant(options = {}) {
-    const {
-      tier = 'silver',
-      name,
-      email,
-      domain,
-      region = this.defaultRegion
-    } = options;
+    const { tier = 'silver', name, email, domain, region = this.defaultRegion } = options;
 
     if (!this.regions.includes(region)) {
       throw new Error(`Invalid region: ${region}`);
@@ -351,7 +347,7 @@ export class TenantManager {
       rateLimit: this._getTierRateLimit(tier),
       annualValue: this._getTierValue(tier),
       compliance: this._getTierCompliance(tier),
-      metadata: options.metadata || {}
+      metadata: options.metadata || {},
     };
 
     // Store tenant
@@ -371,7 +367,7 @@ export class TenantManager {
       tenantId,
       tier,
       region,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     logger.info('Tenant registered', { tenantId, tier, region });
@@ -381,7 +377,7 @@ export class TenantManager {
       apiKey,
       secretKey,
       region,
-      encryptionKeyId: encryptionKey.keyId
+      encryptionKeyId: encryptionKey.keyId,
     };
   }
 
@@ -406,7 +402,7 @@ export class TenantManager {
       tier: tenant.tier,
       region: tenant.region,
       features: tenant.features,
-      rateLimit: tenant.rateLimit
+      rateLimit: tenant.rateLimit,
     };
   }
 
@@ -448,20 +444,24 @@ export class TenantManager {
 
     // Apply filters
     if (filters.tier) {
-      tenants = tenants.filter(t => t.tier === filters.tier);
+      tenants = tenants.filter((t) => t.tier === filters.tier);
     }
     if (filters.region) {
-      tenants = tenants.filter(t => t.region === filters.region);
+      tenants = tenants.filter((t) => t.region === filters.region);
     }
     if (filters.status) {
-      tenants = tenants.filter(t => t.status === filters.status);
+      tenants = tenants.filter((t) => t.status === filters.status);
     }
 
     // Sort by tier priority: platinum first, then gold, then silver
-    const platinum = tenants.filter(t => t.tier === 'platinum').sort((a, b) => a.id.localeCompare(b.id));
-    const gold = tenants.filter(t => t.tier === 'gold').sort((a, b) => a.id.localeCompare(b.id));
-    const silver = tenants.filter(t => t.tier === 'silver').sort((a, b) => a.id.localeCompare(b.id));
-    
+    const platinum = tenants
+      .filter((t) => t.tier === 'platinum')
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const gold = tenants.filter((t) => t.tier === 'gold').sort((a, b) => a.id.localeCompare(b.id));
+    const silver = tenants
+      .filter((t) => t.tier === 'silver')
+      .sort((a, b) => a.id.localeCompare(b.id));
+
     tenants = [...platinum, ...gold, ...silver];
 
     // Apply pagination
@@ -490,7 +490,7 @@ export class TenantManager {
     const updated = {
       ...tenant,
       ...updates,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     this.tenants.set(tenantId, updated);
@@ -509,7 +509,7 @@ export class TenantManager {
     this._audit('TENANT_UPDATED', {
       tenantId,
       updates: Object.keys(updates),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Remove secret from return
@@ -536,7 +536,7 @@ export class TenantManager {
     this._audit('TENANT_SUSPENDED', {
       tenantId,
       reason,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     logger.warn('Tenant suspended', { tenantId, reason });
@@ -561,7 +561,7 @@ export class TenantManager {
     // Audit log
     this._audit('TENANT_ACTIVATED', {
       tenantId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     logger.info('Tenant activated', { tenantId });
@@ -592,7 +592,7 @@ export class TenantManager {
     // Audit log
     this._audit('TENANT_DELETED', {
       tenantId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     logger.info('Tenant deleted', { tenantId });
@@ -624,7 +624,7 @@ export class TenantManager {
     // Audit log
     this._audit('API_KEY_ROTATED', {
       tenantId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     return { tenantId, apiKey: newApiKey };
@@ -646,7 +646,7 @@ export class TenantManager {
       billing,
       region: tenant.region,
       features: tenant.features,
-      compliance: tenant.compliance
+      compliance: tenant.compliance,
     };
   }
 
@@ -658,7 +658,7 @@ export class TenantManager {
     const tierBreakdown = {
       platinum: 100,
       gold: 900,
-      silver: 9000
+      silver: 9000,
     };
 
     const regionBreakdown = {};
@@ -677,10 +677,10 @@ export class TenantManager {
         tierBreakdown,
         regionBreakdown,
         annualValue,
-        tenYearValue: annualValue * 10
+        tenYearValue: annualValue * 10,
       },
       regions: this.regions,
-      hsmEnabled: this.hsmEnabled
+      hsmEnabled: this.hsmEnabled,
     };
   }
 
@@ -693,7 +693,7 @@ export class TenantManager {
       const testTenant = await this.registerTenant({
         tier: 'silver',
         name: 'health-check',
-        email: 'health@check.com'
+        email: 'health@check.com',
       });
 
       const auth = this.authenticate(testTenant.apiKey);
@@ -711,14 +711,14 @@ export class TenantManager {
         regions: this.regions,
         hsmEnabled: this.hsmEnabled,
         metrics: this.metrics,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       return {
         status: 'degraded',
         component: this.component,
         error: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -730,7 +730,7 @@ export class TenantManager {
     const features = {
       platinum: ['quantum', 'forensics', 'unlimited', 'hsm', 'dedicated', 'sla-99999'],
       gold: ['quantum', 'forensics', 'enterprise', 'sla-9999'],
-      silver: ['standard', 'audit', 'basic']
+      silver: ['standard', 'audit', 'basic'],
     };
     return features[tier] || features.silver;
   }
@@ -758,7 +758,7 @@ export class TenantManager {
     const compliance = {
       platinum: ['POPIA', 'GDPR', 'CCPA', 'SOX', 'ISO27001', 'SOC2'],
       gold: ['POPIA', 'GDPR', 'CCPA', 'SOX', 'ISO27001'],
-      silver: ['POPIA', 'GDPR']
+      silver: ['POPIA', 'GDPR'],
     };
     return compliance[tier] || compliance.silver;
   }
@@ -791,7 +791,7 @@ export class TenantManager {
     logger.info('Metrics collected', {
       tenantCount: this.tenants.size,
       activeTenants: this.metrics.activeTenants,
-      quotaViolations: this.metrics.quotaViolations
+      quotaViolations: this.metrics.quotaViolations,
     });
   }
 
@@ -812,7 +812,7 @@ export class TenantManager {
     const entry = {
       action,
       ...data,
-      component: this.component
+      component: this.component,
     };
 
     this.auditTrail.push(entry);
@@ -859,7 +859,7 @@ export class TenantManager {
       from: this.defaultRegion,
       to: region,
       latency,
-      tenants: this.tenants.size
+      tenants: this.tenants.size,
     });
 
     return {
@@ -867,7 +867,7 @@ export class TenantManager {
       previousRegion: this.defaultRegion,
       newRegion: region,
       latency,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 }
@@ -897,7 +897,7 @@ class DeterministicRegistry {
     this.tiers = {
       platinum: { count: 100, value: 500_000_000 },
       gold: { count: 900, value: 100_000_000 },
-      silver: { count: 9000, value: 10_000_000 }
+      silver: { count: 9000, value: 10_000_000 },
     };
   }
 
@@ -919,15 +919,14 @@ class DeterministicRegistry {
   }
 
   _register(id, tier) {
-    const region = tier === 'platinum' ? 'ZA-HQ' : 
-                   tier === 'gold' ? 'EU-HQ' : 'US-HQ';
+    const region = tier === 'platinum' ? 'ZA-HQ' : tier === 'gold' ? 'EU-HQ' : 'US-HQ';
     this.tenants.set(id, {
       id,
       tier,
       region,
       annualValue: this.tiers[tier].value,
       status: 'active',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     });
   }
 
@@ -942,7 +941,7 @@ class DeterministicRegistry {
       gold: 900,
       silver: 9000,
       'annual-value': 'R230B',
-      'ten-year-potential': 'R2.3T'
+      'ten-year-potential': 'R2.3T',
     };
   }
 }
@@ -998,15 +997,15 @@ class Ledger {
     const id = `ledger-${Date.now()}-${Math.random().toString(36).substring(7)}`;
     const serialized = JSON.stringify({ id, ...record, previous_hmac: this.lastSignature });
     const signature = crypto.createHash('sha256').update(serialized).digest('hex');
-    
-    const entry = { 
-      id, 
-      ...record, 
-      previous_hmac: this.lastSignature, 
+
+    const entry = {
+      id,
+      ...record,
+      previous_hmac: this.lastSignature,
       signature,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
+
     this.entries.push(entry);
     this.lastSignature = signature;
     return entry;
@@ -1018,7 +1017,7 @@ class Ledger {
 
   async verifyChain() {
     for (let i = 1; i < this.entries.length; i++) {
-      if (this.entries[i].previous_hmac !== this.entries[i-1].signature) {
+      if (this.entries[i].previous_hmac !== this.entries[i - 1].signature) {
         return false;
       }
     }
@@ -1031,12 +1030,12 @@ class Ledger {
       exportedBy,
       exportedAt: new Date().toISOString(),
       entries: this.entries.slice(-10),
-      chainValid: await this.verifyChain()
+      chainValid: await this.verifyChain(),
     };
-    
+
     const serialized = JSON.stringify(evidence);
     const signature = crypto.createHash('sha256').update(serialized).digest('hex');
-    
+
     return {
       canonical: serialized,
       signature,
@@ -1044,8 +1043,8 @@ class Ledger {
         caseId,
         exportedBy,
         timestamp: new Date().toISOString(),
-        entryCount: this.entries.length
-      }
+        entryCount: this.entries.length,
+      },
     };
   }
 }
@@ -1055,23 +1054,23 @@ class Ledger {
  */
 export function getTenantManagerEnhanced(options = {}) {
   const base = getTenantManager(options);
-  
+
   // Avoid double enhancement
   if (base.__enhanced) return base;
-  
+
   // Attach registry
   base.registry = registry;
-  
+
   // Attach HSM adapter
   base.hsmAdapter = new HsmAdapter({
     provider: options.hsmProvider || base.hsmConfig.provider,
     keyId: options.hsmKeyId || base.hsmConfig.keyId,
-    region: options.hsmRegion || base.hsmConfig.region
+    region: options.hsmRegion || base.hsmConfig.region,
   });
-  
+
   // Attach ledger
   base.ledger = new Ledger();
-  
+
   // Attach required enhancement functions
   base.generateWrappedApiKey = async (tenantId) => {
     const apiKeyPlain = crypto.randomBytes(32);
@@ -1079,26 +1078,28 @@ export function getTenantManagerEnhanced(options = {}) {
     const apiKeyId = `AK-${crypto.createHash('sha256').update(wrapped).digest('hex').slice(0, 16)}`;
     return { apiKeyId, wrapped };
   };
-  
+
   base.rotateApiKeySecure = async (tenantId) => {
     const { apiKeyId } = await base.generateWrappedApiKey(tenantId);
     base.metrics.keysRotated++;
     await base._audit('API_KEY_ROTATED_SECURE', { tenantId, apiKeyId });
     return { tenantId, apiKeyId };
   };
-  
+
   base.exportForensicEvidence = async (caseId, exportedBy) => {
     return base.ledger.exportEvidence(caseId, exportedBy);
   };
-  
+
   // Mark as enhanced
   base.__enhanced = true;
-  
+
   // Bootstrap registry if requested
   if (options.bootstrapRegistry) {
-    registry.bootstrap().catch(e => logger.warn('Registry bootstrap failed', { error: e.message }));
+    registry
+      .bootstrap()
+      .catch((e) => logger.warn('Registry bootstrap failed', { error: e.message }));
   }
-  
+
   return base;
 }
 

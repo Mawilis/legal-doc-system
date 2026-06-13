@@ -22,7 +22,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import * as crypto from 'crypto';
-import { cryptoUtils } from '../utils/cryptoUtils.js';
+import cryptoUtils from '../utils/cryptoUtils.js';
 import logger from '../utils/logger.js';
 
 export class ForensicVault {
@@ -34,25 +34,26 @@ export class ForensicVault {
     this.hsmEnabled = options.hsmEnabled || false;
     this.quantumEnabled = options.quantumEnabled !== false;
     this.retentionDays = options.retentionDays || 2555; // 7 years
-    
+
     // 🔥 FIX: Atomic counter using BigInt for concurrency safety
     this.writeCounter = 0n;
     this.verifiedCounter = 0n;
-    
+
     // 🔥 FIX: Evidence index for fast lookup
     this.evidenceIndex = new Map(); // id -> {path, timestamp, hash}
-    
+
     // Chain of custody tracking
-    this.lastHash = options.genesisHash || 
+    this.lastHash =
+      options.genesisHash ||
       'cb6578fac6d7a7fc56a99dcd0f496fe64ac1ae01c656808e59cbfb414295d0c27b42dedc348bb3f729bc6e53945a4ebc573a2ad7019cf60f6bc9a64234fa3304';
-    
+
     // Metrics
     this.metrics = {
       totalRecords: 0,
       totalBytes: 0,
       failures: 0,
       lastWrite: null,
-      startTime: Date.now()
+      startTime: Date.now(),
     };
 
     this._initialize();
@@ -66,7 +67,7 @@ export class ForensicVault {
       quantumEnabled: this.quantumEnabled,
       retentionDays: this.retentionDays,
       component: this.component,
-      version: this.version
+      version: this.version,
     });
 
     this._logAsciiArt();
@@ -88,10 +89,7 @@ export class ForensicVault {
 
   _getTimestamp() {
     const now = new Date();
-    return now.toISOString()
-      .replace(/[:.]/g, '-')
-      .replace('T', '_')
-      .slice(0, 19);
+    return now.toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
   }
 
   /**
@@ -112,10 +110,11 @@ export class ForensicVault {
    */
   async _generateChainEntry(previousHash, evidence, operation) {
     const timestamp = Date.now();
-    const evidenceId = (await cryptoUtils.hashData(
-      cryptoUtils.canonicalStringify(evidence)
-    )).slice(0, 16);
-    
+    const evidenceId = (await cryptoUtils.hashData(cryptoUtils.canonicalStringify(evidence))).slice(
+      0,
+      16
+    );
+
     const entry = {
       operation,
       timestamp,
@@ -123,16 +122,14 @@ export class ForensicVault {
       previousHash,
       node: process.env.HOSTNAME || 'localhost',
       component: this.component,
-      version: this.version
+      version: this.version,
     };
 
     // Hash the entry without the hash field
     const entryForHash = { ...entry };
     delete entryForHash.hash;
-    entry.hash = await cryptoUtils.hashData(
-      cryptoUtils.canonicalStringify(entryForHash)
-    );
-    
+    entry.hash = await cryptoUtils.hashData(cryptoUtils.canonicalStringify(entryForHash));
+
     return entry;
   }
 
@@ -145,16 +142,16 @@ export class ForensicVault {
       category = 'general',
       retention = this.retentionDays,
       priority = 'normal',
-      chainOfCustody = true
+      chainOfCustody = true,
     } = options;
 
     try {
       // 🔥 FIX: Atomic counter increment
       this.writeCounter++;
       const counter = this.writeCounter.toString();
-      
+
       const id = crypto.randomBytes(16).toString('hex');
-      
+
       // Generate base payload with canonical structure
       const payload = {
         id,
@@ -168,8 +165,8 @@ export class ForensicVault {
           component: this.component,
           version: this.version,
           node: process.env.HOSTNAME || 'localhost',
-          pid: process.pid
-        }
+          pid: process.pid,
+        },
       };
 
       // Calculate forensic hash using canonical JSON
@@ -236,7 +233,7 @@ export class ForensicVault {
         timestamp: payload.timestamp,
         hash: payload.hash,
         category,
-        counter
+        counter,
       });
 
       // Update metrics
@@ -253,7 +250,7 @@ export class ForensicVault {
         category,
         latency,
         hash: payload.hash.slice(0, 16),
-        chainOfCustody: !!payload.chainOfCustody
+        chainOfCustody: !!payload.chainOfCustody,
       });
 
       return {
@@ -268,16 +265,15 @@ export class ForensicVault {
         latency,
         size: contentBuffer.length,
         chainOfCustody: payload.chainOfCustody,
-        payload // Return full payload for verification
+        payload, // Return full payload for verification
       };
-
     } catch (error) {
       this.metrics.failures++;
       logger.error('FORENSIC_WRITE_FAILURE', {
         error: error.message,
         stack: error.stack,
         category,
-        priority
+        priority,
       });
       throw new Error(`Forensic write failed: ${error.message}`);
     }
@@ -288,33 +284,33 @@ export class ForensicVault {
    */
   async readEvidence(identifier) {
     let filepath;
-    
+
     // Check if identifier is a full path
     if (identifier.includes('/')) {
       filepath = identifier;
-    } 
+    }
     // Check index first
     else if (this.evidenceIndex.has(identifier)) {
       filepath = this.evidenceIndex.get(identifier).path;
-    } 
+    }
     // Fallback to filesystem search
     else {
       const files = await fs.readdir(this.basePath);
-      const forensicFiles = files.filter(f => f.startsWith(this.prefix) && f.endsWith('.json'));
-      
+      const forensicFiles = files.filter((f) => f.startsWith(this.prefix) && f.endsWith('.json'));
+
       // Try exact match
-      let match = forensicFiles.find(f => f.includes(identifier));
-      
+      let match = forensicFiles.find((f) => f.includes(identifier));
+
       // Try short ID match (first 8 chars)
       if (!match && identifier.length >= 8) {
         const shortId = identifier.slice(0, 8);
-        match = forensicFiles.find(f => f.includes(shortId));
+        match = forensicFiles.find((f) => f.includes(shortId));
       }
-      
+
       if (!match) {
         throw new Error(`Evidence not found: ${identifier}`);
       }
-      
+
       filepath = path.join(this.basePath, match);
     }
 
@@ -328,13 +324,13 @@ export class ForensicVault {
   async verifyEvidence(identifier) {
     try {
       const evidence = await this.readEvidence(identifier);
-      
+
       // Recalculate hash from evidence (without hash field)
       const evidenceForHash = { ...evidence };
       delete evidenceForHash.hash;
       delete evidenceForHash.fingerprint;
       delete evidenceForHash.quantumSignature;
-      
+
       const calculatedHash = await cryptoUtils.hashData(
         cryptoUtils.canonicalStringify(evidenceForHash.evidence)
       );
@@ -344,9 +340,9 @@ export class ForensicVault {
       let quantumValid = true;
       if (evidence.quantumSignature) {
         quantumValid = await cryptoUtils.verifyQuantumSignature(
-          cryptoUtils.canonicalStringify({ 
-            evidence: evidence.evidence, 
-            hash: evidence.hash 
+          cryptoUtils.canonicalStringify({
+            evidence: evidence.evidence,
+            hash: evidence.hash,
           }),
           evidence.quantumSignature
         );
@@ -371,9 +367,10 @@ export class ForensicVault {
       }
 
       // 🔥 FIX: Special case for contract evidence (F003)
-      const isValid = evidence.category === 'contract' 
-        ? hashValid && quantumValid && fingerprintValid && chainValid && !!evidence.id
-        : hashValid && quantumValid && fingerprintValid && chainValid;
+      const isValid =
+        evidence.category === 'contract'
+          ? hashValid && quantumValid && fingerprintValid && chainValid && !!evidence.id
+          : hashValid && quantumValid && fingerprintValid && chainValid;
 
       logger.forensic('Evidence verified', {
         id: evidence.id,
@@ -382,7 +379,7 @@ export class ForensicVault {
         quantumValid,
         fingerprintValid,
         chainValid,
-        category: evidence.category
+        category: evidence.category,
       });
 
       // 🔥 FIX: Increment verified counter
@@ -396,9 +393,8 @@ export class ForensicVault {
         quantumValid,
         fingerprintValid,
         chainValid,
-        evidence
+        evidence,
       };
-
     } catch (error) {
       logger.error('Verification failed', { error: error.message });
       return { isValid: false, error: error.message };
@@ -408,16 +404,14 @@ export class ForensicVault {
   async listEvidence() {
     const files = await fs.readdir(this.basePath).catch(() => []);
     return files
-      .filter(f => f.startsWith(this.prefix) && f.endsWith('.json'))
+      .filter((f) => f.startsWith(this.prefix) && f.endsWith('.json'))
       .sort()
       .reverse();
   }
 
   async generateAuditReport(options = {}) {
-    const {
-      startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      endDate = new Date()
-    } = options;
+    const { startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), endDate = new Date() } =
+      options;
 
     const files = await this.listEvidence();
     const reports = [];
@@ -426,7 +420,7 @@ export class ForensicVault {
       const filepath = path.join(this.basePath, file);
       const stats = await fs.stat(filepath).catch(() => null);
       if (!stats) continue;
-      
+
       if (stats.mtime >= startDate && stats.mtime <= endDate) {
         try {
           const content = await this.readEvidence(filepath);
@@ -436,7 +430,7 @@ export class ForensicVault {
             size: stats.size,
             id: content.id,
             category: content.category,
-            hash: content.hash?.slice(0, 16)
+            hash: content.hash?.slice(0, 16),
           });
         } catch {
           // Skip unreadable files
@@ -450,20 +444,20 @@ export class ForensicVault {
       version: this.version,
       period: {
         start: startDate.toISOString(),
-        end: endDate.toISOString()
+        end: endDate.toISOString(),
       },
       summary: {
         totalRecords: reports.length,
         totalBytes: reports.reduce((acc, r) => acc + r.size, 0),
-        categories: [...new Set(reports.map(r => r.category))]
+        categories: [...new Set(reports.map((r) => r.category))],
       },
-      records: reports
+      records: reports,
     };
 
     auditReport.signature = await cryptoUtils.quantumSign(
-      cryptoUtils.canonicalStringify({ 
-        summary: auditReport.summary, 
-        period: auditReport.period 
+      cryptoUtils.canonicalStringify({
+        summary: auditReport.summary,
+        period: auditReport.period,
       })
     );
 
@@ -477,12 +471,14 @@ export class ForensicVault {
       verifiedCounter: Number(this.verifiedCounter),
       indexSize: this.evidenceIndex.size,
       uptime: Date.now() - this.metrics.startTime,
-      successRate: this.metrics.totalRecords > 0
-        ? (this.metrics.totalRecords - this.metrics.failures) / this.metrics.totalRecords
-        : 1,
-      averageRecordSize: this.metrics.totalRecords > 0
-        ? Math.round(this.metrics.totalBytes / this.metrics.totalRecords)
-        : 0
+      successRate:
+        this.metrics.totalRecords > 0
+          ? (this.metrics.totalRecords - this.metrics.failures) / this.metrics.totalRecords
+          : 1,
+      averageRecordSize:
+        this.metrics.totalRecords > 0
+          ? Math.round(this.metrics.totalBytes / this.metrics.totalRecords)
+          : 0,
     };
   }
 
@@ -498,7 +494,7 @@ export class ForensicVault {
       canWrite,
       quantumEnabled: this.quantumEnabled,
       hsmEnabled: this.hsmEnabled,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -524,7 +520,7 @@ export class ForensicVault {
       const filepath = path.join(this.basePath, file);
       const stats = await fs.stat(filepath).catch(() => null);
       if (!stats) continue;
-      
+
       if (now - stats.mtime > retentionMs) {
         await fs.unlink(filepath).catch(() => {});
         pruned++;
