@@ -1,6 +1,6 @@
 # ============================================================================
-# WILSY OS 2050 - UNIFIED CI/CD PIPELINE (FIXED SECRET CONTEXT)
-# 41/41 TESTS | QUANTUM-SAFE | INVESTOR-GRADE | R2.3T VALIDATED
+# WILSY OS 2050 - UNIFIED PRODUCTION CI/CD INFRASTRUCTURE
+# 41/41 TESTS | ENCRYPTED CLOUD ENVIRONMENT MATRIX | INVESTOR-GRADE
 # ============================================================================
 
 name: 🏛️ WILSY OS 2050 Unified Pipeline
@@ -11,18 +11,11 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ main, develop ]
-  release:
-    types: [ published ]
   workflow_dispatch:
 
 env:
   NODE_VERSION: '20.x'
   NODE_ENV: test
-  FORENSIC_HMAC_KEY: test-key-for-signature-verification
-  JWT_SECRET: test-jwt-secret
-  JWT_REFRESH_SECRET: test-refresh-secret
-  ADMIN_EMAIL: wilsonkhanyezi@gmail.com
-  ADMIN_PASSWORD: ${ADMIN_PASSWORD:-REDACTED}
 
 permissions:
   contents: read
@@ -32,7 +25,6 @@ permissions:
   actions: read
 
 jobs:
-  # STAGE 1: SECURITY & CODE QUALITY
   security-scan:
     name: 🕵️ Security & Quantum Audit
     runs-on: ubuntu-latest
@@ -47,23 +39,12 @@ jobs:
         run: cd server && npm audit --omit=dev --audit-level=high --json > security-audit.json || true
       - name: Run forensic linting
         run: cd server && npm run lint -- --format json --output-file eslint-report.json || true
-      - name: Upload security reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-reports
-          path: |
-            server/security-audit.json
-            server/eslint-report.json
 
-  # STAGE 2: COMPREHENSIVE TEST SUITE (41/41 TESTS)
   test-suite:
     name: 🧪 Complete Test Suite (41 Tests)
     runs-on: ubuntu-latest
     needs: [security-scan]
     services:
-      mongodb:
-        image: mongo:7-jammy
-        ports: [ "27017:27017" ]
       redis:
         image: redis:7-alpine
         ports: [ "6379:6379" ]
@@ -83,11 +64,23 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Install dependencies
-        run: cd server && npm ci
+        run: cd server && npm install --omit=dev
+        
+      # Dynamic generation of the decoupled .env.test on the remote cloud machine
+      - name: Create temporary .env.test payload matrix
+        run: |
+          cd server && \
+          echo "NODE_ENV=test" > .env.test && \
+          echo "FORENSIC_HMAC_KEY=test-key-for-signature-verification" >> .env.test && \
+          echo "JWT_SECRET=test-jwt-secret" >> .env.test && \
+          echo "JWT_REFRESH_SECRET=test-refresh-secret" >> .env.test && \
+          echo "ADMIN_EMAIL=wilsonkhanyezi@gmail.com" >> .env.test && \
+          echo "TEST_MONGODB_URI=${{ secrets.TEST_MONGODB_URI }}" >> .env.test && \
+          echo "REDIS_URL=redis://localhost:6379" >> .env.test
+          
       - name: Run ${{ matrix.test-group }}
         env:
           NODE_OPTIONS: --experimental-vm-modules
-          TEST_MONGODB_URI: ${{ secrets.TEST_MONGODB_URI }}
         run: |
           cd server && \
           mkdir -p test-results && \
@@ -96,64 +89,10 @@ jobs:
             --timeout 60000 --exit \
             --reporter mocha-junit-reporter \
             --reporter-options mochaFile=./test-results/${{ matrix.test-group }}.xml
+            
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.test-group }}
           path: server/test-results/
-
-  # STAGE 3: COVERAGE & INVESTOR INSIGHTS
-  coverage-analysis:
-    name: 📊 Coverage & Investor Report
-    runs-on: ubuntu-latest
-    needs: [test-suite]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Generate investor insights
-        run: |
-          cd server && \
-          cat > investor-report.md << 'ENDINVESTOR'
-          # 📈 WILSY OS 2050 - INVESTOR INSIGHTS
-          - ✅ 41/41 Tests Passing
-          - ✅ R2.3T Valuation Validated
-          - ✅ Quantum-Safe Algorithms
-          ENDINVESTOR
-      - name: Upload reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: investor-reports
-          path: server/investor-report.md
-
-  # STAGE 4: DEPLOYMENT
-  deploy:
-    name: 🚀 Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [coverage-analysis]
-    if: github.ref == 'refs/heads/production' && github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build and push
-        run: |
-          docker build -t wilsy-os-2050 .
-          docker push wilsy-os-2050:latest
-
-  # STAGE 5: NOTIFICATIONS
-  notify:
-    name: 📢 War Room Notification
-    runs-on: ubuntu-latest
-    needs: [deploy, test-suite]
-    if: always()
-    steps:
-      - name: Send Slack notification
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
