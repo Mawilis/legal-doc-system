@@ -1,6 +1,6 @@
 # ============================================================================
 # WILSY OS 2050 - UNIFIED PRODUCTION CI/CD INFRASTRUCTURE
-# 41/41 TESTS | SCOPED DIRECTORY ARCHITECTURE | INVESTOR-GRADE
+# 41/41 TESTS | HARDENED BINARY ROUTING | INVESTOR-GRADE
 # ============================================================================
 
 name: 🏛️ WILSY OS 2050 Unified Pipeline
@@ -90,7 +90,7 @@ jobs:
           REDIS_URL: redis://localhost:6379
         run: |
           mkdir -p test-results
-          npx mocha --config .mocharc.test.json \
+          ./node_modules/.bin/mocha --config .mocharc.test.json \
             tests/enterprise/${{ matrix.test-group }} \
             --timeout 60000 --exit \
             --reporter mocha-junit-reporter \
