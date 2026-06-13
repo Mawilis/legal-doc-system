@@ -68,7 +68,8 @@ jobs:
         image: redis:7-alpine
         ports: [ "6379:6379" ]
     strategy:
-      matrix:
+      fail-fast: false
+    matrix:
         test-group: [
           "forensic-fix.test.js",
           "tenants.enhanced-complete.test.js",
