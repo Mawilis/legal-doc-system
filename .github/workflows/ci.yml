@@ -66,21 +66,26 @@ jobs:
       - name: Install dependencies
         run: cd server && npm install --omit=dev
         
-      # Dynamic generation of the decoupled .env.test on the remote cloud machine
-      - name: Create temporary .env.test payload matrix
+      # Doubled Layer: Writes local files to match your exact structural architecture
+       Sir: Native Initialization
+      - name: Create local environment fallback matrices
         run: |
           cd server && \
-          echo "NODE_ENV=test" > .env.test && \
-          echo "FORENSIC_HMAC_KEY=test-key-for-signature-verification" >> .env.test && \
-          echo "JWT_SECRET=test-jwt-secret" >> .env.test && \
-          echo "JWT_REFRESH_SECRET=test-refresh-secret" >> .env.test && \
-          echo "ADMIN_EMAIL=wilsonkhanyezi@gmail.com" >> .env.test && \
-          echo "TEST_MONGODB_URI=${{ secrets.TEST_MONGODB_URI }}" >> .env.test && \
-          echo "REDIS_URL=redis://localhost:6379" >> .env.test
+          echo "NODE_ENV=test" > .env && \
+          echo "TEST_MONGODB_URI=${{ secrets.TEST_MONGODB_URI }}" >> .env && \
+          cp .env .env.test
           
       - name: Run ${{ matrix.test-group }}
+        # Ultimate Fix: Pass variables directly into the system shell process environment
         env:
           NODE_OPTIONS: --experimental-vm-modules
+          NODE_ENV: test
+          FORENSIC_HMAC_KEY: test-key-for-signature-verification
+          JWT_SECRET: test-jwt-secret
+          JWT_REFRESH_SECRET: test-refresh-secret
+          ADMIN_EMAIL: wilsonkhanyezi@gmail.com
+          TEST_MONGODB_URI: ${{ secrets.TEST_MONGODB_URI }}
+          REDIS_URL: redis://localhost:6379
         run: |
           cd server && \
           mkdir -p test-results && \
