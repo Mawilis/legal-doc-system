@@ -65,7 +65,7 @@
     "fast-xml-parser": "5.3.8",
     "figlet": "1.11.0",
     "geoip-lite": "1.4.10",
-    "gpu.js": "2.15.0",
+    "gpu.js": "^2.15.2",
     "handlebars": "4.7.8",
     "helmet": "7.1.0",
     "hpp": "0.2.3",
@@ -176,6 +176,7 @@
   "overrides": {
     "gl": "npm:empty-npm-package@1.0.0",
     "axios": "^1.7.4",
-    "@remix-run/router": "^1.19.0"
+    "@remix-run/router": "^1.19.0",
+    "gpu.js": "^2.15.2"
   }
 }
