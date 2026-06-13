@@ -68,6 +68,13 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
+
+/**
+ * @function HospitalityDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const HospitalityDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -234,12 +241,26 @@ const HospitalityDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_V
     loadHospitalityData();
   }, [loadHospitalityData]);
 
-  const handleRefresh = async () => {
+  
+/**
+ * @function handleRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadHospitalityData();
   };
 
-  const getStatusColor = (status) => {
+  
+/**
+ * @function getStatusColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getStatusColor = (status) => {
     switch(status) {
       case 'CONFIRMED': return 'text-blue-400 bg-blue-950/30';
       case 'CHECKED_IN': return 'text-emerald-400 bg-emerald-950/30';
@@ -249,7 +270,14 @@ const HospitalityDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_V
     }
   };
 
-  const getSeverityColor = (severity) => {
+  
+/**
+ * @function getSeverityColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getSeverityColor = (severity) => {
     switch(severity) {
       case 'CRITICAL': return 'text-red-400';
       case 'WARNING': return 'text-yellow-400';
@@ -258,7 +286,14 @@ const HospitalityDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_V
     }
   };
 
-  const getSentimentColor = (sentiment) => {
+  
+/**
+ * @function getSentimentColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getSentimentColor = (sentiment) => {
     switch(sentiment) {
       case 'POSITIVE': return 'text-emerald-400';
       case 'NEUTRAL': return 'text-yellow-400';

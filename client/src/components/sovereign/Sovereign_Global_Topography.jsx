@@ -41,8 +41,22 @@ const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 610;
 const REGISTRY_TENANT = 'WILSY_ROOT';
 const DEFAULT_MAP_POSITION = { coordinates: [20, -5], zoom: 1, locked: true };
+
+/**
+ * @function clamp
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
+
+/**
+ * @function extractNodeRows
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const extractNodeRows = (payload = {}) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload.nodes)) return payload.nodes;
@@ -52,6 +66,13 @@ const extractNodeRows = (payload = {}) => {
   return [];
 };
 
+
+/**
+ * @function normalizeNode
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const normalizeNode = (node = {}) => {
   const id = node._id || node.id || node.nodeId || node.entity || 'NODE';
   const metadata = node.metadata || {};
@@ -83,12 +104,26 @@ const normalizeNode = (node = {}) => {
   };
 };
 
+
+/**
+ * @function nodeTone
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const nodeTone = (node) => {
   if (node.status === 'ONLINE' || node.status === 'ACTIVE') return 'online';
   if (node.status === 'SYNCING') return 'syncing';
   return 'fault';
 };
 
+
+/**
+ * @function isWilsyOwnedNode
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const isWilsyOwnedNode = (node = {}) => {
   const identity = [
     node.label,
@@ -105,12 +140,26 @@ const isWilsyOwnedNode = (node = {}) => {
   return Boolean(node.ownerVisible || node.metadata?.ownerVisible || /wilsy/i.test(identity));
 };
 
+
+/**
+ * @function hasCoordinates
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const hasCoordinates = (node = {}) => (
   Number.isFinite(node.lat) &&
   Number.isFinite(node.lng) &&
   (node.lat !== 0 || node.lng !== 0)
 );
 
+
+/**
+ * @function Sovereign_Global_Topography
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Global_Topography = () => {
   const { activeTenant } = useTenants();
   const mapFrameRef = useRef(null);
@@ -231,7 +280,14 @@ const Sovereign_Global_Topography = () => {
       .slice(0, 8)
   ), [nodes]);
 
-  const renderNodeMarker = (node) => {
+  
+/**
+ * @function renderNodeMarker
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderNodeMarker = (node) => {
     const tone = nodeTone(node);
     return (
       <Marker key={node.id} coordinates={[node.lng, node.lat]}>

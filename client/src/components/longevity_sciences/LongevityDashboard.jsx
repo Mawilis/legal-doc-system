@@ -47,6 +47,13 @@ const TAB_TO_LABEL_MAP = Object.freeze({
  * Sovereign Longevity Sciences Dashboard – Unified interface for all longevity modules.
  * @returns {JSX.Element}
  */
+
+/**
+ * @function LongevityDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const LongevityDashboard = () => {
   const { activeTenant } = useTenants();
   const tenantId = activeTenant?.tenantId || 'MASTER';
@@ -136,7 +143,14 @@ const LongevityDashboard = () => {
 
   // Initial dashboard baseline structural ignition mount thread hook
   useEffect(() => {
-    const init = async () => {
+    
+/**
+ * @function init
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const init = async () => {
       setLoading(true);
       await loadAllData();
       setLoading(false);
@@ -161,7 +175,14 @@ const LongevityDashboard = () => {
    * @param {boolean} increment - Logic binary switch deciding forward advancement or reverse pagination offsets.
    * @returns {Promise<void>}
    */
-  const updatePageOffset = async (tab, increment) => {
+  
+/**
+ * @function updatePageOffset
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const updatePageOffset = async (tab, increment) => {
     const targetPage = pageStates[tab];
     const newOffset = increment ? targetPage.offset + targetPage.limit : Math.max(0, targetPage.offset - targetPage.limit);
     const updatedPage = { ...targetPage, offset: newOffset };
@@ -176,7 +197,14 @@ const LongevityDashboard = () => {
    * @param {Object} formData - Key-value pair configuration metadata alignment map properties.
    * @returns {Promise<void>}
    */
-  const handleSave = async (formData) => {
+  
+/**
+ * @function handleSave
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleSave = async (formData) => {
     try {
       setIsRefreshing(true);
       if (modalType === 'genomic') {
@@ -211,7 +239,14 @@ const LongevityDashboard = () => {
    * @param {string} type - Functional service track division selector parameters code line indicators.
    * @returns {Promise<void>}
    */
-  const handleDelete = async (id, type) => {
+  
+/**
+ * @function handleDelete
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleDelete = async (id, type) => {
     if (!window.confirm('Confirm deletion? Action will be logged to audit ledger.')) return;
     try {
       setIsRefreshing(true);
@@ -231,7 +266,14 @@ const LongevityDashboard = () => {
    * Assembles grid records and outputs deep metric matrices out to standard CSV files datasets streams.
    * @returns {Promise<void>}
    */
-  const handleExport = async () => {
+  
+/**
+ * @function handleExport
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleExport = async () => {
     try {
       setIsRefreshing(true);
       let dataset = [];
@@ -251,7 +293,14 @@ const LongevityDashboard = () => {
   /**
    * Assembles dynamic multi-page frame controllers for deep grid views metrics.
    */
-  const renderPagination = (tabKey, total) => {
+  
+/**
+ * @function renderPagination
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderPagination = (tabKey, total) => {
     const pageState = pageStates[tabKey];
     const totalPages = Math.ceil(total / pageState.limit);
     return (
@@ -280,7 +329,14 @@ const LongevityDashboard = () => {
   /**
    * Structural content management shell framing tabular records rows layout models grids.
    */
-  const renderTable = (items, headers, renderRow, tabKey, totalCount) => (
+  
+/**
+ * @function renderTable
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderTable = (items, headers, renderRow, tabKey, totalCount) => (
     <div style={{ position: 'relative', opacity: isRefreshing ? 0.4 : 1, transition: 'opacity 0.2s ease' }}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-400 font-mono">
@@ -318,7 +374,14 @@ const LongevityDashboard = () => {
    * Controls data rendering structures based on active view panel selections variables.
    * @returns {JSX.Element|null}
    */
-  const renderContent = () => {
+  
+/**
+ * @function renderContent
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderContent = () => {
     switch (activeTab) {
       case 'genomics':
         return renderTable(genomicSequences.items, ['Sample ID', 'Organism', 'Sequence Length', 'Coverage', 'Completed'], (item) => (

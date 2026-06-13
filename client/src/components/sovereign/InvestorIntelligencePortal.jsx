@@ -33,6 +33,13 @@ import styles from './InvestorIntelligencePortal.module.css';
  * @component InvestorIntelligencePortal
  * @desc The board-level interface for Wilsy OS, providing strategic oversight of global assets and ROI.
  */
+
+/**
+ * @function InvestorIntelligencePortal
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const InvestorIntelligencePortal = () => {
   const [metrics, setMetrics] = useState({
     aum: 1051250000, // Assets Under Management (from Nexus)
@@ -45,7 +52,14 @@ const InvestorIntelligencePortal = () => {
 
   // 📡 INTELLIGENCE STREAM: Syncing with Master Sovereignty Engines
   useEffect(() => {
-    const syncIntelligence = async () => {
+    
+/**
+ * @function syncIntelligence
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const syncIntelligence = async () => {
       setLoading(true);
       // Synchronize with RevenueSingularity and AssetNexus
       setTimeout(() => {

@@ -37,6 +37,13 @@ const AUTO_DISMISS_CRITICAL_MS = null;
  * Plays a short beep sound (if supported by browser) and vibrates for critical alerts.
  * @private
  */
+
+/**
+ * @function playCriticalAlertSoundAndVibrate
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 function playCriticalAlertSoundAndVibrate() {
   try {
     if (navigator.vibrate) {
@@ -73,6 +80,13 @@ function playCriticalAlertSoundAndVibrate() {
  * @param {Function} props.onDismiss - Callback when banner is dismissed (removed from stack)
  * @param {boolean} props.isAutoDismissEnabled - Whether auto‑dismiss is allowed for this severity
  * @returns {JSX.Element}
+ */
+
+/**
+ * @function SingleAlert
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
  */
 const SingleAlert = ({ alert, tenantId, onDismiss, isAutoDismissEnabled }) => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -282,6 +296,13 @@ const SingleAlert = ({ alert, tenantId, onDismiss, isAutoDismissEnabled }) => {
  *
  * // Multiple alerts
  * <HUDAlertBanner alert={[alert1, alert2]} />
+ */
+
+/**
+ * @function HUDAlertBanner
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
  */
 const HUDAlertBanner = ({ alert, tenantId }) => {
   const initialAlerts = Array.isArray(alert) ? alert : (alert ? [alert] : []);

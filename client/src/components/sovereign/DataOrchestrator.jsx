@@ -76,7 +76,14 @@ const DataContext = createContext(null);
  *   // In App.jsx or BoardroomLayout.jsx
  *   import { DataOrchestratorProvider } from './components/sovereign/DataOrchestrator';
  *
- *   function App() {
+ *   
+/**
+ * @function App
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+function App() {
  *     return (
  *       <SovereignOrchestratorProvider>
  *         <DataOrchestratorProvider>
@@ -86,7 +93,14 @@ const DataContext = createContext(null);
  *     );
  *   }
  */
-export const DataOrchestratorProvider = ({ children }) => {
+export 
+/**
+ * @function DataOrchestratorProvider
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const DataOrchestratorProvider = ({ children }) => {
   const mesh = useSovereignMesh();
 
   // 🔥 CIRCUIT BREAKER: Prevents overlapping telemetry calls (flood protection)
@@ -246,7 +260,14 @@ export const DataOrchestratorProvider = ({ children }) => {
       return;
     }
 
-    const handleAction = (e) => {
+    
+/**
+ * @function handleAction
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleAction = (e) => {
       const { action, payload } = e.detail;
 
       if (action === 'BILLING_UPDATE') {
@@ -345,7 +366,14 @@ export const DataOrchestratorProvider = ({ children }) => {
  *   `DataOrchestratorProvider` via mesh events. This maintains a single source of truth.
  *
  * @example
- *   function AlertPanel() {
+ *   
+/**
+ * @function AlertPanel
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+function AlertPanel() {
  *     const { alerts, anomalyProbability } = useSovereignData();
  *     return (
  *       <div>
@@ -355,7 +383,14 @@ export const DataOrchestratorProvider = ({ children }) => {
  *     );
  *   }
  */
-export const useSovereignData = () => {
+export 
+/**
+ * @function useSovereignData
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const useSovereignData = () => {
   const context = useContext(DataContext);
   if (!context) {
     throw new Error('[WILSY-OS] useSovereignData must be used within DataOrchestratorProvider.');

@@ -23,6 +23,13 @@ import { useTenants } from '../../contexts/tenantContext';
 import '../../styles/superadmin/animations/quantum-pulse.css';
 import '../../styles/superadmin/animations/terminal-glow.css';
 
+
+/**
+ * @function SovereignLogin
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const SovereignLogin = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
   const { verifyOTP, login: contextLogin } = useAuth();
@@ -47,7 +54,14 @@ const SovereignLogin = ({ onLoginSuccess }) => {
 
   // 📡 ADAPTIVE SHARD SCALING & NUCLEUS SYNC
   useEffect(() => {
-    const liveSlaSync = () => {
+    
+/**
+ * @function liveSlaSync
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const liveSlaSync = () => {
       setPreFlightStatus(prev => ({
         ...prev,
         entropy: (99.96 + Math.random() * 0.03).toFixed(2),
@@ -157,6 +171,13 @@ const SovereignLogin = ({ onLoginSuccess }) => {
   );
 };
 
+
+/**
+ * @function FounderLoginModule
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const FounderLoginModule = ({ onLoginSuccess, onSwitchToTenant, onOpenCovenant, addForensicEntry, verifyOTP, contextLogin, onNavigateHome }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -169,7 +190,14 @@ const FounderLoginModule = ({ onLoginSuccess, onSwitchToTenant, onOpenCovenant, 
   const [authStrategy, setAuthStrategy] = useState('');
   const [hasBiometric, setHasBiometric] = useState(false);
 
-  const base64urlToUint8Array = (base64url) => {
+  
+/**
+ * @function base64urlToUint8Array
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const base64urlToUint8Array = (base64url) => {
     const padding = '='.repeat((4 - base64url.length % 4) % 4);
     const base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
     const rawData = window.atob(base64);
@@ -178,12 +206,26 @@ const FounderLoginModule = ({ onLoginSuccess, onSwitchToTenant, onOpenCovenant, 
     return outputArray;
   };
 
-  const bufferToBase64url = (buffer) => {
+  
+/**
+ * @function bufferToBase64url
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const bufferToBase64url = (buffer) => {
     return btoa(String.fromCharCode(...new Uint8Array(buffer)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
   };
 
-  const handleCredentialsSubmit = async (e) => {
+  
+/**
+ * @function handleCredentialsSubmit
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const handleCredentialsSubmit = async (e) => {
     e?.preventDefault();
     setLoading(true);
     setError('');
@@ -216,7 +258,14 @@ const FounderLoginModule = ({ onLoginSuccess, onSwitchToTenant, onOpenCovenant, 
     } finally { setLoading(false); }
   };
 
-  const handleSiliconHandshake = async (e) => {
+  
+/**
+ * @function handleSiliconHandshake
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const handleSiliconHandshake = async (e) => {
     e?.preventDefault();
     const otpStr = String(otp).trim();
     if (otpStr.length !== 6 || isNaN(otpStr)) {
@@ -360,6 +409,13 @@ const FounderLoginModule = ({ onLoginSuccess, onSwitchToTenant, onOpenCovenant, 
   );
 };
 
+
+/**
+ * @function TenantLoginModule
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const TenantLoginModule = ({ onBackToFounder }) => (
   <div style={{padding: '20px 0'}}>
     <h2 style={gatewayTitle}>TENANT GATEWAY</h2>
@@ -406,6 +462,13 @@ const subValue = { color: '#d4af37', fontSize: '1rem', marginTop: '5px', fontWei
 const forensicLog = { marginTop: '40px', fontFamily: '"JetBrains Mono", monospace', fontSize: '0.55rem', lineHeight: '2', borderTop: '1px solid #111', paddingTop: '20px', height: '150px', overflow: 'hidden' };
 const footerWatermark = { color: '#222', fontSize: '0.5rem', marginTop: '40px', textAlign: 'center', letterSpacing: '2px' };
 const stepIndicator = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', marginBottom: '30px' };
+
+/**
+ * @function step
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const step = (active) => ({ color: active ? '#d4af37' : '#222', fontSize: '0.55rem', fontWeight: '900', letterSpacing: '2px' });
 const stepSeparator = { width: '20px', height: '1px', background: '#111' };
 

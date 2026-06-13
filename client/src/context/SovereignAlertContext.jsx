@@ -69,6 +69,13 @@ const SovereignAlertContext = createContext(null);
  * @param {AlertObject} alert
  * @returns {string}
  */
+
+/**
+ * @function getAlertKey
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 function getAlertKey(alert) {
   return `${alert.alertId || 'no-id'}:${alert.correlationId || 'no-correlation'}:${alert.severity}`;
 }
@@ -116,7 +123,14 @@ function getAlertKey(alert) {
  * };
  * window.dispatchEvent(new CustomEvent('SOVEREIGN_ESCALATION', { detail: alert }));
  */
-export const SovereignAlertProvider = ({ children }) => {
+export 
+/**
+ * @function SovereignAlertProvider
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const SovereignAlertProvider = ({ children }) => {
   const [alerts, setAlerts] = useState([]);
   const pruneTimeoutsRef = useRef(new Map());
 
@@ -228,7 +242,14 @@ export const SovereignAlertProvider = ({ children }) => {
   }, [alerts]);
 
   useEffect(() => {
-    const handler = (event) => {
+    
+/**
+ * @function handler
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handler = (event) => {
       if (event.detail) {
         addAlert(event.detail);
       }
@@ -284,7 +305,14 @@ export const SovereignAlertProvider = ({ children }) => {
  * const { addAlert, dismissAlert } = useSovereignAlerts();
  * addAlert({ severity: 'critical', title: 'System Overload', message: 'CPU > 90%' });
  */
-export const useSovereignAlerts = () => {
+export 
+/**
+ * @function useSovereignAlerts
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const useSovereignAlerts = () => {
   const context = useContext(SovereignAlertContext);
   if (!context) {
     throw new Error('useSovereignAlerts must be used within a SovereignAlertProvider');

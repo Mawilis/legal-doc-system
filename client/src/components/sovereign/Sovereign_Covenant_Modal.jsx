@@ -16,6 +16,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './Sovereign_Covenant.module.css';
 
+
+/**
+ * @function Sovereign_Covenant_Modal
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Covenant_Modal = ({ isOpen, onAccept }) => {
   const [isSealing, setIsSealing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -39,7 +46,14 @@ const Sovereign_Covenant_Modal = ({ isOpen, onAccept }) => {
   if (!isOpen) return null;
 
   // --- ✍️ FORENSIC SIGNATURE ENGINE ---
-  const startDrawing = (e) => {
+  
+/**
+ * @function startDrawing
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const startDrawing = (e) => {
     setIsDrawing(true);
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -50,7 +64,14 @@ const Sovereign_Covenant_Modal = ({ isOpen, onAccept }) => {
     ctx.moveTo(x, y);
   };
 
-  const draw = (e) => {
+  
+/**
+ * @function draw
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const draw = (e) => {
     if (!isDrawing) return;
     e.preventDefault();
     const canvas = canvasRef.current;
@@ -63,7 +84,14 @@ const Sovereign_Covenant_Modal = ({ isOpen, onAccept }) => {
     setStrokeCount(prev => prev + 1);
   };
 
-  const stopDrawing = () => {
+  
+/**
+ * @function stopDrawing
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const stopDrawing = () => {
     setIsDrawing(false);
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -92,7 +120,14 @@ const Sovereign_Covenant_Modal = ({ isOpen, onAccept }) => {
     }
   };
 
-  const clearSignature = () => {
+  
+/**
+ * @function clearSignature
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const clearSignature = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -103,7 +138,14 @@ const Sovereign_Covenant_Modal = ({ isOpen, onAccept }) => {
   };
 
   // --- 🔒 COVENANT SEALING SEQUENCE ---
-  const handleSealSequence = () => {
+  
+/**
+ * @function handleSealSequence
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleSealSequence = () => {
     if (!hasSigned || isSealing) return;
 
     setIsSealing(true);

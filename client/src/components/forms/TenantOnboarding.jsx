@@ -5,10 +5,24 @@
  */
 import React, { useState } from 'react';
 
+
+/**
+ * @function TenantOnboarding
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
 const TenantOnboarding = () => {
   const [tenant, setTenant] = useState({ name: '', country: 'Tanzania', nodeID: '' });
 
-  const handleOnboard = () => {
+  
+/**
+ * @function handleOnboard
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const handleOnboard = () => {
     console.log(`[SOVEREIGN-ONBOARD] Provisioning Node for ${tenant.name}`);
     alert(`NODE PROVISIONED: SIT-TENANT-${Math.random().toString(36).toUpperCase().substring(2, 10)}`);
   };

@@ -7,6 +7,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
+
+/**
+ * @function FirmSidebar
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const FirmSidebar = () => {
   const navItems = [
     { name: 'Firm Overview', path: '/firm/dashboard', icon: '📊' },

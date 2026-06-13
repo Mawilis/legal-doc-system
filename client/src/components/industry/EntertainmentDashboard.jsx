@@ -49,6 +49,13 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
+
+/**
+ * @function EntertainmentDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const EntertainmentDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -189,7 +196,14 @@ const EntertainmentDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS
     loadEntertainmentData();
   }, [loadEntertainmentData]);
 
-  const getStatusColor = (status) => {
+  
+/**
+ * @function getStatusColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getStatusColor = (status) => {
     switch(status) {
       case 'RELEASED': return 'text-emerald-400 bg-emerald-950/30';
       case 'TOURING': return 'text-blue-400 bg-blue-950/30';
@@ -199,7 +213,14 @@ const EntertainmentDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS
     }
   };
 
-  const getTypeColor = (type) => {
+  
+/**
+ * @function getTypeColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getTypeColor = (type) => {
     switch(type) {
       case 'FILM': return 'text-red-400';
       case 'CONCERT': return 'text-purple-400';

@@ -150,10 +150,24 @@ const CRM_VENDOR_PRESETS = {
   }
 };
 
+
+/**
+ * @function normalizeImportKey
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
 const normalizeImportKey = (key = '') => (
   FIELD_ALIASES[key.toString().trim().toLowerCase()] || key.toString().trim().replace(/\s+(.)/g, (_, char) => char.toUpperCase())
 );
 
+
+/**
+ * @function parseCsv
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
 const parseCsv = (text = '') => {
   const rows = [];
   let row = [];
@@ -198,6 +212,13 @@ const parseCsv = (text = '') => {
   }, {}));
 };
 
+
+/**
+ * @function crmField
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
 const crmField = (key, label, type = 'text', options = {}) => ({ key, label, type, ...options });
 
 const CRM_MODULE_CONFIG = {
@@ -437,6 +458,13 @@ const CRM_MODULE_CONFIG = {
  * Sovereign CRM Dashboard – Unified interface for all CRM objects with full telemetry and audit.
  * @returns {JSX.Element}
  */
+
+/**
+ * @function CRMDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
 const CRMDashboard = () => {
   const { activeTenant } = useTenants();
   const { user } = useAuth();
@@ -636,7 +664,14 @@ const CRMDashboard = () => {
    * @param {string} key - Active workspace department index key tracker identifier.
    * @param {boolean} increment - Binary step parameter evaluating layout shift offsets.
    */
-  const handlePageShift = async (key, increment) => {
+  
+/**
+ * @function handlePageShift
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const handlePageShift = async (key, increment) => {
     const slice = pageStates[key];
     const targetOffset = increment ? slice.offset + slice.limit : Math.max(0, slice.offset - slice.limit);
     const updatedBounds = { ...slice, offset: targetOffset };
@@ -646,23 +681,51 @@ const CRMDashboard = () => {
     setIsRefreshing(false);
   };
 
-  const openCreateModal = () => {
+  
+/**
+ * @function openCreateModal
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const openCreateModal = () => {
     setEditingItem(null);
     setFormDraft({});
     setShowModal(true);
   };
 
-  const openEditModal = (item) => {
+  
+/**
+ * @function openEditModal
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const openEditModal = (item) => {
     setEditingItem(item);
     setFormDraft(item || {});
     setShowModal(true);
   };
 
-  const updateDraft = (key, value) => {
+  
+/**
+ * @function updateDraft
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const updateDraft = (key, value) => {
     setFormDraft(prev => ({ ...prev, [key]: value }));
   };
 
-  const getFormFields = () => {
+  
+/**
+ * @function getFormFields
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const getFormFields = () => {
     return CRM_MODULE_CONFIG[activeTab]?.sections || [];
   };
 
@@ -671,7 +734,14 @@ const CRMDashboard = () => {
    * Pushes data updates down microservice threads and forces telemetric audit tracking entries logging.
    * @param {Object} payload - Data collection schema variables layout object maps entries.
    */
-  const handleSaveItem = async (payload) => {
+  
+/**
+ * @function handleSaveItem
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const handleSaveItem = async (payload) => {
     const isEdit = !!editingItem;
     try {
       setIsRefreshing(true);

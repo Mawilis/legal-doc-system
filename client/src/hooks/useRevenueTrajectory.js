@@ -28,7 +28,14 @@ import api from '../services/api'; // 🛡️ Institutional API Service Alignmen
  * @param {string} tenantId - The unique identifier for the sovereign shard.
  * @returns {Object} { trajectory, loading, error, refetch }
  */
-export const useRevenueTrajectory = (tenantId) => {
+export 
+/**
+ * @function useRevenueTrajectory
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const useRevenueTrajectory = (tenantId) => {
   const [trajectory, setTrajectory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,7 +85,14 @@ export const useRevenueTrajectory = (tenantId) => {
    * 🔄 refetch
    * Manual trigger for on-demand financial re-sync.
    */
-  const refetch = () => fetchTrajectory();
+  
+/**
+ * @function refetch
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const refetch = () => fetchTrajectory();
 
   return {
     trajectory,

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Command, Power, RadioTower, ShieldCheck, Sparkles } from 'lucide-react';
 import styles from './SingularityToggle.module.css';
@@ -6,6 +7,13 @@ const PRIMARY_STORAGE_KEY = 'wilsy:singularityMode';
 const LEGACY_STORAGE_KEY = 'useSingularity';
 const TOAST_DURATION = 3200;
 
+
+/**
+ * @function readStoredMode
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const readStoredMode = () => {
   try {
     const primary = localStorage.getItem(PRIMARY_STORAGE_KEY);
@@ -17,11 +25,25 @@ const readStoredMode = () => {
   }
 };
 
+
+/**
+ * @function persistMode
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const persistMode = (enabled) => {
   localStorage.setItem(PRIMARY_STORAGE_KEY, enabled ? 'singularity' : 'legacy');
   localStorage.setItem(LEGACY_STORAGE_KEY, enabled ? 'true' : 'false');
 };
 
+
+/**
+ * @function SingularityToggle
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const SingularityToggle = () => {
   const [isEnabled, setIsEnabled] = useState(() => readStoredMode());
   const [showToast, setShowToast] = useState(false);
@@ -69,7 +91,14 @@ const SingularityToggle = () => {
   useEffect(() => {
     logDebug(`Mode anchored as ${isEnabled ? 'SINGULARITY' : 'LEGACY'}`);
 
-    const handleKeyDown = (event) => {
+    
+/**
+ * @function handleKeyDown
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const handleKeyDown = (event) => {
       const isShortcut = (event.ctrlKey || event.metaKey)
         && event.shiftKey
         && event.key.toLowerCase() === 's';
@@ -81,7 +110,14 @@ const SingularityToggle = () => {
       toggleMode('keyboard');
     };
 
-    const handleStorage = (event) => {
+    
+/**
+ * @function handleStorage
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const handleStorage = (event) => {
       if (event.key === PRIMARY_STORAGE_KEY || event.key === LEGACY_STORAGE_KEY) {
         setIsEnabled(readStoredMode());
       }

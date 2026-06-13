@@ -37,6 +37,13 @@ import styles from './Sovereign_Identity_Auth.module.css';
  * @component Sovereign_Identity_Auth
  * @desc The definitive entry point for Wilsy OS. Handles polymorphic auth for Founders and Tenants.
  */
+
+/**
+ * @function Sovereign_Identity_Auth
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Identity_Auth = () => {
   // 🏛️ SOVEREIGN CONTEXT COUPLING
   const { login, verifyOtp, loading: authLoading, error: authError } = useAuth();

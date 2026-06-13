@@ -64,7 +64,14 @@ const SovereignContext = createContext(null);
  * @param {React.ReactNode} props.children – The entire application tree
  * @returns {JSX.Element} The context provider wrapping the children
  */
-export const SovereignOrchestrator = ({ children }) => {
+export 
+/**
+ * @function SovereignOrchestrator
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const SovereignOrchestrator = ({ children }) => {
   // --------------------------------------------------------------------------
   // Refs for stable references (survive hot‑reloads and re‑renders)
   // --------------------------------------------------------------------------
@@ -280,7 +287,14 @@ export const SovereignOrchestrator = ({ children }) => {
   );
 };
 
-export const useSovereignMesh = () => {
+export 
+/**
+ * @function useSovereignMesh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const useSovereignMesh = () => {
   const context = useContext(SovereignContext);
   if (!context) {
     throw new Error(

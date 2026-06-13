@@ -20,6 +20,13 @@ import api from '../../services/api';
 import { broadcastTelemetry } from '../../utils/telemetryHelper.js';
 import { ShieldCheck, Lock, Copy, RefreshCcw, CheckCircle2, AlertTriangle } from 'lucide-react';
 
+
+/**
+ * @function SovereignMfaPortal
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const SovereignMfaPortal = ({ onVerificationSuccess }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -69,7 +76,14 @@ const SovereignMfaPortal = ({ onVerificationSuccess }) => {
     if (step === 'enroll') initiateMfaEnrollment();
   }, [email, qrCode, step, navigate]);
 
-  const handleVerify = async (e) => {
+  
+/**
+ * @function handleVerify
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const handleVerify = async (e) => {
     e?.preventDefault();
     if (otp.length !== 6) return;
 

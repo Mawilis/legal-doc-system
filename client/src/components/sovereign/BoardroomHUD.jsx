@@ -81,6 +81,13 @@ const extractPayload = (response) => response?.data?.data || response?.data || n
  * Enhanced with dashboard registry navigation.
  * @returns {JSX.Element|null} Rendered floating dashboard overlay, or `null` if no data yet.
  */
+
+/**
+ * @function BoardroomHUD
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const BoardroomHUD = () => {
   const mesh = useSovereignMesh();
   const sovereignData = useSovereignData(); // Reserved for future consistency checks
@@ -355,7 +362,14 @@ const BoardroomHUD = () => {
     }
 
     // 2. Biometric Accountability Gate (WebAuthn)
-    const triggerBiometric = async () => {
+    
+/**
+ * @function triggerBiometric
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const triggerBiometric = async () => {
       if (window.PublicKeyCredential && !biometricPending && (isBreached || isWarning)) {
         setBiometricPending(true);
         broadcastTelemetry('BIOMETRIC_CHALLENGE_STARTED', { integrityIndex, refreshFailure });
@@ -414,13 +428,34 @@ const BoardroomHUD = () => {
   const monthlyInflow = coerceNumber(financialSnapshot.metrics?.monthlyInflow);
   const ytdRevenue = coerceNumber(financialSnapshot.metrics?.ytdRevenue);
   const outstandingReceivables = coerceNumber(financialSnapshot.metrics?.outstandingReceivables);
-  const formatMoney = (value) => new Intl.NumberFormat('en-ZA', {
+  
+/**
+ * @function formatMoney
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const formatMoney = (value) => new Intl.NumberFormat('en-ZA', {
     style: 'currency',
     currency: 'ZAR',
     maximumFractionDigits: 0
   }).format(value);
-  const formatLiveMoney = (value) => value === null ? 'NO LIVE DATA' : formatMoney(value);
-  const formatLivePercent = (value) => value === null ? 'NO LIVE DATA' : `${value}%`;
+  
+/**
+ * @function formatLiveMoney
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const formatLiveMoney = (value) => value === null ? 'NO LIVE DATA' : formatMoney(value);
+  
+/**
+ * @function formatLivePercent
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const formatLivePercent = (value) => value === null ? 'NO LIVE DATA' : `${value}%`;
   const financialStatusLabel = financialSnapshot.status === 'syncing'
     ? 'Syncing financial ledger'
     : (financialSnapshot.status === 'error' ? 'Financial sync blocked' : 'Live DB source');

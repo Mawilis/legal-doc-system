@@ -25,6 +25,13 @@ import {
 } from 'lucide-react';
 import styles from './Sovereign_Crisis_Command.module.css';
 
+
+/**
+ * @function Sovereign_Crisis_Command
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Crisis_Command = () => {
   const { user } = useAuth();
 
@@ -97,7 +104,14 @@ const Sovereign_Crisis_Command = () => {
   }, []);
 
   // 🛡️ ACTION: QUANTUM KEY ROTATION
-  const initiateKeyRotation = async () => {
+  
+/**
+ * @function initiateKeyRotation
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const initiateKeyRotation = async () => {
     if (isRotatingKeys) return;
     setIsRotatingKeys(true);
     const traceId = `QKR-${Date.now().toString().slice(-6)}`;
@@ -132,7 +146,14 @@ const Sovereign_Crisis_Command = () => {
   }, [isLockdownActive]);
 
   // 🛡️ ACTION: RESTORE OPERATIONS
-  const restoreOperations = () => {
+  
+/**
+ * @function restoreOperations
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const restoreOperations = () => {
     setIsLockdownActive(false);
     setDefcon(5);
     setTelemetry(prev => ({
@@ -145,7 +166,14 @@ const Sovereign_Crisis_Command = () => {
   };
 
   // 📝 FORENSIC LOGGING
-  const logEvent = (msg, trace, severity) => {
+  
+/**
+ * @function logEvent
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const logEvent = (msg, trace, severity) => {
     setThreatLog(prev => [
       { id: Date.now(), time: new Date().toLocaleTimeString('en-GB'), event: msg, trace, severity },
       ...prev

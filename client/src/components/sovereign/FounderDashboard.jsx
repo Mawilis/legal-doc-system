@@ -166,6 +166,13 @@ const resolveFounderDisplayName = (user) => normalizeFounderDisplayName(
  * @param {string} filename - Name of the file (without extension).
  * @returns {void}
  */
+
+/**
+ * @function exportCSV
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const exportCSV = (data, filename) => {
   if (!data || (Array.isArray(data) && data.length === 0)) {
     console.warn('[CSV] No data to export');
@@ -196,6 +203,13 @@ const exportCSV = (data, filename) => {
  * @param {React.RefObject} elementRef - Ref of the DOM element to capture.
  * @param {string} filename - Name of the PDF file.
  * @returns {Promise<void>}
+ */
+
+/**
+ * @function exportPDF
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
  */
 const exportPDF = async (elementRef, filename) => {
   if (!elementRef?.current) {
@@ -439,6 +453,13 @@ const getActiveToken = () => {
  * @description Cycles through a pool of boardroom narratives every 12 seconds.
  * @returns {{ currentNarrative: string }}
  */
+
+/**
+ * @function useDynamicNarrative
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const useDynamicNarrative = () => {
   const [narrativeIndex, setNarrativeIndex] = useState(0);
   const narrativePool = useMemo(() => [
@@ -463,6 +484,13 @@ const useDynamicNarrative = () => {
  * Falls back to the icon manifest, then a hardcoded map, then a generic Target icon.
  * @param {string} key - Module identifier
  * @returns {JSX.Element} Resolved icon component
+ */
+
+/**
+ * @function getModuleIcon
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
  */
 const getModuleIcon = (key) => {
   if (iconManifest && iconManifest[key]) {
@@ -515,6 +543,13 @@ const getModuleIcon = (key) => {
  * can access the Neural Mesh context without "must be used within" errors.
  *
  * @returns {JSX.Element} The complete Founder Dashboard.
+ */
+
+/**
+ * @function FounderDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
  */
 const FounderDashboard = () => {
   // --------------------------------------------------------------------------
@@ -856,7 +891,14 @@ const FounderDashboard = () => {
   // Fetch live billing metrics
   // --------------------------------------------------------------------------
   useEffect(() => {
-    const fetchBilling = async () => {
+    
+/**
+ * @function fetchBilling
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const fetchBilling = async () => {
       try {
         const token = getActiveToken();
         const tenantId = activeTenant?.id || 'GLOBAL_ROOT';
@@ -887,7 +929,14 @@ const FounderDashboard = () => {
   // --------------------------------------------------------------------------
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    const handleKeyDown = (e) => {
+    
+/**
+ * @function handleKeyDown
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleKeyDown = (e) => {
       if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         e.stopPropagation();

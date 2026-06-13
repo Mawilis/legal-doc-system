@@ -45,6 +45,13 @@ const TAB_TO_LABEL_MAP = Object.freeze({
  * Sovereign Legal Dashboard – Unified interface for all legal modules.
  * @returns {JSX.Element}
  */
+
+/**
+ * @function LegalDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const LegalDashboard = () => {
   const { activeTenant } = useTenants();
   const tenantId = activeTenant?.tenantId || 'MASTER';
@@ -120,7 +127,14 @@ const LegalDashboard = () => {
 
   // Initial load
   useEffect(() => {
-    const init = async () => {
+    
+/**
+ * @function init
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const init = async () => {
       setLoading(true);
       await loadAllData();
       setLoading(false);
@@ -139,7 +153,14 @@ const LegalDashboard = () => {
     }
   }, [searchTerm]);
 
-  const updatePageOffset = async (tab, increment) => {
+  
+/**
+ * @function updatePageOffset
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const updatePageOffset = async (tab, increment) => {
     const targetPage = pageStates[tab];
     const newOffset = increment ? targetPage.offset + targetPage.limit : Math.max(0, targetPage.offset - targetPage.limit);
     const updatedPage = { ...targetPage, offset: newOffset };
@@ -150,7 +171,14 @@ const LegalDashboard = () => {
     setIsRefreshing(false);
   };
 
-  const handleSave = async (formData) => {
+  
+/**
+ * @function handleSave
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleSave = async (formData) => {
     try {
       setIsRefreshing(true);
       if (modalType === 'contract') {
@@ -181,7 +209,14 @@ const LegalDashboard = () => {
     }
   };
 
-  const handleDelete = async (id, type) => {
+  
+/**
+ * @function handleDelete
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleDelete = async (id, type) => {
     if (!window.confirm('Confirm execution deletion? Changes will permanently register on global compliance ledger trails.')) return;
     try {
       setIsRefreshing(true);
@@ -199,7 +234,14 @@ const LegalDashboard = () => {
     }
   };
 
-  const handleExport = async () => {
+  
+/**
+ * @function handleExport
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleExport = async () => {
     try {
       setIsRefreshing(true);
       let dataset = [];
@@ -217,7 +259,14 @@ const LegalDashboard = () => {
     }
   };
 
-  const renderPagination = (tabKey, total) => {
+  
+/**
+ * @function renderPagination
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderPagination = (tabKey, total) => {
     const pageState = pageStates[tabKey];
     const totalPages = Math.ceil(total / pageState.limit);
     return (
@@ -229,7 +278,14 @@ const LegalDashboard = () => {
     );
   };
 
-  const renderTable = (items, headers, renderRow, tabKey, total) => (
+  
+/**
+ * @function renderTable
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderTable = (items, headers, renderRow, tabKey, total) => (
     <div style={{ position: 'relative', opacity: isRefreshing ? 0.4 : 1, transition: 'opacity 0.2s ease' }}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-400 font-mono">
@@ -255,7 +311,14 @@ const LegalDashboard = () => {
     </div>
   );
 
-  const renderContent = () => {
+  
+/**
+ * @function renderContent
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderContent = () => {
     switch (activeTab) {
       case 'contracts':
         return renderTable(contracts.items, ['Contract #', 'Counterparty', 'Value', 'Status', 'Expiry'], (c) => (

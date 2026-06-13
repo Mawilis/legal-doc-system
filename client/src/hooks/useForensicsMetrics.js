@@ -23,8 +23,22 @@ import api from '../services/api';
  * @param {Object} options - Configuration options (see useSovereignMetrics for full list).
  * @returns {Object} { metrics, boardroomSummary, isSyncing, isStale, error, refresh, breakerStatus }
  */
-export const useForensicsMetrics = (options = {}) => {
-  const apiFn = async ({ tenantId, signal, headers }) => {
+export 
+/**
+ * @function useForensicsMetrics
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const useForensicsMetrics = (options = {}) => {
+  
+/**
+ * @function apiFn
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const apiFn = async ({ tenantId, signal, headers }) => {
     const response = await api.get(`/forensics/metrics/${tenantId}`, {
       signal,
       headers,

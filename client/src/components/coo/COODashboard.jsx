@@ -40,6 +40,13 @@ import styles from '../sovereign/FounderDashboard.module.css';
  * Sovereign COO Operations Dashboard – Unified interface for COO modules.
  * @returns {JSX.Element}
  */
+
+/**
+ * @function COODashboard
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
 const COODashboard = () => {
   const { activeTenant } = useTenants();
   const tenantId = activeTenant?.tenantId || 'MASTER';
@@ -110,7 +117,14 @@ const COODashboard = () => {
   }, [pageStates, fetchTabData]);
 
   useEffect(() => {
-    const init = async () => {
+    
+/**
+ * @function init
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const init = async () => {
       setLoading(true);
       await loadAllData();
       setLoading(false);
@@ -124,7 +138,14 @@ const COODashboard = () => {
    * @param {boolean} increment - Next/previous.
    * @returns {Promise<void>}
    */
-  const updatePageOffset = async (tab, increment) => {
+  
+/**
+ * @function updatePageOffset
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const updatePageOffset = async (tab, increment) => {
     const targetPage = pageStates[tab];
     const newOffset = increment ? targetPage.offset + targetPage.limit : Math.max(0, targetPage.offset - targetPage.limit);
     const updatedPage = { ...targetPage, offset: newOffset };
@@ -139,7 +160,14 @@ const COODashboard = () => {
    * @param {Object} formData - Form data.
    * @returns {Promise<void>}
    */
-  const handleSave = async (formData) => {
+  
+/**
+ * @function handleSave
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const handleSave = async (formData) => {
     try {
       setIsRefreshing(true);
       if (modalType === 'kpi') {
@@ -163,7 +191,14 @@ const COODashboard = () => {
    * @param {string} id - Approval ID.
    * @returns {Promise<void>}
    */
-  const handleApprove = async (id) => {
+  
+/**
+ * @function handleApprove
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const handleApprove = async (id) => {
     try {
       setIsRefreshing(true);
       await cooService.approveRequest(id, tenantId);
@@ -180,7 +215,14 @@ const COODashboard = () => {
    * @param {string} id - Approval ID.
    * @returns {Promise<void>}
    */
-  const handleReject = async (id) => {
+  
+/**
+ * @function handleReject
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const handleReject = async (id) => {
     try {
       setIsRefreshing(true);
       await cooService.rejectRequest(id, tenantId);
@@ -197,7 +239,14 @@ const COODashboard = () => {
    * @param {string} id - Alert ID.
    * @returns {Promise<void>}
    */
-  const handleAcknowledgeAlert = async (id) => {
+  
+/**
+ * @function handleAcknowledgeAlert
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const handleAcknowledgeAlert = async (id) => {
     try {
       setIsRefreshing(true);
       await cooService.acknowledgeAlert(id, tenantId);
@@ -214,7 +263,14 @@ const COODashboard = () => {
    * @param {string} id - Alert ID.
    * @returns {Promise<void>}
    */
-  const handleResolveAlert = async (id) => {
+  
+/**
+ * @function handleResolveAlert
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const handleResolveAlert = async (id) => {
     try {
       setIsRefreshing(true);
       await cooService.resolveAlert(id, tenantId);
@@ -230,7 +286,14 @@ const COODashboard = () => {
    * Exports current tab data to CSV.
    * @returns {Promise<void>}
    */
-  const handleExport = async () => {
+  
+/**
+ * @function handleExport
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const handleExport = async () => {
     try {
       setIsRefreshing(true);
       let dataset = [];
@@ -246,7 +309,14 @@ const COODashboard = () => {
     }
   };
 
-  const renderPagination = (tabKey, total) => {
+  
+/**
+ * @function renderPagination
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
+const renderPagination = (tabKey, total) => {
     const pageState = pageStates[tabKey];
     const totalPages = Math.ceil(total / pageState.limit);
     return (

@@ -127,6 +127,13 @@ const WORLD_CLASS_STANDARDS = {
  * MAIN COMPONENT
  * ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
 
+
+/**
+ * @function ProductionDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const ProductionDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   /* ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
    * STATE MANAGEMENT - LIVE DATA FROM API
@@ -251,7 +258,14 @@ const ProductionDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VI
     loadProductionData();
   }, [loadProductionData]);
 
-  const handleRefresh = async () => {
+  
+/**
+ * @function handleRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadProductionData();
   };
@@ -260,19 +274,40 @@ const ProductionDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VI
    * HELPER FUNCTIONS - UI UTILITIES
    * ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
 
-  const getOEEColor = (oee) => {
+  
+/**
+ * @function getOEEColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getOEEColor = (oee) => {
     if (oee >= 85) return 'text-emerald-400';
     if (oee >= 65) return 'text-yellow-400';
     return 'text-red-400';
   };
 
-  const getStatusColor = (value, target = 85) => {
+  
+/**
+ * @function getStatusColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getStatusColor = (value, target = 85) => {
     if (value >= target) return 'text-emerald-400';
     if (value >= target * 0.85) return 'text-yellow-400';
     return 'text-red-400';
   };
 
-  const getSeverityColor = (severity) => {
+  
+/**
+ * @function getSeverityColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getSeverityColor = (severity) => {
     switch(severity?.toUpperCase()) {
       case 'CRITICAL': return 'text-red-400';
       case 'WARNING': return 'text-yellow-400';

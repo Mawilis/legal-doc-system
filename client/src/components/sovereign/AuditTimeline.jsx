@@ -21,6 +21,13 @@ import api from '../../services/api';
 import { broadcastTelemetry } from '../../utils/telemetryHelper';
 import styles from './AuditTimeline.module.css';
 
+
+/**
+ * @function AuditTimeline
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const AuditTimeline = ({ traceIds }) => {
   const [entries, setEntries] = useState([]);
   const [chainVerified, setChainVerified] = useState(null);
@@ -33,7 +40,14 @@ const AuditTimeline = ({ traceIds }) => {
       return;
     }
 
-    const fetchForensicData = async () => {
+    
+/**
+ * @function fetchForensicData
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const fetchForensicData = async () => {
       const startTime = performance.now();
       try {
         // 🛡️ Executing the Sovereign Batch Verification Strike

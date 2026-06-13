@@ -36,6 +36,13 @@ import styles from './ForensicsDashboard.module.css'; // ✅ Sovereign CSS Modul
  * @description The cryptographic intelligence nucleus of Wilsy OS.
  * Renders live PQE-256 integrity and threat vector metrics with forensic revalidation.
  */
+
+/**
+ * @function ForensicsDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const ForensicsDashboard = () => {
   const {
     crypto,

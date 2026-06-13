@@ -20,6 +20,13 @@ import QuantumForecasts from './QuantumForecasts';
 import UserActivity from './UserActivity';
 import { Shield, TrendingUp, Zap, Users, Award, Eye } from 'lucide-react';
 
+
+/**
+ * @function AnalyticsDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const AnalyticsDashboard = () => {
   const { activeModule } = useSovereignStore();
   const {

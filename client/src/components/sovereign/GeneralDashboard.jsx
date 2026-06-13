@@ -29,6 +29,13 @@ const DocumentVault = React.lazy(() => import('./Sovereign_Document_Vault'));
 const UserManagement = React.lazy(() => import('./Sovereign_User_Management'));
 const LegalAnalytics = React.lazy(() => import('./Sovereign_Legal_Analytics'));
 
+
+/**
+ * @function GeneralDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const GeneralDashboard = () => {
   const { user, logout } = useAuth();
   const { activeTenant } = useTenants();
@@ -38,7 +45,14 @@ const GeneralDashboard = () => {
     console.log(`[TENANT-CENTER] 🛰️ Active Tenant: ${activeTenant?.name || 'RESOLVING...'}`);
   }, [activeTenant]);
 
-  const renderModule = () => {
+  
+/**
+ * @function renderModule
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderModule = () => {
     switch (activeModule) {
       case 'VAULT': return <DocumentVault />;
       case 'USERS': return <UserManagement />;

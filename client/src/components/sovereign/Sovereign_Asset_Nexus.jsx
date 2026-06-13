@@ -33,6 +33,13 @@ import styles from './Sovereign_Asset_Nexus.module.css';
  * @component Sovereign_Asset_Nexus
  * @desc The master UI for managing trillion-dollar assets within the Wilsy OS ecosystem.
  */
+
+/**
+ * @function Sovereign_Asset_Nexus
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Asset_Nexus = () => {
   const [assets, setAssets] = useState([]);
   const [isVaulting, setIsVaulting] = useState(false);
@@ -40,7 +47,14 @@ const Sovereign_Asset_Nexus = () => {
 
   // 📡 ASSET STREAM: Fetching the Immutable Registry
   useEffect(() => {
-    const fetchAssets = async () => {
+    
+/**
+ * @function fetchAssets
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const fetchAssets = async () => {
       setLoading(true);
       // Simulate Sovereign Handshake with the SAN Service
       setTimeout(() => {

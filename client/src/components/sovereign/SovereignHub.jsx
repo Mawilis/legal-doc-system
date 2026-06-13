@@ -26,6 +26,13 @@ import styles from './SovereignHub.module.css';
  * @component SovereignHub
  * @description The master orchestration layer of Wilsy OS. Unifies all forensic, compliance, and revenue intelligence into a single investor-ready panorama.
  */
+
+/**
+ * @function SovereignHub
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const SovereignHub = () => {
   return (
     <div className={styles.hubContainer}>

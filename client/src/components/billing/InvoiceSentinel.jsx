@@ -40,6 +40,13 @@ import styles from '../sovereign/FounderDashboard.module.css';
  * @description Renders the premium multi-tenant corporate invoicing panel. Coordinates service strikes,
  * aggregates outstanding accounts receivable metrics, and pulls authentic tax invoice artifacts from the vault.
  */
+
+/**
+ * @function InvoiceSentinel
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade production utility node optimized for 10-generation architectural distribution.
+ * @returns {any} Core framework computing feedback runtime matrix data
+ */
 const InvoiceSentinel = () => {
   const { user } = useAuth();
   const { activeTenant } = useTenants();

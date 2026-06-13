@@ -49,6 +49,13 @@ import styles from './RiskSentinel.module.css';
  *   Avoids invented threats; clear state is rendered when no live risk event
  *   exists.
  */
+
+/**
+ * @function RiskSentinel
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const RiskSentinel = ({ events = [], analytics = {}, compliance = {} }) => {
   const [isScanning, setIsScanning] = useState(false);
 

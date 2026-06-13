@@ -42,6 +42,13 @@ const SOURCE_SILENT = 'SOURCE SILENT';
  * @param {object} response - Axios response object.
  * @returns {object|Array|null} Normalised payload.
  */
+
+/**
+ * @function extractPayload
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const extractPayload = (response) => response?.data?.data || response?.data || null;
 
 /**
@@ -52,6 +59,13 @@ const extractPayload = (response) => response?.data?.data || response?.data || n
  *
  * @param {*} value - Candidate numeric value.
  * @returns {number|null} Finite number or null.
+ */
+
+/**
+ * @function coerceNumber
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
  */
 const coerceNumber = (value) => {
   const numeric = Number(value);
@@ -67,6 +81,13 @@ const coerceNumber = (value) => {
  * @param {object} source - Source object.
  * @param {string[]} keys - Candidate keys.
  * @returns {number|null} First finite numeric value.
+ */
+
+/**
+ * @function pickNumber
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
  */
 const pickNumber = (source, keys = []) => {
   if (!source || typeof source !== 'object') return null;
@@ -86,6 +107,13 @@ const pickNumber = (source, keys = []) => {
  * @param {number|null} value - Currency amount.
  * @returns {string} Display value.
  */
+
+/**
+ * @function formatZAR
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const formatZAR = (value) => {
   const numeric = coerceNumber(value);
   if (numeric === null) return SOURCE_SILENT;
@@ -104,6 +132,13 @@ const formatZAR = (value) => {
  * @param {number|null} value - Percentage value.
  * @returns {string} Display value.
  */
+
+/**
+ * @function formatPercent
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const formatPercent = (value) => {
   const numeric = coerceNumber(value);
   return numeric === null ? SOURCE_SILENT : `${numeric.toFixed(numeric % 1 ? 1 : 0)}%`;
@@ -116,6 +151,13 @@ const formatPercent = (value) => {
  *
  * @param {number|null} value - Latency in ms.
  * @returns {string} Display value.
+ */
+
+/**
+ * @function formatMs
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
  */
 const formatMs = (value) => {
   const numeric = coerceNumber(value);
@@ -130,6 +172,13 @@ const formatMs = (value) => {
  *
  * @param {object|null} activeTenant - Active tenant context.
  * @returns {string} Tenant identifier.
+ */
+
+/**
+ * @function resolveTenantId
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
  */
 const resolveTenantId = (activeTenant) => (
   activeTenant?.tenantId
@@ -147,6 +196,13 @@ const resolveTenantId = (activeTenant) => (
  *
  * @param {Array} events - Telemetry events from FounderDashboard.
  * @returns {Array<object>} Normalised event feed.
+ */
+
+/**
+ * @function normaliseTelemetryEvents
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
  */
 const normaliseTelemetryEvents = (events = []) => {
   if (!Array.isArray(events)) return [];
@@ -175,6 +231,13 @@ const normaliseTelemetryEvents = (events = []) => {
  * @param {object|Array|null} stats - Telemetry stats payload.
  * @returns {object} Normalised telemetry readings.
  */
+
+/**
+ * @function normaliseTelemetryStats
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const normaliseTelemetryStats = (stats) => {
   const rows = Array.isArray(stats) ? stats : (stats ? [stats] : []);
   const latest = rows[0] || {};
@@ -199,6 +262,13 @@ const normaliseTelemetryStats = (stats) => {
  * @param {PromiseSettledResult} result - Settled API result.
  * @param {string} label - Human label.
  * @returns {object} Source status.
+ */
+
+/**
+ * @function buildSourceStatus
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
  */
 const buildSourceStatus = (result, label) => ({
   label,

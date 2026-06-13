@@ -20,6 +20,13 @@ import { ShieldCheck, ShieldAlert, Clock, Fingerprint, Link as LinkIcon, AlertTr
 import api from '../../services/api';
 import styles from './BatchVerificationView.module.css';
 
+
+/**
+ * @function BatchVerificationView
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const BatchVerificationView = ({ batchId }) => {
   const [batch, setBatch] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +39,14 @@ const BatchVerificationView = ({ batchId }) => {
       return;
     }
 
-    const fetchBatchData = async () => {
+    
+/**
+ * @function fetchBatchData
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const fetchBatchData = async () => {
       try {
         // 🛡️ Executing the batch cryptographic strike via secure interceptor
         const res = await api.get(`/audit/batch/view/${batchId}`);

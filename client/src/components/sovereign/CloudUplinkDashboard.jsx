@@ -11,6 +11,13 @@ import React, { useState } from 'react';
 // 🛠️ PATH CORRECTION: Explicitly pointing to the services directory
 import { generateAuditManifest } from '../../services/ForensicAuditService';
 
+
+/**
+ * @function CloudUplinkDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const CloudUplinkDashboard = () => {
   const [logs, setLogs] = useState([
     `[${new Date().toLocaleTimeString()}] INITIATING_HANDSHAKE...`,
@@ -18,12 +25,26 @@ const CloudUplinkDashboard = () => {
   ]);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleGenerateAudit = () => {
+  
+/**
+ * @function handleGenerateAudit
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleGenerateAudit = () => {
     generateAuditManifest();
     setLogs(prev => [`[${new Date().toLocaleTimeString()}] MASTER_AUDIT_GENERATED: LOCAL_SAVE_COMPLETE`, ...prev]);
   };
 
-  const handleMirrorDrive = async () => {
+  
+/**
+ * @function handleMirrorDrive
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleMirrorDrive = async () => {
     setIsUploading(true);
     setLogs(prev => [`[${new Date().toLocaleTimeString()}] UPLINK_STARTED: TARGET_GOOGLE_DRIVE`, ...prev]);
 

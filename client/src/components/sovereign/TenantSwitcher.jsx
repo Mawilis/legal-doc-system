@@ -18,6 +18,13 @@ import React, { useState, useEffect } from 'react';
 import { Zap, ShieldCheck, LogOut, Loader2, Fingerprint, Database } from 'lucide-react';
 import { broadcastTelemetry } from '../../utils/telemetryHelper';
 
+
+/**
+ * @function Sovereign_Shard_Gateway
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Shard_Gateway = ({ onTenantChange }) => {
   const [tenantId, setTenantId] = useState('');
   const [isActive, setIsActive] = useState(false);
@@ -25,7 +32,14 @@ const Sovereign_Shard_Gateway = ({ onTenantChange }) => {
   const [gateState, setGateState] = useState('IDLE'); // IDLE | COMPILING | SIGNING | ANCHORING
 
   // 🛡️ INSTITUTIONAL HANDSHAKE
-  const initiateOnboarding = async () => {
+  
+/**
+ * @function initiateOnboarding
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const initiateOnboarding = async () => {
     setIsTransitioning(true);
     setGateState('COMPILING');
 
@@ -60,7 +74,14 @@ const Sovereign_Shard_Gateway = ({ onTenantChange }) => {
     window.location.reload();
   };
 
-  const terminateSession = async () => {
+  
+/**
+ * @function terminateSession
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const terminateSession = async () => {
     setIsTransitioning(true);
     setGateState('PURGING');
 

@@ -62,6 +62,13 @@ import styles from "./ForensicsHUD.module.css";
  * @collaboration Wilson Khanyezi mandated that Matrix-hosted modules must not use full-page viewport physics that cut components.
  * Mars-spec resilience ensures no unmount data leaks.
  */
+
+/**
+ * @function ForensicsHUD
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const ForensicsHUD = ({ embedded = false }) => {
   const [forensicData, setForensicData] = useState(null);
   const [loading, setLoading] = useState(true);

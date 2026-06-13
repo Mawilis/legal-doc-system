@@ -162,7 +162,14 @@ class RateLimiter {
 // ============================================================================
 // 🛡️ CANONICAL FORENSIC HEADER GENERATION – SHA3-512 seal formula
 // ============================================================================
-export const generateForensicHeaders = (payload = {}, prefix = 'GEN') => {
+export 
+/**
+ * @function generateForensicHeaders
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const generateForensicHeaders = (payload = {}, prefix = 'GEN') => {
   const traceId = `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
   const timestamp = new Date().toISOString();
   const canonicalPayload = typeof payload === 'string' ? payload : JSON.stringify(payload);
@@ -178,7 +185,14 @@ export const generateForensicHeaders = (payload = {}, prefix = 'GEN') => {
 // ============================================================================
 // 📊 BASE HOOK – useSovereignMetrics with GLOBAL DEDUPLICATION
 // ============================================================================
-export const useSovereignMetrics = ({
+export 
+/**
+ * @function useSovereignMetrics
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const useSovereignMetrics = ({
   apiFn,
   tenantId = 'GLOBAL_ROOT',
   refreshInterval = 300000,
@@ -332,7 +346,14 @@ export const useSovereignMetrics = ({
   useEffect(() => {
     if (!enabled) return;
 
-    const startPolling = () => {
+    
+/**
+ * @function startPolling
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const startPolling = () => {
       if (GLOBAL_POLL_INTERVALS.has(streamKey)) return;
 
       syncInternal(false).catch(() => {});

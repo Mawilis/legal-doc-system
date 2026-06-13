@@ -18,6 +18,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ShieldCheck, Lock, Feather, AlertTriangle, Cpu, Gavel } from 'lucide-react';
 import styles from './CovenantPortal.module.css';
 
+
+/**
+ * @function CovenantPortal
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const CovenantPortal = ({ onAccept, onDecline, covenantData }) => {
   const scrollRef = useRef(null);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
@@ -25,7 +32,14 @@ const CovenantPortal = ({ onAccept, onDecline, covenantData }) => {
   const [agreed, setAgreed] = useState(false);
 
   // 🛡️ Ensure scroll detection works even on high-DPI displays
-  const handleScroll = (e) => {
+  
+/**
+ * @function handleScroll
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
     const isAtBottom = scrollHeight - scrollTop <= clientHeight + 10;
     if (isAtBottom && !hasScrolledToBottom) {

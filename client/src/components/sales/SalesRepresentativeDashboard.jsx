@@ -40,6 +40,13 @@ import {
 // SAFE STRING UTILITY - Prevents object rendering errors
 // ============================================================================
 
+
+/**
+ * @function safeString
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const safeString = (value, defaultValue = '') => {
   if (value === null || value === undefined) return defaultValue;
   if (typeof value === 'string') return value;
@@ -52,6 +59,13 @@ const safeString = (value, defaultValue = '') => {
   return defaultValue;
 };
 
+
+/**
+ * @function safeNumber
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const safeNumber = (value, defaultValue = 0) => {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') return parseFloat(value) || defaultValue;
@@ -62,6 +76,13 @@ const safeNumber = (value, defaultValue = 0) => {
 // UNIVERSAL BUSINESS DETECTION & CONFIGURATION
 // ============================================================================
 
+
+/**
+ * @function detectBusinessType
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const detectBusinessType = (tenantConfig) => {
   const industry = tenantConfig?.industry?.toLowerCase() || '';
   const businessType = tenantConfig?.businessType?.toLowerCase() || '';
@@ -76,6 +97,13 @@ const detectBusinessType = (tenantConfig) => {
   return 'universal';
 };
 
+
+/**
+ * @function getUniversalStages
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const getUniversalStages = () => [
   { id: 'lead', name: 'LEAD', probability: 10, color: 'border-blue-500', bg: 'bg-blue-950/20', icon: Users },
   { id: 'qualified', name: 'QUALIFIED', probability: 25, color: 'border-cyan-500', bg: 'bg-cyan-950/20', icon: Target },
@@ -85,6 +113,13 @@ const getUniversalStages = () => [
   { id: 'closed_lost', name: 'LOST', probability: 0, color: 'border-red-500', bg: 'bg-red-950/20', icon: XCircle }
 ];
 
+
+/**
+ * @function getIndustryStages
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const getIndustryStages = (businessType) => {
   const stages = getUniversalStages();
 
@@ -113,6 +148,13 @@ const getIndustryStages = (businessType) => {
 // UNIVERSAL DEAL CARD COMPONENT - FIXED with safeString
 // ============================================================================
 
+
+/**
+ * @function UniversalDealCard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const UniversalDealCard = ({ deal, stages, onEdit, onDelete, onStageChange, currency = 'ZAR' }) => {
   const [showActions, setShowActions] = useState(false);
 
@@ -126,7 +168,14 @@ const UniversalDealCard = ({ deal, stages, onEdit, onDelete, onStageChange, curr
   const stageConfig = stages.find(s => s.id === stageId) || stages[0];
   const StageIcon = stageConfig?.icon || Target;
 
-  const formatCurrency = (val) => {
+  
+/**
+ * @function formatCurrency
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency }).format(val);
   };
 
@@ -199,6 +248,13 @@ const UniversalDealCard = ({ deal, stages, onEdit, onDelete, onStageChange, curr
 // UNIVERSAL KANBAN BOARD - FIXED with safe values
 // ============================================================================
 
+
+/**
+ * @function UniversalKanbanBoard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const UniversalKanbanBoard = ({ deals, stages, onDealClick, onStageChange, onEditDeal, onDeleteDeal, currency }) => {
   const dealsByStage = {};
   stages.forEach(stage => { dealsByStage[stage.id] = []; });
@@ -216,7 +272,14 @@ const UniversalKanbanBoard = ({ deals, stages, onDealClick, onStageChange, onEdi
   const weightedValue = deals.reduce((sum, d) => sum + (safeNumber(d.value || d.amount, 0) * (safeNumber(d.probability, 50) / 100)), 0);
   const wonValue = dealsByStage['closed_won']?.reduce((sum, d) => sum + safeNumber(d.value || d.amount, 0), 0) || 0;
 
-  const formatCurrency = (val) => {
+  
+/**
+ * @function formatCurrency
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency }).format(val);
   };
 
@@ -302,6 +365,13 @@ const UniversalKanbanBoard = ({ deals, stages, onDealClick, onStageChange, onEdi
 // DEAL MODAL COMPONENT - FIXED with safe values
 // ============================================================================
 
+
+/**
+ * @function DealModal
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const DealModal = ({ isOpen, onClose, onSave, deal, stages, currency = 'ZAR' }) => {
   const [formData, setFormData] = useState({
     name: '',

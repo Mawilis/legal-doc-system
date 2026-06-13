@@ -34,6 +34,13 @@ import styles from './RevenueDashboard.module.css';
  * @description The financial intelligence nucleus of Wilsy OS.
  * Renders live ARR, MRR, and Transaction Volume with forensic revalidation.
  */
+
+/**
+ * @function RevenueDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const RevenueDashboard = () => {
   const {
     formattedArr,

@@ -49,6 +49,13 @@ import styles from './NeuralNarrativeCapsule.module.css';
  * @param {string} props.shardId - The active shard identifier for metadata display.
  * @returns {JSX.Element} The rendered capsule.
  */
+
+/**
+ * @function NeuralNarrativeCapsule
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const NeuralNarrativeCapsule = ({ currentNarrative, shardId }) => {
   // ==========================================================================
   // STATE – Animation & Live Metrics

@@ -20,6 +20,13 @@ import { ShieldCheck, ShieldAlert, Fingerprint, Clock, FileText, ShieldQuestion,
 import api from '../../services/api';
 import styles from './AuditEntry.module.css';
 
+
+/**
+ * @function AuditEntry
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const AuditEntry = ({ traceId }) => {
   const [entry, setEntry] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +43,14 @@ const AuditEntry = ({ traceId }) => {
       return;
     }
 
-    const fetchAuditEntry = async () => {
+    
+/**
+ * @function fetchAuditEntry
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const fetchAuditEntry = async () => {
       try {
         // 🛡️ Executing the individual cryptographic strike
         const res = await api.get(`/audit/${traceId}`);
@@ -53,7 +67,14 @@ const AuditEntry = ({ traceId }) => {
   }, [traceId]);
 
   // 🛡️ Cryptographic QR Signature Strike
-  const verifyQrSignature = async () => {
+  
+/**
+ * @function verifyQrSignature
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const verifyQrSignature = async () => {
     setIsVerifying(true);
     setVerificationResult(null);
     try {

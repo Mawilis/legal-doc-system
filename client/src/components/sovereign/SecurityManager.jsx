@@ -29,7 +29,14 @@ import api from '../../services/api';
 
 const SecurityContext = createContext(null);
 
-export const SecurityManager = ({ children }) => {
+export 
+/**
+ * @function SecurityManager
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const SecurityManager = ({ children }) => {
   const mesh = useSovereignMesh();
   const [threatLevel, setThreatLevel] = useState('NOMINAL');
   const [hardwareBound, setHardwareBound] = useState(false);
@@ -114,7 +121,14 @@ export const SecurityManager = ({ children }) => {
   );
 };
 
-export const useSovereignSecurity = () => {
+export 
+/**
+ * @function useSovereignSecurity
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const useSovereignSecurity = () => {
   const context = useContext(SecurityContext);
   if (!context) throw new Error('[WILSY-OS] useSovereignSecurity must be used within SecurityManager.');
   return context;

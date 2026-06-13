@@ -49,6 +49,13 @@ const TAB_TO_LABEL_MAP = Object.freeze({
  * Sovereign Research Dashboard – Unified interface for all research modules.
  * @returns {JSX.Element}
  */
+
+/**
+ * @function ResearchDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const ResearchDashboard = () => {
   const { activeTenant } = useTenants();
   const tenantId = activeTenant?.tenantId || 'MASTER';
@@ -144,7 +151,14 @@ const ResearchDashboard = () => {
 
   // Initial runtime framework instantiation tracking hook
   useEffect(() => {
-    const init = async () => {
+    
+/**
+ * @function init
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const init = async () => {
       setLoading(true);
       await loadAllData();
       setLoading(false);
@@ -169,7 +183,14 @@ const ResearchDashboard = () => {
    * @param {boolean} increment - Evaluates if advance or decrease path execution rule applies.
    * @returns {Promise<void>}
    */
-  const updatePageOffset = async (tab, increment) => {
+  
+/**
+ * @function updatePageOffset
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const updatePageOffset = async (tab, increment) => {
     const targetPage = pageStates[tab];
     const newOffset = increment ? targetPage.offset + targetPage.limit : Math.max(0, targetPage.offset - targetPage.limit);
     const updatedPage = { ...targetPage, offset: newOffset };
@@ -184,7 +205,14 @@ const ResearchDashboard = () => {
    * @param {Object} formData - Key-value pair payload collection maps fields.
    * @returns {Promise<void>}
    */
-  const handleSave = async (formData) => {
+  
+/**
+ * @function handleSave
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleSave = async (formData) => {
     try {
       setIsRefreshing(true);
       if (modalType === 'rdProject') {
@@ -223,7 +251,14 @@ const ResearchDashboard = () => {
    * @param {string} type - System module identification boundary tracking locator.
    * @returns {Promise<void>}
    */
-  const handleDelete = async (id, type) => {
+  
+/**
+ * @function handleDelete
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleDelete = async (id, type) => {
     if (!window.confirm('Confirm deletion? Action will be logged to audit ledger.')) return;
     try {
       setIsRefreshing(true);
@@ -244,7 +279,14 @@ const ResearchDashboard = () => {
    * Drives high-performance CSV compilation matching the currently loaded matrix set.
    * @returns {Promise<void>}
    */
-  const handleExport = async () => {
+  
+/**
+ * @function handleExport
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleExport = async () => {
     try {
       setIsRefreshing(true);
       let dataset = [];
@@ -265,7 +307,14 @@ const ResearchDashboard = () => {
   /**
    * Compiles interactive pagination controls layouts panels metrics frames trackers.
    */
-  const renderPagination = (tabKey, total) => {
+  
+/**
+ * @function renderPagination
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderPagination = (tabKey, total) => {
     const pageState = pageStates[tabKey];
     const totalPages = Math.ceil(total / pageState.limit);
     return (
@@ -294,7 +343,14 @@ const ResearchDashboard = () => {
   /**
    * Unified data rendering pipeline constructing responsive cell row wrappers.
    */
-  const renderTable = (items, headers, renderRow, tabKey, totalCount) => (
+  
+/**
+ * @function renderTable
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderTable = (items, headers, renderRow, tabKey, totalCount) => (
     <div style={{ position: 'relative', opacity: isRefreshing ? 0.4 : 1, transition: 'opacity 0.2s ease' }}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-400 font-mono">
@@ -332,7 +388,14 @@ const ResearchDashboard = () => {
    * Selects and handles cell map distributions inside visual framework canvas rows.
    * @returns {JSX.Element|null}
    */
-  const renderContent = () => {
+  
+/**
+ * @function renderContent
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderContent = () => {
     switch (activeTab) {
       case 'rdProjects':
         return renderTable(rdProjects.items, ['Project Name', 'Status', 'Start Date', 'Budget', 'Lead Researcher'], (item) => (

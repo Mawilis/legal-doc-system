@@ -18,6 +18,13 @@
 import React, { useState } from 'react';
 import { Briefcase, Users, FileText, CheckCircle, AlertTriangle, Clock, Globe, Shield } from 'lucide-react';
 
+
+/**
+ * @function Sovereign_Client_Covenant
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Client_Covenant = () => {
   const [clients] = useState([
     {
@@ -64,14 +71,28 @@ const Sovereign_Client_Covenant = () => {
 
   const [selectedClient, setSelectedClient] = useState(null);
 
-  const getHealthColor = (health) => {
+  
+/**
+ * @function getHealthColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getHealthColor = (health) => {
     if (health >= 95) return 'bg-emerald-500'; // For 98%, 95%, 100%
     if (health >= 85) return 'bg-gold';
     if (health >= 70) return 'bg-orange-500';
     return 'bg-red-500';
   };
 
-  const getHealthTextColor = (health) => {
+  
+/**
+ * @function getHealthTextColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getHealthTextColor = (health) => {
     if (health >= 95) return 'text-emerald-500';
     if (health >= 85) return 'text-gold';
     if (health >= 70) return 'text-orange-500';

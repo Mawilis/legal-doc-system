@@ -45,6 +45,13 @@ import {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 const DEFAULT_WILSY_LOGO = '/src/assets/logo/wilsy.jpeg';
 
+
+/**
+ * @function TechDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const TechDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   // [COLLABORATION: STATE MATRIX]
   // Granular state architecture to isolate re-renders.
@@ -119,7 +126,14 @@ const TechDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' })
 
   useEffect(() => { loadTechData(); }, [loadTechData]);
 
-  const handleRefresh = async () => {
+  
+/**
+ * @function handleRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadTechData();
   };

@@ -347,6 +347,13 @@ const resolveOperatingState = ({ liveCount = 0, totalCount = 0, anomaly = null }
  * • AI Engineering (DeepSeek): Implemented real‑time WebSocket fallback,
  * quantum session rotation, and voice commands.
  */
+
+/**
+ * @function SingularityDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const SingularityDashboard = ({ onLogout }) => {
   const {
     activeTenant,

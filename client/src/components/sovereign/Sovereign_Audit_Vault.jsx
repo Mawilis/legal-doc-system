@@ -38,6 +38,13 @@ import { broadcastTelemetry } from '../../utils/telemetryHelper';
  * @forensic All data is sourced from the sovereign forensic chain and verified
  *           against blockchain anchors to detect tampering.
  */
+
+/**
+ * @function Sovereign_Audit_Vault
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Audit_Vault = () => {
   const { user } = useAuth();
   const { activeTenant } = useTenants();
@@ -471,7 +478,14 @@ const Sovereign_Audit_Vault = () => {
 
     const abortController = new AbortController();
 
-    const init = async () => {
+    
+/**
+ * @function init
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const init = async () => {
       await fetchForensicStream();
       const wsCleanup = setupWebSocket();
       if (Notification.permission === 'default') {

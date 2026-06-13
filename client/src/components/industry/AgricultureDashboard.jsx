@@ -163,6 +163,13 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
+
+/**
+ * @function AgricultureDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const AgricultureDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   // ============================================================================
   // STATE MANAGEMENT
@@ -314,7 +321,14 @@ const AgricultureDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_V
     loadAgricultureData();
   }, [loadAgricultureData]);
 
-  const handleRefresh = async () => {
+  
+/**
+ * @function handleRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadAgricultureData();
   };
@@ -323,7 +337,14 @@ const AgricultureDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_V
   // HELPER FUNCTIONS
   // ============================================================================
 
-  const getStatusColor = (status) => {
+  
+/**
+ * @function getStatusColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getStatusColor = (status) => {
     switch(status) {
       case 'GROWING': return 'text-emerald-400 bg-emerald-950/30';
       case 'MATURING': return 'text-yellow-400 bg-yellow-950/30';
@@ -336,17 +357,38 @@ const AgricultureDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_V
     }
   };
 
-  const getTrendColor = (trend) => {
+  
+/**
+ * @function getTrendColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getTrendColor = (trend) => {
     return trend === 'up' ? 'text-emerald-400' : 'text-red-400';
   };
 
-  const getHealthColor = (health) => {
+  
+/**
+ * @function getHealthColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getHealthColor = (health) => {
     if (health >= 90) return 'text-emerald-400';
     if (health >= 70) return 'text-yellow-400';
     return 'text-red-400';
   };
 
-  const formatCurrency = (amount) => {
+  
+/**
+ * @function formatCurrency
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
   };
 

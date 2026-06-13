@@ -15,6 +15,13 @@
 
 import React, { useState, useEffect } from 'react';
 
+
+/**
+ * @function TenantDevTool
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const TenantDevTool = ({ onClose }) => {
   const [isActive, setIsActive] = useState(false);
   const [tenantId, setTenantId] = useState('tenant_123');
@@ -61,7 +68,14 @@ const TenantDevTool = ({ onClose }) => {
     }
   }, []);
 
-  const handleOnboard = () => {
+  
+/**
+ * @function handleOnboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleOnboard = () => {
     console.log('[DEVTOOL] Onboarding with tenantId:', tenantId);
     setIsLoading(true);
 
@@ -98,7 +112,14 @@ const TenantDevTool = ({ onClose }) => {
     }
   };
 
-  const handleLogout = () => {
+  
+/**
+ * @function handleLogout
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleLogout = () => {
     console.log('[DEVTOOL] Logging out');
     setIsLoading(true);
 
@@ -113,7 +134,14 @@ const TenantDevTool = ({ onClose }) => {
     }, 500);
   };
 
-  const handleClearAll = () => {
+  
+/**
+ * @function handleClearAll
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleClearAll = () => {
     console.log('[DEVTOOL] Clearing all storage');
     setIsLoading(true);
 
@@ -128,7 +156,14 @@ const TenantDevTool = ({ onClose }) => {
     }, 500);
   };
 
-  const handleManualRefresh = () => {
+  
+/**
+ * @function handleManualRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleManualRefresh = () => {
     window.location.reload();
   };
 

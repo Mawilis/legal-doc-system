@@ -74,6 +74,13 @@ const OMEGA_SPEC = 'V54.0.0-MARS-EPITOME';
  * if the Sovereign Mesh is available, propagated to all connected dashboards. This provides a
  * complete audit trail of identity resolution events.
  */
+
+/**
+ * @function TenantDiscovery
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const TenantDiscovery = ({ onTenantConfirmed, savedTenant }) => {
   // --------------------------------------------------------------------------
   // 🔗 Sovereign Mesh & Data Orchestrator (for real‑time event broadcasting)

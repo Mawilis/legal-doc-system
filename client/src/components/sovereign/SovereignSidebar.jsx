@@ -56,6 +56,13 @@ const THREAT_LOGS = [
  * @param {string} activeModule - Currently selected module ID.
  * @param {function} setActiveModule - Function to switch module context.
  */
+
+/**
+ * @function SovereignSidebar
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const SovereignSidebar = ({ activeModule, setActiveModule }) => {
   const { logout } = useAuth();
   const { activeTenant } = useTenants();

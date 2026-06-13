@@ -65,6 +65,13 @@ import styles from "./RevenueHUD.module.css";
  * @returns {JSX.Element}
  * @collaboration Wilson Khanyezi challenged this surface to behave like an OS viewport, not a nested prototype page.
  */
+
+/**
+ * @function RevenueHUD
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const RevenueHUD = ({ embedded = false } = {}) => {
   const { activeTenant } = useTenants();
 
@@ -346,7 +353,14 @@ const RevenueHUD = ({ embedded = false } = {}) => {
   // RENDER HELPERS (Five Views)
   // ----------------------------------------------------------------------
 
-  const renderOverview = () => {
+  
+/**
+ * @function renderOverview
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const renderOverview = () => {
     if (!revenueData) return null;
     return (
       <div className={styles.panelOverview}>
@@ -384,7 +398,14 @@ const RevenueHUD = ({ embedded = false } = {}) => {
     );
   };
 
-  const renderCollections = () => {
+  
+/**
+ * @function renderCollections
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const renderCollections = () => {
     if (!revenueData) return null;
     return (
       <div className={styles.panelCollections}>
@@ -417,7 +438,14 @@ const RevenueHUD = ({ embedded = false } = {}) => {
     );
   };
 
-  const renderAudit = () => {
+  
+/**
+ * @function renderAudit
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const renderAudit = () => {
     if (!revenueData) return null;
     return (
       <div className={styles.panelAudit}>
@@ -495,7 +523,14 @@ const RevenueHUD = ({ embedded = false } = {}) => {
     );
   };
 
-  const renderBoardroom = () => {
+  
+/**
+ * @function renderBoardroom
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const renderBoardroom = () => {
     if (!revenueData) return null;
     return (
       <div className={styles.panelBoardroom}>

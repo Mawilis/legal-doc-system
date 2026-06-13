@@ -26,6 +26,13 @@ import styles from './TenantManagementGrid.module.css';
  * 🧠 NEURAL HEALTH PULSE
  * Simulates the "breathing" of individual shard nodes.
  */
+
+/**
+ * @function ShardPulse
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const ShardPulse = ({ baseHealth = 99.9 }) => {
   const [health, setHealth] = useState(baseHealth);
   useEffect(() => {
@@ -46,6 +53,13 @@ const ShardPulse = ({ baseHealth = 99.9 }) => {
   );
 };
 
+
+/**
+ * @function TenantManagementGrid
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const TenantManagementGrid = ({ onExecuteStrike }) => {
   const { tenants, loading, error, refresh } = useTenantRegistry();
 

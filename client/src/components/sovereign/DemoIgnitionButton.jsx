@@ -12,6 +12,13 @@
 
 import React, { useState } from "react";
 
+
+/**
+ * @function DemoIgnitionButton
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const DemoIgnitionButton = () => {
   const [isIgniting, setIsIgniting] = useState(false);
   const [demoOutput, setDemoOutput] = useState(null);
@@ -20,7 +27,14 @@ const DemoIgnitionButton = () => {
    * ⚛️ SOVEREIGN IGNITION SEQUENCE
    * Triggers the master contract seal with PQE-256 validation.
    */
-  const triggerSovereignEvent = async () => {
+  
+/**
+ * @function triggerSovereignEvent
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const triggerSovereignEvent = async () => {
     setIsIgniting(true);
     try {
       const response = await fetch('/api/v2/sovereign/demo/ignite', {

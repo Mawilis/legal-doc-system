@@ -62,6 +62,13 @@ const BREAKER_COOLDOWN_MS = 30000; // 30 Seconds
  * @param {Object} [payload={}] - Payload to include in seal generation.
  * @returns {Object} Headers object with forensic fields.
  */
+
+/**
+ * @function generateForensicHeaders
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const generateForensicHeaders = (payload = {}) => {
   const traceId = `TRC-TENANT-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
   const timestamp = new Date().toISOString();
@@ -107,7 +114,14 @@ const TenantContext = createContext(null);
  * Integrates self‑healing circuit breaker, mesh broadcasting, and localStorage persistence.
  * Forensic chain reconciliation is handled by the backend – the client only stores the tenant alias.
  */
-export const TenantProvider = ({ children }) => {
+export 
+/**
+ * @function TenantProvider
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const TenantProvider = ({ children }) => {
   const mesh = useSovereignMesh();
   const sovereignData = useSovereignData(); // Reserved for future use
 
@@ -283,6 +297,13 @@ export const TenantProvider = ({ children }) => {
  * @hook useTenants
  * @description Access the tenant context.
  */
-export const useTenants = () => useContext(TenantContext);
+export 
+/**
+ * @function useTenants
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const useTenants = () => useContext(TenantContext);
 
 export default TenantContext;

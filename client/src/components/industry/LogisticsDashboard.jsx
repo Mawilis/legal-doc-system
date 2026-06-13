@@ -28,6 +28,13 @@ import {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 const DEFAULT_WILSY_LOGO = '/src/assets/logo/wilsy.jpeg';
 
+
+/**
+ * @function LogisticsDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const LogisticsDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -140,12 +147,26 @@ const LogisticsDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIE
 
   useEffect(() => { loadLogisticsData(); }, [loadLogisticsData]);
 
-  const handleRefresh = async () => {
+  
+/**
+ * @function handleRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadLogisticsData();
   };
 
-  const getStatusColor = (status) => {
+  
+/**
+ * @function getStatusColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getStatusColor = (status) => {
     if (!status) return 'text-stone-400';
     switch (status.toUpperCase()) {
       case 'IN_TRANSIT': return 'text-blue-400 bg-blue-950/30';
@@ -159,7 +180,14 @@ const LogisticsDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIE
     }
   };
 
-  const getSeverityColor = (severity) => {
+  
+/**
+ * @function getSeverityColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getSeverityColor = (severity) => {
     if (!severity) return 'text-stone-400';
     switch (severity.toUpperCase()) {
       case 'CRITICAL': return 'text-red-400';

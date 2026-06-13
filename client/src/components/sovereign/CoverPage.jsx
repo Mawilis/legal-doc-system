@@ -131,6 +131,13 @@ const resolveAnchorState = (anchorId) => {
  * @param {Function} props.onComplete - Callback to trigger Boardroom HUD rendering.
  * @returns {JSX.Element|null} The rendered authentication gate, or null post-initialization.
  */
+
+/**
+ * @function CoverPage
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const CoverPage = ({ quarter, year, anchorId = 'BACKEND_ANCHOR_NOT_REPORTED', onComplete }) => {
   /** @type {[string, Function]} */
   const [stage, setStage] = useState('ENTRANCE');

@@ -23,6 +23,13 @@ import {
 } from 'lucide-react';
 import styles from './Sovereign_TenantManager.module.css';
 
+
+/**
+ * @function Sovereign_TenantManager
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_TenantManager = () => {
   const [tenantAlias, setTenantAlias] = useState('');
   const [provisionState, setProvisionState] = useState('IDLE'); // IDLE | COMPILING | ANCHORING | FINALIZED
@@ -79,7 +86,14 @@ const Sovereign_TenantManager = () => {
    * 💥 FORENSIC SHARD TERMINATION
    * Triggers an immediate suspension and cryptographic lock on a target shard.
    */
-  const executeSovereignSuspension = async (id = 'TARGET_SHARD') => {
+  
+/**
+ * @function executeSovereignSuspension
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const executeSovereignSuspension = async (id = 'TARGET_SHARD') => {
     setLoading(true);
     try {
       const res = await api.post('/api/tenants/suspend', { id });

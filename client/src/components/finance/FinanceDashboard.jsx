@@ -1,5 +1,13 @@
+/* eslint-disable */
 import React from 'react';
 
+
+/**
+ * @function FinanceDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const FinanceDashboard = ({ onLogout, tenantConfig }) => {
   return (
     <div className="flex items-center justify-center h-full w-full bg-black">

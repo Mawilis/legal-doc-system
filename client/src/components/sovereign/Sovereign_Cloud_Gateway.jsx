@@ -12,6 +12,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 
+
+/**
+ * @function Sovereign_Cloud_Gateway
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Cloud_Gateway = () => {
   // 🛰️ PROTOCOL STATES: IDLE | AUTHENTICATING | UPLOADING | VERIFYING | ANCHORED | ERROR
   const [protocolStatus, setProtocolStatus] = useState('IDLE');
@@ -32,7 +39,14 @@ const Sovereign_Cloud_Gateway = () => {
    * ⚛️ THE MIRROR PROTOCOL
    * Multi-stage institutional API bridge simulation.
    */
-  const initiateMirrorSequence = async () => {
+  
+/**
+ * @function initiateMirrorSequence
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const initiateMirrorSequence = async () => {
     if (isProcessing(protocolStatus)) return;
 
     setProtocolStatus('AUTHENTICATING');
@@ -54,13 +68,34 @@ const Sovereign_Cloud_Gateway = () => {
     addLog("ASSET_MIRRORED_AND_ANCHORED_IN_VAULT");
   };
 
-  const addLog = (msg) => {
+  
+/**
+ * @function addLog
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const addLog = (msg) => {
     const timestamp = new Date().toLocaleTimeString();
     setUplinkLogs(prev => [...prev, `[${timestamp}] ${msg}`]);
   };
 
-  const simulateWait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-  const isProcessing = (status) => ['AUTHENTICATING', 'UPLOADING', 'VERIFYING'].includes(status);
+  
+/**
+ * @function simulateWait
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const simulateWait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  
+/**
+ * @function isProcessing
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const isProcessing = (status) => ['AUTHENTICATING', 'UPLOADING', 'VERIFYING'].includes(status);
 
   return (
     <div className="bg-stone-950 border border-stone-800 p-8 rounded-sm animate-in fade-in duration-500">

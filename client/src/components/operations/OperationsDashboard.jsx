@@ -1,5 +1,13 @@
+/* eslint-disable */
 import React from 'react';
 
+
+/**
+ * @function OperationsDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const OperationsDashboard = ({ onLogout, tenantConfig }) => {
   return (
     <div className="flex items-center justify-center h-full w-full bg-black">

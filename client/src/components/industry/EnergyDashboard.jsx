@@ -60,6 +60,13 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
+
+/**
+ * @function EnergyDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const EnergyDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -235,12 +242,26 @@ const EnergyDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' 
     loadEnergyData();
   }, [loadEnergyData]);
 
-  const handleRefresh = async () => {
+  
+/**
+ * @function handleRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadEnergyData();
   };
 
-  const getStatusColor = (status) => {
+  
+/**
+ * @function getStatusColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getStatusColor = (status) => {
     switch(status) {
       case 'OPERATIONAL': return 'text-emerald-400 bg-emerald-950/30';
       case 'WARNING': return 'text-yellow-400 bg-yellow-950/30';
@@ -250,7 +271,14 @@ const EnergyDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' 
     }
   };
 
-  const getSeverityColor = (severity) => {
+  
+/**
+ * @function getSeverityColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getSeverityColor = (severity) => {
     switch(severity) {
       case 'CRITICAL': return 'text-red-400';
       case 'WARNING': return 'text-yellow-400';

@@ -9,6 +9,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/authContext';
 import styles from './Header.module.css';
 
+
+/**
+ * @function Header
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Header = () => {
   const { user } = useAuth();
   const [displayName, setDisplayName] = useState('SUPREME OPERATOR');

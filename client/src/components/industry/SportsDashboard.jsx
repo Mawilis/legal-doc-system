@@ -26,6 +26,13 @@ import {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 const DEFAULT_WILSY_LOGO = '/src/assets/logo/wilsy.jpeg';
 
+
+/**
+ * @function SportsDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const SportsDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   // [COLLABORATION: STATE MATRIX]
   // Segregated state management to prevent cross-contamination during re-renders.
@@ -112,18 +119,39 @@ const SportsDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' 
 
   useEffect(() => { loadSportsData(); }, [loadSportsData]);
 
-  const handleRefresh = async () => {
+  
+/**
+ * @function handleRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadSportsData();
   };
 
-  const getWinRateColor = (rate) => {
+  
+/**
+ * @function getWinRateColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getWinRateColor = (rate) => {
     if (rate >= 65) return 'text-emerald-400';
     if (rate >= 50) return 'text-yellow-400';
     return 'text-red-400';
   };
 
-  const getStatusColor = (status) => {
+  
+/**
+ * @function getStatusColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getStatusColor = (status) => {
     switch (status?.toUpperCase()) {
       case 'FIT': return 'text-emerald-400 bg-emerald-950/30';
       case 'MINOR': return 'text-yellow-400 bg-yellow-950/30';

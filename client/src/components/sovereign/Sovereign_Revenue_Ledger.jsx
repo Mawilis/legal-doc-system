@@ -47,6 +47,13 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointEleme
  * @description Production‑grade skeleton screen to reduce perceived latency and prevent layout shift.
  * @returns {JSX.Element}
  */
+
+/**
+ * @function SkeletonLoader
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const SkeletonLoader = () => (
   <div className={styles.hudContent} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
     <div className="animate-pulse space-y-4 w-full max-w-md">
@@ -929,6 +936,13 @@ const useMerkleAuditor = (tenantId, traceIds = []) => {
  * @description The trillion-dollar institutional command center. Integrates predictive AI modeling,
  * forensic compliance tracking, and real-time ledger intelligence for multi-tenant SaaS orchestration.
  */
+
+/**
+ * @function Sovereign_Revenue_Ledger
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Revenue_Ledger = () => {
   // 1. DATA HYDRATION & MULTI-TENANT CONTEXT
   const { revenue, compliance, analytics, loading } = useSovereignData();
@@ -1039,7 +1053,14 @@ const Sovereign_Revenue_Ledger = () => {
    */
   useEffect(() => {
     let alive = true;
-    const loadLedgerDetail = async () => {
+    
+/**
+ * @function loadLedgerDetail
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const loadLedgerDetail = async () => {
       setLedgerLoading(true);
       try {
         const response = await api.get('/revenue/ledger', { params: { tenantId: tenantAlias } });

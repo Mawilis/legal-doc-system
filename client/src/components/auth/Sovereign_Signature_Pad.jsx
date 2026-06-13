@@ -22,6 +22,13 @@ import styles from './Sovereign_Signature_Pad.module.css';
 // The absolute minimum biometric vectors required to seal a Wilsy OS asset.
 const FORENSIC_THRESHOLD = 50;
 
+
+/**
+ * @function Sovereign_Signature_Pad
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const Sovereign_Signature_Pad = ({ onSignComplete, tenantDNA }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -64,18 +71,39 @@ const Sovereign_Signature_Pad = ({ onSignComplete, tenantDNA }) => {
     return () => window.removeEventListener('resize', initForensicField);
   }, [initForensicField]);
 
-  const getCoordinates = (e) => {
+  
+/**
+ * @function getCoordinates
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const getCoordinates = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return { x: clientX - rect.left, y: clientY - rect.top };
   };
 
-  const broadcastGestureEvent = (type, data) => {
+  
+/**
+ * @function broadcastGestureEvent
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const broadcastGestureEvent = (type, data) => {
     console.log(`[BIOMETRIC-TELEMETRY] 🛰️ ${type}:`, data);
   };
 
-  const startDrawing = (e) => {
+  
+/**
+ * @function startDrawing
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const startDrawing = (e) => {
     setIsDrawing(true);
     const { x, y } = getCoordinates(e);
     const ctx = canvasRef.current.getContext('2d');
@@ -85,7 +113,14 @@ const Sovereign_Signature_Pad = ({ onSignComplete, tenantDNA }) => {
     broadcastGestureEvent('SIGN_START', { x, y });
   };
 
-  const draw = (e) => {
+  
+/**
+ * @function draw
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const draw = (e) => {
     if (!isDrawing) return;
     const { x, y } = getCoordinates(e);
     const ctx = canvasRef.current.getContext('2d');
@@ -111,7 +146,14 @@ const Sovereign_Signature_Pad = ({ onSignComplete, tenantDNA }) => {
     setPoints(prev => [...prev, { x, y, t: now, v: velocity, a: acceleration }]);
   };
 
-  const stopDrawing = () => {
+  
+/**
+ * @function stopDrawing
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const stopDrawing = () => {
     setIsDrawing(false);
 
     if (points.length >= FORENSIC_THRESHOLD) {
@@ -126,7 +168,14 @@ const Sovereign_Signature_Pad = ({ onSignComplete, tenantDNA }) => {
     }
   };
 
-  const clearPad = () => {
+  
+/**
+ * @function clearPad
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const clearPad = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -135,7 +184,14 @@ const Sovereign_Signature_Pad = ({ onSignComplete, tenantDNA }) => {
     setMetrics({ x: 0, y: 0, velocity: 0, acceleration: 0 });
   };
 
-  const handleFinalize = () => {
+  
+/**
+ * @function handleFinalize
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const handleFinalize = () => {
     if (!isSignatureValid) {
       setFailedAttempts(prev => prev + 1);
       alert('INSUFFICIENT BIOMETRIC DATA: Signature too short for forensic anchoring.');

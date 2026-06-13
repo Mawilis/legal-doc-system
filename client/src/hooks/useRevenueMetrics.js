@@ -103,6 +103,13 @@ class CircuitBreaker {
  * @param {Object} [payload={}] – additional payload for seal derivation
  * @returns {Object} headers object
  */
+
+/**
+ * @function generateForensicHeaders
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const generateForensicHeaders = (payload = {}) => {
   const traceId = `REV-STRK-${Date.now()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
   const timestamp = new Date().toISOString();
@@ -129,7 +136,14 @@ const MIN_INTERVAL = 30000; // 30s
  * @param {boolean} [options.useErrorBoundary=false] – throw error to boundary if true
  * @returns {Object} state and actions
  */
-export const useRevenueMetrics = (options = {}) => {
+export 
+/**
+ * @function useRevenueMetrics
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const useRevenueMetrics = (options = {}) => {
   const {
     refreshInterval = DEFAULT_BASE_INTERVAL,
     tenantId = 'GLOBAL_ROOT',
@@ -162,7 +176,14 @@ export const useRevenueMetrics = (options = {}) => {
    * @param {number} val
    * @returns {string}
    */
-  const formatZAR = (val) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(val);
+  
+/**
+ * @function formatZAR
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const formatZAR = (val) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(val);
 
   /**
    * Fetches revenue metrics from the backend.

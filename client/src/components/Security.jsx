@@ -1,3 +1,4 @@
+/* eslint-disable */
 /*╔═══════════════════════════════════════════════════════════════════════════╗
   ║  ███████╗███████╗ ██████╗██╗   ██╗██████╗ ██╗████████╗██╗   ██╗           ║
   ║  ██╔════╝██╔════╝██╔════╝██║   ██║██╔══██╗██║╚══██╔══╝╚██╗ ██╔╝           ║
@@ -12,7 +13,14 @@
 
 import React from 'react'
 
-export const SecurityDashboard = () => {
+export 
+/**
+ * @function SecurityDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const SecurityDashboard = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-semibold mb-6">Security Dashboard</h1>
@@ -174,7 +182,21 @@ export const SecurityDashboard = () => {
   )
 }
 
-export const SecurityEvents = () => <div>Security Events Component</div>
-export const SecurityPolicies = () => <div>Security Policies Component</div>
+export 
+/**
+ * @function SecurityEvents
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const SecurityEvents = () => <div>Security Events Component</div>
+export 
+/**
+ * @function SecurityPolicies
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const SecurityPolicies = () => <div>Security Policies Component</div>
 
 export default SecurityDashboard

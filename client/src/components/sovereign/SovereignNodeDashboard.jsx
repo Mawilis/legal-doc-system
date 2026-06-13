@@ -71,6 +71,13 @@ const ROLE_MENU_CONFIG = {
   }
 };
 
+
+/**
+ * @function SovereignNodeDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const SovereignNodeDashboard = ({ onLogout }) => {
   const { activeModule = 'REVENUE_LEDGER', setActiveModule } = useSovereignStore();
   const [selectedTimeframe, setSelectedTimeframe] = useState('30D');
@@ -106,7 +113,14 @@ const SovereignNodeDashboard = ({ onLogout }) => {
   // 🔐 NUCLEUS IDENTITY SYNC
   // ============================================================================
   useEffect(() => {
-    const fetchIdentity = async () => {
+    
+/**
+ * @function fetchIdentity
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const fetchIdentity = async () => {
       try {
         const token = localStorage.getItem('sovereignToken');
         if (!token) return setRealUser(p => ({...p, isLoading: false}));

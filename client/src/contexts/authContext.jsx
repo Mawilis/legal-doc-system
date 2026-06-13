@@ -21,13 +21,27 @@ import { broadcastTelemetry } from '../utils/telemetryHelper.js';
 import forge from 'node-forge';
 
 const AuthContext = createContext();
+
+/**
+ * @function getStoredRefreshToken
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const getStoredRefreshToken = () => {
   const raw = localStorage.getItem('wilsy_refresh_token') || localStorage.getItem('refreshToken');
   if (!raw || raw === 'undefined' || raw === 'null') return null;
   return raw.replace(/^["']|["']$/g, '');
 };
 
-export const AuthProvider = ({ children }) => {
+export 
+/**
+ * @function AuthProvider
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('wilsy_user');
     try { return stored ? JSON.parse(stored) : null; } catch (e) { return null; }
@@ -66,7 +80,14 @@ export const AuthProvider = ({ children }) => {
 
   // 🏛️ BOOT-TIME SILENT REFRESH: Re-anchors session with Jitter-Shield
   useEffect(() => {
-    const trySilentRefresh = async () => {
+    
+/**
+ * @function trySilentRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const trySilentRefresh = async () => {
       const token = localStorage.getItem('wilsy_auth_token');
       if (!token) return;
 
@@ -198,4 +219,11 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export 
+/**
+ * @function useAuth
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const useAuth = () => useContext(AuthContext);

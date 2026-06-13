@@ -46,6 +46,13 @@ const TAB_TO_LABEL_MAP = Object.freeze({
  * Sovereign Space Operations Dashboard – Unified interface for all space modules.
  * @returns {JSX.Element}
  */
+
+/**
+ * @function SpaceOperationsDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const SpaceOperationsDashboard = () => {
   const { activeTenant } = useTenants();
   const tenantId = activeTenant?.tenantId || 'MASTER';
@@ -135,7 +142,14 @@ const SpaceOperationsDashboard = () => {
 
   // Constellation monitor lifecycle runtime mount trigger
   useEffect(() => {
-    const init = async () => {
+    
+/**
+ * @function init
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const init = async () => {
       setLoading(true);
       await loadAllData();
       setLoading(false);
@@ -160,7 +174,14 @@ const SpaceOperationsDashboard = () => {
    * @param {boolean} increment - Logic checkpoint managing index pointer stepping parameters.
    * @returns {Promise<void>}
    */
-  const updatePageOffset = async (tab, increment) => {
+  
+/**
+ * @function updatePageOffset
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const updatePageOffset = async (tab, increment) => {
     const targetPage = pageStates[tab];
     const newOffset = increment ? targetPage.offset + targetPage.limit : Math.max(0, targetPage.offset - targetPage.limit);
     const updatedPage = { ...targetPage, offset: newOffset };
@@ -175,7 +196,14 @@ const SpaceOperationsDashboard = () => {
    * @param {Object} formData - Structured hardware spec configurations parameters dictionary map.
    * @returns {Promise<void>}
    */
-  const handleSave = async (formData) => {
+  
+/**
+ * @function handleSave
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleSave = async (formData) => {
     try {
       setIsRefreshing(true);
       if (modalType === 'satellite') {
@@ -210,7 +238,14 @@ const SpaceOperationsDashboard = () => {
    * @param {string} type - System module validation context checker sequence identifier boundary parameter.
    * @returns {Promise<void>}
    */
-  const handleDelete = async (id, type) => {
+  
+/**
+ * @function handleDelete
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleDelete = async (id, type) => {
     if (!window.confirm('Confirm deletion? Action will be logged to audit ledger.')) return;
     try {
       setIsRefreshing(true);
@@ -230,7 +265,14 @@ const SpaceOperationsDashboard = () => {
    * Compiles extensive telemetry matrices data tables straight to standardized CSV arrays.
    * @returns {Promise<void>}
    */
-  const handleExport = async () => {
+  
+/**
+ * @function handleExport
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleExport = async () => {
     try {
       setIsRefreshing(true);
       let dataset = [];
@@ -250,7 +292,14 @@ const SpaceOperationsDashboard = () => {
   /**
    * Generates interactive pagination control interfaces dashboards grids layouts.
    */
-  const renderPagination = (tabKey, total) => {
+  
+/**
+ * @function renderPagination
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderPagination = (tabKey, total) => {
     const pageState = pageStates[tabKey];
     const totalPages = Math.ceil(total / pageState.limit);
     return (
@@ -279,7 +328,14 @@ const SpaceOperationsDashboard = () => {
   /**
    * Visual table architecture mapper constructor creating canvas grid rows cells variables lists diagrams.
    */
-  const renderTable = (items, headers, renderRow, tabKey, totalCount) => (
+  
+/**
+ * @function renderTable
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderTable = (items, headers, renderRow, tabKey, totalCount) => (
     <div style={{ position: 'relative', opacity: isRefreshing ? 0.4 : 1, transition: 'opacity 0.2s ease' }}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-400 font-mono">
@@ -317,7 +373,14 @@ const SpaceOperationsDashboard = () => {
    * Distributes dataset structures vectors inside layout screens panels context viewports.
    * @returns {JSX.Element|null}
    */
-  const renderContent = () => {
+  
+/**
+ * @function renderContent
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const renderContent = () => {
     switch (activeTab) {
       case 'satellites':
         return renderTable(satellites.items, ['Satellite Name', 'NORAD ID', 'Orbit', 'Status', 'Launch Date'], (item) => (

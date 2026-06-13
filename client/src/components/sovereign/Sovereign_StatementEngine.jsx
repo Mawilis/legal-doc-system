@@ -20,11 +20,25 @@ import { broadcastTelemetry } from '../../utils/telemetryHelper';
 import { FileText, ShieldCheck, Fingerprint, Download, Loader2 } from 'lucide-react';
 import styles from './Sovereign_StatementEngine.module.css';
 
+
+/**
+ * @function Sovereign_StatementEngine
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_StatementEngine = ({ tenantId = 'GLOBAL_ROOT' }) => {
   // 🛰️ STATE: Independent loading states to prevent full-shard lockup
   const [loadingType, setLoadingType] = useState(null);
 
-  const generateStatement = async (type) => {
+  
+/**
+ * @function generateStatement
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const generateStatement = async (type) => {
     setLoadingType(type);
     try {
       const res = await api.get(`/api/statements/${type}?tenantId=${tenantId}`, { responseType: 'blob' });

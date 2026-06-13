@@ -64,6 +64,13 @@ const TAB_TO_MODAL_MAP = Object.freeze({
  * Sovereign HR Dashboard – Unified interface for all HR modules.
  * @returns {JSX.Element}
  */
+
+/**
+ * @function HRDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const HRDashboard = () => {
   const { activeTenant } = useTenants();
   const tenantId = activeTenant?.tenantId || 'MASTER';
@@ -158,7 +165,14 @@ const HRDashboard = () => {
 
   // Initial load
   useEffect(() => {
-    const initializeDashboard = async () => {
+    
+/**
+ * @function initializeDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const initializeDashboard = async () => {
       setLoading(true);
       await loadAllData();
       setLoading(false);
@@ -181,7 +195,14 @@ const HRDashboard = () => {
    * @param {boolean} increment - True for next page, false for previous.
    * @returns {Promise<void>}
    */
-  const updatePageOffset = async (tab, increment) => {
+  
+/**
+ * @function updatePageOffset
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const updatePageOffset = async (tab, increment) => {
     const targetPage = pageStates[tab];
     const newOffset = increment ? targetPage.offset + targetPage.limit : Math.max(0, targetPage.offset - targetPage.limit);
     const updatedPage = { ...targetPage, offset: newOffset };
@@ -196,7 +217,14 @@ const HRDashboard = () => {
    * @param {Object} formData - The form data to send to the API.
    * @returns {Promise<void>}
    */
-  const handleSave = async (formData) => {
+  
+/**
+ * @function handleSave
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const handleSave = async (formData) => {
     try {
       setIsRefreshing(true);
       if (modalType === 'employee') {
@@ -234,7 +262,14 @@ const HRDashboard = () => {
    * @param {string} type - Record type (employee, candidate, jobOpening, benefit, performanceReview, timeOff).
    * @returns {Promise<void>}
    */
-  const handleDelete = async (id, type) => {
+  
+/**
+ * @function handleDelete
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const handleDelete = async (id, type) => {
     if (!window.confirm('Confirm Immutable Personnel Deletion? Action will be logs sealed.')) return;
     try {
       setIsRefreshing(true);
@@ -256,7 +291,14 @@ const HRDashboard = () => {
    * Exports all records of the current tab (without pagination) to CSV.
    * @returns {Promise<void>}
    */
-  const handleExport = async () => {
+  
+/**
+ * @function handleExport
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const handleExport = async () => {
     try {
       setIsRefreshing(true);
       let exhaustiveDataset = [];
@@ -300,7 +342,14 @@ const HRDashboard = () => {
    * @param {number} currentTotal - Total number of records for this tab.
    * @returns {JSX.Element}
    */
-  const renderPagination = (tabKey, currentTotal) => {
+  
+/**
+ * @function renderPagination
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const renderPagination = (tabKey, currentTotal) => {
     const pageState = pageStates[tabKey];
     const totalPages = Math.ceil(currentTotal / pageState.limit);
     return (
@@ -333,7 +382,14 @@ const HRDashboard = () => {
    * @param {number} totalCount - Total records for pagination.
    * @returns {JSX.Element}
    */
-  const renderTableWrapper = (items, headers, renderRow, tabKey, totalCount) => (
+  
+/**
+ * @function renderTableWrapper
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const renderTableWrapper = (items, headers, renderRow, tabKey, totalCount) => (
     <div style={{ position: 'relative', opacity: isRefreshing ? 0.4 : 1, transition: 'opacity 0.2s ease' }}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-400 font-mono">
@@ -363,7 +419,14 @@ const HRDashboard = () => {
    * Renders the content of the currently active tab.
    * @returns {JSX.Element|null}
    */
-  const renderTabContent = () => {
+  
+/**
+ * @function renderTabContent
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
+const renderTabContent = () => {
     switch (activeTab) {
       case 'employees':
         return renderTableWrapper(employees.items, ['Personnel ID', 'Email Stack', 'Sovereign Domain', 'Corporate Status'], (emp) => (

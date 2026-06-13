@@ -40,6 +40,13 @@ import styles from './ComplianceDashboard.module.css';
  * @description The regulatory intelligence nucleus.
  * Renders live telemetry from the V33.14.0 Compliance Controller.
  */
+
+/**
+ * @function ComplianceDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const ComplianceDashboard = () => {
   const {
     metrics,           // { totalEvents, severityDistribution, criticalAlerts24h, citadelStatus }

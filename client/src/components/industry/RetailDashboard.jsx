@@ -26,6 +26,13 @@ import {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 const DEFAULT_WILSY_LOGO = '/src/assets/logo/wilsy.jpeg';
 
+
+/**
+ * @function RetailDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const RetailDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   // [COLLABORATION: STATE MATRIX]
   // Segregated state management to prevent cross-contamination during re-renders.
@@ -108,7 +115,14 @@ const RetailDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' 
   useEffect(() => { loadData(); }, [loadData]);
 
   // [COLLABORATION: MANUAL OVERRIDE]
-  const handleRefresh = async () => {
+  
+/**
+ * @function handleRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadData();
   };

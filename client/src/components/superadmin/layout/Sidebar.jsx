@@ -6,6 +6,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
+
+/**
+ * @function Sidebar
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sidebar = () => {
   const navItems = [
     { name: 'Command Center', path: '/superadmin/dashboard', icon: '🏛️' },

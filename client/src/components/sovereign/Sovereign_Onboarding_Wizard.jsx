@@ -28,6 +28,13 @@ import {
   Loader2
 } from 'lucide-react';
 
+
+/**
+ * @function Sovereign_Onboarding_Wizard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Onboarding_Wizard = () => {
   const [step, setStep] = useState(1);
   const [isIgniting, setIsIgniting] = useState(false);
@@ -47,7 +54,14 @@ const Sovereign_Onboarding_Wizard = () => {
    * ⚛️ GENESIS IGNITION
    * Triggers the backend provisioning sequence via the OnboardingService.
    */
-  const handleIgnition = async () => {
+  
+/**
+ * @function handleIgnition
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleIgnition = async () => {
     setIsIgniting(true);
     setError(null);
 

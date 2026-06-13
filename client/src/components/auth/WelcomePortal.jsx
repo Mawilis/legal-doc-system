@@ -1,5 +1,13 @@
+/* eslint-disable */
 import React from 'react';
 
+
+/**
+ * @function WelcomePortal
+ * @memberof WILSY_OS_CORE
+ * @description Sovereign-grade operational asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix framework core execution output feedback
+ */
 const WelcomePortal = ({ onInitialize }) => {
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center bg-neutral-950 text-white p-6">

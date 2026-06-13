@@ -37,6 +37,13 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
+
+/**
+ * @function HealthcareDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const HealthcareDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -176,12 +183,26 @@ const HealthcareDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VI
     loadHealthcareData();
   }, [loadHealthcareData]);
 
-  const handleRefresh = async () => {
+  
+/**
+ * @function handleRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadHealthcareData();
   };
 
-  const getStatusColor = (status) => {
+  
+/**
+ * @function getStatusColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getStatusColor = (status) => {
     switch(status) {
       case 'SCHEDULED': return 'text-blue-400 bg-blue-950/30';
       case 'CHECKED_IN': return 'text-yellow-400 bg-yellow-950/30';
@@ -192,7 +213,14 @@ const HealthcareDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VI
     }
   };
 
-  const getSeverityColor = (severity) => {
+  
+/**
+ * @function getSeverityColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getSeverityColor = (severity) => {
     switch(severity) {
       case 'CRITICAL': return 'text-red-400';
       case 'WARNING': return 'text-yellow-400';
@@ -201,7 +229,14 @@ const HealthcareDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VI
     }
   };
 
-  const getRiskColor = (risk) => {
+  
+/**
+ * @function getRiskColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getRiskColor = (risk) => {
     if (risk >= 15) return 'text-red-400';
     if (risk >= 10) return 'text-yellow-400';
     return 'text-emerald-400';

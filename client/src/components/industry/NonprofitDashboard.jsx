@@ -32,6 +32,13 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
+
+/**
+ * @function NonprofitDashboard
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const NonprofitDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIEW' }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -130,12 +137,26 @@ const NonprofitDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIE
     loadNonprofitData();
   }, [loadNonprofitData]);
 
-  const handleRefresh = async () => {
+  
+/**
+ * @function handleRefresh
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadNonprofitData();
   };
 
-  const getStatusColor = (status) => {
+  
+/**
+ * @function getStatusColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getStatusColor = (status) => {
     switch(status) {
       case 'ACTIVE': return 'text-emerald-400 bg-emerald-950/30';
       case 'PENDING': return 'text-yellow-400 bg-yellow-950/30';
@@ -144,7 +165,14 @@ const NonprofitDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIE
     }
   };
 
-  const getDonorTypeColor = (type) => {
+  
+/**
+ * @function getDonorTypeColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getDonorTypeColor = (type) => {
     switch(type) {
       case 'FOUNDATION': return 'text-purple-400';
       case 'CORPORATE': return 'text-blue-400';
@@ -153,13 +181,27 @@ const NonprofitDashboard = ({ onLogout, tenantConfig, roleView = 'OPERATIONS_VIE
     }
   };
 
-  const getEngagementColor = (score) => {
+  
+/**
+ * @function getEngagementColor
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const getEngagementColor = (score) => {
     if (score >= 90) return 'text-emerald-400';
     if (score >= 70) return 'text-yellow-400';
     return 'text-red-400';
   };
 
-  const formatCurrency = (amount) => {
+  
+/**
+ * @function formatCurrency
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
   };
 

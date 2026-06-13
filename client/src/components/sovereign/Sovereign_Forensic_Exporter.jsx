@@ -11,6 +11,13 @@
 
 import React, { useState } from 'react';
 
+
+/**
+ * @function Sovereign_Forensic_Exporter
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
 const Sovereign_Forensic_Exporter = () => {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -18,7 +25,14 @@ const Sovereign_Forensic_Exporter = () => {
    * 🛡️ MASTER EXPORT SEQUENCE
    * Generates a physical SHA-512 sealed manifest for forensic audit.
    */
-  const handleExport = (e) => {
+  
+/**
+ * @function handleExport
+ * @memberof WILSY_OS_CORE
+ * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
+ * @returns {any} Matrix runtime feedback data context output
+ */
+const handleExport = (e) => {
     // Prevent any default behavior to suppress JSDOM navigation warnings
     if (e && e.preventDefault) e.preventDefault();
 
