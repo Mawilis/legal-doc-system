@@ -74,6 +74,10 @@ import {
   normalizeCurrency,
   syncCurrencyWatchlist
 } from '../../services/CurrencyIntelligenceService';
+import {
+  answerExecutiveNaturalLanguageQuery,
+  buildExecutiveTransformationPlaybook
+} from '../../services/ExecutiveTransformationEngine';
 import styles from './ExecutiveDashboard.module.css';
 
 const EXECUTIVE_SUITE_VERSION = 'V56.4.0-PRODUCTION-EPITOME';
@@ -509,6 +513,8 @@ const ExecutiveDashboard = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [businessModelOverride, setBusinessModelOverride] = useState('');
+  const [executiveQuestion, setExecutiveQuestion] = useState('');
+  const [executiveAnswer, setExecutiveAnswer] = useState(null);
 
   // Pagination states
   const [pageStates, setPageStates] = useState({
@@ -1618,6 +1624,31 @@ const ExecutiveDashboard = ({
   };
 
   /**
+   * @function askExecutiveOS
+   * @description Answers a constrained executive natural-language question from local source-aware playbook data.
+   * @param {Event} event - Optional form submit event.
+   * @returns {Promise<void>} Resolves after the answer is stored and telemetry is broadcast.
+   * @collaboration Adds roadmap-level natural language without pretending a remote AI answered when only local evidence was used.
+   */
+  const askExecutiveOS = async (event) => {
+    event?.preventDefault?.();
+    const answer = answerExecutiveNaturalLanguageQuery({
+      question: executiveQuestion,
+      financialKPIs,
+      sourceRows,
+      executiveReadiness,
+      transformationPlaybook: executiveTransformation
+    });
+    if (!answer) return;
+    setExecutiveAnswer(answer);
+    await broadcastTelemetry(tenantId, 'EXEC_NATURAL_LANGUAGE_QUERY', answer.intent, 'ExecutiveDashboard', {
+      question: executiveQuestion,
+      intent: answer.intent,
+      proofHash: answer.proofHash
+    }).catch(() => {});
+  };
+
+  /**
    * @function executeExecutiveCommand
    * @description Runs high-level executive command rail actions with telemetry and tenant isolation.
    * @param {string} commandId - Command identifier.
@@ -1701,6 +1732,78 @@ const ExecutiveDashboard = ({
         return;
       }
 
+      if (commandId === 'TRANSFORMATION_PLAYBOOK') {
+        const action = executiveTransformation.priorityActions?.[0] || {};
+        await commitExecutiveRecord({
+          tab: 'strategicGoals',
+          type: 'strategicGoal',
+          payload: {
+            title: action.title || `Execute ${executiveTransformation.phase?.label || 'executive transformation playbook'}`,
+            progress: executiveTransformation.phaseProgress || 0,
+            deadline: todayIso(),
+            status: executiveTransformation.phaseProgress >= 35 ? 'on_track' : 'at_risk',
+            lane: action.lane || 'Executive',
+            phase: executiveTransformation.phase?.key,
+            arr: executiveTransformation.arr,
+            sourceStatus: action.status || executiveReadiness.posture,
+            reason: executiveTransformation.phase?.mandate,
+            route: action.route || '/executive',
+            proofHash: executiveTransformation.proofHash
+          },
+          receiptStatus: 'TRANSFORMATION_PLAYBOOK_ACCEPTED'
+        });
+        setActiveTab('strategicGoals');
+        return;
+      }
+
+      if (commandId === 'INTEGRATION_SPRINT') {
+        const connector = executiveTransformation.integrationRows?.find(row => row.status !== 'CONNECTED')
+          || executiveTransformation.integrationRows?.[0];
+        if (!connector) return;
+        await commitExecutiveRecord({
+          tab: 'strategicGoals',
+          type: 'strategicGoal',
+          payload: {
+            title: `Connect ${connector.label}`,
+            progress: connector.status === 'READY_TO_CONNECT' ? 35 : 0,
+            deadline: todayIso(),
+            status: connector.status === 'READY_TO_CONNECT' ? 'on_track' : 'blocked',
+            lane: connector.lane,
+            sourceStatus: connector.status,
+            reason: connector.nextAction,
+            route: connector.route,
+            proofHash: connector.proofHash
+          },
+          receiptStatus: connector.status === 'READY_TO_CONNECT' ? 'INTEGRATION_SPRINT_READY' : 'INTEGRATION_SOURCE_GATED'
+        });
+        setActiveTab('strategicGoals');
+        return;
+      }
+
+      if (commandId === 'TRUST_PACKET') {
+        const trustScore = Math.round(
+          (executiveTransformation.trustRows || []).reduce((sum, row) => sum + Number(row.score || 0), 0)
+          / Math.max(1, executiveTransformation.trustRows?.length || 1)
+        );
+        await commitExecutiveRecord({
+          tab: 'boardReports',
+          type: 'boardReport',
+          payload: {
+            title: `${executiveOperatingSystem.profile.name} Enterprise Trust Packet ${todayIso()}`,
+            date: todayIso(),
+            author: role,
+            status: trustScore >= 70 ? 'sealed' : 'draft',
+            sourceStatus: trustScore >= 70 ? 'TRUST_EVIDENCE_READY' : 'TRUST_EVIDENCE_BUILDING',
+            trustScore,
+            complianceRows: executiveTransformation.trustRows?.map(row => `${row.label}:${row.status}`),
+            proofHash: executiveTransformation.proofHash
+          },
+          receiptStatus: trustScore >= 70 ? 'TRUST_PACKET_SEALED' : 'TRUST_PACKET_DRAFT'
+        });
+        setActiveTab('boardReports');
+        return;
+      }
+
       if (commandId === 'WILSY_AI_LICENSE') {
         await activateWilsyAiUseCase(wilsyAiPlan[0]);
       }
@@ -1748,6 +1851,30 @@ const ExecutiveDashboard = ({
       totalSources: sourceRows.length
     };
   }, [mutationReceipts.length, pageStates, sourceRows, telemetryError]);
+
+  const executiveTransformation = useMemo(() => (
+    buildExecutiveTransformationPlaybook({
+      activeTenant,
+      financialKPIs,
+      sourceSnapshot,
+      sourceRows,
+      profile: executiveOperatingSystem.profile,
+      executiveReadiness,
+      wilsyAiPlan,
+      accessDecision,
+      mutationReceipts
+    })
+  ), [
+    accessDecision,
+    activeTenant,
+    executiveOperatingSystem.profile,
+    executiveReadiness,
+    financialKPIs,
+    mutationReceipts,
+    sourceRows,
+    sourceSnapshot,
+    wilsyAiPlan
+  ]);
 
   const executiveMemo = useMemo(() => {
     const arr = financialKPIs.arr ?? null;
@@ -2330,6 +2457,176 @@ const ExecutiveDashboard = ({
           <span>Wilsy AI</span>
           <small>License top automation</small>
         </button>
+        <button type="button" onClick={() => executeExecutiveCommand('TRANSFORMATION_PLAYBOOK')}>
+          <Building2 size={16} />
+          <span>ARR Playbook</span>
+          <small>{executiveTransformation.phase?.target || 'Roadmap phase'}</small>
+        </button>
+        <button type="button" onClick={() => executeExecutiveCommand('INTEGRATION_SPRINT')}>
+          <Database size={16} />
+          <span>Integration Sprint</span>
+          <small>{executiveTransformation.integrationRows?.[0]?.label || 'Connector lane'}</small>
+        </button>
+        <button type="button" onClick={() => executeExecutiveCommand('TRUST_PACKET')}>
+          <ShieldCheck size={16} />
+          <span>Trust Packet</span>
+          <small>Compliance evidence row</small>
+        </button>
+      </section>
+
+      <section className={styles.transformationGrid}>
+        <article className={styles.transformationHero}>
+          <header>
+            <div>
+              <span><Building2 size={13} /> ARR_TRANSFORMATION_PLAYBOOK</span>
+              <h2>{executiveTransformation.phase?.label}</h2>
+            </div>
+            <small>{executiveTransformation.phase?.months} // {executiveTransformation.phase?.target}</small>
+          </header>
+          <div className={styles.phaseMeter}>
+            <div>
+              <strong>{executiveTransformation.phaseProgress}%</strong>
+              <span>PHASE_PROGRESS</span>
+            </div>
+            <div className={styles.phaseTrack}>
+              <i style={{ width: `${executiveTransformation.phaseProgress}%` }} />
+            </div>
+          </div>
+          <p>{executiveTransformation.phase?.mandate}</p>
+          <div className={styles.transformationStats}>
+            <div>
+              <small>ARR</small>
+              <strong>{formatExecutiveMoney(executiveTransformation.arr, executiveTransformation.currency)}</strong>
+            </div>
+            <div>
+              <small>REVENUE</small>
+              <strong>{formatExecutiveMoney(executiveTransformation.revenue, executiveTransformation.currency)}</strong>
+            </div>
+            <div>
+              <small>READINESS</small>
+              <strong>{executiveTransformation.readinessScore}%</strong>
+            </div>
+            <div>
+              <small>PLAYBOOK_PROOF</small>
+              <strong>{executiveTransformation.proofHash?.slice(0, 18)}</strong>
+            </div>
+          </div>
+          <div className={styles.priorityStack}>
+            {executiveTransformation.priorityActions.slice(0, 5).map(action => (
+              <article key={action.id} data-status={action.status}>
+                <small>{action.priority} // {action.lane}</small>
+                <strong>{action.title}</strong>
+                <span title={action.proofHash}>{compactExecutiveSignal(action.status)}</span>
+              </article>
+            ))}
+          </div>
+        </article>
+
+        <article className={styles.intelligencePanel}>
+          <header>
+            <div>
+              <span><PieChart size={13} /> AI_POWERED_EXECUTIVE_INTELLIGENCE</span>
+              <h2>Forecast, anomaly and board signals</h2>
+            </div>
+            <small>{executiveTransformation.insightRows.length} INSIGHT LANES</small>
+          </header>
+          <div className={styles.insightList}>
+            {executiveTransformation.insightRows.map(insight => (
+              <article key={insight.id} data-status={insight.status}>
+                <div>
+                  <small>{insight.lane} // {insight.confidence}%</small>
+                  <strong>{insight.title}</strong>
+                  <p>{insight.signal}</p>
+                </div>
+                <span title={insight.proofHash}>{compactExecutiveSignal(insight.status)}</span>
+              </article>
+            ))}
+          </div>
+          <form className={styles.nlqBox} onSubmit={askExecutiveOS}>
+            <label>
+              <Search size={13} />
+              <input
+                value={executiveQuestion}
+                onChange={event => setExecutiveQuestion(event.target.value)}
+                placeholder="ASK_REVENUE_SOURCE_BOARD_COMPLIANCE"
+              />
+            </label>
+            <button type="submit" className={styles.primaryButton} disabled={isRefreshing || !executiveQuestion.trim()}>
+              ASK
+            </button>
+          </form>
+          {executiveAnswer && (
+            <div className={styles.nlqAnswer}>
+              <small>{executiveAnswer.intent} // {executiveAnswer.proofHash.slice(0, 18)}</small>
+              <strong>{executiveAnswer.answer}</strong>
+              <div>
+                {executiveAnswer.evidenceRows.slice(0, 4).map(row => (
+                  <span key={row}>{row}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </article>
+
+        <article className={styles.integrationPanel}>
+          <header>
+            <div>
+              <span><Database size={13} /> INTEGRATION_MARKETPLACE_READINESS</span>
+              <h2>Finance, CRM, alerts and identity rails</h2>
+            </div>
+            <small>{executiveTransformation.integrationRows.filter(row => row.status === 'READY_TO_CONNECT').length} READY</small>
+          </header>
+          <div className={styles.connectorGrid}>
+            {executiveTransformation.integrationRows.slice(0, 8).map(connector => (
+              <article key={connector.key} data-status={connector.status}>
+                <small>{connector.lane} // {compactExecutiveSignal(connector.sourceStatus)}</small>
+                <strong>{connector.label}</strong>
+                <span>{connector.value}</span>
+                <em title={connector.proofHash}>{compactExecutiveSignal(connector.status)}</em>
+              </article>
+            ))}
+          </div>
+        </article>
+
+        <article className={styles.trustPanel}>
+          <header>
+            <div>
+              <span><ShieldCheck size={13} /> ENTERPRISE_TRUST_STACK</span>
+              <h2>SOC2, POPIA, audit export and RBAC</h2>
+            </div>
+            <small>{executiveTransformation.trustRows.filter(row => ['EVIDENCE_READY', 'EXPORT_READY', 'RBAC_ACTIVE'].includes(row.status)).length} SEALED</small>
+          </header>
+          <div className={styles.trustRows}>
+            {executiveTransformation.trustRows.map(row => (
+              <article key={row.key} data-status={row.status}>
+                <div>
+                  <small>{row.lane} // SCORE {row.score}</small>
+                  <strong>{row.label}</strong>
+                </div>
+                <span title={row.sourceStatus}>{compactExecutiveSignal(row.status)}</span>
+              </article>
+            ))}
+          </div>
+        </article>
+
+        <article className={styles.moatPanel}>
+          <header>
+            <div>
+              <span><Target size={13} /> COMPETITIVE_KILL_MATRIX</span>
+              <h2>Market counter-positioning</h2>
+            </div>
+            <small>{executiveTransformation.moatRows.filter(row => row.status === 'MOAT_LIVE').length} LIVE MOATS</small>
+          </header>
+          <div className={styles.moatRows}>
+            {executiveTransformation.moatRows.map(row => (
+              <article key={row.key} data-status={row.status}>
+                <small>{row.label} // {compactExecutiveSignal(row.status)}</small>
+                <strong>{row.wilsyMove}</strong>
+                <p>{row.competitorSignal}</p>
+              </article>
+            ))}
+          </div>
+        </article>
       </section>
 
       <section className={styles.operatingGrid}>

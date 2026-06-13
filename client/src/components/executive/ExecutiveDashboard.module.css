@@ -40,7 +40,8 @@
 .executiveShell[data-refreshing="true"] .panel,
 .executiveShell[data-refreshing="true"] .commandDeck,
 .executiveShell[data-refreshing="true"] .kpiGrid,
-.executiveShell[data-refreshing="true"] .operatingGrid {
+.executiveShell[data-refreshing="true"] .operatingGrid,
+.executiveShell[data-refreshing="true"] .transformationGrid {
   filter: saturate(0.82);
 }
 
@@ -533,6 +534,348 @@
   color: #858878;
   font-size: 0.64rem;
   overflow-wrap: anywhere;
+}
+
+.transformationGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: 14px;
+  min-width: 0;
+}
+
+.transformationHero,
+.intelligencePanel,
+.integrationPanel,
+.trustPanel,
+.moatPanel {
+  min-width: 0;
+  background: linear-gradient(180deg, rgba(9, 13, 12, 0.96), rgba(2, 3, 3, 0.98));
+  border: 1px solid rgba(86, 214, 155, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 16px 36px rgba(0, 0, 0, 0.25);
+}
+
+.transformationHero {
+  grid-row: span 2;
+  border-color: rgba(246, 215, 107, 0.18);
+}
+
+.moatPanel {
+  grid-column: 1 / -1;
+}
+
+.transformationHero header,
+.intelligencePanel header,
+.integrationPanel header,
+.trustPanel header,
+.moatPanel header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(246, 215, 107, 0.12);
+}
+
+.transformationHero header span,
+.intelligencePanel header span,
+.integrationPanel header span,
+.trustPanel header span,
+.moatPanel header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #d4af37;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.transformationHero h2,
+.intelligencePanel h2,
+.integrationPanel h2,
+.trustPanel h2,
+.moatPanel h2 {
+  margin: 5px 0 0;
+  color: #ffffff;
+  font-size: 0.96rem;
+  line-height: 1.25;
+}
+
+.transformationHero header small,
+.intelligencePanel header small,
+.integrationPanel header small,
+.trustPanel header small,
+.moatPanel header small {
+  color: #858878;
+  font-size: 0.63rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.phaseMeter {
+  display: grid;
+  gap: 10px;
+  padding: 16px 16px 0;
+}
+
+.phaseMeter > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.phaseMeter strong {
+  color: #56d69b;
+  font-size: clamp(1.55rem, 4vw, 2.8rem);
+  line-height: 1;
+}
+
+.phaseMeter span,
+.transformationStats small,
+.priorityStack small,
+.insightList small,
+.connectorGrid small,
+.trustRows small,
+.moatRows small,
+.nlqAnswer small {
+  color: #858878;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.phaseTrack {
+  height: 9px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(86, 214, 155, 0.18);
+  overflow: hidden;
+}
+
+.phaseTrack i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #56d69b, #f6d76b);
+}
+
+.transformationHero > p {
+  margin: 14px 16px 0;
+  color: #aeb3a6;
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.transformationStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 14px 16px;
+}
+
+.transformationStats div,
+.priorityStack article,
+.insightList article,
+.connectorGrid article,
+.trustRows article,
+.moatRows article,
+.nlqAnswer {
+  min-width: 0;
+  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(75, 94, 84, 0.42);
+}
+
+.transformationStats div {
+  padding: 10px;
+}
+
+.transformationStats strong {
+  display: block;
+  margin-top: 6px;
+  color: #f4f0df;
+  font-size: 0.74rem;
+  line-height: 1.3;
+}
+
+.priorityStack {
+  display: grid;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+
+.priorityStack article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 7px 10px;
+  padding: 10px;
+}
+
+.priorityStack strong {
+  color: #ffffff;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.priorityStack span,
+.insightList > article > span,
+.connectorGrid em,
+.trustRows span {
+  align-self: center;
+  color: #d4af37;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.priorityStack article[data-status*="REQUIRED"],
+.priorityStack article[data-status*="GATED"],
+.insightList article[data-status*="REQUIRED"],
+.insightList article[data-status*="GATED"],
+.connectorGrid article[data-status="SOURCE_REQUIRED"],
+.trustRows article[data-status="SOURCE_REQUIRED"],
+.moatRows article[data-status="SOURCE_GATED"] {
+  border-color: rgba(255, 102, 115, 0.32);
+}
+
+.priorityStack article[data-status="READY_TO_CONNECT"],
+.insightList article[data-status="READY"],
+.insightList article[data-status="BOARD_READY"],
+.connectorGrid article[data-status="READY_TO_CONNECT"],
+.trustRows article[data-status="EVIDENCE_READY"],
+.trustRows article[data-status="EXPORT_READY"],
+.trustRows article[data-status="RBAC_ACTIVE"],
+.moatRows article[data-status="MOAT_LIVE"] {
+  border-color: rgba(86, 214, 155, 0.34);
+}
+
+.insightList,
+.trustRows,
+.moatRows {
+  display: grid;
+  gap: 9px;
+  padding: 14px 16px;
+}
+
+.insightList article,
+.trustRows article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 10px;
+  padding: 11px;
+}
+
+.insightList strong,
+.trustRows strong,
+.connectorGrid strong,
+.moatRows strong,
+.nlqAnswer strong {
+  display: block;
+  color: #ffffff;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.insightList p,
+.moatRows p {
+  margin: 6px 0 0;
+  color: #aeb3a6;
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
+.nlqBox {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 8px;
+  padding: 0 16px 14px;
+}
+
+.nlqBox label {
+  min-width: 0;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  color: #d4af37;
+  background: rgba(0, 0, 0, 0.56);
+  border: 1px solid rgba(246, 215, 107, 0.17);
+}
+
+.nlqBox input {
+  width: 100%;
+  min-width: 0;
+  color: #fff8dc;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  font-size: 0.68rem;
+}
+
+.nlqBox input::placeholder {
+  color: #666a5a;
+}
+
+.nlqAnswer {
+  display: grid;
+  gap: 8px;
+  margin: 0 16px 16px;
+  padding: 11px;
+  border-color: rgba(246, 215, 107, 0.2);
+}
+
+.nlqAnswer div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nlqAnswer span {
+  max-width: 100%;
+  padding: 4px 7px;
+  color: #f4f0df;
+  background: rgba(86, 214, 155, 0.08);
+  border: 1px solid rgba(86, 214, 155, 0.2);
+  font-size: 0.58rem;
+  line-height: 1.3;
+}
+
+.connectorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 9px;
+  padding: 14px 16px 16px;
+}
+
+.connectorGrid article {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+}
+
+.connectorGrid span {
+  color: #aeb3a6;
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
+.connectorGrid em {
+  text-align: left;
+}
+
+.moatRows {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.moatRows article {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
 }
 
 .operatingGrid {
@@ -1482,7 +1825,8 @@
   }
 
   .commandDeck,
-  .operatingGrid {
+  .operatingGrid,
+  .transformationGrid {
     grid-template-columns: 1fr;
   }
 
@@ -1505,7 +1849,12 @@
   .finalityHeader,
   .panelHeader,
   .telemetryPanel header,
-  .currencyPanel header {
+  .currencyPanel header,
+  .transformationHero header,
+  .intelligencePanel header,
+  .integrationPanel header,
+  .trustPanel header,
+  .moatPanel header {
     display: grid;
   }
 
@@ -1525,7 +1874,9 @@
   .profileStrip,
   .workOrderMeta,
   .workOrderActions,
-  .formGrid {
+  .formGrid,
+  .transformationStats,
+  .nlqBox {
     grid-template-columns: 1fr;
   }
 
@@ -1539,7 +1890,12 @@
   .panelHeader small,
   .currencyPanel header small,
   .dailyDutyPanel header small,
-  .aiPanel header small {
+  .aiPanel header small,
+  .transformationHero header small,
+  .intelligencePanel header small,
+  .integrationPanel header small,
+  .trustPanel header small,
+  .moatPanel header small {
     text-align: left;
   }
 
@@ -1615,7 +1971,8 @@
 
 @container (max-width: 1180px) {
   .commandDeck,
-  .operatingGrid {
+  .operatingGrid,
+  .transformationGrid {
     grid-template-columns: 1fr;
   }
 
@@ -1640,7 +1997,12 @@
   .telemetryPanel header,
   .currencyPanel header,
   .dailyDutyPanel header,
-  .aiPanel header {
+  .aiPanel header,
+  .transformationHero header,
+  .intelligencePanel header,
+  .integrationPanel header,
+  .trustPanel header,
+  .moatPanel header {
     display: grid;
     grid-template-columns: 1fr;
   }
@@ -1659,7 +2021,9 @@
   .profileStrip,
   .workOrderMeta,
   .workOrderActions,
-  .formGrid {
+  .formGrid,
+  .transformationStats,
+  .nlqBox {
     grid-template-columns: 1fr;
   }
 
@@ -1676,7 +2040,12 @@
   .panelHeader small,
   .currencyPanel header small,
   .dailyDutyPanel header small,
-  .aiPanel header small {
+  .aiPanel header small,
+  .transformationHero header small,
+  .intelligencePanel header small,
+  .integrationPanel header small,
+  .trustPanel header small,
+  .moatPanel header small {
     text-align: left;
   }
 }
@@ -1684,7 +2053,9 @@
 @container (max-width: 560px) {
   .commandRail,
   .kpiGrid,
-  .aiList {
+  .aiList,
+  .moatRows,
+  .connectorGrid {
     grid-template-columns: 1fr;
   }
 
@@ -1697,4 +2068,24 @@
   .secondaryButton {
     width: 100%;
   }
+}
+
+.transformationHero > p,
+.transformationStats strong,
+.priorityStack strong,
+.priorityStack span,
+.insightList strong,
+.insightList p,
+.insightList > article > span,
+.connectorGrid strong,
+.connectorGrid span,
+.connectorGrid em,
+.trustRows strong,
+.trustRows span,
+.moatRows strong,
+.moatRows p,
+.nlqAnswer strong,
+.nlqAnswer span {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }

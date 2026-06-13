@@ -14,10 +14,11 @@
  * ║ • FORENSIC ANCHORING: Prevents React 401 race conditions by enforcing a cryptographic delay before the DOM paints the dashboard.       ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ 👥 COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                 ║
- * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated root-level mesh orchestration, forensic JSDoc, and Founder Dashboard enforcement.    ║
+ * ║ • Wilson Khanyezi (CEO/Lead Architect) - Mandated root-level mesh orchestration, forensic JSDoc, and dynamic dashboard auto-detect.    ║
  * ║ • AI Engineering (Gemini) - ORCHESTRATED: Re-ordered providers to ensure SovereignOrchestrator is the universal parent.                ║
  * ║ • AI Engineering (Gemini) - OVERRIDE: Enforced direct FOUNDER routing within SovereignRouter to bypass Controller ambiguity. [2026-05-24]║
  * ║ • AI Engineering (Gemini) - INNOVATION: Injected useSovereignMesh and useSovereignData to create a living, reactive router. [2026-05-24] ║
+ * ║ • AI Engineering (Codex) - RESTORED: Returned dashboard selection to SovereignDashboardController for role-aware standalone routing.    ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  *
  * @fileoverview App.jsx – The Genesis Node of the WILSY OS Frontend.
@@ -43,17 +44,16 @@ import SovereignDashboardController from './components/sovereign/SovereignDashbo
 import { SovereignOrchestrator, useSovereignMesh } from './components/sovereign/SovereignOrchestrator.jsx';
 import { DataOrchestratorProvider, useSovereignData } from './components/sovereign/DataOrchestrator.jsx';
 
-// 👑 FOUNDER DASHBOARD DIRECT IMPORT
-import FounderDashboard from './components/sovereign/FounderDashboard.jsx';
-
 /**
- * @component SovereignRouter
+ * @function SovereignRouter
  * @description The primary navigational artery of WILSY OS.
  * Orchestrates identity verification, tenant discovery, and routing to the
  * secure Command Center. Uniquely engineered to consume live Neural Mesh telemetry,
  * ensuring that data pipelines are fully hardened before exposing the DOM.
- * Integrates an absolute routing override for FOUNDER/OMEGA designations.
- * * @returns {React.ReactElement} The active, mesh-aware routing matrix.
+ * Delegates dashboard selection to SovereignDashboardController so Founder,
+ * Executive, tenant, and specialist dashboards remain dynamically resolved.
+ * @returns {React.ReactElement} The active, mesh-aware routing matrix.
+ * @collaboration Restores Wilson's original login flow where identity context chooses the correct dashboard instead of root hardcoding.
  */
 const SovereignRouter = () => {
   const { isAuthenticated, user, loading: authLoading, updateSovereignIdentity } = useAuth();
@@ -184,12 +184,7 @@ const SovereignRouter = () => {
           isAuthenticated && isAnchored ? (
             user?.hasSignedCovenant ? (
               <ErrorBoundary>
-                {/* 👑 FOUNDER SOVEREIGN OVERRIDE: Intercept and enforce direct routing to FounderDashboard */}
-                {(user?.role === 'FOUNDER' || user?.role === 'OMEGA') ? (
-                  <FounderDashboard user={user} />
-                ) : (
-                  <SovereignDashboardController user={user} />
-                )}
+                <SovereignDashboardController user={user} />
               </ErrorBoundary>
             ) : (
               <Navigate to="/covenant" />
@@ -205,11 +200,12 @@ const SovereignRouter = () => {
 };
 
 /**
- * @component App
+ * @function App
  * @description The root entry point of WILSY OS.
  * Anchors the sovereign provider hierarchy, mounting the Mesh, Data Stream,
  * and Auth layers in the strict order required for institutional data integrity.
  * @returns {React.ReactElement} The fully wrapped application root.
+ * @collaboration Keeps the provider spine stable while SovereignDashboardController owns dashboard auto-detection.
  */
 function App() {
   return (
