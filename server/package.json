@@ -43,7 +43,7 @@
     "canonical-json": "0.2.0",
     "chalk": "5.6.2",
     "compression": "1.8.1",
-    "compromise": "14.14.0",
+    "compromise": "^14.14.0",
     "compromise-dates": "3.7.1",
     "compromise-ngrams": "0.0.6",
     "compromise-numbers": "1.4.0",
@@ -177,6 +177,7 @@
     "gl": "npm:empty-npm-package@1.0.0",
     "axios": "^1.7.4",
     "@remix-run/router": "^1.19.0",
-    "gpu.js": "^2.15.2"
+    "gpu.js": "^2.15.2",
+    "compromise": "^14.14.0"
   }
 }
