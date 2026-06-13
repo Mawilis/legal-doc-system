@@ -69,7 +69,7 @@ jobs:
         ports: [ "6379:6379" ]
     strategy:
       fail-fast: false
-    matrix:
+      matrix:
         test-group: [
           "forensic-fix.test.js",
           "tenants.enhanced-complete.test.js",
