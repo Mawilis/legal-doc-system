@@ -58,7 +58,7 @@ jobs:
       fail-fast: false
       matrix:
         test-group: [
-          "forensic-fix.test.js",
+          "security.secrets.test.mjs",
           "tenants.enhanced-complete.test.js",
           "end-to-end.tampering.test.js",
           "enterprise-cache.test.js",
@@ -95,10 +95,10 @@ jobs:
             --timeout 60000 --exit \
             --reporter mocha-junit-reporter \
             --reporter-options mochaFile=./test-results/${{ matrix.test-group }}.xml
-            
+
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: test-results-${{ matrix.test-group }}
-          path: server/test-results/
+          name: test-results
+          path: ./reports
