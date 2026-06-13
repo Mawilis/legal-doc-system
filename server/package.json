@@ -134,7 +134,9 @@
     "xss-clean": "0.1.4",
     "zxcvbn": "4.4.2",
     "@babel/core": "^7.24.0",
-    "@babel/register": "^7.23.7"
+    "@babel/register": "^7.23.7",
+    "@babel/preset-env": "^7.24.0",
+    "@babel/preset-react": "^7.23.3"
   },
   "devDependencies": {
     "@babel/core": "7.29.0",
