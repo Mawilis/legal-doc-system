@@ -79,6 +79,9 @@ import styles from './CRMDashboard.module.css';
 
 const WILSY_R18AD67_CRM_DASHBOARD_CATALOG_COMMAND_WIRE = 'R18AD67-CRM-DASHBOARD-CATALOG-COMMAND-WIRE';
 
+const WILSY_R18AD69_CRM_CATALOG_RENDER_GUARD = 'R18AD69-CRM-CATALOG-RENDER-GUARD';
+
+
 const WILSY_R9U_CRM_LIVE_OVERLAY_INLINE_IDENTITY_FIX = 'WILSY_R9U_CRM_LIVE_OVERLAY_INLINE_IDENTITY_FIX_ACTIVE';
 
 /**
@@ -915,6 +918,53 @@ const CRM_WORKSPACES = Object.freeze(WILSY_CRM_WORKSPACE_CATALOG.map(workspace =
   sourceWorkspaceId: workspace.id,
   icon: CRM_ICON_MAP[workspace.icon] || Home
 })));
+
+/**
+ * @function resolveCrmCatalogModuleConfig
+ * @description Resolves a CRM module from the governed catalog with a safe fallback so legacy dashboard rails cannot crash render.
+ * @param {string} moduleId - Candidate CRM module id.
+ * @param {string} fallbackId - Fallback CRM module id.
+ * @returns {Object} Safe CRM module config.
+ * @collaboration Keeps the catalog-driven CRM shell stable while older UI rails are being migrated one file at a time.
+ */
+const resolveCrmCatalogModuleConfig = (moduleId = 'leads', fallbackId = 'leads') => {
+  const normalizedId = String(moduleId || '').trim().toLowerCase();
+  const normalizedFallback = String(fallbackId || 'leads').trim().toLowerCase();
+
+  return (
+    CRM_MODULES.find(item => item?.id === normalizedId)
+    || CRM_MODULES.find(item => item?.id === normalizedFallback)
+    || CRM_MODULES[0]
+    || {
+      id: 'source_required',
+      label: 'Source Required',
+      singular: 'Record',
+      icon: 'database',
+      route: 'records',
+      primary: 'name',
+      secondary: 'status',
+      money: null,
+      boardBy: 'status',
+      lanes: ['source_required'],
+      fields: ['name', 'status'],
+      sourceStatus: 'SOURCE_REQUIRED',
+      routePosture: 'ROUTE_REQUIRED'
+    }
+  );
+};
+
+/**
+ * @function resolveCrmCatalogIcon
+ * @description Resolves a CRM icon component from the icon map with a safe fallback.
+ * @param {string} iconKey - Catalog icon key.
+ * @param {React.ComponentType} fallbackIcon - Fallback icon component.
+ * @returns {React.ComponentType} Icon component.
+ * @collaboration Prevents catalog growth from breaking CRM module, workspace and task rails.
+ */
+const resolveCrmCatalogIcon = (iconKey = 'database', fallbackIcon = Database) => (
+  CRM_ICON_MAP[String(iconKey || '').trim()] || fallbackIcon || Database
+);
+
 
 const FIELD_LABELS = Object.freeze({
   accountName: 'Account',
@@ -1815,7 +1865,7 @@ const CRMDashboard = ({
   ), [activeTenant, currentTenantId, tenantConfig, user]);
 
   const moduleConfig = useMemo(() => (
-    CRM_MODULES.find(item => item.id === activeModule) || CRM_MODULES[0]
+    resolveCrmCatalogModuleConfig(activeModule)
   ), [activeModule]);
 
   const currentCollection = collections[activeModule] || { items: [], total: 0, sourceStatus: 'SOURCE_REQUIRED' };
@@ -1883,7 +1933,7 @@ const CRMDashboard = ({
   }, []);
 
   const loadModuleRecords = useCallback(async (moduleId = activeModule, nextPage = pageState[moduleId]) => {
-    const config = CRM_MODULES.find(item => item.id === moduleId) || moduleConfig;
+    const config = resolveCrmCatalogModuleConfig(moduleId, moduleConfig?.id);
     const page = nextPage || { limit: DEFAULT_PAGE_LIMIT, offset: 0 };
 
     try {
@@ -2335,7 +2385,7 @@ const CRMDashboard = ({
   const ActiveWorkspaceIcon = CRM_WORKSPACES.find(workspace => workspace.id === activeWorkspace)?.icon || Home;
 
   const moduleCards = CRM_MODULES.map(item => {
-    const Icon = CRM_ICON_MAP[item.icon] || Database;
+    const Icon = resolveCrmCatalogIcon(item?.icon, Database);
     const active = item.id === activeModule;
     return (
       <button
@@ -2549,9 +2599,9 @@ const CRMDashboard = ({
 
   const tasksView = (
     <div className={styles.homeGrid}>
-      {['tasks', 'meetings', 'calls', 'tickets'].map(moduleId => {
-        const config = CRM_MODULES.find(item => item.id === moduleId);
-        const Icon = CRM_ICON_MAP[config.icon] || Activity;
+      {['tasks', 'meetings', 'conversations', 'tickets'].map(moduleId => {
+        const config = resolveCrmCatalogModuleConfig(moduleId, activeModule);
+        const Icon = resolveCrmCatalogIcon(config?.icon, Activity);
         return (
           <section key={moduleId} className={styles.widgetCard}>
             <header><span><Icon size={14} /> {config.label}</span><button type="button" onClick={() => { setActiveModule(moduleId); setActiveWorkspace('records'); }}>Open</button></header>
