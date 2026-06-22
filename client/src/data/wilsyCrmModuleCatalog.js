@@ -1,8 +1,8 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - CRM MODULE CATALOG [R18AD65-SALES-CRM-OBLITERATION-CONTROL-PLANE]                                           ║
- * ║ SALES | CRM | SDR | CUSTOMER SUCCESS | SUPPORT | REVENUE | FORECAST | AUTOMATION | MIGRATION | AUDIT                    ║
+ * ║ WILSY OS - CRM MODULE CATALOG [R18AD70-SOVEREIGN-SALES-CRM-OBLITERATION-DOCTRINE]                                           ║
+ * ║ SALES | CRM | SDR | SUCCESS | REVENUE | IFRS | COMPLIANCE | FORENSICS | INVESTOR TELEMETRY | AUDIT                    ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/data/wilsyCrmModuleCatalog.js                          ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -18,7 +18,7 @@
  * role posture, source requirements, receipt posture and tenant boundaries.
  */
 
-export const WILSY_CRM_MODULE_CATALOG_VERSION = 'R18AD65-SALES-CRM-OBLITERATION-CONTROL-PLANE';
+export const WILSY_CRM_MODULE_CATALOG_VERSION = 'R18AD70-SOVEREIGN-SALES-CRM-OBLITERATION-DOCTRINE';
 
 export const WILSY_CRM_DEFAULT_MODULE_ID = 'leads';
 
@@ -253,6 +253,31 @@ export const WILSY_CRM_MODULE_GROUPS = Object.freeze({
     label: 'Automation and AI',
     doctrine: 'Workflows, next-best-action, intelligence and migration posture.',
     buyerSignal: 'operating leverage'
+  },
+  intelligence: {
+    label: 'Sales Intelligence',
+    doctrine: 'Lead scoring, BANT qualification, predictive win probability and next-best-action.',
+    buyerSignal: 'sales inevitability'
+  },
+  financeEvidence: {
+    label: 'Revenue Evidence',
+    doctrine: 'Contracts, invoices, receipts, IFRS posture and revenue proof in one command desk.',
+    buyerSignal: 'investor-grade revenue trust'
+  },
+  complianceHud: {
+    label: 'Compliance HUD',
+    doctrine: 'POPIA, GDPR, SOC2 and customer clauses bound to every customer record.',
+    buyerSignal: 'regulator-ready customer ledger'
+  },
+  forensicFlow: {
+    label: 'Forensic Sales Flow',
+    doctrine: 'Every lead transfer, pipeline movement, contract and disclosure has chain-of-custody posture.',
+    buyerSignal: 'tamper-proof commercial operation'
+  },
+  investor: {
+    label: 'Investor Strip',
+    doctrine: 'Sovereign root hash, sealed receipts and live revenue telemetry displayed without fake metrics.',
+    buyerSignal: 'investor confidence'
   }
 });
 
@@ -281,6 +306,82 @@ const baseTenantContract = Object.freeze({
   recordFilter: 'tenantId === activeTenantId',
   founderView: 'Founder/Omega view is audited and tenant-scoped by selected tenant context.',
   employeeView: 'Employee view is restricted to authenticated tenant and permitted role.'
+});
+
+export const WILSY_CRM_QUALIFICATION_FRAMEWORKS = Object.freeze({
+  bant: Object.freeze(['budget', 'authority', 'need', 'timeline']),
+  medicc: Object.freeze(['metrics', 'economicBuyer', 'decisionCriteria', 'decisionProcess', 'identifyPain', 'champion', 'competition']),
+  sovereignFit: Object.freeze(['tenantBoundary', 'sourceTrust', 'authorityToBind', 'complianceNeed', 'revenueMateriality']),
+  doctrine: 'Lead intelligence must explain score, qualification gaps and next action without inventing customer facts.'
+});
+
+export const WILSY_CRM_COMPLIANCE_CLAUSE_CATALOG = Object.freeze({
+  popia: Object.freeze(['POPIA_S19_SECURITY_SAFEGUARDS', 'POPIA_S11_PROCESSING_LIMITATION', 'POPIA_S18_NOTIFICATION']),
+  gdpr: Object.freeze(['GDPR_ART_5_PRINCIPLES', 'GDPR_ART_6_LAWFUL_BASIS', 'GDPR_ART_32_SECURITY']),
+  soc2: Object.freeze(['SOC2_SECURITY', 'SOC2_CONFIDENTIALITY', 'SOC2_AVAILABILITY']),
+  ifrs: Object.freeze(['IFRS15_REVENUE_RECOGNITION', 'IFRS9_RECEIVABLE_RISK', 'IAS1_DISCLOSURE_POSTURE']),
+  doctrine: 'Customer records, contracts, invoices and support events must carry clause posture when used for regulated decisions.'
+});
+
+export const WILSY_CRM_FORENSIC_FLOW_CATALOG = Object.freeze({
+  leadEntered: 'LEAD_ENTERED_VERIFIED_SOURCE_RECEIPT',
+  qualificationUpdated: 'QUALIFICATION_UPDATED_BANT_RECEIPT',
+  pipelineMoved: 'PIPELINE_STAGE_MOVED_CHAIN_OF_CUSTODY',
+  dealClosed: 'DEAL_CLOSED_CONTRACT_IFRS_RECEIPT',
+  invoiceIssued: 'INVOICE_ISSUED_REVENUE_LEDGER_RECEIPT',
+  supportEscalated: 'SUPPORT_ESCALATION_CUSTOMER_RISK_RECEIPT',
+  disclosureExported: 'REGULATOR_DISCLOSURE_EXPORT_RECEIPT',
+  sovereignRootAnchored: 'SOVEREIGN_ROOT_HASH_ANCHORED',
+  doctrine: 'Every material CRM action must become a receipt-capable forensic event.'
+});
+
+export const WILSY_CRM_CONNECTOR_CONTRACTS = Object.freeze({
+  email: Object.freeze({
+    id: 'email_connector',
+    vendors: Object.freeze(['GMAIL', 'OUTLOOK', 'IMAP']),
+    requiredEvidence: Object.freeze(['messageId', 'threadId', 'sentAt', 'operatorId', 'tenantId']),
+    posture: WILSY_CRM_SOURCE_STATUS.sourceRequired
+  }),
+  linkedin: Object.freeze({
+    id: 'linkedin_connector',
+    vendors: Object.freeze(['LINKEDIN_EXPORT', 'SALES_NAVIGATOR_EXPORT']),
+    requiredEvidence: Object.freeze(['profileUrl', 'engagementType', 'capturedAt', 'operatorId', 'tenantId']),
+    posture: WILSY_CRM_SOURCE_STATUS.sourceRequired
+  }),
+  finance: Object.freeze({
+    id: 'finance_connector',
+    vendors: Object.freeze(['WILSY_BILLING', 'XERO', 'QUICKBOOKS', 'SAGE']),
+    requiredEvidence: Object.freeze(['contractId', 'invoiceId', 'receiptId', 'ledgerEntryId', 'tenantId']),
+    posture: WILSY_CRM_SOURCE_STATUS.sourceRequired
+  }),
+  hr: Object.freeze({
+    id: 'hr_connector',
+    vendors: Object.freeze(['WILSY_HR', 'CSV_EMPLOYEE_LEDGER']),
+    requiredEvidence: Object.freeze(['employeeId', 'role', 'sessionId', 'performancePeriod', 'tenantId']),
+    posture: WILSY_CRM_SOURCE_STATUS.sourceRequired
+  }),
+  doctrine: 'Connectors are not decorative integrations; they are source-truth rails with evidence requirements.'
+});
+
+export const WILSY_CRM_BACKEND_SERVICE_CONTRACTS = Object.freeze({
+  authentication: 'MULTI_TENANT_LOGIN_SHA3_512_RECEIPTS',
+  telemetry: 'LIVE_CRM_METRIC_STREAMS',
+  audit: 'CRYPTOGRAPHIC_ACTION_RECEIPTS_CHAINED_TO_SOVEREIGN_ROOT',
+  governance: 'CHAIN_OF_CUSTODY_FOR_LEAD_TRANSFER_PROOF_MOVEMENT_AND_CONTRACTS',
+  evidenceLedger: 'CRM_ACTIVITY_TO_REGULATOR_READY_EVIDENCE_MAPPING',
+  exportApi: 'ONE_CLICK_DISCLOSURE_PACKAGE_ZIP',
+  doctrine: 'Backend CRM services must prove identity, action, revenue and compliance movement.'
+});
+
+export const WILSY_CRM_INVESTOR_TELEMETRY_CONTRACT = Object.freeze({
+  sovereignRootHash: 'SOURCE_REQUIRED',
+  sealedReceipts: 'SOURCE_REQUIRED',
+  revenueTelemetry: 'SOURCE_REQUIRED',
+  pipelineTelemetry: 'SOURCE_REQUIRED',
+  complianceReadiness: 'SOURCE_REQUIRED',
+  disclosureBundleReadiness: 'SOURCE_REQUIRED',
+  noFakeMetrics: true,
+  doctrine: 'Investor telemetry must show live source posture or SOURCE_REQUIRED, never invented progress.'
 });
 
 export const WILSY_CRM_MODULE_CATALOG = Object.freeze([
@@ -883,6 +984,284 @@ export const WILSY_CRM_MODULE_CATALOG = Object.freeze([
     aiCommand: 'Identify strategic partner leverage, gaps and customer impact.',
     migrationPosture: Object.freeze(['ZOHO', 'SALESFORCE', 'GENERIC_CRM']),
     competitiveWedge: 'Partner networks become part of the revenue command graph.'
+  },
+  {
+    id: 'calls',
+    label: 'Calls',
+    singular: 'Call',
+    icon: 'messageSquare',
+    group: 'work',
+    route: 'calls',
+    workspace: 'records',
+    primary: 'subject',
+    secondary: 'contactName',
+    money: null,
+    boardBy: 'outcome',
+    lanes: Object.freeze(['scheduled', 'completed', 'missed', 'follow_up']),
+    fields: Object.freeze(['subject', 'phone', 'contactName', 'outcome', 'completedAt', 'owner', 'status']),
+    personas: Object.freeze(['sdr', 'sales_representative', 'account_executive', 'customer_success']),
+    serviceMethods: Object.freeze(['getCalls', 'createCall', 'updateCall', 'deleteCall']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: baseSourceContract,
+    receiptContract: baseReceiptContract,
+    tenantContract: baseTenantContract,
+    aiCommand: 'Summarize call outcome, next action, sentiment and pipeline impact.',
+    migrationPosture: Object.freeze(['HUBSPOT', 'ZOHO', 'SALESFORCE', 'INTERCOM', 'GENERIC_CRM']),
+    competitiveWedge: 'Calls become traceable customer evidence, not forgotten activity notes.'
+  },
+  {
+    id: 'lead_intelligence',
+    label: 'Lead Intelligence',
+    singular: 'Lead Intelligence Packet',
+    icon: 'sparkles',
+    group: 'intelligence',
+    route: 'lead-intelligence',
+    workspace: 'intelligence',
+    primary: 'leadName',
+    secondary: 'qualificationPosture',
+    money: 'estimatedValue',
+    boardBy: 'qualificationPosture',
+    lanes: Object.freeze(['unqualified', 'bant_gap', 'qualified', 'sales_ready', 'board_review']),
+    fields: Object.freeze(['leadName', 'company', 'score', 'qualificationPosture', 'budget', 'authority', 'need', 'timeline', 'winProbability', 'nextBestAction']),
+    personas: Object.freeze(['sdr', 'sales_representative', 'account_executive', 'sales_manager', 'founder_omega']),
+    serviceMethods: Object.freeze(['getLeadIntelligence', 'createLeadIntelligence', 'updateLeadIntelligence', 'deleteLeadIntelligence']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: Object.freeze({ ...baseSourceContract, minimumStatus: WILSY_CRM_SOURCE_STATUS.sourceRequired, framework: WILSY_CRM_QUALIFICATION_FRAMEWORKS.bant }),
+    receiptContract: Object.freeze({ ...baseReceiptContract, score: 'CRM_LEAD_SCORE_RECEIPT_REQUIRED', qualification: 'CRM_BANT_QUALIFICATION_RECEIPT_REQUIRED' }),
+    tenantContract: baseTenantContract,
+    aiCommand: 'Score lead quality, expose BANT gaps, predict win probability and recommend next action from source-backed signals.',
+    migrationPosture: Object.freeze(['HUBSPOT', 'ZOHO', 'SALESFORCE', 'LINKEDIN_EXPORT', 'GENERIC_CRM']),
+    competitiveWedge: 'HubSpot scores leads; Wilsy proves why the score exists and receipts every qualification movement.',
+    qualificationFrameworks: WILSY_CRM_QUALIFICATION_FRAMEWORKS,
+    forensicFlow: Object.freeze([WILSY_CRM_FORENSIC_FLOW_CATALOG.leadEntered, WILSY_CRM_FORENSIC_FLOW_CATALOG.qualificationUpdated])
+  },
+  {
+    id: 'pipeline_cockpit',
+    label: 'Pipeline Cockpit',
+    singular: 'Pipeline Cockpit',
+    icon: 'target',
+    group: 'revenue',
+    route: 'pipeline-cockpit',
+    workspace: 'pipeline',
+    primary: 'period',
+    secondary: 'pipelinePosture',
+    money: 'weightedPipeline',
+    boardBy: 'pipelinePosture',
+    lanes: Object.freeze(['source_required', 'building', 'forecastable', 'at_risk', 'board_ready']),
+    fields: Object.freeze(['period', 'leadCount', 'accountCount', 'dealCount', 'weightedPipeline', 'churnRisk', 'forecastConfidence', 'pipelinePosture']),
+    personas: Object.freeze(['sales_manager', 'sales_leader', 'revenue_operations', 'founder_omega']),
+    serviceMethods: Object.freeze(['getPipelineCockpit', 'createPipelineSnapshot', 'updatePipelineSnapshot', 'deletePipelineSnapshot']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: baseSourceContract,
+    receiptContract: Object.freeze({ ...baseReceiptContract, stageMove: 'CRM_PIPELINE_STAGE_MOVE_RECEIPT_REQUIRED', forecast: 'CRM_FORECAST_RECEIPT_REQUIRED' }),
+    tenantContract: baseTenantContract,
+    aiCommand: 'Collapse leads, accounts, deals, churn and expansion into one weighted revenue cockpit.',
+    migrationPosture: Object.freeze(['HUBSPOT', 'ZOHO', 'SALESFORCE', 'GENERIC_CRM']),
+    competitiveWedge: 'Competitors show scattered panels; Wilsy shows weighted revenue inevitability with evidence.',
+    forensicFlow: Object.freeze([WILSY_CRM_FORENSIC_FLOW_CATALOG.pipelineMoved])
+  },
+  {
+    id: 'customer_success_telemetry',
+    label: 'Success Telemetry',
+    singular: 'Success Telemetry Packet',
+    icon: 'success',
+    group: 'service',
+    route: 'customer-success-telemetry',
+    workspace: 'success',
+    primary: 'accountName',
+    secondary: 'healthPosture',
+    money: 'expansionRevenue',
+    boardBy: 'healthPosture',
+    lanes: Object.freeze(['source_required', 'healthy', 'expansion', 'adoption_risk', 'churn_risk']),
+    fields: Object.freeze(['accountName', 'adoptionScore', 'sessionCount', 'employeeOwner', 'expansionRevenue', 'renewalDate', 'churnRisk', 'healthPosture']),
+    personas: Object.freeze(['customer_success', 'sales_manager', 'revenue_operations', 'founder_omega']),
+    serviceMethods: Object.freeze(['getCustomerSuccessTelemetry', 'createCustomerSuccessTelemetry', 'updateCustomerSuccessTelemetry', 'deleteCustomerSuccessTelemetry']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: Object.freeze({ ...baseSourceContract, connectors: Object.freeze(['hr', 'product', 'support', 'billing']) }),
+    receiptContract: Object.freeze({ ...baseReceiptContract, healthChange: 'CRM_CUSTOMER_HEALTH_RECEIPT_REQUIRED', churnRisk: 'CRM_CHURN_RISK_RECEIPT_REQUIRED' }),
+    tenantContract: baseTenantContract,
+    aiCommand: 'Tie adoption, expansion, churn, tickets and employee performance into one success telemetry view.',
+    migrationPosture: Object.freeze(['INTERCOM', 'ZENDESK', 'FRESHDESK', 'HUBSPOT', 'SALESFORCE', 'GENERIC_CRM']),
+    competitiveWedge: 'Customer Success becomes measurable revenue telemetry, not a colour-coded health badge.',
+    connectorContract: Object.freeze([WILSY_CRM_CONNECTOR_CONTRACTS.hr, WILSY_CRM_CONNECTOR_CONTRACTS.finance])
+  },
+  {
+    id: 'revenue_desk',
+    label: 'Revenue Desk',
+    singular: 'Revenue Desk Entry',
+    icon: 'invoices',
+    group: 'financeEvidence',
+    route: 'revenue-desk',
+    workspace: 'pipeline',
+    primary: 'contractNumber',
+    secondary: 'revenuePosture',
+    money: 'recognizedRevenue',
+    boardBy: 'revenuePosture',
+    lanes: Object.freeze(['contract_pending', 'invoice_issued', 'receipt_sealed', 'ifrs_review', 'board_ready']),
+    fields: Object.freeze(['contractNumber', 'accountName', 'contractValue', 'invoiceNumber', 'recognizedRevenue', 'receiptId', 'ifrsClause', 'revenuePosture']),
+    personas: Object.freeze(['revenue_operations', 'sales_manager', 'sales_leader', 'compliance_officer', 'founder_omega']),
+    serviceMethods: Object.freeze(['getRevenueDesk', 'createRevenueDeskEntry', 'updateRevenueDeskEntry', 'deleteRevenueDeskEntry']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: Object.freeze({ ...baseSourceContract, minimumStatus: WILSY_CRM_SOURCE_STATUS.sourceRequired, clauses: WILSY_CRM_COMPLIANCE_CLAUSE_CATALOG.ifrs }),
+    receiptContract: Object.freeze({ ...baseReceiptContract, ledger: 'CRM_IFRS_LEDGER_RECEIPT_REQUIRED', invoice: 'CRM_INVOICE_RECEIPT_REQUIRED', contract: 'CRM_CONTRACT_REVENUE_RECEIPT_REQUIRED' }),
+    tenantContract: baseTenantContract,
+    aiCommand: 'Connect contracts signed, invoices issued, receipts sealed and IFRS posture into one revenue command desk.',
+    migrationPosture: Object.freeze(['SALESFORCE', 'ZOHO', 'HUBSPOT', 'XERO', 'QUICKBOOKS', 'SAGE', 'GENERIC_CRM']),
+    competitiveWedge: 'Salesforce can forecast; Wilsy ties revenue to contracts, invoices, receipts and IFRS posture.',
+    connectorContract: Object.freeze([WILSY_CRM_CONNECTOR_CONTRACTS.finance]),
+    complianceClauses: WILSY_CRM_COMPLIANCE_CLAUSE_CATALOG.ifrs,
+    forensicFlow: Object.freeze([WILSY_CRM_FORENSIC_FLOW_CATALOG.dealClosed, WILSY_CRM_FORENSIC_FLOW_CATALOG.invoiceIssued])
+  },
+  {
+    id: 'compliance_hud',
+    label: 'Compliance HUD',
+    singular: 'Compliance HUD Entry',
+    icon: 'shield',
+    group: 'complianceHud',
+    route: 'compliance-hud',
+    workspace: 'evidence',
+    primary: 'customerName',
+    secondary: 'clausePosture',
+    money: null,
+    boardBy: 'clausePosture',
+    lanes: Object.freeze(['source_required', 'clause_gap', 'consent_gap', 'receipt_gap', 'regulator_ready']),
+    fields: Object.freeze(['customerName', 'moduleId', 'popiaClause', 'gdprClause', 'soc2Clause', 'authorityStatus', 'receiptId', 'clausePosture']),
+    personas: Object.freeze(['compliance_officer', 'customer_success', 'sales_manager', 'tenant_admin', 'founder_omega']),
+    serviceMethods: Object.freeze(['getComplianceHud', 'createComplianceHudEntry', 'updateComplianceHudEntry', 'deleteComplianceHudEntry']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: Object.freeze({ ...baseSourceContract, clauses: WILSY_CRM_COMPLIANCE_CLAUSE_CATALOG }),
+    receiptContract: Object.freeze({ ...baseReceiptContract, clauseBinding: 'CRM_COMPLIANCE_CLAUSE_BINDING_RECEIPT_REQUIRED' }),
+    tenantContract: baseTenantContract,
+    aiCommand: 'Bind POPIA, GDPR, SOC2 and authority posture to customer, deal, support and revenue events.',
+    migrationPosture: Object.freeze(['SALESFORCE', 'ZENDESK', 'HUBSPOT', 'GENERIC_CRM']),
+    competitiveWedge: 'Competitors store notes; Wilsy binds customer movement to compliance clauses and receipts.',
+    complianceClauses: WILSY_CRM_COMPLIANCE_CLAUSE_CATALOG
+  },
+  {
+    id: 'forensic_sales_flow',
+    label: 'Forensic Flow',
+    singular: 'Forensic Sales Event',
+    icon: 'audit',
+    group: 'forensicFlow',
+    route: 'forensic-sales-flow',
+    workspace: 'evidence',
+    primary: 'eventType',
+    secondary: 'chainOfCustodyPosture',
+    money: 'eventValue',
+    boardBy: 'chainOfCustodyPosture',
+    lanes: Object.freeze(['captured', 'receipt_pending', 'sealed', 'sovereign_anchored', 'review_required']),
+    fields: Object.freeze(['eventType', 'leadId', 'dealId', 'contractId', 'operatorId', 'timestamp', 'receiptId', 'sovereignRootHash', 'chainOfCustodyPosture']),
+    personas: Object.freeze(['sales_manager', 'compliance_officer', 'revenue_operations', 'founder_omega']),
+    serviceMethods: Object.freeze(['getForensicSalesFlow', 'createForensicSalesEvent', 'updateForensicSalesEvent', 'deleteForensicSalesEvent']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: Object.freeze({ ...baseSourceContract, forensicFlow: WILSY_CRM_FORENSIC_FLOW_CATALOG }),
+    receiptContract: Object.freeze({ ...baseReceiptContract, chain: 'CRM_CHAIN_OF_CUSTODY_RECEIPT_REQUIRED', root: 'CRM_SOVEREIGN_ROOT_ANCHOR_REQUIRED' }),
+    tenantContract: baseTenantContract,
+    aiCommand: 'Explain the full chain of custody from lead entry to contract, invoice, receipt and regulator disclosure.',
+    migrationPosture: Object.freeze(['GENERIC_CRM']),
+    competitiveWedge: 'No competitor turns sales operations into regulator-ready forensic evidence.',
+    forensicFlow: WILSY_CRM_FORENSIC_FLOW_CATALOG
+  },
+  {
+    id: 'connector_command',
+    label: 'Connector Command',
+    singular: 'Connector Command',
+    icon: 'connectors',
+    group: 'automation',
+    route: 'connector-command',
+    workspace: 'evidence',
+    primary: 'connectorName',
+    secondary: 'connectorPosture',
+    money: null,
+    boardBy: 'connectorPosture',
+    lanes: Object.freeze(['missing', 'configured', 'syncing', 'degraded', 'live']),
+    fields: Object.freeze(['connectorName', 'vendor', 'lastSyncAt', 'recordsSynced', 'evidenceFields', 'sourceStatus', 'connectorPosture']),
+    personas: Object.freeze(['tenant_admin', 'revenue_operations', 'compliance_officer', 'founder_omega']),
+    serviceMethods: Object.freeze(['getConnectorCommand', 'createConnectorCommand', 'updateConnectorCommand', 'deleteConnectorCommand']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: Object.freeze({ ...baseSourceContract, connectorContract: WILSY_CRM_CONNECTOR_CONTRACTS }),
+    receiptContract: Object.freeze({ ...baseReceiptContract, sync: 'CRM_CONNECTOR_SYNC_RECEIPT_REQUIRED' }),
+    tenantContract: baseTenantContract,
+    aiCommand: 'Expose Gmail, Outlook, LinkedIn, finance, HR and support connector readiness without fake sync claims.',
+    migrationPosture: Object.freeze(['GMAIL', 'OUTLOOK', 'LINKEDIN_EXPORT', 'HUBSPOT', 'ZOHO', 'ZENDESK', 'SALESFORCE', 'GENERIC_CRM']),
+    competitiveWedge: 'Connectors are source evidence rails, not checkbox integrations.',
+    connectorContract: WILSY_CRM_CONNECTOR_CONTRACTS
+  },
+  {
+    id: 'investor_strip',
+    label: 'Investor Strip',
+    singular: 'Investor Telemetry Strip',
+    icon: 'forecast',
+    group: 'investor',
+    route: 'investor-strip',
+    workspace: 'intelligence',
+    primary: 'sovereignRootHash',
+    secondary: 'investorPosture',
+    money: 'liveRevenueMovement',
+    boardBy: 'investorPosture',
+    lanes: Object.freeze(['source_required', 'telemetry_live', 'receipts_sealed', 'board_ready', 'investor_review']),
+    fields: Object.freeze(['sovereignRootHash', 'sealedReceipts', 'liveRevenueMovement', 'pipelineMovement', 'complianceReadiness', 'disclosureBundleReadiness', 'investorPosture']),
+    personas: Object.freeze(['founder_omega', 'sales_leader', 'revenue_operations', 'compliance_officer']),
+    serviceMethods: Object.freeze(['getInvestorStrip', 'createInvestorTelemetrySnapshot', 'updateInvestorTelemetrySnapshot', 'deleteInvestorTelemetrySnapshot']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: Object.freeze({ ...baseSourceContract, telemetryContract: WILSY_CRM_INVESTOR_TELEMETRY_CONTRACT }),
+    receiptContract: Object.freeze({ ...baseReceiptContract, investorSnapshot: 'CRM_INVESTOR_TELEMETRY_RECEIPT_REQUIRED' }),
+    tenantContract: baseTenantContract,
+    aiCommand: 'Show sovereign root hash, sealed receipts, revenue movement and compliance readiness with no fake investor metrics.',
+    migrationPosture: Object.freeze(['GENERIC_CRM']),
+    competitiveWedge: 'Investors see tamper-proof commercial telemetry instead of a decorative SaaS dashboard.',
+    investorTelemetry: WILSY_CRM_INVESTOR_TELEMETRY_CONTRACT,
+    forensicFlow: Object.freeze([WILSY_CRM_FORENSIC_FLOW_CATALOG.sovereignRootAnchored])
+  },
+  {
+    id: 'governance_ledger',
+    label: 'Governance Ledger',
+    singular: 'Governance Ledger Entry',
+    icon: 'evidence',
+    group: 'governance',
+    route: 'governance-ledger',
+    workspace: 'evidence',
+    primary: 'governanceEvent',
+    secondary: 'custodyPosture',
+    money: null,
+    boardBy: 'custodyPosture',
+    lanes: Object.freeze(['captured', 'custody_pending', 'verified', 'sealed', 'review_required']),
+    fields: Object.freeze(['governanceEvent', 'moduleId', 'recordId', 'operatorId', 'sourceSystem', 'receiptId', 'custodyPosture']),
+    personas: Object.freeze(['compliance_officer', 'tenant_admin', 'revenue_operations', 'founder_omega']),
+    serviceMethods: Object.freeze(['getGovernanceLedger', 'createGovernanceLedgerEntry', 'updateGovernanceLedgerEntry', 'deleteGovernanceLedgerEntry']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: Object.freeze({ ...baseSourceContract, backendServiceContracts: WILSY_CRM_BACKEND_SERVICE_CONTRACTS }),
+    receiptContract: Object.freeze({ ...baseReceiptContract, governance: 'CRM_GOVERNANCE_LEDGER_RECEIPT_REQUIRED' }),
+    tenantContract: baseTenantContract,
+    aiCommand: 'Map CRM actions to governance events, custody posture and evidence ledger readiness.',
+    migrationPosture: Object.freeze(['GENERIC_CRM']),
+    competitiveWedge: 'Wilsy makes CRM governance native, not a compliance afterthought.',
+    backendServiceContracts: WILSY_CRM_BACKEND_SERVICE_CONTRACTS
+  },
+  {
+    id: 'evidence_exports',
+    label: 'Evidence Exports',
+    singular: 'Evidence Export',
+    icon: 'upload',
+    group: 'forensicFlow',
+    route: 'evidence-exports',
+    workspace: 'evidence',
+    primary: 'bundleName',
+    secondary: 'disclosurePosture',
+    money: null,
+    boardBy: 'disclosurePosture',
+    lanes: Object.freeze(['source_required', 'assembling', 'sealed', 'exported', 'regulator_ready']),
+    fields: Object.freeze(['bundleName', 'customerName', 'clauseCount', 'receiptCount', 'zipHash', 'exportedAt', 'disclosurePosture']),
+    personas: Object.freeze(['compliance_officer', 'tenant_admin', 'founder_omega']),
+    serviceMethods: Object.freeze(['getEvidenceExports', 'createEvidenceExport', 'updateEvidenceExport', 'deleteEvidenceExport']),
+    routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+    sourceContract: Object.freeze({ ...baseSourceContract, exportApi: WILSY_CRM_BACKEND_SERVICE_CONTRACTS.exportApi }),
+    receiptContract: Object.freeze({ ...baseReceiptContract, disclosure: 'CRM_DISCLOSURE_EXPORT_RECEIPT_REQUIRED' }),
+    tenantContract: baseTenantContract,
+    aiCommand: 'Prepare one-click regulator disclosure packages with customer records, clauses, receipts and sovereign hashes.',
+    migrationPosture: Object.freeze(['GENERIC_CRM']),
+    competitiveWedge: 'Regulator-ready exports make competitor CRMs look ungoverned.',
+    forensicFlow: Object.freeze([WILSY_CRM_FORENSIC_FLOW_CATALOG.disclosureExported])
   }
 ]);
 
@@ -1147,6 +1526,83 @@ export const buildWilsyCrmCatalogReadiness = () => {
     })
   });
 };
+
+/**
+ * @function listWilsyCrmSovereignSalesModules
+ * @description Lists the obliteration-grade sovereign Sales CRM modules that turn CRM from a ledger into a forensic revenue operating system.
+ * @returns {Array<Object>} Sovereign Sales CRM modules.
+ * @collaboration Feeds CRMDashboard investor strip, forensic flow, compliance HUD and sales intelligence workspaces without duplicate config.
+ */
+export const listWilsyCrmSovereignSalesModules = () => (
+  WILSY_CRM_MODULE_CATALOG.filter(moduleConfig => (
+    ['lead_intelligence', 'pipeline_cockpit', 'customer_success_telemetry', 'revenue_desk', 'compliance_hud', 'forensic_sales_flow', 'connector_command', 'investor_strip', 'governance_ledger', 'evidence_exports']
+      .includes(moduleConfig.id)
+  ))
+);
+
+/**
+ * @function buildWilsyCrmSovereignSalesBlueprint
+ * @description Builds the frontend-safe blueprint for the investor-grade Sales CRM operating doctrine.
+ * @returns {Object} Sovereign Sales CRM blueprint.
+ * @collaboration Gives CRM UI and backend routes a single doctrine packet for lead intelligence, pipeline, revenue, compliance and forensic evidence.
+ */
+export const buildWilsyCrmSovereignSalesBlueprint = () => {
+  const sovereignModules = listWilsyCrmSovereignSalesModules();
+
+  return Object.freeze({
+    version: WILSY_CRM_MODULE_CATALOG_VERSION,
+    doctrine: 'SOVEREIGN_SALES_CRM_OBLITERATION_GRADE',
+    tenantBoundary: WILSY_CRM_TENANT_BOUNDARY.noSharedDataDoctrine,
+    noFakeData: true,
+    moduleCount: sovereignModules.length,
+    modules: Object.freeze(sovereignModules.map(moduleConfig => moduleConfig.id)),
+    qualificationFrameworks: WILSY_CRM_QUALIFICATION_FRAMEWORKS,
+    complianceClauses: WILSY_CRM_COMPLIANCE_CLAUSE_CATALOG,
+    forensicFlow: WILSY_CRM_FORENSIC_FLOW_CATALOG,
+    connectorContracts: WILSY_CRM_CONNECTOR_CONTRACTS,
+    backendServices: WILSY_CRM_BACKEND_SERVICE_CONTRACTS,
+    investorTelemetry: WILSY_CRM_INVESTOR_TELEMETRY_CONTRACT,
+    investorSignal: 'Wilsy CRM proves revenue movement, customer evidence, compliance posture and sovereign root integrity.'
+  });
+};
+
+/**
+ * @function buildWilsyCrmForensicSalesFlow
+ * @description Builds a source-required forensic sales flow packet that can be rendered before backend receipts are wired.
+ * @returns {Object} Forensic sales flow contract.
+ * @collaboration Lets the CRM dashboard show chain-of-custody requirements without pretending receipts already exist.
+ */
+export const buildWilsyCrmForensicSalesFlow = () => Object.freeze({
+  version: WILSY_CRM_MODULE_CATALOG_VERSION,
+  noFakeData: true,
+  sourceStatus: WILSY_CRM_SOURCE_STATUS.sourceRequired,
+  routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+  events: WILSY_CRM_FORENSIC_FLOW_CATALOG,
+  requiredBackendServices: WILSY_CRM_BACKEND_SERVICE_CONTRACTS,
+  tenantBoundary: WILSY_CRM_TENANT_BOUNDARY.noSharedDataDoctrine
+});
+
+/**
+ * @function buildWilsyCrmInvestorTelemetryStrip
+ * @description Builds the source-required investor strip contract for sovereign root hash, sealed receipts and revenue telemetry.
+ * @returns {Object} Investor telemetry strip contract.
+ * @collaboration Keeps investor-grade CRM telemetry honest until live backend receipts and revenue streams are connected.
+ */
+export const buildWilsyCrmInvestorTelemetryStrip = () => Object.freeze({
+  version: WILSY_CRM_MODULE_CATALOG_VERSION,
+  noFakeMetrics: true,
+  sourceStatus: WILSY_CRM_SOURCE_STATUS.sourceRequired,
+  routePosture: WILSY_CRM_ROUTE_POSTURE.planned,
+  telemetry: WILSY_CRM_INVESTOR_TELEMETRY_CONTRACT,
+  modules: Object.freeze(['investor_strip', 'revenue_desk', 'forensic_sales_flow', 'compliance_hud', 'governance_ledger']),
+  displayDoctrine: 'Show source-required posture instead of fabricated investor metrics.'
+});
+
+export const WILSY_CRM_SOVEREIGN_SALES_BLUEPRINT = buildWilsyCrmSovereignSalesBlueprint();
+
+export const WILSY_CRM_FORENSIC_SALES_FLOW = buildWilsyCrmForensicSalesFlow();
+
+export const WILSY_CRM_INVESTOR_TELEMETRY_STRIP = buildWilsyCrmInvestorTelemetryStrip();
 
 export const WILSY_CRM_MODULE_CATALOG_HEALTH = assertWilsyCrmModuleCatalog();
 
