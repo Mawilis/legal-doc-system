@@ -874,10 +874,10 @@ function buildWilsyRegulatorPackText({ identity, proof }) {
     '-------------',
     `Status: ${proof.label}`,
     `Raw status: ${proof.status}`,
-    `Safe-window receipts: ${proof.receiptCount}`,
-    `Review receipts: ${proof.reviewReceiptCount}`,
+    `Sealed receipts: ${proof.receiptCount}`,
+    `Review blockers: ${proof.reviewReceiptCount}`,
     `Sealed receipts: ${proof.sealedReceiptCount}`,
-    `Clause bindings: ${proof.clausesAnchored}`,
+    `Compliance bindings: ${proof.clausesAnchored}`,
     `Receipt root: ${proof.receiptMerkleRoot || 'pending'}`,
     `Merkle root: ${proof.merkleRoot || 'pending'}`,
     `Backend authority: ${proof.backendAuthority ? 'TRUE' : 'FALSE'}`,
@@ -5129,8 +5129,8 @@ export function WilsyAccountCommandCenter({
               <section className="wac-mobile-section" data-wilsy-account-mobile-forensic-console="R18AC5">
                 <span className="wac-eyebrow">Forensic Bridge</span>
                 <h3>{forensicProof.label}</h3>
-                <article><small>Safe-window receipts</small><strong>{forensicProof.receiptCount}</strong></article>
-                <article><small>Clause bindings</small><strong>{forensicProof.clausesAnchored}</strong></article>
+                <article><small>Sealed receipts</small><strong>{forensicProof.receiptCount}</strong></article>
+                <article><small>Compliance bindings</small><strong>{forensicProof.clausesAnchored}</strong></article>
                 <article><small>Browser authority</small><strong>{forensicProof.browserAuthority ? 'Review' : 'Disabled'}</strong></article>
 
                 <div className="wac-mobile-actions">
@@ -5343,7 +5343,7 @@ export function WilsyAccountCommandCenter({
                 <article className="wac-compliance-final-cell">
                   <small>Merkle</small>
                   <strong>{forensicProof.compactRoot}</strong>
-                  <span>Proof root.</span>
+                  <span>Merkle root.</span>
                 </article>
               </div>
 
