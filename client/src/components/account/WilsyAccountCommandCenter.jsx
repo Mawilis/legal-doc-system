@@ -5326,24 +5326,48 @@ export function WilsyAccountCommandCenter({
 
               <div className="wac-compliance-final-proof">
                 <article className="wac-compliance-final-cell">
-                  <small>Privacy windows</small>
-                  <strong>{forensicProof.receiptCount}</strong>
-                  <span>Display-safe evidence.</span>
+                  <small>Sealed receipts</small>
+                  <strong>
+                    {complianceCommandPacket?.proof?.sealedReceiptCount ??
+                      complianceCommandPacket?.evidence?.sealedReceiptCount ??
+                      0}
+                  </strong>
+                  <span>Backend evidence receipts.</span>
                 </article>
                 <article className="wac-compliance-final-cell">
-                  <small>Controls</small>
-                  <strong>{forensicProof.clausesAnchored}</strong>
-                  <span>Anchored policies.</span>
+                  <small>Compliance bindings</small>
+                  <strong>
+                    {complianceCommandPacket?.proof?.clausesAnchored ??
+                      complianceCommandPacket?.evidence?.clausesAnchored ??
+                      0}
+                  </strong>
+                  <span>POPIA · FICA · AUDIT · EXPORT.</span>
                 </article>
                 <article className="wac-compliance-final-cell">
-                  <small>Reviews</small>
-                  <strong>{forensicProof.reviewReceiptCount}</strong>
-                  <span>Assurance receipts.</span>
+                  <small>Blockers</small>
+                  <strong>
+                    {Array.isArray(complianceCommandPacket?.proof?.blockers)
+                      ? complianceCommandPacket.proof.blockers.length
+                      : 0}
+                  </strong>
+                  <span>Proof rail clear.</span>
                 </article>
                 <article className="wac-compliance-final-cell">
-                  <small>Merkle</small>
-                  <strong>{forensicProof.compactRoot}</strong>
-                  <span>Merkle root.</span>
+                  <small>Merkle root</small>
+                  <strong>
+                    {(() => {
+                      const rootValue = String(
+                        complianceCommandPacket?.proof?.merkleRoot ||
+                          complianceCommandPacket?.evidence?.merkleRoot ||
+                          complianceCommandPacket?.proof?.compactRoot ||
+                          complianceCommandPacket?.evidence?.compactRoot ||
+                          ''
+                      ).replace(/[^a-z0-9]/gi, '').toUpperCase();
+
+                      return rootValue ? `${rootValue.slice(0, 10)}…${rootValue.slice(-6)}` : 'ROOT PENDING';
+                    })()}
+                  </strong>
+                  <span>Sealed proof digest.</span>
                 </article>
               </div>
 
@@ -5352,7 +5376,7 @@ export function WilsyAccountCommandCenter({
                 <span>
                   {forensicProof.blockers.length
                     ? forensicProof.blockers.join(' · ').toLowerCase().replaceAll('_', ' ')
-                    : 'Ready for board review, regulator export and tenant ledger inspection.'}
+                    : 'Zero blockers · sealed backend evidence · regulator bundle ready.'}
                 </span>
                 {forensicError && <span>{forensicError}</span>}
               </div>
