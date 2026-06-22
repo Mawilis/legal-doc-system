@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - CRM COMMAND CENTER [R18AD67-CRM-DASHBOARD-CATALOG-COMMAND-WIRE]                                                                         ║
+ * ║ WILSY OS - CRM COMMAND CENTER [R18AD73-CRM-WILSY-AI-MONETISATION-LAYER]                                                                         ║
  * ║ [EXECUTIVE DASHBOARD PARITY | ZOHO-CLEAN MODULE RAIL | SOURCE-TRUTH CRM | TENANT BRANDING RUNTIME | WILSY AI COMMAND ENGINE]        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: R18AD67-CRM-DASHBOARD-CATALOG-COMMAND-WIRE | PRODUCTION READY | CRM OPERATING SYSTEM SURFACE                                              ║
+ * ║ VERSION: R18AD73-CRM-WILSY-AI-MONETISATION-LAYER | PRODUCTION READY | CRM OPERATING SYSTEM SURFACE                                              ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/crm/CRMDashboard.jsx                                      ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                   ║
@@ -49,6 +49,13 @@ import {
 } from 'lucide-react';
 import * as crmService from '../../services/crmService';
 import {
+  activateWilsyAILicense,
+  buildWilsyAiLicensePlan,
+  createWilsyAIClientProof,
+  recordWilsyAIUsage,
+  syncWilsyAIEntitlements
+} from '../../services/WilsyAIService';
+import {
   WILSY_CRM_CATALOG_READINESS,
   WILSY_CRM_IMPORT_VENDOR_CATALOG,
   WILSY_CRM_MODULE_CATALOG,
@@ -80,6 +87,7 @@ import styles from './CRMDashboard.module.css';
 const WILSY_R18AD67_CRM_DASHBOARD_CATALOG_COMMAND_WIRE = 'R18AD67-CRM-DASHBOARD-CATALOG-COMMAND-WIRE';
 
 const WILSY_R18AD69_CRM_CATALOG_RENDER_GUARD = 'R18AD69-CRM-CATALOG-RENDER-GUARD';
+const WILSY_R18AD73_CRM_WILSY_AI_MONETISATION_LAYER = 'R18AD73-CRM-WILSY-AI-MONETISATION-LAYER';
 
 
 const WILSY_R9U_CRM_LIVE_OVERLAY_INLINE_IDENTITY_FIX = 'WILSY_R9U_CRM_LIVE_OVERLAY_INLINE_IDENTITY_FIX_ACTIVE';
@@ -750,7 +758,7 @@ bootWilsyR9WBodyMountedIdentityRail();
 
 
 
-const CRM_VERSION = 'R18AD67-CRM-DASHBOARD-CATALOG-COMMAND-WIRE';
+const CRM_VERSION = 'R18AD73-CRM-WILSY-AI-MONETISATION-LAYER';
 const DEFAULT_TENANT_ID = 'MASTER';
 const DEFAULT_PAGE_LIMIT = 25;
 const MAX_RECEIPTS = 14;
@@ -1707,6 +1715,328 @@ const getCrmDisplayValue = (row = {}, field = '') => {
   return String(value);
 };
 
+
+const CRM_WILSY_AI_INLINE_STYLES = Object.freeze({
+  shell: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(340px, 0.95fr) minmax(480px, 1.35fr) minmax(280px, 0.75fr)',
+    gap: 16,
+    alignItems: 'stretch',
+    padding: 18,
+    border: '1px solid rgba(234, 208, 96, 0.30)',
+    borderRadius: 24,
+    background: 'linear-gradient(135deg, rgba(7, 11, 18, 0.98), rgba(2, 4, 8, 0.98))',
+    boxShadow: '0 24px 70px rgba(0,0,0,0.36)',
+    marginBottom: 22,
+    overflow: 'hidden'
+  },
+  hero: {
+    display: 'grid',
+    gap: 10,
+    padding: 18,
+    borderRadius: 18,
+    border: '1px solid rgba(255,255,255,0.10)',
+    background: 'radial-gradient(circle at 0% 0%, rgba(234,208,96,0.16), transparent 42%), rgba(0,0,0,0.34)'
+  },
+  eyebrow: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+    color: '#e9d06a',
+    fontSize: 11,
+    letterSpacing: '0.22em',
+    fontWeight: 900,
+    textTransform: 'uppercase'
+  },
+  title: {
+    margin: 0,
+    color: '#ffffff',
+    fontSize: 24,
+    lineHeight: 1.05,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase'
+  },
+  copy: {
+    margin: 0,
+    color: 'rgba(255,255,255,0.70)',
+    lineHeight: 1.45,
+    fontSize: 13
+  },
+  proof: {
+    display: 'block',
+    color: '#8ef5c5',
+    fontSize: 10,
+    letterSpacing: '0.11em',
+    wordBreak: 'break-all'
+  },
+  planGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: 12
+  },
+  plan: {
+    display: 'grid',
+    gap: 8,
+    minWidth: 0,
+    padding: 14,
+    borderRadius: 16,
+    border: '1px solid rgba(255,255,255,0.11)',
+    background: 'rgba(255,255,255,0.035)'
+  },
+  planTitle: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 900,
+    lineHeight: 1.25,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  },
+  planMeta: {
+    color: 'rgba(255,255,255,0.62)',
+    fontSize: 11,
+    lineHeight: 1.4
+  },
+  planValue: {
+    color: '#e9d06a',
+    fontSize: 18,
+    fontWeight: 950,
+    letterSpacing: '0.06em'
+  },
+  actionRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 10,
+    alignItems: 'center',
+    marginTop: 4
+  },
+  button: {
+    minHeight: 38,
+    padding: '0 14px',
+    border: '1px solid rgba(234,208,96,0.45)',
+    background: 'linear-gradient(135deg, #dfc558, #fff5c7)',
+    color: '#151005',
+    fontWeight: 950,
+    letterSpacing: '0.08em',
+    cursor: 'pointer'
+  },
+  ghostButton: {
+    minHeight: 38,
+    padding: '0 14px',
+    border: '1px solid rgba(255,255,255,0.16)',
+    background: 'rgba(255,255,255,0.04)',
+    color: '#ffffff',
+    fontWeight: 850,
+    letterSpacing: '0.08em',
+    cursor: 'pointer'
+  },
+  telemetry: {
+    display: 'grid',
+    gap: 10,
+    padding: 16,
+    borderRadius: 18,
+    border: '1px solid rgba(142,245,197,0.20)',
+    background: 'rgba(9,22,18,0.38)'
+  },
+  telemetryRow: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) auto',
+    gap: 12,
+    alignItems: 'center',
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 12,
+    borderBottom: '1px solid rgba(255,255,255,0.07)',
+    paddingBottom: 8
+  }
+});
+
+/**
+ * @function buildCrmWilsyAiSourceSnapshot
+ * @description Builds the source heartbeat packet Wilsy AI needs before planning, licensing or usage recording.
+ * @param {Object} params - Source inputs.
+ * @returns {Object} Wilsy AI source snapshot.
+ * @collaboration Keeps CRM AI honest by showing source gates instead of fabricated scoring output.
+ */
+const buildCrmWilsyAiSourceSnapshot = ({ readiness = {}, collections = {}, sourceRegistryEvidence = {} } = {}) => {
+  const totalRecords = Object.values(collections || {}).reduce((sum, envelope) => (
+    sum + Number(envelope?.total || envelope?.items?.length || 0)
+  ), 0);
+
+  const financeRecords = ['invoices', 'quotes', 'contracts', 'revenue_desk'].reduce((sum, key) => (
+    sum + Number(collections?.[key]?.total || collections?.[key]?.items?.length || 0)
+  ), 0);
+
+  const salesRecords = ['leads', 'contacts', 'accounts', 'deals', 'opportunities'].reduce((sum, key) => (
+    sum + Number(collections?.[key]?.total || collections?.[key]?.items?.length || 0)
+  ), 0);
+
+  const sourceStatus = String(sourceRegistryEvidence?.sourceStatus || readiness?.posture || 'SOURCE_REQUIRED').toUpperCase();
+
+  return {
+    crm: {
+      live: Number(readiness?.liveSources || 0) > 0,
+      status: readiness?.posture || 'CRM_SOURCE_REQUIRED'
+    },
+    records: {
+      live: totalRecords > 0 || salesRecords > 0,
+      count: totalRecords,
+      salesRecords
+    },
+    finance: {
+      live: financeRecords > 0,
+      count: financeRecords
+    },
+    telemetry: {
+      live: Number(readiness?.liveSources || 0) > 0 || sourceStatus.includes('LIVE'),
+      readinessScore: Number(readiness?.score || 0)
+    },
+    evidence: {
+      live: Number(sourceRegistryEvidence?.total || sourceRegistryEvidence?.items?.length || 0) > 0,
+      count: Number(sourceRegistryEvidence?.total || sourceRegistryEvidence?.items?.length || 0),
+      sourceStatus
+    }
+  };
+};
+
+/**
+ * @function buildCrmWilsyAiAccessDecision
+ * @description Builds an executive permission packet for Wilsy AI licensing in CRM.
+ * @param {Object} params - Access inputs.
+ * @returns {Object} Access decision.
+ * @collaboration Ensures tenant AI monetisation cannot activate without operator authority.
+ */
+const buildCrmWilsyAiAccessDecision = ({ user = {} } = {}) => {
+  const role = String(user?.role || user?.roleKey || user?.tenantRole || '').toLowerCase();
+  const allowed = Boolean(
+    user?.sovereignAccess
+    || user?.omegaAccess
+    || user?.founderAccess
+    || ['founder', 'super_admin', 'admin', 'owner', 'omega'].includes(role)
+  );
+
+  return {
+    allowed,
+    reason: allowed
+      ? 'Executive operator permitted to review Wilsy AI licensing.'
+      : 'Executive permission is required before Wilsy AI can be licensed.'
+  };
+};
+
+/**
+ * @function buildCrmWilsyAiTenantProfile
+ * @description Builds the tenant profile used by Wilsy AI license planning.
+ * @param {Object} params - Tenant inputs.
+ * @returns {Object} Tenant profile packet.
+ * @collaboration Converts CRM tenant context into monetisable Wilsy AI planning without changing tenant data.
+ */
+const buildCrmWilsyAiTenantProfile = ({ currentTenantId = '', tenantIdentity = {}, tenantConfig = {}, activeTenant = {} } = {}) => ({
+  tenantId: currentTenantId,
+  name: tenantIdentity.displayName || tenantConfig.name || activeTenant.name || 'Wilsy OS Tenant',
+  industryKey: tenantConfig.industryKey || activeTenant.industryKey || activeTenant.industry || 'general_smb',
+  sourceStatus: tenantIdentity.sourceStatus || 'TENANT_PROFILE_CONTEXT',
+  archetype: {
+    wilsyAiUseCases: [
+      'Predictive lead scoring',
+      'Pipeline cockpit command',
+      'Customer success churn sentinel',
+      'Revenue desk IFRS evidence assistant',
+      'Compliance clause binder',
+      'Forensic sales receipt command'
+    ]
+  }
+});
+
+/**
+ * @function buildCrmWilsyAiDutyStack
+ * @description Builds CRM-specific Wilsy AI duties that can become paid license opportunities.
+ * @param {Object} params - Duty inputs.
+ * @returns {Array<Object>} CRM Wilsy AI duty rows.
+ * @collaboration Turns Sales CRM operations into monetisable tenant AI use cases without inventing live model results.
+ */
+const buildCrmWilsyAiDutyStack = ({ activeModule = 'leads', readiness = {} } = {}) => {
+  const sourceStatus = Number(readiness?.liveSources || 0) > 0 ? 'CRM_SOURCE_PARTIAL' : 'CRM_AI_SOURCE_REQUIRED';
+
+  return [
+    {
+      lane: 'Sales',
+      title: 'Predictive lead scoring',
+      reason: 'Rank leads by close probability once email, LinkedIn and CRM source rails are live.',
+      commandLabel: 'Score leads',
+      wilsyAiUseCase: 'Predictive lead scoring',
+      sourceStatus
+    },
+    {
+      lane: 'Sales',
+      title: 'Pipeline cockpit assistant',
+      reason: 'Explain weighted pipeline, churn risk and next-best-action from source-backed CRM records.',
+      commandLabel: 'Review pipeline',
+      wilsyAiUseCase: 'Pipeline cockpit command',
+      sourceStatus
+    },
+    {
+      lane: 'Customer',
+      title: 'Customer success churn sentinel',
+      reason: 'Tie adoption, support, renewal and HR performance signals to success telemetry.',
+      commandLabel: 'Review churn',
+      wilsyAiUseCase: 'Customer success churn sentinel',
+      sourceStatus
+    },
+    {
+      lane: 'Finance',
+      title: 'Revenue desk IFRS evidence assistant',
+      reason: 'Connect contracts, invoices, receipts and IFRS posture without fake revenue metrics.',
+      commandLabel: 'Review revenue',
+      wilsyAiUseCase: 'Revenue desk IFRS evidence assistant',
+      sourceStatus
+    },
+    {
+      lane: 'Compliance',
+      title: 'Compliance clause binder',
+      reason: 'Bind POPIA, GDPR and SOC2 posture to customer records and regulator export packs.',
+      commandLabel: 'Bind clauses',
+      wilsyAiUseCase: 'Compliance clause binder',
+      sourceStatus
+    },
+    {
+      lane: 'Wilsy AI',
+      title: `CRM command agent for ${titleizeCrmText(activeModule)}`,
+      reason: 'Meter tenant AI actions, record usage receipts and surface connector requirements.',
+      commandLabel: 'Run CRM AI',
+      wilsyAiUseCase: 'Forensic sales receipt command',
+      sourceStatus
+    }
+  ];
+};
+
+/**
+ * @function buildCrmWilsyAiCommercialPosture
+ * @description Builds the visible commercial posture for the CRM Wilsy AI strip.
+ * @param {Object} params - Commercial posture inputs.
+ * @returns {Object} Commercial posture packet.
+ * @collaboration Shows monetisation, source gates and receipt posture without claiming unlicensed AI execution.
+ */
+const buildCrmWilsyAiCommercialPosture = ({ planRows = [], entitlementPacket = {}, sourceSnapshot = {}, accessDecision = {} } = {}) => {
+  const activeLicenses = Number(entitlementPacket?.licenses?.filter?.(license => String(license?.licenseStatus || license?.status || '').toUpperCase() === 'ACTIVE')?.length || 0);
+  const plannedRevenue = planRows.reduce((sum, plan) => sum + Number(plan?.monthlyPriceZar || plan?.monthlyPrice || 0), 0);
+  const proof = createWilsyAIClientProof({
+    activeLicenses,
+    plannedRevenue,
+    planCount: planRows.length,
+    sourceSnapshot,
+    accessAllowed: accessDecision.allowed
+  });
+
+  return {
+    status: activeLicenses > 0 ? 'WILSY_AI_LICENSE_ACTIVE' : entitlementPacket?.sourceStatus || 'WILSY_AI_LICENSE_ROUTE_REQUIRED',
+    label: activeLicenses > 0 ? `${activeLicenses} active CRM AI licenses` : 'Wilsy AI monetisation ready',
+    plannedRevenue,
+    proof,
+    reason: entitlementPacket?.error || accessDecision.reason || 'Tenant AI licenses require backend entitlement authority.',
+    sourceStatus: entitlementPacket?.sourceStatus || 'WILSY_AI_ENTITLEMENT_SOURCE_REQUIRED'
+  };
+};
+
+
 /**
  * @function buildDefaultCrmDraft
  * @description Builds a draft record for the active CRM module.
@@ -1807,6 +2137,19 @@ const CRMDashboard = ({
   const [boardFilter, setBoardFilter] = useState('ALL');
   const [themePreference, setThemePreference] = useState(() => readWilsyCrmThemePreference());
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+  const [wilsyAiEntitlements, setWilsyAiEntitlements] = useState({
+    status: 'WILSY_AI_SOURCE_REQUIRED',
+    sourceStatus: 'WILSY_AI_ENTITLEMENT_SOURCE_REQUIRED',
+    plans: [],
+    licenses: [],
+    catalog: [],
+    error: ''
+  });
+  const [wilsyAiUsageReceipt, setWilsyAiUsageReceipt] = useState(null);
+  const [wilsyAiActionState, setWilsyAiActionState] = useState({
+    status: 'IDLE',
+    message: 'Wilsy AI CRM monetisation source gates ready.'
+  });
 
   /**
    * @function resolveInitialCrmAccountThemeId
@@ -1885,6 +2228,52 @@ const CRMDashboard = ({
   const aiMemo = useMemo(() => (
     buildCrmAiMemo({ readiness, activeModule, collections, evidenceTotal })
   ), [activeModule, collections, evidenceTotal, readiness]);
+
+  const crmWilsyAiAccessDecision = useMemo(() => (
+    buildCrmWilsyAiAccessDecision({ user })
+  ), [user]);
+
+  const crmWilsyAiSourceSnapshot = useMemo(() => (
+    buildCrmWilsyAiSourceSnapshot({ readiness, collections, sourceRegistryEvidence })
+  ), [collections, readiness, sourceRegistryEvidence]);
+
+  const crmWilsyAiTenantProfile = useMemo(() => (
+    buildCrmWilsyAiTenantProfile({ currentTenantId, tenantIdentity, tenantConfig, activeTenant })
+  ), [activeTenant, currentTenantId, tenantConfig, tenantIdentity]);
+
+  const crmWilsyAiDutyStack = useMemo(() => (
+    buildCrmWilsyAiDutyStack({ activeModule, readiness })
+  ), [activeModule, readiness]);
+
+  const crmWilsyAiLocalPlan = useMemo(() => (
+    buildWilsyAiLicensePlan({
+      tenantProfile: crmWilsyAiTenantProfile,
+      dailyDuties: crmWilsyAiDutyStack,
+      sourceSnapshot: crmWilsyAiSourceSnapshot,
+      accessDecision: crmWilsyAiAccessDecision
+    })
+  ), [crmWilsyAiAccessDecision, crmWilsyAiDutyStack, crmWilsyAiSourceSnapshot, crmWilsyAiTenantProfile]);
+
+  const wilsyAiPlanRows = useMemo(() => {
+    const serverPlans = Array.isArray(wilsyAiEntitlements?.plans) && wilsyAiEntitlements.plans.length
+      ? wilsyAiEntitlements.plans
+      : Array.isArray(wilsyAiEntitlements?.catalog) && wilsyAiEntitlements.catalog.length
+        ? wilsyAiEntitlements.catalog
+        : [];
+
+    return (serverPlans.length ? serverPlans : crmWilsyAiLocalPlan).slice(0, 6);
+  }, [crmWilsyAiLocalPlan, wilsyAiEntitlements]);
+
+  const wilsyAiPrimaryPlan = wilsyAiPlanRows[0] || crmWilsyAiLocalPlan[0] || null;
+
+  const wilsyAiCommercialPosture = useMemo(() => (
+    buildCrmWilsyAiCommercialPosture({
+      planRows: wilsyAiPlanRows,
+      entitlementPacket: wilsyAiEntitlements,
+      sourceSnapshot: crmWilsyAiSourceSnapshot,
+      accessDecision: crmWilsyAiAccessDecision
+    })
+  ), [crmWilsyAiAccessDecision, crmWilsyAiSourceSnapshot, wilsyAiEntitlements, wilsyAiPlanRows]);
 
   const visibleRows = useMemo(() => {
     const needle = searchTerm.trim().toLowerCase();
@@ -2381,6 +2770,50 @@ const CRMDashboard = ({
     loadModuleRecords(activeModule, pageState[activeModule]);
   }, [activeModule]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    setWilsyAiEntitlements(previous => ({
+      ...previous,
+      status: 'SYNCING',
+      sourceStatus: previous.sourceStatus || 'WILSY_AI_ENTITLEMENT_SOURCE_REQUIRED'
+    }));
+
+    syncWilsyAIEntitlements({
+      tenantId: currentTenantId,
+      tenantProfile: crmWilsyAiTenantProfile,
+      accessDecision: crmWilsyAiAccessDecision,
+      sourceSnapshot: crmWilsyAiSourceSnapshot
+    })
+      .then(packet => {
+        if (!isMounted) return;
+        setWilsyAiEntitlements({
+          status: packet?.status || packet?.sourceStatus || 'WILSY_AI_ENTITLEMENT_SYNCED',
+          sourceStatus: packet?.sourceStatus || (packet?.catalog?.length ? 'SERVER_ENTITLEMENT_CATALOG' : 'WILSY_AI_ENTITLEMENT_SOURCE_SILENT'),
+          plans: packet?.plans || packet?.planRows || [],
+          licenses: packet?.licenses || [],
+          catalog: packet?.catalog || [],
+          error: packet?.error || '',
+          raw: packet
+        });
+      })
+      .catch(error => {
+        if (!isMounted) return;
+        setWilsyAiEntitlements({
+          status: 'WILSY_AI_ENTITLEMENT_SOURCE_ERROR',
+          sourceStatus: 'WILSY_AI_ENTITLEMENT_SOURCE_SILENT',
+          plans: [],
+          licenses: [],
+          catalog: [],
+          error: error?.message || 'Wilsy AI entitlement sync failed.'
+        });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [crmWilsyAiAccessDecision, crmWilsyAiSourceSnapshot, crmWilsyAiTenantProfile, currentTenantId]);
+
   const sourceLabel = compactCrmSignal(currentCollection.sourceStatus || sourceState[activeModule]?.status || 'SOURCE_REQUIRED');
   const ActiveWorkspaceIcon = CRM_WORKSPACES.find(workspace => workspace.id === activeWorkspace)?.icon || Home;
 
@@ -2421,6 +2854,143 @@ const CRMDashboard = ({
       </button>
     );
   });
+
+  /**
+   * @function handleCrmWilsyAiUsageProbe
+   * @description Records a source-aware Wilsy AI CRM usage probe through the Wilsy AI usage ledger.
+   * @param {Object} plan - Wilsy AI plan row.
+   * @returns {Promise<void>} Usage probe completion.
+   * @collaboration Converts CRM AI clicks into measurable tenant AI usage without fabricating AI output.
+   */
+  const handleCrmWilsyAiUsageProbe = useCallback(async (plan = wilsyAiPrimaryPlan) => {
+    if (!plan) return;
+
+    setWilsyAiActionState({ status: 'SYNCING', message: 'Recording Wilsy AI CRM usage posture...' });
+
+    const sourceEvidence = createWilsyAIClientProof({
+      tenantId: currentTenantId,
+      moduleId: plan.moduleId,
+      planId: plan.id,
+      activeModule,
+      sourceSnapshot: crmWilsyAiSourceSnapshot,
+      action: 'CRM_AI_USAGE_PROBE'
+    });
+
+    const packet = await recordWilsyAIUsage({
+      tenantId: currentTenantId,
+      plan,
+      action: 'CRM_AI_USAGE_PROBE',
+      sourceStatus: wilsyAiCommercialPosture.sourceStatus,
+      sourceEvidence,
+      sourceSnapshot: crmWilsyAiSourceSnapshot
+    });
+
+    setWilsyAiUsageReceipt(packet);
+    setWilsyAiActionState({
+      status: packet?.ok === false ? 'SOURCE_REQUIRED' : 'RECORDED',
+      message: packet?.message || packet?.status || 'Wilsy AI CRM usage posture recorded.'
+    });
+
+    addReceipt('WILSY_AI_CRM_USAGE', plan.name || plan.title || 'Wilsy AI CRM plan usage', {
+      activeModule,
+      sourceEvidence,
+      sourceStatus: wilsyAiCommercialPosture.sourceStatus,
+      tenantId: currentTenantId
+    });
+  }, [activeModule, addReceipt, crmWilsyAiSourceSnapshot, currentTenantId, wilsyAiCommercialPosture.sourceStatus, wilsyAiPrimaryPlan]);
+
+  /**
+   * @function handleCrmWilsyAiActivatePlan
+   * @description Requests backend Wilsy AI license activation for a CRM plan.
+   * @param {Object} plan - Wilsy AI plan row.
+   * @returns {Promise<void>} Activation completion.
+   * @collaboration Keeps paid CRM AI activation backend-authoritative and receipt-aware.
+   */
+  const handleCrmWilsyAiActivatePlan = useCallback(async (plan = wilsyAiPrimaryPlan) => {
+    if (!plan) return;
+
+    setWilsyAiActionState({ status: 'SYNCING', message: 'Requesting Wilsy AI tenant license activation...' });
+
+    const packet = await activateWilsyAILicense({
+      tenantId: currentTenantId,
+      plan,
+      sourceSnapshot: crmWilsyAiSourceSnapshot
+    });
+
+    setWilsyAiActionState({
+      status: packet?.ok === false ? 'SOURCE_REQUIRED' : 'ACTIVATION_REQUESTED',
+      message: packet?.message || packet?.status || 'Wilsy AI license activation requested.'
+    });
+
+    addReceipt('WILSY_AI_LICENSE_ACTIVATION', plan.name || plan.title || 'Wilsy AI CRM license', {
+      activeModule,
+      moduleId: plan.moduleId,
+      licenseId: packet?.licenseId || plan.licenseId || 'LICENSE_SOURCE_REQUIRED',
+      tenantId: currentTenantId
+    });
+
+    const refreshed = await syncWilsyAIEntitlements({
+      tenantId: currentTenantId,
+      tenantProfile: crmWilsyAiTenantProfile,
+      accessDecision: crmWilsyAiAccessDecision,
+      sourceSnapshot: crmWilsyAiSourceSnapshot
+    });
+
+    setWilsyAiEntitlements({
+      status: refreshed?.status || refreshed?.sourceStatus || 'WILSY_AI_ENTITLEMENT_SYNCED',
+      sourceStatus: refreshed?.sourceStatus || 'WILSY_AI_ENTITLEMENT_SOURCE_SILENT',
+      plans: refreshed?.plans || refreshed?.planRows || [],
+      licenses: refreshed?.licenses || [],
+      catalog: refreshed?.catalog || [],
+      error: refreshed?.error || '',
+      raw: refreshed
+    });
+  }, [activeModule, addReceipt, crmWilsyAiAccessDecision, crmWilsyAiSourceSnapshot, crmWilsyAiTenantProfile, currentTenantId, wilsyAiPrimaryPlan]);
+
+  const wilsyAiMonetisationStrip = (
+    <section data-wilsy-crm-ai-monetisation-strip="true" style={CRM_WILSY_AI_INLINE_STYLES.shell}>
+      <article style={CRM_WILSY_AI_INLINE_STYLES.hero}>
+        <span style={CRM_WILSY_AI_INLINE_STYLES.eyebrow}><Sparkles size={15} /> Wilsy AI Monetisation Layer</span>
+        <h3 style={CRM_WILSY_AI_INLINE_STYLES.title}>{wilsyAiCommercialPosture.label}</h3>
+        <p style={CRM_WILSY_AI_INLINE_STYLES.copy}>
+          Paid tenant AI for predictive lead scoring, pipeline cockpit, customer success telemetry, revenue intelligence,
+          compliance binding and forensic sales receipts. No fake AI output: every activation is entitlement-gated.
+        </p>
+        <small style={CRM_WILSY_AI_INLINE_STYLES.proof}>
+          CLIENT PROOF {String(wilsyAiCommercialPosture.proof || '').slice(0, 18)}…{String(wilsyAiCommercialPosture.proof || '').slice(-12)}
+        </small>
+      </article>
+
+      <div style={CRM_WILSY_AI_INLINE_STYLES.planGrid}>
+        {wilsyAiPlanRows.slice(0, 3).map(plan => (
+          <article key={plan.id || plan.moduleId || plan.name} style={CRM_WILSY_AI_INLINE_STYLES.plan}>
+            <span style={CRM_WILSY_AI_INLINE_STYLES.eyebrow}>{compactCrmSignal(plan.licenseStatus || plan.sourceStatus || 'UNLICENSED')}</span>
+            <strong style={CRM_WILSY_AI_INLINE_STYLES.planTitle}>{plan.name || plan.title || plan.moduleId || 'Wilsy AI CRM Plan'}</strong>
+            <small style={CRM_WILSY_AI_INLINE_STYLES.planMeta}>{plan.valuePromise || plan.reason || 'Source-gated CRM AI use case.'}</small>
+            <b style={CRM_WILSY_AI_INLINE_STYLES.planValue}>R {Number(plan.monthlyPriceZar || plan.monthlyPrice || 0).toLocaleString('en-ZA')}/mo</b>
+            <small style={CRM_WILSY_AI_INLINE_STYLES.planMeta}>
+              {Number(plan.dailyRequestLimit || 0)} daily requests · {Number(plan.monthlyAutomationLimit || 0).toLocaleString('en-ZA')} monthly automations
+            </small>
+          </article>
+        ))}
+      </div>
+
+      <aside style={CRM_WILSY_AI_INLINE_STYLES.telemetry}>
+        <div style={CRM_WILSY_AI_INLINE_STYLES.telemetryRow}><span>Entitlement</span><strong>{compactCrmSignal(wilsyAiEntitlements.sourceStatus || wilsyAiEntitlements.status)}</strong></div>
+        <div style={CRM_WILSY_AI_INLINE_STYLES.telemetryRow}><span>Usage ledger</span><strong>{compactCrmSignal(wilsyAiUsageReceipt?.status || wilsyAiActionState.status)}</strong></div>
+        <div style={CRM_WILSY_AI_INLINE_STYLES.telemetryRow}><span>Planned MRR</span><strong>R {Number(wilsyAiCommercialPosture.plannedRevenue || 0).toLocaleString('en-ZA')}</strong></div>
+        <div style={CRM_WILSY_AI_INLINE_STYLES.actionRow}>
+          <button type="button" style={CRM_WILSY_AI_INLINE_STYLES.button} onClick={() => handleCrmWilsyAiActivatePlan(wilsyAiPrimaryPlan)}>
+            Activate CRM AI
+          </button>
+          <button type="button" style={CRM_WILSY_AI_INLINE_STYLES.ghostButton} onClick={() => handleCrmWilsyAiUsageProbe(wilsyAiPrimaryPlan)}>
+            Record Usage
+          </button>
+        </div>
+        <small style={CRM_WILSY_AI_INLINE_STYLES.planMeta}>{wilsyAiActionState.message || wilsyAiCommercialPosture.reason}</small>
+      </aside>
+    </section>
+  );
 
   /**
    * @function homeCards
@@ -2634,17 +3204,18 @@ const CRMDashboard = ({
 
   const aiView = (
     <div className={styles.aiGrid}>
+      {wilsyAiMonetisationStrip}
       <section className={styles.aiPanel}>
-        <span><Sparkles size={15} /> Wilsy AI CRM Memo</span>
+        <span><Sparkles size={15} /> Wilsy AI CRM Command</span>
         <h3>{aiMemo.headline}</h3>
         <p>{aiMemo.detail}</p>
         <strong>{aiMemo.next}</strong>
       </section>
       <section className={styles.aiPanel}>
-        <span><Wand2 size={15} /> Command Engine</span>
-        <h3>{compactCrmSignal(readiness.posture)}</h3>
-        <p>Wilsy AI reads source posture, customer records, pipeline value, authority, contract posture and evidence route status.</p>
-        <button type="button" onClick={loadAllData}>Run Source Review</button>
+        <span><Wand2 size={15} /> Paid AI Source Gates</span>
+        <h3>{compactCrmSignal(wilsyAiCommercialPosture.sourceStatus)}</h3>
+        <p>{wilsyAiCommercialPosture.reason}</p>
+        <button type="button" onClick={() => handleCrmWilsyAiUsageProbe(wilsyAiPrimaryPlan)}>Record AI Usage Probe</button>
       </section>
     </div>
   );
@@ -3655,7 +4226,7 @@ const workspaceContent = {
 
             <section className={styles.aiRailCard}>
               <span>Wilsy AI</span>
-              <p>{aiMemo.headline}</p>
+              <p>{wilsyAiCommercialPosture.label}</p>
             </section>
 
             <section className={styles.receiptFeed}>
