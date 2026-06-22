@@ -1,0 +1,259 @@
+/*
+ * WILSY OS — SOVEREIGN THEME AUTHORITY LAYER
+ * Version: R18AD60-THEME-AUTHORITY-STAGE1
+ * Purpose: Boardroom day clarity, forensic night depth, regulator-ready typography,
+ * compliance glow, active module authority and telemetry pulse.
+ */
+
+:root {
+  --wilsy-authority-gold: #d4af37;
+  --wilsy-authority-gold-soft: rgba(212, 175, 55, 0.22);
+  --wilsy-authority-gold-glow: rgba(212, 175, 55, 0.58);
+  --wilsy-day-bg: #fdfbf3;
+  --wilsy-day-surface: #fffef9;
+  --wilsy-day-panel: #f7f1df;
+  --wilsy-day-text: #080808;
+  --wilsy-day-muted: #3e4658;
+  --wilsy-night-bg: #020306;
+  --wilsy-night-surface: #070a11;
+  --wilsy-night-panel: #0b1020;
+  --wilsy-night-text: rgba(255, 255, 255, 0.92);
+  --wilsy-night-heading: #ffffff;
+  --wilsy-regulator-line-height: 1.5;
+  --wilsy-label-weight: 700;
+  --wilsy-heading-weight: 850;
+  --wilsy-receipt-font: "SFMono-Regular", "Cascadia Mono", "Roboto Mono", "Menlo", monospace;
+}
+
+/* Universal typography discipline */
+body,
+[data-wilsy-account-command-center="true"],
+.crmShell,
+[class*="Dashboard"],
+[class*="dashboard"],
+[class*="Command"],
+[class*="command"] {
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  font-variant-ligatures: contextual;
+}
+
+h1,
+h2,
+h3,
+.wac-narrative h1,
+.wac-panel h3,
+.crmShell h1,
+.crmShell h2,
+.crmShell h3 {
+  font-weight: var(--wilsy-heading-weight) !important;
+  letter-spacing: -0.045em !important;
+  line-height: 1.02 !important;
+}
+
+small,
+label,
+.wac-eyebrow,
+.wac-tab,
+.wac-proof-status,
+[class*="label"],
+[class*="eyebrow"] {
+  font-weight: var(--wilsy-label-weight) !important;
+  letter-spacing: 0.13em !important;
+  text-transform: uppercase !important;
+}
+
+p,
+li,
+span,
+button,
+input,
+select,
+textarea,
+.wac-panel p,
+.crmShell p {
+  line-height: var(--wilsy-regulator-line-height);
+}
+
+/* Day Mode: boardroom clarity */
+body.day-mode,
+[data-wilsy-resolved-mode="day"],
+[data-wilsy-mode="day"],
+.crmShell[data-wilsy-mode="day"],
+.crmShell[data-wilsy-resolved-mode="day"],
+.crmShell[data-wilsy-theme="pearl_command"],
+.crmShell[data-wilsy-theme="wilsy_daybreak"] {
+  color-scheme: light;
+  color: var(--wilsy-day-text) !important;
+}
+
+body.day-mode,
+[data-wilsy-resolved-mode="day"] {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(212, 175, 55, 0.12), transparent 34%),
+    linear-gradient(180deg, var(--wilsy-day-bg), #f3ecd8) !important;
+}
+
+[data-wilsy-resolved-mode="day"] .wac-panel,
+[data-wilsy-resolved-mode="day"] .wac-id,
+[data-wilsy-resolved-mode="day"] .wac-narrative,
+[data-wilsy-resolved-mode="day"] .wac-signal,
+[data-wilsy-resolved-mode="day"] .wac-proof,
+.crmShell[data-wilsy-theme="pearl_command"] :is(article, section, aside),
+.crmShell[data-wilsy-theme="wilsy_daybreak"] :is(article, section, aside) {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(212, 175, 55, 0.10), transparent 34%),
+    linear-gradient(135deg, var(--wilsy-day-surface), var(--wilsy-day-panel)) !important;
+  border-color: rgba(74, 56, 18, 0.18) !important;
+  color: var(--wilsy-day-text) !important;
+}
+
+[data-wilsy-resolved-mode="day"] :is(h1, h2, h3, strong),
+.crmShell[data-wilsy-theme="pearl_command"] :is(h1, h2, h3, strong),
+.crmShell[data-wilsy-theme="wilsy_daybreak"] :is(h1, h2, h3, strong) {
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+[data-wilsy-resolved-mode="day"] :is(p, small, span, label),
+.crmShell[data-wilsy-theme="pearl_command"] :is(p, small, span, label),
+.crmShell[data-wilsy-theme="wilsy_daybreak"] :is(p, small, span, label) {
+  color: var(--wilsy-day-muted) !important;
+}
+
+/* Night Mode: forensic depth */
+body.night-mode,
+[data-wilsy-resolved-mode="night"],
+[data-wilsy-mode="night"],
+.crmShell[data-wilsy-mode="night"],
+.crmShell[data-wilsy-resolved-mode="night"],
+.crmShell[data-wilsy-theme="sovereign_black"],
+.crmShell[data-wilsy-theme="wilsy_aurora"] {
+  color-scheme: dark;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(212, 175, 55, 0.12), transparent 34%),
+    radial-gradient(circle at 88% 8%, rgba(126, 78, 216, 0.16), transparent 32%),
+    linear-gradient(180deg, var(--wilsy-night-bg), #05070d) !important;
+  color: var(--wilsy-night-text) !important;
+}
+
+[data-wilsy-resolved-mode="night"] :is(h1, h2, h3, strong),
+.crmShell[data-wilsy-theme="sovereign_black"] :is(h1, h2, h3, strong),
+.crmShell[data-wilsy-theme="wilsy_aurora"] :is(h1, h2, h3, strong) {
+  color: var(--wilsy-night-heading) !important;
+}
+
+[data-wilsy-resolved-mode="night"] :is(small, label, .wac-eyebrow),
+.crmShell[data-wilsy-theme="sovereign_black"] :is(small, label),
+.crmShell[data-wilsy-theme="wilsy_aurora"] :is(small, label) {
+  color: rgba(255, 240, 183, 0.88) !important;
+}
+
+/* Persistent active authority highlight */
+.wac-tab[data-active="true"],
+.wac-mode[data-active="true"],
+.wac-skin[data-active="true"],
+.wac-signal[data-active="true"],
+.active-panel,
+[data-active="true"][class*="panel"],
+[data-selected="true"],
+[aria-selected="true"] {
+  border-color: var(--wilsy-authority-gold) !important;
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.40),
+    0 0 22px rgba(212, 175, 55, 0.26),
+    0 18px 48px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* Compliance clause glow */
+.wac-compliance-final-cell,
+.wac-compliance-panel article,
+.wac-compliance-command-shell article,
+[data-wilsy-compliance-cockpit] article,
+[class*="compliance"] article,
+[class*="Compliance"] article {
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.wac-compliance-final-cell:hover,
+.wac-compliance-panel article:hover,
+.wac-compliance-command-shell article:hover,
+[data-wilsy-compliance-cockpit] article:hover,
+[class*="compliance"] article:hover,
+[class*="Compliance"] article:hover {
+  border-color: rgba(212, 175, 55, 0.66) !important;
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.22),
+    0 0 26px rgba(212, 175, 55, 0.18) !important;
+  transform: translateY(-1px);
+}
+
+/* Receipt and Merkle typography */
+.wac-compliance-final-cell strong,
+[class*="receipt"] strong,
+[class*="Receipt"] strong,
+[class*="merkle"],
+[class*="Merkle"],
+[class*="hash"],
+[class*="Hash"] {
+  font-family: var(--wilsy-receipt-font) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Telemetry pulse for verified/sealed receipt counters */
+.wac-compliance-final-proof .wac-compliance-final-cell:first-child strong,
+[data-wilsy-compliance-cockpit] article:first-child strong,
+[class*="receipt"][data-status="SEALED"],
+[class*="Receipt"][data-status="SEALED"] {
+  animation: wilsyVerifiedReceiptPulse 2200ms ease-in-out infinite;
+}
+
+@keyframes wilsyVerifiedReceiptPulse {
+  0%, 100% {
+    text-shadow: 0 0 0 rgba(212, 175, 55, 0);
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 0 0 14px rgba(212, 175, 55, 0.44);
+    filter: brightness(1.08);
+  }
+}
+
+/* Baseline grid discipline */
+.wac-panel,
+.wac-preferences,
+.wac-profile-grid,
+.wac-security-grid,
+.wac-compliance-grid,
+.crmShell :is(main, section, article, aside) {
+  align-items: stretch;
+}
+
+.wac-panel,
+.wac-proof,
+.wac-profile-card,
+.wac-security-card,
+.wac-compliance-final-cell,
+.crmShell article {
+  min-height: 0;
+}
+
+/* Accessibility: reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .wac-compliance-final-proof .wac-compliance-final-cell:first-child strong,
+  [data-wilsy-compliance-cockpit] article:first-child strong,
+  [class*="receipt"][data-status="SEALED"],
+  [class*="Receipt"][data-status="SEALED"] {
+    animation: none !important;
+  }
+
+  .wac-compliance-final-cell,
+  .wac-compliance-panel article,
+  .wac-compliance-command-shell article,
+  [data-wilsy-compliance-cockpit] article,
+  [class*="compliance"] article,
+  [class*="Compliance"] article {
+    transition: none !important;
+  }
+}
