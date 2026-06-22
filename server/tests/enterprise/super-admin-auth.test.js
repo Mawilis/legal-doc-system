@@ -30,6 +30,11 @@ describe('🏛️ WILSY OS 2050 - SUPER ADMIN AUTHENTICATION SUITE', function ()
   const adminPassword = process.env.ADMIN_PASSWORD || process.env.JWT_SECRET || 'test-jwt-secret';
 
   // Full login + MFA helper (required because mfaRequired = true)
+  /**
+   * @function fullLogin
+   * @description Performs the full super-admin login and MFA handshake used by the enterprise auth suite.
+   * @collaboration Exercises SuperAdminAuth login, MFA verification, token issuing, and forensic request identity contracts.
+   */
   async function fullLogin(testName) {
     const ip = '192.168.1.42';
     const loginReq = {
@@ -236,7 +241,7 @@ describe('🏛️ WILSY OS 2050 - SUPER ADMIN AUTHENTICATION SUITE', function ()
     authenticate(mockReq, mockRes, () => {});
     await new Promise((r) => setImmediate(r));
 
-    // IP change → must trigger AUTH_003
+    // IP change → must trigger AUTH_009
     mockReq.headers['x-forwarded-for'] = '10.0.0.1';
     mockReq.socket.remoteAddress = '10.0.0.1';
     mockReq.ip = '10.0.0.1';
@@ -248,7 +253,7 @@ describe('🏛️ WILSY OS 2050 - SUPER ADMIN AUTHENTICATION SUITE', function ()
     await new Promise((r) => setImmediate(r));
 
     expect(nextCalled).to.be.false;
-    expect(mockRes.body.code).to.equal('AUTH_003');
+    expect(mockRes.body.code).to.equal('AUTH_009');
   });
 
   after(() => {
