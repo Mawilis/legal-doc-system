@@ -5328,8 +5328,8 @@ export function WilsyAccountCommandCenter({
                 <article className="wac-compliance-final-cell">
                   <small>Sealed receipts</small>
                   <strong>
-                    {complianceCommandPacket?.proof?.sealedReceiptCount ??
-                      complianceCommandPacket?.evidence?.sealedReceiptCount ??
+                    {complianceCommandPacket?.evidence?.sealedReceiptCount ??
+                      complianceCommandPacket?.proof?.sealedReceiptCount ??
                       0}
                   </strong>
                   <span>Backend evidence receipts.</span>
@@ -5337,8 +5337,8 @@ export function WilsyAccountCommandCenter({
                 <article className="wac-compliance-final-cell">
                   <small>Compliance bindings</small>
                   <strong>
-                    {complianceCommandPacket?.proof?.clausesAnchored ??
-                      complianceCommandPacket?.evidence?.clausesAnchored ??
+                    {complianceCommandPacket?.evidence?.clausesAnchored ??
+                      complianceCommandPacket?.proof?.clausesAnchored ??
                       0}
                   </strong>
                   <span>POPIA · FICA · AUDIT · EXPORT.</span>
@@ -5346,9 +5346,11 @@ export function WilsyAccountCommandCenter({
                 <article className="wac-compliance-final-cell">
                   <small>Blockers</small>
                   <strong>
-                    {Array.isArray(complianceCommandPacket?.proof?.blockers)
-                      ? complianceCommandPacket.proof.blockers.length
-                      : 0}
+                    {complianceCommandPacket?.evidence?.receiptSealStatus === 'SEALED'
+                      ? 0
+                      : Array.isArray(complianceCommandPacket?.proof?.blockers)
+                        ? complianceCommandPacket.proof.blockers.length
+                        : 0}
                   </strong>
                   <span>Proof rail clear.</span>
                 </article>
@@ -5357,10 +5359,10 @@ export function WilsyAccountCommandCenter({
                   <strong>
                     {(() => {
                       const rootValue = String(
-                        complianceCommandPacket?.proof?.merkleRoot ||
-                          complianceCommandPacket?.evidence?.merkleRoot ||
-                          complianceCommandPacket?.proof?.compactRoot ||
+                        complianceCommandPacket?.evidence?.merkleRoot ||
+                          complianceCommandPacket?.proof?.merkleRoot ||
                           complianceCommandPacket?.evidence?.compactRoot ||
+                          complianceCommandPacket?.proof?.compactRoot ||
                           ''
                       ).replace(/[^a-z0-9]/gi, '').toUpperCase();
 

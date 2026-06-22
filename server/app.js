@@ -87,7 +87,7 @@ const corsMiddleware = (req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.header(
     'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Tenant-ID, x-tenant-id, X-Tenant-Id, x-tenant-id, X-Request-ID, x-request-id, X-Trace-ID, x-trace-id, X-Correlation-ID, x-correlation-id, X-Forensic-Timestamp, x-forensic-timestamp, X-Cryptographic-Nonce, x-cryptographic-nonce, X-Request-Seal, x-request-seal, X-Request-Proof, x-request-proof, X-Artifact-Type, x-artifact-type, X-Wilsy-Tenant-ID, x-wilsy-tenant-id, X-Wilsy-Artifact-Type, x-wilsy-artifact-type, X-Binary-Strike, x-binary-strike, X-Quantum-Verified, x-quantum-verified'
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Tenant-ID, x-tenant-id, X-Tenant-Id, x-tenant-id, X-Request-ID, x-request-id, X-Trace-ID, x-trace-id, X-Correlation-ID, x-correlation-id, X-Forensic-Timestamp, x-forensic-timestamp, X-Cryptographic-Nonce, x-cryptographic-nonce, X-Request-Seal, x-request-seal, X-Request-Proof, x-request-proof, X-Artifact-Type, x-artifact-type, X-Wilsy-Tenant-ID, x-wilsy-tenant-id, X-Wilsy-Artifact-Type, x-wilsy-artifact-type, X-Binary-Strike, x-binary-strike, X-Quantum-Verified, x-quantum-verified, X-Wilsy-Account-Client, x-wilsy-account-client, X-Wilsy-Account-Command, x-wilsy-account-command, X-Wilsy-Client, x-wilsy-client'
   );
   res.header(
     'Access-Control-Expose-Headers',
