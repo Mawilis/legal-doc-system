@@ -551,7 +551,7 @@ const getModuleIcon = (key) => {
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
  */
-const FounderDashboard = () => {
+const FounderDashboard = ({ onSwitchDashboard }) => {
   // --------------------------------------------------------------------------
   // Context hooks
   // --------------------------------------------------------------------------
@@ -875,11 +875,46 @@ const FounderDashboard = () => {
    *   operating surface. Codex keeps this as the single module activation path.
    */
   const activateModule = useCallback((moduleKey) => {
+    const standaloneDashboardRoutes = {
+      EXECUTIVE_OVERSIGHT: 'EXECUTIVE',
+      CEO_DASHBOARD: 'EXECUTIVE',
+      SALES_CRM: 'CRM_DASHBOARD',
+      CRM_DASHBOARD: 'CRM_DASHBOARD'
+    };
+
+    const standaloneDashboardKey = standaloneDashboardRoutes[moduleKey];
+
+    if (standaloneDashboardKey) {
+      if (onSwitchDashboard) {
+        onSwitchDashboard(standaloneDashboardKey);
+        return;
+      }
+
+      if (typeof window !== 'undefined') {
+        const dashboardRoute = standaloneDashboardKey === 'CRM_DASHBOARD' ? '/crm' : '/executive';
+        const requestPacket = {
+          dashboardKey: standaloneDashboardKey,
+          moduleKey,
+          route: dashboardRoute,
+          source: 'FounderDashboard',
+          requestedAt: new Date().toISOString()
+        };
+
+        window.localStorage.setItem('wilsy_last_dashboard', standaloneDashboardKey);
+        window.localStorage.setItem('wilsy:requested-dashboard', JSON.stringify(requestPacket));
+        window.dispatchEvent(new CustomEvent('wilsy:navigate-dashboard', { detail: requestPacket }));
+        window.dispatchEvent(new CustomEvent('wilsy:switch-dashboard', { detail: requestPacket }));
+      }
+
+      return;
+    }
+
     if (moduleKey === 'BOARDROOM_HUD') {
       setBoardroomReturnModule(activeModule === 'BOARDROOM_HUD' ? 'SINGULARITY_MATRIX' : activeModule);
     }
+
     setActiveModule(moduleKey);
-  }, [activeModule]);
+  }, [activeModule, onSwitchDashboard]);
 
   useEffect(() => {
     if (activeModule === 'SALES_CRM') {
@@ -1087,7 +1122,7 @@ const handleKeyDown = (e) => {
     { id: 'MODULE_INVESTOR_PROOF', label: 'Investor Proof Console', icon: <BadgeCheck size={16} />, handler: () => setActiveModule('INVESTOR_PROOF'), description: 'Why WILSY OS wins' },
     { id: 'MODULE_BOARDROOM_HUD', label: 'Boardroom HUD', icon: <Eye size={16} />, handler: () => setActiveModule('BOARDROOM_HUD'), description: 'Live Telemetry Override' },
     { id: 'MODULE_SINGULARITY_MATRIX', label: 'Singularity Matrix (HUDs)', icon: <BarChart3 size={16} />, handler: () => setActiveModule('SINGULARITY_MATRIX'), description: 'The Big Three HUDs' },
-    { id: 'MODULE_EXECUTIVE_OVERSIGHT', label: 'Executive Oversight', icon: <Crown size={16} />, handler: () => setActiveModule('EXECUTIVE_OVERSIGHT'), description: 'C-Suite Analytics' },
+    { id: 'MODULE_EXECUTIVE_OVERSIGHT', label: 'Executive Oversight', icon: <Crown size={16} />, handler: () => onSwitchDashboard ? onSwitchDashboard('EXECUTIVE') : setActiveModule('EXECUTIVE_OVERSIGHT'), description: 'C-Suite Analytics' },
     { id: 'MODULE_CLOUD_UPLINK', label: 'Cloud Uplink', icon: <Server size={16} />, handler: () => setActiveModule('CLOUD_UPLINK'), description: 'Global Node Telemetry' },
     { id: 'MODULE_REVENUE_LEDGER', label: 'Mathematics (Revenue)', icon: <TrendingUp size={16} />, handler: () => setActiveModule('REVENUE_LEDGER'), description: 'View ARR/MRR metrics' },
     { id: 'MODULE_BILLING_HUB', label: 'Billing Hub', icon: <CreditCard size={16} />, handler: () => setActiveModule('BILLING_HUB'), description: 'Billing, courts, collections and pricing control' },
@@ -1105,7 +1140,7 @@ const handleKeyDown = (e) => {
     { id: 'MODULE_CEO_DASHBOARD', label: 'CEO Dashboard', icon: <Crown size={16} />, handler: () => setActiveModule('CEO_DASHBOARD'), description: 'Chief Executive Officer view' },
     { id: 'MODULE_COO_DASHBOARD', label: 'COO Dashboard', icon: <Briefcase size={16} />, handler: () => setActiveModule('COO_DASHBOARD'), description: 'Chief Operations Officer view' },
     { id: 'MODULE_HR_DASHBOARD', label: 'HR Department', icon: <Users size={16} />, handler: () => setActiveModule('HR_DASHBOARD'), description: 'Human Resources suite' },
-    { id: 'MODULE_SALES_CRM', label: 'Sales & CRM', icon: <MessageSquare size={16} />, handler: () => setActiveModule('SALES_CRM'), description: 'CRM, Leads, Deals, Projects' },
+    { id: 'MODULE_SALES_CRM', label: 'Sales & CRM', icon: <MessageSquare size={16} />, handler: () => activateModule('SALES_CRM'), description: 'CRM, Leads, Deals, Projects' },
     { id: 'MODULE_IT_OPS', label: 'IT Operations', icon: <Server size={16} />, handler: () => setActiveModule('IT_OPS'), description: 'System Engineers & Infrastructure' },
     { id: 'MODULE_FINANCE_DASHBOARD', label: 'Finance', icon: <DollarSign size={16} />, handler: () => setActiveModule('FINANCE_DASHBOARD') },
     { id: 'MODULE_LEGAL_DASHBOARD', label: 'Legal', icon: <Gavel size={16} />, handler: () => setActiveModule('LEGAL_DASHBOARD') },
@@ -1157,7 +1192,7 @@ const handleKeyDown = (e) => {
       id: 'CAPABILITY_COMMAND_MANIFEST_EXPORT',
       label: 'Export Sealed Command Manifest',
       icon: <FileCheck2 size={16} />,
-      handler: () => setActiveModule('EXECUTIVE_OVERSIGHT'),
+      handler: () => onSwitchDashboard ? onSwitchDashboard('EXECUTIVE') : setActiveModule('EXECUTIVE_OVERSIGHT'),
       description: 'Audit-ready command capability map'
     },
     {
@@ -1171,7 +1206,7 @@ const handleKeyDown = (e) => {
       id: 'CAPABILITY_INVESTOR_REPORT',
       label: 'Generate Investor Report',
       icon: <Scale size={16} />,
-      handler: () => setActiveModule('EXECUTIVE_OVERSIGHT'),
+      handler: () => onSwitchDashboard ? onSwitchDashboard('EXECUTIVE') : setActiveModule('EXECUTIVE_OVERSIGHT'),
       description: 'Founder-only investor distribution'
     },
     {
@@ -2229,28 +2264,19 @@ const handleKeyDown = (e) => {
                 </div>
               );
 
-            case 'EXECUTIVE_OVERSIGHT':
-              return (
-                <>
-                  <div className={`${styles.quad} ${styles.span12}`} style={{ ...quadShield, minHeight: '760px', padding: 0, overflow: 'visible' }}>
-                    <Suspense fallback={<div className={styles.loading}>HYDRATING EXECUTIVE DASHBOARD...</div>}>
-                      <ExecutiveDashboard metrics={analytics} />
-                    </Suspense>
-                  </div>
-                  <div className={`${styles.quad} ${styles.span12}`} style={{ ...quadShield, minHeight: '520px', padding: 0 }}>
-                    <Suspense fallback={<div className={styles.loading}>HYDRATING ANALYTICS DASHBOARD...</div>}>
-                      <AnalyticsDashboard metrics={analytics} />
-                    </Suspense>
-                  </div>
-                </>
-              );
+
 
             case 'CEO_DASHBOARD':
+              // CEO_DASHBOARD is now standalone — redirect immediately via effect and show spinner
+              if (onSwitchDashboard) {
+                // Deferred so React can commit the current render before switching
+                setTimeout(() => onSwitchDashboard('EXECUTIVE'), 0);
+              }
               return (
-                <div className={`${styles.quad} ${styles.span12}`} style={{ ...quadShield, minHeight: '600px' }}>
-                  <Suspense fallback={<div className={styles.loading}>HYDRATING CEO DASHBOARD...</div>}>
-                    <ExecutiveDashboard role="CEO" metrics={billingMetrics} analytics={analytics} executeCommand={executeOmegaStrike} />
-                  </Suspense>
+                <div className={`${styles.quad} ${styles.span12}`} style={{ ...quadShield, minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className={styles.loading} style={{ fontSize: '0.72rem', letterSpacing: '0.18em' }}>
+                    LAUNCHING EXECUTIVE WORKSPACE...
+                  </div>
                 </div>
               );
 
@@ -2273,13 +2299,36 @@ const handleKeyDown = (e) => {
               );
 
             case 'SALES_CRM':
+              if (onSwitchDashboard) {
+                setTimeout(() => onSwitchDashboard('CRM_DASHBOARD'), 0);
+              } else if (typeof window !== 'undefined') {
+                setTimeout(() => {
+                  const requestPacket = {
+                    dashboardKey: 'CRM_DASHBOARD',
+                    moduleKey: 'SALES_CRM',
+                    route: '/crm',
+                    source: 'FounderDashboard',
+                    requestedAt: new Date().toISOString()
+                  };
+
+                  window.localStorage.setItem('wilsy_last_dashboard', 'CRM_DASHBOARD');
+                  window.localStorage.setItem('wilsy:requested-dashboard', JSON.stringify(requestPacket));
+                  window.dispatchEvent(new CustomEvent('wilsy:navigate-dashboard', { detail: requestPacket }));
+                  window.dispatchEvent(new CustomEvent('wilsy:switch-dashboard', { detail: requestPacket }));
+                }, 0);
+              }
+
               return (
-                <div className={`${styles.quad} ${styles.span12}`} style={{ ...quadShield, minHeight: '600px' }}>
-                  <Suspense fallback={<div className={styles.loading}>LOADING SOVEREIGN CRM...</div>}>
-                    <CRMDashboard metrics={billingMetrics} executeCommand={executeOmegaStrike} />
-                  </Suspense>
+                <div className={`${styles.quad} ${styles.span12}`} style={{ ...quadShield, minHeight: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className={styles.loading} style={{ fontSize: '0.72rem', letterSpacing: '0.18em' }}>
+                    LAUNCHING CRM COMMAND CENTER...
+                  </div>
                 </div>
               );
+
+
+
+
 
             case 'IT_OPS':
               return (
@@ -2914,7 +2963,7 @@ const handleKeyDown = (e) => {
 
                   <div className={styles.navSectionLabel}>INSTITUTIONAL_HUB</div>
                   {SOVEREIGN_HUB_KEYS.map(key => (
-                    <button key={key} className={activeModule === key ? styles.navItemActive : styles.navItem} onClick={() => setActiveModule(key)}>
+                    <button key={key} className={activeModule === key ? styles.navItemActive : styles.navItem} onClick={() => activateModule(key)}>
                       {getModuleIcon(key)}
                       <span style={{ marginLeft: '8px' }}>{key.replace(/_/g, ' ')}</span>
                     </button>
@@ -2922,7 +2971,7 @@ const handleKeyDown = (e) => {
 
                   <div className={styles.navSectionLabel}>LEADERSHIP</div>
                   {LEADERSHIP_KEYS.map(key => (
-                    <button key={key} className={activeModule === key ? styles.navItemActive : styles.navItem} onClick={() => setActiveModule(key)}>
+                    <button key={key} className={activeModule === key ? styles.navItemActive : styles.navItem} onClick={() => activateModule(key)}>
                       {getModuleIcon(key)}
                       <span style={{ marginLeft: '8px' }}>{key.replace(/_/g, ' ')}</span>
                     </button>
@@ -2933,7 +2982,7 @@ const handleKeyDown = (e) => {
                     let label = key.replace(/_/g, ' ');
                     if (key === 'SALES_CRM') label = 'SALES & CRM';
                     return (
-                      <button key={key} className={activeModule === key ? styles.navItemActive : styles.navItem} onClick={() => setActiveModule(key)}>
+                      <button key={key} className={activeModule === key ? styles.navItemActive : styles.navItem} onClick={() => activateModule(key)}>
                         {getModuleIcon(key)}
                         <span style={{ marginLeft: '8px' }}>{label}</span>
                       </button>

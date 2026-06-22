@@ -14,11 +14,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
+import WilsyForensicMerkleShowroom from './components/chrome/WilsyForensicMerkleShowroom.jsx';
 import './index.css';
 
 // Billion-dollar infrastructure requires StrictMode to catch side-effects early
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    {import.meta.env.DEV && window.location.pathname === '/wilsy-lab/forensic-merkle' ? (
+      <WilsyForensicMerkleShowroom />
+    ) : (
+      <App />
+    )}
   </React.StrictMode>,
 );

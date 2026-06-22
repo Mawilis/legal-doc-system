@@ -1,6 +1,5 @@
 node_modules/
 .env
-.env
 *.env
 **/.envnode_modules/
 logs/
@@ -8,28 +7,17 @@ logs/
 *.rdb
 dump.rdb
 # .gitignore
-.env
 .env.local
 .env.test
 coverage/
-node_modules/
-logs/
 *.env*
 
-
 node_modules
-.env
-.env.test
 coverage
-
-
-.env.local
 .env.*.local
 server/tests_legacy_backup/
-
 # Production environment files
 .env.production
-
 # Additional security files
 .env.*
 *.key
@@ -37,60 +25,41 @@ server/tests_legacy_backup/
 *.crt
 secrets/
 k8s/secrets.yaml
-
 # ============================================================================
 # 🔐 WILSY OS 2050 - SECURITY ENHANCED GITIGNORE
-# ============================================================================
-
 # Environment files - NEVER COMMIT
-.env
-.env.*
 !.env.example
 !.env.template
-.env.production
 .env.staging
-.env.test
-.env.local
 .env.development
-
 # Secrets and keys
-*.key
-*.pem
-*.crt
 *.csr
 *.p12
 *.pfx
-secrets/
 **/secrets/
 **/secrets.json
 **/credentials.json
 **/service-account.json
-k8s/secrets.yaml
 k8s/*-secrets.yaml
 ssl/
 certificates/
-
 # Forensic and audit data
 /forensic/evidence/
 /forensic/court-*.json
 /forensic/quantum-*.json
 /data/forensic/
 /audit-logs/
-*.log
-
 # Test outputs
 /test-results/
 /coverage/
 .nyc_output/
 junit.xml
 test-results/
-
 # Quantum keys
 **/quantum-keys/
 **/pqc-keys/
 *.pqc
 *.qkey
-
 # Neural models
 /models/neural/
 /neural-models/
@@ -98,11 +67,9 @@ test-results/
 *.onnx
 *.pb
 *.tflite
-
 # Docker sensitive
 docker-compose.override.yml
 *.env.docker
-
 # Backup files - DON'T COMMIT BACKUPS
 *.bak
 *.backup
@@ -110,11 +77,7 @@ docker-compose.override.yml
 *~
 *.swp
 *.swo
-
-# ============================================================================
 # DEVELOPMENT & DEBUG FILES - NEVER COMMIT
-# ============================================================================
-
 # Debug scripts
 server/debug-*.js
 server/diagnose-*.js
@@ -145,38 +108,30 @@ server/test-*.js
 server/test-*.sh
 server/__tests__/
 server/tests_backup/
-
 # Script directories
 server/scripts/audit/
 server/scripts/vetting/
 server/scripts/emergency/
 server/k8s/
-
 # Model backups
 server/models/*.backup*
 server/models/*.bak
 server/models/*.ai-backup
 server/models/*.working.js
 server/models/*.minimal.js
-
 # Quantum metadata
 wilsy-os-2050/
 *.quantum-manifest
 *.quantum-metadata
-
 # Investment suite (keep local only)
 WILSY-OS-INVESTMENT-READY/
 WILSY-OS-INVESTMENT-SUITE/
-
 # Husky hooks
 .husky/
 server/.husky/
-
 # Test artifacts
-server/__tests__/
 server/coverage/
 server/test-results/
-
 # Client specific
 client/node_modules/
 client/dist/
@@ -185,3 +140,29 @@ client/.env.local
 client/.env.*.local
 client/coverage/
 client/build/
+.aider*
+# WILSY OS local backup artifacts - never commit
+*.bak.*
+*.baseline.*
+*.backup.*
+*.orig
+*.rej
+.DS_Store
+# WILSY OS local runtime / generated evidence - keep out of source commits unless intentionally archived elsewhere
+.wilsy-mongo-data/
+.wilsy-mongo.log
+.wilsy-evidence-captures/
+server/exports/regulator-bundles/*.json
+# WILSY OS local runtime/evidence artifacts - do not push from dev machine
+# WILSY OS local runtime/database/evidence artifacts - never commit
+.local-mongo-rs0/
+.local-mongo*/
+.wilsy-checkpoints/
+.wilsy-forensics/
+server/exports/
+server/exports/regulator-bundles/
+reports/
+forensic-fixes/
+WILSY_*.txt
+WILSY_*.md
+WILSY_*.json

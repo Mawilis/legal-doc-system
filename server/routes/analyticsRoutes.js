@@ -31,7 +31,7 @@ const ANALYTICS_CONFIG = {
   QUANTUM_CIRCUITS: 1024,
   TENANT_ISOLATION_ENFORCED: true,
   NO_HARDCODED_MASTER: true,
-  FORENSIC_RETENTION_DAYS: 36500
+  FORENSIC_RETENTION_DAYS: 36500,
 };
 
 const analyticsCache = new Map();
@@ -52,7 +52,7 @@ const enforceTenantIsolation = (user, correlationId) => {
       userId: user?.id,
       email: user?.email,
       correlationId,
-      severity: 'CRITICAL'
+      severity: 'CRITICAL',
     });
     throw error;
   }
@@ -62,11 +62,12 @@ const enforceTenantIsolation = (user, correlationId) => {
     userEmail: user.email,
     userRole: user.role,
     correlationId,
-    forensicHash: crypto.createHash('sha512')
+    forensicHash: crypto
+      .createHash('sha512')
       .update(`${user.tenantId}:${user.email}:${correlationId}:TENANT-ISOLATION-v13`)
       .digest('hex')
       .substring(0, 32)
-      .toUpperCase()
+      .toUpperCase(),
   };
 };
 
@@ -85,11 +86,12 @@ const safeTenantIsolation = (user, correlationId) => {
     userEmail: user.email,
     userRole: user.role,
     correlationId,
-    forensicHash: crypto.createHash('sha512')
+    forensicHash: crypto
+      .createHash('sha512')
       .update(`${user.tenantId}:${user.email}:${correlationId}:TENANT-ISOLATION-v13`)
       .digest('hex')
       .substring(0, 32)
-      .toUpperCase()
+      .toUpperCase(),
   };
 };
 
@@ -119,6 +121,20 @@ const setQuantumHeaders = (res, correlationId, tenantId) => {
   res.set('X-Tenant-Isolated', 'true');
   res.set('X-Tenant-ID', tenantId || 'ISOLATED');
   res.set('X-Encryption-Algorithm', 'DILITHIUM-5');
+};
+
+/**
+ * @function getTenant
+ * @description Safely retrieves a tenant regardless of whether the identifier is an ObjectId, a uuid string, or an alias.
+ * @param {string} identifier - The tenant identifier.
+ * @returns {Promise<Object|null>} The matched tenant.
+ */
+const getTenant = async (identifier) => {
+  if (!identifier) return null;
+  const query = mongoose.Types.ObjectId.isValid(identifier)
+    ? { _id: identifier }
+    : { $or: [{ tenantId: identifier }, { alias: identifier }] };
+  return await Tenant.findOne(query).lean();
 };
 
 /**
@@ -165,7 +181,7 @@ router.get('/health', (req, res) => {
     quantumCircuits: ANALYTICS_CONFIG.QUANTUM_CIRCUITS,
     version: '13.0.1-EMPTY-DATA-FIXED',
     public: true,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -186,17 +202,17 @@ router.get('/revenue', async (req, res) => {
     console.log('[ANALYTICS] 📊 Revenue request - TENANT ISOLATED', {
       tenantId: tenantContext.tenantId,
       userEmail: tenantContext.userEmail,
-      correlationId
+      correlationId,
     });
 
-    const tenant = await Tenant.findById(tenantContext.tenantId).lean();
+    const tenant = await getTenant(tenantContext.tenantId);
     if (!tenant) {
       return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND', correlationId });
     }
 
     const userCount = await User.countDocuments({
       tenantId: tenantContext.tenantId,
-      isActive: true
+      isActive: true,
     });
 
     // Get tenant-specific revenue - with safety for empty data
@@ -205,7 +221,7 @@ router.get('/revenue', async (req, res) => {
       revenueData = await Revenue.aggregate([
         { $match: { tenantId: tenantContext.tenantId, paymentStatus: 'paid' } },
         { $group: { _id: { $month: '$periodDate' }, total: { $sum: '$amount' } } },
-        { $sort: { '_id': 1 } }
+        { $sort: { _id: 1 } },
       ]);
     } catch (err) {
       console.warn('[ANALYTICS] Revenue aggregate failed:', err.message);
@@ -218,15 +234,27 @@ router.get('/revenue', async (req, res) => {
     try {
       const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
       const currentMonthRevenue = await Revenue.aggregate([
-        { $match: { tenantId: tenantContext.tenantId, paymentStatus: 'paid', periodDate: { $gte: currentMonthStart } } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
+        {
+          $match: {
+            tenantId: tenantContext.tenantId,
+            paymentStatus: 'paid',
+            periodDate: { $gte: currentMonthStart },
+          },
+        },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
       ]);
       currentRevenue = currentMonthRevenue[0]?.total || 0;
 
       const previousMonthStart = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
       const previousMonthRevenue = await Revenue.aggregate([
-        { $match: { tenantId: tenantContext.tenantId, paymentStatus: 'paid', periodDate: { $gte: previousMonthStart, $lt: currentMonthStart } } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
+        {
+          $match: {
+            tenantId: tenantContext.tenantId,
+            paymentStatus: 'paid',
+            periodDate: { $gte: previousMonthStart, $lt: currentMonthStart },
+          },
+        },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
       ]);
       previousRevenue = previousMonthRevenue[0]?.total || 0;
     } catch (err) {
@@ -237,9 +265,22 @@ router.get('/revenue', async (req, res) => {
 
     const growthRate = calculateGrowthRate(currentRevenue, previousRevenue);
 
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     const historicalRevenue = months.map((_, index) => {
-      const entry = revenueData.find(r => r._id === index + 1);
+      const entry = revenueData.find((r) => r._id === index + 1);
       return entry?.total || 0;
     });
 
@@ -247,7 +288,12 @@ router.get('/revenue', async (req, res) => {
       total: currentRevenue,
       formatted: formatCurrency(currentRevenue),
       growthRate: parseFloat(growthRate.toFixed(1)),
-      growthRateFormatted: growthRate > 0 ? `+${growthRate.toFixed(1)}%` : growthRate < 0 ? `${growthRate.toFixed(1)}%` : '0%',
+      growthRateFormatted:
+        growthRate > 0
+          ? `+${growthRate.toFixed(1)}%`
+          : growthRate < 0
+            ? `${growthRate.toFixed(1)}%`
+            : '0%',
       historical: historicalRevenue,
       tenantId: tenantContext.tenantId,
       tenantName: tenant.name,
@@ -257,7 +303,7 @@ router.get('/revenue', async (req, res) => {
       noHardcodedMaster: true,
       correlationId,
       timestamp: new Date().toISOString(),
-      forensicHash: tenantContext.forensicHash
+      forensicHash: tenantContext.forensicHash,
     };
 
     console.log('[ANALYTICS] Revenue response:', { total: currentRevenue, growthRate });
@@ -270,10 +316,9 @@ router.get('/revenue', async (req, res) => {
         tenantIsolated: true,
         correlationId,
         processingTime: `${Date.now() - startTime}ms`,
-        version: '13.0.1-EMPTY-DATA-FIXED'
-      }
+        version: '13.0.1-EMPTY-DATA-FIXED',
+      },
     });
-
   } catch (error) {
     console.error('[ANALYTICS] ❌ Revenue fetch error:', error.message);
     console.error('[ANALYTICS] Stack:', error.stack);
@@ -292,8 +337,8 @@ router.get('/revenue', async (req, res) => {
           activeUsers: 0,
           tenantIsolated: true,
           correlationId,
-          note: 'No tenant assigned'
-        }
+          note: 'No tenant assigned',
+        },
       });
     }
 
@@ -301,7 +346,7 @@ router.get('/revenue', async (req, res) => {
       success: false,
       error: 'REVENUE_ANALYTICS_FAILED',
       message: error.message,
-      correlationId
+      correlationId,
     });
   }
 });
@@ -320,7 +365,15 @@ router.get('/users', requireRole(['executive', 'super_admin']), async (req, res)
     if (!tenantContext) {
       return res.json({
         success: true,
-        data: { totalUsers: 0, activeToday: 0, activeThisWeek: 0, activePercentage: 0, tenantId: null, tenantIsolated: true, correlationId }
+        data: {
+          totalUsers: 0,
+          activeToday: 0,
+          activeThisWeek: 0,
+          activePercentage: 0,
+          tenantId: null,
+          tenantIsolated: true,
+          correlationId,
+        },
       });
     }
 
@@ -330,8 +383,8 @@ router.get('/users', requireRole(['executive', 'super_admin']), async (req, res)
       success: true,
       data: {
         ...userSnapshot,
-        correlationId
-      }
+        correlationId,
+      },
     });
   } catch (error) {
     res.status(200).json({
@@ -346,9 +399,9 @@ router.get('/users', requireRole(['executive', 'super_admin']), async (req, res)
         tenantId: req.user?.tenantId || null,
         tenantIsolated: true,
         sourceStatus: 'USER_ACTIVITY_SOURCE_SILENT',
-        correlationId
+        correlationId,
       },
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -367,12 +420,26 @@ router.get('/investor/kpis', requireRole(['executive', 'super_admin']), async (r
     if (!tenantContext) {
       return res.json({
         success: true,
-        data: { tenantId: null, tenantName: null, mrr: 0, mrrFormatted: 'R 0.00', arr: 0, arrFormatted: 'R 0.00', valuation: 0, activeUsers: 0, tenantIsolated: true, correlationId }
+        data: {
+          tenantId: null,
+          tenantName: null,
+          mrr: 0,
+          mrrFormatted: 'R 0.00',
+          arr: 0,
+          arrFormatted: 'R 0.00',
+          valuation: 0,
+          activeUsers: 0,
+          tenantIsolated: true,
+          correlationId,
+        },
       });
     }
 
-    const tenant = await Tenant.findById(tenantContext.tenantId).lean();
-    const userCount = await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true });
+    const tenant = await getTenant(tenantContext.tenantId);
+    const userCount = await User.countDocuments({
+      tenantId: tenantContext.tenantId,
+      isActive: true,
+    });
     const totalMRR = tenant?.billing?.monthlyRevenue || 0;
     const totalARR = totalMRR * 12;
 
@@ -389,8 +456,8 @@ router.get('/investor/kpis', requireRole(['executive', 'super_admin']), async (r
         valuation: totalARR * 15,
         activeUsers: userCount,
         tenantIsolated: true,
-        correlationId
-      }
+        correlationId,
+      },
     });
   } catch (error) {
     res.status(200).json({
@@ -408,9 +475,9 @@ router.get('/investor/kpis', requireRole(['executive', 'super_admin']), async (r
         activeUsers: null,
         tenantIsolated: true,
         sourceStatus: 'INVESTOR_KPI_SOURCE_SILENT',
-        correlationId
+        correlationId,
       },
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -425,7 +492,9 @@ router.get('/risk', requireRole(['risk', 'executive', 'super_admin']), async (re
 
   try {
     const tenantContext = safeTenantIsolation(req.user, correlationId);
-    const userCount = tenantContext ? await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true }) : 0;
+    const userCount = tenantContext
+      ? await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true })
+      : 0;
 
     res.json({
       success: true,
@@ -436,8 +505,8 @@ router.get('/risk', requireRole(['risk', 'executive', 'super_admin']), async (re
         tenantId: tenantContext?.tenantId,
         userCount,
         tenantIsolated: true,
-        correlationId
-      }
+        correlationId,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message, correlationId });
@@ -454,7 +523,7 @@ router.get('/forecast', requireRole(['executive', 'super_admin']), async (req, r
 
   try {
     const tenantContext = safeTenantIsolation(req.user, correlationId);
-    const tenant = tenantContext ? await Tenant.findById(tenantContext.tenantId).lean() : null;
+    const tenant = tenantContext ? await getTenant(tenantContext.tenantId) : null;
     const totalMRR = tenant?.billing?.monthlyRevenue || 0;
 
     res.json({
@@ -467,8 +536,8 @@ router.get('/forecast', requireRole(['executive', 'super_admin']), async (req, r
         tenantId: tenantContext?.tenantId,
         tenantName: tenant?.name,
         tenantIsolated: true,
-        correlationId
-      }
+        correlationId,
+      },
     });
   } catch (error) {
     res.status(200).json({
@@ -483,9 +552,9 @@ router.get('/forecast', requireRole(['executive', 'super_admin']), async (req, r
         tenantName: null,
         tenantIsolated: true,
         sourceStatus: 'FORECAST_SOURCE_SILENT',
-        correlationId
+        correlationId,
       },
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -498,36 +567,74 @@ router.get('/dashboard', requireRole(['executive', 'super_admin']), async (req, 
   try {
     const tenantContext = safeTenantIsolation(req.user, generateCorrelationId());
     if (!tenantContext) return res.json({ success: true, data: { tenant: null, userCount: 0 } });
-    const tenant = await Tenant.findById(tenantContext.tenantId).lean();
-    const userCount = await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true });
-    res.json({ success: true, data: { tenant: { id: tenant?._id, name: tenant?.name }, userCount, tenantIsolated: true } });
+    const tenant = await getTenant(tenantContext.tenantId);
+    const userCount = await User.countDocuments({
+      tenantId: tenantContext.tenantId,
+      isActive: true,
+    });
+    res.json({
+      success: true,
+      data: { tenant: { id: tenant?._id, name: tenant?.name }, userCount, tenantIsolated: true },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.get('/deal-flow', requireRole(['deal_team', 'executive', 'super_admin']), async (req, res) => {
-  try {
-    const tenantContext = safeTenantIsolation(req.user, generateCorrelationId());
-    const userCount = tenantContext ? await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true }) : 0;
-    res.json({ success: true, data: { pipeline: { identification: userCount * 10, screening: userCount * 5 }, tenantId: tenantContext?.tenantId, tenantIsolated: true } });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+router.get(
+  '/deal-flow',
+  requireRole(['deal_team', 'executive', 'super_admin']),
+  async (req, res) => {
+    try {
+      const tenantContext = safeTenantIsolation(req.user, generateCorrelationId());
+      const userCount = tenantContext
+        ? await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true })
+        : 0;
+      res.json({
+        success: true,
+        data: {
+          pipeline: { identification: userCount * 10, screening: userCount * 5 },
+          tenantId: tenantContext?.tenantId,
+          tenantIsolated: true,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
-});
+);
 
-router.get('/compliance', requireRole(['compliance', 'executive', 'super_admin']), async (req, res) => {
-  try {
-    res.json({ success: true, data: { popiaCompliance: 100, ficaCompliance: 100, quantumCompliant: true, tenantId: req.user?.tenantId } });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+router.get(
+  '/compliance',
+  requireRole(['compliance', 'executive', 'super_admin']),
+  async (req, res) => {
+    try {
+      res.json({
+        success: true,
+        data: {
+          popiaCompliance: 100,
+          ficaCompliance: 100,
+          quantumCompliant: true,
+          tenantId: req.user?.tenantId,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
-});
+);
 
 router.get('/performance', requireRole(['devops', 'super_admin']), async (req, res) => {
   try {
     const userCount = await User.countDocuments({ tenantId: req.user?.tenantId, isActive: true });
-    res.json({ success: true, data: { uptime: 99.999, requestsPerSecond: Math.max(1, userCount * 10), tenantId: req.user?.tenantId } });
+    res.json({
+      success: true,
+      data: {
+        uptime: 99.999,
+        requestsPerSecond: Math.max(1, userCount * 10),
+        tenantId: req.user?.tenantId,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -536,7 +643,13 @@ router.get('/performance', requireRole(['devops', 'super_admin']), async (req, r
 router.post('/predict', requireRole(['executive', 'super_admin']), async (req, res) => {
   try {
     const userCount = await User.countDocuments({ tenantId: req.user?.tenantId, isActive: true });
-    res.json({ success: true, data: { nextQuarter: { deals: userCount * 50, value: userCount * 10000000 }, tenantId: req.user?.tenantId } });
+    res.json({
+      success: true,
+      data: {
+        nextQuarter: { deals: userCount * 50, value: userCount * 10000000 },
+        tenantId: req.user?.tenantId,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -545,7 +658,13 @@ router.post('/predict', requireRole(['executive', 'super_admin']), async (req, r
 router.get('/trends', requireRole(['executive', 'super_admin']), async (req, res) => {
   try {
     const userCount = await User.countDocuments({ tenantId: req.user?.tenantId, isActive: true });
-    res.json({ success: true, data: { yearly: [{ year: 2026, deals: Math.max(1, userCount * 10) }], tenantId: req.user?.tenantId } });
+    res.json({
+      success: true,
+      data: {
+        yearly: [{ year: 2026, deals: Math.max(1, userCount * 10) }],
+        tenantId: req.user?.tenantId,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -554,7 +673,14 @@ router.get('/trends', requireRole(['executive', 'super_admin']), async (req, res
 router.get('/investor', requireRole(['executive', 'super_admin']), async (req, res) => {
   try {
     const userCount = await User.countDocuments({ tenantId: req.user?.tenantId, isActive: true });
-    res.json({ success: true, data: { valuation: userCount * 50000000, mrr: userCount * 500000, tenantId: req.user?.tenantId } });
+    res.json({
+      success: true,
+      data: {
+        valuation: userCount * 50000000,
+        mrr: userCount * 500000,
+        tenantId: req.user?.tenantId,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -570,7 +696,7 @@ router.use((req, res, next) => {
       statusCode: res.statusCode,
       userId: req.user?.id,
       tenantId: req.user?.tenantId,
-      processingTimeMs: processingTimeMs.toFixed(3)
+      processingTimeMs: processingTimeMs.toFixed(3),
     });
   });
   next();
@@ -578,8 +704,15 @@ router.use((req, res, next) => {
 
 router.use((err, req, res, next) => {
   const errorId = crypto.randomBytes(16).toString('hex');
-  auditLogger.critical('Analytics route error', { errorId, error: err.message, method: req.method, path: req.path });
-  res.status(err.status || 500).json({ success: false, error: err.code || 'ANALYTICS_ERROR', errorId, message: err.message });
+  auditLogger.critical('Analytics route error', {
+    errorId,
+    error: err.message,
+    method: req.method,
+    path: req.path,
+  });
+  res
+    .status(err.status || 500)
+    .json({ success: false, error: err.code || 'ANALYTICS_ERROR', errorId, message: err.message });
 });
 
 export default router;

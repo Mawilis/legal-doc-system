@@ -41,6 +41,7 @@ import {
   Target,
   Trash2,
   Users,
+  UserCog,
   X
 } from 'lucide-react';
 import { useTenants } from '../../contexts/tenantContext';
@@ -49,6 +50,15 @@ import { useTelemetryFeed } from '../../hooks/useTelemetryFeed';
 import { exportCSV } from '../../utils/exportHelpers';
 import { broadcastTelemetry } from '../../utils/telemetryHelper';
 import * as financeService from '../../services/financeService';
+import * as crmService from '../../services/crmService';
+import * as hrService from '../../services/hrService';
+import * as salesService from '../../services/salesService';
+import * as customerSuccessService from '../../services/customerSuccessService';
+import * as productService from '../../services/productService';
+import * as marketingService from '../../services/marketingService';
+import * as procurementService from '../../services/procurementService';
+import * as itService from '../../services/itService';
+import * as securityService from '../../services/securityService';
 import {
   buildExecutiveAccessDecision,
   buildExecutiveOperatingSystem
@@ -78,7 +88,252 @@ import {
   answerExecutiveNaturalLanguageQuery,
   buildExecutiveTransformationPlaybook
 } from '../../services/ExecutiveTransformationEngine';
+import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
+import BusinessArtifactStudio from '../artifacts/BusinessArtifactStudio';
 import styles from './ExecutiveDashboard.module.css';
+
+
+const WILSY_EXEC_THEME_STORAGE_KEYS = Object.freeze({
+  theme: 'wilsy:account-command-center:theme',
+  mode: 'wilsy:account-command-center:mode'
+});
+
+const WILSY_EXEC_THEME_SKINS = Object.freeze({
+  wilsy_aurora: {
+    accent: '#B66DFF',
+    secondary: '#17BDF2',
+    authority: '#D4AF37',
+    live: '#84F0C8',
+    risk: '#FF8AA4',
+    surface: '#060B18',
+    panel: '#0B1024',
+    rail: '#080C18',
+    bg: '#020306',
+    text: '#FFFAF0',
+    muted: '#C5CCE5',
+    border: 'rgba(182,109,255,0.34)'
+  },
+  sovereign_black: {
+    accent: '#D4AF37',
+    secondary: '#56D69B',
+    authority: '#F6D76B',
+    live: '#56D69B',
+    risk: '#FF6673',
+    surface: '#050505',
+    panel: '#0B0B0B',
+    rail: '#030303',
+    bg: '#000000',
+    text: '#FFFFFF',
+    muted: '#A7A7A7',
+    border: 'rgba(212,175,55,0.32)'
+  },
+  cobalt_glass: {
+    accent: '#17BDF2',
+    secondary: '#8DBBFF',
+    authority: '#D4AF37',
+    live: '#54F0D1',
+    risk: '#FF7C98',
+    surface: '#06142E',
+    panel: '#0A1D3D',
+    rail: '#07132B',
+    bg: '#020817',
+    text: '#F3F8FF',
+    muted: '#AFC7F6',
+    border: 'rgba(23,189,242,0.34)'
+  },
+  pearl_command: {
+    accent: '#7C68FF',
+    secondary: '#0F9F6E',
+    authority: '#C49A18',
+    live: '#0F9F6E',
+    risk: '#D33F62',
+    surface: '#FFFFFF',
+    panel: '#EEF2FF',
+    rail: '#FFFFFF',
+    bg: '#F6F8FF',
+    text: '#111827',
+    muted: '#53617F',
+    border: 'rgba(124,104,255,0.26)'
+  },
+  legacy_gold: {
+    accent: '#D4AF37',
+    secondary: '#8FE6B1',
+    authority: '#F6D76B',
+    live: '#8FE6B1',
+    risk: '#FF8A8A',
+    surface: '#0D0A03',
+    panel: '#141006',
+    rail: '#090702',
+    bg: '#070602',
+    text: '#FFF8DC',
+    muted: '#B9A56D',
+    border: 'rgba(246,215,107,0.32)'
+  },
+  forensic_violet: {
+    accent: '#B66DFF',
+    secondary: '#E7B7FF',
+    authority: '#D4AF37',
+    live: '#84F0C8',
+    risk: '#FF8AA4',
+    surface: '#0D0718',
+    panel: '#140B26',
+    rail: '#090412',
+    bg: '#05020A',
+    text: '#FFF7FF',
+    muted: '#CAB8EA',
+    border: 'rgba(182,109,255,0.36)'
+  },
+  quantum: {
+    accent: '#17F2D1',
+    secondary: '#B6F6FF',
+    authority: '#D4AF37',
+    live: '#84F0C8',
+    risk: '#FF789A',
+    surface: '#06111A',
+    panel: '#071C25',
+    rail: '#031018',
+    bg: '#01050A',
+    text: '#F5FFFF',
+    muted: '#9FD7E7',
+    border: 'rgba(23,242,209,0.34)'
+  }
+});
+
+/**
+ * @function normalizeWilsyExecutiveThemeId
+ * @description Normalizes saved Account Command Center theme ids for ExecutiveDashboard.
+ * @param {string} themeId - Candidate theme id.
+ * @returns {string} Supported operating skin id.
+ * @collaboration Forces the Executive cockpit to obey the same operating skins as Account Command Center.
+ */
+const normalizeWilsyExecutiveThemeId = (themeId = '') => {
+  const aliases = {
+    forensic: 'forensic_violet',
+    cobalt: 'cobalt_glass',
+    wilsy_daybreak: 'pearl_command',
+    dark_ops: 'sovereign_black'
+  };
+  const normalized = aliases[themeId] || themeId || 'wilsy_aurora';
+  return WILSY_EXEC_THEME_SKINS[normalized] ? normalized : 'wilsy_aurora';
+};
+
+/**
+ * @function normalizeWilsyExecutiveMode
+ * @description Normalizes saved Account Command Center mode for ExecutiveDashboard.
+ * @param {string} mode - Candidate mode.
+ * @returns {string} Safe mode id.
+ * @collaboration Keeps ExecutiveDashboard aligned with the Account mode receipt.
+ */
+const normalizeWilsyExecutiveMode = (mode = '') => (
+  ['day', 'night', 'auto'].includes(mode) ? mode : 'night'
+);
+
+/**
+ * @function resolveWilsyExecutiveMode
+ * @description Resolves auto mode to day or night.
+ * @param {string} mode - Candidate mode.
+ * @returns {string} Resolved mode.
+ * @collaboration Allows the cockpit to consume auto mode without waiting for backend preference services.
+ */
+const resolveWilsyExecutiveMode = (mode = 'night') => {
+  const safeMode = normalizeWilsyExecutiveMode(mode);
+  if (safeMode !== 'auto') return safeMode;
+  const hour = new Date().getHours();
+  return hour >= 7 && hour < 18 ? 'day' : 'night';
+};
+
+/**
+ * @function readWilsyExecutiveThemePreference
+ * @description Reads the persisted operating skin saved by Account Command Center.
+ * @returns {{themeId:string,mode:string,resolvedMode:string,skin:Object}} Theme packet.
+ * @collaboration Bridges saved Account receipts into ExecutiveDashboard even when controller-level theme propagation is bypassed.
+ */
+const readWilsyExecutiveThemePreference = () => {
+  const themeId = normalizeWilsyExecutiveThemeId(
+    typeof window === 'undefined'
+      ? 'wilsy_aurora'
+      : window.localStorage.getItem(WILSY_EXEC_THEME_STORAGE_KEYS.theme)
+  );
+  const mode = normalizeWilsyExecutiveMode(
+    typeof window === 'undefined'
+      ? 'night'
+      : window.localStorage.getItem(WILSY_EXEC_THEME_STORAGE_KEYS.mode)
+  );
+  return {
+    themeId,
+    mode,
+    resolvedMode: resolveWilsyExecutiveMode(mode),
+    skin: WILSY_EXEC_THEME_SKINS[themeId] || WILSY_EXEC_THEME_SKINS.wilsy_aurora
+  };
+};
+
+/**
+ * @function buildWilsyExecutiveThemeVars
+ * @description Builds CSS variable payload consumed directly by ExecutiveDashboard.
+ * @param {string} themeId - Operating skin id.
+ * @param {string} mode - Theme mode.
+ * @returns {Object} CSS variable object.
+ * @collaboration Makes ExecutiveDashboard repaint from saved theme receipts instead of local hardcoded gold defaults.
+ */
+const buildWilsyExecutiveThemeVars = (themeId = 'wilsy_aurora', mode = 'night') => {
+  const safeThemeId = normalizeWilsyExecutiveThemeId(themeId);
+  const resolvedMode = resolveWilsyExecutiveMode(mode);
+  const skin = WILSY_EXEC_THEME_SKINS[safeThemeId] || WILSY_EXEC_THEME_SKINS.wilsy_aurora;
+
+  return {
+    '--wilsy-bg': skin.bg,
+    '--wilsy-surface': skin.surface,
+    '--wilsy-panel': skin.panel,
+    '--wilsy-rail': skin.rail,
+    '--wilsy-text': skin.text,
+    '--wilsy-muted': skin.muted,
+    '--wilsy-accent': skin.accent,
+    '--wilsy-accent-2': skin.secondary,
+    '--wilsy-accent-3': skin.live,
+    '--wilsy-authority': skin.authority,
+    '--wilsy-live': skin.live,
+    '--wilsy-risk': skin.risk,
+    '--wilsy-border': skin.border,
+    '--exec-brand-primary': skin.accent,
+    '--exec-brand-secondary': skin.secondary,
+    '--exec-brand-surface': skin.bg,
+    '--exec-view-bg': skin.bg,
+    '--exec-view-muted': skin.muted,
+    '--exec-view-border': skin.border,
+    colorScheme: resolvedMode === 'day' ? 'light' : 'dark'
+  };
+};
+
+/**
+ * @function applyWilsyExecutiveThemeToDocument
+ * @description Writes current Executive theme values to the document root.
+ * @param {string} themeId - Operating skin id.
+ * @param {string} mode - Theme mode.
+ * @returns {void}
+ * @collaboration Ensures the active dashboard and global chrome share one operating skin source of truth.
+ */
+const applyWilsyExecutiveThemeToDocument = (themeId = 'wilsy_aurora', mode = 'night') => {
+  if (typeof document === 'undefined') return;
+
+  const safeThemeId = normalizeWilsyExecutiveThemeId(themeId);
+  const safeMode = normalizeWilsyExecutiveMode(mode);
+  const resolvedMode = resolveWilsyExecutiveMode(safeMode);
+  const vars = buildWilsyExecutiveThemeVars(safeThemeId, safeMode);
+
+  document.documentElement.dataset.wilsyTheme = safeThemeId;
+  document.documentElement.dataset.wilsyMode = safeMode;
+  document.documentElement.dataset.wilsyResolvedMode = resolvedMode;
+  document.body.dataset.wilsyTheme = safeThemeId;
+  document.body.dataset.wilsyMode = safeMode;
+  document.body.dataset.wilsyResolvedMode = resolvedMode;
+
+  Object.entries(vars).forEach(([key, value]) => {
+    if (key.startsWith('--')) {
+      document.documentElement.style.setProperty(key, value);
+      document.body.style.setProperty(key, value);
+    }
+  });
+};
 
 const EXECUTIVE_SUITE_VERSION = 'V56.4.0-PRODUCTION-EPITOME';
 const DEFAULT_PAGE_LIMIT = 10;
@@ -97,6 +352,155 @@ const DEFAULT_FINANCIAL_KPIS = Object.freeze({
   sourceStatus: 'SOURCE_SILENT',
   source: 'financeService'
 });
+
+const EXECUTIVE_OPERATING_SOURCE_PLAYBOOK = Object.freeze([
+  { key: 'hr', label: 'HR / People', lane: 'People', functionKey: 'hr', loader: (tenantId) => hrService.getEmployees(tenantId, { limit: 5, offset: 0 }) },
+  { key: 'crm', label: 'CRM / Customer Graph', lane: 'Sales', functionKey: 'crm', loader: (tenantId) => crmService.getCrmSummary(tenantId) },
+  { key: 'sales', label: 'Sales Pipeline', lane: 'Revenue', functionKey: 'sales', loader: (tenantId) => salesService.getPipeline(tenantId, { limit: 5, offset: 0 }) },
+  { key: 'customerSuccess', label: 'Customer Success', lane: 'Customer', functionKey: 'customer_success', loader: (tenantId) => customerSuccessService.getTickets(tenantId, { limit: 5, offset: 0 }) },
+  { key: 'product', label: 'Product / Roadmap', lane: 'Delivery', functionKey: 'product', loader: (tenantId) => productService.getProductMetrics(tenantId, { limit: 5, offset: 0 }) },
+  { key: 'marketing', label: 'Marketing Demand', lane: 'Growth', functionKey: 'marketing', loader: (tenantId) => marketingService.getAnalytics(tenantId, { limit: 5, offset: 0 }) },
+  { key: 'procurement', label: 'Procurement / Supply', lane: 'Supply', functionKey: 'procurement', loader: (tenantId) => procurementService.getPurchaseOrders(tenantId, { limit: 5, offset: 0 }) },
+  { key: 'security', label: 'Security / Risk', lane: 'Risk', functionKey: 'security', loader: (tenantId) => securityService.getIncidents(tenantId, { limit: 5, offset: 0 }) },
+  { key: 'it', label: 'IT / Reliability', lane: 'Technology', functionKey: 'it', loader: (tenantId) => itService.getIncidents(tenantId, { limit: 5, offset: 0 }) }
+]);
+
+
+/**
+ * @function titleCaseExecutiveText
+ * @description Converts identifiers, emails and role tokens into readable executive labels.
+ * @param {string} value - Candidate display text.
+ * @returns {string} Human-readable label.
+ * @collaboration Prevents raw tenant and role identifiers from becoming the executive story.
+ */
+const titleCaseExecutiveText = (value = '') => (
+  String(value || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, letter => letter.toUpperCase())
+);
+
+/**
+ * @function deriveNameFromEmail
+ * @description Derives a temporary operator name from email only when tenant/user names are absent.
+ * @param {string} email - Operator email.
+ * @returns {string} Human-readable fallback name.
+ * @collaboration Keeps the UI from displaying raw email as the primary executive identity.
+ */
+const deriveNameFromEmail = (email = '') => {
+  const localPart = String(email || '').split('@')[0] || '';
+  if (!localPart) return 'Executive Operator';
+  return titleCaseExecutiveText(localPart.replace(/[.]+/g, ' '));
+};
+
+/**
+ * @function buildExecutiveOperatorIdentity
+ * @description Builds the top-rail operator and tenant story for ExecutiveDashboard.
+ * @param {Object} params - Identity inputs from user, tenant, access and operating system profile.
+ * @returns {Object} Display-safe executive identity packet.
+ * @collaboration Turns the top rail into a business OS identity layer instead of email/version metadata.
+ */
+const buildExecutiveOperatorIdentity = ({
+  user = {},
+  activeTenant = {},
+  tenantBranding = {},
+  executiveOperatingSystem = {},
+  executiveReadiness = {},
+  sourceSnapshot = {},
+  role = 'EXECUTIVE',
+  access = {}
+} = {}) => {
+  const email = user?.email || user?.username || '';
+  const composedName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+
+  const displayName = (
+    user?.fullName ||
+    user?.displayName ||
+    user?.name ||
+    composedName ||
+    activeTenant?.ownerName ||
+    activeTenant?.founderName ||
+    deriveNameFromEmail(email)
+  );
+
+  const roleLabel = titleCaseExecutiveText(
+    user?.title ||
+    user?.position ||
+    user?.roleLabel ||
+    user?.tenantRole ||
+    user?.role ||
+    access?.role ||
+    role ||
+    'Executive Operator'
+  );
+
+  const tenantName = (
+    tenantBranding?.displayName ||
+    activeTenant?.name ||
+    activeTenant?.companyName ||
+    activeTenant?.tenantName ||
+    'Wilsy OS Tenant'
+  );
+
+  const industryLabel = executiveOperatingSystem?.profile?.industryLabel || 'Adaptive business model';
+  const readinessLabel = compactExecutiveSignal(executiveReadiness?.posture || 'COMMAND_READY');
+  const financeLabel = compactExecutiveSignal(sourceSnapshot?.finance?.status || 'FINANCE_SOURCE_REQUIRED');
+  const telemetryLabel = compactExecutiveSignal(sourceSnapshot?.telemetry?.status || 'STREAM_READY');
+  const sourceCount = resolveExecutiveSourceCount(sourceSnapshot) || null;
+
+  return {
+    displayName,
+    roleLabel,
+    email,
+    tenantName,
+    commandLabel: 'Executive Command',
+    tenantEyebrow: 'Tenant identity',
+    tenantStory: 'Operating brand verified',
+    storyMessages: [
+      `Wilsy OS is running ${tenantName} as a branded business operating system`,
+      `${displayName} is operating as ${roleLabel}`,
+      `${industryLabel} command layer is active`,
+      `Finance posture: ${financeLabel}`,
+      `Activity posture: ${telemetryLabel}`,
+      `Executive posture: ${readinessLabel}`,
+      sourceCount ? `${sourceCount} business sources visible` : 'HR, CRM, Billing, Documents and Artifacts are available through Command K'
+    ]
+  };
+};
+
+/**
+ * @function buildInitialOperatingSourceRows
+ * @description Builds the default cross-functional source rows before live service hydration.
+ * @returns {Array<Object>} Operating source rows.
+ * @collaboration Gives CEO onboarding a complete HR, CRM, sales, customer, product and risk checklist before sources answer.
+ */
+const buildInitialOperatingSourceRows = () => EXECUTIVE_OPERATING_SOURCE_PLAYBOOK.map(source => ({
+  ...source,
+  live: false,
+  status: `${source.key.toUpperCase()}_NOT_SYNCED`,
+  count: null,
+  lastSync: null,
+  proofHash: null
+}));
+
+/**
+ * @function buildInitialOperatingSourceSnapshot
+ * @description Converts operating source rows into sourceSnapshot entries.
+ * @returns {Object} Source snapshot keyed by source name.
+ * @collaboration Lets the readiness engine reason about HR, CRM and operating systems before the first API reply.
+ */
+const buildInitialOperatingSourceSnapshot = () => buildInitialOperatingSourceRows().reduce((snapshot, source) => ({
+  ...snapshot,
+  [source.key]: {
+    status: source.status,
+    live: false,
+    lastSync: null,
+    functionKey: source.functionKey,
+    lane: source.lane
+  }
+}), {});
 
 const TAB_TO_MODAL_MAP = Object.freeze({
   kpis: 'kpi',
@@ -150,10 +554,79 @@ const stableExecutiveStringify = (value) => {
 const createExecutiveProofHash = (payload = {}) => sha3_512(stableExecutiveStringify(payload)).toUpperCase();
 
 /**
+ * @function resolveExecutiveSourceCount
+ * @description Extracts a truthful source volume from heterogeneous HR, CRM and operating service responses.
+ * @param {unknown} payload - Service response payload.
+ * @returns {number|null} Count when available, otherwise null.
+ * @collaboration Cross-functional CEO readiness should be based on actual service responses without inventing row counts.
+ */
+const resolveExecutiveSourceCount = (payload = {}) => {
+  if (Array.isArray(payload)) return payload.length;
+  const source = payload?.data || payload?.summary || payload?.metrics || payload;
+  if (Array.isArray(source)) return source.length;
+  if (Array.isArray(source?.items)) return source.items.length;
+  if (Array.isArray(source?.records)) return source.records.length;
+  const numeric = [
+    source?.total,
+    source?.count,
+    source?.open,
+    source?.active,
+    source?.itemsTotal,
+    source?.pipelineValue ? 1 : null,
+    source?.healthScore ? 1 : null
+  ].find(value => value !== undefined && value !== null && value !== '');
+  if (numeric === undefined || numeric === null) return null;
+  const parsed = Number(numeric);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+/**
+ * @function buildOperatingSourceRow
+ * @description Normalizes a fulfilled or failed operating service check into the executive source row shape.
+ * @param {Object} descriptor - Operating source descriptor.
+ * @param {Object} params - Result inputs.
+ * @returns {Object} Normalized operating source row.
+ * @collaboration Makes HR, CRM and operating components first-class CEO onboarding evidence with proof hashes.
+ */
+const buildOperatingSourceRow = (descriptor = {}, { tenantId = 'MASTER', payload = null, error = null } = {}) => {
+  const now = new Date().toISOString();
+  const count = error ? null : resolveExecutiveSourceCount(payload);
+  const live = !error;
+  const status = error
+    ? `${descriptor.key?.toUpperCase()}_SOURCE_SILENT`
+    : count === 0
+      ? `${descriptor.key?.toUpperCase()}_SOURCE_READY_EMPTY`
+      : `${descriptor.key?.toUpperCase()}_SOURCE_LIVE`;
+  const packet = {
+    key: descriptor.key,
+    label: descriptor.label,
+    lane: descriptor.lane,
+    functionKey: descriptor.functionKey,
+    tenantId,
+    status,
+    live,
+    count,
+    syncedAt: now,
+    error: error?.response?.data?.message || error?.message || null,
+    suiteVersion: EXECUTIVE_SUITE_VERSION
+  };
+  return {
+    ...descriptor,
+    live,
+    status,
+    count,
+    lastSync: now,
+    error: packet.error,
+    proofHash: createExecutiveProofHash(packet)
+  };
+};
+
+/**
  * @function normalizeFinancialKPIs
  * @description Normalizes financeService KPI envelopes into the executive source-of-truth shape.
  * @param {Object} payload - Finance KPI payload.
  * @returns {Object} Normalized KPI fields.
+ * @collaboration Keeps executive finance reads source-truthful before HR, CRM and operating sources are fused into readiness.
  */
 const normalizeFinancialKPIs = (payload = {}) => {
   const sourcePayload = payload?.data?.kpis || payload?.data?.metrics || payload?.data || payload?.kpis || payload?.metrics || payload;
@@ -355,31 +828,84 @@ const formatExecutiveUsageValue = (value, suffix = '') => {
 
 /**
  * @function compactExecutiveSignal
- * @description Converts verbose source-machine states into readable cockpit labels without mutating the underlying state.
- * @param {string} value - Full source or readiness state.
- * @returns {string} Compact operator-facing label.
- * @collaboration Wilson Khanyezi rejected unreadable machine text; this keeps forensic precision while making the HUD usable.
+ * @description Converts source-machine states into boardroom-readable business language.
+ * @param {string} value - Source, telemetry, command or readiness state.
+ * @returns {string} Executive-facing display label.
+ * @collaboration Keeps backend truth available for Diagnostics while removing machine language from the CEO cockpit.
  */
 const compactExecutiveSignal = (value = 'SOURCE_PENDING') => {
-  const raw = String(value || 'SOURCE_PENDING').toUpperCase();
+  const raw = String(value || 'SOURCE_PENDING').trim().toUpperCase();
+
   const aliases = {
-    FINANCE_SERVICE_SOURCE_SILENT: 'FINANCE_SILENT',
-    FINANCE_SERVICE_LIVE: 'FINANCE_LIVE',
-    REQUEST_CONTEXT_FALLBACK: 'CONTEXT_SOURCE',
-    TENANT_PROFILE_INCOMPLETE: 'PROFILE_NEEDED',
-    WILSY_AI_ENTITLEMENT_SOURCE_SILENT: 'AI_SOURCE_SILENT',
-    TELEMETRY_DEGRADED_RETRYING_30S: 'TELEMETRY_RETRY',
-    SOURCE_REQUIRED: 'SOURCE_REQUIRED',
-    SOURCE_SILENT: 'SOURCE_SILENT'
+    COMMAND_READY: 'Ready for decisions',
+    READY: 'Ready',
+    LIVE: 'Live',
+    LIVE_SOURCE: 'Live sources',
+    LIVE_SOURCE_READY: 'Live sources',
+    LIVE_SOURCE_PARTIAL: 'Partially connected',
+    STREAM_READY: 'Live activity stream',
+    AWAITING_MUTATION: 'No executive action yet',
+    MUTATION_READY: 'Ready to commit',
+    EXEC_KPI_MUTATION: 'KPI update',
+    STATE_MUTATION: 'Business update',
+
+    SOURCE_REQUIRED: 'Source connection required',
+    SOURCE_SILENT: 'Source awaiting connection',
+    SOURCE_GATED: 'Access required',
+    SOURCE_PENDING: 'Source pending',
+    ZERO_RECORDS_FOUND_IN_SHARD: 'No records found',
+
+    FINANCE_KPI_SOURCE_REQUIRED: 'Finance setup required',
+    FINANCE_SOURCE_REQUIRED: 'Finance setup required',
+    FINANCE_SERVICE_SOURCE_SILENT: 'Finance awaiting connection',
+    FINANCE_SERVICE_LIVE: 'Finance connected',
+    FINANCE_SOURCE_SYNC: 'Finance refresh',
+    MARGIN_SOURCE_REQUIRED: 'Margin data required',
+
+    FX_WATCHLIST_PARTIAL_LIVE: 'FX watchlist active',
+    FX_NOT_SYNCED: 'FX setup required',
+
+    TENANT_BRAND: 'Tenant',
+    TENANT_BRAND_SOURCE: 'Brand source',
+    TENANT_BRAND_DEFAULTED: 'Tenant branding incomplete',
+    TENANT_PROFILE_INCOMPLETE: 'Tenant profile incomplete',
+    PROFILE_NEEDED: 'Profile setup required',
+    TENANT_COMMAND_LEDGER: 'Tenant ledger',
+
+    WILSY_AI_ENTITLEMENT_SOURCE_SILENT: 'AI entitlement required',
+    WILSY_AI_ENTITLEMENTS_READY: 'Wilsy AI ready',
+    SERVER_ENTITLEMENT_CATALOG: 'License catalogue',
+    QUOTA_AVAILABLE: 'Quota available',
+
+    HR_SOURCE_SILENT: 'HR awaiting connection',
+    CRM_SOURCE_SILENT: 'CRM awaiting connection',
+    SALES_SOURCE_SILENT: 'Sales awaiting connection',
+    PRODUCT_SOURCE_SILENT: 'Product awaiting connection',
+    CUSTOMER_SUCCESS_SOURCE_SILENT: 'Customer success awaiting connection',
+
+    TELEMETRY_DEGRADED_RETRYING_30S: 'Telemetry reconnecting',
+    REQUEST_CONTEXT_FALLBACK: 'Using local context',
+    COMPLIANCE_EVIDENCE: 'Review trust evidence ready',
+    REVENUE_ARTIFACT_ROUTE: 'Board pack route',
+    READINESS_OBJECTIVE: 'Readiness target',
+    LICENSE_AUTOMATION: 'Configure Wilsy AI',
+    QUICKBOOKS: 'QuickBooks',
+    XERO: 'Xero'
   };
+
   if (aliases[raw]) return aliases[raw];
-  return raw.length > 28
-    ? raw
-      .replace('WILSY_AI_ENTITLEMENT_', 'AI_')
-      .replace('FINANCE_SERVICE_', 'FINANCE_')
-      .replace('TENANT_PROFILE_', 'PROFILE_')
-      .slice(0, 28)
-    : raw;
+
+  return raw
+    .replace(/^EXECUTIVE_/, '')
+    .replace(/^EXEC_/, '')
+    .replace(/^TENANT_/, '')
+    .replace(/^WILSY_/, '')
+    .replace(/^FINANCE_SERVICE_/, 'FINANCE_')
+    .replace(/_SOURCE_/g, '_')
+    .replace(/_SOURCE$/g, '')
+    .replace(/_+/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, letter => letter.toUpperCase()) || 'Setup required';
 };
 
 /**
@@ -498,7 +1024,11 @@ const ExecutiveDashboard = ({
   role = 'EXECUTIVE',
   metrics = {},
   analytics = {},
-  executeCommand = null
+  executeCommand = null,
+  user = null,
+  onSignOut = null,
+  onFounderReturn = null,
+  founderReturnEnabled = false
 }) => {
   const { activeTenant } = useTenants();
   const access = useSovereignAccess();
@@ -512,9 +1042,17 @@ const ExecutiveDashboard = ({
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeWorkspace, setActiveWorkspace] = useState('overview');
   const [businessModelOverride, setBusinessModelOverride] = useState('');
   const [executiveQuestion, setExecutiveQuestion] = useState('');
   const [executiveAnswer, setExecutiveAnswer] = useState(null);
+  const [isAccountCommandCenterOpen, setIsAccountCommandCenterOpen] = useState(false);
+  const [accountThemeId, setAccountThemeId] = useState(() => readWilsyExecutiveThemePreference().themeId);
+  const [accountThemeMode, setAccountThemeMode] = useState(() => readWilsyExecutiveThemePreference().mode);
+
+  const executiveThemeVars = useMemo(() => (
+    buildWilsyExecutiveThemeVars(accountThemeId, accountThemeMode)
+  ), [accountThemeId, accountThemeMode]);
 
   // Pagination states
   const [pageStates, setPageStates] = useState({
@@ -534,8 +1072,10 @@ const ExecutiveDashboard = ({
     finance: { status: 'SOURCE_SILENT', live: false, lastSync: null },
     fx: { status: 'FX_NOT_SYNCED', live: false, lastSync: null },
     telemetry: { status: 'SYNCING', live: false, lastSync: null },
-    records: { status: 'TENANT_COMMAND_LEDGER', live: true, lastSync: null }
+    records: { status: 'TENANT_COMMAND_LEDGER', live: true, lastSync: null },
+    ...buildInitialOperatingSourceSnapshot()
   });
+  const [operatingSources, setOperatingSources] = useState(buildInitialOperatingSourceRows);
   const [mutationReceipts, setMutationReceipts] = useState([]);
   const [committedRows, setCommittedRows] = useState({
     kpis: [],
@@ -616,6 +1156,13 @@ const ExecutiveDashboard = ({
     })
   ), [accessDecision, executiveOperatingSystem, sourceSnapshot, wilsyAIEntitlements.plans]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    document.documentElement.dataset.wilsyTheme = accountThemeId;
+    document.documentElement.dataset.wilsyMode = accountThemeMode;
+    return undefined;
+  }, [accountThemeId, accountThemeMode]);
+
   /**
    * @function fetchFinancialKPIs
    * @description Hydrates executive KPIs from financeService and marks the finance source truthfully when unavailable.
@@ -691,6 +1238,54 @@ const ExecutiveDashboard = ({
       }
     }));
     return watchlist;
+  }, [tenantId]);
+
+  /**
+   * @function fetchOperatingSources
+   * @description Hydrates HR, CRM and operating source readiness from their real Wilsy OS service clients.
+   * @returns {Promise<Array<Object>>} Operating source rows.
+   * @collaboration CEO onboarding must know whether people, customer, product, supply and risk systems are actually connected.
+   */
+  const fetchOperatingSources = useCallback(async () => {
+    const settled = await Promise.allSettled(
+      EXECUTIVE_OPERATING_SOURCE_PLAYBOOK.map(async descriptor => (
+        buildOperatingSourceRow(descriptor, {
+          tenantId,
+          payload: await descriptor.loader(tenantId)
+        })
+      ))
+    );
+    const rows = settled.map((result, index) => (
+      result.status === 'fulfilled'
+        ? result.value
+        : buildOperatingSourceRow(EXECUTIVE_OPERATING_SOURCE_PLAYBOOK[index], {
+          tenantId,
+          error: result.reason
+        })
+    ));
+    setOperatingSources(rows);
+    setSourceSnapshot(prev => ({
+      ...prev,
+      ...rows.reduce((snapshot, row) => ({
+        ...snapshot,
+        [row.key]: {
+          status: row.status,
+          live: row.live,
+          lastSync: row.lastSync,
+          count: row.count,
+          functionKey: row.functionKey,
+          lane: row.lane,
+          proofHash: row.proofHash,
+          error: row.error || null
+        }
+      }), {})
+    }));
+    await broadcastTelemetry(tenantId, 'EXEC_OPERATING_SOURCE_SYNC', 'COMMITTED', 'ExecutiveDashboard', {
+      liveSources: rows.filter(row => row.live).length,
+      totalSources: rows.length,
+      proofHash: createExecutiveProofHash({ tenantId, rows, suiteVersion: EXECUTIVE_SUITE_VERSION })
+    }).catch(() => {});
+    return rows;
   }, [tenantId]);
 
   /**
@@ -787,10 +1382,11 @@ const ExecutiveDashboard = ({
       fetchTabData('boardReports', pageStates.boardReports, nextFinancialKPIs),
       fetchTabData('investorUpdates', pageStates.investorUpdates, nextFinancialKPIs),
       fetchTabData('strategicGoals', pageStates.strategicGoals, nextFinancialKPIs),
-      fetchCurrencyWorkbench()
+      fetchCurrencyWorkbench(),
+      fetchOperatingSources()
     ]);
     setIsRefreshing(false);
-  }, [pageStates, fetchTabData, fetchFinancialKPIs, fetchCurrencyWorkbench]);
+  }, [pageStates, fetchTabData, fetchFinancialKPIs, fetchCurrencyWorkbench, fetchOperatingSources]);
 
   useEffect(() => {
     if (access.isLoading) return undefined;
@@ -909,7 +1505,7 @@ const ExecutiveDashboard = ({
     const updatedPage = { ...targetPage, offset: newOffset };
     setPageStates(prev => ({ ...prev, [tab]: updatedPage }));
     setIsRefreshing(true);
-    await broadcastTelemetry(tenantId, 'EXEC_PAGE_STATE_MUTATION', increment ? 'NEXT_PAGE' : 'PREVIOUS_PAGE', 'ExecutiveDashboard', {
+    await broadcastTelemetry(tenantId, 'EXEC_PAGE_Business Update', increment ? 'NEXT_PAGE' : 'PREVIOUS_PAGE', 'ExecutiveDashboard', {
       tab,
       offset: updatedPage.offset,
       limit: updatedPage.limit,
@@ -1229,7 +1825,7 @@ const ExecutiveDashboard = ({
    */
   const updateBusinessModelOverride = async (nextModel) => {
     setBusinessModelOverride(nextModel);
-    await broadcastTelemetry(tenantId, 'EXEC_BUSINESS_MODEL_SELECTION', nextModel || 'TENANT_AUTO_DETECT', 'ExecutiveDashboard', {
+    await broadcastTelemetry(tenantId, 'EXEC_Business Model_SELECTION', nextModel || 'TENANT_AUTO_DETECT', 'ExecutiveDashboard', {
       tenantId,
       selectedModel: nextModel || null,
       previousModel: executiveOperatingSystem.profile.industryKey,
@@ -1603,9 +2199,9 @@ const ExecutiveDashboard = ({
       type: 'strategicGoal',
       payload: {
         title: `Persist tenant business model: ${profile.industryLabel}`,
-        progress: profile.sourceStatus === 'OPERATOR_DECLARED_BUSINESS_MODEL' ? 10 : 100,
+        progress: profile.sourceStatus === 'OPERATOR_DECLARED_Business Model' ? 10 : 100,
         deadline: todayIso(),
-        status: profile.sourceStatus === 'OPERATOR_DECLARED_BUSINESS_MODEL' ? 'on_track' : 'committed',
+        status: profile.sourceStatus === 'OPERATOR_DECLARED_Business Model' ? 'on_track' : 'committed',
         lane: 'Administration',
         businessModel: profile.industryKey,
         sourceStatus: profile.sourceStatus,
@@ -1618,7 +2214,7 @@ const ExecutiveDashboard = ({
           suiteVersion: EXECUTIVE_SUITE_VERSION
         })
       },
-      receiptStatus: 'BUSINESS_MODEL_PROFILE_COMMAND'
+      receiptStatus: 'Business Model_PROFILE_COMMAND'
     });
     setActiveTab('strategicGoals');
   };
@@ -1647,6 +2243,196 @@ const ExecutiveDashboard = ({
       proofHash: answer.proofHash
     }).catch(() => {});
   };
+
+  /**
+   * @function handleAccountCommand
+   * @description Routes account command center actions through telemetry and the host command router when available.
+   * @param {string} action - Account action identifier.
+   * @param {Object} payload - Account command payload.
+   * @returns {Promise<void>} Resolves after the account command is routed or recorded.
+   * @collaboration Turns Settings, My Account, Security, MFA, Sessions, Privacy and Compliance into real OS command routes instead of dead UI.
+   */
+  const handleAccountCommand = useCallback(async (action, payload = {}) => {
+    const route = payload?.route || '/account';
+    const commandName = `EXEC_ACCOUNT_${String(action || 'COMMAND').toUpperCase()}`;
+    const proofHash = createExecutiveProofHash({
+      tenantId,
+      action,
+      route,
+      role,
+      suiteVersion: EXECUTIVE_SUITE_VERSION
+    });
+
+    await broadcastTelemetry(tenantId, commandName, 'ACCOUNT_COMMAND_CAPTURED', 'ExecutiveDashboard', {
+      action,
+      route,
+      proofHash
+    }).catch(() => {});
+
+    if (typeof executeCommand === 'function' && route) {
+      await executeCommand(commandName, route, 'GET', {
+        tenantId,
+        source: 'ExecutiveDashboard',
+        action,
+        proofHash
+      }).catch(error => {
+        broadcastTelemetry(tenantId, 'EXEC_ACCOUNT_COMMAND_ROUTE_FRACTURE', 'FRACTURE', 'ExecutiveDashboard', {
+          action,
+          route,
+          error: error.message,
+          proofHash
+        }).catch(() => {});
+      });
+    }
+  }, [executeCommand, role, tenantId]);
+
+  /**
+   * @function handleExecutiveSignOut
+   * @description Routes sign out through the host auth handler or records a governed logout command.
+   * @returns {Promise<void>} Resolves after sign out intent is handled.
+   * @collaboration Keeps Sign Out real without assuming every dashboard host exposes the same auth callback.
+   */
+  const handleExecutiveSignOut = useCallback(async () => {
+    if (typeof onSignOut === 'function') {
+      onSignOut();
+      await broadcastTelemetry(tenantId, 'EXEC_ACCOUNT_SIGN_OUT', 'ROUTED', 'ExecutiveDashboard', {
+        proofHash: createExecutiveProofHash({ tenantId, action: 'sign_out', suiteVersion: EXECUTIVE_SUITE_VERSION })
+      }).catch(() => {});
+      return;
+    }
+
+    await handleAccountCommand('sign_out', { route: '/auth/logout' });
+  }, [handleAccountCommand, onSignOut, tenantId]);
+
+  /**
+   * @function isFounderReturnEligible
+   * @description Determines whether the floating Founder return command should render.
+   * @returns {boolean} True when founder return should be available.
+   * @collaboration Keeps founder navigation conditional and executive-safe instead of occupying permanent cockpit space.
+   */
+  const isFounderReturnEligible = useMemo(() => (
+    Boolean(founderReturnEnabled || typeof onFounderReturn === 'function')
+  ), [founderReturnEnabled, onFounderReturn]);
+
+  /**
+   * @function handleFounderReturn
+   * @description Routes the operator back to the Founder command center when permitted.
+   * @returns {Promise<void>} Resolves after founder return is routed or recorded.
+   * @collaboration Makes founder return a smooth conditional OS transition rather than a fixed top-bar interruption.
+   */
+  const handleFounderReturn = useCallback(async () => {
+    const proofHash = createExecutiveProofHash({
+      tenantId,
+      action: 'return_to_founder_dashboard',
+      role,
+      suiteVersion: EXECUTIVE_SUITE_VERSION
+    });
+
+    await broadcastTelemetry(tenantId, 'EXEC_FOUNDER_RETURN_REQUESTED', 'ROUTED', 'ExecutiveDashboard', {
+      proofHash
+    }).catch(() => {});
+
+    if (typeof onFounderReturn === 'function') {
+      onFounderReturn({ tenantId, proofHash, source: 'ExecutiveDashboard' });
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('wilsy:navigate-dashboard', {
+        detail: {
+          dashboardKey: 'founder',
+          route: '/founder',
+          tenantId,
+          proofHash,
+          source: 'ExecutiveDashboard'
+        }
+      }));
+
+      window.localStorage.setItem('wilsy:requested-dashboard', JSON.stringify({
+        dashboardKey: 'founder',
+        route: '/founder',
+        tenantId,
+        proofHash,
+        requestedAt: new Date().toISOString()
+      }));
+    }
+
+    await handleAccountCommand('return_to_founder_dashboard', {
+      route: '/founder',
+      dashboardKey: 'founder',
+      proofHash
+    });
+  }, [handleAccountCommand, onFounderReturn, role, tenantId]);
+
+  /**
+   * @function executeVerticalSystemRoute
+   * @description Routes the CEO cockpit into a full Wilsy OS vertical system.
+   * @param {Object} system - Vertical system descriptor.
+   * @returns {Promise<void>} Resolves after the vertical transition is routed or recorded.
+   * @collaboration Keeps ExecutiveDashboard as the CEO gateway while HR, CRM, Billing, Documents and Legal remain full real systems.
+   */
+  const executeVerticalSystemRoute = useCallback(async (system) => {
+    const proofHash = createExecutiveProofHash({
+      tenantId,
+      action: system.command,
+      route: system.route,
+      dashboardKey: system.dashboardKey,
+      role,
+      suiteVersion: EXECUTIVE_SUITE_VERSION
+    });
+
+    await broadcastTelemetry(tenantId, 'EXEC_VERTICAL_SYSTEM_ROUTE', system.command, 'ExecutiveDashboard', {
+      label: system.label,
+      route: system.route,
+      dashboardKey: system.dashboardKey,
+      proofHash
+    }).catch(() => {});
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('wilsy:navigate-dashboard', {
+        detail: {
+          dashboardKey: system.dashboardKey,
+          route: system.route,
+          tenantId,
+          proofHash,
+          source: 'ExecutiveDashboard'
+        }
+      }));
+
+      window.localStorage.setItem('wilsy:requested-dashboard', JSON.stringify({
+        dashboardKey: system.dashboardKey,
+        route: system.route,
+        label: system.label,
+        tenantId,
+        proofHash,
+        requestedAt: new Date().toISOString()
+      }));
+    }
+
+    if (typeof executeCommand === 'function') {
+      await executeCommand(system.command, system.route, 'GET', {
+        tenantId,
+        dashboardKey: system.dashboardKey,
+        proofHash,
+        source: 'ExecutiveDashboard'
+      }).catch(error => {
+        broadcastTelemetry(tenantId, 'EXEC_VERTICAL_ROUTE_FRACTURE', 'FRACTURE', 'ExecutiveDashboard', {
+          label: system.label,
+          route: system.route,
+          error: error.message,
+          proofHash
+        }).catch(() => {});
+      });
+      return;
+    }
+
+    await handleAccountCommand(system.command, {
+      route: system.route,
+      dashboardKey: system.dashboardKey,
+      proofHash
+    });
+  }, [executeCommand, handleAccountCommand, role, tenantId]);
+
 
   /**
    * @function executeExecutiveCommand
@@ -1836,6 +2622,10 @@ const ExecutiveDashboard = ({
   const selectedWorkOrder = useMemo(() => (
     executiveWorkOrders.find(order => order.workOrderId === selectedWorkOrderId) || executiveWorkOrders[0] || null
   ), [executiveWorkOrders, selectedWorkOrderId]);
+  const operatingSourceCoverage = useMemo(() => ({
+    live: operatingSources.filter(source => source.live).length,
+    total: operatingSources.length
+  }), [operatingSources]);
 
   const executiveReadiness = useMemo(() => {
     const liveSources = sourceRows.filter(source => source.live).length;
@@ -2254,11 +3044,932 @@ const ExecutiveDashboard = ({
     );
   };
 
+  const executiveWorkspaceOptions = [
+    { id: 'overview', label: 'Overview', detail: 'Executive decision cockpit', icon: Briefcase, status: executiveReadiness.posture },
+    { id: 'sources', label: 'Sources', detail: 'Tenant operating systems', icon: Database, status: `${operatingSourceCoverage.live}/${operatingSourceCoverage.total} live` },
+    { id: 'playbook', label: 'Playbook', detail: executiveTransformation.phase?.target || 'ARR phase', icon: Building2, status: `${executiveTransformation.phaseProgress}%` },
+    { id: 'workbench', label: 'Work', detail: 'Daily executive workbench', icon: ClipboardCheck, status: selectedWorkOrder ? compactExecutiveSignal(selectedWorkOrder.status) : 'READY' },
+    { id: 'automation', label: 'AI', detail: 'Wilsy automation', icon: ShieldCheck, status: compactExecutiveSignal(wilsyAIEntitlements.status || wilsyAiPlan[0]?.readiness || 'PLAN_PENDING') },
+    { id: 'finance', label: 'Finance', detail: 'Finance and FX intelligence', icon: PieChart, status: compactExecutiveSignal(sourceSnapshot.finance.status) },
+    { id: 'ledger', label: 'Ledger', detail: TAB_TO_LABEL_MAP[activeTab] || 'KPI', icon: FileText, status: `${pageStates[activeTab].limit} rows` },
+    { id: 'systems', label: 'Systems', detail: 'Vertical OS', icon: Route, status: 'Live gateways' },
+    { id: 'diagnostics', label: 'Diagnostics', detail: 'Source truth', icon: Activity, status: compactExecutiveSignal(sourceSnapshot.telemetry.status) }
+  ];
+  const activeWorkspaceMeta = executiveWorkspaceOptions.find(workspace => workspace.id === activeWorkspace) || executiveWorkspaceOptions[0];
+  const ActiveWorkspaceIcon = activeWorkspaceMeta.icon;
+
+  useEffect(() => {
+    /**
+     * @function syncWilsyExecutiveThemeRuntime
+     * @description Synchronizes ExecutiveDashboard with Account Command Center theme receipts.
+     * @param {CustomEvent|StorageEvent} event - Theme change or storage event.
+     * @returns {void}
+     * @collaboration Makes operating skins repaint the live Executive cockpit immediately after Account saves them.
+     */
+    const syncWilsyExecutiveThemeRuntime = (event = {}) => {
+      const stored = readWilsyExecutiveThemePreference();
+      const detail = event?.detail || {};
+      const nextThemeId = normalizeWilsyExecutiveThemeId(detail.themeId || stored.themeId);
+      const nextMode = normalizeWilsyExecutiveMode(detail.mode || stored.mode);
+
+      setAccountThemeId(nextThemeId);
+      setAccountThemeMode(nextMode);
+      applyWilsyExecutiveThemeToDocument(nextThemeId, nextMode);
+    };
+
+    syncWilsyExecutiveThemeRuntime();
+
+    window.addEventListener('wilsy:theme-change', syncWilsyExecutiveThemeRuntime);
+    window.addEventListener('storage', syncWilsyExecutiveThemeRuntime);
+
+    return () => {
+      window.removeEventListener('wilsy:theme-change', syncWilsyExecutiveThemeRuntime);
+      window.removeEventListener('storage', syncWilsyExecutiveThemeRuntime);
+    };
+  }, []);
+
+  const executiveCommandOptions = [
+    { id: 'KPI_REBASE', label: 'KPI Rebase', detail: 'Refresh finance KPIs', icon: PieChart, targetWorkspace: 'finance' },
+    { id: 'BOARD_PACKET', label: 'Seal Board Pack', detail: 'Prepare board pack', icon: FileText, targetWorkspace: 'ledger' },
+    { id: 'INVESTOR_BRIEF', label: 'Investor Brief', detail: 'Create investor update', icon: Send, targetWorkspace: 'ledger' },
+    { id: 'STRATEGIC_MANDATE', label: 'Mandate Goal', detail: 'Set executive mandate', icon: Target, targetWorkspace: 'ledger' },
+    { id: 'WILSY_AI_LICENSE', label: 'Wilsy AI', detail: 'Configure Wilsy AI', icon: ShieldCheck, targetWorkspace: 'automation' },
+    { id: 'TRANSFORMATION_PLAYBOOK', label: 'ARR Playbook', detail: executiveTransformation.phase?.target || 'Roadmap phase', icon: Building2, targetWorkspace: 'playbook' },
+    { id: 'INTEGRATION_SPRINT', label: 'Integration Sprint', detail: executiveTransformation.integrationRows?.[0]?.label || 'Connector lane', icon: Database, targetWorkspace: 'sources' },
+    { id: 'TRUST_PACKET', label: 'Trust Packet', detail: 'Review trust evidence', icon: ShieldCheck, targetWorkspace: 'playbook' }
+  ];
+
+  const sourceRegistryPanel = (
+    <article className={styles.sourceRegistry}>
+      <span><Database size={13} /> SOURCE_REGISTRY</span>
+      <div>
+        {sourceRows.map(source => (
+          <div key={source.key}>
+            <small>{source.live ? <CheckCircle size={11} /> : <AlertTriangle size={11} />} {source.key}</small>
+            <strong data-live={source.live ? 'true' : 'false'} title={source.status}>
+              {compactExecutiveSignal(source.status)}
+            </strong>
+          </div>
+        ))}
+      </div>
+      {sourceRepairQueue.length > 0 && (
+        <div className={styles.repairQueue}>
+          <small>SOURCE_REPAIR_QUEUE</small>
+          {sourceRepairQueue.slice(0, 4).map(action => (
+            <button
+              type="button"
+              key={action.id}
+              onClick={() => {
+                setActiveWorkspace('ledger');
+                requestSourceRepair(action);
+              }}
+              disabled={isRefreshing}
+            >
+              <AlertTriangle size={12} />
+              <span>{action.title}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </article>
+  );
+
+  /**
+   * @function executiveCommandRail
+   * @description Renders the fixed command launcher used by the selected executive workspace.
+   * @returns {JSX.Element} Executive command rail.
+   * @collaboration Replaces continuous scrolling command discovery with deliberate CEO command selection inside the OS viewport.
+   */
+  const executiveCommandRail = (
+    <section className={styles.commandRail} aria-label="Executive command rail">
+      {executiveCommandOptions.map(command => {
+        const CommandIcon = command.icon;
+        return (
+          <button
+            key={command.id}
+            type="button"
+            onClick={() => {
+              setActiveWorkspace(command.targetWorkspace);
+              executeExecutiveCommand(command.id);
+            }}
+          >
+            <CommandIcon size={16} />
+            <span>{command.label}</span>
+            <small>{command.detail}</small>
+          </button>
+        );
+      })}
+    </section>
+  );
+
+  const executiveKpiStrip = (
+    <section className={styles.kpiGrid}>
+      <article>
+        <span>REVENUE_YTD_COUNTER</span>
+        <strong data-tone="green">{formatExecutiveKpiValue(financialKPIs.revenue, financialKPIs.currency || DEFAULT_OPERATING_CURRENCY)}</strong>
+      </article>
+      <article>
+        <span>ANNUAL_RECURRING_ARR</span>
+        <strong>{formatExecutiveKpiValue(financialKPIs.arr, financialKPIs.currency || DEFAULT_OPERATING_CURRENCY)}</strong>
+      </article>
+      <article>
+        <span>PROFIT_MARGIN_EFFICIENCY</span>
+        <strong>{formatExecutiveKpiValue(financialKPIs.profitMargin, '%')}</strong>
+      </article>
+      <article>
+        <span>NET_PROMOTER_INDEX</span>
+        <strong>{formatExecutiveKpiValue(financialKPIs.nps, 'score')}</strong>
+      </article>
+      <article>
+        <span>EMPLOYEE_SAT_COEFFICIENT</span>
+        <strong data-tone="green">{formatExecutiveKpiValue(financialKPIs.employeeSatisfaction, '%')}</strong>
+      </article>
+    </section>
+  );
+
+  /**
+   * @function executiveLedgerTabs
+   * @description Renders ledger mode tabs inside the focused executive workspace.
+   * @returns {JSX.Element} Ledger tab controls.
+   * @collaboration Keeps board, investor, KPI and goal records accessible without forcing Wilson through the full dashboard scroll stack.
+   */
+  const executiveLedgerTabs = (
+    <nav className={styles.tabs} aria-label="Executive command workspace">
+      {[
+        { id: 'kpis', label: 'STRATEGIC KPIS', icon: <BarChart3 size={12} /> },
+        { id: 'boardReports', label: 'BOARD REPORTS', icon: <FileText size={12} /> },
+        { id: 'investorUpdates', label: 'INVESTOR UPDATES', icon: <Users size={12} /> },
+        { id: 'strategicGoals', label: 'GOALS_PROJECTION', icon: <Target size={12} /> }
+      ].map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => {
+            setActiveWorkspace('ledger');
+            setActiveTab(tab.id);
+            fetchTabData(tab.id, pageStates[tab.id]);
+          }}
+          className={activeTab === tab.id ? styles.tabActive : styles.tabButton}
+        >
+          {tab.icon} {tab.label}
+        </button>
+      ))}
+    </nav>
+  );
+
+  const verticalSystemGateways = [
+    {
+      id: 'hr',
+      label: 'People and HR',
+      detail: 'Employees, recruitment, payroll, benefits, performance and time off.',
+      command: 'EXEC_OPEN_HR_VERTICAL',
+      route: '/hr',
+      dashboardKey: 'hr',
+      icon: Users,
+      posture: 'Full vertical available'
+    },
+    {
+      id: 'crm',
+      label: 'CRM and Customers',
+      detail: 'Clients, leads, accounts, deals, activities, documents and customer records.',
+      command: 'EXEC_OPEN_CRM_VERTICAL',
+      route: '/crm',
+      dashboardKey: 'crm',
+      icon: Building2,
+      posture: 'Customer vertical available'
+    },
+    {
+      id: 'billing',
+      label: 'Billing Command',
+      detail: 'Invoices, billing analytics, payments, subscriptions and revenue controls.',
+      command: 'EXEC_OPEN_BILLING_VERTICAL',
+      route: '/billing',
+      dashboardKey: 'billing',
+      icon: Database,
+      posture: 'Billing system available'
+    },
+    {
+      id: 'revenue-ledger',
+      label: 'Revenue Ledger',
+      detail: 'Sovereign revenue ledger, proof exports, invoice evidence and fiscal trail.',
+      command: 'EXEC_OPEN_REVENUE_LEDGER',
+      route: '/revenue-ledger',
+      dashboardKey: 'revenue-ledger',
+      icon: FileText,
+      posture: 'Ledger vertical available'
+    },
+    {
+      id: 'documents',
+      label: 'Document Vault',
+      detail: 'Document search, versions, audit, verification, sharing, watermarking and lock control.',
+      command: 'EXEC_OPEN_DOCUMENT_VAULT',
+      route: '/documents',
+      dashboardKey: 'documents',
+      icon: ClipboardCheck,
+      posture: 'Document rails available'
+    },
+    {
+      id: 'artifacts',
+      label: 'Artifact Studio',
+      detail: 'Board packs, NDAs, invoices, evidence packs, proof-sealed exports and templates.',
+      command: 'EXEC_OPEN_ARTIFACT_STUDIO',
+      route: '/artifacts',
+      dashboardKey: 'artifacts',
+      icon: Send,
+      posture: 'Artifact engine available'
+    },
+    {
+      id: 'legal',
+      label: 'Legal and Compliance',
+      detail: 'POPIA, forensic reports, legal workflows, compliance review and evidence.',
+      command: 'EXEC_OPEN_LEGAL_VERTICAL',
+      route: '/legal',
+      dashboardKey: 'legal',
+      icon: ShieldCheck,
+      posture: 'Legal vertical available'
+    },
+    {
+      id: 'client-portal',
+      label: 'Client Portal',
+      detail: 'Client documents, messages, invoices, matters, activity and portal records.',
+      command: 'EXEC_OPEN_CLIENT_PORTAL',
+      route: '/client-portal',
+      dashboardKey: 'client-portal',
+      icon: Route,
+      posture: 'Client portal available'
+    }
+  ];
+
+
+  const workspaceContent = {
+    overview: (
+      <div className={styles.overviewWorkspace}>
+        <section className={styles.commandDeck}>
+          <article className={styles.finalityPanel}>
+            <div className={styles.finalityHeader}>
+              <div>
+                <span>
+                  <ShieldCheck size={13} /> Executive Readiness
+                </span>
+                <strong>
+                  {executiveReadiness.score}% // {executiveReadiness.posture}
+                </strong>
+              </div>
+              <div>
+                <span>LIVE_SOURCE_COVERAGE</span>
+                <strong>{executiveReadiness.liveSources}/{executiveReadiness.totalSources}</strong>
+              </div>
+            </div>
+            <div className={styles.sourceMatrix}>
+              <div>
+                <span>FINANCE_TRUTH_SOURCE</span>
+                <strong title={sourceSnapshot.finance.status}>{compactExecutiveSignal(sourceSnapshot.finance.status)}</strong>
+                <small>{sourceSnapshot.finance.proofHash?.slice(0, 18) || 'PROOF_PENDING'}</small>
+              </div>
+              <div>
+                <span>TELEMETRY_STREAM</span>
+                <strong title={sourceSnapshot.telemetry.status}>{compactExecutiveSignal(sourceSnapshot.telemetry.status)}</strong>
+                <small>{sourceSnapshot.telemetry.lastSync || 'SYNC_PENDING'}</small>
+              </div>
+              <div>
+                <span>SHARD_PAGINATION</span>
+                <strong>{pageStates[activeTab].limit} ROW WINDOWS</strong>
+                <small>{sourceSnapshot.records.proofHash?.slice(0, 18) || 'PROOF_PENDING'}</small>
+              </div>
+            </div>
+          </article>
+
+          <article className={styles.memoPanel}>
+            <span><ClipboardCheck size={13} /> Decision Memo</span>
+            <h2>{executiveMemo.nextAction}</h2>
+            {executiveMemo.dutyReason && <p>{executiveMemo.dutyReason}</p>}
+            <div className={styles.memoGrid}>
+              <div>
+                <small>ARR</small>
+                <strong>{formatExecutiveMoney(executiveMemo.arr)}</strong>
+              </div>
+              <div>
+                <small>Revenue</small>
+                <strong>{formatExecutiveMoney(executiveMemo.revenue)}</strong>
+              </div>
+              <div>
+                <small>Industry</small>
+                <strong>{executiveMemo.industry}</strong>
+              </div>
+            </div>
+            <p>MEMO_PROOF // {executiveMemo.proofHash.slice(0, 28)}</p>
+          </article>
+        </section>
+        {executiveCommandRail}
+      </div>
+    ),
+    sources: (
+      <div className={styles.sourcesWorkspace}>
+        <section className={styles.operatingSourceDeck}>
+          <header>
+            <div>
+              <span><Database size={13} /> CEO_OPERATING_SOURCE_FABRIC</span>
+              <h2>HR, CRM, revenue, product and risk rails</h2>
+            </div>
+            <small>{operatingSourceCoverage.live}/{operatingSourceCoverage.total} LIVE</small>
+          </header>
+          <div className={styles.operatingSourceGrid}>
+            {operatingSources.map(source => (
+              <article key={source.key} data-live={source.live ? 'true' : 'false'}>
+                <small>{source.lane} // {source.count === null ? 'SOURCE_REQUIRED' : `${source.count} ROWS`}</small>
+                <strong>{source.label}</strong>
+                <span title={source.status}>{compactExecutiveSignal(source.status)}</span>
+                <button
+                  type="button"
+                  className={styles.inlineAction}
+                  onClick={() => executeFunctionCard({
+                    key: source.functionKey,
+                    label: source.label,
+                    status: source.live ? 'ENABLED' : 'RECOMMENDED',
+                    sourceStatus: source.status
+                  })}
+                  disabled={isRefreshing}
+                >
+                  <Route size={12} /> Open Rail
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+        {sourceRegistryPanel}
+      </div>
+    ),
+    playbook: (
+      <section className={styles.transformationGrid}>
+        <article className={styles.transformationHero}>
+          <header>
+            <div>
+              <span><Building2 size={13} /> ARR_TRANSFORMATION_PLAYBOOK</span>
+              <h2>{executiveTransformation.phase?.label}</h2>
+            </div>
+            <small>{executiveTransformation.phase?.months} // {executiveTransformation.phase?.target}</small>
+          </header>
+          <div className={styles.phaseMeter}>
+            <div>
+              <strong>{executiveTransformation.phaseProgress}%</strong>
+              <span>PHASE_PROGRESS</span>
+            </div>
+            <div className={styles.phaseTrack}>
+              <i style={{ width: `${executiveTransformation.phaseProgress}%` }} />
+            </div>
+          </div>
+          <p>{executiveTransformation.phase?.mandate}</p>
+          <div className={styles.transformationStats}>
+            <div>
+              <small>ARR</small>
+              <strong>{formatExecutiveMoney(executiveTransformation.arr, executiveTransformation.currency)}</strong>
+            </div>
+            <div>
+              <small>REVENUE</small>
+              <strong>{formatExecutiveMoney(executiveTransformation.revenue, executiveTransformation.currency)}</strong>
+            </div>
+            <div>
+              <small>READINESS</small>
+              <strong>{executiveTransformation.readinessScore}%</strong>
+            </div>
+            <div>
+              <small>PLAYBOOK_PROOF</small>
+              <strong>{executiveTransformation.proofHash?.slice(0, 18)}</strong>
+            </div>
+          </div>
+          <div className={styles.priorityStack}>
+            {executiveTransformation.priorityActions.slice(0, 5).map(action => (
+              <article key={action.id} data-status={action.status}>
+                <small>{action.priority} // {action.lane}</small>
+                <strong>{action.title}</strong>
+                <span title={action.proofHash}>{compactExecutiveSignal(action.status)}</span>
+              </article>
+            ))}
+          </div>
+        </article>
+
+        <article className={styles.integrationPanel}>
+          <header>
+            <div>
+              <span><Database size={13} /> INTEGRATION_MARKETPLACE_READINESS</span>
+              <h2>Finance, CRM, alerts and identity rails</h2>
+            </div>
+            <small>{executiveTransformation.integrationRows.filter(row => row.status === 'READY_TO_CONNECT').length} READY</small>
+          </header>
+          <div className={styles.connectorGrid}>
+            {executiveTransformation.integrationRows.slice(0, 8).map(connector => (
+              <article key={connector.key} data-status={connector.status}>
+                <small>{connector.lane} // {compactExecutiveSignal(connector.sourceStatus)}</small>
+                <strong>{connector.label}</strong>
+                <span>{connector.value}</span>
+                <em title={connector.proofHash}>{compactExecutiveSignal(connector.status)}</em>
+              </article>
+            ))}
+          </div>
+        </article>
+
+        <article className={styles.trustPanel}>
+          <header>
+            <div>
+              <span><ShieldCheck size={13} /> ENTERPRISE_TRUST_STACK</span>
+              <h2>SOC2, POPIA, audit export and RBAC</h2>
+            </div>
+            <small>{executiveTransformation.trustRows.filter(row => ['EVIDENCE_READY', 'EXPORT_READY', 'RBAC_ACTIVE'].includes(row.status)).length} SEALED</small>
+          </header>
+          <div className={styles.trustRows}>
+            {executiveTransformation.trustRows.map(row => (
+              <article key={row.key} data-status={row.status}>
+                <div>
+                  <small>{row.lane} // SCORE {row.score}</small>
+                  <strong>{row.label}</strong>
+                </div>
+                <span title={row.sourceStatus}>{compactExecutiveSignal(row.status)}</span>
+              </article>
+            ))}
+          </div>
+        </article>
+
+        <article className={styles.moatPanel}>
+          <header>
+            <div>
+              <span><Target size={13} /> COMPETITIVE_KILL_MATRIX</span>
+              <h2>Market counter-positioning</h2>
+            </div>
+            <small>{executiveTransformation.moatRows.filter(row => row.status === 'MOAT_LIVE').length} LIVE MOATS</small>
+          </header>
+          <div className={styles.moatRows}>
+            {executiveTransformation.moatRows.map(row => (
+              <article key={row.key} data-status={row.status}>
+                <small>{row.label} // {compactExecutiveSignal(row.status)}</small>
+                <strong>{row.wilsyMove}</strong>
+                <p>{row.competitorSignal}</p>
+              </article>
+            ))}
+          </div>
+        </article>
+      </section>
+    ),
+    automation: (
+      <div className={styles.automationWorkspace}>
+        <article className={styles.intelligencePanel}>
+          <header>
+            <div>
+              <span><PieChart size={13} /> AI_POWERED_EXECUTIVE_INTELLIGENCE</span>
+              <h2>Forecast, anomaly and board signals</h2>
+            </div>
+            <small>{executiveTransformation.insightRows.length} INSIGHT LANES</small>
+          </header>
+          <div className={styles.insightList}>
+            {executiveTransformation.insightRows.map(insight => (
+              <article key={insight.id} data-status={insight.status}>
+                <div>
+                  <small>{insight.lane} // {insight.confidence}%</small>
+                  <strong>{insight.title}</strong>
+                  <p>{insight.signal}</p>
+                </div>
+                <span title={insight.proofHash}>{compactExecutiveSignal(insight.status)}</span>
+              </article>
+            ))}
+          </div>
+          <form className={styles.nlqBox} onSubmit={askExecutiveOS}>
+            <label>
+              <Search size={13} />
+              <input
+                value={executiveQuestion}
+                onChange={event => setExecutiveQuestion(event.target.value)}
+                placeholder="ASK_REVENUE_SOURCE_BOARD_COMPLIANCE"
+              />
+            </label>
+            <button type="submit" className={styles.primaryButton} disabled={isRefreshing || !executiveQuestion.trim()}>
+              ASK
+            </button>
+          </form>
+          {executiveAnswer && (
+            <div className={styles.nlqAnswer}>
+              <small>{executiveAnswer.intent} // {executiveAnswer.proofHash.slice(0, 18)}</small>
+              <strong>{executiveAnswer.answer}</strong>
+              <div>
+                {executiveAnswer.evidenceRows.slice(0, 4).map(row => (
+                  <span key={row}>{row}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </article>
+
+        <article className={styles.aiPanel}>
+          <header>
+            <div>
+              <span><ShieldCheck size={13} /> WILSY_AI_LICENSE_LADDER</span>
+              <h2>Tenant Automation Add-ons</h2>
+            </div>
+            <small title={wilsyAIEntitlements.status || wilsyAiPlan[0]?.readiness || 'PLAN_PENDING'}>
+              {compactExecutiveSignal(wilsyAIEntitlements.status || wilsyAiPlan[0]?.readiness || 'PLAN_PENDING')}
+            </small>
+          </header>
+          <div className={styles.aiList}>
+            {wilsyAiPlan.map(plan => (
+              <article key={plan.id} className={styles.aiCard} data-readiness={plan.readiness}>
+                <span>{plan.tier} // {plan.licenseStatus || 'UNLICENSED'}</span>
+                <h3>{plan.name}</h3>
+                <p>{plan.differentiator || plan.valuePromise || plan.reason}</p>
+                <div className={styles.aiEconomics}>
+                  <div>
+                    <small>MONTHLY</small>
+                    <strong>{formatOperatingMoney(plan.monthlyPriceZar ?? plan.monthlyPrice ?? null, 'ZAR')}</strong>
+                  </div>
+                  <div>
+                    <small>DAILY REQUESTS</small>
+                    <strong>
+                      {formatExecutiveUsageValue(plan.usageAnalytics?.daily?.requestUnits)}
+                      /{formatExecutiveUsageValue(plan.dailyRequestLimit)}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>MONTH VALUE</small>
+                    <strong>{formatOperatingMoney(plan.usageAnalytics?.monthly?.estimatedValueZar ?? null, 'ZAR')}</strong>
+                  </div>
+                </div>
+                <small title={plan.sourceStatus}>
+                  {plan.tenantFit} // {compactExecutiveSignal(plan.sourceStatus)} // {compactExecutiveSignal(plan.usageAnalytics?.quotaStatus || 'USAGE_SOURCE_REQUIRED')}
+                </small>
+                <div className={styles.aiActions}>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() => activateWilsyAiUseCase(plan)}
+                    disabled={isRefreshing || plan.readiness === 'ACCESS_DENIED' || plan.licenseStatus === 'ACTIVE'}
+                  >
+                    {plan.licenseStatus === 'ACTIVE' ? 'ACTIVE' : 'LICENSE'}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => logWilsyAiRequest(plan)}
+                    disabled={isRefreshing || plan.licenseStatus !== 'ACTIVE'}
+                  >
+                    LOG REQUEST
+                  </button>
+                </div>
+              </article>
+            ))}
+            {wilsyAiPlan.length === 0 && (
+              <div className={styles.emptyStream}>WILSY_AI_PLAN_REQUIRES_TENANT_PROFILE...</div>
+            )}
+          </div>
+        </article>
+      </div>
+    ),
+    workbench: (
+      <section className={styles.operatingGrid}>
+        <article className={styles.dailyDutyPanel}>
+          <header>
+            <div>
+              <span><ClipboardCheck size={13} /> DAILY_EXECUTIVE_WORKBENCH</span>
+              <h2>{executiveOperatingSystem.profile.name}</h2>
+            </div>
+            <small title={executiveOperatingSystem.profile.sourceStatus}>{compactExecutiveSignal(executiveOperatingSystem.profile.sourceStatus)}</small>
+          </header>
+          <div className={styles.profileStrip}>
+            <div>
+              <small>Business Model</small>
+              <strong>{executiveOperatingSystem.profile.industryLabel}</strong>
+            </div>
+            <div>
+              <small>MODEL_SELECTOR</small>
+              <label className={styles.modelSelector}>
+                <select
+                  value={businessModelOverride || ''}
+                  onChange={event => updateBusinessModelOverride(event.target.value)}
+                >
+                  <option value="">Tenant auto-detect</option>
+                  {executiveOperatingSystem.businessModels.map(model => (
+                    <option key={model.key} value={model.key}>{model.label}</option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className={styles.inlineAction}
+                onClick={persistBusinessModelCommand}
+                disabled={isRefreshing}
+              >
+                <Settings size={12} /> Persist Model
+              </button>
+            </div>
+            <div>
+              <small>BUSINESS_FAMILY</small>
+              <strong>{executiveOperatingSystem.profile.naicsFamily || 'General operating model'}</strong>
+            </div>
+            <div>
+              <small>CONFIDENCE</small>
+              <strong>{Math.round((executiveOperatingSystem.profile.confidence || 0) * 100)}% // {compactExecutiveSignal(executiveOperatingSystem.profile.sourceStatus)}</strong>
+            </div>
+            <div>
+              <small>PROFILE_EVIDENCE</small>
+              <strong>{executiveOperatingSystem.profile.sourceEvidence}</strong>
+            </div>
+          </div>
+          <div className={styles.functionMatrix}>
+            {executiveOperatingSystem.functionMatrix.map(item => (
+              <article key={item.key} data-status={item.status}>
+                <div>
+                  <small>{item.label}</small>
+                  <strong>{compactExecutiveSignal(item.status)}</strong>
+                </div>
+                <button
+                  type="button"
+                  className={isFunctionExecutable(item) ? styles.iconButton : `${styles.iconButton} ${styles.dangerButton}`}
+                  onClick={() => executeFunctionCard(item)}
+                  title={isFunctionExecutable(item) ? `Open ${item.label}` : `Request access to ${item.label}`}
+                  disabled={isRefreshing}
+                >
+                  {isFunctionExecutable(item) ? <Route size={13} /> : <Lock size={13} />}
+                </button>
+              </article>
+            ))}
+          </div>
+          <div className={styles.workOrderPanel}>
+            <header>
+              <div>
+                <span><PlayCircle size={13} /> EXECUTIVE_WORK_ORDER</span>
+                <h2>{selectedWorkOrder?.title || 'No accepted work order yet'}</h2>
+              </div>
+              <small>{selectedWorkOrder ? compactExecutiveSignal(selectedWorkOrder.status) : 'AWAITING_DUTY_ACCEPTANCE'}</small>
+            </header>
+            {selectedWorkOrder ? (
+              <div className={styles.workOrderBody}>
+                <div className={styles.workOrderMeta}>
+                  <div>
+                    <small>MODULE</small>
+                    <strong>{selectedWorkOrder.functionKey}</strong>
+                  </div>
+                  <div>
+                    <small>ROUTE</small>
+                    <strong>{selectedWorkOrder.route?.route || '/executive'}</strong>
+                  </div>
+                  <div>
+                    <small>PROOF</small>
+                    <strong>{selectedWorkOrder.proofHash?.slice(0, 18)}</strong>
+                  </div>
+                </div>
+                <ol className={styles.workSteps}>
+                  {(selectedWorkOrder.workflowSteps || []).map(step => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+                {selectedWorkOrder.blockedReason && <p className={styles.blockedReason}>{selectedWorkOrder.blockedReason}</p>}
+                <div className={styles.workOrderActions}>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() => runExecutiveWorkOrder(selectedWorkOrder)}
+                    disabled={isRefreshing}
+                  >
+                    {selectedWorkOrder.blocked ? 'REVIEW GATES' : 'RUN WORK ORDER'}
+                  </button>
+                  <select
+                    value={selectedWorkOrder.workOrderId}
+                    onChange={event => setSelectedWorkOrderId(event.target.value)}
+                  >
+                    {executiveWorkOrders.map(order => (
+                      <option key={order.workOrderId} value={order.workOrderId}>{order.title}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.emptyStream}>ACCEPT_A_DAILY_DUTY_TO_CREATE_A_WORK_ORDER...</div>
+            )}
+          </div>
+          <div className={styles.dutyList}>
+            {executiveOperatingSystem.dailyDuties.map(duty => (
+              <article key={duty.key} className={styles.dutyCard} data-status={duty.status} data-impact={duty.impact}>
+                <div>
+                  <span>{duty.lane} // {duty.cadence}</span>
+                  <h3>{duty.title}</h3>
+                  <p>{duty.reason}</p>
+                  <div className={styles.evidenceRail}>
+                    {(duty.evidenceRequired || []).slice(0, 4).map(evidence => (
+                      <i key={evidence}>{evidence}</i>
+                    ))}
+                  </div>
+                  {duty.blockedReason && <p className={styles.blockedReason}>{duty.blockedReason}</p>}
+                  <small title={duty.sourceStatus}>{compactExecutiveSignal(duty.sourceStatus)} // IMPACT {duty.impact}</small>
+                </div>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => acceptDailyDuty(duty)}
+                  disabled={isRefreshing}
+                >
+                  {duty.commandLabel || 'ACCEPT'}
+                </button>
+              </article>
+            ))}
+          </div>
+        </article>
+        {sourceRegistryPanel}
+      </section>
+    ),
+    finance: (
+      <div className={styles.financeWorkspace}>
+        {executiveKpiStrip}
+        <section className={styles.currencyPanel}>
+          <header>
+            <div>
+              <span>ZA_CURRENCY_INTELLIGENCE</span>
+              <h2>ZAR Operating Lens</h2>
+            </div>
+            <small title={currencyWorkbench.sourceStatus}>{compactExecutiveSignal(currencyWorkbench.sourceStatus)}</small>
+          </header>
+          <div className={styles.fxWorkbench}>
+            <div className={styles.fxControls}>
+              <label>
+                <span>Amount</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={currencyWorkbench.amount}
+                  onChange={event => setCurrencyWorkbench(prev => ({ ...prev, amount: event.target.value }))}
+                />
+              </label>
+              <label>
+                <span>From</span>
+                <select
+                  value={currencyWorkbench.fromCurrency}
+                  onChange={event => setCurrencyWorkbench(prev => ({ ...prev, fromCurrency: event.target.value }))}
+                >
+                  {EXECUTIVE_CURRENCIES.map(currency => <option key={currency} value={currency}>{currency}</option>)}
+                </select>
+              </label>
+              <label>
+                <span>To</span>
+                <select
+                  value={currencyWorkbench.toCurrency}
+                  onChange={event => setCurrencyWorkbench(prev => ({ ...prev, toCurrency: event.target.value }))}
+                >
+                  {EXECUTIVE_CURRENCIES.map(currency => <option key={currency} value={currency}>{currency}</option>)}
+                </select>
+              </label>
+              <button type="button" className={styles.primaryButton} onClick={runCurrencyConversion} disabled={isRefreshing}>
+                CONVERT
+              </button>
+            </div>
+            <div className={styles.fxResult}>
+              <span>CONVERSION_RECEIPT</span>
+              <strong>
+                {currencyWorkbench.conversion?.display?.converted || 'FX_SOURCE_REQUIRED'}
+              </strong>
+              <small>
+                {currencyWorkbench.conversion?.display?.source || formatOperatingMoney(currencyWorkbench.amount, currencyWorkbench.fromCurrency)}
+                {' '} // RATE {currencyWorkbench.conversion?.rate || 'SOURCE_REQUIRED'}
+              </small>
+              <p>
+                {currencyWorkbench.conversion?.sarbReview?.status || 'SARB_INTERNAL_REVIEW_PENDING'} // PROOF{' '}
+                {(currencyWorkbench.conversion?.proofHash || currencyWorkbench.proofHash || 'PENDING').slice(0, 22)}
+              </p>
+            </div>
+            <div className={styles.fxRates}>
+              {currencyWorkbench.watchlist.length === 0 ? (
+                <div className={styles.emptyStream}>FX_WATCHLIST_SOURCE_REQUIRED...</div>
+              ) : currencyWorkbench.watchlist.map(rate => (
+                <article key={`${rate.baseCurrency}-${rate.quoteCurrency}`}>
+                  <small>{rate.baseCurrency}/{rate.quoteCurrency}</small>
+                  <strong>{rate.rate || 'SOURCE_REQUIRED'}</strong>
+                  <span title={rate.sourceStatus}>{compactExecutiveSignal(rate.sourceStatus)}</span>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    ),
+    ledger: (
+      <div className={styles.ledgerWorkspace}>
+        {executiveLedgerTabs}
+        <section className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <div>
+              <span>EXECUTIVE_LEDGER</span>
+              <h2>{TAB_TO_LABEL_MAP[activeTab] || 'KPI'} GOVERNANCE</h2>
+            </div>
+            <small title={sourceSnapshot.records.status}>{pageStates[activeTab].limit} row shard // {compactExecutiveSignal(sourceSnapshot.records.status)}</small>
+          </div>
+          {renderContent()}
+        </section>
+      </div>
+    ),
+    systems: (
+      <div className={styles.integrationWorkspace}>
+        <section className={styles.integrationPanel}>
+          <header>
+            <span>Vertical OS</span>
+            <h2>Wilsy OS System Gateways</h2>
+            <p>
+              ExecutiveDashboard is the CEO cockpit. Each card opens a real vertical system instead of compressing
+              HR, CRM, billing, documents and legal operations into one crowded view.
+            </p>
+          </header>
+
+          <div className={styles.connectorGrid}>
+            {verticalSystemGateways.map(system => {
+              const SystemIcon = system.icon;
+              return (
+                <article key={system.id}>
+                  <div>
+                    <SystemIcon size={18} />
+                    <span>{system.posture}</span>
+                  </div>
+                  <h3>{system.label}</h3>
+                  <p>{system.detail}</p>
+                  <button
+                    type="button"
+                    className={styles.inlineAction}
+                    onClick={() => executeVerticalSystemRoute(system)}
+                  >
+                    Open System
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className={styles.trustPanel}>
+          <header>
+            <span>Operating Doctrine</span>
+            <h2>CEO gateway, not a table dump</h2>
+          </header>
+          <div className={styles.trustRows}>
+            <article>
+              <strong>HR</strong>
+              <span>Employee detail belongs in the HR vertical; Executive gets workforce signal and route access.</span>
+            </article>
+            <article>
+              <strong>CRM</strong>
+              <span>Client detail belongs in CRM; Executive gets pipeline signal and customer-risk commands.</span>
+            </article>
+            <article>
+              <strong>Documents</strong>
+              <span>Generated artifacts and vault records stay connected to proof, audit and source posture.</span>
+            </article>
+            <article>
+              <strong>Billing</strong>
+              <span>Invoices, payments and revenue proof stay governed by billing and ledger rails.</span>
+            </article>
+          </div>
+        </section>
+      </div>
+    ),
+
+    diagnostics: (
+      <div className={styles.ledgerWorkspace}>
+        {sourceRegistryPanel}
+        <section className={styles.telemetryPanel}>
+          <header>
+            <h3><Activity size={13} /> EXECUTIVE_TELEMETRY_STREAM</h3>
+            <span title={sourceSnapshot.telemetry.status}>{telemetrySyncing ? 'SYNCING' : compactExecutiveSignal(sourceSnapshot.telemetry.status)}</span>
+          </header>
+          <div>
+            {executiveActivities.length === 0 && (
+              <div className={styles.emptyStream}>EXEC_STREAM_VACANT_AWAITING_MUTATIONS...</div>
+            )}
+            {executiveActivities.map((act, idx) => (
+              <article key={act.id || idx}>
+                {act.timestamp ? new Date(act.timestamp).toLocaleTimeString() : 'EXEC_NOW'} //{' '}
+                {act.eventType} // {act.event || 'COMMITTED'} // {act.message || 'TRANSACTION_LOG_COMMITTED'} // PROOF{' '}
+                {act.proofHash?.slice(0, 16) || 'PENDING'}
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+    )
+  };
+
+  /**
+   * @function executiveIdentity
+   * @description Memoizes top-rail operator and business OS story copy.
+   * @returns {Object} Executive identity packet.
+   * @collaboration Keeps the visible top rail grounded in tenant/user/business context rather than debug identifiers.
+   */
+  const executiveIdentity = buildExecutiveOperatorIdentity({
+    user,
+    activeTenant,
+    tenantBranding,
+    executiveOperatingSystem,
+    executiveReadiness,
+    sourceSnapshot,
+    role,
+    access
+  });
+
   if (loading || access.isLoading) {
     return (
       <div className={styles.loading}>
         <RefreshCw size={20} className={styles.spin} />
-        <span>HYDRATING_EXECUTIVE_SUITE</span>
+        <span>Loading Executive Suite</span>
       </div>
     );
   }
@@ -2283,17 +3994,51 @@ const ExecutiveDashboard = ({
     <div
       className={styles.executiveShell}
       data-refreshing={isRefreshing ? 'true' : 'false'}
-      style={tenantBranding.cssVars}
+      style={{ ...(tenantBranding.cssVars || {}), ...executiveThemeVars }}
+      data-wilsy-theme={accountThemeId}
+      data-wilsy-mode={accountThemeMode}
+      data-wilsy-resolved-mode={resolveWilsyExecutiveMode(accountThemeMode)}
     >
-      <header className={styles.header}>
-        <div>
-          <span className={styles.eyebrow}><Briefcase size={14} /> {role} COMMAND</span>
-          <h1>
-            SOVEREIGN EXECUTIVE SUITE
-          </h1>
-          <p>
-            {EXECUTIVE_SUITE_VERSION} // TENANT {tenantId} // {executiveOperatingSystem.profile.industryLabel} // {executiveReadiness.posture}
-          </p>
+      {isFounderReturnEligible && (
+        <button
+          type="button"
+          data-wilsy-founder-return="true"
+          onClick={handleFounderReturn}
+          style={{
+            position: 'fixed',
+            left: 24,
+            top: 78,
+            zIndex: 2200,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            minHeight: 42,
+            padding: '0 16px',
+            borderRadius: 999,
+            border: '1px solid var(--wilsy-border-authority, rgba(212,175,55,0.5))',
+            color: 'var(--wilsy-text, #fffaf0)',
+            background: 'rgba(2, 3, 6, 0.72)',
+            backdropFilter: 'blur(14px)',
+            boxShadow: '0 18px 48px rgba(0,0,0,0.28)',
+            fontFamily: 'monospace',
+            fontSize: 11,
+            fontWeight: 900,
+            letterSpacing: '0.08em',
+            cursor: 'pointer'
+          }}
+          title="Return to Founder Dashboard"
+        >
+          <span aria-hidden="true">←</span>
+          Founder Dashboard
+        </button>
+      )}
+      <header className={styles.osTopRail}>
+        <div className={styles.osTitleBlock}>
+          <span className={styles.eyebrow}><Briefcase size={14} /> {executiveIdentity.commandLabel}</span>
+          <h1>WILSY OS EXECUTIVE COMMAND CENTER</h1>
+          <div className={styles.operatingStoryRail} aria-label="Wilsy OS executive operating story">
+            <span>{executiveIdentity.storyMessages.join('     •     ')}</span>
+          </div>
         </div>
         <div className={styles.brandPlate}>
           <div className={styles.tenantMark}>
@@ -2304,9 +4049,284 @@ const ExecutiveDashboard = ({
             )}
           </div>
           <div>
-            <small>TENANT_BRAND</small>
-            <strong>{tenantBranding.displayName}</strong>
-            <em>{compactExecutiveSignal(tenantBranding.sourceStatus)}</em>
+            <small>{executiveIdentity.tenantEyebrow}</small>
+            <strong>{executiveIdentity.tenantName}</strong>
+            <em>{executiveIdentity.tenantStory}</em>
+          </div>
+        </div>
+        <div className={styles.toolbar}>
+          <div className={styles.operatorIdentityCard} title={executiveIdentity.email || executiveIdentity.displayName}>
+            <UserCog size={14} />
+            <div>
+              <strong>{executiveIdentity.displayName}</strong>
+              <small>{executiveIdentity.roleLabel}</small>
+            </div>
+          </div>
+          <label className={styles.searchBox}>
+            <Search size={13} />
+            <input
+              value={searchTerm}
+              onChange={event => setSearchTerm(event.target.value)}
+              placeholder="Search Wilsy OS or press ⌘K" onFocus={() => window.dispatchEvent(new CustomEvent('wilsy:open-command-search'))}
+            />
+          </label>
+          <button
+            onClick={() => setIsAccountCommandCenterOpen(true)}
+            className={styles.secondaryButton}
+            title="Open Wilsy Account Command Center"
+          >
+            <UserCog size={13} /> COMMAND CENTER
+          </button>
+          <button
+            onClick={loadAllData}
+            disabled={isRefreshing}
+            className={styles.secondaryButton}
+          >
+            <RefreshCw size={13} className={isRefreshing ? styles.spin : ''} /> LIVE SYNC
+          </button>
+          <button
+            onClick={() => {
+              setEditingItem(null);
+              setModalType(TAB_TO_MODAL_MAP[activeTab] || 'kpi');
+              setShowModal(true);
+            }}
+            className={styles.primaryButton}
+          >
+            <Plus size={13} /> NEW COMMAND
+          </button>
+        </div>
+      </header>
+
+      <section className={styles.workspaceFrame}>
+        <nav className={styles.workspaceRail} aria-label="Executive operating workspaces">
+          <label className={styles.workspaceSelect}>
+            <span>WORKSPACE</span>
+            <select value={activeWorkspace} onChange={event => setActiveWorkspace(event.target.value)}>
+              {executiveWorkspaceOptions.map(workspace => (
+                <option key={workspace.id} value={workspace.id}>{workspace.label}</option>
+              ))}
+            </select>
+          </label>
+          <div className={styles.workspaceButtons}>
+            {executiveWorkspaceOptions.map(workspace => {
+              const WorkspaceIcon = workspace.icon;
+              return (
+                <button
+                  key={workspace.id}
+                  type="button"
+                  className={activeWorkspace === workspace.id ? styles.workspaceButtonActive : styles.workspaceButton}
+                  onClick={() => setActiveWorkspace(workspace.id)}
+                >
+                  <WorkspaceIcon size={15} />
+                  <span>{workspace.label}</span>
+                  <small>{workspace.detail}</small>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+
+        <main className={styles.workspaceViewport}>
+          <div className={styles.workspaceHeader}>
+            <div>
+              <span><ActiveWorkspaceIcon size={13} /> Workspace</span>
+              <h2>{activeWorkspaceMeta.label}</h2>
+              <p>{activeWorkspaceMeta.detail} // {compactExecutiveSignal(activeWorkspaceMeta.status)}</p>
+            </div>
+            <div className={styles.workspaceMetrics}>
+              <div>
+                <small>READINESS</small>
+                <strong>{executiveReadiness.score}%</strong>
+              </div>
+              <div>
+                <small>SOURCES</small>
+                <strong>{executiveReadiness.liveSources}/{executiveReadiness.totalSources}</strong>
+              </div>
+              <div>
+                <small>ARR</small>
+                <strong>{formatExecutiveMoney(executiveMemo.arr)}</strong>
+              </div>
+            </div>
+          </div>
+          <div className={styles.workspaceContent}>
+            {workspaceContent[activeWorkspace] || workspaceContent.overview}
+          </div>
+        </main>
+          <aside className={styles.contextRail} aria-label="Executive business artifact controls">
+            <header>
+              <span><Settings size={13} /> Business Command</span>
+              <strong>{compactExecutiveSignal(activeWorkspaceMeta.status)}</strong>
+            </header>
+
+            <label>
+              <span>Run Command</span>
+              <select
+                value=""
+                onChange={event => {
+                  const command = executiveCommandOptions.find(item => item.id === event.target.value);
+                  if (!command) return;
+                  setActiveWorkspace(command.targetWorkspace);
+                  executeExecutiveCommand(command.id);
+                }}
+              >
+                <option value="">Select command</option>
+                {executiveCommandOptions.map(command => (
+                  <option key={command.id} value={command.id}>{command.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span>Ledger View</span>
+              <select
+                value={activeTab}
+                onChange={event => {
+                  setActiveWorkspace('ledger');
+                  setActiveTab(event.target.value);
+                  fetchTabData(event.target.value, pageStates[event.target.value]);
+                }}
+              >
+                <option value="kpis">Strategic KPIs</option>
+                <option value="boardReports">Board Reports</option>
+                <option value="investorUpdates">Investor Updates</option>
+                <option value="strategicGoals">Goals Projection</option>
+              </select>
+            </label>
+
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={() => {
+                const gateway = verticalSystemGateways.find(system => system.id === 'artifacts');
+                window.dispatchEvent(new CustomEvent('wilsy:artifact-command', {
+                  detail: {
+                    openCatalog: true,
+                    tenantId,
+                    source: 'ExecutiveDashboard'
+                  }
+                }));
+                if (gateway) executeVerticalSystemRoute(gateway);
+              }}
+              disabled={isRefreshing}
+            >
+              <Download size={13} /> BUSINESS ARTIFACTS
+            </button>
+
+            <section className={styles.businessArtifactRail} aria-label="Business artifact launcher">
+              <header>
+                <strong>Business Artifact Studio</strong>
+                <small>Select the document the business needs. Wilsy OS routes it to the artifact engine.</small>
+              </header>
+
+              <div className={styles.artifactCommandStack}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const gateway = verticalSystemGateways.find(system => system.id === 'artifacts');
+                    window.dispatchEvent(new CustomEvent('wilsy:artifact-command', {
+                      detail: { type: 'boardPack', tenantId, source: 'ExecutiveDashboard' }
+                    }));
+                    if (gateway) executeVerticalSystemRoute(gateway);
+                  }}
+                >
+                  <FileText size={15} />
+                  <span>
+                    <strong>Board Pack</strong>
+                    <small>Investor and executive pack</small>
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const gateway = verticalSystemGateways.find(system => system.id === 'artifacts');
+                    window.dispatchEvent(new CustomEvent('wilsy:artifact-command', {
+                      detail: { type: 'NDAA-ENTERPRISE', tenantId, source: 'ExecutiveDashboard' }
+                    }));
+                    if (gateway) executeVerticalSystemRoute(gateway);
+                  }}
+                >
+                  <ShieldCheck size={15} />
+                  <span>
+                    <strong>NDA</strong>
+                    <small>Confidentiality agreement</small>
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const gateway = verticalSystemGateways.find(system => system.id === 'artifacts');
+                    window.dispatchEvent(new CustomEvent('wilsy:artifact-command', {
+                      detail: { type: 'invoice', tenantId, source: 'ExecutiveDashboard' }
+                    }));
+                    if (gateway) executeVerticalSystemRoute(gateway);
+                  }}
+                >
+                  <Database size={15} />
+                  <span>
+                    <strong>Invoice</strong>
+                    <small>Branded billing document</small>
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const gateway = verticalSystemGateways.find(system => system.id === 'documents');
+                    if (gateway) executeVerticalSystemRoute(gateway);
+                  }}
+                >
+                  <ClipboardCheck size={15} />
+                  <span>
+                    <strong>Document Vault</strong>
+                    <small>Contracts, evidence and records</small>
+                  </span>
+                </button>
+              </div>
+            </section>
+
+            <div className={styles.contextActivity}>
+              <span>Command Receipts</span>
+              {executiveActivities.slice(0, 3).map((activity, index) => (
+                <article key={activity.id || index}>
+                  <strong>{compactExecutiveSignal(activity.eventType || activity.event || 'EXEC_EVENT')}</strong>
+                  <small>{activity.message || (activity.proofHash ? `Proof ${activity.proofHash.slice(0, 14)}` : 'Awaiting command proof')}</small>
+                </article>
+              ))}
+              {executiveActivities.length === 0 && (
+                <article>
+                  <strong>No command executed yet</strong>
+                  <small>Open Business Artifacts, run a command, or launch a vertical system.</small>
+                </article>
+              )}
+            </div>
+          </aside>
+      </section>
+
+      <div className={styles.legacyContinuousStack} aria-hidden="true">
+      <header className={styles.header}>
+        <div>
+          <span className={styles.eyebrow}><Briefcase size={14} /> {executiveIdentity.commandLabel}</span>
+          <h1>
+            SOVEREIGN EXECUTIVE SUITE
+          </h1>
+          <div className={styles.operatingStoryRail} aria-label="Wilsy OS executive operating story">
+            <span>{executiveIdentity.storyMessages.join('     •     ')}</span>
+          </div>
+        </div>
+        <div className={styles.brandPlate}>
+          <div className={styles.tenantMark}>
+            {tenantBranding.logo ? (
+              <img src={tenantBranding.logo} alt={`${tenantBranding.displayName} mark`} />
+            ) : (
+              <span>{tenantBranding.initials}</span>
+            )}
+          </div>
+          <div>
+            <small>{executiveIdentity.tenantEyebrow}</small>
+            <strong>{executiveIdentity.tenantName}</strong>
+            <em>{executiveIdentity.tenantStory}</em>
           </div>
         </div>
         <div className={styles.toolbar}>
@@ -2315,7 +4335,7 @@ const ExecutiveDashboard = ({
             <input
               value={searchTerm}
               onChange={event => setSearchTerm(event.target.value)}
-              placeholder="SEARCH_EXEC_LEDGER"
+              placeholder="Search Wilsy OS or press ⌘K" onFocus={() => window.dispatchEvent(new CustomEvent('wilsy:open-command-search'))}
             />
           </label>
           <button
@@ -2323,7 +4343,7 @@ const ExecutiveDashboard = ({
             disabled={isRefreshing}
             className={styles.secondaryButton}
           >
-            <RefreshCw size={13} className={isRefreshing ? styles.spin : ''} /> RESYNC
+            <RefreshCw size={13} className={isRefreshing ? styles.spin : ''} /> LIVE SYNC
           </button>
           <button
             onClick={handleExport}
@@ -2339,7 +4359,7 @@ const ExecutiveDashboard = ({
             }}
             className={styles.primaryButton}
           >
-            <Plus size={13} /> NEW {TAB_TO_LABEL_MAP[activeTab] || 'KPI'}
+            <Plus size={13} /> NEW COMMAND {TAB_TO_LABEL_MAP[activeTab] || 'KPI'}
           </button>
         </div>
       </header>
@@ -2349,7 +4369,7 @@ const ExecutiveDashboard = ({
           <div className={styles.finalityHeader}>
             <div>
               <span>
-                <ShieldCheck size={13} /> EXECUTIVE_FINALITY_ENGINE
+                <ShieldCheck size={13} /> Executive Readiness
               </span>
               <strong>
                 {executiveReadiness.score}% // {executiveReadiness.posture}
@@ -2380,7 +4400,7 @@ const ExecutiveDashboard = ({
         </article>
 
         <article className={styles.memoPanel}>
-          <span><ClipboardCheck size={13} /> DECISION_MEMO</span>
+          <span><ClipboardCheck size={13} /> Decision Memo</span>
           <h2>{executiveMemo.nextAction}</h2>
           {executiveMemo.dutyReason && <p>{executiveMemo.dutyReason}</p>}
           <div className={styles.memoGrid}>
@@ -2435,17 +4455,17 @@ const ExecutiveDashboard = ({
         <button type="button" onClick={() => executeExecutiveCommand('KPI_REBASE')}>
           <PieChart size={16} />
           <span>KPI Rebase</span>
-          <small>Finance source sync</small>
+          <small>Refresh finance KPIs</small>
         </button>
         <button type="button" onClick={() => executeExecutiveCommand('BOARD_PACKET')}>
           <FileText size={16} />
           <span>Seal Board Pack</span>
-          <small>Revenue artifact route</small>
+          <small>Prepare board pack</small>
         </button>
         <button type="button" onClick={() => executeExecutiveCommand('INVESTOR_BRIEF')}>
           <Send size={16} />
           <span>Investor Brief</span>
-          <small>Dispatch update row</small>
+          <small>Create investor update</small>
         </button>
         <button type="button" onClick={() => executeExecutiveCommand('STRATEGIC_MANDATE')}>
           <Target size={16} />
@@ -2470,8 +4490,40 @@ const ExecutiveDashboard = ({
         <button type="button" onClick={() => executeExecutiveCommand('TRUST_PACKET')}>
           <ShieldCheck size={16} />
           <span>Trust Packet</span>
-          <small>Compliance evidence row</small>
+          <small>Review trust evidence row</small>
         </button>
+      </section>
+
+      <section className={styles.operatingSourceDeck}>
+        <header>
+          <div>
+            <span><Database size={13} /> CEO_OPERATING_SOURCE_FABRIC</span>
+            <h2>HR, CRM, revenue, product and risk rails</h2>
+          </div>
+          <small>{operatingSourceCoverage.live}/{operatingSourceCoverage.total} LIVE</small>
+        </header>
+        <div className={styles.operatingSourceGrid}>
+          {operatingSources.map(source => (
+            <article key={source.key} data-live={source.live ? 'true' : 'false'}>
+              <small>{source.lane} // {source.count === null ? 'SOURCE_REQUIRED' : `${source.count} ROWS`}</small>
+              <strong>{source.label}</strong>
+              <span title={source.status}>{compactExecutiveSignal(source.status)}</span>
+              <button
+                type="button"
+                className={styles.inlineAction}
+                onClick={() => executeFunctionCard({
+                  key: source.functionKey,
+                  label: source.label,
+                  status: source.live ? 'ENABLED' : 'RECOMMENDED',
+                  sourceStatus: source.status
+                })}
+                disabled={isRefreshing}
+              >
+                <Route size={12} /> Open Rail
+              </button>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className={styles.transformationGrid}>
@@ -2640,7 +4692,7 @@ const ExecutiveDashboard = ({
           </header>
           <div className={styles.profileStrip}>
             <div>
-              <small>BUSINESS_MODEL</small>
+              <small>Business Model</small>
               <strong>{executiveOperatingSystem.profile.industryLabel}</strong>
             </div>
             <div>
@@ -2983,6 +5035,37 @@ const ExecutiveDashboard = ({
           ))}
         </div>
       </section>
+      </div>
+
+      
+        <BusinessArtifactStudio tenantId={tenantId} />
+
+<WilsyAccountCommandCenter
+        isOpen={isAccountCommandCenterOpen}
+        onClose={() => setIsAccountCommandCenterOpen(false)}
+        onNavigate={handleAccountCommand}
+        onSignOut={handleExecutiveSignOut}
+        user={user || access}
+        activeThemeId={accountThemeId}
+        themeMode={accountThemeMode}
+        onThemeChange={setAccountThemeId}
+        onModeChange={setAccountThemeMode}
+        securitySummary={{
+          identitySource: accessDecision.allowed ? 'Executive access verified' : 'Access gated',
+          mfaStatus: sourceSnapshot.security?.live ? 'Risk rail online' : '',
+          trustedDevices: sourceSnapshot.it?.live ? 'IT source live' : '',
+          accountActivity: executiveReadiness.posture
+        }}
+        complianceSummary={{
+          privacyStatus: 'POPIA display safe',
+          complianceStatus: sourceSnapshot.security?.live ? 'Security source live' : 'Compliance source required',
+          auditConfidence: `${executiveReadiness.score}% readiness`,
+          retentionStatus: sourceSnapshot.records?.status || 'Tenant ledger ready'
+        }}
+        sessionSummary={{
+          activeSessions: telemetrySyncing ? 'Telemetry syncing' : compactExecutiveSignal(sourceSnapshot.telemetry.status)
+        }}
+      />
 
       {showModal && (
         <div className={styles.modalBackdrop}>
@@ -2992,7 +5075,7 @@ const ExecutiveDashboard = ({
           }}>
             <header>
               <div>
-                <span>STATE_MUTATION</span>
+                <span>Business Update</span>
                 <h2>{modalType.toUpperCase()}</h2>
               </div>
               <button
@@ -3008,7 +5091,7 @@ const ExecutiveDashboard = ({
             </p>
             {renderModalFields()}
             <div className={styles.proofPreview}>
-              PREVIEW_PROOF // {createExecutiveProofHash({ tenantId, modalType, activeTab, modalDraft, suiteVersion: EXECUTIVE_SUITE_VERSION }).slice(0, 36)}
+              Audit Preview // {createExecutiveProofHash({ tenantId, modalType, activeTab, modalDraft, suiteVersion: EXECUTIVE_SUITE_VERSION }).slice(0, 36)}
             </div>
             <div className={styles.modalActions}>
               <button

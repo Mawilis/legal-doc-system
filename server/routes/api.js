@@ -61,6 +61,7 @@ import wilsyAiRoutes from './wilsyAiRoutes.js';
 // 🏛️ SOVEREIGN ARTIFACT CONTROLLER (replaces legacy pdfRoutes)
 import artifactController from '../controllers/artifactController.js';
 import { queryLedger } from '../controllers/aiController.js';
+import { generateSovereignArtifactPdf } from '../controllers/businessArtifactPdfController.js';
 
 const router = express.Router();
 
@@ -73,9 +74,10 @@ const router = express.Router();
  * computes real‑time cryptographic hashes, and records latency. Satisfies Cybercrimes Act §3.
  */
 router.use((req, res, next) => {
-  req.traceId = req.headers['x-trace-id'] ||
-                req.headers['x-request-id'] ||
-                `TRC-TITAN-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+  req.traceId =
+    req.headers['x-trace-id'] ||
+    req.headers['x-request-id'] ||
+    `TRC-TITAN-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
   req.startTime = performance.now();
 
   const forensicPayload = `${req.traceId}-${req.ip}-${req.headers['user-agent']}`;
@@ -95,7 +97,7 @@ router.use((req, res, next) => {
         traceId: req.traceId,
         durationMs: duration,
         status: res.statusCode,
-        method: req.method
+        method: req.method,
       }).catch(() => {});
     } catch (error) {
       // Request completion telemetry must never alter the HTTP lifecycle.
@@ -131,8 +133,8 @@ router.get('/status', async (req, res) => {
       database: dbStatus,
       redis: { status: redisHealth.status, latencyMs: redisHealth.latency || 0 },
       circuitBreakers: breakers,
-      telemetryQueue: coldStorageQueue.length
-    }
+      telemetryQueue: coldStorageQueue.length,
+    },
   });
 });
 
@@ -178,7 +180,7 @@ router.post('/ai/query-ledger', queryLedger);
 
 // 🏛️ SOVEREIGN ARTIFACT GENERATION – HMAC-sealed PDF endpoint
 // Legacy pdfRoutes is replaced by artifactController for enhanced security (HMAC verification, forensic logging, digital signature embedding)
-router.post('/generate/pdf', artifactController.generateSovereignArtifact);
+router.post('/generate/pdf', generateSovereignArtifactPdf);
 
 // ============================================================================
 // 💥 GLOBAL NEXUS FAULT INTERCEPTOR
@@ -194,11 +196,18 @@ router.use((err, req, res, next) => {
   const tenantId = req.headers['x-tenant-id'] || 'WILSY_ROOT';
 
   auditLogger.log('CRITICAL_FRACTURE', {
-    errorId, traceId: req.traceId, message: err.message, path: req.originalUrl, tenantId
+    errorId,
+    traceId: req.traceId,
+    message: err.message,
+    path: req.originalUrl,
+    tenantId,
   });
 
   broadcastTelemetry(tenantId, 'NEXUS_FRACTURE', 'CORE_INTERCEPTOR', 'EXCEPTION', {
-    errorId, traceId: req.traceId, durationMs: duration, errorCode: err.status || 500
+    errorId,
+    traceId: req.traceId,
+    durationMs: duration,
+    errorCode: err.status || 500,
   });
 
   res.status(err.status || 500).json({
@@ -206,7 +215,7 @@ router.use((err, req, res, next) => {
     errorId,
     message: `Institutional Nexus Jitter: ${err.message}`,
     traceId: req.traceId,
-    latencyMs: duration
+    latencyMs: duration,
   });
 });
 

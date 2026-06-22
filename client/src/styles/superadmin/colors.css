@@ -1,44 +1,548 @@
 /* ============================================================================
-   WILSY OS 2050 - SUPER ADMIN COLOR SCHEME
-   ============================================================================
-*/
+   WILSY OS 2050 - SOVEREIGN COLOUR REGISTRY
+   Absolute Path:
+   /Users/wilsonkhanyezi/legal-doc-system/client/src/styles/superadmin/colors.css
+
+   Purpose:
+   Theme registry for Super Admin, Founder, Account, Executive, tenant and cockpit
+   surfaces. This file maps the root DNA tokens from styles/tokens/colors.css
+   into complete operating skins.
+
+   Theme principle:
+   Wilsy OS does not use decorative colour dots.
+   Wilsy OS uses operating skins.
+   ============================================================================ */
 
 :root {
-  /* Primary Colors */
-  --wilsy-primary: #6366f1;
-  --wilsy-primary-dark: #4f46e5;
-  --wilsy-primary-light: #818cf8;
-  
-  /* Secondary Colors */
-  --wilsy-secondary: #8b5cf6;
-  --wilsy-secondary-dark: #7c3aed;
-  --wilsy-secondary-light: #a78bfa;
-  
-  /* Status Colors */
-  --wilsy-success: #10b981;
-  --wilsy-warning: #f59e0b;
-  --wilsy-danger: #ef4444;
-  --wilsy-info: #3b82f6;
-  
-  /* Dark Theme (Default) */
-  --wilsy-bg-dark: #0f172a;
-  --wilsy-surface-dark: #1e293b;
-  --wilsy-border-dark: #334155;
-  --wilsy-text-dark: #f1f5f9;
-  --wilsy-text-muted-dark: #94a3b8;
-  
-  /* Light Theme */
-  --wilsy-bg-light: #f8fafc;
+  /* CORE DNA BRIDGE */
+  --wilsy-primary: var(--tenant-primary, #2436a4);
+  --wilsy-primary-dark: #17246f;
+  --wilsy-primary-light: #5b6dff;
+
+  --wilsy-secondary: var(--tenant-secondary, #17bdf2);
+  --wilsy-secondary-dark: #087da4;
+  --wilsy-secondary-light: #d8f7ff;
+
+  --wilsy-accent: var(--tenant-accent, #d4af37);
+  --wilsy-accent-2: var(--tenant-secondary, #17bdf2);
+  --wilsy-accent-3: var(--tenant-live, #7ff0c8);
+
+  --wilsy-success: var(--forensic-success, #7ff0c8);
+  --wilsy-warning: var(--forensic-warning, #d4af37);
+  --wilsy-danger: var(--forensic-danger, #ff6f91);
+  --wilsy-info: var(--forensic-info, #17bdf2);
+
+  /* WILSY SOVEREIGN PALETTE */
+  --wilsy-sovereign-black: #020306;
+  --wilsy-sovereign-ink: #05070d;
+  --wilsy-sovereign-night: #090d18;
+  --wilsy-sovereign-navy: #101a35;
+  --wilsy-sovereign-cobalt: #2436a4;
+  --wilsy-sovereign-royal: #3957ff;
+  --wilsy-sovereign-cyan: #17bdf2;
+  --wilsy-sovereign-ice: #d8f7ff;
+  --wilsy-sovereign-pearl: #fffaf0;
+  --wilsy-sovereign-mint: #7ff0c8;
+  --wilsy-sovereign-gold: #d4af37;
+  --wilsy-sovereign-rose: #ff6f91;
+  --wilsy-sovereign-violet: #7c68ff;
+
+  /* BASE MODE CONTRACT */
+  --wilsy-bg-dark: var(--sovereign-bg, #020306);
+  --wilsy-surface-dark: var(--sovereign-surface, rgba(8, 12, 24, 0.94));
+  --wilsy-surface-raised-dark: var(--sovereign-surface-raised, rgba(15, 24, 52, 0.9));
+  --wilsy-border-dark: var(--sovereign-border, rgba(216, 247, 255, 0.1));
+  --wilsy-text-dark: var(--text-primary, #fffaf0);
+  --wilsy-text-muted-dark: var(--text-secondary, #c5cce5);
+
+  --wilsy-bg-light: #f6f8ff;
   --wilsy-surface-light: #ffffff;
-  --wilsy-border-light: #e2e8f0;
-  --wilsy-text-light: #0f172a;
-  --wilsy-text-muted-light: #64748b;
-}
+  --wilsy-surface-raised-light: #f3f6ff;
+  --wilsy-border-light: rgba(36, 54, 164, 0.16);
+  --wilsy-text-light: #10182b;
+  --wilsy-text-muted-light: #64708e;
 
-:root {
+  /* DEFAULT OPERATING SKIN */
+  --wilsy-theme-id: "wilsy_aurora";
+  --wilsy-theme-name: "Wilsy Sovereign Aurora";
+
   --wilsy-bg: var(--wilsy-bg-dark);
   --wilsy-surface: var(--wilsy-surface-dark);
+  --wilsy-surface-raised: var(--wilsy-surface-raised-dark);
   --wilsy-border: var(--wilsy-border-dark);
   --wilsy-text: var(--wilsy-text-dark);
   --wilsy-text-muted: var(--wilsy-text-muted-dark);
+
+  --wilsy-panel-bg:
+    radial-gradient(circle at 12% 0%, rgba(36, 54, 164, 0.28), transparent 34%),
+    radial-gradient(circle at 86% 12%, rgba(23, 189, 242, 0.18), transparent 36%),
+    radial-gradient(circle at 58% 92%, rgba(127, 240, 200, 0.1), transparent 30%),
+    linear-gradient(180deg, rgba(5, 7, 13, 0.99), rgba(2, 3, 6, 0.99));
+
+  --wilsy-header-bg:
+    linear-gradient(135deg, rgba(2, 3, 6, 0.94), rgba(36, 54, 164, 0.92) 48%, rgba(23, 189, 242, 0.58));
+
+  --wilsy-card-bg:
+    linear-gradient(180deg, rgba(8, 12, 24, 0.94), rgba(3, 5, 10, 0.98));
+
+  --wilsy-command-bg:
+    linear-gradient(135deg, var(--wilsy-sovereign-gold), #fff1a8);
+
+  --wilsy-border-soft: rgba(216, 247, 255, 0.1);
+  --wilsy-border-strong: rgba(127, 240, 200, 0.36);
+  --wilsy-border-authority: rgba(212, 175, 55, 0.44);
+
+  --wilsy-shadow-soft: 0 20px 70px rgba(0, 0, 0, 0.45);
+  --wilsy-shadow-strong: 0 30px 110px rgba(0, 0, 0, 0.62);
+  --wilsy-shadow-cobalt: 0 0 48px rgba(36, 54, 164, 0.32);
+  --wilsy-shadow-cyan: 0 0 42px rgba(23, 189, 242, 0.24);
+  --wilsy-shadow-gold: 0 0 42px rgba(212, 175, 55, 0.22);
+
+  --wilsy-radius-sm: 12px;
+  --wilsy-radius-md: 18px;
+  --wilsy-radius-lg: 28px;
+  --wilsy-radius-xl: 38px;
+
+  --wilsy-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wilsy-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   WILSY SOVEREIGN AURORA
+   Flagship operating skin.
+   Black authority, cobalt trust, cyan intelligence, mint live-state, gold command.
+   ============================================================================ */
+
+:root[data-wilsy-theme="wilsy_aurora"],
+[data-wilsy-theme="wilsy_aurora"],
+.theme-wilsy-aurora {
+  --wilsy-theme-id: "wilsy_aurora";
+  --wilsy-theme-name: "Wilsy Sovereign Aurora";
+
+  --wilsy-bg: #020306;
+  --wilsy-surface: rgba(8, 12, 24, 0.96);
+  --wilsy-surface-raised: rgba(15, 24, 52, 0.9);
+  --wilsy-border: rgba(216, 247, 255, 0.1);
+  --wilsy-text: #fffaf0;
+  --wilsy-text-muted: #c5cce5;
+
+  --wilsy-primary: #2436a4;
+  --wilsy-primary-dark: #111d65;
+  --wilsy-primary-light: #5b6dff;
+
+  --wilsy-secondary: #17bdf2;
+  --wilsy-secondary-dark: #087da4;
+  --wilsy-secondary-light: #d8f7ff;
+
+  --wilsy-accent: #d4af37;
+  --wilsy-accent-2: #17bdf2;
+  --wilsy-accent-3: #7ff0c8;
+
+  --wilsy-panel-bg:
+    radial-gradient(circle at 12% 0%, rgba(36, 54, 164, 0.3), transparent 34%),
+    radial-gradient(circle at 86% 12%, rgba(23, 189, 242, 0.18), transparent 36%),
+    radial-gradient(circle at 58% 92%, rgba(127, 240, 200, 0.11), transparent 30%),
+    linear-gradient(180deg, #05070d, #020306);
+
+  --wilsy-header-bg:
+    linear-gradient(135deg, #020306, #2436a4 48%, rgba(23, 189, 242, 0.72));
+
+  --wilsy-card-bg:
+    linear-gradient(180deg, rgba(8, 12, 24, 0.94), rgba(3, 5, 10, 0.98));
+
+  --wilsy-command-bg:
+    linear-gradient(135deg, #fff1a8, #d4af37);
+
+  --wilsy-border-soft: rgba(216, 247, 255, 0.1);
+  --wilsy-border-strong: rgba(127, 240, 200, 0.38);
+  --wilsy-border-authority: rgba(212, 175, 55, 0.46);
+
+  --wilsy-shadow-soft: 0 20px 70px rgba(0, 0, 0, 0.48);
+  --wilsy-shadow-strong: 0 30px 110px rgba(0, 0, 0, 0.64);
+  --wilsy-shadow-cobalt: 0 0 48px rgba(36, 54, 164, 0.34);
+  --wilsy-shadow-cyan: 0 0 42px rgba(23, 189, 242, 0.24);
+  --wilsy-shadow-gold: 0 0 42px rgba(212, 175, 55, 0.24);
+
+  color-scheme: dark;
+}
+
+:root[data-wilsy-theme="wilsy_aurora"][data-wilsy-mode="day"],
+[data-wilsy-theme="wilsy_aurora"][data-wilsy-mode="day"],
+.theme-wilsy-aurora.theme-day {
+  --wilsy-bg: #f6f8ff;
+  --wilsy-surface: rgba(255, 255, 255, 0.96);
+  --wilsy-surface-raised: rgba(248, 250, 255, 0.94);
+  --wilsy-border: rgba(36, 54, 164, 0.16);
+  --wilsy-text: #10182b;
+  --wilsy-text-muted: #53617f;
+
+  --wilsy-panel-bg:
+    radial-gradient(circle at 12% 0%, rgba(36, 54, 164, 0.16), transparent 34%),
+    radial-gradient(circle at 86% 12%, rgba(23, 189, 242, 0.12), transparent 36%),
+    linear-gradient(180deg, #ffffff, #f6f8ff);
+
+  --wilsy-header-bg:
+    linear-gradient(135deg, #2436a4, #3957ff 52%, #17bdf2);
+
+  --wilsy-card-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 255, 0.96));
+
+  --wilsy-command-bg:
+    linear-gradient(135deg, #fff1a8, #d4af37);
+
+  --wilsy-border-soft: rgba(36, 54, 164, 0.16);
+  --wilsy-border-strong: rgba(36, 54, 164, 0.32);
+  --wilsy-border-authority: rgba(212, 175, 55, 0.42);
+
+  --wilsy-shadow-soft: 0 20px 70px rgba(36, 54, 164, 0.14);
+  --wilsy-shadow-strong: 0 28px 90px rgba(36, 54, 164, 0.2);
+  --wilsy-shadow-cobalt: 0 0 44px rgba(36, 54, 164, 0.16);
+  --wilsy-shadow-cyan: 0 0 38px rgba(23, 189, 242, 0.14);
+  --wilsy-shadow-gold: 0 0 38px rgba(212, 175, 55, 0.18);
+
+  color-scheme: light;
+}
+
+/* ============================================================================
+   SOVEREIGN BLACK
+   Boardroom authority. Minimal, black, white, gold.
+   ============================================================================ */
+
+:root[data-wilsy-theme="sovereign_black"],
+[data-wilsy-theme="sovereign_black"],
+.theme-sovereign-black {
+  --wilsy-theme-id: "sovereign_black";
+  --wilsy-theme-name: "Sovereign Black";
+
+  --wilsy-bg: #000000;
+  --wilsy-surface: rgba(8, 8, 8, 0.96);
+  --wilsy-surface-raised: rgba(18, 18, 18, 0.94);
+  --wilsy-border: rgba(255, 250, 240, 0.12);
+  --wilsy-text: #fffaf0;
+  --wilsy-text-muted: #a8a091;
+
+  --wilsy-primary: #fffaf0;
+  --wilsy-secondary: #d4af37;
+  --wilsy-accent: #d4af37;
+  --wilsy-accent-2: #fff1a8;
+  --wilsy-accent-3: #ffffff;
+
+  --wilsy-panel-bg: linear-gradient(180deg, #050505, #000000);
+  --wilsy-header-bg: linear-gradient(135deg, #000000, #151515 60%, #d4af37);
+  --wilsy-card-bg: linear-gradient(180deg, rgba(12, 12, 12, 0.96), rgba(0, 0, 0, 0.98));
+  --wilsy-command-bg: linear-gradient(135deg, #fff1a8, #d4af37);
+
+  --wilsy-border-soft: rgba(255, 250, 240, 0.1);
+  --wilsy-border-strong: rgba(212, 175, 55, 0.44);
+  --wilsy-border-authority: rgba(212, 175, 55, 0.58);
+
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   COBALT GLASS
+   Executive SaaS trust. Cobalt, glass, ice.
+   ============================================================================ */
+
+:root[data-wilsy-theme="cobalt_glass"],
+[data-wilsy-theme="cobalt_glass"],
+.theme-cobalt-glass {
+  --wilsy-theme-id: "cobalt_glass";
+  --wilsy-theme-name: "Cobalt Glass";
+
+  --wilsy-bg: #061026;
+  --wilsy-surface: rgba(11, 23, 56, 0.78);
+  --wilsy-surface-raised: rgba(22, 39, 82, 0.78);
+  --wilsy-border: rgba(216, 247, 255, 0.16);
+  --wilsy-text: #f3fbff;
+  --wilsy-text-muted: #a8c0dd;
+
+  --wilsy-primary: #3957ff;
+  --wilsy-secondary: #17bdf2;
+  --wilsy-accent: #17bdf2;
+  --wilsy-accent-2: #d8f7ff;
+  --wilsy-accent-3: #7ff0c8;
+
+  --wilsy-panel-bg:
+    radial-gradient(circle at top left, rgba(57, 87, 255, 0.3), transparent 34%),
+    linear-gradient(180deg, rgba(6, 16, 38, 0.98), rgba(2, 6, 18, 0.98));
+
+  --wilsy-header-bg: linear-gradient(135deg, #061026, #3957ff 58%, #17bdf2);
+  --wilsy-card-bg: linear-gradient(180deg, rgba(11, 23, 56, 0.82), rgba(3, 8, 22, 0.94));
+  --wilsy-command-bg: linear-gradient(135deg, #d8f7ff, #17bdf2);
+
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   PEARL COMMAND
+   Day-mode flagship. Pearl white, cobalt frame, gold authority.
+   ============================================================================ */
+
+:root[data-wilsy-theme="pearl_command"],
+[data-wilsy-theme="pearl_command"],
+.theme-pearl-command {
+  --wilsy-theme-id: "pearl_command";
+  --wilsy-theme-name: "Pearl Command";
+
+  --wilsy-bg: #f7f8fb;
+  --wilsy-surface: rgba(255, 255, 255, 0.96);
+  --wilsy-surface-raised: rgba(244, 247, 255, 0.96);
+  --wilsy-border: rgba(36, 54, 164, 0.16);
+  --wilsy-text: #10182b;
+  --wilsy-text-muted: #56627e;
+
+  --wilsy-primary: #2436a4;
+  --wilsy-secondary: #17bdf2;
+  --wilsy-accent: #d4af37;
+  --wilsy-accent-2: #3957ff;
+  --wilsy-accent-3: #7ff0c8;
+
+  --wilsy-panel-bg:
+    radial-gradient(circle at top left, rgba(36, 54, 164, 0.12), transparent 34%),
+    linear-gradient(180deg, #ffffff, #f7f8fb);
+
+  --wilsy-header-bg: linear-gradient(135deg, #2436a4, #3957ff 58%, #17bdf2);
+  --wilsy-card-bg: linear-gradient(180deg, #ffffff, #f4f7ff);
+  --wilsy-command-bg: linear-gradient(135deg, #fff1a8, #d4af37);
+
+  color-scheme: light;
+}
+
+/* ============================================================================
+   LEGACY GOLD
+   ============================================================================ */
+
+:root[data-wilsy-theme="legacy_gold"],
+[data-wilsy-theme="legacy_gold"],
+.theme-legacy-gold {
+  --wilsy-theme-id: "legacy_gold";
+  --wilsy-theme-name: "Legacy Gold";
+
+  --wilsy-bg: #080604;
+  --wilsy-surface: #151008;
+  --wilsy-surface-raised: #241b0c;
+  --wilsy-border: rgba(212, 175, 55, 0.32);
+  --wilsy-text: #fff7d6;
+  --wilsy-text-muted: #b9aa78;
+
+  --wilsy-primary: #d4af37;
+  --wilsy-secondary: #8b6f23;
+  --wilsy-accent: #d4af37;
+  --wilsy-accent-2: #f6d76b;
+  --wilsy-accent-3: #fff1a8;
+
+  --wilsy-panel-bg: linear-gradient(180deg, rgba(18, 13, 5, 0.96), rgba(4, 3, 1, 0.98));
+  --wilsy-header-bg: linear-gradient(135deg, #080604, #d4af37);
+  --wilsy-card-bg: rgba(21, 16, 8, 0.88);
+  --wilsy-command-bg: linear-gradient(135deg, #fff1a8, #d4af37);
+
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   FORENSIC VIOLET
+   Audit, compliance and investigation skin.
+   ============================================================================ */
+
+:root[data-wilsy-theme="forensic_violet"],
+[data-wilsy-theme="forensic_violet"],
+.theme-forensic-violet,
+:root[data-wilsy-theme="forensic"],
+[data-wilsy-theme="forensic"],
+.theme-forensic {
+  --wilsy-theme-id: "forensic_violet";
+  --wilsy-theme-name: "Forensic Violet";
+
+  --wilsy-bg: #09040f;
+  --wilsy-surface: #150820;
+  --wilsy-surface-raised: #241035;
+  --wilsy-border: rgba(168, 91, 255, 0.34);
+  --wilsy-text: #fff1ff;
+  --wilsy-text-muted: #c9a7da;
+
+  --wilsy-primary: #a85bff;
+  --wilsy-secondary: #f39dff;
+  --wilsy-accent: #a85bff;
+  --wilsy-accent-2: #f39dff;
+  --wilsy-accent-3: #d8b4fe;
+
+  --wilsy-panel-bg: linear-gradient(180deg, rgba(21, 8, 32, 0.96), rgba(9, 4, 15, 0.98));
+  --wilsy-header-bg: linear-gradient(135deg, #09040f, #6d28d9 58%, #f39dff);
+  --wilsy-card-bg: rgba(21, 8, 32, 0.88);
+  --wilsy-command-bg: linear-gradient(135deg, #f5d0fe, #a85bff);
+
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   QUANTUM BLUE
+   ============================================================================ */
+
+:root[data-wilsy-theme="quantum"],
+[data-wilsy-theme="quantum"],
+.theme-quantum {
+  --wilsy-theme-id: "quantum";
+  --wilsy-theme-name: "Quantum Blue";
+
+  --wilsy-bg: #020817;
+  --wilsy-surface: #071426;
+  --wilsy-surface-raised: #0b2344;
+  --wilsy-border: rgba(97, 168, 255, 0.32);
+  --wilsy-text: #eaf6ff;
+  --wilsy-text-muted: #8ab7da;
+
+  --wilsy-primary: #61a8ff;
+  --wilsy-secondary: #16c7f3;
+  --wilsy-accent: #61a8ff;
+  --wilsy-accent-2: #16c7f3;
+  --wilsy-accent-3: #a9e8ff;
+
+  --wilsy-panel-bg: linear-gradient(180deg, rgba(7, 20, 38, 0.96), rgba(2, 8, 23, 0.98));
+  --wilsy-header-bg: linear-gradient(135deg, #020817, #2563eb 58%, #16c7f3);
+  --wilsy-card-bg: rgba(7, 20, 38, 0.88);
+  --wilsy-command-bg: linear-gradient(135deg, #a9e8ff, #16c7f3);
+
+  color-scheme: dark;
+}
+
+/* LEGACY ALIAS */
+:root[data-wilsy-theme="dark_ops"],
+[data-wilsy-theme="dark_ops"],
+.theme-dark-ops {
+  --wilsy-theme-id: "dark_ops";
+  --wilsy-theme-name: "Dark Ops";
+  --wilsy-bg: #020617;
+  --wilsy-surface: #0f172a;
+  --wilsy-surface-raised: #1e293b;
+  --wilsy-border: #334155;
+  --wilsy-text: #f1f5f9;
+  --wilsy-text-muted: #94a3b8;
+  --wilsy-primary: #6366f1;
+  --wilsy-secondary: #8b5cf6;
+  --wilsy-accent: #6366f1;
+  --wilsy-accent-2: #8b5cf6;
+  --wilsy-accent-3: #3b82f6;
+  --wilsy-panel-bg: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.98));
+  --wilsy-header-bg: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  --wilsy-card-bg: rgba(15, 23, 42, 0.82);
+  --wilsy-command-bg: linear-gradient(135deg, #818cf8, #6366f1);
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   GLOBAL THEME HELPERS
+   ============================================================================ */
+
+.wilsy-theme-bg {
+  color: var(--wilsy-text);
+  background: var(--wilsy-panel-bg);
+}
+
+.wilsy-theme-surface {
+  color: var(--wilsy-text);
+  background: var(--wilsy-surface);
+  border: 1px solid var(--wilsy-border);
+}
+
+.wilsy-theme-card {
+  color: var(--wilsy-text);
+  background: var(--wilsy-card-bg);
+  border: 1px solid var(--wilsy-border-soft);
+  box-shadow: var(--wilsy-shadow-soft);
+}
+
+.wilsy-theme-header {
+  color: #fffaf0;
+  background: var(--wilsy-header-bg);
+}
+
+.wilsy-theme-command {
+  color: #020306;
+  background: var(--wilsy-command-bg);
+  border: 1px solid var(--wilsy-border-authority);
+}
+
+.wilsy-theme-text {
+  color: var(--wilsy-text);
+}
+
+.wilsy-theme-muted {
+  color: var(--wilsy-text-muted);
+}
+
+.wilsy-theme-accent {
+  color: var(--wilsy-accent);
+}
+
+.wilsy-theme-live {
+  color: var(--wilsy-accent-3);
+}
+
+.wilsy-theme-authority {
+  color: var(--wilsy-accent);
+}
+
+.wilsy-theme-border {
+  border-color: var(--wilsy-border);
+}
+
+.wilsy-theme-button {
+  color: var(--wilsy-text);
+  background: var(--wilsy-surface);
+  border: 1px solid var(--wilsy-border-soft);
+}
+
+.wilsy-theme-button-primary {
+  color: #020306;
+  background: var(--wilsy-command-bg);
+  border: 1px solid var(--wilsy-border-authority);
+}
+
+.wilsy-theme-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--wilsy-accent) transparent;
+}
+
+.wilsy-theme-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.wilsy-theme-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wilsy-theme-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--wilsy-accent), var(--wilsy-accent-2));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* MODE OVERRIDES */
+:root[data-wilsy-mode="day"],
+[data-wilsy-mode="day"] {
+  color-scheme: light;
+}
+
+:root[data-wilsy-mode="night"],
+[data-wilsy-mode="night"] {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-wilsy-mode="auto"],
+  [data-wilsy-mode="auto"] {
+    color-scheme: light;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-wilsy-mode="auto"],
+  [data-wilsy-mode="auto"] {
+    color-scheme: dark;
+  }
 }

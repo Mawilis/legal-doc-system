@@ -8,13 +8,13 @@
   --exec-brand-primary: #d4af37;
   --exec-brand-secondary: #56d69b;
   --exec-brand-surface: #030504;
-  width: 100%;
-  max-width: 100%;
-  min-width: min(1080px, calc(100vw - 32px));
-  min-height: 100%;
+  width: 100vw;
+  height: calc(100vh - 52px);
+  margin: 0;
   display: grid;
-  gap: 18px;
-  padding: clamp(14px, 2vw, 24px);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
   container-type: inline-size;
   isolation: isolate;
   color: #f4f0df;
@@ -23,10 +23,375 @@
     linear-gradient(180deg, color-mix(in srgb, var(--exec-brand-primary) 8%, transparent), transparent 180px),
     linear-gradient(135deg, color-mix(in srgb, var(--exec-brand-secondary) 7%, transparent), transparent 38%),
     var(--exec-brand-surface);
-  border: 1px solid color-mix(in srgb, var(--exec-brand-primary) 25%, transparent);
-  border-radius: 8px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 20px 60px rgba(0, 0, 0, 0.42);
-  overflow: visible;
+  border: none;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.legacyContinuousStack {
+  display: none;
+}
+
+.osTopRail {
+  min-height: 86px;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(220px, 0.45fr) minmax(300px, 0.8fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(10, 12, 10, 0.92), rgba(0, 0, 0, 0.7));
+  border: 1px solid rgba(246, 215, 107, 0.16);
+}
+
+.osTitleBlock {
+  min-width: 0;
+}
+
+.osTitleBlock h1 {
+  margin: 7px 0 4px;
+  color: var(--exec-brand-primary);
+  font-size: clamp(1rem, 1.45vw, 1.45rem);
+  line-height: 1.04;
+  letter-spacing: 0.08em;
+}
+
+.osTitleBlock p {
+  margin: 0;
+  color: #8f917f;
+  font-size: 0.64rem;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+}
+
+.workspaceFrame {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr) minmax(210px, 280px);
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspaceRail,
+.workspaceViewport,
+.contextRail {
+  min-width: 0;
+  min-height: 0;
+  background: linear-gradient(180deg, rgba(10, 12, 10, 0.96), rgba(1, 2, 2, 0.98));
+  border: 1px solid rgba(246, 215, 107, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 16px 36px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+
+.workspaceRail,
+.contextRail {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 12px;
+}
+
+.workspaceSelect,
+.contextRail label {
+  display: grid;
+  gap: 6px;
+}
+
+.workspaceSelect span,
+.contextRail label span,
+.contextActivity > span,
+.workspaceHeader span,
+.contextRail header span,
+.contextStatusGrid small,
+.workspaceMetrics small {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #d4af37;
+  font-size: 0.58rem;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.workspaceSelect select,
+.contextRail select {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 9px;
+  color: #fff8dc;
+  background: rgba(0, 0, 0, 0.62);
+  border: 1px solid rgba(246, 215, 107, 0.18);
+  outline: 0;
+  font: inherit;
+  font-size: 0.66rem;
+}
+
+.workspaceButtons {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.workspaceButton,
+.workspaceButtonActive {
+  min-width: 0;
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 3px 9px;
+  align-content: center;
+  padding: 10px;
+  color: #aeb3a6;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.42);
+  border: 1px solid rgba(246, 215, 107, 0.1);
+  font: inherit;
+  cursor: pointer;
+}
+
+.workspaceButton svg,
+.workspaceButtonActive svg {
+  grid-row: 1 / 3;
+  align-self: center;
+  color: #d4af37;
+}
+
+.workspaceButton span,
+.workspaceButtonActive span {
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workspaceButton small,
+.workspaceButtonActive small {
+  color: #858878;
+  font-size: 0.56rem;
+  line-height: 1.25;
+}
+
+.workspaceButtonActive {
+  color: #050504;
+  background: linear-gradient(135deg, #f6d76b, var(--exec-brand-primary));
+  border-color: rgba(246, 215, 107, 0.68);
+}
+
+.workspaceButtonActive svg,
+.workspaceButtonActive span,
+.workspaceButtonActive small {
+  color: #050504;
+}
+
+.workspaceViewport {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.workspaceHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.65fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(246, 215, 107, 0.12);
+}
+
+.workspaceHeader h2 {
+  margin: 5px 0 3px;
+  color: #ffffff;
+  font-size: clamp(1rem, 1.5vw, 1.42rem);
+  line-height: 1.05;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workspaceHeader p {
+  margin: 0;
+  color: #8f917f;
+  font-size: 0.64rem;
+  line-height: 1.35;
+}
+
+.workspaceMetrics,
+.contextStatusGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.workspaceMetrics div,
+.contextStatusGrid div {
+  min-width: 0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.36);
+  border: 1px solid rgba(75, 94, 84, 0.42);
+}
+
+.workspaceMetrics strong,
+.contextStatusGrid strong {
+  display: block;
+  margin-top: 5px;
+  color: #56d69b;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceContent {
+  min-height: 0;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.overviewWorkspace,
+.financeWorkspace,
+.ledgerWorkspace {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.overviewWorkspace {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.financeWorkspace {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.ledgerWorkspace {
+  grid-template-rows: auto minmax(0, 1fr) minmax(118px, 0.32fr);
+}
+
+.sourcesWorkspace,
+.automationWorkspace {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(260px, 0.7fr);
+  gap: 12px;
+  overflow: hidden;
+}
+
+.workspaceContent .commandDeck,
+.workspaceContent .transformationGrid,
+.workspaceContent .operatingGrid {
+  height: 100%;
+  min-height: 0;
+}
+
+.workspaceContent .finalityPanel,
+.workspaceContent .memoPanel,
+.workspaceContent .sourceRegistry,
+.workspaceContent .operatingSourceDeck,
+.workspaceContent .transformationHero,
+.workspaceContent .intelligencePanel,
+.workspaceContent .integrationPanel,
+.workspaceContent .trustPanel,
+.workspaceContent .moatPanel,
+.workspaceContent .dailyDutyPanel,
+.workspaceContent .aiPanel,
+.workspaceContent .currencyPanel,
+.workspaceContent .panel,
+.workspaceContent .telemetryPanel {
+  overflow: hidden;
+}
+
+.workspaceContent .sourceRegistry > div,
+.workspaceContent .operatingSourceGrid,
+.workspaceContent .priorityStack,
+.workspaceContent .insightList,
+.workspaceContent .connectorGrid,
+.workspaceContent .trustRows,
+.workspaceContent .moatRows,
+.workspaceContent .dutyList,
+.workspaceContent .aiList,
+.workspaceContent .tableScroll,
+.workspaceContent .fxRates,
+.workspaceContent .functionMatrix {
+  min-height: 0;
+  overflow: auto;
+}
+
+.workspaceContent .operatingSourceDeck,
+.workspaceContent .currencyPanel,
+.workspaceContent .panel,
+.workspaceContent .telemetryPanel,
+.workspaceContent .dailyDutyPanel,
+.workspaceContent .aiPanel,
+.workspaceContent .intelligencePanel,
+.workspaceContent .transformationHero,
+.workspaceContent .integrationPanel,
+.workspaceContent .trustPanel,
+.workspaceContent .moatPanel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.workspaceContent .dailyDutyPanel {
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+}
+
+.workspaceContent .aiPanel,
+.workspaceContent .intelligencePanel {
+  align-self: stretch;
+}
+
+.workspaceContent .telemetryPanel > div {
+  max-height: none;
+}
+
+.contextRail header {
+  display: grid;
+  gap: 5px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(246, 215, 107, 0.12);
+}
+
+.contextRail header strong {
+  color: #ffffff;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.contextActivity {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.contextActivity article {
+  min-width: 0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.34);
+  border-left: 2px solid rgba(212, 175, 55, 0.72);
+}
+
+.contextActivity strong {
+  display: block;
+  color: #ffffff;
+  font-size: 0.62rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextActivity small {
+  display: block;
+  margin-top: 4px;
+  color: #858878;
+  font-size: 0.58rem;
 }
 
 .executiveShell *,
@@ -39,6 +404,7 @@
 
 .executiveShell[data-refreshing="true"] .panel,
 .executiveShell[data-refreshing="true"] .commandDeck,
+.executiveShell[data-refreshing="true"] .operatingSourceDeck,
 .executiveShell[data-refreshing="true"] .kpiGrid,
 .executiveShell[data-refreshing="true"] .operatingGrid,
 .executiveShell[data-refreshing="true"] .transformationGrid {
@@ -534,6 +900,96 @@
   color: #858878;
   font-size: 0.64rem;
   overflow-wrap: anywhere;
+}
+
+.operatingSourceDeck {
+  min-width: 0;
+  background: linear-gradient(180deg, rgba(9, 13, 12, 0.96), rgba(2, 3, 3, 0.98));
+  border: 1px solid rgba(86, 214, 155, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 16px 36px rgba(0, 0, 0, 0.24);
+}
+
+.operatingSourceDeck header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(246, 215, 107, 0.12);
+}
+
+.operatingSourceDeck header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #d4af37;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.operatingSourceDeck h2 {
+  margin: 5px 0 0;
+  color: #ffffff;
+  font-size: 0.96rem;
+  line-height: 1.25;
+}
+
+.operatingSourceDeck header small {
+  color: #56d69b;
+  font-size: 0.64rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-align: right;
+}
+
+.operatingSourceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 9px;
+  padding: 14px 16px 16px;
+}
+
+.operatingSourceGrid article {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(255, 102, 115, 0.26);
+}
+
+.operatingSourceGrid article[data-live="true"] {
+  border-color: rgba(86, 214, 155, 0.34);
+}
+
+.operatingSourceGrid small {
+  color: #858878;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.operatingSourceGrid strong {
+  color: #ffffff;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.operatingSourceGrid span {
+  color: #ffb4bc;
+  font-size: 0.58rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.operatingSourceGrid article[data-live="true"] span {
+  color: #56d69b;
 }
 
 .transformationGrid {
@@ -2088,4 +2544,838 @@
 .nlqAnswer span {
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.workspaceContent .sourceRegistry {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.workspaceContent .kpiGrid strong,
+.workspaceContent .fxResult strong,
+.workspaceContent .sourceChip,
+.workspaceContent .statusPill,
+.contextStatusGrid strong,
+.workspaceMetrics strong {
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+}
+
+.workspaceContent .kpiGrid strong {
+  font-size: clamp(0.86rem, 1.15vw, 1.18rem);
+}
+
+@media (max-width: 1180px) {
+  .executiveShell {
+    height: auto;
+    min-height: 720px;
+    overflow: visible;
+  }
+
+  .osTopRail,
+  .workspaceFrame,
+  .workspaceHeader,
+  .sourcesWorkspace,
+  .automationWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .workspaceFrame,
+  .workspaceViewport,
+  .workspaceContent {
+    overflow: visible;
+  }
+
+  .workspaceButtons {
+    grid-template-columns: repeat(auto-fit, minmax(142px, 1fr));
+    overflow: visible;
+  }
+
+  .contextRail {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  }
+}
+
+
+/* ============================================================================
+   WILSY OS - EXECUTIVE VIEW REPAIR [V56.9.0-RAIL-AUTHORITY]
+   Absolute Path:
+   /Users/wilsonkhanyezi/legal-doc-system/client/src/components/executive/ExecutiveDashboard.module.css
+
+   Purpose:
+   - Remove visual damage caused by pseudo-text investor masks.
+   - Restore premium rail discipline.
+   - Give Systems workspace real enterprise presence.
+   - Preserve source truth for JSX display mappers instead of hiding it in CSS.
+   ============================================================================ */
+
+.executiveShell {
+  --exec-brand-primary: var(--wilsy-accent, #d4af37);
+  --exec-brand-secondary: var(--wilsy-accent-3, #56d69b);
+  --exec-brand-cyan: var(--wilsy-accent-2, #17bdf2);
+  --exec-view-bg: var(--wilsy-bg, #020306);
+  --exec-view-panel: linear-gradient(180deg, rgba(8, 12, 18, 0.96), rgba(2, 3, 6, 0.98));
+  --exec-view-border: rgba(246, 215, 107, 0.16);
+  --exec-view-border-strong: rgba(212, 175, 55, 0.42);
+  --exec-view-muted: #aeb6c8;
+  width: 100%;
+  height: calc(100vh - 52px);
+  padding: clamp(14px, 1.25vw, 20px);
+  gap: clamp(12px, 1.1vw, 18px);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(212, 175, 55, 0.16), transparent 30%),
+    radial-gradient(circle at 92% 12%, rgba(23, 189, 242, 0.13), transparent 34%),
+    linear-gradient(135deg, rgba(3, 5, 12, 0.98), rgba(4, 8, 18, 0.98) 46%, rgba(1, 2, 5, 0.99)),
+    var(--exec-view-bg);
+  overflow: hidden;
+}
+
+.osTopRail {
+  min-height: 92px;
+  grid-template-columns: minmax(320px, 1.05fr) minmax(240px, 0.46fr) minmax(340px, 0.82fr);
+  padding: 14px 16px;
+  border-radius: 24px;
+  border: 1px solid var(--exec-view-border);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 32%),
+    linear-gradient(180deg, rgba(8, 12, 24, 0.95), rgba(2, 3, 8, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.075),
+    0 20px 72px rgba(0, 0, 0, 0.28);
+}
+
+.osTitleBlock h1 {
+  font-size: clamp(1.18rem, 1.65vw, 1.76rem);
+  letter-spacing: 0.075em;
+}
+
+.osTitleBlock p,
+.workspaceHeader p,
+.contextRail header span,
+.contextActivity small {
+  color: var(--exec-view-muted);
+}
+
+.workspaceFrame {
+  grid-template-columns: minmax(250px, 310px) minmax(0, 1fr) minmax(310px, 390px);
+  gap: clamp(12px, 1.1vw, 18px);
+}
+
+.workspaceRail,
+.workspaceViewport,
+.contextRail {
+  border-radius: 24px;
+  border: 1px solid var(--exec-view-border);
+  background: var(--exec-view-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 22px 70px rgba(0, 0, 0, 0.26);
+}
+
+.workspaceRail,
+.contextRail {
+  padding: 14px;
+  overflow: auto;
+}
+
+.workspaceViewport {
+  overflow: hidden;
+}
+
+.workspaceContent {
+  padding: 14px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.workspaceButtons {
+  gap: 9px;
+  overflow: visible;
+  padding-right: 0;
+}
+
+.workspaceButton,
+.workspaceButtonActive {
+  min-height: 68px;
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.workspaceButton {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 36%),
+    rgba(0, 0, 0, 0.32);
+}
+
+.workspaceButtonActive {
+  box-shadow:
+    0 12px 34px rgba(212, 175, 55, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.workspaceHeader {
+  min-height: 96px;
+  padding: 15px 18px;
+}
+
+.workspaceHeader h2 {
+  font-size: clamp(1.18rem, 1.55vw, 1.58rem);
+}
+
+.workspaceMetrics div,
+.contextStatusGrid div {
+  border-radius: 16px;
+}
+
+.overviewWorkspace,
+.financeWorkspace,
+.ledgerWorkspace,
+.sourcesWorkspace,
+.automationWorkspace,
+.integrationWorkspace {
+  height: 100%;
+  min-height: 0;
+}
+
+.overviewWorkspace {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.commandDeck {
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  grid-template-areas:
+    "final memo"
+    "commands commands";
+  gap: 14px;
+}
+
+.commandDeck .finalityPanel {
+  grid-area: final;
+}
+
+.commandDeck .memoPanel {
+  grid-area: memo;
+}
+
+.commandDeck .commandRail {
+  grid-area: commands;
+}
+
+.sourceRegistry {
+  min-height: 0;
+}
+
+.diagnosticsWorkspace,
+.ledgerWorkspace {
+  gap: 14px;
+}
+
+.finalityPanel,
+.memoPanel,
+.sourceRegistry,
+.panel,
+.telemetryPanel,
+.operatingSourceDeck,
+.currencyPanel,
+.dailyDutyPanel,
+.aiPanel,
+.transformationHero,
+.intelligencePanel,
+.integrationPanel,
+.trustPanel,
+.moatPanel {
+  border-radius: 24px;
+  border: 1px solid var(--exec-view-border);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 34%),
+    linear-gradient(180deg, rgba(8, 12, 18, 0.96), rgba(1, 2, 6, 0.98));
+}
+
+.finalityPanel,
+.memoPanel,
+.sourceRegistry {
+  padding: 18px;
+}
+
+.finalityHeader strong {
+  font-size: clamp(1.75rem, 3.1vw, 2.9rem);
+}
+
+.memoPanel h2 {
+  font-size: clamp(1.08rem, 1.55vw, 1.42rem);
+}
+
+.commandRail {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.commandRail button {
+  min-height: 82px;
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.085), transparent 40%),
+    rgba(0, 0, 0, 0.34);
+}
+
+.integrationWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+  gap: 14px;
+  overflow: hidden;
+}
+
+.integrationWorkspace .integrationPanel,
+.integrationWorkspace .trustPanel {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.integrationWorkspace .connectorGrid,
+.integrationWorkspace .trustRows {
+  min-height: 0;
+  overflow: auto;
+}
+
+.integrationWorkspace .connectorGrid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.connectorGrid article,
+.trustRows article,
+.moatRows article,
+.insightList article,
+.priorityStack article,
+.dutyCard,
+.aiCard,
+.profileStrip div,
+.sourceMatrix div,
+.memoGrid div,
+.kpiGrid article {
+  border-radius: 18px;
+}
+
+.connectorGrid article {
+  min-height: 176px;
+  align-content: start;
+}
+
+.connectorGrid article > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.connectorGrid h3 {
+  margin: 4px 0;
+  color: #ffffff;
+  font-size: 0.92rem;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+}
+
+.connectorGrid p {
+  margin: 0;
+  color: var(--exec-view-muted);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.inlineAction {
+  min-height: 34px;
+  border-radius: 999px;
+}
+
+.contextRail {
+  gap: 12px;
+}
+
+.contextActivity article {
+  border-radius: 16px;
+}
+
+.dataTable {
+  min-width: 860px;
+}
+
+.sourceChip,
+.statusPill,
+.proofCell {
+  max-width: 260px;
+  white-space: nowrap;
+}
+
+.sourceChip,
+.statusPill {
+  border-radius: 999px;
+}
+
+.executiveShell ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.executiveShell ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.executiveShell ::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.28);
+  border: 2px solid rgba(2, 3, 6, 0.92);
+  border-radius: 999px;
+}
+
+.executiveShell ::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.46);
+}
+
+@media (min-width: 1500px) {
+  .workspaceFrame {
+    grid-template-columns: minmax(270px, 330px) minmax(0, 1fr) minmax(340px, 420px);
+  }
+}
+
+@media (max-width: 1280px) {
+  .workspaceFrame {
+    grid-template-columns: minmax(220px, 270px) minmax(0, 1fr);
+  }
+
+  .contextRail {
+    display: none;
+  }
+
+  .osTopRail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .brandPlate,
+  .toolbar {
+    width: 100%;
+  }
+
+  .integrationWorkspace,
+  .sourcesWorkspace,
+  .automationWorkspace,
+  .operatingGrid,
+  .transformationGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .executiveShell {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .workspaceFrame {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .workspaceRail,
+  .workspaceViewport,
+  .contextRail {
+    overflow: visible;
+  }
+
+  .workspaceContent {
+    overflow: visible;
+  }
+
+  .commandDeck {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "final"
+      "memo"
+      "commands";
+  }
+
+  .workspaceHeader {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ============================================================================
+   WILSY OS - EXECUTIVE THEME AUTHORITY [V56.13.0-DAY-MODE]
+   Purpose:
+   - Make Account Command Center day/night/skin receipts visible in Executive.
+   - Replace local hardcoded gold dominance with operating-skin variables.
+   - Keep day mode readable, premium and enterprise-grade.
+   ============================================================================ */
+
+.executiveShell {
+  color: var(--wilsy-text, #fffaf0) !important;
+}
+
+.executiveShell .osTitleBlock h1,
+.executiveShell .workspaceHeader h2,
+.executiveShell .contextRail header strong,
+.executiveShell .brandPlate strong,
+.executiveShell .workspaceButton span,
+.executiveShell .commandRail button span,
+.executiveShell .memoPanel h2,
+.executiveShell .panelHeader h2,
+.executiveShell .connectorGrid h3,
+.executiveShell .trustRows strong {
+  color: var(--wilsy-text, #fffaf0) !important;
+}
+
+.executiveShell .osTitleBlock p,
+.executiveShell .workspaceHeader p,
+.executiveShell .workspaceButton small,
+.executiveShell .commandRail button small,
+.executiveShell .contextActivity small,
+.executiveShell .brandPlate small,
+.executiveShell .brandPlate em,
+.executiveShell .memoPanel p,
+.executiveShell .connectorGrid p {
+  color: var(--wilsy-muted, #aeb6c8) !important;
+}
+
+.executiveShell .eyebrow,
+.executiveShell .workspaceSelect span,
+.executiveShell .contextRail label span,
+.executiveShell .contextActivity > span,
+.executiveShell .workspaceHeader span,
+.executiveShell .contextRail header span,
+.executiveShell .contextStatusGrid small,
+.executiveShell .workspaceMetrics small,
+.executiveShell .finalityHeader span,
+.executiveShell .memoPanel > span,
+.executiveShell .sourceRegistry > span,
+.executiveShell .panelHeader span,
+.executiveShell .telemetryPanel h3,
+.executiveShell .operatingSourceDeck header span,
+.executiveShell .dailyDutyPanel header span,
+.executiveShell .aiPanel header span,
+.executiveShell .currencyPanel header span {
+  color: var(--wilsy-authority, var(--wilsy-accent, #d4af37)) !important;
+}
+
+.executiveShell .workspaceViewport,
+.executiveShell .workspaceRail,
+.executiveShell .contextRail,
+.executiveShell .finalityPanel,
+.executiveShell .memoPanel,
+.executiveShell .sourceRegistry,
+.executiveShell .panel,
+.executiveShell .telemetryPanel,
+.executiveShell .operatingSourceDeck,
+.executiveShell .currencyPanel,
+.executiveShell .dailyDutyPanel,
+.executiveShell .aiPanel,
+.executiveShell .transformationHero,
+.executiveShell .intelligencePanel,
+.executiveShell .integrationPanel,
+.executiveShell .trustPanel,
+.executiveShell .moatPanel {
+  border-color: var(--wilsy-border, rgba(212,175,55,0.2)) !important;
+}
+
+.executiveShell .workspaceButtonActive,
+.executiveShell .primaryButton,
+.executiveShell .inlineAction,
+.executiveShell .contextRail > button,
+.executiveShell .tabActive {
+  background: linear-gradient(135deg, var(--wilsy-authority, #d4af37), var(--wilsy-accent-2, #17bdf2)) !important;
+  color: #061018 !important;
+}
+
+.executiveShell .workspaceButtonActive span,
+.executiveShell .workspaceButtonActive small,
+.executiveShell .workspaceButtonActive svg {
+  color: #061018 !important;
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] {
+  --exec-day-bg: #f5f8ff;
+  --exec-day-surface: rgba(255,255,255,0.92);
+  --exec-day-panel: rgba(255,255,255,0.86);
+  --exec-day-text: #101827;
+  --exec-day-muted: #53617f;
+  color: var(--exec-day-text) !important;
+  background:
+    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--wilsy-accent, #17bdf2) 18%, transparent), transparent 30%),
+    radial-gradient(circle at 86% 8%, color-mix(in srgb, var(--wilsy-live, #56d69b) 12%, transparent), transparent 32%),
+    linear-gradient(135deg, #f7f9ff, #edf5ff 48%, #ffffff) !important;
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] .osTopRail,
+.executiveShell[data-wilsy-resolved-mode="day"] .workspaceRail,
+.executiveShell[data-wilsy-resolved-mode="day"] .workspaceViewport,
+.executiveShell[data-wilsy-resolved-mode="day"] .contextRail,
+.executiveShell[data-wilsy-resolved-mode="day"] .finalityPanel,
+.executiveShell[data-wilsy-resolved-mode="day"] .memoPanel,
+.executiveShell[data-wilsy-resolved-mode="day"] .sourceRegistry,
+.executiveShell[data-wilsy-resolved-mode="day"] .panel,
+.executiveShell[data-wilsy-resolved-mode="day"] .telemetryPanel,
+.executiveShell[data-wilsy-resolved-mode="day"] .operatingSourceDeck,
+.executiveShell[data-wilsy-resolved-mode="day"] .currencyPanel,
+.executiveShell[data-wilsy-resolved-mode="day"] .dailyDutyPanel,
+.executiveShell[data-wilsy-resolved-mode="day"] .aiPanel,
+.executiveShell[data-wilsy-resolved-mode="day"] .integrationPanel,
+.executiveShell[data-wilsy-resolved-mode="day"] .trustPanel {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.84), rgba(255,255,255,0.62)),
+    var(--exec-day-panel) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.8),
+    0 22px 70px rgba(54, 76, 128, 0.13) !important;
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] .osTitleBlock h1,
+.executiveShell[data-wilsy-resolved-mode="day"] .workspaceHeader h2,
+.executiveShell[data-wilsy-resolved-mode="day"] .contextRail header strong,
+.executiveShell[data-wilsy-resolved-mode="day"] .workspaceButton span,
+.executiveShell[data-wilsy-resolved-mode="day"] .commandRail button span,
+.executiveShell[data-wilsy-resolved-mode="day"] .memoPanel h2,
+.executiveShell[data-wilsy-resolved-mode="day"] .panelHeader h2,
+.executiveShell[data-wilsy-resolved-mode="day"] .brandPlate strong {
+  color: var(--exec-day-text) !important;
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] .osTitleBlock p,
+.executiveShell[data-wilsy-resolved-mode="day"] .workspaceHeader p,
+.executiveShell[data-wilsy-resolved-mode="day"] .workspaceButton small,
+.executiveShell[data-wilsy-resolved-mode="day"] .commandRail button small,
+.executiveShell[data-wilsy-resolved-mode="day"] .contextActivity small,
+.executiveShell[data-wilsy-resolved-mode="day"] .memoPanel p {
+  color: var(--exec-day-muted) !important;
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] .workspaceButton,
+.executiveShell[data-wilsy-resolved-mode="day"] .commandRail button,
+.executiveShell[data-wilsy-resolved-mode="day"] .sourceMatrix div,
+.executiveShell[data-wilsy-resolved-mode="day"] .memoGrid div,
+.executiveShell[data-wilsy-resolved-mode="day"] .kpiGrid article,
+.executiveShell[data-wilsy-resolved-mode="day"] .contextActivity article,
+.executiveShell[data-wilsy-resolved-mode="day"] .contextStatusGrid div,
+.executiveShell[data-wilsy-resolved-mode="day"] .workspaceMetrics div {
+  background: rgba(255,255,255,0.72) !important;
+  border-color: color-mix(in srgb, var(--wilsy-accent, #17bdf2) 22%, transparent) !important;
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] input,
+.executiveShell[data-wilsy-resolved-mode="day"] select {
+  color: var(--exec-day-text) !important;
+  background: rgba(255,255,255,0.82) !important;
+  border-color: color-mix(in srgb, var(--wilsy-accent, #17bdf2) 28%, transparent) !important;
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] .modal {
+  color: var(--exec-day-text) !important;
+  background: #ffffff !important;
+}
+
+
+/* ============================================================================
+   WILSY OS - EXECUTIVE OPERATOR STORY RAIL [V56.16.0]
+   Purpose:
+   - Replace raw email/version metadata with operator identity and moving OS story.
+   - Keep the existing top rail structure stable.
+   ============================================================================ */
+
+.operatorIdentityCard {
+  min-width: 220px;
+  display: inline-grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  color: var(--wilsy-text, #fffaf0);
+}
+
+.operatorIdentityCard svg {
+  color: var(--wilsy-authority, var(--wilsy-accent, #d4af37));
+}
+
+.operatorIdentityCard strong {
+  display: block;
+  color: var(--wilsy-text, #fffaf0);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.operatorIdentityCard small {
+  display: block;
+  margin-top: 3px;
+  color: var(--wilsy-muted, #aeb6c8);
+  font-size: 0.56rem;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.operatingStoryRail {
+  width: min(100%, 820px);
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-left: 2px solid color-mix(in srgb, var(--wilsy-accent, #d4af37) 50%, transparent);
+  color: var(--wilsy-muted, #aeb6c8);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+
+.operatingStoryRail span {
+  display: inline-block;
+  min-width: max-content;
+  padding-left: 100%;
+  color: var(--wilsy-muted, #aeb6c8);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+  animation: wilsyExecutiveStoryMarquee 34s linear infinite;
+}
+
+.operatingStoryRail:hover span {
+  animation-play-state: paused;
+}
+
+@keyframes wilsyExecutiveStoryMarquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] .operatorIdentityCard strong {
+  color: #101827;
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] .operatorIdentityCard small,
+.executiveShell[data-wilsy-resolved-mode="day"] .operatingStoryRail span {
+  color: #53617f;
+}
+
+
+/* ============================================================================
+   WILSY OS - EXECUTIVE BUSINESS ARTIFACT RAIL [V56.20.0]
+   Purpose:
+   - Keep the right rail compact and useful.
+   - Route Export View into Business Artifact Studio.
+   - Remove cramped metric blocks from the executive rail.
+   ============================================================================ */
+
+.businessArtifactRail {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--wilsy-accent, #d4af37) 28%, transparent);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--wilsy-accent, #d4af37) 10%, transparent), transparent 44%),
+    rgba(0, 0, 0, 0.26);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.045);
+}
+
+.businessArtifactRail header {
+  display: grid;
+  gap: 5px;
+}
+
+.businessArtifactRail header strong {
+  color: var(--wilsy-text, #fffaf0);
+  font-size: 0.76rem;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.businessArtifactRail header small {
+  color: var(--wilsy-muted, #aeb6c8);
+  font-size: 0.6rem;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+}
+
+.artifactCommandStack {
+  display: grid;
+  gap: 8px;
+}
+
+.artifactCommandStack button {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--wilsy-authority, #d4af37) 28%, transparent);
+  border-radius: 16px;
+  color: var(--wilsy-text, #fffaf0);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--wilsy-accent, #d4af37) 8%, transparent), transparent 44%),
+    rgba(0, 0, 0, 0.3);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.artifactCommandStack button:hover {
+  transform: translateY(-1px);
+  border-color: var(--wilsy-authority, #d4af37);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--wilsy-authority, #d4af37) 18%, transparent), color-mix(in srgb, var(--wilsy-accent-2, #17bdf2) 10%, transparent)),
+    rgba(0, 0, 0, 0.36);
+}
+
+.artifactCommandStack svg {
+  color: var(--wilsy-authority, #d4af37);
+}
+
+.artifactCommandStack span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.artifactCommandStack strong {
+  color: var(--wilsy-text, #fffaf0);
+  font-size: 0.68rem;
+  line-height: 1.2;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.artifactCommandStack small {
+  color: var(--wilsy-muted, #aeb6c8);
+  font-size: 0.56rem;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] .businessArtifactRail,
+.executiveShell[data-wilsy-resolved-mode="day"] .artifactCommandStack button {
+  background: rgba(255,255,255,0.74);
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] .businessArtifactRail header strong,
+.executiveShell[data-wilsy-resolved-mode="day"] .artifactCommandStack strong {
+  color: #101827;
+}
+
+.executiveShell[data-wilsy-resolved-mode="day"] .businessArtifactRail header small,
+.executiveShell[data-wilsy-resolved-mode="day"] .artifactCommandStack small {
+  color: #53617f;
 }

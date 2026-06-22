@@ -1,0 +1,343 @@
+/* eslint-disable */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9700;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(16px);
+}
+
+.shell {
+  width: min(1560px, 96vw);
+  max-height: 92vh;
+  display: grid;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+  gap: 14px;
+  overflow: hidden;
+  padding: 22px;
+  color: var(--wilsy-text, #fffaf0);
+  border: 1px solid color-mix(in srgb, var(--wilsy-authority, #d4af37) 34%, transparent);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--wilsy-authority, #d4af37) 14%, transparent), transparent 34%),
+    linear-gradient(135deg, rgba(5, 10, 7, 0.98), rgba(8, 8, 4, 0.98));
+  box-shadow: 0 44px 160px rgba(0, 0, 0, 0.68), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.generatorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 20px;
+}
+
+.generatorHeader span {
+  display: block;
+  color: var(--wilsy-authority, #d4af37);
+  font-size: 0.66rem;
+  font-weight: 1000;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.generatorHeader h2 {
+  margin: 8px 0 0;
+  color: var(--wilsy-text, #fffaf0);
+  font-size: clamp(1.6rem, 3vw, 2.35rem);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.closeButton {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--wilsy-authority, #d4af37) 24%, transparent);
+  border-radius: 14px;
+  color: var(--wilsy-text, #fffaf0);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+}
+
+.draftRail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 14px;
+}
+
+.draftRail label,
+.utilityRail label {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 0 16px;
+  border: 1px solid rgba(39, 184, 118, 0.44);
+  border-radius: 8px;
+  color: #66e7b4;
+  background: rgba(11, 46, 30, 0.46);
+}
+
+.draftRail input,
+.utilityRail input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: var(--wilsy-text, #fffaf0);
+  background: transparent;
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.draftRail button {
+  border: 1px solid color-mix(in srgb, var(--wilsy-authority, #d4af37) 40%, transparent);
+  border-radius: 8px;
+  color: #061018;
+  background: linear-gradient(135deg, #fff08a, #d4af37);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 1000;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.utilityRail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 14px;
+}
+
+.utilityRail > div {
+  display: flex;
+  gap: 8px;
+}
+
+.utilityRail > div button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(39, 184, 118, 0.34);
+  border-radius: 10px;
+  color: #83f5c6;
+  background: rgba(11, 46, 30, 0.32);
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 1000;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.statusLine {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--wilsy-authority, #d4af37) 24%, transparent);
+  border-radius: 10px;
+  color: var(--wilsy-muted, #c8bfea);
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.catalogGrid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(230px, 1fr));
+  gap: 14px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.artifactCard {
+  min-height: 216px;
+  display: grid;
+  grid-template-rows: auto minmax(44px, 1fr) auto auto;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--wilsy-authority, #d4af37) 28%, transparent);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--wilsy-authority, #d4af37) 8%, transparent), transparent 40%),
+    rgba(0, 0, 0, 0.34);
+}
+
+.artifactCard small {
+  display: block;
+  color: var(--wilsy-authority, #d4af37);
+  font-size: 0.56rem;
+  font-weight: 1000;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.artifactCard h3 {
+  margin: 8px 0 0;
+  color: var(--wilsy-text, #fffaf0);
+  font-size: 0.78rem;
+  line-height: 1.24;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.artifactCard p {
+  margin: 0;
+  color: var(--wilsy-muted, #aeb6c8);
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+
+.formatRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.formatRail button {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid rgba(39, 184, 118, 0.38);
+  border-radius: 6px;
+  color: #83f5c6;
+  background: rgba(39, 184, 118, 0.14);
+  font: inherit;
+  font-size: 0.54rem;
+  font-weight: 1000;
+  letter-spacing: 0.09em;
+  cursor: pointer;
+}
+
+.formatRail button[data-active="true"] {
+  border-color: var(--wilsy-authority, #d4af37);
+  color: #061018;
+  background: linear-gradient(135deg, #fff08a, #d4af37);
+}
+
+.generateButton {
+  min-height: 44px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid color-mix(in srgb, var(--wilsy-authority, #d4af37) 42%, transparent);
+  border-radius: 7px;
+  color: #061018;
+  background: linear-gradient(135deg, #fff08a, #d4af37);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.generateButton:disabled,
+.draftRail button:disabled {
+  opacity: 0.56;
+  cursor: progress;
+}
+
+.receiptRail {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: color-mix(in srgb, var(--wilsy-authority, #d4af37) 64%, transparent);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1200px) {
+  .catalogGrid {
+    grid-template-columns: repeat(2, minmax(230px, 1fr));
+  }
+
+  .draftRail,
+  .utilityRail {
+    grid-template-columns: 1fr;
+  }
+
+  .utilityRail > div {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 720px) {
+  .catalogGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ============================================================================
+   WILSY OS - BUSINESS ARTIFACT CARD ALIGNMENT [V2.1.0]
+   Purpose:
+   - Stop generate buttons from bleeding outside cards.
+   - Make every artifact card a clean workstation.
+   - Preserve the Sovereign Export identity while using active Wilsy OS variables.
+   ============================================================================ */
+
+.shell,
+.shell * {
+  box-sizing: border-box;
+}
+
+.catalogGrid {
+  align-items: stretch;
+  grid-auto-rows: 1fr;
+  padding: 0 10px 18px 0;
+}
+
+.artifactCard {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  align-content: stretch;
+}
+
+.artifactCard > * {
+  min-width: 0;
+}
+
+.artifactCard h3 {
+  overflow-wrap: anywhere;
+}
+
+.artifactCard p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.formatRail {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.generateButton {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  justify-self: stretch;
+  padding-inline: 14px;
+}
+
+@media (max-width: 1420px) {
+  .catalogGrid {
+    grid-template-columns: repeat(3, minmax(230px, 1fr));
+  }
+}
+
+@media (max-width: 1080px) {
+  .catalogGrid {
+    grid-template-columns: repeat(2, minmax(230px, 1fr));
+  }
+}

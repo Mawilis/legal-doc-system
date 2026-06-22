@@ -42,7 +42,22 @@
 import User from '../models/User.js';
 import Tenant from '../models/Tenant.js';
 import auditLogger from '../utils/auditLogger.js';
+import mongoose from 'mongoose';
 import crypto from 'crypto';
+
+/**
+ * @function getTenant
+ * @description Safely retrieves a tenant regardless of whether the identifier is an ObjectId, a uuid string, or an alias.
+ * @param {string} identifier - The tenant identifier.
+ * @returns {Promise<Object|null>} The matched tenant.
+ */
+const getTenant = async (identifier) => {
+  if (!identifier) return null;
+  const query = mongoose.Types.ObjectId.isValid(identifier)
+    ? { _id: identifier }
+    : { $or: [{ tenantId: identifier }, { alias: identifier }] };
+  return await Tenant.findOne(query).lean();
+};
 
 // ============================================================================
 // 🔐 FORENSIC EVIDENCE CHAIN
@@ -54,7 +69,7 @@ const ANALYTICS_FORENSIC_CHAIN = {
   operator: 'FOUNDER',
   pqeCircuit: 'NISTDILITHIUM-5·1024',
   tenantIsolationEnforced: true,
-  zeroHardcodedTenants: true
+  zeroHardcodedTenants: true,
 };
 
 // ============================================================================
@@ -74,11 +89,12 @@ const enforceTenantIsolation = (user, correlationId) => {
     tenantId: userTenantId,
     userEmail,
     correlationId,
-    forensicHash: crypto.createHash('sha512')
+    forensicHash: crypto
+      .createHash('sha512')
       .update(`${userEmail}:${userTenantId}:${correlationId}`)
       .digest('hex')
       .substring(0, 32)
-      .toUpperCase()
+      .toUpperCase(),
   };
 };
 
@@ -101,14 +117,14 @@ export const getDashboardMetrics = async (req, res) => {
     const tenantContext = enforceTenantIsolation(req.user, correlationId);
 
     // STRICT QUERY: Only user's own tenant
-    const tenant = await Tenant.findById(tenantContext.tenantId).lean();
+    const tenant = await getTenant(tenantContext.tenantId);
     if (!tenant) {
       return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND', correlationId });
     }
 
     const userCount = await User.countDocuments({
       tenantId: tenantContext.tenantId,
-      isActive: true
+      isActive: true,
     });
 
     const totalMRR = tenant.billing?.monthlyRevenue || 0;
@@ -117,7 +133,7 @@ export const getDashboardMetrics = async (req, res) => {
     auditLogger.quantum('Dashboard metrics - tenant isolated', {
       tenantId: tenantContext.tenantId,
       userEmail: tenantContext.userEmail,
-      correlationId
+      correlationId,
     });
 
     res.json({
@@ -130,13 +146,19 @@ export const getDashboardMetrics = async (req, res) => {
         estimatedValuation: totalARR * 15,
         tenantIsolated: true,
         correlationId,
-        forensicHash: tenantContext.forensicHash
-      }
+        forensicHash: tenantContext.forensicHash,
+      },
     });
-
   } catch (error) {
     if (error.message.includes('TENANT_NOT_ASSIGNED')) {
-      return res.status(403).json({ success: false, error: 'TENANT_NOT_ASSIGNED', message: 'No tenant assigned', correlationId });
+      return res
+        .status(403)
+        .json({
+          success: false,
+          error: 'TENANT_NOT_ASSIGNED',
+          message: 'No tenant assigned',
+          correlationId,
+        });
     }
     res.status(500).json({ success: false, error: error.message, correlationId });
   }
@@ -149,7 +171,7 @@ export const getRevenueAnalytics = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, correlationId);
 
-    const tenant = await Tenant.findById(tenantContext.tenantId).lean();
+    const tenant = await getTenant(tenantContext.tenantId);
     if (!tenant) {
       return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND', correlationId });
     }
@@ -166,10 +188,9 @@ export const getRevenueAnalytics = async (req, res) => {
         tenantId: tenantContext.tenantId,
         tenantName: tenant.name,
         tenantIsolated: true,
-        correlationId
-      }
+        correlationId,
+      },
     });
-
   } catch (error) {
     if (error.message.includes('TENANT_NOT_ASSIGNED')) {
       return res.status(403).json({ success: false, error: 'TENANT_NOT_ASSIGNED', correlationId });
@@ -184,7 +205,7 @@ export const getInvestorKPIs = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, correlationId);
 
-    const tenant = await Tenant.findById(tenantContext.tenantId).lean();
+    const tenant = await getTenant(tenantContext.tenantId);
     if (!tenant) {
       return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND', correlationId });
     }
@@ -201,10 +222,9 @@ export const getInvestorKPIs = async (req, res) => {
         arr: totalARR,
         valuation: totalARR * 15,
         tenantIsolated: true,
-        correlationId
-      }
+        correlationId,
+      },
     });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message, correlationId });
   }
@@ -218,7 +238,7 @@ export const getRiskMetrics = async (req, res) => {
 
     const userCount = await User.countDocuments({
       tenantId: tenantContext.tenantId,
-      isActive: true
+      isActive: true,
     });
 
     res.json({
@@ -229,10 +249,9 @@ export const getRiskMetrics = async (req, res) => {
         tenantId: tenantContext.tenantId,
         userCount,
         tenantIsolated: true,
-        correlationId
-      }
+        correlationId,
+      },
     });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message, correlationId });
   }
@@ -244,7 +263,7 @@ export const getQuantumForecasts = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, correlationId);
 
-    const tenant = await Tenant.findById(tenantContext.tenantId).lean();
+    const tenant = await getTenant(tenantContext.tenantId);
     const totalMRR = tenant?.billing?.monthlyRevenue || 0;
 
     res.json({
@@ -254,10 +273,9 @@ export const getQuantumForecasts = async (req, res) => {
         nextYear: totalMRR * Math.pow(1.025, 12),
         tenantId: tenantContext.tenantId,
         tenantIsolated: true,
-        correlationId
-      }
+        correlationId,
+      },
     });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message, correlationId });
   }
@@ -271,7 +289,7 @@ export const getUserActivityMetrics = async (req, res) => {
 
     const totalUsers = await User.countDocuments({
       tenantId: tenantContext.tenantId,
-      isActive: true
+      isActive: true,
     });
 
     res.json({
@@ -280,10 +298,9 @@ export const getUserActivityMetrics = async (req, res) => {
         totalUsers,
         tenantId: tenantContext.tenantId,
         tenantIsolated: true,
-        correlationId
-      }
+        correlationId,
+      },
     });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message, correlationId });
   }
@@ -295,7 +312,7 @@ export const getTenantPerformance = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, correlationId);
 
-    const tenant = await Tenant.findById(tenantContext.tenantId).lean();
+    const tenant = await getTenant(tenantContext.tenantId);
     if (!tenant) {
       return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND', correlationId });
     }
@@ -307,13 +324,12 @@ export const getTenantPerformance = async (req, res) => {
           id: tenant._id,
           name: tenant.name,
           slug: tenant.slug,
-          status: tenant.status
+          status: tenant.status,
         },
         tenantIsolated: true,
-        correlationId
-      }
+        correlationId,
+      },
     });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message, correlationId });
   }
@@ -325,8 +341,11 @@ export const getInvestorReport = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, correlationId);
 
-    const tenant = await Tenant.findById(tenantContext.tenantId).lean();
-    const userCount = await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true });
+    const tenant = await getTenant(tenantContext.tenantId);
+    const userCount = await User.countDocuments({
+      tenantId: tenantContext.tenantId,
+      isActive: true,
+    });
     const totalMRR = tenant?.billing?.monthlyRevenue || 0;
 
     res.json({
@@ -338,10 +357,9 @@ export const getInvestorReport = async (req, res) => {
         totalMRR,
         totalARR: totalMRR * 12,
         tenantIsolated: true,
-        correlationId
-      }
+        correlationId,
+      },
     });
-
   } catch (error) {
     res.status(500).json({ success: false, error: error.message, correlationId });
   }
@@ -351,8 +369,17 @@ export const getInvestorReport = async (req, res) => {
 export const getDealFlowAnalytics = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, `${Date.now()}`);
-    const userCount = await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true });
-    res.json({ success: true, data: { pipeline: { identification: userCount * 10, screening: userCount * 5 }, tenantIsolated: true } });
+    const userCount = await User.countDocuments({
+      tenantId: tenantContext.tenantId,
+      isActive: true,
+    });
+    res.json({
+      success: true,
+      data: {
+        pipeline: { identification: userCount * 10, screening: userCount * 5 },
+        tenantIsolated: true,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -361,7 +388,15 @@ export const getDealFlowAnalytics = async (req, res) => {
 export const getComplianceMetrics = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, `${Date.now()}`);
-    res.json({ success: true, data: { popiaCompliance: 100, ficaCompliance: 100, tenantId: tenantContext.tenantId, tenantIsolated: true } });
+    res.json({
+      success: true,
+      data: {
+        popiaCompliance: 100,
+        ficaCompliance: 100,
+        tenantId: tenantContext.tenantId,
+        tenantIsolated: true,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -370,8 +405,18 @@ export const getComplianceMetrics = async (req, res) => {
 export const getPerformanceMetrics = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, `${Date.now()}`);
-    const userCount = await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true });
-    res.json({ success: true, data: { uptime: 99.999, requestsPerSecond: Math.max(1, userCount * 10), tenantIsolated: true } });
+    const userCount = await User.countDocuments({
+      tenantId: tenantContext.tenantId,
+      isActive: true,
+    });
+    res.json({
+      success: true,
+      data: {
+        uptime: 99.999,
+        requestsPerSecond: Math.max(1, userCount * 10),
+        tenantIsolated: true,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -380,8 +425,17 @@ export const getPerformanceMetrics = async (req, res) => {
 export const generatePredictions = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, `${Date.now()}`);
-    const userCount = await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true });
-    res.json({ success: true, data: { nextQuarter: { deals: userCount * 50, value: userCount * 10000000 }, tenantIsolated: true } });
+    const userCount = await User.countDocuments({
+      tenantId: tenantContext.tenantId,
+      isActive: true,
+    });
+    res.json({
+      success: true,
+      data: {
+        nextQuarter: { deals: userCount * 50, value: userCount * 10000000 },
+        tenantIsolated: true,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -390,8 +444,14 @@ export const generatePredictions = async (req, res) => {
 export const getTrendAnalysis = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, `${Date.now()}`);
-    const userCount = await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true });
-    res.json({ success: true, data: { yearly: [{ year: 2026, deals: Math.max(1, userCount * 10) }], tenantIsolated: true } });
+    const userCount = await User.countDocuments({
+      tenantId: tenantContext.tenantId,
+      isActive: true,
+    });
+    res.json({
+      success: true,
+      data: { yearly: [{ year: 2026, deals: Math.max(1, userCount * 10) }], tenantIsolated: true },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -400,8 +460,14 @@ export const getTrendAnalysis = async (req, res) => {
 export const getInvestorMetrics = async (req, res) => {
   try {
     const tenantContext = enforceTenantIsolation(req.user, `${Date.now()}`);
-    const userCount = await User.countDocuments({ tenantId: tenantContext.tenantId, isActive: true });
-    res.json({ success: true, data: { valuation: userCount * 50000000, mrr: userCount * 500000, tenantIsolated: true } });
+    const userCount = await User.countDocuments({
+      tenantId: tenantContext.tenantId,
+      isActive: true,
+    });
+    res.json({
+      success: true,
+      data: { valuation: userCount * 50000000, mrr: userCount * 500000, tenantIsolated: true },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -421,5 +487,5 @@ export default {
   getTenantPerformance,
   getInvestorReport,
   getInvestorKPIs,
-  getQuantumForecasts
+  getQuantumForecasts,
 };

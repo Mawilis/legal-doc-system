@@ -1,0 +1,387 @@
+/**
+ * WILSY OS - WILSY AURORA THEME
+ * Absolute Path: /Users/wilsonkhanyezi/legal-doc-system/client/src/styles/superadmin/themes/wilsy-aurora.css
+ *
+ * Purpose:
+ * Wilsy Aurora is the signature Wilsy OS theme.
+ * It carries the Wilsy logo language: cobalt command blue, sovereign black, clean white,
+ * aurora cyan, royal violet, and institutional gold.
+ */
+
+:root[data-wilsy-theme="wilsy_aurora"],
+[data-wilsy-theme="wilsy_aurora"],
+.theme-wilsy-aurora {
+  --wilsy-theme-id: "wilsy_aurora";
+  --wilsy-theme-name: "Wilsy Aurora";
+
+  --wilsy-bg-0: #05060d;
+  --wilsy-bg-1: #080b18;
+  --wilsy-bg-2: #0c1024;
+  --wilsy-bg-3: #121936;
+
+  --wilsy-surface-0: rgba(5, 7, 16, 0.96);
+  --wilsy-surface-1: rgba(9, 13, 28, 0.92);
+  --wilsy-surface-2: rgba(13, 20, 42, 0.88);
+  --wilsy-surface-raised: rgba(18, 25, 54, 0.88);
+
+  --wilsy-text-0: #fffaf0;
+  --wilsy-text-1: #e9e7ff;
+  --wilsy-text-2: #b9c0dc;
+  --wilsy-text-muted: #7f89aa;
+
+  --wilsy-brand-black: #020306;
+  --wilsy-brand-white: #fffaf0;
+  --wilsy-brand-blue: #2536a4;
+  --wilsy-brand-cobalt: #5267f6;
+  --wilsy-brand-cyan: #16c7f3;
+  --wilsy-brand-ice: #b9f4ff;
+  --wilsy-brand-violet: #8b5cf6;
+  --wilsy-brand-aurora: #7c68ff;
+  --wilsy-brand-mint: #84f0c8;
+  --wilsy-brand-gold: #d4af37;
+  --wilsy-brand-rose: #ff7d9b;
+
+  --wilsy-accent: var(--wilsy-brand-aurora);
+  --wilsy-accent-2: var(--wilsy-brand-cyan);
+  --wilsy-accent-3: var(--wilsy-brand-mint);
+  --wilsy-warning: var(--wilsy-brand-gold);
+  --wilsy-danger: var(--wilsy-brand-rose);
+  --wilsy-success: #56d69b;
+
+  --wilsy-border-soft: rgba(124, 104, 255, 0.28);
+  --wilsy-border-strong: rgba(132, 240, 200, 0.46);
+  --wilsy-border-gold: rgba(212, 175, 55, 0.42);
+
+  --wilsy-shadow-soft: 0 20px 70px rgba(10, 16, 40, 0.48);
+  --wilsy-shadow-aurora: 0 0 44px rgba(124, 104, 255, 0.28);
+  --wilsy-shadow-cyan: 0 0 38px rgba(22, 199, 243, 0.22);
+  --wilsy-shadow-mint: 0 0 38px rgba(132, 240, 200, 0.18);
+
+  --wilsy-radius-sm: 12px;
+  --wilsy-radius-md: 18px;
+  --wilsy-radius-lg: 28px;
+  --wilsy-radius-xl: 36px;
+
+  --wilsy-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wilsy-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  color-scheme: dark;
+}
+
+:root[data-wilsy-theme="wilsy_aurora"][data-wilsy-mode="day"],
+[data-wilsy-theme="wilsy_aurora"][data-wilsy-mode="day"],
+.theme-wilsy-aurora.theme-day {
+  --wilsy-bg-0: #f6f8ff;
+  --wilsy-bg-1: #eef3ff;
+  --wilsy-bg-2: #e8efff;
+  --wilsy-bg-3: #dfe9ff;
+
+  --wilsy-surface-0: rgba(255, 255, 255, 0.96);
+  --wilsy-surface-1: rgba(248, 250, 255, 0.94);
+  --wilsy-surface-2: rgba(240, 245, 255, 0.9);
+  --wilsy-surface-raised: rgba(255, 255, 255, 0.92);
+
+  --wilsy-text-0: #1c2437;
+  --wilsy-text-1: #2c3652;
+  --wilsy-text-2: #5d6885;
+  --wilsy-text-muted: #76829e;
+
+  --wilsy-border-soft: rgba(82, 103, 246, 0.24);
+  --wilsy-border-strong: rgba(37, 54, 164, 0.34);
+  --wilsy-border-gold: rgba(212, 175, 55, 0.38);
+
+  --wilsy-shadow-soft: 0 20px 70px rgba(82, 103, 246, 0.16);
+  --wilsy-shadow-aurora: 0 0 44px rgba(82, 103, 246, 0.16);
+  --wilsy-shadow-cyan: 0 0 38px rgba(22, 199, 243, 0.14);
+  --wilsy-shadow-mint: 0 0 38px rgba(86, 214, 155, 0.12);
+
+  color-scheme: light;
+}
+
+:root[data-wilsy-theme="wilsy_aurora"][data-wilsy-mode="night"],
+[data-wilsy-theme="wilsy_aurora"][data-wilsy-mode="night"],
+.theme-wilsy-aurora.theme-night {
+  color-scheme: dark;
+}
+
+.wilsyAuroraShell {
+  min-height: 100%;
+  color: var(--wilsy-text-0);
+  font-family: var(--wilsy-font-ui);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(124, 104, 255, 0.28), transparent 30%),
+    radial-gradient(circle at 80% 12%, rgba(22, 199, 243, 0.2), transparent 34%),
+    radial-gradient(circle at 62% 88%, rgba(132, 240, 200, 0.14), transparent 30%),
+    linear-gradient(180deg, var(--wilsy-bg-1), var(--wilsy-bg-0));
+}
+
+.wilsyAuroraGrid {
+  position: relative;
+  overflow: hidden;
+}
+
+.wilsyAuroraGrid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(124, 104, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 104, 255, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 80%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 80%);
+}
+
+.wilsyAuroraPanel,
+.wilsyAuroraCard,
+.wilsyAuroraCommandCard {
+  color: var(--wilsy-text-0);
+  background:
+    linear-gradient(180deg, var(--wilsy-surface-1), var(--wilsy-surface-0));
+  border: 1px solid var(--wilsy-border-soft);
+  border-radius: var(--wilsy-radius-lg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    var(--wilsy-shadow-soft);
+}
+
+.wilsyAuroraPanelStrong {
+  background:
+    radial-gradient(circle at top left, rgba(124, 104, 255, 0.18), transparent 36%),
+    linear-gradient(180deg, var(--wilsy-surface-1), var(--wilsy-surface-0));
+  border: 1px solid var(--wilsy-border-strong);
+  box-shadow:
+    var(--wilsy-shadow-aurora),
+    var(--wilsy-shadow-soft);
+}
+
+.wilsyAuroraHeader {
+  background:
+    linear-gradient(135deg, rgba(37, 54, 164, 0.94), rgba(124, 104, 255, 0.88) 48%, rgba(22, 199, 243, 0.58)),
+    radial-gradient(circle at top right, rgba(132, 240, 200, 0.24), transparent 36%);
+  color: #fffaf0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.wilsyAuroraIdentityMark {
+  display: grid;
+  place-items: center;
+  color: #020306;
+  font-family: var(--wilsy-font-mono);
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  background:
+    radial-gradient(circle at 35% 20%, #fffaf0, transparent 24%),
+    linear-gradient(135deg, var(--wilsy-brand-ice), var(--wilsy-brand-aurora) 48%, var(--wilsy-brand-mint));
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow:
+    0 18px 40px rgba(124, 104, 255, 0.34),
+    0 0 0 6px rgba(255, 255, 255, 0.04);
+}
+
+.wilsyAuroraLogoPlate {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.98), rgba(236, 242, 255, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow: 0 20px 44px rgba(37, 54, 164, 0.24);
+}
+
+.wilsyAuroraLogoPlate img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wilsyAuroraEyebrow {
+  color: var(--wilsy-accent);
+  font-family: var(--wilsy-font-mono);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.wilsyAuroraTitle {
+  color: var(--wilsy-text-0);
+  font-family: var(--wilsy-font-mono);
+  font-weight: 1000;
+  letter-spacing: -0.02em;
+}
+
+.wilsyAuroraMuted {
+  color: var(--wilsy-text-muted);
+}
+
+.wilsyAuroraButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 42px;
+  padding: 0 1rem;
+  color: var(--wilsy-text-0);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--wilsy-border-soft);
+  border-radius: var(--wilsy-radius-md);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.wilsyAuroraButton:hover {
+  transform: translateY(-1px);
+  border-color: var(--wilsy-border-strong);
+  box-shadow: var(--wilsy-shadow-cyan);
+}
+
+.wilsyAuroraButtonPrimary {
+  color: #020306;
+  background:
+    linear-gradient(135deg, var(--wilsy-brand-mint), var(--wilsy-brand-cyan) 48%, var(--wilsy-brand-aurora));
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow: var(--wilsy-shadow-cyan);
+}
+
+.wilsyAuroraButtonGold {
+  color: #020306;
+  background:
+    linear-gradient(135deg, #fff1a8, var(--wilsy-brand-gold));
+  border-color: var(--wilsy-border-gold);
+}
+
+.wilsyAuroraDanger {
+  color: #ffb6c5;
+  background: rgba(255, 125, 155, 0.08);
+  border-color: rgba(255, 125, 155, 0.32);
+}
+
+.wilsyAuroraInput,
+.wilsyAuroraSelect,
+.wilsyAuroraTextarea {
+  width: 100%;
+  min-height: 42px;
+  color: var(--wilsy-text-0);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--wilsy-border-soft);
+  border-radius: var(--wilsy-radius-md);
+  outline: none;
+  padding: 0 0.9rem;
+  font: inherit;
+}
+
+.wilsyAuroraInput:focus,
+.wilsyAuroraSelect:focus,
+.wilsyAuroraTextarea:focus {
+  border-color: var(--wilsy-border-strong);
+  box-shadow: 0 0 0 3px rgba(124, 104, 255, 0.16);
+}
+
+.wilsyAuroraTextarea {
+  min-height: 110px;
+  padding: 0.85rem 0.9rem;
+  resize: vertical;
+}
+
+.wilsyAuroraSegmented {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--wilsy-border-soft);
+  border-radius: var(--wilsy-radius-lg);
+}
+
+.wilsyAuroraSegmented[data-columns="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.wilsyAuroraSegmentedItem {
+  min-height: 48px;
+  color: var(--wilsy-text-2);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--wilsy-radius-md);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.wilsyAuroraSegmentedItem[data-active="true"] {
+  color: #020306;
+  background:
+    linear-gradient(135deg, var(--wilsy-brand-mint), var(--wilsy-brand-cyan) 54%, var(--wilsy-brand-aurora));
+  border-color: rgba(255, 255, 255, 0.38);
+  box-shadow: var(--wilsy-shadow-cyan);
+}
+
+.wilsyAuroraSwatch {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--wilsy-border-soft);
+  background:
+    linear-gradient(135deg, var(--wilsy-brand-ice), var(--wilsy-brand-aurora) 44%, var(--wilsy-brand-mint));
+  box-shadow: var(--wilsy-shadow-aurora);
+}
+
+.wilsyAuroraStatusReady {
+  color: var(--wilsy-success);
+}
+
+.wilsyAuroraStatusWarn {
+  color: var(--wilsy-warning);
+}
+
+.wilsyAuroraStatusRisk {
+  color: var(--wilsy-danger);
+}
+
+.wilsyAuroraDivider {
+  height: 1px;
+  border: 0;
+  background:
+    linear-gradient(90deg, transparent, var(--wilsy-border-soft), var(--wilsy-border-strong), transparent);
+}
+
+.wilsyAuroraScroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--wilsy-accent) transparent;
+}
+
+.wilsyAuroraScroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.wilsyAuroraScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wilsyAuroraScroll::-webkit-scrollbar-thumb {
+  background:
+    linear-gradient(180deg, var(--wilsy-accent), var(--wilsy-accent-2));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+@media (max-width: 760px) {
+  .wilsyAuroraSegmented[data-columns="3"] {
+    grid-template-columns: 1fr;
+  }
+
+  .wilsyAuroraButton {
+    width: 100%;
+  }
+}

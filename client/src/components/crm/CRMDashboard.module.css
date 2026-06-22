@@ -1,883 +1,4430 @@
+/* ==========================================================================
+   WILSY OS CRM COMMAND CENTER
+   Version: V70.0.0-CLEAN-OPERATING-SHELL
+   Benchmark: ExecutiveDashboard
+   ========================================================================== */
+
 .crmShell {
   width: 100%;
-  min-height: 100%;
+  height: 100dvh;
+  min-height: 760px;
   display: grid;
-  align-content: start;
-  gap: 18px;
-  padding: clamp(16px, 2vw, 24px);
-  color: #fff;
+  grid-template-columns: 276px minmax(0, 1fr);
+  overflow: hidden;
+  color: var(--wilsy-text, #fffaf0);
   background:
-    linear-gradient(rgba(212, 175, 55, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(212, 175, 55, 0.018) 1px, transparent 1px),
-    #000;
-  background-size: 28px 28px;
-  font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--wilsy-accent, #b66dff) 18%, transparent), transparent 32%),
+    radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--wilsy-accent-2, #17bdf2) 14%, transparent), transparent 28%),
+    linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+    var(--wilsy-bg, #020306);
+  background-size: auto, auto, 30px 30px, 30px 30px, auto;
+  font-family: Inter, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-.crmHero {
-  display: grid;
-  grid-template-columns: minmax(360px, 0.72fr) minmax(420px, 1fr);
-  gap: clamp(18px, 3vw, 42px);
-  align-items: end;
-  min-height: clamp(300px, 38vh, 460px);
-  padding: clamp(24px, 4vw, 54px);
-  border: 1px solid rgba(212, 175, 55, 0.26);
-  border-radius: 14px;
-  background:
-    linear-gradient(135deg, rgba(212,175,55,0.14), transparent 32%),
-    radial-gradient(circle at 92% 8%, rgba(32,227,138,0.14), transparent 28%),
-    rgba(5,5,5,0.88);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 26px 70px rgba(0,0,0,0.55);
+.crmShell * {
+  box-sizing: border-box;
 }
 
-.heroCopy {
-  min-width: 0;
-}
-
-.eyebrow,
-.heroCopy h1,
-.heroCopy p,
-.metricCard span,
-.moduleButton,
-.moduleActive,
-.workspaceHeader span,
-.sourceBadge,
-.intelHeader,
-.intelStats span {
-  text-transform: uppercase;
-}
-
-.eyebrow {
-  color: #f6d76b;
-  font-size: 0.7rem;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-}
-
-.heroCopy h1 {
-  margin: 10px 0;
-  color: #fff;
-  font-size: clamp(2rem, 4.7vw, 5.1rem);
-  font-weight: 950;
-  line-height: 0.95;
-  letter-spacing: 0;
-}
-
-.heroCopy p {
-  max-width: 780px;
-  margin: 0;
-  color: rgba(255,255,255,0.76);
-  font-size: 0.9rem;
-  line-height: 1.65;
-  text-transform: none;
-}
-
-.heroActions,
-.toolsBar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.heroActions {
-  justify-content: flex-end;
-  align-items: center;
-  align-self: end;
-  padding-bottom: 4px;
-}
-
-.primaryButton,
-.secondaryButton,
-.iconButton {
-  min-height: 42px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.primaryButton {
-  padding: 0 16px;
-  color: #050505;
-  border: 1px solid rgba(255,240,163,0.6);
-  background: linear-gradient(180deg, #fff0a3, #d4af37 58%, #8d741f);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.58), inset 0 -3px 0 rgba(0,0,0,0.24);
-}
-
-.secondaryButton,
-.iconButton {
-  padding: 0 14px;
-  color: #f6d76b;
-  border: 1px solid rgba(212,175,55,0.34);
-  background: rgba(0,0,0,0.44);
-}
-
-.vendorSelect {
-  min-width: 170px;
-  min-height: 46px;
-  padding: 0 12px;
-  color: #fff;
-  border: 1px solid rgba(32,227,138,0.32);
-  border-radius: 8px;
-  background: rgba(0,0,0,0.62);
-  font: inherit;
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.fileInput {
+.hiddenInput {
   display: none;
 }
 
-.migrationDock {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.34fr);
-  gap: 18px;
-  align-items: stretch;
-  padding: clamp(18px, 2.4vw, 28px);
-  border: 1px solid rgba(32,227,138,0.18);
-  border-radius: 12px;
-  background:
-    linear-gradient(90deg, rgba(32,227,138,0.1), transparent 42%),
-    rgba(3,8,6,0.86);
-}
-
-.migrationDock > div {
-  min-width: 0;
-}
-
-.migrationDock span,
-.migrationStats span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #20e38a;
-  font-size: 0.62rem;
-  font-weight: 950;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.migrationDock strong {
-  display: block;
-  margin-top: 10px;
-  color: #fff;
-  font-size: clamp(1.2rem, 2.4vw, 2.4rem);
-  font-weight: 950;
-  line-height: 1.12;
-}
-
-.migrationDock p {
-  max-width: 82ch;
-  margin: 7px 0 0;
-  color: rgba(255,255,255,0.72);
-  font-size: 0.78rem;
-  line-height: 1.55;
-}
-
-.migrationStats {
-  display: grid;
-  align-content: center;
-  gap: 10px;
-  padding: 18px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  background: rgba(0,0,0,0.36);
-}
-
-.migrationStats strong {
-  margin: 0;
-  font-size: 0.9rem;
-  overflow-wrap: anywhere;
-  line-height: 1.35;
-}
-
-.migrationStats small {
-  color: rgba(255,255,255,0.52);
-  font-size: 0.62rem;
-}
-
-.switchboard {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.moduleRail {
+  height: 100dvh;
+  min-height: 760px;
+  overflow: hidden;
+  padding: 16px 12px;
+  background: color-mix(in srgb, var(--wilsy-rail, #080c18) 92%, #000 8%);
+  border-right: 1px solid var(--wilsy-border, rgba(182, 109, 255, 0.34));
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-.switchboard article {
-  min-width: 0;
+.productMark {
+  height: 56px;
   display: grid;
-  gap: 7px;
-  padding: 14px;
-  border: 1px solid rgba(32,227,138,0.16);
-  border-radius: 10px;
-  background:
-    linear-gradient(135deg, rgba(32,227,138,0.08), transparent 48%),
-    rgba(4, 6, 6, 0.9);
+  grid-template-columns: 42px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 82%, transparent);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.switchboard span {
-  color: #20e38a;
-  font-size: 0.56rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
+.logoBox {
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--wilsy-border, rgba(182, 109, 255, 0.34));
+  background: #050505;
+}
+
+.logoBox img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.productMark strong {
+  display: block;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.productMark small {
+  color: var(--wilsy-muted, #c5cce5);
+  font-size: 10px;
   text-transform: uppercase;
+  letter-spacing: 0.14em;
 }
 
-.switchboard strong {
-  color: #fff;
-  font-size: clamp(1.1rem, 2vw, 1.7rem);
-  font-weight: 950;
-  line-height: 1;
-}
-
-.switchboard small {
-  color: rgba(255,255,255,0.62);
-  font-size: 0.64rem;
-  line-height: 1.45;
-}
-
-.metricGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.metricCard {
-  min-height: 128px;
-  display: grid;
-  align-content: center;
+.railSearch,
+.globalSearch,
+.filterBar label {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
   gap: 9px;
-  padding: 18px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-left: 4px solid #d4af37;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.railSearch input,
+.globalSearch input,
+.filterBar input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--wilsy-text, #fffaf0);
+  font: inherit;
+}
+
+.railNav {
+  display: grid;
+  gap: 6px;
+}
+
+.navButton,
+.navButtonActive {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
   border-radius: 10px;
-  background: rgba(7,7,7,0.88);
+  background: transparent;
+  color: var(--wilsy-muted, #c5cce5);
+  padding: 0 10px;
+  font: inherit;
+  cursor: pointer;
 }
 
-.metricCard svg { color: #f6d76b; }
-.metricCard[data-tone="green"] { border-left-color: #20e38a; }
-.metricCard[data-tone="cyan"] { border-left-color: #6bf7ff; }
-.metricCard[data-tone="blue"] { border-left-color: #56b8ff; }
-.metricCard span {
-  color: rgba(255,255,255,0.68);
-  font-size: 0.62rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-}
-.metricCard strong {
-  color: #fff;
-  font-size: clamp(1.5rem, 2.6vw, 2.45rem);
-  font-weight: 950;
-  line-height: 1;
+.navButtonActive {
+  color: var(--wilsy-text, #fffaf0);
+  background: color-mix(in srgb, var(--wilsy-accent, #b66dff) 24%, transparent);
 }
 
-.commandGrid {
+.moduleTitle {
+  margin: 8px 6px 0;
+  color: var(--wilsy-text, #fffaf0);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.moduleList {
+  flex: 1;
+  overflow: auto;
   display: grid;
-  grid-template-columns: 230px minmax(0, 1fr) minmax(260px, 0.3fr);
-  gap: 16px;
-  align-items: start;
-}
-
-.commandGrid[data-rail="closed"] {
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.3fr);
-}
-
-.moduleRail,
-.workspace,
-.intelPanel {
-  border: 1px solid rgba(212,175,55,0.18);
-  border-radius: 12px;
-  background: rgba(5,5,5,0.88);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-}
-
-.moduleRail {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
+  gap: 4px;
+  padding: 2px;
+  scrollbar-width: thin;
 }
 
 .moduleButton,
-.moduleActive {
-  min-height: 46px;
+.moduleButtonActive {
+  width: 100%;
+  min-height: 36px;
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) 8px;
-  gap: 10px;
-  align-items: center;
-  padding: 0 12px;
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 8px;
-  background: rgba(255,255,255,0.035);
-  color: rgba(255,255,255,0.68);
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.1em;
-  text-align: left;
-}
-
-.moduleActive {
-  color: #050505;
-  border-color: rgba(255,240,163,0.72);
-  background: linear-gradient(180deg, #fff0a3, #d4af37 58%, #8d741f);
-}
-
-.moduleButton i,
-.moduleActive i {
-  width: 8px;
-  height: 8px;
-  border-radius: 99px;
-  background: #555;
-}
-.moduleButton i[data-state="live"],
-.moduleActive i[data-state="live"] { background: #20e38a; box-shadow: 0 0 10px rgba(32,227,138,0.7); }
-.moduleButton i[data-state="unbound"],
-.moduleActive i[data-state="unbound"] { background: #d4af37; }
-.moduleButton i[data-state="degraded"],
-.moduleActive i[data-state="degraded"] { background: #ff6666; }
-
-.workspace {
-  min-width: 0;
-  padding: 18px;
-}
-
-.workspaceHeader {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  align-items: flex-start;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-
-.headerActions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 10px;
-  align-items: center;
-}
-
-.railToggle {
-  min-height: 34px;
-  display: inline-flex;
+  grid-template-columns: 22px 1fr auto;
   align-items: center;
   gap: 8px;
-  padding: 0 11px;
-  color: #f6d76b;
-  border: 1px solid rgba(212,175,55,0.26);
-  border-radius: 8px;
-  background: rgba(0,0,0,0.44);
-  cursor: pointer;
-  font-size: 0.58rem;
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.workspaceHeader span {
-  color: #f6d76b;
-  font-size: 0.6rem;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-}
-.workspaceHeader h2 {
-  margin: 4px 0 0;
-  color: #fff;
-  font-size: clamp(1.2rem, 2.2vw, 2.1rem);
-  font-weight: 950;
-}
-
-.sourceBadge {
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 12px;
-  border-radius: 8px;
-  color: #03150c;
-  background: linear-gradient(180deg, #8affc3, #20e38a 62%, #0d7c4c);
-  font-size: 0.58rem;
-  font-weight: 950;
-  letter-spacing: 0.1em;
-  text-align: center;
-}
-.sourceBadge[data-state="unbound"],
-.sourceBadge[data-state="syncing"] {
-  color: #050505;
-  background: linear-gradient(180deg, #fff0a3, #d4af37 58%, #8d741f);
-}
-.sourceBadge[data-state="degraded"] {
-  color: #fff;
-  background: linear-gradient(180deg, #ff7777, #9d1b1b);
-}
-
-.moduleDock {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
-  gap: 8px;
-  margin: 16px 0 0;
-}
-
-.moduleDock button {
-  min-width: 0;
-  min-height: 40px;
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) 7px;
-  gap: 8px;
-  align-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--wilsy-muted, #c5cce5);
   padding: 0 10px;
-  color: rgba(255,255,255,0.66);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 8px;
-  background: rgba(255,255,255,0.03);
-  cursor: pointer;
-  font-size: 0.6rem;
-  font-weight: 950;
-  letter-spacing: 0.08em;
   text-align: left;
-  text-transform: uppercase;
+  font: inherit;
+  cursor: pointer;
 }
 
-.moduleDock button[data-active="true"] {
-  color: #050505;
-  border-color: rgba(255,240,163,0.7);
-  background: linear-gradient(180deg, #fff0a3, #d4af37 58%, #8d741f);
-}
-
-.moduleDock button span {
+.moduleButton span,
+.moduleButtonActive span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.moduleDock i {
-  width: 7px;
-  height: 7px;
-  border-radius: 99px;
-  background: #555;
+.moduleButton em,
+.moduleButtonActive em {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  color: transparent;
+  background: rgba(255, 255, 255, 0.22);
 }
 
-.moduleDock i[data-state="live"] { background: #20e38a; box-shadow: 0 0 9px rgba(32,227,138,0.68); }
-.moduleDock i[data-state="unbound"] { background: #d4af37; }
-.moduleDock i[data-state="degraded"] { background: #ff6666; }
-
-.toolsBar {
-  justify-content: space-between;
-  align-items: center;
-  margin: 16px 0;
+.moduleButtonActive {
+  color: var(--wilsy-text, #fffaf0);
+  background: linear-gradient(135deg, var(--wilsy-authority, #d4af37), var(--wilsy-accent-2, #17bdf2));
 }
 
-.searchBox {
-  min-height: 42px;
-  flex: 1 1 280px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 12px;
-  border: 1px solid rgba(255,255,255,0.09);
-  border-radius: 8px;
-  background: rgba(0,0,0,0.52);
-}
-.searchBox svg { color: #f6d76b; }
-.searchBox input,
-.selectBox {
+.appSurface {
   min-width: 0;
-  width: 100%;
-  color: #fff;
-  background: transparent;
-  border: 0;
-  outline: none;
-  font: inherit;
-  font-size: 0.76rem;
-}
-.selectBox {
-  width: auto;
-  min-height: 42px;
-  padding: 0 12px;
-  border: 1px solid rgba(255,255,255,0.09);
-  border-radius: 8px;
-  background: #050505;
+  height: 100dvh;
+  min-height: 760px;
+  display: grid;
+  grid-template-rows: 70px minmax(0, 1fr);
+  overflow: hidden;
 }
 
-.viewSwitch {
-  min-height: 42px;
-  display: inline-flex;
-  padding: 3px;
-  border: 1px solid rgba(255,255,255,0.09);
-  border-radius: 8px;
-  background: rgba(0,0,0,0.52);
+.topBar {
+  height: 70px;
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(260px, 420px) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 18px;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 88%, transparent);
+  border-bottom: 1px solid var(--wilsy-border, rgba(182, 109, 255, 0.34));
 }
 
-.viewSwitch button {
-  width: 36px;
+.pageTitle {
+  min-width: 0;
+}
+
+.pageTitle span,
+.workspaceHeader span,
+.ledgerHeader span,
+.widgetCard header span,
+.contextRail header span,
+.receiptFeed > span,
+.aiRailCard span,
+.metricPanel span,
+.importPanel header span,
+.artifactPanel header span,
+.aiPanel span,
+.moduleTitle {
+  color: var(--wilsy-authority, #d4af37);
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+.pageTitle h1 {
+  margin: 3px 0 2px;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.pageTitle p,
+.workspaceHeader p,
+.ledgerHeader p,
+.contextRail p,
+.widgetCard p,
+.importPanel p,
+.artifactPanel p,
+.aiPanel p {
+  margin: 0;
+  color: var(--wilsy-muted, #c5cce5);
+  font-size: 12px;
+}
+
+.topActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.topActions button,
+.ledgerActions button,
+.contextRail button,
+.importControls button,
+.cleanTableShell button,
+.modalPanel button,
+.artifactPanel button,
+.aiPanel button {
+  min-height: 40px;
+  border: 1px solid color-mix(in srgb, var(--wilsy-authority, #d4af37) 55%, transparent);
+  background: rgba(0, 0, 0, 0.32);
+  color: var(--wilsy-text, #fffaf0);
+  padding: 0 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.62);
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
+  gap: 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 
-.viewSwitch button[data-active="true"] {
-  color: #050505;
-  background: #d4af37;
+.topActions button:last-child,
+.primaryButton {
+  background: linear-gradient(135deg, var(--wilsy-authority, #d4af37), var(--wilsy-accent-2, #17bdf2)) !important;
+  color: #050505 !important;
 }
 
-.bindingBanner {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 14px;
-  padding: 12px;
-  color: #f6d76b;
-  border: 1px solid rgba(212,175,55,0.24);
-  border-radius: 8px;
-  background: rgba(212,175,55,0.08);
-  font-size: 0.76rem;
-  line-height: 1.45;
-}
-
-.dataPanel {
-  min-height: 360px;
+.operatingGrid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 320px;
+  gap: 14px;
+  padding: 14px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 10px;
-  background: rgba(0,0,0,0.36);
 }
-.dataPanel[data-refreshing="true"] { opacity: 0.58; }
 
-.pipelineBoard {
-  min-height: 360px;
+.workspaceRail,
+.workspaceViewport,
+.contextRail {
+  min-height: 0;
+  border: 1px solid var(--wilsy-border, rgba(182, 109, 255, 0.34));
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 78%, transparent);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.workspaceRail {
+  padding: 14px;
   display: grid;
-  grid-template-columns: repeat(5, minmax(180px, 1fr));
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 12px;
-  padding: 12px;
-  overflow-x: auto;
 }
 
-.pipelineColumn {
-  min-width: 180px;
+.workspaceSelect,
+.contextRail label,
+.importControls label {
   display: grid;
-  align-content: start;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  background: rgba(255,255,255,0.028);
+  gap: 7px;
+  color: var(--wilsy-authority, #d4af37);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
 }
 
-.pipelineColumn header {
-  display: flex;
-  justify-content: space-between;
+.workspaceSelect select,
+.contextRail select,
+.importControls select,
+.filterBar select {
+  min-height: 40px;
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--wilsy-authority, #d4af37) 42%, transparent);
+  background: rgba(0, 0, 0, 0.34);
+  color: var(--wilsy-text, #fffaf0);
+  padding: 0 10px;
+  font: inherit;
+}
+
+.workspaceButtons {
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+  scrollbar-width: thin;
+}
+
+.workspaceButton,
+.workspaceButtonActive {
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: 24px 1fr;
   gap: 10px;
   align-items: center;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.26);
+  color: var(--wilsy-text, #fffaf0);
+  padding: 12px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
 }
 
-.pipelineColumn header span {
-  color: #f6d76b;
-  font-size: 0.62rem;
-  font-weight: 950;
-  letter-spacing: 0.1em;
+.workspaceButton span,
+.workspaceButtonActive span {
+  display: block;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+}
+
+.workspaceButton small,
+.workspaceButtonActive small {
+  display: block;
+  margin-top: 4px;
+  color: var(--wilsy-muted, #c5cce5);
+}
+
+.workspaceButtonActive {
+  border-color: var(--wilsy-authority, #d4af37);
+  background: linear-gradient(135deg, var(--wilsy-authority, #d4af37), var(--wilsy-accent-2, #17bdf2));
+  color: #050505;
+}
+
+.workspaceButtonActive small {
+  color: rgba(5, 5, 5, 0.72);
+}
+
+.workspaceViewport {
+  display: grid;
+  grid-template-rows: 112px minmax(0, 1fr);
+}
+
+.workspaceHeader {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.workspaceHeader h2 {
+  margin: 6px 0 4px;
+  font-size: 30px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.pipelineColumn header strong {
-  color: #fff;
-  font-size: 0.8rem;
+.workspaceMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, 110px);
+  gap: 10px;
 }
 
-.pipelineCard,
-.pipelineEmpty {
-  padding: 11px;
-  border-radius: 8px;
-  background: rgba(0,0,0,0.42);
+.workspaceMetrics article,
+.metricPanel {
+  min-height: 70px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.28);
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 12px;
 }
 
-.pipelineCard {
+.workspaceMetrics small,
+.metricPanel small {
+  color: var(--wilsy-authority, #d4af37);
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.workspaceMetrics strong,
+.metricPanel strong {
+  font-size: 20px;
+}
+
+.workspaceContent {
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  scrollbar-width: thin;
+}
+
+.homeGrid {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  grid-auto-rows: minmax(240px, 1fr);
+  gap: 14px;
+}
+
+.widgetCard,
+.ledgerCard,
+.importPanel,
+.artifactPanel,
+.aiPanel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.widgetCard header,
+.ledgerHeader,
+.importPanel header,
+.artifactPanel header {
+  min-height: 62px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.widgetCard header button {
+  border: 0;
+  background: transparent;
+  color: var(--wilsy-accent-2, #17bdf2);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cleanTableShell {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.cleanTableShell table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.cleanTableShell th,
+.cleanTableShell td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  color: var(--wilsy-text, #fffaf0);
+  font-size: 12px;
+}
+
+.cleanTableShell th {
+  color: var(--wilsy-muted, #c5cce5);
+  background: rgba(255, 255, 255, 0.025);
+  font-weight: 800;
+}
+
+.cleanTableShell td[colspan] {
+  text-align: center;
+  color: var(--wilsy-muted, #c5cce5);
+  padding: 44px 14px;
+}
+
+.contextRail {
+  padding: 16px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+}
+
+.contextRail header {
+  display: grid;
+  gap: 7px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.contextRail header strong {
+  font-size: 20px;
+}
+
+.aiRailCard,
+.receiptFeed,
+.importReport {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.24);
+  padding: 14px;
+}
+
+.aiRailCard p,
+.receiptFeed p {
+  color: var(--wilsy-muted, #c5cce5);
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.receiptFeed {
+  display: grid;
+  gap: 10px;
+}
+
+.receiptFeed article {
+  display: grid;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.receiptFeed strong {
+  font-size: 12px;
+}
+
+.receiptFeed small,
+.receiptFeed em {
+  color: var(--wilsy-muted, #c5cce5);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.ledgerCard {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.ledgerHeader h3 {
+  margin: 4px 0 2px;
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ledgerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.filterBar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 200px 200px;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.boardGrid {
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.boardLane {
+  min-height: 260px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 12px;
+}
+
+.boardLane header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--wilsy-authority, #d4af37);
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  margin-bottom: 10px;
+}
+
+.boardLane article {
+  border: 1px solid color-mix(in srgb, var(--wilsy-authority, #d4af37) 36%, transparent);
+  border-radius: 12px;
+  padding: 12px;
   display: grid;
   gap: 6px;
-  border-left: 3px solid #20e38a;
+  margin-bottom: 10px;
 }
 
-.pipelineCard strong {
-  color: #fff;
-  font-size: 0.78rem;
+.boardLane small,
+.boardLane em {
+  color: var(--wilsy-muted, #c5cce5);
+  font-style: normal;
 }
 
-.pipelineCard span,
-.pipelineCard small,
-.pipelineEmpty {
-  color: rgba(255,255,255,0.62);
-  font-size: 0.66rem;
-  line-height: 1.45;
-}
-
-.emptyState {
-  min-height: 360px;
+.analyticsGrid {
+  height: 100%;
+  min-height: 0;
   display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 12px;
-  padding: 30px;
-  text-align: center;
-  color: rgba(255,255,255,0.78);
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  grid-auto-rows: minmax(120px, auto);
+  gap: 14px;
 }
-.emptyState svg { color: #f6d76b; }
-.emptyState strong {
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 950;
+
+.spanAll {
+  grid-column: 1 / -1;
+  min-height: 0;
+}
+
+.artifactPanel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.artifactPanel header {
+  display: grid;
+  justify-content: start;
+  border: 0;
+  padding: 0 0 10px;
+}
+
+.artifactPanel button {
+  justify-content: flex-start;
+  min-height: 54px;
+  border-radius: 12px;
+}
+
+.aiGrid {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.aiPanel {
+  padding: 24px;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.aiPanel h3 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.35;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.emptyState span {
-  max-width: 52ch;
-  font-size: 0.78rem;
-  line-height: 1.55;
+
+.aiPanel strong {
+  color: var(--wilsy-authority, #d4af37);
 }
 
-.intelPanel {
+.importPanel {
+  padding: 18px;
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  gap: 16px;
 }
-.intelHeader {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  color: #f6d76b;
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.14em;
+
+.importPanel header {
+  display: grid;
+  align-items: start;
+  justify-content: stretch;
+  padding: 0 0 16px;
 }
-.intelStats {
+
+.importPanel h3 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.importControls {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.cleanList {
+  padding: 12px 16px;
   display: grid;
   gap: 10px;
 }
-.intelStats div {
+
+.cleanList article {
   display: grid;
   gap: 4px;
-  padding: 12px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  background: rgba(0,0,0,0.38);
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
-.intelStats span {
-  color: rgba(255,255,255,0.64);
-  font-size: 0.56rem;
-  font-weight: 950;
-  letter-spacing: 0.1em;
-}
-.intelStats strong {
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 950;
-  overflow-wrap: anywhere;
-}
-.activityFeed {
-  display: grid;
-  gap: 8px;
-  max-height: 260px;
-  overflow: auto;
-}
-.activityItem {
-  display: grid;
-  gap: 4px;
-  padding: 10px;
-  border-left: 3px solid #d4af37;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.035);
-}
-.activityItem span,
-.activityItem small {
-  color: rgba(255,255,255,0.62);
-  font-size: 0.58rem;
-}
-.activityItem strong {
-  color: #fff;
-  font-size: 0.66rem;
-  overflow-wrap: anywhere;
-}
-.activityEmpty {
-  color: rgba(255,255,255,0.58);
-  font-size: 0.72rem;
-  line-height: 1.5;
+
+.cleanList small,
+.cleanList p {
+  color: var(--wilsy-muted, #c5cce5);
+  margin: 0;
 }
 
 .modalOverlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 1200;
   display: grid;
   place-items: center;
-  padding: 20px;
-  background: rgba(0,0,0,0.86);
-  backdrop-filter: blur(14px);
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
 }
 
 .modalPanel {
-  width: min(980px, 100%);
-  max-height: min(88vh, 920px);
-  overflow-y: auto;
-  display: grid;
-  gap: 18px;
-  padding: clamp(20px, 3vw, 30px);
-  border: 1px solid rgba(212,175,55,0.32);
-  border-radius: 14px;
-  background:
-    linear-gradient(135deg, rgba(212,175,55,0.12), transparent 34%),
-    rgba(5,5,5,0.96);
-  box-shadow: 0 28px 90px rgba(0,0,0,0.76), inset 0 1px 0 rgba(255,255,255,0.08);
+  width: min(780px, 96vw);
+  max-height: 88vh;
+  overflow: auto;
+  border: 1px solid var(--wilsy-border, rgba(182, 109, 255, 0.34));
+  border-radius: 18px;
+  background: var(--wilsy-panel, #0b1024);
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.62);
 }
 
-.formSections {
-  display: grid;
-  gap: 18px;
+.modalPanel header,
+.modalPanel footer {
+  min-height: 70px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.formSection {
-  display: grid;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  background: rgba(0,0,0,0.24);
+.modalPanel footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 0;
+  justify-content: flex-end;
 }
 
-.formSection h3 {
-  margin: 0;
-  color: #f6d76b;
-  font-size: 0.72rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
+.modalPanel header span {
+  color: var(--wilsy-authority, #d4af37);
   text-transform: uppercase;
-}
-
-.modalHeader {
-  display: grid;
-  gap: 6px;
-}
-
-.modalHeader span {
-  color: #f6d76b;
-  font-size: 0.62rem;
-  font-weight: 950;
+  font-size: 11px;
+  font-weight: 900;
   letter-spacing: 0.16em;
-  text-transform: uppercase;
 }
 
-.modalHeader h2 {
-  margin: 0;
-  color: #fff;
-  font-size: clamp(1.25rem, 3vw, 2.2rem);
-  font-weight: 950;
-  line-height: 1.05;
+.modalPanel h2 {
+  margin: 4px 0 0;
 }
 
 .formGrid {
+  padding: 18px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
 }
 
-.formField {
-  min-width: 0;
+.formGrid label {
   display: grid;
-  gap: 7px;
+  gap: 8px;
 }
 
-.formField span {
-  color: rgba(255,255,255,0.72);
-  font-size: 0.62rem;
-  font-weight: 950;
-  letter-spacing: 0.1em;
+.formGrid span {
+  color: var(--wilsy-muted, #c5cce5);
   text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
 }
 
-.formField input,
-.formField textarea {
-  width: 100%;
+.formGrid input {
   min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--wilsy-text, #fffaf0);
   padding: 0 12px;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.11);
-  border-radius: 8px;
-  background: rgba(0,0,0,0.48);
-  outline: none;
   font: inherit;
-  font-size: 0.78rem;
 }
 
-.formField textarea {
-  min-height: 108px;
-  padding-top: 11px;
-  resize: vertical;
+.founderReturnButton {
+  position: fixed;
+  left: 22px;
+  bottom: 22px;
+  z-index: 1250;
+  min-height: 46px;
+  border-radius: 999px;
+  border: 1px solid var(--wilsy-border, rgba(182, 109, 255, 0.34));
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 88%, transparent);
+  color: var(--wilsy-text, #fffaf0);
+  padding: 0 18px;
+  font: inherit;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+  cursor: pointer;
 }
 
-.formField input[type="checkbox"] {
-  width: 22px;
-  min-height: 22px;
-  accent-color: #d4af37;
+.spin {
+  animation: crmSpin 0.9s linear infinite;
 }
 
-.formFieldWide {
-  grid-column: 1 / -1;
+@keyframes crmSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.formField input:focus,
-.formField textarea:focus {
-  border-color: rgba(212,175,55,0.58);
-  box-shadow: 0 0 0 3px rgba(212,175,55,0.08);
+@media (max-width: 1320px) {
+  .crmShell {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .operatingGrid {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .contextRail {
+    display: none;
+  }
 }
 
-.modalActions {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding-top: 4px;
-}
-
-@media (max-width: 1280px) {
-  .metricGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .switchboard { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .commandGrid { grid-template-columns: 190px minmax(0, 1fr); }
-  .commandGrid[data-rail="closed"] { grid-template-columns: 1fr; }
-  .intelPanel { grid-column: 1 / -1; }
-}
-
-@media (max-width: 820px) {
-  .crmHero,
-  .commandGrid,
-  .metricGrid,
-  .switchboard,
-  .migrationDock {
+@media (max-width: 960px) {
+  .crmShell {
     grid-template-columns: 1fr;
   }
-  .crmHero {
-    min-height: auto;
-  }
-  .heroActions {
-    justify-content: flex-start;
-  }
+
   .moduleRail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: none;
   }
-  .workspaceHeader {
-    display: grid;
+
+  .topBar {
+    grid-template-columns: 1fr;
+    height: auto;
   }
-  .formGrid {
+
+  .appSurface {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .operatingGrid {
     grid-template-columns: 1fr;
   }
+
+  .workspaceRail {
+    display: none;
+  }
+
+  .homeGrid,
+  .aiGrid,
+  .analyticsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .filterBar,
+  .importControls {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ==========================================================================
+   WILSY OS CRM COMPETITION KILLER V70.2.0
+   Purpose: clean CRM workstation, no squeeze, no stacked rails, no footer bleed.
+   Benchmark: ExecutiveDashboard plus Zoho-clean single-rail CRM behavior.
+   ========================================================================== */
+
+:global(body[data-wilsy-active-dashboard="crm"]) {
+  overflow: hidden !important;
+  background: var(--wilsy-bg, #020306) !important;
+}
+
+:global(body[data-wilsy-active-dashboard="crm"] footer),
+:global(body[data-wilsy-active-dashboard="crm"] [class*="footer"]),
+:global(body[data-wilsy-active-dashboard="crm"] [class*="Footer"]),
+:global(body[data-wilsy-active-dashboard="crm"] [class*="watermark"]),
+:global(body[data-wilsy-active-dashboard="crm"] [class*="Watermark"]) {
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+.crmShell {
+  position: relative !important;
+  z-index: 100 !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  grid-template-columns: 312px minmax(0, 1fr) !important;
+  background:
+    radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--wilsy-accent, #b66dff) 18%, transparent), transparent 34%),
+    radial-gradient(circle at 86% 0%, color-mix(in srgb, var(--wilsy-accent-2, #17bdf2) 14%, transparent), transparent 30%),
+    linear-gradient(rgba(212, 175, 55, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.018) 1px, transparent 1px),
+    var(--wilsy-bg, #020306) !important;
+  background-size: auto, auto, 32px 32px, 32px 32px, auto !important;
+}
+
+.moduleRail {
+  width: 312px !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  padding: 18px 14px 82px !important;
+  overflow: hidden !important;
+  background: color-mix(in srgb, var(--wilsy-rail, #080c18) 94%, #000 6%) !important;
+  border-right: 1px solid color-mix(in srgb, var(--wilsy-border, rgba(182,109,255,0.34)) 92%, transparent) !important;
+}
+
+.productMark {
+  height: 64px !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  border-radius: 16px !important;
+}
+
+.logoBox {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.railSearch {
+  height: 46px !important;
+  min-height: 46px !important;
+}
+
+.railNav {
+  gap: 8px !important;
+}
+
+.navButton,
+.navButtonActive {
+  min-height: 44px !important;
+  font-size: 15px !important;
+}
+
+.moduleTitle {
+  margin-top: 14px !important;
+  margin-bottom: 4px !important;
+  font-size: 12px !important;
+  letter-spacing: 0.22em !important;
+}
+
+.moduleList {
+  padding: 4px 0 108px !important;
+  gap: 7px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.moduleButton,
+.moduleButtonActive {
+  min-height: 42px !important;
+  grid-template-columns: 24px minmax(0, 1fr) 10px !important;
+  padding: 0 12px !important;
+  font-size: 15px !important;
+  border-radius: 12px !important;
+}
+
+.moduleButtonActive {
+  background: linear-gradient(135deg, var(--wilsy-authority, #d4af37), var(--wilsy-accent-2, #17bdf2)) !important;
+  color: #050505 !important;
+}
+
+.appSurface {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-rows: 106px minmax(0, 1fr) !important;
+}
+
+.topBar {
+  height: 106px !important;
+  min-height: 106px !important;
+  padding: 16px 22px 14px !important;
+  grid-template-columns: minmax(260px, 1fr) minmax(360px, 560px) auto !important;
+  gap: 18px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 88%, transparent) !important;
+}
+
+.pageTitle {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.pageTitle span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-bottom: 6px !important;
+}
+
+.pageTitle h1 {
+  max-width: 100% !important;
+  margin: 0 0 6px !important;
+  font-size: clamp(24px, 2vw, 34px) !important;
+  line-height: 1.06 !important;
+  letter-spacing: 0.03em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.pageTitle p {
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.globalSearch {
+  height: 50px !important;
+  min-height: 50px !important;
+  max-width: 560px !important;
+}
+
+.topActions {
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+.topActions button {
+  min-height: 50px !important;
+  padding: 0 18px !important;
+  white-space: nowrap !important;
+}
+
+.operatingGrid {
+  height: 100% !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: 90px minmax(0, 1fr) !important;
+  grid-template-areas:
+    "workspace"
+    "main" !important;
+  gap: 16px !important;
+  padding: 16px 18px 18px !important;
+  overflow: hidden !important;
+}
+
+.workspaceRail {
+  grid-area: workspace !important;
+  height: 90px !important;
+  min-height: 90px !important;
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 190px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 12px !important;
+  overflow: hidden !important;
+  border-radius: 18px !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 82%, transparent) !important;
+}
+
+.workspaceSelect {
+  height: 100% !important;
+  display: grid !important;
+  align-items: center !important;
+}
+
+.workspaceSelect span {
+  display: none !important;
+}
+
+.workspaceSelect select {
+  height: 56px !important;
+  min-height: 56px !important;
+  border-radius: 10px !important;
+}
+
+.workspaceButtons {
+  height: 100% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  gap: 12px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 0 2px 4px !important;
+}
+
+.workspaceButton,
+.workspaceButtonActive {
+  flex: 0 0 198px !important;
+  width: 198px !important;
+  min-height: 62px !important;
+  height: 62px !important;
+  grid-template-columns: 26px minmax(0, 1fr) !important;
+  padding: 10px 14px !important;
+  border-radius: 16px !important;
+}
+
+.workspaceButton span,
+.workspaceButtonActive span {
+  font-size: 13px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.workspaceButton small,
+.workspaceButtonActive small {
+  display: none !important;
+}
+
+.workspaceViewport {
+  grid-area: main !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-rows: 132px minmax(0, 1fr) !important;
+  overflow: hidden !important;
+  border-radius: 20px !important;
+}
+
+.contextRail {
+  display: none !important;
+}
+
+.workspaceHeader {
+  height: 132px !important;
+  min-height: 132px !important;
+  padding: 22px 26px !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 88%, transparent) !important;
+}
+
+.workspaceHeader h2 {
+  max-width: 100% !important;
+  margin: 8px 0 6px !important;
+  font-size: clamp(34px, 3vw, 52px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: 0.16em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.workspaceHeader p {
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.workspaceMetrics {
+  grid-template-columns: repeat(3, 132px) !important;
+  gap: 12px !important;
+}
+
+.workspaceMetrics article {
+  min-height: 84px !important;
+  border-radius: 16px !important;
+}
+
+.workspaceContent {
+  height: 100% !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  overflow: auto !important;
+  padding: 18px !important;
+  scrollbar-width: thin !important;
+}
+
+.homeGrid {
+  height: 100% !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(330px, 1fr)) !important;
+  grid-template-rows: repeat(2, minmax(218px, 1fr)) !important;
+  grid-auto-rows: minmax(218px, 1fr) !important;
+  gap: 18px !important;
+}
+
+.widgetCard {
+  min-height: 0 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+.widgetCard header {
+  height: 64px !important;
+  min-height: 64px !important;
+  padding: 14px 18px !important;
+}
+
+.cleanTableShell {
+  height: calc(100% - 64px) !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+.cleanTableShell table {
+  min-width: 520px !important;
+}
+
+.cleanTableShell th,
+.cleanTableShell td {
+  padding: 13px 16px !important;
+}
+
+.ledgerCard {
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+.ledgerHeader {
+  min-height: 82px !important;
+  padding: 16px 20px !important;
+}
+
+.filterBar {
+  grid-template-columns: minmax(280px, 1fr) minmax(180px, 220px) minmax(180px, 220px) !important;
+  padding: 14px 20px !important;
+}
+
+.boardGrid {
+  min-height: 0 !important;
+}
+
+.analyticsGrid,
+.aiGrid {
+  height: 100% !important;
+  min-height: 0 !important;
+  grid-template-columns: repeat(4, minmax(180px, 1fr)) !important;
+}
+
+.founderReturnButton {
+  position: fixed !important;
+  left: 28px !important;
+  bottom: 24px !important;
+  top: auto !important;
+  z-index: 2147483000 !important;
+  min-width: 250px !important;
+  max-width: 270px !important;
+  min-height: 52px !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 92%, transparent) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+@media (min-width: 1920px) {
+  .operatingGrid {
+    grid-template-columns: minmax(0, 1fr) 360px !important;
+    grid-template-areas:
+      "workspace workspace"
+      "main context" !important;
+  }
+
+  .contextRail {
+    display: flex !important;
+    grid-area: context !important;
+    width: 360px !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: auto !important;
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+  }
+}
+
+@media (max-width: 1240px) {
+  .crmShell {
+    grid-template-columns: 260px minmax(0, 1fr) !important;
+  }
+
+  .moduleRail {
+    width: 260px !important;
+  }
+
+  .topBar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .globalSearch {
+    display: none !important;
+  }
+
+  .workspaceMetrics {
+    display: none !important;
+  }
+
+  .homeGrid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: none !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .crmShell {
+    grid-template-columns: 1fr !important;
+  }
+
+  .moduleRail {
+    display: none !important;
+  }
+
+  .appSurface {
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+
+  .topBar {
+    height: auto !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .topActions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .operatingGrid {
+    grid-template-rows: 78px minmax(0, 1fr) !important;
+    padding: 10px !important;
+  }
+
+  .workspaceRail {
+    height: 78px !important;
+    min-height: 78px !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .workspaceSelect {
+    display: none !important;
+  }
+
+  .workspaceViewport {
+    grid-template-rows: 116px minmax(0, 1fr) !important;
+  }
+
+  .workspaceHeader {
+    height: 116px !important;
+    min-height: 116px !important;
+  }
+}
+
+/* END WILSY OS CRM COMPETITION KILLER V70.2.0
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM COMMAND CENTRE V70.3.0
+   Purpose: one sidebar, one main workstation, no duplicate workspace rail,
+   dynamic logo fallback, command centre drawer that does not squeeze work.
+   ========================================================================== */
+
+:global(body[data-wilsy-active-dashboard="crm"]) {
+  overflow: hidden !important;
+  background: var(--wilsy-bg, #020306) !important;
+}
+
+.crmShell {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  grid-template-columns: 312px minmax(0, 1fr) !important;
+}
+
+.moduleRail {
+  width: 312px !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  padding: 18px 14px 86px !important;
+  overflow: hidden !important;
+}
+
+.logoBox img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  background: #050505 !important;
+}
+
+.appSurface {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  grid-template-rows: 112px minmax(0, 1fr) !important;
+}
+
+.topBar {
+  height: 112px !important;
+  min-height: 112px !important;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(380px, 560px) auto !important;
+  gap: 18px !important;
+  padding: 18px 24px !important;
+  overflow: hidden !important;
+  align-items: center !important;
+}
+
+.pageTitle h1 {
+  max-width: 100% !important;
+  margin: 0 0 6px !important;
+  font-size: clamp(24px, 1.95vw, 36px) !important;
+  line-height: 1.06 !important;
+  letter-spacing: 0.035em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.pageTitle p {
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.globalSearch {
+  height: 54px !important;
+  min-height: 54px !important;
+}
+
+.topActions button {
+  min-height: 54px !important;
+}
+
+.operatingGrid {
+  height: 100% !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  padding: 22px 24px 24px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  grid-template-areas: "main" !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+}
+
+.workspaceRail {
+  display: none !important;
+}
+
+.workspaceViewport {
+  grid-area: main !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: 126px minmax(0, 1fr) !important;
+  overflow: hidden !important;
+  border-radius: 22px !important;
+}
+
+.workspaceHeader {
+  height: 126px !important;
+  min-height: 126px !important;
+  padding: 22px 28px !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  overflow: hidden !important;
+  align-items: center !important;
+}
+
+.workspaceHeader h2 {
+  max-width: 100% !important;
+  margin: 8px 0 6px !important;
+  font-size: clamp(36px, 3vw, 56px) !important;
+  line-height: 0.96 !important;
+  letter-spacing: 0.15em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.workspaceHeader p {
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.workspaceMetrics {
+  grid-template-columns: repeat(3, 132px) !important;
+  gap: 14px !important;
+}
+
+.workspaceMetrics article {
+  min-height: 86px !important;
+  border-radius: 18px !important;
+}
+
+.workspaceContent {
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  padding: 18px !important;
+}
+
+.homeGrid {
+  height: 100% !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(330px, 1fr)) !important;
+  grid-template-rows: repeat(2, minmax(230px, 1fr)) !important;
+  gap: 18px !important;
+}
+
+.widgetCard {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.widgetCard header {
+  height: 64px !important;
+  min-height: 64px !important;
+}
+
+.cleanTableShell {
+  height: calc(100% - 64px) !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+.contextRail {
+  display: flex !important;
+  position: fixed !important;
+  top: 134px !important;
+  right: 18px !important;
+  bottom: 22px !important;
+  width: 390px !important;
+  height: auto !important;
+  max-height: none !important;
+  z-index: 1200 !important;
+  border-radius: 20px !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 94%, transparent) !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.34)) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.42) !important;
+  transform: translateX(332px) !important;
+  transition: transform 180ms ease, box-shadow 180ms ease !important;
+  overflow: auto !important;
+  padding: 18px 18px 18px 72px !important;
+}
+
+.contextRail::before {
+  content: "COMMAND CENTRE" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 56px !important;
+  display: grid !important;
+  place-items: center !important;
+  writing-mode: vertical-rl !important;
+  transform: rotate(180deg) !important;
+  color: var(--wilsy-authority, #d4af37) !important;
+  background: color-mix(in srgb, var(--wilsy-rail, #080c18) 92%, transparent) !important;
+  border-right: 1px solid var(--wilsy-border, rgba(182,109,255,0.34)) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.22em !important;
+}
+
+.contextRail:hover,
+.contextRail:focus-within {
+  transform: translateX(0) !important;
+  box-shadow: 0 28px 100px rgba(0,0,0,0.55) !important;
+}
+
+.contextRail header span {
+  letter-spacing: 0.20em !important;
+}
+
+.founderReturnButton {
+  position: fixed !important;
+  left: 28px !important;
+  bottom: 24px !important;
+  top: auto !important;
+  z-index: 2147483000 !important;
+  min-width: 250px !important;
+  max-width: 270px !important;
+  min-height: 52px !important;
+  border-radius: 999px !important;
+}
+
+@media (max-width: 1320px) {
+  .crmShell {
+    grid-template-columns: 270px minmax(0, 1fr) !important;
+  }
+
+  .moduleRail {
+    width: 270px !important;
+  }
+
+  .topBar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .globalSearch {
+    display: none !important;
+  }
+
+  .workspaceMetrics {
+    display: none !important;
+  }
+
+  .homeGrid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: none !important;
+  }
+
+  .contextRail {
+    transform: translateX(342px) !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .crmShell {
+    grid-template-columns: 1fr !important;
+  }
+
+  .moduleRail {
+    display: none !important;
+  }
+
+  .appSurface {
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+
+  .topBar {
+    height: auto !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .operatingGrid {
+    padding: 12px !important;
+  }
+
+  .workspaceViewport {
+    grid-template-rows: 112px minmax(0, 1fr) !important;
+  }
+
+  .workspaceHeader {
+    height: 112px !important;
+    min-height: 112px !important;
+  }
+
+  .contextRail {
+    display: none !important;
+  }
+}
+
+/* END WILSY OS CRM COMMAND CENTRE V70.3.0
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM DOCK STABILITY V70.4.0
+   Purpose: Founder return stays closed until opened. Command Centre uses
+   explicit click state instead of hover translation, so it never jumps.
+   ========================================================================== */
+
+.founderReturnButton {
+  display: none !important;
+}
+
+.founderReturnDock {
+  position: fixed !important;
+  left: 28px !important;
+  bottom: 24px !important;
+  z-index: 2147483000 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  pointer-events: auto !important;
+}
+
+.founderReturnToggle {
+  width: 58px !important;
+  height: 58px !important;
+  min-width: 58px !important;
+  min-height: 58px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.44)) !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 92%, transparent) !important;
+  color: var(--wilsy-authority, #d4af37) !important;
+  font-size: 28px !important;
+  line-height: 1 !important;
+  display: grid !important;
+  place-items: center !important;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.42) !important;
+  cursor: pointer !important;
+}
+
+.founderReturnPanel {
+  height: 58px !important;
+  min-width: 294px !important;
+  max-width: 330px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 44px !important;
+  align-items: center !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.44)) !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 94%, transparent) !important;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.42) !important;
+  overflow: hidden !important;
+  animation: wilsyFounderDockOpen 120ms ease-out !important;
+}
+
+.founderReturnAction {
+  height: 58px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--wilsy-text, #fffaf0) !important;
+  padding: 0 18px !important;
+  text-align: left !important;
+  font: inherit !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+.founderReturnClose {
+  width: 44px !important;
+  height: 44px !important;
+  margin-right: 7px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  background: rgba(255,255,255,0.05) !important;
+  color: var(--wilsy-text, #fffaf0) !important;
+  font-size: 24px !important;
+  cursor: pointer !important;
+}
+
+@keyframes wilsyFounderDockOpen {
+  from {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.contextRail {
+  display: block !important;
+  position: fixed !important;
+  top: 134px !important;
+  right: 18px !important;
+  bottom: 22px !important;
+  width: 390px !important;
+  height: auto !important;
+  max-height: none !important;
+  z-index: 1200 !important;
+  border-radius: 20px !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 94%, transparent) !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.34)) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.42) !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  transition: transform 160ms ease, box-shadow 160ms ease !important;
+  will-change: transform !important;
+}
+
+.contextRailClosed {
+  transform: translateX(calc(100% - 56px)) !important;
+}
+
+.contextRailOpen {
+  transform: translateX(0) !important;
+  box-shadow: 0 28px 100px rgba(0,0,0,0.55) !important;
+}
+
+.contextRail:hover,
+.contextRail:focus-within {
+  transform: inherit;
+}
+
+.contextRail::before {
+  content: none !important;
+}
+
+.contextRailHandle {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 56px !important;
+  z-index: 2 !important;
+  border: 0 !important;
+  border-right: 1px solid var(--wilsy-border, rgba(182,109,255,0.34)) !important;
+  background: color-mix(in srgb, var(--wilsy-rail, #080c18) 94%, transparent) !important;
+  color: var(--wilsy-authority, #d4af37) !important;
+  writing-mode: vertical-rl !important;
+  transform: rotate(180deg) !important;
+  font: inherit !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.22em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+}
+
+.contextRailInner {
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: auto !important;
+  padding: 18px 18px 18px 74px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+
+@media (max-width: 1320px) {
+  .contextRail {
+    top: 124px !important;
+    right: 12px !important;
+    bottom: 16px !important;
+    width: 360px !important;
+  }
+
+  .contextRailClosed {
+    transform: translateX(calc(100% - 56px)) !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .contextRail {
+    display: none !important;
+  }
+
+  .founderReturnDock {
+    left: 16px !important;
+    bottom: 16px !important;
+  }
+
+  .founderReturnPanel {
+    min-width: 250px !important;
+  }
+}
+
+/* END WILSY OS CRM DOCK STABILITY V70.4.0
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM RUNTIME TRUTH V70.5.0
+   Purpose: tenant logo must render from runtime branding, not hardcoded local
+   assets, and CRM headings must derive from tenant/workspace/source state.
+   ========================================================================== */
+
+.logoBox {
+  display: grid !important;
+  place-items: center !important;
+  padding: 3px !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 86%, #050505 14%) !important;
+}
+
+.logoBox img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+}
+
+.pageTitle h1 {
+  font-size: clamp(26px, 2.2vw, 40px) !important;
+  max-width: none !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  letter-spacing: 0.04em !important;
+}
+
+.workspaceHeader h2 {
+  font-size: clamp(34px, 3vw, 54px) !important;
+  letter-spacing: 0.18em !important;
+}
+
+.workspaceHeader p,
+.pageTitle p {
+  color: var(--wilsy-muted, #c5cce5) !important;
+}
+
+.contextRail {
+  transform: translateX(calc(100% - 56px)) !important;
+}
+
+.contextRailOpen {
+  transform: translateX(0) !important;
+}
+
+.contextRailClosed {
+  transform: translateX(calc(100% - 56px)) !important;
+}
+
+/* END WILSY OS CRM RUNTIME TRUTH V70.5.0
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM VISUAL TRUTH V70.6.0
+   Purpose: official Wilsy logo fallback, no giant clipped HOME header,
+   one clean Founder dock, stable command centre.
+   ========================================================================== */
+
+.logoBox {
+  display: grid !important;
+  place-items: center !important;
+  padding: 3px !important;
+  background: #050505 !important;
+}
+
+.logoBox img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  border-radius: 10px !important;
+  background: #050505 !important;
+}
+
+.workspaceViewport {
+  grid-template-rows: 138px minmax(0, 1fr) !important;
+}
+
+.workspaceHeader {
+  height: 138px !important;
+  min-height: 138px !important;
+  padding: 22px 28px !important;
+  overflow: hidden !important;
+  align-items: center !important;
+}
+
+.workspaceHeader h2 {
+  max-width: 100% !important;
+  margin: 8px 0 8px !important;
+  font-size: clamp(28px, 2.2vw, 42px) !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0.08em !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.workspaceHeader p {
+  max-width: 100% !important;
+  line-height: 1.45 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.pageTitle h1 {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  line-height: 1.08 !important;
+}
+
+.founderReturnButton {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.founderReturnDock {
+  position: fixed !important;
+  left: 28px !important;
+  bottom: 24px !important;
+  z-index: 2147483000 !important;
+  width: 58px !important;
+  height: 58px !important;
+  display: block !important;
+}
+
+.founderReturnDockClosed {
+  width: 58px !important;
+  height: 58px !important;
+}
+
+.founderReturnDockClosed .founderReturnPanel {
+  display: none !important;
+}
+
+.founderReturnDockOpen {
+  width: auto !important;
+  min-width: 360px !important;
+}
+
+.founderReturnToggle {
+  position: absolute !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 58px !important;
+  height: 58px !important;
+  z-index: 2 !important;
+  transform: none !important;
+}
+
+.founderReturnPanel {
+  position: absolute !important;
+  left: 68px !important;
+  bottom: 0 !important;
+  height: 58px !important;
+  min-width: 292px !important;
+}
+
+.contextRail {
+  transform: translate3d(calc(100% - 56px), 0, 0) !important;
+  transition: transform 180ms ease, box-shadow 180ms ease !important;
+}
+
+.contextRailClosed {
+  transform: translate3d(calc(100% - 56px), 0, 0) !important;
+}
+
+.contextRailOpen {
+  transform: translate3d(0, 0, 0) !important;
+}
+
+.contextRail:hover,
+.contextRail:focus-within {
+  transform: inherit;
+}
+
+@media (max-width: 860px) {
+  .workspaceViewport {
+    grid-template-rows: 122px minmax(0, 1fr) !important;
+  }
+
+  .workspaceHeader {
+    height: 122px !important;
+    min-height: 122px !important;
+    padding: 18px !important;
+  }
+
+  .workspaceHeader h2 {
+    font-size: clamp(24px, 8vw, 34px) !important;
+  }
+}
+
+/* END WILSY OS CRM VISUAL TRUTH V70.6.0
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM OPERATOR DECK V70.7.0
+   Purpose: one Founder dock, reusable Account Settings, official logo fallback,
+   compact header hierarchy and stable Command Centre drawer.
+   ========================================================================== */
+
+.logoBox {
+  display: grid !important;
+  place-items: center !important;
+  padding: 4px !important;
+  background: #050505 !important;
+}
+
+.logoBox img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  border-radius: 10px !important;
+  background: #050505 !important;
+}
+
+.topBar {
+  height: 112px !important;
+  min-height: 112px !important;
+  grid-template-columns: minmax(360px, 0.95fr) minmax(380px, 560px) auto !important;
+}
+
+.pageTitle h1 {
+  max-width: 100% !important;
+  font-size: clamp(28px, 2.25vw, 42px) !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0.04em !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.pageTitle p {
+  color: var(--wilsy-muted, #c5cce5) !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.workspaceViewport {
+  grid-template-rows: 104px minmax(0, 1fr) !important;
+}
+
+.workspaceHeader {
+  height: 104px !important;
+  min-height: 104px !important;
+  padding: 18px 24px !important;
+}
+
+.workspaceHeader h2 {
+  margin: 6px 0 4px !important;
+  font-size: clamp(22px, 1.8vw, 32px) !important;
+  line-height: 1.12 !important;
+  letter-spacing: 0.12em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.workspaceHeader p {
+  line-height: 1.35 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.founderReturnButton,
+.founderReturnDock,
+.founderReturnDockClosed,
+.founderReturnDockOpen,
+.founderReturnToggle,
+.founderReturnPanel {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.founderReturnClosedButton {
+  position: fixed !important;
+  left: 28px !important;
+  bottom: 24px !important;
+  z-index: 2147483000 !important;
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.44)) !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 94%, transparent) !important;
+  color: var(--wilsy-authority, #d4af37) !important;
+  display: grid !important;
+  place-items: center !important;
+  font: inherit !important;
+  font-size: 26px !important;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.42) !important;
+  cursor: pointer !important;
+}
+
+.founderReturnOpenPanel {
+  position: fixed !important;
+  left: 28px !important;
+  bottom: 24px !important;
+  z-index: 2147483000 !important;
+  height: 58px !important;
+  width: 360px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 58px !important;
+  align-items: center !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.44)) !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 94%, transparent) !important;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.42) !important;
+  overflow: hidden !important;
+}
+
+.founderReturnAction {
+  height: 58px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--wilsy-text, #fffaf0) !important;
+  padding: 0 20px !important;
+  text-align: left !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+.founderReturnClose {
+  width: 48px !important;
+  height: 48px !important;
+  margin: 5px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  background: rgba(255,255,255,0.07) !important;
+  color: var(--wilsy-text, #fffaf0) !important;
+  font-size: 24px !important;
+  cursor: pointer !important;
+}
+
+.accountSettingsOverlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147482500 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 28px !important;
+  background: rgba(0, 0, 0, 0.72) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.accountSettingsFrame {
+  width: min(1120px, 96vw) !important;
+  height: min(860px, 92vh) !important;
+  overflow: auto !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.44)) !important;
+  border-radius: 26px !important;
+  background: var(--wilsy-panel, #0b1024) !important;
+  box-shadow: 0 30px 120px rgba(0,0,0,0.68) !important;
+}
+
+.accountSettingsLoading {
+  min-height: 240px !important;
+  display: grid !important;
+  place-items: center !important;
+  color: var(--wilsy-text, #fffaf0) !important;
+  font-size: 14px !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+}
+
+.contextRail {
+  transform: translate3d(calc(100% - 56px), 0, 0) !important;
+  transition: transform 180ms ease, box-shadow 180ms ease !important;
+}
+
+.contextRailClosed {
+  transform: translate3d(calc(100% - 56px), 0, 0) !important;
+}
+
+.contextRailOpen {
+  transform: translate3d(0, 0, 0) !important;
+}
+
+.contextRail:hover,
+.contextRail:focus-within {
+  transform: inherit;
+}
+
+@media (max-width: 1320px) {
+  .topBar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .globalSearch {
+    display: none !important;
+  }
+
+  .workspaceMetrics {
+    display: none !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .founderReturnOpenPanel {
+    width: calc(100vw - 32px) !important;
+    left: 16px !important;
+    bottom: 16px !important;
+  }
+
+  .founderReturnClosedButton {
+    left: 16px !important;
+    bottom: 16px !important;
+  }
+
+  .accountSettingsOverlay {
+    padding: 12px !important;
+  }
+
+  .accountSettingsFrame {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 18px !important;
+  }
+}
+
+/* END WILSY OS CRM OPERATOR DECK V70.7.0
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM SYSTEM DOCKS V70.8.0
+   Purpose: collapsible left OS rail, Account Settings event launcher,
+   pinned Command Centre, single Founder control and stronger CRM identity.
+   ========================================================================== */
+
+.crmShell {
+  grid-template-columns: 312px minmax(0, 1fr) !important;
+  transition: grid-template-columns 180ms ease !important;
+}
+
+.railClosed {
+  grid-template-columns: 92px minmax(0, 1fr) !important;
+}
+
+.moduleRail {
+  position: relative !important;
+  width: 312px !important;
+  padding: 18px 14px 86px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 40% 0%, color-mix(in srgb, var(--wilsy-accent, #b66dff) 18%, transparent), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--wilsy-rail, #080c18) 96%, transparent), color-mix(in srgb, var(--wilsy-bg, #020306) 94%, transparent)) !important;
+  border-right: 1px solid var(--wilsy-border, rgba(182,109,255,0.34)) !important;
+  transition: width 180ms ease, padding 180ms ease !important;
+}
+
+.moduleRail::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 18px 8px 78px auto !important;
+  width: 1px !important;
+  background: linear-gradient(180deg, transparent, var(--wilsy-accent, #b66dff), transparent) !important;
+  opacity: 0.45 !important;
+}
+
+.moduleRailClosed {
+  width: 92px !important;
+  padding: 18px 12px 86px !important;
+}
+
+.railDockToggle {
+  position: absolute !important;
+  top: 18px !important;
+  right: 10px !important;
+  z-index: 10 !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.44)) !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 92%, transparent) !important;
+  color: var(--wilsy-authority, #d4af37) !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+}
+
+.productMark {
+  padding-right: 42px !important;
+  border-radius: 18px !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 82%, transparent) !important;
+}
+
+.logoBox {
+  display: grid !important;
+  place-items: center !important;
+  padding: 4px !important;
+  background: #050505 !important;
+}
+
+.logoBox img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  border-radius: 10px !important;
+  background: #050505 !important;
+}
+
+.moduleRailClosed .productMark {
+  grid-template-columns: 48px !important;
+  width: 58px !important;
+  height: 58px !important;
+  padding: 5px !important;
+}
+
+.moduleRailClosed .productMark > div:not(.logoBox),
+.moduleRailClosed .railSearch,
+.moduleRailClosed .railNav,
+.moduleRailClosed .moduleTitle,
+.moduleRailClosed .moduleButton span,
+.moduleRailClosed .moduleButtonActive span,
+.moduleRailClosed .moduleButton em,
+.moduleRailClosed .moduleButtonActive em {
+  display: none !important;
+}
+
+.moduleRailClosed .moduleList {
+  margin-top: 16px !important;
+  padding: 4px 0 100px !important;
+}
+
+.moduleRailClosed .moduleButton,
+.moduleRailClosed .moduleButtonActive {
+  width: 58px !important;
+  min-height: 52px !important;
+  grid-template-columns: 1fr !important;
+  justify-items: center !important;
+  padding: 0 !important;
+  border-radius: 16px !important;
+}
+
+.moduleRailClosed .moduleButton svg,
+.moduleRailClosed .moduleButtonActive svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.topBar {
+  height: 112px !important;
+  min-height: 112px !important;
+  grid-template-columns: minmax(360px, 0.95fr) minmax(380px, 560px) auto !important;
+}
+
+.pageTitle h1 {
+  max-width: 100% !important;
+  font-size: clamp(28px, 2.25vw, 42px) !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0.04em !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.pageTitle p {
+  color: var(--wilsy-muted, #c5cce5) !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.workspaceViewport {
+  grid-template-rows: 104px minmax(0, 1fr) !important;
+}
+
+.workspaceHeader {
+  height: 104px !important;
+  min-height: 104px !important;
+  padding: 18px 24px !important;
+}
+
+.workspaceHeader h2 {
+  margin: 6px 0 4px !important;
+  font-size: clamp(22px, 1.8vw, 32px) !important;
+  line-height: 1.12 !important;
+  letter-spacing: 0.12em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.workspaceHeader p {
+  line-height: 1.35 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.founderReturnButton,
+.founderReturnDock,
+.founderReturnDockClosed,
+.founderReturnDockOpen,
+.founderReturnToggle,
+.founderReturnPanel {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.founderReturnClosedButton {
+  position: fixed !important;
+  left: 28px !important;
+  bottom: 24px !important;
+  z-index: 2147483000 !important;
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.44)) !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 94%, transparent) !important;
+  color: var(--wilsy-authority, #d4af37) !important;
+  display: grid !important;
+  place-items: center !important;
+  font: inherit !important;
+  font-size: 26px !important;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.42) !important;
+  cursor: pointer !important;
+}
+
+.founderReturnOpenPanel {
+  position: fixed !important;
+  left: 28px !important;
+  bottom: 24px !important;
+  z-index: 2147483000 !important;
+  height: 58px !important;
+  width: 360px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 58px !important;
+  align-items: center !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.44)) !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 94%, transparent) !important;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.42) !important;
+  overflow: hidden !important;
+}
+
+.founderReturnAction {
+  height: 58px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--wilsy-text, #fffaf0) !important;
+  padding: 0 20px !important;
+  text-align: left !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+.founderReturnClose {
+  width: 48px !important;
+  height: 48px !important;
+  margin: 5px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  background: rgba(255,255,255,0.07) !important;
+  color: var(--wilsy-text, #fffaf0) !important;
+  font-size: 24px !important;
+  cursor: pointer !important;
+}
+
+.accountSettingsOverlay,
+.accountSettingsFrame {
+  display: none !important;
+}
+
+.commandFloating .contextRail {
+  position: fixed !important;
+  top: 134px !important;
+  right: 18px !important;
+  bottom: 22px !important;
+  width: 390px !important;
+  transform: translate3d(calc(100% - 56px), 0, 0) !important;
+}
+
+.commandFloating .contextRailClosed {
+  transform: translate3d(calc(100% - 56px), 0, 0) !important;
+}
+
+.commandFloating .contextRailOpen {
+  transform: translate3d(0, 0, 0) !important;
+}
+
+.commandPinned .operatingGrid {
+  grid-template-columns: minmax(0, 1fr) 390px !important;
+  grid-template-areas: "main context" !important;
+  gap: 16px !important;
+}
+
+.commandPinned .contextRail {
+  grid-area: context !important;
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 390px !important;
+  height: 100% !important;
+  transform: none !important;
+}
+
+.contextRail {
+  transition: transform 180ms ease, box-shadow 180ms ease !important;
+  overflow: hidden !important;
+}
+
+.contextRail:hover,
+.contextRail:focus-within {
+  transform: inherit;
+}
+
+.contextPinButton {
+  position: absolute !important;
+  top: 14px !important;
+  right: 14px !important;
+  z-index: 4 !important;
+  min-width: 64px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--wilsy-border, rgba(182,109,255,0.44)) !important;
+  background: color-mix(in srgb, var(--wilsy-panel, #0b1024) 92%, transparent) !important;
+  color: var(--wilsy-authority, #d4af37) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+}
+
+.contextRailInner {
+  height: 100% !important;
+  overflow: auto !important;
+  padding: 62px 18px 18px 74px !important;
+}
+
+@media (max-width: 1320px) {
+  .topBar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .globalSearch {
+    display: none !important;
+  }
+
+  .workspaceMetrics {
+    display: none !important;
+  }
+
+  .commandPinned .operatingGrid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: "main" !important;
+  }
+
+  .commandPinned .contextRail {
+    position: fixed !important;
+    top: 124px !important;
+    right: 12px !important;
+    bottom: 16px !important;
+    width: 360px !important;
+    height: auto !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .crmShell,
+  .railClosed {
+    grid-template-columns: 1fr !important;
+  }
+
+  .moduleRail {
+    display: none !important;
+  }
+
+  .founderReturnOpenPanel {
+    width: calc(100vw - 32px) !important;
+    left: 16px !important;
+    bottom: 16px !important;
+  }
+
+  .founderReturnClosedButton {
+    left: 16px !important;
+    bottom: 16px !important;
+  }
+
+  .contextRail {
+    display: none !important;
+  }
+}
+
+/* END WILSY OS CRM SYSTEM DOCKS V70.8.0
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM SYNTAX RECOVERY ACCOUNT V70.10.0
+   Purpose: parent Founder frame owns return navigation, CRM owns account profile.
+   ========================================================================== */
+
+.crmShell .founderReturnButton,
+.crmShell .founderReturnDock,
+.crmShell .founderReturnDockClosed,
+.crmShell .founderReturnDockOpen,
+.crmShell .founderReturnToggle,
+.crmShell .founderReturnPanel,
+.crmShell .founderReturnClosedButton,
+.crmShell .founderReturnOpenPanel,
+.crmShell [data-wilsy-founder-return="open"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.accountSettingsOverlay,
+.accountSettingsFrame {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.moduleRail {
+  padding-bottom: 28px !important;
+}
+
+.moduleList {
+  padding-bottom: 28px !important;
+}
+
+/* END WILSY OS CRM SYNTAX RECOVERY ACCOUNT V70.10.0
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM SAFE RESTORE PATCH
+   Purpose: parent standalone frame owns Founder navigation. CRM internal
+   duplicate Founder return is suppressed without JSX surgery.
+   ========================================================================== */
+
+.crmShell .founderReturnButton,
+.crmShell .founderReturnDock,
+.crmShell .founderReturnDockClosed,
+.crmShell .founderReturnDockOpen,
+.crmShell .founderReturnToggle,
+.crmShell .founderReturnPanel,
+.crmShell .founderReturnClosedButton,
+.crmShell .founderReturnOpenPanel,
+.crmShell [data-wilsy-founder-return="open"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* END WILSY OS CRM SAFE RESTORE PATCH
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM LEFT RAIL LOGO FOCUS V70.11.0
+   Purpose: restore CRM side rail open/close and blend the official Wilsy logo
+   into the OS rail without touching Account Settings or Founder navigation.
+   ========================================================================== */
+
+.crmShell {
+  transition: grid-template-columns 180ms ease !important;
+}
+
+.crmShell:has(.moduleRailOpen) {
+  grid-template-columns: 312px minmax(0, 1fr) !important;
+}
+
+.crmShell:has(.moduleRailClosed) {
+  grid-template-columns: 92px minmax(0, 1fr) !important;
+}
+
+.moduleRail {
+  position: relative !important;
+  width: 312px !important;
+  min-width: 0 !important;
+  padding: 22px 14px 34px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 30% 0%, color-mix(in srgb, var(--wilsy-accent, #7d4ed8) 24%, transparent), transparent 38%),
+    radial-gradient(circle at 80% 14%, color-mix(in srgb, var(--wilsy-accent-2, #22d3ee) 10%, transparent), transparent 36%),
+    linear-gradient(180deg, rgba(17, 22, 45, 0.98), rgba(3, 6, 14, 0.99)) !important;
+  border-right: 1px solid color-mix(in srgb, var(--wilsy-border, rgba(126,78,216,0.44)) 86%, transparent) !important;
+  box-shadow:
+    inset -1px 0 0 rgba(255,255,255,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  transition: width 180ms ease, padding 180ms ease !important;
+}
+
+.moduleRail::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  background:
+    linear-gradient(rgba(212, 175, 55, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.014) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.85), transparent 92%) !important;
+}
+
+.moduleRail::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 22px !important;
+  right: 8px !important;
+  bottom: 34px !important;
+  width: 1px !important;
+  pointer-events: none !important;
+  background: linear-gradient(180deg, transparent, var(--wilsy-accent, #7d4ed8), var(--wilsy-authority, #d4af37), transparent) !important;
+  opacity: 0.48 !important;
+}
+
+.moduleRailClosed {
+  width: 92px !important;
+  padding: 22px 12px 34px !important;
+}
+
+.railDockToggle {
+  position: absolute !important;
+  top: 28px !important;
+  right: 12px !important;
+  z-index: 20 !important;
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 999px !important;
+  border: 1px solid color-mix(in srgb, var(--wilsy-border, rgba(126,78,216,0.56)) 88%, transparent) !important;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(212, 175, 55, 0.18), transparent 42%),
+    color-mix(in srgb, var(--wilsy-panel, #0b1024) 92%, #000 8%) !important;
+  color: var(--wilsy-authority, #d4af37) !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 30px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.38) !important;
+}
+
+.railDockToggle:hover {
+  transform: translateY(-1px) !important;
+}
+
+.productMark {
+  position: relative !important;
+  z-index: 2 !important;
+  height: 84px !important;
+  min-height: 84px !important;
+  display: grid !important;
+  grid-template-columns: 72px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 10px 54px 10px 12px !important;
+  border-radius: 24px !important;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.075), rgba(255,255,255,0.018)),
+    color-mix(in srgb, var(--wilsy-panel, #0b1024) 86%, transparent) !important;
+  border: 1px solid rgba(255,255,255,0.075) !important;
+  box-shadow:
+    0 20px 50px rgba(0,0,0,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+  overflow: hidden !important;
+}
+
+.logoBox {
+  width: 64px !important;
+  height: 64px !important;
+  min-width: 64px !important;
+  border-radius: 18px !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 7px !important;
+  background:
+    radial-gradient(circle at 35% 20%, rgba(255,255,255,0.22), transparent 38%),
+    linear-gradient(135deg, rgba(126,78,216,0.50), rgba(34,211,238,0.32)),
+    #050712 !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  box-shadow:
+    0 12px 26px rgba(0,0,0,0.42),
+    inset 0 0 0 1px rgba(0,0,0,0.36) !important;
+  overflow: hidden !important;
+}
+
+.logoBox img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  border-radius: 13px !important;
+  background: rgba(255,255,255,0.92) !important;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.24) !important;
+}
+
+.productMark h2,
+.productMark strong,
+.productMark span,
+.productMark p {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.moduleRailClosed .railDockToggle {
+  top: 30px !important;
+  right: 24px !important;
+}
+
+.moduleRailClosed .productMark {
+  width: 66px !important;
+  height: 74px !important;
+  min-height: 74px !important;
+  grid-template-columns: 1fr !important;
+  justify-items: center !important;
+  padding: 8px !important;
+  border-radius: 22px !important;
+}
+
+.moduleRailClosed .productMark > div:not(.logoBox),
+.moduleRailClosed .productMark h2,
+.moduleRailClosed .productMark p,
+.moduleRailClosed .productMark span,
+.moduleRailClosed .railSearch,
+.moduleRailClosed .railNav,
+.moduleRailClosed .moduleTitle,
+.moduleRailClosed .moduleButton span,
+.moduleRailClosed .moduleButtonActive span,
+.moduleRailClosed .moduleButton em,
+.moduleRailClosed .moduleButtonActive em,
+.moduleRailClosed .moduleButton small,
+.moduleRailClosed .moduleButtonActive small {
+  display: none !important;
+}
+
+.moduleRailClosed .logoBox {
+  width: 50px !important;
+  height: 50px !important;
+  min-width: 50px !important;
+  padding: 5px !important;
+  border-radius: 16px !important;
+}
+
+.moduleRailClosed .moduleList {
+  margin-top: 18px !important;
+  padding: 8px 0 34px !important;
+  gap: 10px !important;
+  overflow-y: auto !important;
+}
+
+.moduleRailClosed .moduleButton,
+.moduleRailClosed .moduleButtonActive {
+  width: 66px !important;
+  min-height: 58px !important;
+  grid-template-columns: 1fr !important;
+  justify-items: center !important;
+  align-items: center !important;
+  padding: 0 !important;
+  border-radius: 18px !important;
+}
+
+.moduleRailClosed .moduleButton svg,
+.moduleRailClosed .moduleButtonActive svg {
+  width: 21px !important;
+  height: 21px !important;
+}
+
+.moduleRailOpen .railSearch,
+.moduleRailOpen .railNav,
+.moduleRailOpen .moduleTitle,
+.moduleRailOpen .moduleList {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+@media (max-width: 860px) {
+  .crmShell,
+  .crmShell:has(.moduleRailOpen),
+  .crmShell:has(.moduleRailClosed) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .moduleRail {
+    display: none !important;
+  }
+}
+
+/* END WILSY OS CRM LEFT RAIL LOGO FOCUS V70.11.0
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM COMMAND CENTRE PIN V70.12.0
+   Purpose: right command dock has compact closed blade, click-open drawer,
+   and pinned workstation mode.
+   ========================================================================== */
+
+.contextRail {
+  --wilsy-command-blade: 34px;
+  --wilsy-command-width: 392px;
+  overflow: hidden !important;
+  transition:
+    transform 180ms ease,
+    width 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease !important;
+  will-change: transform !important;
+}
+
+.contextRailFloating {
+  position: fixed !important;
+  top: 126px !important;
+  right: 0 !important;
+  bottom: 18px !important;
+  width: var(--wilsy-command-width) !important;
+  height: auto !important;
+  z-index: 1200 !important;
+  border-radius: 18px 0 0 18px !important;
+}
+
+.contextRailClosed {
+  transform: translate3d(calc(100% - var(--wilsy-command-blade)), 0, 0) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.contextRailOpen {
+  transform: translate3d(0, 0, 0) !important;
+  background:
+    radial-gradient(circle at 0% 10%, color-mix(in srgb, var(--wilsy-accent, #7d4ed8) 16%, transparent), transparent 44%),
+    color-mix(in srgb, var(--wilsy-panel, #0b1024) 95%, #000 5%) !important;
+  border: 1px solid var(--wilsy-border, rgba(126,78,216,0.44)) !important;
+  box-shadow: 0 28px 90px rgba(0,0,0,0.56) !important;
+}
+
+.contextRailPinned {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  grid-area: context !important;
+  width: 392px !important;
+  height: 100% !important;
+  transform: none !important;
+  border-radius: 18px !important;
+  background:
+    radial-gradient(circle at 0% 10%, color-mix(in srgb, var(--wilsy-accent, #7d4ed8) 16%, transparent), transparent 44%),
+    color-mix(in srgb, var(--wilsy-panel, #0b1024) 95%, #000 5%) !important;
+  border: 1px solid var(--wilsy-border, rgba(126,78,216,0.44)) !important;
+  box-shadow: 0 18px 64px rgba(0,0,0,0.38) !important;
+}
+
+.operatingGrid:has(.contextRailPinned) {
+  grid-template-columns: minmax(0, 1fr) 392px !important;
+  grid-template-areas: "main context" !important;
+  gap: 16px !important;
+}
+
+.contextDockControls {
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: var(--wilsy-command-blade) !important;
+  z-index: 10 !important;
+  pointer-events: none !important;
+}
+
+.contextRailHandle {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: var(--wilsy-command-blade) !important;
+  border: 0 !important;
+  border-right: 1px solid rgba(212,175,55,0.26) !important;
+  border-radius: 18px 0 0 18px !important;
+  background:
+    linear-gradient(180deg, rgba(212,175,55,0.08), rgba(126,78,216,0.10)),
+    color-mix(in srgb, var(--wilsy-rail, #080c18) 94%, #000 6%) !important;
+  color: var(--wilsy-authority, #d4af37) !important;
+  writing-mode: vertical-rl !important;
+  transform: rotate(180deg) !important;
+  font: inherit !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+.contextRailHandle:hover {
+  background:
+    linear-gradient(180deg, rgba(212,175,55,0.16), rgba(126,78,216,0.18)),
+    color-mix(in srgb, var(--wilsy-rail, #080c18) 88%, #000 12%) !important;
+}
+
+.contextPinButton {
+  position: absolute !important;
+  top: 14px !important;
+  left: 48px !important;
+  z-index: 12 !important;
+  min-width: 70px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(212,175,55,0.42) !important;
+  background:
+    linear-gradient(135deg, rgba(212,175,55,0.16), rgba(126,78,216,0.14)),
+    color-mix(in srgb, var(--wilsy-panel, #0b1024) 92%, #000 8%) !important;
+  color: var(--wilsy-authority, #d4af37) !important;
+  font: inherit !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.11em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.contextRailOpen .contextPinButton,
+.contextRailPinned .contextPinButton {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.contextRailClosed .contextRailInner {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.contextRailOpen .contextRailInner,
+.contextRailPinned .contextRailInner {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.contextRailInner {
+  height: 100% !important;
+  overflow: auto !important;
+  padding: 62px 18px 18px 52px !important;
+  transition: opacity 140ms ease !important;
+}
+
+.contextRailClosed > *:not(.contextDockControls) {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.contextRailOpen > *:not(.contextDockControls),
+.contextRailPinned > *:not(.contextDockControls) {
+  opacity: 1 !important;
+}
+
+.contextRail::before {
+  content: none !important;
+}
+
+@media (max-width: 1320px) {
+  .contextRailFloating {
+    top: 116px !important;
+    bottom: 14px !important;
+    width: min(372px, calc(100vw - 82px)) !important;
+  }
+
+  .operatingGrid:has(.contextRailPinned) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: "main" !important;
+  }
+
+  .contextRailPinned {
+    position: fixed !important;
+    top: 116px !important;
+    right: 0 !important;
+    bottom: 14px !important;
+    width: min(372px, calc(100vw - 82px)) !important;
+    height: auto !important;
+    z-index: 1200 !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .contextRail,
+  .contextRailFloating,
+  .contextRailPinned {
+    display: none !important;
+  }
+}
+
+/* END WILSY OS CRM COMMAND CENTRE PIN V70.12.0
+   ========================================================================== */
+
+
+/* ==========================================================================
+   WILSY OS CRM TOPBAR LIVE ACCOUNT V70.13.0
+   Purpose: stop top app bar cut-off, make account command reachable, and make
+   home header compact with live source truth only.
+   ========================================================================== */
+
+.appSurface {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.topBar {
+  height: 116px !important;
+  min-height: 116px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 16px 72px 16px 22px !important;
+  grid-template-columns: minmax(260px, 0.82fr) minmax(280px, 460px) minmax(350px, auto) !important;
+  gap: 14px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+.pageTitle {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.pageTitle span {
+  margin-bottom: 6px !important;
+  letter-spacing: 0.22em !important;
+}
+
+.pageTitle h1 {
+  max-width: 100% !important;
+  margin: 0 0 6px !important;
+  font-size: clamp(28px, 2.35vw, 42px) !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0.045em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.pageTitle p {
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  color: var(--wilsy-muted, #c5cce5) !important;
+}
+
+.globalSearch {
+  min-width: 0 !important;
+  max-width: 460px !important;
+  height: 52px !important;
+}
+
+.topActions {
+  min-width: 0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 10px !important;
+  overflow: hidden !important;
+}
+
+.topActions button {
+  height: 52px !important;
+  min-height: 52px !important;
+  min-width: 116px !important;
+  max-width: 156px !important;
+  padding: 0 14px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  letter-spacing: 0.12em !important;
+}
+
+.topActions button:last-child {
+  max-width: 146px !important;
+}
+
+.railOpen .topBar {
+  grid-template-columns: minmax(250px, 0.74fr) minmax(260px, 420px) minmax(340px, auto) !important;
+}
+
+.railClosed .topBar {
+  grid-template-columns: minmax(300px, 1fr) minmax(320px, 500px) minmax(350px, auto) !important;
+}
+
+.workspaceViewport {
+  grid-template-rows: 96px minmax(0, 1fr) !important;
+}
+
+.workspaceHeader {
+  height: 96px !important;
+  min-height: 96px !important;
+  padding: 16px 22px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+.workspaceHeader h2 {
+  margin: 4px 0 4px !important;
+  font-size: clamp(22px, 1.7vw, 30px) !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0.13em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.workspaceHeader p {
+  max-width: 100% !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  color: var(--wilsy-muted, #c5cce5) !important;
+}
+
+.workspaceMetrics {
+  gap: 10px !important;
+}
+
+.workspaceMetrics article {
+  min-height: 68px !important;
+  width: 132px !important;
+  padding: 12px !important;
+  border-radius: 16px !important;
+}
+
+.workspaceMetrics strong {
+  font-size: 24px !important;
+}
+
+.workspaceContent {
+  padding-top: 14px !important;
+}
+
+.contextRail {
+  --wilsy-command-blade: 34px;
+}
+
+.contextRailClosed {
+  transform: translate3d(calc(100% - var(--wilsy-command-blade)), 0, 0) !important;
+  box-shadow: none !important;
+}
+
+.contextPinButton {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.contextRailOpen .contextPinButton,
+.contextRailPinned .contextPinButton {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+@media (max-width: 1540px) {
+  .topBar {
+    grid-template-columns: minmax(250px, 1fr) minmax(260px, 420px) minmax(300px, auto) !important;
+    padding-right: 62px !important;
+  }
+
+  .topActions button {
+    min-width: 104px !important;
+    max-width: 134px !important;
+    padding: 0 12px !important;
+  }
+}
+
+@media (max-width: 1320px) {
+  .topBar {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, auto) !important;
+  }
+
+  .globalSearch {
+    display: none !important;
+  }
+
+  .topActions button {
+    min-width: 100px !important;
+  }
+
+  .workspaceMetrics {
+    display: none !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .topBar {
+    height: auto !important;
+    grid-template-columns: 1fr !important;
+    padding: 14px !important;
+  }
+
+  .topActions {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .topActions button {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+/* END WILSY OS CRM TOPBAR LIVE ACCOUNT V70.13.0
+   ========================================================================== */
+
+/* WILSY OS CRM SLOT TOPRAIL TOOLBAR RESCUE - STEP E */
+.crmSlotTopRail {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 168px !important;
+  display: grid !important;
+  grid-template-columns: minmax(560px, 1fr) minmax(360px, 430px) !important;
+  grid-template-areas:
+    "title tenant"
+    "toolbar toolbar" !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 16px 18px !important;
+  border-radius: 0 !important;
+  border-top: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.32) !important;
+  background:
+    radial-gradient(circle at 7% 12%, rgba(212, 175, 55, 0.12), transparent 31%),
+    radial-gradient(circle at 91% 6%, rgba(132, 240, 200, 0.1), transparent 27%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.008)),
+    rgba(2, 3, 6, 0.96) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 46px rgba(0, 0, 0, 0.26) !important;
+  overflow: visible !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTitleBlock) {
+  grid-area: title !important;
+  min-width: 0 !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTenantPlate) {
+  grid-area: tenant !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 84px !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeToolbar) {
+  grid-area: toolbar !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(190px, 250px) minmax(360px, 1fr) auto auto auto !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  gap: 10px !important;
+  overflow: visible !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTitleBlock h1) {
+  max-width: none !important;
+  margin: 4px 0 6px !important;
+  font-size: clamp(34px, 2.6vw, 52px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: 0.045em !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeStoryRail) {
+  height: 28px !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeStoryRail span) {
+  line-height: 28px !important;
+  font-size: 13px !important;
+  letter-spacing: 0.075em !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeSearchBox),
+.crmSlotTopRail :global(.wilsyOsChromePrimaryButton),
+.crmSlotTopRail :global(.wilsyOsChromeSecondaryButton),
+.crmSlotTopRail :global(.wilsyOsChromeOperatorCard) {
+  height: 52px !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeSearchBox) {
+  min-width: 0 !important;
+  border-color: rgba(212, 175, 55, 0.34) !important;
+  background: rgba(2, 3, 6, 0.64) !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeSecondaryButton) {
+  min-width: 142px !important;
+  border-color: rgba(212, 175, 55, 0.46) !important;
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.09), rgba(132, 240, 200, 0.035)),
+    rgba(2, 3, 6, 0.68) !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromePrimaryButton) {
+  min-width: 152px !important;
+}
+
+@media (max-width: 1520px) {
+  .crmSlotTopRail {
+    grid-template-columns: minmax(420px, 1fr) minmax(320px, 410px) !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromeToolbar) {
+    grid-template-columns: minmax(170px, 220px) minmax(300px, 1fr) repeat(3, auto) !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromeTitleBlock h1) {
+    font-size: clamp(30px, 2.25vw, 42px) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .crmSlotTopRail {
+    min-height: auto !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "title"
+      "tenant"
+      "toolbar" !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromeToolbar) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromePrimaryButton),
+  .crmSlotTopRail :global(.wilsyOsChromeSecondaryButton),
+  .crmSlotTopRail :global(.wilsyOsChromeSearchBox) {
+    width: 100% !important;
+  }
+}
+
+/* WILSY OS CRM TOPRAIL CONTAINMENT - STEP F */
+.appSurface:has(.crmSlotTopRail) {
+  display: grid !important;
+  grid-template-rows: 226px minmax(0, 1fr) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.crmSlotTopRail {
+  height: 226px !important;
+  min-height: 226px !important;
+  max-height: 226px !important;
+  display: grid !important;
+  grid-template-columns: minmax(680px, 1fr) minmax(430px, 520px) !important;
+  grid-template-areas:
+    "title tenant"
+    "toolbar toolbar" !important;
+  align-content: start !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 20px 24px 18px !important;
+  overflow: hidden !important;
+  z-index: 20 !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTitleBlock) {
+  grid-area: title !important;
+  min-width: 0 !important;
+  align-self: center !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTenantPlate) {
+  grid-area: tenant !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 92px !important;
+  min-height: 92px !important;
+  align-self: center !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeToolbar) {
+  grid-area: toolbar !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 58px !important;
+  display: grid !important;
+  grid-template-columns: minmax(230px, 300px) minmax(460px, 1fr) auto auto auto !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  gap: 12px !important;
+  align-self: end !important;
+  position: relative !important;
+  z-index: 22 !important;
+  overflow: visible !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTitleBlock h1) {
+  max-width: none !important;
+  margin: 4px 0 8px !important;
+  font-size: clamp(38px, 2.7vw, 54px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: 0.045em !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeStoryRail) {
+  height: 30px !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeStoryRail span) {
+  line-height: 30px !important;
+  font-size: 13px !important;
+  letter-spacing: 0.08em !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeOperatorCard),
+.crmSlotTopRail :global(.wilsyOsChromeSearchBox),
+.crmSlotTopRail :global(.wilsyOsChromeSecondaryButton),
+.crmSlotTopRail :global(.wilsyOsChromePrimaryButton) {
+  height: 54px !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeSearchBox) {
+  min-width: 0 !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeSecondaryButton) {
+  min-width: 152px !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromePrimaryButton) {
+  min-width: 164px !important;
+}
+
+.appSurface:has(.crmSlotTopRail) .workspaceViewport {
+  position: relative !important;
+  z-index: 1 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.appSurface:has(.crmSlotTopRail) .workspaceHeader {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+@media (max-width: 1520px) {
+  .appSurface:has(.crmSlotTopRail) {
+    grid-template-rows: 246px minmax(0, 1fr) !important;
+  }
+
+  .crmSlotTopRail {
+    height: 246px !important;
+    min-height: 246px !important;
+    max-height: 246px !important;
+    grid-template-columns: minmax(520px, 1fr) minmax(360px, 460px) !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromeToolbar) {
+    grid-template-columns: minmax(200px, 260px) minmax(340px, 1fr) repeat(3, auto) !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromeTitleBlock h1) {
+    font-size: clamp(34px, 2.35vw, 46px) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .appSurface:has(.crmSlotTopRail) {
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+
+  .crmSlotTopRail {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "title"
+      "tenant"
+      "toolbar" !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromeToolbar) {
+    height: auto !important;
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* WILSY OS CRM TOPRAIL EXECUTIVE COMPRESSION - STEP G */
+.appSurface:has(.crmSlotTopRail) {
+  display: grid !important;
+  grid-template-rows: 176px minmax(0, 1fr) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.crmSlotTopRail {
+  height: 176px !important;
+  min-height: 176px !important;
+  max-height: 176px !important;
+  display: grid !important;
+  grid-template-columns: minmax(620px, 1fr) minmax(410px, 500px) !important;
+  grid-template-areas:
+    "title tenant"
+    "toolbar toolbar" !important;
+  align-content: start !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 14px 22px 12px !important;
+  border: 1px solid rgba(212, 175, 55, 0.26) !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+  border-radius: 0 !important;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(212, 175, 55, 0.14), transparent 30%),
+    radial-gradient(circle at 94% 8%, rgba(132, 240, 200, 0.12), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.008)),
+    rgba(2, 3, 6, 0.98) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.065),
+    0 18px 46px rgba(0, 0, 0, 0.28) !important;
+  overflow: hidden !important;
+  z-index: 20 !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTitleBlock) {
+  grid-area: title !important;
+  min-width: 0 !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeEyebrow) {
+  font-size: 11px !important;
+  letter-spacing: 0.18em !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTitleBlock h1) {
+  max-width: none !important;
+  margin: 3px 0 5px !important;
+  font-size: clamp(32px, 2.35vw, 46px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: 0.045em !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeStoryRail) {
+  height: 24px !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeStoryRail span) {
+  line-height: 24px !important;
+  font-size: 12px !important;
+  letter-spacing: 0.075em !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTenantPlate) {
+  grid-area: tenant !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 78px !important;
+  min-height: 78px !important;
+  grid-template-columns: 56px minmax(0, 1fr) !important;
+  padding: 10px 12px !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTenantMark) {
+  width: 52px !important;
+  height: 52px !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTenantMark img) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTenantPlate strong) {
+  font-size: 15px !important;
+  margin: 4px 0 !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTenantPlate small),
+.crmSlotTopRail :global(.wilsyOsChromeTenantPlate em) {
+  font-size: 10px !important;
+  letter-spacing: 0.14em !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeToolbar) {
+  grid-area: toolbar !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 50px !important;
+  display: grid !important;
+  grid-template-columns: minmax(230px, 300px) minmax(440px, 1fr) auto auto auto !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  gap: 10px !important;
+  position: relative !important;
+  z-index: 22 !important;
+  overflow: visible !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeOperatorCard),
+.crmSlotTopRail :global(.wilsyOsChromeSearchBox),
+.crmSlotTopRail :global(.wilsyOsChromeSecondaryButton),
+.crmSlotTopRail :global(.wilsyOsChromePrimaryButton) {
+  height: 48px !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeOperatorCard strong) {
+  font-size: 13px !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeOperatorCard small) {
+  font-size: 10px !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeSearchBox) {
+  min-width: 0 !important;
+  border-color: rgba(212, 175, 55, 0.36) !important;
+  background: rgba(2, 3, 6, 0.66) !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeSearchBox input) {
+  font-size: 12px !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeSecondaryButton) {
+  min-width: 146px !important;
+  padding: 0 14px !important;
+  font-size: 11px !important;
+  border-color: rgba(212, 175, 55, 0.48) !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromePrimaryButton) {
+  min-width: 158px !important;
+  padding: 0 16px !important;
+  font-size: 11px !important;
+}
+
+.appSurface:has(.crmSlotTopRail) .workspaceViewport {
+  position: relative !important;
+  z-index: 1 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.appSurface:has(.crmSlotTopRail) .workspaceHeader {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+@media (max-width: 1520px) {
+  .appSurface:has(.crmSlotTopRail) {
+    grid-template-rows: 188px minmax(0, 1fr) !important;
+  }
+
+  .crmSlotTopRail {
+    height: 188px !important;
+    min-height: 188px !important;
+    max-height: 188px !important;
+    grid-template-columns: minmax(500px, 1fr) minmax(360px, 460px) !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromeToolbar) {
+    grid-template-columns: minmax(210px, 260px) minmax(330px, 1fr) repeat(3, auto) !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromeTitleBlock h1) {
+    font-size: clamp(30px, 2.1vw, 40px) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .appSurface:has(.crmSlotTopRail) {
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+
+  .crmSlotTopRail {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "title"
+      "tenant"
+      "toolbar" !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromeToolbar) {
+    height: auto !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .crmSlotTopRail :global(.wilsyOsChromePrimaryButton),
+  .crmSlotTopRail :global(.wilsyOsChromeSecondaryButton),
+  .crmSlotTopRail :global(.wilsyOsChromeSearchBox) {
+    width: 100% !important;
+  }
+}
+
+/* WILSY OS CRM OPERATOR ACCOUNT LOGO PRECISION - STEP H */
+.crmSlotTopRail :global(.wilsyOsChromeTenantMark) {
+  border-radius: 18px !important;
+  padding: 5px !important;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.18), transparent 58%),
+    linear-gradient(135deg, rgba(212, 175, 55, 0.82), rgba(132, 240, 200, 0.76), rgba(23, 189, 242, 0.52)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 12px 28px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(212, 175, 55, 0.28) !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTenantMark img) {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  border-radius: 14px !important;
+  padding: 2px !important;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.98), rgba(229, 236, 255, 0.92)) !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeTenantPlate) {
+  background:
+    radial-gradient(circle at 8% 50%, rgba(132, 240, 200, 0.12), transparent 46%),
+    linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(132, 240, 200, 0.045)),
+    rgba(4, 8, 14, 0.7) !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeOperatorCard strong) {
+  text-transform: none !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeOperatorCard small) {
+  color: rgba(229, 231, 245, 0.72) !important;
+}
+
+/* WILSY OS CRM COPY BUTTON CONTRACTS - STEP I */
+.crmSlotTopRail :global(.wilsyOsChromeStoryRail span) {
+  text-transform: none !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromePrimaryButton),
+.crmSlotTopRail :global(.wilsyOsChromeSecondaryButton) {
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 28 !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromePrimaryButton) {
+  margin-right: 58px !important;
+}
+
+.accountSettingsOverlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: grid !important;
+  place-items: center !important;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(182, 109, 255, 0.16), transparent 38%),
+    rgba(0, 0, 0, 0.72) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.accountSettingsOverlay > * {
+  position: relative !important;
+  z-index: 2147483001 !important;
+}
+
+/* WILSY OS CRM COMMAND CENTER CONTRACT - STEP J */
+.crmSlotTopRail :global(.wilsyOsChromeSecondaryButton),
+.crmSlotTopRail :global(.wilsyOsChromePrimaryButton) {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 80 !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeStoryRail span) {
+  text-transform: none !important;
+}
+
+.accountSettingsOverlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: grid !important;
+  place-items: center !important;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(182, 109, 255, 0.16), transparent 38%),
+    rgba(0, 0, 0, 0.72) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.accountSettingsOverlay > * {
+  position: relative !important;
+  z-index: 2147483001 !important;
+}
+
+/* WILSY OS CRM EXECUTIVE DIRECT COMMAND CENTER - STEP L.2 */
+.crmSlotTopRail :global([data-wilsy-crm-command-center-direct="executive-parity"]) {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 220 !important;
+  user-select: none !important;
+}
+
+.crmSlotTopRail :global([data-wilsy-crm-command-center-direct="executive-parity"]:hover) {
+  border-color: rgba(132, 240, 200, 0.62) !important;
+  box-shadow:
+    0 0 0 1px rgba(132, 240, 200, 0.2),
+    0 14px 34px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* WILSY OS CRM EXECUTIVE ROOT ACCOUNT MOUNT - STEP M */
+.crmSlotTopRail :global(.wilsyOsChromeSecondaryButton) {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.crmSlotTopRail :global(.wilsyOsChromeSecondaryButton[title="Open Wilsy Account Command Center"]) {
+  position: relative !important;
+  z-index: 240 !important;
+}
+
+/* WILSY OS CRM ACCOUNT CENTER SERVICE CONTRACT - STEP N */
+.crmShell :global([data-wilsy-account-command-center]),
+.crmShell :global(.wilsyAccountCommandCenter) {
+  isolation: isolate !important;
+}
+
+.crmShell :global([data-wilsy-account-command-center] button),
+.crmShell :global(.wilsyAccountCommandCenter button) {
+  cursor: pointer !important;
+}
+
+/* WILSY OS CRM ACCOUNT THEME RUNTIME BRIDGE - STEP O.1 */
+.crmShell {
+  background:
+    radial-gradient(circle at 7% 8%, var(--crm-glow, rgba(212, 175, 55, 0.16)), transparent 32%),
+    radial-gradient(circle at 94% 10%, var(--crm-glow-2, rgba(23, 189, 242, 0.12)), transparent 34%),
+    var(--crm-bg, #05070c) !important;
+}
+
+.crmShell[data-wilsy-theme="sovereign_black"] {
+  --crm-bg: #050505;
+  --crm-surface: #090b10;
+  --crm-card: #0d1017;
+  --crm-accent: #d4af37;
+  --crm-accent-2: #84f0c8;
+  --crm-accent-3: #b66dff;
+  --crm-glow: rgba(212, 175, 55, 0.18);
+  --crm-glow-2: rgba(132, 240, 200, 0.12);
+}
+
+.crmShell[data-wilsy-theme="wilsy_aurora"] {
+  --crm-bg: #050711;
+  --crm-surface: #0b1020;
+  --crm-card: #0e1528;
+  --crm-accent: #b66dff;
+  --crm-accent-2: #17bdf2;
+  --crm-accent-3: #84f0c8;
+  --crm-glow: rgba(182, 109, 255, 0.22);
+  --crm-glow-2: rgba(23, 189, 242, 0.16);
+}
+
+.crmShell[data-wilsy-theme="wilsy_daybreak"] {
+  --crm-bg: #f6f0df;
+  --crm-surface: #fffaf0;
+  --crm-card: #f4ead0;
+  --crm-accent: #b8860b;
+  --crm-accent-2: #0f8f8c;
+  --crm-accent-3: #5f6df0;
+  --crm-glow: rgba(184, 134, 11, 0.2);
+  --crm-glow-2: rgba(15, 143, 140, 0.14);
+}
+
+.crmShell[data-wilsy-theme="pearl_command"] {
+  --crm-bg: #f4f6fb;
+  --crm-surface: #ffffff;
+  --crm-card: #edf1f8;
+  --crm-accent: #5f6df0;
+  --crm-accent-2: #0f8f8c;
+  --crm-accent-3: #b8860b;
+  --crm-glow: rgba(95, 109, 240, 0.18);
+  --crm-glow-2: rgba(15, 143, 140, 0.12);
+}
+
+.crmShell :global([data-wilsy-account-command-center]),
+.crmShell :global(.wilsyAccountCommandCenter) {
+  --wilsy-accent: var(--crm-accent, #d4af37);
+  --wilsy-accent-2: var(--crm-accent-2, #17bdf2);
+  --wilsy-accent-3: var(--crm-accent-3, #84f0c8);
+}
+
+
+/* WILSY OS CRM FULL DASHBOARD THEME RUNTIME - STEP R4A */
+:global(html[data-wilsy-crm-dashboard-live="true"]),
+:global(body[data-wilsy-crm-dashboard-live="true"]) {
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--wilsy-accent-2, #17bdf2) 18%, transparent) 0%, transparent 36%),
+    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--wilsy-accent, #d4af37) 14%, transparent) 0%, transparent 32%),
+    linear-gradient(180deg, var(--crm-bg, var(--wilsy-bg, #020306)) 0%, var(--wilsy-bg, #020306) 100%) !important;
+  color: var(--wilsy-text, #fffaf0) !important;
+}
+
+:global(body[data-wilsy-crm-dashboard-live="true"] #root),
+:global(body[data-wilsy-crm-dashboard-live="true"] main),
+:global(body[data-wilsy-crm-dashboard-live="true"] section),
+:global(body[data-wilsy-crm-dashboard-live="true"] aside),
+:global(body[data-wilsy-crm-dashboard-live="true"] nav),
+:global(body[data-wilsy-crm-dashboard-live="true"] article) {
+  border-color: var(--wilsy-border-color, rgba(212, 175, 55, 0.28)) !important;
+  color: var(--wilsy-text, #fffaf0);
+  transition: background 220ms ease, color 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+:global(body[data-wilsy-crm-dashboard-live="true"] [class*="sidebar"]),
+:global(body[data-wilsy-crm-dashboard-live="true"] [class*="Sidebar"]),
+:global(body[data-wilsy-crm-dashboard-live="true"] [class*="rail"]),
+:global(body[data-wilsy-crm-dashboard-live="true"] [class*="Rail"]) {
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--wilsy-accent, #d4af37) 12%, transparent) 0%, transparent 40%),
+    linear-gradient(180deg, var(--wilsy-rail, rgba(3,5,10,0.96)) 0%, var(--wilsy-bg, #020306) 100%) !important;
+}
+
+:global(body[data-wilsy-crm-dashboard-live="true"] [class*="panel"]),
+:global(body[data-wilsy-crm-dashboard-live="true"] [class*="Panel"]),
+:global(body[data-wilsy-crm-dashboard-live="true"] [class*="card"]),
+:global(body[data-wilsy-crm-dashboard-live="true"] [class*="Card"]),
+:global(body[data-wilsy-crm-dashboard-live="true"] [class*="tile"]),
+:global(body[data-wilsy-crm-dashboard-live="true"] [class*="Tile"]) {
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--wilsy-accent-2, #17bdf2) 10%, transparent) 0%, transparent 38%),
+    linear-gradient(180deg, color-mix(in srgb, var(--crm-card, #080c18) 94%, transparent) 0%, color-mix(in srgb, var(--crm-surface, #05070d) 98%, transparent) 100%) !important;
+  border-color: var(--wilsy-border-color, rgba(212, 175, 55, 0.28)) !important;
+  box-shadow: 0 20px 54px color-mix(in srgb, var(--wilsy-accent, #d4af37) 12%, transparent) !important;
+}
+
+:global(body[data-wilsy-crm-dashboard-live="true"] h1),
+:global(body[data-wilsy-crm-dashboard-live="true"] h2),
+:global(body[data-wilsy-crm-dashboard-live="true"] h3),
+:global(body[data-wilsy-crm-dashboard-live="true"] strong) {
+  color: var(--wilsy-text, #fffaf0) !important;
+}
+
+:global(body[data-wilsy-crm-dashboard-live="true"] p),
+:global(body[data-wilsy-crm-dashboard-live="true"] span),
+:global(body[data-wilsy-crm-dashboard-live="true"] small),
+:global(body[data-wilsy-crm-dashboard-live="true"] td),
+:global(body[data-wilsy-crm-dashboard-live="true"] th) {
+  color: inherit;
+}
+
+:global(body[data-wilsy-crm-dashboard-live="true"] button),
+:global(body[data-wilsy-crm-dashboard-live="true"] input),
+:global(body[data-wilsy-crm-dashboard-live="true"] select) {
+  border-color: var(--wilsy-border-color, rgba(212, 175, 55, 0.28)) !important;
+}
+
+:global(body[data-wilsy-crm-dashboard-live="true"] button:hover) {
+  box-shadow: 0 0 0 1px var(--wilsy-accent, #d4af37), 0 18px 42px color-mix(in srgb, var(--wilsy-accent, #d4af37) 20%, transparent) !important;
+}
+
+/* WILSY_R9R_CRM_OVERLAY_COMMAND_IDENTITY_UNCLIP */
+/* Production fix: the active broken Command Identity card is rendered inside the CRM account settings overlay. */
+:global([class*="accountSettingsOverlay"]) :global([data-wilsy-identity-chrome]),
+:global([class*="accountSettingsOverlay"]) :global([data-wilsy-r7c-identity-card="true"]),
+:global([class*="accountSettingsOverlay"]) :global([data-wilsy-r7c-identity-ui="true"]) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global([data-wilsy-r7c-identity-ui="true"]) {
+  grid-template-columns: clamp(104px, 7.2vw, 132px) minmax(0, 1fr) !important;
+  gap: clamp(28px, 3vw, 46px) !important;
+  align-items: start !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-identity-content) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 14px !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-identity-eyebrow) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px 24px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-command-label),
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-verified-label) {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  font-size: clamp(9px, 0.64vw, 12px) !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.13em !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-identity-name),
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-identity-account) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7f-identity-evidence) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 8px 18px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7f-clause-anchor),
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7f-identity-seal),
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7f-identity-evidence span) {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  font-size: clamp(8px, 0.52vw, 10px) !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.10em !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-tenant-pill) {
+  width: min(100%, 620px) !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-tenant-text) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+/* Also cover CRM chrome operator card variants visible in the live DOM dump. */
+:global([class*="accountSettingsOverlay"]) :global(.wilsyOsChromeOperatorCard),
+:global([class*="accountSettingsOverlay"]) :global(.wilsyOsChromeOperatorCard *) {
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* WILSY_R9S_CRM_OVERLAY_IDENTITY_NO_ELLIPSIS */
+/* Final source target: active CRM account settings overlay, not Account Center runtime. */
+:global([class*="accountSettingsOverlay"]) :global([data-wilsy-r7c-identity-ui="true"]) {
+  grid-template-columns: clamp(104px, 7vw, 132px) minmax(0, 1fr) !important;
+  gap: clamp(28px, 3vw, 44px) !important;
+  align-items: start !important;
+  overflow: visible !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-identity-content) {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto auto auto !important;
+  align-content: start !important;
+  gap: 14px !important;
+}
+
+/* Put COMMAND IDENTITY and TENANT VERIFIED on disciplined rows so neither can clip. */
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-identity-eyebrow) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-auto-rows: auto !important;
+  justify-items: start !important;
+  align-items: start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-command-label),
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-verified-label) {
+  display: inline-flex !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.16em !important;
+  font-size: clamp(10px, 0.72vw, 13px) !important;
+  line-height: 1.15 !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-identity-name) {
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* Evidence rail becomes readable forensic rows instead of one choking line. */
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7f-identity-evidence) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-auto-rows: auto !important;
+  justify-items: start !important;
+  align-items: start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7f-clause-anchor),
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7f-identity-seal),
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7f-identity-evidence span) {
+  display: inline-flex !important;
+  width: auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  letter-spacing: 0.13em !important;
+  font-size: clamp(9px, 0.62vw, 11px) !important;
+  line-height: 1.18 !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-tenant-pill) {
+  width: min(100%, 620px) !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+:global([class*="accountSettingsOverlay"]) :global(.wilsy-r7c-tenant-text) {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
 }

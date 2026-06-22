@@ -75,32 +75,22 @@ const DataContext = createContext(null);
  * @example
  *   // In App.jsx or BoardroomLayout.jsx
  *   import { DataOrchestratorProvider } from './components/sovereign/DataOrchestrator';
- *
- *   
-/**
- * @function App
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
+ *   <SovereignOrchestratorProvider>
+ *     <DataOrchestratorProvider>
+ *       <BoardroomHUD />
+ *     </DataOrchestratorProvider>
+ *   </SovereignOrchestratorProvider>
  */
-function App() {
- *     return (
- *       <SovereignOrchestratorProvider>
- *         <DataOrchestratorProvider>
- *           <BoardroomHUD />
- *         </DataOrchestratorProvider>
- *       </SovereignOrchestratorProvider>
- *     );
- *   }
- */
-export 
 /**
  * @function DataOrchestratorProvider
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
+ * @param {Object} props - Provider props.
+ * @param {React.ReactNode} props.children - Child components receiving forensic stream context.
+ * @returns {JSX.Element} Matrix runtime feedback data context output.
+ * @collaboration Preserves Wilson's UI mesh bridge while keeping provider exports parse-safe and documentation-guard compliant.
  */
-const DataOrchestratorProvider = ({ children }) => {
+export const DataOrchestratorProvider = ({ children }) => {
   const mesh = useSovereignMesh();
 
   // 🔥 CIRCUIT BREAKER: Prevents overlapping telemetry calls (flood protection)
@@ -260,14 +250,15 @@ const DataOrchestratorProvider = ({ children }) => {
       return;
     }
 
-    
-/**
- * @function handleAction
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
- */
-const handleAction = (e) => {
+    /**
+     * @function handleAction
+     * @memberof WILSY_OS_CORE
+     * @description Routes sovereign mesh events into sealed revenue, anomaly and ledger stream updates.
+     * @param {CustomEvent} e - Mesh event containing action and payload detail.
+     * @returns {void}
+     * @collaboration Keeps live boardroom data moving without reintroducing the teardown loop or telemetry flood.
+     */
+    const handleAction = (e) => {
       const { action, payload } = e.detail;
 
       if (action === 'BILLING_UPDATE') {
@@ -366,31 +357,17 @@ const handleAction = (e) => {
  *   `DataOrchestratorProvider` via mesh events. This maintains a single source of truth.
  *
  * @example
- *   
-/**
- * @function AlertPanel
- * @memberof WILSY_OS_CORE
- * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
+ *   Read `alerts` and `anomalyProbability` from useSovereignData inside a dashboard panel,
+ *   then render each alert with its traceId as the stable key.
  */
-function AlertPanel() {
- *     const { alerts, anomalyProbability } = useSovereignData();
- *     return (
- *       <div>
- *         <h3>Risk Score: {(anomalyProbability * 100).toFixed(1)}%</h3>
- *         {alerts.map(alert => <AlertItem key={alert.traceId} {...alert} />)}
- *       </div>
- *     );
- *   }
- */
-export 
 /**
  * @function useSovereignData
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
+ * @returns {Object} Matrix runtime feedback data context output.
+ * @collaboration Gives downstream sovereign dashboards one guarded read path into the orchestrated stream.
  */
-const useSovereignData = () => {
+export const useSovereignData = () => {
   const context = useContext(DataContext);
   if (!context) {
     throw new Error('[WILSY-OS] useSovereignData must be used within DataOrchestratorProvider.');

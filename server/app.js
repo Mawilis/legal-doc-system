@@ -26,6 +26,8 @@
  */
 
 import express from 'express';
+import { generateSovereignArtifactPdf } from './controllers/businessArtifactPdfController.js';
+
 import helmet from 'helmet';
 import morgan from 'morgan';
 import chalk from 'chalk';
@@ -36,6 +38,7 @@ import os from 'os';
 // 🏛️ SOVEREIGN IMPORTS
 import { tenantContext } from './middleware/tenantContext.js';
 import { integrityShield } from './middleware/ProductionHardening.middleware.js';
+
 import metrics from './utils/metrics.js';
 import routes from './routes/api.js';
 import forensicRoutes from './routes/forensicRoutes.js';
@@ -59,6 +62,11 @@ const app = express();
  * @param {Object} res - Express response
  * @param {Function} next - Express next middleware
  */
+/**
+ * @function corsMiddleware
+ * @description Applies Wilsy OS CORS policy for browser, proxy, and local development API traffic.
+ * @collaboration Supports frontend Vite proxy, auth routes, telemetry routes, and protected backend services.
+ */
 const corsMiddleware = (req, res, next) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
@@ -66,7 +74,7 @@ const corsMiddleware = (req, res, next) => {
     'http://127.0.0.1:3000',
     'http://localhost:3001',
     'http://localhost:5173',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
   ];
 
   if (allowedOrigins.includes(origin)) {
@@ -79,9 +87,12 @@ const corsMiddleware = (req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.header(
     'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Tenant-ID, x-tenant-id, X-Request-ID, x-request-id, X-Trace-ID, x-trace-id, X-Forensic-Timestamp, x-forensic-timestamp, X-Cryptographic-Nonce, x-cryptographic-nonce, X-Request-Seal, x-request-seal, X-Correlation-ID, x-correlation-id, X-Quantum-Verified, x-quantum-verified, x-binary-strike'
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Tenant-ID, x-tenant-id, X-Tenant-Id, x-tenant-id, X-Request-ID, x-request-id, X-Trace-ID, x-trace-id, X-Correlation-ID, x-correlation-id, X-Forensic-Timestamp, x-forensic-timestamp, X-Cryptographic-Nonce, x-cryptographic-nonce, X-Request-Seal, x-request-seal, X-Request-Proof, x-request-proof, X-Artifact-Type, x-artifact-type, X-Wilsy-Tenant-ID, x-wilsy-tenant-id, X-Wilsy-Artifact-Type, x-wilsy-artifact-type, X-Binary-Strike, x-binary-strike, X-Quantum-Verified, x-quantum-verified'
   );
-  res.header('Access-Control-Expose-Headers', 'X-Institutional-Latency, X-Forensic-Trace');
+  res.header(
+    'Access-Control-Expose-Headers',
+    'X-Institutional-Latency, X-Forensic-Trace, X-Artifact-Seal, X-Request-Proof, X-Wilsy-Trace-ID, X-Wilsy-Merkle-Root, X-Wilsy-Tenant-ID, X-Wilsy-Artifact-Type'
+  );
   res.header('Access-Control-Max-Age', '86400');
 
   if (req.method === 'OPTIONS') return res.sendStatus(204);
@@ -89,6 +100,14 @@ const corsMiddleware = (req, res, next) => {
 };
 
 app.use(corsMiddleware);
+
+/**
+ * @route POST /api/generate/pdf
+ * @description Scoped DB-free branded artifact ingress mounted immediately after CORS.
+ * @returns {Promise<void>} Streams a branded Wilsy OS artifact PDF.
+ * @collaboration Bypasses heavy tenant/global middleware for artifact export while preserving JWT and proof verification inside the controller.
+ */
+app.post('/api/generate/pdf', express.json({ limit: '10mb' }), generateSovereignArtifactPdf);
 
 // ============================================================================
 // 🛡️ PUBLIC HEALTH PROBES (BYPASS AUTH & RATE LIMITING)
@@ -121,15 +140,26 @@ app.post('/api/telemetry/pulse', (req, res) => {
  * @description Measures request duration, injects latency headers, and records SLA metrics.
  * Logs a warning if response time exceeds 500ms.
  */
+/**
+ * @function latencySniper
+ * @description Measures request latency and surfaces slow-strike warnings without changing response semantics.
+ * @collaboration Supports observability, SLA telemetry, and backend route performance for Wilsy OS.
+ */
 const latencySniper = (req, res, next) => {
   const start = process.hrtime();
   const tenantId = req.headers['x-tenant-id'] || 'GLOBAL_ROOT';
 
   // Skip health probes to reduce noise
-  if (req.originalUrl.includes('/telemetry/pulse') || req.originalUrl === '/api/status') return next();
+  if (
+    req.originalUrl.includes('/telemetry/pulse') ||
+    req.originalUrl === '/api/status' ||
+    req.originalUrl.includes('/api/source-registry/health') ||
+    req.originalUrl.includes('/api/source-registry/status')
+  )
+    return next();
 
   const originalEnd = res.end;
-  res.end = function(chunk, encoding, callback) {
+  res.end = function (chunk, encoding, callback) {
     if (!res.headersSent) {
       const diff = process.hrtime(start);
       const timeInMs = Number((diff[0] * 1e3 + diff[1] * 1e-6).toFixed(3));
@@ -141,11 +171,15 @@ const latencySniper = (req, res, next) => {
         tenantId,
         method: req.method,
         endpoint: req.originalUrl,
-        threshold: 500
+        threshold: 500,
       });
 
       if (timeInMs > 500) {
-        console.warn(chalk.yellow(`[SLA-WARNING] Slow Strike Detected: ${req.method} ${req.originalUrl} - ${timeInMs}ms`));
+        console.warn(
+          chalk.yellow(
+            `[SLA-WARNING] Slow Strike Detected: ${req.method} ${req.originalUrl} - ${timeInMs}ms`
+          )
+        );
       }
     }
     originalEnd.call(this, chunk, encoding, callback);
@@ -168,7 +202,8 @@ const sovereignLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 2000,
   keyGenerator: (req) => req.headers['x-tenant-id'] || req.ip,
-  handler: (req, res) => res.status(429).json({ success: false, message: 'Institutional Threshold Reached.' })
+  handler: (req, res) =>
+    res.status(429).json({ success: false, message: 'Institutional Threshold Reached.' }),
 });
 app.use('/api/', sovereignLimiter);
 
@@ -201,7 +236,9 @@ app.use(integrityShield);
 app.get('/api/v1/sovereign-health', async (req, res) => {
   try {
     const breakers = breakerRegistry ? breakerRegistry.getAllStatus() : {};
-    const redisHealth = checkRedisHealth ? await checkRedisHealth() : { status: 'OFFLINE', latency: 0 };
+    const redisHealth = checkRedisHealth
+      ? await checkRedisHealth()
+      : { status: 'OFFLINE', latency: 0 };
     const snapshot = metrics.getSnapshot ? metrics.getSnapshot() : { metrics: { performance: {} } };
     const telemetryState = getTelemetryState ? getTelemetryState() : { queueLength: 0 };
 
@@ -217,14 +254,39 @@ app.get('/api/v1/sovereign-health', async (req, res) => {
         coldStorageQueueSize: telemetryState.queueLength || 0,
         kpi: {
           slaScore: snapshot.metrics?.performance?.latency_request_latency?.p95 || 0,
-          riskIndex: snapshot.metrics?.performance?.latency_request_latency?.p99 || 0
-        }
-      }
+          riskIndex: snapshot.metrics?.performance?.latency_request_latency?.p99 || 0,
+        },
+      },
     });
   } catch (err) {
     res.status(500).json({ status: 'FRACTURED', error: err.message });
   }
 });
+
+/**
+ * @function isWilsyPublicForensicGatewayPath
+ * @description Detects forensic Merkle gateway endpoints that are intentionally public in development/showroom mode.
+ * @collaboration Prevents auth-debug noise on approved read/showroom proof endpoints while preserving real auth enforcement elsewhere.
+ */
+const isWilsyPublicForensicGatewayPath = (req = {}) => {
+  const url = String(req.originalUrl || req.url || '').toLowerCase();
+  const method = String(req.method || 'GET').toUpperCase();
+
+  const publicReadPaths = [
+    '/api/forensics/verify-chain',
+    '/api/forensics/merkle-auditor/status',
+    '/api/forensics/merkle-auditor/anchors',
+  ];
+
+  if (
+    ['GET', 'HEAD', 'OPTIONS'].includes(method) &&
+    publicReadPaths.some((path) => url.startsWith(path))
+  ) {
+    return true;
+  }
+
+  return method === 'POST' && url.startsWith('/api/forensics/merkle-auditor/run');
+};
 
 // ============================================================================
 // 🔍 FORENSIC DEBUG MIDDLEWARE (Auth-only, no payload dump – production friendly)
@@ -245,9 +307,13 @@ app.use((req, res, next) => {
       '/api/auth/login',
       '/api/auth/verify-3fa',
       '/api/auth/register',
-      '/api/auth/refresh-token'
+      '/api/auth/refresh-token',
+      '/api/auth/me',
     ];
-    if (publicTelemetryPaths.some(path => req.originalUrl.startsWith(path))) {
+    if (
+      publicTelemetryPaths.some((path) => req.originalUrl.startsWith(path)) ||
+      isWilsyPublicForensicGatewayPath(req)
+    ) {
       return next();
     }
 
@@ -265,7 +331,6 @@ app.use((req, res, next) => {
 // ============================================================================
 // 🚀 MASTER ROUTE DISPATCH
 // ============================================================================
-
 app.use('/api', routes);
 app.use('/api/forensics', forensicRoutes);
 
@@ -293,14 +358,14 @@ app.use(async (err, req, res, next) => {
 
   broadcastTelemetry(tenantId, 'SYSTEM_EVENT', 'GATEWAY_ERROR', 'AppCore', {
     traceId,
-    error: err.message
+    error: err.message,
   });
 
   if (!res.headersSent) {
     res.status(err.status || 500).json({
       success: false,
       message: 'Institutional Finality Breach.',
-      forensics: { traceId, timestamp: new Date().toISOString(), shard: tenantId }
+      forensics: { traceId, timestamp: new Date().toISOString(), shard: tenantId },
     });
   }
 });

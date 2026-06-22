@@ -1,0 +1,2883 @@
+/* WILSY_R18AD7A_CSS_COMPAT_PATCH: line-clamp standard property and backdrop-filter prefix order repaired. */
+/* eslint-disable */
+/*
+ * WILSY OS - FORENSIC MERKLE SHOWROOM CSS
+ * @file client/src/components/chrome/WilsyForensicMerkleShowroom.module.css
+ * @version R18Y1-FORENSIC-MERKLE-SHOWROOM-COMPACT-SEAL-HUD
+ * @description CSS module for the isolated backend-bound forensic Merkle showroom.
+ * @collaboration Owns a three-zone executive showroom: evidence stream, sovereign root hero, compliance authority rail, with Wilsy OS theme-engine token mapping and no bottom bleed.
+ * @fileNotes
+ * - This stylesheet belongs only to the isolated forensic Merkle showroom.
+ * - Do not move Account, CRM, Founder, Executive, Finance, HR, or Security styling into this file.
+ * - No credential material belongs in CSS.
+ */
+
+.root {
+  --bg: var(--sovereign-bg, #070706);
+  --surface: var(--sovereign-surface, rgba(18, 18, 18, 0.88));
+  --surface-strong: var(--sovereign-surface-strong, rgba(24, 24, 24, 0.96));
+  --line: var(--sovereign-border, rgba(255, 232, 168, 0.18));
+  --line-soft: rgba(255, 255, 255, 0.1);
+  --gold: var(--forensic-warning, #ffe9a6);
+  --gold-strong: var(--tenant-accent, #ffd36d);
+  --green: var(--forensic-success, #31ef9b);
+  --cyan: var(--forensic-info, #24d3ee);
+  --danger: var(--forensic-danger, #ff6f7d);
+  --text: var(--text-primary, #fff7df);
+  --muted: var(--text-secondary, rgba(255, 247, 223, 0.68));
+  --dim: var(--text-muted, rgba(255, 247, 223, 0.46));
+  --radius: 24px;
+  --gap: clamp(14px, 1vw, 20px);
+  --deck-height: clamp(660px, calc(100dvh - 128px), 820px);
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  overflow-x: hidden;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 211, 109, 0.12), transparent 34%),
+    radial-gradient(circle at 12% 18%, rgba(49, 239, 155, 0.08), transparent 30%),
+    linear-gradient(180deg, var(--bg) 0%, #0b0b0a 48%, #050505 100%);
+  padding: 16px 20px 18px;
+}
+
+.root *,
+.root *::before,
+.root *::after {
+  box-sizing: border-box;
+}
+
+.shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, var(--deck-height)) auto auto;
+  gap: var(--gap);
+  width: min(100%, 1680px);
+  min-height: calc(100dvh - 34px);
+  margin: 0 auto;
+}
+
+.topBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  gap: 16px;
+  align-items: center;
+  min-height: 74px;
+  padding: 14px 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+    rgba(10, 10, 10, 0.88);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+}
+
+.topBrand {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.topBrand strong {
+  color: var(--gold);
+  font-size: clamp(24px, 2vw, 36px);
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.045em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topBrand small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 780;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+}
+
+.topStatus,
+.boundaryFooter span,
+.inlineWarning {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topStatus {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(49, 239, 155, 0.22);
+  border-radius: 999px;
+  color: var(--green);
+  background: rgba(49, 239, 155, 0.07);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.topAction,
+.runButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  border: 1px solid rgba(255, 211, 109, 0.35);
+  border-radius: 14px;
+  color: #161008;
+  background: linear-gradient(135deg, var(--gold), var(--gold-strong));
+  box-shadow: 0 18px 48px rgba(255, 211, 109, 0.18);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.topAction {
+  padding: 0 22px;
+}
+
+.topAction:disabled,
+.runButton:disabled {
+  color: rgba(22, 16, 8, 0.72);
+  cursor: wait;
+  background: linear-gradient(135deg, #b7ad91, #7a705d);
+  box-shadow: none;
+}
+
+.showroomDeck {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(520px, 1.75fr) minmax(280px, 0.82fr);
+  gap: var(--gap);
+  align-items: stretch;
+  min-height: 0;
+  height: var(--deck-height);
+  overflow: hidden;
+}
+
+.evidenceRail,
+.rootHero,
+.complianceRail,
+.technicalDrawer,
+.boundaryFooter {
+  min-width: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.016)),
+    var(--surface);
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.evidenceRail,
+.complianceRail {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  min-height: 0;
+  max-height: 100%;
+  padding: 18px;
+  overflow: hidden;
+}
+
+.railHeader {
+  display: grid;
+  gap: 6px;
+  min-height: 54px;
+}
+
+.railHeader h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(21px, 1.45vw, 30px);
+  line-height: 1.02;
+  font-weight: 950;
+  letter-spacing: -0.045em;
+}
+
+.railHeader small {
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.evidenceList,
+.complianceStack {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 211, 109, 0.38) rgba(255, 255, 255, 0.04);
+}
+
+.evidenceList::-webkit-scrollbar,
+.complianceStack::-webkit-scrollbar {
+  width: 8px;
+}
+
+.evidenceList::-webkit-scrollbar-thumb,
+.complianceStack::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 211, 109, 0.35);
+}
+
+.evidenceItem,
+.complianceAuthorityCard {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.evidenceItem {
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  min-height: 78px;
+  padding: 12px;
+}
+
+.evidenceItemActive {
+  border-color: rgba(255, 211, 109, 0.58);
+  background:
+    linear-gradient(90deg, rgba(255, 211, 109, 0.24), rgba(255, 211, 109, 0.03)),
+    rgba(255, 255, 255, 0.04);
+  box-shadow: inset 4px 0 0 var(--gold);
+}
+
+.evidenceItemIcon,
+.complianceAuthorityIcon {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 211, 109, 0.26);
+  color: var(--gold);
+  background: rgba(255, 211, 109, 0.08);
+}
+
+.evidenceItemIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+}
+
+.evidenceItemCopy,
+.complianceAuthorityCopy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.evidenceItemLabel,
+.complianceAuthorityLabel {
+  color: var(--dim);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.evidenceItemTitle,
+.complianceAuthorityTitle {
+  color: var(--text);
+  font-weight: 950;
+  line-height: 1.12;
+  overflow-wrap: break-word;
+}
+
+.evidenceItemTitle {
+  font-size: 15px;
+}
+
+.evidenceItemMeta,
+.complianceAuthorityMeta {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+
+.inlineWarning {
+  align-self: end;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 111, 125, 0.32);
+  border-radius: 14px;
+  color: var(--danger);
+  background: rgba(255, 111, 125, 0.08);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.rootHero {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(260px, 1fr) auto auto;
+  gap: 14px;
+  min-height: 0;
+  max-height: 100%;
+  padding: clamp(18px, 1.45vw, 26px);
+  overflow: hidden;
+  border-color: rgba(255, 211, 109, 0.2);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 211, 109, 0.11), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+    var(--surface-strong);
+}
+
+.rootHero::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(90deg, transparent 49.8%, rgba(255, 211, 109, 0.16) 50%, transparent 50.2%),
+    linear-gradient(180deg, transparent 49.8%, rgba(255, 211, 109, 0.08) 50%, transparent 50.2%);
+  opacity: 0.42;
+}
+
+.rootHeroHeader {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.rootHeroEyebrow {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.rootHeroTitle {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(32px, 2.7vw, 54px);
+  line-height: 0.96;
+  font-weight: 950;
+  letter-spacing: -0.06em;
+}
+
+.rootHeroCopy {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 780;
+  line-height: 1.36;
+}
+
+.rootHalo {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  justify-self: center;
+  width: min(100%, 500px, 50dvh);
+  min-width: 280px;
+  aspect-ratio: 1;
+  border: clamp(8px, 0.75vw, 12px) solid rgba(255, 233, 166, 0.88);
+  border-radius: 999px;
+  box-shadow:
+    0 0 44px rgba(255, 211, 109, 0.18),
+    inset 0 0 54px rgba(0, 0, 0, 0.28);
+}
+
+.rootHaloVerified {
+  border-color: rgba(255, 233, 166, 0.94);
+}
+
+.rootHaloReview {
+  border-color: rgba(255, 111, 125, 0.86);
+}
+
+.rootHaloPending {
+  border-color: rgba(36, 211, 238, 0.78);
+}
+
+.rootOrbitTop {
+  position: absolute;
+  top: clamp(-36px, -3.4dvh, -26px);
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: clamp(54px, 6dvh, 74px);
+  height: clamp(54px, 6dvh, 74px);
+  border: 5px solid rgba(255, 233, 166, 0.95);
+  border-radius: 999px;
+  color: var(--gold);
+  background: #12100d;
+  transform: translateX(-50%);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
+}
+
+.rootOrbitLine {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  width: 1px;
+  height: min(112px, 13dvh);
+  background: linear-gradient(180deg, rgba(255, 233, 166, 0.88), rgba(255, 233, 166, 0));
+  transform: translateX(-50%);
+}
+
+.rootCore {
+  display: grid;
+  gap: 8px;
+  width: min(74%, 380px);
+  padding: clamp(16px, 1.5vw, 24px);
+  border: 1px solid rgba(255, 233, 166, 0.28);
+  border-radius: 22px;
+  text-align: center;
+  background: rgba(8, 8, 8, 0.82);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+}
+
+.rootCore small {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rootCore code {
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: clamp(12px, 0.95vw, 16px);
+  line-height: 1.38;
+  overflow-wrap: anywhere;
+}
+
+.rootHeroMetrics {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rootHeroMetrics span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.rootHeroMetrics small {
+  color: var(--dim);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rootHeroMetrics strong {
+  color: var(--green);
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1.1;
+  overflow-wrap: break-word;
+}
+
+.rootHeroAction {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+  gap: 12px;
+  align-items: center;
+}
+
+.rootHeroReceipt {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 780;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+
+.runButton {
+  padding: 0 18px;
+}
+
+.complianceAuthorityCard {
+  justify-items: center;
+  min-height: clamp(134px, 20dvh, 174px);
+  padding: clamp(16px, 1.3vw, 22px);
+  text-align: center;
+}
+
+.complianceAuthorityIcon {
+  width: clamp(58px, 7dvh, 72px);
+  height: clamp(58px, 7dvh, 72px);
+  border-radius: 22px;
+}
+
+.complianceAuthorityTitle {
+  font-size: 18px;
+}
+
+.technicalDrawer {
+  overflow: hidden;
+}
+
+.technicalDrawer summary {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 54px;
+  padding: 0 18px;
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;
+}
+
+.technicalDrawer summary::-webkit-details-marker {
+  display: none;
+}
+
+.technicalDrawer summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.technicalDrawer summary small {
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.technicalGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 18px 18px;
+}
+
+.technicalRow {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.technicalRow small {
+  color: var(--dim);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.technicalRow strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.25;
+  overflow-wrap: break-word;
+}
+
+.boundaryFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 10px 12px;
+}
+
+.boundaryFooter span {
+  padding: 8px 10px;
+  border: 1px solid rgba(49, 239, 155, 0.18);
+  border-radius: 999px;
+  color: var(--green);
+  background: rgba(49, 239, 155, 0.055);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1180px) {
+  .shell {
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .showroomDeck {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .rootHero {
+    grid-row: 1;
+    min-height: 620px;
+  }
+
+  .evidenceRail,
+  .complianceRail {
+    min-height: 360px;
+    max-height: none;
+  }
+
+  .evidenceList,
+  .complianceStack {
+    max-height: 420px;
+  }
+
+  .technicalGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .topBar {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .topStatus,
+  .topAction {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 720px) {
+  .root {
+    padding: 12px;
+  }
+
+  .rootHero {
+    min-height: 560px;
+    padding: 18px;
+    grid-template-rows: auto minmax(260px, 1fr) auto auto;
+  }
+
+  .rootHeroMetrics,
+  .rootHeroAction,
+  .technicalGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .rootHalo {
+    width: min(100%, 340px);
+    min-width: 240px;
+    border-width: 8px;
+  }
+
+  .rootOrbitTop {
+    top: -28px;
+    width: 56px;
+    height: 56px;
+    border-width: 4px;
+  }
+
+  .rootOrbitLine {
+    top: 24px;
+    height: 76px;
+  }
+
+  .evidenceRail,
+  .complianceRail {
+    min-height: auto;
+  }
+
+  .evidenceList,
+  .complianceStack {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .topBrand strong {
+    white-space: normal;
+  }
+}
+
+/* === WILSY R18E RECEIPT CONTRACT POLISH BEGIN === */
+/*
+ * @section R18E receipt-contract polish
+ * @description Visual treatment for R18D/R18C5 safe snapshot receipt-contract mode.
+ * @collaboration Makes REVIEW_REQUIRED, safe-window receipts, POPIA/GDPR/SOC2/WORM bindings, and receipt Merkle authority feel deliberate instead of pending or broken.
+ */
+
+.root {
+  --receipt-review: #ee6174;
+  --receipt-review-soft: rgba(238, 97, 116, 0.14);
+  --receipt-review-line: rgba(238, 97, 116, 0.46);
+  --receipt-gold-soft: rgba(255, 211, 109, 0.14);
+  --receipt-card: rgba(255, 255, 255, 0.052);
+  --receipt-card-strong: rgba(255, 255, 255, 0.078);
+  --deck-height: clamp(690px, calc(100dvh - 126px), 860px);
+}
+
+.showroomDeck {
+  grid-template-columns: minmax(280px, 0.78fr) minmax(540px, 1.62fr) minmax(330px, 0.92fr);
+}
+
+.topBar {
+  border-color: rgba(255, 233, 166, 0.16);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 211, 109, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.064), rgba(255, 255, 255, 0.024)),
+    rgba(10, 10, 10, 0.9);
+}
+
+.topBrand small {
+  color: rgba(255, 247, 223, 0.74);
+  letter-spacing: 0.01em;
+}
+
+.topStatus {
+  border-color: rgba(49, 239, 155, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 42px rgba(49, 239, 155, 0.1);
+}
+
+.evidenceRail,
+.complianceRail {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 211, 109, 0.055), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018)),
+    var(--surface);
+}
+
+.evidenceItem {
+  background:
+    linear-gradient(180deg, var(--receipt-card), rgba(255, 255, 255, 0.03));
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.evidenceItem:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 211, 109, 0.3);
+}
+
+.evidenceItemActive {
+  border-color: var(--receipt-review-line);
+  background:
+    linear-gradient(90deg, var(--receipt-review-soft), rgba(255, 211, 109, 0.055)),
+    rgba(255, 255, 255, 0.045);
+  box-shadow:
+    inset 4px 0 0 var(--receipt-review),
+    0 18px 52px rgba(238, 97, 116, 0.11);
+}
+
+.evidenceItemActive .evidenceItemIcon {
+  border-color: rgba(238, 97, 116, 0.46);
+  color: #ffd4dc;
+  background: rgba(238, 97, 116, 0.12);
+}
+
+.evidenceItemTitle {
+  letter-spacing: 0.015em;
+}
+
+.evidenceItemMeta {
+  color: rgba(255, 247, 223, 0.62);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+}
+
+.rootHero {
+  border-color: rgba(255, 211, 109, 0.24);
+  background:
+    radial-gradient(circle at 50% 38%, rgba(238, 97, 116, 0.09), transparent 30%),
+    radial-gradient(circle at 50% 44%, rgba(255, 211, 109, 0.1), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.058), rgba(255, 255, 255, 0.018)),
+    var(--surface-strong);
+}
+
+.rootHeroCopy {
+  color: rgba(255, 247, 223, 0.72);
+  font-weight: 820;
+}
+
+.rootHaloReview {
+  border-color: rgba(238, 97, 116, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(238, 97, 116, 0.22),
+    0 0 58px rgba(238, 97, 116, 0.19),
+    inset 0 0 64px rgba(238, 97, 116, 0.06),
+    inset 0 0 54px rgba(0, 0, 0, 0.3);
+}
+
+.rootHaloReview .rootOrbitTop {
+  border-color: rgba(255, 233, 166, 0.96);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.42),
+    0 0 34px rgba(238, 97, 116, 0.22);
+}
+
+.rootCore {
+  border-color: rgba(255, 233, 166, 0.34);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 211, 109, 0.08), transparent 44%),
+    rgba(8, 8, 8, 0.86);
+}
+
+.rootHeroMetrics span {
+  background:
+    linear-gradient(180deg, var(--receipt-card-strong), rgba(255, 255, 255, 0.032));
+}
+
+.rootHeroMetrics strong {
+  color: var(--green);
+  text-shadow: 0 0 18px rgba(49, 239, 155, 0.16);
+}
+
+.rootHeroReceipt {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 211, 109, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 211, 109, 0.045);
+}
+
+.complianceStack {
+  gap: 14px;
+}
+
+.complianceAuthorityCard {
+  min-height: clamp(150px, 19dvh, 192px);
+  border-color: rgba(255, 233, 166, 0.14);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 211, 109, 0.07), transparent 46%),
+    linear-gradient(180deg, var(--receipt-card), rgba(255, 255, 255, 0.028));
+}
+
+.complianceAuthorityCard:nth-child(2) {
+  border-color: var(--receipt-review-line);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(238, 97, 116, 0.12), transparent 46%),
+    linear-gradient(180deg, rgba(255, 211, 109, 0.075), rgba(255, 255, 255, 0.026));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 22px 64px rgba(238, 97, 116, 0.09);
+}
+
+.complianceAuthorityCard:nth-child(2) .complianceAuthorityIcon {
+  border-color: rgba(238, 97, 116, 0.42);
+  color: #ffd4dc;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(238, 97, 116, 0.2), rgba(255, 211, 109, 0.07));
+}
+
+.complianceAuthorityCopy {
+  justify-items: center;
+  width: 100%;
+}
+
+.complianceAuthorityTitle {
+  max-width: 280px;
+  font-size: clamp(18px, 1.35vw, 23px);
+  letter-spacing: -0.035em;
+}
+
+.complianceAuthorityMeta {
+  max-width: 292px;
+  margin-inline: auto;
+  color: rgba(255, 247, 223, 0.7);
+  font-size: clamp(12px, 0.86vw, 14px);
+  font-weight: 720;
+  line-height: 1.48;
+  text-wrap: balance;
+}
+
+.complianceAuthorityCard:nth-child(2) .complianceAuthorityMeta {
+  color: rgba(255, 247, 223, 0.78);
+  font-weight: 800;
+}
+
+.technicalDrawer {
+  border-color: rgba(255, 233, 166, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+    rgba(13, 13, 13, 0.88);
+}
+
+.technicalRow {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.024));
+}
+
+.boundaryFooter {
+  border-color: rgba(49, 239, 155, 0.13);
+}
+
+.boundaryFooter::after {
+  content: "R18E RECEIPT-CONTRACT VIEW";
+  color: rgba(255, 211, 109, 0.42);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+}
+
+@media (max-width: 1280px) {
+  .showroomDeck {
+    grid-template-columns: minmax(260px, 0.82fr) minmax(500px, 1.55fr) minmax(310px, 0.94fr);
+  }
+
+  .complianceAuthorityMeta {
+    max-width: 260px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .showroomDeck {
+    grid-template-columns: 1fr;
+  }
+
+  .complianceAuthorityCard {
+    min-height: 140px;
+  }
+
+  .complianceAuthorityMeta {
+    max-width: 620px;
+  }
+}
+
+@media (max-width: 720px) {
+  .root {
+    --deck-height: auto;
+  }
+
+  .rootHeroReceipt {
+    align-items: flex-start;
+  }
+
+  .complianceAuthorityMeta {
+    max-width: 100%;
+    font-size: 12px;
+  }
+
+  .boundaryFooter::after {
+    flex-basis: 100%;
+    text-align: center;
+  }
+}
+/* === WILSY R18E RECEIPT CONTRACT POLISH END === */
+
+/* === WILSY R18F RIGHT RAIL RECEIPT FIT BEGIN === */
+/*
+ * @section R18F right-rail receipt fit
+ * @description Fixes compliance receipt card overflow after R18D/R18E receipt-contract wiring.
+ * @collaboration Keeps receipt-contract text readable while preserving the three-zone executive forensic showroom.
+ */
+
+.root {
+  --deck-height: clamp(720px, calc(100dvh - 122px), 900px);
+}
+
+.showroomDeck {
+  grid-template-columns: minmax(280px, 0.78fr) minmax(540px, 1.55fr) minmax(350px, 0.96fr);
+}
+
+.complianceRail {
+  gap: 12px;
+  padding: 16px;
+}
+
+.complianceStack {
+  display: grid;
+  grid-template-rows: minmax(140px, 0.88fr) minmax(220px, 1.34fr) minmax(150px, 0.96fr);
+  gap: 12px;
+  overflow: hidden;
+  padding-right: 0;
+}
+
+.complianceAuthorityCard {
+  align-content: center;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  padding: 14px 16px;
+  overflow: hidden;
+}
+
+.complianceAuthorityCard:nth-child(1) {
+  min-height: 140px;
+}
+
+.complianceAuthorityCard:nth-child(2) {
+  min-height: 220px;
+  padding: 16px 18px 18px;
+}
+
+.complianceAuthorityCard:nth-child(3) {
+  min-height: 150px;
+}
+
+.complianceAuthorityIcon {
+  width: clamp(52px, 6dvh, 66px);
+  height: clamp(52px, 6dvh, 66px);
+  border-radius: 20px;
+}
+
+.complianceAuthorityCopy {
+  align-content: center;
+  gap: 7px;
+  min-height: 0;
+}
+
+.complianceAuthorityLabel {
+  line-height: 1.15;
+}
+
+.complianceAuthorityTitle {
+  max-width: 300px;
+  font-size: clamp(18px, 1.22vw, 22px);
+  line-height: 1.08;
+}
+
+.complianceAuthorityMeta {
+  display: block;
+  max-width: 310px;
+  color: rgba(255, 247, 223, 0.74);
+  font-size: clamp(11px, 0.76vw, 13px);
+  font-weight: 760;
+  line-height: 1.36;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.complianceAuthorityCard:nth-child(2) .complianceAuthorityMeta {
+  max-width: 306px;
+  color: rgba(255, 247, 223, 0.84);
+  font-size: clamp(11px, 0.74vw, 12px);
+  font-weight: 850;
+  line-height: 1.34;
+}
+
+.complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+  max-width: 300px;
+  font-size: clamp(11px, 0.74vw, 12px);
+  line-height: 1.35;
+}
+
+.rootHero {
+  grid-template-rows: auto minmax(300px, 1fr) auto auto;
+}
+
+.rootHalo {
+  width: min(100%, 520px, 54dvh);
+}
+
+.rootHeroAction {
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 250px);
+}
+
+.boundaryFooter {
+  position: relative;
+  z-index: 2;
+  min-height: 54px;
+  overflow: hidden;
+}
+
+.boundaryFooter::after {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 211, 109, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 211, 109, 0.035);
+}
+
+@media (max-width: 1380px) {
+  .showroomDeck {
+    grid-template-columns: minmax(270px, 0.8fr) minmax(500px, 1.46fr) minmax(340px, 0.98fr);
+  }
+
+  .complianceAuthorityCard:nth-child(2) .complianceAuthorityMeta {
+    font-size: 11px;
+    line-height: 1.32;
+  }
+}
+
+@media (max-width: 1180px) {
+  .root {
+    --deck-height: auto;
+  }
+
+  .complianceStack {
+    grid-template-rows: none;
+    overflow: visible;
+  }
+
+  .complianceAuthorityCard,
+  .complianceAuthorityCard:nth-child(1),
+  .complianceAuthorityCard:nth-child(2),
+  .complianceAuthorityCard:nth-child(3) {
+    height: auto;
+    min-height: 138px;
+  }
+
+  .complianceAuthorityMeta,
+  .complianceAuthorityCard:nth-child(2) .complianceAuthorityMeta,
+  .complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+    max-width: 680px;
+    font-size: 12px;
+    line-height: 1.42;
+  }
+}
+
+@media (max-width: 720px) {
+  .complianceRail {
+    padding: 14px;
+  }
+
+  .complianceAuthorityCard {
+    padding: 15px;
+  }
+
+  .complianceAuthorityCard:nth-child(2) {
+    min-height: 190px;
+  }
+
+  .complianceAuthorityMeta,
+  .complianceAuthorityCard:nth-child(2) .complianceAuthorityMeta,
+  .complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+    max-width: 100%;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+}
+/* === WILSY R18F RIGHT RAIL RECEIPT FIT END === */
+
+/* === WILSY R18G BOTTOM SAFE ZONE BEGIN === */
+/*
+ * @section R18G bottom safe zone
+ * @description Adds breathing room below the R18D/R18E/R18F receipt-contract command deck.
+ * @collaboration Prevents action bars, compliance cards and legal-standard watermark from crowding the viewport bottom.
+ */
+
+.root {
+  --deck-height: clamp(680px, calc(100dvh - 168px), 840px);
+  padding-bottom: clamp(28px, 3.4dvh, 52px);
+}
+
+.shell {
+  min-height: auto;
+  padding-bottom: clamp(18px, 2.2dvh, 34px);
+}
+
+.showroomDeck {
+  margin-bottom: clamp(12px, 1.4dvh, 24px);
+}
+
+.rootHero {
+  padding-bottom: clamp(22px, 2.2dvh, 34px);
+}
+
+.rootHeroAction {
+  align-self: end;
+  margin-bottom: clamp(8px, 1.2dvh, 18px);
+}
+
+.rootHeroReceipt {
+  min-height: 48px;
+}
+
+.complianceRail {
+  padding-bottom: clamp(18px, 2dvh, 30px);
+}
+
+.complianceStack {
+  padding-bottom: 6px;
+}
+
+.complianceAuthorityCard:nth-child(3) {
+  margin-bottom: 4px;
+}
+
+.boundaryFooter {
+  margin-top: clamp(8px, 1.2dvh, 18px);
+  margin-bottom: clamp(10px, 1.8dvh, 28px);
+}
+
+@media (max-width: 1180px) {
+  .root {
+    --deck-height: auto;
+    padding-bottom: 32px;
+  }
+
+  .showroomDeck {
+    margin-bottom: 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  .root {
+    padding-bottom: 26px;
+  }
+
+  .rootHeroAction {
+    margin-bottom: 10px;
+  }
+
+  .boundaryFooter {
+    margin-bottom: 18px;
+  }
+}
+/* === WILSY R18G BOTTOM SAFE ZONE END === */
+
+/* === WILSY R18I COMMAND LAYER + ROOT PRECISION BEGIN === */
+/*
+ * @section R18I command layer and root precision
+ * @description Makes the forensic command product layer visible and reduces sovereign root halo overlap.
+ * @collaboration Turns R18H command exports into visible operator actions while keeping backend Merkle authority untouched.
+ */
+
+.root {
+  --deck-height: clamp(610px, calc(100dvh - 218px), 760px);
+}
+
+.shell {
+  grid-template-rows: auto auto minmax(0, var(--deck-height)) auto auto;
+  gap: clamp(10px, 0.82vw, 16px);
+}
+
+.topBar {
+  grid-row: 1;
+}
+
+.commandLayer {
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.76fr) minmax(0, 1.62fr) minmax(300px, 0.9fr);
+  gap: clamp(10px, 0.82vw, 16px);
+  align-items: stretch;
+  min-height: 112px;
+  padding: 12px;
+  border: 1px solid rgba(255, 233, 166, 0.16);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(238, 97, 116, 0.11), transparent 30%),
+    radial-gradient(circle at 78% 0%, rgba(255, 211, 109, 0.1), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.02)),
+    rgba(10, 10, 10, 0.88);
+  box-shadow:
+    0 22px 72px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.commandHeader {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 233, 166, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.commandHeader span {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.commandHeader small {
+  color: var(--dim);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.commandHeader strong {
+  color: var(--gold);
+  font-size: clamp(15px, 1.1vw, 20px);
+  font-weight: 950;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.commandHeader em {
+  color: rgba(255, 247, 223, 0.72);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 780;
+  line-height: 1.34;
+  overflow-wrap: anywhere;
+}
+
+.commandGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.commandButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 211, 109, 0.22);
+  border-radius: 14px;
+  color: var(--text);
+  background:
+    linear-gradient(180deg, rgba(255, 211, 109, 0.11), rgba(255, 255, 255, 0.035));
+  cursor: pointer;
+  font-size: clamp(10px, 0.72vw, 12px);
+  font-weight: 950;
+  line-height: 1.12;
+  letter-spacing: 0.035em;
+  text-align: center;
+  text-transform: uppercase;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.commandButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 211, 109, 0.44);
+  background:
+    linear-gradient(180deg, rgba(255, 211, 109, 0.18), rgba(255, 255, 255, 0.04));
+}
+
+.commandButton:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.receiptDrilldown {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px;
+  border: 1px solid rgba(238, 97, 116, 0.26);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(238, 97, 116, 0.12), transparent 48%),
+    rgba(255, 255, 255, 0.032);
+  overflow: hidden;
+}
+
+.receiptSelector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.receiptSelectorButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 1px solid rgba(255, 211, 109, 0.2);
+  border-radius: 10px;
+  color: rgba(255, 247, 223, 0.78);
+  background: rgba(255, 255, 255, 0.035);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.receiptSelectorButtonActive {
+  border-color: rgba(238, 97, 116, 0.52);
+  color: #ffd4dc;
+  background: rgba(238, 97, 116, 0.13);
+}
+
+.receiptDrilldownGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+}
+
+.receiptDrilldownGrid span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 6px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.028);
+}
+
+.receiptDrilldownGrid small {
+  color: var(--dim);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.receiptDrilldownGrid strong {
+  color: rgba(255, 247, 223, 0.86);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 850;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+
+.showroomDeck {
+  grid-row: 3;
+  height: var(--deck-height);
+}
+
+.rootHero {
+  grid-template-rows: auto minmax(230px, 1fr) auto auto;
+  gap: 10px;
+}
+
+.rootHeroHeader {
+  gap: 5px;
+}
+
+.rootHeroTitle {
+  font-size: clamp(30px, 2.25vw, 46px);
+}
+
+.rootHeroCopy {
+  max-width: 560px;
+  font-size: 13px;
+}
+
+.rootHalo {
+  width: min(100%, 410px, 39dvh);
+  min-width: 250px;
+  margin-top: clamp(12px, 1.6dvh, 24px);
+  border-width: clamp(7px, 0.62vw, 10px);
+}
+
+.rootOrbitTop {
+  top: clamp(-30px, -2.8dvh, -22px);
+  width: clamp(50px, 5.1dvh, 62px);
+  height: clamp(50px, 5.1dvh, 62px);
+  border-width: 4px;
+}
+
+.rootOrbitLine {
+  top: 26px;
+  height: min(84px, 9dvh);
+}
+
+.rootCore {
+  width: min(76%, 330px);
+  padding: clamp(14px, 1.2vw, 20px);
+}
+
+.rootCore code {
+  font-size: clamp(11px, 0.82vw, 14px);
+  line-height: 1.32;
+}
+
+.rootHeroMetrics span {
+  padding: 9px 11px;
+}
+
+.rootHeroAction {
+  margin-bottom: 0;
+}
+
+.technicalDrawer {
+  grid-row: 4;
+}
+
+.boundaryFooter {
+  grid-row: 5;
+}
+
+@media (max-width: 1380px) {
+  .commandLayer {
+    grid-template-columns: 1fr;
+  }
+
+  .commandGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .receiptDrilldownGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .rootHalo {
+    width: min(100%, 390px, 37dvh);
+  }
+}
+
+@media (max-width: 1180px) {
+  .shell {
+    grid-template-rows: auto auto auto auto auto;
+  }
+
+  .commandLayer,
+  .showroomDeck,
+  .technicalDrawer,
+  .boundaryFooter {
+    grid-row: auto;
+  }
+
+  .commandGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .receiptDrilldownGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rootHalo {
+    width: min(100%, 380px);
+  }
+}
+
+@media (max-width: 720px) {
+  .commandLayer {
+    padding: 10px;
+  }
+
+  .commandGrid,
+  .receiptSelector,
+  .receiptDrilldownGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .rootHalo {
+    width: min(100%, 320px);
+    min-width: 230px;
+  }
+}
+/* === WILSY R18I COMMAND LAYER + ROOT PRECISION END === */
+
+/* === WILSY R18J ONE-SCREEN COMMAND CENTER BEGIN === */
+/*
+ * @section R18J one-screen command center
+ * @description Fits the R18H forensic command layer and R18D receipt proof deck inside one executive viewport.
+ * @collaboration Preserves receipt drilldown, regulator pack, export, review explain, full proof and seal-window commands without clipping the hero bottom.
+ */
+
+.root {
+  --deck-height: clamp(500px, calc(100dvh - 292px), 640px);
+  min-height: 100dvh;
+  overflow-y: auto;
+  padding-top: 10px;
+  padding-bottom: 12px;
+}
+
+.shell {
+  grid-template-rows: auto auto minmax(0, var(--deck-height));
+  gap: 10px;
+  min-height: auto;
+  padding-bottom: 0;
+}
+
+.topBar {
+  min-height: 64px;
+  padding: 10px 16px;
+}
+
+.topBrand strong {
+  font-size: clamp(22px, 1.72vw, 32px);
+}
+
+.topBrand small {
+  font-size: 12px;
+}
+
+.topStatus,
+.topAction {
+  min-height: 38px;
+}
+
+.commandLayer {
+  min-height: 92px;
+  max-height: 132px;
+  padding: 8px;
+  grid-template-columns: minmax(240px, 0.82fr) minmax(420px, 1.72fr) minmax(380px, 1.14fr);
+  gap: 8px;
+}
+
+.commandHeader {
+  padding: 9px 11px;
+  border-radius: 16px;
+}
+
+.commandHeader strong {
+  font-size: clamp(14px, 0.95vw, 18px);
+}
+
+.commandHeader em {
+  font-size: 11px;
+  line-height: 1.22;
+}
+
+.commandGrid {
+  gap: 7px;
+}
+
+.commandButton {
+  min-height: 56px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  font-size: clamp(9px, 0.62vw, 11px);
+  line-height: 1.08;
+}
+
+.receiptDrilldown {
+  grid-template-rows: 28px minmax(0, 1fr);
+  gap: 6px;
+  padding: 8px;
+  max-height: 116px;
+}
+
+.receiptSelector {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.receiptSelectorButton {
+  min-height: 26px;
+  padding: 4px 6px;
+  font-size: 9px;
+}
+
+.receiptDrilldownGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.receiptDrilldownGrid span {
+  padding: 5px 6px;
+  border-radius: 9px;
+}
+
+.receiptDrilldownGrid small {
+  font-size: 7px;
+}
+
+.receiptDrilldownGrid strong {
+  font-size: 8px;
+  line-height: 1.14;
+}
+
+.showroomDeck {
+  height: var(--deck-height);
+  margin-bottom: 0;
+  grid-template-columns: minmax(260px, 0.82fr) minmax(460px, 1.46fr) minmax(320px, 0.96fr);
+  gap: 10px;
+}
+
+.evidenceRail,
+.complianceRail {
+  padding: 14px;
+  gap: 10px;
+}
+
+.railHeader {
+  min-height: 46px;
+}
+
+.railHeader h2 {
+  font-size: clamp(19px, 1.24vw, 25px);
+}
+
+.railHeader small {
+  font-size: 10px;
+}
+
+.evidenceList {
+  gap: 10px;
+}
+
+.evidenceItem {
+  min-height: 68px;
+  padding: 10px;
+  grid-template-columns: 38px minmax(0, 1fr);
+}
+
+.evidenceItemIcon {
+  width: 38px;
+  height: 38px;
+}
+
+.evidenceItemTitle {
+  font-size: 14px;
+}
+
+.rootHero {
+  grid-template-rows: auto minmax(210px, 1fr) auto auto;
+  gap: 8px;
+  padding: clamp(14px, 1.1vw, 20px);
+}
+
+.rootHeroHeader {
+  gap: 4px;
+}
+
+.rootHeroEyebrow {
+  font-size: 10px;
+}
+
+.rootHeroTitle {
+  font-size: clamp(28px, 2vw, 42px);
+}
+
+.rootHeroCopy {
+  max-width: 520px;
+  font-size: 12px;
+  line-height: 1.24;
+}
+
+.rootHalo {
+  width: min(100%, 360px, 34dvh);
+  min-width: 230px;
+  margin-top: 18px;
+  border-width: 7px;
+}
+
+.rootOrbitTop {
+  top: -24px;
+  width: 50px;
+  height: 50px;
+  border-width: 4px;
+}
+
+.rootOrbitLine {
+  top: 24px;
+  height: min(70px, 7.4dvh);
+}
+
+.rootCore {
+  width: min(76%, 300px);
+  padding: 13px 15px;
+  border-radius: 18px;
+}
+
+.rootCore small {
+  font-size: 10px;
+}
+
+.rootCore code {
+  font-size: clamp(10px, 0.72vw, 12px);
+  line-height: 1.26;
+}
+
+.rootHeroMetrics {
+  gap: 8px;
+}
+
+.rootHeroMetrics span {
+  padding: 8px 10px;
+  border-radius: 14px;
+}
+
+.rootHeroMetrics small {
+  font-size: 8px;
+}
+
+.rootHeroMetrics strong {
+  font-size: 16px;
+}
+
+.rootHeroAction {
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 220px);
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.rootHeroReceipt {
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.runButton {
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.complianceStack {
+  grid-template-rows: minmax(120px, 0.86fr) minmax(178px, 1.24fr) minmax(128px, 0.9fr);
+  gap: 10px;
+}
+
+.complianceAuthorityCard {
+  padding: 12px 14px;
+}
+
+.complianceAuthorityCard:nth-child(1) {
+  min-height: 120px;
+}
+
+.complianceAuthorityCard:nth-child(2) {
+  min-height: 178px;
+  padding: 13px 14px 14px;
+}
+
+.complianceAuthorityCard:nth-child(3) {
+  min-height: 128px;
+}
+
+.complianceAuthorityIcon {
+  width: clamp(46px, 5dvh, 58px);
+  height: clamp(46px, 5dvh, 58px);
+  border-radius: 17px;
+}
+
+.complianceAuthorityLabel {
+  font-size: 9px;
+}
+
+.complianceAuthorityTitle {
+  max-width: 286px;
+  font-size: clamp(16px, 1.05vw, 20px);
+}
+
+.complianceAuthorityMeta,
+.complianceAuthorityCard:nth-child(2) .complianceAuthorityMeta,
+.complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+  max-width: 300px;
+  font-size: clamp(10px, 0.68vw, 11px);
+  line-height: 1.28;
+}
+
+.technicalDrawer,
+.boundaryFooter {
+  display: none;
+}
+
+@media (max-width: 1380px) {
+  .root {
+    --deck-height: clamp(520px, calc(100dvh - 306px), 650px);
+  }
+
+  .commandLayer {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+
+  .showroomDeck {
+    grid-template-columns: minmax(245px, 0.82fr) minmax(430px, 1.36fr) minmax(310px, 0.98fr);
+  }
+}
+
+@media (max-width: 1180px) {
+  .root {
+    --deck-height: auto;
+    overflow-y: auto;
+  }
+
+  .shell {
+    grid-template-rows: auto auto auto;
+  }
+
+  .commandLayer {
+    max-height: none;
+  }
+
+  .showroomDeck {
+    height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .technicalDrawer,
+  .boundaryFooter {
+    display: block;
+  }
+}
+
+@media (max-width: 720px) {
+  .commandGrid,
+  .receiptSelector,
+  .receiptDrilldownGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .receiptDrilldown {
+    max-height: none;
+  }
+
+  .rootHalo {
+    width: min(100%, 300px);
+    min-width: 220px;
+  }
+}
+/* === WILSY R18J ONE-SCREEN COMMAND CENTER END === */
+
+/* === WILSY R18K PRECISION FIT BEGIN === */
+/*
+ * @section R18K precision fit
+ * @description Removes bottom clipping from command receipt drilldown and compliance receipt rail.
+ * @collaboration Keeps the R18H command layer visible while preserving a single executive proof viewport.
+ */
+
+.root {
+  --deck-height: clamp(500px, calc(100dvh - 286px), 635px);
+}
+
+.commandLayer {
+  min-height: 104px;
+  max-height: 148px;
+  grid-template-columns: minmax(250px, 0.78fr) minmax(450px, 1.38fr) minmax(500px, 1.42fr);
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.commandHeader {
+  min-height: 88px;
+}
+
+.commandGrid {
+  grid-template-columns: repeat(5, minmax(92px, 1fr));
+  min-height: 88px;
+}
+
+.commandButton {
+  min-height: 64px;
+  padding: 8px 9px;
+}
+
+.receiptDrilldown {
+  grid-template-rows: 30px minmax(52px, 1fr);
+  max-height: none;
+  min-height: 88px;
+  overflow: hidden;
+}
+
+.receiptSelector {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.receiptSelectorButton {
+  min-height: 28px;
+}
+
+.receiptDrilldownGrid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: stretch;
+  min-height: 52px;
+  overflow: hidden;
+}
+
+.receiptDrilldownGrid span {
+  align-content: center;
+  min-height: 50px;
+  padding: 5px 6px;
+}
+
+.receiptDrilldownGrid small {
+  font-size: 7px;
+  line-height: 1;
+}
+
+.receiptDrilldownGrid strong {
+  display: -webkit-box;
+  max-height: 30px;
+  font-size: 8px;
+  line-height: 1.18;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.showroomDeck {
+  grid-template-columns: minmax(270px, 0.82fr) minmax(480px, 1.42fr) minmax(340px, 0.98fr);
+}
+
+.complianceRail {
+  overflow: hidden;
+  padding-bottom: 12px;
+}
+
+.complianceRail::after {
+  display: none !important;
+  content: none !important;
+}
+
+.complianceStack {
+  grid-template-rows: minmax(110px, 0.78fr) minmax(160px, 1.12fr) minmax(112px, 0.8fr);
+  gap: 9px;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+.complianceAuthorityCard {
+  align-content: center;
+  min-height: 0 !important;
+  height: 100%;
+  padding: 10px 12px;
+}
+
+.complianceAuthorityCard:nth-child(1),
+.complianceAuthorityCard:nth-child(2),
+.complianceAuthorityCard:nth-child(3) {
+  min-height: 0 !important;
+}
+
+.complianceAuthorityIcon {
+  width: clamp(42px, 4.4dvh, 54px);
+  height: clamp(42px, 4.4dvh, 54px);
+  border-radius: 16px;
+}
+
+.complianceAuthorityCopy {
+  gap: 5px;
+}
+
+.complianceAuthorityLabel {
+  font-size: 8px;
+  line-height: 1.08;
+}
+
+.complianceAuthorityTitle {
+  font-size: clamp(15px, 0.96vw, 18px);
+  line-height: 1.06;
+}
+
+.complianceAuthorityMeta,
+.complianceAuthorityCard:nth-child(2) .complianceAuthorityMeta,
+.complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+  max-width: 294px;
+  font-size: clamp(9px, 0.62vw, 10.5px);
+  line-height: 1.24;
+}
+
+.complianceAuthorityCard:nth-child(3) .complianceAuthorityTitle {
+  font-size: clamp(14px, 0.92vw, 17px);
+}
+
+.complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+  display: -webkit-box;
+  max-height: 36px;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.rootHalo {
+  width: min(100%, 350px, 33dvh);
+  min-width: 224px;
+}
+
+.rootHero {
+  grid-template-rows: auto minmax(200px, 1fr) auto auto;
+}
+
+.rootHeroMetrics span {
+  padding: 7px 9px;
+}
+
+.rootHeroReceipt {
+  min-height: 38px;
+}
+
+.runButton {
+  min-height: 38px;
+}
+
+@media (max-width: 1500px) {
+  .commandLayer {
+    grid-template-columns: minmax(230px, 0.76fr) minmax(400px, 1.24fr) minmax(470px, 1.44fr);
+  }
+
+  .receiptDrilldownGrid strong {
+    font-size: 7.5px;
+  }
+}
+
+@media (max-width: 1380px) {
+  .commandLayer {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+
+  .commandGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .receiptDrilldown {
+    min-height: 118px;
+  }
+
+  .receiptDrilldownGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .receiptDrilldownGrid strong {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .complianceStack {
+    grid-template-rows: none;
+    overflow: visible;
+  }
+
+  .complianceAuthorityCard {
+    height: auto;
+    min-height: 126px !important;
+  }
+
+  .complianceAuthorityMeta,
+  .complianceAuthorityCard:nth-child(2) .complianceAuthorityMeta,
+  .complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+    max-width: 680px;
+    font-size: 12px;
+    line-height: 1.38;
+  }
+
+  .complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+    display: block;
+    max-height: none;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+  }
+}
+
+@media (max-width: 720px) {
+  .commandGrid,
+  .receiptSelector,
+  .receiptDrilldownGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .receiptDrilldown {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .receiptDrilldownGrid strong {
+    display: block;
+    max-height: none;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+  }
+}
+/* === WILSY R18K PRECISION FIT END === */
+
+/* === WILSY R18L COMPLIANCE SCROLL CHAMBER BEGIN === */
+/*
+ * @section R18L compliance scroll chamber
+ * @description Makes the Compliance Receipts rail internally scrollable so authority, policy and append-only cards remain accessible inside the fixed executive viewport.
+ * @collaboration Preserves the one-screen forensic command center while preventing right-rail proof cards from clipping at the bottom edge.
+ */
+
+.complianceRail {
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  padding-bottom: 14px;
+}
+
+.complianceStack {
+  display: grid;
+  grid-template-rows: none;
+  grid-auto-rows: minmax(172px, auto);
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 0 6px 22px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 211, 109, 0.42) rgba(255, 255, 255, 0.045);
+}
+
+.complianceStack::-webkit-scrollbar {
+  width: 8px;
+}
+
+.complianceStack::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.complianceStack::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 211, 109, 0.58), rgba(238, 97, 116, 0.42));
+}
+
+.complianceAuthorityCard,
+.complianceAuthorityCard:nth-child(1),
+.complianceAuthorityCard:nth-child(2),
+.complianceAuthorityCard:nth-child(3) {
+  min-height: 172px !important;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.complianceAuthorityCard:nth-child(2) {
+  min-height: 206px !important;
+}
+
+.complianceAuthorityCard:nth-child(3) {
+  min-height: 188px !important;
+  margin-bottom: 10px;
+}
+
+.complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+  display: block;
+  max-height: none;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.complianceRail::before {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  z-index: 3;
+  width: 42%;
+  height: 52px;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(180deg, rgba(18, 18, 18, 0), rgba(18, 18, 18, 0.88));
+  border-bottom-right-radius: var(--radius);
+}
+
+@media (max-width: 1180px) {
+  .complianceStack {
+    overflow: visible;
+    height: auto;
+    max-height: none;
+    padding-right: 0;
+    padding-bottom: 0;
+  }
+
+  .complianceRail::before {
+    display: none;
+  }
+}
+/* === WILSY R18L COMPLIANCE SCROLL CHAMBER END === */
+
+/* === WILSY R18M PREMIUM COMPLIANCE LEDGER BEGIN === */
+/*
+ * @section R18M premium compliance ledger
+ * @description Rebuilds the Compliance Receipts rail as a clean internal evidence ledger with no clipping, no card overlap, and no ghost fade collision.
+ * @collaboration Preserves R18H command capability while making POPIA/GDPR/SOC2/WORM receipt authority visually investor-grade.
+ */
+
+.complianceRail {
+  position: relative;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  overflow: hidden;
+  padding: 16px 14px 16px;
+}
+
+.complianceRail::before,
+.complianceRail::after {
+  display: none !important;
+  content: none !important;
+}
+
+.complianceRail .railHeader {
+  position: relative;
+  z-index: 2;
+  min-height: 58px;
+  padding: 2px 4px 8px;
+  border-bottom: 1px solid rgba(255, 233, 166, 0.08);
+}
+
+.complianceRail .railHeader h2 {
+  font-size: clamp(22px, 1.48vw, 30px);
+  letter-spacing: -0.05em;
+}
+
+.complianceRail .railHeader small {
+  color: rgba(255, 247, 223, 0.48);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.complianceStack {
+  display: block !important;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 8px 26px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(238, 97, 116, 0.52) rgba(255, 255, 255, 0.04);
+}
+
+.complianceStack::-webkit-scrollbar {
+  width: 8px;
+}
+
+.complianceStack::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.complianceStack::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 211, 109, 0.62), rgba(238, 97, 116, 0.54));
+}
+
+.complianceAuthorityCard,
+.complianceAuthorityCard:nth-child(1),
+.complianceAuthorityCard:nth-child(2),
+.complianceAuthorityCard:nth-child(3) {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  width: 100%;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 0 14px;
+  overflow: visible !important;
+}
+
+.complianceAuthorityCard {
+  padding: 18px 18px;
+  border-radius: 22px;
+}
+
+.complianceAuthorityCard:nth-child(1) {
+  min-height: 150px !important;
+}
+
+.complianceAuthorityCard:nth-child(2) {
+  min-height: 210px !important;
+  border-color: rgba(238, 97, 116, 0.48);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(238, 97, 116, 0.18), transparent 48%),
+    radial-gradient(circle at 50% 100%, rgba(255, 211, 109, 0.06), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.024));
+}
+
+.complianceAuthorityCard:nth-child(3) {
+  min-height: 180px !important;
+  margin-bottom: 24px;
+}
+
+.complianceAuthorityIcon {
+  width: clamp(52px, 5.2dvh, 64px);
+  height: clamp(52px, 5.2dvh, 64px);
+  margin-bottom: 8px;
+  border-radius: 20px;
+}
+
+.complianceAuthorityCopy {
+  justify-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.complianceAuthorityLabel {
+  color: rgba(255, 247, 223, 0.46);
+  font-size: 10px;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+}
+
+.complianceAuthorityTitle {
+  max-width: 320px;
+  font-size: clamp(18px, 1.18vw, 23px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.complianceAuthorityMeta,
+.complianceAuthorityCard:nth-child(2) .complianceAuthorityMeta,
+.complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+  display: block !important;
+  max-width: 330px;
+  max-height: none !important;
+  color: rgba(255, 247, 223, 0.76);
+  font-size: clamp(11px, 0.74vw, 13px);
+  font-weight: 780;
+  line-height: 1.38;
+  overflow: visible !important;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+}
+
+.complianceAuthorityCard:nth-child(2) .complianceAuthorityMeta {
+  color: rgba(255, 247, 223, 0.86);
+  font-weight: 860;
+}
+
+.complianceAuthorityCard:nth-child(3) .complianceAuthorityTitle {
+  max-width: 310px;
+  font-size: clamp(17px, 1.06vw, 21px);
+}
+
+.complianceAuthorityCard:nth-child(3) .complianceAuthorityMeta {
+  max-width: 320px;
+}
+
+.complianceStack::after {
+  display: block;
+  height: 20px;
+  content: "";
+}
+
+@media (max-width: 1180px) {
+  .complianceRail {
+    overflow: visible;
+  }
+
+  .complianceStack {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+    padding-bottom: 0;
+  }
+
+  .complianceAuthorityCard,
+  .complianceAuthorityCard:nth-child(1),
+  .complianceAuthorityCard:nth-child(2),
+  .complianceAuthorityCard:nth-child(3) {
+    min-height: 150px !important;
+  }
+}
+/* === WILSY R18M PREMIUM COMPLIANCE LEDGER END === */
+
+/* === WILSY R18X SEAL DECISION BOARDROOM SKIN BEGIN === */
+:global([data-wilsy-seal-decision-panel-mounted="R18U"]) {
+  grid-column: 1 / -1 !important;
+  margin: 10px 0 0 !important;
+  padding: 0 !important;
+  border-radius: 24px !important;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(255, 94, 126, 0.18), transparent 32%),
+    radial-gradient(circle at 82% 18%, rgba(255, 216, 127, 0.16), transparent 34%),
+    rgba(8, 8, 7, 0.72) !important;
+  border: 1px solid rgba(255, 217, 145, 0.22) !important;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  overflow: hidden !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"]) {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 0.88fr) minmax(300px, 1.42fr) minmax(240px, 1fr) !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  border: 0 !important;
+  border-radius: 24px !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.035), rgba(255, 94, 126, 0.045), rgba(255, 213, 116, 0.035)) !important;
+  box-shadow: none !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div) {
+  min-height: 104px !important;
+  padding: 13px 14px !important;
+  border-radius: 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.16) !important;
+  backdrop-filter: blur(18px) saturate(1.16) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(1)) {
+  border: 1px solid rgba(255, 213, 116, 0.24) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 213, 116, 0.12), rgba(0, 0, 0, 0.28)) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(2)) {
+  border: 1px solid rgba(255, 94, 126, 0.34) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 94, 126, 0.14), rgba(0, 0, 0, 0.30)) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(3)) {
+  border: 1px solid rgba(32, 245, 164, 0.24) !important;
+  background:
+    linear-gradient(145deg, rgba(32, 245, 164, 0.10), rgba(0, 0, 0, 0.30)) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] span) {
+  font-size: 9px !important;
+  letter-spacing: 0.28em !important;
+  color: rgba(255, 236, 190, 0.60) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] strong) {
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  text-wrap: balance !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(1) strong) {
+  color: #ffe59b !important;
+  font-size: clamp(13px, 0.92vw, 17px) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(2) strong) {
+  color: #fff5dc !important;
+  font-size: clamp(12px, 0.78vw, 14px) !important;
+  line-height: 1.35 !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(3) strong) {
+  color: #20f5a4 !important;
+  font-size: clamp(12px, 0.78vw, 14px) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] small) {
+  color: rgba(255, 255, 255, 0.66) !important;
+  font-size: clamp(10px, 0.64vw, 12px) !important;
+  line-height: 1.42 !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 1280px) {
+  :global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"]) {
+    grid-template-columns: 1fr !important;
+  }
+
+  :global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div) {
+    min-height: 88px !important;
+  }
+}
+/* === WILSY R18X SEAL DECISION BOARDROOM SKIN END === */
+
+/* === WILSY R18Y FLOATING SEAL DECISION HUD BEGIN === */
+:global([data-wilsy-seal-decision-panel-mounted="R18U"]) {
+  position: fixed !important;
+  top: clamp(178px, 19vh, 238px) !important;
+  right: clamp(18px, 2.2vw, 34px) !important;
+  left: auto !important;
+  width: min(520px, calc(100vw - 42px)) !important;
+  max-height: calc(100vh - 230px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 9997 !important;
+  border-radius: 28px !important;
+  overflow: hidden auto !important;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(255, 92, 123, 0.28), transparent 34%),
+    radial-gradient(circle at 88% 16%, rgba(255, 218, 132, 0.22), transparent 38%),
+    rgba(7, 7, 6, 0.88) !important;
+  border: 1px solid rgba(255, 218, 132, 0.24) !important;
+  box-shadow:
+    0 34px 110px rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(255, 255, 255, 0.055) inset,
+    0 0 44px rgba(255, 92, 123, 0.12) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.22) !important;
+  backdrop-filter: blur(26px) saturate(1.22) !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255, 218, 132, 0.5) rgba(255, 255, 255, 0.05) !important;
+}
+
+:global([data-wilsy-seal-decision-panel-mounted="R18U"]::-webkit-scrollbar) {
+  width: 8px !important;
+}
+
+:global([data-wilsy-seal-decision-panel-mounted="R18U"]::-webkit-scrollbar-track) {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+:global([data-wilsy-seal-decision-panel-mounted="R18U"]::-webkit-scrollbar-thumb) {
+  background: rgba(255, 218, 132, 0.48) !important;
+  border-radius: 999px !important;
+}
+
+:global([data-wilsy-seal-decision-panel-mounted="R18U"])::before {
+  content: "BACKEND SEAL DECISION" !important;
+  display: block !important;
+  padding: 14px 16px 0 !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+  letter-spacing: 0.24em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 232, 180, 0.68) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"]) {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 14px !important;
+  border: 0 !important;
+  border-radius: 28px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div) {
+  min-height: auto !important;
+  padding: 14px 15px !important;
+  border-radius: 20px !important;
+  display: grid !important;
+  gap: 6px !important;
+  justify-content: stretch !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.11) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(1)) {
+  border-color: rgba(255, 218, 132, 0.24) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 218, 132, 0.13), rgba(0, 0, 0, 0.22)) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(2)) {
+  border-color: rgba(255, 92, 123, 0.32) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 92, 123, 0.16), rgba(0, 0, 0, 0.28)) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(3)) {
+  border-color: rgba(32, 245, 164, 0.28) !important;
+  background:
+    linear-gradient(145deg, rgba(32, 245, 164, 0.11), rgba(0, 0, 0, 0.26)) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] span) {
+  font-size: 9px !important;
+  letter-spacing: 0.28em !important;
+  color: rgba(255, 236, 190, 0.60) !important;
+  margin: 0 !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] strong) {
+  max-width: 100% !important;
+  color: #fff2cd !important;
+  font-size: clamp(12px, 0.82vw, 15px) !important;
+  line-height: 1.35 !important;
+  overflow-wrap: anywhere !important;
+  text-wrap: balance !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(1) strong) {
+  color: #ffe59b !important;
+  font-size: clamp(13px, 0.95vw, 17px) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(3) strong) {
+  color: #20f5a4 !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] small) {
+  color: rgba(255, 255, 255, 0.66) !important;
+  font-size: clamp(10px, 0.68vw, 12px) !important;
+  line-height: 1.42 !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 980px) {
+  :global([data-wilsy-seal-decision-panel-mounted="R18U"]) {
+    top: 96px !important;
+    right: 14px !important;
+    left: 14px !important;
+    width: auto !important;
+    max-height: calc(100vh - 132px) !important;
+  }
+}
+/* === WILSY R18Y FLOATING SEAL DECISION HUD END === */
+
+/* === WILSY R18Y1 COMPACT SEAL HUD ABOVE FOLD BEGIN === */
+:global([data-wilsy-seal-decision-panel-mounted="R18U"]) {
+  position: fixed !important;
+  top: clamp(92px, 11vh, 132px) !important;
+  right: clamp(14px, 1.6vw, 28px) !important;
+  left: auto !important;
+  width: min(430px, calc(100vw - 34px)) !important;
+  max-height: min(520px, calc(100vh - 116px)) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 9998 !important;
+  border-radius: 22px !important;
+  overflow: hidden auto !important;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(255, 92, 123, 0.22), transparent 32%),
+    radial-gradient(circle at 92% 12%, rgba(255, 218, 132, 0.18), transparent 34%),
+    rgba(7, 7, 6, 0.91) !important;
+  border: 1px solid rgba(255, 218, 132, 0.22) !important;
+  box-shadow:
+    0 28px 88px rgba(0, 0, 0, 0.58),
+    0 0 0 1px rgba(255, 255, 255, 0.055) inset,
+    0 0 34px rgba(255, 92, 123, 0.11) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.18) !important;
+  backdrop-filter: blur(24px) saturate(1.18) !important;
+}
+
+:global([data-wilsy-seal-decision-panel-mounted="R18U"])::before {
+  content: "BACKEND SEAL DECISION" !important;
+  display: block !important;
+  padding: 11px 14px 0 !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
+  letter-spacing: 0.25em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 232, 180, 0.66) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"]) {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 10px !important;
+  border: 0 !important;
+  border-radius: 22px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div) {
+  min-height: auto !important;
+  padding: 10px 12px !important;
+  border-radius: 16px !important;
+  display: grid !important;
+  gap: 4px !important;
+  justify-content: stretch !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.12) !important;
+  backdrop-filter: blur(16px) saturate(1.12) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(1)) {
+  border: 1px solid rgba(255, 218, 132, 0.24) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 218, 132, 0.11), rgba(0, 0, 0, 0.28)) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(2)) {
+  border: 1px solid rgba(255, 92, 123, 0.32) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 92, 123, 0.14), rgba(0, 0, 0, 0.30)) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(3)) {
+  border: 1px solid rgba(32, 245, 164, 0.25) !important;
+  background:
+    linear-gradient(145deg, rgba(32, 245, 164, 0.10), rgba(0, 0, 0, 0.28)) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] span) {
+  font-size: 8px !important;
+  letter-spacing: 0.25em !important;
+  color: rgba(255, 236, 190, 0.56) !important;
+  margin: 0 !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] strong) {
+  max-width: 100% !important;
+  color: #fff3cf !important;
+  font-size: clamp(10px, 0.72vw, 13px) !important;
+  line-height: 1.28 !important;
+  overflow-wrap: anywhere !important;
+  text-wrap: balance !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(1) strong) {
+  color: #ffe59b !important;
+  font-size: clamp(12px, 0.82vw, 15px) !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div:nth-child(3) strong) {
+  color: #20f5a4 !important;
+}
+
+:global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] small) {
+  color: rgba(255, 255, 255, 0.62) !important;
+  font-size: clamp(9px, 0.58vw, 11px) !important;
+  line-height: 1.34 !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-height: 760px) {
+  :global([data-wilsy-seal-decision-panel-mounted="R18U"]) {
+    top: 74px !important;
+    width: min(390px, calc(100vw - 28px)) !important;
+    max-height: calc(100vh - 94px) !important;
+  }
+
+  :global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] > div) {
+    padding: 8px 10px !important;
+  }
+
+  :global([data-wilsy-seal-decision-panel="R18T-PERSISTENT-SEAL-DECISION"] small) {
+    font-size: 9px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  :global([data-wilsy-seal-decision-panel-mounted="R18U"]) {
+    top: 88px !important;
+    right: 12px !important;
+    left: 12px !important;
+    width: auto !important;
+    max-height: calc(100vh - 112px) !important;
+  }
+}
+/* === WILSY R18Y1 COMPACT SEAL HUD ABOVE FOLD END === */

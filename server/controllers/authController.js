@@ -72,7 +72,7 @@ const emitIdentityTelemetry = (eventType, action, metadata = {}) => {
   try {
     Promise.resolve(
       broadcastTelemetry('GLOBAL_ROOT', eventType, action, 'AuthController', metadata)
-    ).catch(error => logger.warn(`[AUTH-TELEMETRY-SOFT-FAIL] ${error.message}`));
+    ).catch((error) => logger.warn(`[AUTH-TELEMETRY-SOFT-FAIL] ${error.message}`));
   } catch (error) {
     logger.warn(`[AUTH-TELEMETRY-SYNC-FAIL] ${error.message}`);
   }
@@ -89,8 +89,9 @@ const emitIdentityTelemetry = (eventType, action, metadata = {}) => {
  */
 const propagateIdentityMesh = (tenantId, payload = {}, action = 'IDENTITY_EVENT') => {
   try {
-    mesh.propagate(tenantId, payload, action)
-      .catch(error => logger.warn(`[AUTH-MESH-SOFT-FAIL] ${error.message}`));
+    mesh
+      .propagate(tenantId, payload, action)
+      .catch((error) => logger.warn(`[AUTH-MESH-SOFT-FAIL] ${error.message}`));
   } catch (error) {
     logger.warn(`[AUTH-MESH-SYNC-FAIL] ${error.message}`);
   }
@@ -104,7 +105,9 @@ const propagateIdentityMesh = (tenantId, payload = {}, action = 'IDENTITY_EVENT'
  * @collaboration The founder tenant must always resolve in local sovereign operation without pretending unknown tenants exist.
  */
 const buildFounderDiscoveryTenant = (alias = 'wilsy') => {
-  const normalized = String(alias || 'wilsy').split(':')[0].toLowerCase();
+  const normalized = String(alias || 'wilsy')
+    .split(':')[0]
+    .toLowerCase();
   if (!['wilsy', 'localhost', '127.0.0.1', 'master'].includes(normalized)) return null;
   return {
     name: 'Wilsy OS Root',
@@ -112,7 +115,7 @@ const buildFounderDiscoveryTenant = (alias = 'wilsy') => {
     alias: 'wilsy',
     status: 'ACTIVE',
     tier: 'SOVEREIGN',
-    billingStatus: 'ACTIVE'
+    billingStatus: 'ACTIVE',
   };
 };
 
@@ -135,13 +138,17 @@ const buildFounderDiscoveryTenant = (alias = 'wilsy') => {
 export const discoverTenant = async (req, res, next) => {
   const startFetch = performance.now();
   const traceId = req.headers['x-trace-id'] || req.traceId || `TRC-DSC-${Date.now()}`;
-  console.log(chalk.magenta(`[DISCOVER] 🔍 discoverTenant called with ${req.method} ${req.originalUrl}, host: ${req.query.host || req.body.host || 'wilsy'}`));
+  console.log(
+    chalk.magenta(
+      `[DISCOVER] 🔍 discoverTenant called with ${req.method} ${req.originalUrl}, host: ${req.query.host || req.body.host || 'wilsy'}`
+    )
+  );
   try {
     const host = req.query.host || req.body.host || 'wilsy';
-    const alias = (typeof host === 'string') ? host.split(':')[0].toLowerCase() : 'wilsy';
+    const alias = typeof host === 'string' ? host.split(':')[0].toLowerCase() : 'wilsy';
 
     let tenant = await TenantConfig.findOne({
-      $or: [{ tenantId: alias.toUpperCase() }, { alias: alias }]
+      $or: [{ tenantId: alias.toUpperCase() }, { alias: alias }],
     }).lean();
 
     if (!tenant && alias === 'wilsy') {
@@ -149,7 +156,11 @@ export const discoverTenant = async (req, res, next) => {
     }
 
     if (!tenant) {
-      emitIdentityTelemetry("SECURITY_EVENT", "TENANT_DISCOVERY_FAILURE", { traceId, reason: "NOT_FOUND", severity: "CRITICAL" });
+      emitIdentityTelemetry('SECURITY_EVENT', 'TENANT_DISCOVERY_FAILURE', {
+        traceId,
+        reason: 'NOT_FOUND',
+        severity: 'CRITICAL',
+      });
       return res.status(404).json({ success: false, message: 'Sovereign Shard not found.' });
     }
 
@@ -165,7 +176,9 @@ export const discoverTenant = async (req, res, next) => {
         logger.warn('[DISCOVERY] redisClient or rawGet method missing – skipping suspension check');
       }
     } catch (redisErr) {
-      logger.warn('[DISCOVERY] Redis unreachable for suspension check', { error: redisErr.message });
+      logger.warn('[DISCOVERY] Redis unreachable for suspension check', {
+        error: redisErr.message,
+      });
     }
 
     tenant.billingStatus = billingStatus;
@@ -185,7 +198,7 @@ export const discoverTenant = async (req, res, next) => {
       integrity: breakerState.integrity || null,
       breakerTransitions: breakerState.lastTransition ? 1 : 0,
       timestamp: new Date().toISOString(),
-      billingStatus: tenant.billingStatus
+      billingStatus: tenant.billingStatus,
     };
 
     const entry = new TelemetryModel({
@@ -193,21 +206,40 @@ export const discoverTenant = async (req, res, next) => {
       tenantId: tenant.alias || tenant.tenantId,
       severity: latencyMs > 500 ? 'HIGH' : 'LOW',
       details: latencyMs > 500 ? 'SLA_THRESHOLD_EXCEEDED' : 'DISCOVERY_OK',
-      metadata: { latencyMs, breakerState: breakerState.state, route: '/auth/discover', slaBreach: latencyMs > 500, compliance: telemetryPayload.compliance, billingStatus: tenant.billingStatus }
+      metadata: {
+        latencyMs,
+        breakerState: breakerState.state,
+        route: '/auth/discover',
+        slaBreach: latencyMs > 500,
+        compliance: telemetryPayload.compliance,
+        billingStatus: tenant.billingStatus,
+      },
     });
-    entry.save().catch(e => console.error(`[AUDIT-FRACTURE] Discovery ledger write failed: ${e.message}`));
+    entry
+      .save()
+      .catch((e) => console.error(`[AUDIT-FRACTURE] Discovery ledger write failed: ${e.message}`));
 
-    emitIdentityTelemetry("SYSTEM_EVENT", "TENANT_DISCOVERY", {
-      traceId, alias, ...telemetryPayload
+    emitIdentityTelemetry('SYSTEM_EVENT', 'TENANT_DISCOVERY', {
+      traceId,
+      alias,
+      ...telemetryPayload,
     });
 
-    propagateIdentityMesh(tenant.alias || 'GLOBAL_ROOT', { alias, billingStatus, latencyMs }, 'TENANT_DISCOVERY');
+    propagateIdentityMesh(
+      tenant.alias || 'GLOBAL_ROOT',
+      { alias, billingStatus, latencyMs },
+      'TENANT_DISCOVERY'
+    );
 
     return res.status(200).json({ success: true, tenant, telemetry: telemetryPayload });
   } catch (error) {
     console.error(chalk.bgRed.white(`\n 💥 [DISCOVER-TENANT FRACTURE] Trace: ${traceId} `));
     console.error(chalk.red(`Error message: ${error.message}`));
-    emitIdentityTelemetry("SECURITY_EVENT", "TENANT_DISCOVERY_FAILURE", { traceId, reason: error.message, severity: "CRITICAL" });
+    emitIdentityTelemetry('SECURITY_EVENT', 'TENANT_DISCOVERY_FAILURE', {
+      traceId,
+      reason: error.message,
+      severity: 'CRITICAL',
+    });
     propagateIdentityMesh('GLOBAL_ROOT', { error: error.message }, 'TENANT_DISCOVERY_FAILURE');
     return res.status(200).json({
       success: true,
@@ -216,10 +248,10 @@ export const discoverTenant = async (req, res, next) => {
         latencyMs: Math.round(performance.now() - startFetch),
         breakerState: 'DEGRADED',
         integrity: null,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       sourceStatus: 'DEGRADED',
-      warning: error.message
+      warning: error.message,
     });
   }
 };
@@ -242,17 +274,28 @@ export const discoverTenant = async (req, res, next) => {
 export const register = async (req, res, next) => {
   const traceId = req.headers['x-trace-id'] || req.traceId || `TRC-REG-${Date.now()}`;
   try {
-    console.log(chalk.magenta(`[GENESIS-INIT] Request for: ${req.body.businessName} [Trace: ${traceId}]`));
+    console.log(
+      chalk.magenta(`[GENESIS-INIT] Request for: ${req.body.businessName} [Trace: ${traceId}]`)
+    );
     const result = await onboardingService.initializeSovereignTenant(req.body, traceId);
-    broadcastTelemetry("GLOBAL_ROOT", "SYSTEM_EVENT", "TENANT_REGISTERED", "AuthController", { traceId, tenantId: result.tenantId });
-    mesh.propagate(result.tenantId, { traceId, businessName: req.body.businessName }, 'TENANT_REGISTERED')
-      .catch(err => console.error('[Mesh] Broadcast failed:', err));
+    broadcastTelemetry('GLOBAL_ROOT', 'SYSTEM_EVENT', 'TENANT_REGISTERED', 'AuthController', {
+      traceId,
+      tenantId: result.tenantId,
+    });
+    mesh
+      .propagate(
+        result.tenantId,
+        { traceId, businessName: req.body.businessName },
+        'TENANT_REGISTERED'
+      )
+      .catch((err) => console.error('[Mesh] Broadcast failed:', err));
     return res.status(201).json(result);
   } catch (error) {
     console.error(chalk.bgRed.white(`\n 💥 [REGISTER FRACTURE] Trace: ${traceId} `));
     console.error(chalk.red(`Error: ${error.message}`));
-    mesh.propagate('GLOBAL_ROOT', { error: error.message }, 'TENANT_REGISTRATION_FAILED')
-      .catch(err => console.error('[Mesh] Broadcast failed:', err));
+    mesh
+      .propagate('GLOBAL_ROOT', { error: error.message }, 'TENANT_REGISTRATION_FAILED')
+      .catch((err) => console.error('[Mesh] Broadcast failed:', err));
     if (typeof next === 'function') next(error);
     else res.status(500).json({ success: false, message: error.message });
   }
@@ -298,8 +341,9 @@ export const login = async (req, res, next) => {
         const db = sovereignConn.useDb(tenant, { useCache: false });
         const UserModel = db.model('User', UserSchema, 'users');
 
-        const foundUser = await UserModel.findOne({ email: email.toLowerCase().trim() })
-          .select('+password +securityMetadata.mfaSecret +isTwoFactorEnabled +twoFactorSecret +securityMetadata.mfaEnabled +securityMetadata.mfaSetupComplete +authenticators +tenantId +role');
+        const foundUser = await UserModel.findOne({ email: email.toLowerCase().trim() }).select(
+          '+password +securityMetadata.mfaSecret +isTwoFactorEnabled +twoFactorSecret +securityMetadata.mfaEnabled +securityMetadata.mfaSetupComplete +authenticators +tenantId +role'
+        );
 
         if (foundUser) {
           user = foundUser;
@@ -313,17 +357,37 @@ export const login = async (req, res, next) => {
     }
 
     if (!user) {
-      console.error(chalk.red(`[LOGIN-FRACTURE] Identity ${email} not found in any reachable shard.`));
-      broadcastTelemetry("GLOBAL_ROOT", "SECURITY_EVENT", "LOGIN_FAILURE", "AuthController", { traceId, reason: "IDENTITY_NOT_FOUND", severity: "HIGH" });
-      mesh?.propagate?.('GLOBAL_ROOT', { email, reason: 'IDENTITY_NOT_FOUND' }, 'LOGIN_FAILURE').catch(() => {});
+      console.error(
+        chalk.red(`[LOGIN-FRACTURE] Identity ${email} not found in any reachable shard.`)
+      );
+      broadcastTelemetry('GLOBAL_ROOT', 'SECURITY_EVENT', 'LOGIN_FAILURE', 'AuthController', {
+        traceId,
+        reason: 'IDENTITY_NOT_FOUND',
+        severity: 'HIGH',
+      });
+      mesh
+        ?.propagate?.('GLOBAL_ROOT', { email, reason: 'IDENTITY_NOT_FOUND' }, 'LOGIN_FAILURE')
+        .catch(() => {});
       return res.status(401).json({ success: false, message: 'Identity not found.' });
     }
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       if (user.incrementFailures) await user.incrementFailures();
-      broadcastTelemetry(user.tenantId || "GLOBAL_ROOT", "SECURITY_EVENT", "LOGIN_FRACTURE", "AuthController", { traceId, email, reason: 'INVALID_CREDENTIALS', severity: 'ELEVATED' });
-      mesh?.propagate?.(user.tenantId || 'GLOBAL_ROOT', { email, reason: 'INVALID_CREDENTIALS' }, 'LOGIN_FAILURE').catch(() => {});
+      broadcastTelemetry(
+        user.tenantId || 'GLOBAL_ROOT',
+        'SECURITY_EVENT',
+        'LOGIN_FRACTURE',
+        'AuthController',
+        { traceId, email, reason: 'INVALID_CREDENTIALS', severity: 'ELEVATED' }
+      );
+      mesh
+        ?.propagate?.(
+          user.tenantId || 'GLOBAL_ROOT',
+          { email, reason: 'INVALID_CREDENTIALS' },
+          'LOGIN_FAILURE'
+        )
+        .catch(() => {});
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
     }
 
@@ -331,7 +395,13 @@ export const login = async (req, res, next) => {
       if (redisClient && typeof redisClient.rawGet === 'function') {
         const suspended = await redisClient.rawGet(`suspended:${user.tenantId || targetTenant}`);
         if (suspended && user.role !== 'FOUNDER' && user.role !== 'OMEGA') {
-          return res.status(402).json({ success: false, code: 'SOVEREIGN_FREEZE', message: 'Institutional access is currently frozen. Settlement required.' });
+          return res
+            .status(402)
+            .json({
+              success: false,
+              code: 'SOVEREIGN_FREEZE',
+              message: 'Institutional access is currently frozen. Settlement required.',
+            });
         }
       }
     } catch (redisErr) {}
@@ -340,12 +410,27 @@ export const login = async (req, res, next) => {
     const isFullySetup = user.securityMetadata?.mfaSetupComplete === true;
 
     if (hasSecret && isFullySetup) {
-      console.log(chalk.yellow(`[SHARD-LOCK] Handshake preserved for ${email}. Proposing challenge...`));
-      return res.status(200).json({ success: true, status: 'MFA_REQUIRED', message: "Enter institutional code from Authenticator." });
+      console.log(
+        chalk.yellow(`[SHARD-LOCK] Handshake preserved for ${email}. Proposing challenge...`)
+      );
+      return res
+        .status(200)
+        .json({
+          success: true,
+          status: 'MFA_REQUIRED',
+          message: 'Enter institutional code from Authenticator.',
+        });
     }
 
-    console.log(chalk.cyan(`[MFA-SETUP-FORCED] Initiating fresh Shard Anchor for ${email}. Generating new QR.`));
-    const secret = speakeasy.generateSecret({ name: `WilsyOS:${user.email}`, issuer: `WilsyOS:ANCHOR-${traceId.slice(-6)}` });
+    console.log(
+      chalk.cyan(
+        `[MFA-SETUP-FORCED] Initiating fresh Shard Anchor for ${email}. Generating new QR.`
+      )
+    );
+    const secret = speakeasy.generateSecret({
+      name: `WilsyOS:${user.email}`,
+      issuer: `WilsyOS:ANCHOR-${traceId.slice(-6)}`,
+    });
 
     user.securityMetadata.mfaSecret = secret.base32;
     user.securityMetadata.mfaEnabled = true;
@@ -354,7 +439,14 @@ export const login = async (req, res, next) => {
     await user.save();
 
     const qrCodeUrl = await qrcode.toDataURL(secret.otpauth_url);
-    return res.status(200).json({ success: true, status: 'MFA_SETUP', qrCode: qrCodeUrl, message: "Scan the QR code to align your device with the Sovereign Nucleus." });
+    return res
+      .status(200)
+      .json({
+        success: true,
+        status: 'MFA_SETUP',
+        qrCode: qrCodeUrl,
+        message: 'Scan the QR code to align your device with the Sovereign Nucleus.',
+      });
   } catch (error) {
     console.error(chalk.bgRed.white(`\n 💥 [LOGIN FRACTURE] Trace: ${traceId} `), error);
     if (typeof next === 'function') next(error);
@@ -391,7 +483,7 @@ export const verify3FA = async (req, res, next) => {
     const providedTenantId = (req.headers['x-tenant-id'] || 'wilsy').toLowerCase();
 
     if (!email || !otp) {
-      return res.status(400).json({ success: false, message: "Forensic requirements not met." });
+      return res.status(400).json({ success: false, message: 'Forensic requirements not met.' });
     }
 
     const otpStr = String(otp).trim();
@@ -407,23 +499,33 @@ export const verify3FA = async (req, res, next) => {
         const db = sovereignConn.useDb(tenant, { useCache: false });
         const UserModel = db.model('User', UserSchema, 'users');
 
-        const foundUser = await UserModel.findOne({ email: email.toLowerCase().trim() })
-          .select('+securityMetadata.mfaSecret +role +tenantId +firstName +lastName +failedOtpAttempts +securityMetadata.mfaSetupComplete');
+        const foundUser = await UserModel.findOne({ email: email.toLowerCase().trim() }).select(
+          '+securityMetadata.mfaSecret +role +tenantId +firstName +lastName +failedOtpAttempts +securityMetadata.mfaSetupComplete'
+        );
 
         if (foundUser) {
           user = foundUser;
           console.log(chalk.green(`[3FA-STRIKE] Identity located in shard: ${tenant}`));
           break;
         }
-      } catch (err) { continue; }
+      } catch (err) {
+        continue;
+      }
     }
 
     if (!user) {
-      console.error(chalk.red(`[3FA-FRACTURE] Identity ${email} not found in any reachable shard.`));
+      console.error(
+        chalk.red(`[3FA-FRACTURE] Identity ${email} not found in any reachable shard.`)
+      );
       return res.status(404).json({ success: false, message: 'Identity not found in any shard.' });
     }
 
-    const otpVerified = speakeasy.totp.verify({ secret: user.securityMetadata.mfaSecret, encoding: 'base32', token: otpStr, window: 10 });
+    const otpVerified = speakeasy.totp.verify({
+      secret: user.securityMetadata.mfaSecret,
+      encoding: 'base32',
+      token: otpStr,
+      window: 10,
+    });
 
     if (!otpVerified) {
       user.failedOtpAttempts = (user.failedOtpAttempts || 0) + 1;
@@ -431,11 +533,16 @@ export const verify3FA = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid OTP. Check clock sync.' });
     }
 
-    if (!user.securityMetadata.mfaSetupComplete) { user.securityMetadata.mfaSetupComplete = true; }
+    if (!user.securityMetadata.mfaSetupComplete) {
+      user.securityMetadata.mfaSetupComplete = true;
+    }
     user.failedOtpAttempts = 0;
     await user.save();
 
-    const finalTenantId = user.tenantId === 'wilsy-sovereign-root' ? 'WILSY_ROOT' : (user.tenantId || 'WILSY_ROOT');
+    const finalTenantId =
+      user.tenantId === 'WILSY_ROOT' || user.tenantId === 'MASTER'
+        ? 'wilsy-sovereign-root'
+        : user.tenantId || 'wilsy-sovereign-root';
 
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role, tenantId: finalTenantId },
@@ -444,11 +551,26 @@ export const verify3FA = async (req, res, next) => {
     );
 
     const latencyMs = Number((performance.now() - startFetch).toFixed(2));
-    broadcastTelemetry("GLOBAL_ROOT", "AUDIT_EVENT", "TOKEN_ISSUED", "AuthController", { traceId, userId: user.id, latencyMs });
-    mesh.propagate(user.tenantId || 'GLOBAL_ROOT', { userId: user.id, latencyMs }, 'THREE_FA_SUCCESS').catch(() => {});
+    broadcastTelemetry('GLOBAL_ROOT', 'AUDIT_EVENT', 'TOKEN_ISSUED', 'AuthController', {
+      traceId,
+      userId: user.id,
+      latencyMs,
+    });
+    mesh
+      .propagate(user.tenantId || 'GLOBAL_ROOT', { userId: user.id, latencyMs }, 'THREE_FA_SUCCESS')
+      .catch(() => {});
 
     return res.status(200).json({
-      success: true, token, user: { id: user._id, email: user.email, role: user.role, tenantId: finalTenantId, firstName: user.firstName, lastName: user.lastName }
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        tenantId: finalTenantId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
     });
   } catch (error) {
     console.error(chalk.red(`[3FA] Critical error: ${error.message}`));
@@ -464,7 +586,7 @@ export const verify3FA = async (req, res, next) => {
 /**
  * @function refresh
  * @description Refresh an expired JWT token. Verifies the old token (ignoring expiration) and issues a new one.
- * Uses HS512 algorithm and normalizes tenantId to 'WILSY_ROOT' for master bypass.
+ * Uses HS512 algorithm and normalizes tenantId to the canonical wilsy-sovereign-root identity for root users.
  * @param {Object} req - Express request object (Authorization header)
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware
@@ -483,7 +605,9 @@ export const refresh = async (req, res, next) => {
     if (!authHeader) return res.status(401).json({ success: false, message: 'No token provided' });
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'wilsy_sovereign_secret', { ignoreExpiration: true });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'wilsy_sovereign_secret', {
+      ignoreExpiration: true,
+    });
 
     const sovereignConn = getSovereignDb();
     const providedTenantId = (req.headers['x-tenant-id'] || 'wilsy').toLowerCase();
@@ -499,12 +623,17 @@ export const refresh = async (req, res, next) => {
           user = foundUser;
           break;
         }
-      } catch (err) { continue; }
+      } catch (err) {
+        continue;
+      }
     }
 
     if (!user) return res.status(401).json({ success: false, message: 'Identity fractured' });
 
-    const finalTenantId = user.tenantId === 'wilsy-sovereign-root' ? 'WILSY_ROOT' : (user.tenantId || 'WILSY_ROOT');
+    const finalTenantId =
+      user.tenantId === 'WILSY_ROOT' || user.tenantId === 'MASTER'
+        ? 'wilsy-sovereign-root'
+        : user.tenantId || 'wilsy-sovereign-root';
     const newToken = jwt.sign(
       { id: user._id, email: user.email, role: user.role, tenantId: finalTenantId },
       process.env.JWT_SECRET || 'wilsy_sovereign_secret',
@@ -546,7 +675,9 @@ export const getWebAuthnChallenge = async (req, res, next) => {
         const UserModel = db.model('User', UserSchema, 'users');
         user = await UserModel.findOne({ email }).select('+currentChallenge +authenticators');
         if (user) break;
-      } catch (err) { continue; }
+      } catch (err) {
+        continue;
+      }
     }
     if (!user) return res.status(404).json({ success: false, message: 'Identity not found.' });
 
@@ -554,7 +685,15 @@ export const getWebAuthnChallenge = async (req, res, next) => {
     user.currentChallenge = challenge;
     await user.save();
 
-    return res.json({ success: true, challenge, allowCredentials: (user.authenticators || []).map(auth => ({ id: auth.credentialID.toString('base64url'), type: 'public-key', transports: auth.transports || ['internal'] })) });
+    return res.json({
+      success: true,
+      challenge,
+      allowCredentials: (user.authenticators || []).map((auth) => ({
+        id: auth.credentialID.toString('base64url'),
+        type: 'public-key',
+        transports: auth.transports || ['internal'],
+      })),
+    });
   } catch (error) {
     if (typeof next === 'function') next(error);
     else res.status(500).json({ success: false, message: error.message });
@@ -588,7 +727,9 @@ export const getMe = async (req, res, next) => {
         const UserModel = db.model('User', UserSchema, 'users');
         user = await UserModel.findById(req.user.id).select('-password');
         if (user) break;
-      } catch (err) { continue; }
+      } catch (err) {
+        continue;
+      }
     }
     return res.status(200).json({ success: true, user });
   } catch (error) {
@@ -611,7 +752,8 @@ export const getMe = async (req, res, next) => {
  * @real-world Called when the user clicks "Sign Out". The forensic chain is closed with a termination event.
  * @forensic The logout event is broadcast to the mesh, allowing the boardroom HUD to record session termination.
  */
-export const logout = async (req, res, next) => res.status(200).json({ success: true, message: 'Session dissolved.' });
+export const logout = async (req, res, next) =>
+  res.status(200).json({ success: true, message: 'Session dissolved.' });
 
 // ============================================================================
 // 🏛️ HARDWARE DEVICE ANCHORING
@@ -631,22 +773,33 @@ export const anchorHardwareDevice = async (req, res, next) => {
   try {
     const { nickname, credential } = req.body;
 
-    const targetTenant = req.user.tenantId === 'WILSY_ROOT' ? 'wilsy-sovereign-root' : (req.user.tenantId || 'wilsy');
+    const targetTenant =
+      req.user.tenantId === 'WILSY_ROOT' ? 'wilsy-sovereign-root' : req.user.tenantId || 'wilsy';
     const db = getSovereignDb().useDb(targetTenant, { useCache: false });
     const UserModel = db.model('User', UserSchema, 'users');
 
     const user = await UserModel.findById(req.user.id);
-    if (!user) return res.status(404).json({ success: false, message: 'Identity not found in shard.' });
+    if (!user)
+      return res.status(404).json({ success: false, message: 'Identity not found in shard.' });
 
     user.authenticators.push({
       credentialID: Buffer.from(credential.id, 'base64url'),
       publicKey: Buffer.from(credential.publicKey, 'base64url'),
-      deviceType: nickname || 'Secondary_Shard'
+      deviceType: nickname || 'Secondary_Shard',
     });
     await user.save();
 
-    broadcastTelemetry("GLOBAL_ROOT", "SECURITY_EVENT", "HARDWARE_ANCHORED", "AuthController", { userId: req.user.id, device: nickname });
-    mesh.propagate(user.tenantId || 'GLOBAL_ROOT', { userId: req.user.id, device: nickname }, 'HARDWARE_ANCHORED').catch(() => {});
+    broadcastTelemetry('GLOBAL_ROOT', 'SECURITY_EVENT', 'HARDWARE_ANCHORED', 'AuthController', {
+      userId: req.user.id,
+      device: nickname,
+    });
+    mesh
+      .propagate(
+        user.tenantId || 'GLOBAL_ROOT',
+        { userId: req.user.id, device: nickname },
+        'HARDWARE_ANCHORED'
+      )
+      .catch(() => {});
     return res.status(201).json({ success: true, message: 'Hardware anchored.' });
   } catch (error) {
     if (typeof next === 'function') next(error);
@@ -682,7 +835,9 @@ export const resetPasswordSovereign = async (req, res, next) => {
         const UserModel = db.model('User', UserSchema, 'users');
         user = await UserModel.findOne({ email: email.toLowerCase().trim() });
         if (user) break;
-      } catch (err) { continue; }
+      } catch (err) {
+        continue;
+      }
     }
 
     if (!user) return res.status(404).json({ success: false, message: 'Identity not found.' });
@@ -691,8 +846,12 @@ export const resetPasswordSovereign = async (req, res, next) => {
       user.setRecoverySeed(recoverySeed);
       await user.save();
     }
-    broadcastTelemetry("GLOBAL_ROOT", "SECURITY_EVENT", "RECOVERY_DISPATCHED", "AuthController", { email });
-    mesh.propagate(user.tenantId || 'GLOBAL_ROOT', { email }, 'PASSWORD_RESET_INITIATED').catch(() => {});
+    broadcastTelemetry('GLOBAL_ROOT', 'SECURITY_EVENT', 'RECOVERY_DISPATCHED', 'AuthController', {
+      email,
+    });
+    mesh
+      .propagate(user.tenantId || 'GLOBAL_ROOT', { email }, 'PASSWORD_RESET_INITIATED')
+      .catch(() => {});
     return res.status(200).json({ success: true, message: 'Recovery protocol dispatched.' });
   } catch (error) {
     if (typeof next === 'function') next(error);
@@ -716,16 +875,22 @@ export const resetPasswordSovereign = async (req, res, next) => {
  */
 export const revokeBiometric = async (req, res, next) => {
   try {
-    const targetTenant = req.user.tenantId === 'WILSY_ROOT' ? 'wilsy-sovereign-root' : (req.user.tenantId || 'wilsy');
+    const targetTenant =
+      req.user.tenantId === 'WILSY_ROOT' ? 'wilsy-sovereign-root' : req.user.tenantId || 'wilsy';
     const db = getSovereignDb().useDb(targetTenant, { useCache: false });
     const UserModel = db.model('User', UserSchema, 'users');
 
     const user = await UserModel.findById(req.user.id);
-    if (!user) return res.status(404).json({ success: false, message: 'Identity not found in shard.' });
+    if (!user)
+      return res.status(404).json({ success: false, message: 'Identity not found in shard.' });
 
     await user.revokeBiometric();
-    broadcastTelemetry("GLOBAL_ROOT", "SECURITY_EVENT", "BIOMETRIC_REVOKED", "AuthController", { userId: req.user.id });
-    mesh.propagate(user.tenantId || 'GLOBAL_ROOT', { userId: req.user.id }, 'BIOMETRIC_REVOKED').catch(() => {});
+    broadcastTelemetry('GLOBAL_ROOT', 'SECURITY_EVENT', 'BIOMETRIC_REVOKED', 'AuthController', {
+      userId: req.user.id,
+    });
+    mesh
+      .propagate(user.tenantId || 'GLOBAL_ROOT', { userId: req.user.id }, 'BIOMETRIC_REVOKED')
+      .catch(() => {});
     return res.status(200).json({ success: true, message: 'Biometric revoked.' });
   } catch (error) {
     if (typeof next === 'function') next(error);
@@ -749,16 +914,27 @@ export const revokeBiometric = async (req, res, next) => {
  */
 export const verifyForensicChain = async (req, res, next) => {
   try {
-    const targetTenant = req.user.tenantId === 'WILSY_ROOT' ? 'wilsy-sovereign-root' : (req.user.tenantId || 'wilsy');
+    const targetTenant =
+      req.user.tenantId === 'WILSY_ROOT' ? 'wilsy-sovereign-root' : req.user.tenantId || 'wilsy';
     const db = getSovereignDb().useDb(targetTenant, { useCache: false });
     const UserModel = db.model('User', UserSchema, 'users');
 
     const user = await UserModel.findById(req.user.id);
-    if (!user) return res.status(404).json({ success: false, message: 'Identity not found in shard.' });
+    if (!user)
+      return res.status(404).json({ success: false, message: 'Identity not found in shard.' });
 
     const isValid = user.verifyForensicChain();
-    broadcastTelemetry("GLOBAL_ROOT", "AUDIT_EVENT", "FORENSIC_CHAIN_CHECK", "AuthController", { userId: req.user.id, isValid });
-    mesh.propagate(user.tenantId || 'GLOBAL_ROOT', { userId: req.user.id, isValid }, 'FORENSIC_CHAIN_VERIFIED').catch(() => {});
+    broadcastTelemetry('GLOBAL_ROOT', 'AUDIT_EVENT', 'FORENSIC_CHAIN_CHECK', 'AuthController', {
+      userId: req.user.id,
+      isValid,
+    });
+    mesh
+      .propagate(
+        user.tenantId || 'GLOBAL_ROOT',
+        { userId: req.user.id, isValid },
+        'FORENSIC_CHAIN_VERIFIED'
+      )
+      .catch(() => {});
     return res.status(200).json({ success: true, forensicValid: isValid });
   } catch (error) {
     if (typeof next === 'function') next(error);
@@ -823,7 +999,8 @@ export const validateMFASetup = async (req, res, next) => res.status(200).json({
  * @param {Function} next - Express next middleware
  * @returns {Promise<void>} Responds with success
  */
-export const adminForceRegenerateMfa = async (req, res, next) => res.status(200).json({ success: true });
+export const adminForceRegenerateMfa = async (req, res, next) =>
+  res.status(200).json({ success: true });
 
 /**
  * @function validate
@@ -837,7 +1014,22 @@ export const adminForceRegenerateMfa = async (req, res, next) => res.status(200)
 export const validate = async (req, res, next) => res.status(200).json({ success: true });
 
 export default {
-  discoverTenant, register, login, refresh, getWebAuthnChallenge, verify3FA, getMe, logout,
-  anchorHardwareDevice, resetPasswordSovereign, revokeBiometric, verifyForensicChain,
-  verifyOTP, generateOTP, setupMFA, validateMFASetup, adminForceRegenerateMfa, validate
+  discoverTenant,
+  register,
+  login,
+  refresh,
+  getWebAuthnChallenge,
+  verify3FA,
+  getMe,
+  logout,
+  anchorHardwareDevice,
+  resetPasswordSovereign,
+  revokeBiometric,
+  verifyForensicChain,
+  verifyOTP,
+  generateOTP,
+  setupMFA,
+  validateMFASetup,
+  adminForceRegenerateMfa,
+  validate,
 };

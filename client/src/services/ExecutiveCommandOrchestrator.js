@@ -21,10 +21,15 @@ const DEFAULT_BRAND_SURFACE = '#030504';
 
 export const EXECUTIVE_FUNCTION_ROUTES = Object.freeze({
   executive_dashboard: { route: '/executive', command: 'EXEC_OPEN_EXECUTIVE_OS', channel: 'Executive' },
+  finance: { route: '/finance', command: 'EXEC_OPEN_FINANCE', channel: 'Finance' },
   billing: { route: '/billing', command: 'EXEC_OPEN_BILLING', channel: 'Finance' },
+  hr: { route: '/hr', command: 'EXEC_OPEN_HR', channel: 'People' },
+  people: { route: '/hr', command: 'EXEC_OPEN_PEOPLE', channel: 'People' },
   inventory: { route: '/inventory', command: 'EXEC_OPEN_INVENTORY', channel: 'Operations' },
   logistics: { route: '/logistics', command: 'EXEC_OPEN_LOGISTICS', channel: 'Logistics' },
   crm: { route: '/crm', command: 'EXEC_OPEN_CRM', channel: 'Sales' },
+  sales: { route: '/sales', command: 'EXEC_OPEN_SALES', channel: 'Sales' },
+  customer_success: { route: '/customer-success', command: 'EXEC_OPEN_CUSTOMER_SUCCESS', channel: 'Customer' },
   contracts: { route: '/contracts', command: 'EXEC_OPEN_CONTRACTS', channel: 'Legal' },
   currency_fx: { route: '/finance/currency', command: 'EXEC_OPEN_FX', channel: 'Finance' },
   wilsy_ai: { route: '/wilsy-ai', command: 'EXEC_OPEN_WILSY_AI', channel: 'Automation' },
@@ -50,7 +55,10 @@ export const EXECUTIVE_FUNCTION_ROUTES = Object.freeze({
   documents: { route: '/documents', command: 'EXEC_OPEN_DOCUMENTS', channel: 'Administration' },
   subscriptions: { route: '/billing/subscriptions', command: 'EXEC_OPEN_SUBSCRIPTIONS', channel: 'Finance' },
   security: { route: '/security', command: 'EXEC_OPEN_SECURITY', channel: 'Risk' },
-  product: { route: '/product', command: 'EXEC_OPEN_PRODUCT', channel: 'Delivery' }
+  product: { route: '/product', command: 'EXEC_OPEN_PRODUCT', channel: 'Delivery' },
+  engineering: { route: '/engineering', command: 'EXEC_OPEN_ENGINEERING', channel: 'Delivery' },
+  data: { route: '/data', command: 'EXEC_OPEN_DATA', channel: 'Operations' },
+  it: { route: '/it', command: 'EXEC_OPEN_IT', channel: 'Risk' }
 });
 
 const DUTY_LANE_FUNCTION_MAP = Object.freeze({
@@ -62,7 +70,7 @@ const DUTY_LANE_FUNCTION_MAP = Object.freeze({
   Logistics: 'logistics',
   Supply: 'procurement',
   Delivery: 'project_management',
-  People: 'time_tracking',
+  People: 'hr',
   Compliance: 'compliance',
   Risk: 'security',
   Administration: 'documents',

@@ -9,19 +9,24 @@
   ║                                                                                   ║
   ║  🏛️  WILSY OS 2050 - SUPER ADMIN AUTHENTICATION & AUTHORIZATION (UPDATED)      ║
   ║  └─ IP-based threat detection now 100% reliable (fixes SA008 forever)           ║
+  ║  └─ TENANT ALIGNMENT: Root admin now accepts 'wilsy' or 'wilsy-sovereign-root'   ║
+  ║  └─ Added MongoDB user lookup for regular users (fixes login 401)               ║
+  ║  └─ Removed all hardcoded personal details – environment only                   ║
+  ║  └─ Fixed password hash: synchronous bcrypt.hashSync to prevent race condition  ║
   ╚═══════════════════════════════════════════════════════════════════════════╝*/
 
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import pino from 'pino';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { signer } from '../../enterprise/utils/canonicalSigner.js';
 
 // Initialize logger
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
   base: { component: 'SuperAdminAuth' },
-  timestamp: () => `,"timestamp":"${new Date().toISOString()}"`
+  timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
 });
 
 // ============================================================================
@@ -39,7 +44,7 @@ class SovereignStore {
   }
 
   async setSession(key, value, ttlSeconds) {
-    const expiry = Date.now() + (ttlSeconds * 1000);
+    const expiry = Date.now() + ttlSeconds * 1000;
     this.sessions.set(key, { value, expiry });
     return true;
   }
@@ -61,7 +66,7 @@ class SovereignStore {
   }
 
   async setRefreshToken(key, value, ttlSeconds) {
-    const expiry = Date.now() + (ttlSeconds * 1000);
+    const expiry = Date.now() + ttlSeconds * 1000;
     this.refreshTokens.set(key, { value, expiry });
     return true;
   }
@@ -112,7 +117,7 @@ class SovereignStore {
   addAuditEntry(entry) {
     this.auditStore.push({
       ...entry,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     if (this.auditStore.length > this.maxAuditEntries) {
@@ -152,7 +157,7 @@ class SovereignRateLimiter {
       record = {
         points: 0,
         resetTime: now + windowMs,
-        blockedUntil: null
+        blockedUntil: null,
       };
       this.store.set(key, record);
     }
@@ -187,7 +192,7 @@ class SovereignRateLimiter {
       remainingPoints: this.points - record.points,
       msBeforeNext: record.resetTime - now,
       consumedPoints: record.points,
-      isBlocked: !!record.blockedUntil
+      isBlocked: !!record.blockedUntil,
     };
   }
 
@@ -205,7 +210,7 @@ class SovereignRateLimiter {
       consumedPoints: record.points,
       remainingPoints: Math.max(0, this.points - record.points),
       msBeforeNext: record.resetTime - now,
-      isBlocked: !!(record.blockedUntil && now < record.blockedUntil)
+      isBlocked: !!(record.blockedUntil && now < record.blockedUntil),
     };
   }
 
@@ -217,7 +222,7 @@ class SovereignRateLimiter {
       } else if (record.blockedUntil && now > record.blockedUntil) {
         record.blockedUntil = null;
         record.points = 0;
-        record.resetTime = now + (this.duration * 1000);
+        record.resetTime = now + this.duration * 1000;
       }
     }
   }
@@ -276,23 +281,30 @@ class SuperAdminAuth {
     this.rateLimiter = new SovereignRateLimiter({
       points: 5,
       duration: 900,
-      blockDuration: 1800
+      blockDuration: 1800,
     });
     this.hsm = new SovereignHSM();
 
     this.superAdmins = new Map();
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'wilsonkhanyezi@gmail.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || '${ADMIN_PASSWORD:-REDACTED}';
-    const adminName = process.env.ADMIN_NAME || 'Wilson Khanyezi';
+    // All personal data must come from environment variables
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminName = process.env.ADMIN_NAME || 'Sovereign Administrator';
 
-    const testHash = '$2a$10$N9qo8uLOickgx2ZMRZoMy.MrVqYz2Qq6QX5QYqYQYqYQYqYQYqYQYq';
+    if (!adminEmail || !adminPassword) {
+      throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required');
+    }
+
+    // Synchronous hash to ensure it's ready immediately
+    const saltRounds = 10;
+    const passwordHash = bcrypt.hashSync(adminPassword, saltRounds);
 
     this.superAdmins.set('SA-001', {
       id: 'SA-001',
       username: adminEmail,
-      passwordHash: testHash,
-      hardwareId: 'HW-ROOT-001',
+      passwordHash: passwordHash,
+      hardwareId: process.env.ROOT_ADMIN_HARDWARE_ID || 'HW-ROOT-001',
       mfaSecret: process.env.ROOT_ADMIN_MFA_SECRET || 'BASE32SECRET',
       role: 'SUPER_ADMIN',
       permissions: ['*'],
@@ -301,32 +313,22 @@ class SuperAdminAuth {
       accessLevel: 10,
       isActive: true,
       name: adminName,
-      phone: process.env.ADMIN_PHONE || '+27791234567'
-    });
-
-    this.initializePassword(adminPassword).then(hash => {
-      const admin = this.superAdmins.get('SA-001');
-      if (admin) {
-        admin.passwordHash = hash;
-        logger.info({ adminEmail }, 'Admin password hash initialized');
-      }
+      phone: process.env.ADMIN_PHONE || null,
     });
 
     this.forensicSigner = signer;
 
-    logger.info({
-      mfaRequired: this.mfaRequired,
-      hardwareKeyRequired: this.hardwareKeyRequired,
-      hsmEnabled: this.hsm.enabled,
-      sessionTimeout: this.sessionTimeout,
-      adminCount: this.superAdmins.size,
-      adminEmail: adminEmail
-    }, 'Super Admin Auth initialized');
-  }
-
-  async initializePassword(password) {
-    const saltRounds = 10;
-    return await bcrypt.hash(password, saltRounds);
+    logger.info(
+      {
+        mfaRequired: this.mfaRequired,
+        hardwareKeyRequired: this.hardwareKeyRequired,
+        hsmEnabled: this.hsm.enabled,
+        sessionTimeout: this.sessionTimeout,
+        adminCount: this.superAdmins.size,
+        adminEmail: '[REDACTED]',
+      },
+      'Super Admin Auth initialized'
+    );
   }
 
   async verifyPassword(password, hash) {
@@ -366,7 +368,7 @@ class SuperAdminAuth {
         decoded = jwt.verify(token, this.jwtSecret, {
           algorithms: ['HS512'],
           issuer: 'wilsy-os-2050',
-          audience: 'super-admin'
+          audience: 'super-admin',
         });
       } catch (error) {
         if (error.name === 'TokenExpiredError') {
@@ -385,10 +387,14 @@ class SuperAdminAuth {
       const sessionData = JSON.parse(session);
 
       if (process.env.ENFORCE_IP_CONSISTENCY === 'true' && sessionData.ip !== clientIp) {
-        await this.logSecurityEvent('IP_MISMATCH', {
-          expected: sessionData.ip,
-          received: clientIp
-        }, requestId);
+        await this.logSecurityEvent(
+          'IP_MISMATCH',
+          {
+            expected: sessionData.ip,
+            received: clientIp,
+          },
+          requestId
+        );
         return this.denyAccess(res, 401, 'AUTH_005', 'IP address mismatch', requestId);
       }
 
@@ -397,10 +403,46 @@ class SuperAdminAuth {
       }
 
       if (this.hardwareKeyRequired && !sessionData.hardwareVerified) {
-        return this.denyAccess(res, 403, 'AUTH_007', 'Hardware key verification required', requestId);
+        return this.denyAccess(
+          res,
+          403,
+          'AUTH_007',
+          'Hardware key verification required',
+          requestId
+        );
       }
 
-      const admin = this.superAdmins.get(decoded.sub);
+      // Try to get admin from superAdmins or from database
+      let admin = this.superAdmins.get(decoded.sub);
+      if (!admin) {
+        // Attempt to load user from MongoDB
+        try {
+          const User =
+            mongoose.models.User ||
+            mongoose.model('User', new mongoose.Schema({}, { strict: false, collection: 'users' }));
+          const dbUser = await User.findOne({ email: decoded.sub, isActive: true }).lean();
+          if (dbUser) {
+            admin = {
+              id: dbUser._id.toString(),
+              username: dbUser.email,
+              role: dbUser.role || 'USER',
+              permissions: dbUser.permissions || [],
+              jurisdiction: dbUser.jurisdiction || 'local',
+              accessLevel: dbUser.accessLevel || 1,
+              isActive: dbUser.isActive,
+              name: `${dbUser.firstName || ''} ${dbUser.lastName || ''}`.trim(),
+              tenantId: dbUser.tenantId,
+              isDatabaseUser: true,
+            };
+          }
+        } catch (err) {
+          logger.warn(
+            { error: err.message },
+            'Failed to fetch user from database during authentication'
+          );
+        }
+      }
+
       if (!admin) {
         return this.denyAccess(res, 403, 'AUTH_008', 'Admin not found', requestId);
       }
@@ -421,6 +463,14 @@ class SuperAdminAuth {
 
       await this.logAccess(admin, req, requestId, startTime);
 
+      // Inject tenant context that matches both 'wilsy' and 'wilsy-sovereign-root' for super admin
+      let effectiveTenantId = admin.tenantId || 'wilsy';
+      // If request has a tenant header, use it only if it's a trusted corporate zone
+      const reqTenant = req.headers['x-tenant-id'];
+      if (reqTenant && (reqTenant === 'wilsy' || reqTenant === 'wilsy-sovereign-root')) {
+        effectiveTenantId = reqTenant;
+      }
+
       req.admin = {
         id: admin.id,
         username: admin.username,
@@ -428,8 +478,8 @@ class SuperAdminAuth {
         permissions: admin.permissions,
         jurisdiction: admin.jurisdiction,
         accessLevel: admin.accessLevel,
-        tenantId: admin.tenantId,
-        name: admin.name
+        tenantId: effectiveTenantId,
+        name: admin.name,
       };
 
       req.requestFingerprint = this.forensicSigner.sign({
@@ -437,7 +487,7 @@ class SuperAdminAuth {
         requestId,
         timestamp: Date.now(),
         path: req.path,
-        method: req.method
+        method: req.method,
       });
 
       next();
@@ -458,7 +508,7 @@ class SuperAdminAuth {
           success: false,
           code: 'MFA_001',
           message: 'Admin not found',
-          requestId
+          requestId,
         });
       }
 
@@ -476,7 +526,7 @@ class SuperAdminAuth {
           success: false,
           code: 'MFA_002',
           message: 'Invalid verification codes',
-          requestId
+          requestId,
         });
       }
 
@@ -502,7 +552,7 @@ class SuperAdminAuth {
         success: true,
         message: 'MFA verified successfully',
         forensicId: forensicEvidence.signature.substring(0, 16),
-        requestId
+        requestId,
       });
     } catch (error) {
       logger.error({ error: error.message, requestId }, 'MFA verification error');
@@ -510,11 +560,14 @@ class SuperAdminAuth {
         success: false,
         code: 'MFA_500',
         message: 'MFA verification failed',
-        requestId
+        requestId,
       });
     }
   };
 
+  /**
+   * Enhanced login: checks superAdmins first, then falls back to MongoDB users collection
+   */
   login = async (req, res) => {
     const { username, password, mfaCode, hardwareToken } = req.body;
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -523,42 +576,89 @@ class SuperAdminAuth {
     try {
       await this.checkRateLimit(clientIp, requestId);
 
-      const admin = Array.from(this.superAdmins.values()).find(a => a.username === username);
+      // First, try to find in superAdmins
+      let admin = Array.from(this.superAdmins.values()).find((a) => a.username === username);
+
+      // If not found, try to load from MongoDB
+      if (!admin && mongoose.connection.readyState === 1) {
+        try {
+          const User =
+            mongoose.models.User ||
+            mongoose.model('User', new mongoose.Schema({}, { strict: false, collection: 'users' }));
+          const dbUser = await User.findOne({ email: username, isActive: true }).lean();
+          if (dbUser) {
+            admin = {
+              id: dbUser._id.toString(),
+              username: dbUser.email,
+              passwordHash: dbUser.password, // stored bcrypt hash
+              role: dbUser.role || 'USER',
+              permissions: dbUser.permissions || [],
+              jurisdiction: dbUser.jurisdiction || 'local',
+              accessLevel: dbUser.accessLevel || 1,
+              isActive: dbUser.isActive,
+              name: `${dbUser.firstName || ''} ${dbUser.lastName || ''}`.trim(),
+              tenantId: dbUser.tenantId,
+              isDatabaseUser: true,
+              mfaSecret: dbUser.twoFactorSecret || null,
+              hardwareId: dbUser.hardwareId || null,
+            };
+            logger.info({ username, adminId: admin.id }, 'Found user in MongoDB');
+          }
+        } catch (dbErr) {
+          logger.error({ error: dbErr.message, username }, 'MongoDB lookup failed during login');
+        }
+      }
+
       if (!admin) {
         await this.logSecurityEvent('LOGIN_FAILURE', { username, ip: clientIp }, requestId);
         return res.status(401).json({
           success: false,
           code: 'LOGIN_001',
           message: 'Invalid credentials',
-          requestId
+          requestId,
         });
       }
 
       if (!admin.isActive) {
-        await this.logSecurityEvent('LOGIN_FAILURE', { adminId: admin.id, reason: 'inactive' }, requestId);
+        await this.logSecurityEvent(
+          'LOGIN_FAILURE',
+          { adminId: admin.id, reason: 'inactive' },
+          requestId
+        );
         return res.status(403).json({
           success: false,
           code: 'LOGIN_002',
           message: 'Account is deactivated',
-          requestId
+          requestId,
         });
       }
 
       const isValidPassword = await this.verifyPassword(password, admin.passwordHash);
 
       if (!isValidPassword) {
-        await this.logSecurityEvent('LOGIN_FAILURE', { adminId: admin.id, ip: clientIp }, requestId);
+        await this.logSecurityEvent(
+          'LOGIN_FAILURE',
+          { adminId: admin.id, ip: clientIp },
+          requestId
+        );
         return res.status(401).json({
           success: false,
           code: 'LOGIN_001',
           message: 'Invalid credentials',
-          requestId
+          requestId,
         });
       }
 
       const sessionId = crypto.randomBytes(32).toString('hex');
       const token = this.generateToken(admin, sessionId);
       const refreshToken = this.generateRefreshToken(admin);
+
+      // Determine tenantId for session: prefer request header if in trusted set, otherwise fallback to admin's tenantId or 'wilsy'
+      let tenantId = admin.tenantId || 'wilsy';
+      const reqTenant = req.headers['x-tenant-id'];
+      if (reqTenant && (reqTenant === 'wilsy' || reqTenant === 'wilsy-sovereign-root')) {
+        tenantId = reqTenant;
+      }
 
       const sessionData = {
         adminId: admin.id,
@@ -567,8 +667,10 @@ class SuperAdminAuth {
         userAgent: req.headers['user-agent'],
         createdAt: Date.now(),
         lastAccess: Date.now(),
-        mfaVerified: false,
-        hardwareVerified: false
+        mfaVerified: !this.mfaRequired, // if MFA not required, assume verified
+        hardwareVerified: !this.hardwareKeyRequired,
+        tenantId: tenantId,
+        isDatabaseUser: admin.isDatabaseUser || false,
       };
 
       await this.store.setSession(
@@ -577,11 +679,7 @@ class SuperAdminAuth {
         this.sessionTimeout
       );
 
-      await this.store.setRefreshToken(
-        `refresh:${admin.id}`,
-        refreshToken,
-        7 * 24 * 60 * 60
-      );
+      await this.store.setRefreshToken(`refresh:${admin.id}`, refreshToken, 7 * 24 * 60 * 60);
 
       await this.logAccess(admin, req, requestId, Date.now());
 
@@ -598,17 +696,17 @@ class SuperAdminAuth {
         token,
         refreshToken,
         expiresIn: this.sessionTimeout,
-        mfaRequired: this.mfaRequired,
-        hardwareKeyRequired: this.hardwareKeyRequired,
+        mfaRequired: this.mfaRequired && !sessionData.mfaVerified,
+        hardwareKeyRequired: this.hardwareKeyRequired && !sessionData.hardwareVerified,
         forensicId: forensicEvidence.signature.substring(0, 16),
         requestId,
         admin: {
           id: admin.id,
           username: admin.username,
           role: admin.role,
-          tenantId: admin.tenantId,
-          name: admin.name
-        }
+          tenantId: tenantId,
+          name: admin.name,
+        },
       });
     } catch (error) {
       if (error.code === 'RATE_LIMIT_EXCEEDED') {
@@ -617,7 +715,7 @@ class SuperAdminAuth {
           code: 'RATE_LIMIT_EXCEEDED',
           message: 'Too many login attempts. Please try again later.',
           retryAfter: Math.ceil(error.msBeforeNext / 1000),
-          requestId
+          requestId,
         });
       }
 
@@ -626,7 +724,7 @@ class SuperAdminAuth {
         success: false,
         code: 'LOGIN_500',
         message: 'Login failed',
-        requestId
+        requestId,
       });
     }
   };
@@ -641,33 +739,47 @@ class SuperAdminAuth {
         }
 
         if (req.admin.accessLevel < requiredLevel) {
-          await this.logSecurityEvent('INSUFFICIENT_LEVEL', {
-            adminId: req.admin.id,
-            required: requiredLevel,
-            actual: req.admin.accessLevel
-          }, requestId);
+          await this.logSecurityEvent(
+            'INSUFFICIENT_LEVEL',
+            {
+              adminId: req.admin.id,
+              required: requiredLevel,
+              actual: req.admin.accessLevel,
+            },
+            requestId
+          );
 
           return this.denyAccess(res, 403, 'AUTH_011', 'Insufficient access level', requestId);
         }
 
         if (requiredPermissions.length > 0) {
-          const hasPermission = requiredPermissions.every(p =>
-            req.admin.permissions.includes('*') || req.admin.permissions.includes(p)
+          const hasPermission = requiredPermissions.every(
+            (p) => req.admin.permissions.includes('*') || req.admin.permissions.includes(p)
           );
 
           if (!hasPermission) {
-            await this.logSecurityEvent('INSUFFICIENT_PERMISSIONS', {
-              adminId: req.admin.id,
-              required: requiredPermissions,
-              actual: req.admin.permissions
-            }, requestId);
+            await this.logSecurityEvent(
+              'INSUFFICIENT_PERMISSIONS',
+              {
+                adminId: req.admin.id,
+                required: requiredPermissions,
+                actual: req.admin.permissions,
+              },
+              requestId
+            );
 
             return this.denyAccess(res, 403, 'AUTH_012', 'Insufficient permissions', requestId);
           }
         }
 
         if (req.admin.jurisdiction !== 'global' && req.path.includes('/global/')) {
-          return this.denyAccess(res, 403, 'AUTH_013', 'Global operations require global jurisdiction', requestId);
+          return this.denyAccess(
+            res,
+            403,
+            'AUTH_013',
+            'Global operations require global jurisdiction',
+            requestId
+          );
         }
 
         next();
@@ -684,7 +796,7 @@ class SuperAdminAuth {
 
     try {
       const decoded = jwt.verify(refreshToken, this.refreshSecret, {
-        algorithms: ['HS512']
+        algorithms: ['HS512'],
       });
 
       const storedToken = await this.store.getRefreshToken(`refresh:${decoded.sub}`);
@@ -693,25 +805,58 @@ class SuperAdminAuth {
           success: false,
           code: 'REFRESH_001',
           message: 'Invalid refresh token',
-          requestId
+          requestId,
         });
       }
 
-      const admin = this.superAdmins.get(decoded.sub);
+      // Try to get admin from superAdmins or database
+      let admin = this.superAdmins.get(decoded.sub);
+      if (!admin && mongoose.connection.readyState === 1) {
+        try {
+          const User =
+            mongoose.models.User ||
+            mongoose.model('User', new mongoose.Schema({}, { strict: false, collection: 'users' }));
+          const dbUser = await User.findOne({ email: decoded.sub, isActive: true }).lean();
+          if (dbUser) {
+            admin = {
+              id: dbUser._id.toString(),
+              username: dbUser.email,
+              role: dbUser.role || 'USER',
+              permissions: dbUser.permissions || [],
+              jurisdiction: dbUser.jurisdiction || 'local',
+              accessLevel: dbUser.accessLevel || 1,
+              tenantId: dbUser.tenantId,
+              name: `${dbUser.firstName || ''} ${dbUser.lastName || ''}`.trim(),
+              isDatabaseUser: true,
+            };
+          }
+        } catch (err) {
+          logger.warn(
+            { error: err.message },
+            'Failed to fetch user from database during token refresh'
+          );
+        }
+      }
+
+      if (!admin) {
+        return res.status(401).json({
+          success: false,
+          code: 'REFRESH_002',
+          message: 'User not found',
+          requestId,
+        });
+      }
+
       const newToken = this.generateToken(admin);
       const newRefreshToken = this.generateRefreshToken(admin);
 
-      await this.store.setRefreshToken(
-        `refresh:${admin.id}`,
-        newRefreshToken,
-        7 * 24 * 60 * 60
-      );
+      await this.store.setRefreshToken(`refresh:${admin.id}`, newRefreshToken, 7 * 24 * 60 * 60);
 
       res.status(200).json({
         success: true,
         token: newToken,
         refreshToken: newRefreshToken,
-        requestId
+        requestId,
       });
     } catch (error) {
       logger.error({ error: error.message, requestId }, 'Refresh token error');
@@ -719,7 +864,7 @@ class SuperAdminAuth {
         success: false,
         code: 'REFRESH_002',
         message: 'Invalid refresh token',
-        requestId
+        requestId,
       });
     }
   };
@@ -737,7 +882,7 @@ class SuperAdminAuth {
       res.status(200).json({
         success: true,
         message: 'Logged out successfully',
-        requestId
+        requestId,
       });
     } catch (error) {
       logger.error({ error: error.message, requestId }, 'Logout error');
@@ -745,7 +890,7 @@ class SuperAdminAuth {
         success: false,
         code: 'LOGOUT_500',
         message: 'Logout failed',
-        requestId
+        requestId,
       });
     }
   };
@@ -760,7 +905,7 @@ class SuperAdminAuth {
         threatLevel: await this.getGlobalThreatLevel(),
         auditTrail: this.store.getAuditTrail(100),
         lastUpdated: new Date().toISOString(),
-        adminCount: this.superAdmins.size
+        adminCount: this.superAdmins.size,
       };
 
       const forensicEvidence = this.forensicSigner.sign(metrics);
@@ -769,7 +914,7 @@ class SuperAdminAuth {
         success: true,
         metrics,
         forensicId: forensicEvidence.substring(0, 16),
-        requestId
+        requestId,
       });
     } catch (error) {
       logger.error({ error: error.message, requestId }, 'Metrics error');
@@ -777,7 +922,7 @@ class SuperAdminAuth {
         success: false,
         code: 'METRICS_500',
         message: 'Failed to retrieve metrics',
-        requestId
+        requestId,
       });
     }
   };
@@ -800,14 +945,14 @@ class SuperAdminAuth {
         role: admin.role,
         sessionId,
         tenantId: admin.tenantId,
-        jti: crypto.randomBytes(16).toString('hex')
+        jti: crypto.randomBytes(16).toString('hex'),
       },
       this.jwtSecret,
       {
         expiresIn: this.sessionTimeout,
         algorithm: 'HS512',
         issuer: 'wilsy-os-2050',
-        audience: 'super-admin'
+        audience: 'super-admin',
       }
     );
   }
@@ -816,12 +961,12 @@ class SuperAdminAuth {
     return jwt.sign(
       {
         sub: admin.id,
-        type: 'refresh'
+        type: 'refresh',
       },
       this.refreshSecret,
       {
         expiresIn: '7d',
-        algorithm: 'HS512'
+        algorithm: 'HS512',
       }
     );
   }
@@ -858,8 +1003,8 @@ class SuperAdminAuth {
 
   async getGlobalThreatLevel() {
     const recentAudit = this.store.getAuditTrail(1000);
-    const failedAttempts = recentAudit.filter(e =>
-      e.eventType === 'LOGIN_FAILURE' || e.eventType === 'MFA_FAILURE'
+    const failedAttempts = recentAudit.filter(
+      (e) => e.eventType === 'LOGIN_FAILURE' || e.eventType === 'MFA_FAILURE'
     ).length;
 
     return Math.min(failedAttempts / 100, 0.9);
@@ -872,23 +1017,21 @@ class SuperAdminAuth {
     let threatLevel = 0;
 
     // Consistent IP extraction (matches login + session storage)
-    const currentIp = req.headers['x-forwarded-for'] ||
-      req.socket?.remoteAddress ||
-      req.ip ||
-      'unknown';
+    const currentIp =
+      req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || 'unknown';
 
     // IP mismatch = HIGH threat (impossible travel)
     if (sessionData.lastIp && sessionData.lastIp !== currentIp) {
-      threatLevel += 0.8;   // ← CRITICAL FIX: 0.8 now reliably triggers AUTH_009
+      threatLevel += 0.8; // ← CRITICAL FIX: 0.8 now reliably triggers AUTH_009
     }
 
     if (sessionData.userAgent && sessionData.userAgent !== req.headers['user-agent']) {
       threatLevel += 0.3;
     }
 
-    const recentAccess = this.store.getAuditTrail(10).filter(e =>
-      e.data?.adminId === admin.id
-    ).length;
+    const recentAccess = this.store
+      .getAuditTrail(10)
+      .filter((e) => e.data?.adminId === admin.id).length;
 
     if (recentAccess > 5) {
       threatLevel += 0.2;
@@ -900,18 +1043,25 @@ class SuperAdminAuth {
   async triggerThreatResponse(threatLevel, admin, req, requestId) {
     const currentIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip;
 
-    logger.warn({
-      threatLevel,
-      adminId: admin.id,
-      ip: currentIp,
-      requestId
-    }, 'Threat detected');
+    logger.warn(
+      {
+        threatLevel,
+        adminId: admin.id,
+        ip: currentIp,
+        requestId,
+      },
+      'Threat detected'
+    );
 
-    await this.logSecurityEvent('THREAT_DETECTED', {
-      adminId: admin.id,
-      threatLevel,
-      ip: currentIp
-    }, requestId);
+    await this.logSecurityEvent(
+      'THREAT_DETECTED',
+      {
+        adminId: admin.id,
+        threatLevel,
+        ip: currentIp,
+      },
+      requestId
+    );
 
     if (threatLevel > 0.8) {
       await this.store.deleteSession(`session:${admin.id}`);
@@ -929,7 +1079,7 @@ class SuperAdminAuth {
       method: req.method,
       requestId,
       responseTime: Date.now() - startTime,
-      forensicHash: this.forensicSigner.sign({ adminId: admin.id, timestamp: Date.now() })
+      forensicHash: this.forensicSigner.sign({ adminId: admin.id, timestamp: Date.now() }),
     };
 
     this.store.addAuditEntry(logEntry);
@@ -942,7 +1092,7 @@ class SuperAdminAuth {
       eventType,
       data,
       requestId,
-      forensicHash: this.forensicSigner.sign({ eventType, data, timestamp: Date.now() })
+      forensicHash: this.forensicSigner.sign({ eventType, data, timestamp: Date.now() }),
     };
 
     this.store.addAuditEntry(event);
@@ -955,7 +1105,7 @@ class SuperAdminAuth {
       code,
       message,
       requestId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 }

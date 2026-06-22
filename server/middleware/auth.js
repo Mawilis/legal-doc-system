@@ -72,7 +72,10 @@ const mesh = useSovereignMesh();
  * @returns {string} Lowercase role token.
  * @collaboration Role comparisons must behave consistently across database, JWT and route declarations.
  */
-const normalizeAuthRoleToken = (role = '') => String(role || '').trim().toLowerCase();
+const normalizeAuthRoleToken = (role = '') =>
+  String(role || '')
+    .trim()
+    .toLowerCase();
 
 /**
  * @function normalizeAllowedRoles
@@ -81,12 +84,8 @@ const normalizeAuthRoleToken = (role = '') => String(role || '').trim().toLowerC
  * @returns {Array<string>} Normalized allowed role list.
  * @collaboration Several Wilsy OS routes already declare role arrays; the gate must honour them instead of rejecting executives.
  */
-const normalizeAllowedRoles = (allowedRoles = []) => (
-  allowedRoles
-    .flat(Infinity)
-    .filter(Boolean)
-    .map(normalizeAuthRoleToken)
-);
+const normalizeAllowedRoles = (allowedRoles = []) =>
+  allowedRoles.flat(Infinity).filter(Boolean).map(normalizeAuthRoleToken);
 
 /**
  * @function isRoleAuthorized
@@ -99,7 +98,12 @@ const normalizeAllowedRoles = (allowedRoles = []) => (
 const isRoleAuthorized = (userRole = '', allowedRoles = []) => {
   const role = normalizeAuthRoleToken(userRole);
   if (allowedRoles.includes(role)) return true;
-  if (canBypassTenant(userRole) && allowedRoles.some(allowed => ['executive', 'super_admin', 'admin', 'founder', 'sovereign'].includes(allowed))) {
+  if (
+    canBypassTenant(userRole) &&
+    allowedRoles.some((allowed) =>
+      ['executive', 'super_admin', 'admin', 'founder', 'sovereign'].includes(allowed)
+    )
+  ) {
     return true;
   }
   return false;
@@ -115,19 +119,33 @@ const isRoleAuthorized = (userRole = '', allowedRoles = []) => {
 const shouldBypassForensicAudit = (req = {}) => {
   const url = String(req.originalUrl || req.url || '').toLowerCase();
   const method = String(req.method || 'GET').toUpperCase();
-  const safeReadMethod = ['GET', 'HEAD', 'OPTIONS'].includes(method);
+  const safeReadMethod = [
+    'GET',
+    'HEAD',
+    'OPTIONS',
+    '/api/source-registry/health',
+    '/api/source-registry/status',
+  ].includes(method);
 
-  if (url.includes('telemetry/error') || url.includes('telemetry/pulse') || url.includes('/api/status') || url.includes('/ws/boardroom')) {
+  if (
+    url.includes('telemetry/error') ||
+    url.includes('telemetry/pulse') ||
+    url.includes('/api/status') ||
+    url.includes('/ws/boardroom')
+  ) {
     return true;
   }
 
-  if (safeReadMethod && [
-    '/api/analytics',
-    '/api/finance/kpis',
-    '/api/finance/currency',
-    '/api/wilsy-ai/catalog',
-    '/api/wilsy-ai/analytics'
-  ].some(route => url.includes(route))) {
+  if (
+    safeReadMethod &&
+    [
+      '/api/analytics',
+      '/api/finance/kpis',
+      '/api/finance/currency',
+      '/api/wilsy-ai/catalog',
+      '/api/wilsy-ai/analytics',
+    ].some((route) => url.includes(route))
+  ) {
     return true;
   }
 
@@ -170,28 +188,32 @@ export const sovereignAuthenticate = asyncHandler(async (req, res, next) => {
 
   if (!token) {
     // Broadcast missing token event to mesh for boardroom visibility
-    mesh.propagate('GLOBAL_ROOT', { path: req.originalUrl, method: req.method }, 'AUTH_TOKEN_MISSING')
-      .catch(err => console.error('[Mesh] Broadcast failed:', err));
+    mesh
+      .propagate('GLOBAL_ROOT', { path: req.originalUrl, method: req.method }, 'AUTH_TOKEN_MISSING')
+      .catch((err) => console.error('[Mesh] Broadcast failed:', err));
     return res.status(401).json({
       success: false,
       error: 'NO_TOKEN',
       message: 'Access denied. Sovereign token missing.',
-      code: 'AUTH-401-MISSING'
+      code: 'AUTH-401-MISSING',
     });
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password -recoverySeedHash -twoFactorSecret');
+    const user = await User.findById(decoded.id).select(
+      '-password -recoverySeedHash -twoFactorSecret'
+    );
 
     if (!user || !user.isActive) {
-      mesh.propagate('GLOBAL_ROOT', { userId: decoded.id, reason: 'INACTIVE_USER' }, 'AUTH_FAILURE')
-        .catch(err => console.error('[Mesh] Broadcast failed:', err));
+      mesh
+        .propagate('GLOBAL_ROOT', { userId: decoded.id, reason: 'INACTIVE_USER' }, 'AUTH_FAILURE')
+        .catch((err) => console.error('[Mesh] Broadcast failed:', err));
       return res.status(401).json({
         success: false,
         error: 'IDENTITY_INVALID',
         message: 'The sovereign identity is inactive or does not exist.',
-        code: 'AUTH-401-INVALID'
+        code: 'AUTH-401-INVALID',
       });
     }
 
@@ -199,14 +221,19 @@ export const sovereignAuthenticate = asyncHandler(async (req, res, next) => {
     req.tenantId = user.tenantId;
 
     // Broadcast successful authentication to Sovereign Mesh (real‑time boardroom visibility)
-    mesh.propagate(user.tenantId, { userId: user._id, email: user.email, role: user.role }, 'AUTH_SUCCESS')
-      .catch(err => console.error('[Mesh] Broadcast failed:', err));
+    mesh
+      .propagate(
+        user.tenantId,
+        { userId: user._id, email: user.email, role: user.role },
+        'AUTH_SUCCESS'
+      )
+      .catch((err) => console.error('[Mesh] Broadcast failed:', err));
 
     // Append forensic entry for data mutations to secure immutable traceability logs
     if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
       user.appendForensicEntry('ACCESS_GRANTED', 'AUTH_MIDDLEWARE', {
         path: req.originalUrl,
-        method: req.method
+        method: req.method,
       });
       await user.save({ validateBeforeSave: false });
     }
@@ -214,13 +241,14 @@ export const sovereignAuthenticate = asyncHandler(async (req, res, next) => {
     return next();
   } catch (error) {
     logger.error(`[AUTH-SHIELD] Token validation fracture: ${error.message}`);
-    mesh.propagate('GLOBAL_ROOT', { error: error.message, path: req.originalUrl }, 'AUTH_FAILURE')
-      .catch(err => console.error('[Mesh] Broadcast failed:', err));
+    mesh
+      .propagate('GLOBAL_ROOT', { error: error.message, path: req.originalUrl }, 'AUTH_FAILURE')
+      .catch((err) => console.error('[Mesh] Broadcast failed:', err));
     return res.status(401).json({
       success: false,
       error: 'INVALID_TOKEN',
       message: 'Cryptographic token failed validation.',
-      code: 'AUTH-401-FAIL'
+      code: 'AUTH-401-FAIL',
     });
   }
 });
@@ -255,25 +283,34 @@ export const requireRole = (...allowedRoles) => {
       return res.status(401).json({
         success: false,
         error: 'AUTHENTICATION_REQUIRED',
-        code: 'AUTH-401-REQ'
+        code: 'AUTH-401-REQ',
       });
     }
 
     if (!isRoleAuthorized(req.user.role, normalizedAllowedRoles)) {
-      logger.warn(`[ROLE-VIOLATION] User ${req.user.email} attempted restricted action with role: ${req.user.role}`);
+      logger.warn(
+        `[ROLE-VIOLATION] User ${req.user.email} attempted restricted action with role: ${req.user.role}`
+      );
       req.user.recordAccessDenied?.({
         reason: 'INSUFFICIENT_PRIVILEGES',
         target: req.originalUrl,
-        channel: 'AUTH_MIDDLEWARE'
+        channel: 'AUTH_MIDDLEWARE',
       });
-      req.user.save?.({ validateBeforeSave: false }).catch(err => logger.warn(`[ROLE-VIOLATION-SAVE] ${err.message}`));
-      mesh.propagate(req.user.tenantId, { email: req.user.email, role: req.user.role, requiredRoles: normalizedAllowedRoles }, 'ROLE_VIOLATION')
-        .catch(err => console.error('[Mesh] Broadcast failed:', err));
+      req.user
+        .save?.({ validateBeforeSave: false })
+        .catch((err) => logger.warn(`[ROLE-VIOLATION-SAVE] ${err.message}`));
+      mesh
+        .propagate(
+          req.user.tenantId,
+          { email: req.user.email, role: req.user.role, requiredRoles: normalizedAllowedRoles },
+          'ROLE_VIOLATION'
+        )
+        .catch((err) => console.error('[Mesh] Broadcast failed:', err));
       return res.status(403).json({
         success: false,
         error: 'INSUFFICIENT_PRIVILEGES',
         message: `This operation requires one of the following privilege profiles: ${normalizedAllowedRoles.join(', ')}`,
-        code: 'AUTH-403-LEVEL'
+        code: 'AUTH-403-LEVEL',
       });
     }
     next();
@@ -302,7 +339,9 @@ export const tenantOwner = requireRole('tenant_owner', 'super_admin', 'founder')
  */
 export const requireSovereignAuth = (req, res, next) => {
   // DEBUG: Diagnose URL mismatch
-  if (req.originalUrl.includes('telemetry')) { console.log('[DEBUG-AUTH-CHECK]', req.originalUrl); }
+  if (req.originalUrl.includes('telemetry')) {
+    console.log('[DEBUG-AUTH-CHECK]', req.originalUrl);
+  }
 
   const bypassPaths = [
     '/discover',
@@ -310,10 +349,10 @@ export const requireSovereignAuth = (req, res, next) => {
     '/status',
     '/telemetry/pulse',
     '/telemetry/error',
-    '/api/telemetry/error'
+    '/api/telemetry/error',
   ];
 
-  if (bypassPaths.some(path => req.originalUrl.includes(path))) {
+  if (bypassPaths.some((path) => req.originalUrl.includes(path))) {
     return next();
   }
   return sovereignAuthenticate(req, res, next);
@@ -344,7 +383,9 @@ export const requireSovereignAuth = (req, res, next) => {
 export const forensicAuditMiddleware = (req, res, next) => {
   // 🛡️ HARDENED TELEMETRY BYPASS: Force skip for telemetry errors
   // Diagnostic log added to confirm path detection
-  if (req.originalUrl.includes('telemetry')) { console.log('[DEBUG-FORENSIC-CHECK]', req.originalUrl); }
+  if (req.originalUrl.includes('telemetry')) {
+    console.log('[DEBUG-FORENSIC-CHECK]', req.originalUrl);
+  }
 
   if (shouldBypassForensicAudit(req)) {
     return next();
@@ -353,14 +394,21 @@ export const forensicAuditMiddleware = (req, res, next) => {
   const isValid = verifyForensicSeal(req.headers, req.body);
   if (!isValid) {
     const traceId = req.headers['x-trace-id'] || 'UNKNOWN';
-    logger.warn(`[FORENSIC-AUDIT] Seal validation failed for request ${req.method} ${req.originalUrl} (trace: ${traceId})`);
-    mesh.propagate('GLOBAL_ROOT', { path: req.originalUrl, method: req.method, traceId, ip: req.ip }, 'FORENSIC_SEAL_FAILURE')
-      .catch(err => console.error('[Mesh] Broadcast failed:', err));
+    logger.warn(
+      `[FORENSIC-AUDIT] Seal validation failed for request ${req.method} ${req.originalUrl} (trace: ${traceId})`
+    );
+    mesh
+      .propagate(
+        'GLOBAL_ROOT',
+        { path: req.originalUrl, method: req.method, traceId, ip: req.ip },
+        'FORENSIC_SEAL_FAILURE'
+      )
+      .catch((err) => console.error('[Mesh] Broadcast failed:', err));
     return res.status(403).json({
       success: false,
       error: 'FORENSIC_SEAL_MISMATCH',
       message: 'Request integrity check failed. The cryptographic seal is missing or invalid.',
-      code: 'AUTH-403-SEAL'
+      code: 'AUTH-403-SEAL',
     });
   }
   next();
@@ -378,5 +426,5 @@ export default {
   admin,
   tenantOwner,
   requireSovereignAuth,
-  forensicAuditMiddleware
+  forensicAuditMiddleware,
 };

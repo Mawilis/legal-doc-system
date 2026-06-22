@@ -18,15 +18,93 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { broadcastTelemetry } from '../utils/telemetryHelper.js';
-import forge from 'node-forge';
 
 const AuthContext = createContext();
+const AUTH_BIOMETRIC_CHALLENGE = 'wilsy-auth-challenge';
+
+/**
+ * @function stripPemEnvelope
+ * @memberof WILSY_OS_CORE
+ * @description Removes PEM armor and whitespace so browser crypto can import the private key bytes.
+ * @param {string} pem - PKCS#8 private key PEM.
+ * @returns {string} Base64 key body.
+ * @collaboration Keeps founder MFA signing browser-native instead of depending on an uninstalled forge package.
+ */
+const stripPemEnvelope = (pem = '') => (
+  String(pem)
+    .replace(/-----BEGIN [^-]+-----/g, '')
+    .replace(/-----END [^-]+-----/g, '')
+    .replace(/\s+/g, '')
+);
+
+/**
+ * @function base64ToArrayBuffer
+ * @memberof WILSY_OS_CORE
+ * @description Converts a base64 payload into an ArrayBuffer for Web Crypto import and signing operations.
+ * @param {string} base64 - Base64 encoded payload.
+ * @returns {ArrayBuffer} Decoded binary buffer.
+ * @collaboration Provides deterministic browser crypto plumbing for the sovereign authentication path.
+ */
+const base64ToArrayBuffer = (base64 = '') => {
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes.buffer;
+};
+
+/**
+ * @function arrayBufferToBase64
+ * @memberof WILSY_OS_CORE
+ * @description Converts Web Crypto signature bytes into the base64 biometric token expected by auth routes.
+ * @param {ArrayBuffer} buffer - Binary signature buffer.
+ * @returns {string} Base64 encoded signature.
+ * @collaboration Preserves the existing biometricToken contract while removing the missing node-forge dependency.
+ */
+const arrayBufferToBase64 = (buffer) => {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let index = 0; index < bytes.byteLength; index += 1) {
+    binary += String.fromCharCode(bytes[index]);
+  }
+  return window.btoa(binary);
+};
+
+/**
+ * @function signBiometricChallenge
+ * @memberof WILSY_OS_CORE
+ * @description Signs the Wilsy authentication challenge with native RSASSA-PKCS1-v1_5 SHA-256 Web Crypto.
+ * @param {string} privateKeyPem - PKCS#8 private key PEM used for founder biometric fallback signing.
+ * @returns {Promise<string>} Base64 RSA-SHA256 signature.
+ * @collaboration Keeps the CEO login bridge buildable and aligned with the server strike client's RSA-SHA256 token format.
+ */
+const signBiometricChallenge = async (privateKeyPem = '') => {
+  if (!window.crypto?.subtle) {
+    throw new Error('Browser Web Crypto is required for biometric challenge signing.');
+  }
+  const keyData = base64ToArrayBuffer(stripPemEnvelope(privateKeyPem));
+  const privateKey = await window.crypto.subtle.importKey(
+    'pkcs8',
+    keyData,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await window.crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    privateKey,
+    new TextEncoder().encode(AUTH_BIOMETRIC_CHALLENGE)
+  );
+  return arrayBufferToBase64(signature);
+};
 
 /**
  * @function getStoredRefreshToken
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
+ * @collaboration Normalizes legacy token storage before every silent refresh or session replay.
  */
 const getStoredRefreshToken = () => {
   const raw = localStorage.getItem('wilsy_refresh_token') || localStorage.getItem('refreshToken');
@@ -34,14 +112,16 @@ const getStoredRefreshToken = () => {
   return raw.replace(/^["']|["']$/g, '');
 };
 
-export 
 /**
  * @function AuthProvider
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
+ * @param {Object} props - Provider props.
+ * @param {React.ReactNode} props.children - Application subtree receiving auth state.
+ * @returns {JSX.Element} Matrix runtime feedback data context output.
+ * @collaboration Owns the browser-side sovereign identity state, MFA bridge and telemetry purge contract.
  */
-const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('wilsy_user');
     try { return stored ? JSON.parse(stored) : null; } catch (e) { return null; }
@@ -86,6 +166,7 @@ const AuthProvider = ({ children }) => {
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
  * @returns {any} Matrix runtime feedback data context output
+ * @collaboration Re-anchors valid sessions without purging the CEO during temporary backend jitter.
  */
 const trySilentRefresh = async () => {
       const token = localStorage.getItem('wilsy_auth_token');
@@ -165,11 +246,7 @@ const trySilentRefresh = async () => {
     try {
       let biometricToken = null;
       if (typeof biometricAssertion === 'string' && biometricAssertion.includes('BEGIN PRIVATE KEY')) {
-        const privateKey = forge.pki.privateKeyFromPem(biometricAssertion);
-        const md = forge.md.sha256.create();
-        md.update('wilsy-auth-challenge', 'utf8');
-        const signature = privateKey.sign(md);
-        biometricToken = forge.util.encode64(signature);
+        biometricToken = await signBiometricChallenge(biometricAssertion);
       }
 
       const response = await api.post('/auth/verify-3fa', {
@@ -219,11 +296,11 @@ const trySilentRefresh = async () => {
   );
 };
 
-export 
 /**
  * @function useAuth
  * @memberof WILSY_OS_CORE
  * @description Production-grade sovereign enterprise asset node optimized for 10-generation architectural distribution.
- * @returns {any} Matrix runtime feedback data context output
+ * @returns {Object} Matrix runtime feedback data context output.
+ * @collaboration Gives Wilsy OS components one stable auth context entrypoint.
  */
-const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext);

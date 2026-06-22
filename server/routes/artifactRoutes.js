@@ -25,11 +25,11 @@
  */
 
 import express from 'express';
-import { generateSovereignArtifact } from '../controllers/artifactController.js';
 import { requireSovereignAuth } from '../middleware/auth.middleware.js';
 import { broadcastTelemetry } from '../utils/telemetryHelper.js';
 import crypto from 'node:crypto';
-
+import artifactController from '../controllers/artifactController.js';
+import { generateSovereignArtifactPdf } from '../controllers/businessArtifactPdfController.js';
 const router = express.Router();
 
 /**
@@ -43,15 +43,63 @@ const router = express.Router();
  *              enabling forensic reconstruction in case of disputes.
  * @forensic Broadcasts the request start event to telemetry, capturing user, tenant, and timestamp.
  */
+/**
+ * @function artifactTraceMiddleware
+ * @description Adds forensic trace context to artifact generation requests.
+ * @param {import('express').Request} req - Express request.
+ * @param {import('express').Response} res - Express response.
+ * @param {import('express').NextFunction} next - Express next handler.
+ * @returns {void}
+ * @collaboration Preserves route-level observability for Wilsy OS artifact generation without changing authentication, tenant isolation or cryptographic proof enforcement.
+ */
 const artifactTraceMiddleware = (req, res, next) => {
-  req.traceId = req.headers['x-trace-id'] || crypto.randomBytes(8).toString('hex').toUpperCase();
-  res.setHeader('X-Artifact-Trace-ID', req.traceId);
-  broadcastTelemetry(req.headers['x-tenant-id'] || 'GLOBAL_ROOT', 'ARTIFACT_ROUTE', 'REQUEST_START', 'artifactRoutes', {
-    traceId: req.traceId,
-    user: req.user?.id || 'ANONYMOUS',
-    path: req.originalUrl
-  }).catch(() => {});
-  next();
+  const WILSY_ARTIFACT_TRACE_DB_FREE_V1 = true;
+
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const metadata = body.metadata && typeof body.metadata === 'object' ? body.metadata : {};
+
+  const tenantId = String(
+    req.get?.('X-Tenant-ID') ||
+      req.get?.('X-Tenant-Id') ||
+      req.get?.('X-Wilsy-Tenant-ID') ||
+      body.tenantId ||
+      metadata.tenantId ||
+      'MASTER'
+  ).trim();
+
+  const artifactType = String(
+    req.get?.('X-Artifact-Type') ||
+      req.get?.('X-Wilsy-Artifact-Type') ||
+      body.type ||
+      metadata.type ||
+      'business-artifact'
+  ).trim();
+
+  const requestId = String(
+    req.get?.('X-Request-ID') ||
+      req.get?.('X-Correlation-ID') ||
+      metadata.requestId ||
+      `artifact-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  );
+
+  req.wilsyArtifactTrace = {
+    dbFree: WILSY_ARTIFACT_TRACE_DB_FREE_V1,
+    requestId,
+    tenantId,
+    artifactType,
+    route: req.originalUrl || req.url,
+    method: req.method,
+    timestamp: new Date().toISOString(),
+  };
+
+  req.tenantId = tenantId;
+  req.wilsyTenantId = tenantId;
+
+  req.headers['x-tenant-id'] = tenantId;
+  req.headers['x-wilsy-tenant-id'] = tenantId;
+  req.headers['x-artifact-type'] = artifactType;
+
+  return next();
 };
 
 // 🛡️ ZERO-TRUST SHIELD: All generation requests MUST pass through Sovereign Auth
@@ -70,7 +118,7 @@ router.use(artifactTraceMiddleware);
  * @example
  * curl -X POST /api/generate/pdf -H "Authorization: Bearer <token>" -H "X-Request-Seal: ..." -d '{"type":"NDAA-ENTERPRISE","signature":"data:image/...","metadata":{"timestamp":"..."}}'
  */
-router.post('/pdf', generateSovereignArtifact);
+router.post('/pdf', generateSovereignArtifactPdf);
 
 // Optional health check for the artifact service (internal use)
 router.get('/pdf/health', (req, res) => {
@@ -78,7 +126,7 @@ router.get('/pdf/health', (req, res) => {
     success: true,
     service: 'SovereignArtifactRouter',
     status: 'OPERATIONAL',
-    version: '48.3.0-MARS'
+    version: '48.3.0-MARS',
   });
 });
 

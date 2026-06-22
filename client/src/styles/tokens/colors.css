@@ -1,60 +1,166 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - SOVEREIGN COLOR TOKENS (DYNAMIC TENANT DNA)                                                                                 ║
- * ║ [R23.7T VISUAL FIDELITY | CSS VARIABLE INJECTION | MULTI-TENANT ARCHITECTURE]                                                          ║
+ * ║ WILSY OS - SOVEREIGN COLOR TOKENS [V16.0.0-SOVEREIGN-AURORA-DNA]                                                                        ║
+ * ║ TENANT DNA | COMMAND COCKPIT | DAY/NIGHT OPERATING MODES | MULTI-TENANT BRANDING                                                       ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 15.5.0-SINGULARITY-OMEGA | PRODUCTION READY                                                                                 ║
- * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | FORTUNE 500 STANDARD                                                              ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ COLLABORATION NOTES:                                                                                                                   ║
- * ║ 1. ARCHITECTURAL INTENT: Decouple brand identity from component logic using CSS Custom Properties.                                     ║
- * ║ 2. PERFORMANCE: Zero-repaint runtime updates via root property injection.                                                               ║
- * ║ 3. SCALABILITY: Supports 10,000+ tenants with unique branding via a single context hook.                                               ║
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/styles/tokens/colors.css                                               ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
 
 :root {
-  /* 🧬 DEFAULT WILSY OS OMEGA CORE DNA */
-  --tenant-primary: #0072FF;      /* The "Sovereign Blue" - Primary action color */
-  --tenant-secondary: #00C6FF;    /* Secondary highlights / gradients */
-  --tenant-accent: #6C63FF;       /* UI accents for neural indicators */
+  /* WILSY LOGO DNA */
+  --wilsy-dna-black: #020306;
+  --wilsy-dna-ink: #05070d;
+  --wilsy-dna-midnight: #090d18;
+  --wilsy-dna-navy: #101a35;
+  --wilsy-dna-cobalt: #2436a4;
+  --wilsy-dna-royal: #3957ff;
+  --wilsy-dna-sky: #17bdf2;
+  --wilsy-dna-ice: #d8f7ff;
+  --wilsy-dna-pearl: #fffaf0;
+  --wilsy-dna-mint: #7ff0c8;
+  --wilsy-dna-gold: #d4af37;
+  --wilsy-dna-rose: #ff6f91;
+  --wilsy-dna-violet: #7c68ff;
 
-  /* 🏛️ CORE SURFACE ARCHITECTURE (Dark-Ops Foundation) */
-  --sovereign-bg: #0A0B10;        /* Deep space background for premium contrast */
-  --sovereign-surface: #161B22;   /* Elevated cards and panels */
-  --sovereign-border: rgba(255, 255, 255, 0.08);
+  /* TENANT DNA */
+  --tenant-primary: var(--wilsy-dna-cobalt);
+  --tenant-secondary: var(--wilsy-dna-sky);
+  --tenant-accent: var(--wilsy-dna-gold);
+  --tenant-authority: var(--wilsy-dna-gold);
+  --tenant-live: var(--wilsy-dna-mint);
+  --tenant-risk: var(--wilsy-dna-rose);
 
-  /* 🛡️ FORENSIC SEMANTIC SYSTEM (Standardized across all global companies) */
-  --forensic-success: #00FF94;    /* Verified transactions / Healthy nodes */
-  --forensic-warning: #FFB800;    /* Audit anomalies / Compliance flags */
-  --forensic-danger: #FF4B4B;     /* Security breaches / Critical failures */
-  --forensic-info: #00D1FF;       /* System metadata notifications */
+  /* SURFACE ARCHITECTURE */
+  --sovereign-bg: var(--wilsy-dna-black);
+  --sovereign-bg-elevated: var(--wilsy-dna-ink);
+  --sovereign-surface: rgba(8, 12, 24, 0.94);
+  --sovereign-surface-raised: rgba(15, 24, 52, 0.9);
+  --sovereign-surface-glass: rgba(255, 255, 255, 0.045);
+  --sovereign-border: rgba(216, 247, 255, 0.1);
+  --sovereign-border-strong: rgba(127, 240, 200, 0.36);
+  --sovereign-border-authority: rgba(212, 175, 55, 0.42);
 
-  /* 💎 TEXT HIERARCHY (NIST-Compliant Readability) */
-  --text-primary: #FFFFFF;        /* High-fidelity headings */
-  --text-secondary: #8B949E;      /* Support text / metadata */
-  --text-muted: #484F58;          /* Low-priority / disabled states */
+  /* SEMANTIC SYSTEM */
+  --forensic-success: var(--wilsy-dna-mint);
+  --forensic-warning: var(--wilsy-dna-gold);
+  --forensic-danger: var(--wilsy-dna-rose);
+  --forensic-info: var(--wilsy-dna-sky);
 
-  /* 🚀 QUANTUM VISUAL EFFECTS */
-  --glow-primary: rgba(0, 114, 255, 0.4);
-  --shadow-sovereign: 0 10px 40px rgba(0, 0, 0, 0.5);
-  --glass-blur: blur(12px);
+  /* TEXT HIERARCHY */
+  --text-primary: var(--wilsy-dna-pearl);
+  --text-secondary: #c5cce5;
+  --text-muted: #7c86a8;
+  --text-disabled: #4d5570;
+  --text-inverse: var(--wilsy-dna-black);
+
+  /* EFFECTS */
+  --glow-primary: rgba(36, 54, 164, 0.42);
+  --glow-cyan: rgba(23, 189, 242, 0.28);
+  --glow-mint: rgba(127, 240, 200, 0.2);
+  --glow-gold: rgba(212, 175, 55, 0.28);
+  --shadow-sovereign: 0 28px 90px rgba(0, 0, 0, 0.58);
+  --shadow-glass: 0 18px 60px rgba(6, 12, 30, 0.35);
+  --glass-blur: blur(18px);
+
+  /* COMMAND RADII */
+  --radius-command-sm: 12px;
+  --radius-command-md: 18px;
+  --radius-command-lg: 28px;
+  --radius-command-xl: 38px;
+
+  /* MODE BRIDGE */
+  --wilsy-mode-bg: var(--sovereign-bg);
+  --wilsy-mode-surface: var(--sovereign-surface);
+  --wilsy-mode-text: var(--text-primary);
+  --wilsy-mode-muted: var(--text-secondary);
+
+  color-scheme: dark;
 }
 
-/**
- * 🏢 TENANT-SPECIFIC OVERRIDES (Sovereign Context Selectors)
- * These can be targeted via CSS if specific branding requires unique logic.
- */
+/* DAY OPERATING MODE */
+:root[data-wilsy-mode="day"],
+[data-wilsy-mode="day"] {
+  --sovereign-bg: #f6f8ff;
+  --sovereign-bg-elevated: #ffffff;
+  --sovereign-surface: rgba(255, 255, 255, 0.96);
+  --sovereign-surface-raised: rgba(248, 250, 255, 0.94);
+  --sovereign-surface-glass: rgba(36, 54, 164, 0.055);
+  --sovereign-border: rgba(36, 54, 164, 0.16);
+  --sovereign-border-strong: rgba(36, 54, 164, 0.3);
+  --sovereign-border-authority: rgba(212, 175, 55, 0.4);
+
+  --text-primary: #10182b;
+  --text-secondary: #34405f;
+  --text-muted: #64708e;
+  --text-disabled: #9ca6bc;
+  --text-inverse: #fffaf0;
+
+  --shadow-sovereign: 0 28px 90px rgba(36, 54, 164, 0.16);
+  --shadow-glass: 0 18px 60px rgba(36, 54, 164, 0.12);
+
+  --wilsy-mode-bg: var(--sovereign-bg);
+  --wilsy-mode-surface: var(--sovereign-surface);
+  --wilsy-mode-text: var(--text-primary);
+  --wilsy-mode-muted: var(--text-secondary);
+
+  color-scheme: light;
+}
+
+/* NIGHT OPERATING MODE */
+:root[data-wilsy-mode="night"],
+[data-wilsy-mode="night"] {
+  color-scheme: dark;
+}
+
+/* AUTO MODE */
+@media (prefers-color-scheme: light) {
+  :root[data-wilsy-mode="auto"],
+  [data-wilsy-mode="auto"] {
+    --sovereign-bg: #f6f8ff;
+    --sovereign-bg-elevated: #ffffff;
+    --sovereign-surface: rgba(255, 255, 255, 0.96);
+    --sovereign-surface-raised: rgba(248, 250, 255, 0.94);
+    --sovereign-surface-glass: rgba(36, 54, 164, 0.055);
+    --sovereign-border: rgba(36, 54, 164, 0.16);
+    --sovereign-border-strong: rgba(36, 54, 164, 0.3);
+    --text-primary: #10182b;
+    --text-secondary: #34405f;
+    --text-muted: #64708e;
+    --text-inverse: #fffaf0;
+    color-scheme: light;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-wilsy-mode="auto"],
+  [data-wilsy-mode="auto"] {
+    color-scheme: dark;
+  }
+}
+
+/* TENANT OVERRIDES */
+[data-tenant="wilsy"],
+[data-tenant="wilsy-root"] {
+  --tenant-primary: var(--wilsy-dna-cobalt);
+  --tenant-secondary: var(--wilsy-dna-sky);
+  --tenant-accent: var(--wilsy-dna-gold);
+  --tenant-authority: var(--wilsy-dna-gold);
+  --tenant-live: var(--wilsy-dna-mint);
+}
+
 [data-tenant="ensafrica"] {
-  --tenant-primary: #8C734B;      /* ENS Gold Heritage */
-  --tenant-secondary: #1A1A1A;
-  --tenant-accent: #C5A059;
+  --tenant-primary: #8c734b;
+  --tenant-secondary: #1a1a1a;
+  --tenant-accent: #c5a059;
+  --tenant-authority: #c5a059;
   --glow-primary: rgba(140, 115, 75, 0.4);
 }
 
 [data-tenant="musk-spacex"] {
-  --tenant-primary: #005288;      /* SpaceX Mars-Ready Blue */
+  --tenant-primary: #005288;
   --tenant-secondary: #000000;
-  --tenant-accent: #FFFFFF;
+  --tenant-accent: #ffffff;
+  --tenant-authority: #ffffff;
 }

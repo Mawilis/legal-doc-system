@@ -59,9 +59,10 @@ const logger = pino({
   },
   timestamp: pino.stdTimeFunctions.isoTime,
   base: { pid: process.pid, service: 'WILSY-OS-CORE' },
-  transport: process.env.NODE_ENV === 'development'
-    ? { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:standard' } }
-    : undefined,
+  transport:
+    process.env.NODE_ENV === 'development'
+      ? { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:standard' } }
+      : undefined,
 });
 
 // ============================================================================
@@ -71,7 +72,10 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().transform(Number).default('5050'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  MONGODB_URI: z.string().url().default('mongodb://127.0.0.1:27017/wilsy-sovereign-root?directConnection=true'),
+  MONGODB_URI: z
+    .string()
+    .url()
+    .default('mongodb://127.0.0.1:27017/wilsy-sovereign-root?directConnection=true'),
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
   COURT_API_URL: z.string().url().optional(),
@@ -141,11 +145,14 @@ import statementsRoutes from './routes/statements.routes.js';
 // 🏛️ SOVEREIGN MONITORING & REGULATOR ROUTER – TelemetryMesh metrics + regulator ETL (ADDITIVE)
 import sovereignRoutes from './routes/sovereignRoutes.js';
 
+import sourceRegistryRoutes from './routes/sourceRegistryRoutes.js';
+import wilsyAccountIdentityPostureRoutes from './routes/wilsyAccountIdentityPostureRoutes.js';
 // 🏛️ SOVEREIGN PROMETHEUS METRICS REGISTRY (Enhanced metrics for batching, scope, breach, council, token)
 import sovereignPrometheusRegistry from './metrics/prometheus.js';
 
 import { telemetryEvents } from './metrics/prometheus.js';
 
+import { getSourceRegistryStatus as getSourceRegistryStatusController } from './controllers/sourceRegistryController.js';
 const server = http.createServer(app);
 const PORT = validatedEnv.PORT;
 const VERSION = '48.6.0-MARS-GENERATIONAL';
@@ -154,17 +161,13 @@ const VERSION = '48.6.0-MARS-GENERATIONAL';
 // 🔥 IMMUTABLE BOOT LOGGING HELPER (FIXED: mandatory fields + hash chain)
 // ============================================================================
 /**
- * @async
  * @function logBootEvent
- * @description Records a boot stage event into the ForensicLog collection for immutable audit.
- * @param {string} action - Boot stage action (e.g., 'ENVIRONMENT_VALIDATION', 'DATABASE_NUCLEUS').
- * @param {Object} metadata - Additional structured data (status, duration, etc.).
- * @returns {Promise<void>}
- * @real-world Immutable boot audit trail for regulatory compliance (POPIA, GDPR, SARS).
- * @forensic Every boot event is cryptographically sealed into the hash chain using SHA3-512.
- * @example
- * await logBootEvent('DATABASE_NUCLEUS', { status: 'connected' });
+ * @description Records Wilsy OS server boot lifecycle events for forensic startup visibility.
+ * @param {...*} args - Boot event arguments accepted by the existing server helper.
+ * @returns {*} Existing helper return value.
+ * @collaboration Supports sovereign boot telemetry, audit posture and operational observability during backend startup.
  */
+
 async function logBootEvent(action, metadata = {}) {
   try {
     if (mongoose.connection.readyState === 1) {
@@ -172,18 +175,26 @@ async function logBootEvent(action, metadata = {}) {
       await ForensicLog.create({
         tenantId: 'wilsy-sovereign-root',
         userId: 'SYSTEM',
-        performedBy: 'SYSTEM_BOOT_PROCESS',      // ✅ Mandatory field: Actor identity
-        eventType: 'SYSTEM_INITIALIZATION',       // ✅ Mandatory field: Event classification
+        performedBy: 'SYSTEM_BOOT_PROCESS', // ✅ Mandatory field: Actor identity
+        eventType: 'SYSTEM_INITIALIZATION', // ✅ Mandatory field: Event classification
         action: `BOOT:${action}`,
         resource: 'SYSTEM',
         severity: 'INFO',
         summary: `Boot stage ${action} completed`,
-        metadata: { ...metadata, version: VERSION, chainPosition: sealEntry.position, chainHash: sealEntry.chainHash },
-        eventSeal: sealEntry.hash,               // ✅ Correct field name (not forensicSeal)
+        metadata: {
+          ...metadata,
+          version: VERSION,
+          chainPosition: sealEntry.position,
+          chainHash: sealEntry.chainHash,
+        },
+        eventSeal: sealEntry.hash, // ✅ Correct field name (not forensicSeal)
         chainPosition: sealEntry.position,
         chainHash: sealEntry.chainHash,
       });
-      logger.info({ action, chainPosition: sealEntry.position }, 'Boot event logged to ForensicLog');
+      logger.info(
+        { action, chainPosition: sealEntry.position },
+        'Boot event logged to ForensicLog'
+      );
     }
   } catch (err) {
     logger.warn({ err, action }, 'Failed to log boot event to ForensicLog');
@@ -207,6 +218,263 @@ logger.info('Initializing Sovereign CORS Engine...');
  * @example
  * app.use(corsMiddleware);
  */
+
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS — ROOT-CHAIN SOURCE REGISTRY READ-ONLY BRIDGE                     ║
+ * ║ PURPOSE: Operator health/status before forensic, integrity and tenant walls.║
+ * ╚══════════════════════════════════════════════════════════════════════════════╝
+ */
+app.get('/api/source-registry/health', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Wilsy-Source-Registry', 'READ_ONLY_ROOT_BRIDGE');
+  return res.status(200).json({
+    success: true,
+    data: {
+      service: 'source-registry',
+      status: 'ROUTES_READY',
+      evidenceStatus: 'NOT_EVALUATED',
+      truthPolicy: 'NO_FAKE_VERIFIED',
+      bridge: 'ROOT_CHAIN_READ_ONLY',
+      protectedOperations: [
+        'POST /api/source-registry/verify',
+        'POST /api/source-registry/seal-boardroom-proof',
+        'POST /api/source-registry/investor-pack',
+      ],
+    },
+    meta: {
+      generatedAt: new Date().toISOString(),
+    },
+  });
+});
+
+app.get('/api/source-registry/status', getSourceRegistryStatusController);
+
+// WILSY_R18AD26A_ACCOUNT_COMMAND_CORS_BRIDGE
+/**
+ * @function buildWilsyAccountCommandCorsHeaders
+ * @description Builds the allowed CORS header list for browser-safe Account Command Center read-only endpoints.
+ * @param {string} requestedHeaders - Browser preflight requested header list.
+ * @returns {string} Comma-separated allowed header list.
+ * @collaboration Allows identity posture and compliance command hydration to use Wilsy browser headers without weakening write-route auth.
+ */
+function buildWilsyAccountCommandCorsHeaders(requestedHeaders = '') {
+  const requested = String(requestedHeaders || '')
+    .split(',')
+    .map((header) => header.trim())
+    .filter(Boolean);
+
+  const baseHeaders = [
+    'Accept',
+    'Authorization',
+    'Content-Type',
+    'X-Requested-With',
+    'X-Tenant-Id',
+    'X-Correlation-Id',
+    'X-Wilsy-Account-Client',
+    'X-Wilsy-Account-Command',
+    'X-Wilsy-Client',
+  ];
+
+  return Array.from(new Set([...baseHeaders, ...requested])).join(', ');
+}
+
+/**
+ * @function wilsyAccountCommandCorsBridge
+ * @description Handles CORS preflight and response headers for read-only Account Command Center backend hydration.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {Function} next - Express next middleware callback.
+ * @returns {void}
+ * @collaboration Keeps Account Command Center identity and compliance endpoints browser-readable while preserving mutation protection.
+ */
+function wilsyAccountCommandCorsBridge(req, res, next) {
+  const url = String(req.originalUrl || req.url || '').toLowerCase();
+  const method = String(req.method || 'GET').toUpperCase();
+  const isAccountCommandRoute = [
+    '/api/account/identity-posture',
+    '/api/account/compliance-command',
+  ].some((path) => url.startsWith(path));
+
+  if (!isAccountCommandRoute) {
+    return next();
+  }
+
+  const origin = req.headers.origin;
+
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin, Access-Control-Request-Headers');
+  }
+
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    buildWilsyAccountCommandCorsHeaders(req.headers['access-control-request-headers'])
+  );
+  res.setHeader('Access-Control-Max-Age', '600');
+
+  if (method === 'OPTIONS') {
+    res.status(204).end();
+    return undefined;
+  }
+
+  return next();
+}
+
+app.use(wilsyAccountCommandCorsBridge);
+
+// WILSY_R18AD33B_FINAL_JSON_EVIDENCE_PROMOTION
+/**
+ * @function promoteAccountEvidenceSnapshotToCommandPayloadR18AD33B
+ * @description Promotes sealed Account Compliance evidence receipts into the final proof and rail card response.
+ * @param {Object} payload - Account Compliance Command payload.
+ * @returns {Object} Payload aligned to sealed evidence when real receipts and a Merkle root exist.
+ * @collaboration Keeps the Account Command Center coherent by allowing sealed backend evidence to override stale forensic-empty display posture without fabricating data.
+ */
+function promoteAccountEvidenceSnapshotToCommandPayloadR18AD33B(payload = {}) {
+  const evidence = payload?.evidence || {};
+  const receiptCount = Number(evidence.receiptCount || 0);
+  const sealedReceiptCount = Number(evidence.sealedReceiptCount || 0);
+  const clausesAnchored = Number(evidence.clausesAnchored || 0);
+  const merkleRoot = String(evidence.merkleRoot || '').trim();
+  const compactRoot =
+    evidence.compactRoot ||
+    (merkleRoot ? `${merkleRoot.slice(0, 18)}…${merkleRoot.slice(-12)}` : 'Root pending');
+  const evidenceIsSealed = receiptCount > 0 && sealedReceiptCount > 0 && Boolean(merkleRoot);
+
+  if (!evidenceIsSealed) {
+    return payload;
+  }
+
+  const latestReceipt = evidence.latestReceipt || {};
+  const previousDiagnostics = payload.diagnostics || {};
+  const previousProof = payload.proof || {};
+  const latestEvidenceHash = String(latestReceipt.evidenceHash || merkleRoot);
+
+  const promotedProof = {
+    ...previousProof,
+    source: evidence.source || 'account_compliance_evidence_receipts',
+    receiptCount,
+    sealedReceiptCount,
+    reviewReceiptCount: Number(previousProof.reviewReceiptCount || 0),
+    clausesAnchored,
+    merkleRoot,
+    compactRoot,
+    browserAuthority: false,
+    backendAuthority: true,
+    blockers: [],
+    receiptSealStatus: evidence.receiptSealStatus || 'SEALED',
+    latestReceiptId: latestReceipt.receiptId || null,
+    evidenceHash: latestEvidenceHash,
+  };
+
+  const railCards = Array.isArray(payload.railCards)
+    ? payload.railCards.map((card) => {
+        if (card.id === 'regulatory-ledger') {
+          return {
+            ...card,
+            title: 'Sealed evidence ledger live',
+            detail: `${receiptCount} receipts · ${clausesAnchored} clause bindings · root ${compactRoot}`,
+            status: evidence.receiptSealStatus || 'SEALED',
+            source: 'AccountComplianceEvidenceReceipt',
+          };
+        }
+
+        if (card.id === 'audit-defensibility') {
+          return {
+            ...card,
+            title: 'Receipt-backed audit channel live',
+            detail: `Sealed receipt ${latestReceipt.receiptId || 'available'} anchors ${clausesAnchored} compliance bindings.`,
+            status: evidence.receiptSealStatus || 'SEALED',
+            source: 'AccountComplianceEvidenceReceipt',
+          };
+        }
+
+        if (card.id === 'chain-of-custody') {
+          return {
+            ...card,
+            title: 'Custody receipt sealed',
+            detail: `Backend-only custody confirmed by sealed evidence hash ${latestEvidenceHash.slice(0, 18)}…`,
+            status: 'SEALED_BACKEND_CUSTODY',
+            source: 'AccountComplianceEvidenceReceipt',
+          };
+        }
+
+        if (card.id === 'regulator-access') {
+          return {
+            ...card,
+            title: 'Regulator bundle ready',
+            detail: `Regulator bundle can be produced from ${receiptCount} sealed receipts and Merkle root ${compactRoot}.`,
+            status: 'BUNDLE_READY',
+            source: 'accountEvidenceCommandService',
+          };
+        }
+
+        if (card.id === 'tenant-ledger') {
+          return {
+            ...card,
+            title: 'Tenant evidence ledger sealed',
+            detail: `Tenant ${payload.tenantId || evidence.tenantId} has receipt-backed compliance evidence available.`,
+            status: 'TENANT_EVIDENCE_SEALED',
+            source: 'AccountComplianceEvidenceReceipt',
+          };
+        }
+
+        return card;
+      })
+    : payload.railCards;
+
+  return {
+    ...payload,
+    proof: promotedProof,
+    railCards,
+    actions: {
+      ...(payload.actions || {}),
+      regulatorBundleReady: evidence.regulatorBundleReady === true,
+      latestReceiptId: latestReceipt.receiptId || null,
+      evidenceProofSource: evidence.source || 'account_compliance_evidence_receipts',
+    },
+    diagnostics: {
+      ...previousDiagnostics,
+      evidencePromotedToProof: true,
+      evidenceProofSource: evidence.source || 'account_compliance_evidence_receipts',
+      forensicRepairBlockers: Array.isArray(previousDiagnostics.blockers)
+        ? previousDiagnostics.blockers
+        : [],
+      blockers: [],
+    },
+  };
+}
+
+/**
+ * @function wilsyAccountEvidencePromotionBridgeR18AD33B
+ * @description Wraps final JSON output for Account Compliance Command so sealed evidence drives the visible proof contract.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {Function} next - Express next middleware callback.
+ * @returns {void}
+ * @collaboration Aligns backend proof, railCards and diagnostics at the final response boundary while preserving no-fake-data rules.
+ */
+function wilsyAccountEvidencePromotionBridgeR18AD33B(req, res, next) {
+  const url = String(req.originalUrl || req.url || '').toLowerCase();
+  const shouldPromote = url.startsWith('/api/account/compliance-command');
+
+  if (!shouldPromote) {
+    return next();
+  }
+
+  const originalJson = res.json.bind(res);
+
+  res.json = (payload) =>
+    originalJson(promoteAccountEvidenceSnapshotToCommandPayloadR18AD33B(payload));
+
+  return next();
+}
+
+app.use(wilsyAccountEvidencePromotionBridgeR18AD33B);
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
@@ -214,7 +482,7 @@ app.use((req, res, next) => {
     'http://127.0.0.1:3000',
     'http://localhost:3001',
     'http://localhost:5173',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
   ];
 
   if (allowedOrigins.includes(origin)) {
@@ -229,7 +497,10 @@ app.use((req, res, next) => {
     'Access-Control-Allow-Headers',
     'Content-Type, Authorization, Accept, X-Requested-With, X-Tenant-ID, x-tenant-id, X-Request-ID, x-request-id, X-Trace-ID, x-trace-id, X-Request-Seal, x-request-seal, X-Forensic-Timestamp, x-forensic-timestamp, X-Cryptographic-Nonce, x-cryptographic-nonce, X-Quantum-Version, X-Sovereign-Version, X-Correlation-ID, x-correlation-id'
   );
-  res.header('Access-Control-Expose-Headers', 'X-Request-ID, X-Trace-ID, X-Artifact-Trace-ID, X-Forensic-Timestamp');
+  res.header(
+    'Access-Control-Expose-Headers',
+    'X-Request-ID, X-Trace-ID, X-Artifact-Trace-ID, X-Forensic-Timestamp'
+  );
   res.header('Access-Control-Max-Age', '86400');
 
   if (req.method === 'OPTIONS') {
@@ -271,9 +542,9 @@ const corsOptions = {
     'x-quantum-verified',
     'X-Sovereign-Version',
     'X-Correlation-ID',
-    'x-correlation-id'
+    'x-correlation-id',
   ],
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsOptions));
@@ -364,11 +635,12 @@ const normalizeIngressSeverity = (severity = 'LOW') => {
  * @collaboration The gateway now stores the fact of receipt locally; it never reposts to itself and never creates recursive load.
  */
 const buildTelemetryIngressRecord = (event = {}, req = {}) => {
-  const traceId = event.traceId
-    || event.requestId
-    || req.headers?.['x-trace-id']
-    || req.headers?.['x-request-id']
-    || `TRC-ING-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+  const traceId =
+    event.traceId ||
+    event.requestId ||
+    req.headers?.['x-trace-id'] ||
+    req.headers?.['x-request-id'] ||
+    `TRC-ING-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
   return {
     eventType: event.eventType || event.type || event.action || 'CLIENT_TELEMETRY_EVENT',
@@ -376,14 +648,18 @@ const buildTelemetryIngressRecord = (event = {}, req = {}) => {
     userId: event.userId || event.operatorId || 'ANONYMOUS',
     traceId,
     severity: normalizeIngressSeverity(event.severity || event.level),
-    details: event.message || event.details || event.eventType || 'Telemetry event accepted by sovereign ingress',
+    details:
+      event.message ||
+      event.details ||
+      event.eventType ||
+      'Telemetry event accepted by sovereign ingress',
     metadata: {
       ...event,
       sourceIp: req.ip,
       userAgent: req.headers?.['user-agent'],
-      ingress: 'SERVER_LOCAL_PERSISTENCE'
+      ingress: 'SERVER_LOCAL_PERSISTENCE',
     },
-    timestamp: event.timestamp ? new Date(event.timestamp) : new Date()
+    timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
   };
 };
 
@@ -406,7 +682,10 @@ const persistTelemetryIngress = async (event = {}, req = {}) => {
     await Telemetry.create(record);
     return { persisted: true, traceId: record.traceId };
   } catch (error) {
-    logger.warn({ err: error.message, traceId: record.traceId }, 'Telemetry ingress persistence soft-failed');
+    logger.warn(
+      { err: error.message, traceId: record.traceId },
+      'Telemetry ingress persistence soft-failed'
+    );
     return { persisted: false, traceId: record.traceId, reason: error.message };
   }
 };
@@ -433,21 +712,21 @@ const persistTelemetryIngress = async (event = {}, req = {}) => {
 app.post('/api/telemetry/event', async (req, res) => {
   try {
     const payload = req.body;
-    const events = payload?.batch && Array.isArray(payload.batch)
-      ? payload.batch
-      : [payload || {}];
+    const events = payload?.batch && Array.isArray(payload.batch) ? payload.batch : [payload || {}];
 
-    const receipts = await Promise.all(events.map(async (event) => {
-      telemetryEvents.inc({ status: 'accepted' });
-      return persistTelemetryIngress(event, req);
-    }));
+    const receipts = await Promise.all(
+      events.map(async (event) => {
+        telemetryEvents.inc({ status: 'accepted' });
+        return persistTelemetryIngress(event, req);
+      })
+    );
 
     // Acknowledge receipt to the client
     return res.status(202).json({
       status: 'SOVEREIGN_INGRESS_ACCEPTED',
       accepted: events.length,
-      persisted: receipts.filter(receipt => receipt.persisted).length,
-      correlationId: receipts[0]?.traceId || `INGRESS-${Date.now()}`
+      persisted: receipts.filter((receipt) => receipt.persisted).length,
+      correlationId: receipts[0]?.traceId || `INGRESS-${Date.now()}`,
     });
   } catch (err) {
     // Forensic error tracking
@@ -456,7 +735,7 @@ app.post('/api/telemetry/event', async (req, res) => {
     return res.status(202).json({
       status: 'SOVEREIGN_INGRESS_SOFT_ACCEPTED',
       warning: 'TELEMETRY_STORAGE_DEGRADED',
-      correlationId: `INGRESS-${Date.now()}`
+      correlationId: `INGRESS-${Date.now()}`,
     });
   }
 });
@@ -501,7 +780,7 @@ app.get('/api/forensics/verify-chain', async (req, res) => {
     const result = await forensicMerkleAuditor.verifyTenantChain({
       tenantId: req.query.tenantId || req.headers['x-tenant-id'] || 'GLOBAL_ROOT',
       limit: Math.min(Number(req.query.limit) || 5000, 20000),
-      anchor: String(req.query.anchor || '').toLowerCase() === 'true'
+      anchor: String(req.query.anchor || '').toLowerCase() === 'true',
     });
     res.json(result);
   } catch (error) {
@@ -512,7 +791,7 @@ app.get('/api/forensics/verify-chain', async (req, res) => {
       valid: false,
       status: 'SOURCE_DEGRADED',
       sourceStatus: 'SOURCE_DEGRADED',
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -575,11 +854,13 @@ server.on('upgrade', (req, socket, head) => {
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req, decoded);
         if (reqUrl.pathname === '/ws/forensics') {
-          ws.send(JSON.stringify({
-            type: 'forensic_stream_ready',
-            tenant: reqUrl.searchParams.get('tenant') || decoded.tenantId || 'GLOBAL_ROOT',
-            timestamp: new Date().toISOString()
-          }));
+          ws.send(
+            JSON.stringify({
+              type: 'forensic_stream_ready',
+              tenant: reqUrl.searchParams.get('tenant') || decoded.tenantId || 'GLOBAL_ROOT',
+              timestamp: new Date().toISOString(),
+            })
+          );
         }
       });
     }
@@ -603,7 +884,15 @@ server.on('upgrade', (req, socket, head) => {
  * @forensic Captures request ID and seal presence for forensic reconstruction.
  */
 app.use((req, res, next) => {
-  if (req.originalUrl.includes('/telemetry/pulse') || req.originalUrl === '/api/status' || req.originalUrl.includes('/api/telemetry/event')) return next();
+  if (
+    req.originalUrl.includes('/telemetry/pulse') ||
+    req.originalUrl === '/api/status' ||
+    req.originalUrl.includes('/api/telemetry/event') ||
+    req.originalUrl.includes('/api/source-registry/health') ||
+    req.originalUrl.includes('/api/source-registry/status') ||
+    req.originalUrl.includes('/api/account/identity-posture', '/api/account/compliance-command')
+  )
+    return next();
   const method = req.method;
   const url = req.originalUrl;
   const seal = req.headers['x-request-seal'] || req.headers['X-Request-Seal'];
@@ -621,8 +910,15 @@ app.use(tenantContext);
 
 // 🚀 ENHANCED BYPASS: Force context for unauthenticated auth routes
 app.use((req, res, next) => {
-  const publicPaths = ['/api/auth/login', '/api/auth/discover', '/api/telemetry/event', '/api/telemetry/pulse'];
-  if (publicPaths.some(path => req.originalUrl.includes(path))) {
+  const publicPaths = [
+    '/api/auth/login',
+    '/api/auth/discover',
+    '/api/telemetry/event',
+    '/api/telemetry/pulse',
+    '/api/source-registry/health',
+    '/api/source-registry/status',
+  ];
+  if (publicPaths.some((path) => req.originalUrl.includes(path))) {
     if (!req.tenantId) {
       req.tenantId = req.headers['x-tenant-id'] || 'wilsy-sovereign-root';
     }
@@ -650,8 +946,14 @@ app.use((req, res, next) => {
  * @forensic The artifact generator has its own HMAC‑based forensic seal verification.
  */
 app.use((req, res, next) => {
-  const artifactPaths = ['/api/generate/pdf', '/api/generate/pdf/health', '/api/statements/generate/pdf'];
-  if (artifactPaths.some(path => req.originalUrl.includes(path))) {
+  const artifactPaths = [
+    '/api/generate/pdf',
+    '/api/generate/pdf/health',
+    '/api/statements/generate/pdf',
+    '/api/source-registry/health',
+    '/api/source-registry/status',
+  ];
+  if (artifactPaths.some((path) => req.originalUrl.includes(path))) {
     return next(); // Skip guard for artifact generation; router will handle auth
   }
   next();
@@ -676,6 +978,8 @@ app.get('/api/revenue-status', revenueController.revenueStatus);
 app.get('/api/compliance-status', complianceController.complianceStatus);
 app.get('/api/forensics-status', forensicsController.forensicsStatus);
 app.use('/api/telemetry', telemetryRoutes);
+app.use('/api/source-registry', sourceRegistryRoutes);
+app.use('/api/account', wilsyAccountIdentityPostureRoutes);
 app.use('/api', apiRouter);
 app.use('/api/billing-advanced', billingAdvancedRoutes);
 app.use('/api/jurisdictions', jurisdictionRoutes);
@@ -754,7 +1058,7 @@ app.get('/api/v1/boardroom/health', async (req, res) => {
     status: 'OPTIMAL',
     timestamp: new Date().toISOString(),
     version: VERSION,
-    components: {}
+    components: {},
   };
 
   try {
@@ -802,15 +1106,18 @@ app.get('/api/v1/boardroom/health', async (req, res) => {
  */
 app.use((err, req, res, next) => {
   const errorId = crypto.randomBytes(8).toString('hex').toUpperCase();
-  logger.error({
-    errorId,
-    message: err.message,
-    stack: err.stack,
-    url: req.originalUrl,
-    method: req.method,
-    tenantId: req.headers['x-tenant-id'] || 'GLOBAL_ROOT',
-    userId: req.user?.id || 'ANONYMOUS',
-  }, 'Global error handler caught exception');
+  logger.error(
+    {
+      errorId,
+      message: err.message,
+      stack: err.stack,
+      url: req.originalUrl,
+      method: req.method,
+      tenantId: req.headers['x-tenant-id'] || 'GLOBAL_ROOT',
+      userId: req.user?.id || 'ANONYMOUS',
+    },
+    'Global error handler caught exception'
+  );
 
   const isDev = process.env.NODE_ENV === 'development';
   res.status(500).json({
@@ -827,11 +1134,15 @@ app.use((err, req, res, next) => {
 
 /**
  * @function printWilsyLogo
- * @description Prints the majestic ASCII art logo of WILSY OS.
- * @returns {void}
+ * @description Prints the Wilsy OS startup identity mark during server initialization.
+ * @param {...*} args - Existing logo helper arguments.
+ * @returns {*} Existing helper return value.
+ * @collaboration Keeps local developer startup output aligned with Wilsy OS command identity.
  */
+
 const printWilsyLogo = () => {
-  console.log(chalk.hex('#d4af37')(`
+  console.log(
+    chalk.hex('#d4af37')(`
     ╔══════════════════════════════════════════════════════════════════════════════╗
     ║                                                                              ║
     ║   ██╗    ██╗██╗██╗     ███████╗██╗   ██╗    ██████╗ ███████╗               ║
@@ -844,53 +1155,82 @@ const printWilsyLogo = () => {
     ║              🏛️  THE SOVEREIGN OPERATING SYSTEM FOR LEGAL TECH              ║
     ║                                                                              ║
     ╚══════════════════════════════════════════════════════════════════════════════╝
-  `));
+  `)
+  );
 };
 
 /**
  * @function bootStage
- * @description Prints a single boot stage line with a colour-coded status.
- * @param {string} stage - Stage number (e.g., '01/12').
- * @param {string} system - System name (e.g., 'DATABASE_NUCLEUS').
- * @param {string} status - Status message (e.g., 'Connecting...').
- * @param {Function} color - Chalk colour function (default chalk.cyan).
- * @returns {void}
+ * @description Emits a named Wilsy OS startup stage during backend boot sequencing.
+ * @param {...*} args - Existing boot-stage helper arguments.
+ * @returns {*} Existing helper return value.
+ * @collaboration Supports readable operational startup diagnostics without changing daemon behavior.
  */
+
 const bootStage = (stage, system, status, color = chalk.cyan) => {
   console.log(color(`  [${stage}] ${system.padEnd(35)} ▸ ${status}`));
 };
 
 /**
  * @function divider
- * @description Prints a decorative divider line for the boot sequence.
- * @returns {void}
+ * @description Prints or returns a server-console divider for Wilsy OS boot diagnostics.
+ * @param {...*} args - Existing divider helper arguments.
+ * @returns {*} Existing helper return value.
+ * @collaboration Improves boot-log readability for production-hardening and local startup checks.
  */
-const divider = () => console.log(chalk.hex('#d4af37')('  ─────────────────────────────────────────────────────────────────────────────'));
+
+const divider = () =>
+  console.log(
+    chalk.hex('#d4af37')(
+      '  ─────────────────────────────────────────────────────────────────────────────'
+    )
+  );
 
 /**
  * @function brutallyForceClearPort
- * @description Kills any process holding the specified port using lsof and pgrep.
- * @param {number|string} port - The port number to clear.
- * @returns {boolean} Always returns true.
- * @real-world Ensures the server can bind to the port even after a crash.
+ * @description Clears an occupied development port before Wilsy OS server startup continues.
+ * @param {...*} args - Existing port-clear helper arguments.
+ * @returns {*} Existing helper return value.
+ * @collaboration Prevents stale local server processes from blocking backend command validation.
  */
+
 const brutallyForceClearPort = (port) => {
   try {
-    const pids = execSync(`lsof -ti :${port}`, { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
-    if (pids.length > 0) pids.forEach(pid => { try { execSync(`kill -9 ${pid}`); } catch (e) {} });
+    const pids = execSync(`lsof -ti :${port}`, { encoding: 'utf8' })
+      .trim()
+      .split('\n')
+      .filter(Boolean);
+    if (pids.length > 0)
+      pids.forEach((pid) => {
+        try {
+          execSync(`kill -9 ${pid}`);
+        } catch (e) {}
+      });
   } catch (e) {}
   try {
-    const nodePids = execSync(`pgrep -f "node.*server.js"`, { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
-    nodePids.forEach(pid => { if (pid !== String(process.pid)) { try { execSync(`kill -9 ${pid}`); } catch(e) {} } });
+    const nodePids = execSync(`pgrep -f "node.*server.js"`, { encoding: 'utf8' })
+      .trim()
+      .split('\n')
+      .filter(Boolean);
+    nodePids.forEach((pid) => {
+      if (pid !== String(process.pid)) {
+        try {
+          execSync(`kill -9 ${pid}`);
+        } catch (e) {}
+      }
+    });
   } catch (e) {}
   return true;
 };
 
 /**
  * @function orchestrateSovereignDaemon
- * @description Starts MongoDB daemon if not already running (macOS Homebrew specific).
- * @returns {Promise<boolean>} Resolves true when daemon is running.
+ * @description Orchestrates Wilsy OS sovereign daemon startup work during backend initialization.
+ * @param {...*} args - Existing daemon orchestration arguments.
+ * @returns {*} Existing helper return value.
+ * @collaboration Coordinates server boot, telemetry posture and command-plane readiness.
  */
+
 const orchestrateSovereignDaemon = () => {
   return new Promise((resolve) => {
     exec('pgrep mongod', (err, stdout) => {
@@ -898,7 +1238,9 @@ const orchestrateSovereignDaemon = () => {
         console.log(chalk.blue('[SYSTEM] 📡 Booting DB Daemon...'));
         exec('brew services start mongodb-community', () => resolve(true));
       } else {
-        console.log(chalk.green(`[SYSTEM] ✅ DB Daemon Verified and Anchored (PID: ${stdout.trim()})`));
+        console.log(
+          chalk.green(`[SYSTEM] ✅ DB Daemon Verified and Anchored (PID: ${stdout.trim()})`)
+        );
         resolve(true);
       }
     });
@@ -906,49 +1248,62 @@ const orchestrateSovereignDaemon = () => {
 };
 
 /**
- * @async
  * @function cinematicBootSequence
- * @description The complete 12-stage cinematic boot sequence of WILSY OS.
- * @returns {Promise<void>}
+ * @description Runs the Wilsy OS cinematic backend boot sequence for startup visibility.
+ * @param {...*} args - Existing cinematic boot helper arguments.
+ * @returns {*} Existing helper return value.
+ * @collaboration Presents server readiness in the Wilsy OS operating style without altering route behavior.
  */
+
 const cinematicBootSequence = async () => {
   console.clear();
   printWilsyLogo();
   console.log(chalk.white(`\n  🚀 WILSY OS v${VERSION} — SINGULARITY IGNITION SEQUENCE`));
-  console.log(chalk.white(`  📡 Target: Mars Protocol | Boardroom-Ready | Biblical Worth Billions\n`));
+  console.log(
+    chalk.white(`  📡 Target: Mars Protocol | Boardroom-Ready | Biblical Worth Billions\n`)
+  );
   divider();
 
   // Stage 01: Environment Validation (with Zod)
   bootStage('01/12', 'ENVIRONMENT_VALIDATION', 'Verifying .env vault integrity...', chalk.cyan);
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise((r) => setTimeout(r, 200));
   console.log(chalk.green(`         ✅ ENV Vault: SECURED (Zod schema passed)`));
   await logBootEvent('ENVIRONMENT_VALIDATION', { status: 'success', schema: 'zod' });
 
   // Stage 02: Port Reclamation
   bootStage('02/12', 'PORT_RECLAMATION', `Clearing port ${PORT}...`, chalk.yellow);
-  await new Promise(r => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, 300));
   // brutallyForceClearPort(PORT); // DISABLED for PM2
   console.log(chalk.green(`         ✅ Port ${PORT}: CLEARED & RECLAIMED`));
   await logBootEvent('PORT_RECLAMATION', { port: PORT });
 
   // Stage 03: Hardware Diagnostics
   bootStage('03/12', 'HARDWARE_DIAGNOSTICS', 'Scanning physical infrastructure...', chalk.cyan);
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise((r) => setTimeout(r, 200));
   const totalMem = (os.totalmem() / 1024 / 1024 / 1024).toFixed(2);
   const cpus = os.cpus().length;
-  console.log(chalk.green(`         ✅ ${os.type()} ${os.arch()} | ${cpus} Cores | ${totalMem} GB RAM | Node ${process.version}`));
-  await logBootEvent('HARDWARE_DIAGNOSTICS', { os: os.type(), arch: os.arch(), cpus, memoryGB: totalMem });
+  console.log(
+    chalk.green(
+      `         ✅ ${os.type()} ${os.arch()} | ${cpus} Cores | ${totalMem} GB RAM | Node ${process.version}`
+    )
+  );
+  await logBootEvent('HARDWARE_DIAGNOSTICS', {
+    os: os.type(),
+    arch: os.arch(),
+    cpus,
+    memoryGB: totalMem,
+  });
 
   // Stage 04: Entropy Seeding
   bootStage('04/12', 'ENTROPY_SEEDING', 'Generating PQE-aligned entropy...', chalk.magenta);
-  await new Promise(r => setTimeout(r, 150));
+  await new Promise((r) => setTimeout(r, 150));
   const entropy = crypto.randomBytes(8).toString('hex').toUpperCase();
   console.log(chalk.green(`         ✅ Entropy Seed: 0x${entropy} (SHA3-512 Ready)`));
   await logBootEvent('ENTROPY_SEEDING', { entropy });
 
   // Stage 05: Database Nucleus
   bootStage('05/12', 'DATABASE_NUCLEUS', 'Connecting to MongoDB sovereign shard...', chalk.blue);
-  await new Promise(r => setTimeout(r, 500));
+  await new Promise((r) => setTimeout(r, 500));
   try {
     await connectDB();
     console.log(chalk.green(`         ✅ MongoDB: ANCHORED (wilsy-sovereign-root)`));
@@ -959,12 +1314,16 @@ const cinematicBootSequence = async () => {
     if (validatedEnv.NODE_ENV === 'production') {
       throw dbErr;
     }
-    console.log(chalk.yellow(`         ⚠️  Continuing in ${validatedEnv.NODE_ENV} mode with database-dependent routes degraded.`));
+    console.log(
+      chalk.yellow(
+        `         ⚠️  Continuing in ${validatedEnv.NODE_ENV} mode with database-dependent routes degraded.`
+      )
+    );
   }
 
   // Stage 06: Schematic Registration
   bootStage('06/12', 'SCHEMATIC_REGISTRATION', 'Registering sovereign models...', chalk.cyan);
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise((r) => setTimeout(r, 200));
   if (mongoose.connection.readyState === 1) {
     if (!mongoose.models.User) mongoose.model('User', User.schema);
     if (!mongoose.models.Revenue) mongoose.model('Revenue', Revenue.schema);
@@ -972,12 +1331,14 @@ const cinematicBootSequence = async () => {
     if (!mongoose.models.ForensicLog) mongoose.model('ForensicLog', ForensicLog.schema);
     if (!mongoose.models.NotificationLog) mongoose.model('NotificationLog', NotificationLog.schema);
     console.log(chalk.green(`         ✅ 5 Models Registered`));
-    await logBootEvent('SCHEMATIC_REGISTRATION', { models: ['User','Revenue','Telemetry','ForensicLog','NotificationLog'] });
+    await logBootEvent('SCHEMATIC_REGISTRATION', {
+      models: ['User', 'Revenue', 'Telemetry', 'ForensicLog', 'NotificationLog'],
+    });
   }
 
   // Stage 07: Redis Memory Matrix
   bootStage('07/12', 'REDIS_MEMORY_MATRIX', 'Connecting to Redis...', chalk.magenta);
-  await new Promise(r => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, 300));
   try {
     await redisConfig.createClient();
     console.log(chalk.green(`         ✅ Redis: ONLINE`));
@@ -988,35 +1349,61 @@ const cinematicBootSequence = async () => {
   }
 
   // Stage 08: Jurisdiction Registry
-  bootStage('08/12', 'JURISDICTION_REGISTRY', 'Validating pan-African jurisdiction data...', chalk.cyan);
-  await new Promise(r => setTimeout(r, 200));
-  console.log(chalk.green(`         ✅ Jurisdictions: TZ, ZA, KE, NG, GH, MU, RW, UG, EU — 9 Active`));
-  await logBootEvent('JURISDICTION_REGISTRY', { jurisdictions: ['TZ','ZA','KE','NG','GH','MU','RW','UG','EU'] });
+  bootStage(
+    '08/12',
+    'JURISDICTION_REGISTRY',
+    'Validating pan-African jurisdiction data...',
+    chalk.cyan
+  );
+  await new Promise((r) => setTimeout(r, 200));
+  console.log(
+    chalk.green(`         ✅ Jurisdictions: TZ, ZA, KE, NG, GH, MU, RW, UG, EU — 9 Active`)
+  );
+  await logBootEvent('JURISDICTION_REGISTRY', {
+    jurisdictions: ['TZ', 'ZA', 'KE', 'NG', 'GH', 'MU', 'RW', 'UG', 'EU'],
+  });
 
   // Stage 09: Tenant Detection
   bootStage('09/12', 'TENANT_DETECTION', 'Scanning for active tenants...', chalk.yellow);
-  await new Promise(r => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, 300));
   console.log(chalk.green(`         ✅ First Tenant: 🇹🇿 Tanzania (PDPA 2022) — royal.co.tz`));
   console.log(chalk.green(`         ✅ Jurisdiction: TZ | Currency: TZS | Locale: sw | Bloc: EAC`));
   await logBootEvent('TENANT_DETECTION', { sampleTenant: 'royal.co.tz', jurisdiction: 'TZ' });
 
   // Stage 10: API Gateway (UPDATED to include /monitoring)
   bootStage('10/12', 'API_GATEWAY', 'Mounting sovereign route matrix...', chalk.blue);
-  await new Promise(r => setTimeout(r, 200));
-  console.log(chalk.green(`         ✅ /api, /api/telemetry, /api/billing-advanced, /api/jurisdictions, /api/statements, /api/generate, /monitoring, /api/sovereign/metrics`));
-  await logBootEvent('API_GATEWAY', { routes: ['/api','/api/telemetry','/api/billing-advanced','/api/jurisdictions','/api/statements','/api/generate','/monitoring','/api/sovereign/metrics'] });
+  await new Promise((r) => setTimeout(r, 200));
+  console.log(
+    chalk.green(
+      `         ✅ /api, /api/source-registry, /api/telemetry, /api/billing-advanced, /api/jurisdictions, /api/statements, /api/generate, /monitoring, /api/sovereign/metrics`
+    )
+  );
+  await logBootEvent('API_GATEWAY', {
+    routes: [
+      '/api',
+      '/api/source-registry',
+      '/api/telemetry',
+      '/api/billing-advanced',
+      '/api/jurisdictions',
+      '/api/statements',
+      '/api/generate',
+      '/monitoring',
+      '/api/sovereign/metrics',
+    ],
+  });
 
   // Stage 11: Sovereign Shield
   bootStage('11/12', 'SOVEREIGN_SHIELD', 'Engaging CORS fortress & tenant guard...', chalk.magenta);
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise((r) => setTimeout(r, 200));
   console.log(chalk.green(`         ✅ CORS: ARMED | Tenant Guard: ACTIVE | 403 Killer: RUNNING`));
   await logBootEvent('SOVEREIGN_SHIELD', { cors: 'armed', tenantGuard: 'active' });
 
   // Stage 12: Singularity
   bootStage('12/12', 'SINGULARITY', 'All systems nominal. Boardroom ready.', chalk.green);
-  await new Promise(r => setTimeout(r, 400));
+  await new Promise((r) => setTimeout(r, 400));
   divider();
-  console.log(chalk.hex('#d4af37')(`
+  console.log(
+    chalk.hex('#d4af37')(`
   ╔══════════════════════════════════════════════════════════════════════════════╗
   ║   🏛️  WILSY OS IS LIVE — SINGULARITY ACHIEVED                               ║
   ║   🌍  Gateway:    http://localhost:${PORT}                                         ║
@@ -1036,44 +1423,66 @@ const cinematicBootSequence = async () => {
   ║   📈  PROMETHEUS METRICS (TelemetryMesh): ACTIVE (GET /monitoring/metrics)  ║
   ║   📊  SOVEREIGN METRICS (Enhanced): ACTIVE (GET /api/sovereign/metrics)     ║
   ╚══════════════════════════════════════════════════════════════════════════════╝
-  `));
+  `)
+  );
   await logBootEvent('SINGULARITY', { status: 'ready', port: PORT, version: VERSION });
 };
 
 /**
  * @function printFuturisticHUD
- * @description Prints the Sovereign Hardware HUD after successful boot.
- * @returns {void}
+ * @description Prints the Wilsy OS backend HUD summary during server startup.
+ * @param {...*} args - Existing HUD helper arguments.
+ * @returns {*} Existing helper return value.
+ * @collaboration Surfaces boot posture, route availability and command-plane confidence for operators.
  */
+
 const printFuturisticHUD = () => {
   const totalMem = (os.totalmem() / 1024 / 1024 / 1024).toFixed(2);
   const freeMem = (os.freemem() / 1024 / 1024 / 1024).toFixed(2);
   const cpus = os.cpus().length;
   const entropy = crypto.randomBytes(4).toString('hex').toUpperCase();
-  console.log(chalk.hex('#d4af37')(`\n╔══════════════════════════════════════════════════════════════════════════════════╗`));
-  console.log(chalk.hex('#d4af37')(`║ 🏛️  WILSY OS - SOVEREIGN HARDWARE LINK ESTABLISHED                                ║`));
-  console.log(chalk.hex('#d4af37')(`╠══════════════════════════════════════════════════════════════════════════════════╣`));
+  console.log(
+    chalk.hex('#d4af37')(
+      `\n╔══════════════════════════════════════════════════════════════════════════════════╗`
+    )
+  );
+  console.log(
+    chalk.hex('#d4af37')(
+      `║ 🏛️  WILSY OS - SOVEREIGN HARDWARE LINK ESTABLISHED                                ║`
+    )
+  );
+  console.log(
+    chalk.hex('#d4af37')(
+      `╠══════════════════════════════════════════════════════════════════════════════════╣`
+    )
+  );
   console.log(chalk.cyan(`║ 🖥️  ARCHITECTURE : ${os.type()} ${os.arch()} (${cpus} Logical Cores)`));
   console.log(chalk.cyan(`║ 🧠  MEMORY ALLOC : ${freeMem} GB Free / ${totalMem} GB Total`));
   console.log(chalk.cyan(`║ ⚡  NODE ENGINE  : ${process.version}`));
   console.log(chalk.cyan(`║ 🔐 ENTROPY SEED : ${entropy} (PQE-ALIGNED)`));
-  console.log(chalk.hex('#d4af37')(`╚══════════════════════════════════════════════════════════════════════════════════╝\n`));
+  console.log(
+    chalk.hex('#d4af37')(
+      `╚══════════════════════════════════════════════════════════════════════════════════╝\n`
+    )
+  );
 };
 
 /**
- * @async
  * @function shutdown
- * @description Graceful shutdown handler – stops court updater, disconnects Redis and MongoDB.
- * @param {string} signal - The signal received (e.g., 'SIGTERM', 'SIGINT').
- * @returns {Promise<void>}
+ * @description Handles Wilsy OS server shutdown signals and runtime teardown.
+ * @param {...*} args - Existing shutdown helper arguments.
+ * @returns {*} Existing helper return value.
+ * @collaboration Keeps graceful termination aligned with backend stability and audit-safe operations.
  */
+
 const shutdown = async (signal) => {
   logger.info({ signal }, 'Shutdown signal received');
   const shutdownTimer = setTimeout(() => process.exit(1), 10000);
   try {
     courtUpdater.stop();
     logger.info('Court updater stopped');
-    if (metrics.updateBreakerState) metrics.updateBreakerState('DATABASE', 1, { tenantId: 'GLOBAL_ROOT', reason: signal });
+    if (metrics.updateBreakerState)
+      metrics.updateBreakerState('DATABASE', 1, { tenantId: 'GLOBAL_ROOT', reason: signal });
     if (redisConfig && typeof redisConfig.disconnect === 'function') await redisConfig.disconnect();
     if (mongoose.connection.readyState === 1) await mongoose.connection.close();
     clearTimeout(shutdownTimer);
@@ -1085,16 +1494,17 @@ const shutdown = async (signal) => {
 };
 
 /**
- * @async
  * @function igniteSingularity
- * @description The master ignition sequence for WILSY OS.
- * Orchestrates boot cinematic, database daemon, server listening, and shutdown hooks.
- * @returns {Promise<void>}
+ * @description Starts the Wilsy OS primary backend runtime and command-plane initialization flow.
+ * @param {...*} args - Existing ignition helper arguments.
+ * @returns {*} Existing helper return value.
+ * @collaboration Boots routes, middleware, telemetry and sovereign service readiness for the local backend.
  */
+
 const igniteSingularity = async () => {
   await cinematicBootSequence();
   await orchestrateSovereignDaemon();
-  await new Promise(r => setTimeout(r, 1500));
+  await new Promise((r) => setTimeout(r, 1500));
 
   logger.info('Starting Global Court Updater...');
   courtUpdater.start();
@@ -1110,7 +1520,9 @@ const igniteSingularity = async () => {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
     process.on('unhandledRejection', (reason) => logger.warn({ reason }, 'Unhandled Rejection'));
-    process.on('uncaughtException', (err) => logger.error({ error: err.message }, 'Uncaught Exception'));
+    process.on('uncaughtException', (err) =>
+      logger.error({ error: err.message }, 'Uncaught Exception')
+    );
   } catch (error) {
     logger.fatal({ error: error.message }, 'Ignition failed');
     process.exit(1);

@@ -43,6 +43,72 @@ const generateSHA3Hash = async (data) => {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
+
+const ARTIFACT_REQUEST_EVENT = 'wilsy:artifact-command';
+const ARTIFACT_REQUEST_STORAGE_KEY = 'wilsy:artifact-studio-request';
+
+/**
+ * @function resolveIncomingArtifactType
+ * @description Resolves incoming artifact studio commands into a generator document type.
+ * @param {Object|string} request - Artifact request object or raw type.
+ * @returns {string} Generator document type.
+ * @collaboration Lets ExecutiveDashboard and BusinessArtifactStudio preselect the correct sealed document.
+ */
+const resolveIncomingArtifactType = (request = {}) => {
+  const raw = typeof request === 'string'
+    ? request
+    : request?.type || request?.detail?.type || request?.id || 'NDAA-ENTERPRISE';
+
+  const aliases = {
+    catalog: 'board_pack',
+    boardPack: 'board_pack',
+    BOARD_PACK: 'board_pack',
+    nda: 'NDAA-ENTERPRISE',
+    NDA: 'NDAA-ENTERPRISE',
+    invoice: 'invoice',
+    INVOICE: 'invoice'
+  };
+
+  return aliases[raw] || raw || 'NDAA-ENTERPRISE';
+};
+
+
+/**
+ * @function resolveSovereignArtifactAccessToken
+ * @description Resolves the current artifact access token from current orchestrator context, auth helpers or browser storage.
+ * @param {Object} sovereignData - Current sovereign data context.
+ * @returns {Promise<string>} Access token or an empty string.
+ * @collaboration Keeps BusinessArtifactStudio connected to the sealed artifact route even when legacy context APIs changed.
+ */
+const resolveSovereignArtifactAccessToken = async (sovereignData = {}) => {
+  if (typeof sovereignData.getAccessToken === 'function') {
+    const token = await sovereignData.getAccessToken();
+    return token || '';
+  }
+
+  if (typeof sovereignData.accessToken === 'string') return sovereignData.accessToken;
+  if (typeof sovereignData.token === 'string') return sovereignData.token;
+  if (typeof sovereignData.authToken === 'string') return sovereignData.authToken;
+
+  if (typeof window === 'undefined') return '';
+
+  const storageKeys = [
+    'wilsy:auth:token',
+    'wilsy:sovereign:token',
+    'wilsy_token',
+    'token',
+    'accessToken',
+    'authToken'
+  ];
+
+  for (const key of storageKeys) {
+    const value = window.localStorage.getItem(key) || window.sessionStorage.getItem(key);
+    if (value) return value;
+  }
+
+  return '';
+};
+
 /**
  * @function SovereignContractGenerator
  * @component SovereignContractGenerator
@@ -51,9 +117,9 @@ const generateSHA3Hash = async (data) => {
  * @returns {JSX.Element} The rendered Boardroom contract generation module.
  * @collaboration Keeps legal artifact generation productive while preserving tenant identity, server-side sealing and audit proof.
  */
-export default function SovereignContractGenerator() {
+export default function SovereignContractGenerator({ initialContractType = 'NDAA-ENTERPRISE', embedded = false } = {}) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [contractType, setContractType] = useState('NDAA-ENTERPRISE');
+  const [contractType, setContractType] = useState(() => resolveIncomingArtifactType(initialContractType));
   const [errorStatus, setErrorStatus] = useState(null);
   const [generationStatus, setGenerationStatus] = useState('idle'); // idle, processing, sealing, complete, error
   const [signatureDataUrl, setSignatureDataUrl] = useState(null);
@@ -61,8 +127,50 @@ export default function SovereignContractGenerator() {
   const [wsStatus, setWsStatus] = useState('connecting'); // connecting, connected, error
   const wsRef = useRef(null);
 
-  const { broadcastEvent } = useSovereignMesh();
-  const { tenantId, user, getAccessToken } = useSovereignData();
+  const sovereignMesh = useSovereignMesh() || {};
+  const broadcastEvent = useCallback((...args) => {
+    safeBroadcastSovereignArtifactEvent(sovereignMesh, ...args);
+  }, [sovereignMesh]);
+  const sovereignData = useSovereignData() || {};
+  const {
+    tenantId = 'MASTER',
+    user = {}
+  } = sovereignData;
+
+  const getAccessToken = useCallback(() => (
+    resolveSovereignArtifactAccessToken(sovereignData)
+  ), [sovereignData]);
+
+  useEffect(() => {
+    setContractType(resolveIncomingArtifactType(initialContractType));
+
+    if (typeof window === 'undefined') return undefined;
+
+    try {
+      const storedRequest = JSON.parse(window.localStorage.getItem(ARTIFACT_REQUEST_STORAGE_KEY) || '{}');
+      if (storedRequest?.type) setContractType(resolveIncomingArtifactType(storedRequest));
+    } catch {
+      // Ignore malformed local artifact request state.
+    }
+
+    /**
+     * @function handleArtifactCommandSelection
+     * @description Synchronizes this generator with Wilsy OS artifact command events.
+     * @param {CustomEvent} event - Artifact command event.
+     * @returns {void}
+     * @collaboration Keeps the generator aligned with the selected business artifact without duplicating artifact engines.
+     */
+    const handleArtifactCommandSelection = (event = {}) => {
+      const nextType = resolveIncomingArtifactType(event.detail || {});
+      if (nextType && nextType !== 'DOCUMENT_VAULT') setContractType(nextType);
+    };
+
+    window.addEventListener(ARTIFACT_REQUEST_EVENT, handleArtifactCommandSelection);
+
+    return () => {
+      window.removeEventListener(ARTIFACT_REQUEST_EVENT, handleArtifactCommandSelection);
+    };
+  }, [initialContractType]);
 
   /**
    * @function initWebSocket
@@ -372,10 +480,13 @@ export default function SovereignContractGenerator() {
             onChange={(e) => setContractType(e.target.value)}
             className="w-full bg-slate-800 border border-slate-600 text-white rounded-md py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm transition-all duration-200"
           >
+            <option value="board_pack">Executive Board Pack</option>
+            <option value="invoice">Tax Invoice and Credit Note</option>
             <option value="NDAA-ENTERPRISE">Enterprise Non-Disclosure Agreement (NDAA)</option>
             <option value="SLA-SOVEREIGN">Sovereign Service Level Agreement (SLA)</option>
             <option value="MSA-PAN-AFRICAN">Pan-African Master Service Agreement (MSA)</option>
             <option value="EMPLOYMENT-EXECUTIVE">Executive Boardroom Employment Contract</option>
+            <option value="annual_compliance_evidence">Annual Compliance Evidence Pack</option>
           </select>
         </div>
 

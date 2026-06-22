@@ -94,6 +94,21 @@ const UNIVERSAL_EXECUTIVE_DUTIES = Object.freeze([
 ]);
 
 /**
+ * @constant {Array<string>}
+ * @description Core CEO operating modules every tenant should see before industry-specific overlays.
+ * @collaboration Wilson needs CEO onboarding to start with finance, people, customer, governance and AI controls for every industry.
+ */
+const CORE_EXECUTIVE_FUNCTIONS = Object.freeze([
+  'executive_dashboard',
+  'billing',
+  'crm',
+  'hr',
+  'reports',
+  'documents',
+  'wilsy_ai'
+]);
+
+/**
  * @constant {Object<string, Object>}
  * @description Industry archetypes mapped to daily executive workflows, operating functions and AI use cases.
  * @collaboration Wilson required one dashboard to adapt from sole proprietor to bakery, construction, logistics and enterprise without new components.
@@ -264,6 +279,20 @@ export const getExecutiveBusinessModels = () => Object.entries(INDUSTRY_ARCHETYP
 }));
 
 /**
+ * @function mergeExecutiveFunctionKeys
+ * @description Merges universal CEO modules with tenant-industry modules while preserving order and uniqueness.
+ * @param {Array<string>} industryFunctions - Industry-specific function keys.
+ * @returns {Array<string>} Complete function key list.
+ * @collaboration Ensures every CEO onboarding profile includes HR, CRM, finance, documents and Wilsy AI even when an archetype is narrow.
+ */
+const mergeExecutiveFunctionKeys = (industryFunctions = []) => (
+  [...new Set([
+    ...CORE_EXECUTIVE_FUNCTIONS,
+    ...(Array.isArray(industryFunctions) ? industryFunctions : [])
+  ].map(value => String(value || '').toLowerCase()).filter(Boolean))]
+);
+
+/**
  * @function getPermissionedFunctions
  * @description Resolves the tenant-enabled functions for the executive surface from permissions and industry playbook defaults.
  * @param {Object} params - Function inputs.
@@ -281,7 +310,7 @@ export const getPermissionedFunctions = ({ activeTenant = {}, archetype = {} } =
     ...(tenant.enabledFeatures || []),
     ...(tenant.modules || [])
   ].map(value => String(value).toLowerCase()));
-  const recommended = archetype.functions || INDUSTRY_ARCHETYPES.general_smb.functions;
+  const recommended = mergeExecutiveFunctionKeys(archetype.functions || INDUSTRY_ARCHETYPES.general_smb.functions);
   return recommended.map((key, index) => ({
     key,
     label: key.replace(/_/g, ' ').toUpperCase(),
@@ -373,13 +402,39 @@ export const resolveTenantBusinessProfile = (input = {}) => {
     : ['general_smb', INDUSTRY_ARCHETYPES.general_smb]);
   const [industryKey, archetype] = matchedEntry;
   const royalProspect = fingerprint.includes('royal') || fingerprint.includes('royal.co.tz');
-  const finalIndustryKey = royalProspect && industryKey === 'general_smb' ? 'import_logistics_agri' : industryKey;
-  const finalArchetype = royalProspect && industryKey === 'general_smb'
-    ? INDUSTRY_ARCHETYPES.import_logistics_agri
-    : archetype;
+
+  // SOVEREIGN WILSY OS DETECTION: The WILSY OS platform itself is a SaaS/tech company.
+  // Any tenant whose id/alias/name contains 'wilsy', 'sovereign', 'wilsy-sovereign-root', or
+  // whose profile has no industry metadata at all and is operating as the master account,
+  // must be identified as technology_saas — never fall through to general_smb.
+  const isSovereignRoot = [
+    tenant.tenantId, tenant.id, tenant.alias, tenant.name, tenant.companyName, tenant.legalName
+  ].some(value => {
+    const normalized = String(value || '').toLowerCase();
+    return (
+      normalized === 'wilsy' ||
+      normalized === 'master' ||
+      normalized.includes('wilsy-sovereign') ||
+      normalized.includes('wilsy_sovereign') ||
+      normalized.includes('wilsy os') ||
+      normalized === 'global_root' ||
+      normalized === 'wilsy_root'
+    );
+  });
+
+  const finalIndustryKey = isSovereignRoot && industryKey === 'general_smb'
+    ? 'technology_saas'
+    : royalProspect && industryKey === 'general_smb'
+      ? 'import_logistics_agri'
+      : industryKey;
+  const finalArchetype = isSovereignRoot && industryKey === 'general_smb'
+    ? INDUSTRY_ARCHETYPES.technology_saas
+    : royalProspect && industryKey === 'general_smb'
+      ? INDUSTRY_ARCHETYPES.import_logistics_agri
+      : archetype;
   const sourceStatus = businessModelOverride
     ? 'OPERATOR_DECLARED_BUSINESS_MODEL'
-    : tenant.industry || tenant.businessType || tenant.website || royalProspect || requestedModel
+    : tenant.industry || tenant.businessType || tenant.website || royalProspect || isSovereignRoot || requestedModel
       ? 'TENANT_PROFILE_DERIVED'
       : 'TENANT_PROFILE_INCOMPLETE';
 
@@ -392,11 +447,13 @@ export const resolveTenantBusinessProfile = (input = {}) => {
     industryLabel: finalArchetype.label,
     naicsFamily: finalArchetype.naicsFamily,
     sourceStatus,
-    sourceEvidence: royalProspect
-      ? 'Royal Logistics public website: used motor vehicles, auto parts, agri-business and general supplies.'
-      : businessModelOverride
-        ? 'Operator-selected session model. Persist this on the tenant profile to make it permanent.'
-        : 'Tenant metadata and live dashboard context.',
+    sourceEvidence: isSovereignRoot && industryKey === 'general_smb'
+      ? 'WILSY OS sovereign root tenant auto-detected as Technology / SaaS. Set tenant.industry = "technology_saas" to make permanent.'
+      : royalProspect
+        ? 'Royal Logistics public website: used motor vehicles, auto parts, agri-business and general supplies.'
+        : businessModelOverride
+          ? 'Operator-selected session model. Persist this on the tenant profile to make it permanent.'
+          : 'Tenant metadata and live dashboard context.',
     archetype: finalArchetype,
     confidence: explicitEntry || businessModelOverride ? 1 : Math.min(1, (scoredEntries[0]?.score || 0) / 4),
     matchSignals: scoredEntries.slice(0, 3).map(entry => ({
@@ -481,15 +538,15 @@ export const buildDailyExecutiveDuties = ({ profile = {}, financialKPIs = {}, so
   const sourceGateByLane = {
     Executive: financeLive || telemetryLive,
     Finance: financeLive,
-    Sales: Boolean(sourceSnapshot.records?.live || financeLive),
-    Operations: profileReady,
+    Sales: Boolean(sourceSnapshot.crm?.live || sourceSnapshot.sales?.live || sourceSnapshot.records?.live || financeLive),
+    Operations: Boolean(sourceSnapshot.procurement?.live || sourceSnapshot.product?.live || sourceSnapshot.it?.live || profileReady),
     Logistics: profileReady,
-    Supply: profileReady,
-    Delivery: profileReady,
-    Customer: Boolean(sourceSnapshot.records?.live || telemetryLive),
-    People: profileReady,
+    Supply: Boolean(sourceSnapshot.procurement?.live || profileReady),
+    Delivery: Boolean(sourceSnapshot.product?.live || sourceSnapshot.customerSuccess?.live || profileReady),
+    Customer: Boolean(sourceSnapshot.customerSuccess?.live || sourceSnapshot.crm?.live || sourceSnapshot.records?.live || telemetryLive),
+    People: Boolean(sourceSnapshot.hr?.live || profileReady),
     Compliance: profileReady,
-    Risk: telemetryLive || profileReady,
+    Risk: Boolean(sourceSnapshot.security?.live || sourceSnapshot.it?.live || telemetryLive || profileReady),
     Administration: Boolean(sourceSnapshot.records?.live || profileReady),
     'Wilsy AI': profileReady
   };
@@ -534,6 +591,14 @@ export const buildDailyExecutiveDuties = ({ profile = {}, financialKPIs = {}, so
       ? sourceSnapshot.finance?.status || 'SOURCE_SILENT'
       : duty.lane === 'Executive'
         ? `${sourceSnapshot.finance?.status || 'FINANCE_UNKNOWN'} / ${sourceSnapshot.telemetry?.status || 'TELEMETRY_UNKNOWN'}`
+        : duty.lane === 'People'
+          ? sourceSnapshot.hr?.status || profile.sourceStatus
+          : ['Sales', 'Customer'].includes(duty.lane)
+            ? sourceSnapshot.crm?.status || sourceSnapshot.customerSuccess?.status || profile.sourceStatus
+            : duty.lane === 'Supply'
+              ? sourceSnapshot.procurement?.status || profile.sourceStatus
+              : duty.lane === 'Risk'
+                ? sourceSnapshot.security?.status || sourceSnapshot.it?.status || sourceSnapshot.telemetry?.status || profile.sourceStatus
         : profile.sourceStatus,
     evidenceRequired: duty.evidenceRequired || ['tenant operating evidence'],
     commandLabel: duty.commandLabel || 'Accept Duty',

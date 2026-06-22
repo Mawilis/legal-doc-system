@@ -1,4 +1,34 @@
 /* eslint-disable */
+
+@import "tailwindcss" source(none);
+
+/* WILSY_R18AD6C_TAILWIND_SOURCE_LOCKOUT
+   Account Command Center contains a large runtime CSS template string.
+   Tailwind source scanning must not parse it as utility candidates. */
+@source "./App.jsx";
+@source "./main.jsx";
+@source "./components";
+@source "./contexts";
+@source "./data";
+@source "./hooks";
+@source "./pages";
+@source "./services";
+@source "./utils";
+@source not "./components/account";
+@source not "./components/account/WilsyAccountCommandCenter.jsx";
+
+@import "./styles/tokens/z-index.css";
+
+/* R18AD1L-DIRECT-TAILWIND-SOURCE-TIGHTEN: exclude generated, service, and embedded-CSS files from Tailwind candidate scanning. */
+@source not "./output.css";
+@source not "../test-results/**";
+@source not "./services/**";
+@source not "./components/account/wilsyAccountChromeRuntimeCss.js";
+@source not "./components/account/wilsyAccountThemeTokens.js";
+@source not "./components/account/WilsyAccountCommandCenter.jsx";
+@source not "./components/chrome/WilsyForensicMerkleShowroom.jsx";
+@source not "./components/sovereign/Sovereign_Covenant_Modal.jsx";
+
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - SOVEREIGN DESIGN SYSTEM [V28.5.0-TITAN-FINALITY]                                                                            ║
@@ -8,11 +38,7 @@
  * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY | BOARDROOM READY                                        ║
  * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
  */
-
-@import "tailwindcss";
 /* 🛡️ RECTIFIED: Importing the Unified Z-Index Shard */
-@import "./styles/tokens/z-index.css";
-
 :root {
   --color-gold: #d4af37;
   --color-gold-light: #f1d592;

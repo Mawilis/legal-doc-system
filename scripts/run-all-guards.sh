@@ -15,3 +15,6 @@ echo -e "\033[1;33m📑 RUNNING WILSY DOCUMENTATION GUARD...\033[0m"
 node ./scripts/wilsy-documentation-guard.js
 
 echo -e "\033[1;32m✅ ALL SYSTEM GUARDS PASSED. CORE APPLICATION INTEGRITY SECURED.\033[0m"
+
+echo "🔒 Running Wilsy OS Chrome Mandate Guard..."
+node scripts/wilsy-chrome-mandate-guard.js client/src/components/account/WilsyAccountCommandCenter.jsx
