@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - CRM COMMAND CENTER [R18AD73-CRM-WILSY-AI-MONETISATION-LAYER]                                                                         ║
+ * ║ WILSY OS - CRM COMMAND CENTER [R18AD76-CRM-VISUAL-BLUEPRINT-SHELL]                                                                         ║
  * ║ [EXECUTIVE DASHBOARD PARITY | ZOHO-CLEAN MODULE RAIL | SOURCE-TRUTH CRM | TENANT BRANDING RUNTIME | WILSY AI COMMAND ENGINE]        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: R18AD73-CRM-WILSY-AI-MONETISATION-LAYER | PRODUCTION READY | CRM OPERATING SYSTEM SURFACE                                              ║
+ * ║ VERSION: R18AD76-CRM-VISUAL-BLUEPRINT-SHELL | PRODUCTION READY | CRM OPERATING SYSTEM SURFACE                                              ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/crm/CRMDashboard.jsx                                      ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                   ║
@@ -88,6 +88,9 @@ const WILSY_R18AD67_CRM_DASHBOARD_CATALOG_COMMAND_WIRE = 'R18AD67-CRM-DASHBOARD-
 
 const WILSY_R18AD69_CRM_CATALOG_RENDER_GUARD = 'R18AD69-CRM-CATALOG-RENDER-GUARD';
 const WILSY_R18AD73_CRM_WILSY_AI_MONETISATION_LAYER = 'R18AD73-CRM-WILSY-AI-MONETISATION-LAYER';
+const WILSY_R18AD76_CRM_VISUAL_BLUEPRINT_SHELL = 'R18AD76-CRM-VISUAL-BLUEPRINT-SHELL';
+const WILSY_R18AD74_CRM_AI_ENTITLEMENT_LOOP_GUARD = 'R18AD74-CRM-AI-ENTITLEMENT-LOOP-GUARD';
+const WILSY_CRM_AI_ENTITLEMENT_SYNC_COOLDOWN_MS = 15 * 60 * 1000;
 
 
 const WILSY_R9U_CRM_LIVE_OVERLAY_INLINE_IDENTITY_FIX = 'WILSY_R9U_CRM_LIVE_OVERLAY_INLINE_IDENTITY_FIX_ACTIVE';
@@ -758,7 +761,7 @@ bootWilsyR9WBodyMountedIdentityRail();
 
 
 
-const CRM_VERSION = 'R18AD73-CRM-WILSY-AI-MONETISATION-LAYER';
+const CRM_VERSION = 'R18AD76-CRM-VISUAL-BLUEPRINT-SHELL';
 const DEFAULT_TENANT_ID = 'MASTER';
 const DEFAULT_PAGE_LIMIT = 25;
 const MAX_RECEIPTS = 14;
@@ -1851,6 +1854,36 @@ const CRM_WILSY_AI_INLINE_STYLES = Object.freeze({
 });
 
 /**
+ * @function buildCrmWilsyAiEntitlementSyncKey
+ * @description Builds a stable Wilsy AI entitlement sync key so CRM cannot hammer missing backend entitlement routes.
+ * @param {Object} params - Sync key inputs.
+ * @returns {string} Stable sync key.
+ * @collaboration Protects the server while preserving monetisable tenant AI entitlement posture.
+ */
+const buildCrmWilsyAiEntitlementSyncKey = ({
+  currentTenantId = '',
+  sourceSnapshot = {},
+  accessDecision = {},
+  tenantProfile = {}
+} = {}) => createWilsyAIClientProof({
+  tenantId: currentTenantId || 'TENANT_SOURCE_REQUIRED',
+  accessAllowed: Boolean(accessDecision?.allowed),
+  accessReason: accessDecision?.reason || 'ACCESS_SOURCE_REQUIRED',
+  industryKey: tenantProfile?.industryKey || 'general_smb',
+  tenantName: tenantProfile?.name || 'TENANT_PROFILE_SOURCE_REQUIRED',
+  sourcePosture: {
+    crmStatus: sourceSnapshot?.crm?.status || 'CRM_SOURCE_REQUIRED',
+    recordsLive: Boolean(sourceSnapshot?.records?.live),
+    recordsCount: Number(sourceSnapshot?.records?.count || 0),
+    financeLive: Boolean(sourceSnapshot?.finance?.live),
+    financeCount: Number(sourceSnapshot?.finance?.count || 0),
+    telemetryLive: Boolean(sourceSnapshot?.telemetry?.live),
+    evidenceLive: Boolean(sourceSnapshot?.evidence?.live),
+    evidenceCount: Number(sourceSnapshot?.evidence?.count || 0)
+  }
+});
+
+/**
  * @function buildCrmWilsyAiSourceSnapshot
  * @description Builds the source heartbeat packet Wilsy AI needs before planning, licensing or usage recording.
  * @param {Object} params - Source inputs.
@@ -2149,6 +2182,13 @@ const CRMDashboard = ({
   const [wilsyAiActionState, setWilsyAiActionState] = useState({
     status: 'IDLE',
     message: 'Wilsy AI CRM monetisation source gates ready.'
+  });
+
+  const wilsyAiEntitlementSyncRef = useRef({
+    key: '',
+    lastAt: 0,
+    inFlight: false,
+    sourceSilentUntil: 0
   });
 
   /**
@@ -2771,13 +2811,35 @@ const CRMDashboard = ({
   }, [activeModule]);
 
   useEffect(() => {
-    let isMounted = true;
+    const now = Date.now();
+    const syncKey = buildCrmWilsyAiEntitlementSyncKey({
+      currentTenantId,
+      sourceSnapshot: crmWilsyAiSourceSnapshot,
+      accessDecision: crmWilsyAiAccessDecision,
+      tenantProfile: crmWilsyAiTenantProfile
+    });
+    const syncState = wilsyAiEntitlementSyncRef.current;
 
-    setWilsyAiEntitlements(previous => ({
-      ...previous,
-      status: 'SYNCING',
-      sourceStatus: previous.sourceStatus || 'WILSY_AI_ENTITLEMENT_SOURCE_REQUIRED'
-    }));
+    if (!currentTenantId || currentTenantId === 'TENANT_SOURCE_REQUIRED') return;
+    if (syncState.inFlight) return;
+    if (syncState.key === syncKey && now - Number(syncState.lastAt || 0) < WILSY_CRM_AI_ENTITLEMENT_SYNC_COOLDOWN_MS) return;
+    if (syncState.key === syncKey && Number(syncState.sourceSilentUntil || 0) > now) return;
+
+    let isMounted = true;
+    syncState.key = syncKey;
+    syncState.lastAt = now;
+    syncState.inFlight = true;
+
+    setWilsyAiEntitlements(previous => {
+      if (previous?.status === 'SYNCING' && previous?.syncKey === syncKey) return previous;
+
+      return {
+        ...previous,
+        status: 'SYNCING',
+        sourceStatus: previous.sourceStatus || 'WILSY_AI_ENTITLEMENT_SOURCE_REQUIRED',
+        syncKey
+      };
+    });
 
     syncWilsyAIEntitlements({
       tenantId: currentTenantId,
@@ -2786,33 +2848,60 @@ const CRMDashboard = ({
       sourceSnapshot: crmWilsyAiSourceSnapshot
     })
       .then(packet => {
+        syncState.inFlight = false;
         if (!isMounted) return;
+
+        const sourceStatus = packet?.sourceStatus || (packet?.catalog?.length ? 'SERVER_ENTITLEMENT_CATALOG' : 'WILSY_AI_ENTITLEMENT_SOURCE_SILENT');
+        const sourceSilent = String(sourceStatus).includes('SOURCE_SILENT')
+          || String(packet?.error || '').includes('404')
+          || String(packet?.message || '').includes('404');
+
+        if (sourceSilent) {
+          syncState.sourceSilentUntil = Date.now() + WILSY_CRM_AI_ENTITLEMENT_SYNC_COOLDOWN_MS;
+        }
+
         setWilsyAiEntitlements({
-          status: packet?.status || packet?.sourceStatus || 'WILSY_AI_ENTITLEMENT_SYNCED',
-          sourceStatus: packet?.sourceStatus || (packet?.catalog?.length ? 'SERVER_ENTITLEMENT_CATALOG' : 'WILSY_AI_ENTITLEMENT_SOURCE_SILENT'),
+          status: packet?.status || sourceStatus || 'WILSY_AI_ENTITLEMENT_SYNCED',
+          sourceStatus,
           plans: packet?.plans || packet?.planRows || [],
           licenses: packet?.licenses || [],
           catalog: packet?.catalog || [],
           error: packet?.error || '',
+          syncKey,
           raw: packet
         });
       })
       .catch(error => {
+        syncState.inFlight = false;
+        syncState.sourceSilentUntil = Date.now() + WILSY_CRM_AI_ENTITLEMENT_SYNC_COOLDOWN_MS;
         if (!isMounted) return;
+
         setWilsyAiEntitlements({
           status: 'WILSY_AI_ENTITLEMENT_SOURCE_ERROR',
           sourceStatus: 'WILSY_AI_ENTITLEMENT_SOURCE_SILENT',
           plans: [],
           licenses: [],
           catalog: [],
-          error: error?.message || 'Wilsy AI entitlement sync failed.'
+          error: error?.message || 'Wilsy AI entitlement sync failed.',
+          syncKey
         });
       });
 
     return () => {
       isMounted = false;
     };
-  }, [crmWilsyAiAccessDecision, crmWilsyAiSourceSnapshot, crmWilsyAiTenantProfile, currentTenantId]);
+  }, [
+    currentTenantId,
+    crmWilsyAiAccessDecision.allowed,
+    crmWilsyAiAccessDecision.reason,
+    crmWilsyAiSourceSnapshot?.crm?.status,
+    crmWilsyAiSourceSnapshot?.records?.count,
+    crmWilsyAiSourceSnapshot?.finance?.count,
+    crmWilsyAiSourceSnapshot?.telemetry?.readinessScore,
+    crmWilsyAiSourceSnapshot?.evidence?.count,
+    crmWilsyAiTenantProfile?.industryKey,
+    crmWilsyAiTenantProfile?.name
+  ]);
 
   const sourceLabel = compactCrmSignal(currentCollection.sourceStatus || sourceState[activeModule]?.status || 'SOURCE_REQUIRED');
   const ActiveWorkspaceIcon = CRM_WORKSPACES.find(workspace => workspace.id === activeWorkspace)?.icon || Home;
@@ -4010,6 +4099,616 @@ const workspaceContent = {
   });
 
 
+
+  const visualCounts = {
+    leads: Number(collections?.leads?.total || collections?.leads?.items?.length || 0),
+    contacts: Number(collections?.contacts?.total || collections?.contacts?.items?.length || 0),
+    accounts: Number(collections?.accounts?.total || collections?.accounts?.items?.length || 0),
+    deals: Number(collections?.deals?.total || collections?.deals?.items?.length || 0),
+    tasks: Number(collections?.tasks?.total || collections?.tasks?.items?.length || 0),
+    meetings: Number(collections?.meetings?.total || collections?.meetings?.items?.length || 0),
+    evidence: Number(sourceRegistryEvidence?.total || sourceRegistryEvidence?.items?.length || 0)
+  };
+
+  const visualWeightedPipeline = Number(
+    (collections?.deals?.items || []).reduce((sum, deal) => (
+      sum + Number(deal?.weightedValue || deal?.amount || deal?.value || 0)
+    ), 0)
+  );
+
+  /**
+   * @function visualCurrency
+   * @description Formats CRM monetary values for the visual blueprint shell without inventing revenue data.
+   * @param {number|string} value - Candidate monetary value.
+   * @returns {string} South African Rand display value.
+   * @collaboration Keeps the R18AD76 CRM cockpit revenue surfaces honest, source-backed, and investor-readable.
+   */
+  const visualCurrency = value => `R ${Number(value || 0).toLocaleString('en-ZA')}`;
+
+  const visualModuleIds = ['leads', 'contacts', 'accounts', 'deals', 'tasks', 'meetings', 'calls', 'campaigns', 'documents', 'visits', 'projects'];
+  const visualModules = visualModuleIds
+    .map(moduleId => CRM_MODULES.find(moduleConfig => moduleConfig.id === moduleId))
+    .filter(Boolean);
+
+  const visualStageRows = [
+    { label: 'Prospecting', count: 0, value: 0 },
+    { label: 'Qualification', count: 0, value: 0 },
+    { label: 'Proposal', count: 0, value: 0 },
+    { label: 'Negotiation', count: 0, value: 0 }
+  ];
+
+  const visualMetricCards = [
+    {
+      label: 'Weighted Pipeline',
+      value: visualCurrency(visualWeightedPipeline),
+      detail: visualWeightedPipeline > 0 ? 'Source-backed weighted value' : 'No active pipeline',
+      Icon: Target,
+      tone: '#e7c956'
+    },
+    {
+      label: 'Readiness Score',
+      value: `${Number(readiness?.score || 0)}%`,
+      detail: Number(readiness?.score || 0) > 0 ? 'Setup in progress' : 'Setup in progress',
+      Icon: Activity,
+      tone: '#f5f5f0'
+    },
+    {
+      label: 'Connected Sources',
+      value: `${Number(readiness?.liveSources || 0)} / ${Number(readiness?.totalSources || 36)}`,
+      detail: Number(readiness?.liveSources || 0) > 0 ? 'Sources online' : 'No sources connected',
+      Icon: Database,
+      tone: '#8ab8ff'
+    },
+    {
+      label: 'Compliance Posture',
+      value: `${Number(readiness?.complianceScore || readiness?.score || 0)}%`,
+      detail: visualCounts.evidence > 0 ? 'Evidence available' : 'Evidence gaps detected',
+      Icon: Shield,
+      tone: '#16e4ce'
+    },
+    {
+      label: 'Live Command Status',
+      value: isRefreshing ? 'Syncing' : 'Idle',
+      detail: isRefreshing ? 'Live sync in progress' : 'No active operations',
+      Icon: RefreshCw,
+      tone: '#16e4ce'
+    }
+  ];
+
+  const visualActivityCards = [
+    {
+      label: "Today's Leads",
+      value: visualCounts.leads,
+      empty: visualCounts.leads > 0 ? `${visualCounts.leads} lead records available.` : 'No leads captured today.',
+      cta: 'Add Lead',
+      Icon: Users,
+      action: () => { setActiveModule('leads'); setActiveWorkspace('records'); }
+    },
+    {
+      label: 'Deals Closing This Month',
+      value: visualCounts.deals,
+      empty: visualCounts.deals > 0 ? `${visualCounts.deals} deal records available.` : 'No deals closing this month.',
+      cta: 'Create Deal',
+      Icon: Briefcase,
+      action: () => { setActiveModule('deals'); setActiveWorkspace('records'); }
+    },
+    {
+      label: 'My Open Tasks',
+      value: visualCounts.tasks,
+      empty: visualCounts.tasks > 0 ? `${visualCounts.tasks} task records available.` : 'All caught up for now.',
+      cta: 'Create Task',
+      Icon: CheckCircle,
+      action: () => { setActiveModule('tasks'); setActiveWorkspace('records'); }
+    },
+    {
+      label: 'Upcoming Meetings',
+      value: visualCounts.meetings,
+      empty: visualCounts.meetings > 0 ? `${visualCounts.meetings} meeting records available.` : 'No meetings scheduled.',
+      cta: 'Schedule Meeting',
+      Icon: Calendar,
+      action: () => { setActiveModule('meetings'); setActiveWorkspace('records'); }
+    }
+  ];
+
+  const visualStyles = {
+    shell: {
+      width: '100vw',
+      height: '100vh',
+      overflow: 'hidden',
+      display: 'grid',
+      gridTemplateColumns: sideRailOpen ? '282px minmax(0, 1fr)' : '82px minmax(0, 1fr)',
+      background: 'radial-gradient(circle at 12% 0%, rgba(231,201,86,.11), transparent 32%), radial-gradient(circle at 88% 8%, rgba(22,228,206,.075), transparent 30%), #050707',
+      color: '#f7f7f2',
+      fontFamily: '"Inter", "JetBrains Mono", system-ui, sans-serif'
+    },
+    rail: {
+      height: '100vh',
+      overflow: 'hidden',
+      display: 'grid',
+      gridTemplateRows: 'auto auto auto minmax(0, 1fr) auto',
+      gap: 14,
+      padding: sideRailOpen ? '24px 20px 18px' : '24px 12px 18px',
+      borderRight: '1px solid rgba(231,201,86,.25)',
+      background: 'linear-gradient(180deg, rgba(9,11,12,.99), rgba(2,3,4,.99))',
+      boxShadow: '20px 0 54px rgba(0,0,0,.50)',
+      position: 'relative'
+    },
+    railBrand: {
+      display: 'grid',
+      gridTemplateColumns: sideRailOpen ? '52px minmax(0, 1fr)' : '1fr',
+      alignItems: 'center',
+      justifyItems: sideRailOpen ? 'start' : 'center',
+      gap: 14,
+      minHeight: 68
+    },
+    logoBox: {
+      width: 52,
+      height: 52,
+      borderRadius: 14,
+      overflow: 'hidden',
+      border: '1px solid rgba(231,201,86,.52)',
+      background: 'rgba(231,201,86,.10)'
+    },
+    tenantTile: {
+      display: sideRailOpen ? 'grid' : 'none',
+      gridTemplateColumns: '40px minmax(0, 1fr) auto',
+      alignItems: 'center',
+      gap: 10,
+      padding: '10px 12px',
+      border: '1px solid rgba(231,201,86,.22)',
+      borderRadius: 9,
+      background: 'rgba(0,0,0,.28)'
+    },
+    searchRail: {
+      display: sideRailOpen ? 'grid' : 'none',
+      gridTemplateColumns: '18px minmax(0, 1fr)',
+      alignItems: 'center',
+      gap: 10,
+      height: 46,
+      padding: '0 14px',
+      borderRadius: 10,
+      border: '1px solid rgba(255,255,255,.10)',
+      background: 'rgba(0,0,0,.34)'
+    },
+    railButton: active => ({
+      width: '100%',
+      height: 40,
+      display: 'grid',
+      gridTemplateColumns: sideRailOpen ? '20px minmax(0, 1fr) auto' : '1fr',
+      alignItems: 'center',
+      justifyItems: sideRailOpen ? 'start' : 'center',
+      gap: 10,
+      padding: sideRailOpen ? '0 10px' : 0,
+      borderRadius: 8,
+      border: active ? '1px solid rgba(231,201,86,.34)' : '1px solid transparent',
+      background: active ? 'linear-gradient(90deg, #dfc557, #fff5c8)' : 'transparent',
+      color: active ? '#1b1607' : 'rgba(255,255,255,.74)',
+      fontSize: 12.5,
+      fontWeight: 750,
+      cursor: 'pointer'
+    }),
+    app: {
+      minWidth: 0,
+      height: '100vh',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      padding: '18px 22px 20px',
+      display: 'grid',
+      gridTemplateRows: 'auto auto auto auto',
+      gap: 14
+    },
+    top: {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr) 390px',
+      gap: 26,
+      alignItems: 'start',
+      borderBottom: '1px solid rgba(255,255,255,.08)',
+      paddingBottom: 12
+    },
+    toolbar: {
+      gridColumn: '1 / -1',
+      display: 'grid',
+      gridTemplateColumns: '220px minmax(320px, 1fr) 150px 150px 150px',
+      gap: 16,
+      alignItems: 'center',
+      marginTop: 8
+    },
+    panel: {
+      border: '1px solid rgba(255,255,255,.105)',
+      borderRadius: 9,
+      background: 'linear-gradient(145deg, rgba(15,20,22,.92), rgba(7,9,11,.94))'
+    },
+    metricGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(5, minmax(150px, 1fr))',
+      gap: 12
+    },
+    metricCard: {
+      minHeight: 82,
+      display: 'grid',
+      gridTemplateColumns: '34px minmax(0, 1fr) auto',
+      gap: 12,
+      alignItems: 'center',
+      padding: '14px 16px',
+      border: '1px solid rgba(255,255,255,.105)',
+      borderRadius: 9,
+      background: 'linear-gradient(145deg, rgba(15,20,22,.92), rgba(7,9,11,.94))'
+    },
+    mainGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr) 360px',
+      gap: 14,
+      alignItems: 'stretch'
+    },
+    cockpit: {
+      minHeight: 350,
+      padding: 16,
+      border: '1px solid rgba(255,255,255,.105)',
+      borderRadius: 10,
+      background: 'linear-gradient(135deg, rgba(14,21,22,.95), rgba(7,9,11,.97))'
+    },
+    rightStack: {
+      display: 'grid',
+      gap: 14
+    },
+    rightCard: {
+      minHeight: 120,
+      padding: 16,
+      border: '1px solid rgba(255,255,255,.105)',
+      borderRadius: 10,
+      background: 'linear-gradient(145deg, rgba(11,16,18,.96), rgba(5,7,9,.98))'
+    },
+    activityGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, minmax(180px, 1fr)) 360px',
+      gap: 14
+    },
+    activityCard: {
+      minHeight: 170,
+      padding: 14,
+      display: 'grid',
+      gap: 8,
+      alignContent: 'space-between',
+      border: '1px solid rgba(255,255,255,.105)',
+      borderRadius: 10,
+      background: 'linear-gradient(145deg, rgba(13,18,20,.94), rgba(6,8,10,.96))'
+    },
+    strip: {
+      minHeight: 62,
+      display: 'grid',
+      gridTemplateColumns: '260px repeat(4, minmax(0, 1fr)) 220px',
+      gap: 0,
+      alignItems: 'center',
+      border: '1px solid rgba(255,255,255,.105)',
+      borderRadius: 10,
+      background: 'linear-gradient(90deg, rgba(13,18,20,.94), rgba(6,8,10,.96))',
+      overflow: 'hidden'
+    },
+    goldButton: {
+      height: 36,
+      borderRadius: 6,
+      border: '1px solid rgba(231,201,86,.46)',
+      background: 'linear-gradient(135deg, #dfc557, #fff5c7)',
+      color: '#171103',
+      fontWeight: 950,
+      letterSpacing: '.04em',
+      cursor: 'pointer'
+    },
+    outlineButton: {
+      height: 36,
+      borderRadius: 6,
+      border: '1px solid rgba(231,201,86,.38)',
+      background: 'transparent',
+      color: '#ffe58a',
+      fontWeight: 800,
+      cursor: 'pointer'
+    }
+  };
+
+  const wilsyCrmVisualShell = (
+    <div
+      data-wilsy-crm-visual-blueprint="R18AD76"
+      data-version={CRM_VERSION}
+      data-wilsy-theme={accountThemeId}
+      data-wilsy-mode={accountThemeMode}
+      style={visualStyles.shell}
+    >
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".csv,.json,text/csv,application/json"
+        style={{ display: 'none' }}
+        onChange={importFile}
+      />
+
+      {(founderReturnEnabled || typeof onFounderReturn === 'function') && (
+        founderReturnOpen ? (
+          <div style={{ position: 'fixed', left: 24, bottom: 24, zIndex: 90, display: 'flex', gap: 8 }}>
+            <button type="button" style={visualStyles.outlineButton} onClick={onFounderReturn}>← Founder Dashboard</button>
+            <button type="button" style={visualStyles.outlineButton} onClick={() => setFounderReturnOpen(false)}>×</button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setFounderReturnOpen(true)}
+            style={{ position: 'fixed', left: 20, bottom: 88, zIndex: 90, width: 46, height: 46, borderRadius: 999, border: '1px solid rgba(231,201,86,.38)', background: '#050707', color: '#ffe58a' }}
+          >
+            ♛
+          </button>
+        )
+      )}
+
+      <aside style={visualStyles.rail} aria-label="CRM module navigation">
+        <button
+          type="button"
+          onClick={() => setSideRailOpen(previous => !previous)}
+          aria-label="Toggle CRM navigation"
+          style={{ position: 'absolute', top: 40, right: -17, width: 40, height: 52, borderRadius: 999, background: '#030404', border: '1px solid rgba(231,201,86,.32)', color: '#fff7ca', zIndex: 5 }}
+        >
+          {sideRailOpen ? '‹' : '›'}
+        </button>
+
+        <div style={visualStyles.railBrand}>
+          <div style={visualStyles.logoBox}>
+            <img src={wilsyOfficialLogo} alt="Wilsy CRM" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          {sideRailOpen && (
+            <div style={{ minWidth: 0 }}>
+              <strong style={{ display: 'block', fontSize: 17, letterSpacing: '.14em', color: '#fff' }}>WILSY CRM</strong>
+              <small style={{ display: 'block', marginTop: 4, color: '#e7c956', fontWeight: 850 }}>{currentTenantId || 'MASTER'}</small>
+            </div>
+          )}
+        </div>
+
+        <div style={visualStyles.tenantTile}>
+          <img src={wilsyOfficialLogo} alt="Tenant" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover' }} />
+          <div style={{ minWidth: 0 }}>
+            <strong style={{ display: 'block', fontSize: 12, color: '#fff' }}>{tenantIdentity?.displayName || tenantConfig?.name || 'Wilsy OS Root'}</strong>
+            <small style={{ color: 'rgba(255,255,255,.62)' }}>Tenant Identity Live</small>
+          </div>
+          <span style={{ width: 8, height: 8, borderRadius: 999, background: '#45f0bd' }} />
+        </div>
+
+        <label style={visualStyles.searchRail}>
+          <Search size={16} />
+          <input
+            value={searchTerm}
+            onChange={event => setSearchTerm(event.target.value)}
+            placeholder="Search records"
+            style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: '#fff' }}
+          />
+        </label>
+
+        <nav style={{ display: 'grid', gap: 8 }}>
+          {[
+            { id: 'home', label: 'Home', Icon: Home, action: () => setActiveWorkspace('home') },
+            { id: 'reports', label: 'Reports', Icon: BarChart3, action: () => setActiveWorkspace('analytics') }
+          ].map(item => (
+            <button key={item.id} type="button" onClick={item.action} style={visualStyles.railButton(activeWorkspace === item.id)}>
+              <item.Icon size={17} />
+              {sideRailOpen && <span>{item.label}</span>}
+            </button>
+          ))}
+        </nav>
+
+        <div style={{ minHeight: 0, overflow: 'hidden', display: 'grid', gridTemplateRows: 'auto minmax(0,1fr)', gap: 10 }}>
+          {sideRailOpen && <div style={{ color: 'rgba(255,255,255,.65)', fontSize: 10, letterSpacing: '.28em', fontWeight: 950 }}>MODULES</div>}
+          <div style={{ minHeight: 0, overflowY: 'auto', display: 'grid', alignContent: 'start', gap: 6, paddingRight: 5 }}>
+            {visualModules.map(item => {
+              const Icon = CRM_ICON_MAP[item.icon] || Database;
+              const active = item.id === activeModule;
+              const count = Number(collections?.[item.id]?.total || collections?.[item.id]?.items?.length || 0);
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => { setActiveModule(item.id); setActiveWorkspace('records'); }}
+                  style={visualStyles.railButton(active)}
+                >
+                  <Icon size={17} />
+                  {sideRailOpen && <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>}
+                  {sideRailOpen && <em style={{ fontStyle: 'normal', opacity: .68 }}>{count}</em>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ display: sideRailOpen ? 'grid' : 'none', gridTemplateColumns: '40px minmax(0,1fr) auto', gap: 10, alignItems: 'center', padding: '10px 12px', border: '1px solid rgba(255,255,255,.105)', borderRadius: 10, background: 'rgba(0,0,0,.24)' }}>
+          <span style={{ width: 34, height: 34, borderRadius: 999, display: 'grid', placeItems: 'center', background: 'rgba(231,201,86,.22)', color: '#ffe58a', fontWeight: 900 }}>WK</span>
+          <div style={{ minWidth: 0 }}>
+            <strong style={{ display: 'block', fontSize: 12 }}>Wilson Khanyezi</strong>
+            <small style={{ color: 'rgba(255,255,255,.62)' }}>Super Admin</small>
+          </div>
+          <span>›</span>
+        </div>
+      </aside>
+
+      <main style={visualStyles.app}>
+        <header style={visualStyles.top}>
+          <section style={{ minWidth: 0 }}>
+            <small style={{ color: '#e7c956', fontSize: 10, letterSpacing: '.18em', fontWeight: 950 }}><Home size={12} /> HOME</small>
+            <h1 style={{ margin: '12px 0 8px', fontSize: 'clamp(28px, 2.35vw, 42px)', lineHeight: 1, letterSpacing: '.12em', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              WILSY OS CRM COMMAND CENTER
+            </h1>
+            <p style={{ margin: 0, color: 'rgba(255,255,255,.72)' }}>Command your enterprise. Close with confidence. Prove every action.</p>
+          </section>
+
+          <section style={{ ...visualStyles.panel, display: 'grid', gridTemplateColumns: '54px minmax(0,1fr)', gap: 14, alignItems: 'center', padding: '10px 16px', borderColor: 'rgba(69,240,189,.24)' }}>
+            <img src={wilsyOfficialLogo} alt="Tenant identity" style={{ width: 54, height: 54, borderRadius: 13, objectFit: 'cover' }} />
+            <div style={{ minWidth: 0 }}>
+              <small style={{ color: '#e7c956', letterSpacing: '.16em', fontWeight: 950 }}>TENANT IDENTITY</small>
+              <strong style={{ display: 'block', color: '#fff', marginTop: 5 }}>{tenantIdentity?.displayName || tenantConfig?.name || 'Wilsy OS Root'}</strong>
+              <small style={{ color: 'rgba(255,255,255,.70)', letterSpacing: '.10em' }}>Tenant Identity Live <span style={{ color: '#45f0bd' }}>●</span></small>
+            </div>
+          </section>
+
+          <section style={visualStyles.toolbar}>
+            <button type="button" onClick={() => setAccountSettingsOpen(true)} style={{ ...visualStyles.panel, display: 'grid', gridTemplateColumns: '32px minmax(0,1fr)', alignItems: 'center', gap: 10, padding: '0 14px', height: 44, color: '#fff' }}>
+              <UserCog size={16} />
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Wilson Khanyezi<br /><small style={{ color: 'rgba(255,255,255,.58)', letterSpacing: '.14em' }}>SUPER ADMIN</small></span>
+            </button>
+
+            <label style={{ ...visualStyles.panel, display: 'grid', gridTemplateColumns: '18px minmax(0,1fr) auto', alignItems: 'center', gap: 10, padding: '0 14px', height: 44 }}>
+              <Search size={16} />
+              <input
+                value={searchTerm}
+                onChange={event => setSearchTerm(event.target.value)}
+                placeholder="Search records, leads, accounts..."
+                style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: '#fff' }}
+              />
+              <small style={{ color: 'rgba(255,255,255,.58)' }}>⌘ K</small>
+            </label>
+
+            <button type="button" onClick={() => setAccountSettingsOpen(true)} style={visualStyles.outlineButton}>Command Center</button>
+            <button type="button" onClick={() => loadModuleRecords(activeModule, pageState[activeModule])} style={visualStyles.outlineButton}>↻ Live Sync</button>
+            <button type="button" onClick={() => { setActiveModule('leads'); setActiveWorkspace('records'); }} style={visualStyles.goldButton}>+ New Lead</button>
+          </section>
+        </header>
+
+        <section style={visualStyles.metricGrid}>
+          {visualMetricCards.map(card => (
+            <article key={card.label} style={visualStyles.metricCard}>
+              <card.Icon size={24} color={card.tone} />
+              <div style={{ minWidth: 0 }}>
+                <small style={{ display: 'block', color: 'rgba(255,255,255,.60)', fontSize: 10, fontWeight: 900, letterSpacing: '.11em' }}>{card.label}</small>
+                <strong style={{ display: 'block', color: '#fff', fontSize: 24, marginTop: 5 }}>{card.value}</strong>
+                <small style={{ color: 'rgba(255,255,255,.56)' }}>{card.detail}</small>
+              </div>
+              <span style={{ opacity: .46 }}>ⓘ</span>
+            </article>
+          ))}
+        </section>
+
+        <section style={visualStyles.mainGrid}>
+          <article style={visualStyles.cockpit}>
+            <strong style={{ display: 'block', color: '#16e4ce', fontSize: 12, letterSpacing: '.18em', marginBottom: 16 }}><Target size={14} /> PIPELINE COCKPIT</strong>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr)) 220px', gap: 10 }}>
+              {visualStageRows.map(stage => (
+                <section key={stage.label} style={{ ...visualStyles.panel, minHeight: 74, padding: '14px 16px' }}>
+                  <small style={{ color: 'rgba(255,255,255,.72)' }}>{stage.label}</small>
+                  <strong style={{ display: 'block', color: '#fff', fontSize: 18, marginTop: 8 }}>{stage.count}</strong>
+                  <small style={{ color: '#fff' }}>{visualCurrency(stage.value)}</small>
+                </section>
+              ))}
+
+              <section style={{ ...visualStyles.panel, gridRow: '1 / span 2', padding: 16 }}>
+                <strong style={{ display: 'block', marginBottom: 14 }}>Pipeline Summary</strong>
+                {[
+                  ['Total Deals', visualCounts.deals],
+                  ['Total Value', visualCurrency(visualWeightedPipeline)],
+                  ['Weighted Value', visualCurrency(visualWeightedPipeline)],
+                  ['Avg. Deal Size', visualCurrency(visualCounts.deals ? visualWeightedPipeline / visualCounts.deals : 0)],
+                  ['Win Rate', '0%']
+                ].map(([label, value]) => (
+                  <div key={label} style={{ display: 'grid', gridTemplateColumns: '1fr auto', padding: '9px 0', borderTop: '1px solid rgba(255,255,255,.065)', color: 'rgba(255,255,255,.72)' }}>
+                    <span>{label}</span><strong style={{ color: '#fff' }}>{value}</strong>
+                  </div>
+                ))}
+                <button type="button" onClick={() => setActiveWorkspace('pipeline')} style={{ ...visualStyles.outlineButton, width: '100%', marginTop: 10 }}>View Full Pipeline →</button>
+              </section>
+            </div>
+
+            <div style={{ minHeight: 178, display: 'grid', placeItems: 'center', marginTop: 12, border: '1px solid rgba(255,255,255,.085)', borderRadius: 9, background: 'radial-gradient(circle at 50% 35%, rgba(22,228,206,.18), transparent 9%), rgba(0,0,0,.16)' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: 58, height: 58, margin: '0 auto 14px', borderRadius: 999, border: '1px solid rgba(22,228,206,.34)', boxShadow: '0 0 34px rgba(22,228,206,.30)' }} />
+                <strong>Your revenue pipeline is ready for lift-off.</strong>
+                <p style={{ color: 'rgba(255,255,255,.65)' }}>Add leads and move deals through stages to build momentum.</p>
+                <button type="button" onClick={() => { setActiveModule('leads'); setActiveWorkspace('records'); }} style={{ ...visualStyles.outlineButton, minWidth: 200 }}>+ Add Your First Lead</button>
+              </div>
+            </div>
+          </article>
+
+          <aside style={visualStyles.rightStack}>
+            <article style={visualStyles.rightCard}>
+              <strong style={{ color: '#e7c956', letterSpacing: '.12em', fontSize: 11 }}><Sparkles size={13} /> WILSY AI COMMAND LAYER</strong>
+              <p style={{ color: 'rgba(255,255,255,.70)', marginTop: 18 }}>{wilsyAiCommercialPosture?.label || 'Your AI co-pilot for growth and intelligence.'}</p>
+              <small style={{ color: 'rgba(255,255,255,.54)' }}>{wilsyAiActionState?.message || 'No recommendations yet.'}</small>
+              <button type="button" onClick={() => handleCrmWilsyAiUsageProbe(wilsyAiPrimaryPlan)} style={{ ...visualStyles.outlineButton, width: '100%', marginTop: 18 }}>Open AI Command Center →</button>
+            </article>
+
+            <article style={visualStyles.rightCard}>
+              <strong style={{ color: '#16e4ce', letterSpacing: '.12em', fontSize: 11 }}><UploadCloud size={13} /> CONNECTORS HUB</strong>
+              <div style={{ display: 'flex', gap: 18, color: '#16e4ce', margin: '22px 0 12px' }}>
+                <MessageSquare size={18} /><Calendar size={18} /><PhoneCall size={18} /><UploadCloud size={18} /><Database size={18} />
+              </div>
+              <small style={{ color: 'rgba(255,255,255,.68)' }}>{Number(readiness?.liveSources || 0)} of {Number(readiness?.totalSources || 36)} connectors active</small>
+              <button type="button" onClick={() => setActiveWorkspace('import')} style={{ ...visualStyles.outlineButton, width: '100%', marginTop: 14 }}>Manage Connectors →</button>
+            </article>
+
+            <article style={visualStyles.rightCard}>
+              <strong style={{ color: '#fff', letterSpacing: '.12em', fontSize: 11 }}><Shield size={13} /> AUDIT POSTURE</strong>
+              <div style={{ marginTop: 16, display: 'grid', gap: 9 }}>
+                {[
+                  ['Backend Authority', sourceRegistryEvidence?.backendAuthority ? 'Established' : 'Not Established'],
+                  ['Ledger Readiness', `${Number(readiness?.ledgerReadiness || 0)}%`],
+                  ['Sealed Evidence', visualCounts.evidence]
+                ].map(([label, value]) => (
+                  <div key={label} style={{ display: 'grid', gridTemplateColumns: '1fr auto', color: 'rgba(255,255,255,.68)', borderTop: '1px solid rgba(255,255,255,.065)', paddingTop: 8 }}>
+                    <span>{label}</span><strong style={{ color: '#fff' }}>{value}</strong>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={() => setActiveWorkspace('evidence')} style={{ ...visualStyles.outlineButton, width: '100%', marginTop: 14 }}>Open Audit Center →</button>
+            </article>
+          </aside>
+        </section>
+
+        <section style={visualStyles.activityGrid}>
+          {visualActivityCards.map(card => (
+            <article key={card.label} style={visualStyles.activityCard}>
+              <header>
+                <small style={{ color: 'rgba(255,255,255,.78)', letterSpacing: '.10em', fontWeight: 950 }}><card.Icon size={13} /> {card.label}</small>
+                <strong style={{ display: 'block', color: '#fff', fontSize: 24, marginTop: 8 }}>{card.value}</strong>
+              </header>
+              <p style={{ color: 'rgba(255,255,255,.58)', textAlign: 'center', margin: '12px 0' }}>{card.empty}</p>
+              <button type="button" onClick={card.action} style={{ ...visualStyles.outlineButton, width: '100%' }}>{card.cta}</button>
+            </article>
+          ))}
+
+          <article style={visualStyles.activityCard}>
+            <header>
+              <small style={{ color: '#16e4ce', letterSpacing: '.10em', fontWeight: 950 }}><Shield size={13} /> COMPLIANCE & EVIDENCE</small>
+              <strong style={{ display: 'block', color: '#fff', fontSize: 24, marginTop: 8 }}>{Number(readiness?.score || 0)}%</strong>
+            </header>
+            <p style={{ color: 'rgba(255,255,255,.58)', textAlign: 'center', margin: '12px 0' }}>{visualCounts.evidence ? `${visualCounts.evidence} evidence records available.` : 'No evidence captured yet.'}</p>
+            <button type="button" onClick={() => setActiveWorkspace('evidence')} style={{ ...visualStyles.outlineButton, width: '100%' }}>Upload Evidence</button>
+          </article>
+        </section>
+
+        <footer style={visualStyles.strip}>
+          <div style={{ padding: '0 16px' }}>
+            <small style={{ color: '#16e4ce', letterSpacing: '.14em', fontWeight: 950 }}>INVESTOR & REGULATOR STRIP</small>
+            <strong style={{ display: 'block', marginTop: 4 }}>Sealed Evidence Posture</strong>
+          </div>
+          {[
+            ['Backend Authority', sourceRegistryEvidence?.backendAuthority ? 'Established' : 'Not Established'],
+            ['Evidence Integrity', `${Number(readiness?.score || 0)}% Verified`],
+            ['Ledger Readiness', `${Number(readiness?.ledgerReadiness || 0)}%`],
+            ['Forensic Receipts', visualCounts.evidence]
+          ].map(([label, value]) => (
+            <div key={label} style={{ minHeight: 62, display: 'grid', alignContent: 'center', padding: '0 16px', borderLeft: '1px solid rgba(255,255,255,.08)' }}>
+              <small style={{ color: 'rgba(255,255,255,.62)' }}>{label}</small>
+              <strong>{value}</strong>
+            </div>
+          ))}
+          <div style={{ padding: '0 16px', borderLeft: '1px solid rgba(255,255,255,.08)' }}>
+            <button type="button" onClick={() => setActiveWorkspace('evidence')} style={{ ...visualStyles.outlineButton, width: '100%' }}>🔒 Open Forensic Vault</button>
+          </div>
+        </footer>
+      </main>
+
+      <WilsyAccountCommandCenter
+        isOpen={accountSettingsOpen}
+        onClose={() => setAccountSettingsOpen(false)}
+      />
+    </div>
+  );
+
+
+  return wilsyCrmVisualShell;
 
   return (
     <div className={styles.crmShell} style={crmThemeVars} data-wilsy-crm-dashboard="clean-os" data-version={CRM_VERSION} data-wilsy-theme={accountThemeId} data-wilsy-mode={accountThemeMode}>
