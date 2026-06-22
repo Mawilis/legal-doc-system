@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - POLYMORPHIC DASHBOARD REGISTRY [V7.0.0-SINGULARITY-OMEGA]                                                                   ║
+ * ║ WILSY OS - POLYMORPHIC DASHBOARD REGISTRY [R18AD68-CRM-OS-DISCOVERY-ROUTING]                                                                   ║
  * ║ [TENANT ISOLATION | DYNAMIC LAZY LOADING | MEMORY-SAFE CACHE | CRYPTOGRAPHIC FALLBACKS]                                                ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 7.0.0-SINGULARITY | PRODUCTION READY | BILLION DOLLAR SPEC                                                                    ║
+ * ║ VERSION: R18AD68-CRM-OS-DISCOVERY-ROUTING | PRODUCTION READY | BILLION DOLLAR SPEC                                                                    ║
  * ║ EPITOME: BIBLICAL WORTH BILLIONS | NO CHILD'S PLACE | INSTITUTIONAL AUTHORITY                                                          ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/utils/DashboardRegistry.jsx                                           ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
@@ -22,6 +22,87 @@ import ErrorBoundary from '../components/ErrorBoundary';
 
 // 🛡️ THE ULTIMATE FALLBACK: Statically imported to guarantee it never fails to load
 import SingularityDashboard from '../components/SingularityDashboard';
+
+const WILSY_DASHBOARD_REGISTRY_VERSION = 'R18AD68-CRM-OS-DISCOVERY-ROUTING';
+
+const WILSY_CRM_OS_DASHBOARD_KEY = 'crm_os';
+
+const WILSY_CRM_OS_DISCOVERY_ROLES = Object.freeze([
+  'sales',
+  'sales_representative',
+  'sales_development_representative',
+  'sdr',
+  'account_executive',
+  'business_development',
+  'sales_manager',
+  'sales_director',
+  'crm',
+  'crm_operator',
+  'crm_manager',
+  'customer_success',
+  'customer_success_manager',
+  'support_agent',
+  'revenue_operations'
+]);
+
+const WILSY_SOVEREIGN_OVERRIDE_ROLES = Object.freeze([
+  'founder',
+  'super_admin',
+  'omega'
+]);
+
+/**
+ * @function normalizeDashboardRegistryKey
+ * @description Normalizes user role, tenant dashboard and force-dashboard keys for deterministic dashboard routing.
+ * @param {unknown} value - Candidate dashboard key.
+ * @returns {string} Normalized dashboard key.
+ * @collaboration Keeps Discovery UI, tenant overrides, Founder/Omega commands and CRM OS role routing aligned.
+ */
+function normalizeDashboardRegistryKey(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+/**
+ * @function loadWilsyCrmOsDashboard
+ * @description Lazily loads the Wilsy CRM OS dashboard as the operating surface for Sales, CRM, SDR, Support and Customer Success roles.
+ * @returns {React.LazyExoticComponent} Lazy CRM dashboard component.
+ * @collaboration Routes revenue-facing tenant employees into one governed CRM command system instead of fragmented SaaS-style panels.
+ */
+function loadWilsyCrmOsDashboard() {
+  return lazy(() => import('../components/crm/CRMDashboard'));
+}
+
+/**
+ * @function isWilsyCrmOsDiscoveryRole
+ * @description Determines whether a normalized role should resolve to the Wilsy CRM OS surface.
+ * @param {unknown} role - User role or dashboard key.
+ * @returns {boolean} True when the role belongs to the CRM OS entry cohort.
+ * @collaboration Gives Discovery UI one CRM/Sales/Customer Success destination while preserving tenant isolation.
+ */
+function isWilsyCrmOsDiscoveryRole(role) {
+  return WILSY_CRM_OS_DISCOVERY_ROLES.includes(normalizeDashboardRegistryKey(role));
+}
+
+/**
+ * @function isWilsySovereignOverrideUser
+ * @description Determines whether a user has sovereign Founder/Omega override privileges.
+ * @param {Object} user - Authenticated user.
+ * @returns {boolean} True when the user can cross-enter sovereign dashboards under audit.
+ * @collaboration Lets Founder/Omega access CRM from FounderDashboard without weakening normal tenant user isolation.
+ */
+function isWilsySovereignOverrideUser(user) {
+  const roleKey = normalizeDashboardRegistryKey(user?.role || user?.roleKey || user?.tenantRole);
+  return Boolean(
+    user?.sovereignAccess
+    || user?.omegaAccess
+    || user?.founderAccess
+    || WILSY_SOVEREIGN_OVERRIDE_ROLES.includes(roleKey)
+  );
+}
 
 // ============================================================================
 // 1. LAZY LOADING MAPS (OMNI-MATRIX FULLY INTEGRATED)
@@ -65,11 +146,22 @@ const roleLoaders = {
   // Operations
   operations_manager: () => lazy(() => import('../components/operations/OperationsDashboard')),
   // Sales
-  sales_representative: () => lazy(() => import('../components/sales/SalesRepresentativeDashboard')),
-  account_executive: () => lazy(() => import('../components/sales/SalesRepresentativeDashboard')),
-  business_development: () => lazy(() => import('../components/sales/SalesRepresentativeDashboard')),
-  sales_manager: () => lazy(() => import('../components/sales/AISalesIntelligenceDashboard')),
-  sales_director: () => lazy(() => import('../components/sales/AISalesIntelligenceDashboard')),
+  sales_representative: loadWilsyCrmOsDashboard,
+  account_executive: loadWilsyCrmOsDashboard,
+  business_development: loadWilsyCrmOsDashboard,
+  sales_manager: loadWilsyCrmOsDashboard,
+  sales_director: loadWilsyCrmOsDashboard,
+  sales: loadWilsyCrmOsDashboard,
+  sales_development_representative: loadWilsyCrmOsDashboard,
+  sdr: loadWilsyCrmOsDashboard,
+  crm: loadWilsyCrmOsDashboard,
+  crm_os: loadWilsyCrmOsDashboard,
+  crm_operator: loadWilsyCrmOsDashboard,
+  crm_manager: loadWilsyCrmOsDashboard,
+  customer_success: loadWilsyCrmOsDashboard,
+  customer_success_manager: loadWilsyCrmOsDashboard,
+  support_agent: loadWilsyCrmOsDashboard,
+  revenue_operations: loadWilsyCrmOsDashboard,
   // Technical
   technical_director: () => lazy(() => import('../components/technical/TechnicalDashboard')),
   // Compliance
@@ -93,6 +185,13 @@ const sovereignLoaders = {
 const cache = new Map();
 const MAX_CACHE_SIZE = 50;
 
+/**
+ * @function getCached
+ * @description Retrieves a cached dashboard component while enforcing a short registry TTL.
+ * @param {string} key - Cache key.
+ * @returns {Function|null} Cached dashboard component or null.
+ * @collaboration Keeps tenant dashboard resolution fast without leaking stale dashboard entries.
+ */
 function getCached(key) {
   const entry = cache.get(key);
   if (!entry) return null;
@@ -104,6 +203,14 @@ function getCached(key) {
   return entry.component;
 }
 
+/**
+ * @function setCached
+ * @description Stores a dashboard component in the bounded dashboard registry cache.
+ * @param {string} key - Cache key.
+ * @param {Function} component - Dashboard component.
+ * @returns {void}
+ * @collaboration Prevents heap bloat during multi-tenant dashboard routing.
+ */
 function setCached(key, component) {
   // 🛡️ MEMORY SHIELD: Prevent memory leaks in multi-tenant heavy routing
   if (cache.size >= MAX_CACHE_SIZE) {
@@ -116,6 +223,18 @@ function setCached(key, component) {
 // ============================================================================
 // 3. TELEMETRY (ENHANCED FOR ISOLATION VIOLATIONS)
 // ============================================================================
+/**
+ * @function logDashboardResolution
+ * @description Emits dashboard resolution telemetry and local isolation-violation diagnostics.
+ * @param {string} userId - User id.
+ * @param {string} tenantId - Tenant id.
+ * @param {string} resolvedType - Resolution trace.
+ * @param {boolean} fallbackUsed - Whether fallback was used.
+ * @param {boolean} permissionDenied - Whether permission was denied.
+ * @param {boolean} isolationViolation - Whether tenant isolation was violated.
+ * @returns {Promise<void>} Telemetry result.
+ * @collaboration Gives Wilsy OS auditable dashboard routing without blocking user navigation.
+ */
 async function logDashboardResolution(userId, tenantId, resolvedType, fallbackUsed, permissionDenied, isolationViolation = false) {
   const payload = { userId, tenantId, resolvedType, fallbackUsed, permissionDenied, isolationViolation, timestamp: new Date().toISOString() };
   if (process.env.NODE_ENV === 'production') {
@@ -130,13 +249,16 @@ async function logDashboardResolution(userId, tenantId, resolvedType, fallbackUs
 // 4. TENANT ISOLATION ENFORCEMENT (THE IRON WALL)
 // ============================================================================
 /**
- * Checks if the user is allowed to access the given tenant.
- * - Sovereign roles (founder, super_admin) bypass tenant isolation.
- * - All other users must have user.tenantId === tenant._id.
+ * @function isTenantAccessAllowed
+ * @description Checks whether a user can access a tenant under the Wilsy OS iron-wall isolation doctrine.
+ * @param {Object} user - Authenticated user.
+ * @param {Object} tenant - Target tenant.
+ * @returns {boolean} True when access is allowed.
+ * @collaboration Allows audited Founder/Omega override while forcing normal users to match their tenant shard.
  */
 function isTenantAccessAllowed(user, tenant) {
   // Sovereign override
-  if (user?.role === 'founder' || user?.role === 'super_admin' || user?.sovereignAccess) {
+  if (isWilsySovereignOverrideUser(user)) {
     return true;
   }
   // Normal tenant user: strict match
@@ -150,8 +272,18 @@ function isTenantAccessAllowed(user, tenant) {
 // ============================================================================
 // 5. PERMISSION MATRIX
 // ============================================================================
+/**
+ * @function hasDashboardAccess
+ * @description Verifies whether a user may access a resolved dashboard type for a tenant.
+ * @param {Object} user - Authenticated user.
+ * @param {Object} tenant - Target tenant.
+ * @param {string} dashboardType - Dashboard category.
+ * @param {string|null} roleKey - Optional role dashboard key.
+ * @returns {boolean} True when dashboard access is allowed.
+ * @collaboration Enforces role and tenant boundaries before lazy dashboard rendering.
+ */
 function hasDashboardAccess(user, tenant, dashboardType, roleKey = null) {
-  if (user?.sovereignAccess || user?.role === 'founder' || user?.role === 'super_admin') return true;
+  if (isWilsySovereignOverrideUser(user)) return true;
   if (dashboardType === 'industry') return isTenantAccessAllowed(user, tenant);
   if (dashboardType === 'role' && roleKey) return user?.role === roleKey;
   return true;
@@ -160,12 +292,24 @@ function hasDashboardAccess(user, tenant, dashboardType, roleKey = null) {
 // ============================================================================
 // 6. SOVEREIGN FALLBACK UI COMPONENTS
 // ============================================================================
+/**
+ * @function RegistryLoader
+ * @description Renders the dashboard registry loading surface during lazy dashboard hydration.
+ * @returns {React.ReactElement} Registry loading element.
+ * @collaboration Keeps Discovery UI transitions sovereign and readable while dashboard chunks load.
+ */
 const RegistryLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#050505' }}>
     <Spin size="large" tip={<span style={{ color: '#D4AF37', letterSpacing: '2px', fontWeight: 'bold' }}>HYDRATING NUCLEUS...</span>} />
   </div>
 );
 
+/**
+ * @function IsolationErrorDashboard
+ * @description Renders the jurisdiction-denied dashboard when tenant isolation fails.
+ * @returns {React.ReactElement} Isolation error element.
+ * @collaboration Stops cross-tenant access while giving the operator a clear termination path.
+ */
 const IsolationErrorDashboard = () => (
   <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#050505', color: '#ff3333', fontFamily: '"JetBrains Mono", monospace' }}>
     <AlertOctagon size={64} style={{ marginBottom: '24px', filter: 'drop-shadow(0 0 20px rgba(255,51,51,0.5))' }} />
@@ -185,6 +329,15 @@ const IsolationErrorDashboard = () => (
 // ============================================================================
 // 7. RESOLVER CORE WITH TENANT ISOLATION
 // ============================================================================
+/**
+ * @function resolveDashboard
+ * @description Resolves the correct Wilsy OS dashboard for a user, tenant and optional forced dashboard key.
+ * @param {Object} user - Authenticated user.
+ * @param {Object} tenant - Active tenant.
+ * @param {Object} options - Resolution options.
+ * @returns {React.ComponentType} Resolved dashboard wrapper component.
+ * @collaboration Routes Sales/CRM/SDR/Customer Success roles into CRM OS while preserving Founder/Omega and tenant isolation rules.
+ */
 export function resolveDashboard(user, tenant, options = {}) {
   // STEP 0: TENANT ISOLATION VALIDATION (MANDATORY)
   if (!isTenantAccessAllowed(user, tenant)) {
@@ -208,10 +361,11 @@ export function resolveDashboard(user, tenant, options = {}) {
   console.log('[DashboardRegistry] 🔍 Tenant isolation passed. Resolving for role:', user?.role, 'tenant:', tenant?._id);
 
   // STEP 1: Explicit force override
-  if (options.forceDashboard && roleLoaders[options.forceDashboard]) {
-    DashboardComponent = roleLoaders[options.forceDashboard]();
-    resolutionTrace.push(`forced:${options.forceDashboard}`);
-    if (!hasDashboardAccess(user, tenant, 'role', options.forceDashboard)) {
+  const forcedDashboardKey = normalizeDashboardRegistryKey(options.forceDashboard);
+  if (forcedDashboardKey && roleLoaders[forcedDashboardKey]) {
+    DashboardComponent = roleLoaders[forcedDashboardKey]();
+    resolutionTrace.push(`forced:${forcedDashboardKey}`);
+    if (!hasDashboardAccess(user, tenant, 'role', forcedDashboardKey)) {
       permissionDenied = true;
       DashboardComponent = SingularityDashboard;
       resolutionTrace.push('permission-denied→fallback');
@@ -219,8 +373,9 @@ export function resolveDashboard(user, tenant, options = {}) {
   }
 
   // STEP 2: Sovereign layer
-  if (!DashboardComponent && (user?.sovereignAccess || user?.role === 'super_admin' || user?.role === 'founder')) {
-    if (user?.role === 'founder' || user?.role === 'super_admin') {
+  if (!DashboardComponent && isWilsySovereignOverrideUser(user)) {
+    const sovereignRoleKey = normalizeDashboardRegistryKey(user?.role);
+    if (sovereignRoleKey === 'founder' || sovereignRoleKey === 'super_admin' || sovereignRoleKey === 'omega') {
       DashboardComponent = sovereignLoaders.founder();
       resolutionTrace.push('sovereign:founder');
     } else if (user?.nodeType === 'sovereign') {
@@ -233,8 +388,8 @@ export function resolveDashboard(user, tenant, options = {}) {
   }
 
   // STEP 3: Role-based
-  if (!DashboardComponent && user?.role && roleLoaders[user.role.toLowerCase()]) {
-    const roleKey = user.role.toLowerCase();
+  if (!DashboardComponent && user?.role && roleLoaders[normalizeDashboardRegistryKey(user.role)]) {
+    const roleKey = normalizeDashboardRegistryKey(user.role);
     DashboardComponent = roleLoaders[roleKey]();
     resolutionTrace.push(`role:${roleKey}`);
     if (!hasDashboardAccess(user, tenant, 'role', roleKey)) {
@@ -245,10 +400,11 @@ export function resolveDashboard(user, tenant, options = {}) {
   }
 
   // STEP 4: Tenant custom dashboard overrides
-  if (!DashboardComponent && tenant?.customDashboard && roleLoaders[tenant.customDashboard]) {
-    DashboardComponent = roleLoaders[tenant.customDashboard]();
-    resolutionTrace.push(`tenant-custom:${tenant.customDashboard}`);
-    if (!hasDashboardAccess(user, tenant, 'role', tenant.customDashboard)) {
+  const tenantCustomDashboardKey = normalizeDashboardRegistryKey(tenant?.customDashboard);
+  if (!DashboardComponent && tenantCustomDashboardKey && roleLoaders[tenantCustomDashboardKey]) {
+    DashboardComponent = roleLoaders[tenantCustomDashboardKey]();
+    resolutionTrace.push(`tenant-custom:${tenantCustomDashboardKey}`);
+    if (!hasDashboardAccess(user, tenant, 'role', tenantCustomDashboardKey)) {
       permissionDenied = true;
       DashboardComponent = SingularityDashboard;
       resolutionTrace.push('permission-denied→fallback');
@@ -257,7 +413,7 @@ export function resolveDashboard(user, tenant, options = {}) {
 
   // STEP 5: Industry dashboard (only if tenant.industry is valid)
   if (!DashboardComponent && tenant?.industry && typeof tenant.industry === 'string' && tenant.industry.trim() !== '') {
-    const industryKey = tenant.industry.toLowerCase();
+    const industryKey = normalizeDashboardRegistryKey(tenant.industry);
     if (industryLoaders[industryKey]) {
       DashboardComponent = industryLoaders[industryKey]();
       resolutionTrace.push(`industry:${tenant.industry}`);
@@ -277,6 +433,13 @@ export function resolveDashboard(user, tenant, options = {}) {
   }
 
   // Wrap with Suspense & ErrorBoundary
+  /**
+   * @function WrappedDashboard
+   * @description Wraps the resolved dashboard in ErrorBoundary and Suspense protections.
+   * @param {Object} props - Dashboard props.
+   * @returns {React.ReactElement} Protected dashboard render.
+   * @collaboration Keeps lazy CRM OS, sovereign and tenant dashboards resilient during route hydration.
+   */
   const WrappedDashboard = (props) => {
     if (DashboardComponent === SingularityDashboard) {
       return (
@@ -301,6 +464,14 @@ export function resolveDashboard(user, tenant, options = {}) {
   return WrappedDashboard;
 }
 
+/**
+ * @function preloadDashboard
+ * @description Preloads the resolved dashboard for a user and tenant into the bounded dashboard cache.
+ * @param {Object} user - Authenticated user.
+ * @param {Object} tenant - Active tenant.
+ * @returns {void}
+ * @collaboration Speeds up role-based dashboard entry without bypassing tenant isolation.
+ */
 export function preloadDashboard(user, tenant) {
   if (!isTenantAccessAllowed(user, tenant)) return;
   const cacheKey = `${user?._id}-${tenant?._id}-preload`;
