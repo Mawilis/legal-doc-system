@@ -1,10 +1,10 @@
 /* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - CRM COMMAND CENTER [V70.13.4-CRMDASHBOARD-JSDOC-SHELL]                                                                         ║
+ * ║ WILSY OS - CRM COMMAND CENTER [R18AD67-CRM-DASHBOARD-CATALOG-COMMAND-WIRE]                                                                         ║
  * ║ [EXECUTIVE DASHBOARD PARITY | ZOHO-CLEAN MODULE RAIL | SOURCE-TRUTH CRM | TENANT BRANDING RUNTIME | WILSY AI COMMAND ENGINE]        ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: 70.13.4-CRMDASHBOARD-JSDOC-SHELL | PRODUCTION READY | CRM OPERATING SYSTEM SURFACE                                              ║
+ * ║ VERSION: R18AD67-CRM-DASHBOARD-CATALOG-COMMAND-WIRE | PRODUCTION READY | CRM OPERATING SYSTEM SURFACE                                              ║
  * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/crm/CRMDashboard.jsx                                      ║
  * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
  * ║ COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                   ║
@@ -48,11 +48,36 @@ import {
   X
 } from 'lucide-react';
 import * as crmService from '../../services/crmService';
+import {
+  WILSY_CRM_CATALOG_READINESS,
+  WILSY_CRM_IMPORT_VENDOR_CATALOG,
+  WILSY_CRM_MODULE_CATALOG,
+  WILSY_CRM_MODULE_CATALOG_VERSION,
+  WILSY_CRM_ROUTE_POSTURE,
+  WILSY_CRM_WORKSPACE_CATALOG,
+  buildWilsyCrmModuleEnvelope
+} from '../../data/wilsyCrmModuleCatalog.js';
+import {
+  WILSY_CRM_COMMAND_CLIENT_HEALTH,
+  WILSY_CRM_COMMAND_CLIENT_VERSION,
+  createWilsyCrmRecord,
+  deleteWilsyCrmRecord,
+  exportWilsyCrmRecords,
+  getWilsyCrmCommandCenter,
+  getWilsyCrmSourceRegistryEvidence,
+  importWilsyCrmRecords,
+  listWilsyCrmRecords,
+  previewWilsyCrmImportRecords,
+  updateWilsyCrmRecord
+} from '../../services/wilsyCrmCommandClient.js';
 import wilsyOfficialLogo from '../../assets/logo/wilsy.jpeg';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
 import WilsyOSDashboardTopRail from '../os/WilsyOSDashboardTopRail';
 import styles from './CRMDashboard.module.css';
 
+
+
+const WILSY_R18AD67_CRM_DASHBOARD_CATALOG_COMMAND_WIRE = 'R18AD67-CRM-DASHBOARD-CATALOG-COMMAND-WIRE';
 
 const WILSY_R9U_CRM_LIVE_OVERLAY_INLINE_IDENTITY_FIX = 'WILSY_R9U_CRM_LIVE_OVERLAY_INLINE_IDENTITY_FIX_ACTIVE';
 
@@ -722,7 +747,7 @@ bootWilsyR9WBodyMountedIdentityRail();
 
 
 
-const CRM_VERSION = 'V70.13.4-CRMDASHBOARD-JSDOC-SHELL';
+const CRM_VERSION = 'R18AD67-CRM-DASHBOARD-CATALOG-COMMAND-WIRE';
 const DEFAULT_TENANT_ID = 'MASTER';
 const DEFAULT_PAGE_LIMIT = 25;
 const MAX_RECEIPTS = 14;
@@ -835,6 +860,9 @@ const WILSY_CRM_THEME_SKINS = Object.freeze({
 
 const CRM_ICON_MAP = Object.freeze({
   home: Home,
+  command: Home,
+  database: Database,
+  records: Database,
   leads: Users,
   contacts: Users,
   accounts: Building2,
@@ -855,42 +883,38 @@ const CRM_ICON_MAP = Object.freeze({
   risks: AlertCircle,
   opportunities: TrendingUp,
   suppliers: Briefcase,
-  partners: Users
+  partners: Users,
+  success: Users,
+  support: MessageSquare,
+  conversations: MessageSquare,
+  forecast: TrendingUp,
+  workflows: Wand2,
+  automation: Wand2,
+  connectors: Database,
+  audit: Shield,
+  evidence: Shield,
+  shield: Shield,
+  upload: UploadCloud,
+  sparkles: Sparkles,
+  wand: Wand2,
+  messageSquare: MessageSquare,
+  target: Target
 });
 
-const CRM_MODULES = Object.freeze([
-  { id: 'leads', label: 'Leads', singular: 'Lead', icon: 'leads', route: 'leads', primary: 'name', secondary: 'company', money: null, boardBy: 'stage', lanes: ['new', 'qualified', 'proposal', 'won', 'lost'], fields: ['name', 'email', 'company', 'phone', 'stage', 'score', 'owner'] },
-  { id: 'contacts', label: 'Contacts', singular: 'Contact', icon: 'contacts', route: 'contacts', primary: 'name', secondary: 'accountName', money: null, boardBy: 'relationshipStatus', lanes: ['new', 'engaged', 'qualified', 'customer'], fields: ['name', 'email', 'phone', 'accountName', 'authorityStatus', 'owner'] },
-  { id: 'accounts', label: 'Accounts', singular: 'Account', icon: 'accounts', route: 'accounts', primary: 'name', secondary: 'industry', money: 'annualRevenue', boardBy: 'status', lanes: ['prospect', 'active', 'at_risk', 'inactive'], fields: ['name', 'industry', 'annualRevenue', 'status', 'contractStatus', 'owner'] },
-  { id: 'deals', label: 'Deals', singular: 'Deal', icon: 'deals', route: 'deals', primary: 'name', secondary: 'accountName', money: 'value', boardBy: 'stage', lanes: ['lead', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'], fields: ['name', 'accountName', 'value', 'probability', 'stage', 'closingDate', 'owner'] },
-  { id: 'tasks', label: 'Tasks', singular: 'Task', icon: 'tasks', route: 'tasks', primary: 'subject', secondary: 'owner', money: null, boardBy: 'status', lanes: ['open', 'in_progress', 'blocked', 'completed'], fields: ['subject', 'owner', 'priority', 'status', 'dueDate'] },
-  { id: 'meetings', label: 'Meetings', singular: 'Meeting', icon: 'meetings', route: 'meetings', primary: 'subject', secondary: 'accountName', money: null, boardBy: 'status', lanes: ['scheduled', 'completed', 'cancelled'], fields: ['subject', 'accountName', 'contactName', 'startsAt', 'status'] },
-  { id: 'calls', label: 'Calls', singular: 'Call', icon: 'calls', route: 'calls', primary: 'subject', secondary: 'contactName', money: null, boardBy: 'outcome', lanes: ['scheduled', 'completed', 'missed', 'follow_up'], fields: ['subject', 'phone', 'contactName', 'outcome', 'completedAt'] },
-  { id: 'campaigns', label: 'Campaigns', singular: 'Campaign', icon: 'campaigns', route: 'campaigns', primary: 'name', secondary: 'channel', money: 'budget', boardBy: 'status', lanes: ['draft', 'active', 'paused', 'completed'], fields: ['name', 'channel', 'budget', 'leadsGenerated', 'status'] },
-  { id: 'documents', label: 'Documents', singular: 'Document', icon: 'documents', route: 'documents', primary: 'fileName', secondary: 'documentType', money: null, boardBy: 'status', lanes: ['draft', 'sent', 'signed', 'archived'], fields: ['fileName', 'documentType', 'accountName', 'status'] },
-  { id: 'visits', label: 'Visits', singular: 'Visit', icon: 'visits', route: 'visits', primary: 'subject', secondary: 'location', money: null, boardBy: 'status', lanes: ['planned', 'completed', 'missed'], fields: ['subject', 'accountName', 'location', 'scheduledAt', 'status'] },
-  { id: 'projects', label: 'Projects', singular: 'Project', icon: 'projects', route: 'projects', primary: 'name', secondary: 'accountName', money: null, boardBy: 'status', lanes: ['planned', 'active', 'at_risk', 'completed'], fields: ['name', 'accountName', 'owner', 'percentComplete', 'status'] },
-  { id: 'quotes', label: 'Quotes', singular: 'Quote', icon: 'quotes', route: 'quotes', primary: 'number', secondary: 'accountName', money: 'amount', boardBy: 'status', lanes: ['draft', 'sent', 'approved', 'rejected'], fields: ['number', 'accountName', 'amount', 'validUntil', 'status'] },
-  { id: 'invoices', label: 'Invoices', singular: 'Invoice', icon: 'invoices', route: 'invoices', primary: 'number', secondary: 'accountName', money: 'amount', boardBy: 'status', lanes: ['draft', 'sent', 'paid', 'overdue'], fields: ['number', 'accountName', 'amount', 'dueDate', 'status'] },
-  { id: 'cases', label: 'Cases', singular: 'Case', icon: 'cases', route: 'cases', primary: 'subject', secondary: 'accountName', money: null, boardBy: 'status', lanes: ['new', 'open', 'escalated', 'resolved'], fields: ['subject', 'accountName', 'priority', 'owner', 'status'] },
-  { id: 'tickets', label: 'Tickets', singular: 'Ticket', icon: 'tickets', route: 'tickets', primary: 'subject', secondary: 'accountName', money: null, boardBy: 'status', lanes: ['new', 'open', 'waiting', 'resolved'], fields: ['subject', 'accountName', 'priority', 'owner', 'status'] },
-  { id: 'contracts', label: 'Contracts', singular: 'Contract', icon: 'contracts', route: 'contracts', primary: 'name', secondary: 'accountName', money: null, boardBy: 'contractStatus', lanes: ['drafting', 'approved', 'signed', 'active'], fields: ['name', 'accountName', 'contractStatus', 'authorityStatus', 'effectiveDate'] },
-  { id: 'authorities', label: 'Authority', singular: 'Authority', icon: 'authorities', route: 'authorities', primary: 'contactName', secondary: 'accountName', money: null, boardBy: 'authorityStatus', lanes: ['missing', 'pending', 'validated', 'verified'], fields: ['contactName', 'accountName', 'authorityStatus', 'evidenceType', 'verifiedAt'] },
-  { id: 'risks', label: 'Risks', singular: 'Risk', icon: 'risks', route: 'risks', primary: 'title', secondary: 'accountName', money: null, boardBy: 'severity', lanes: ['low', 'medium', 'high', 'critical', 'mitigated'], fields: ['title', 'accountName', 'severity', 'owner', 'status'] },
-  { id: 'opportunities', label: 'Opportunities', singular: 'Opportunity', icon: 'opportunities', route: 'opportunities', primary: 'name', secondary: 'accountName', money: 'value', boardBy: 'stage', lanes: ['identified', 'qualified', 'proposal', 'won'], fields: ['name', 'accountName', 'value', 'probability', 'stage'] },
-  { id: 'suppliers', label: 'Suppliers', singular: 'Supplier', icon: 'suppliers', route: 'suppliers', primary: 'name', secondary: 'category', money: null, boardBy: 'status', lanes: ['prospect', 'approved', 'active', 'blocked'], fields: ['name', 'category', 'contactName', 'contractStatus', 'status'] },
-  { id: 'partners', label: 'Partners', singular: 'Partner', icon: 'partners', route: 'partners', primary: 'name', secondary: 'category', money: null, boardBy: 'status', lanes: ['prospect', 'active', 'strategic', 'inactive'], fields: ['name', 'category', 'contactName', 'contractStatus', 'status'] }
-]);
+const CRM_MODULES = Object.freeze(WILSY_CRM_MODULE_CATALOG.map(moduleConfig => ({
+  ...moduleConfig,
+  sourceStatus: moduleConfig?.sourceContract?.minimumStatus || 'SOURCE_REQUIRED',
+  routePosture: moduleConfig?.routePosture || WILSY_CRM_ROUTE_POSTURE.required,
+  catalogVersion: WILSY_CRM_MODULE_CATALOG_VERSION,
+  commandEnvelope: buildWilsyCrmModuleEnvelope(moduleConfig.id)
+})));
 
-const CRM_WORKSPACES = Object.freeze([
-  { id: 'home', label: 'Home', detail: 'CRM operating cockpit', icon: Home },
-  { id: 'records', label: 'Records', detail: 'Module ledger', icon: Database },
-  { id: 'pipeline', label: 'Pipeline', detail: 'Revenue and stage control', icon: Target },
-  { id: 'tasks', label: 'Work', detail: 'Tasks and meetings', icon: Calendar },
-  { id: 'evidence', label: 'Evidence', detail: 'Source and board proof', icon: Shield },
-  { id: 'ai', label: 'Wilsy AI', detail: 'Customer command engine', icon: Sparkles },
-  { id: 'import', label: 'Import', detail: 'Competitor CRM intake', icon: UploadCloud }
-]);
+const CRM_WORKSPACES = Object.freeze(WILSY_CRM_WORKSPACE_CATALOG.map(workspace => ({
+  ...workspace,
+  id: workspace.id === 'command' ? 'home' : workspace.id,
+  sourceWorkspaceId: workspace.id,
+  icon: CRM_ICON_MAP[workspace.icon] || Home
+})));
 
 const FIELD_LABELS = Object.freeze({
   accountName: 'Account',
@@ -930,7 +954,28 @@ const FIELD_LABELS = Object.freeze({
   title: 'Title',
   validUntil: 'Valid Until',
   value: 'Value',
-  verifiedAt: 'Verified'
+  verifiedAt: 'Verified',
+  healthScore: 'Health Score',
+  healthStatus: 'Health',
+  renewalDate: 'Renewal Date',
+  renewalValue: 'Renewal Value',
+  slaStatus: 'SLA',
+  channel: 'Channel',
+  lastMessageAt: 'Last Message',
+  trigger: 'Trigger',
+  targetModule: 'Target Module',
+  lastRunAt: 'Last Run',
+  vendor: 'Vendor',
+  lastSyncAt: 'Last Sync',
+  recordsSynced: 'Records Synced',
+  receiptId: 'Receipt',
+  operatorId: 'Operator',
+  moduleId: 'Module',
+  action: 'Action',
+  period: 'Period',
+  forecastValue: 'Forecast',
+  pipelineValue: 'Pipeline',
+  confidence: 'Confidence'
 });
 
 const FIELD_TYPES = Object.freeze({
@@ -951,7 +996,17 @@ const FIELD_TYPES = Object.freeze({
   startsAt: 'datetime-local',
   validUntil: 'date',
   value: 'number',
-  verifiedAt: 'date'
+  verifiedAt: 'date',
+  healthScore: 'number',
+  renewalDate: 'date',
+  renewalValue: 'number',
+  lastMessageAt: 'datetime-local',
+  lastRunAt: 'datetime-local',
+  lastSyncAt: 'datetime-local',
+  recordsSynced: 'number',
+  forecastValue: 'number',
+  pipelineValue: 'number',
+  confidence: 'number'
 });
 
 /**
@@ -1529,13 +1584,32 @@ const buildCrmReadiness = ({ collections = {}, sourceState = {} } = {}) => {
   const totalRecords = Object.values(collections).reduce((sum, envelope) => (
     sum + Number(envelope?.total || envelope?.items?.length || 0)
   ), 0);
+  const catalogReady = Boolean(WILSY_CRM_CATALOG_READINESS?.ok);
+  const commandReady = Boolean(WILSY_CRM_COMMAND_CLIENT_HEALTH?.ok);
+  const liveRouteCount = Number(WILSY_CRM_CATALOG_READINESS?.liveRoutes || 0);
+  const plannedRouteCount = Number(WILSY_CRM_CATALOG_READINESS?.plannedRoutes || 0);
 
-  const score = Math.min(100, Math.round((liveSources / totalSources) * 68 + (totalRecords > 0 ? 22 : 6) + 4));
+  const score = Math.min(100, Math.round(
+    (liveSources / Math.max(totalSources, 1)) * 54
+    + (totalRecords > 0 ? 18 : 4)
+    + (catalogReady ? 12 : 0)
+    + (commandReady ? 10 : 0)
+    + (liveRouteCount > 0 ? 6 : 0)
+  ));
+
   return {
     score,
-    posture: score >= 80 ? 'READY_FOR_DECISIONS' : score >= 55 ? 'SOURCE_REPAIR_ACTIVE' : 'SOURCE_GAPS',
+    posture: score >= 80 ? 'CRM_OS_READY_FOR_REVENUE_COMMAND' : score >= 55 ? 'CRM_OS_SOURCE_REPAIR_ACTIVE' : 'CRM_OS_SOURCE_ROUTES_REQUIRED',
     liveSources,
-    totalSources
+    totalSources,
+    totalRecords,
+    liveRouteCount,
+    plannedRouteCount,
+    catalogReady,
+    commandReady,
+    catalogVersion: WILSY_CRM_MODULE_CATALOG_VERSION,
+    commandClientVersion: WILSY_CRM_COMMAND_CLIENT_VERSION,
+    noFakeData: true
   };
 };
 
@@ -1810,33 +1884,63 @@ const CRMDashboard = ({
 
   const loadModuleRecords = useCallback(async (moduleId = activeModule, nextPage = pageState[moduleId]) => {
     const config = CRM_MODULES.find(item => item.id === moduleId) || moduleConfig;
-    const methodNames = buildCrmMethodNames('get', config);
     const page = nextPage || { limit: DEFAULT_PAGE_LIMIT, offset: 0 };
-    const argumentSets = [
-      [currentTenantId, page],
-      [config.route, currentTenantId, page],
-      [config.id, currentTenantId, page],
-      [config.id, page, currentTenantId],
-      [{ tenantId: currentTenantId, resourceType: config.id, ...page }]
-    ];
 
     try {
-      const response = await callCrmServiceMethod(methodNames, argumentSets);
-      if (!response) {
-        updateSource(moduleId, 'SOURCE_REQUIRED', `${config.label} service route required`);
+      const commandEnvelope = await listWilsyCrmRecords(config.id, {
+        tenantId: currentTenantId,
+        limit: page.limit || DEFAULT_PAGE_LIMIT,
+        offset: page.offset || 0,
+        search: searchTerm,
+        sourceStatus: sourceFilter !== 'ALL' ? sourceFilter : undefined
+      });
+
+      const normalizedCommandEnvelope = normalizeCrmEnvelope(commandEnvelope);
+
+      if (
+        commandEnvelope?.sourceStatus === 'SOURCE_LIVE'
+        || commandEnvelope?.routePosture !== 'ROUTE_REQUIRED'
+        || normalizedCommandEnvelope.items.length > 0
+      ) {
         setCollections(previous => ({
           ...previous,
-          [moduleId]: { items: [], total: 0, sourceStatus: 'SOURCE_REQUIRED' }
+          [moduleId]: normalizedCommandEnvelope
+        }));
+        updateSource(moduleId, commandEnvelope?.sourceStatus || normalizedCommandEnvelope.sourceStatus || 'SOURCE_REQUIRED', `${config.label} command client hydrated`);
+        return;
+      }
+
+      const methodNames = buildCrmMethodNames('get', config);
+      const argumentSets = [
+        [currentTenantId, page],
+        [config.route, currentTenantId, page],
+        [config.id, currentTenantId, page],
+        [config.id, page, currentTenantId],
+        [{ tenantId: currentTenantId, resourceType: config.id, ...page }]
+      ];
+
+      const legacyResponse = await callCrmServiceMethod(methodNames, argumentSets);
+      if (!legacyResponse) {
+        updateSource(moduleId, 'SOURCE_REQUIRED', `${config.label} command route required`);
+        setCollections(previous => ({
+          ...previous,
+          [moduleId]: {
+            items: [],
+            total: 0,
+            sourceStatus: 'SOURCE_REQUIRED',
+            routePosture: config.routePosture || 'ROUTE_REQUIRED',
+            moduleEnvelope: buildWilsyCrmModuleEnvelope(config.id, { tenantId: currentTenantId })
+          }
         }));
         return;
       }
 
-      const envelope = normalizeCrmEnvelope(response);
+      const envelope = normalizeCrmEnvelope(legacyResponse);
       setCollections(previous => ({
         ...previous,
         [moduleId]: envelope
       }));
-      updateSource(moduleId, envelope.sourceStatus || 'SOURCE_LIVE', `${config.label} hydrated`);
+      updateSource(moduleId, envelope.sourceStatus || 'SOURCE_LIVE', `${config.label} legacy service hydrated`);
     } catch (error) {
       updateSource(moduleId, 'SOURCE_ERROR', error?.message || `${config.label} source failed`);
       setCollections(previous => ({
@@ -1848,14 +1952,31 @@ const CRMDashboard = ({
         }
       }));
     }
-  }, [activeModule, currentTenantId, moduleConfig, pageState, updateSource]);
+  }, [activeModule, currentTenantId, moduleConfig, pageState, searchTerm, sourceFilter, updateSource]);
 
   const loadCommandCenter = useCallback(async () => {
     try {
-      if (typeof crmService.getCrmCommandCenter !== 'function') {
-        setCommandCenter({ sourceStatus: 'SOURCE_REQUIRED' });
+      const commandEnvelope = await getWilsyCrmCommandCenter({
+        tenantId: currentTenantId,
+        limit: 50
+      });
+
+      if (commandEnvelope?.ok || commandEnvelope?.sourceStatus !== 'SOURCE_ERROR') {
+        setCommandCenter({
+          ...(commandEnvelope.raw?.data || commandEnvelope.raw || {}),
+          sourceStatus: commandEnvelope.sourceStatus || 'SOURCE_REQUIRED',
+          commandClientVersion: WILSY_CRM_COMMAND_CLIENT_VERSION,
+          catalogVersion: WILSY_CRM_MODULE_CATALOG_VERSION,
+          noFakeData: true
+        });
         return;
       }
+
+      if (typeof crmService.getCrmCommandCenter !== 'function') {
+        setCommandCenter({ sourceStatus: 'SOURCE_REQUIRED', commandClientVersion: WILSY_CRM_COMMAND_CLIENT_VERSION });
+        return;
+      }
+
       const envelope = normalizeCrmEnvelope(await crmService.getCrmCommandCenter(currentTenantId));
       setCommandCenter(envelope.raw?.data || envelope.raw || { sourceStatus: envelope.sourceStatus });
     } catch (error) {
@@ -1865,10 +1986,21 @@ const CRMDashboard = ({
 
   const loadEvidence = useCallback(async () => {
     try {
+      const commandEnvelope = await getWilsyCrmSourceRegistryEvidence({
+        tenantId: currentTenantId,
+        limit: 25
+      });
+
+      if (commandEnvelope?.ok || commandEnvelope?.sourceStatus !== 'SOURCE_ERROR') {
+        setSourceRegistryEvidence(commandEnvelope);
+        return;
+      }
+
       if (typeof crmService.getCrmSourceRegistryEvidence !== 'function') {
         setSourceRegistryEvidence({ items: [], total: 0, sourceStatus: 'SOURCE_REQUIRED' });
         return;
       }
+
       const envelope = normalizeCrmEnvelope(await crmService.getCrmSourceRegistryEvidence(currentTenantId, { limit: 20 }));
       setSourceRegistryEvidence(envelope);
     } catch (error) {
@@ -1977,10 +2109,30 @@ const CRMDashboard = ({
     setIsRefreshing(false);
   }, [activeModule, addReceipt, currentTenantId, loadModuleRecords, moduleConfig, pageState]);
 
-  const exportCurrentModule = useCallback(() => {
-    downloadCrmCsv(visibleRows, `wilsy_crm_${activeModule}_${Date.now()}`);
-    addReceipt('CRM_EXPORT', `${visibleRows.length} ${moduleConfig.label} rows exported`, { activeModule });
-  }, [activeModule, addReceipt, moduleConfig.label, visibleRows]);
+  const exportCurrentModule = useCallback(async () => {
+    try {
+      const exportEnvelope = await exportWilsyCrmRecords(activeModule, {
+        tenantId: currentTenantId,
+        filters: { sourceFilter, boardFilter, searchTerm },
+        format: 'csv'
+      });
+
+      if (exportEnvelope?.ok && exportEnvelope?.raw?.downloadUrl) {
+        window.open(exportEnvelope.raw.downloadUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        downloadCrmCsv(visibleRows, `wilsy_crm_${activeModule}_${Date.now()}`);
+      }
+
+      addReceipt('CRM_EXPORT', `${visibleRows.length} ${moduleConfig.label} rows exported`, {
+        activeModule,
+        routePosture: exportEnvelope?.routePosture || 'ROUTE_REQUIRED',
+        sourceStatus: exportEnvelope?.sourceStatus || 'SOURCE_REQUIRED'
+      });
+    } catch (error) {
+      downloadCrmCsv(visibleRows, `wilsy_crm_${activeModule}_${Date.now()}`);
+      addReceipt('CRM_EXPORT_LOCAL_FALLBACK', `${visibleRows.length} ${moduleConfig.label} rows exported locally`, { activeModule });
+    }
+  }, [activeModule, addReceipt, boardFilter, currentTenantId, moduleConfig.label, searchTerm, sourceFilter, visibleRows]);
 
   const importFile = useCallback(async (event) => {
     const file = event.target.files?.[0];
@@ -2198,6 +2350,7 @@ const CRMDashboard = ({
         <Icon size={16} />
         <span>{item.label}</span>
         <em>{collections[item.id]?.total || 0}</em>
+        <small>{compactCrmSignal(collections[item.id]?.sourceStatus || item.routePosture || 'SOURCE_REQUIRED')}</small>
       </button>
     );
   });
@@ -2457,11 +2610,9 @@ const CRMDashboard = ({
         <label>
           <span>Vendor</span>
           <select value={importVendor} onChange={event => setImportVendor(event.target.value)}>
-            <option value="GENERIC_CRM">Generic CRM</option>
-            <option value="SALESFORCE">Salesforce</option>
-            <option value="HUBSPOT">HubSpot</option>
-            <option value="ZOHO">Zoho CRM</option>
-            <option value="DYNAMICS_365">Dynamics 365</option>
+            {WILSY_CRM_IMPORT_VENDOR_CATALOG.map(vendor => (
+              <option key={vendor.id} value={vendor.id}>{vendor.label}</option>
+            ))}
           </select>
         </label>
         <label>
@@ -3217,9 +3368,15 @@ const CRMDashboard = ({
 
 const workspaceContent = {
     home: homeCards,
+    command: homeCards,
     records: recordsView,
     pipeline: pipelineView,
     tasks: tasksView,
+    work: tasksView,
+    success: recordsView,
+    support: tasksView,
+    automation: aiView,
+    intelligence: aiView,
     evidence: evidenceView,
     ai: aiView,
     import: importView
@@ -3466,24 +3623,6 @@ const workspaceContent = {
           </aside>
         </main>
       </section>
-
-      {accountSettingsOpen && (
-        <div className={styles.accountSettingsOverlay} role="dialog" aria-modal="true" aria-label="Account Settings">
-          <div className={styles.accountSettingsFrame}>
-            <Suspense fallback={<div className={styles.accountSettingsLoading}>Loading account settings...</div>}>
-              <WilsyAccountCommandCenter
-                open={accountSettingsOpen}
-                isOpen={accountSettingsOpen}
-                tenantId={currentTenantId}
-                activeTenant={activeTenant}
-                tenantConfig={tenantConfig}
-                user={user}
-                onClose={() => setAccountSettingsOpen(false)}
-              />
-            </Suspense>
-          </div>
-        </div>
-      )}
 
       {modalOpen && (
         <div className={styles.modalOverlay}>
