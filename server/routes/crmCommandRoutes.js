@@ -38,9 +38,34 @@ import {
   listLeadSearchRegulatorEvidenceDossiers,
   verifyLeadSearchRegulatorEvidenceDossier,
   listLeadSearchRegulatorEvidenceDossierVerifications,
+  buildLeadSearchRegulatorDossierChainLedger,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+const WILSY_R68N_REGULATOR_DOSSIER_CHAIN_LEDGER_ROUTE_CONTRACT =
+  'R68N-REGULATOR-DOSSIER-CHAIN-LEDGER-AUTHORITY';
+
+/**
+ * R68N JSON-only regulator dossier chain ledger.
+ */
+router.get('/search/regulator-evidence/dossier-chain/latest', async (req, res) => {
+  const tenantId =
+    String(
+      req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+    ).trim() || 'MASTER';
+
+  const payload = await buildLeadSearchRegulatorDossierChainLedger({
+    tenantId,
+    limit: req.query.limit || 25,
+  });
+
+  return res.status(payload.ok ? 200 : 206).json({
+    ...payload,
+    route: '/api/crm/command/search/regulator-evidence/dossier-chain/latest',
+    routeContract: WILSY_R68N_REGULATOR_DOSSIER_CHAIN_LEDGER_ROUTE_CONTRACT,
+  });
+});
 
 const WILSY_R68M_REGULATOR_DOSSIER_VERIFICATION_ROUTE_CONTRACT =
   'R68M-REGULATOR-DOSSIER-VERIFICATION-AUTHORITY';
