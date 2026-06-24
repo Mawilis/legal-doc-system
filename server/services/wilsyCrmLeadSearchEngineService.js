@@ -6241,3 +6241,233 @@ export const verifyLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificatio
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_FINAL_ATTESTATION_VERSION =
+  'R68X-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-FINAL-REGULATOR-INVESTOR-ATTESTATION-AUTHORITY';
+
+/**
+ * @function normalizeRegulatorDossierChainFinalAttestationValue
+ * @description Produces deterministic values for R68X final regulator and investor attestation hashing.
+ * @collaboration R68W receipt verifier, R68V verification receipt, R68U/R68T evidence bundle controls.
+ */
+const normalizeRegulatorDossierChainFinalAttestationValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeRegulatorDossierChainFinalAttestationValue(item));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((normalized, key) => {
+        normalized[key] = normalizeRegulatorDossierChainFinalAttestationValue(value[key]);
+        return normalized;
+      }, {});
+  }
+
+  return value;
+};
+
+/**
+ * @function computeRegulatorDossierChainFinalAttestationHash
+ * @description Computes a deterministic hash for the R68X regulator and investor final attestation.
+ * @collaboration R68W verified receipt packet, regulator evidence chain, investor evidence surface.
+ */
+const computeRegulatorDossierChainFinalAttestationHash = (attestationPayload) =>
+  crypto
+    .createHash('sha512')
+    .update(JSON.stringify(normalizeRegulatorDossierChainFinalAttestationValue(attestationPayload)))
+    .digest('hex');
+
+/**
+ * @function buildLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestation
+ * @description Issues one JSON-only final regulator and investor attestation across R68O through R68W.
+ * @collaboration CRM command routes, regulator dossier evidence bundle, investor attestation controls.
+ */
+export const buildLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestation = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const receiptVerifierPacket =
+    await verifyLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt({
+      tenantId,
+      ledgerId,
+      limit,
+      operator,
+    });
+
+  const verifier = receiptVerifierPacket.evidenceBundleIndexVerificationReceiptVerifier || {};
+  const verificationReceipt = receiptVerifierPacket.verificationReceipt || {};
+  const proofFlags = verificationReceipt.proofFlags || {};
+  const statuses = verificationReceipt.statuses || {};
+  const routeContracts = verificationReceipt.routeContracts || {};
+  const sourceRoutes = verificationReceipt.sourceRoutes || {};
+  const attestedAt = new Date().toISOString();
+
+  const attestationPayload = {
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_FINAL_ATTESTATION_VERSION,
+    attestationType: 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_REGULATOR_INVESTOR_ATTESTATION',
+    audience: ['REGULATOR', 'INVESTOR'],
+    tenantId,
+    operator,
+    attestedAt,
+    chainRange: ['R68O', 'R68P', 'R68Q', 'R68R', 'R68S', 'R68T', 'R68U', 'R68V', 'R68W'],
+    evidenceRange: verificationReceipt.evidenceRange || [],
+    ledgerRoot: receiptVerifierPacket.ledgerRoot || verificationReceipt.ledgerRoot || null,
+    sourceReceiptVerifierStatus: receiptVerifierPacket.status,
+    sourceReceiptStatus: verifier.sourceReceiptStatus || null,
+    sourceVerifierStatus: verificationReceipt.sourceVerifierStatus || null,
+    sourceBundleIndexStatus: verificationReceipt.sourceBundleIndexStatus || null,
+    hashes: {
+      storedReceiptHash:
+        receiptVerifierPacket.storedReceiptHash || verifier.storedReceiptHash || null,
+      recomputedReceiptHash:
+        receiptVerifierPacket.recomputedReceiptHash || verifier.recomputedReceiptHash || null,
+      storedBundleIndexHash: verificationReceipt.storedBundleIndexHash || null,
+      recomputedBundleIndexHash: verificationReceipt.recomputedBundleIndexHash || null,
+      receiptHash: verificationReceipt.receiptHash || null,
+      receiptHashShort: verificationReceipt.receiptHashShort || null,
+      ledgerRoot: receiptVerifierPacket.ledgerRoot || verificationReceipt.ledgerRoot || null,
+    },
+    routeContracts: {
+      R68O: routeContracts.R68O || 'R68O-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-AUTHORITY',
+      R68P:
+        routeContracts.R68P || 'R68P-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-AUTHORITY',
+      R68Q:
+        routeContracts.R68Q ||
+        'R68Q-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY',
+      R68R:
+        routeContracts.R68R ||
+        'R68R-REGULATOR-DOSSIER-CHAIN-VERIFICATION-FINALITY-CERTIFICATE-AUTHORITY',
+      R68S:
+        routeContracts.R68S ||
+        'R68S-REGULATOR-DOSSIER-CHAIN-FINALITY-CERTIFICATE-VERIFIER-AUTHORITY',
+      R68T: 'R68T-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-AUTHORITY',
+      R68U: 'R68U-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFIER-AUTHORITY',
+      R68V: 'R68V-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFICATION-RECEIPT-AUTHORITY',
+      R68W: 'R68W-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY',
+    },
+    sourceRoutes: {
+      R68O:
+        sourceRoutes.R68O ||
+        '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O',
+      R68P:
+        sourceRoutes.R68P ||
+        '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/latest',
+      R68Q:
+        sourceRoutes.R68Q ||
+        '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/verify/latest',
+      R68R:
+        sourceRoutes.R68R ||
+        '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/latest',
+      R68S:
+        sourceRoutes.R68S ||
+        '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/verify/latest',
+      R68T: '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/latest',
+      R68U: '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verify/latest',
+      R68V: '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/latest',
+      R68W: '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/verify/latest',
+    },
+    statuses: {
+      R68O: statuses.ledgerStatus || null,
+      R68P: statuses.receiptStatus || null,
+      R68Q: statuses.receiptVerifierStatus || null,
+      R68R: statuses.finalityCertificateStatus || null,
+      R68S: statuses.finalityVerifierStatus || null,
+      R68T: verificationReceipt.sourceBundleIndexStatus || null,
+      R68U: verificationReceipt.sourceVerifierStatus || null,
+      R68V: verifier.sourceReceiptStatus || null,
+      R68W: receiptVerifierPacket.status || null,
+    },
+    proofFlags: {
+      receiptHashVerified: receiptVerifierPacket.receiptHashVerified === true,
+      storedReceiptHashMatchesRecomputed:
+        receiptVerifierPacket.storedReceiptHash === receiptVerifierPacket.recomputedReceiptHash,
+      sourceVerifierStatusVerified: receiptVerifierPacket.sourceVerifierStatusVerified === true,
+      sourceBundleIndexStatusVerified:
+        receiptVerifierPacket.sourceBundleIndexStatusVerified === true,
+      bundleIndexHashVerified: receiptVerifierPacket.bundleIndexHashVerified === true,
+      bundleIndexHashEqualityVerified:
+        receiptVerifierPacket.bundleIndexHashEqualityVerified === true,
+      evidenceRangeVerified: receiptVerifierPacket.evidenceRangeVerified === true,
+      routeContractsVerified: receiptVerifierPacket.routeContractsVerified === true,
+      sourceRoutesVerified: receiptVerifierPacket.sourceRoutesVerified === true,
+      statusesVerified: receiptVerifierPacket.statusesVerified === true,
+      proofFlagsVerified: receiptVerifierPacket.proofFlagsVerified === true,
+      embeddedProofFlagsVerified: receiptVerifierPacket.embeddedProofFlagsVerified === true,
+      evidenceRangeStillIndexed: receiptVerifierPacket.evidenceRangeStillIndexed === true,
+      certificateHashVerified: proofFlags.certificateHashVerified === true,
+      upstreamReceiptHashVerified: proofFlags.receiptHashVerified === true,
+      sourceLedgerRootVerified: proofFlags.sourceLedgerRootVerified === true,
+      sourceContinuityVerified: proofFlags.sourceContinuityVerified === true,
+      sourceLinksVerified: proofFlags.sourceLinksVerified === true,
+      jsonResponseOnly:
+        receiptVerifierPacket.jsonResponseOnly === true &&
+        verificationReceipt.jsonResponseOnly === true &&
+        verifier.jsonResponseOnly === true,
+      noFilesystemWrite:
+        receiptVerifierPacket.noFilesystemWrite === true &&
+        verificationReceipt.noFilesystemWrite === true &&
+        verifier.noFilesystemWrite === true,
+    },
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const attestationHash = computeRegulatorDossierChainFinalAttestationHash(attestationPayload);
+
+  const finalAttestation = {
+    ...attestationPayload,
+    attestationHash,
+    attestationHashShort: attestationHash.slice(0, 16),
+  };
+
+  const verified =
+    receiptVerifierPacket.status ===
+      'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFIED' &&
+    finalAttestation.statuses.R68V ===
+      'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_MATERIALIZED' &&
+    finalAttestation.statuses.R68U === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFIED' &&
+    finalAttestation.statuses.R68T === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEXED' &&
+    finalAttestation.proofFlags.receiptHashVerified === true &&
+    finalAttestation.proofFlags.storedReceiptHashMatchesRecomputed === true &&
+    finalAttestation.proofFlags.sourceVerifierStatusVerified === true &&
+    finalAttestation.proofFlags.sourceBundleIndexStatusVerified === true &&
+    finalAttestation.proofFlags.bundleIndexHashVerified === true &&
+    finalAttestation.proofFlags.bundleIndexHashEqualityVerified === true &&
+    finalAttestation.proofFlags.evidenceRangeVerified === true &&
+    finalAttestation.proofFlags.routeContractsVerified === true &&
+    finalAttestation.proofFlags.sourceRoutesVerified === true &&
+    finalAttestation.proofFlags.statusesVerified === true &&
+    finalAttestation.proofFlags.proofFlagsVerified === true &&
+    finalAttestation.proofFlags.embeddedProofFlagsVerified === true &&
+    finalAttestation.proofFlags.evidenceRangeStillIndexed === true &&
+    finalAttestation.proofFlags.certificateHashVerified === true &&
+    finalAttestation.proofFlags.upstreamReceiptHashVerified === true &&
+    finalAttestation.proofFlags.sourceLedgerRootVerified === true &&
+    finalAttestation.proofFlags.sourceContinuityVerified === true &&
+    finalAttestation.proofFlags.sourceLinksVerified === true &&
+    finalAttestation.proofFlags.jsonResponseOnly === true &&
+    finalAttestation.proofFlags.noFilesystemWrite === true;
+
+  return {
+    ok: verified,
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_FINAL_ATTESTATION_VERSION,
+    status: verified
+      ? 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_ISSUED'
+      : 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_DEGRADED',
+    attestationHash,
+    attestationHashShort: attestationHash.slice(0, 16),
+    ledgerRoot: finalAttestation.ledgerRoot,
+    finalAttestation,
+    sourceReceiptVerifier: receiptVerifierPacket,
+    verificationReceipt,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
