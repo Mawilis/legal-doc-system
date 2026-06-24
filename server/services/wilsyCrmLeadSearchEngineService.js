@@ -5643,3 +5643,155 @@ export const verifyLeadSearchRegulatorDossierChainFinalityCertificate = async (o
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERSION =
+  'R68T-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-AUTHORITY';
+
+/**
+ * @function normalizeRegulatorDossierChainEvidenceBundleIndexValue
+ * @description Produces deterministic values for R68T evidence bundle index hashing.
+ * @collaboration R68O ledger verification, R68P receipt, R68Q verifier, R68R certificate, R68S verifier.
+ */
+const normalizeRegulatorDossierChainEvidenceBundleIndexValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeRegulatorDossierChainEvidenceBundleIndexValue(item));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((normalized, key) => {
+        normalized[key] = normalizeRegulatorDossierChainEvidenceBundleIndexValue(value[key]);
+        return normalized;
+      }, {});
+  }
+
+  return value;
+};
+
+/**
+ * @function computeRegulatorDossierChainEvidenceBundleIndexHash
+ * @description Computes a deterministic hash for the regulator dossier chain evidence bundle index.
+ * @collaboration R68S finality verifier, regulator evidence chain, investor evidence index surface.
+ */
+const computeRegulatorDossierChainEvidenceBundleIndexHash = (bundleIndexPayload) =>
+  crypto
+    .createHash('sha512')
+    .update(
+      JSON.stringify(normalizeRegulatorDossierChainEvidenceBundleIndexValue(bundleIndexPayload))
+    )
+    .digest('hex');
+
+/**
+ * @function buildLeadSearchRegulatorDossierChainEvidenceBundleIndex
+ * @description Builds one JSON-only evidence bundle index across R68O through R68S.
+ * @collaboration CRM command routes, regulator dossier chain proof, investor evidence review surface.
+ */
+export const buildLeadSearchRegulatorDossierChainEvidenceBundleIndex = async (options = {}) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const finalityVerifierPacket = await verifyLeadSearchRegulatorDossierChainFinalityCertificate({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const sourceCertificatePacket = finalityVerifierPacket.sourceCertificatePacket || {};
+  const finalityCertificate = finalityVerifierPacket.finalityCertificate || {};
+  const verifierPacket = sourceCertificatePacket.verifier || {};
+  const receiptPacket = verifierPacket.receipt || {};
+  const receiptVerifier = verifierPacket.receiptVerifier || {};
+
+  const bundleIndexPayload = {
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERSION,
+    indexType: 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX',
+    tenantId,
+    operator,
+    indexedAt: new Date().toISOString(),
+    ledgerRoot: finalityVerifierPacket.ledgerRoot || finalityCertificate.ledgerRoot || null,
+    evidenceRange: ['R68O', 'R68P', 'R68Q', 'R68R', 'R68S'],
+    routeContracts: {
+      R68O: 'R68O-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-AUTHORITY',
+      R68P: 'R68P-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-AUTHORITY',
+      R68Q: 'R68Q-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY',
+      R68R: 'R68R-REGULATOR-DOSSIER-CHAIN-VERIFICATION-FINALITY-CERTIFICATE-AUTHORITY',
+      R68S: 'R68S-REGULATOR-DOSSIER-CHAIN-FINALITY-CERTIFICATE-VERIFIER-AUTHORITY',
+    },
+    sourceRoutes: {
+      R68O: '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O',
+      R68P: '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/latest',
+      R68Q: '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/verify/latest',
+      R68R: '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/latest',
+      R68S: '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/verify/latest',
+    },
+    statuses: {
+      finalityVerifierStatus: finalityVerifierPacket.status,
+      finalityCertificateStatus: sourceCertificatePacket.status || null,
+      receiptVerifierStatus: verifierPacket.status || null,
+      receiptStatus: receiptVerifier.sourceReceiptStatus || null,
+      ledgerStatus: receiptPacket.sourceStatus || null,
+    },
+    hashes: {
+      certificateHash:
+        finalityVerifierPacket.storedCertificateHash || finalityCertificate.certificateHash || null,
+      recomputedCertificateHash: finalityVerifierPacket.recomputedCertificateHash || null,
+      receiptHash: finalityVerifierPacket.receiptHash || finalityCertificate.receiptHash || null,
+      recomputedReceiptHash: finalityCertificate.recomputedReceiptHash || null,
+      ledgerRoot: finalityVerifierPacket.ledgerRoot || finalityCertificate.ledgerRoot || null,
+    },
+    proofFlags: {
+      certificateHashVerified: finalityVerifierPacket.certificateHashVerified === true,
+      receiptHashVerified: finalityVerifierPacket.receiptHashVerified === true,
+      sourceLedgerRootVerified: finalityVerifierPacket.sourceLedgerRootVerified === true,
+      sourceContinuityVerified: finalityVerifierPacket.sourceContinuityVerified === true,
+      sourceLinksVerified: finalityVerifierPacket.sourceLinksVerified === true,
+      jsonResponseOnly:
+        finalityVerifierPacket.jsonResponseOnly === true &&
+        finalityVerifierPacket.finalityVerifier?.jsonResponseOnly === true,
+      noFilesystemWrite:
+        finalityVerifierPacket.noFilesystemWrite === true &&
+        finalityVerifierPacket.finalityVerifier?.noFilesystemWrite === true,
+    },
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const bundleIndexHash = computeRegulatorDossierChainEvidenceBundleIndexHash(bundleIndexPayload);
+
+  const evidenceBundleIndex = {
+    ...bundleIndexPayload,
+    bundleIndexHash,
+    bundleIndexHashShort: bundleIndexHash.slice(0, 16),
+  };
+
+  const verified =
+    finalityVerifierPacket.status === 'REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIED' &&
+    evidenceBundleIndex.proofFlags.certificateHashVerified === true &&
+    evidenceBundleIndex.proofFlags.receiptHashVerified === true &&
+    evidenceBundleIndex.proofFlags.sourceLedgerRootVerified === true &&
+    evidenceBundleIndex.proofFlags.sourceContinuityVerified === true &&
+    evidenceBundleIndex.proofFlags.sourceLinksVerified === true &&
+    evidenceBundleIndex.proofFlags.jsonResponseOnly === true &&
+    evidenceBundleIndex.proofFlags.noFilesystemWrite === true;
+
+  return {
+    ok: verified,
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERSION,
+    status: verified
+      ? 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEXED'
+      : 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_DEGRADED',
+    bundleIndexHash,
+    bundleIndexHashShort: bundleIndexHash.slice(0, 16),
+    ledgerRoot: evidenceBundleIndex.ledgerRoot,
+    evidenceBundleIndex,
+    finalityVerifier: finalityVerifierPacket,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
