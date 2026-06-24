@@ -53,9 +53,50 @@ import {
   buildLeadSearchRegulatorInvestorEvidenceChainTerminalSeal,
   verifyLeadSearchRegulatorInvestorEvidenceChainTerminalSeal,
   buildLeadSearchRegulatorInvestorEvidenceChainTerminalSealVerificationReceipt,
+  verifyLeadSearchRegulatorInvestorEvidenceChainTerminalSealVerificationReceipt,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R69C JSON-only terminal seal verification receipt verifier.
+ */
+router.get(
+  '/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/verify/latest',
+  async (req, res) => {
+    const tenantId =
+      String(
+        req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+      ).trim() || 'MASTER';
+
+    const payload =
+      await verifyLeadSearchRegulatorInvestorEvidenceChainTerminalSealVerificationReceipt({
+        tenantId,
+        ledgerId: req.query.ledgerRoot || 'latest',
+        limit: req.query.limit || 25,
+        operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+      });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/verify/latest',
+      routeContract:
+        WILSY_R69C_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT_VERIFIER_ROUTE_CONTRACT,
+      sourceTerminalSealVerificationReceiptRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/latest',
+      sourceTerminalSealVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verify/latest',
+      sourceTerminalSealRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/latest',
+      safeRouteAlias:
+        'R69C_SAFE_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT_VERIFIER_ROUTE',
+    });
+  }
+);
+
+const WILSY_R69C_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT_VERIFIER_ROUTE_CONTRACT =
+  'R69C-REGULATOR-INVESTOR-EVIDENCE-CHAIN-TERMINAL-SEAL-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY';
 
 /**
  * R69B JSON-only terminal seal verification receipt.
