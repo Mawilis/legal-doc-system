@@ -23,6 +23,8 @@ export const WILSY_CRM_REGULATOR_EVIDENCE_EXPORT_VERSION =
   'R68I-REGULATOR-EVIDENCE-EXPORT-AUTHORITY';
 export const WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERSION =
   'R68J-REGULATOR-EXPORT-RECEIPT-MATERIALIZATION';
+export const WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERIFICATION_VERSION =
+  'R68K-REGULATOR-EXPORT-RECEIPT-VERIFICATION-AUTHORITY';
 
 const SOURCE_REGISTRY = Object.freeze([
   { key: 'leads', modelName: 'CRMLead', weight: 1.0 },
@@ -3572,6 +3574,338 @@ export async function listLeadSearchRegulatorExportReceipts(params = {}) {
     total: exportReceipts.length,
     status: 'REGULATOR_EXPORT_RECEIPTS_LISTED',
     exportReceipts,
+  };
+}
+
+/**
+ * @function resolveRegulatorExportReceiptFieldValue
+ * @description Resolves the first available field value from a regulator export receipt record.
+ * @param {Object} record - Persisted CrmRecord document.
+ * @param {string[]} fields - Candidate fields.
+ * @param {*} fallback - Fallback value.
+ * @returns {*} Resolved value.
+ * @collaboration Normalizes flexible CrmRecord schemas for receipt verification.
+ */
+function resolveRegulatorExportReceiptFieldValue(record = {}, fields = [], fallback = null) {
+  for (const field of fields) {
+    if (record[field] !== undefined && record[field] !== null && record[field] !== '') {
+      return record[field];
+    }
+  }
+
+  return fallback;
+}
+
+/**
+ * @function extractRegulatorExportReceiptPayload
+ * @description Extracts the regulator export receipt payload from a persisted record.
+ * @param {Object} record - Persisted CrmRecord document.
+ * @returns {Object|null} Receipt payload.
+ * @collaboration Preserves the real R68J payload for verification even when enum-safe top-level fields differ.
+ */
+function extractRegulatorExportReceiptPayload(record = {}) {
+  return (
+    record.payload || record.metadata || record.details || record.context || record.data || null
+  );
+}
+
+/**
+ * @function computeRegulatorExportReceiptPayloadHash
+ * @description Computes the canonical hash of a persisted regulator export receipt payload.
+ * @param {Object} record - Persisted CrmRecord document.
+ * @returns {string} Receipt payload hash.
+ * @collaboration Verifies that persisted CrmRecord receipt payloads remain stable.
+ */
+function computeRegulatorExportReceiptPayloadHash(record = {}) {
+  const payload = extractRegulatorExportReceiptPayload(record);
+
+  if (!payload) return '';
+
+  return createHashDigest(JSON.stringify(payload));
+}
+
+/**
+ * @function verifyRegulatorExportIntegrityFromReceiptPayload
+ * @description Verifies the regulator export hash carried inside the receipt payload.
+ * @param {Object} payload - Persisted R68J receipt payload.
+ * @returns {Object} Regulator export integrity packet.
+ * @collaboration Proves the persisted receipt still carries a valid R68I export hash input packet.
+ */
+function verifyRegulatorExportIntegrityFromReceiptPayload(payload = {}) {
+  const exportIntegrity = payload.exportIntegrity || {};
+  const hashInput = exportIntegrity.hashInput || null;
+  const storedExportHash = payload.exportHash || exportIntegrity.exportHash || '';
+
+  if (!hashInput || !storedExportHash) {
+    return {
+      verified: false,
+      status: 'REGULATOR_EXPORT_HASH_INPUT_NOT_AVAILABLE',
+      storedExportHash: storedExportHash || null,
+      storedExportHashShort: storedExportHash ? storedExportHash.slice(0, 16) : null,
+      recomputedExportHash: null,
+      recomputedExportHashShort: null,
+    };
+  }
+
+  const recomputedExportHash = createHashDigest(JSON.stringify(hashInput));
+  const verified = storedExportHash === recomputedExportHash;
+
+  return {
+    verified,
+    status: verified ? 'REGULATOR_EXPORT_HASH_VERIFIED' : 'REGULATOR_EXPORT_HASH_MISMATCH',
+    storedExportHash,
+    storedExportHashShort: storedExportHash.slice(0, 16),
+    recomputedExportHash,
+    recomputedExportHashShort: recomputedExportHash.slice(0, 16),
+  };
+}
+
+/**
+ * @function buildRegulatorExportReceiptLookupFilter
+ * @description Builds a tenant-scoped lookup filter for export receipt id or hash.
+ * @param {Object} model - CrmRecord model.
+ * @param {string} tenantId - Tenant id.
+ * @param {string} receiptId - Receipt id, export receipt hash, export hash, or governance id.
+ * @returns {Object} Mongoose filter.
+ * @collaboration Supports regulator export receipt lookup across flexible CrmRecord schemas.
+ */
+function buildRegulatorExportReceiptLookupFilter(model, tenantId = 'MASTER', receiptId = '') {
+  const filter = buildTenantFilter(model, tenantId);
+  const paths = getSchemaPathNames(model);
+  const clauses = [];
+  const value = String(receiptId || '').trim();
+
+  if (mongoose.Types.ObjectId.isValid(value)) {
+    clauses.push({ _id: new mongoose.Types.ObjectId(value) });
+  }
+
+  [
+    'exportReceiptHash',
+    'receiptHash',
+    'hash',
+    'provenanceHash',
+    'exportHash',
+    'governanceEventId',
+    'governanceHash',
+  ].forEach((field) => {
+    if (paths.has(field)) clauses.push({ [field]: value });
+  });
+
+  if (!clauses.length) return filter;
+
+  return { $and: [filter, { $or: clauses }] };
+}
+
+/**
+ * @function normalizeLeadSearchRegulatorExportReceipt
+ * @description Normalizes and verifies a persisted regulator export receipt.
+ * @param {Object} record - Persisted CrmRecord document.
+ * @param {Object} model - CrmRecord model.
+ * @returns {Object} Normalized receipt.
+ * @collaboration Produces the regulator-facing verification packet for one persisted export receipt.
+ */
+function normalizeLeadSearchRegulatorExportReceipt(record = {}, model = null) {
+  const payload = extractRegulatorExportReceiptPayload(record);
+  const recomputedReceiptHash = computeRegulatorExportReceiptPayloadHash(record);
+  const storedReceiptHash = String(
+    resolveRegulatorExportReceiptFieldValue(
+      record,
+      ['exportReceiptHash', 'receiptHash', 'hash', 'provenanceHash'],
+      ''
+    ) || ''
+  );
+  const effectiveReceiptHash = storedReceiptHash || recomputedReceiptHash;
+  const regulatorExportIntegrity = verifyRegulatorExportIntegrityFromReceiptPayload(payload || {});
+  const receiptHashVerified = Boolean(
+    storedReceiptHash && recomputedReceiptHash && storedReceiptHash === recomputedReceiptHash
+  );
+  const receiptHashRecomputed = Boolean(!storedReceiptHash && recomputedReceiptHash);
+
+  return {
+    id: String(record._id || record.id || ''),
+    version: WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERIFICATION_VERSION,
+    materializationVersion: WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERSION,
+    modelName: model?.modelName || 'CrmRecord',
+    eventType: String(
+      payload?.exportType ||
+        record.eventType ||
+        record.type ||
+        record.recordType ||
+        record.kind ||
+        'CRM_LEAD_SEARCH_REGULATOR_EXPORT_RECEIPT'
+    ),
+    tenantId: String(record.tenantId || record.tenant || payload?.tenantId || 'MASTER'),
+    operatorId: String(
+      record.operatorId || record.actorId || record.userId || payload?.operatorId || 'SYSTEM'
+    ),
+    query: String(record.query || record.searchQuery || payload?.query || ''),
+    status: String(record.status || record.recordStatus || payload?.status || 'SEALED'),
+    exportReceiptHash: effectiveReceiptHash || null,
+    exportReceiptHashShort: effectiveReceiptHash ? effectiveReceiptHash.slice(0, 16) : null,
+    exportHash: payload?.exportHash || record.exportHash || null,
+    exportHashShort: payload?.exportHashShort || null,
+    governanceEventId: payload?.governanceEventId || record.governanceEventId || null,
+    governanceHash: payload?.governanceHash || record.governanceHash || null,
+    governanceHashShort: payload?.governanceHashShort || null,
+    complianceReceiptId: payload?.complianceReceiptId || record.complianceReceiptId || null,
+    telemetryEventId: payload?.telemetryEventId || record.telemetryEventId || null,
+    boardReady: Boolean(record.boardReady ?? payload?.boardReady),
+    regulatorReady: Boolean(record.regulatorReady ?? payload?.regulatorReady),
+    createdAt:
+      record.createdAt || record.generatedAt || record.timestamp || payload?.generatedAt || null,
+    integrity: {
+      verified: Boolean(
+        (receiptHashVerified || receiptHashRecomputed) && regulatorExportIntegrity.verified
+      ),
+      status: receiptHashVerified
+        ? 'REGULATOR_EXPORT_RECEIPT_HASH_VERIFIED'
+        : receiptHashRecomputed
+          ? 'REGULATOR_EXPORT_RECEIPT_HASH_RECOMPUTED'
+          : 'REGULATOR_EXPORT_RECEIPT_HASH_NOT_AVAILABLE',
+      storedHash: storedReceiptHash || null,
+      storedHashShort: storedReceiptHash ? storedReceiptHash.slice(0, 16) : null,
+      recomputedHash: recomputedReceiptHash || null,
+      recomputedHashShort: recomputedReceiptHash ? recomputedReceiptHash.slice(0, 16) : null,
+      regulatorExportIntegrity,
+    },
+    payloadAvailable: Boolean(payload),
+    payload,
+  };
+}
+
+/**
+ * @function findRegulatorExportReceiptByHashFallback
+ * @description Finds an export receipt by scanning recent tenant records and comparing payload hashes.
+ * @param {Object} params - Lookup parameters.
+ * @returns {Promise<Object|null>} Matched record or null.
+ * @collaboration Enables lookup by exportReceiptHash or exportHash when schema did not persist top-level hash fields.
+ */
+async function findRegulatorExportReceiptByHashFallback(params = {}) {
+  const model = params.model;
+  const tenantId = String(params.tenantId || 'MASTER').trim() || 'MASTER';
+  const receiptId = String(params.receiptId || '').trim();
+
+  if (!model || !receiptId) return null;
+
+  const filter = buildTenantFilter(model, tenantId);
+  const records = await model
+    .find(filter)
+    .sort({ createdAt: -1, generatedAt: -1, timestamp: -1, eventAt: -1 })
+    .limit(500)
+    .lean();
+
+  return (
+    records.find((record) => {
+      const normalized = normalizeLeadSearchRegulatorExportReceipt(record, model);
+      const payload = normalized.payload || {};
+      const candidates = [
+        normalized.id,
+        normalized.exportReceiptHash,
+        normalized.exportHash,
+        normalized.governanceEventId,
+        normalized.governanceHash,
+        payload?.exportHash,
+        payload?.governanceEventId,
+        payload?.governanceHash,
+        payload?.exportReceiptHash,
+      ]
+        .filter(Boolean)
+        .map((value) => String(value));
+
+      return candidates.includes(receiptId);
+    }) || null
+  );
+}
+
+/**
+ * @function verifyLeadSearchRegulatorExportReceipt
+ * @description Verifies a persisted regulator export receipt by id, exportReceiptHash, exportHash, or governance id.
+ * @param {Object} params - Verification parameters.
+ * @returns {Promise<Object>} Receipt verification response.
+ * @collaboration Gives regulators a stable verification endpoint over persisted export receipt records.
+ */
+export async function verifyLeadSearchRegulatorExportReceipt(params = {}) {
+  const tenantId = String(params.tenantId || 'MASTER').trim() || 'MASTER';
+  const receiptId = String(
+    params.receiptId ||
+      params.exportReceiptId ||
+      params.exportReceiptHash ||
+      params.exportHash ||
+      ''
+  ).trim();
+  const model = resolveRegulatorExportRecordModel();
+
+  if (!model) {
+    return {
+      ok: false,
+      version: WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERIFICATION_VERSION,
+      tenantId,
+      receiptId,
+      status: 'REGULATOR_EXPORT_RECORD_MODEL_NOT_REGISTERED',
+      exportReceipt: null,
+    };
+  }
+
+  const filter = buildRegulatorExportReceiptLookupFilter(model, tenantId, receiptId);
+  let record = await model.findOne(filter).lean();
+
+  if (!record) {
+    record = await findRegulatorExportReceiptByHashFallback({ model, tenantId, receiptId });
+  }
+
+  if (!record) {
+    return {
+      ok: false,
+      version: WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERIFICATION_VERSION,
+      tenantId,
+      receiptId,
+      status: 'REGULATOR_EXPORT_RECEIPT_NOT_FOUND',
+      exportReceipt: null,
+    };
+  }
+
+  const exportReceipt = normalizeLeadSearchRegulatorExportReceipt(record, model);
+
+  return {
+    ok: true,
+    version: WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERIFICATION_VERSION,
+    tenantId,
+    receiptId,
+    status: 'REGULATOR_EXPORT_RECEIPT_FOUND',
+    exportReceipt,
+  };
+}
+
+/**
+ * @function listLeadSearchRegulatorExportReceiptVerifications
+ * @description Lists verified regulator export receipt packets.
+ * @param {Object} params - List parameters.
+ * @returns {Promise<Object>} Verified receipt list response.
+ * @collaboration Provides a verification ledger for persisted regulator export receipts.
+ */
+export async function listLeadSearchRegulatorExportReceiptVerifications(params = {}) {
+  const tenantId = String(params.tenantId || 'MASTER').trim() || 'MASTER';
+  const limit = Math.min(Math.max(Number(params.limit || 10), 1), 50);
+  const receiptLedger = await listLeadSearchRegulatorExportReceipts({ tenantId, limit });
+  const exportReceipts = receiptLedger.exportReceipts || [];
+  const verifiedReceipts = await Promise.all(
+    exportReceipts.map((receipt) =>
+      verifyLeadSearchRegulatorExportReceipt({
+        tenantId,
+        receiptId: receipt.id || receipt.exportReceiptHash || receipt.exportHash,
+      })
+    )
+  );
+
+  return {
+    ok: true,
+    version: WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERIFICATION_VERSION,
+    tenantId,
+    total: verifiedReceipts.length,
+    verified: verifiedReceipts.filter((receipt) => receipt.exportReceipt?.integrity?.verified)
+      .length,
+    status: 'REGULATOR_EXPORT_RECEIPT_VERIFICATIONS_LISTED',
+    exportReceipts: verifiedReceipts.map((receipt) => receipt.exportReceipt).filter(Boolean),
   };
 }
 

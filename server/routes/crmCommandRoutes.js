@@ -32,9 +32,56 @@ import {
   listLeadSearchRegulatorEvidenceBundles,
   materializeLeadSearchRegulatorExportReceipt,
   listLeadSearchRegulatorExportReceipts,
+  verifyLeadSearchRegulatorExportReceipt,
+  listLeadSearchRegulatorExportReceiptVerifications,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+const WILSY_R68K_REGULATOR_EXPORT_RECEIPT_VERIFICATION_ROUTE_CONTRACT =
+  'R68K-REGULATOR-EXPORT-RECEIPT-VERIFICATION-AUTHORITY';
+
+/**
+ * R68K verified regulator export receipt ledger.
+ */
+router.get('/search/regulator-evidence/receipts/verified/latest', async (req, res) => {
+  const tenantId =
+    String(
+      req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+    ).trim() || 'MASTER';
+
+  const payload = await listLeadSearchRegulatorExportReceiptVerifications({
+    tenantId,
+    limit: req.query.limit || 10,
+  });
+
+  return res.status(200).json({
+    ...payload,
+    route: '/api/crm/command/search/regulator-evidence/receipts/verified/latest',
+    routeContract: WILSY_R68K_REGULATOR_EXPORT_RECEIPT_VERIFICATION_ROUTE_CONTRACT,
+  });
+});
+
+/**
+ * R68K verify regulator export receipt by id, exportReceiptHash, exportHash, or governance id.
+ */
+router.get('/search/regulator-evidence/receipt/:receiptId', async (req, res) => {
+  const tenantId =
+    String(
+      req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+    ).trim() || 'MASTER';
+
+  const payload = await verifyLeadSearchRegulatorExportReceipt({
+    tenantId,
+    receiptId: req.params.receiptId,
+  });
+
+  return res.status(payload.ok ? 200 : 404).json({
+    ...payload,
+    route: '/api/crm/command/search/regulator-evidence/receipt/:receiptId',
+    routeContract: WILSY_R68K_REGULATOR_EXPORT_RECEIPT_VERIFICATION_ROUTE_CONTRACT,
+  });
+});
 
 const WILSY_R68J_REGULATOR_EXPORT_RECEIPT_ROUTE_CONTRACT =
   'R68J-REGULATOR-EXPORT-RECEIPT-MATERIALIZATION';
