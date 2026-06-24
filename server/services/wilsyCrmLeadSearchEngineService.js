@@ -7141,3 +7141,175 @@ export const verifyLeadSearchRegulatorInvestorEvidenceChainTerminalSeal = async 
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT_VERSION =
+  'R69B-REGULATOR-INVESTOR-EVIDENCE-CHAIN-TERMINAL-SEAL-VERIFICATION-RECEIPT-AUTHORITY';
+
+/**
+ * @function normalizeRegulatorInvestorEvidenceChainTerminalSealVerificationReceiptValue
+ * @description Produces deterministic values for R69B terminal seal verification receipt hashing.
+ * @collaboration R69A terminal seal verifier, R68Z terminal seal, CRM regulator/investor receipt controls.
+ */
+const normalizeRegulatorInvestorEvidenceChainTerminalSealVerificationReceiptValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) =>
+      normalizeRegulatorInvestorEvidenceChainTerminalSealVerificationReceiptValue(item)
+    );
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((normalized, key) => {
+        normalized[key] =
+          normalizeRegulatorInvestorEvidenceChainTerminalSealVerificationReceiptValue(value[key]);
+        return normalized;
+      }, {});
+  }
+
+  return value;
+};
+
+/**
+ * @function computeRegulatorInvestorEvidenceChainTerminalSealVerificationReceiptHash
+ * @description Computes a deterministic hash for the R69B terminal seal verification receipt.
+ * @collaboration R69A verifier packet, terminal evidence seal, regulator/investor proof receipt surface.
+ */
+const computeRegulatorInvestorEvidenceChainTerminalSealVerificationReceiptHash = (receiptPayload) =>
+  crypto
+    .createHash('sha512')
+    .update(
+      JSON.stringify(
+        normalizeRegulatorInvestorEvidenceChainTerminalSealVerificationReceiptValue(receiptPayload)
+      )
+    )
+    .digest('hex');
+
+/**
+ * @function buildLeadSearchRegulatorInvestorEvidenceChainTerminalSealVerificationReceipt
+ * @description Materializes a JSON-only verification receipt from the R69A terminal seal verifier.
+ * @collaboration CRM command routes, R69A terminal seal verifier, regulator/investor receipt controls.
+ */
+export const buildLeadSearchRegulatorInvestorEvidenceChainTerminalSealVerificationReceipt = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const verifierPacket = await verifyLeadSearchRegulatorInvestorEvidenceChainTerminalSeal({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const terminalSealVerifier = verifierPacket.terminalSealVerifier || {};
+  const terminalSeal = verifierPacket.terminalSeal || {};
+  const terminalDisposition = terminalSeal.terminalDisposition || {};
+  const issuedAt = new Date().toISOString();
+
+  const receiptPayload = {
+    version: WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT_VERSION,
+    receiptType: 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT',
+    tenantId,
+    operator,
+    issuedAt,
+    sourceTerminalSealVerifierStatus: verifierPacket.status,
+    sourceTerminalSealStatus: terminalSealVerifier.sourceTerminalSealStatus || null,
+    ledgerRoot: verifierPacket.ledgerRoot || terminalSeal.ledgerRoot || null,
+    storedTerminalSealHash:
+      verifierPacket.storedTerminalSealHash || terminalSealVerifier.storedTerminalSealHash || null,
+    recomputedTerminalSealHash:
+      verifierPacket.recomputedTerminalSealHash ||
+      terminalSealVerifier.recomputedTerminalSealHash ||
+      null,
+    terminalSealHashVerified: verifierPacket.terminalSealHashVerified === true,
+    requiredStatusesVerified: verifierPacket.requiredStatusesVerified === true,
+    proofFlagsAllTrue: verifierPacket.proofFlagsAllTrue === true,
+    finalAttestationVerifierPassed: verifierPacket.finalAttestationVerifierPassed === true,
+    chainRangeVerified: verifierPacket.chainRangeVerified === true,
+    audienceVerified: verifierPacket.audienceVerified === true,
+    statusesVerified: verifierPacket.statusesVerified === true,
+    routeContractsVerified: verifierPacket.routeContractsVerified === true,
+    sourceRoutesVerified: verifierPacket.sourceRoutesVerified === true,
+    hashEqualityVerified: verifierPacket.hashEqualityVerified === true,
+    proofFlagsVerified: verifierPacket.proofFlagsVerified === true,
+    terminalDispositionVerified: verifierPacket.terminalDispositionVerified === true,
+    regulatorReady: verifierPacket.regulatorReady === true,
+    investorReady: verifierPacket.investorReady === true,
+    chainRange: terminalSeal.chainRange || [],
+    audience: terminalSeal.audience || [],
+    statuses: terminalSeal.statuses || {},
+    routeContracts: terminalSeal.routeContracts || {},
+    sourceRoutes: terminalSeal.sourceRoutes || {},
+    hashes: terminalSeal.hashes || {},
+    proofFlags: terminalSeal.proofFlags || {},
+    terminalDisposition,
+    sourceRoute:
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verify/latest',
+    sourceTerminalSealRoute:
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/latest',
+    sourceFinalAttestationVerifierRoute:
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/final-attestation/verify/latest',
+    jsonResponseOnly:
+      verifierPacket.jsonResponseOnly === true &&
+      terminalSealVerifier.jsonResponseOnly === true &&
+      terminalDisposition.jsonResponseOnly === true,
+    noFilesystemWrite:
+      verifierPacket.noFilesystemWrite === true &&
+      terminalSealVerifier.noFilesystemWrite === true &&
+      terminalDisposition.noFilesystemWrite === true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const receiptHash =
+    computeRegulatorInvestorEvidenceChainTerminalSealVerificationReceiptHash(receiptPayload);
+
+  const terminalSealVerificationReceipt = {
+    ...receiptPayload,
+    receiptHash,
+    receiptHashShort: receiptHash.slice(0, 16),
+  };
+
+  const materialized =
+    verifierPacket.status === 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFIED' &&
+    terminalSealVerificationReceipt.terminalSealHashVerified === true &&
+    terminalSealVerificationReceipt.storedTerminalSealHash ===
+      terminalSealVerificationReceipt.recomputedTerminalSealHash &&
+    terminalSealVerificationReceipt.requiredStatusesVerified === true &&
+    terminalSealVerificationReceipt.proofFlagsAllTrue === true &&
+    terminalSealVerificationReceipt.finalAttestationVerifierPassed === true &&
+    terminalSealVerificationReceipt.chainRangeVerified === true &&
+    terminalSealVerificationReceipt.audienceVerified === true &&
+    terminalSealVerificationReceipt.statusesVerified === true &&
+    terminalSealVerificationReceipt.routeContractsVerified === true &&
+    terminalSealVerificationReceipt.sourceRoutesVerified === true &&
+    terminalSealVerificationReceipt.hashEqualityVerified === true &&
+    terminalSealVerificationReceipt.proofFlagsVerified === true &&
+    terminalSealVerificationReceipt.terminalDispositionVerified === true &&
+    terminalSealVerificationReceipt.regulatorReady === true &&
+    terminalSealVerificationReceipt.investorReady === true &&
+    terminalSealVerificationReceipt.jsonResponseOnly === true &&
+    terminalSealVerificationReceipt.noFilesystemWrite === true;
+
+  return {
+    ok: materialized,
+    version: WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT_VERSION,
+    status: materialized
+      ? 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT_MATERIALIZED'
+      : 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT_DEGRADED',
+    receiptHash,
+    receiptHashShort: receiptHash.slice(0, 16),
+    ledgerRoot: terminalSealVerificationReceipt.ledgerRoot,
+    terminalSealVerificationReceipt,
+    sourceTerminalSealVerifier: verifierPacket,
+    terminalSeal,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
