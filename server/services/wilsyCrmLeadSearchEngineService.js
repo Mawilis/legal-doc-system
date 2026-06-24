@@ -6679,3 +6679,238 @@ export const verifyLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestat
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERSION =
+  'R68Z-REGULATOR-INVESTOR-EVIDENCE-CHAIN-TERMINAL-SEAL-AUTHORITY';
+
+/**
+ * @function normalizeRegulatorInvestorEvidenceChainTerminalSealValue
+ * @description Produces deterministic values for R68Z terminal regulator and investor evidence-chain seal hashing.
+ * @collaboration R68Y final attestation verifier, R68X final attestation, CRM regulator/investor terminal evidence controls.
+ */
+const normalizeRegulatorInvestorEvidenceChainTerminalSealValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeRegulatorInvestorEvidenceChainTerminalSealValue(item));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((normalized, key) => {
+        normalized[key] = normalizeRegulatorInvestorEvidenceChainTerminalSealValue(value[key]);
+        return normalized;
+      }, {});
+  }
+
+  return value;
+};
+
+/**
+ * @function computeRegulatorInvestorEvidenceChainTerminalSealHash
+ * @description Computes a deterministic hash for the R68Z terminal evidence-chain seal.
+ * @collaboration R68Y verified final attestation packet, regulator evidence chain, investor evidence controls.
+ */
+const computeRegulatorInvestorEvidenceChainTerminalSealHash = (terminalSealPayload) =>
+  crypto
+    .createHash('sha512')
+    .update(
+      JSON.stringify(normalizeRegulatorInvestorEvidenceChainTerminalSealValue(terminalSealPayload))
+    )
+    .digest('hex');
+
+/**
+ * @function buildLeadSearchRegulatorInvestorEvidenceChainTerminalSeal
+ * @description Issues one JSON-only terminal regulator and investor evidence-chain seal across R68O through R68Y.
+ * @collaboration CRM command routes, regulator dossier evidence bundle, investor attestation controls.
+ */
+export const buildLeadSearchRegulatorInvestorEvidenceChainTerminalSeal = async (options = {}) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const finalAttestationVerifierPacket =
+    await verifyLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestation({
+      tenantId,
+      ledgerId,
+      limit,
+      operator,
+    });
+
+  const verifier = finalAttestationVerifierPacket.finalAttestationVerifier || {};
+  const finalAttestation = finalAttestationVerifierPacket.finalAttestation || {};
+  const proofFlags = finalAttestation.proofFlags || {};
+  const hashes = finalAttestation.hashes || {};
+  const statuses = finalAttestation.statuses || {};
+  const routeContracts = finalAttestation.routeContracts || {};
+  const sourceRoutes = finalAttestation.sourceRoutes || {};
+  const sealedAt = new Date().toISOString();
+
+  const chainRange = [
+    'R68O',
+    'R68P',
+    'R68Q',
+    'R68R',
+    'R68S',
+    'R68T',
+    'R68U',
+    'R68V',
+    'R68W',
+    'R68X',
+    'R68Y',
+  ];
+
+  const terminalStatuses = {
+    ...statuses,
+    R68X:
+      verifier.sourceAttestationStatus ||
+      finalAttestationVerifierPacket.sourceAttestationPacket?.status ||
+      null,
+    R68Y: finalAttestationVerifierPacket.status || null,
+  };
+
+  const terminalRouteContracts = {
+    ...routeContracts,
+    R68X: 'R68X-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-FINAL-REGULATOR-INVESTOR-ATTESTATION-AUTHORITY',
+    R68Y: 'R68Y-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-FINAL-ATTESTATION-VERIFIER-AUTHORITY',
+  };
+
+  const terminalSourceRoutes = {
+    ...sourceRoutes,
+    R68X: '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/final-attestation/latest',
+    R68Y: '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/final-attestation/verify/latest',
+  };
+
+  const terminalProofFlags = {
+    finalAttestationVerifierPassed:
+      finalAttestationVerifierPacket.status ===
+      'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_VERIFIED',
+    attestationHashVerified: finalAttestationVerifierPacket.attestationHashVerified === true,
+    storedAttestationHashMatchesRecomputed:
+      finalAttestationVerifierPacket.storedAttestationHash ===
+      finalAttestationVerifierPacket.recomputedAttestationHash,
+    chainRangeVerified: finalAttestationVerifierPacket.chainRangeVerified === true,
+    audienceVerified: finalAttestationVerifierPacket.audienceVerified === true,
+    statusesVerified: finalAttestationVerifierPacket.statusesVerified === true,
+    routeContractsVerified: finalAttestationVerifierPacket.routeContractsVerified === true,
+    sourceRoutesVerified: finalAttestationVerifierPacket.sourceRoutesVerified === true,
+    hashEqualityVerified: finalAttestationVerifierPacket.hashEqualityVerified === true,
+    proofFlagsVerified: finalAttestationVerifierPacket.proofFlagsVerified === true,
+    receiptHashVerified: proofFlags.receiptHashVerified === true,
+    storedReceiptHashMatchesRecomputed: proofFlags.storedReceiptHashMatchesRecomputed === true,
+    bundleIndexHashVerified: proofFlags.bundleIndexHashVerified === true,
+    bundleIndexHashEqualityVerified: proofFlags.bundleIndexHashEqualityVerified === true,
+    certificateHashVerified: proofFlags.certificateHashVerified === true,
+    upstreamReceiptHashVerified: proofFlags.upstreamReceiptHashVerified === true,
+    sourceLedgerRootVerified: proofFlags.sourceLedgerRootVerified === true,
+    sourceContinuityVerified: proofFlags.sourceContinuityVerified === true,
+    sourceLinksVerified: proofFlags.sourceLinksVerified === true,
+    jsonResponseOnly:
+      finalAttestationVerifierPacket.jsonResponseOnly === true &&
+      verifier.jsonResponseOnly === true &&
+      proofFlags.jsonResponseOnly === true,
+    noFilesystemWrite:
+      finalAttestationVerifierPacket.noFilesystemWrite === true &&
+      verifier.noFilesystemWrite === true &&
+      proofFlags.noFilesystemWrite === true,
+  };
+
+  const terminalSealPayload = {
+    version: WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERSION,
+    sealType: 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL',
+    audience: ['REGULATOR', 'INVESTOR'],
+    tenantId,
+    operator,
+    sealedAt,
+    chainRange,
+    sourceFinalAttestationVerifierStatus: finalAttestationVerifierPacket.status,
+    sourceFinalAttestationStatus: verifier.sourceAttestationStatus || null,
+    ledgerRoot:
+      finalAttestationVerifierPacket.ledgerRoot ||
+      finalAttestation.ledgerRoot ||
+      hashes.ledgerRoot ||
+      null,
+    hashes: {
+      storedAttestationHash: finalAttestationVerifierPacket.storedAttestationHash || null,
+      recomputedAttestationHash: finalAttestationVerifierPacket.recomputedAttestationHash || null,
+      attestationHash: finalAttestation.attestationHash || null,
+      attestationHashShort: finalAttestation.attestationHashShort || null,
+      storedReceiptHash: hashes.storedReceiptHash || null,
+      recomputedReceiptHash: hashes.recomputedReceiptHash || null,
+      receiptHash: hashes.receiptHash || null,
+      storedBundleIndexHash: hashes.storedBundleIndexHash || null,
+      recomputedBundleIndexHash: hashes.recomputedBundleIndexHash || null,
+      ledgerRoot: hashes.ledgerRoot || finalAttestation.ledgerRoot || null,
+    },
+    routeContracts: terminalRouteContracts,
+    sourceRoutes: terminalSourceRoutes,
+    statuses: terminalStatuses,
+    proofFlags: terminalProofFlags,
+    terminalDisposition: {
+      evidenceChainStatus: 'TERMINALLY_SEALED',
+      regulatorReady: true,
+      investorReady: true,
+      filesystemExported: false,
+      jsonResponseOnly: true,
+      noFilesystemWrite: true,
+    },
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const terminalSealHash =
+    computeRegulatorInvestorEvidenceChainTerminalSealHash(terminalSealPayload);
+
+  const terminalSeal = {
+    ...terminalSealPayload,
+    terminalSealHash,
+    terminalSealHashShort: terminalSealHash.slice(0, 16),
+  };
+
+  const requiredStatusesVerified =
+    terminalStatuses.R68O === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFIED' &&
+    terminalStatuses.R68P === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_MATERIALIZED' &&
+    terminalStatuses.R68Q === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIED' &&
+    terminalStatuses.R68R === 'REGULATOR_DOSSIER_CHAIN_VERIFICATION_FINALITY_CERTIFICATE_ISSUED' &&
+    terminalStatuses.R68S === 'REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIED' &&
+    terminalStatuses.R68T === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEXED' &&
+    terminalStatuses.R68U === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFIED' &&
+    terminalStatuses.R68V ===
+      'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_MATERIALIZED' &&
+    terminalStatuses.R68W ===
+      'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFIED' &&
+    terminalStatuses.R68X === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_ISSUED' &&
+    terminalStatuses.R68Y === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_VERIFIED';
+
+  const proofFlagsAllTrue = Object.values(terminalProofFlags).every((value) => value === true);
+
+  const issued =
+    requiredStatusesVerified &&
+    proofFlagsAllTrue &&
+    terminalSeal.terminalDisposition.regulatorReady === true &&
+    terminalSeal.terminalDisposition.investorReady === true &&
+    terminalSeal.terminalDisposition.jsonResponseOnly === true &&
+    terminalSeal.terminalDisposition.noFilesystemWrite === true &&
+    terminalSeal.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok: issued,
+    version: WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERSION,
+    status: issued
+      ? 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_ISSUED'
+      : 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_DEGRADED',
+    terminalSealHash,
+    terminalSealHashShort: terminalSealHash.slice(0, 16),
+    ledgerRoot: terminalSeal.ledgerRoot,
+    requiredStatusesVerified,
+    proofFlagsAllTrue,
+    finalAttestationVerifierPassed: terminalProofFlags.finalAttestationVerifierPassed,
+    terminalSeal,
+    sourceFinalAttestationVerifier: finalAttestationVerifierPacket,
+    finalAttestation,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
