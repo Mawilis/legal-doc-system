@@ -43,9 +43,50 @@ import {
   buildLeadSearchRegulatorDossierChainLedgerVerificationReceipt,
   verifyLeadSearchRegulatorDossierChainLedgerVerificationReceipt,
   buildLeadSearchRegulatorDossierChainFinalityCertificate,
+  verifyLeadSearchRegulatorDossierChainFinalityCertificate,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R68S JSON-only regulator dossier chain finality certificate verifier.
+ */
+router.get(
+  '/search/regulator-evidence/dossier-chain/finality-certificate/verify/latest',
+  async (req, res) => {
+    const tenantId =
+      String(
+        req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+      ).trim() || 'MASTER';
+
+    const payload = await verifyLeadSearchRegulatorDossierChainFinalityCertificate({
+      tenantId,
+      ledgerId: req.query.ledgerRoot || 'latest',
+      limit: req.query.limit || 25,
+      operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+    });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/verify/latest',
+      routeContract:
+        WILSY_R68S_REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIER_ROUTE_CONTRACT,
+      sourceFinalityRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/latest',
+      sourceVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/verify/latest',
+      sourceReceiptRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/latest',
+      sourceLedgerRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O',
+      safeRouteAlias: 'R68S_SAFE_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIER_ROUTE',
+    });
+  }
+);
+
+const WILSY_R68S_REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIER_ROUTE_CONTRACT =
+  'R68S-REGULATOR-DOSSIER-CHAIN-FINALITY-CERTIFICATE-VERIFIER-AUTHORITY';
 
 /**
  * R68R JSON-only regulator dossier chain verification finality certificate.

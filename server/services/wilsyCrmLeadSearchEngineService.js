@@ -5547,3 +5547,99 @@ export const buildLeadSearchRegulatorDossierChainFinalityCertificate = async (op
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIER_VERSION =
+  'R68S-REGULATOR-DOSSIER-CHAIN-FINALITY-CERTIFICATE-VERIFIER-AUTHORITY';
+
+/**
+ * @function verifyLeadSearchRegulatorDossierChainFinalityCertificate
+ * @description Verifies a regulator dossier chain finality certificate by recomputing its certificate hash.
+ * @collaboration R68R finality certificate, R68Q receipt verifier, CRM regulator evidence controls.
+ */
+export const verifyLeadSearchRegulatorDossierChainFinalityCertificate = async (options = {}) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const certificatePacket = await buildLeadSearchRegulatorDossierChainFinalityCertificate({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const finalityCertificate = certificatePacket.finalityCertificate || {};
+  const {
+    certificateHash: storedCertificateHash,
+    certificateHashShort,
+    ...certificatePayload
+  } = finalityCertificate;
+
+  const recomputedCertificateHash =
+    computeRegulatorDossierChainFinalityCertificateHash(certificatePayload);
+  const certificateHashVerified =
+    Boolean(storedCertificateHash) && storedCertificateHash === recomputedCertificateHash;
+
+  const receiptHashVerified = finalityCertificate.receiptHashVerified === true;
+  const sourceLedgerRootVerified = finalityCertificate.sourceLedgerRootVerified === true;
+  const sourceContinuityVerified = finalityCertificate.sourceContinuityVerified === true;
+  const sourceLinksVerified = finalityCertificate.sourceLinksVerified === true;
+  const jsonResponseOnly =
+    certificatePacket.jsonResponseOnly === true && finalityCertificate.jsonResponseOnly === true;
+  const noFilesystemWrite =
+    certificatePacket.noFilesystemWrite === true && finalityCertificate.noFilesystemWrite === true;
+
+  const verified =
+    certificatePacket.status ===
+      'REGULATOR_DOSSIER_CHAIN_VERIFICATION_FINALITY_CERTIFICATE_ISSUED' &&
+    certificateHashVerified &&
+    receiptHashVerified &&
+    sourceLedgerRootVerified &&
+    sourceContinuityVerified &&
+    sourceLinksVerified &&
+    jsonResponseOnly &&
+    noFilesystemWrite;
+
+  return {
+    ok: verified,
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIER_VERSION,
+    status: verified
+      ? 'REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIED'
+      : 'REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFICATION_FAILED',
+    certificateHashVerified,
+    storedCertificateHash,
+    storedCertificateHashShort:
+      certificateHashShort || String(storedCertificateHash || '').slice(0, 16),
+    recomputedCertificateHash,
+    recomputedCertificateHashShort: recomputedCertificateHash.slice(0, 16),
+    ledgerRoot: finalityCertificate.ledgerRoot || certificatePacket.ledgerRoot || null,
+    receiptHash: finalityCertificate.receiptHash || null,
+    receiptHashVerified,
+    sourceLedgerRootVerified,
+    sourceContinuityVerified,
+    sourceLinksVerified,
+    finalityVerifier: {
+      tenantId,
+      operator,
+      verifiedAt: new Date().toISOString(),
+      sourceCertificateStatus: certificatePacket.status,
+      certificateHashVerified,
+      storedCertificateHash,
+      recomputedCertificateHash,
+      receiptHashVerified,
+      sourceLedgerRootVerified,
+      sourceContinuityVerified,
+      sourceLinksVerified,
+      jsonResponseOnly,
+      noFilesystemWrite,
+    },
+    finalityCertificate,
+    sourceCertificatePacket: certificatePacket,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
