@@ -6086,3 +6086,158 @@ export const buildLeadSearchRegulatorDossierChainEvidenceBundleIndexVerification
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFIER_VERSION =
+  'R68W-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY';
+
+/**
+ * @function verifyLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt
+ * @description Verifies the R68V evidence bundle index verification receipt by recomputing its receipt hash.
+ * @collaboration R68V verification receipt, R68U evidence bundle verifier, CRM regulator evidence controls.
+ */
+export const verifyLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const receiptPacket =
+    await buildLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt({
+      tenantId,
+      ledgerId,
+      limit,
+      operator,
+    });
+
+  const verificationReceipt = receiptPacket.verificationReceipt || {};
+  const {
+    receiptHash: storedReceiptHash,
+    receiptHashShort,
+    ...receiptPayload
+  } = verificationReceipt;
+
+  const recomputedReceiptHash =
+    computeRegulatorDossierChainEvidenceBundleIndexVerificationReceiptHash(receiptPayload);
+  const receiptHashVerified =
+    Boolean(storedReceiptHash) && storedReceiptHash === recomputedReceiptHash;
+
+  const sourceVerifierStatusVerified =
+    verificationReceipt.sourceVerifierStatus ===
+    'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFIED';
+
+  const sourceBundleIndexStatusVerified =
+    verificationReceipt.sourceBundleIndexStatus ===
+    'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEXED';
+
+  const bundleIndexHashVerified = verificationReceipt.bundleIndexHashVerified === true;
+  const bundleIndexHashEqualityVerified =
+    Boolean(verificationReceipt.storedBundleIndexHash) &&
+    verificationReceipt.storedBundleIndexHash === verificationReceipt.recomputedBundleIndexHash;
+
+  const evidenceRangeVerified = verificationReceipt.evidenceRangeVerified === true;
+  const routeContractsVerified = verificationReceipt.routeContractsVerified === true;
+  const sourceRoutesVerified = verificationReceipt.sourceRoutesVerified === true;
+  const statusesVerified = verificationReceipt.statusesVerified === true;
+  const proofFlagsVerified = verificationReceipt.proofFlagsVerified === true;
+
+  const proofFlags = verificationReceipt.proofFlags || {};
+  const embeddedProofFlagsVerified =
+    proofFlags.certificateHashVerified === true &&
+    proofFlags.receiptHashVerified === true &&
+    proofFlags.sourceLedgerRootVerified === true &&
+    proofFlags.sourceContinuityVerified === true &&
+    proofFlags.sourceLinksVerified === true &&
+    proofFlags.jsonResponseOnly === true &&
+    proofFlags.noFilesystemWrite === true;
+
+  const evidenceRange = Array.isArray(verificationReceipt.evidenceRange)
+    ? verificationReceipt.evidenceRange
+    : [];
+
+  const expectedEvidenceRange = ['R68O', 'R68P', 'R68Q', 'R68R', 'R68S'];
+  const evidenceRangeStillIndexed =
+    JSON.stringify(evidenceRange) === JSON.stringify(expectedEvidenceRange);
+
+  const jsonResponseOnly =
+    receiptPacket.jsonResponseOnly === true &&
+    verificationReceipt.jsonResponseOnly === true &&
+    verificationReceipt.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  const noFilesystemWrite =
+    receiptPacket.noFilesystemWrite === true && verificationReceipt.noFilesystemWrite === true;
+
+  const verified =
+    receiptPacket.status ===
+      'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_MATERIALIZED' &&
+    receiptHashVerified &&
+    sourceVerifierStatusVerified &&
+    sourceBundleIndexStatusVerified &&
+    bundleIndexHashVerified &&
+    bundleIndexHashEqualityVerified &&
+    evidenceRangeVerified &&
+    routeContractsVerified &&
+    sourceRoutesVerified &&
+    statusesVerified &&
+    proofFlagsVerified &&
+    embeddedProofFlagsVerified &&
+    evidenceRangeStillIndexed &&
+    jsonResponseOnly &&
+    noFilesystemWrite;
+
+  return {
+    ok: verified,
+    version:
+      WILSY_CRM_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFIER_VERSION,
+    status: verified
+      ? 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFIED'
+      : 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFICATION_FAILED',
+    receiptHashVerified,
+    storedReceiptHash,
+    storedReceiptHashShort: receiptHashShort || String(storedReceiptHash || '').slice(0, 16),
+    recomputedReceiptHash,
+    recomputedReceiptHashShort: recomputedReceiptHash.slice(0, 16),
+    sourceVerifierStatusVerified,
+    sourceBundleIndexStatusVerified,
+    bundleIndexHashVerified,
+    bundleIndexHashEqualityVerified,
+    evidenceRangeVerified,
+    routeContractsVerified,
+    sourceRoutesVerified,
+    statusesVerified,
+    proofFlagsVerified,
+    embeddedProofFlagsVerified,
+    evidenceRangeStillIndexed,
+    ledgerRoot: verificationReceipt.ledgerRoot || receiptPacket.ledgerRoot || null,
+    evidenceBundleIndexVerificationReceiptVerifier: {
+      tenantId,
+      operator,
+      verifiedAt: new Date().toISOString(),
+      sourceReceiptStatus: receiptPacket.status,
+      receiptHashVerified,
+      storedReceiptHash,
+      recomputedReceiptHash,
+      sourceVerifierStatusVerified,
+      sourceBundleIndexStatusVerified,
+      bundleIndexHashVerified,
+      bundleIndexHashEqualityVerified,
+      evidenceRangeVerified,
+      routeContractsVerified,
+      sourceRoutesVerified,
+      statusesVerified,
+      proofFlagsVerified,
+      embeddedProofFlagsVerified,
+      evidenceRangeStillIndexed,
+      jsonResponseOnly,
+      noFilesystemWrite,
+    },
+    verificationReceipt,
+    sourceReceiptPacket: receiptPacket,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};

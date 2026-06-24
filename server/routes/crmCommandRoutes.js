@@ -47,9 +47,50 @@ import {
   buildLeadSearchRegulatorDossierChainEvidenceBundleIndex,
   verifyLeadSearchRegulatorDossierChainEvidenceBundleIndex,
   buildLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt,
+  verifyLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R68W JSON-only regulator dossier chain evidence bundle index verification receipt verifier.
+ */
+router.get(
+  '/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/verify/latest',
+  async (req, res) => {
+    const tenantId =
+      String(
+        req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+      ).trim() || 'MASTER';
+
+    const payload =
+      await verifyLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt({
+        tenantId,
+        ledgerId: req.query.ledgerRoot || 'latest',
+        limit: req.query.limit || 25,
+        operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+      });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/verify/latest',
+      routeContract:
+        WILSY_R68W_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFIER_ROUTE_CONTRACT,
+      sourceEvidenceBundleIndexVerificationReceiptRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/latest',
+      sourceEvidenceBundleIndexVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verify/latest',
+      sourceEvidenceBundleIndexRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/latest',
+      safeRouteAlias:
+        'R68W_SAFE_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFIER_ROUTE',
+    });
+  }
+);
+
+const WILSY_R68W_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFIER_ROUTE_CONTRACT =
+  'R68W-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY';
 
 /**
  * R68V JSON-only regulator dossier chain evidence bundle index verification receipt.
