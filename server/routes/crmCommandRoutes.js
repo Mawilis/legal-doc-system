@@ -41,9 +41,13 @@ import {
   buildLeadSearchRegulatorDossierChainLedger,
   verifyLeadSearchRegulatorDossierChainLedger,
   buildLeadSearchRegulatorDossierChainLedgerVerificationReceipt,
+  verifyLeadSearchRegulatorDossierChainLedgerVerificationReceipt,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+const WILSY_R68Q_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIER_ROUTE_CONTRACT =
+  'R68Q-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY';
 
 const WILSY_R68P_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_ROUTE_CONTRACT =
   'R68P-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-AUTHORITY';
@@ -114,6 +118,39 @@ router.get(
       routeContract: WILSY_R68P_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_ROUTE_CONTRACT,
       sourceRoute: '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O',
       safeRouteAlias: 'R68P_SAFE_EXISTING_LEDGER_VERIFICATION_RECEIPT_ROUTE',
+    });
+  }
+);
+
+/**
+ * R68Q JSON-only regulator dossier chain ledger verification receipt verifier.
+ */
+router.get(
+  '/search/regulator-evidence/dossier-chain/verification-receipt/verify/latest',
+  async (req, res) => {
+    const tenantId =
+      String(
+        req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+      ).trim() || 'MASTER';
+
+    const payload = await verifyLeadSearchRegulatorDossierChainLedgerVerificationReceipt({
+      tenantId,
+      ledgerId: req.query.ledgerRoot || 'latest',
+      limit: req.query.limit || 25,
+      operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+    });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/verify/latest',
+      routeContract:
+        WILSY_R68Q_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIER_ROUTE_CONTRACT,
+      sourceRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/latest',
+      sourceLedgerRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O',
+      safeRouteAlias: 'R68Q_SAFE_EXISTING_LEDGER_VERIFICATION_RECEIPT_VERIFIER_ROUTE',
     });
   }
 );

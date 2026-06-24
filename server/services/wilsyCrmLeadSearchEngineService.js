@@ -5341,3 +5341,90 @@ export const buildLeadSearchRegulatorDossierChainLedgerVerificationReceipt = asy
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIER_VERSION =
+  'R68Q-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY';
+
+/**
+ * @function verifyLeadSearchRegulatorDossierChainLedgerVerificationReceipt
+ * @description Verifies a regulator dossier chain ledger verification receipt by recomputing its receipt hash.
+ * @collaboration R68P receipt materialization, R68O ledger verification, CRM regulator evidence verifier controls.
+ */
+export const verifyLeadSearchRegulatorDossierChainLedgerVerificationReceipt = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const receiptPacket = await buildLeadSearchRegulatorDossierChainLedgerVerificationReceipt({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const receipt = receiptPacket.receipt || {};
+  const { receiptHash: storedReceiptHash, receiptHashShort, ...receiptPayload } = receipt;
+
+  const recomputedReceiptHash =
+    computeRegulatorDossierLedgerVerificationReceiptHash(receiptPayload);
+  const receiptHashVerified =
+    Boolean(storedReceiptHash) && storedReceiptHash === recomputedReceiptHash;
+
+  const sourceLedgerRootVerified = receipt.ledgerRootVerified === true;
+  const sourceContinuityVerified = receipt.continuityVerified === true;
+  const sourceLinksVerified = receipt.linksVerified === true;
+  const jsonResponseOnly =
+    receiptPacket.jsonResponseOnly === true && receipt.jsonResponseOnly === true;
+  const noFilesystemWrite =
+    receiptPacket.noFilesystemWrite === true && receipt.noFilesystemWrite === true;
+
+  const verified =
+    receiptPacket.status === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_MATERIALIZED' &&
+    receiptHashVerified &&
+    sourceLedgerRootVerified &&
+    sourceContinuityVerified &&
+    sourceLinksVerified &&
+    jsonResponseOnly &&
+    noFilesystemWrite;
+
+  return {
+    ok: verified,
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIER_VERSION,
+    status: verified
+      ? 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIED'
+      : 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFICATION_FAILED',
+    receiptHashVerified,
+    storedReceiptHash,
+    storedReceiptHashShort: receiptHashShort || String(storedReceiptHash || '').slice(0, 16),
+    recomputedReceiptHash,
+    recomputedReceiptHashShort: recomputedReceiptHash.slice(0, 16),
+    sourceLedgerRootVerified,
+    sourceContinuityVerified,
+    sourceLinksVerified,
+    ledgerRoot: receipt.ledgerRoot || receiptPacket.ledgerRoot || null,
+    receiptVerifier: {
+      tenantId,
+      operator,
+      verifiedAt: new Date().toISOString(),
+      sourceReceiptStatus: receiptPacket.status,
+      receiptHashVerified,
+      storedReceiptHash,
+      recomputedReceiptHash,
+      sourceLedgerRootVerified,
+      sourceContinuityVerified,
+      sourceLinksVerified,
+      jsonResponseOnly,
+      noFilesystemWrite,
+    },
+    receipt,
+    verification: receiptPacket.verification || null,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
