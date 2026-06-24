@@ -31,6 +31,8 @@ export const WILSY_CRM_REGULATOR_DOSSIER_VERIFICATION_VERSION =
   'R68M-REGULATOR-DOSSIER-VERIFICATION-AUTHORITY';
 export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERSION =
   'R68N-REGULATOR-DOSSIER-CHAIN-LEDGER-AUTHORITY';
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_VERSION =
+  'R68O-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-AUTHORITY';
 
 const SOURCE_REGISTRY = Object.freeze([
   { key: 'leads', modelName: 'CRMLead', weight: 1.0 },
@@ -4829,6 +4831,213 @@ export async function buildLeadSearchRegulatorDossierChainLedger(params = {}) {
 }
 
 /**
+ * @function computeRegulatorDossierLedgerRootFromLedger
+ * @description Recomputes the ledger root from a returned regulator dossier chain ledger.
+ * @param {Object} ledger - R68N chain ledger.
+ * @returns {string} Recomputed ledger root.
+ * @collaboration Proves the returned ledger root still matches ordered chain links.
+ */
+function computeRegulatorDossierLedgerRootFromLedger(ledger = {}) {
+  return computeRegulatorDossierLedgerRoot(ledger.chainLinks || []);
+}
+
+/**
+ * @function verifyRegulatorDossierLedgerLinkContinuity
+ * @description Verifies every chain link previous hash and link hash.
+ * @param {Object[]} chainLinks - Ledger chain links.
+ * @returns {Object[]} Link verification packets.
+ * @collaboration Proves every dossier chain link remains attached to its predecessor.
+ */
+function verifyRegulatorDossierLedgerLinkContinuity(chainLinks = []) {
+  return chainLinks.map((link, index) => {
+    const expectedPreviousLinkHash = index === 0 ? 'GENESIS' : chainLinks[index - 1]?.linkHash;
+    const previousLinkHashVerified = link.previousLinkHash === expectedPreviousLinkHash;
+
+    const recomputedLinkHashInput = buildRegulatorDossierLedgerLinkHashInput({
+      index: link.index,
+      tenantId: link.tenantId,
+      previousLinkHash: link.previousLinkHash,
+      dossierHash: link.dossierHash,
+      exportReceiptHash: link.exportReceiptHash,
+      exportHash: link.exportHash,
+      governanceEventId: link.governanceEventId,
+      governanceHash: link.governanceHash,
+      verified: link.verified,
+    });
+
+    const recomputedLinkHash = createHashDigest(JSON.stringify(recomputedLinkHashInput));
+    const linkHashVerified = recomputedLinkHash === link.linkHash;
+
+    return {
+      index,
+      dossierHash: link.dossierHash || null,
+      dossierHashShort: link.dossierHashShort || null,
+      expectedPreviousLinkHash,
+      expectedPreviousLinkHashShort:
+        expectedPreviousLinkHash === 'GENESIS' ? 'GENESIS' : expectedPreviousLinkHash?.slice(0, 16),
+      actualPreviousLinkHash: link.previousLinkHash,
+      actualPreviousLinkHashShort:
+        link.previousLinkHash === 'GENESIS' ? 'GENESIS' : link.previousLinkHash?.slice(0, 16),
+      previousLinkHashVerified,
+      storedLinkHash: link.linkHash,
+      storedLinkHashShort: link.linkHashShort,
+      recomputedLinkHash,
+      recomputedLinkHashShort: recomputedLinkHash.slice(0, 16),
+      linkHashVerified,
+      verified: Boolean(
+        previousLinkHashVerified && linkHashVerified && link.verified && link.dossierHash
+      ),
+    };
+  });
+}
+
+/**
+ * @function verifyRegulatorDossierLedgerRootPacket
+ * @description Builds the root verification packet for a returned ledger.
+ * @param {Object} ledger - R68N chain ledger.
+ * @returns {Object} Ledger root verification packet.
+ * @collaboration Proves the top-level ledger root has not changed.
+ */
+function verifyRegulatorDossierLedgerRootPacket(ledger = {}) {
+  const storedLedgerRoot = ledger.ledgerRoot || ledger.ledgerIntegrity?.ledgerRoot || '';
+  const recomputedLedgerRoot = computeRegulatorDossierLedgerRootFromLedger(ledger);
+  const verified = Boolean(storedLedgerRoot && storedLedgerRoot === recomputedLedgerRoot);
+
+  return {
+    verified,
+    status: verified
+      ? 'REGULATOR_DOSSIER_LEDGER_ROOT_HASH_VERIFIED'
+      : 'REGULATOR_DOSSIER_LEDGER_ROOT_HASH_MISMATCH',
+    storedLedgerRoot,
+    storedLedgerRootShort: storedLedgerRoot ? storedLedgerRoot.slice(0, 16) : null,
+    recomputedLedgerRoot,
+    recomputedLedgerRootShort: recomputedLedgerRoot ? recomputedLedgerRoot.slice(0, 16) : null,
+  };
+}
+
+/**
+ * @function buildRegulatorDossierLedgerVerificationPacket
+ * @description Builds a normalized verification packet for a returned chain ledger.
+ * @param {Object} ledgerResponse - R68N ledger response.
+ * @param {string} ledgerId - Requested ledger root or lookup id.
+ * @returns {Object} Chain ledger verification packet.
+ * @collaboration Summarizes ledger root, continuity and JSON-only checks.
+ */
+function buildRegulatorDossierLedgerVerificationPacket(ledgerResponse = {}, ledgerId = '') {
+  const ledger = ledgerResponse.ledger || {};
+  const linkVerifications = verifyRegulatorDossierLedgerLinkContinuity(ledger.chainLinks || []);
+  const ledgerRootIntegrity = verifyRegulatorDossierLedgerRootPacket(ledger);
+  const continuity = verifyRegulatorDossierLedgerContinuity(
+    ledger.chainLinks || [],
+    ledger.ledgerRoot || ''
+  );
+  const linksVerified =
+    linkVerifications.length > 0 && linkVerifications.every((link) => link.verified);
+
+  const verified = Boolean(
+    ledgerRootIntegrity.verified &&
+    continuity.verified &&
+    linksVerified &&
+    ledger.persistenceMode === 'JSON_RESPONSE_ONLY' &&
+    ledger.noFilesystemWrite === true
+  );
+
+  return {
+    verificationType: 'CRM_LEAD_SEARCH_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION',
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_VERSION,
+    ledgerVersion: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERSION,
+    ledgerId,
+    tenantId: ledger.tenantId || ledgerResponse.tenantId || 'MASTER',
+    verified,
+    status: verified
+      ? 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFIED'
+      : 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_PARTIAL',
+    ledgerRoot: ledger.ledgerRoot || null,
+    ledgerRootShort: ledger.ledgerRootShort || null,
+    ledgerRootIntegrity,
+    continuity,
+    linkVerifications,
+    verificationSummary: {
+      verifiedLedgerRoot: Boolean(ledgerRootIntegrity.verified),
+      verifiedContinuity: Boolean(continuity.verified),
+      verifiedLinks: Boolean(linksVerified),
+      totalLinks: linkVerifications.length,
+      totalDossiers: ledger.totalDossiers || 0,
+      verifiedDossiers: ledger.verifiedDossiers || 0,
+      jsonResponseOnly: ledger.persistenceMode === 'JSON_RESPONSE_ONLY',
+      noFilesystemWrite: ledger.noFilesystemWrite === true,
+      duplicateDossierHashes: Boolean(continuity.duplicateDossierHashes),
+    },
+    verifiedLedger: ledger,
+  };
+}
+
+/**
+ * @function verifyLeadSearchRegulatorDossierChainLedger
+ * @description Verifies a regulator dossier chain ledger by current ledger root or latest ledger.
+ * @param {Object} params - Verification parameters.
+ * @returns {Promise<Object>} Ledger verification response.
+ * @collaboration Recomputes the ledger root over chain links and proves continuity without writing files.
+ */
+export async function verifyLeadSearchRegulatorDossierChainLedger(params = {}) {
+  const tenantId = String(params.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = String(params.ledgerId || params.ledgerRoot || '').trim();
+  const limit = Math.min(Math.max(Number(params.limit || 25), 1), 50);
+
+  const ledgerResponse = await buildLeadSearchRegulatorDossierChainLedger({
+    tenantId,
+    limit,
+  });
+
+  if (!ledgerResponse || !ledgerResponse.ledger) {
+    return {
+      ok: false,
+      version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_VERSION,
+      tenantId,
+      ledgerId,
+      status: 'REGULATOR_DOSSIER_CHAIN_LEDGER_NOT_FOUND',
+      verification: null,
+    };
+  }
+
+  const ledgerRoot = ledgerResponse.ledgerRoot || ledgerResponse.ledger?.ledgerRoot || '';
+
+  if (
+    ledgerId &&
+    ledgerId !== 'latest' &&
+    ledgerId !== ledgerRoot &&
+    ledgerId !== ledgerRoot.slice(0, 16)
+  ) {
+    return {
+      ok: false,
+      version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_VERSION,
+      tenantId,
+      ledgerId,
+      status: 'REGULATOR_DOSSIER_CHAIN_LEDGER_ROOT_MISMATCH',
+      ledgerRoot,
+      ledgerRootShort: ledgerRoot.slice(0, 16),
+      verification: null,
+    };
+  }
+
+  const verification = buildRegulatorDossierLedgerVerificationPacket(
+    ledgerResponse,
+    ledgerId || ledgerRoot
+  );
+
+  return {
+    ok: Boolean(verification.verified),
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_VERSION,
+    tenantId,
+    ledgerId: ledgerId || ledgerRoot,
+    status: verification.status,
+    ledgerRoot: verification.ledgerRoot,
+    ledgerRootShort: verification.ledgerRootShort,
+    verification,
+  };
+}
+
+/**
  * @function searchLeadOperatingRoom
  * @description Searches CRM backend models for Lead cockpit records, evidence and provenance with isolated telemetry persistence.
  * @param {Object} params - Search parameters.
@@ -5014,3 +5223,121 @@ export async function searchLeadOperatingRoom(params = {}) {
     complianceReceiptHashShort: complianceReceiptPersistence?.receiptHashShort || null,
   };
 }
+
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERSION =
+  'R68P-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-AUTHORITY';
+
+/**
+ * @function normalizeRegulatorDossierLedgerVerificationReceiptValue
+ * @description Produces deterministic values for R68P verification receipt hashing.
+ * @collaboration R68O ledger verification, CRM regulator evidence chain, R68P receipt authority.
+ */
+const normalizeRegulatorDossierLedgerVerificationReceiptValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeRegulatorDossierLedgerVerificationReceiptValue(item));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((normalized, key) => {
+        normalized[key] = normalizeRegulatorDossierLedgerVerificationReceiptValue(value[key]);
+        return normalized;
+      }, {});
+  }
+
+  return value;
+};
+
+/**
+ * @function computeRegulatorDossierLedgerVerificationReceiptHash
+ * @description Computes the deterministic receipt hash for a regulator dossier chain ledger verification receipt.
+ * @collaboration R68O ledger verification, regulator evidence receipts, CRM forensic proof surface.
+ */
+const computeRegulatorDossierLedgerVerificationReceiptHash = (receiptPayload) =>
+  crypto
+    .createHash('sha512')
+    .update(JSON.stringify(normalizeRegulatorDossierLedgerVerificationReceiptValue(receiptPayload)))
+    .digest('hex');
+
+/**
+ * @function buildLeadSearchRegulatorDossierChainLedgerVerificationReceipt
+ * @description Materializes a JSON-only regulator receipt for a verified dossier chain ledger root.
+ * @collaboration CRM command routes, R68O ledger verification, regulator dossier chain receipt controls.
+ */
+export const buildLeadSearchRegulatorDossierChainLedgerVerificationReceipt = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const verificationPacket = await verifyLeadSearchRegulatorDossierChainLedger({
+    tenantId,
+    ledgerId,
+    limit,
+  });
+
+  const verification = verificationPacket.verification || {};
+  const verificationSummary = verification.verificationSummary || {};
+  const ledgerRootIntegrity = verification.ledgerRootIntegrity || {};
+  const issuedAt = new Date().toISOString();
+
+  const receiptPayload = {
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERSION,
+    receiptType: 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT',
+    tenantId,
+    operator,
+    issuedAt,
+    sourceStatus: verificationPacket.status,
+    ledgerRoot: verificationPacket.ledgerRoot || ledgerRootIntegrity.storedLedgerRoot || null,
+    storedLedgerRoot: ledgerRootIntegrity.storedLedgerRoot || null,
+    recomputedLedgerRoot: ledgerRootIntegrity.recomputedLedgerRoot || null,
+    ledgerRootVerified: ledgerRootIntegrity.verified === true,
+    ledgerRootStatus: ledgerRootIntegrity.status || null,
+    continuityVerified: verification.continuity?.verified === true,
+    linksVerified: verificationSummary.verifiedLinks === true,
+    totalLinks: verificationSummary.totalLinks || 0,
+    totalDossiers: verificationSummary.totalDossiers || 0,
+    verifiedDossiers: verificationSummary.verifiedDossiers || 0,
+    duplicateDossierHashes: verificationSummary.duplicateDossierHashes === true,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+  };
+
+  const receiptHash = computeRegulatorDossierLedgerVerificationReceiptHash(receiptPayload);
+
+  const receipt = {
+    ...receiptPayload,
+    receiptHash,
+    receiptHashShort: receiptHash.slice(0, 16),
+  };
+
+  const verified =
+    verificationPacket.status === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFIED' &&
+    receipt.ledgerRootVerified === true &&
+    receipt.continuityVerified === true &&
+    receipt.linksVerified === true &&
+    receipt.jsonResponseOnly === true &&
+    receipt.noFilesystemWrite === true;
+
+  return {
+    ok: verified,
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERSION,
+    status: verified
+      ? 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_MATERIALIZED'
+      : 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_DEGRADED',
+    receiptHash,
+    receiptHashShort: receiptHash.slice(0, 16),
+    ledgerRoot: receipt.ledgerRoot,
+    receipt,
+    verification,
+    verificationStatus: verificationPacket.status,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};

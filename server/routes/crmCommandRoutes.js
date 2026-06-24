@@ -39,9 +39,17 @@ import {
   verifyLeadSearchRegulatorEvidenceDossier,
   listLeadSearchRegulatorEvidenceDossierVerifications,
   buildLeadSearchRegulatorDossierChainLedger,
+  verifyLeadSearchRegulatorDossierChainLedger,
+  buildLeadSearchRegulatorDossierChainLedgerVerificationReceipt,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+const WILSY_R68P_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_ROUTE_CONTRACT =
+  'R68P-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-AUTHORITY';
+
+const WILSY_R68O_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_ROUTE_CONTRACT =
+  'R68O-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-AUTHORITY';
 
 const WILSY_R68N_REGULATOR_DOSSIER_CHAIN_LEDGER_ROUTE_CONTRACT =
   'R68N-REGULATOR-DOSSIER-CHAIN-LEDGER-AUTHORITY';
@@ -55,6 +63,21 @@ router.get('/search/regulator-evidence/dossier-chain/latest', async (req, res) =
       req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
     ).trim() || 'MASTER';
 
+  if (String(req.query.rootCheck || req.query.verification || '').toUpperCase() === 'R68O') {
+    const payload = await verifyLeadSearchRegulatorDossierChainLedger({
+      tenantId,
+      ledgerId: req.query.ledgerRoot || 'latest',
+      limit: req.query.limit || 25,
+    });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route: '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O',
+      routeContract: WILSY_R68O_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_ROUTE_CONTRACT,
+      safeRouteAlias: 'R68O_SAFE_EXISTING_LEDGER_ROUTE',
+    });
+  }
+
   const payload = await buildLeadSearchRegulatorDossierChainLedger({
     tenantId,
     limit: req.query.limit || 25,
@@ -66,6 +89,34 @@ router.get('/search/regulator-evidence/dossier-chain/latest', async (req, res) =
     routeContract: WILSY_R68N_REGULATOR_DOSSIER_CHAIN_LEDGER_ROUTE_CONTRACT,
   });
 });
+
+/**
+ * R68P JSON-only regulator dossier chain ledger verification receipt.
+ */
+router.get(
+  '/search/regulator-evidence/dossier-chain/verification-receipt/latest',
+  async (req, res) => {
+    const tenantId =
+      String(
+        req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+      ).trim() || 'MASTER';
+
+    const payload = await buildLeadSearchRegulatorDossierChainLedgerVerificationReceipt({
+      tenantId,
+      ledgerId: req.query.ledgerRoot || 'latest',
+      limit: req.query.limit || 25,
+      operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+    });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route: '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/latest',
+      routeContract: WILSY_R68P_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_ROUTE_CONTRACT,
+      sourceRoute: '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O',
+      safeRouteAlias: 'R68P_SAFE_EXISTING_LEDGER_VERIFICATION_RECEIPT_ROUTE',
+    });
+  }
+);
 
 const WILSY_R68M_REGULATOR_DOSSIER_VERIFICATION_ROUTE_CONTRACT =
   'R68M-REGULATOR-DOSSIER-VERIFICATION-AUTHORITY';
