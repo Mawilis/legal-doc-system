@@ -42,9 +42,46 @@ import {
   verifyLeadSearchRegulatorDossierChainLedger,
   buildLeadSearchRegulatorDossierChainLedgerVerificationReceipt,
   verifyLeadSearchRegulatorDossierChainLedgerVerificationReceipt,
+  buildLeadSearchRegulatorDossierChainFinalityCertificate,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R68R JSON-only regulator dossier chain verification finality certificate.
+ */
+router.get(
+  '/search/regulator-evidence/dossier-chain/finality-certificate/latest',
+  async (req, res) => {
+    const tenantId =
+      String(
+        req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+      ).trim() || 'MASTER';
+
+    const payload = await buildLeadSearchRegulatorDossierChainFinalityCertificate({
+      tenantId,
+      ledgerId: req.query.ledgerRoot || 'latest',
+      limit: req.query.limit || 25,
+      operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+    });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route: '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/latest',
+      routeContract: WILSY_R68R_REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_ROUTE_CONTRACT,
+      sourceVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/verify/latest',
+      sourceReceiptRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/latest',
+      sourceLedgerRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O',
+      safeRouteAlias: 'R68R_SAFE_DOSSIER_CHAIN_FINALITY_CERTIFICATE_ROUTE',
+    });
+  }
+);
+
+const WILSY_R68R_REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_ROUTE_CONTRACT =
+  'R68R-REGULATOR-DOSSIER-CHAIN-VERIFICATION-FINALITY-CERTIFICATE-AUTHORITY';
 
 const WILSY_R68Q_REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIER_ROUTE_CONTRACT =
   'R68Q-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY';

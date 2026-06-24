@@ -5428,3 +5428,122 @@ export const verifyLeadSearchRegulatorDossierChainLedgerVerificationReceipt = as
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERSION =
+  'R68R-REGULATOR-DOSSIER-CHAIN-VERIFICATION-FINALITY-CERTIFICATE-AUTHORITY';
+
+/**
+ * @function normalizeRegulatorDossierChainFinalityCertificateValue
+ * @description Produces deterministic values for R68R finality certificate hashing.
+ * @collaboration R68O ledger verification, R68P receipt materialization, R68Q receipt verifier.
+ */
+const normalizeRegulatorDossierChainFinalityCertificateValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeRegulatorDossierChainFinalityCertificateValue(item));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((normalized, key) => {
+        normalized[key] = normalizeRegulatorDossierChainFinalityCertificateValue(value[key]);
+        return normalized;
+      }, {});
+  }
+
+  return value;
+};
+
+/**
+ * @function computeRegulatorDossierChainFinalityCertificateHash
+ * @description Computes a deterministic finality certificate hash for the regulator dossier chain.
+ * @collaboration R68Q receipt verifier, regulator evidence chain, investor evidence surface.
+ */
+const computeRegulatorDossierChainFinalityCertificateHash = (certificatePayload) =>
+  crypto
+    .createHash('sha512')
+    .update(
+      JSON.stringify(normalizeRegulatorDossierChainFinalityCertificateValue(certificatePayload))
+    )
+    .digest('hex');
+
+/**
+ * @function buildLeadSearchRegulatorDossierChainFinalityCertificate
+ * @description Issues a JSON-only finality certificate from verified R68O, R68P, and R68Q evidence.
+ * @collaboration CRM command routes, regulator dossier chain ledger, receipt verifier controls.
+ */
+export const buildLeadSearchRegulatorDossierChainFinalityCertificate = async (options = {}) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const verifierPacket = await verifyLeadSearchRegulatorDossierChainLedgerVerificationReceipt({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const receipt = verifierPacket.receipt || {};
+  const receiptVerifier = verifierPacket.receiptVerifier || {};
+  const issuedAt = new Date().toISOString();
+
+  const certificatePayload = {
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERSION,
+    certificateType: 'REGULATOR_DOSSIER_CHAIN_VERIFICATION_FINALITY_CERTIFICATE',
+    tenantId,
+    operator,
+    issuedAt,
+    sourceVerifierStatus: verifierPacket.status,
+    ledgerRoot: verifierPacket.ledgerRoot || receipt.ledgerRoot || null,
+    receiptHash: verifierPacket.storedReceiptHash || receipt.receiptHash || null,
+    recomputedReceiptHash: verifierPacket.recomputedReceiptHash || null,
+    receiptHashVerified: verifierPacket.receiptHashVerified === true,
+    sourceLedgerRootVerified: verifierPacket.sourceLedgerRootVerified === true,
+    sourceContinuityVerified: verifierPacket.sourceContinuityVerified === true,
+    sourceLinksVerified: verifierPacket.sourceLinksVerified === true,
+    jsonResponseOnly:
+      verifierPacket.jsonResponseOnly === true && receiptVerifier.jsonResponseOnly === true,
+    noFilesystemWrite:
+      verifierPacket.noFilesystemWrite === true && receiptVerifier.noFilesystemWrite === true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const certificateHash = computeRegulatorDossierChainFinalityCertificateHash(certificatePayload);
+
+  const finalityCertificate = {
+    ...certificatePayload,
+    certificateHash,
+    certificateHashShort: certificateHash.slice(0, 16),
+  };
+
+  const verified =
+    verifierPacket.status === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIED' &&
+    finalityCertificate.receiptHashVerified === true &&
+    finalityCertificate.sourceLedgerRootVerified === true &&
+    finalityCertificate.sourceContinuityVerified === true &&
+    finalityCertificate.sourceLinksVerified === true &&
+    finalityCertificate.jsonResponseOnly === true &&
+    finalityCertificate.noFilesystemWrite === true;
+
+  return {
+    ok: verified,
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERSION,
+    status: verified
+      ? 'REGULATOR_DOSSIER_CHAIN_VERIFICATION_FINALITY_CERTIFICATE_ISSUED'
+      : 'REGULATOR_DOSSIER_CHAIN_VERIFICATION_FINALITY_CERTIFICATE_DEGRADED',
+    certificateHash,
+    certificateHashShort: certificateHash.slice(0, 16),
+    ledgerRoot: finalityCertificate.ledgerRoot,
+    finalityCertificate,
+    verifier: verifierPacket,
+    receipt,
+    receiptVerifier,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
