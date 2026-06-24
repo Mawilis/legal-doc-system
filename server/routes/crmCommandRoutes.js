@@ -46,9 +46,47 @@ import {
   verifyLeadSearchRegulatorDossierChainFinalityCertificate,
   buildLeadSearchRegulatorDossierChainEvidenceBundleIndex,
   verifyLeadSearchRegulatorDossierChainEvidenceBundleIndex,
+  buildLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R68V JSON-only regulator dossier chain evidence bundle index verification receipt.
+ */
+router.get(
+  '/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/latest',
+  async (req, res) => {
+    const tenantId =
+      String(
+        req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+      ).trim() || 'MASTER';
+
+    const payload =
+      await buildLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt({
+        tenantId,
+        ledgerId: req.query.ledgerRoot || 'latest',
+        limit: req.query.limit || 25,
+        operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+      });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/latest',
+      routeContract:
+        WILSY_R68V_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_ROUTE_CONTRACT,
+      sourceEvidenceBundleIndexVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verify/latest',
+      sourceEvidenceBundleIndexRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/latest',
+      safeRouteAlias: 'R68V_SAFE_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_ROUTE',
+    });
+  }
+);
+
+const WILSY_R68V_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_ROUTE_CONTRACT =
+  'R68V-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFICATION-RECEIPT-AUTHORITY';
 
 /**
  * R68U JSON-only regulator dossier chain evidence bundle index verifier.

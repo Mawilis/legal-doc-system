@@ -5942,3 +5942,147 @@ export const verifyLeadSearchRegulatorDossierChainEvidenceBundleIndex = async (o
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERSION =
+  'R68V-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFICATION-RECEIPT-AUTHORITY';
+
+/**
+ * @function normalizeRegulatorDossierChainEvidenceBundleIndexVerificationReceiptValue
+ * @description Produces deterministic values for R68V evidence bundle index verification receipt hashing.
+ * @collaboration R68U evidence bundle verifier, R68T evidence bundle index, CRM regulator evidence receipt controls.
+ */
+const normalizeRegulatorDossierChainEvidenceBundleIndexVerificationReceiptValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) =>
+      normalizeRegulatorDossierChainEvidenceBundleIndexVerificationReceiptValue(item)
+    );
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((normalized, key) => {
+        normalized[key] = normalizeRegulatorDossierChainEvidenceBundleIndexVerificationReceiptValue(
+          value[key]
+        );
+        return normalized;
+      }, {});
+  }
+
+  return value;
+};
+
+/**
+ * @function computeRegulatorDossierChainEvidenceBundleIndexVerificationReceiptHash
+ * @description Computes a deterministic hash for the R68V evidence bundle index verification receipt.
+ * @collaboration R68U verifier packet, regulator evidence chain, investor evidence receipt surface.
+ */
+const computeRegulatorDossierChainEvidenceBundleIndexVerificationReceiptHash = (receiptPayload) =>
+  crypto
+    .createHash('sha512')
+    .update(
+      JSON.stringify(
+        normalizeRegulatorDossierChainEvidenceBundleIndexVerificationReceiptValue(receiptPayload)
+      )
+    )
+    .digest('hex');
+
+/**
+ * @function buildLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt
+ * @description Materializes a JSON-only receipt from the verified R68U evidence bundle index verifier.
+ * @collaboration CRM command routes, R68U evidence bundle verifier, regulator/investor proof receipts.
+ */
+export const buildLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const verifierPacket = await verifyLeadSearchRegulatorDossierChainEvidenceBundleIndex({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const verifier = verifierPacket.evidenceBundleIndexVerifier || {};
+  const evidenceBundleIndex = verifierPacket.evidenceBundleIndex || {};
+  const issuedAt = new Date().toISOString();
+
+  const receiptPayload = {
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERSION,
+    receiptType: 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT',
+    tenantId,
+    operator,
+    issuedAt,
+    sourceVerifierStatus: verifierPacket.status,
+    sourceBundleIndexStatus: verifier.sourceBundleIndexStatus || null,
+    ledgerRoot: verifierPacket.ledgerRoot || evidenceBundleIndex.ledgerRoot || null,
+    storedBundleIndexHash:
+      verifierPacket.storedBundleIndexHash || verifier.storedBundleIndexHash || null,
+    recomputedBundleIndexHash:
+      verifierPacket.recomputedBundleIndexHash || verifier.recomputedBundleIndexHash || null,
+    bundleIndexHashVerified: verifierPacket.bundleIndexHashVerified === true,
+    evidenceRangeVerified: verifierPacket.evidenceRangeVerified === true,
+    routeContractsVerified: verifierPacket.routeContractsVerified === true,
+    sourceRoutesVerified: verifierPacket.sourceRoutesVerified === true,
+    statusesVerified: verifierPacket.statusesVerified === true,
+    proofFlagsVerified: verifierPacket.proofFlagsVerified === true,
+    evidenceRange: evidenceBundleIndex.evidenceRange || [],
+    routeContracts: evidenceBundleIndex.routeContracts || {},
+    sourceRoutes: evidenceBundleIndex.sourceRoutes || {},
+    statuses: evidenceBundleIndex.statuses || {},
+    proofFlags: evidenceBundleIndex.proofFlags || {},
+    sourceRoute:
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verify/latest',
+    sourceEvidenceBundleIndexRoute:
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/latest',
+    jsonResponseOnly:
+      verifierPacket.jsonResponseOnly === true && verifier.jsonResponseOnly === true,
+    noFilesystemWrite:
+      verifierPacket.noFilesystemWrite === true && verifier.noFilesystemWrite === true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const receiptHash =
+    computeRegulatorDossierChainEvidenceBundleIndexVerificationReceiptHash(receiptPayload);
+
+  const verificationReceipt = {
+    ...receiptPayload,
+    receiptHash,
+    receiptHashShort: receiptHash.slice(0, 16),
+  };
+
+  const materialized =
+    verifierPacket.status === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFIED' &&
+    verificationReceipt.bundleIndexHashVerified === true &&
+    verificationReceipt.storedBundleIndexHash === verificationReceipt.recomputedBundleIndexHash &&
+    verificationReceipt.evidenceRangeVerified === true &&
+    verificationReceipt.routeContractsVerified === true &&
+    verificationReceipt.sourceRoutesVerified === true &&
+    verificationReceipt.statusesVerified === true &&
+    verificationReceipt.proofFlagsVerified === true &&
+    verificationReceipt.jsonResponseOnly === true &&
+    verificationReceipt.noFilesystemWrite === true;
+
+  return {
+    ok: materialized,
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERSION,
+    status: materialized
+      ? 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_MATERIALIZED'
+      : 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_DEGRADED',
+    receiptHash,
+    receiptHashShort: receiptHash.slice(0, 16),
+    ledgerRoot: verificationReceipt.ledgerRoot,
+    verificationReceipt,
+    sourceVerifier: verifierPacket,
+    evidenceBundleIndex,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
