@@ -5795,3 +5795,150 @@ export const buildLeadSearchRegulatorDossierChainEvidenceBundleIndex = async (op
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFIER_VERSION =
+  'R68U-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFIER-AUTHORITY';
+
+/**
+ * @function verifyLeadSearchRegulatorDossierChainEvidenceBundleIndex
+ * @description Verifies a regulator dossier chain evidence bundle index by recomputing its bundle index hash.
+ * @collaboration R68T evidence bundle index, R68S finality verifier, CRM regulator evidence controls.
+ */
+export const verifyLeadSearchRegulatorDossierChainEvidenceBundleIndex = async (options = {}) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const bundleIndexPacket = await buildLeadSearchRegulatorDossierChainEvidenceBundleIndex({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const evidenceBundleIndex = bundleIndexPacket.evidenceBundleIndex || {};
+  const {
+    bundleIndexHash: storedBundleIndexHash,
+    bundleIndexHashShort,
+    ...bundleIndexPayload
+  } = evidenceBundleIndex;
+
+  const recomputedBundleIndexHash =
+    computeRegulatorDossierChainEvidenceBundleIndexHash(bundleIndexPayload);
+  const bundleIndexHashVerified =
+    Boolean(storedBundleIndexHash) && storedBundleIndexHash === recomputedBundleIndexHash;
+
+  const evidenceRange = Array.isArray(evidenceBundleIndex.evidenceRange)
+    ? evidenceBundleIndex.evidenceRange
+    : [];
+
+  const expectedEvidenceRange = ['R68O', 'R68P', 'R68Q', 'R68R', 'R68S'];
+  const evidenceRangeVerified =
+    JSON.stringify(evidenceRange) === JSON.stringify(expectedEvidenceRange);
+
+  const routeContracts = evidenceBundleIndex.routeContracts || {};
+  const routeContractsVerified =
+    routeContracts.R68O === 'R68O-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-AUTHORITY' &&
+    routeContracts.R68P === 'R68P-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-AUTHORITY' &&
+    routeContracts.R68Q ===
+      'R68Q-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY' &&
+    routeContracts.R68R ===
+      'R68R-REGULATOR-DOSSIER-CHAIN-VERIFICATION-FINALITY-CERTIFICATE-AUTHORITY' &&
+    routeContracts.R68S === 'R68S-REGULATOR-DOSSIER-CHAIN-FINALITY-CERTIFICATE-VERIFIER-AUTHORITY';
+
+  const sourceRoutes = evidenceBundleIndex.sourceRoutes || {};
+  const sourceRoutesVerified =
+    sourceRoutes.R68O ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O' &&
+    sourceRoutes.R68P ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/latest' &&
+    sourceRoutes.R68Q ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/verify/latest' &&
+    sourceRoutes.R68R ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/latest' &&
+    sourceRoutes.R68S ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/verify/latest';
+
+  const statuses = evidenceBundleIndex.statuses || {};
+  const statusesVerified =
+    statuses.finalityVerifierStatus === 'REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIED' &&
+    statuses.finalityCertificateStatus ===
+      'REGULATOR_DOSSIER_CHAIN_VERIFICATION_FINALITY_CERTIFICATE_ISSUED' &&
+    statuses.receiptVerifierStatus ===
+      'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIED' &&
+    statuses.receiptStatus === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_MATERIALIZED' &&
+    statuses.ledgerStatus === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFIED';
+
+  const proofFlags = evidenceBundleIndex.proofFlags || {};
+  const proofFlagsVerified =
+    proofFlags.certificateHashVerified === true &&
+    proofFlags.receiptHashVerified === true &&
+    proofFlags.sourceLedgerRootVerified === true &&
+    proofFlags.sourceContinuityVerified === true &&
+    proofFlags.sourceLinksVerified === true &&
+    proofFlags.jsonResponseOnly === true &&
+    proofFlags.noFilesystemWrite === true;
+
+  const jsonResponseOnly =
+    bundleIndexPacket.jsonResponseOnly === true &&
+    proofFlags.jsonResponseOnly === true &&
+    evidenceBundleIndex.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  const noFilesystemWrite =
+    bundleIndexPacket.noFilesystemWrite === true && proofFlags.noFilesystemWrite === true;
+
+  const verified =
+    bundleIndexPacket.status === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEXED' &&
+    bundleIndexHashVerified &&
+    evidenceRangeVerified &&
+    routeContractsVerified &&
+    sourceRoutesVerified &&
+    statusesVerified &&
+    proofFlagsVerified &&
+    jsonResponseOnly &&
+    noFilesystemWrite;
+
+  return {
+    ok: verified,
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFIER_VERSION,
+    status: verified
+      ? 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFIED'
+      : 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_FAILED',
+    bundleIndexHashVerified,
+    storedBundleIndexHash,
+    storedBundleIndexHashShort:
+      bundleIndexHashShort || String(storedBundleIndexHash || '').slice(0, 16),
+    recomputedBundleIndexHash,
+    recomputedBundleIndexHashShort: recomputedBundleIndexHash.slice(0, 16),
+    evidenceRangeVerified,
+    routeContractsVerified,
+    sourceRoutesVerified,
+    statusesVerified,
+    proofFlagsVerified,
+    ledgerRoot: evidenceBundleIndex.ledgerRoot || bundleIndexPacket.ledgerRoot || null,
+    evidenceBundleIndexVerifier: {
+      tenantId,
+      operator,
+      verifiedAt: new Date().toISOString(),
+      sourceBundleIndexStatus: bundleIndexPacket.status,
+      bundleIndexHashVerified,
+      storedBundleIndexHash,
+      recomputedBundleIndexHash,
+      evidenceRangeVerified,
+      routeContractsVerified,
+      sourceRoutesVerified,
+      statusesVerified,
+      proofFlagsVerified,
+      jsonResponseOnly,
+      noFilesystemWrite,
+    },
+    evidenceBundleIndex,
+    sourceBundleIndexPacket: bundleIndexPacket,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
