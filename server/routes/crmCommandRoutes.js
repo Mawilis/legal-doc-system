@@ -54,9 +54,50 @@ import {
   verifyLeadSearchRegulatorInvestorEvidenceChainTerminalSeal,
   buildLeadSearchRegulatorInvestorEvidenceChainTerminalSealVerificationReceipt,
   verifyLeadSearchRegulatorInvestorEvidenceChainTerminalSealVerificationReceipt,
+  buildLeadSearchRegulatorInvestorEvidenceChainTerminalReceiptFinalityCertificate,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R69D JSON-only terminal receipt finality certificate.
+ */
+router.get(
+  '/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/latest',
+  async (req, res) => {
+    const tenantId =
+      String(
+        req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+      ).trim() || 'MASTER';
+
+    const payload =
+      await buildLeadSearchRegulatorInvestorEvidenceChainTerminalReceiptFinalityCertificate({
+        tenantId,
+        ledgerId: req.query.ledgerRoot || 'latest',
+        limit: req.query.limit || 25,
+        operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+      });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/latest',
+      routeContract:
+        WILSY_R69D_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_RECEIPT_FINALITY_CERTIFICATE_ROUTE_CONTRACT,
+      sourceReceiptVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/verify/latest',
+      sourceReceiptRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/latest',
+      sourceTerminalSealVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verify/latest',
+      safeRouteAlias:
+        'R69D_SAFE_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_RECEIPT_FINALITY_CERTIFICATE_ROUTE',
+    });
+  }
+);
+
+const WILSY_R69D_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_RECEIPT_FINALITY_CERTIFICATE_ROUTE_CONTRACT =
+  'R69D-REGULATOR-INVESTOR-EVIDENCE-CHAIN-TERMINAL-RECEIPT-FINALITY-CERTIFICATE-AUTHORITY';
 
 /**
  * R69C JSON-only terminal seal verification receipt verifier.
