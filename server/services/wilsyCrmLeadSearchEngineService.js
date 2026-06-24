@@ -27,6 +27,8 @@ export const WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERIFICATION_VERSION =
   'R68K-REGULATOR-EXPORT-RECEIPT-VERIFICATION-AUTHORITY';
 export const WILSY_CRM_REGULATOR_EVIDENCE_DOSSIER_VERSION =
   'R68L-REGULATOR-EVIDENCE-DOSSIER-AUTHORITY';
+export const WILSY_CRM_REGULATOR_DOSSIER_VERIFICATION_VERSION =
+  'R68M-REGULATOR-DOSSIER-VERIFICATION-AUTHORITY';
 
 const SOURCE_REGISTRY = Object.freeze([
   { key: 'leads', modelName: 'CRMLead', weight: 1.0 },
@@ -4251,6 +4253,275 @@ export async function listLeadSearchRegulatorEvidenceDossiers(params = {}) {
     ready: dossiers.filter((item) => item.ok).length,
     status: 'REGULATOR_EVIDENCE_DOSSIERS_LISTED',
     dossiers,
+  };
+}
+
+/**
+ * @function computeRegulatorDossierHashFromInput
+ * @description Computes a dossier hash from a dossier integrity hash input.
+ * @param {Object} hashInput - Dossier hash input.
+ * @returns {string} Recomputed dossier hash.
+ * @collaboration Proves the final regulator dossier hash input has not changed.
+ */
+function computeRegulatorDossierHashFromInput(hashInput = {}) {
+  if (!hashInput || typeof hashInput !== 'object') return '';
+
+  return createHashDigest(JSON.stringify(hashInput));
+}
+
+/**
+ * @function resolveRegulatorDossierLookupCandidates
+ * @description Resolves dossier lookup candidates from a dossier response.
+ * @param {Object} dossierResponse - R68L dossier response.
+ * @returns {string[]} Lookup candidates.
+ * @collaboration Allows R68M to verify by dossier hash, export receipt hash, export hash, or governance id.
+ */
+function resolveRegulatorDossierLookupCandidates(dossierResponse = {}) {
+  const dossier = dossierResponse.dossier || dossierResponse;
+  const receipt = dossier.verifiedExportReceipt || {};
+  const bundle = dossier.regulatorEvidenceBundle || {};
+  const proof = dossier.governanceProof || {};
+  const integrity = dossier.dossierIntegrity || {};
+  const hashInput = integrity.hashInput || {};
+
+  return [
+    dossierResponse.dossierHash,
+    dossier.dossierHash,
+    integrity.dossierHash,
+    receipt.id,
+    receipt.exportReceiptHash,
+    receipt.exportHash,
+    receipt.governanceEventId,
+    receipt.governanceHash,
+    bundle.hashes?.exportHash,
+    bundle.hashes?.governanceHash,
+    proof.id,
+    proof.governanceHash,
+    hashInput.exportReceiptId,
+    hashInput.exportReceiptHash,
+    hashInput.exportHash,
+    hashInput.governanceEventId,
+    hashInput.governanceHash,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value));
+}
+
+/**
+ * @function verifyRegulatorDossierIntegrity
+ * @description Verifies a returned dossier hash against its stored final hash input.
+ * @param {Object} dossierResponse - R68L dossier response.
+ * @returns {Object} Dossier verification packet.
+ * @collaboration Recomputes the top-level dossier hash from the final hash input.
+ */
+function verifyRegulatorDossierIntegrity(dossierResponse = {}) {
+  const dossier = dossierResponse.dossier || {};
+  const integrity = dossier.dossierIntegrity || {};
+  const hashInput = integrity.hashInput || null;
+  const storedDossierHash =
+    dossier.dossierHash || dossierResponse.dossierHash || integrity.dossierHash || '';
+
+  if (!hashInput || !storedDossierHash) {
+    return {
+      verified: false,
+      status: 'REGULATOR_DOSSIER_HASH_INPUT_NOT_AVAILABLE',
+      storedDossierHash: storedDossierHash || null,
+      storedDossierHashShort: storedDossierHash ? storedDossierHash.slice(0, 16) : null,
+      recomputedDossierHash: null,
+      recomputedDossierHashShort: null,
+      hashInputAvailable: Boolean(hashInput),
+    };
+  }
+
+  const recomputedDossierHash = computeRegulatorDossierHashFromInput(hashInput);
+  const verified = storedDossierHash === recomputedDossierHash;
+
+  return {
+    verified,
+    status: verified ? 'REGULATOR_DOSSIER_HASH_VERIFIED' : 'REGULATOR_DOSSIER_HASH_MISMATCH',
+    storedDossierHash,
+    storedDossierHashShort: storedDossierHash.slice(0, 16),
+    recomputedDossierHash,
+    recomputedDossierHashShort: recomputedDossierHash.slice(0, 16),
+    hashInput,
+  };
+}
+
+/**
+ * @function buildRegulatorDossierVerificationPacket
+ * @description Builds a normalized regulator dossier verification response packet.
+ * @param {Object} dossierResponse - R68L dossier response.
+ * @param {string} dossierId - Lookup id or hash.
+ * @returns {Object} Verification packet.
+ * @collaboration Summarizes dossier, receipt, export, governance, chain, compliance, telemetry, and source checks.
+ */
+function buildRegulatorDossierVerificationPacket(dossierResponse = {}, dossierId = '') {
+  const dossier = dossierResponse.dossier || {};
+  const readiness = dossier.readiness || {};
+  const checks = readiness.checks || {};
+  const dossierIntegrity = verifyRegulatorDossierIntegrity(dossierResponse);
+  const sourceRegistryStatus = dossier.sourceRegistryStatus || {};
+
+  return {
+    dossierType: 'CRM_LEAD_SEARCH_REGULATOR_DOSSIER_VERIFICATION',
+    version: WILSY_CRM_REGULATOR_DOSSIER_VERIFICATION_VERSION,
+    dossierVersion: WILSY_CRM_REGULATOR_EVIDENCE_DOSSIER_VERSION,
+    lookupId: dossierId,
+    tenantId: dossier.tenantId || dossierResponse.tenantId || 'MASTER',
+    query: dossier.query || '',
+    operatorId: dossier.operatorId || 'SYSTEM',
+    status:
+      dossierIntegrity.verified && readiness.regulatorReady
+        ? 'REGULATOR_DOSSIER_VERIFIED'
+        : 'REGULATOR_DOSSIER_PARTIAL',
+    verified: Boolean(dossierIntegrity.verified && readiness.regulatorReady),
+    dossierHash: dossier.dossierHash || dossierResponse.dossierHash || null,
+    dossierHashShort: dossier.dossierHashShort || dossierResponse.dossierHashShort || null,
+    dossierIntegrity,
+    verificationSummary: {
+      verifiedDossierHash: Boolean(dossierIntegrity.verified),
+      verifiedExportReceipt: Boolean(
+        checks.verifiedExportReceipt || dossier.verifiedExportReceipt?.integrity?.verified
+      ),
+      verifiedRegulatorExport: Boolean(
+        checks.verifiedRegulatorExport || dossier.regulatorEvidenceBundle?.exportIntegrity?.verified
+      ),
+      verifiedGovernance: Boolean(
+        checks.verifiedGovernance || dossier.governanceProof?.integrity?.verified
+      ),
+      verifiedEvidenceChain: Boolean(
+        checks.verifiedEvidenceChain || dossier.evidenceChainProof?.chainVerified
+      ),
+      verifiedCompliance: Boolean(
+        checks.verifiedCompliance || dossier.complianceReceipt?.integrity?.verified
+      ),
+      verifiedTelemetry: Boolean(
+        checks.verifiedTelemetry || dossier.telemetryReceipt?.integrity?.verified
+      ),
+      sourceRegistryLive: Boolean(checks.sourceRegistryLive),
+      sourceRegistryCount: sourceRegistryStatus.totalSources || 0,
+      sourceGaps: sourceRegistryStatus.sourceGaps || [],
+      noFilesystemWrite: Boolean(dossier.dossierMetadata?.noFilesystemWrite),
+    },
+    verifiedDossier: dossier,
+  };
+}
+
+/**
+ * @function findRegulatorEvidenceDossierByHashFallback
+ * @description Rebuilds recent JSON-only dossiers and finds a matching dossier hash.
+ * @param {Object} params - Lookup parameters.
+ * @returns {Promise<Object|null>} Matching dossier response or null.
+ * @collaboration Enables dossier hash lookup without persisting dossier files.
+ */
+async function findRegulatorEvidenceDossierByHashFallback(params = {}) {
+  const tenantId = String(params.tenantId || 'MASTER').trim() || 'MASTER';
+  const dossierId = String(params.dossierId || '').trim();
+
+  if (!dossierId) return null;
+
+  const latest = await listLeadSearchRegulatorEvidenceDossiers({
+    tenantId,
+    limit: params.limit || 25,
+  });
+
+  return (
+    (latest.dossiers || []).find((dossierResponse) => {
+      const candidates = resolveRegulatorDossierLookupCandidates(dossierResponse);
+      return candidates.includes(dossierId);
+    }) || null
+  );
+}
+
+/**
+ * @function verifyLeadSearchRegulatorEvidenceDossier
+ * @description Verifies a regulator dossier by dossier hash, export receipt hash, export hash, or governance id.
+ * @param {Object} params - Verification parameters.
+ * @returns {Promise<Object>} Dossier verification response.
+ * @collaboration Proves the final dossier hash input has not changed without writing files.
+ */
+export async function verifyLeadSearchRegulatorEvidenceDossier(params = {}) {
+  const tenantId = String(params.tenantId || 'MASTER').trim() || 'MASTER';
+  const dossierId = String(
+    params.dossierId ||
+      params.receiptId ||
+      params.dossierHash ||
+      params.exportReceiptHash ||
+      params.exportHash ||
+      params.governanceId ||
+      ''
+  ).trim();
+
+  let dossierResponse = await buildLeadSearchRegulatorEvidenceDossier({
+    tenantId,
+    receiptId: dossierId,
+  });
+
+  if (!dossierResponse.ok || !dossierResponse.dossier) {
+    dossierResponse = await findRegulatorEvidenceDossierByHashFallback({
+      tenantId,
+      dossierId,
+      limit: params.limit || 25,
+    });
+  }
+
+  if (!dossierResponse || !dossierResponse.dossier) {
+    return {
+      ok: false,
+      version: WILSY_CRM_REGULATOR_DOSSIER_VERIFICATION_VERSION,
+      tenantId,
+      dossierId,
+      status: 'REGULATOR_DOSSIER_NOT_FOUND',
+      verification: null,
+    };
+  }
+
+  const verification = buildRegulatorDossierVerificationPacket(dossierResponse, dossierId);
+
+  return {
+    ok: Boolean(verification.verified),
+    version: WILSY_CRM_REGULATOR_DOSSIER_VERIFICATION_VERSION,
+    tenantId,
+    dossierId,
+    status: verification.status,
+    dossierHash: verification.dossierHash,
+    dossierHashShort: verification.dossierHashShort,
+    verification,
+  };
+}
+
+/**
+ * @function listLeadSearchRegulatorEvidenceDossierVerifications
+ * @description Lists verified regulator dossier verification packets.
+ * @param {Object} params - List parameters.
+ * @returns {Promise<Object>} Dossier verification list response.
+ * @collaboration Provides JSON-only regulator dossier verification ledger.
+ */
+export async function listLeadSearchRegulatorEvidenceDossierVerifications(params = {}) {
+  const tenantId = String(params.tenantId || 'MASTER').trim() || 'MASTER';
+  const limit = Math.min(Math.max(Number(params.limit || 5), 1), 25);
+  const latest = await listLeadSearchRegulatorEvidenceDossiers({
+    tenantId,
+    limit,
+  });
+
+  const verifications = await Promise.all(
+    (latest.dossiers || []).map((dossierResponse) =>
+      verifyLeadSearchRegulatorEvidenceDossier({
+        tenantId,
+        dossierId: dossierResponse.dossierHash || dossierResponse.dossier?.dossierHash,
+      })
+    )
+  );
+
+  return {
+    ok: true,
+    version: WILSY_CRM_REGULATOR_DOSSIER_VERIFICATION_VERSION,
+    tenantId,
+    total: verifications.length,
+    verified: verifications.filter((item) => item.ok).length,
+    status: 'REGULATOR_DOSSIER_VERIFICATIONS_LISTED',
+    verifications,
   };
 }
 
