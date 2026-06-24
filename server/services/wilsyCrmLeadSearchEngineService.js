@@ -25,6 +25,8 @@ export const WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERSION =
   'R68J-REGULATOR-EXPORT-RECEIPT-MATERIALIZATION';
 export const WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERIFICATION_VERSION =
   'R68K-REGULATOR-EXPORT-RECEIPT-VERIFICATION-AUTHORITY';
+export const WILSY_CRM_REGULATOR_EVIDENCE_DOSSIER_VERSION =
+  'R68L-REGULATOR-EVIDENCE-DOSSIER-AUTHORITY';
 
 const SOURCE_REGISTRY = Object.freeze([
   { key: 'leads', modelName: 'CRMLead', weight: 1.0 },
@@ -3906,6 +3908,349 @@ export async function listLeadSearchRegulatorExportReceiptVerifications(params =
       .length,
     status: 'REGULATOR_EXPORT_RECEIPT_VERIFICATIONS_LISTED',
     exportReceipts: verifiedReceipts.map((receipt) => receipt.exportReceipt).filter(Boolean),
+  };
+}
+
+/**
+ * @function resolveRegulatorDossierSourceRegistry
+ * @description Resolves the source registry from the regulator evidence bundle.
+ * @param {Object} evidenceBundle - Regulator evidence bundle.
+ * @returns {Array} Source registry.
+ * @collaboration Gives the dossier a stable source-system posture without creating new records.
+ */
+function resolveRegulatorDossierSourceRegistry(evidenceBundle = {}) {
+  return (
+    evidenceBundle.telemetryReceipt?.payload?.registry ||
+    evidenceBundle.governanceProof?.payload?.registry ||
+    evidenceBundle.complianceReceipt?.payload?.registry ||
+    []
+  );
+}
+
+/**
+ * @function resolveRegulatorDossierComplianceBindings
+ * @description Resolves compliance bindings for the regulator dossier.
+ * @param {Object} evidenceBundle - Regulator evidence bundle.
+ * @returns {Array} Compliance bindings.
+ * @collaboration Ensures POPIA, GDPR, SOC2 and regulator-export controls travel with the dossier.
+ */
+function resolveRegulatorDossierComplianceBindings(evidenceBundle = {}) {
+  return (
+    evidenceBundle.complianceReceipt?.complianceBindings ||
+    evidenceBundle.complianceReceipt?.payload?.complianceBindings ||
+    evidenceBundle.telemetryReceipt?.payload?.complianceBindings ||
+    evidenceBundle.complianceVerification?.complianceReceipt?.complianceBindings ||
+    []
+  );
+}
+
+/**
+ * @function buildRegulatorDossierHashInput
+ * @description Builds canonical hash input for a regulator evidence dossier.
+ * @param {Object} dossierCore - Dossier core.
+ * @returns {Object} Dossier hash input.
+ * @collaboration Provides deterministic integrity over the dossier response.
+ */
+function buildRegulatorDossierHashInput(dossierCore = {}) {
+  return {
+    dossierType: dossierCore.dossierType,
+    dossierVersion: dossierCore.dossierVersion,
+    tenantId: dossierCore.tenantId,
+    query: dossierCore.query,
+    operatorId: dossierCore.operatorId,
+    exportReceiptId: dossierCore.verifiedExportReceipt?.id || null,
+    exportReceiptHash: dossierCore.verifiedExportReceipt?.exportReceiptHash || null,
+    exportHash:
+      dossierCore.verifiedExportReceipt?.exportHash ||
+      dossierCore.regulatorEvidenceBundle?.hashes?.exportHash ||
+      null,
+    governanceEventId:
+      dossierCore.governanceProof?.id ||
+      dossierCore.verifiedExportReceipt?.governanceEventId ||
+      null,
+    governanceHash:
+      dossierCore.governanceProof?.governanceHash ||
+      dossierCore.verifiedExportReceipt?.governanceHash ||
+      null,
+    complianceReceiptId:
+      dossierCore.complianceReceipt?.id || dossierCore.complianceReceipt?.receiptId || null,
+    telemetryEventId: dossierCore.telemetryReceipt?.id || null,
+    evidenceChainStatus: dossierCore.evidenceChainProof?.status || null,
+    sourceRegistryCount: Array.isArray(dossierCore.sourceRegistry)
+      ? dossierCore.sourceRegistry.length
+      : 0,
+    generatedAt: dossierCore.generatedAt,
+  };
+}
+
+/**
+ * @function buildRegulatorDossierReadiness
+ * @description Builds the readiness posture for a regulator evidence dossier.
+ * @param {Object} params - Readiness dependencies.
+ * @returns {Object} Readiness posture.
+ * @collaboration Summarizes board-ready and regulator-ready state for the response.
+ */
+function buildRegulatorDossierReadiness(params = {}) {
+  const receipt = params.verifiedExportReceipt || {};
+  const bundle = params.regulatorEvidenceBundle || {};
+  const evidenceStatus = bundle.evidenceStatus || {};
+
+  const verifiedExportReceipt = Boolean(receipt.integrity?.verified);
+  const verifiedRegulatorExport = Boolean(
+    receipt.integrity?.regulatorExportIntegrity?.verified || bundle.exportIntegrity?.verified
+  );
+  const verifiedTelemetry = Boolean(
+    evidenceStatus.telemetryReceiptVerified || bundle.telemetryReceipt?.integrity?.verified
+  );
+  const verifiedCompliance = Boolean(
+    evidenceStatus.complianceReceiptVerified || bundle.complianceReceipt?.integrity?.verified
+  );
+  const verifiedEvidenceChain = Boolean(
+    evidenceStatus.evidenceChainVerified || bundle.evidenceChain?.chainVerified
+  );
+  const verifiedGovernance = Boolean(
+    evidenceStatus.governanceEventVerified || bundle.governanceProof?.integrity?.verified
+  );
+  const sourceRegistryLive =
+    Array.isArray(params.sourceRegistry) &&
+    params.sourceRegistry.length >= 11 &&
+    params.sourceRegistry.every(
+      (source) => source?.sourceStatus === 'SOURCE_LIVE' && source?.connected === true
+    );
+
+  const ready = Boolean(
+    verifiedExportReceipt &&
+    verifiedRegulatorExport &&
+    verifiedTelemetry &&
+    verifiedCompliance &&
+    verifiedEvidenceChain &&
+    verifiedGovernance &&
+    sourceRegistryLive
+  );
+
+  return {
+    ready,
+    boardReady: ready,
+    regulatorReady: ready,
+    status: ready ? 'REGULATOR_EVIDENCE_DOSSIER_READY' : 'REGULATOR_EVIDENCE_DOSSIER_PARTIAL',
+    checks: {
+      verifiedExportReceipt,
+      verifiedRegulatorExport,
+      verifiedTelemetry,
+      verifiedCompliance,
+      verifiedEvidenceChain,
+      verifiedGovernance,
+      sourceRegistryLive,
+    },
+  };
+}
+
+/**
+ * @function buildRegulatorEvidenceDossierCore
+ * @description Builds the complete regulator evidence dossier response core.
+ * @param {Object} params - Dossier dependencies.
+ * @returns {Object} Dossier core.
+ * @collaboration Combines verified export receipt, evidence bundle, governance, chain, compliance, telemetry and source registry.
+ */
+function buildRegulatorEvidenceDossierCore(params = {}) {
+  const verifiedReceiptResponse = params.verifiedReceiptResponse || {};
+  const verifiedExportReceipt = verifiedReceiptResponse.exportReceipt || {};
+  const regulatorExportResponse = params.regulatorExportResponse || {};
+  const regulatorEvidenceBundle = regulatorExportResponse.evidenceBundle || {};
+  const sourceRegistry = resolveRegulatorDossierSourceRegistry(regulatorEvidenceBundle);
+  const complianceBindings = resolveRegulatorDossierComplianceBindings(regulatorEvidenceBundle);
+  const generatedAt = new Date().toISOString();
+
+  const readiness = buildRegulatorDossierReadiness({
+    verifiedExportReceipt,
+    regulatorEvidenceBundle,
+    sourceRegistry,
+  });
+
+  return {
+    dossierType: 'CRM_LEAD_SEARCH_REGULATOR_EVIDENCE_DOSSIER',
+    dossierVersion: WILSY_CRM_REGULATOR_EVIDENCE_DOSSIER_VERSION,
+    tenantId:
+      verifiedExportReceipt.tenantId ||
+      regulatorEvidenceBundle.tenantId ||
+      params.tenantId ||
+      'MASTER',
+    query: verifiedExportReceipt.query || regulatorEvidenceBundle.query || '',
+    operatorId: verifiedExportReceipt.operatorId || regulatorEvidenceBundle.operatorId || 'SYSTEM',
+    generatedAt,
+    route: '/api/crm/command/search/regulator-evidence/dossier/:receiptId',
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+    readiness,
+    verifiedExportReceipt,
+    regulatorExportResponse,
+    regulatorEvidenceBundle,
+    governanceProof: regulatorEvidenceBundle.governanceProof || null,
+    evidenceChainProof: regulatorEvidenceBundle.evidenceChain || null,
+    complianceReceipt: regulatorEvidenceBundle.complianceReceipt || null,
+    telemetryReceipt: regulatorEvidenceBundle.telemetryReceipt || null,
+    sourceRegistry,
+    sourceRegistryStatus: {
+      totalSources: sourceRegistry.length,
+      liveSources: sourceRegistry.filter((source) => source?.sourceStatus === 'SOURCE_LIVE').length,
+      connectedSources: sourceRegistry.filter((source) => source?.connected === true).length,
+      searchableSources: sourceRegistry.filter((source) => source?.searchable === true).length,
+      sourceGaps:
+        regulatorEvidenceBundle.telemetryReceipt?.payload?.sourceGaps ||
+        regulatorEvidenceBundle.sourceGaps ||
+        [],
+    },
+    complianceBindings,
+    dossierMetadata: {
+      generatedBy: 'WILSY_OS_CRM_COMMAND_FABRIC',
+      receiptVerificationVersion: WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERIFICATION_VERSION,
+      exportVersion: WILSY_CRM_REGULATOR_EVIDENCE_EXPORT_VERSION,
+      materializationVersion: WILSY_CRM_REGULATOR_EXPORT_RECEIPT_VERSION,
+      dossierVersion: WILSY_CRM_REGULATOR_EVIDENCE_DOSSIER_VERSION,
+      noFilesystemWrite: true,
+      reviewMode: 'BOARD_AND_REGULATOR_JSON_DOSSIER',
+    },
+  };
+}
+
+/**
+ * @function sealRegulatorEvidenceDossier
+ * @description Seals the regulator evidence dossier with a deterministic dossier hash.
+ * @param {Object} dossierCore - Dossier core.
+ * @returns {Object} Sealed dossier.
+ * @collaboration Gives the dossier one top-level hash over its verified chain.
+ */
+function sealRegulatorEvidenceDossier(dossierCore = {}) {
+  const hashInput = buildRegulatorDossierHashInput(dossierCore);
+  const dossierHash = createHashDigest(JSON.stringify(hashInput));
+
+  return {
+    ...dossierCore,
+    dossierHash,
+    dossierHashShort: dossierHash.slice(0, 16),
+    dossierIntegrity: {
+      verified: Boolean(dossierCore.readiness?.ready),
+      status: dossierCore.readiness?.ready
+        ? 'REGULATOR_EVIDENCE_DOSSIER_HASH_VERIFIED'
+        : 'REGULATOR_EVIDENCE_DOSSIER_HASH_PARTIAL',
+      dossierHash,
+      dossierHashShort: dossierHash.slice(0, 16),
+      hashInput,
+    },
+  };
+}
+
+/**
+ * @function buildLeadSearchRegulatorEvidenceDossier
+ * @description Builds one regulator-ready evidence dossier from a verified export receipt.
+ * @param {Object} params - Dossier parameters.
+ * @returns {Promise<Object>} Dossier response.
+ * @collaboration Assembles the final board/regulator JSON response without writing files.
+ */
+export async function buildLeadSearchRegulatorEvidenceDossier(params = {}) {
+  const tenantId = String(params.tenantId || 'MASTER').trim() || 'MASTER';
+  const receiptId = String(
+    params.receiptId ||
+      params.exportReceiptId ||
+      params.exportReceiptHash ||
+      params.exportHash ||
+      ''
+  ).trim();
+
+  const verifiedReceiptResponse = await verifyLeadSearchRegulatorExportReceipt({
+    tenantId,
+    receiptId,
+  });
+
+  if (!verifiedReceiptResponse.ok || !verifiedReceiptResponse.exportReceipt) {
+    return {
+      ok: false,
+      version: WILSY_CRM_REGULATOR_EVIDENCE_DOSSIER_VERSION,
+      tenantId,
+      receiptId,
+      status: 'REGULATOR_EVIDENCE_DOSSIER_RECEIPT_NOT_FOUND',
+      dossier: null,
+      verifiedReceiptResponse,
+    };
+  }
+
+  const verifiedExportReceipt = verifiedReceiptResponse.exportReceipt;
+  const governanceId =
+    verifiedExportReceipt.governanceEventId ||
+    verifiedExportReceipt.payload?.governanceEventId ||
+    verifiedExportReceipt.governanceHash ||
+    verifiedExportReceipt.payload?.governanceHash ||
+    '';
+
+  const regulatorExportResponse = await exportLeadSearchRegulatorEvidenceBundle({
+    tenantId,
+    governanceId,
+  });
+
+  if (!regulatorExportResponse.ok || !regulatorExportResponse.evidenceBundle) {
+    return {
+      ok: false,
+      version: WILSY_CRM_REGULATOR_EVIDENCE_DOSSIER_VERSION,
+      tenantId,
+      receiptId,
+      status: 'REGULATOR_EVIDENCE_DOSSIER_EXPORT_NOT_READY',
+      dossier: null,
+      verifiedReceiptResponse,
+      regulatorExportResponse,
+    };
+  }
+
+  const dossierCore = buildRegulatorEvidenceDossierCore({
+    tenantId,
+    verifiedReceiptResponse,
+    regulatorExportResponse,
+  });
+
+  const dossier = sealRegulatorEvidenceDossier(dossierCore);
+
+  return {
+    ok: Boolean(dossier.dossierIntegrity?.verified),
+    version: WILSY_CRM_REGULATOR_EVIDENCE_DOSSIER_VERSION,
+    tenantId,
+    receiptId,
+    status: dossier.readiness?.status || 'REGULATOR_EVIDENCE_DOSSIER_PARTIAL',
+    dossierHash: dossier.dossierHash,
+    dossierHashShort: dossier.dossierHashShort,
+    dossier,
+  };
+}
+
+/**
+ * @function listLeadSearchRegulatorEvidenceDossiers
+ * @description Lists recent regulator-ready evidence dossiers.
+ * @param {Object} params - List parameters.
+ * @returns {Promise<Object>} Dossier list response.
+ * @collaboration Provides a JSON-only board/regulator dossier ledger.
+ */
+export async function listLeadSearchRegulatorEvidenceDossiers(params = {}) {
+  const tenantId = String(params.tenantId || 'MASTER').trim() || 'MASTER';
+  const limit = Math.min(Math.max(Number(params.limit || 5), 1), 25);
+  const verifiedLedger = await listLeadSearchRegulatorExportReceiptVerifications({
+    tenantId,
+    limit,
+  });
+
+  const dossiers = await Promise.all(
+    (verifiedLedger.exportReceipts || []).map((receipt) =>
+      buildLeadSearchRegulatorEvidenceDossier({
+        tenantId,
+        receiptId: receipt.id || receipt.exportReceiptHash || receipt.exportHash,
+      })
+    )
+  );
+
+  return {
+    ok: true,
+    version: WILSY_CRM_REGULATOR_EVIDENCE_DOSSIER_VERSION,
+    tenantId,
+    total: dossiers.length,
+    ready: dossiers.filter((item) => item.ok).length,
+    status: 'REGULATOR_EVIDENCE_DOSSIERS_LISTED',
+    dossiers,
   };
 }
 
