@@ -49,9 +49,45 @@ import {
   buildLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt,
   verifyLeadSearchRegulatorDossierChainEvidenceBundleIndexVerificationReceipt,
   buildLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestation,
+  verifyLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestation,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R68Y JSON-only final regulator and investor attestation verifier.
+ */
+router.get(
+  '/search/regulator-evidence/dossier-chain/evidence-bundle/final-attestation/verify/latest',
+  async (req, res) => {
+    const tenantId =
+      String(
+        req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+      ).trim() || 'MASTER';
+
+    const payload = await verifyLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestation({
+      tenantId,
+      ledgerId: req.query.ledgerRoot || 'latest',
+      limit: req.query.limit || 25,
+      operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+    });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/final-attestation/verify/latest',
+      routeContract: WILSY_R68Y_REGULATOR_DOSSIER_CHAIN_FINAL_ATTESTATION_VERIFIER_ROUTE_CONTRACT,
+      sourceFinalAttestationRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/final-attestation/latest',
+      sourceEvidenceBundleIndexVerificationReceiptVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/verify/latest',
+      safeRouteAlias: 'R68Y_SAFE_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_VERIFIER_ROUTE',
+    });
+  }
+);
+
+const WILSY_R68Y_REGULATOR_DOSSIER_CHAIN_FINAL_ATTESTATION_VERIFIER_ROUTE_CONTRACT =
+  'R68Y-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-FINAL-ATTESTATION-VERIFIER-AUTHORITY';
 
 /**
  * R68X JSON-only final regulator and investor attestation.

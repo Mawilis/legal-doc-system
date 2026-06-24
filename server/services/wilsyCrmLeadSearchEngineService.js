@@ -6471,3 +6471,211 @@ export const buildLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestati
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_REGULATOR_DOSSIER_CHAIN_FINAL_ATTESTATION_VERIFIER_VERSION =
+  'R68Y-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-FINAL-ATTESTATION-VERIFIER-AUTHORITY';
+
+/**
+ * @function verifyLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestation
+ * @description Verifies the R68X final regulator and investor attestation by recomputing its attestation hash.
+ * @collaboration R68X final attestation, R68W receipt verifier, CRM regulator evidence controls.
+ */
+export const verifyLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestation = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const attestationPacket =
+    await buildLeadSearchRegulatorDossierChainFinalRegulatorInvestorAttestation({
+      tenantId,
+      ledgerId,
+      limit,
+      operator,
+    });
+
+  const finalAttestation = attestationPacket.finalAttestation || {};
+  const {
+    attestationHash: storedAttestationHash,
+    attestationHashShort,
+    ...attestationPayload
+  } = finalAttestation;
+
+  const recomputedAttestationHash =
+    computeRegulatorDossierChainFinalAttestationHash(attestationPayload);
+  const attestationHashVerified =
+    Boolean(storedAttestationHash) && storedAttestationHash === recomputedAttestationHash;
+
+  const expectedChainRange = [
+    'R68O',
+    'R68P',
+    'R68Q',
+    'R68R',
+    'R68S',
+    'R68T',
+    'R68U',
+    'R68V',
+    'R68W',
+  ];
+
+  const chainRange = Array.isArray(finalAttestation.chainRange) ? finalAttestation.chainRange : [];
+
+  const chainRangeVerified = JSON.stringify(chainRange) === JSON.stringify(expectedChainRange);
+
+  const audience = Array.isArray(finalAttestation.audience) ? finalAttestation.audience : [];
+
+  const audienceVerified = JSON.stringify(audience) === JSON.stringify(['REGULATOR', 'INVESTOR']);
+
+  const statuses = finalAttestation.statuses || {};
+  const statusesVerified =
+    statuses.R68O === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFIED' &&
+    statuses.R68P === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_MATERIALIZED' &&
+    statuses.R68Q === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIED' &&
+    statuses.R68R === 'REGULATOR_DOSSIER_CHAIN_VERIFICATION_FINALITY_CERTIFICATE_ISSUED' &&
+    statuses.R68S === 'REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIED' &&
+    statuses.R68T === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEXED' &&
+    statuses.R68U === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFIED' &&
+    statuses.R68V ===
+      'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_MATERIALIZED' &&
+    statuses.R68W === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFIED';
+
+  const routeContracts = finalAttestation.routeContracts || {};
+  const routeContractsVerified =
+    routeContracts.R68O === 'R68O-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-AUTHORITY' &&
+    routeContracts.R68P === 'R68P-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-AUTHORITY' &&
+    routeContracts.R68Q ===
+      'R68Q-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY' &&
+    routeContracts.R68R ===
+      'R68R-REGULATOR-DOSSIER-CHAIN-VERIFICATION-FINALITY-CERTIFICATE-AUTHORITY' &&
+    routeContracts.R68S ===
+      'R68S-REGULATOR-DOSSIER-CHAIN-FINALITY-CERTIFICATE-VERIFIER-AUTHORITY' &&
+    routeContracts.R68T === 'R68T-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-AUTHORITY' &&
+    routeContracts.R68U ===
+      'R68U-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFIER-AUTHORITY' &&
+    routeContracts.R68V ===
+      'R68V-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFICATION-RECEIPT-AUTHORITY' &&
+    routeContracts.R68W ===
+      'R68W-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY';
+
+  const sourceRoutes = finalAttestation.sourceRoutes || {};
+  const sourceRoutesVerified =
+    sourceRoutes.R68O ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O' &&
+    sourceRoutes.R68P ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/latest' &&
+    sourceRoutes.R68Q ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/verify/latest' &&
+    sourceRoutes.R68R ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/latest' &&
+    sourceRoutes.R68S ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/verify/latest' &&
+    sourceRoutes.R68T ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/latest' &&
+    sourceRoutes.R68U ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verify/latest' &&
+    sourceRoutes.R68V ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/latest' &&
+    sourceRoutes.R68W ===
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/verify/latest';
+
+  const hashes = finalAttestation.hashes || {};
+  const hashEqualityVerified =
+    Boolean(hashes.storedReceiptHash) &&
+    hashes.storedReceiptHash === hashes.recomputedReceiptHash &&
+    Boolean(hashes.storedBundleIndexHash) &&
+    hashes.storedBundleIndexHash === hashes.recomputedBundleIndexHash;
+
+  const proofFlags = finalAttestation.proofFlags || {};
+  const proofFlagsVerified =
+    proofFlags.receiptHashVerified === true &&
+    proofFlags.storedReceiptHashMatchesRecomputed === true &&
+    proofFlags.sourceVerifierStatusVerified === true &&
+    proofFlags.sourceBundleIndexStatusVerified === true &&
+    proofFlags.bundleIndexHashVerified === true &&
+    proofFlags.bundleIndexHashEqualityVerified === true &&
+    proofFlags.evidenceRangeVerified === true &&
+    proofFlags.routeContractsVerified === true &&
+    proofFlags.sourceRoutesVerified === true &&
+    proofFlags.statusesVerified === true &&
+    proofFlags.proofFlagsVerified === true &&
+    proofFlags.embeddedProofFlagsVerified === true &&
+    proofFlags.evidenceRangeStillIndexed === true &&
+    proofFlags.certificateHashVerified === true &&
+    proofFlags.upstreamReceiptHashVerified === true &&
+    proofFlags.sourceLedgerRootVerified === true &&
+    proofFlags.sourceContinuityVerified === true &&
+    proofFlags.sourceLinksVerified === true &&
+    proofFlags.jsonResponseOnly === true &&
+    proofFlags.noFilesystemWrite === true;
+
+  const jsonResponseOnly =
+    attestationPacket.jsonResponseOnly === true &&
+    finalAttestation.persistenceMode === 'JSON_RESPONSE_ONLY' &&
+    proofFlags.jsonResponseOnly === true;
+
+  const noFilesystemWrite =
+    attestationPacket.noFilesystemWrite === true && proofFlags.noFilesystemWrite === true;
+
+  const verified =
+    attestationPacket.status ===
+      'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_ISSUED' &&
+    attestationHashVerified &&
+    chainRangeVerified &&
+    audienceVerified &&
+    statusesVerified &&
+    routeContractsVerified &&
+    sourceRoutesVerified &&
+    hashEqualityVerified &&
+    proofFlagsVerified &&
+    jsonResponseOnly &&
+    noFilesystemWrite;
+
+  return {
+    ok: verified,
+    version: WILSY_CRM_REGULATOR_DOSSIER_CHAIN_FINAL_ATTESTATION_VERIFIER_VERSION,
+    status: verified
+      ? 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_VERIFIED'
+      : 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_VERIFICATION_FAILED',
+    attestationHashVerified,
+    storedAttestationHash,
+    storedAttestationHashShort:
+      attestationHashShort || String(storedAttestationHash || '').slice(0, 16),
+    recomputedAttestationHash,
+    recomputedAttestationHashShort: recomputedAttestationHash.slice(0, 16),
+    chainRangeVerified,
+    audienceVerified,
+    statusesVerified,
+    routeContractsVerified,
+    sourceRoutesVerified,
+    hashEqualityVerified,
+    proofFlagsVerified,
+    ledgerRoot: finalAttestation.ledgerRoot || attestationPacket.ledgerRoot || null,
+    finalAttestationVerifier: {
+      tenantId,
+      operator,
+      verifiedAt: new Date().toISOString(),
+      sourceAttestationStatus: attestationPacket.status,
+      attestationHashVerified,
+      storedAttestationHash,
+      recomputedAttestationHash,
+      chainRangeVerified,
+      audienceVerified,
+      statusesVerified,
+      routeContractsVerified,
+      sourceRoutesVerified,
+      hashEqualityVerified,
+      proofFlagsVerified,
+      jsonResponseOnly,
+      noFilesystemWrite,
+    },
+    finalAttestation,
+    sourceAttestationPacket: attestationPacket,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
