@@ -1022,7 +1022,6 @@ const FIELD_LABELS = Object.freeze({
   renewalDate: 'Renewal Date',
   renewalValue: 'Renewal Value',
   slaStatus: 'SLA',
-  channel: 'Channel',
   lastMessageAt: 'Last Message',
   trigger: 'Trigger',
   targetModule: 'Target Module',
