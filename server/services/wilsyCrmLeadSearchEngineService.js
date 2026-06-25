@@ -20325,3 +20325,316 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseReadiness = 
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_VERSION =
+  'R71J-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-RELEASE-PASSPORT-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidenceReleasePassport
+ * @description Produces a single release passport that can be consumed by buyers, boards, regulators, investors, auditors, and engineering.
+ * @collaboration R71I release readiness, R71H API surface registry, CRM command routes, release governance surfaces.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidenceReleasePassport = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const releaseReadiness = await buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseReadiness({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const deploymentPosture = releaseReadiness.deploymentPosture || {};
+  const releaseScore = releaseReadiness.releaseReadinessScore || {};
+  const sourceRegistry = releaseReadiness.sourceTerminalEvidenceApiSurfaceRegistry || {};
+
+  const passportIdentity = {
+    product: 'WILSY CRM',
+    passportType: 'TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT',
+    releaseClass: deploymentPosture.releaseClass || 'TERMINAL_EVIDENCE_API_SURFACE_RELEASE',
+    evidenceSurface:
+      deploymentPosture.evidenceSurface || 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE',
+    releaseDecision: deploymentPosture.releaseDecision || 'HOLD',
+    buyerReadableStatus: releaseReadiness.buyerReadableStatus || 'UNKNOWN',
+    releaseScore: releaseScore.score || 0,
+    authorityVersion: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_VERSION,
+  };
+
+  const signoffMatrix = [
+    {
+      signer: 'product',
+      label: 'Product release signoff',
+      decision: passportIdentity.releaseDecision,
+      ready:
+        releaseReadiness.ok === true &&
+        releaseScore.score === 100 &&
+        passportIdentity.releaseDecision === 'GO',
+      evidence: ['releaseReadinessScore', 'deploymentPosture', 'releaseNotes'],
+    },
+    {
+      signer: 'engineering',
+      label: 'Engineering boundary signoff',
+      decision: releaseReadiness.noR70F === true ? 'GO' : 'HOLD',
+      ready:
+        releaseReadiness.noR70F === true &&
+        releaseReadiness.recursiveLoopFrozen === true &&
+        deploymentPosture.apiOnly === true,
+      evidence: ['terminalStop', 'noR70F', 'recursiveLoopFrozen', 'apiOnly'],
+    },
+    {
+      signer: 'security',
+      label: 'Security mutation boundary signoff',
+      decision:
+        deploymentPosture.authMutationRequired === false &&
+        deploymentPosture.securityMutationRequired === false
+          ? 'GO'
+          : 'HOLD',
+      ready:
+        deploymentPosture.authMutationRequired === false &&
+        deploymentPosture.securityMutationRequired === false,
+      evidence: ['authMutationRequired', 'securityMutationRequired', 'protectedBoundaries'],
+    },
+    {
+      signer: 'regulator',
+      label: 'Regulator inspection signoff',
+      decision:
+        releaseReadiness.releaseGates?.find(
+          (gate) => gate.gate === 'regulator_investor_audit_readiness'
+        )?.ready === true
+          ? 'GO'
+          : 'HOLD',
+      ready:
+        releaseReadiness.releaseGates?.find(
+          (gate) => gate.gate === 'regulator_investor_audit_readiness'
+        )?.ready === true &&
+        sourceRegistry.clientContracts?.find((client) => client.client === 'regulator_portal')
+          ?.ready === true,
+      evidence: ['regulator_portal', 'hash posture', 'authority posture', 'schema invariants'],
+    },
+    {
+      signer: 'investor',
+      label: 'Investor diligence signoff',
+      decision:
+        sourceRegistry.clientContracts?.find((client) => client.client === 'investor_room')
+          ?.ready === true
+          ? 'GO'
+          : 'HOLD',
+      ready:
+        sourceRegistry.clientContracts?.find((client) => client.client === 'investor_room')
+          ?.ready === true && releaseReadiness.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE',
+      evidence: ['investor_room', 'buyerReadableStatus', 'releaseNotes.investorLine'],
+    },
+    {
+      signer: 'auditor',
+      label: 'Audit assurance signoff',
+      decision:
+        sourceRegistry.clientContracts?.find((client) => client.client === 'audit_assurance')
+          ?.ready === true
+          ? 'GO'
+          : 'HOLD',
+      ready:
+        sourceRegistry.clientContracts?.find((client) => client.client === 'audit_assurance')
+          ?.ready === true && releaseReadiness.persistenceMode === 'JSON_RESPONSE_ONLY',
+      evidence: ['audit_assurance', 'persistenceMode', 'noFilesystemWrite'],
+    },
+  ];
+
+  const releasePassportSections = [
+    {
+      section: 'decision',
+      title: 'Release decision',
+      value: passportIdentity.releaseDecision,
+      ready: passportIdentity.releaseDecision === 'GO',
+    },
+    {
+      section: 'score',
+      title: 'Release readiness score',
+      value: passportIdentity.releaseScore,
+      ready: passportIdentity.releaseScore === 100,
+    },
+    {
+      section: 'surface',
+      title: 'Registered evidence surface',
+      value: sourceRegistry.registryType || null,
+      ready: sourceRegistry.ok === true && sourceRegistry.apiSurfaceRegistry?.length === 7,
+    },
+    {
+      section: 'clients',
+      title: 'Client contracts',
+      value: sourceRegistry.clientContracts?.length || 0,
+      ready:
+        sourceRegistry.clientContracts?.length === 5 &&
+        sourceRegistry.clientContracts.every((client) => client.ready === true),
+    },
+    {
+      section: 'runtime',
+      title: 'Runtime posture',
+      value: releaseReadiness.persistenceMode || 'JSON_RESPONSE_ONLY',
+      ready:
+        releaseReadiness.jsonResponseOnly === true &&
+        releaseReadiness.noFilesystemWrite === true &&
+        releaseReadiness.persistenceMode === 'JSON_RESPONSE_ONLY',
+    },
+    {
+      section: 'boundary',
+      title: 'Terminal proof boundary',
+      value: releaseReadiness.noR70F === true ? 'NO_R70F' : 'RECURSION_OPEN',
+      ready:
+        releaseReadiness.terminalStop === true &&
+        releaseReadiness.noR70F === true &&
+        releaseReadiness.recursiveLoopFrozen === true,
+    },
+  ];
+
+  const consumptionMap = {
+    buyer: {
+      entry: '/api/crm/command/search/regulator-evidence/terminal-diligence-room/latest',
+      proof: 'VERIFIED_TERMINAL_EVIDENCE',
+      ready:
+        sourceRegistry.clientContracts?.find((client) => client.client === 'investor_room')
+          ?.ready === true,
+    },
+    crmCockpit: {
+      entry: '/api/crm/command/search/regulator-evidence/terminal-cockpit-contract/latest',
+      proof: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COCKPIT_CONTRACT_READY',
+      ready:
+        sourceRegistry.clientContracts?.find((client) => client.client === 'crm_cockpit')?.ready ===
+        true,
+    },
+    aiCommandLayer: {
+      entry: '/api/crm/command/search/regulator-evidence/terminal-command-index/latest',
+      proof: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COMMAND_INDEX_READY',
+      ready:
+        sourceRegistry.clientContracts?.find((client) => client.client === 'ai_command_layer')
+          ?.ready === true,
+    },
+    regulatorPortal: {
+      entry: '/api/crm/command/search/regulator-evidence/terminal-manifest/latest',
+      proof: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_MANIFEST_READY',
+      ready:
+        sourceRegistry.clientContracts?.find((client) => client.client === 'regulator_portal')
+          ?.ready === true,
+    },
+    auditAssurance: {
+      entry: '/api/crm/command/search/regulator-evidence/terminal-manifest/latest',
+      proof: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_API_SURFACE_REGISTRY_READY',
+      ready:
+        sourceRegistry.clientContracts?.find((client) => client.client === 'audit_assurance')
+          ?.ready === true,
+    },
+  };
+
+  const finalAssertions = {
+    releaseReady: passportIdentity.releaseDecision === 'GO',
+    scorePerfect: passportIdentity.releaseScore === 100,
+    allReleaseGatesPassed:
+      releaseReadiness.releaseGates?.length === 8 &&
+      releaseReadiness.releaseGates.every((gate) => gate.ready === true),
+    allGoLiveChecksPassed:
+      releaseReadiness.goLiveChecklist?.length === 8 &&
+      releaseReadiness.goLiveChecklist.every((check) => check.ready === true),
+    allSignoffsReady: signoffMatrix.every((signoff) => signoff.ready === true),
+    allSectionsReady: releasePassportSections.every((section) => section.ready === true),
+    allConsumptionReady: Object.values(consumptionMap).every((item) => item.ready === true),
+    apiOnly: deploymentPosture.apiOnly === true,
+    noUiMutation: deploymentPosture.uiMutationRequired === false,
+    noAuthMutation: deploymentPosture.authMutationRequired === false,
+    noSecurityMutation: deploymentPosture.securityMutationRequired === false,
+    noFilesystemExport: deploymentPosture.filesystemExportRequired === false,
+    terminalStop: releaseReadiness.terminalStop === true,
+    noR70F: releaseReadiness.noR70F === true,
+    recursiveLoopFrozen: releaseReadiness.recursiveLoopFrozen === true,
+    jsonResponseOnly: releaseReadiness.jsonResponseOnly === true,
+    noFilesystemWrite: releaseReadiness.noFilesystemWrite === true,
+  };
+
+  const passport = {
+    passportId: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_R71J',
+    passportType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT',
+    generatedAt: new Date().toISOString(),
+    tenantId,
+    operator,
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: releaseReadiness.recursiveLoopFrozen === true,
+    buyerReadableStatus: releaseReadiness.buyerReadableStatus,
+    passportIdentity,
+    signoffMatrix,
+    releasePassportSections,
+    consumptionMap,
+    finalAssertions,
+    releaseNotes: releaseReadiness.releaseNotes || {},
+    protectedBoundaries: releaseReadiness.protectedBoundaries || [],
+    sourceReleaseReadinessSummary: {
+      ok: releaseReadiness.ok === true,
+      version: releaseReadiness.version || null,
+      status: releaseReadiness.status || null,
+      readinessType: releaseReadiness.readinessType || null,
+      releaseDecision: deploymentPosture.releaseDecision || null,
+      score: releaseScore.score || 0,
+      gateCount: releaseReadiness.releaseGates?.length || 0,
+      checklistCount: releaseReadiness.goLiveChecklist?.length || 0,
+      protectedBoundaryCount: releaseReadiness.protectedBoundaries?.length || 0,
+      noR70F: releaseReadiness.noR70F === true,
+      recursiveLoopFrozen: releaseReadiness.recursiveLoopFrozen === true,
+    },
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const ok =
+    releaseReadiness.ok === true &&
+    passport.productizationSurface === true &&
+    passport.terminalStop === true &&
+    passport.noR70F === true &&
+    passport.recursiveLoopFrozen === true &&
+    passport.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE' &&
+    signoffMatrix.length === 6 &&
+    signoffMatrix.every((signoff) => signoff.ready === true && signoff.decision === 'GO') &&
+    releasePassportSections.length === 6 &&
+    releasePassportSections.every((section) => section.ready === true) &&
+    Object.values(consumptionMap).every((item) => item.ready === true) &&
+    Object.values(finalAssertions).every(Boolean) &&
+    passport.protectedBoundaries.length === 9 &&
+    passport.sourceReleaseReadinessSummary.ok === true &&
+    passport.sourceReleaseReadinessSummary.score === 100 &&
+    passport.sourceReleaseReadinessSummary.gateCount === 8 &&
+    passport.sourceReleaseReadinessSummary.checklistCount === 8 &&
+    passport.sourceReleaseReadinessSummary.noR70F === true &&
+    passport.jsonResponseOnly === true &&
+    passport.noFilesystemWrite === true &&
+    passport.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_DEGRADED',
+    passportType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: passport.recursiveLoopFrozen,
+    buyerReadableStatus: passport.buyerReadableStatus,
+    passportIdentity,
+    signoffMatrix,
+    releasePassportSections,
+    consumptionMap,
+    finalAssertions,
+    passport,
+    sourceTerminalEvidenceReleaseReadiness: releaseReadiness,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
