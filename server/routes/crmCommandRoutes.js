@@ -80,9 +80,45 @@ import {
   verifyLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificate,
   buildLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerificationReceipt,
   verifyLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerificationReceipt,
+  buildLeadSearchRegulatorInvestorEvidenceChainTerminalClosureCertificate,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R70D JSON-only terminal closure certificate over R70C terminal verifier.
+ */
+router.get(
+  '/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/terminal-closure-certificate/latest',
+  async (req, res) => {
+    const tenantId =
+      String(
+        req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+      ).trim() || 'MASTER';
+
+    const payload = await buildLeadSearchRegulatorInvestorEvidenceChainTerminalClosureCertificate({
+      tenantId,
+      ledgerId: req.query.ledgerRoot || 'latest',
+      limit: req.query.limit || 25,
+      operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+    });
+
+    return res.status(payload.ok ? 200 : 206).json({
+      ...payload,
+      route:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/terminal-closure-certificate/latest',
+      routeContract:
+        WILSY_R70D_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_CLOSURE_CERTIFICATE_ROUTE_CONTRACT,
+      sourceTerminalVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/evidence-index/verification-receipt/certificate/verification-receipt/finality-certificate/verification-receipt/finality-certificate/verify/verification-receipt/finality-certificate/verify/verification-receipt/finality-certificate/verify/verification-receipt/verify/latest',
+      safeRouteAlias:
+        'R70D_SAFE_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_CLOSURE_CERTIFICATE_ROUTE',
+    });
+  }
+);
+
+const WILSY_R70D_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_CLOSURE_CERTIFICATE_ROUTE_CONTRACT =
+  'R70D-REGULATOR-INVESTOR-EVIDENCE-CHAIN-TERMINAL-CLOSURE-CERTIFICATE-AUTHORITY';
 
 /**
  * R70C JSON-only verifier over R70B finality certificate verification receipt.
