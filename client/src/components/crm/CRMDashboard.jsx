@@ -81,6 +81,7 @@ import wilsyOfficialLogo from '../../assets/logo/wilsy.jpeg';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
 import WilsyOSDashboardTopRail from '../os/WilsyOSDashboardTopRail';
 import styles from './CRMDashboard.module.css';
+import TerminalEvidenceCockpitPanel from './TerminalEvidenceCockpitPanel.js';
 
 
 
@@ -4712,6 +4713,14 @@ const workspaceContent = {
 
   return (
     <div className={styles.crmShell} style={crmThemeVars} data-wilsy-crm-dashboard="clean-os" data-version={CRM_VERSION} data-wilsy-theme={accountThemeId} data-wilsy-mode={accountThemeMode}>
+      <div data-wilsy-r72f-terminal-evidence-dashboard-wire="true">
+        <TerminalEvidenceCockpitPanel
+          tenantId={tenantConfig?.tenantId || 'MASTER'}
+          operator="CRM_DASHBOARD"
+          autoFetch
+        />
+      </div>
+
       <input ref={importInputRef} type="file" accept=".csv,.json,text/csv,application/json" className={styles.hiddenInput} onChange={importFile} />
       {(founderReturnEnabled || typeof onFounderReturn === 'function') && (
         founderReturnOpen ? (
