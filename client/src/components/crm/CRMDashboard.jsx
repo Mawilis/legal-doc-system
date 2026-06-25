@@ -988,7 +988,394 @@ function useCrmSnapshot(tenantId, refreshSignal) {
  * @returns {JSX.Element} CRM dashboard.
  * @collaboration Gives Sovereign routing one production CRM surface with Account Command Center integration.
  */
+
+const R73B_SOVEREIGN_SEARCH_RUNTIME_HELPERS = true;
+
+const SOVEREIGN_SEARCH_LIVE_COLLECTIONS = Object.freeze([
+  'leads',
+  'accounts',
+  'contacts',
+  'deals',
+  'tasks',
+  'meetings',
+  'evidence',
+  'connectors',
+]);
+
+const SOVEREIGN_SEARCH_INTELLIGENCE_COLLECTIONS = Object.freeze([
+  'telemetry',
+  'compliance',
+  'governance',
+  'revenue',
+  'scores',
+]);
+
+/**
+ * @function shouldOpenSovereignSearchFromKeyboard
+ * @description Detects the platform command shortcut used to open the CRM sovereign search overlay.
+ * @collaboration R73B keyboard command runtime, existing command shell, CRM operator workflow.
+ */
+function shouldOpenSovereignSearchFromKeyboard(event) {
+  return Boolean((event.metaKey || event.ctrlKey) && String(event.key || '').toLowerCase() === 'k');
+}
+
+/**
+ * @function resolveSovereignSearchApiBase
+ * @description Resolves the CRM search API base from the existing Vite runtime configuration.
+ * @collaboration R73B search runtime transport, CRM backend route mount, tenant-safe browser execution.
+ */
+function resolveSovereignSearchApiBase() {
+  return String(import.meta.env?.VITE_API_URL || '').replace(/\/$/, '');
+}
+
+/**
+ * @function resolveSovereignSearchHeaders
+ * @description Builds safe runtime headers for CRM search calls without exposing browser-side secrets.
+ * @collaboration R73B search runtime transport, tenant posture, auth/security hardening compatibility.
+ */
+function resolveSovereignSearchHeaders() {
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'X-Tenant-Id': window.localStorage.getItem('tenantId') || window.localStorage.getItem('wilsyTenantId') || 'MASTER',
+  };
+
+  const runtimeCredential = window.localStorage.getItem('token') || window.localStorage.getItem('authToken') || window.localStorage.getItem('wilsyToken');
+  if (runtimeCredential) {
+    headers.Authorization = ['Bearer', runtimeCredential].join(' ');
+  }
+
+  return headers;
+}
+
+/**
+ * @function normalizeSovereignSearchPayloadRecords
+ * @description Extracts record arrays from route payloads while preserving source-honest empty results.
+ * @collaboration R73B search runtime parsing, CRM live source routes, intelligence collection routes.
+ */
+function normalizeSovereignSearchPayloadRecords(payload) {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return [];
+  }
+
+  const candidate =
+    payload.records ||
+    payload.items ||
+    payload.results ||
+    payload.data ||
+    payload.collection ||
+    payload.payload ||
+    [];
+
+  if (Array.isArray(candidate)) {
+    return candidate;
+  }
+
+  if (candidate && typeof candidate === 'object' && Array.isArray(candidate.records)) {
+    return candidate.records;
+  }
+
+  return [];
+}
+
+/**
+ * @function buildSovereignSearchRecordLabel
+ * @description Builds a human-readable label for a CRM search record without inventing data.
+ * @collaboration R73B result rendering, source-honest CRM records, operator-readable command overlay.
+ */
+function buildSovereignSearchRecordLabel(record, fallbackLabel) {
+  if (!record || typeof record !== 'object') {
+    return fallbackLabel;
+  }
+
+  return (
+    record.name ||
+    record.title ||
+    record.companyName ||
+    record.accountName ||
+    record.contactName ||
+    record.email ||
+    record.reference ||
+    record.hash ||
+    record.rootHash ||
+    record._id ||
+    record.id ||
+    fallbackLabel
+  );
+}
+
+/**
+ * @function buildSovereignSearchRecordDescription
+ * @description Builds a compact source-honest description for a CRM search record.
+ * @collaboration R73B result rendering, evidence and connector posture, operator-readable search output.
+ */
+function buildSovereignSearchRecordDescription(record) {
+  if (!record || typeof record !== 'object') {
+    return 'No additional source fields returned.';
+  }
+
+  return (
+    record.description ||
+    record.summary ||
+    record.status ||
+    record.stage ||
+    record.type ||
+    record.source ||
+    record.collection ||
+    record.tenantId ||
+    'Source record returned by CRM backend.'
+  );
+}
+
+/**
+ * @function recordMatchesSovereignSearchQuery
+ * @description Checks whether a returned CRM record matches the operator query.
+ * @collaboration R73B client-side refinement, live source routes, source-honest search filtering.
+ */
+function recordMatchesSovereignSearchQuery(record, normalizedQuery) {
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return JSON.stringify(record || {}).toLowerCase().includes(normalizedQuery);
+}
+
+/**
+ * @function mapSovereignSearchRecords
+ * @description Maps route records into normalized overlay result objects.
+ * @collaboration R73B search results overlay, source grouping, CRM command center output.
+ */
+function mapSovereignSearchRecords(records, sourceGroup, query) {
+  const normalizedQuery = query.toLowerCase();
+
+  return records
+    .filter((record) => recordMatchesSovereignSearchQuery(record, normalizedQuery))
+    .slice(0, 8)
+    .map((record, index) => ({
+      id: record?._id || record?.id || [sourceGroup.key, index, buildSovereignSearchRecordLabel(record, sourceGroup.label)].join(':'),
+      group: sourceGroup.label,
+      type: sourceGroup.key,
+      label: buildSovereignSearchRecordLabel(record, sourceGroup.label),
+      description: buildSovereignSearchRecordDescription(record),
+      evidence: record?.hash || record?.rootHash || record?.evidenceId || record?.receiptId || record?.tenantId || 'SOURCE-LIVE',
+    }));
+}
+
+/**
+ * @function fetchSovereignSearchCollection
+ * @description Fetches one CRM live or intelligence collection for the sovereign search overlay.
+ * @collaboration R73B search transport, R72W mounted CRM APIs, auth/security/hardening compatibility.
+ */
+async function fetchSovereignSearchCollection(endpoint, sourceGroup, query) {
+  const apiBase = resolveSovereignSearchApiBase();
+  const response = await fetch(`${apiBase}${endpoint}`, {
+    method: 'GET',
+    headers: resolveSovereignSearchHeaders(),
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const payload = await response.json();
+  const records = normalizeSovereignSearchPayloadRecords(payload);
+
+  return mapSovereignSearchRecords(records, sourceGroup, query);
+}
+
+/**
+ * @function runSovereignSearchRuntime
+ * @description Runs CRM sovereign search across mounted live and intelligence backend surfaces.
+ * @collaboration R73B visible search payoff, R72W route mount activation, CRM source-honest results.
+ */
+async function runSovereignSearchRuntime(query) {
+  const normalizedQuery = String(query || '').trim();
+
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  const liveGroups = SOVEREIGN_SEARCH_LIVE_COLLECTIONS.map((collection) => ({
+    key: collection,
+    label: collection.replace(/(^|-)\w/g, (value) => value.toUpperCase()),
+    endpoint: `/api/crm/live/${collection}?limit=24`,
+  }));
+
+  const intelligenceGroups = SOVEREIGN_SEARCH_INTELLIGENCE_COLLECTIONS.map((collection) => ({
+    key: `intelligence-${collection}`,
+    label: `Intelligence ${collection.replace(/(^|-)\w/g, (value) => value.toUpperCase())}`,
+    endpoint: `/api/crm/intelligence/${collection}?limit=24`,
+  }));
+
+  const results = await Promise.all(
+    [...liveGroups, ...intelligenceGroups].map((group) =>
+      fetchSovereignSearchCollection(group.endpoint, group, normalizedQuery)
+    )
+  );
+
+  return results.flat().slice(0, 36);
+}
+
+/**
+ * @function SovereignSearchCommandOverlay
+ * @description Renders the CRM sovereign search results overlay with loading, empty, error, and grouped result states.
+ * @collaboration R73B operator-grade search UI, existing CRM dashboard shell, source-honest backend results.
+ */
+function SovereignSearchCommandOverlay({ isOpen, query, searchState, styles, onClose }) {
+  if (!isOpen) {
+    return null;
+  }
+
+  const hasQuery = Boolean(String(query || '').trim());
+  const resultCount = searchState?.results?.length || 0;
+
+  return (
+    <section
+      className={styles.sovereignSearchOverlay}
+      data-wilsy-r73b-sovereign-search-overlay="true"
+      aria-label="Sovereign CRM search results"
+    >
+      <div className={styles.sovereignSearchPanel}>
+        <div className={styles.sovereignSearchHeader}>
+          <div>
+            <p className={styles.sovereignSearchEyebrow}>SOVEREIGN SEARCH ENGINE</p>
+            <h3>CRM command results</h3>
+          </div>
+          <button
+            type="button"
+            className={styles.sovereignSearchClose}
+            onClick={onClose}
+            aria-label="Close sovereign search"
+          >
+            Esc
+          </button>
+        </div>
+
+        <div className={styles.sovereignSearchStatus}>
+          {!hasQuery && 'Type to search leads, accounts, contacts, deals, evidence, hashes, connectors and intelligence.'}
+          {hasQuery && searchState?.status === 'loading' && `Searching sovereign CRM sources for “${query}”…`}
+          {hasQuery && searchState?.status === 'ready' && `${resultCount} source-honest result${resultCount === 1 ? '' : 's'} for “${query}”.`}
+          {hasQuery && searchState?.status === 'error' && searchState?.error}
+        </div>
+
+        {hasQuery && searchState?.status === 'ready' && resultCount === 0 && (
+          <div className={styles.sovereignSearchEmpty}>
+            No live CRM records matched this query yet. The search engine returned a source-honest empty state, not fake data.
+          </div>
+        )}
+
+        {hasQuery && searchState?.status === 'ready' && resultCount > 0 && (
+          <div className={styles.sovereignSearchResults}>
+            {searchState.results.map((result) => (
+              <article className={styles.sovereignSearchResult} key={result.id}>
+                <div>
+                  <span className={styles.sovereignSearchGroup}>{result.group}</span>
+                  <strong>{result.label}</strong>
+                  <p>{result.description}</p>
+                </div>
+                <code>{result.evidence}</code>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * @function CRMDashboard
+ * @description Renders the sovereign CRM operating dashboard, including the R73B source-guided search results overlay, account command center integration, command rail, lead room, theme runtime, and backend evidence surfaces.
+ * @collaboration Coordinates CRM frontend search, mounted CRM live/intelligence APIs, tenant-aware service posture, account command center controls, and Wilsy OS production guard discipline.
+ */
 function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
+  /* WILSY R73B: Sovereign search runtime state. */
+  const [sovereignSearchQuery, setSovereignSearchQuery] = useState('');
+  const [sovereignSearchOpen, setSovereignSearchOpen] = useState(false);
+  const [sovereignSearchState, setSovereignSearchState] = useState({
+    status: 'idle',
+    results: [],
+    error: '',
+  });
+
+  useEffect(() => {
+    /**
+     * @function handleSovereignSearchKeyboard
+     * @description Opens and closes the CRM sovereign search overlay from keyboard commands.
+     * @collaboration R73B command keyboard runtime, CRM operator search, existing dashboard shell.
+     */
+    const handleSovereignSearchKeyboard = (event) => {
+      if (shouldOpenSovereignSearchFromKeyboard(event)) {
+        event.preventDefault();
+        setSovereignSearchOpen(true);
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        setSovereignSearchOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleSovereignSearchKeyboard);
+    return () => window.removeEventListener('keydown', handleSovereignSearchKeyboard);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const normalizedQuery = sovereignSearchQuery.trim();
+
+    if (!normalizedQuery) {
+      setSovereignSearchState({
+        status: 'idle',
+        results: [],
+        error: '',
+      });
+      return undefined;
+    }
+
+    setSovereignSearchState((currentState) => ({
+      ...currentState,
+      status: 'loading',
+      error: '',
+    }));
+
+    const searchTimer = window.setTimeout(() => {
+      runSovereignSearchRuntime(normalizedQuery)
+        .then((results) => {
+          if (cancelled) {
+            return;
+          }
+
+          setSovereignSearchState({
+            status: 'ready',
+            results,
+            error: '',
+          });
+        })
+        .catch((error) => {
+          if (cancelled) {
+            return;
+          }
+
+          setSovereignSearchState({
+            status: 'error',
+            results: [],
+            error: error?.message || 'Sovereign search runtime failed.',
+          });
+        });
+    }, 220);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(searchTimer);
+    };
+  }, [sovereignSearchQuery]);
+
+
   const tenantRuntime = useTenants() || {};
   const [activeWorkspace, setActiveWorkspace] = useState('home');
   const [searchTerm, setSearchTerm] = useState('');
@@ -1197,13 +1584,15 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
             <span><Shield size={16} /> {readinessScore}% governance readiness</span>
           </div>
 
-          <label className={styles.chromeSearch}>
+                    <label className={styles.chromeSearch}>
             <Search size={19} />
             <input
               value={searchTerm}
               onChange={(event) => {
                 const query = event.target.value;
                 setSearchTerm(query);
+                setSovereignSearchQuery(query);
+                setSovereignSearchOpen(true);
 
                 if (query.trim().length >= 2) {
                   searchCrmCommandFabric({
@@ -1213,8 +1602,19 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   }).catch(() => {});
                 }
               }}
+              onFocus={() => setSovereignSearchOpen(true)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  setSovereignSearchOpen(true);
+                }
+
+                if (event.key === 'Escape') {
+                  setSovereignSearchOpen(false);
+                }
+              }}
               placeholder="Search pipeline, accounts, evidence"
               aria-label="Global CRM search"
+              data-wilsy-r73b-search-input="true"
             />
             <kbd>⌘ K</kbd>
           </label>

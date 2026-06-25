@@ -3322,3 +3322,169 @@
   min-height: calc(100vh - 28px) !important;
   overflow: auto !important;
 }
+
+/* WILSY R73B - Sovereign CRM Search Results Overlay */
+.sovereignSearchOverlay {
+  position: fixed;
+  inset: 96px 32px auto 32px;
+  z-index: 80;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sovereignSearchPanel {
+  width: min(980px, calc(100vw - 64px));
+  max-height: min(680px, calc(100vh - 140px));
+  overflow: hidden;
+  pointer-events: auto;
+  border: 1px solid rgba(153, 255, 205, 0.28);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(0, 255, 148, 0.14), transparent 32%),
+    radial-gradient(circle at 90% 0%, rgba(0, 209, 255, 0.12), transparent 30%),
+    rgba(2, 10, 8, 0.96);
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.54),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 42px rgba(0, 255, 148, 0.12);
+  backdrop-filter: blur(28px);
+}
+
+.sovereignSearchHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 26px 18px;
+  border-bottom: 1px solid rgba(153, 255, 205, 0.14);
+}
+
+.sovereignSearchHeader h3 {
+  margin: 4px 0 0;
+  color: rgba(244, 255, 249, 0.96);
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.sovereignSearchEyebrow {
+  margin: 0;
+  color: rgba(177, 255, 213, 0.76);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+.sovereignSearchClose {
+  border: 1px solid rgba(153, 255, 205, 0.2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(244, 255, 249, 0.78);
+  padding: 9px 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.sovereignSearchClose:hover {
+  border-color: rgba(153, 255, 205, 0.42);
+  background: rgba(0, 255, 148, 0.1);
+}
+
+.sovereignSearchStatus {
+  padding: 16px 26px;
+  color: rgba(226, 245, 235, 0.72);
+  font-size: 0.92rem;
+  border-bottom: 1px solid rgba(153, 255, 205, 0.1);
+}
+
+.sovereignSearchEmpty {
+  margin: 20px 26px 26px;
+  border: 1px dashed rgba(153, 255, 205, 0.28);
+  border-radius: 20px;
+  padding: 22px;
+  color: rgba(226, 245, 235, 0.74);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.sovereignSearchResults {
+  display: grid;
+  gap: 12px;
+  padding: 18px 22px 24px;
+  overflow: auto;
+  max-height: 470px;
+}
+
+.sovereignSearchResult {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  border: 1px solid rgba(153, 255, 205, 0.16);
+  border-radius: 20px;
+  padding: 16px 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.025)),
+    rgba(0, 0, 0, 0.18);
+}
+
+.sovereignSearchResult strong {
+  display: block;
+  margin-top: 4px;
+  color: rgba(244, 255, 249, 0.94);
+  font-size: 1rem;
+}
+
+.sovereignSearchResult p {
+  margin: 6px 0 0;
+  color: rgba(226, 245, 235, 0.66);
+  font-size: 0.86rem;
+}
+
+.sovereignSearchResult code {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid rgba(153, 255, 205, 0.16);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: rgba(177, 255, 213, 0.82);
+  background: rgba(0, 255, 148, 0.07);
+  font-size: 0.72rem;
+}
+
+.sovereignSearchGroup {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid rgba(0, 209, 255, 0.22);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: rgba(177, 231, 255, 0.8);
+  background: rgba(0, 209, 255, 0.07);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .sovereignSearchOverlay {
+    inset: 82px 14px auto 14px;
+  }
+
+  .sovereignSearchPanel {
+    width: calc(100vw - 28px);
+    border-radius: 22px;
+  }
+
+  .sovereignSearchHeader {
+    padding: 20px;
+  }
+
+  .sovereignSearchResult {
+    grid-template-columns: 1fr;
+  }
+
+  .sovereignSearchResult code {
+    max-width: 100%;
+  }
+}
