@@ -19425,3 +19425,280 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidenceCommandIndex = asyn
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COCKPIT_CONTRACT_VERSION =
+  'R71G-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-COCKPIT-CONTRACT-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidenceCockpitContract
+ * @description Produces a stable JSON-only cockpit data contract for future CRM evidence HUD, AI command surfaces, and diligence views.
+ * @collaboration R71F command index, R71E diligence room, CRM command routes, future cockpit integration.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidenceCockpitContract = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const commandIndexPacket = await buildLeadSearchRegulatorInvestorTerminalEvidenceCommandIndex({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const readinessIndex = commandIndexPacket.readinessIndex || {};
+  const cockpitWiringHints = commandIndexPacket.cockpitWiringHints || {};
+  const routeMap = commandIndexPacket.routeMap || {};
+
+  const cockpitKpis = [
+    {
+      key: 'terminalEvidence',
+      label: 'Terminal Evidence',
+      value: commandIndexPacket.buyerReadableStatus || 'UNKNOWN',
+      status:
+        commandIndexPacket.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE'
+          ? 'verified'
+          : 'degraded',
+      ready: commandIndexPacket.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE',
+    },
+    {
+      key: 'regulatorReady',
+      label: 'Regulator Ready',
+      value: readinessIndex.regulatorReady === true,
+      status: readinessIndex.regulatorReady === true ? 'ready' : 'blocked',
+      ready: readinessIndex.regulatorReady === true,
+    },
+    {
+      key: 'investorReady',
+      label: 'Investor Ready',
+      value: readinessIndex.investorReady === true,
+      status: readinessIndex.investorReady === true ? 'ready' : 'blocked',
+      ready: readinessIndex.investorReady === true,
+    },
+    {
+      key: 'auditReady',
+      label: 'Audit Ready',
+      value: readinessIndex.auditorReady === true,
+      status: readinessIndex.auditorReady === true ? 'ready' : 'blocked',
+      ready: readinessIndex.auditorReady === true,
+    },
+    {
+      key: 'recursion',
+      label: 'Proof Recursion',
+      value: readinessIndex.noR70F === true ? 'FROZEN' : 'OPEN',
+      status:
+        readinessIndex.noR70F === true && readinessIndex.recursiveLoopFrozen === true
+          ? 'frozen'
+          : 'open',
+      ready: readinessIndex.noR70F === true && readinessIndex.recursiveLoopFrozen === true,
+    },
+    {
+      key: 'persistence',
+      label: 'Persistence',
+      value: readinessIndex.persistenceMode || 'JSON_RESPONSE_ONLY',
+      status:
+        readinessIndex.jsonResponseOnly === true && readinessIndex.noFilesystemWrite === true
+          ? 'controlled'
+          : 'degraded',
+      ready: readinessIndex.jsonResponseOnly === true && readinessIndex.noFilesystemWrite === true,
+    },
+  ];
+
+  const cockpitTabs = [
+    {
+      id: 'overview',
+      label: 'Overview',
+      sourceCommand: 'open_terminal_diligence_room',
+      route: routeMap.diligenceRoom,
+      ready: readinessIndex.demoReady === true,
+    },
+    {
+      id: 'packet',
+      label: 'Evidence Packet',
+      sourceCommand: 'open_terminal_packet',
+      route: routeMap.packet,
+      ready:
+        commandIndexPacket.commandIndex?.find((item) => item.command === 'open_terminal_packet')
+          ?.readiness === true,
+    },
+    {
+      id: 'manifest',
+      label: 'Manifest',
+      sourceCommand: 'open_terminal_manifest',
+      route: routeMap.manifest,
+      ready:
+        commandIndexPacket.commandIndex?.find((item) => item.command === 'open_terminal_manifest')
+          ?.readiness === true,
+    },
+    {
+      id: 'summary',
+      label: 'Summary',
+      sourceCommand: 'open_terminal_summary',
+      route: routeMap.summary,
+      ready:
+        commandIndexPacket.commandIndex?.find((item) => item.command === 'open_terminal_summary')
+          ?.readiness === true,
+    },
+    {
+      id: 'closure',
+      label: 'Closure Proof',
+      sourceCommand: 'inspect_terminal_closure_verifier',
+      route: routeMap.terminalClosureVerifier,
+      ready:
+        commandIndexPacket.commandIndex?.find(
+          (item) => item.command === 'inspect_terminal_closure_verifier'
+        )?.readiness === true,
+    },
+  ];
+
+  const primaryActions = [
+    {
+      id: 'open_terminal_diligence_room',
+      label: 'Open diligence room',
+      intent: 'primary',
+      route: routeMap.diligenceRoom,
+      ready: cockpitWiringHints.primaryAction === 'open_terminal_diligence_room',
+    },
+    {
+      id: 'open_terminal_packet',
+      label: 'Open evidence packet',
+      intent: 'secondary',
+      route: routeMap.packet,
+      ready: cockpitWiringHints.secondaryActions?.includes('open_terminal_packet') === true,
+    },
+    {
+      id: 'open_terminal_manifest',
+      label: 'Open evidence manifest',
+      intent: 'secondary',
+      route: routeMap.manifest,
+      ready: cockpitWiringHints.secondaryActions?.includes('open_terminal_manifest') === true,
+    },
+    {
+      id: 'open_terminal_summary',
+      label: 'Open evidence summary',
+      intent: 'secondary',
+      route: routeMap.summary,
+      ready: cockpitWiringHints.secondaryActions?.includes('open_terminal_summary') === true,
+    },
+  ];
+
+  const evidenceHud = {
+    title: 'CRM Terminal Evidence HUD',
+    topKpi: cockpitWiringHints.topKpi || 'VERIFIED_TERMINAL_EVIDENCE',
+    fields: cockpitWiringHints.evidenceHudFields || [],
+    values: {
+      buyerReady: readinessIndex.buyerReady === true,
+      regulatorReady: readinessIndex.regulatorReady === true,
+      investorReady: readinessIndex.investorReady === true,
+      auditorReady: readinessIndex.auditorReady === true,
+      engineeringReady: readinessIndex.engineeringReady === true,
+      terminalStop: readinessIndex.terminalStop === true,
+      noR70F: readinessIndex.noR70F === true,
+      recursiveLoopFrozen: readinessIndex.recursiveLoopFrozen === true,
+      jsonResponseOnly: readinessIndex.jsonResponseOnly === true,
+      noFilesystemWrite: readinessIndex.noFilesystemWrite === true,
+    },
+    warningSuppression:
+      cockpitWiringHints.warningSuppression || 'No recursive proof expansion required.',
+  };
+
+  const aiSurfaceContract = {
+    title: 'Terminal Evidence AI Command Surface',
+    prompts: commandIndexPacket.aiCommandPrompts || [],
+    defaultPrompt: 'explain_terminal_evidence_status',
+    ready:
+      Array.isArray(commandIndexPacket.aiCommandPrompts) &&
+      commandIndexPacket.aiCommandPrompts.length === 4 &&
+      commandIndexPacket.aiCommandPrompts.every((prompt) => prompt.ready === true),
+  };
+
+  const cockpitContract = {
+    contractId: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COCKPIT_CONTRACT_R71G',
+    contractType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COCKPIT_CONTRACT',
+    generatedAt: new Date().toISOString(),
+    tenantId,
+    operator,
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: commandIndexPacket.recursiveLoopFrozen === true,
+    buyerReadableStatus: commandIndexPacket.buyerReadableStatus,
+    cockpitKpis,
+    cockpitTabs,
+    primaryActions,
+    evidenceHud,
+    aiSurfaceContract,
+    routeMap,
+    sourceCommandIndexSummary: {
+      ok: commandIndexPacket.ok === true,
+      version: commandIndexPacket.version || null,
+      status: commandIndexPacket.status || null,
+      indexType: commandIndexPacket.indexType || null,
+      commandCount: commandIndexPacket.commandIndex?.length || 0,
+      aiPromptCount: commandIndexPacket.aiCommandPrompts?.length || 0,
+      primaryAction: cockpitWiringHints.primaryAction || null,
+      topKpi: cockpitWiringHints.topKpi || null,
+      noR70F: commandIndexPacket.noR70F === true,
+      recursiveLoopFrozen: commandIndexPacket.recursiveLoopFrozen === true,
+    },
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const ok =
+    commandIndexPacket.ok === true &&
+    cockpitContract.productizationSurface === true &&
+    cockpitContract.terminalStop === true &&
+    cockpitContract.noR70F === true &&
+    cockpitContract.recursiveLoopFrozen === true &&
+    cockpitContract.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE' &&
+    cockpitKpis.length === 6 &&
+    cockpitKpis.every((item) => item.ready === true) &&
+    cockpitTabs.length === 5 &&
+    cockpitTabs.every((item) => item.ready === true) &&
+    primaryActions.length === 4 &&
+    primaryActions.every((item) => item.ready === true) &&
+    evidenceHud.topKpi === 'VERIFIED_TERMINAL_EVIDENCE' &&
+    evidenceHud.warningSuppression === 'No recursive proof expansion required.' &&
+    Object.values(evidenceHud.values).every(Boolean) &&
+    aiSurfaceContract.ready === true &&
+    cockpitContract.sourceCommandIndexSummary.ok === true &&
+    cockpitContract.sourceCommandIndexSummary.commandCount === 7 &&
+    cockpitContract.sourceCommandIndexSummary.aiPromptCount === 4 &&
+    cockpitContract.sourceCommandIndexSummary.noR70F === true &&
+    cockpitContract.sourceCommandIndexSummary.recursiveLoopFrozen === true &&
+    cockpitContract.jsonResponseOnly === true &&
+    cockpitContract.noFilesystemWrite === true &&
+    cockpitContract.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COCKPIT_CONTRACT_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COCKPIT_CONTRACT_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COCKPIT_CONTRACT_DEGRADED',
+    contractType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COCKPIT_CONTRACT',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: cockpitContract.recursiveLoopFrozen,
+    buyerReadableStatus: cockpitContract.buyerReadableStatus,
+    cockpitKpis,
+    cockpitTabs,
+    primaryActions,
+    evidenceHud,
+    aiSurfaceContract,
+    routeMap,
+    cockpitContract,
+    sourceTerminalEvidenceCommandIndex: commandIndexPacket,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
