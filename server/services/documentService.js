@@ -25,19 +25,22 @@ import NodeCache from 'node-cache';
 import logger from '../utils/logger.js';
 import { appendAuditEntry } from '../lib/auditLedger.js';
 import { generateDocumentHash, createTimestamp } from '../lib/ots.js';
+import { installPdfRuntimePolyfills } from '../utils/pdfRuntimePolyfills.js';
 
 // Native execution bridge for older non-ESM compliance modules
 const require = createRequire(import.meta.url);
+installPdfRuntimePolyfills();
 const pdfParse = require('pdf-parse');
 
 const DOC_CONFIG = {
   BUCKET_NAME: 'wilsy_sovereign_vault',
   CACHE_TTL: 1800, // 30 Minutes of high-speed local memory data caching
   PII_PATTERNS: {
-    SA_ID: /(?<=\b)(?<year>\d{2})(?<month>0[1-9]|1[0-2])(?<day>0[1-9]|[12]\d|3[01])(?<gender>\d{4})(?<citizenship>[01])(?<race>8|9)(?<checksum>\d)(?=\b)/,
+    SA_ID:
+      /(?<=\b)(?<year>\d{2})(?<month>0[1-9]|1[0-2])(?<day>0[1-9]|[12]\d|3[01])(?<gender>\d{4})(?<citizenship>[01])(?<race>8|9)(?<checksum>\d)(?=\b)/,
     MOBILE: /(?:\+27|0)\s*[6-8]\d\s*\d{3}\s*\d{4}\b/,
-    EMAIL: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
-  }
+    EMAIL: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+  },
 };
 
 const documentCache = new NodeCache({ stdTTL: DOC_CONFIG.CACHE_TTL, checkperiod: 300 });
@@ -47,7 +50,6 @@ const documentCache = new NodeCache({ stdTTL: DOC_CONFIG.CACHE_TTL, checkperiod:
 // ============================================================================
 
 export class DocumentService {
-
   /**
    * Directly injects, parses, and commits a files payload into the multi-tenant vault infrastructure.
    * Runs asynchronous background deep scanning routines to categorize POPIA exposure hazards.
@@ -59,7 +61,9 @@ export class DocumentService {
     const { tenantId, user } = context;
     const documentId = `DOC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
 
-    logger.info(`[DOCUMENT-SERVICE] 📥 Stream ingestion initialized for [${metadata.filename}] onto Tenant: [${tenantId}]`);
+    logger.info(
+      `[DOCUMENT-SERVICE] 📥 Stream ingestion initialized for [${metadata.filename}] onto Tenant: [${tenantId}]`
+    );
 
     try {
       // 1. Calculate Unaltered Binary Integrity Digest
@@ -70,7 +74,10 @@ export class DocumentService {
       if (metadata.mimetype === 'application/pdf') {
         const parsedPdf = await pdfParse(fileBuffer);
         extractedText = parsedPdf.text;
-      } else if (metadata.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      } else if (
+        metadata.mimetype ===
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ) {
         const parsedDocx = await mammoth.extractRawText({ buffer: fileBuffer });
         extractedText = parsedDocx.value;
       } else {
@@ -92,8 +99,8 @@ export class DocumentService {
           documentId,
           tenantId,
           owner: user?.id || 'SYSTEM_DAEMON',
-          checksum: rawContentHash
-        }
+          checksum: rawContentHash,
+        },
       });
 
       await new Promise((resolve, reject) => {
@@ -113,7 +120,11 @@ export class DocumentService {
         resourceType: 'DOCUMENT',
         resourceId: documentId,
         actor: user?.id || 'SYSTEM_DAEMON',
-        details: { filename: metadata.filename, piiRisk: piiAssessment.riskLevel, hash: rawContentHash }
+        details: {
+          filename: metadata.filename,
+          piiRisk: piiAssessment.riskLevel,
+          hash: rawContentHash,
+        },
       });
 
       return {
@@ -123,9 +134,8 @@ export class DocumentService {
         integrityHash: rawContentHash,
         piiStatus: piiAssessment,
         timestampAnchor: cryptographicTimestampReceipt.anchorId,
-        executionTimeMs: Date.now() - startTime
+        executionTimeMs: Date.now() - startTime,
       };
-
     } catch (error) {
       logger.error(`[DOCUMENT-FRACTURE] Ingestion processing phase rejected: ${error.message}`);
       throw error;
@@ -162,7 +172,7 @@ export class DocumentService {
       containsPII: matchCount > 0,
       riskLevel,
       indicators: [...new Set(itemsIdentified)],
-      score: matchCount
+      score: matchCount,
     };
   }
 }
