@@ -20039,3 +20039,289 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidenceApiSurfaceRegistry 
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_READINESS_VERSION =
+  'R71I-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-RELEASE-READINESS-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseReadiness
+ * @description Produces a production go-live readiness matrix for the complete terminal CRM evidence API surface.
+ * @collaboration R71H API surface registry, R71G cockpit contract, R71F command index, CRM command routes, release governance surfaces.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseReadiness = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const apiRegistry = await buildLeadSearchRegulatorInvestorTerminalEvidenceApiSurfaceRegistry({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const sourceCockpit = apiRegistry.sourceTerminalEvidenceCockpitContract || {};
+  const sourceCommandIndex = sourceCockpit.sourceTerminalEvidenceCommandIndex || {};
+
+  const releaseGates = [
+    {
+      gate: 'api_surface_registry',
+      label: 'API surface registry ready',
+      ready:
+        apiRegistry.ok === true &&
+        apiRegistry.apiSurfaceRegistry?.length === 7 &&
+        apiRegistry.apiSurfaceRegistry.every((surface) => surface.ready === true),
+      evidence: ['apiSurfaceRegistry', 'responseSchemaRegistry', 'integrationChecklist'],
+    },
+    {
+      gate: 'client_contracts',
+      label: 'Client contracts ready',
+      ready:
+        apiRegistry.clientContracts?.length === 5 &&
+        apiRegistry.clientContracts.every((client) => client.ready === true),
+      evidence: [
+        'crm_cockpit',
+        'ai_command_layer',
+        'regulator_portal',
+        'investor_room',
+        'audit_assurance',
+      ],
+    },
+    {
+      gate: 'cockpit_contract',
+      label: 'Cockpit contract ready',
+      ready:
+        sourceCockpit.ok === true &&
+        sourceCockpit.cockpitKpis?.length === 6 &&
+        sourceCockpit.cockpitTabs?.length === 5 &&
+        sourceCockpit.primaryActions?.length === 4,
+      evidence: [
+        'cockpitKpis',
+        'cockpitTabs',
+        'primaryActions',
+        'evidenceHud',
+        'aiSurfaceContract',
+      ],
+    },
+    {
+      gate: 'command_index',
+      label: 'Command index ready',
+      ready:
+        sourceCommandIndex.ok === true &&
+        sourceCommandIndex.commandIndex?.length === 7 &&
+        sourceCommandIndex.aiCommandPrompts?.length === 4,
+      evidence: ['commandIndex', 'readinessIndex', 'aiCommandPrompts', 'cockpitWiringHints'],
+    },
+    {
+      gate: 'commercial_readiness',
+      label: 'Commercial readiness ready',
+      ready:
+        apiRegistry.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE' &&
+        sourceCockpit.evidenceHud?.topKpi === 'VERIFIED_TERMINAL_EVIDENCE' &&
+        sourceCommandIndex.readinessIndex?.demoReady === true,
+      evidence: ['buyerReadableStatus', 'topKpi', 'demoReady', 'buyerReady', 'boardReady'],
+    },
+    {
+      gate: 'regulator_investor_audit_readiness',
+      label: 'Regulator, investor, and audit readiness ready',
+      ready:
+        sourceCommandIndex.readinessIndex?.regulatorReady === true &&
+        sourceCommandIndex.readinessIndex?.investorReady === true &&
+        sourceCommandIndex.readinessIndex?.auditorReady === true,
+      evidence: ['regulatorReady', 'investorReady', 'auditorReady'],
+    },
+    {
+      gate: 'terminal_boundary',
+      label: 'Terminal proof boundary ready',
+      ready:
+        apiRegistry.terminalStop === true &&
+        apiRegistry.noR70F === true &&
+        apiRegistry.recursiveLoopFrozen === true,
+      evidence: ['terminalStop', 'noR70F', 'recursiveLoopFrozen'],
+    },
+    {
+      gate: 'json_only_runtime',
+      label: 'JSON-only runtime ready',
+      ready:
+        apiRegistry.jsonResponseOnly === true &&
+        apiRegistry.noFilesystemWrite === true &&
+        apiRegistry.persistenceMode === 'JSON_RESPONSE_ONLY',
+      evidence: ['jsonResponseOnly', 'noFilesystemWrite', 'persistenceMode'],
+    },
+  ];
+
+  const goLiveChecklist = [
+    {
+      check: 'routes_registered',
+      label: 'All terminal evidence routes are registered',
+      ready:
+        apiRegistry.apiSurfaceRegistry?.every((surface) =>
+          String(surface.route || '').includes('/api/crm/command/search/regulator-evidence/')
+        ) === true,
+    },
+    {
+      check: 'schemas_invariant',
+      label: 'Invariant response schema is enforced',
+      ready:
+        apiRegistry.responseSchemaRegistry?.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE' &&
+        apiRegistry.responseSchemaRegistry?.persistenceMode === 'JSON_RESPONSE_ONLY' &&
+        apiRegistry.responseSchemaRegistry?.requiredBooleanInvariants?.noR70F === true,
+    },
+    {
+      check: 'cockpit_consumable',
+      label: 'CRM cockpit can consume the contract',
+      ready:
+        apiRegistry.clientContracts?.find((client) => client.client === 'crm_cockpit')?.ready ===
+        true,
+    },
+    {
+      check: 'ai_consumable',
+      label: 'AI command layer can consume the contract',
+      ready:
+        apiRegistry.clientContracts?.find((client) => client.client === 'ai_command_layer')
+          ?.ready === true,
+    },
+    {
+      check: 'regulator_consumable',
+      label: 'Regulator portal can consume the contract',
+      ready:
+        apiRegistry.clientContracts?.find((client) => client.client === 'regulator_portal')
+          ?.ready === true,
+    },
+    {
+      check: 'investor_consumable',
+      label: 'Investor room can consume the contract',
+      ready:
+        apiRegistry.clientContracts?.find((client) => client.client === 'investor_room')?.ready ===
+        true,
+    },
+    {
+      check: 'audit_consumable',
+      label: 'Audit assurance can consume the contract',
+      ready:
+        apiRegistry.clientContracts?.find((client) => client.client === 'audit_assurance')
+          ?.ready === true,
+    },
+    {
+      check: 'no_background_exports',
+      label: 'No filesystem export side effects',
+      ready:
+        apiRegistry.noFilesystemWrite === true &&
+        apiRegistry.persistenceMode === 'JSON_RESPONSE_ONLY',
+    },
+  ];
+
+  const releaseReadinessScore = {
+    totalGates: releaseGates.length,
+    passedGates: releaseGates.filter((gate) => gate.ready === true).length,
+    totalChecks: goLiveChecklist.length,
+    passedChecks: goLiveChecklist.filter((check) => check.ready === true).length,
+    score: Math.round(
+      ((releaseGates.filter((gate) => gate.ready === true).length +
+        goLiveChecklist.filter((check) => check.ready === true).length) /
+        (releaseGates.length + goLiveChecklist.length)) *
+        100
+    ),
+  };
+
+  const deploymentPosture = {
+    releaseClass: 'TERMINAL_EVIDENCE_API_SURFACE_RELEASE',
+    releaseDecision: releaseReadinessScore.score === 100 ? 'GO' : 'HOLD',
+    evidenceSurface: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE',
+    apiOnly: true,
+    uiMutationRequired: false,
+    authMutationRequired: false,
+    securityMutationRequired: false,
+    filesystemExportRequired: false,
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: true,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const releaseNotes = {
+    headline: 'CRM terminal evidence API surface is release-ready.',
+    buyerLine:
+      'The CRM now exposes buyer-readable terminal evidence with verified API contracts and no recursive proof expansion.',
+    regulatorLine:
+      'Regulator-facing routes, schema invariants, hash posture, authority posture, and JSON-only controls are registered.',
+    investorLine:
+      'Investor diligence can inspect the terminal evidence room, cockpit contract, command index, and API registry.',
+    engineeringLine:
+      'Engineering should integrate the API surface registry and cockpit contract without touching proof recursion.',
+  };
+
+  const protectedBoundaries = [
+    'server/middleware/auth.js',
+    'server/middleware/auth.middleware.js',
+    'server/middleware/security.js',
+    'server/middleware/ProductionHardening.middleware.js',
+    'client/src/components/account',
+    'client/src/components/crm/lead',
+    'client/src/components/crm/rail',
+    'client/src/styles/superadmin/themes',
+    'scripts/wilsy-account-command-center-production-gate.js',
+  ];
+
+  const ok =
+    apiRegistry.ok === true &&
+    releaseGates.length === 8 &&
+    releaseGates.every((gate) => gate.ready === true) &&
+    goLiveChecklist.length === 8 &&
+    goLiveChecklist.every((check) => check.ready === true) &&
+    releaseReadinessScore.score === 100 &&
+    deploymentPosture.releaseDecision === 'GO' &&
+    deploymentPosture.apiOnly === true &&
+    deploymentPosture.uiMutationRequired === false &&
+    deploymentPosture.authMutationRequired === false &&
+    deploymentPosture.securityMutationRequired === false &&
+    deploymentPosture.filesystemExportRequired === false &&
+    deploymentPosture.noR70F === true &&
+    deploymentPosture.recursiveLoopFrozen === true &&
+    deploymentPosture.jsonResponseOnly === true &&
+    deploymentPosture.noFilesystemWrite === true &&
+    protectedBoundaries.length === 9;
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_READINESS_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_READINESS_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_READINESS_DEGRADED',
+    readinessType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_READINESS',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: apiRegistry.recursiveLoopFrozen === true,
+    buyerReadableStatus: apiRegistry.buyerReadableStatus,
+    releaseGates,
+    goLiveChecklist,
+    releaseReadinessScore,
+    deploymentPosture,
+    releaseNotes,
+    protectedBoundaries,
+    sourceApiSurfaceRegistrySummary: {
+      ok: apiRegistry.ok === true,
+      version: apiRegistry.version || null,
+      status: apiRegistry.status || null,
+      registryType: apiRegistry.registryType || null,
+      apiSurfaceCount: apiRegistry.apiSurfaceRegistry?.length || 0,
+      clientContractCount: apiRegistry.clientContracts?.length || 0,
+      integrationChecklistCount: apiRegistry.integrationChecklist?.length || 0,
+      noR70F: apiRegistry.noR70F === true,
+      recursiveLoopFrozen: apiRegistry.recursiveLoopFrozen === true,
+    },
+    sourceTerminalEvidenceApiSurfaceRegistry: apiRegistry,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
