@@ -1590,11 +1590,13 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
               value={searchTerm}
               onChange={(event) => {
                 const query = event.target.value;
+                const normalizedQuery = query.trim();
+
                 setSearchTerm(query);
                 setSovereignSearchQuery(query);
-                setSovereignSearchOpen(true);
+                setSovereignSearchOpen(Boolean(normalizedQuery));
 
-                if (query.trim().length >= 2) {
+                if (normalizedQuery.length >= 2) {
                   searchCrmCommandFabric({
                     tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
                     query,
@@ -1602,10 +1604,21 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   }).catch(() => {});
                 }
               }}
-              onFocus={() => setSovereignSearchOpen(true)}
+              onFocus={(event) => {
+                const query = event.currentTarget.value;
+                setSovereignSearchQuery(query);
+                setSovereignSearchOpen(true);
+              }}
               onKeyDown={(event) => {
+                const query = String(event.currentTarget.value || '');
+                const normalizedQuery = query.trim();
+
                 if (event.key === 'Enter') {
-                  setSovereignSearchOpen(true);
+                  event.preventDefault();
+                  setSearchTerm(query);
+                  setSovereignSearchQuery(query);
+                  setSovereignSearchOpen(Boolean(normalizedQuery));
+                  return;
                 }
 
                 if (event.key === 'Escape') {
@@ -1615,68 +1628,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
               placeholder="Search pipeline, accounts, evidence"
               aria-label="Global CRM search"
               data-wilsy-r73b-search-input="true"
-              data-wilsy-r74a-search-typing-feedback="true"
-              data-wilsy-r74a-search-submit-feedback="true"
-              data-wilsy-r74a-search-submit-state="idle"
-              onKeyDownCapture={(event) => {
-                const key = event.key;
-
-                if (key !== 'Enter' && key !== 'Escape') {
-                  return;
-                }
-
-                const input = event.currentTarget;
-                const query = String(input.value || '').trim();
-                const statusNode = input.parentElement?.querySelector('[data-wilsy-r74a-search-submit-status="true"]');
-
-                if (key === 'Escape') {
-                  input.dataset.wilsyR74aSearchSubmitState = 'cleared';
-                  input.setAttribute('aria-busy', 'false');
-
-                  if (statusNode) {
-                    statusNode.textContent = 'CLEARED — READY';
-                  }
-
-                  return;
-                }
-
-                if (!query) {
-                  input.dataset.wilsyR74aSearchSubmitState = 'empty';
-                  input.setAttribute('aria-busy', 'false');
-
-                  if (statusNode) {
-                    statusNode.textContent = 'EMPTY QUERY — TYPE FIRST';
-                  }
-
-                  return;
-                }
-
-                input.dataset.wilsyR74aSearchSubmitState = 'searching';
-                input.setAttribute('aria-busy', 'true');
-
-                if (statusNode) {
-                  statusNode.textContent = 'SEARCHING — ' + query;
-                }
-
-                window.dispatchEvent(new CustomEvent('wilsy:crm-search-submit-feedback', {
-                  detail: {
-                    query,
-                    source: 'crm-sovereign-search',
-                    submittedAt: new Date().toISOString(),
-                  },
-                }));
-
-                window.setTimeout(() => {
-                  if (input.dataset.wilsyR74aSearchSubmitState === 'searching') {
-                    input.dataset.wilsyR74aSearchSubmitState = 'submitted';
-                    input.setAttribute('aria-busy', 'false');
-
-                    if (statusNode) {
-                      statusNode.textContent = 'INITIATED — ' + query;
-                    }
-                  }
-                }, 420);
-              }}
+              data-wilsy-r74c-search-results-driver="true"
             />
             <span
               className={styles.sovereignSearchSubmitFeedback}
