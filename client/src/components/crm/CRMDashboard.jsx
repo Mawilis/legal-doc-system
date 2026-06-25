@@ -1,5437 +1,1677 @@
 /* eslint-disable */
 /**
- * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- * ║ WILSY OS - CRM COMMAND CENTER [R18AD76-CRM-VISUAL-BLUEPRINT-SHELL]                                                                         ║
- * ║ [EXECUTIVE DASHBOARD PARITY | ZOHO-CLEAN MODULE RAIL | SOURCE-TRUTH CRM | TENANT BRANDING RUNTIME | WILSY AI COMMAND ENGINE]        ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ VERSION: R18AD76-CRM-VISUAL-BLUEPRINT-SHELL | PRODUCTION READY | CRM OPERATING SYSTEM SURFACE                                              ║
- * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/crm/CRMDashboard.jsx                                      ║
- * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
- * ║ COLLABORATION & SOVEREIGN SIGN-OFF:                                                                                                   ║
- * ║ • Wilson Khanyezi (Founder/CEO) - Mandated ExecutiveDashboard as the Wilsy OS benchmark and rejected endless scroll CRM layouts.     ║
- * ║ • AI Engineering (Codex) - ARCHITECTED: Rebuilt CRM as a clean operating shell with real service routes and no fabricated records.   ║
- * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+ * ║ WILSY OS - CRM COMMAND CENTER                                                                                        ║
+ * ║ SOVEREIGN SALES INTELLIGENCE | SOURCE-LED PIPELINE | COMPLIANCE HUD | INVESTOR TELEMETRY | ACCOUNT COMMAND CENTER     ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ ABSOLUTE PATH: /Users/wilsonkhanyezi/legal-doc-system/client/src/components/crm/CRMDashboard.jsx                       ║
+ * ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
+ * ║ COLLABORATION                                                                                                          ║
+ * ║ 1. Wilson Khanyezi - Mandated investor-grade CRM capable of sovereign sales intelligence and forensic proof posture.   ║
+ * ║ 2. AI Engineering - Rebuilt the CRM as one source-led operating shell with no visible build labels or fake records.    ║
+ * ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+ *
+ * @fileoverview Wilsy OS CRM Command Center.
+ * This surface renders one CRM shell only. It does not display internal build labels, fake customer records,
+ * or duplicate legacy workspaces. Every metric is derived from live source routes or shown as a source gap.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
-  AlertCircle,
+  AlertTriangle,
   BarChart3,
-  Briefcase,
   Building2,
-  Calendar,
-  CheckCircle,
-  Clock,
+  CalendarDays,
+  CheckCircle2,
+  CheckSquare,
+  ChevronRight,
+  CircleDollarSign,
+  Command,
+  Crown,
   Database,
-  Download,
+  FileCheck2,
   FileText,
-  Folder,
+  Fingerprint,
   Home,
-  LayoutGrid,
-  Loader2,
-  MapPin,
-  Megaphone,
-  MessageSquare,
-  PhoneCall,
+  LockKeyhole,
+  Mail,
+  Network,
+  Phone,
   Plus,
-  RefreshCw,
+  RefreshCcw,
   Search,
   Shield,
   Sparkles,
   Target,
-  TrendingUp,
   UploadCloud,
-  UserCog,
+  User,
   Users,
-  Wand2,
-  X
+  Zap
 } from 'lucide-react';
-import * as crmService from '../../services/crmService';
-import {
-  activateWilsyAILicense,
-  buildWilsyAiLicensePlan,
-  createWilsyAIClientProof,
-  recordWilsyAIUsage,
-  syncWilsyAIEntitlements
-} from '../../services/WilsyAIService';
-import {
-  WILSY_CRM_CATALOG_READINESS,
-  WILSY_CRM_IMPORT_VENDOR_CATALOG,
-  WILSY_CRM_MODULE_CATALOG,
-  WILSY_CRM_MODULE_CATALOG_VERSION,
-  WILSY_CRM_ROUTE_POSTURE,
-  WILSY_CRM_WORKSPACE_CATALOG,
-  buildWilsyCrmModuleEnvelope
-} from '../../data/wilsyCrmModuleCatalog.js';
-import {
-  WILSY_CRM_COMMAND_CLIENT_HEALTH,
-  WILSY_CRM_COMMAND_CLIENT_VERSION,
-  createWilsyCrmRecord,
-  deleteWilsyCrmRecord,
-  exportWilsyCrmRecords,
-  getWilsyCrmCommandCenter,
-  getWilsyCrmSourceRegistryEvidence,
-  importWilsyCrmRecords,
-  listWilsyCrmRecords,
-  previewWilsyCrmImportRecords,
-  updateWilsyCrmRecord
-} from '../../services/wilsyCrmCommandClient.js';
-import wilsyOfficialLogo from '../../assets/logo/wilsy.jpeg';
 import WilsyAccountCommandCenter from '../account/WilsyAccountCommandCenter';
-import WilsyOSDashboardTopRail from '../os/WilsyOSDashboardTopRail';
+import {
+  DEFAULT_OPERATING_SKINS as WILSY_OPERATING_SKINS,
+  buildVisualTokens as buildWilsyVisualTokens,
+  commitWilsyThemeRuntime,
+  readStoredWilsyThemeRuntime,
+  resolveAutoMode as resolveWilsyAutoMode,
+  subscribeWilsyThemeRuntime
+} from '../account/wilsyAccountThemeTokens';
+import { useTenants } from '../../contexts/tenantContext';
+import wilsyLogo from '../../assets/logo/wilsy.jpeg';
 import styles from './CRMDashboard.module.css';
+
+import { searchCrmCommandFabric, syncCrmCommandFabric, createCrmCommandLead } from '../../services/crmService.js';
+
+import CrmSovereignSideRail from './rail/CrmSovereignSideRail.jsx';
+
+import WilsyLeadOperatingRoom from './lead/WilsyLeadOperatingRoom.jsx';
+
 import TerminalEvidenceCockpitPanel from './TerminalEvidenceCockpitPanel.js';
-
-
-
-const WILSY_R18AD67_CRM_DASHBOARD_CATALOG_COMMAND_WIRE = 'R18AD67-CRM-DASHBOARD-CATALOG-COMMAND-WIRE';
-
-const WILSY_R18AD69_CRM_CATALOG_RENDER_GUARD = 'R18AD69-CRM-CATALOG-RENDER-GUARD';
-const WILSY_R18AD73_CRM_WILSY_AI_MONETISATION_LAYER = 'R18AD73-CRM-WILSY-AI-MONETISATION-LAYER';
-const WILSY_R18AD76_CRM_VISUAL_BLUEPRINT_SHELL = 'R18AD76-CRM-VISUAL-BLUEPRINT-SHELL';
-const WILSY_R18AD74_CRM_AI_ENTITLEMENT_LOOP_GUARD = 'R18AD74-CRM-AI-ENTITLEMENT-LOOP-GUARD';
-const WILSY_CRM_AI_ENTITLEMENT_SYNC_COOLDOWN_MS = 15 * 60 * 1000;
-
-
-const WILSY_R9U_CRM_LIVE_OVERLAY_INLINE_IDENTITY_FIX = 'WILSY_R9U_CRM_LIVE_OVERLAY_INLINE_IDENTITY_FIX_ACTIVE';
-
-/**
- * @function applyWilsyR9UInlineStyle
- * @description Applies important inline styles to the active CRM overlay Command Identity nodes when CSS module cascade is insufficient.
- * @collaboration Repairs the CRM Account Command Center identity surface without changing auth, tenant state, or Account Center source data.
- */
-const applyWilsyR9UInlineStyle = (node, styles = {}) => {
-  if (!node || !node.style) return;
-
-  Object.entries(styles).forEach(([property, value]) => {
-    const cssProperty = String(property).replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
-    node.style.setProperty(cssProperty, value, 'important');
-  });
-};
-
-/**
- * @function repairWilsyR9UCrmOverlayIdentity
- * @description Finds the live CRM account settings overlay and unclips the restored R7C Command Identity hierarchy.
- * @collaboration Preserves the restored R7C identity shell while making command labels, evidence seals, and tenant scope readable.
- */
-const repairWilsyR9UCrmOverlayIdentity = () => {
-  if (typeof document === 'undefined') return;
-
-  const overlays = Array.from(document.querySelectorAll('[class*="accountSettingsOverlay"]'));
-
-  overlays.forEach((overlay) => {
-    overlay.setAttribute('data-wilsy-r9u-crm-overlay-identity-fixed', 'true');
-
-    const identityCards = overlay.querySelectorAll('[data-wilsy-identity-chrome], [data-wilsy-r7c-identity-card="true"]');
-    const identityShells = overlay.querySelectorAll('[data-wilsy-r7c-identity-ui="true"]');
-    const identityContent = overlay.querySelectorAll('.wilsy-r7c-identity-content');
-    const eyebrowRows = overlay.querySelectorAll('.wilsy-r7c-identity-eyebrow');
-    const commandLabels = overlay.querySelectorAll('.wilsy-r7c-command-label');
-    const verifiedLabels = overlay.querySelectorAll('.wilsy-r7c-verified-label');
-    const identityNames = overlay.querySelectorAll('.wilsy-r7c-identity-name');
-    const accountRows = overlay.querySelectorAll('.wilsy-r7c-identity-account');
-    const evidenceRows = overlay.querySelectorAll('.wilsy-r7f-identity-evidence');
-    const evidenceItems = overlay.querySelectorAll('.wilsy-r7f-identity-evidence span, .wilsy-r7f-clause-anchor, .wilsy-r7f-identity-seal');
-    const tenantPills = overlay.querySelectorAll('.wilsy-r7c-tenant-pill');
-    const tenantTexts = overlay.querySelectorAll('.wilsy-r7c-tenant-text');
-
-    identityCards.forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        width: '100%',
-        maxWidth: '100%',
-        minWidth: '0',
-        maxHeight: 'none',
-        overflow: 'visible',
-        boxSizing: 'border-box'
-      });
-    });
-
-    identityShells.forEach((node) => {
-      node.setAttribute('data-wilsy-r9u-active-identity-shell', 'true');
-      applyWilsyR9UInlineStyle(node, {
-        width: '100%',
-        maxWidth: '100%',
-        minWidth: '0',
-        display: 'grid',
-        gridTemplateColumns: 'clamp(104px, 7vw, 132px) minmax(0, 1fr)',
-        gap: 'clamp(28px, 3vw, 44px)',
-        alignItems: 'start',
-        overflow: 'visible',
-        boxSizing: 'border-box'
-      });
-    });
-
-    identityContent.forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        display: 'grid',
-        gridTemplateRows: 'auto auto auto auto auto',
-        alignContent: 'start',
-        gap: '14px',
-        width: '100%',
-        maxWidth: '100%',
-        minWidth: '0',
-        overflow: 'visible',
-        boxSizing: 'border-box'
-      });
-    });
-
-    eyebrowRows.forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr)',
-        gridAutoRows: 'auto',
-        justifyItems: 'start',
-        alignItems: 'start',
-        gap: '8px',
-        width: '100%',
-        maxWidth: '100%',
-        minWidth: '0',
-        overflow: 'visible',
-        whiteSpace: 'normal'
-      });
-    });
-
-    [...commandLabels, ...verifiedLabels].forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        display: 'inline-flex',
-        width: 'max-content',
-        minWidth: 'max-content',
-        maxWidth: 'none',
-        flex: '0 0 auto',
-        overflow: 'visible',
-        textOverflow: 'clip',
-        whiteSpace: 'nowrap',
-        overflowWrap: 'normal',
-        letterSpacing: '0.12em',
-        fontSize: 'clamp(9px, 0.62vw, 11px)',
-        lineHeight: '1.15'
-      });
-    });
-
-    identityNames.forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        width: '100%',
-        maxWidth: '100%',
-        minWidth: '0',
-        overflow: 'visible',
-        textOverflow: 'clip',
-        whiteSpace: 'normal',
-        overflowWrap: 'anywhere'
-      });
-    });
-
-    accountRows.forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        width: '100%',
-        maxWidth: '100%',
-        minWidth: '0',
-        overflow: 'visible',
-        textOverflow: 'clip',
-        whiteSpace: 'normal',
-        overflowWrap: 'anywhere'
-      });
-    });
-
-    evidenceRows.forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        gap: '8px 14px',
-        width: '100%',
-        maxWidth: '100%',
-        minWidth: '100%',
-        overflow: 'visible',
-        whiteSpace: 'normal'
-      });
-    });
-
-    evidenceItems.forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        display: 'inline-flex',
-        width: 'max-content',
-        minWidth: 'max-content',
-        maxWidth: 'none',
-        flex: '0 0 auto',
-        overflow: 'visible',
-        textOverflow: 'clip',
-        whiteSpace: 'nowrap',
-        overflowWrap: 'normal',
-        letterSpacing: '0.10em',
-        fontSize: 'clamp(8px, 0.54vw, 10px)',
-        lineHeight: '1.18'
-      });
-    });
-
-
-    /* WILSY_R9U_C_ZERO_WIDTH_COLLAPSE_HARDENING */
-    [...eyebrowRows, ...evidenceRows].forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        position: 'relative',
-        display: 'flex',
-        flexWrap: 'wrap',
-        width: '100%',
-        minWidth: '100%',
-        maxWidth: '100%',
-        inlineSize: '100%',
-        minInlineSize: '100%',
-        maxInlineSize: '100%',
-        blockSize: 'auto',
-        contain: 'none',
-        clipPath: 'none',
-        overflow: 'visible',
-        textOverflow: 'clip',
-        whiteSpace: 'normal',
-        transform: 'none'
-      });
-    });
-
-    [...commandLabels, ...verifiedLabels, ...evidenceItems].forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        position: 'relative',
-        display: 'inline-flex',
-        flex: '0 0 auto',
-        flexShrink: '0',
-        flexGrow: '0',
-        width: 'max-content',
-        minWidth: 'max-content',
-        maxWidth: 'none',
-        inlineSize: 'max-content',
-        minInlineSize: 'max-content',
-        maxInlineSize: 'none',
-        blockSize: 'auto',
-        minBlockSize: 'auto',
-        contain: 'none',
-        clipPath: 'none',
-        overflow: 'visible',
-        textOverflow: 'clip',
-        whiteSpace: 'nowrap',
-        overflowWrap: 'normal',
-        wordBreak: 'normal',
-        transform: 'none'
-      });
-    });
-
-
-    /* WILSY_R9V_CRM_READABLE_COMMAND_IDENTITY_RAIL */
-    identityContent.forEach((contentNode) => {
-      const originalEyebrow = contentNode.querySelector('.wilsy-r7c-identity-eyebrow');
-      const originalEvidence = contentNode.querySelector('.wilsy-r7f-identity-evidence');
-
-      const commandText = originalEyebrow?.querySelector('.wilsy-r7c-command-label')?.textContent?.trim() || 'Command Identity';
-      const verifiedText = originalEyebrow?.querySelector('.wilsy-r7c-verified-label')?.textContent?.trim() || 'Tenant Verified';
-      const evidenceText = originalEvidence?.textContent?.replace(/\s+/g, ' ')?.trim() || 'POPIA S19 • TENANT AUTHORITY CID';
-
-      let readableHeader = contentNode.querySelector('[data-wilsy-r9v-readable-identity-header="true"]');
-
-      if (!readableHeader) {
-        readableHeader = document.createElement('div');
-        readableHeader.setAttribute('data-wilsy-r9v-readable-identity-header', 'true');
-
-        if (originalEyebrow?.parentNode) {
-          originalEyebrow.parentNode.insertBefore(readableHeader, originalEyebrow);
-        } else {
-          contentNode.prepend(readableHeader);
-        }
-      }
-
-      readableHeader.textContent = '';
-
-      [commandText, verifiedText].forEach((labelText) => {
-        const label = document.createElement('span');
-        label.textContent = labelText;
-        readableHeader.appendChild(label);
-
-        applyWilsyR9UInlineStyle(label, {
-          display: 'inline-flex',
-          width: 'max-content',
-          minWidth: 'max-content',
-          maxWidth: '100%',
-          overflow: 'visible',
-          textOverflow: 'clip',
-          whiteSpace: 'nowrap',
-          letterSpacing: '0.14em',
-          fontSize: 'clamp(10px, 0.72vw, 13px)',
-          lineHeight: '1.15',
-          fontWeight: '900',
-          textTransform: 'uppercase'
-        });
-      });
-
-      applyWilsyR9UInlineStyle(readableHeader, {
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        gap: '8px 22px',
-        width: '100%',
-        minWidth: '100%',
-        maxWidth: '100%',
-        overflow: 'visible',
-        whiteSpace: 'normal',
-        contain: 'none',
-        clipPath: 'none'
-      });
-
-      let readableEvidence = contentNode.querySelector('[data-wilsy-r9v-readable-identity-evidence="true"]');
-
-      if (!readableEvidence) {
-        readableEvidence = document.createElement('div');
-        readableEvidence.setAttribute('data-wilsy-r9v-readable-identity-evidence', 'true');
-
-        if (originalEvidence?.parentNode) {
-          originalEvidence.parentNode.insertBefore(readableEvidence, originalEvidence);
-        } else {
-          contentNode.appendChild(readableEvidence);
-        }
-      }
-
-      readableEvidence.textContent = '';
-
-      const normalizedEvidence = evidenceText
-        .replace(/(CID-[A-Z0-9]+)/g, ' $1')
-        .replace(/(TENANT AUTHORITY)/gi, ' $1 ')
-        .split(/\s{2,}|(?=CID-)|(?=TENANT AUTHORITY)/i)
-        .map(item => item.trim())
-        .filter(Boolean);
-
-      normalizedEvidence.forEach((itemText) => {
-        const item = document.createElement('span');
-        item.textContent = itemText;
-        readableEvidence.appendChild(item);
-
-        applyWilsyR9UInlineStyle(item, {
-          display: 'inline-flex',
-          width: 'max-content',
-          minWidth: 'max-content',
-          maxWidth: '100%',
-          overflow: 'visible',
-          textOverflow: 'clip',
-          whiteSpace: 'nowrap',
-          letterSpacing: '0.10em',
-          fontSize: 'clamp(8px, 0.54vw, 10px)',
-          lineHeight: '1.18',
-          fontWeight: '850',
-          textTransform: 'uppercase'
-        });
-      });
-
-      applyWilsyR9UInlineStyle(readableEvidence, {
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        gap: '8px 14px',
-        width: '100%',
-        minWidth: '100%',
-        maxWidth: '100%',
-        overflow: 'visible',
-        whiteSpace: 'normal',
-        contain: 'none',
-        clipPath: 'none'
-      });
-
-      if (originalEyebrow) {
-        originalEyebrow.setAttribute('data-wilsy-r9v-superseded-zero-width-rail', 'true');
-        applyWilsyR9UInlineStyle(originalEyebrow, {
-          display: 'none',
-          visibility: 'hidden',
-          pointerEvents: 'none'
-        });
-      }
-
-      if (originalEvidence) {
-        originalEvidence.setAttribute('data-wilsy-r9v-superseded-zero-width-rail', 'true');
-        applyWilsyR9UInlineStyle(originalEvidence, {
-          display: 'none',
-          visibility: 'hidden',
-          pointerEvents: 'none'
-        });
-      }
-    });
-
-    tenantPills.forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        width: 'min(100%, 620px)',
-        maxWidth: '100%',
-        minWidth: '0',
-        overflow: 'visible'
-      });
-    });
-
-    tenantTexts.forEach((node) => {
-      applyWilsyR9UInlineStyle(node, {
-        minWidth: '0',
-        maxWidth: '100%',
-        overflow: 'visible',
-        textOverflow: 'clip',
-        whiteSpace: 'normal'
-      });
-    });
-  });
-};
-
-/**
- * @function scheduleWilsyR9UCrmOverlayIdentityFix
- * @description Schedules bounded CRM overlay identity repair passes after route render, click-open, and animation frames.
- * @collaboration Avoids observers while ensuring the Account Command Center overlay is repaired when it appears.
- */
-const scheduleWilsyR9UCrmOverlayIdentityFix = () => {
-  if (typeof window === 'undefined') return;
-
-  [0, 50, 150, 350, 700, 1200, 2200].forEach((delay) => {
-    window.setTimeout(repairWilsyR9UCrmOverlayIdentity, delay);
-  });
-};
-
-/**
- * @function bootWilsyR9UCrmOverlayIdentityFix
- * @description Boots the CRM overlay identity repair with bounded event scheduling and no document-level observer.
- * @collaboration Targets only the active CRM overlay that hosts the Account Command Center card.
- */
-const bootWilsyR9UCrmOverlayIdentityFix = () => {
-  if (typeof window === 'undefined' || window.__wilsyR9UCrmOverlayIdentityFixBooted) return;
-
-  window.__wilsyR9UCrmOverlayIdentityFixBooted = true;
-  scheduleWilsyR9UCrmOverlayIdentityFix();
-
-  window.addEventListener('click', scheduleWilsyR9UCrmOverlayIdentityFix, { passive: true });
-  window.addEventListener('focusin', scheduleWilsyR9UCrmOverlayIdentityFix, { passive: true });
-  window.addEventListener('resize', scheduleWilsyR9UCrmOverlayIdentityFix, { passive: true });
-};
-
-bootWilsyR9UCrmOverlayIdentityFix();
-
-const WILSY_R9W_BODY_MOUNTED_COMMAND_IDENTITY_RAIL = 'WILSY_R9W_BODY_MOUNTED_COMMAND_IDENTITY_RAIL_ACTIVE';
-
-/**
- * @function applyWilsyR9WBodyRailStyle
- * @description Applies important inline styles to the body-mounted CRM Command Identity rail.
- * @collaboration Bypasses the zero-width CRM identity content region without changing tenant/auth data.
- */
-const applyWilsyR9WBodyRailStyle = (node, styles = {}) => {
-  if (!node || !node.style) return;
-
-  Object.entries(styles).forEach(([property, value]) => {
-    const cssProperty = String(property).replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
-    node.style.setProperty(cssProperty, value, 'important');
-  });
-};
-
-/**
- * @function ensureWilsyR9WBodyRail
- * @description Creates or returns the body-mounted readable identity rail for the active CRM overlay.
- * @collaboration Preserves the restored R7C identity source while rendering readable command/evidence copy outside the poisoned layout node.
- */
-const ensureWilsyR9WBodyRail = () => {
-  if (typeof document === 'undefined') return null;
-
-  let rail = document.querySelector('[data-wilsy-r9w-body-mounted-identity-rail="true"]');
-
-  if (!rail) {
-    rail = document.createElement('div');
-    rail.setAttribute('data-wilsy-r9w-body-mounted-identity-rail', 'true');
-
-    const header = document.createElement('div');
-    header.setAttribute('data-wilsy-r9w-body-mounted-identity-header', 'true');
-
-    const command = document.createElement('span');
-    command.setAttribute('data-wilsy-r9w-command-label', 'true');
-    command.textContent = 'COMMAND IDENTITY';
-
-    const verified = document.createElement('span');
-    verified.setAttribute('data-wilsy-r9w-verified-label', 'true');
-    verified.textContent = '● TENANT VERIFIED';
-
-    header.append(command, verified);
-
-    const evidence = document.createElement('div');
-    evidence.setAttribute('data-wilsy-r9w-body-mounted-identity-evidence', 'true');
-
-    const clause = document.createElement('span');
-    clause.textContent = 'POPIA S19';
-
-    const authority = document.createElement('span');
-    authority.textContent = 'TENANT AUTHORITY';
-
-    const cid = document.createElement('span');
-    cid.setAttribute('data-wilsy-r9w-cid-label', 'true');
-    cid.textContent = 'CID';
-
-    evidence.append(clause, authority, cid);
-    rail.append(header, evidence);
-    document.body.appendChild(rail);
-  }
-
-  return rail;
-};
-
-/**
- * @function repairWilsyR9WBodyMountedIdentityRail
- * @description Positions a readable body-mounted command identity rail over the active CRM identity card.
- * @collaboration Solves the zero-width label failure proven by DevTools while keeping the CRM overlay and Account Command Center intact.
- */
-const repairWilsyR9WBodyMountedIdentityRail = () => {
-  if (typeof document === 'undefined' || typeof window === 'undefined') return;
-
-  const overlay = document.querySelector('[class*="accountSettingsOverlay"]');
-  if (!overlay) return;
-
-  const shellCandidates = Array.from(
-    overlay.querySelectorAll('[data-wilsy-r9u-active-identity-shell="true"], [data-wilsy-r7c-identity-ui="true"], [data-wilsy-identity-chrome], [data-wilsy-r7c-identity-card="true"]')
-  );
-
-  const visibleShellFrames = shellCandidates
-    .map(node => {
-      const candidateRect = node.getBoundingClientRect();
-      return {
-        node,
-        rect: candidateRect,
-        area: Math.max(0, candidateRect.width) * Math.max(0, candidateRect.height)
-      };
-    })
-    .filter(item => item.rect.width >= 120 && item.rect.height >= 80)
-    .sort((a, b) => b.area - a.area);
-
-  const overlayRect = overlay.getBoundingClientRect();
-  const selectedFrame = visibleShellFrames[0] || {
-    node: overlay,
-    rect: {
-      left: overlayRect.left + 24,
-      top: overlayRect.top + 24,
-      width: Math.min(460, Math.max(320, overlayRect.width * 0.30)),
-      height: 156
-    },
-    area: 1
-  };
-
-  const rect = selectedFrame.rect;
-  overlay.setAttribute('data-wilsy-r9w-frame-source', visibleShellFrames[0] ? 'visible-shell' : 'overlay-fallback');
-  overlay.setAttribute('data-wilsy-r9w-frame-candidates', String(shellCandidates.length));
-
-  const rail = ensureWilsyR9WBodyRail();
-  if (!rail) return;
-
-  const sourceEvidenceText = overlay
-    .querySelector('[data-wilsy-r9v-readable-identity-evidence="true"], .wilsy-r7f-identity-evidence')
-    ?.textContent
-    ?.replace(/\s+/g, ' ')
-    ?.trim();
-
-  const cidMatch = sourceEvidenceText?.match(/CID[-A-Z0-9]+/i);
-  const cidNode = rail.querySelector('[data-wilsy-r9w-cid-label="true"]');
-  if (cidNode && cidMatch?.[0]) cidNode.textContent = cidMatch[0].toUpperCase();
-
-  const leftOffset = Math.min(132, Math.max(112, rect.width * 0.30));
-  const railLeft = rect.left + leftOffset;
-  const railTop = rect.top + 23;
-  const railWidth = Math.max(240, rect.width - leftOffset - 26);
-
-  applyWilsyR9WBodyRailStyle(rail, {
-    position: 'fixed',
-    zIndex: '2147483646',
-    left: `${railLeft}px`,
-    top: `${railTop}px`,
-    width: `${railWidth}px`,
-    maxWidth: `${railWidth}px`,
-    minWidth: `${railWidth}px`,
-    pointerEvents: 'none',
-    display: 'grid',
-    gridTemplateRows: 'auto auto',
-    gap: '52px',
-    overflow: 'visible',
-    contain: 'none',
-    clipPath: 'none',
-    background: 'transparent',
-    transform: 'translateZ(0)'
-  });
-
-  const header = rail.querySelector('[data-wilsy-r9w-body-mounted-identity-header="true"]');
-  applyWilsyR9WBodyRailStyle(header, {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '8px 22px',
-    width: '100%',
-    minWidth: '100%',
-    overflow: 'visible',
-    whiteSpace: 'normal'
-  });
-
-  rail.querySelectorAll('[data-wilsy-r9w-body-mounted-identity-header="true"] span').forEach((node) => {
-    applyWilsyR9WBodyRailStyle(node, {
-      display: 'inline-flex',
-      flex: '0 0 auto',
-      width: 'max-content',
-      minWidth: 'max-content',
-      maxWidth: 'none',
-      overflow: 'visible',
-      textOverflow: 'clip',
-      whiteSpace: 'nowrap',
-      letterSpacing: '0.18em',
-      fontSize: '11px',
-      lineHeight: '1',
-      fontWeight: '950',
-      textTransform: 'uppercase',
-      color: node.textContent.includes('TENANT') ? '#31f59b' : '#d7deef',
-      textShadow: '0 0 18px rgba(0, 209, 255, 0.25)'
-    });
-  });
-
-  const evidence = rail.querySelector('[data-wilsy-r9w-body-mounted-identity-evidence="true"]');
-  applyWilsyR9WBodyRailStyle(evidence, {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '8px 14px',
-    width: '100%',
-    minWidth: '100%',
-    overflow: 'visible',
-    whiteSpace: 'normal'
-  });
-
-  rail.querySelectorAll('[data-wilsy-r9w-body-mounted-identity-evidence="true"] span').forEach((node) => {
-    applyWilsyR9WBodyRailStyle(node, {
-      display: 'inline-flex',
-      flex: '0 0 auto',
-      width: 'max-content',
-      minWidth: 'max-content',
-      maxWidth: 'none',
-      overflow: 'visible',
-      textOverflow: 'clip',
-      whiteSpace: 'nowrap',
-      letterSpacing: '0.12em',
-      fontSize: '10px',
-      lineHeight: '1',
-      fontWeight: '900',
-      textTransform: 'uppercase',
-      color: node.textContent.startsWith('CID') ? '#e0c45c' : '#31f59b',
-      textShadow: '0 0 14px rgba(49, 245, 155, 0.22)'
-    });
-  });
-
-  overlay
-    .querySelectorAll('.wilsy-r7c-identity-eyebrow, .wilsy-r7f-identity-evidence, [data-wilsy-r9v-readable-identity-header="true"], [data-wilsy-r9v-readable-identity-evidence="true"]')
-    .forEach((node) => {
-      node.setAttribute('data-wilsy-r9w-hidden-dead-identity-rail', 'true');
-      applyWilsyR9WBodyRailStyle(node, {
-        opacity: '0',
-        visibility: 'hidden',
-        pointerEvents: 'none'
-      });
-    });
-};
-
-/**
- * @function scheduleWilsyR9WBodyMountedIdentityRail
- * @description Schedules body rail repair after CRM overlay render and interaction frames.
- * @collaboration Keeps the readable identity rail aligned to the live card during account overlay usage.
- */
-const scheduleWilsyR9WBodyMountedIdentityRail = () => {
-  if (typeof window === 'undefined') return;
-
-  [0, 40, 120, 260, 520, 900, 1500, 2400].forEach((delay) => {
-    window.setTimeout(repairWilsyR9WBodyMountedIdentityRail, delay);
-  });
-};
-
-/**
- * @function bootWilsyR9WBodyMountedIdentityRail
- * @description Boots the body-mounted CRM identity rail with bounded event scheduling.
- * @collaboration Provides the final readable overlay path after the live card region proved zero-width.
- */
-const bootWilsyR9WBodyMountedIdentityRail = () => {
-  if (typeof window === 'undefined' || window.__wilsyR9WBodyMountedIdentityRailBooted) return;
-
-  window.__wilsyR9WBodyMountedIdentityRailBooted = true;
-  scheduleWilsyR9WBodyMountedIdentityRail();
-
-  window.addEventListener('click', scheduleWilsyR9WBodyMountedIdentityRail, { passive: true });
-  window.addEventListener('focusin', scheduleWilsyR9WBodyMountedIdentityRail, { passive: true });
-  window.addEventListener('resize', scheduleWilsyR9WBodyMountedIdentityRail, { passive: true });
-  window.addEventListener('scroll', scheduleWilsyR9WBodyMountedIdentityRail, { passive: true });
-};
-
-bootWilsyR9WBodyMountedIdentityRail();
-
-
-
-
-
-const CRM_VERSION = 'R18AD76-CRM-VISUAL-BLUEPRINT-SHELL';
-const DEFAULT_TENANT_ID = 'MASTER';
-const DEFAULT_PAGE_LIMIT = 25;
-const MAX_RECEIPTS = 14;
-
-const WILSY_CRM_THEME_STORAGE_KEYS = Object.freeze({
-  theme: 'wilsy:account-command-center:theme',
-  mode: 'wilsy:account-command-center:mode'
+const WILSY_R66A_LEAD_OPERATING_ROOM = 'R66A-WILSY-LEAD-OPERATING-ROOM';
+const WILSY_R65A_TRI_STATE_KINETIC_RAIL = 'R65A-TRI-STATE-KINETIC-RAIL';
+const WILSY_R62I_CRM_CLEAN_INLINE_COMMAND_FABRIC = 'R62I-CRM-CLEAN-INLINE-COMMAND-FABRIC';
+const CRM_INTERNAL_DIAGNOSTIC_ID = 'CRM-COMMAND-CENTER';
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
+const CRM_ENDPOINTS = Object.freeze({
+  leads: '/api/crm/live/leads',
+  contacts: '/api/crm/live/contacts',
+  accounts: '/api/crm/live/accounts',
+  deals: '/api/crm/live/deals',
+  tasks: '/api/crm/live/tasks',
+  meetings: '/api/crm/live/meetings',
+  evidence: '/api/crm/live/evidence',
+  connectors: '/api/crm/live/connectors'
 });
 
-const WILSY_CRM_THEME_SKINS = Object.freeze({
-  wilsy_aurora: {
-    accent: '#B66DFF',
+const CRM_SOURCE_POSTURE_ENDPOINT = '/api/crm/live/source-posture';
+
+const USER_PROFILE_ENDPOINTS = Object.freeze([
+  import.meta.env.VITE_USER_PROFILE_URL,
+  import.meta.env.VITE_OPERATOR_PROFILE_URL,
+  '/api/auth/me',
+  '/api/auth/user',
+  '/api/auth/profile',
+  '/api/users/me',
+  '/api/users/profile',
+  '/api/user/me',
+  '/api/user/profile',
+  '/api/profile/me',
+  '/api/account/me',
+  '/api/account/profile',
+  '/api/operator/me',
+  '/api/operator/profile',
+  '/api/me',
+  '/api/v1/auth/me',
+  '/api/v1/users/me',
+  '/api/v1/profile/me'
+].filter(Boolean));
+
+const CRM_WORKSPACES = Object.freeze([
+  { id: 'home', label: 'Home', icon: Home, group: 'Command' },
+  { id: 'leads', label: 'Leads', icon: Database, group: 'Records' },
+  { id: 'contacts', label: 'Contacts', icon: Users, group: 'Records' },
+  { id: 'accounts', label: 'Accounts', icon: Building2, group: 'Records' },
+  { id: 'deals', label: 'Deals', icon: Target, group: 'Records' },
+  { id: 'tasks', label: 'Tasks', icon: CheckSquare, group: 'Records' },
+  { id: 'meetings', label: 'Meetings', icon: CalendarDays, group: 'Records' },
+  { id: 'evidence', label: 'Evidence', icon: Shield, group: 'Control' },
+  { id: 'connectors', label: 'Connectors', icon: Network, group: 'Control' }
+]);
+
+const CRM_RECORD_COLUMNS = Object.freeze({
+  leads: ['Name', 'Company', 'Email', 'Phone', 'Source'],
+  contacts: ['Name', 'Company', 'Email', 'Phone', 'Source'],
+  accounts: ['Account', 'Industry', 'Owner', 'Status', 'Source'],
+  deals: ['Deal', 'Account', 'Stage', 'Value', 'Source'],
+  tasks: ['Task', 'Owner', 'Due', 'Status', 'Source'],
+  meetings: ['Meeting', 'Account', 'Date', 'Status', 'Source'],
+  evidence: ['Evidence', 'Type', 'Owner', 'Status', 'Source'],
+  connectors: ['Connector', 'Category', 'Status', 'Last Sync', 'Source']
+});
+
+const PIPELINE_STAGE_RULES = Object.freeze([
+  {
+    stage: 'Prospecting',
+    aliases: ['Lead Generation'],
+    probability: 10,
+    lane: 'primary',
+    tone: 'blue',
+    clause: 'ICP fit and POPIA lead consent basis',
+    proof: 'Lead source receipt'
+  },
+  {
+    stage: 'Lead Qualification',
+    aliases: ['Qualification', 'Sales Qualified'],
+    probability: 25,
+    lane: 'primary',
+    tone: 'cyan',
+    clause: 'BANT, authority and FICA identity posture',
+    proof: 'Buyer authority marker'
+  },
+  {
+    stage: 'Needs Analysis',
+    aliases: ['Discovery', 'Needs Assessment'],
+    probability: 40,
+    lane: 'primary',
+    tone: 'violet',
+    clause: 'Pain, goals and buying criteria documented',
+    proof: 'Discovery receipt'
+  },
+  {
+    stage: 'Demo / Presentation',
+    aliases: ['Demo', 'Presentation', 'Solution Fit', 'Proof of Concept'],
+    probability: 55,
+    lane: 'primary',
+    tone: 'teal',
+    clause: 'Solution fit and value case evidence',
+    proof: 'Demo outcome proof'
+  },
+  {
+    stage: 'Proposal',
+    aliases: ['Offer', 'Commercial Proposal'],
+    probability: 70,
+    lane: 'primary',
+    tone: 'gold',
+    clause: 'Pricing, scope and implementation terms',
+    proof: 'Offer pack hash'
+  },
+  {
+    stage: 'Negotiation',
+    aliases: ['Negotiation and Commitment', 'Commitment'],
+    probability: 85,
+    lane: 'primary',
+    tone: 'amber',
+    clause: 'Objections, redlines and authority trail',
+    proof: 'Clause variance log'
+  },
+  {
+    stage: 'Closed Won / Lost',
+    aliases: ['Closed', 'Closed Won', 'Closed Lost', 'Won', 'Lost'],
+    probability: 100,
+    lane: 'primary',
+    tone: 'green',
+    clause: 'Final outcome recorded for forecast integrity',
+    proof: 'Outcome receipt'
+  },
+  {
+    stage: 'Compliance Gate',
+    aliases: ['Compliance Review'],
+    probability: 88,
+    lane: 'sovereign',
+    tone: 'gold',
+    clause: 'POPIA / FICA / SOC2 clearance',
+    proof: 'Disclosure pack'
+  },
+  {
+    stage: 'Contracting',
+    aliases: ['Contract', 'Legal Review'],
+    probability: 96,
+    lane: 'sovereign',
+    tone: 'violet',
+    clause: 'Clause-bound commercial agreement',
+    proof: 'Contract hash'
+  },
+  {
+    stage: 'Onboarding',
+    aliases: ['Implementation', 'Activation'],
+    probability: 100,
+    lane: 'sovereign',
+    tone: 'cyan',
+    clause: 'Activation and handover workflow',
+    proof: 'Handover receipt'
+  },
+  {
+    stage: 'Renewal / Expansion',
+    aliases: ['Renewal', 'Expansion', 'Post-purchase', 'Follow-up'],
+    probability: 100,
+    lane: 'sovereign',
+    tone: 'green',
+    clause: 'Value realisation and expansion motion',
+    proof: 'Retention telemetry'
+  }
+]);
+
+const COMPLIANCE_BADGES = Object.freeze(['POPIA', 'FICA', 'GDPR', 'SOC2', 'Audit']);
+
+/**
+ * @function buildCrmFallbackThemeRuntime
+ * @description Builds a safe fallback visual token contract before the Wilsy OS theme runtime hydrates.
+ * @returns {Object} Fallback theme runtime.
+ * @collaboration Prevents CRM from rendering hardcoded theme colors while Account Command Center runtime loads.
+ */
+function buildCrmFallbackThemeRuntime() {
+  return {
+    themeId: 'crm_revenue_pulse',
+    effectiveMode: 'night',
+    resolvedMode: 'night',
+    accent: '#E8C670',
     secondary: '#17BDF2',
-    authority: '#D4AF37',
-    live: '#84F0C8',
-    risk: '#FF8AA4',
-    surface: '#060B18',
-    panel: '#0B1024',
-    rail: '#080C18',
-    bg: '#020306',
-    text: '#FFFAF0',
-    muted: '#C5CCE5',
-    border: 'rgba(182,109,255,0.34)'
-  },
-  sovereign_black: {
-    accent: '#D4AF37',
-    secondary: '#56D69B',
-    authority: '#F6D76B',
-    live: '#56D69B',
-    risk: '#FF6673',
-    surface: '#050505',
-    panel: '#0B0B0B',
-    rail: '#030303',
-    bg: '#000000',
-    text: '#FFFFFF',
-    muted: '#A7A7A7',
-    border: 'rgba(212,175,55,0.32)'
-  },
-  cobalt_glass: {
-    accent: '#17BDF2',
-    secondary: '#8DBBFF',
-    authority: '#D4AF37',
-    live: '#54F0D1',
-    risk: '#FF7C98',
-    surface: '#06142E',
-    panel: '#0A1D3D',
-    rail: '#07132B',
-    bg: '#020817',
-    text: '#F3F8FF',
-    muted: '#AFC7F6',
-    border: 'rgba(23,189,242,0.34)'
-  },
-  pearl_command: {
-    accent: '#7C68FF',
-    secondary: '#0F9F6E',
-    authority: '#C49A18',
-    live: '#0F9F6E',
-    risk: '#D33F62',
-    surface: '#FFFFFF',
-    panel: '#EEF2FF',
-    rail: '#FFFFFF',
-    bg: '#F6F8FF',
-    text: '#111827',
-    muted: '#53617F',
-    border: 'rgba(124,104,255,0.26)'
-  },
-  legacy_gold: {
-    accent: '#D4AF37',
-    secondary: '#8FE6B1',
-    authority: '#F6D76B',
-    live: '#8FE6B1',
-    risk: '#FF8A8A',
-    surface: '#0D0A03',
-    panel: '#141006',
-    rail: '#090702',
-    bg: '#070602',
-    text: '#FFF8DC',
-    muted: '#B9A56D',
-    border: 'rgba(246,215,107,0.32)'
-  },
-  forensic_violet: {
-    accent: '#B66DFF',
-    secondary: '#E7B7FF',
-    authority: '#D4AF37',
-    live: '#84F0C8',
-    risk: '#FF8AA4',
-    surface: '#0D0718',
-    panel: '#140B26',
-    rail: '#090412',
-    bg: '#05020A',
-    text: '#FFF7FF',
-    muted: '#CAB8EA',
-    border: 'rgba(182,109,255,0.36)'
-  },
-  quantum: {
-    accent: '#17F2D1',
-    secondary: '#B6F6FF',
-    authority: '#D4AF37',
-    live: '#84F0C8',
-    risk: '#FF789A',
-    surface: '#06111A',
-    panel: '#071C25',
-    rail: '#031018',
-    bg: '#01050A',
-    text: '#F5FFFF',
-    muted: '#9FD7E7',
-    border: 'rgba(23,242,209,0.34)'
-  }
-});
-
-const CRM_ICON_MAP = Object.freeze({
-  home: Home,
-  command: Home,
-  database: Database,
-  records: Database,
-  leads: Users,
-  contacts: Users,
-  accounts: Building2,
-  deals: Target,
-  tasks: CheckCircle,
-  meetings: Calendar,
-  calls: PhoneCall,
-  campaigns: Megaphone,
-  documents: Folder,
-  visits: MapPin,
-  projects: Activity,
-  quotes: FileText,
-  invoices: FileText,
-  cases: Shield,
-  tickets: MessageSquare,
-  contracts: FileText,
-  authorities: Shield,
-  risks: AlertCircle,
-  opportunities: TrendingUp,
-  suppliers: Briefcase,
-  partners: Users,
-  success: Users,
-  support: MessageSquare,
-  conversations: MessageSquare,
-  forecast: TrendingUp,
-  workflows: Wand2,
-  automation: Wand2,
-  connectors: Database,
-  audit: Shield,
-  evidence: Shield,
-  shield: Shield,
-  upload: UploadCloud,
-  sparkles: Sparkles,
-  wand: Wand2,
-  messageSquare: MessageSquare,
-  target: Target
-});
-
-const CRM_MODULES = Object.freeze(WILSY_CRM_MODULE_CATALOG.map(moduleConfig => ({
-  ...moduleConfig,
-  sourceStatus: moduleConfig?.sourceContract?.minimumStatus || 'SOURCE_REQUIRED',
-  routePosture: moduleConfig?.routePosture || WILSY_CRM_ROUTE_POSTURE.required,
-  catalogVersion: WILSY_CRM_MODULE_CATALOG_VERSION,
-  commandEnvelope: buildWilsyCrmModuleEnvelope(moduleConfig.id)
-})));
-
-const CRM_WORKSPACES = Object.freeze(WILSY_CRM_WORKSPACE_CATALOG.map(workspace => ({
-  ...workspace,
-  id: workspace.id === 'command' ? 'home' : workspace.id,
-  sourceWorkspaceId: workspace.id,
-  icon: CRM_ICON_MAP[workspace.icon] || Home
-})));
-
-/**
- * @function resolveCrmCatalogModuleConfig
- * @description Resolves a CRM module from the governed catalog with a safe fallback so legacy dashboard rails cannot crash render.
- * @param {string} moduleId - Candidate CRM module id.
- * @param {string} fallbackId - Fallback CRM module id.
- * @returns {Object} Safe CRM module config.
- * @collaboration Keeps the catalog-driven CRM shell stable while older UI rails are being migrated one file at a time.
- */
-const resolveCrmCatalogModuleConfig = (moduleId = 'leads', fallbackId = 'leads') => {
-  const normalizedId = String(moduleId || '').trim().toLowerCase();
-  const normalizedFallback = String(fallbackId || 'leads').trim().toLowerCase();
-
-  return (
-    CRM_MODULES.find(item => item?.id === normalizedId)
-    || CRM_MODULES.find(item => item?.id === normalizedFallback)
-    || CRM_MODULES[0]
-    || {
-      id: 'source_required',
-      label: 'Source Required',
-      singular: 'Record',
-      icon: 'database',
-      route: 'records',
-      primary: 'name',
-      secondary: 'status',
-      money: null,
-      boardBy: 'status',
-      lanes: ['source_required'],
-      fields: ['name', 'status'],
-      sourceStatus: 'SOURCE_REQUIRED',
-      routePosture: 'ROUTE_REQUIRED'
-    }
-  );
-};
-
-/**
- * @function resolveCrmCatalogIcon
- * @description Resolves a CRM icon component from the icon map with a safe fallback.
- * @param {string} iconKey - Catalog icon key.
- * @param {React.ComponentType} fallbackIcon - Fallback icon component.
- * @returns {React.ComponentType} Icon component.
- * @collaboration Prevents catalog growth from breaking CRM module, workspace and task rails.
- */
-const resolveCrmCatalogIcon = (iconKey = 'database', fallbackIcon = Database) => (
-  CRM_ICON_MAP[String(iconKey || '').trim()] || fallbackIcon || Database
-);
-
-
-const FIELD_LABELS = Object.freeze({
-  accountName: 'Account',
-  annualRevenue: 'Annual Revenue',
-  authorityStatus: 'Authority',
-  budget: 'Budget',
-  channel: 'Channel',
-  closingDate: 'Close Date',
-  company: 'Company',
-  completedAt: 'Completed',
-  contactName: 'Contact',
-  contractStatus: 'Contract',
-  documentType: 'Document Type',
-  dueDate: 'Due Date',
-  effectiveDate: 'Effective Date',
-  email: 'Email',
-  evidenceType: 'Evidence Type',
-  fileName: 'File Name',
-  industry: 'Industry',
-  leadsGenerated: 'Leads',
-  location: 'Location',
-  name: 'Name',
-  number: 'Number',
-  outcome: 'Outcome',
-  owner: 'Owner',
-  percentComplete: 'Complete',
-  phone: 'Phone',
-  priority: 'Priority',
-  probability: 'Probability',
-  scheduledAt: 'Scheduled',
-  score: 'Score',
-  severity: 'Severity',
-  stage: 'Stage',
-  startsAt: 'Start',
-  status: 'Status',
-  subject: 'Subject',
-  title: 'Title',
-  validUntil: 'Valid Until',
-  value: 'Value',
-  verifiedAt: 'Verified',
-  healthScore: 'Health Score',
-  healthStatus: 'Health',
-  renewalDate: 'Renewal Date',
-  renewalValue: 'Renewal Value',
-  slaStatus: 'SLA',
-  lastMessageAt: 'Last Message',
-  trigger: 'Trigger',
-  targetModule: 'Target Module',
-  lastRunAt: 'Last Run',
-  vendor: 'Vendor',
-  lastSyncAt: 'Last Sync',
-  recordsSynced: 'Records Synced',
-  receiptId: 'Receipt',
-  operatorId: 'Operator',
-  moduleId: 'Module',
-  action: 'Action',
-  period: 'Period',
-  forecastValue: 'Forecast',
-  pipelineValue: 'Pipeline',
-  confidence: 'Confidence'
-});
-
-const FIELD_TYPES = Object.freeze({
-  amount: 'number',
-  annualRevenue: 'number',
-  budget: 'number',
-  closingDate: 'date',
-  completedAt: 'date',
-  dueDate: 'date',
-  effectiveDate: 'date',
-  email: 'email',
-  leadsGenerated: 'number',
-  percentComplete: 'number',
-  phone: 'tel',
-  probability: 'number',
-  scheduledAt: 'date',
-  score: 'number',
-  startsAt: 'datetime-local',
-  validUntil: 'date',
-  value: 'number',
-  verifiedAt: 'date',
-  healthScore: 'number',
-  renewalDate: 'date',
-  renewalValue: 'number',
-  lastMessageAt: 'datetime-local',
-  lastRunAt: 'datetime-local',
-  lastSyncAt: 'datetime-local',
-  recordsSynced: 'number',
-  forecastValue: 'number',
-  pipelineValue: 'number',
-  confidence: 'number'
-});
-
-/**
- * @function normalizeWilsyCrmThemeId
- * @description Normalizes Account Command Center theme ids for CRM.
- * @param {string} themeId - Candidate theme id.
- * @returns {string} Supported CRM theme id.
- * @collaboration Keeps CRM visual skin aligned with ExecutiveDashboard and Account Command Center.
- */
-const normalizeWilsyCrmThemeId = (themeId = '') => {
-  const aliases = {
-    forensic: 'forensic_violet',
-    cobalt: 'cobalt_glass',
-    wilsy_daybreak: 'pearl_command',
-    dark_ops: 'sovereign_black'
+    highlight: '#FFF0A4',
+    live: '#40F2B2',
+    brightText: '#FFFFFF',
+    softText: 'rgba(255,255,255,0.72)',
+    mutedText: 'rgba(255,255,255,0.48)',
+    overlay: 'rgba(15,18,28,0.74)',
+    panelBackground: 'rgba(8,12,20,0.94)',
+    headerBackground: 'linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018)), rgba(4,7,13,0.92)',
+    cardBackground: 'rgba(11,16,26,0.82)',
+    railBackground: 'rgba(8,12,20,0.96)',
+    commandBackground: 'linear-gradient(135deg, #D4AF37, #FFF0A4)',
+    shadow: '0 24px 70px rgba(0,0,0,0.54)',
+    cssVars: {}
   };
-  const normalized = aliases[themeId] || themeId || 'wilsy_aurora';
-  return WILSY_CRM_THEME_SKINS[normalized] ? normalized : 'wilsy_aurora';
-};
+}
 
 /**
- * @function normalizeWilsyCrmMode
- * @description Normalizes Account Command Center mode values for CRM.
- * @param {string} mode - Candidate mode.
- * @returns {string} Safe mode value.
- * @collaboration Protects CRM from invalid theme receipts.
+ * @function normalizeCrmThemeRuntimePacket
+ * @description Normalizes a Wilsy OS theme runtime packet into CRM semantic variables.
+ * @param {Object} packet - Theme runtime packet.
+ * @param {Object} fallback - Fallback token packet.
+ * @returns {Object} Normalized token packet.
+ * @collaboration Keeps CRM synchronized with Account Command Center, ExecutiveDashboard and future dashboard runtimes.
  */
-const normalizeWilsyCrmMode = (mode = '') => (
-  ['day', 'night', 'auto'].includes(mode) ? mode : 'night'
-);
+function normalizeCrmThemeRuntimePacket(packet = {}, fallback = buildCrmFallbackThemeRuntime()) {
+  const source = packet?.tokens || packet?.runtime || packet || {};
+  const cssVars = source.cssVars || packet?.cssVars || fallback.cssVars || {};
 
-/**
- * @function resolveWilsyCrmMode
- * @description Resolves automatic day or night mode.
- * @param {string} mode - Candidate mode.
- * @returns {string} Resolved mode.
- * @collaboration Mirrors ExecutiveDashboard theme behavior for CRM.
- */
-const resolveWilsyCrmMode = (mode = 'night') => {
-  const safeMode = normalizeWilsyCrmMode(mode);
-  if (safeMode !== 'auto') return safeMode;
-  const hour = new Date().getHours();
-  return hour >= 7 && hour < 18 ? 'day' : 'night';
-};
-
-/**
- * @function readWilsyCrmThemePreference
- * @description Reads persisted Account Command Center theme settings.
- * @returns {{themeId:string,mode:string,resolvedMode:string,skin:Object}} Theme packet.
- * @collaboration Gives CRM the same operating theme source as ExecutiveDashboard.
- */
-const readWilsyCrmThemePreference = () => {
-  const themeId = normalizeWilsyCrmThemeId(
-    typeof window === 'undefined'
-      ? 'wilsy_aurora'
-      : window.localStorage.getItem(WILSY_CRM_THEME_STORAGE_KEYS.theme)
-  );
-  const mode = normalizeWilsyCrmMode(
-    typeof window === 'undefined'
-      ? 'night'
-      : window.localStorage.getItem(WILSY_CRM_THEME_STORAGE_KEYS.mode)
-  );
   return {
-    themeId,
-    mode,
-    resolvedMode: resolveWilsyCrmMode(mode),
-    skin: WILSY_CRM_THEME_SKINS[themeId] || WILSY_CRM_THEME_SKINS.wilsy_aurora
+    ...fallback,
+    ...source,
+    cssVars,
+    themeId: source.themeId || packet.themeId || fallback.themeId,
+    effectiveMode: source.effectiveMode || packet.mode || fallback.effectiveMode,
+    resolvedMode: source.resolvedMode || packet.resolvedMode || fallback.resolvedMode,
+    accent: source.accent || cssVars['--wilsy-accent'] || cssVars['--crm-accent'] || fallback.accent,
+    secondary: source.secondary || cssVars['--wilsy-secondary'] || cssVars['--crm-accent-2'] || fallback.secondary,
+    highlight: source.highlight || cssVars['--wilsy-highlight'] || fallback.highlight,
+    live: source.live || cssVars['--wilsy-live'] || cssVars['--crm-accent-3'] || fallback.live,
+    brightText: source.brightText || cssVars['--wilsy-text'] || fallback.brightText,
+    softText: source.softText || cssVars['--wilsy-soft-text'] || fallback.softText,
+    mutedText: source.mutedText || cssVars['--wilsy-muted'] || fallback.mutedText,
+    overlay: source.overlay || cssVars['--wilsy-overlay'] || fallback.overlay,
+    panelBackground: source.panelBackground || cssVars['--wilsy-panel'] || cssVars['--crm-surface'] || fallback.panelBackground,
+    headerBackground: source.headerBackground || fallback.headerBackground,
+    cardBackground: source.cardBackground || cssVars['--wilsy-card'] || cssVars['--crm-card'] || fallback.cardBackground,
+    railBackground: source.railBackground || cssVars['--wilsy-rail'] || fallback.railBackground,
+    commandBackground: source.commandBackground || fallback.commandBackground,
+    shadow: source.shadow || fallback.shadow
   };
-};
+}
 
 /**
- * @function buildWilsyCrmThemeVars
- * @description Builds CSS variable payload consumed by the CRM shell.
- * @param {string} themeId - Theme id.
- * @param {string} mode - Theme mode.
+ * @function buildCrmThemeStyleVars
+ * @description Converts the active Wilsy OS theme runtime packet into CRM shell CSS variables.
+ * @param {Object} themeRuntime - Active theme runtime packet.
+ * @param {Object} tenantIdentity - Tenant identity colors.
  * @returns {Object} CSS variable map.
- * @collaboration Keeps CRM theme behavior equal to ExecutiveDashboard.
+ * @collaboration Lets CRM consume OS theme skins without hardcoded visual drift.
  */
-const buildWilsyCrmThemeVars = (themeId = 'wilsy_aurora', mode = 'night') => {
-  const safeThemeId = normalizeWilsyCrmThemeId(themeId);
-  const resolvedMode = resolveWilsyCrmMode(mode);
-  const skin = WILSY_CRM_THEME_SKINS[safeThemeId] || WILSY_CRM_THEME_SKINS.wilsy_aurora;
-
+function buildCrmThemeStyleVars(themeRuntime = buildCrmFallbackThemeRuntime(), tenantIdentity = {}) {
   return {
-    '--wilsy-bg': skin.bg,
-    '--wilsy-surface': skin.surface,
-    '--wilsy-panel': skin.panel,
-    '--wilsy-rail': skin.rail,
-    '--wilsy-text': skin.text,
-    '--wilsy-muted': skin.muted,
-    '--wilsy-accent': skin.accent,
-    '--wilsy-accent-2': skin.secondary,
-    '--wilsy-authority': skin.authority,
-    '--wilsy-live': skin.live,
-    '--wilsy-risk': skin.risk,
-    '--wilsy-border': skin.border,
-    colorScheme: resolvedMode === 'day' ? 'light' : 'dark'
+    ...themeRuntime.cssVars,
+    '--crm-black': themeRuntime.cssVars?.['--crm-bg'] || themeRuntime.cssVars?.['--wilsy-bg'] || '#02040A',
+    '--crm-ink': themeRuntime.cssVars?.['--wilsy-surface'] || '#070A12',
+    '--crm-panel': themeRuntime.panelBackground,
+    '--crm-card': themeRuntime.cardBackground,
+    '--crm-glass': themeRuntime.overlay,
+    '--crm-gold': themeRuntime.accent || tenantIdentity.primaryColor || '#E8C670',
+    '--crm-gold-strong': themeRuntime.highlight || tenantIdentity.accentColor || '#FFF0A4',
+    '--crm-cyan': themeRuntime.live || themeRuntime.secondary || tenantIdentity.secondaryColor || '#1EEBCB',
+    '--crm-text': themeRuntime.brightText || '#FFFFFF',
+    '--crm-soft': themeRuntime.softText || 'rgba(255,255,255,0.72)',
+    '--crm-muted': themeRuntime.mutedText || 'rgba(255,255,255,0.48)',
+    '--crm-command-bg': themeRuntime.commandBackground,
+    '--crm-header-bg': themeRuntime.headerBackground,
+    '--crm-rail-bg': themeRuntime.railBackground,
+    '--crm-shadow': themeRuntime.shadow,
+    '--crm-tenant-primary': tenantIdentity.primaryColor || themeRuntime.accent || '#D4AF37',
+    '--crm-tenant-secondary': tenantIdentity.secondaryColor || themeRuntime.secondary || '#1EEBCB',
+    '--crm-tenant-accent': tenantIdentity.accentColor || themeRuntime.highlight || '#F6E27A'
   };
-};
+}
 
 /**
- * @function applyWilsyCrmThemeToDocument
- * @description Applies current CRM theme to document root and body.
- * @param {string} themeId - Theme id.
- * @param {string} mode - Theme mode.
- * @returns {void}
- * @collaboration Keeps global chrome and CRM surface visually synchronized.
+ * @function resolveCrmGlobalThemeRuntime
+ * @description Resolves CRM theme tokens directly from the Wilsy OS global theme engine.
+ * @param {Object} overrides - Optional theme and mode overrides.
+ * @param {Object} previous - Previous theme runtime.
+ * @returns {Object} Normalized CRM theme runtime.
+ * @collaboration Binds CRM to Account Command Center operating skins without local hardcoded theme drift.
  */
-const applyWilsyCrmThemeToDocument = (themeId = 'wilsy_aurora', mode = 'night') => {
-  if (typeof document === 'undefined') return;
-
-  const safeThemeId = normalizeWilsyCrmThemeId(themeId);
-  const safeMode = normalizeWilsyCrmMode(mode);
-  const resolvedMode = resolveWilsyCrmMode(safeMode);
-  const vars = buildWilsyCrmThemeVars(safeThemeId, safeMode);
-
-  document.documentElement.dataset.wilsyTheme = safeThemeId;
-  document.documentElement.dataset.wilsyMode = safeMode;
-  document.documentElement.dataset.wilsyResolvedMode = resolvedMode;
-  document.body.dataset.wilsyTheme = safeThemeId;
-  document.body.dataset.wilsyMode = safeMode;
-  document.body.dataset.wilsyResolvedMode = resolvedMode;
-  document.body.dataset.wilsyActiveDashboard = 'crm';
-
-  Object.entries(vars).forEach(([key, value]) => {
-    if (key.startsWith('--')) {
-      document.documentElement.style.setProperty(key, value);
-      document.body.style.setProperty(key, value);
-    }
+function resolveCrmGlobalThemeRuntime(overrides = {}, previous = buildCrmFallbackThemeRuntime()) {
+  const storedRuntime = readStoredWilsyThemeRuntime({
+    themeId: overrides.themeId || previous.themeId || 'crm_revenue_pulse',
+    mode: overrides.mode || previous.effectiveMode || 'night'
   });
-};
 
-/**
- * @function titleizeCrmText
- * @description Converts tokens into readable CRM labels.
- * @param {string} value - Candidate text.
- * @returns {string} Readable label.
- * @collaboration Prevents raw CRM route ids from weakening the operating system UI.
- */
-const titleizeCrmText = (value = '') => (
-  String(value || '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase()
-    .replace(/\b\w/g, letter => letter.toUpperCase())
-);
+  const themeId = overrides.themeId || storedRuntime.themeId || previous.themeId || 'crm_revenue_pulse';
+  const mode = overrides.mode || storedRuntime.mode || storedRuntime.effectiveMode || previous.effectiveMode || 'night';
 
-/**
- * @function compactCrmSignal
- * @description Converts source signals into compact CRM posture labels.
- * @param {string} value - Source signal.
- * @returns {string} Compact signal.
- * @collaboration Keeps CRM source posture visible without claiming false verification.
- */
-const compactCrmSignal = (value = '') => (
-  String(value || 'SOURCE_REQUIRED')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toUpperCase()
-);
+  const selectedTheme = WILSY_OPERATING_SKINS.find(theme => theme.id === themeId)
+    || WILSY_OPERATING_SKINS[0]
+    || { id: themeId, label: themeId };
 
-/**
- * @function numericCrmValue
- * @description Converts a value to a finite number.
- * @param {unknown} value - Candidate value.
- * @returns {number} Numeric value.
- * @collaboration Keeps CRM metrics derived from real records only.
- */
-const numericCrmValue = (value = 0) => {
-  const next = Number(value);
-  return Number.isFinite(next) ? next : 0;
-};
-
-/**
- * @function formatCrmMoney
- * @description Formats money values for CRM cards and ledgers.
- * @param {unknown} value - Candidate amount.
- * @returns {string} Formatted money string.
- * @collaboration Keeps CRM commercial truth readable while preserving zero as zero.
- */
-const formatCrmMoney = (value = 0) => `R ${Math.round(numericCrmValue(value)).toLocaleString()}`;
-
-/**
- * @function formatCrmDate
- * @description Formats date-like values for CRM ledgers.
- * @param {unknown} value - Candidate date.
- * @returns {string} Formatted date or source required label.
- * @collaboration Prevents invalid dates from becoming misleading CRM evidence.
- */
-const formatCrmDate = (value = '') => {
-  if (!value) return 'SOURCE REQUIRED';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString();
-};
-
-/**
- * @function normalizeCrmLogoCandidate
- * @description Normalizes a tenant logo candidate.
- * @param {unknown} value - Candidate logo value.
- * @returns {string} Safe logo URL or empty string.
- * @collaboration Keeps CRM multi-tenant without fixed local logo paths.
- */
-const normalizeCrmLogoCandidate = (value = '') => {
-  if (typeof value !== 'string') return '';
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-  if (/placeholder|example|dummy/i.test(trimmed)) return '';
-  
-  return trimmed;
-};
-
-/**
- * @function readStoredCrmBrandingCandidates
- * @description Reads tenant branding candidates from browser storage.
- * @returns {Array<string>} Logo candidates.
- * @collaboration Lets tenant discovery and Account Settings supply CRM tenant logos at runtime.
- */
-const readStoredCrmBrandingCandidates = () => {
-  if (typeof window === 'undefined') return [];
-
-  return [
-    'wilsy:tenant-branding',
-    'wilsy:active-tenant',
-    'wilsy_active_tenant',
-    'activeTenant',
-    'tenant',
-    'tenantConfig',
-    'wilsy_tenant',
-    'wilsy:tenant-context',
-    'wilsy:tenant-profile',
-    'wilsy:tenant-discovery',
-    'wilsy:account-command-center:tenant',
-    'wilsy:account-command-center:profile',
-    'wilsy:account-command-center:branding',
-    'wilsy:account-command-center:user',
-    'wilsy:user-profile',
-    'wilsy:session',
-    'wilsy:auth'
-  ].flatMap(key => {
-    try {
-      const raw = window.localStorage.getItem(key);
-      if (!raw) return [];
-
-      const directLogo = normalizeCrmLogoCandidate(raw);
-      let parsed = null;
-
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        return directLogo ? [directLogo] : [];
-      }
-
-      return [
-        directLogo,
-        parsed?.branding?.logoUrl,
-        parsed?.branding?.logo,
-        parsed?.branding?.brandLogo,
-        parsed?.branding?.logoSrc,
-        parsed?.branding?.logoDataUrl,
-        parsed?.branding?.logoDataUri,
-        parsed?.branding?.image,
-        parsed?.brand?.logoUrl,
-        parsed?.brand?.logo,
-        parsed?.assets?.logoUrl,
-        parsed?.assets?.logo,
-        parsed?.assets?.brandMark,
-        parsed?.logoUrl,
-        parsed?.logo,
-        parsed?.brandLogo,
-        parsed?.tenantLogo,
-        parsed?.logoDataUrl,
-        parsed?.logoDataUri,
-        parsed?.avatar,
-        parsed?.avatarUrl,
-        parsed?.image,
-        parsed?.tenant?.branding?.logoUrl,
-        parsed?.tenant?.branding?.logo,
-        parsed?.tenant?.branding?.brandLogo,
-        parsed?.tenant?.logoUrl,
-        parsed?.tenant?.logo,
-        parsed?.profile?.branding?.logoUrl,
-        parsed?.profile?.branding?.logo,
-        parsed?.profile?.logoUrl,
-        parsed?.profile?.logo,
-        parsed?.user?.tenant?.branding?.logoUrl,
-        parsed?.user?.tenant?.branding?.logo,
-        parsed?.user?.tenant?.logoUrl,
-        parsed?.user?.tenant?.logo
-      ].map(normalizeCrmLogoCandidate).filter(Boolean);
-    } catch {
-      return [];
-    }
+  const resolvedMode = resolveWilsyAutoMode(mode);
+  const visualTokens = buildWilsyVisualTokens(selectedTheme, resolvedMode, {
+    ...storedRuntime,
+    effectiveMode: mode
   });
-};
 
-/**
- * @function createCrmInitialsSeal
- * @description Creates a tenant initials SVG seal when no logo exists.
- * @param {string} displayName - Tenant display name.
- * @returns {string} SVG data URI.
- * @collaboration Prevents broken tenant branding without borrowing Wilson's local logo.
- */
-const createCrmInitialsSeal = (displayName = 'Tenant') => {
-  const safeName = String(displayName || 'Tenant').replace(/[<>&"]/g, '');
-  const initials = safeName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(part => part[0])
-    .join('')
-    .toUpperCase() || 'TN';
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180" role="img" aria-label="${safeName}"><defs><linearGradient id="wilsyTenantSeal" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#D4AF37"/><stop offset="55%" stop-color="#B66DFF"/><stop offset="100%" stop-color="#17BDF2"/></linearGradient></defs><rect width="180" height="180" rx="30" fill="#050505"/><rect x="10" y="10" width="160" height="160" rx="26" fill="url(#wilsyTenantSeal)"/><text x="90" y="104" text-anchor="middle" font-family="Arial, sans-serif" font-size="46" font-weight="900" fill="#050505">${initials}</text></svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-};
-
-/**
- * @function buildCrmTenantIdentity
- * @description Builds tenant and operator identity for CRM.
- * @param {object} params - Identity inputs.
- * @returns {object} Tenant identity packet.
- * @collaboration Makes CRM tenant-branded at scale while keeping founder identity out of tenant logos.
- */
-const buildCrmTenantIdentity = ({ tenantId, activeTenant = {}, tenantConfig = {}, user = {} } = {}) => {
-  const displayName = (
-    activeTenant?.branding?.companyName ||
-    activeTenant?.companyName ||
-    activeTenant?.name ||
-    tenantConfig?.branding?.companyName ||
-    tenantConfig?.companyName ||
-    tenantConfig?.name ||
-    user?.tenant?.name ||
-    'Wilsy OS Tenant'
+  return normalizeCrmThemeRuntimePacket(
+    {
+      ...visualTokens,
+      themeId,
+      mode,
+      effectiveMode: mode,
+      resolvedMode
+    },
+    previous
   );
+}
 
-  const operatorName = (
-    user?.fullName ||
-    user?.displayName ||
-    user?.name ||
-    [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
-    'CRM Operator'
-  );
-
-  const logoCandidates = [
-    activeTenant?.branding?.logoUrl,
-    activeTenant?.branding?.logo,
-    activeTenant?.branding?.brandLogo,
-    activeTenant?.branding?.logoSrc,
-    activeTenant?.brand?.logoUrl,
-    activeTenant?.brand?.logo,
-    activeTenant?.assets?.logoUrl,
-    activeTenant?.assets?.logo,
-    activeTenant?.logoUrl,
-    activeTenant?.logo,
-    activeTenant?.brandLogo,
-    activeTenant?.tenantLogo,
-    tenantConfig?.branding?.logoUrl,
-    tenantConfig?.branding?.logo,
-    tenantConfig?.logoUrl,
-    tenantConfig?.logo,
-    user?.tenant?.branding?.logoUrl,
-    user?.tenant?.branding?.logo,
-    user?.tenant?.branding?.brandLogo,
-    user?.tenant?.branding?.logoDataUrl,
-    user?.tenant?.branding?.logoDataUri,
-    user?.tenant?.logoUrl,
-    user?.tenant?.logo,
-    user?.tenantLogo,
-    user?.logoUrl,
-    user?.logo,
-    user?.avatar,
-    user?.avatarUrl,
-    tenantConfig?.branding?.logoDataUrl,
-    tenantConfig?.branding?.logoDataUri,
-    activeTenant?.branding?.logoDataUrl,
-    activeTenant?.branding?.logoDataUri,
-    import.meta?.env?.VITE_DEFAULT_TENANT_LOGO_URL,
-    import.meta?.env?.VITE_TENANT_LOGO_URL,
-    import.meta?.env?.VITE_WILSY_BRAND_LOGO_URL,
-    ...readStoredCrmBrandingCandidates(),
-    wilsyOfficialLogo
-  ].map(normalizeCrmLogoCandidate).filter(Boolean);
-
-  return {
-    tenantId: tenantId || activeTenant?.tenantId || activeTenant?.id || activeTenant?._id || user?.tenantId || DEFAULT_TENANT_ID,
-    displayName,
-    operatorName,
-    operatorRole: titleizeCrmText(user?.roleLabel || user?.title || user?.role || 'CRM Operator'),
-    logo: logoCandidates[0] || createCrmInitialsSeal(displayName),
-    story: `${displayName} customer graph live`
-  };
-};
 
 /**
- * @function safeParseCrmJson
- * @description Parses JSON safely.
- * @param {string} value - JSON string.
- * @returns {object|null} Parsed payload.
- * @collaboration Keeps CRM import intake deterministic.
+ * @function safeText
+ * @description Converts unknown values into stable display text without inventing business facts.
+ * @param {*} value - Candidate value.
+ * @param {string} fallback - Fallback display value.
+ * @returns {string} Safe text.
+ * @collaboration Keeps CRM labels stable while preserving honest source-empty states.
  */
-const safeParseCrmJson = (value = '') => {
+function safeText(value, fallback = '—') {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+}
+
+/**
+ * @function toNumber
+ * @description Converts unknown numeric input into a safe finite number.
+ * @param {*} value - Candidate numeric value.
+ * @returns {number} Safe number.
+ * @collaboration Protects pipeline calculations from partial API payloads.
+ */
+function toNumber(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+}
+
+/**
+ * @function formatMoney
+ * @description Formats CRM money values as South African Rand.
+ * @param {*} value - Candidate numeric value.
+ * @returns {string} Money display.
+ * @collaboration Keeps revenue telemetry aligned with Wilsy OS South African operating context.
+ */
+function formatMoney(value) {
+  const numeric = toNumber(value);
+  return `R ${numeric.toLocaleString('en-ZA', { maximumFractionDigits: 0 })}`;
+}
+
+/**
+ * @function getStoredValue
+ * @description Reads a localStorage string safely.
+ * @param {string} key - Storage key.
+ * @param {string} fallback - Fallback value.
+ * @returns {string} Stored value or fallback.
+ * @collaboration Lets CRM hydrate known identity hints without fragile global assumptions.
+ */
+function getStoredValue(key, fallback = '') {
   try {
-    return JSON.parse(value);
+    if (typeof window === 'undefined') return fallback;
+    return window.localStorage.getItem(key) || fallback;
   } catch {
+    return fallback;
+  }
+}
+
+/**
+ * @function readStoredJson
+ * @description Reads a localStorage JSON object safely.
+ * @param {string} key - Storage key.
+ * @returns {Object} Parsed object or empty object.
+ * @collaboration Lets CRM consume existing auth cache without crashing restricted browsers.
+ */
+function readStoredJson(key) {
+  try {
+    const raw = getStoredValue(key, '');
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * @function resolveImageSource
+ * @description Resolves a safe browser image source with logo fallback.
+ * @param {*} value - Candidate logo value.
+ * @returns {string} Safe image source.
+ * @collaboration Prevents broken tenant logos from damaging the chrome.
+ */
+function resolveImageSource(value) {
+  const text = safeText(value, '');
+  if (!text) return wilsyLogo;
+  if (text.startsWith('http') || text.startsWith('data:') || text.startsWith('/') || text.startsWith('blob:')) return text;
+  return wilsyLogo;
+}
+
+/**
+ * @function buildInitials
+ * @description Builds stable initials for identity fallback.
+ * @param {string} value - Candidate identity name.
+ * @returns {string} Initials.
+ * @collaboration Keeps operator chrome stable even when profile images are unavailable.
+ */
+function buildInitials(value = '') {
+  const parts = String(value || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'WK';
+  return parts.slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('');
+}
+
+/**
+ * @function normalizeRecord
+ * @description Normalizes one CRM record from backend-shaped payloads.
+ * @param {Object} record - Source record.
+ * @param {string} collection - Collection name.
+ * @param {number} index - Source index.
+ * @returns {Object} Normalized CRM record.
+ * @collaboration Allows service routes to evolve without duplicating mapping logic in visual components.
+ */
+function normalizeRecord(record = {}, collection = 'records', index = 0) {
+  const id = record._id || record.id || record.uuid || record.recordId || `${collection}-source-${index}`;
+  const value = toNumber(record.value || record.amount || record.dealValue || record.weightedValue || record.totalValue);
+  const stage = safeText(record.stage || record.pipelineStage || record.status, 'Unstaged');
+
+  return {
+    id,
+    collection,
+    name: safeText(record.name || record.fullName || record.title || record.subject || record.companyName || record.accountName, 'Unnamed source record'),
+    company: safeText(record.company || record.companyName || record.account || record.accountName || record.organization, '—'),
+    email: safeText(record.email || record.primaryEmail || record.contactEmail, '—'),
+    phone: safeText(record.phone || record.mobile || record.telephone || record.primaryPhone, '—'),
+    owner: safeText(record.owner || record.ownerName || record.assignedTo || record.createdBy, '—'),
+    status: safeText(record.status || record.sourceStatus || record.state || record.readiness, 'Source received'),
+    stage,
+    value,
+    type: safeText(record.type || record.category || record.kind, collection),
+    industry: safeText(record.industry || record.sector || record.market, '—'),
+    dueDate: safeText(record.dueDate || record.date || record.meetingDate || record.scheduledFor, '—'),
+    source: safeText(record.source || record.sourceSystem || record.connector || record.origin, 'Wilsy CRM API'),
+    raw: record
+  };
+}
+
+/**
+ * @function normalizeCollectionPayload
+ * @description Converts a backend response payload into normalized CRM records.
+ * @param {*} payload - Backend payload.
+ * @param {string} collection - Collection name.
+ * @returns {Array<Object>} Normalized records.
+ * @collaboration Keeps every workspace source-led and removes fake UI rows.
+ */
+function normalizeCollectionPayload(payload, collection) {
+  const candidates = [
+    payload?.data,
+    payload?.records,
+    payload?.items,
+    payload?.results,
+    payload?.[collection],
+    payload
+  ];
+
+  const list = candidates.find(candidate => Array.isArray(candidate)) || [];
+  return list.map((record, index) => normalizeRecord(record, collection, index));
+}
+
+/**
+ * @function buildAuthHeaders
+ * @description Builds tenant-safe CRM request headers.
+ * @param {string} tenantId - Active tenant id.
+ * @returns {Object} Request headers.
+ * @collaboration Keeps CRM API calls aligned with Wilsy OS tenant guard expectations.
+ */
+function buildAuthHeaders(tenantId) {
+  const token = getStoredValue('token', '') || getStoredValue('authToken', '') || getStoredValue('wilsyAuthToken', '');
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Tenant-Id': tenantId || 'MASTER',
+    'X-Wilsy-Tenant-ID': tenantId || 'MASTER'
+  };
+
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
+/**
+ * @function fetchCrmCollection
+ * @description Fetches one CRM source collection.
+ * @param {string} collection - Collection id.
+ * @param {string} tenantId - Active tenant id.
+ * @param {AbortSignal} signal - Abort signal.
+ * @returns {Promise<Object>} Source result.
+ * @collaboration Preserves a no-fake-data dashboard contract while surfacing source gaps clearly.
+ */
+async function fetchCrmCollection(collection, tenantId, signal) {
+  const endpoint = CRM_ENDPOINTS[collection];
+  if (!endpoint) return { collection, ok: false, records: [], error: 'Endpoint not configured' };
+
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'GET',
+      headers: buildAuthHeaders(tenantId),
+      signal
+    });
+
+    if (!response.ok) {
+      return { collection, ok: false, records: [], status: response.status, error: `HTTP ${response.status}` };
+    }
+
+    const payload = await response.json();
+    return {
+      collection,
+      ok: true,
+      records: normalizeCollectionPayload(payload, collection),
+      sourcePosture: payload?.sourcePosture || payload?.meta?.sourcePosture || null,
+      status: response.status,
+      error: null
+    };
+  } catch (error) {
+    if (error?.name === 'AbortError') return { collection, ok: false, records: [], aborted: true, error: 'Aborted' };
+    return { collection, ok: false, records: [], error: error?.message || 'Source request failed' };
+  }
+}
+
+
+/**
+ * @function fetchCrmSourcePosture
+ * @description Fetches live CRM source posture from the backend.
+ * @param {string} tenantId - Active tenant id.
+ * @param {AbortSignal} signal - Abort signal.
+ * @returns {Promise<Object|null>} Source posture.
+ * @collaboration Powers Root Hash and source-route counters from the live backend.
+ */
+async function fetchCrmSourcePosture(tenantId, signal) {
+  try {
+    const response = await fetch(`${API_BASE}${CRM_SOURCE_POSTURE_ENDPOINT}`, {
+      method: 'GET',
+      headers: buildAuthHeaders(tenantId),
+      signal
+    });
+
+    if (!response.ok) return null;
+    return response.json();
+  } catch (error) {
+    if (error?.name === 'AbortError') return null;
     return null;
   }
-};
+}
 
 /**
- * @function parseCrmCsv
- * @description Parses a simple CSV file into CRM records.
- * @param {string} text - CSV text.
- * @returns {Array<object>} Parsed rows.
- * @collaboration Allows governed competitor exports to enter CRM through preview routes.
+ * @function createEmptySnapshot
+ * @description Builds a zero-record source snapshot.
+ * @returns {Object} Empty CRM snapshot.
+ * @collaboration Gives CRM an honest baseline before source hydration.
  */
-const parseCrmCsv = (text = '') => {
-  const rows = String(text || '')
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .map(row => row.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')));
-
-  const headers = rows.shift() || [];
-  return rows.map(values => headers.reduce((record, key, index) => ({
-    ...record,
-    [key]: values[index] || ''
-  }), {}));
-};
-
-/**
- * @function escapeCrmCsvCell
- * @description Escapes a value for CSV export.
- * @param {unknown} value - Cell value.
- * @returns {string} CSV cell.
- * @collaboration Keeps CRM exports portable.
- */
-const escapeCrmCsvCell = (value = '') => {
-  const raw = value === null || value === undefined ? '' : String(value);
-  return /[",\n\r]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
-};
-
-/**
- * @function downloadCrmCsv
- * @description Downloads CRM rows as CSV.
- * @param {Array<object>} rows - Rows to export.
- * @param {string} fileName - File name without extension.
- * @returns {void}
- * @collaboration Gives CRM portable evidence without changing source records.
- */
-const downloadCrmCsv = (rows = [], fileName = 'wilsy-crm-export') => {
-  const fields = Array.from(rows.reduce((set, row) => {
-    Object.keys(row || {}).forEach(key => set.add(key));
-    return set;
-  }, new Set(['id', 'name', 'status', 'sourceStatus'])));
-
-  const csv = [
-    fields.join(','),
-    ...rows.map(row => fields.map(field => escapeCrmCsvCell(row?.[field])).join(','))
-  ].join('\n');
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `${fileName}.csv`;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
-};
-
-/**
- * @function normalizeCrmEnvelope
- * @description Normalizes CRM service envelopes.
- * @param {unknown} payload - Service payload.
- * @returns {{items:Array<object>,total:number,sourceStatus:string,raw:unknown}} Normalized envelope.
- * @collaboration Lets CRM read multiple backend envelope formats without fabricating records.
- */
-const normalizeCrmEnvelope = (payload = {}) => {
-  const source = payload?.data || payload?.result || payload?.summary || payload || {};
-  const items = Array.isArray(payload)
-    ? payload
-    : (source.items || source.records || source.rows || source.data || []);
-  const list = Array.isArray(items) ? items : [];
-
+function createEmptySnapshot() {
   return {
-    items: list.map((item, index) => ({
-      ...item,
-      id: item?.id || item?._id || item?.recordId || item?.sourceId || `CRM_ROW_${index}`
-    })),
-    total: Number(source.total ?? source.count ?? list.length ?? 0),
-    sourceStatus: source.sourceStatus || source.status || (list.length ? 'SOURCE_LIVE' : 'SOURCE_REQUIRED'),
-    raw: payload
-  };
-};
-
-/**
- * @function buildCrmMethodNames
- * @description Builds candidate CRM service method names for a module action.
- * @param {string} action - Action name.
- * @param {object} moduleConfig - CRM module config.
- * @returns {Array<string>} Candidate service names.
- * @collaboration Keeps CRM tied to existing services while allowing route growth.
- */
-const buildCrmMethodNames = (action = 'get', moduleConfig = {}) => {
-  const singular = moduleConfig.singular || titleizeCrmText(moduleConfig.id);
-  const plural = titleizeCrmText(moduleConfig.id).replace(/\s+/g, '');
-  const singularName = singular.replace(/\s+/g, '');
-
-  if (action === 'get') return [`get${plural}`, `get${singularName}s`, 'getCrmRecords', 'getRecords'];
-  if (action === 'create') return [`create${singularName}`, 'createCrmRecord', 'createRecord'];
-  if (action === 'update') return [`update${singularName}`, 'updateCrmRecord', 'updateRecord'];
-  if (action === 'delete') return [`delete${singularName}`, 'deleteCrmRecord', 'deleteRecord'];
-  return [];
-};
-
-/**
- * @function callCrmServiceMethod
- * @description Attempts CRM service methods with supported argument signatures.
- * @param {Array<string>} methodNames - Candidate method names.
- * @param {Array<Array<unknown>>} argumentSets - Candidate argument sets.
- * @returns {Promise<unknown>} Service response.
- * @collaboration Uses real connector routes only and surfaces route gaps as source required.
- */
-const callCrmServiceMethod = async (methodNames = [], argumentSets = []) => {
-  let lastError = null;
-
-  for (const name of methodNames) {
-    const fn = crmService?.[name];
-    if (typeof fn !== 'function') continue;
-
-    for (const args of argumentSets) {
-      try {
-        return await fn(...args);
-      } catch (error) {
-        lastError = error;
-      }
+    leads: [],
+    contacts: [],
+    accounts: [],
+    deals: [],
+    tasks: [],
+    meetings: [],
+    evidence: [],
+    connectors: [],
+    sourcePosture: {
+      connected: 0,
+      total: Object.keys(CRM_ENDPOINTS).length,
+      errors: [],
+      loading: false,
+      lastSync: null
     }
-  }
-
-  if (lastError) throw lastError;
-  return null;
-};
-
-/**
- * @function buildCrmReceiptHash
- * @description Builds a browser-safe deterministic receipt hash.
- * @param {object} payload - Receipt payload.
- * @returns {string} Receipt hash.
- * @collaboration Gives CRM visible command receipts without exposing secrets.
- */
-const buildCrmReceiptHash = (payload = {}) => {
-  const raw = JSON.stringify(payload, Object.keys(payload || {}).sort());
-  let hash = 0x811c9dc5;
-  for (let index = 0; index < raw.length; index += 1) {
-    hash ^= raw.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return `CRM-${(hash >>> 0).toString(16).toUpperCase().padStart(8, '0')}`;
-};
-
-/**
- * @function buildCrmReadiness
- * @description Calculates CRM readiness from live source and record posture.
- * @param {object} params - Readiness inputs.
- * @returns {{score:number,posture:string,liveSources:number,totalSources:number}} Readiness packet.
- * @collaboration Makes readiness measurable without inventing verified data.
- */
-const buildCrmReadiness = ({ collections = {}, sourceState = {} } = {}) => {
-  const totalSources = CRM_MODULES.length;
-  const liveSources = Object.values(sourceState).filter(source => (
-    ['SOURCE_LIVE', 'LIVE', 'SOURCE_READY'].includes(String(source?.status || '').toUpperCase())
-  )).length;
-  const totalRecords = Object.values(collections).reduce((sum, envelope) => (
-    sum + Number(envelope?.total || envelope?.items?.length || 0)
-  ), 0);
-  const catalogReady = Boolean(WILSY_CRM_CATALOG_READINESS?.ok);
-  const commandReady = Boolean(WILSY_CRM_COMMAND_CLIENT_HEALTH?.ok);
-  const liveRouteCount = Number(WILSY_CRM_CATALOG_READINESS?.liveRoutes || 0);
-  const plannedRouteCount = Number(WILSY_CRM_CATALOG_READINESS?.plannedRoutes || 0);
-
-  const score = Math.min(100, Math.round(
-    (liveSources / Math.max(totalSources, 1)) * 54
-    + (totalRecords > 0 ? 18 : 4)
-    + (catalogReady ? 12 : 0)
-    + (commandReady ? 10 : 0)
-    + (liveRouteCount > 0 ? 6 : 0)
-  ));
-
-  return {
-    score,
-    posture: score >= 80 ? 'CRM_OS_READY_FOR_REVENUE_COMMAND' : score >= 55 ? 'CRM_OS_SOURCE_REPAIR_ACTIVE' : 'CRM_OS_SOURCE_ROUTES_REQUIRED',
-    liveSources,
-    totalSources,
-    totalRecords,
-    liveRouteCount,
-    plannedRouteCount,
-    catalogReady,
-    commandReady,
-    catalogVersion: WILSY_CRM_MODULE_CATALOG_VERSION,
-    commandClientVersion: WILSY_CRM_COMMAND_CLIENT_VERSION,
-    noFakeData: true
   };
-};
+}
 
 /**
- * @function buildCrmAiMemo
- * @description Builds a Wilsy AI CRM memo from real source posture and visible records.
- * @param {object} params - Memo inputs.
- * @returns {{headline:string,detail:string,next:string}} Memo packet.
- * @collaboration Makes Wilsy AI a command engine layer without claiming model output or fake data.
+ * @function buildCrmSnapshot
+ * @description Builds the CRM snapshot from source route results.
+ * @param {Array<Object>} results - Collection fetch results.
+ * @returns {Object} CRM snapshot.
+ * @collaboration Creates one source-of-truth data object for all cards, records and telemetry strips.
  */
-const buildCrmAiMemo = ({ readiness, activeModule, collections, evidenceTotal } = {}) => {
-  const totalRecords = Object.values(collections || {}).reduce((sum, envelope) => (
-    sum + Number(envelope?.total || envelope?.items?.length || 0)
-  ), 0);
+function buildCrmSnapshot(results = []) {
+  const snapshot = createEmptySnapshot();
+  const errors = [];
+  const backendPosture = results.map(result => result?.sourcePosture).find(Boolean) || null;
 
-  if (readiness.score < 55) {
+  results.forEach(result => {
+    if (!result || !result.collection) return;
+    snapshot[result.collection] = Array.isArray(result.records) ? result.records : [];
+
+    if (result.ok) {
+      snapshot.sourcePosture.connected += 1;
+    } else if (!result.aborted) {
+      errors.push({
+        collection: result.collection,
+        error: result.error || 'Unavailable source',
+        status: result.status || null
+      });
+    }
+  });
+
+  snapshot.sourcePosture.errors = errors;
+  if (backendPosture) {
+    snapshot.sourcePosture.connected = Number(backendPosture.connectedRoutes ?? snapshot.sourcePosture.connected);
+    snapshot.sourcePosture.total = Number(backendPosture.totalRoutes ?? snapshot.sourcePosture.total);
+    snapshot.sourcePosture.rootHash = backendPosture.rootHash || null;
+    snapshot.sourcePosture.rootHashShort = backendPosture.rootHashShort || null;
+    snapshot.sourcePosture.sources = backendPosture.sources || [];
+    snapshot.sourcePosture.sourceGaps = backendPosture.sourceGaps || [];
+    snapshot.sourcePosture.generatedAt = backendPosture.generatedAt || null;
+  }
+  snapshot.sourcePosture.lastSync = new Date().toISOString();
+  snapshot.sourcePosture.loading = false;
+  return snapshot;
+}
+
+/**
+ * @function calculateReadinessScore
+ * @description Calculates CRM readiness from source connectivity and captured records.
+ * @param {Object} snapshot - CRM snapshot.
+ * @returns {number} Readiness score.
+ * @collaboration Produces an investor-visible posture score without hardcoding false maturity.
+ */
+function calculateReadinessScore(snapshot) {
+  const totalSources = snapshot.sourcePosture.total || Object.keys(CRM_ENDPOINTS).length;
+  const connectedRatio = totalSources ? snapshot.sourcePosture.connected / totalSources : 0;
+  const dataAnchors = [
+    snapshot.leads.length > 0,
+    snapshot.contacts.length > 0,
+    snapshot.accounts.length > 0,
+    snapshot.deals.length > 0,
+    snapshot.evidence.length > 0
+  ].filter(Boolean).length / 5;
+
+  return Math.round(Math.min(100, (connectedRatio * 70) + (dataAnchors * 30)));
+}
+
+/**
+ * @function buildPipelineStages
+ * @description Builds weighted pipeline stage summaries from live deals.
+ * @param {Array<Object>} deals - Normalized deal records.
+ * @returns {Array<Object>} Pipeline stages.
+ * @collaboration Turns source deal records into a compliance-aware revenue strip.
+ */
+function buildPipelineStages(deals = []) {
+  return PIPELINE_STAGE_RULES.map(rule => {
+    const stageAliases = [rule.stage, ...(rule.aliases || [])]
+      .map(alias => String(alias || '').toLowerCase());
+
+    const stageDeals = deals.filter(deal => stageAliases.includes(String(deal.stage || '').toLowerCase()));
+    const rawValue = stageDeals.reduce((sum, deal) => sum + toNumber(deal.value), 0);
+    const weightedValue = Math.round(rawValue * (rule.probability / 100));
+
     return {
-      headline: 'Repair source routes, then refresh the customer graph.',
-      detail: `${readiness.liveSources}/${readiness.totalSources} CRM source rails are live. ${totalRecords} records are visible. Evidence rows: ${evidenceTotal}.`,
-      next: 'Run Live Sync and inspect Source Registry evidence.'
+      ...rule,
+      count: stageDeals.length,
+      rawValue,
+      weightedValue
     };
-  }
-
-  return {
-    headline: 'Customer command graph is ready for action.',
-    detail: `${totalRecords} CRM records are active across ${readiness.liveSources} live source rails. Active module: ${titleizeCrmText(activeModule)}.`,
-    next: 'Open Pipeline, Evidence or AI to move customer work forward.'
-  };
-};
+  });
+}
 
 /**
- * @function getCrmDisplayValue
- * @description Extracts and formats a CRM field for display.
- * @param {object} row - CRM row.
- * @param {string} field - Field key.
- * @returns {string} Display value.
- * @collaboration Keeps missing CRM values marked as source required.
+ * @function buildPipelineTotal
+ * @description Calculates total weighted value across pipeline stages.
+ * @param {Array<Object>} stages - Pipeline stages.
+ * @returns {number} Total weighted value.
+ * @collaboration Keeps top metrics and stage strip aligned.
  */
-const getCrmDisplayValue = (row = {}, field = '') => {
-  const value = row?.[field];
-  if (value === null || value === undefined || value === '') return 'SOURCE REQUIRED';
-  if (['amount', 'annualRevenue', 'budget', 'value'].includes(field)) return formatCrmMoney(value);
-  if (['probability', 'score', 'percentComplete'].includes(field)) return `${numericCrmValue(value)}%`;
-  if (['closingDate', 'completedAt', 'dueDate', 'effectiveDate', 'scheduledAt', 'startsAt', 'validUntil', 'verifiedAt'].includes(field)) return formatCrmDate(value);
-  return String(value);
-};
-
-
-const CRM_WILSY_AI_INLINE_STYLES = Object.freeze({
-  shell: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(340px, 0.95fr) minmax(480px, 1.35fr) minmax(280px, 0.75fr)',
-    gap: 16,
-    alignItems: 'stretch',
-    padding: 18,
-    border: '1px solid rgba(234, 208, 96, 0.30)',
-    borderRadius: 24,
-    background: 'linear-gradient(135deg, rgba(7, 11, 18, 0.98), rgba(2, 4, 8, 0.98))',
-    boxShadow: '0 24px 70px rgba(0,0,0,0.36)',
-    marginBottom: 22,
-    overflow: 'hidden'
-  },
-  hero: {
-    display: 'grid',
-    gap: 10,
-    padding: 18,
-    borderRadius: 18,
-    border: '1px solid rgba(255,255,255,0.10)',
-    background: 'radial-gradient(circle at 0% 0%, rgba(234,208,96,0.16), transparent 42%), rgba(0,0,0,0.34)'
-  },
-  eyebrow: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 8,
-    color: '#e9d06a',
-    fontSize: 11,
-    letterSpacing: '0.22em',
-    fontWeight: 900,
-    textTransform: 'uppercase'
-  },
-  title: {
-    margin: 0,
-    color: '#ffffff',
-    fontSize: 24,
-    lineHeight: 1.05,
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase'
-  },
-  copy: {
-    margin: 0,
-    color: 'rgba(255,255,255,0.70)',
-    lineHeight: 1.45,
-    fontSize: 13
-  },
-  proof: {
-    display: 'block',
-    color: '#8ef5c5',
-    fontSize: 10,
-    letterSpacing: '0.11em',
-    wordBreak: 'break-all'
-  },
-  planGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    gap: 12
-  },
-  plan: {
-    display: 'grid',
-    gap: 8,
-    minWidth: 0,
-    padding: 14,
-    borderRadius: 16,
-    border: '1px solid rgba(255,255,255,0.11)',
-    background: 'rgba(255,255,255,0.035)'
-  },
-  planTitle: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 900,
-    lineHeight: 1.25,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
-  },
-  planMeta: {
-    color: 'rgba(255,255,255,0.62)',
-    fontSize: 11,
-    lineHeight: 1.4
-  },
-  planValue: {
-    color: '#e9d06a',
-    fontSize: 18,
-    fontWeight: 950,
-    letterSpacing: '0.06em'
-  },
-  actionRow: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 10,
-    alignItems: 'center',
-    marginTop: 4
-  },
-  button: {
-    minHeight: 38,
-    padding: '0 14px',
-    border: '1px solid rgba(234,208,96,0.45)',
-    background: 'linear-gradient(135deg, #dfc558, #fff5c7)',
-    color: '#151005',
-    fontWeight: 950,
-    letterSpacing: '0.08em',
-    cursor: 'pointer'
-  },
-  ghostButton: {
-    minHeight: 38,
-    padding: '0 14px',
-    border: '1px solid rgba(255,255,255,0.16)',
-    background: 'rgba(255,255,255,0.04)',
-    color: '#ffffff',
-    fontWeight: 850,
-    letterSpacing: '0.08em',
-    cursor: 'pointer'
-  },
-  telemetry: {
-    display: 'grid',
-    gap: 10,
-    padding: 16,
-    borderRadius: 18,
-    border: '1px solid rgba(142,245,197,0.20)',
-    background: 'rgba(9,22,18,0.38)'
-  },
-  telemetryRow: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1fr) auto',
-    gap: 12,
-    alignItems: 'center',
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: 12,
-    borderBottom: '1px solid rgba(255,255,255,0.07)',
-    paddingBottom: 8
-  }
-});
+function buildPipelineTotal(stages = []) {
+  return stages.reduce((sum, stage) => sum + toNumber(stage.weightedValue), 0);
+}
 
 /**
- * @function buildCrmWilsyAiEntitlementSyncKey
- * @description Builds a stable Wilsy AI entitlement sync key so CRM cannot hammer missing backend entitlement routes.
- * @param {Object} params - Sync key inputs.
- * @returns {string} Stable sync key.
- * @collaboration Protects the server while preserving monetisable tenant AI entitlement posture.
+ * @function buildOperatorIdentity
+ * @description Builds the current operator identity from props and browser cache while prioritizing first name and surname.
+ * @param {Object} user - User prop.
+ * @returns {Object} Operator identity.
+ * @collaboration Uses backend/cache identity fields before falling back to browser-safe defaults.
  */
-const buildCrmWilsyAiEntitlementSyncKey = ({
-  currentTenantId = '',
-  sourceSnapshot = {},
-  accessDecision = {},
-  tenantProfile = {}
-} = {}) => createWilsyAIClientProof({
-  tenantId: currentTenantId || 'TENANT_SOURCE_REQUIRED',
-  accessAllowed: Boolean(accessDecision?.allowed),
-  accessReason: accessDecision?.reason || 'ACCESS_SOURCE_REQUIRED',
-  industryKey: tenantProfile?.industryKey || 'general_smb',
-  tenantName: tenantProfile?.name || 'TENANT_PROFILE_SOURCE_REQUIRED',
-  sourcePosture: {
-    crmStatus: sourceSnapshot?.crm?.status || 'CRM_SOURCE_REQUIRED',
-    recordsLive: Boolean(sourceSnapshot?.records?.live),
-    recordsCount: Number(sourceSnapshot?.records?.count || 0),
-    financeLive: Boolean(sourceSnapshot?.finance?.live),
-    financeCount: Number(sourceSnapshot?.finance?.count || 0),
-    telemetryLive: Boolean(sourceSnapshot?.telemetry?.live),
-    evidenceLive: Boolean(sourceSnapshot?.evidence?.live),
-    evidenceCount: Number(sourceSnapshot?.evidence?.count || 0)
-  }
-});
+function buildOperatorIdentity(user = {}) {
+  const storedUser = readStoredJson('user');
+  const source = Object.keys(user || {}).length ? user : storedUser;
 
-/**
- * @function buildCrmWilsyAiSourceSnapshot
- * @description Builds the source heartbeat packet Wilsy AI needs before planning, licensing or usage recording.
- * @param {Object} params - Source inputs.
- * @returns {Object} Wilsy AI source snapshot.
- * @collaboration Keeps CRM AI honest by showing source gates instead of fabricated scoring output.
- */
-const buildCrmWilsyAiSourceSnapshot = ({ readiness = {}, collections = {}, sourceRegistryEvidence = {} } = {}) => {
-  const totalRecords = Object.values(collections || {}).reduce((sum, envelope) => (
-    sum + Number(envelope?.total || envelope?.items?.length || 0)
-  ), 0);
+  const firstName = safeText(source.firstName || source.givenName || source.nameFirst || source.profile?.firstName, '');
+  const surname = safeText(source.surname || source.lastName || source.familyName || source.nameLast || source.profile?.surname, '');
+  const joinedName = `${firstName} ${surname}`.trim();
 
-  const financeRecords = ['invoices', 'quotes', 'contracts', 'revenue_desk'].reduce((sum, key) => (
-    sum + Number(collections?.[key]?.total || collections?.[key]?.items?.length || 0)
-  ), 0);
-
-  const salesRecords = ['leads', 'contacts', 'accounts', 'deals', 'opportunities'].reduce((sum, key) => (
-    sum + Number(collections?.[key]?.total || collections?.[key]?.items?.length || 0)
-  ), 0);
-
-  const sourceStatus = String(sourceRegistryEvidence?.sourceStatus || readiness?.posture || 'SOURCE_REQUIRED').toUpperCase();
-
-  return {
-    crm: {
-      live: Number(readiness?.liveSources || 0) > 0,
-      status: readiness?.posture || 'CRM_SOURCE_REQUIRED'
-    },
-    records: {
-      live: totalRecords > 0 || salesRecords > 0,
-      count: totalRecords,
-      salesRecords
-    },
-    finance: {
-      live: financeRecords > 0,
-      count: financeRecords
-    },
-    telemetry: {
-      live: Number(readiness?.liveSources || 0) > 0 || sourceStatus.includes('LIVE'),
-      readinessScore: Number(readiness?.score || 0)
-    },
-    evidence: {
-      live: Number(sourceRegistryEvidence?.total || sourceRegistryEvidence?.items?.length || 0) > 0,
-      count: Number(sourceRegistryEvidence?.total || sourceRegistryEvidence?.items?.length || 0),
-      sourceStatus
-    }
-  };
-};
-
-/**
- * @function buildCrmWilsyAiAccessDecision
- * @description Builds an executive permission packet for Wilsy AI licensing in CRM.
- * @param {Object} params - Access inputs.
- * @returns {Object} Access decision.
- * @collaboration Ensures tenant AI monetisation cannot activate without operator authority.
- */
-const buildCrmWilsyAiAccessDecision = ({ user = {} } = {}) => {
-  const role = String(user?.role || user?.roleKey || user?.tenantRole || '').toLowerCase();
-  const allowed = Boolean(
-    user?.sovereignAccess
-    || user?.omegaAccess
-    || user?.founderAccess
-    || ['founder', 'super_admin', 'admin', 'owner', 'omega'].includes(role)
+  const displayName = safeText(
+    joinedName || source.displayName || source.fullName || source.name || getStoredValue('wilsyUserName', ''),
+    'Wilson Khanyezi'
   );
 
   return {
-    allowed,
-    reason: allowed
-      ? 'Executive operator permitted to review Wilsy AI licensing.'
-      : 'Executive permission is required before Wilsy AI can be licensed.'
+    displayName,
+    firstName,
+    surname,
+    roleLabel: safeText(source.roleLabel || source.role || source.accountRole || source.profile?.role, 'SUPER_ADMIN').toUpperCase(),
+    email: safeText(source.email || source.primaryEmail || source.username, 'wilsonkhanyezi@gmail.com'),
+    avatar: resolveImageSource(source.avatar || source.avatarUrl || source.profileImage || source.photoURL || source.profile?.avatar),
+    initials: buildInitials(displayName),
+    source: source._id || source.id || source.userId ? 'cache' : 'fallback'
   };
-};
+}
+
 
 /**
- * @function buildCrmWilsyAiTenantProfile
- * @description Builds the tenant profile used by Wilsy AI license planning.
- * @param {Object} params - Tenant inputs.
- * @returns {Object} Tenant profile packet.
- * @collaboration Converts CRM tenant context into monetisable Wilsy AI planning without changing tenant data.
+ * @function normalizeBackendOperatorProfile
+ * @description Normalizes authenticated backend user profile payloads into the CRM operator identity contract.
+ * @param {Object} payload - Backend profile payload.
+ * @param {Object} fallback - Existing identity fallback.
+ * @returns {Object} Normalized operator identity.
+ * @collaboration Ensures CRM displays DB-backed name, surname, email and role when the live backend exposes them.
  */
-const buildCrmWilsyAiTenantProfile = ({ currentTenantId = '', tenantIdentity = {}, tenantConfig = {}, activeTenant = {} } = {}) => ({
-  tenantId: currentTenantId,
-  name: tenantIdentity.displayName || tenantConfig.name || activeTenant.name || 'Wilsy OS Tenant',
-  industryKey: tenantConfig.industryKey || activeTenant.industryKey || activeTenant.industry || 'general_smb',
-  sourceStatus: tenantIdentity.sourceStatus || 'TENANT_PROFILE_CONTEXT',
-  archetype: {
-    wilsyAiUseCases: [
-      'Predictive lead scoring',
-      'Pipeline cockpit command',
-      'Customer success churn sentinel',
-      'Revenue desk IFRS evidence assistant',
-      'Compliance clause binder',
-      'Forensic sales receipt command'
-    ]
-  }
-});
+function normalizeBackendOperatorProfile(payload = {}, fallback = {}) {
+  const candidate = payload?.user || payload?.data?.user || payload?.data || payload?.profile || payload?.operator || payload || {};
 
-/**
- * @function buildCrmWilsyAiDutyStack
- * @description Builds CRM-specific Wilsy AI duties that can become paid license opportunities.
- * @param {Object} params - Duty inputs.
- * @returns {Array<Object>} CRM Wilsy AI duty rows.
- * @collaboration Turns Sales CRM operations into monetisable tenant AI use cases without inventing live model results.
- */
-const buildCrmWilsyAiDutyStack = ({ activeModule = 'leads', readiness = {} } = {}) => {
-  const sourceStatus = Number(readiness?.liveSources || 0) > 0 ? 'CRM_SOURCE_PARTIAL' : 'CRM_AI_SOURCE_REQUIRED';
+  const firstName = safeText(candidate.firstName || candidate.givenName || candidate.nameFirst, '');
+  const surname = safeText(candidate.surname || candidate.lastName || candidate.familyName || candidate.nameLast, '');
+  const joinedName = `${firstName} ${surname}`.trim();
 
-  return [
-    {
-      lane: 'Sales',
-      title: 'Predictive lead scoring',
-      reason: 'Rank leads by close probability once email, LinkedIn and CRM source rails are live.',
-      commandLabel: 'Score leads',
-      wilsyAiUseCase: 'Predictive lead scoring',
-      sourceStatus
-    },
-    {
-      lane: 'Sales',
-      title: 'Pipeline cockpit assistant',
-      reason: 'Explain weighted pipeline, churn risk and next-best-action from source-backed CRM records.',
-      commandLabel: 'Review pipeline',
-      wilsyAiUseCase: 'Pipeline cockpit command',
-      sourceStatus
-    },
-    {
-      lane: 'Customer',
-      title: 'Customer success churn sentinel',
-      reason: 'Tie adoption, support, renewal and HR performance signals to success telemetry.',
-      commandLabel: 'Review churn',
-      wilsyAiUseCase: 'Customer success churn sentinel',
-      sourceStatus
-    },
-    {
-      lane: 'Finance',
-      title: 'Revenue desk IFRS evidence assistant',
-      reason: 'Connect contracts, invoices, receipts and IFRS posture without fake revenue metrics.',
-      commandLabel: 'Review revenue',
-      wilsyAiUseCase: 'Revenue desk IFRS evidence assistant',
-      sourceStatus
-    },
-    {
-      lane: 'Compliance',
-      title: 'Compliance clause binder',
-      reason: 'Bind POPIA, GDPR and SOC2 posture to customer records and regulator export packs.',
-      commandLabel: 'Bind clauses',
-      wilsyAiUseCase: 'Compliance clause binder',
-      sourceStatus
-    },
-    {
-      lane: 'Wilsy AI',
-      title: `CRM command agent for ${titleizeCrmText(activeModule)}`,
-      reason: 'Meter tenant AI actions, record usage receipts and surface connector requirements.',
-      commandLabel: 'Run CRM AI',
-      wilsyAiUseCase: 'Forensic sales receipt command',
-      sourceStatus
-    }
-  ];
-};
+  const displayName = safeText(
+    joinedName || candidate.displayName || candidate.fullName || candidate.name,
+    fallback.displayName || 'Wilson Khanyezi'
+  );
 
-/**
- * @function buildCrmWilsyAiCommercialPosture
- * @description Builds the visible commercial posture for the CRM Wilsy AI strip.
- * @param {Object} params - Commercial posture inputs.
- * @returns {Object} Commercial posture packet.
- * @collaboration Shows monetisation, source gates and receipt posture without claiming unlicensed AI execution.
- */
-const buildCrmWilsyAiCommercialPosture = ({ planRows = [], entitlementPacket = {}, sourceSnapshot = {}, accessDecision = {} } = {}) => {
-  const activeLicenses = Number(entitlementPacket?.licenses?.filter?.(license => String(license?.licenseStatus || license?.status || '').toUpperCase() === 'ACTIVE')?.length || 0);
-  const plannedRevenue = planRows.reduce((sum, plan) => sum + Number(plan?.monthlyPriceZar || plan?.monthlyPrice || 0), 0);
-  const proof = createWilsyAIClientProof({
-    activeLicenses,
-    plannedRevenue,
-    planCount: planRows.length,
-    sourceSnapshot,
-    accessAllowed: accessDecision.allowed
-  });
+  const roleLabel = safeText(
+    candidate.roleLabel || candidate.role || candidate.accountRole || candidate.permissions?.role || candidate.accessRole,
+    fallback.roleLabel || 'SUPER_ADMIN'
+  ).toUpperCase();
+
+  const email = safeText(candidate.email || candidate.primaryEmail || candidate.username, fallback.email || 'wilsonkhanyezi@gmail.com');
 
   return {
-    status: activeLicenses > 0 ? 'WILSY_AI_LICENSE_ACTIVE' : entitlementPacket?.sourceStatus || 'WILSY_AI_LICENSE_ROUTE_REQUIRED',
-    label: activeLicenses > 0 ? `${activeLicenses} active CRM AI licenses` : 'Wilsy AI monetisation ready',
-    plannedRevenue,
-    proof,
-    reason: entitlementPacket?.error || accessDecision.reason || 'Tenant AI licenses require backend entitlement authority.',
-    sourceStatus: entitlementPacket?.sourceStatus || 'WILSY_AI_ENTITLEMENT_SOURCE_REQUIRED'
+    ...fallback,
+    displayName,
+    firstName: firstName || fallback.firstName || '',
+    surname: surname || fallback.surname || '',
+    roleLabel,
+    email,
+    avatar: resolveImageSource(candidate.avatar || candidate.avatarUrl || candidate.profileImage || candidate.photoURL || candidate.profile?.avatar || fallback.avatar),
+    initials: buildInitials(displayName),
+    source: 'backend'
   };
-};
-
-
-/**
- * @function buildDefaultCrmDraft
- * @description Builds a draft record for the active CRM module.
- * @param {object} moduleConfig - Module config.
- * @returns {object} Draft record.
- * @collaboration Creates form state without fabricating persisted records.
- */
-const buildDefaultCrmDraft = (moduleConfig = {}) => (
-  (moduleConfig.fields || []).reduce((draft, field) => ({
-    ...draft,
-    [field]: FIELD_TYPES[field] === 'number' ? 0 : ''
-  }), {
-    sourceSystem: 'WILSY_OS_CRM',
-    sourceStatus: 'SOURCE_PENDING'
-  })
-);
+}
 
 /**
- * @function CRMDashboard
- * @description Renders the clean Wilsy OS CRM command center.
- * @param {object} props - Component props.
- * @returns {React.ReactElement} CRM dashboard.
- * @collaboration Implements ExecutiveDashboard parity with a clean CRM operating shell and real service routes.
+ * @function fetchBackendOperatorProfile
+ * @description Attempts to retrieve the authenticated operator profile from live backend routes.
+ * @param {string} tenantId - Active tenant id.
+ * @param {AbortSignal} signal - Abort signal.
+ * @param {Object} fallback - Existing fallback identity.
+ * @returns {Promise<Object>} Operator identity.
+ * @collaboration Starts the CRM identity chain from backend/DB data without breaking when a route is unavailable.
  */
-/**
- * @function buildCrmLiveStatusLabel
- * @description Builds a truthful CRM status label from live readiness, sync and source inventory state.
- * @param {Object} params - CRM status inputs.
- * @returns {string} Human readable live CRM status label.
- * @collaboration Removes fake placeholder copy while keeping the dashboard honest when source routes are not connected.
- */
-const buildCrmLiveStatusLabel = ({
-  readiness = {},
-  isRefreshing = false,
-  error = null,
-  lastUpdated = null
-} = {}) => {
-  const liveSources = Number(readiness.liveSources || 0);
-  const totalSources = Number(readiness.totalSources || 0);
-  const score = Number(readiness.score || 0);
-  const posture = String(readiness.posture || '').replace(/_/g, ' ').toLowerCase();
-
-  if (isRefreshing) return 'Syncing live CRM source graph';
-  if (error) return 'Live CRM sync needs attention';
-  if (liveSources > 0 && totalSources > 0) {
-    return `${liveSources}/${totalSources} live sources // ${score}% readiness`;
-  }
-  if (totalSources > 0) {
-    return `No connected live CRM sources // ${totalSources} routes checked`;
-  }
-  if (lastUpdated) return `CRM source inventory empty // last checked ${lastUpdated}`;
-  if (posture) return `CRM source inventory empty // ${posture}`;
-  return 'CRM source inventory empty';
-};
-
-/**
- * @function CRMDashboard
- * @description Renders the Wilsy OS CRM command surface with tenant branding, live CRM readiness, customer records, source posture, module navigation and command-center controls.
- * @returns {React.ReactElement} Wilsy OS CRM dashboard.
- * @collaboration Keeps the CRM dashboard guard-compliant while preserving the existing Executive Account Command Center integration path.
- */
-const CRMDashboard = ({
-  tenantId,
-  activeTenant = {},
-  tenantConfig = {},
-  user = {},
-  founderReturnEnabled = false,
-  onFounderReturn,
-  executeCommand
-}) => {
-  const importInputRef = useRef(null);
-  const currentTenantId = tenantId || activeTenant?.tenantId || activeTenant?.id || activeTenant?._id || user?.tenantId || DEFAULT_TENANT_ID;
-
-  const [activeWorkspace, setActiveWorkspace] = useState('home');
-  const [sideRailOpen, setSideRailOpen] = useState(true);
-  const [activeModule, setActiveModule] = useState('leads');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('table');
-  const [collections, setCollections] = useState(() => CRM_MODULES.reduce((all, moduleConfig) => ({
-    ...all,
-    [moduleConfig.id]: { items: [], total: 0, sourceStatus: 'SOURCE_REQUIRED' }
-  }), {}));
-  const [sourceState, setSourceState] = useState({});
-  const [pageState, setPageState] = useState(() => CRM_MODULES.reduce((all, moduleConfig) => ({
-    ...all,
-    [moduleConfig.id]: { limit: DEFAULT_PAGE_LIMIT, offset: 0 }
-  }), {}));
-  const [commandCenter, setCommandCenter] = useState({});
-  const [sourceRegistryEvidence, setSourceRegistryEvidence] = useState({ items: [], total: 0, sourceStatus: 'SOURCE_REQUIRED' });
-  const [receipts, setReceipts] = useState([]);
-  const [importVendor, setImportVendor] = useState('GENERIC_CRM');
-  const [importReport, setImportReport] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState(null);
-  const [recordDraft, setRecordDraft] = useState({});
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [sourceFilter, setSourceFilter] = useState('ALL');
-  const [boardFilter, setBoardFilter] = useState('ALL');
-  const [themePreference, setThemePreference] = useState(() => readWilsyCrmThemePreference());
-  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
-  const [wilsyAiEntitlements, setWilsyAiEntitlements] = useState({
-    status: 'WILSY_AI_SOURCE_REQUIRED',
-    sourceStatus: 'WILSY_AI_ENTITLEMENT_SOURCE_REQUIRED',
-    plans: [],
-    licenses: [],
-    catalog: [],
-    error: ''
-  });
-  const [wilsyAiUsageReceipt, setWilsyAiUsageReceipt] = useState(null);
-  const [wilsyAiActionState, setWilsyAiActionState] = useState({
-    status: 'IDLE',
-    message: 'Wilsy AI CRM monetisation source gates ready.'
-  });
-
-  const wilsyAiEntitlementSyncRef = useRef({
-    key: '',
-    lastAt: 0,
-    inFlight: false,
-    sourceSilentUntil: 0
-  });
-
-  /**
-   * @function resolveInitialCrmAccountThemeId
-   * @description Resolves the CRM Account Command Center theme id from local runtime storage.
-   * @returns {string} Initial CRM account theme id.
-   * @collaboration Prevents Account Command Center theme runtime references from crashing before the first render.
-   */
-  const resolveInitialCrmAccountThemeId = () => {
-    if (typeof window === 'undefined') return 'sovereign_black';
-
+async function fetchBackendOperatorProfile(tenantId, signal, fallback = {}) {
+  for (const endpoint of USER_PROFILE_ENDPOINTS) {
     try {
-      return (
-        window.localStorage.getItem('wilsy:crm:theme')
-        || window.localStorage.getItem('wilsy:account-command-center:theme')
-        || window.localStorage.getItem('wilsy:dashboard-chrome:theme')
-        || 'sovereign_black'
-      );
-    } catch (storageError) {
-      return 'sovereign_black';
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'GET',
+        headers: buildAuthHeaders(tenantId),
+        signal
+      });
+
+      if (!response.ok) continue;
+
+      const payload = await response.json();
+      return normalizeBackendOperatorProfile(payload, fallback);
+    } catch (error) {
+      if (error?.name === 'AbortError') return fallback;
     }
+  }
+
+  return fallback;
+}
+
+/**
+ * @function useBackendOperatorIdentity
+ * @description Hydrates operator identity from backend profile routes with safe fallback.
+ * @param {Object} user - User prop fallback.
+ * @param {string} tenantId - Active tenant id.
+ * @param {number} refreshSignal - Refresh signal.
+ * @returns {Object} Operator identity.
+ * @collaboration Connects CRM chrome to live backend user details while preserving resilience.
+ */
+function useBackendOperatorIdentity(user = {}, tenantId = 'MASTER', refreshSignal = 0) {
+  const fallbackIdentity = useMemo(() => buildOperatorIdentity(user), [user]);
+  const [operatorIdentity, setOperatorIdentity] = useState(fallbackIdentity);
+
+  useEffect(() => {
+    setOperatorIdentity(fallbackIdentity);
+  }, [fallbackIdentity]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchBackendOperatorProfile(tenantId, controller.signal, fallbackIdentity)
+      .then(profile => setOperatorIdentity(profile))
+      .catch(() => setOperatorIdentity(fallbackIdentity));
+
+    return () => controller.abort();
+  }, [tenantId, refreshSignal, fallbackIdentity]);
+
+  return operatorIdentity;
+}
+
+/**
+ * @function buildTenantIdentity
+ * @description Builds tenant identity from tenant context and props.
+ * @param {Object} tenantRuntime - Tenant context runtime.
+ * @param {Object} tenantConfig - Tenant prop config.
+ * @returns {Object} Tenant identity.
+ * @collaboration Uses tenantContext as the governed identity source while preserving safe fallbacks.
+ */
+function buildTenantIdentity(tenantRuntime = {}, tenantConfig = {}) {
+  const activeTenant = tenantRuntime.activeTenant || {};
+  const branding = tenantRuntime.tenantBranding || {};
+  const source = { ...activeTenant, ...branding, ...tenantConfig };
+
+  const name = safeText(
+    source.companyName || source.name || source.label || source.tenantName,
+    'Wilsy OS Root'
+  );
+
+  return {
+    tenantId: safeText(source.tenantId || source.id || source.alias || getStoredValue('tenantId', ''), 'MASTER'),
+    name,
+    subtitle: safeText(source.authority || source.industry || source.businessModel, 'Tenant Identity Live'),
+    logo: resolveImageSource(source.logo || source.logoUrl || source.brandLogo),
+    primaryColor: source.primaryColor || source.primary || '#D4AF37',
+    secondaryColor: source.secondaryColor || source.secondary || '#1EEBCB',
+    accentColor: source.accentColor || source.accent || '#F6E27A'
+  };
+}
+
+/**
+ * @function getRecordCellValue
+ * @description Resolves a table cell display value.
+ * @param {Object} record - Normalized CRM record.
+ * @param {string} column - Column label.
+ * @returns {string} Display value.
+ * @collaboration Keeps record tables consistent across source collections.
+ */
+function getRecordCellValue(record, column) {
+  const key = column.toLowerCase();
+  const valueMap = {
+    name: record.name,
+    company: record.company,
+    email: record.email,
+    phone: record.phone,
+    source: record.source,
+    account: record.company,
+    industry: record.industry,
+    owner: record.owner,
+    status: record.status,
+    deal: record.name,
+    stage: record.stage,
+    value: formatMoney(record.value),
+    task: record.name,
+    due: record.dueDate,
+    meeting: record.name,
+    date: record.dueDate,
+    evidence: record.name,
+    type: record.type,
+    connector: record.name,
+    category: record.type,
+    'last sync': record.dueDate
   };
 
-  /**
-   * @function resolveInitialCrmAccountThemeMode
-   * @description Resolves the CRM Account Command Center mode from local runtime storage.
-   * @returns {string} Initial CRM account theme mode.
-   * @collaboration Keeps CRM boot safe while the Account Command Center takes theme authority.
-   */
-  const resolveInitialCrmAccountThemeMode = () => {
-    if (typeof window === 'undefined') return 'night';
+  return safeText(valueMap[key], '—');
+}
 
-    try {
-      return (
-        window.localStorage.getItem('wilsy:crm:mode')
-        || window.localStorage.getItem('wilsy:account-command-center:mode')
-        || window.localStorage.getItem('wilsy:dashboard-chrome:mode')
-        || 'night'
-      );
-    } catch (storageError) {
-      return 'night';
-    }
-  };
+/**
+ * @function useCrmSnapshot
+ * @description Loads source-led CRM collections for the active tenant.
+ * @param {string} tenantId - Active tenant id.
+ * @param {number} refreshSignal - Refresh trigger.
+ * @returns {Object} Snapshot state.
+ * @collaboration Separates CRM data hydration from presentation so the cockpit remains testable.
+ */
+function useCrmSnapshot(tenantId, refreshSignal) {
+  const [state, setState] = useState(() => ({
+    snapshot: createEmptySnapshot(),
+    loading: true,
+    error: null
+  }));
 
-  const [accountThemeId, setAccountThemeId] = useState(() => String(resolveInitialCrmAccountThemeId() || 'sovereign_black').trim() || 'sovereign_black');
-  const [accountThemeMode, setAccountThemeMode] = useState(() => ['day', 'night', 'auto'].includes(String(resolveInitialCrmAccountThemeMode() || 'night').toLowerCase()) ? String(resolveInitialCrmAccountThemeMode() || 'night').toLowerCase() : 'night');
-  const [founderReturnOpen, setFounderReturnOpen] = useState(false);
-  const [commandCentreOpen, setCommandCentreOpen] = useState(false);
-  const [commandCentrePinned, setCommandCentrePinned] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    const collections = Object.keys(CRM_ENDPOINTS);
 
-  const crmThemeVars = useMemo(() => (
-    buildWilsyCrmThemeVars(themePreference.themeId, themePreference.mode)
-  ), [themePreference]);
-
-  const tenantIdentity = useMemo(() => (
-    buildCrmTenantIdentity({ tenantId: currentTenantId, activeTenant, tenantConfig, user })
-  ), [activeTenant, currentTenantId, tenantConfig, user]);
-
-  const moduleConfig = useMemo(() => (
-    resolveCrmCatalogModuleConfig(activeModule)
-  ), [activeModule]);
-
-  const currentCollection = collections[activeModule] || { items: [], total: 0, sourceStatus: 'SOURCE_REQUIRED' };
-
-  const readiness = useMemo(() => (
-    buildCrmReadiness({ collections, sourceState })
-  ), [collections, sourceState]);
-
-  const pipelineValue = useMemo(() => (
-    (collections.deals?.items || []).reduce((sum, deal) => (
-      sum + numericCrmValue(deal.value || deal.amount) * (numericCrmValue(deal.probability) / 100)
-    ), 0)
-  ), [collections.deals]);
-
-  const evidenceTotal = Number(sourceRegistryEvidence?.total || sourceRegistryEvidence?.items?.length || 0);
-
-  const aiMemo = useMemo(() => (
-    buildCrmAiMemo({ readiness, activeModule, collections, evidenceTotal })
-  ), [activeModule, collections, evidenceTotal, readiness]);
-
-  const crmWilsyAiAccessDecision = useMemo(() => (
-    buildCrmWilsyAiAccessDecision({ user })
-  ), [user]);
-
-  const crmWilsyAiSourceSnapshot = useMemo(() => (
-    buildCrmWilsyAiSourceSnapshot({ readiness, collections, sourceRegistryEvidence })
-  ), [collections, readiness, sourceRegistryEvidence]);
-
-  const crmWilsyAiTenantProfile = useMemo(() => (
-    buildCrmWilsyAiTenantProfile({ currentTenantId, tenantIdentity, tenantConfig, activeTenant })
-  ), [activeTenant, currentTenantId, tenantConfig, tenantIdentity]);
-
-  const crmWilsyAiDutyStack = useMemo(() => (
-    buildCrmWilsyAiDutyStack({ activeModule, readiness })
-  ), [activeModule, readiness]);
-
-  const crmWilsyAiLocalPlan = useMemo(() => (
-    buildWilsyAiLicensePlan({
-      tenantProfile: crmWilsyAiTenantProfile,
-      dailyDuties: crmWilsyAiDutyStack,
-      sourceSnapshot: crmWilsyAiSourceSnapshot,
-      accessDecision: crmWilsyAiAccessDecision
-    })
-  ), [crmWilsyAiAccessDecision, crmWilsyAiDutyStack, crmWilsyAiSourceSnapshot, crmWilsyAiTenantProfile]);
-
-  const wilsyAiPlanRows = useMemo(() => {
-    const serverPlans = Array.isArray(wilsyAiEntitlements?.plans) && wilsyAiEntitlements.plans.length
-      ? wilsyAiEntitlements.plans
-      : Array.isArray(wilsyAiEntitlements?.catalog) && wilsyAiEntitlements.catalog.length
-        ? wilsyAiEntitlements.catalog
-        : [];
-
-    return (serverPlans.length ? serverPlans : crmWilsyAiLocalPlan).slice(0, 6);
-  }, [crmWilsyAiLocalPlan, wilsyAiEntitlements]);
-
-  const wilsyAiPrimaryPlan = wilsyAiPlanRows[0] || crmWilsyAiLocalPlan[0] || null;
-
-  const wilsyAiCommercialPosture = useMemo(() => (
-    buildCrmWilsyAiCommercialPosture({
-      planRows: wilsyAiPlanRows,
-      entitlementPacket: wilsyAiEntitlements,
-      sourceSnapshot: crmWilsyAiSourceSnapshot,
-      accessDecision: crmWilsyAiAccessDecision
-    })
-  ), [crmWilsyAiAccessDecision, crmWilsyAiSourceSnapshot, wilsyAiEntitlements, wilsyAiPlanRows]);
-
-  const visibleRows = useMemo(() => {
-    const needle = searchTerm.trim().toLowerCase();
-    return (currentCollection.items || []).filter(row => {
-      if (needle && !JSON.stringify(row).toLowerCase().includes(needle)) return false;
-      if (sourceFilter !== 'ALL' && String(row.sourceStatus || row.sourcePosture || '').toUpperCase() !== sourceFilter) return false;
-      if (boardFilter !== 'ALL' && String(row.boardStatus || '').toUpperCase() !== boardFilter) return false;
-      return true;
-    });
-  }, [boardFilter, currentCollection.items, searchTerm, sourceFilter]);
-
-  const tableFields = useMemo(() => (
-    Array.from(new Set([moduleConfig.primary, moduleConfig.secondary, ...(moduleConfig.fields || []).slice(0, 4)]))
-      .filter(Boolean)
-      .slice(0, 6)
-  ), [moduleConfig]);
-
-  const addReceipt = useCallback((eventType, message, payload = {}) => {
-    const receipt = {
-      id: `${eventType}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
-      eventType,
-      message,
-      timestamp: new Date().toISOString(),
-      proofHash: buildCrmReceiptHash({
-        eventType,
-        message,
-        payload,
-        tenantId: currentTenantId,
-        version: CRM_VERSION
-      })
-    };
-
-    setReceipts(previous => [receipt, ...previous].slice(0, MAX_RECEIPTS));
-    return receipt;
-  }, [currentTenantId]);
-
-  const updateSource = useCallback((moduleId, status, message = '') => {
-    setSourceState(previous => ({
+    setState(previous => ({
       ...previous,
-      [moduleId]: {
-        status,
-        message: message || compactCrmSignal(status),
-        updatedAt: new Date().toISOString()
-      }
-    }));
-  }, []);
-
-  const loadModuleRecords = useCallback(async (moduleId = activeModule, nextPage = pageState[moduleId]) => {
-    const config = resolveCrmCatalogModuleConfig(moduleId, moduleConfig?.id);
-    const page = nextPage || { limit: DEFAULT_PAGE_LIMIT, offset: 0 };
-
-    try {
-      const commandEnvelope = await listWilsyCrmRecords(config.id, {
-        tenantId: currentTenantId,
-        limit: page.limit || DEFAULT_PAGE_LIMIT,
-        offset: page.offset || 0,
-        search: searchTerm,
-        sourceStatus: sourceFilter !== 'ALL' ? sourceFilter : undefined
-      });
-
-      const normalizedCommandEnvelope = normalizeCrmEnvelope(commandEnvelope);
-
-      if (
-        commandEnvelope?.sourceStatus === 'SOURCE_LIVE'
-        || commandEnvelope?.routePosture !== 'ROUTE_REQUIRED'
-        || normalizedCommandEnvelope.items.length > 0
-      ) {
-        setCollections(previous => ({
-          ...previous,
-          [moduleId]: normalizedCommandEnvelope
-        }));
-        updateSource(moduleId, commandEnvelope?.sourceStatus || normalizedCommandEnvelope.sourceStatus || 'SOURCE_REQUIRED', `${config.label} command client hydrated`);
-        return;
-      }
-
-      const methodNames = buildCrmMethodNames('get', config);
-      const argumentSets = [
-        [currentTenantId, page],
-        [config.route, currentTenantId, page],
-        [config.id, currentTenantId, page],
-        [config.id, page, currentTenantId],
-        [{ tenantId: currentTenantId, resourceType: config.id, ...page }]
-      ];
-
-      const legacyResponse = await callCrmServiceMethod(methodNames, argumentSets);
-      if (!legacyResponse) {
-        updateSource(moduleId, 'SOURCE_REQUIRED', `${config.label} command route required`);
-        setCollections(previous => ({
-          ...previous,
-          [moduleId]: {
-            items: [],
-            total: 0,
-            sourceStatus: 'SOURCE_REQUIRED',
-            routePosture: config.routePosture || 'ROUTE_REQUIRED',
-            moduleEnvelope: buildWilsyCrmModuleEnvelope(config.id, { tenantId: currentTenantId })
-          }
-        }));
-        return;
-      }
-
-      const envelope = normalizeCrmEnvelope(legacyResponse);
-      setCollections(previous => ({
-        ...previous,
-        [moduleId]: envelope
-      }));
-      updateSource(moduleId, envelope.sourceStatus || 'SOURCE_LIVE', `${config.label} legacy service hydrated`);
-    } catch (error) {
-      updateSource(moduleId, 'SOURCE_ERROR', error?.message || `${config.label} source failed`);
-      setCollections(previous => ({
-        ...previous,
-        [moduleId]: {
-          ...(previous[moduleId] || {}),
-          sourceStatus: 'SOURCE_ERROR',
-          error: error?.message || 'Source error'
-        }
-      }));
-    }
-  }, [activeModule, currentTenantId, moduleConfig, pageState, searchTerm, sourceFilter, updateSource]);
-
-  const loadCommandCenter = useCallback(async () => {
-    try {
-      const commandEnvelope = await getWilsyCrmCommandCenter({
-        tenantId: currentTenantId,
-        limit: 50
-      });
-
-      if (commandEnvelope?.ok || commandEnvelope?.sourceStatus !== 'SOURCE_ERROR') {
-        setCommandCenter({
-          ...(commandEnvelope.raw?.data || commandEnvelope.raw || {}),
-          sourceStatus: commandEnvelope.sourceStatus || 'SOURCE_REQUIRED',
-          commandClientVersion: WILSY_CRM_COMMAND_CLIENT_VERSION,
-          catalogVersion: WILSY_CRM_MODULE_CATALOG_VERSION,
-          noFakeData: true
-        });
-        return;
-      }
-
-      if (typeof crmService.getCrmCommandCenter !== 'function') {
-        setCommandCenter({ sourceStatus: 'SOURCE_REQUIRED', commandClientVersion: WILSY_CRM_COMMAND_CLIENT_VERSION });
-        return;
-      }
-
-      const envelope = normalizeCrmEnvelope(await crmService.getCrmCommandCenter(currentTenantId));
-      setCommandCenter(envelope.raw?.data || envelope.raw || { sourceStatus: envelope.sourceStatus });
-    } catch (error) {
-      setCommandCenter({ sourceStatus: 'SOURCE_ERROR', error: error?.message });
-    }
-  }, [currentTenantId]);
-
-  const loadEvidence = useCallback(async () => {
-    try {
-      const commandEnvelope = await getWilsyCrmSourceRegistryEvidence({
-        tenantId: currentTenantId,
-        limit: 25
-      });
-
-      if (commandEnvelope?.ok || commandEnvelope?.sourceStatus !== 'SOURCE_ERROR') {
-        setSourceRegistryEvidence(commandEnvelope);
-        return;
-      }
-
-      if (typeof crmService.getCrmSourceRegistryEvidence !== 'function') {
-        setSourceRegistryEvidence({ items: [], total: 0, sourceStatus: 'SOURCE_REQUIRED' });
-        return;
-      }
-
-      const envelope = normalizeCrmEnvelope(await crmService.getCrmSourceRegistryEvidence(currentTenantId, { limit: 20 }));
-      setSourceRegistryEvidence(envelope);
-    } catch (error) {
-      setSourceRegistryEvidence({ items: [], total: 0, sourceStatus: 'SOURCE_ERROR', error: error?.message });
-    }
-  }, [currentTenantId]);
-
-  const loadAllData = useCallback(async () => {
-    setIsRefreshing(true);
-    await Promise.allSettled([
-      loadCommandCenter(),
-      loadEvidence(),
-      loadModuleRecords(activeModule, pageState[activeModule])
-    ]);
-    addReceipt('CRM_LIVE_SYNC', `CRM refreshed for ${tenantIdentity.displayName}`, { activeModule, receiptId: `CRM_LIVE_SYNC_${activeModule}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}` });
-    setIsRefreshing(false);
-  }, [activeModule, addReceipt, loadCommandCenter, loadEvidence, loadModuleRecords, pageState, tenantIdentity.displayName]);
-  /**
-   * @function openWilsyAccountSettings
-   * @description Opens the Wilsy OS reusable account settings surface through the global operating event bridge.
-   * @returns {void}
-   * @collaboration Gives CRM the same Account command path used by the wider Wilsy OS shell without rendering a blank CRM modal.
-   */
-  const openWilsyAccountSettings = () => {
-    setAccountSettingsOpen(true);
-  };
-
-
-
-  const openCreateRecord = useCallback(() => {
-    setEditingRecord(null);
-    setRecordDraft(buildDefaultCrmDraft(moduleConfig));
-    setModalOpen(true);
-  }, [moduleConfig]);
-
-  const openEditRecord = useCallback((record = {}) => {
-    setEditingRecord(record);
-    setRecordDraft({ ...record });
-    setModalOpen(true);
-  }, []);
-
-  const saveRecord = useCallback(async () => {
-    const action = editingRecord ? 'update' : 'create';
-    const methodNames = buildCrmMethodNames(action, moduleConfig);
-    const id = editingRecord?.id || editingRecord?._id || recordDraft.id;
-    const argumentSets = action === 'create'
-      ? [
-        [currentTenantId, recordDraft],
-        [moduleConfig.route, currentTenantId, recordDraft],
-        [moduleConfig.id, currentTenantId, recordDraft],
-        [recordDraft, currentTenantId]
-      ]
-      : [
-        [id, recordDraft, currentTenantId],
-        [currentTenantId, id, recordDraft],
-        [moduleConfig.route, id, recordDraft, currentTenantId],
-        [moduleConfig.id, id, recordDraft, currentTenantId]
-      ];
-
-    setIsRefreshing(true);
-    try {
-      const response = await callCrmServiceMethod(methodNames, argumentSets);
-      if (!response) {
-        addReceipt('CRM_ROUTE_REQUIRED', `${moduleConfig.singular} ${action} route required`, { activeModule, action });
-        setIsRefreshing(false);
-        return;
-      }
-
-      addReceipt(`CRM_${action.toUpperCase()}`, `${moduleConfig.singular} ${action} committed`, { activeModule });
-      setModalOpen(false);
-      setEditingRecord(null);
-      await loadModuleRecords(activeModule, pageState[activeModule]);
-    } catch (error) {
-      addReceipt('CRM_MUTATION_ERROR', error?.message || `${moduleConfig.singular} save failed`, { activeModule, action });
-    }
-    setIsRefreshing(false);
-  }, [activeModule, addReceipt, currentTenantId, editingRecord, loadModuleRecords, moduleConfig, pageState, recordDraft]);
-
-  const deleteRecord = useCallback(async (record = {}) => {
-    const id = record?.id || record?._id;
-    if (!id) return;
-
-    const confirmed = window.confirm(`Delete ${moduleConfig.singular}?`);
-    if (!confirmed) return;
-
-    setIsRefreshing(true);
-    try {
-      const response = await callCrmServiceMethod(buildCrmMethodNames('delete', moduleConfig), [
-        [id, currentTenantId],
-        [currentTenantId, id],
-        [moduleConfig.route, id, currentTenantId],
-        [moduleConfig.id, id, currentTenantId]
-      ]);
-
-      if (!response) {
-        addReceipt('CRM_DELETE_ROUTE_REQUIRED', `${moduleConfig.singular} delete route required`, { activeModule, id });
-        setIsRefreshing(false);
-        return;
-      }
-
-      addReceipt('CRM_DELETE', `${moduleConfig.singular} deleted`, { activeModule, id });
-      await loadModuleRecords(activeModule, pageState[activeModule]);
-    } catch (error) {
-      addReceipt('CRM_DELETE_ERROR', error?.message || `${moduleConfig.singular} delete failed`, { activeModule, id });
-    }
-    setIsRefreshing(false);
-  }, [activeModule, addReceipt, currentTenantId, loadModuleRecords, moduleConfig, pageState]);
-
-  const exportCurrentModule = useCallback(async () => {
-    try {
-      const exportEnvelope = await exportWilsyCrmRecords(activeModule, {
-        tenantId: currentTenantId,
-        filters: { sourceFilter, boardFilter, searchTerm },
-        format: 'csv'
-      });
-
-      if (exportEnvelope?.ok && exportEnvelope?.raw?.downloadUrl) {
-        window.open(exportEnvelope.raw.downloadUrl, '_blank', 'noopener,noreferrer');
-      } else {
-        downloadCrmCsv(visibleRows, `wilsy_crm_${activeModule}_${Date.now()}`);
-      }
-
-      addReceipt('CRM_EXPORT', `${visibleRows.length} ${moduleConfig.label} rows exported`, {
-        activeModule,
-        routePosture: exportEnvelope?.routePosture || 'ROUTE_REQUIRED',
-        sourceStatus: exportEnvelope?.sourceStatus || 'SOURCE_REQUIRED'
-      });
-    } catch (error) {
-      downloadCrmCsv(visibleRows, `wilsy_crm_${activeModule}_${Date.now()}`);
-      addReceipt('CRM_EXPORT_LOCAL_FALLBACK', `${visibleRows.length} ${moduleConfig.label} rows exported locally`, { activeModule });
-    }
-  }, [activeModule, addReceipt, boardFilter, currentTenantId, moduleConfig.label, searchTerm, sourceFilter, visibleRows]);
-
-  const importFile = useCallback(async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsRefreshing(true);
-    try {
-      const text = await file.text();
-      const parsed = file.name.toLowerCase().endsWith('.json')
-        ? safeParseCrmJson(text)
-        : parseCrmCsv(text);
-      const records = Array.isArray(parsed) ? parsed : parsed?.records;
-
-      if (!Array.isArray(records) || records.length === 0) {
-        setImportReport({ status: 'SOURCE_REQUIRED', message: 'Import file had no records.' });
-        setIsRefreshing(false);
-        event.target.value = '';
-        return;
-      }
-
-      if (typeof crmService.previewImportRecords !== 'function' || typeof crmService.importRecords !== 'function') {
-        setImportReport({ status: 'ROUTE_REQUIRED', message: 'CRM import routes are required before records enter Wilsy OS.' });
-        addReceipt('CRM_IMPORT_ROUTE_REQUIRED', 'Import route required', { activeModule, count: records.length });
-        setIsRefreshing(false);
-        event.target.value = '';
-        return;
-      }
-
-      await crmService.previewImportRecords(activeModule, currentTenantId, records, {
-        dedupeKey: activeModule === 'leads' || activeModule === 'contacts' ? 'email' : 'name',
-        sourceSystem: importVendor
-      });
-
-      const report = await crmService.importRecords(activeModule, currentTenantId, records, {
-        mode: 'upsert',
-        dedupeKey: activeModule === 'leads' || activeModule === 'contacts' ? 'email' : 'name',
-        sourceSystem: importVendor
-      });
-
-      setImportReport({ status: 'IMPORTED', message: `${records.length} records processed`, report });
-      addReceipt('CRM_IMPORT', `${records.length} ${moduleConfig.label} records imported`, { activeModule, importVendor });
-      await loadModuleRecords(activeModule, pageState[activeModule]);
-    } catch (error) {
-      setImportReport({ status: 'ERROR', message: error?.message || 'Import failed' });
-      addReceipt('CRM_IMPORT_ERROR', error?.message || 'Import failed', { activeModule });
-    }
-
-    event.target.value = '';
-    setIsRefreshing(false);
-  }, [activeModule, addReceipt, currentTenantId, importVendor, loadModuleRecords, moduleConfig.label, pageState]);
-
-  const routeArtifactCommand = useCallback((target = 'artifacts') => {
-    const packet = {
-      tenantId: currentTenantId,
-      source: 'CRMDashboard',
-      target,
-      activeModule,
-      proofHash: buildCrmReceiptHash({ target, activeModule, currentTenantId, version: CRM_VERSION })
-    };
-
-    window.dispatchEvent(new CustomEvent('wilsy:artifact-command', { detail: packet }));
-    window.dispatchEvent(new CustomEvent('wilsy:navigate-dashboard', {
-      detail: {
-        dashboardKey: target === 'documents' ? 'DOCUMENTS_DASHBOARD' : 'ARTIFACTS_DASHBOARD',
-        source: 'CRMDashboard',
-        tenantId: currentTenantId
+      loading: true,
+      snapshot: {
+        ...previous.snapshot,
+        sourcePosture: { ...previous.snapshot.sourcePosture, loading: true }
       }
     }));
 
-    if (typeof executeCommand === 'function') {
-      executeCommand('CRM_ARTIFACT_ROUTE', target, 'POST', packet).catch(() => null);
-    }
-
-    addReceipt('CRM_ARTIFACT_ROUTE', `Routed ${target}`, packet);
-  }, [activeModule, addReceipt, currentTenantId, executeCommand]);
-
-  useEffect(() => {
-    // WILSY_CRM_OS_THEME_RUNTIME_SUBSCRIBER_STEP_R4A
-    let unsubscribeWilsyCrmThemeRuntime = null
-    let isWilsyCrmThemeRuntimeMounted = true
-
-    if (typeof document !== 'undefined') {
-      document.documentElement.dataset.wilsyCrmDashboardLive = 'true'
-      document.body.dataset.wilsyCrmDashboardLive = 'true'
-    }
-
-    /**
-     * @function synchronizeWilsyCrmThemeRuntime
-     * @description Commits the shared Wilsy OS theme runtime packet so CRM repaints beyond the Account Command Center.
-     * @param {Object} detail - Runtime theme detail emitted by the Account Command Center or persisted storage.
-     * @returns {void}
-     * @collaboration Makes CRM consume the same OS theme bus as Account, Executive and future tenant dashboards.
-     */
-    const synchronizeWilsyCrmThemeRuntime = detail => {
-      import('../account/wilsyAccountThemeTokens').then(themeRuntime => {
-        if (!isWilsyCrmThemeRuntimeMounted) return
-
-        themeRuntime.commitWilsyThemeRuntime(
-          {
-            themeId: detail?.themeId,
-            mode: detail?.mode,
-            source: 'CRMDashboard.themeRuntimeSubscriber'
-          },
-          {
-            dispatch: false,
-            source: 'CRMDashboard.themeRuntimeSubscriber'
-          }
-        )
-      }).catch(error => {
-        console.warn('[WILSY-CRM-THEME-RUNTIME-SKIPPED]', error.message)
-      })
-    }
-
-    /**
-     * @function bootstrapWilsyCrmThemeRuntime
-     * @description Loads the persisted Wilsy OS theme runtime on CRM mount and subscribes to future changes.
-     * @returns {Promise<void>} Theme runtime bootstrap result.
-     * @collaboration Ensures CRM opens already themed before the Account Command Center is opened.
-     */
-    const bootstrapWilsyCrmThemeRuntime = async () => {
-      try {
-        const themeRuntime = await import('../account/wilsyAccountThemeTokens')
-        if (!isWilsyCrmThemeRuntimeMounted) return
-
-        const storedRuntime = themeRuntime.readStoredWilsyThemeRuntime({
-          themeId: 'wilsy_aurora',
-          mode: 'night'
-        })
-
-        themeRuntime.commitWilsyThemeRuntime(
-          {
-            ...storedRuntime,
-            source: 'CRMDashboard.themeRuntimeBootstrap'
-          },
-          {
-            dispatch: false,
-            source: 'CRMDashboard.themeRuntimeBootstrap'
-          }
-        )
-
-        unsubscribeWilsyCrmThemeRuntime = themeRuntime.subscribeWilsyThemeRuntime(synchronizeWilsyCrmThemeRuntime)
-      } catch (error) {
-        console.warn('[WILSY-CRM-THEME-RUNTIME-BOOTSTRAP-SKIPPED]', error.message)
-      }
-    }
-
-    bootstrapWilsyCrmThemeRuntime()
-
-    return () => {
-      isWilsyCrmThemeRuntimeMounted = false
-      if (typeof unsubscribeWilsyCrmThemeRuntime === 'function') {
-        unsubscribeWilsyCrmThemeRuntime()
-      }
-
-      if (typeof document !== 'undefined') {
-        delete document.documentElement.dataset.wilsyCrmDashboardLive
-        delete document.body.dataset.wilsyCrmDashboardLive
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    const preference = readWilsyCrmThemePreference();
-    setThemePreference(preference);
-    applyWilsyCrmThemeToDocument(preference.themeId, preference.mode);
-
-    /**
-     * @function syncWilsyCrmThemeRuntime
-     * @description Syncs CRM theme from Account Command Center events.
-     * @returns {void}
-     * @collaboration Keeps CRM live with the same theme runtime used by ExecutiveDashboard.
-     */
-    const syncWilsyCrmThemeRuntime = () => {
-      const next = readWilsyCrmThemePreference();
-      setThemePreference(next);
-      applyWilsyCrmThemeToDocument(next.themeId, next.mode);
-    };
-
-    window.addEventListener('wilsy:theme-change', syncWilsyCrmThemeRuntime);
-    window.addEventListener('storage', syncWilsyCrmThemeRuntime);
-
-    return () => {
-      window.removeEventListener('wilsy:theme-change', syncWilsyCrmThemeRuntime);
-      window.removeEventListener('storage', syncWilsyCrmThemeRuntime);
-      if (document.body.dataset.wilsyActiveDashboard === 'crm') {
-        delete document.body.dataset.wilsyActiveDashboard;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    loadAllData();
-  }, [currentTenantId]);
-
-  useEffect(() => {
-    loadModuleRecords(activeModule, pageState[activeModule]);
-  }, [activeModule]);
-
-  useEffect(() => {
-    const now = Date.now();
-    const syncKey = buildCrmWilsyAiEntitlementSyncKey({
-      currentTenantId,
-      sourceSnapshot: crmWilsyAiSourceSnapshot,
-      accessDecision: crmWilsyAiAccessDecision,
-      tenantProfile: crmWilsyAiTenantProfile
-    });
-    const syncState = wilsyAiEntitlementSyncRef.current;
-
-    if (!currentTenantId || currentTenantId === 'TENANT_SOURCE_REQUIRED') return;
-    if (syncState.inFlight) return;
-    if (syncState.key === syncKey && now - Number(syncState.lastAt || 0) < WILSY_CRM_AI_ENTITLEMENT_SYNC_COOLDOWN_MS) return;
-    if (syncState.key === syncKey && Number(syncState.sourceSilentUntil || 0) > now) return;
-
-    let isMounted = true;
-    syncState.key = syncKey;
-    syncState.lastAt = now;
-    syncState.inFlight = true;
-
-    setWilsyAiEntitlements(previous => {
-      if (previous?.status === 'SYNCING' && previous?.syncKey === syncKey) return previous;
-
-      return {
-        ...previous,
-        status: 'SYNCING',
-        sourceStatus: previous.sourceStatus || 'WILSY_AI_ENTITLEMENT_SOURCE_REQUIRED',
-        syncKey
-      };
-    });
-
-    syncWilsyAIEntitlements({
-      tenantId: currentTenantId,
-      tenantProfile: crmWilsyAiTenantProfile,
-      accessDecision: crmWilsyAiAccessDecision,
-      sourceSnapshot: crmWilsyAiSourceSnapshot
-    })
-      .then(packet => {
-        syncState.inFlight = false;
-        if (!isMounted) return;
-
-        const sourceStatus = packet?.sourceStatus || (packet?.catalog?.length ? 'SERVER_ENTITLEMENT_CATALOG' : 'WILSY_AI_ENTITLEMENT_SOURCE_SILENT');
-        const sourceSilent = String(sourceStatus).includes('SOURCE_SILENT')
-          || String(packet?.error || '').includes('404')
-          || String(packet?.message || '').includes('404');
-
-        if (sourceSilent) {
-          syncState.sourceSilentUntil = Date.now() + WILSY_CRM_AI_ENTITLEMENT_SYNC_COOLDOWN_MS;
-        }
-
-        setWilsyAiEntitlements({
-          status: packet?.status || sourceStatus || 'WILSY_AI_ENTITLEMENT_SYNCED',
-          sourceStatus,
-          plans: packet?.plans || packet?.planRows || [],
-          licenses: packet?.licenses || [],
-          catalog: packet?.catalog || [],
-          error: packet?.error || '',
-          syncKey,
-          raw: packet
-        });
+    Promise.all(collections.map(collection => fetchCrmCollection(collection, tenantId, controller.signal)))
+      .then(async results => {
+        const backendPosture = await fetchCrmSourcePosture(tenantId, controller.signal);
+        const enrichedResults = backendPosture && results.length
+          ? results.map((result, index) => index === 0 ? { ...result, sourcePosture: backendPosture } : result)
+          : results;
+        setState({ snapshot: buildCrmSnapshot(enrichedResults), loading: false, error: null });
       })
       .catch(error => {
-        syncState.inFlight = false;
-        syncState.sourceSilentUntil = Date.now() + WILSY_CRM_AI_ENTITLEMENT_SYNC_COOLDOWN_MS;
-        if (!isMounted) return;
-
-        setWilsyAiEntitlements({
-          status: 'WILSY_AI_ENTITLEMENT_SOURCE_ERROR',
-          sourceStatus: 'WILSY_AI_ENTITLEMENT_SOURCE_SILENT',
-          plans: [],
-          licenses: [],
-          catalog: [],
-          error: error?.message || 'Wilsy AI entitlement sync failed.',
-          syncKey
-        });
+        const snapshot = createEmptySnapshot();
+        snapshot.sourcePosture.errors = [{ collection: 'all', error: error?.message || 'CRM source failure' }];
+        setState({ snapshot, loading: false, error: error?.message || 'CRM source failure' });
       });
 
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    currentTenantId,
-    crmWilsyAiAccessDecision.allowed,
-    crmWilsyAiAccessDecision.reason,
-    crmWilsyAiSourceSnapshot?.crm?.status,
-    crmWilsyAiSourceSnapshot?.records?.count,
-    crmWilsyAiSourceSnapshot?.finance?.count,
-    crmWilsyAiSourceSnapshot?.telemetry?.readinessScore,
-    crmWilsyAiSourceSnapshot?.evidence?.count,
-    crmWilsyAiTenantProfile?.industryKey,
-    crmWilsyAiTenantProfile?.name
-  ]);
+    return () => controller.abort();
+  }, [tenantId, refreshSignal]);
 
-  const sourceLabel = compactCrmSignal(currentCollection.sourceStatus || sourceState[activeModule]?.status || 'SOURCE_REQUIRED');
-  const ActiveWorkspaceIcon = CRM_WORKSPACES.find(workspace => workspace.id === activeWorkspace)?.icon || Home;
+  return state;
+}
 
-  const moduleCards = CRM_MODULES.map(item => {
-    const Icon = resolveCrmCatalogIcon(item?.icon, Database);
-    const active = item.id === activeModule;
-    return (
-      <button
-        key={item.id}
-        type="button"
-        className={active ? styles.moduleButtonActive : styles.moduleButton}
-        onClick={() => {
-          setActiveModule(item.id);
-          setActiveWorkspace('records');
-        }}
-      >
-        <Icon size={16} />
-        <span>{item.label}</span>
-        <em>{collections[item.id]?.total || 0}</em>
-        <small>{compactCrmSignal(collections[item.id]?.sourceStatus || item.routePosture || 'SOURCE_REQUIRED')}</small>
-      </button>
-    );
-  });
+/**
+ * @function CRMDashboard
+ * @description Renders the Wilsy OS CRM Command Center as a sovereign sales intelligence cockpit.
+ * @param {Object} props - Dashboard props.
+ * @returns {JSX.Element} CRM dashboard.
+ * @collaboration Gives Sovereign routing one production CRM surface with Account Command Center integration.
+ */
+function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
+  const tenantRuntime = useTenants() || {};
+  const [activeWorkspace, setActiveWorkspace] = useState('home');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [crmRailEngineStateR65A, setCrmRailEngineStateR65A] = useState('EXPANDED');
 
-  const workspaceButtons = CRM_WORKSPACES.map(workspace => {
-    const Icon = workspace.icon;
-    const active = workspace.id === activeWorkspace;
-    return (
-      <button
-        key={workspace.id}
-        type="button"
-        className={active ? styles.workspaceButtonActive : styles.workspaceButton}
-        onClick={() => setActiveWorkspace(workspace.id)}
-      >
-        <Icon size={16} />
-        <span>{workspace.label}</span>
-        <small>{workspace.detail}</small>
-      </button>
-    );
-  });
+  const [refreshSignal, setRefreshSignal] = useState(0);
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+  const [themeRuntime, setThemeRuntime] = useState(() => buildCrmFallbackThemeRuntime());
 
-  /**
-   * @function handleCrmWilsyAiUsageProbe
-   * @description Records a source-aware Wilsy AI CRM usage probe through the Wilsy AI usage ledger.
-   * @param {Object} plan - Wilsy AI plan row.
-   * @returns {Promise<void>} Usage probe completion.
-   * @collaboration Converts CRM AI clicks into measurable tenant AI usage without fabricating AI output.
-   */
-  const handleCrmWilsyAiUsageProbe = useCallback(async (plan = wilsyAiPrimaryPlan) => {
-    if (!plan) return;
-
-    setWilsyAiActionState({ status: 'SYNCING', message: 'Recording Wilsy AI CRM usage posture...' });
-
-    const sourceEvidence = createWilsyAIClientProof({
-      tenantId: currentTenantId,
-      moduleId: plan.moduleId,
-      planId: plan.id,
-      activeModule,
-      sourceSnapshot: crmWilsyAiSourceSnapshot,
-      action: 'CRM_AI_USAGE_PROBE'
-    });
-
-    const packet = await recordWilsyAIUsage({
-      tenantId: currentTenantId,
-      plan,
-      action: 'CRM_AI_USAGE_PROBE',
-      sourceStatus: wilsyAiCommercialPosture.sourceStatus,
-      sourceEvidence,
-      sourceSnapshot: crmWilsyAiSourceSnapshot
-    });
-
-    setWilsyAiUsageReceipt(packet);
-    setWilsyAiActionState({
-      status: packet?.ok === false ? 'SOURCE_REQUIRED' : 'RECORDED',
-      message: packet?.message || packet?.status || 'Wilsy AI CRM usage posture recorded.'
-    });
-
-    addReceipt('WILSY_AI_CRM_USAGE', plan.name || plan.title || 'Wilsy AI CRM plan usage', {
-      activeModule,
-      sourceEvidence,
-      sourceStatus: wilsyAiCommercialPosture.sourceStatus,
-      tenantId: currentTenantId
-    });
-  }, [activeModule, addReceipt, crmWilsyAiSourceSnapshot, currentTenantId, wilsyAiCommercialPosture.sourceStatus, wilsyAiPrimaryPlan]);
-
-  /**
-   * @function handleCrmWilsyAiActivatePlan
-   * @description Requests backend Wilsy AI license activation for a CRM plan.
-   * @param {Object} plan - Wilsy AI plan row.
-   * @returns {Promise<void>} Activation completion.
-   * @collaboration Keeps paid CRM AI activation backend-authoritative and receipt-aware.
-   */
-  const handleCrmWilsyAiActivatePlan = useCallback(async (plan = wilsyAiPrimaryPlan) => {
-    if (!plan) return;
-
-    setWilsyAiActionState({ status: 'SYNCING', message: 'Requesting Wilsy AI tenant license activation...' });
-
-    const packet = await activateWilsyAILicense({
-      tenantId: currentTenantId,
-      plan,
-      sourceSnapshot: crmWilsyAiSourceSnapshot
-    });
-
-    setWilsyAiActionState({
-      status: packet?.ok === false ? 'SOURCE_REQUIRED' : 'ACTIVATION_REQUESTED',
-      message: packet?.message || packet?.status || 'Wilsy AI license activation requested.'
-    });
-
-    addReceipt('WILSY_AI_LICENSE_ACTIVATION', plan.name || plan.title || 'Wilsy AI CRM license', {
-      activeModule,
-      moduleId: plan.moduleId,
-      licenseId: packet?.licenseId || plan.licenseId || 'LICENSE_SOURCE_REQUIRED',
-      tenantId: currentTenantId
-    });
-
-    const refreshed = await syncWilsyAIEntitlements({
-      tenantId: currentTenantId,
-      tenantProfile: crmWilsyAiTenantProfile,
-      accessDecision: crmWilsyAiAccessDecision,
-      sourceSnapshot: crmWilsyAiSourceSnapshot
-    });
-
-    setWilsyAiEntitlements({
-      status: refreshed?.status || refreshed?.sourceStatus || 'WILSY_AI_ENTITLEMENT_SYNCED',
-      sourceStatus: refreshed?.sourceStatus || 'WILSY_AI_ENTITLEMENT_SOURCE_SILENT',
-      plans: refreshed?.plans || refreshed?.planRows || [],
-      licenses: refreshed?.licenses || [],
-      catalog: refreshed?.catalog || [],
-      error: refreshed?.error || '',
-      raw: refreshed
-    });
-  }, [activeModule, addReceipt, crmWilsyAiAccessDecision, crmWilsyAiSourceSnapshot, crmWilsyAiTenantProfile, currentTenantId, wilsyAiPrimaryPlan]);
-
-  const wilsyAiMonetisationStrip = (
-    <section data-wilsy-crm-ai-monetisation-strip="true" style={CRM_WILSY_AI_INLINE_STYLES.shell}>
-      <article style={CRM_WILSY_AI_INLINE_STYLES.hero}>
-        <span style={CRM_WILSY_AI_INLINE_STYLES.eyebrow}><Sparkles size={15} /> Wilsy AI Monetisation Layer</span>
-        <h3 style={CRM_WILSY_AI_INLINE_STYLES.title}>{wilsyAiCommercialPosture.label}</h3>
-        <p style={CRM_WILSY_AI_INLINE_STYLES.copy}>
-          Paid tenant AI for predictive lead scoring, pipeline cockpit, customer success telemetry, revenue intelligence,
-          compliance binding and forensic sales receipts. No fake AI output: every activation is entitlement-gated.
-        </p>
-        <small style={CRM_WILSY_AI_INLINE_STYLES.proof}>
-          CLIENT PROOF {String(wilsyAiCommercialPosture.proof || '').slice(0, 18)}…{String(wilsyAiCommercialPosture.proof || '').slice(-12)}
-        </small>
-      </article>
-
-      <div style={CRM_WILSY_AI_INLINE_STYLES.planGrid}>
-        {wilsyAiPlanRows.slice(0, 3).map(plan => (
-          <article key={plan.id || plan.moduleId || plan.name} style={CRM_WILSY_AI_INLINE_STYLES.plan}>
-            <span style={CRM_WILSY_AI_INLINE_STYLES.eyebrow}>{compactCrmSignal(plan.licenseStatus || plan.sourceStatus || 'UNLICENSED')}</span>
-            <strong style={CRM_WILSY_AI_INLINE_STYLES.planTitle}>{plan.name || plan.title || plan.moduleId || 'Wilsy AI CRM Plan'}</strong>
-            <small style={CRM_WILSY_AI_INLINE_STYLES.planMeta}>{plan.valuePromise || plan.reason || 'Source-gated CRM AI use case.'}</small>
-            <b style={CRM_WILSY_AI_INLINE_STYLES.planValue}>R {Number(plan.monthlyPriceZar || plan.monthlyPrice || 0).toLocaleString('en-ZA')}/mo</b>
-            <small style={CRM_WILSY_AI_INLINE_STYLES.planMeta}>
-              {Number(plan.dailyRequestLimit || 0)} daily requests · {Number(plan.monthlyAutomationLimit || 0).toLocaleString('en-ZA')} monthly automations
-            </small>
-          </article>
-        ))}
-      </div>
-
-      <aside style={CRM_WILSY_AI_INLINE_STYLES.telemetry}>
-        <div style={CRM_WILSY_AI_INLINE_STYLES.telemetryRow}><span>Entitlement</span><strong>{compactCrmSignal(wilsyAiEntitlements.sourceStatus || wilsyAiEntitlements.status)}</strong></div>
-        <div style={CRM_WILSY_AI_INLINE_STYLES.telemetryRow}><span>Usage ledger</span><strong>{compactCrmSignal(wilsyAiUsageReceipt?.status || wilsyAiActionState.status)}</strong></div>
-        <div style={CRM_WILSY_AI_INLINE_STYLES.telemetryRow}><span>Planned MRR</span><strong>R {Number(wilsyAiCommercialPosture.plannedRevenue || 0).toLocaleString('en-ZA')}</strong></div>
-        <div style={CRM_WILSY_AI_INLINE_STYLES.actionRow}>
-          <button type="button" style={CRM_WILSY_AI_INLINE_STYLES.button} onClick={() => handleCrmWilsyAiActivatePlan(wilsyAiPrimaryPlan)}>
-            Activate CRM AI
-          </button>
-          <button type="button" style={CRM_WILSY_AI_INLINE_STYLES.ghostButton} onClick={() => handleCrmWilsyAiUsageProbe(wilsyAiPrimaryPlan)}>
-            Record Usage
-          </button>
-        </div>
-        <small style={CRM_WILSY_AI_INLINE_STYLES.planMeta}>{wilsyAiActionState.message || wilsyAiCommercialPosture.reason}</small>
-      </aside>
-    </section>
+  const tenantIdentity = useMemo(
+    () => buildTenantIdentity(tenantRuntime, tenantConfig),
+    [tenantRuntime, tenantConfig]
   );
 
-  /**
-   * @function homeCards
-   * @description Renders the clean CRM home workspace cards from real task, meeting, lead and deal collections.
-   * @returns {React.ReactElement} CRM home workspace card grid.
-   * @collaboration Keeps the CRM home screen Zoho-clean while preserving Wilsy OS source truth and no fabricated records.
-   */
-  const homeCards = (
-    <div className={styles.homeGrid}>
-      <section className={styles.widgetCard}>
-        <header>
-          <span><CheckCircle size={14} /> My Open Tasks</span>
-          <button type="button" onClick={() => setActiveModule('tasks')}>Open</button>
-        </header>
-        <div className={styles.cleanTableShell}>
-          <table>
-            <thead><tr><th>Subject</th><th>Due Date</th><th>Status</th></tr></thead>
-            <tbody>
-              {(collections.tasks?.items || []).slice(0, 5).map(task => (
-                <tr key={task.id}><td>{getCrmDisplayValue(task, 'subject')}</td><td>{getCrmDisplayValue(task, 'dueDate')}</td><td>{getCrmDisplayValue(task, 'status')}</td></tr>
-              ))}
-              {(collections.tasks?.items || []).length === 0 && <tr><td colSpan="3">No tasks found.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </section>
+  const operatorIdentity = useBackendOperatorIdentity(user, tenantIdentity.tenantId, refreshSignal);
 
-      <section className={styles.widgetCard}>
-        <header>
-          <span><Calendar size={14} /> My Meetings</span>
-          <button type="button" onClick={() => setActiveModule('meetings')}>Open</button>
-        </header>
-        <div className={styles.cleanTableShell}>
-          <table>
-            <thead><tr><th>Title</th><th>From</th><th>Status</th></tr></thead>
-            <tbody>
-              {(collections.meetings?.items || []).slice(0, 5).map(meeting => (
-                <tr key={meeting.id}><td>{getCrmDisplayValue(meeting, 'subject')}</td><td>{getCrmDisplayValue(meeting, 'startsAt')}</td><td>{getCrmDisplayValue(meeting, 'status')}</td></tr>
-              ))}
-              {(collections.meetings?.items || []).length === 0 && <tr><td colSpan="3">No meetings found.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className={styles.widgetCard}>
-        <header>
-          <span><Users size={14} /> Today's Leads</span>
-          <button type="button" onClick={() => setActiveModule('leads')}>Open</button>
-        </header>
-        <div className={styles.cleanTableShell}>
-          <table>
-            <thead><tr><th>Lead Name</th><th>Company</th><th>Stage</th></tr></thead>
-            <tbody>
-              {(collections.leads?.items || []).slice(0, 5).map(lead => (
-                <tr key={lead.id}><td>{getCrmDisplayValue(lead, 'name')}</td><td>{getCrmDisplayValue(lead, 'company')}</td><td>{getCrmDisplayValue(lead, 'stage')}</td></tr>
-              ))}
-              {(collections.leads?.items || []).length === 0 && <tr><td colSpan="3">No leads found.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className={styles.widgetCard}>
-        <header>
-          <span><Target size={14} /> Deals Closing This Month</span>
-          <button type="button" onClick={() => setActiveModule('deals')}>Open</button>
-        </header>
-        <div className={styles.cleanTableShell}>
-          <table>
-            <thead><tr><th>Deal Name</th><th>Amount</th><th>Stage</th></tr></thead>
-            <tbody>
-              {(collections.deals?.items || []).slice(0, 5).map(deal => (
-                <tr key={deal.id}><td>{getCrmDisplayValue(deal, 'name')}</td><td>{getCrmDisplayValue(deal, 'value')}</td><td>{getCrmDisplayValue(deal, 'stage')}</td></tr>
-              ))}
-              {(collections.deals?.items || []).length === 0 && <tr><td colSpan="3">No deals found.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+  const crmThemeVars = useMemo(
+    () => buildCrmThemeStyleVars(themeRuntime, tenantIdentity),
+    [themeRuntime, tenantIdentity]
   );
-
-  /**
-   * @function recordsView
-   * @description Renders the active CRM module ledger, filters, board mode and table mode.
-   * @returns {React.ReactElement} CRM record ledger workspace.
-   * @collaboration Gives every CRM module one clean operating ledger without endless scrolling or fake verified data.
-   */
-  const recordsView = (
-    <section className={styles.ledgerCard}>
-      <header className={styles.ledgerHeader}>
-        <div>
-          <span><Database size={14} /> CRM Ledger</span>
-          <h3>{moduleConfig.label}</h3>
-          <p>{sourceLabel} // {visibleRows.length} visible / {currentCollection.total || 0} total</p>
-        </div>
-        <div className={styles.ledgerActions}>
-          <button type="button" onClick={() => setViewMode(viewMode === 'table' ? 'board' : 'table')}><LayoutGrid size={14} /> {viewMode === 'table' ? 'Board' : 'Table'}</button>
-          <button type="button" onClick={() => loadModuleRecords(activeModule, pageState[activeModule])}><RefreshCw size={14} className={isRefreshing ? styles.spin : ''} /> Sync</button>
-        </div>
-      </header>
-
-      <div className={styles.filterBar}>
-        <label>
-          <Search size={14} />
-          <input value={searchTerm} onChange={event => setSearchTerm(event.target.value)} placeholder={`Search ${moduleConfig.label}`} />
-        </label>
-        <select value={sourceFilter} onChange={event => setSourceFilter(event.target.value)}>
-          <option value="ALL">All source posture</option>
-          <option value="SOURCE_LIVE">Source live</option>
-          <option value="SOURCE_REQUIRED">Source required</option>
-          <option value="SOURCE_ERROR">Source error</option>
-        </select>
-        <select value={boardFilter} onChange={event => setBoardFilter(event.target.value)}>
-          <option value="ALL">All board readiness</option>
-          <option value="READY_FOR_BOARDROOM">Board ready</option>
-          <option value="NEEDS_EVIDENCE">Needs evidence</option>
-          <option value="NEEDS_AUTHORITY">Needs authority</option>
-        </select>
-      </div>
-
-      {viewMode === 'table' ? (
-        <div className={styles.cleanTableShell}>
-          <table>
-            <thead>
-              <tr>
-                {tableFields.map(field => <th key={field}>{FIELD_LABELS[field] || titleizeCrmText(field)}</th>)}
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRows.map(row => (
-                <tr key={row.id}>
-                  {tableFields.map(field => <td key={field}>{getCrmDisplayValue(row, field)}</td>)}
-                  <td>
-                    <button type="button" onClick={() => openEditRecord(row)}>Edit</button>
-                    <button type="button" onClick={() => deleteRecord(row)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-              {visibleRows.length === 0 && (
-                <tr><td colSpan={tableFields.length + 1}>{sourceLabel === 'SOURCE REQUIRED' ? `${moduleConfig.label} route requires live records.` : 'No matching records.'}</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className={styles.boardGrid}>
-          {moduleConfig.lanes.map(lane => (
-            <section key={lane} className={styles.boardLane}>
-              <header><span>{titleizeCrmText(lane)}</span><strong>{visibleRows.filter(row => String(row[moduleConfig.boardBy] || '').toLowerCase() === lane.toLowerCase()).length}</strong></header>
-              {visibleRows.filter(row => String(row[moduleConfig.boardBy] || '').toLowerCase() === lane.toLowerCase()).map(row => (
-                <article key={row.id}>
-                  <strong>{getCrmDisplayValue(row, moduleConfig.primary)}</strong>
-                  <small>{getCrmDisplayValue(row, moduleConfig.secondary)}</small>
-                  {moduleConfig.money && <em>{getCrmDisplayValue(row, moduleConfig.money)}</em>}
-                </article>
-              ))}
-            </section>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-
-  const pipelineView = (
-    <div className={styles.analyticsGrid}>
-      <section className={styles.metricPanel}><span>Weighted Pipeline</span><strong>{formatCrmMoney(pipelineValue)}</strong><small>{collections.deals?.total || 0} deal records</small></section>
-      <section className={styles.metricPanel}><span>Accounts</span><strong>{collections.accounts?.total || 0}</strong><small>Customer accounts</small></section>
-      <section className={styles.metricPanel}><span>Opportunities</span><strong>{collections.opportunities?.total || 0}</strong><small>Expansion records</small></section>
-      <section className={styles.metricPanel}><span>Contract Posture</span><strong>{collections.contracts?.total || 0}</strong><small>Contract records</small></section>
-      <div className={styles.spanAll}>{recordsView}</div>
-    </div>
-  );
-
-  const tasksView = (
-    <div className={styles.homeGrid}>
-      {['tasks', 'meetings', 'conversations', 'tickets'].map(moduleId => {
-        const config = resolveCrmCatalogModuleConfig(moduleId, activeModule);
-        const Icon = resolveCrmCatalogIcon(config?.icon, Activity);
-        return (
-          <section key={moduleId} className={styles.widgetCard}>
-            <header><span><Icon size={14} /> {config.label}</span><button type="button" onClick={() => { setActiveModule(moduleId); setActiveWorkspace('records'); }}>Open</button></header>
-            <div className={styles.cleanList}>
-              {(collections[moduleId]?.items || []).slice(0, 6).map(item => (
-                <article key={item.id}><strong>{getCrmDisplayValue(item, config.primary)}</strong><small>{getCrmDisplayValue(item, config.secondary)}</small></article>
-              ))}
-              {(collections[moduleId]?.items || []).length === 0 && <p>No {config.label.toLowerCase()} found.</p>}
-            </div>
-          </section>
-        );
-      })}
-    </div>
-  );
-
-  const evidenceView = (
-    <div className={styles.analyticsGrid}>
-      <section className={styles.metricPanel}><span>Source Registry Evidence</span><strong>{evidenceTotal}</strong><small>{compactCrmSignal(sourceRegistryEvidence.sourceStatus)}</small></section>
-      <section className={styles.metricPanel}><span>Authority</span><strong>{collections.authorities?.total || 0}</strong><small>Authority-to-bind records</small></section>
-      <section className={styles.metricPanel}><span>Contracts</span><strong>{collections.contracts?.total || 0}</strong><small>Contract ledger records</small></section>
-      <section className={styles.metricPanel}><span>Risks</span><strong>{collections.risks?.total || 0}</strong><small>Customer risk records</small></section>
-      <section className={styles.artifactPanel}>
-        <header><span><Shield size={14} /> Customer Artifact Studio</span><p>Route real customer proof into board, legal, billing and document engines.</p></header>
-        <button type="button" onClick={() => routeArtifactCommand('evidence')}><FileText size={15} /> CRM Evidence Pack</button>
-        <button type="button" onClick={() => routeArtifactCommand('documents')}><Folder size={15} /> Document Vault</button>
-        <button type="button" onClick={exportCurrentModule}><Download size={15} /> Portable CSV</button>
-      </section>
-    </div>
-  );
-
-  const aiView = (
-    <div className={styles.aiGrid}>
-      {wilsyAiMonetisationStrip}
-      <section className={styles.aiPanel}>
-        <span><Sparkles size={15} /> Wilsy AI CRM Command</span>
-        <h3>{aiMemo.headline}</h3>
-        <p>{aiMemo.detail}</p>
-        <strong>{aiMemo.next}</strong>
-      </section>
-      <section className={styles.aiPanel}>
-        <span><Wand2 size={15} /> Paid AI Source Gates</span>
-        <h3>{compactCrmSignal(wilsyAiCommercialPosture.sourceStatus)}</h3>
-        <p>{wilsyAiCommercialPosture.reason}</p>
-        <button type="button" onClick={() => handleCrmWilsyAiUsageProbe(wilsyAiPrimaryPlan)}>Record AI Usage Probe</button>
-      </section>
-    </div>
-  );
-
-  const importView = (
-    <section className={styles.importPanel}>
-      <header>
-        <span><UploadCloud size={14} /> Governed CRM Import</span>
-        <h3>Import only through preview and import routes.</h3>
-        <p>No imported row enters CRM state unless the service route accepts it.</p>
-      </header>
-      <div className={styles.importControls}>
-        <label>
-          <span>Vendor</span>
-          <select value={importVendor} onChange={event => setImportVendor(event.target.value)}>
-            {WILSY_CRM_IMPORT_VENDOR_CATALOG.map(vendor => (
-              <option key={vendor.id} value={vendor.id}>{vendor.label}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>Module</span>
-          <select value={activeModule} onChange={event => setActiveModule(event.target.value)}>
-            {CRM_MODULES.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
-          </select>
-        </label>
-        <button type="button" onClick={() => importInputRef.current?.click()}><UploadCloud size={15} /> Select CSV or JSON</button>
-      </div>
-      {importReport && (
-        <article className={styles.importReport}>
-          <strong>{compactCrmSignal(importReport.status)}</strong>
-          <p>{importReport.message}</p>
-        </article>
-      )}
-    </section>
-  );
-
-  /**
-   * @function handleCrmTopRailPrimaryAction
-   * @description Routes the Wilsy OS CRM top rail primary action to the CRM leads workspace without creating fake records.
-   * @returns {void}
-   * @collaboration Lets the slot-based Wilsy OS top rail stay context-aware while CRM keeps ownership of its domain modules.
-   */
-  const handleCrmTopRailPrimaryAction = () => {
-    if (typeof setActiveWorkspace === 'function') {
-      setActiveWorkspace('leads');
-    }
-
-    if (typeof setCommandCentreOpen === 'function') {
-      setCommandCentreOpen(true);
-    }
-
-    if (typeof setCommandCentrePinned === 'function') {
-      setCommandCentrePinned(true);
-    }
-
-    if (typeof setCommandCenter === 'function') {
-      setCommandCenter(previous => ({
-        ...previous,
-        activeCommand: 'NEW_LEAD_CAPTURE',
-        resourceType: 'leads',
-        intent: 'capture',
-        source: 'toprail',
-        openedAt: new Date().toISOString()
-      }));
-    }
-
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('wilsy:crm-lead-capture-requested', {
-        detail: {
-          action: 'NEW_LEAD_CAPTURE',
-          resourceType: 'leads',
-          source: 'CRMDashboard',
-          emittedAt: new Date().toISOString()
-        }
-      }));
-    }
-  };
-
-  /**
-   * @function normalizeCrmIdentityText
-   * @description Normalizes CRM identity text while refusing to display emails as operator names.
-   * @param {unknown} value - Candidate identity value.
-   * @returns {string} Display-safe identity text.
-   * @collaboration Keeps the Wilsy OS top rail honest by showing DB-backed names or source-required language.
-   */
-  const normalizeCrmIdentityText = value => String(value || '').trim();
-
-  /**
-   * @function isCrmEmailIdentity
-   * @description Determines whether a candidate identity value is only an email address.
-   * @param {unknown} value - Candidate identity value.
-   * @returns {boolean} True when the value is an email address.
-   * @collaboration Prevents CRM from using email addresses as the primary operator display name.
-   */
-  const isCrmEmailIdentity = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeCrmIdentityText(value));
-
-  /**
-   * @function resolveCrmDbOperatorIdentity
-   * @description Resolves CRM operator identity from DB/auth/profile sources without falling back to email as a name.
-   * @param {Object} params - Operator source payloads.
-   * @returns {{displayName:string,roleLabel:string,email:string,sourceStatus:string}} Operator identity for WilsyOSDashboardTopRail.
-   * @collaboration Makes the CRM top rail display real user name, surname and role when backend data is available.
-   */
-  const resolveCrmDbOperatorIdentity = ({ accountProfileSource = {}, userSource = {}, accessSource = {} } = {}) => {
-    const firstName = normalizeCrmIdentityText(
-      accountProfileSource.firstName
-      || accountProfileSource.givenName
-      || userSource.firstName
-      || userSource.givenName
-      || accessSource.firstName
-      || accessSource.givenName
-    );
-    const lastName = normalizeCrmIdentityText(
-      accountProfileSource.lastName
-      || accountProfileSource.surname
-      || accountProfileSource.familyName
-      || userSource.lastName
-      || userSource.surname
-      || userSource.familyName
-      || accessSource.lastName
-      || accessSource.surname
-      || accessSource.familyName
-    );
-    const composedName = normalizeCrmIdentityText([firstName, lastName].filter(Boolean).join(' '));
-    const profileName = normalizeCrmIdentityText(
-      accountProfileSource.fullName
-      || accountProfileSource.displayName
-      || accountProfileSource.name
-      || userSource.fullName
-      || userSource.displayName
-      || userSource.name
-      || accessSource.fullName
-      || accessSource.displayName
-      || accessSource.name
-    );
-    const displayName = composedName
-      || (!isCrmEmailIdentity(profileName) ? profileName : '')
-      || 'User profile source required';
-    const roleLabel = normalizeCrmIdentityText(
-      accountProfileSource.roleLabel
-      || accountProfileSource.role
-      || accountProfileSource.title
-      || userSource.roleLabel
-      || userSource.role
-      || userSource.title
-      || accessSource.roleLabel
-      || accessSource.role
-      || accessSource.tenantRole
-      || 'Role source required'
-    );
-
-    return {
-      ...accountProfileSource,
-      displayName,
-      name: displayName,
-      roleLabel,
-      role: roleLabel,
-      email: normalizeCrmIdentityText(accountProfileSource.email || userSource.email || accessSource.email),
-      sourceStatus: displayName === 'User profile source required' || roleLabel === 'Role source required'
-        ? 'PROFILE_SOURCE_REQUIRED'
-        : 'DB_PROFILE_RESOLVED'
-    };
-  };
-
-  /**
-   * @function resolveCrmTenantTopRailIdentity
-   * @description Resolves tenant identity for the Wilsy OS CRM top rail without hardcoded tenant status theatre.
-   * @param {Object} tenantSource - Tenant identity source.
-   * @returns {Object} Tenant identity for WilsyOSDashboardTopRail.
-   * @collaboration Keeps the tenant plate rooted in tenant data while preserving the official Wilsy logo fallback.
-   */
-  const resolveCrmTenantTopRailIdentity = (tenantSource = {}) => ({
-    ...tenantSource,
-    displayName: normalizeCrmIdentityText(tenantSource.displayName || tenantSource.companyName || tenantSource.name) || 'Tenant profile source required',
-    tenantId: normalizeCrmIdentityText(tenantSource.tenantId || tenantSource.id) || 'wilsy-sovereign-root',
-    logo: tenantSource.logo || tenantSource.branding?.logo || '/src/assets/logo/wilsy.jpeg',
-    status: normalizeCrmIdentityText(tenantSource.status || tenantSource.sourceStatus || tenantSource.ledgerStatus)
-      || (normalizeCrmIdentityText(tenantSource.displayName || tenantSource.companyName || tenantSource.name || tenantSource.tenantId || tenantSource.id)
-        ? 'Tenant identity live'
-        : 'Tenant profile source pending')
-  });
-
-  /**
-   * @function buildCrmTopRailStoryMessages
-   * @description Builds the CRM top rail story from live readiness and source posture only.
-   * @param {Object} params - Story source params.
-   * @returns {Array<string>} Source-backed story messages.
-   * @collaboration Removes hardcoded placeholder slogans from the CRM top rail.
-   */
-  const buildCrmTopRailStoryMessages = ({ liveStatus = '', readinessSource = {} } = {}) => ([
-    normalizeCrmIdentityText(liveStatus) || 'CRM source status required',
-    `${Number(readinessSource.liveSources || 0)}/${Number(readinessSource.totalSources || 0)} live sources visible`,
-    normalizeCrmIdentityText(readinessSource.posture || readinessSource.status) || 'Source posture required'
-  ]);
-
-  const crmResolvedOperatorIdentity = resolveCrmDbOperatorIdentity({
-    accountProfileSource: typeof accountProfile === 'undefined' ? {} : accountProfile,
-    userSource: typeof user === 'undefined' ? {} : user,
-    accessSource: typeof access === 'undefined' ? {} : access
-  });
-  const crmResolvedTenantTopRailIdentity = resolveCrmTenantTopRailIdentity(typeof tenantIdentity === 'undefined' ? {} : tenantIdentity);
-  /**
-   * @function formatCrmSourcePosture
-   * @description Converts raw CRM source constants into polished Wilsy OS interface language.
-   * @param {unknown} value - Raw source posture value.
-   * @returns {string} Human-readable source posture.
-   * @collaboration Removes leaked constants such as SOURCE_GAPS from CRM while preserving source-truth honesty.
-   */
-  const formatCrmSourcePosture = value => {
-    const raw = String(value || '').trim().toUpperCase();
-
-    const phrases = {
-      SOURCE_GAPS: 'CRM live records awaiting sync',
-      SOURCE_REQUIRED: 'Source handshake pending',
-      SOURCE_SILENT: 'Source awaiting connection',
-      SOURCE_PENDING: 'Source pending',
-      LIVE_SOURCE_REQUIRED: 'Live records awaiting sync',
-      CRM_SOURCE_SILENT: 'CRM source handshake pending',
-      CRM_SOURCE_LIVE: 'CRM source live',
-      ZERO_RECORDS_FOUND_IN_SHARD: 'No records found in connected shard',
-      TENANT_LEDGER_READY: 'Tenant ledger ready',
-      PROFILE_SOURCE_REQUIRED: 'Profile source required',
-      DB_PROFILE_RESOLVED: 'Database profile resolved'
-    };
-
-    if (phrases[raw]) return phrases[raw];
-
-    return raw
-      .replace(/^CRM_/, '')
-      .replace(/^WILSY_/, '')
-      .replace(/_+/g, ' ')
-      .toLowerCase()
-      .replace(/\b\w/g, letter => letter.toUpperCase()) || 'Source connection required';
-  };
-
-  /**
-   * @function buildCrmPolishedTopRailStoryMessages
-   * @description Builds polished CRM top rail story messages without exposing raw source constants.
-   * @param {Object} params - CRM story sources.
-   * @returns {Array<string>} Polished top rail story messages.
-   * @collaboration Keeps Wilsy OS Chrome premium while refusing fake live-source claims.
-   */
-  const buildCrmPolishedTopRailStoryMessages = ({ readinessSource = {} } = {}) => {
-    const liveSources = Number(readinessSource.liveSources || 0);
-    const totalSources = Number(readinessSource.totalSources || 0);
-    const routeMessage = totalSources > 0
-      ? `${totalSources} CRM routes checked`
-      : 'CRM route inventory loading';
-    const sourceMessage = liveSources > 0
-      ? `${liveSources}/${totalSources} CRM sources live`
-      : 'Tenant identity loaded';
-    const postureMessage = liveSources > 0
-      ? formatCrmSourcePosture(readinessSource.posture || readinessSource.status || 'CRM_SOURCE_LIVE')
-      : 'CRM live records awaiting sync';
-
-    return [sourceMessage, routeMessage, postureMessage];
-  };
-
-  /**
-   * @function pickCrmAccountValue
-   * @description Picks the first non-empty value from CRM account identity candidates.
-   * @param {...unknown} values - Candidate values.
-   * @returns {string} First displayable value.
-   * @collaboration Keeps WilsyAccountCommandCenter connected to real CRM/auth identity data without fake fallbacks.
-   */
-  const pickCrmAccountValue = (...values) => (
-    values
-      .map(value => String(value || '').trim())
-      .find(Boolean) || ''
-  );
-
-  /**
-   * @function readCrmNestedAccountValue
-   * @description Reads nested account values from possible auth, access, profile and tenant payloads.
-   * @param {Object} source - Source object.
-   * @param {Array<string>} paths - Dot paths to inspect.
-   * @returns {string} First discovered value.
-   * @collaboration Mirrors ExecutiveDashboard's broad user/access payload tolerance for CRM.
-   */
-  const readCrmNestedAccountValue = (source = {}, paths = []) => {
-    for (const path of paths) {
-      const value = String(path)
-        .split('.')
-        .reduce((cursor, key) => (cursor && cursor[key] !== undefined ? cursor[key] : undefined), source);
-
-      if (value !== undefined && value !== null && String(value).trim()) {
-        return String(value).trim();
-      }
-    }
-
-    return '';
-  };
-
-  /**
-   * @function buildCrmAccountCommandCenterUser
-   * @description Builds the exact user packet CRM should pass into WilsyAccountCommandCenter using auth/access/profile/tenant sources.
-   * @param {Object} params - CRM account source packet.
-   * @returns {Object} Account Command Center user payload.
-   * @collaboration Fixes UNBOUND_USER by giving Account Command Center the same class of identity object ExecutiveDashboard supplies.
-   */
-  const buildCrmAccountCommandCenterUser = ({
-    userSource = {},
-    accessSource = {},
-    accountProfileSource = {},
-    operatorSource = {},
-    tenantSource = {}
-  } = {}) => {
-    const id = pickCrmAccountValue(
-      readCrmNestedAccountValue(userSource, ['id', '_id', 'userId', 'uid', 'sub', 'claims.sub', 'profile.id', 'profile._id', 'user.id', 'user._id']),
-      readCrmNestedAccountValue(accessSource, ['id', '_id', 'userId', 'uid', 'sub', 'claims.sub', 'profile.id', 'profile._id', 'user.id', 'user._id']),
-      readCrmNestedAccountValue(accountProfileSource, ['id', '_id', 'userId', 'uid', 'sub', 'profile.id', 'profile._id']),
-      readCrmNestedAccountValue(operatorSource, ['id', '_id', 'userId', 'uid', 'sub']),
-      readCrmNestedAccountValue(tenantSource, ['ownerId', 'createdBy', 'userId'])
-    );
-
-    const firstName = pickCrmAccountValue(
-      userSource.firstName,
-      userSource.givenName,
-      userSource.profile?.firstName,
-      accessSource.firstName,
-      accessSource.givenName,
-      accessSource.user?.firstName,
-      accountProfileSource.firstName,
-      operatorSource.firstName
-    );
-    const lastName = pickCrmAccountValue(
-      userSource.lastName,
-      userSource.surname,
-      userSource.familyName,
-      userSource.profile?.lastName,
-      accessSource.lastName,
-      accessSource.surname,
-      accessSource.familyName,
-      accessSource.user?.lastName,
-      accountProfileSource.lastName,
-      accountProfileSource.surname,
-      operatorSource.lastName
-    );
-    const composedName = [firstName, lastName].filter(Boolean).join(' ').trim();
-    const displayName = pickCrmAccountValue(
-      composedName,
-      userSource.fullName,
-      userSource.displayName,
-      userSource.name,
-      userSource.profile?.displayName,
-      accessSource.fullName,
-      accessSource.displayName,
-      accessSource.name,
-      accessSource.user?.displayName,
-      accessSource.user?.name,
-      accountProfileSource.fullName,
-      accountProfileSource.displayName,
-      accountProfileSource.name,
-      operatorSource.displayName,
-      operatorSource.name,
-      tenantSource.ownerName,
-      tenantSource.founderName
-    );
-
-    const email = pickCrmAccountValue(
-      userSource.email,
-      userSource.username,
-      userSource.profile?.email,
-      accessSource.email,
-      accessSource.userEmail,
-      accessSource.username,
-      accessSource.user?.email,
-      accountProfileSource.email,
-      operatorSource.email
-    );
-
-    const roleLabel = pickCrmAccountValue(
-      userSource.roleLabel,
-      userSource.role,
-      userSource.tenantRole,
-      userSource.title,
-      accessSource.roleLabel,
-      accessSource.userRole,
-      accessSource.role,
-      accessSource.tenantRole,
-      accessSource.user?.role,
-      accountProfileSource.roleLabel,
-      accountProfileSource.role,
-      operatorSource.roleLabel,
-      operatorSource.role,
-      'CRM Command'
-    );
-
-    return {
-      ...accessSource,
-      ...userSource,
-      ...accountProfileSource,
-      ...operatorSource,
-      id: id || undefined,
-      _id: id || userSource._id || accessSource._id || accountProfileSource._id,
-      userId: id || userSource.userId || accessSource.userId || accountProfileSource.userId,
-      uid: id || userSource.uid || accessSource.uid,
-      sub: id || userSource.sub || accessSource.sub,
-      firstName,
-      lastName,
-      fullName: displayName || email || 'Wilsy OS Operator',
-      displayName: displayName || email || 'Wilsy OS Operator',
-      name: displayName || email || 'Wilsy OS Operator',
-      email,
-      role: roleLabel,
-      roleLabel,
-      tenantId: pickCrmAccountValue(
-        tenantSource.tenantId,
-        tenantSource.id,
-        accessSource.tenantId,
-        userSource.tenantId,
-        accountProfileSource.tenantId,
-        'MASTER'
-      ),
-      tenantName: pickCrmAccountValue(
-        tenantSource.displayName,
-        tenantSource.companyName,
-        tenantSource.name,
-        'Wilsy OS Root'
-      ),
-      edition: pickCrmAccountValue(accountProfileSource.edition, accessSource.edition, 'SOVEREIGN_EDITION'),
-      authority: pickCrmAccountValue(accountProfileSource.authority, accessSource.authority, roleLabel, 'TENANT_AUTHORITY')
-    };
-  };
-
-  /**
-   * @function buildCrmAccountSecuritySummary
-   * @description Builds Account Command Center security summary from CRM/access readiness.
-   * @param {Object} params - Security source params.
-   * @returns {Object} Security summary for WilsyAccountCommandCenter.
-   * @collaboration Connects the Account Command Center to CRM service state without inventing unavailable auth-discovery data.
-   */
-  const buildCrmAccountSecuritySummary = ({ accountUser = {}, readinessSource = {}, accessSource = {} } = {}) => ({
-    identitySource: accountUser.id || accountUser.userId || accountUser._id ? 'CRM identity bound' : 'Auth identity source pending',
-    mfaStatus: accessSource.mfaEnabled ? 'MFA enabled' : 'MFA source pending',
-    trustedDevices: accessSource.trustedDevices?.length ? `${accessSource.trustedDevices.length} trusted devices` : 'Device source pending',
-    accountActivity: `${Number(readinessSource.score || 0)}% CRM readiness`
-  });
-
-  /**
-   * @function buildCrmAccountComplianceSummary
-   * @description Builds Account Command Center compliance summary from tenant/readiness state.
-   * @param {Object} params - Compliance source params.
-   * @returns {Object} Compliance summary for WilsyAccountCommandCenter.
-   * @collaboration Keeps POPIA, tenant ledger and CRM readiness visible inside the OS account surface.
-   */
-  const buildCrmAccountComplianceSummary = ({ readinessSource = {}, tenantSource = {} } = {}) => ({
-    privacyStatus: 'POPIA display safe',
-    complianceStatus: tenantSource.complianceStatus || tenantSource.status || 'Tenant ledger visible',
-    auditConfidence: `${Number(readinessSource.score || 0)}% CRM readiness`,
-    retentionStatus: tenantSource.retentionStatus || tenantSource.ledgerStatus || 'Tenant ledger visible'
-  });
-
-  /**
-   * @function buildCrmAccountSessionSummary
-   * @description Builds Account Command Center session summary from CRM telemetry and auth access data.
-   * @param {Object} params - Session source params.
-   * @returns {Object} Session summary for WilsyAccountCommandCenter.
-   * @collaboration Separates live CRM command state from the still-pending auth discover route.
-   */
-  const buildCrmAccountSessionSummary = ({ accessSource = {}, readinessSource = {} } = {}) => ({
-    activeSessions: accessSource.sessionId || accessSource.tokenPresent
-      ? 'CRM auth session detected'
-      : `${Number(readinessSource.liveSources || 0)}/${Number(readinessSource.totalSources || 0)} CRM sources live`
-  });
-
-  /**
-   * @function resolveCrmAccountThemeChangePayload
-   * @description Resolves operating skin changes emitted by WilsyAccountCommandCenter from strings, receipts, payloads or DOM events.
-   * @param {unknown} packet - Theme change packet.
-   * @returns {string} Normalized CRM theme id.
-   * @collaboration Converts Account Command Center receipts into real CRM/Wilsy OS repaint commands.
-   */
-  const resolveCrmAccountThemeChangePayload = packet => {
-    const aliases = {
-      black: 'sovereign_black',
-      sovereign: 'sovereign_black',
-      sovereign_black: 'sovereign_black',
-      aurora: 'wilsy_aurora',
-      wilsy_aurora: 'wilsy_aurora',
-      daybreak: 'wilsy_daybreak',
-      wilsy_daybreak: 'wilsy_daybreak',
-      pearl: 'pearl_command',
-      pearl_command: 'pearl_command'
-    };
-
-    const raw = typeof packet === 'string'
-      ? packet
-      : (
-        packet?.themeId
-        || packet?.skinId
-        || packet?.theme
-        || packet?.skin
-        || packet?.id
-        || packet?.value
-        || packet?.target?.value
-        || packet?.detail?.themeId
-        || packet?.detail?.skinId
-        || packet?.detail?.value
-        || ''
-      );
-
-    const cleaned = String(raw || '').trim();
-    const aliasKey = cleaned.toLowerCase().replace(/\s+/g, '_');
-
-    return aliases[aliasKey] || cleaned || accountThemeId;
-  };
-
-  /**
-   * @function resolveCrmAccountModeChangePayload
-   * @description Resolves mode changes emitted by WilsyAccountCommandCenter from strings, receipts, payloads or DOM events.
-   * @param {unknown} packet - Mode change packet.
-   * @returns {string} Normalized CRM mode.
-   * @collaboration Keeps Account Command Center mode selection synchronized with the CRM runtime.
-   */
-  const resolveCrmAccountModeChangePayload = packet => {
-    const raw = typeof packet === 'string'
-      ? packet
-      : (
-        packet?.mode
-        || packet?.themeMode
-        || packet?.id
-        || packet?.value
-        || packet?.target?.value
-        || packet?.detail?.mode
-        || packet?.detail?.themeMode
-        || packet?.detail?.value
-        || ''
-      );
-
-    const mode = String(raw || accountThemeMode || 'night').trim().toLowerCase();
-    return ['day', 'night', 'auto'].includes(mode) ? mode : 'night';
-  };
-
-  /**
-   * @function normalizeCrmAccountThemeId
-   * @description Normalizes Account Command Center skin ids into supported CRM/Wilsy OS theme ids.
-   * @param {unknown} themeId - Candidate theme id.
-   * @returns {string} Supported theme id.
-   * @collaboration Prevents receipt-only skin changes by keeping theme ids compatible with CRM runtime variables.
-   */
-  const normalizeCrmAccountThemeId = themeId => {
-    const aliases = {
-      black: 'sovereign_black',
-      sovereign: 'sovereign_black',
-      sovereign_black: 'sovereign_black',
-      aurora: 'wilsy_aurora',
-      wilsy_aurora: 'wilsy_aurora',
-      daybreak: 'wilsy_daybreak',
-      wilsy_daybreak: 'wilsy_daybreak',
-      pearl: 'pearl_command',
-      pearl_command: 'pearl_command'
-    };
-
-    const cleaned = String(themeId || accountThemeId || 'sovereign_black').trim();
-    const aliasKey = cleaned.toLowerCase().replace(/\s+/g, '_');
-
-    return aliases[aliasKey] || cleaned || 'sovereign_black';
-  };
-
-  /**
-   * @function buildCrmAccountThemeFallbackVars
-   * @description Builds fallback CSS variables when the CRM theme builder does not provide a complete variable packet.
-   * @param {string} themeId - Theme id.
-   * @param {string} mode - Theme mode.
-   * @returns {Object} CSS variable map.
-   * @collaboration Guarantees that Account theme changes repaint the CRM shell even when theme helper coverage is partial.
-   */
-  const buildCrmAccountThemeFallbackVars = (themeId, mode) => {
-    const palettes = {
-      sovereign_black: {
-        '--crm-bg': '#050505',
-        '--crm-surface': '#090b10',
-        '--crm-card': '#0d1017',
-        '--crm-accent': '#d4af37',
-        '--crm-accent-2': '#84f0c8',
-        '--crm-accent-3': '#b66dff',
-        '--crm-glow': 'rgba(212, 175, 55, 0.18)',
-        '--crm-glow-2': 'rgba(132, 240, 200, 0.12)'
-      },
-      wilsy_aurora: {
-        '--crm-bg': '#050711',
-        '--crm-surface': '#0b1020',
-        '--crm-card': '#0e1528',
-        '--crm-accent': '#b66dff',
-        '--crm-accent-2': '#17bdf2',
-        '--crm-accent-3': '#84f0c8',
-        '--crm-glow': 'rgba(182, 109, 255, 0.22)',
-        '--crm-glow-2': 'rgba(23, 189, 242, 0.16)'
-      },
-      wilsy_daybreak: {
-        '--crm-bg': '#f6f0df',
-        '--crm-surface': '#fffaf0',
-        '--crm-card': '#f4ead0',
-        '--crm-accent': '#b8860b',
-        '--crm-accent-2': '#0f8f8c',
-        '--crm-accent-3': '#5f6df0',
-        '--crm-glow': 'rgba(184, 134, 11, 0.2)',
-        '--crm-glow-2': 'rgba(15, 143, 140, 0.14)'
-      },
-      pearl_command: {
-        '--crm-bg': '#f4f6fb',
-        '--crm-surface': '#ffffff',
-        '--crm-card': '#edf1f8',
-        '--crm-accent': '#5f6df0',
-        '--crm-accent-2': '#0f8f8c',
-        '--crm-accent-3': '#b8860b',
-        '--crm-glow': 'rgba(95, 109, 240, 0.18)',
-        '--crm-glow-2': 'rgba(15, 143, 140, 0.12)'
-      }
-    };
-
-    return palettes[themeId] || palettes.sovereign_black;
-  };
-
-  /**
-   * @function commitCrmAccountThemeRuntime
-   * @description Commits Account Command Center theme/mode changes into CRM state, storage, document datasets and CSS variables.
-   * @param {Object} params - Theme runtime params.
-   * @returns {{themeId:string,mode:string}} Applied theme packet.
-   * @collaboration Turns operating skin receipts into actual Wilsy OS runtime repaint.
-   */
-  const commitCrmAccountThemeRuntime = ({ themeId = accountThemeId, mode = accountThemeMode, source = 'crm_account_command_center' } = {}) => {
-    const nextThemeId = normalizeCrmAccountThemeId(themeId);
-    const nextMode = resolveCrmAccountModeChangePayload(mode);
-
-    let helperVars = {};
-
-    try {
-      if (typeof buildWilsyCrmThemeVars === 'function') {
-        helperVars = buildWilsyCrmThemeVars(nextThemeId, nextMode) || {};
-      }
-    } catch (themeError) {
-      helperVars = {};
-    }
-
-    const nextVars = {
-      ...buildCrmAccountThemeFallbackVars(nextThemeId, nextMode),
-      ...helperVars
-    };
-
-    setAccountThemeId(nextThemeId);
-    setAccountThemeMode(nextMode);
-
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem('wilsy:crm:theme', nextThemeId);
-        window.localStorage.setItem('wilsy:crm:mode', nextMode);
-        window.localStorage.setItem('wilsy:account-command-center:theme', nextThemeId);
-        window.localStorage.setItem('wilsy:account-command-center:mode', nextMode);
-        window.localStorage.setItem('wilsy:dashboard-chrome:theme', nextThemeId);
-        window.localStorage.setItem('wilsy:dashboard-chrome:mode', nextMode);
-      } catch (storageError) {
-        // Storage can fail in restricted browser contexts; runtime repaint must still continue.
-      }
-
-      try {
-        if (typeof applyWilsyCrmThemeToDocument === 'function') {
-          applyWilsyCrmThemeToDocument(nextThemeId, nextMode);
-        }
-      } catch (documentThemeError) {
-        // Continue with direct CSS variable application below.
-      }
-
-      if (typeof document !== 'undefined') {
-        document.documentElement.dataset.wilsyTheme = nextThemeId;
-        document.documentElement.dataset.wilsyMode = nextMode;
-
-        if (document.body) {
-          document.body.dataset.wilsyTheme = nextThemeId;
-          document.body.dataset.wilsyMode = nextMode;
-        }
-
-        Object.entries(nextVars).forEach(([key, value]) => {
-          document.documentElement.style.setProperty(key, value);
-
-          if (document.body) {
-            document.body.style.setProperty(key, value);
-          }
-        });
-      }
-
-      window.dispatchEvent(new CustomEvent('wilsy:theme-change', {
-        detail: {
-          themeId: nextThemeId,
-          mode: nextMode,
-          source,
-          emittedAt: new Date().toISOString()
-        }
-      }));
-
-      window.dispatchEvent(new CustomEvent('wilsy:crm-theme-change', {
-        detail: {
-          themeId: nextThemeId,
-          mode: nextMode,
-          source,
-          emittedAt: new Date().toISOString()
-        }
-      }));
-    }
-
-    return { themeId: nextThemeId, mode: nextMode };
-  };
-
-  /**
-   * @function handleCrmAccountThemeChange
-   * @description Handles Account Command Center operating skin changes and repaints CRM immediately.
-   * @param {unknown} packet - Theme change packet.
-   * @returns {{themeId:string,mode:string}} Applied theme packet.
-   * @collaboration Gives CRM the same account-driven theme authority as ExecutiveDashboard.
-   */
-  const handleCrmAccountThemeChange = packet => commitCrmAccountThemeRuntime({
-    themeId: resolveCrmAccountThemeChangePayload(packet),
-    mode: accountThemeMode,
-    source: 'crm_account_theme_change'
-  });
-
-  /**
-   * @function handleCrmAccountModeChange
-   * @description Handles Account Command Center day/night/auto changes and repaints CRM immediately.
-   * @param {unknown} packet - Mode change packet.
-   * @returns {{themeId:string,mode:string}} Applied mode packet.
-   * @collaboration Synchronizes CRM visual mode with the selected Account Command Center mode.
-   */
-  const handleCrmAccountModeChange = packet => commitCrmAccountThemeRuntime({
-    themeId: accountThemeId,
-    mode: resolveCrmAccountModeChangePayload(packet),
-    source: 'crm_account_mode_change'
-  });
-
-  /**
-   * @function handleCrmAccountCommandBridge
-   * @description Routes Account Command Center commands while converting theme receipts into real CRM runtime changes.
-   * @param {unknown} command - Account command.
-   * @param {unknown} payload - Account command payload.
-   * @returns {unknown} Downstream command result.
-   * @collaboration Preserves existing CRM account navigation while activating saved skin/mode receipts.
-   */
-  const handleCrmAccountCommandBridge = (command, payload) => {
-    const commandKey = String(
-      typeof command === 'string'
-        ? command
-        : (command?.action || command?.type || command?.id || command?.command || '')
-    ).toLowerCase();
-
-    const commandPayload = payload || command || {};
-
-    if (commandKey.includes('skin') || commandKey.includes('theme') || commandKey.includes('operating_skin')) {
-      handleCrmAccountThemeChange(commandPayload);
-    }
-
-    if (commandKey.includes('mode')) {
-      handleCrmAccountModeChange(commandPayload);
-    }
-
-    if (typeof handleCrmAccountCommand === 'function') {
-      return handleCrmAccountCommand(command, payload);
-    }
-
-    return undefined;
-  };
 
   useEffect(() => {
-    commitCrmAccountThemeRuntime({
-      themeId: accountThemeId,
-      mode: accountThemeMode,
-      source: 'crm_account_theme_state_effect'
-    });
-  }, [accountThemeId, accountThemeMode]);
+    let mounted = true;
 
-const workspaceContent = {
-    home: homeCards,
-    command: homeCards,
-    records: recordsView,
-    pipeline: pipelineView,
-    tasks: tasksView,
-    work: tasksView,
-    success: recordsView,
-    support: tasksView,
-    automation: aiView,
-    intelligence: aiView,
-    evidence: evidenceView,
-    ai: aiView,
-    import: importView
-  };
-  const liveCrmStatusLabel = buildCrmLiveStatusLabel({
-    readiness,
-    isRefreshing,
-    error: null,
-    lastUpdated: null
-  });
+    /**
+     * @function applyCrmGlobalThemeRuntime
+     * @description Applies theme packets from the Wilsy OS global runtime to CRM.
+     * @param {Object} packet - Runtime packet.
+     * @returns {void}
+     * @collaboration Keeps CRM repainting when Account Command Center theme or mode changes.
+     */
+    const applyCrmGlobalThemeRuntime = packet => {
+      if (!mounted) return;
+      setThemeRuntime(previous => normalizeCrmThemeRuntimePacket(packet || resolveCrmGlobalThemeRuntime({}, previous), previous));
+    };
+
+    /**
+     * @function applyStoredCrmGlobalThemeRuntime
+     * @description Re-reads the stored global theme runtime and applies it to CRM.
+     * @returns {void}
+     * @collaboration Covers storage events, custom runtime events and direct Account Command Center commits.
+     */
+    const applyStoredCrmGlobalThemeRuntime = () => {
+      if (!mounted) return;
+      setThemeRuntime(previous => resolveCrmGlobalThemeRuntime({}, previous));
+    };
+
+    applyStoredCrmGlobalThemeRuntime();
+
+    const unsubscribeThemeRuntime = subscribeWilsyThemeRuntime(applyCrmGlobalThemeRuntime);
+
+    /**
+     * @function runtimeEventHandler
+     * @description Applies Wilsy OS theme runtime event packets to the CRM theme runtime.
+     * @param {CustomEvent} event - Theme runtime event.
+     * @returns {void}
+     * @collaboration Keeps CRM synchronized with global Account Command Center theme changes.
+     */
+    const runtimeEventHandler = event => {
+      applyCrmGlobalThemeRuntime(event?.detail || null);
+    };
+
+    /**
+     * @function storageEventHandler
+     * @description Rehydrates CRM theme runtime when persisted Wilsy OS theme storage changes.
+     * @param {StorageEvent} event - Browser storage event.
+     * @returns {void}
+     * @collaboration Keeps CRM theme state aligned across tabs and dashboard shells.
+     */
+    const storageEventHandler = event => {
+      const key = String(event?.key || '').toLowerCase();
+      if (key.includes('wilsy') || key.includes('theme') || key.includes('skin') || key.includes('mode')) {
+        applyStoredCrmGlobalThemeRuntime();
+      }
+    };
+
+    window.addEventListener('wilsy:theme-change', runtimeEventHandler);
+    window.addEventListener('wilsy:theme-runtime', runtimeEventHandler);
+    window.addEventListener('wilsy:account-theme-runtime', runtimeEventHandler);
+    window.addEventListener('wilsy:operating-skin-change', runtimeEventHandler);
+    window.addEventListener('storage', storageEventHandler);
+
+    return () => {
+      mounted = false;
+      if (typeof unsubscribeThemeRuntime === 'function') unsubscribeThemeRuntime();
+      window.removeEventListener('wilsy:theme-change', runtimeEventHandler);
+      window.removeEventListener('wilsy:theme-runtime', runtimeEventHandler);
+      window.removeEventListener('wilsy:account-theme-runtime', runtimeEventHandler);
+      window.removeEventListener('wilsy:operating-skin-change', runtimeEventHandler);
+      window.removeEventListener('storage', storageEventHandler);
+    };
+  }, []);
 
 
+  const { snapshot, loading } = useCrmSnapshot(tenantIdentity.tenantId, refreshSignal);
 
-  const visualCounts = {
-    leads: Number(collections?.leads?.total || collections?.leads?.items?.length || 0),
-    contacts: Number(collections?.contacts?.total || collections?.contacts?.items?.length || 0),
-    accounts: Number(collections?.accounts?.total || collections?.accounts?.items?.length || 0),
-    deals: Number(collections?.deals?.total || collections?.deals?.items?.length || 0),
-    tasks: Number(collections?.tasks?.total || collections?.tasks?.items?.length || 0),
-    meetings: Number(collections?.meetings?.total || collections?.meetings?.items?.length || 0),
-    evidence: Number(sourceRegistryEvidence?.total || sourceRegistryEvidence?.items?.length || 0)
-  };
+  const readinessScore = useMemo(() => calculateReadinessScore(snapshot), [snapshot]);
+  const pipelineStages = useMemo(() => buildPipelineStages(snapshot.deals), [snapshot.deals]);
+  const weightedPipeline = useMemo(() => buildPipelineTotal(pipelineStages.filter(stage => stage.lane === 'primary')), [pipelineStages]);
 
-  const visualWeightedPipeline = Number(
-    (collections?.deals?.items || []).reduce((sum, deal) => (
-      sum + Number(deal?.weightedValue || deal?.amount || deal?.value || 0)
-    ), 0)
+  const primaryPipelineStages = useMemo(
+    () => pipelineStages.filter(stage => stage.lane === 'primary'),
+    [pipelineStages]
   );
 
-  /**
-   * @function visualCurrency
-   * @description Formats CRM monetary values for the visual blueprint shell without inventing revenue data.
-   * @param {number|string} value - Candidate monetary value.
-   * @returns {string} South African Rand display value.
-   * @collaboration Keeps the R18AD76 CRM cockpit revenue surfaces honest, source-backed, and investor-readable.
-   */
-  const visualCurrency = value => `R ${Number(value || 0).toLocaleString('en-ZA')}`;
+  const sovereignPipelineStages = useMemo(
+    () => pipelineStages.filter(stage => stage.lane === 'sovereign'),
+    [pipelineStages]
+  );
 
-  const visualModuleIds = ['leads', 'contacts', 'accounts', 'deals', 'tasks', 'meetings', 'calls', 'campaigns', 'documents', 'visits', 'projects'];
-  const visualModules = visualModuleIds
-    .map(moduleId => CRM_MODULES.find(moduleConfig => moduleConfig.id === moduleId))
-    .filter(Boolean);
+  const workspaceMeta = useMemo(
+    () => CRM_WORKSPACES.find(workspace => workspace.id === activeWorkspace) || CRM_WORKSPACES[0],
+    [activeWorkspace]
+  );
 
-  const visualStageRows = [
-    { label: 'Prospecting', count: 0, value: 0 },
-    { label: 'Qualification', count: 0, value: 0 },
-    { label: 'Proposal', count: 0, value: 0 },
-    { label: 'Negotiation', count: 0, value: 0 }
-  ];
+  const sourceErrors = snapshot.sourcePosture.errors || [];
+  const rootHashStatus = snapshot.sourcePosture.rootHashShort ? `Root ${snapshot.sourcePosture.rootHashShort}` : (snapshot.evidence.length ? `${snapshot.evidence.length} receipt anchor${snapshot.evidence.length === 1 ? '' : 's'}` : 'Root hash pending');
 
-  const visualMetricCards = [
-    {
-      label: 'Weighted Pipeline',
-      value: visualCurrency(visualWeightedPipeline),
-      detail: visualWeightedPipeline > 0 ? 'Source-backed weighted value' : 'No active pipeline',
-      Icon: Target,
-      tone: '#e7c956'
-    },
-    {
-      label: 'Readiness Score',
-      value: `${Number(readiness?.score || 0)}%`,
-      detail: Number(readiness?.score || 0) > 0 ? 'Setup in progress' : 'Setup in progress',
-      Icon: Activity,
-      tone: '#f5f5f0'
-    },
-    {
-      label: 'Connected Sources',
-      value: `${Number(readiness?.liveSources || 0)} / ${Number(readiness?.totalSources || 36)}`,
-      detail: Number(readiness?.liveSources || 0) > 0 ? 'Sources online' : 'No sources connected',
-      Icon: Database,
-      tone: '#8ab8ff'
-    },
-    {
-      label: 'Compliance Posture',
-      value: `${Number(readiness?.complianceScore || readiness?.score || 0)}%`,
-      detail: visualCounts.evidence > 0 ? 'Evidence available' : 'Evidence gaps detected',
-      Icon: Shield,
-      tone: '#16e4ce'
-    },
-    {
-      label: 'Live Command Status',
-      value: isRefreshing ? 'Syncing' : 'Idle',
-      detail: isRefreshing ? 'Live sync in progress' : 'No active operations',
-      Icon: RefreshCw,
-      tone: '#16e4ce'
+  const activeRecords = useMemo(() => {
+    const collection = snapshot[activeWorkspace];
+    if (!Array.isArray(collection)) return [];
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return collection;
+
+    return collection.filter(record => [
+      record.name,
+      record.company,
+      record.email,
+      record.phone,
+      record.status,
+      record.stage,
+      record.source
+    ].some(value => String(value || '').toLowerCase().includes(query)));
+  }, [activeWorkspace, snapshot, searchTerm]);
+
+  const refreshSources = useCallback(() => {
+    setRefreshSignal(value => value + 1);
+  }, []);
+
+  const openCreateFlow = useCallback((workspace = 'leads') => {
+    setActiveWorkspace(workspace);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('wilsy:crm:create-record', {
+        detail: {
+          workspace,
+          tenantId: tenantIdentity.tenantId,
+          source: 'CRMDashboard'
+        }
+      }));
     }
-  ];
+  }, [tenantIdentity.tenantId]);
 
-  const visualActivityCards = [
-    {
-      label: "Today's Leads",
-      value: visualCounts.leads,
-      empty: visualCounts.leads > 0 ? `${visualCounts.leads} lead records available.` : 'No leads captured today.',
-      cta: 'Add Lead',
-      Icon: Users,
-      action: () => { setActiveModule('leads'); setActiveWorkspace('records'); }
-    },
-    {
-      label: 'Deals Closing This Month',
-      value: visualCounts.deals,
-      empty: visualCounts.deals > 0 ? `${visualCounts.deals} deal records available.` : 'No deals closing this month.',
-      cta: 'Create Deal',
-      Icon: Briefcase,
-      action: () => { setActiveModule('deals'); setActiveWorkspace('records'); }
-    },
-    {
-      label: 'My Open Tasks',
-      value: visualCounts.tasks,
-      empty: visualCounts.tasks > 0 ? `${visualCounts.tasks} task records available.` : 'All caught up for now.',
-      cta: 'Create Task',
-      Icon: CheckCircle,
-      action: () => { setActiveModule('tasks'); setActiveWorkspace('records'); }
-    },
-    {
-      label: 'Upcoming Meetings',
-      value: visualCounts.meetings,
-      empty: visualCounts.meetings > 0 ? `${visualCounts.meetings} meeting records available.` : 'No meetings scheduled.',
-      cta: 'Schedule Meeting',
-      Icon: Calendar,
-      action: () => { setActiveModule('meetings'); setActiveWorkspace('records'); }
-    }
-  ];
-
-  const visualStyles = {
-    shell: {
-      width: '100vw',
-      height: '100vh',
-      overflow: 'hidden',
-      display: 'grid',
-      gridTemplateColumns: sideRailOpen ? '282px minmax(0, 1fr)' : '82px minmax(0, 1fr)',
-      background: 'radial-gradient(circle at 12% 0%, rgba(231,201,86,.11), transparent 32%), radial-gradient(circle at 88% 8%, rgba(22,228,206,.075), transparent 30%), #050707',
-      color: '#f7f7f2',
-      fontFamily: '"Inter", "JetBrains Mono", system-ui, sans-serif'
-    },
-    rail: {
-      height: '100vh',
-      overflow: 'hidden',
-      display: 'grid',
-      gridTemplateRows: 'auto auto auto minmax(0, 1fr) auto',
-      gap: 14,
-      padding: sideRailOpen ? '24px 20px 18px' : '24px 12px 18px',
-      borderRight: '1px solid rgba(231,201,86,.25)',
-      background: 'linear-gradient(180deg, rgba(9,11,12,.99), rgba(2,3,4,.99))',
-      boxShadow: '20px 0 54px rgba(0,0,0,.50)',
-      position: 'relative'
-    },
-    railBrand: {
-      display: 'grid',
-      gridTemplateColumns: sideRailOpen ? '52px minmax(0, 1fr)' : '1fr',
-      alignItems: 'center',
-      justifyItems: sideRailOpen ? 'start' : 'center',
-      gap: 14,
-      minHeight: 68
-    },
-    logoBox: {
-      width: 52,
-      height: 52,
-      borderRadius: 14,
-      overflow: 'hidden',
-      border: '1px solid rgba(231,201,86,.52)',
-      background: 'rgba(231,201,86,.10)'
-    },
-    tenantTile: {
-      display: sideRailOpen ? 'grid' : 'none',
-      gridTemplateColumns: '40px minmax(0, 1fr) auto',
-      alignItems: 'center',
-      gap: 10,
-      padding: '10px 12px',
-      border: '1px solid rgba(231,201,86,.22)',
-      borderRadius: 9,
-      background: 'rgba(0,0,0,.28)'
-    },
-    searchRail: {
-      display: sideRailOpen ? 'grid' : 'none',
-      gridTemplateColumns: '18px minmax(0, 1fr)',
-      alignItems: 'center',
-      gap: 10,
-      height: 46,
-      padding: '0 14px',
-      borderRadius: 10,
-      border: '1px solid rgba(255,255,255,.10)',
-      background: 'rgba(0,0,0,.34)'
-    },
-    railButton: active => ({
-      width: '100%',
-      height: 40,
-      display: 'grid',
-      gridTemplateColumns: sideRailOpen ? '20px minmax(0, 1fr) auto' : '1fr',
-      alignItems: 'center',
-      justifyItems: sideRailOpen ? 'start' : 'center',
-      gap: 10,
-      padding: sideRailOpen ? '0 10px' : 0,
-      borderRadius: 8,
-      border: active ? '1px solid rgba(231,201,86,.34)' : '1px solid transparent',
-      background: active ? 'linear-gradient(90deg, #dfc557, #fff5c8)' : 'transparent',
-      color: active ? '#1b1607' : 'rgba(255,255,255,.74)',
-      fontSize: 12.5,
-      fontWeight: 750,
-      cursor: 'pointer'
-    }),
-    app: {
-      minWidth: 0,
-      height: '100vh',
-      overflowY: 'auto',
-      overflowX: 'hidden',
-      padding: '18px 22px 20px',
-      display: 'grid',
-      gridTemplateRows: 'auto auto auto auto',
-      gap: 14
-    },
-    top: {
-      display: 'grid',
-      gridTemplateColumns: 'minmax(0, 1fr) 390px',
-      gap: 26,
-      alignItems: 'start',
-      borderBottom: '1px solid rgba(255,255,255,.08)',
-      paddingBottom: 12
-    },
-    toolbar: {
-      gridColumn: '1 / -1',
-      display: 'grid',
-      gridTemplateColumns: '220px minmax(320px, 1fr) 150px 150px 150px',
-      gap: 16,
-      alignItems: 'center',
-      marginTop: 8
-    },
-    panel: {
-      border: '1px solid rgba(255,255,255,.105)',
-      borderRadius: 9,
-      background: 'linear-gradient(145deg, rgba(15,20,22,.92), rgba(7,9,11,.94))'
-    },
-    metricGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(5, minmax(150px, 1fr))',
-      gap: 12
-    },
-    metricCard: {
-      minHeight: 82,
-      display: 'grid',
-      gridTemplateColumns: '34px minmax(0, 1fr) auto',
-      gap: 12,
-      alignItems: 'center',
-      padding: '14px 16px',
-      border: '1px solid rgba(255,255,255,.105)',
-      borderRadius: 9,
-      background: 'linear-gradient(145deg, rgba(15,20,22,.92), rgba(7,9,11,.94))'
-    },
-    mainGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'minmax(0, 1fr) 360px',
-      gap: 14,
-      alignItems: 'stretch'
-    },
-    cockpit: {
-      minHeight: 350,
-      padding: 16,
-      border: '1px solid rgba(255,255,255,.105)',
-      borderRadius: 10,
-      background: 'linear-gradient(135deg, rgba(14,21,22,.95), rgba(7,9,11,.97))'
-    },
-    rightStack: {
-      display: 'grid',
-      gap: 14
-    },
-    rightCard: {
-      minHeight: 120,
-      padding: 16,
-      border: '1px solid rgba(255,255,255,.105)',
-      borderRadius: 10,
-      background: 'linear-gradient(145deg, rgba(11,16,18,.96), rgba(5,7,9,.98))'
-    },
-    activityGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(4, minmax(180px, 1fr)) 360px',
-      gap: 14
-    },
-    activityCard: {
-      minHeight: 170,
-      padding: 14,
-      display: 'grid',
-      gap: 8,
-      alignContent: 'space-between',
-      border: '1px solid rgba(255,255,255,.105)',
-      borderRadius: 10,
-      background: 'linear-gradient(145deg, rgba(13,18,20,.94), rgba(6,8,10,.96))'
-    },
-    strip: {
-      minHeight: 62,
-      display: 'grid',
-      gridTemplateColumns: '260px repeat(4, minmax(0, 1fr)) 220px',
-      gap: 0,
-      alignItems: 'center',
-      border: '1px solid rgba(255,255,255,.105)',
-      borderRadius: 10,
-      background: 'linear-gradient(90deg, rgba(13,18,20,.94), rgba(6,8,10,.96))',
-      overflow: 'hidden'
-    },
-    goldButton: {
-      height: 36,
-      borderRadius: 6,
-      border: '1px solid rgba(231,201,86,.46)',
-      background: 'linear-gradient(135deg, #dfc557, #fff5c7)',
-      color: '#171103',
-      fontWeight: 950,
-      letterSpacing: '.04em',
-      cursor: 'pointer'
-    },
-    outlineButton: {
-      height: 36,
-      borderRadius: 6,
-      border: '1px solid rgba(231,201,86,.38)',
-      background: 'transparent',
-      color: '#ffe58a',
-      fontWeight: 800,
-      cursor: 'pointer'
-    }
-  };
-
-  const wilsyCrmVisualShell = (
+  return (
     <div
-      data-wilsy-crm-visual-blueprint="R18AD76"
-      data-version={CRM_VERSION}
-      data-wilsy-theme={accountThemeId}
-      data-wilsy-mode={accountThemeMode}
-      style={visualStyles.shell}
+      className={styles.crmShell}
+      data-wilsy-active-workspace={activeWorkspace}
+      data-wilsy-rail-engine-state={crmRailEngineStateR65A}
+      data-wilsy-crm-dashboard="sovereign-sales-cockpit"
+      data-wilsy-version={CRM_INTERNAL_DIAGNOSTIC_ID}
+      data-wilsy-theme={themeRuntime.themeId}
+      data-wilsy-mode={themeRuntime.effectiveMode}
+      data-wilsy-resolved-mode={themeRuntime.resolvedMode}
+      style={crmThemeVars}
     >
-      <input
-        ref={importInputRef}
-        type="file"
-        accept=".csv,.json,text/csv,application/json"
-        style={{ display: 'none' }}
-        onChange={importFile}
+
+      <CrmSovereignSideRail
+        workspaces={CRM_WORKSPACES}
+        activeWorkspace={activeWorkspace}
+        snapshot={snapshot}
+        tenantConfig={tenantConfig}
+        user={user}
+        onWorkspaceSelect={(workspaceId) => setActiveWorkspace(workspaceId)}
+        onRailStateChange={setCrmRailEngineStateR65A}
       />
 
-      {(founderReturnEnabled || typeof onFounderReturn === 'function') && (
-        founderReturnOpen ? (
-          <div style={{ position: 'fixed', left: 24, bottom: 24, zIndex: 90, display: 'flex', gap: 8 }}>
-            <button type="button" style={visualStyles.outlineButton} onClick={onFounderReturn}>← Founder Dashboard</button>
-            <button type="button" style={visualStyles.outlineButton} onClick={() => setFounderReturnOpen(false)}>×</button>
+      <section className={styles.commandSurface}>
+        <header className={styles.osChrome}>
+          <div className={styles.chromeTitle}>
+            <small><Home size={13} /> {workspaceMeta.label}</small>
+            <h1 className={styles.crmOneLineTitleLock} aria-label="Wilsy OS CRM Command Center">
+                    <span className={styles.crmOneLineTitleText}>Wilsy&nbsp;OS&nbsp;<span className={styles.crmOneLineTitleGold}>CRM</span>&nbsp;Command&nbsp;Center</span>
+                  </h1>
+            <p>Sovereign sales intelligence. Source-led pipeline. Compliance proof.</p>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setFounderReturnOpen(true)}
-            style={{ position: 'fixed', left: 20, bottom: 88, zIndex: 90, width: 46, height: 46, borderRadius: 999, border: '1px solid rgba(231,201,86,.38)', background: '#050707', color: '#ffe58a' }}
-          >
-            ♛
-          </button>
-        )
-      )}
 
-      <aside style={visualStyles.rail} aria-label="CRM module navigation">
-        <button
-          type="button"
-          onClick={() => setSideRailOpen(previous => !previous)}
-          aria-label="Toggle CRM navigation"
-          style={{ position: 'absolute', top: 40, right: -17, width: 40, height: 52, borderRadius: 999, background: '#030404', border: '1px solid rgba(231,201,86,.32)', color: '#fff7ca', zIndex: 5 }}
-        >
-          {sideRailOpen ? '‹' : '›'}
-        </button>
-
-        <div style={visualStyles.railBrand}>
-          <div style={visualStyles.logoBox}>
-            <img src={wilsyOfficialLogo} alt="Wilsy CRM" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div className={styles.chromeTenant}>
+            <img
+              src={tenantIdentity.logo}
+              alt={tenantIdentity.name}
+              onError={event => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = wilsyLogo;
+              }}
+            />
+            <span>
+              <small>Tenant Identity</small>
+              <strong>{tenantIdentity.name}</strong>
+              <em>Live tenant boundary</em>
+            </span>
           </div>
-          {sideRailOpen && (
-            <div style={{ minWidth: 0 }}>
-              <strong style={{ display: 'block', fontSize: 17, letterSpacing: '.14em', color: '#fff' }}>WILSY CRM</strong>
-              <small style={{ display: 'block', marginTop: 4, color: '#e7c956', fontWeight: 850 }}>{currentTenantId || 'MASTER'}</small>
-            </div>
-          )}
-        </div>
 
-        <div style={visualStyles.tenantTile}>
-          <img src={wilsyOfficialLogo} alt="Tenant" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover' }} />
-          <div style={{ minWidth: 0 }}>
-            <strong style={{ display: 'block', fontSize: 12, color: '#fff' }}>{tenantIdentity?.displayName || tenantConfig?.name || 'Wilsy OS Root'}</strong>
-            <small style={{ color: 'rgba(255,255,255,.62)' }}>Tenant Identity Live</small>
+          <div className={styles.investorStrip} aria-label="Investor telemetry">
+            <span><LockKeyhole size={16} /> {rootHashStatus}</span>
+            <span><Network size={16} /> {snapshot.sourcePosture.connected}/{snapshot.sourcePosture.total} source routes</span>
+            <span><Shield size={16} /> {readinessScore}% governance readiness</span>
           </div>
-          <span style={{ width: 8, height: 8, borderRadius: 999, background: '#45f0bd' }} />
-        </div>
 
-        <label style={visualStyles.searchRail}>
-          <Search size={16} />
-          <input
-            value={searchTerm}
-            onChange={event => setSearchTerm(event.target.value)}
-            placeholder="Search records"
-            style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: '#fff' }}
-          />
-        </label>
+          <label className={styles.chromeSearch}>
+            <Search size={19} />
+            <input
+              value={searchTerm}
+              onChange={(event) => {
+                const query = event.target.value;
+                setSearchTerm(query);
 
-        <nav style={{ display: 'grid', gap: 8 }}>
-          {[
-            { id: 'home', label: 'Home', Icon: Home, action: () => setActiveWorkspace('home') },
-            { id: 'reports', label: 'Reports', Icon: BarChart3, action: () => setActiveWorkspace('analytics') }
-          ].map(item => (
-            <button key={item.id} type="button" onClick={item.action} style={visualStyles.railButton(activeWorkspace === item.id)}>
-              <item.Icon size={17} />
-              {sideRailOpen && <span>{item.label}</span>}
+                if (query.trim().length >= 2) {
+                  searchCrmCommandFabric({
+                    tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
+                    query,
+                    limit: 10
+                  }).catch(() => {});
+                }
+              }}
+              placeholder="Search pipeline, accounts, evidence"
+              aria-label="Global CRM search"
+            />
+            <kbd>⌘ K</kbd>
+          </label>
+
+          <div className={styles.chromeActions}>
+            <button type="button" onClick={() => setAccountSettingsOpen(true)}>
+              <Command size={18} />
+              Command Center
             </button>
-          ))}
-        </nav>
-
-        <div style={{ minHeight: 0, overflow: 'hidden', display: 'grid', gridTemplateRows: 'auto minmax(0,1fr)', gap: 10 }}>
-          {sideRailOpen && <div style={{ color: 'rgba(255,255,255,.65)', fontSize: 10, letterSpacing: '.28em', fontWeight: 950 }}>MODULES</div>}
-          <div style={{ minHeight: 0, overflowY: 'auto', display: 'grid', alignContent: 'start', gap: 6, paddingRight: 5 }}>
-            {visualModules.map(item => {
-              const Icon = CRM_ICON_MAP[item.icon] || Database;
-              const active = item.id === activeModule;
-              const count = Number(collections?.[item.id]?.total || collections?.[item.id]?.items?.length || 0);
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => { setActiveModule(item.id); setActiveWorkspace('records'); }}
-                  style={visualStyles.railButton(active)}
-                >
-                  <Icon size={17} />
-                  {sideRailOpen && <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>}
-                  {sideRailOpen && <em style={{ fontStyle: 'normal', opacity: .68 }}>{count}</em>}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div style={{ display: sideRailOpen ? 'grid' : 'none', gridTemplateColumns: '40px minmax(0,1fr) auto', gap: 10, alignItems: 'center', padding: '10px 12px', border: '1px solid rgba(255,255,255,.105)', borderRadius: 10, background: 'rgba(0,0,0,.24)' }}>
-          <span style={{ width: 34, height: 34, borderRadius: 999, display: 'grid', placeItems: 'center', background: 'rgba(231,201,86,.22)', color: '#ffe58a', fontWeight: 900 }}>WK</span>
-          <div style={{ minWidth: 0 }}>
-            <strong style={{ display: 'block', fontSize: 12 }}>Wilson Khanyezi</strong>
-            <small style={{ color: 'rgba(255,255,255,.62)' }}>Super Admin</small>
-          </div>
-          <span>›</span>
-        </div>
-      </aside>
-
-      <main style={visualStyles.app}>
-        <header style={visualStyles.top}>
-          <section style={{ minWidth: 0 }}>
-            <small style={{ color: '#e7c956', fontSize: 10, letterSpacing: '.18em', fontWeight: 950 }}><Home size={12} /> HOME</small>
-            <h1 style={{ margin: '12px 0 8px', fontSize: 'clamp(28px, 2.35vw, 42px)', lineHeight: 1, letterSpacing: '.12em', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              WILSY OS CRM COMMAND CENTER
-            </h1>
-            <p style={{ margin: 0, color: 'rgba(255,255,255,.72)' }}>Command your enterprise. Close with confidence. Prove every action.</p>
-          </section>
-
-          <section style={{ ...visualStyles.panel, display: 'grid', gridTemplateColumns: '54px minmax(0,1fr)', gap: 14, alignItems: 'center', padding: '10px 16px', borderColor: 'rgba(69,240,189,.24)' }}>
-            <img src={wilsyOfficialLogo} alt="Tenant identity" style={{ width: 54, height: 54, borderRadius: 13, objectFit: 'cover' }} />
-            <div style={{ minWidth: 0 }}>
-              <small style={{ color: '#e7c956', letterSpacing: '.16em', fontWeight: 950 }}>TENANT IDENTITY</small>
-              <strong style={{ display: 'block', color: '#fff', marginTop: 5 }}>{tenantIdentity?.displayName || tenantConfig?.name || 'Wilsy OS Root'}</strong>
-              <small style={{ color: 'rgba(255,255,255,.70)', letterSpacing: '.10em' }}>Tenant Identity Live <span style={{ color: '#45f0bd' }}>●</span></small>
-            </div>
-          </section>
-
-          <section style={visualStyles.toolbar}>
-            <button type="button" onClick={() => setAccountSettingsOpen(true)} style={{ ...visualStyles.panel, display: 'grid', gridTemplateColumns: '32px minmax(0,1fr)', alignItems: 'center', gap: 10, padding: '0 14px', height: 44, color: '#fff' }}>
-              <UserCog size={16} />
-              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Wilson Khanyezi<br /><small style={{ color: 'rgba(255,255,255,.58)', letterSpacing: '.14em' }}>SUPER ADMIN</small></span>
+            <button type="button" onClick={() => {
+                  syncCrmCommandFabric({
+                    tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
+                    activeModule: 'leads',
+                    reason: 'TOP_RAIL_LIVE_SYNC'
+                  }).catch(() => {});
+                }}>
+              <RefreshCcw size={18} className={loading ? styles.spin : ''} />
+              Live Sync
             </button>
-
-            <label style={{ ...visualStyles.panel, display: 'grid', gridTemplateColumns: '18px minmax(0,1fr) auto', alignItems: 'center', gap: 10, padding: '0 14px', height: 44 }}>
-              <Search size={16} />
-              <input
-                value={searchTerm}
-                onChange={event => setSearchTerm(event.target.value)}
-                placeholder="Search records, leads, accounts..."
-                style={{ width: '100%', minWidth: 0, border: 0, outline: 0, background: 'transparent', color: '#fff' }}
-              />
-              <small style={{ color: 'rgba(255,255,255,.58)' }}>⌘ K</small>
-            </label>
-
-            <button type="button" onClick={() => setAccountSettingsOpen(true)} style={visualStyles.outlineButton}>Command Center</button>
-            <button type="button" onClick={() => loadModuleRecords(activeModule, pageState[activeModule])} style={visualStyles.outlineButton}>↻ Live Sync</button>
-            <button type="button" onClick={() => { setActiveModule('leads'); setActiveWorkspace('records'); }} style={visualStyles.goldButton}>+ New Lead</button>
-          </section>
+            <button type="button" className={styles.primaryAction} onClick={() => openCreateFlow('leads')}>
+              <Plus size={18} />
+              Add Lead
+            </button>
+          </div>
         </header>
 
-        <section style={visualStyles.metricGrid}>
-          {visualMetricCards.map(card => (
-            <article key={card.label} style={visualStyles.metricCard}>
-              <card.Icon size={24} color={card.tone} />
-              <div style={{ minWidth: 0 }}>
-                <small style={{ display: 'block', color: 'rgba(255,255,255,.60)', fontSize: 10, fontWeight: 900, letterSpacing: '.11em' }}>{card.label}</small>
-                <strong style={{ display: 'block', color: '#fff', fontSize: 24, marginTop: 5 }}>{card.value}</strong>
-                <small style={{ color: 'rgba(255,255,255,.56)' }}>{card.detail}</small>
+        <main className={styles.workspaceViewport}>
+          {activeWorkspace === 'leads' ? (
+              <WilsyLeadOperatingRoom
+                leads={Array.isArray(snapshot?.leads) ? snapshot.leads : []}
+                searchTerm={searchTerm}
+                loading={loading}
+                tenantConfig={tenantConfig}
+                user={user}
+                onSearch={(queryValue) => {
+                  setSearchTerm(queryValue);
+
+                  if (String(queryValue || '').trim().length >= 2) {
+                    searchCrmCommandFabric({
+                      tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
+                      query: queryValue,
+                      limit: 25
+                    }).catch(() => {});
+                  }
+                }}
+                onSync={() => syncCrmCommandFabric({
+                  tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
+                  activeModule: 'leads',
+                  reason: 'R66B_LEAD_INGESTION_VALIDATION_SYNC'
+                })}
+                onSaveLead={(leadPayload) => createCrmCommandLead({
+                  tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
+                  lead: leadPayload
+                }).then(() => syncCrmCommandFabric({
+                  tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
+                  activeModule: 'leads',
+                  reason: 'R66B_LEAD_INGESTION_VALIDATION_SAVE'
+                }).catch(() => {}))}
+              />
+            ) : activeWorkspace === 'home' ? (
+            <section className={styles.homeGrid}>
+              <div data-wilsy-r72f-terminal-evidence-dashboard-wire="true">
+                <TerminalEvidenceCockpitPanel
+                  tenantId={tenantConfig?.tenantId || 'MASTER'}
+                  operator="CRM_DASHBOARD"
+                  autoFetch
+                />
               </div>
-              <span style={{ opacity: .46 }}>ⓘ</span>
-            </article>
-          ))}
-        </section>
 
-        <section style={visualStyles.mainGrid}>
-          <article style={visualStyles.cockpit}>
-            <strong style={{ display: 'block', color: '#16e4ce', fontSize: 12, letterSpacing: '.18em', marginBottom: 16 }}><Target size={14} /> PIPELINE COCKPIT</strong>
+              <section className={styles.metricDeck} aria-label="CRM posture">
+                <article className={styles.metricCard}>
+                  <CircleDollarSign size={27} />
+                  <span>
+                    <small>Weighted Pipeline</small>
+                    <strong>{formatMoney(weightedPipeline)}</strong>
+                    <em>{snapshot.deals.length ? `${snapshot.deals.length} source deals` : 'Pipeline awaits source deals'}</em>
+                  </span>
+                  <div className={styles.metricBar}><i style={{ width: `${Math.min(100, weightedPipeline ? 100 : 0)}%` }} /></div>
+                </article>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr)) 220px', gap: 10 }}>
-              {visualStageRows.map(stage => (
-                <section key={stage.label} style={{ ...visualStyles.panel, minHeight: 74, padding: '14px 16px' }}>
-                  <small style={{ color: 'rgba(255,255,255,.72)' }}>{stage.label}</small>
-                  <strong style={{ display: 'block', color: '#fff', fontSize: 18, marginTop: 8 }}>{stage.count}</strong>
-                  <small style={{ color: '#fff' }}>{visualCurrency(stage.value)}</small>
-                </section>
-              ))}
+                <article className={styles.metricCard}>
+                  <Activity size={27} />
+                  <span>
+                    <small>Readiness Score</small>
+                    <strong>{readinessScore}%</strong>
+                    <em>{readinessScore ? 'Source posture improving' : 'Connect sources to lift readiness'}</em>
+                  </span>
+                  <div className={styles.metricBar}><i style={{ width: `${readinessScore}%` }} /></div>
+                </article>
 
-              <section style={{ ...visualStyles.panel, gridRow: '1 / span 2', padding: 16 }}>
-                <strong style={{ display: 'block', marginBottom: 14 }}>Pipeline Summary</strong>
-                {[
-                  ['Total Deals', visualCounts.deals],
-                  ['Total Value', visualCurrency(visualWeightedPipeline)],
-                  ['Weighted Value', visualCurrency(visualWeightedPipeline)],
-                  ['Avg. Deal Size', visualCurrency(visualCounts.deals ? visualWeightedPipeline / visualCounts.deals : 0)],
-                  ['Win Rate', '0%']
-                ].map(([label, value]) => (
-                  <div key={label} style={{ display: 'grid', gridTemplateColumns: '1fr auto', padding: '9px 0', borderTop: '1px solid rgba(255,255,255,.065)', color: 'rgba(255,255,255,.72)' }}>
-                    <span>{label}</span><strong style={{ color: '#fff' }}>{value}</strong>
-                  </div>
-                ))}
-                <button type="button" onClick={() => setActiveWorkspace('pipeline')} style={{ ...visualStyles.outlineButton, width: '100%', marginTop: 10 }}>View Full Pipeline →</button>
+                <article className={styles.metricCard}>
+                  <Database size={27} />
+                  <span>
+                    <small>Connected Sources</small>
+                    <strong>{snapshot.sourcePosture.connected}/{snapshot.sourcePosture.total}</strong>
+                    <em>{sourceErrors.length ? `${sourceErrors.length} source gaps` : 'All source routes clean'}</em>
+                  </span>
+                  <div className={styles.metricBar}><i style={{ width: `${(snapshot.sourcePosture.connected / Math.max(1, snapshot.sourcePosture.total)) * 100}%` }} /></div>
+                </article>
+
+                <article className={styles.metricCard}>
+                  <Fingerprint size={27} />
+                  <span>
+                    <small>Evidence Posture</small>
+                    <strong>{snapshot.evidence.length}</strong>
+                    <em>{snapshot.evidence.length ? 'Receipts available' : 'No receipts sealed yet'}</em>
+                  </span>
+                  <div className={styles.metricBar}><i style={{ width: `${snapshot.evidence.length ? 100 : 0}%` }} /></div>
+                </article>
               </section>
-            </div>
+              <section className={styles.pipelineCockpit}>
+                <div className={styles.sectionHeader}>
+                  <span>
+                    <small>Revenue Cockpit</small>
+                    <strong>Sovereign pipeline by verified stage</strong>
+                  </span>
+                  <button type="button" onClick={() => setActiveWorkspace('deals')}>
+                    Open Deals <ChevronRight size={16} />
+                  </button>
+                </div>
 
-            <div style={{ minHeight: 178, display: 'grid', placeItems: 'center', marginTop: 12, border: '1px solid rgba(255,255,255,.085)', borderRadius: 9, background: 'radial-gradient(circle at 50% 35%, rgba(22,228,206,.18), transparent 9%), rgba(0,0,0,.16)' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ width: 58, height: 58, margin: '0 auto 14px', borderRadius: 999, border: '1px solid rgba(22,228,206,.34)', boxShadow: '0 0 34px rgba(22,228,206,.30)' }} />
-                <strong>Your revenue pipeline is ready for lift-off.</strong>
-                <p style={{ color: 'rgba(255,255,255,.65)' }}>Add leads and move deals through stages to build momentum.</p>
-                <button type="button" onClick={() => { setActiveModule('leads'); setActiveWorkspace('records'); }} style={{ ...visualStyles.outlineButton, minWidth: 200 }}>+ Add Your First Lead</button>
-              </div>
-            </div>
-          </article>
-
-          <aside style={visualStyles.rightStack}>
-            <article style={visualStyles.rightCard}>
-              <strong style={{ color: '#e7c956', letterSpacing: '.12em', fontSize: 11 }}><Sparkles size={13} /> WILSY AI COMMAND LAYER</strong>
-              <p style={{ color: 'rgba(255,255,255,.70)', marginTop: 18 }}>{wilsyAiCommercialPosture?.label || 'Your AI co-pilot for growth and intelligence.'}</p>
-              <small style={{ color: 'rgba(255,255,255,.54)' }}>{wilsyAiActionState?.message || 'No recommendations yet.'}</small>
-              <button type="button" onClick={() => handleCrmWilsyAiUsageProbe(wilsyAiPrimaryPlan)} style={{ ...visualStyles.outlineButton, width: '100%', marginTop: 18 }}>Open AI Command Center →</button>
-            </article>
-
-            <article style={visualStyles.rightCard}>
-              <strong style={{ color: '#16e4ce', letterSpacing: '.12em', fontSize: 11 }}><UploadCloud size={13} /> CONNECTORS HUB</strong>
-              <div style={{ display: 'flex', gap: 18, color: '#16e4ce', margin: '22px 0 12px' }}>
-                <MessageSquare size={18} /><Calendar size={18} /><PhoneCall size={18} /><UploadCloud size={18} /><Database size={18} />
-              </div>
-              <small style={{ color: 'rgba(255,255,255,.68)' }}>{Number(readiness?.liveSources || 0)} of {Number(readiness?.totalSources || 36)} connectors active</small>
-              <button type="button" onClick={() => setActiveWorkspace('import')} style={{ ...visualStyles.outlineButton, width: '100%', marginTop: 14 }}>Manage Connectors →</button>
-            </article>
-
-            <article style={visualStyles.rightCard}>
-              <strong style={{ color: '#fff', letterSpacing: '.12em', fontSize: 11 }}><Shield size={13} /> AUDIT POSTURE</strong>
-              <div style={{ marginTop: 16, display: 'grid', gap: 9 }}>
-                {[
-                  ['Backend Authority', sourceRegistryEvidence?.backendAuthority ? 'Established' : 'Not Established'],
-                  ['Ledger Readiness', `${Number(readiness?.ledgerReadiness || 0)}%`],
-                  ['Sealed Evidence', visualCounts.evidence]
-                ].map(([label, value]) => (
-                  <div key={label} style={{ display: 'grid', gridTemplateColumns: '1fr auto', color: 'rgba(255,255,255,.68)', borderTop: '1px solid rgba(255,255,255,.065)', paddingTop: 8 }}>
-                    <span>{label}</span><strong style={{ color: '#fff' }}>{value}</strong>
+                <div className={styles.stageFlow} aria-label="Primary sovereign pipeline stages">
+                  {primaryPipelineStages.map((stage, index) => (
+                    <article key={stage.stage} data-stage-tone={stage.tone}>
+                      <span className={styles.stageIndex}>0{index + 1}</span>
+                      <small>{stage.stage}</small>
+                      <strong>{formatMoney(stage.weightedValue)}</strong>
+                      <em>{stage.count} deals · {stage.probability}%</em>
+                      <p>{stage.clause}</p>
+                      <span className={styles.stageProof}>{stage.proof}</span>
+                      <div className={styles.stageBar}>
+                        <i style={{ width: `${stage.probability}%` }} />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                <div className={styles.sovereignOpsCanvas}>
+                  <div className={styles.opsSignalMap} aria-label="Sovereign operating fabric">
+                    <span data-ops-ready={snapshot.sourcePosture.connected > 0 ? 'true' : 'false'}>
+                      <Mail size={16} />
+                      <strong>Email</strong>
+                      <small>{snapshot.sourcePosture.connected ? 'Source live' : 'Awaiting source'}</small>
+                    </span>
+                    <span data-ops-ready={snapshot.connectors.length > 0 ? 'true' : 'false'}>
+                      <Network size={16} />
+                      <strong>Connectors</strong>
+                      <small>{snapshot.connectors.length ? `${snapshot.connectors.length} active` : 'Not connected'}</small>
+                    </span>
+                    <span data-ops-ready={snapshot.evidence.length > 0 ? 'true' : 'false'}>
+                      <FileCheck2 size={16} />
+                      <strong>Evidence</strong>
+                      <small>{snapshot.evidence.length ? `${snapshot.evidence.length} anchors` : 'No receipts'}</small>
+                    </span>
+                    <span data-ops-ready={snapshot.deals.length > 0 ? 'true' : 'false'}>
+                      <CircleDollarSign size={16} />
+                      <strong>Revenue</strong>
+                      <small>{snapshot.deals.length ? `${snapshot.deals.length} deals` : 'Pipeline standby'}</small>
+                    </span>
                   </div>
-                ))}
+
+                  <div className={styles.opsCommandCenter}>
+                    <div className={styles.opsCoreOrb} aria-hidden="true">
+                      <span />
+                    </div>
+                    <small>Source-to-Signature Fabric</small>
+                    <strong>{snapshot.sourcePosture.connected ? 'Sovereign revenue operations online' : 'Operating fabric ready for live sources'}</strong>
+                    <p>{snapshot.sourcePosture.connected ? 'Wilsy OS is mapping CRM signals into governance, evidence and revenue posture.' : 'No empty canvas: this layer shows exactly which live backend sources must activate the cockpit.'}</p>
+                  </div>
+
+                  <div className={styles.opsProofLedger}>
+                    <div>
+                      <span>Weighted value</span>
+                      <strong>{formatMoney(weightedPipeline)}</strong>
+                    </div>
+                    <div>
+                      <span>Governance</span>
+                      <strong>{readinessScore}%</strong>
+                    </div>
+                    <div>
+                      <span>Backend profile</span>
+                      <strong>{operatorIdentity.source === 'backend' ? 'DB linked' : 'Fallback'}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.sovereignStageRail} aria-label="Sovereign closure stages">
+                  {sovereignPipelineStages.map(stage => (
+                    <article key={stage.stage} data-stage-tone={stage.tone}>
+                      <small>{stage.stage}</small>
+                      <strong>{stage.probability}%</strong>
+                      <span>{stage.clause}</span>
+                      <em>{stage.proof}</em>
+                    </article>
+                  ))}
+                </div>
+              </section>
+              <aside className={styles.commandStack} aria-label="Wilsy OS right intelligence stack">
+                <article className={styles.rightIntelCard}>
+                  <div className={styles.rightIntelHeader}>
+                    <span className={styles.rightIntelGlyph} aria-hidden="true">
+                      <Sparkles size={20} />
+                    </span>
+                    <span>
+                      <small>AI Command Layer</small>
+                      <strong>{snapshot.sourcePosture.connected ? 'Revenue intelligence online' : 'Source intelligence standby'}</strong>
+                    </span>
+                  </div>
+
+                  <div className={styles.sourceConstellation} aria-label="AI source readiness">
+                    <span data-source-ready={snapshot.sourcePosture.connected > 0 ? 'true' : 'false'}>
+                      <i>Email</i>
+                      <b>{snapshot.sourcePosture.connected > 0 ? 'Ready' : 'Gated'}</b>
+                    </span>
+                    <span data-source-ready={snapshot.connectors.length > 0 ? 'true' : 'false'}>
+                      <i>Connectors</i>
+                      <b>{snapshot.connectors.length || 'Gated'}</b>
+                    </span>
+                    <span data-source-ready={snapshot.evidence.length > 0 ? 'true' : 'false'}>
+                      <i>Evidence</i>
+                      <b>{snapshot.evidence.length || 'Gated'}</b>
+                    </span>
+                    <span data-source-ready={snapshot.deals.length > 0 ? 'true' : 'false'}>
+                      <i>Pipeline</i>
+                      <b>{snapshot.deals.length || 'Gated'}</b>
+                    </span>
+                  </div>
+
+                  <div className={styles.nextActionCapsule}>
+                    <small>Next best action</small>
+                    <strong>{snapshot.sourcePosture.connected ? 'Inspect deal movement and evidence gaps.' : 'Connect verified CRM sources.'}</strong>
+                    <p>{snapshot.sourcePosture.connected ? 'Wilsy can generate governed next actions from source context.' : 'AI remains intentionally gated until live source context is available.'}</p>
+                  </div>
+
+                  <div className={styles.rightMiniActions}>
+                    <button type="button" onClick={() => setActiveWorkspace('connectors')}>
+                      <Network size={15} />
+                      Source Graph
+                    </button>
+                    <button type="button" onClick={() => setActiveWorkspace('deals')}>
+                      <Target size={15} />
+                      Deal Signals
+                    </button>
+                    <button type="button" onClick={() => openCreateFlow('leads')}>
+                      <Plus size={15} />
+                      Verified Lead
+                    </button>
+                  </div>
+                </article>
+
+                <article className={styles.proofMatrixCard}>
+                  <div className={styles.rightIntelHeader}>
+                    <span className={styles.rightIntelGlyph} aria-hidden="true">
+                      <Shield size={20} />
+                    </span>
+                    <span>
+                      <small>Compliance HUD</small>
+                      <strong>Proof matrix</strong>
+                    </span>
+                  </div>
+
+                  <div className={styles.proofScoreGrid}>
+                    <div className={styles.proofRing} style={{ '--proof-score': `${readinessScore}%` }}>
+                      <strong>{readinessScore}%</strong>
+                      <small>Readiness</small>
+                    </div>
+
+                    <div className={styles.clauseGrid} aria-label="Compliance clauses">
+                      {COMPLIANCE_BADGES.map(badge => (
+                        <span key={badge}>{badge}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={styles.proofLedger}>
+                    <div>
+                      <span>Authority</span>
+                      <strong>{snapshot.sourcePosture.connected ? 'Connected' : 'Pending'}</strong>
+                    </div>
+                    <div>
+                      <span>Receipt chain</span>
+                      <strong>{snapshot.evidence.length ? `${snapshot.evidence.length} anchors` : 'Not sealed'}</strong>
+                    </div>
+                    <div>
+                      <span>Disclosure pack</span>
+                      <strong>{readinessScore >= 70 ? 'Ready' : 'Incomplete'}</strong>
+                    </div>
+                  </div>
+
+                  <div className={styles.proofSignal}>
+                    <FileCheck2 size={16} />
+                    <span>
+                      <strong>{sourceErrors.length ? `${sourceErrors.length} source gaps` : 'Proof posture monitored'}</strong>
+                      <small>{snapshot.evidence.length ? 'Evidence anchors available.' : 'No sealed evidence returned yet.'}</small>
+                    </span>
+                  </div>
+
+                  <button type="button" className={styles.proofAction} onClick={() => setActiveWorkspace('evidence')}>
+                    Open Evidence <ChevronRight size={16} />
+                  </button>
+                </article>
+              </aside>
+
+              <section className={styles.quickActions}>
+                <article>
+                  <Users size={19} />
+                  <small>Lead Intake</small>
+                  <strong>{snapshot.leads.length}</strong>
+                  <p>{snapshot.leads.length ? 'Source leads available.' : 'No verified leads captured.'}</p>
+                  <button type="button" onClick={() => openCreateFlow('leads')}>Add Lead</button>
+                </article>
+                <article>
+                  <Target size={19} />
+                  <small>Deal Motion</small>
+                  <strong>{snapshot.deals.length}</strong>
+                  <p>{snapshot.deals.length ? 'Deals in pipeline.' : 'No deal records returned.'}</p>
+                  <button type="button" onClick={() => setActiveWorkspace('deals')}>Create Deal</button>
+                </article>
+                <article>
+                  <CheckCircle2 size={19} />
+                  <small>Execution</small>
+                  <strong>{snapshot.tasks.length}</strong>
+                  <p>{snapshot.tasks.length ? 'Tasks available.' : 'No open tasks returned.'}</p>
+                  <button type="button" onClick={() => setActiveWorkspace('tasks')}>Create Task</button>
+                </article>
+                <article>
+                  <CalendarDays size={19} />
+                  <small>Meetings</small>
+                  <strong>{snapshot.meetings.length}</strong>
+                  <p>{snapshot.meetings.length ? 'Meetings available.' : 'No meetings scheduled.'}</p>
+                  <button type="button" onClick={() => setActiveWorkspace('meetings')}>Schedule</button>
+                </article>
+                <article className={styles.wideAction}>
+                  <FileCheck2 size={19} />
+                  <small>Evidence</small>
+                  <strong>{snapshot.evidence.length}</strong>
+                  <p>{snapshot.evidence.length ? 'Evidence records available.' : 'No receipts or evidence records returned.'}</p>
+                  <button type="button" onClick={() => setActiveWorkspace('evidence')}>Upload Evidence</button>
+                </article>
+              </section>
+            </section>
+          ) : (
+            <section className={styles.recordsSurface}>
+              <div className={styles.recordsHeader}>
+                <span>
+                  <small>{workspaceMeta.group}</small>
+                  <strong>{workspaceMeta.label}</strong>
+                  <em>{loading ? 'Synchronising sources...' : `${activeRecords.length} visible / ${(snapshot[activeWorkspace] || []).length} total`}</em>
+                </span>
+                <div>
+                  <button type="button" onClick={refreshSources}>
+                    <RefreshCcw size={16} className={loading ? styles.spin : ''} />
+                    Sync
+                  </button>
+                  <button type="button" className={styles.primaryAction} onClick={() => openCreateFlow(activeWorkspace)}>
+                    <Plus size={16} />
+                    New
+                  </button>
+                </div>
               </div>
-              <button type="button" onClick={() => setActiveWorkspace('evidence')} style={{ ...visualStyles.outlineButton, width: '100%', marginTop: 14 }}>Open Audit Center →</button>
-            </article>
-          </aside>
-        </section>
 
-        <section style={visualStyles.activityGrid}>
-          {visualActivityCards.map(card => (
-            <article key={card.label} style={visualStyles.activityCard}>
-              <header>
-                <small style={{ color: 'rgba(255,255,255,.78)', letterSpacing: '.10em', fontWeight: 950 }}><card.Icon size={13} /> {card.label}</small>
-                <strong style={{ display: 'block', color: '#fff', fontSize: 24, marginTop: 8 }}>{card.value}</strong>
-              </header>
-              <p style={{ color: 'rgba(255,255,255,.58)', textAlign: 'center', margin: '12px 0' }}>{card.empty}</p>
-              <button type="button" onClick={card.action} style={{ ...visualStyles.outlineButton, width: '100%' }}>{card.cta}</button>
-            </article>
-          ))}
+              {sourceErrors.length ? (
+                <div className={styles.sourceWarning}>
+                  <AlertTriangle size={18} />
+                  <span>{sourceErrors.length} source route{sourceErrors.length === 1 ? '' : 's'} unavailable. Showing received records only.</span>
+                </div>
+              ) : null}
 
-          <article style={visualStyles.activityCard}>
-            <header>
-              <small style={{ color: '#16e4ce', letterSpacing: '.10em', fontWeight: 950 }}><Shield size={13} /> COMPLIANCE & EVIDENCE</small>
-              <strong style={{ display: 'block', color: '#fff', fontSize: 24, marginTop: 8 }}>{Number(readiness?.score || 0)}%</strong>
-            </header>
-            <p style={{ color: 'rgba(255,255,255,.58)', textAlign: 'center', margin: '12px 0' }}>{visualCounts.evidence ? `${visualCounts.evidence} evidence records available.` : 'No evidence captured yet.'}</p>
-            <button type="button" onClick={() => setActiveWorkspace('evidence')} style={{ ...visualStyles.outlineButton, width: '100%' }}>Upload Evidence</button>
-          </article>
-        </section>
-
-        <footer style={visualStyles.strip}>
-          <div style={{ padding: '0 16px' }}>
-            <small style={{ color: '#16e4ce', letterSpacing: '.14em', fontWeight: 950 }}>INVESTOR & REGULATOR STRIP</small>
-            <strong style={{ display: 'block', marginTop: 4 }}>Sealed Evidence Posture</strong>
-          </div>
-          {[
-            ['Backend Authority', sourceRegistryEvidence?.backendAuthority ? 'Established' : 'Not Established'],
-            ['Evidence Integrity', `${Number(readiness?.score || 0)}% Verified`],
-            ['Ledger Readiness', `${Number(readiness?.ledgerReadiness || 0)}%`],
-            ['Forensic Receipts', visualCounts.evidence]
-          ].map(([label, value]) => (
-            <div key={label} style={{ minHeight: 62, display: 'grid', alignContent: 'center', padding: '0 16px', borderLeft: '1px solid rgba(255,255,255,.08)' }}>
-              <small style={{ color: 'rgba(255,255,255,.62)' }}>{label}</small>
-              <strong>{value}</strong>
-            </div>
-          ))}
-          <div style={{ padding: '0 16px', borderLeft: '1px solid rgba(255,255,255,.08)' }}>
-            <button type="button" onClick={() => setActiveWorkspace('evidence')} style={{ ...visualStyles.outlineButton, width: '100%' }}>🔒 Open Forensic Vault</button>
-          </div>
-        </footer>
-      </main>
-
+              <div className={styles.tableFrame}>
+                <table>
+                  <thead>
+                    <tr>
+                      {(CRM_RECORD_COLUMNS[activeWorkspace] || CRM_RECORD_COLUMNS.leads).map(column => (
+                        <th key={column}>{column}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeRecords.length ? activeRecords.map(record => (
+                      <tr key={record.id}>
+                        {(CRM_RECORD_COLUMNS[activeWorkspace] || CRM_RECORD_COLUMNS.leads).map(column => (
+                          <td key={`${record.id}-${column}`}>{getRecordCellValue(record, column)}</td>
+                        ))}
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={(CRM_RECORD_COLUMNS[activeWorkspace] || CRM_RECORD_COLUMNS.leads).length}>
+                          <div className={styles.emptyState}>
+                            <Database size={30} />
+                            <strong>No source records returned.</strong>
+                            <p>{loading ? 'Synchronising CRM source routes.' : 'Connect a source or create a verified record to activate this workspace.'}</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+        </main>
+      </section>
       <WilsyAccountCommandCenter
         isOpen={accountSettingsOpen}
         onClose={() => setAccountSettingsOpen(false)}
+        activeThemeId={themeRuntime.themeId}
+        themeMode={themeRuntime.effectiveMode}
+        onThemeChange={nextTheme => {
+          const themeId = nextTheme?.id || nextTheme?.themeId || nextTheme;
+          const mode = themeRuntime.effectiveMode || 'night';
+
+          try {
+            commitWilsyThemeRuntime(
+              {
+                themeId,
+                mode,
+                source: 'CRMDashboard.accountThemeChange'
+              },
+              {
+                dispatch: true,
+                source: 'CRMDashboard.accountThemeChange'
+              }
+            );
+          } catch (error) {
+            window.dispatchEvent(new CustomEvent('wilsy:theme-change', {
+              detail: { themeId, mode, source: 'CRMDashboard.accountThemeChangeFallback' }
+            }));
+          }
+
+          setThemeRuntime(previous => resolveCrmGlobalThemeRuntime({ themeId, mode }, previous));
+        }}
+        onModeChange={nextMode => {
+          const mode = nextMode?.id || nextMode?.mode || nextMode;
+          const themeId = themeRuntime.themeId || 'crm_revenue_pulse';
+
+          try {
+            commitWilsyThemeRuntime(
+              {
+                themeId,
+                mode,
+                source: 'CRMDashboard.accountModeChange'
+              },
+              {
+                dispatch: true,
+                source: 'CRMDashboard.accountModeChange'
+              }
+            );
+          } catch (error) {
+            window.dispatchEvent(new CustomEvent('wilsy:theme-change', {
+              detail: { themeId, mode, source: 'CRMDashboard.accountModeChangeFallback' }
+            }));
+          }
+
+          setThemeRuntime(previous => resolveCrmGlobalThemeRuntime({ themeId, mode }, previous));
+        }}
       />
     </div>
   );
-
-
-  return wilsyCrmVisualShell;
-
-  return (
-    <div className={styles.crmShell} style={crmThemeVars} data-wilsy-crm-dashboard="clean-os" data-version={CRM_VERSION} data-wilsy-theme={accountThemeId} data-wilsy-mode={accountThemeMode}>
-      <div data-wilsy-r72f-terminal-evidence-dashboard-wire="true">
-        <TerminalEvidenceCockpitPanel
-          tenantId={tenantConfig?.tenantId || 'MASTER'}
-          operator="CRM_DASHBOARD"
-          autoFetch
-        />
-      </div>
-
-      <input ref={importInputRef} type="file" accept=".csv,.json,text/csv,application/json" className={styles.hiddenInput} onChange={importFile} />
-      {(founderReturnEnabled || typeof onFounderReturn === 'function') && (
-        founderReturnOpen ? (
-          <div className={styles.founderReturnOpenPanel} data-wilsy-founder-return="open">
-            <button type="button" className={styles.founderReturnAction} onClick={onFounderReturn}>
-              ← Founder Dashboard
-            </button>
-            <button type="button" className={styles.founderReturnClose} onClick={() => setFounderReturnOpen(false)} aria-label="Close Founder return">
-              ×
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className={styles.founderReturnClosedButton}
-            onClick={() => setFounderReturnOpen(true)}
-            aria-label="Open Founder return"
-          >
-            ♛
-          </button>
-        )
-      )}
-
-      <aside className={`${styles.moduleRail} ${sideRailOpen ? styles.moduleRailOpen : styles.moduleRailClosed}`} aria-label="CRM module navigation">
-        <button
-          type="button"
-          className={styles.railDockToggle}
-          onClick={() => setSideRailOpen(previous => !previous)}
-          aria-expanded={sideRailOpen}
-          aria-label={sideRailOpen ? 'Collapse CRM rail' : 'Expand CRM rail'}
-        >
-          {sideRailOpen ? '‹' : '›'}
-        </button>
-
-        <div className={styles.productMark}>
-          <div className={styles.logoBox}>
-            <img src={tenantIdentity.logo || wilsyOfficialLogo} alt={`${tenantIdentity.displayName} logo`} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = wilsyOfficialLogo || createCrmInitialsSeal(tenantIdentity.displayName); }} />
-          </div>
-          <div>
-            <strong>Wilsy CRM</strong>
-            <small>{tenantIdentity.tenantId}</small>
-          </div>
-        </div>
-
-        <label className={styles.railSearch}>
-          <Search size={14} />
-          <input value={searchTerm} onChange={event => setSearchTerm(event.target.value)} placeholder="Search records" />
-        </label>
-
-        <nav className={styles.railNav}>
-          <button type="button" className={activeWorkspace === 'home' ? styles.navButtonActive : styles.navButton} onClick={() => setActiveWorkspace('home')}>
-            <Home size={16} /> Home
-          </button>
-          <button type="button" className={activeWorkspace === 'evidence' ? styles.navButtonActive : styles.navButton} onClick={() => setActiveWorkspace('evidence')}>
-            <BarChart3 size={16} /> Reports
-          </button>
-        </nav>
-
-        <div className={styles.moduleTitle}>Modules</div>
-        <div className={styles.moduleList}>{moduleCards}</div>
-      </aside>
-
-      <section className={styles.appSurface}>
-                                <WilsyOSDashboardTopRail
-                  className={styles.crmSlotTopRail}
-                  dashboardKey="crm"
-                  commandLabel="Customer Intelligence"
-                  title="WILSY OS CRM COMMAND CENTER"
-                  posture={readiness?.posture || readiness?.status || 'SOURCE_REQUIRED'}
-                  tenant={crmResolvedTenantTopRailIdentity}
-                  operator={crmResolvedOperatorIdentity}
-                  storyMessages={buildCrmPolishedTopRailStoryMessages({ readinessSource: readiness })}
-                  search={{
-                    value: searchTerm,
-                    placeholder: 'Search customers, deals, contacts or press ⌘K',
-                    onChange: event => setSearchTerm(event.target.value),
-                    onFocus: () => {
-                      if (typeof window !== 'undefined') {
-                        window.dispatchEvent(new CustomEvent('wilsy:open-command-search'));
-                      }
-                    }
-                  }}
-                  account={{
-                                    label: 'COMMAND CENTER',
-                                    onOpen: openWilsyAccountSettings
-                                  }}
-                  actions={{
-                    liveSyncLabel: 'LIVE SYNC',
-                    primaryActionLabel: 'NEW LEAD',
-                    isRefreshing,
-                    onLiveSync: () => {
-      if (typeof loadAllData === 'function') {
-        loadAllData();
-      }
-
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('wilsy:crm-live-sync-requested', {
-          detail: {
-            action: 'LIVE_SYNC',
-            source: 'CRMDashboard',
-            emittedAt: new Date().toISOString()
-          }
-        }));
-      }
-    },
-                    onPrimaryAction: handleCrmTopRailPrimaryAction
-                  }}
-                
-                                  accountTrigger={
-                                    <button
-                                      type="button"
-                                      className="wilsyOsChromeSecondaryButton"
-                                      data-wilsy-crm-command-center-direct="executive-parity"
-                                      title="Open Wilsy Account Command Center"
-                                      onClick={() => setAccountSettingsOpen(true)}
-                                    >
-                                      <UserCog size={13} /> COMMAND CENTER
-                                    </button>
-                                  }/>
-
-        <main className={styles.operatingGrid}>
-          <nav className={styles.workspaceRail} aria-label="CRM workspace navigation">
-            <label className={styles.workspaceSelect}>
-              <span>Workspace</span>
-              <select value={activeWorkspace} onChange={event => setActiveWorkspace(event.target.value)}>
-                {CRM_WORKSPACES.map(workspace => <option key={workspace.id} value={workspace.id}>{workspace.label}</option>)}
-              </select>
-            </label>
-            <div className={styles.workspaceButtons}>{workspaceButtons}</div>
-          </nav>
-
-          <section className={styles.workspaceViewport}>
-            <header className={styles.workspaceHeader}>
-              <div>
-                <span><ActiveWorkspaceIcon size={14} /> {CRM_WORKSPACES.find(workspace => workspace.id === activeWorkspace)?.label || titleizeCrmText(activeWorkspace)}</span>
-                <h2>{CRM_WORKSPACES.find(workspace => workspace.id === activeWorkspace)?.label || titleizeCrmText(activeWorkspace)}</h2>
-                <p>{activeWorkspace === 'home' ? liveCrmStatusLabel : `${moduleConfig.label} // ${sourceLabel}`}</p>
-              </div>
-              <div className={styles.workspaceMetrics}>
-                <article><small>Readiness</small><strong>{readiness.score}%</strong></article>
-                <article><small>Sources</small><strong>{readiness.liveSources}/{readiness.totalSources}</strong></article>
-                <article><small>Pipeline</small><strong>{formatCrmMoney(pipelineValue)}</strong></article>
-              </div>
-            </header>
-            <div className={styles.workspaceContent}>{workspaceContent[activeWorkspace] || homeCards}</div>
-          </section>
-
-          <aside className={`${styles.contextRail} ${commandCentrePinned ? styles.contextRailPinned : styles.contextRailFloating} ${(commandCentreOpen || commandCentrePinned) ? styles.contextRailOpen : styles.contextRailClosed}`} aria-label="CRM command rail">
-            <div className={styles.contextDockControls}>
-              <button
-                type="button"
-                className={styles.contextRailHandle}
-                onClick={() => setCommandCentreOpen(previous => commandCentrePinned ? true : !previous)}
-                aria-expanded={commandCentreOpen || commandCentrePinned}
-                aria-label={(commandCentreOpen || commandCentrePinned) ? 'Close Command Centre' : 'Open Command Centre'}
-              >
-                {(commandCentreOpen || commandCentrePinned) ? 'Close' : 'Command'}
-              </button>
-              <button
-                type="button"
-                className={styles.contextPinButton}
-                onClick={() => {
-                  setCommandCentrePinned(previous => !previous);
-                  setCommandCentreOpen(true);
-                }}
-                aria-pressed={commandCentrePinned}
-                aria-label={commandCentrePinned ? 'Unpin Command Centre' : 'Pin Command Centre'}
-              >
-                {commandCentrePinned ? 'Unpin' : 'Pin'}
-              </button>
-            </div>
-
-            <div className={styles.contextRailInner}>
-            <header>
-              <span><Sparkles size={14} /> Command Centre</span>
-              <strong>{compactCrmSignal(readiness.posture)}</strong>
-              <p>{collections.leads?.total || 0} leads, {collections.accounts?.total || 0} accounts, {collections.deals?.total || 0} deals.</p>
-            </header>
-
-            <label>
-              <span>Run Command</span>
-              <select
-                value=""
-                onChange={event => {
-                  if (event.target.value === 'sync') loadAllData();
-                  if (event.target.value === 'create') openCreateRecord();
-                  if (event.target.value === 'export') exportCurrentModule();
-                  if (event.target.value === 'import') setActiveWorkspace('import');
-                  if (event.target.value === 'ai') setActiveWorkspace('ai');
-                }}
-              >
-                <option value="">Select command</option>
-                <option value="sync">Live Sync</option>
-                <option value="create">New Record</option>
-                <option value="export">Export Current Module</option>
-                <option value="import">Import Customers</option>
-                <option value="ai">Wilsy AI Review</option>
-              </select>
-            </label>
-
-            <label>
-              <span>CRM Module</span>
-              <select value={activeModule} onChange={event => { setActiveModule(event.target.value); setActiveWorkspace('records'); }}>
-                {CRM_MODULES.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
-              </select>
-            </label>
-
-            <button type="button" className={styles.primaryButton} onClick={() => routeArtifactCommand('evidence')}>
-              <Download size={14} /> Evidence Pack
-            </button>
-
-            <section className={styles.aiRailCard}>
-              <span>Wilsy AI</span>
-              <p>{wilsyAiCommercialPosture.label}</p>
-            </section>
-
-            <section className={styles.receiptFeed}>
-              <span>Command Receipts</span>
-              {receipts.map(receipt => (
-                <article key={receipt.id}>
-                  <strong>{receipt.eventType}</strong>
-                  <small>{receipt.message}</small>
-                  <em>{receipt.proofHash}</em>
-                </article>
-              ))}
-              {receipts.length === 0 && <p>No command executed yet.</p>}
-            </section>
-            </div>
-          </aside>
-        </main>
-      </section>
-
-      {modalOpen && (
-        <div className={styles.modalOverlay}>
-          <section className={styles.modalPanel}>
-            <header>
-              <div>
-                <span>{editingRecord ? 'Update Record' : 'Create Record'}</span>
-                <h2>{moduleConfig.singular}</h2>
-              </div>
-              <button type="button" onClick={() => setModalOpen(false)}><X size={16} /></button>
-            </header>
-            <div className={styles.formGrid}>
-              {moduleConfig.fields.map(field => (
-                <label key={field}>
-                  <span>{FIELD_LABELS[field] || titleizeCrmText(field)}</span>
-                  <input
-                    type={FIELD_TYPES[field] || 'text'}
-                    value={recordDraft[field] ?? ''}
-                    onChange={event => setRecordDraft(previous => ({
-                      ...previous,
-                      [field]: FIELD_TYPES[field] === 'number' ? numericCrmValue(event.target.value) : event.target.value
-                    }))}
-                  />
-                </label>
-              ))}
-            </div>
-            <footer>
-              <button type="button" onClick={() => setModalOpen(false)}>Cancel</button>
-              <button type="button" onClick={saveRecord} className={styles.primaryButton}>{editingRecord ? 'Update' : 'Create'}</button>
-            </footer>
-          </section>
-        </div>
-      )}
-    
-      {/* WILSY CRM EXECUTIVE ROOT ACCOUNT MOUNT - STEP M */}
-            <WilsyAccountCommandCenter
-        isOpen={accountSettingsOpen}
-        onClose={() => setAccountSettingsOpen(false)}
-        onNavigate={handleCrmAccountCommandBridge}
-        onSignOut={typeof handleCrmChromeSignOut === 'function' ? handleCrmChromeSignOut : undefined}
-        user={buildCrmAccountCommandCenterUser({
-          userSource: typeof user === 'undefined' ? {} : user,
-          accessSource: typeof access === 'undefined' ? {} : access,
-          accountProfileSource: typeof accountProfile === 'undefined' ? {} : accountProfile,
-          operatorSource: typeof crmResolvedOperatorIdentity === 'undefined' ? {} : crmResolvedOperatorIdentity,
-          tenantSource: typeof tenantIdentity === 'undefined' ? {} : tenantIdentity
-        })}
-        activeThemeId={accountThemeId}
-        themeMode={accountThemeMode}
-        onThemeChange={handleCrmAccountThemeChange}
-        onModeChange={handleCrmAccountModeChange}
-        securitySummary={buildCrmAccountSecuritySummary({
-          accountUser: buildCrmAccountCommandCenterUser({
-            userSource: typeof user === 'undefined' ? {} : user,
-            accessSource: typeof access === 'undefined' ? {} : access,
-            accountProfileSource: typeof accountProfile === 'undefined' ? {} : accountProfile,
-            operatorSource: typeof crmResolvedOperatorIdentity === 'undefined' ? {} : crmResolvedOperatorIdentity,
-            tenantSource: typeof tenantIdentity === 'undefined' ? {} : tenantIdentity
-          }),
-          readinessSource: typeof readiness === 'undefined' ? {} : readiness,
-          accessSource: typeof access === 'undefined' ? {} : access
-        })}
-        complianceSummary={buildCrmAccountComplianceSummary({
-          readinessSource: typeof readiness === 'undefined' ? {} : readiness,
-          tenantSource: typeof tenantIdentity === 'undefined' ? {} : tenantIdentity
-        })}
-        sessionSummary={buildCrmAccountSessionSummary({
-          accessSource: typeof access === 'undefined' ? {} : access,
-          readinessSource: typeof readiness === 'undefined' ? {} : readiness
-        })}/>
-</div>
-  );
-};
+}
 
 export default CRMDashboard;
-
-
-const WILSY_R9X_CLEAN_BODY_IDENTITY_RAIL = 'WILSY_R9X_CLEAN_BODY_IDENTITY_RAIL_ACTIVE';
-
-/**
- * @function applyWilsyR9XStyle
- * @description Applies important inline styles for the final body-mounted CRM identity rail cleanup.
- * @collaboration Stabilizes R9W output without relying on earlier exact source blocks.
- */
-const applyWilsyR9XStyle = (node, styles = {}) => {
-  if (!node || !node.style) return;
-
-  Object.entries(styles).forEach(([property, value]) => {
-    const cssProperty = String(property).replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
-    node.style.setProperty(cssProperty, value, 'important');
-  });
-};
-
-/**
- * @function repairWilsyR9XCleanBodyIdentityRail
- * @description Removes duplicate dead rails and positions the body-mounted identity rail into non-overlapping header/evidence lanes.
- * @collaboration Keeps the readable R9W rail while preserving the restored account identity card, tenant selector, and operator name.
- */
-const repairWilsyR9XCleanBodyIdentityRail = () => {
-  if (typeof document === 'undefined' || typeof window === 'undefined') return;
-
-  const overlay = document.querySelector('[class*="accountSettingsOverlay"]');
-  const rail = document.querySelector('[data-wilsy-r9w-body-mounted-identity-rail="true"]');
-
-  if (!overlay || !rail) return;
-
-  const shellCandidates = Array.from(
-    overlay.querySelectorAll('[data-wilsy-r9u-active-identity-shell="true"], [data-wilsy-r7c-identity-ui="true"], [data-wilsy-identity-chrome], [data-wilsy-r7c-identity-card="true"]')
-  );
-
-  const frames = shellCandidates
-    .map(node => {
-      const rect = node.getBoundingClientRect();
-      return { node, rect, area: Math.max(0, rect.width) * Math.max(0, rect.height) };
-    })
-    .filter(item => item.rect.width >= 240 && item.rect.height >= 160)
-    .sort((a, b) => b.area - a.area);
-
-  const overlayRect = overlay.getBoundingClientRect();
-  const rect = frames[0]?.rect || {
-    left: overlayRect.left + 24,
-    top: overlayRect.top + 24,
-    width: Math.min(520, Math.max(380, overlayRect.width * 0.34)),
-    height: 430
-  };
-
-  const contentLeft = rect.left + Math.min(230, Math.max(190, rect.width * 0.29));
-  const contentWidth = Math.max(360, rect.right - contentLeft - 40);
-
-  applyWilsyR9XStyle(rail, {
-    position: 'fixed',
-    zIndex: '2147483647',
-    left: `${contentLeft}px`,
-    top: `${rect.top + 38}px`,
-    width: `${contentWidth}px`,
-    minWidth: `${contentWidth}px`,
-    maxWidth: `${contentWidth}px`,
-    height: '260px',
-    minHeight: '260px',
-    maxHeight: '260px',
-    display: 'block',
-    pointerEvents: 'none',
-    overflow: 'visible',
-    background: 'transparent',
-    contain: 'none',
-    clipPath: 'none',
-    transform: 'translateZ(0)'
-  });
-
-  const header = rail.querySelector('[data-wilsy-r9w-body-mounted-identity-header="true"]');
-  const evidence = rail.querySelector('[data-wilsy-r9w-body-mounted-identity-evidence="true"]');
-
-  applyWilsyR9XStyle(header, {
-    position: 'absolute',
-    left: '0',
-    top: '0',
-    width: '100%',
-    minWidth: '100%',
-    maxWidth: '100%',
-    display: 'flex',
-    flexWrap: 'nowrap',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '18px',
-    overflow: 'visible',
-    whiteSpace: 'nowrap'
-  });
-
-  header?.querySelectorAll('span').forEach((node) => {
-    applyWilsyR9XStyle(node, {
-      display: 'inline-flex',
-      flex: '0 0 auto',
-      width: 'max-content',
-      minWidth: 'max-content',
-      maxWidth: 'none',
-      overflow: 'visible',
-      textOverflow: 'clip',
-      whiteSpace: 'nowrap',
-      letterSpacing: '0.10em',
-      fontSize: '10px',
-      lineHeight: '1',
-      fontWeight: '900',
-      textTransform: 'uppercase'
-    });
-  });
-
-  applyWilsyR9XStyle(evidence, {
-    position: 'absolute',
-    left: '0',
-    top: '176px',
-    width: '100%',
-    minWidth: '100%',
-    maxWidth: '100%',
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '8px 14px',
-    overflow: 'visible',
-    whiteSpace: 'normal'
-  });
-
-  evidence?.querySelectorAll('span').forEach((node) => {
-    applyWilsyR9XStyle(node, {
-      display: 'inline-flex',
-      flex: '0 0 auto',
-      width: 'max-content',
-      minWidth: 'max-content',
-      maxWidth: 'none',
-      overflow: 'visible',
-      textOverflow: 'clip',
-      whiteSpace: 'nowrap',
-      letterSpacing: '0.08em',
-      fontSize: '9px',
-      lineHeight: '1',
-      fontWeight: '900',
-      textTransform: 'uppercase'
-    });
-  });
-
-  overlay
-    .querySelectorAll([
-      '.wilsy-r7c-identity-eyebrow',
-      '.wilsy-r7c-command-label',
-      '.wilsy-r7c-verified-label',
-      '.wilsy-r7f-identity-evidence',
-      '.wilsy-r7f-clause-anchor',
-      '.wilsy-r7f-identity-seal',
-      '[data-wilsy-r9v-readable-identity-header="true"]',
-      '[data-wilsy-r9v-readable-identity-evidence="true"]'
-    ].join(', '))
-    .forEach((node) => {
-      node.setAttribute('data-wilsy-r9x-hidden-duplicate-identity-rail', 'true');
-      applyWilsyR9XStyle(node, {
-        display: 'none',
-        opacity: '0',
-        visibility: 'hidden',
-        pointerEvents: 'none',
-        width: '0',
-        minWidth: '0',
-        maxWidth: '0',
-        height: '0',
-        minHeight: '0',
-        maxHeight: '0',
-        overflow: 'hidden',
-        color: 'transparent',
-        textShadow: 'none'
-      });
-    });
-};
-
-/**
- * @function scheduleWilsyR9XCleanBodyIdentityRail
- * @description Schedules the final identity rail cleanup after CRM overlay paint and interaction frames.
- * @collaboration Ensures R9W remains readable without duplicating the original dead rails.
- */
-const scheduleWilsyR9XCleanBodyIdentityRail = () => {
-  if (typeof window === 'undefined') return;
-
-  [0, 40, 120, 260, 520, 900, 1500, 2400].forEach((delay) => {
-    window.setTimeout(repairWilsyR9XCleanBodyIdentityRail, delay);
-  });
-};
-
-/**
- * @function bootWilsyR9XCleanBodyIdentityRail
- * @description Boots the resilient cleanup layer for the body-mounted CRM identity rail.
- * @collaboration Finalizes the Account Command Center CRM overlay after R9W mounted the readable rail.
- */
-const bootWilsyR9XCleanBodyIdentityRail = () => {
-  if (typeof window === 'undefined' || window.__wilsyR9XCleanBodyIdentityRailBooted) return;
-
-  window.__wilsyR9XCleanBodyIdentityRailBooted = true;
-  scheduleWilsyR9XCleanBodyIdentityRail();
-
-  window.addEventListener('click', scheduleWilsyR9XCleanBodyIdentityRail, { passive: true });
-  window.addEventListener('focusin', scheduleWilsyR9XCleanBodyIdentityRail, { passive: true });
-  window.addEventListener('resize', scheduleWilsyR9XCleanBodyIdentityRail, { passive: true });
-  window.addEventListener('scroll', scheduleWilsyR9XCleanBodyIdentityRail, { passive: true });
-};
-
-bootWilsyR9XCleanBodyIdentityRail();
-
-
-const WILSY_R9Y_SINGLE_SOURCE_IDENTITY_RAIL = 'WILSY_R9Y_SINGLE_SOURCE_IDENTITY_RAIL_ACTIVE';
-
-/**
- * @function applyWilsyR9YStyle
- * @description Applies important inline styles for the single-source CRM identity rail cleanup.
- * @collaboration Removes the duplicate body-mounted rail while preserving the restored Account Command Center card.
- */
-const applyWilsyR9YStyle = (node, styles = {}) => {
-  if (!node || !node.style) return;
-
-  Object.entries(styles).forEach(([property, value]) => {
-    const cssProperty = String(property).replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
-    node.style.setProperty(cssProperty, value, 'important');
-  });
-};
-
-/**
- * @function ensureWilsyR9YNoDuplicateStyleSheet
- * @description Installs a defensive stylesheet that prevents body-mounted identity duplicates from rendering.
- * @collaboration Guarantees R9W/R9X rails cannot visually duplicate the in-card identity source.
- */
-const ensureWilsyR9YNoDuplicateStyleSheet = () => {
-  if (typeof document === 'undefined') return;
-
-  if (document.querySelector('[data-wilsy-r9y-no-duplicate-identity-style="true"]')) return;
-
-  const style = document.createElement('style');
-  style.setAttribute('data-wilsy-r9y-no-duplicate-identity-style', 'true');
-  style.textContent = `
-    [data-wilsy-r9w-body-mounted-identity-rail="true"],
-    [data-wilsy-r9v-readable-identity-header="true"],
-    [data-wilsy-r9v-readable-identity-evidence="true"] {
-      display: none !important;
-      opacity: 0 !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-    }
-  `;
-
-  document.head.appendChild(style);
-};
-
-/**
- * @function repairWilsyR9YSingleSourceIdentityRail
- * @description Removes duplicate body-mounted identity rails and restores the in-card rails as the single visible identity source.
- * @collaboration Stabilizes the CRM Account Command Center card after the R9W body-mounted rail caused duplicated command/evidence text.
- */
-const repairWilsyR9YSingleSourceIdentityRail = () => {
-  if (typeof document === 'undefined') return;
-
-  ensureWilsyR9YNoDuplicateStyleSheet();
-
-  document
-    .querySelectorAll('[data-wilsy-r9w-body-mounted-identity-rail="true"]')
-    .forEach((node) => node.remove());
-
-  const overlay = document.querySelector('[class*="accountSettingsOverlay"]');
-  if (!overlay) return;
-
-  overlay.setAttribute('data-wilsy-r9y-single-source-identity-fixed', 'true');
-
-  overlay
-    .querySelectorAll('[data-wilsy-r9v-readable-identity-header="true"], [data-wilsy-r9v-readable-identity-evidence="true"]')
-    .forEach((node) => {
-      node.setAttribute('data-wilsy-r9y-hidden-duplicate-generated-rail', 'true');
-      applyWilsyR9YStyle(node, {
-        display: 'none',
-        opacity: '0',
-        visibility: 'hidden',
-        pointerEvents: 'none',
-        width: '0',
-        height: '0',
-        overflow: 'hidden'
-      });
-    });
-
-  overlay
-    .querySelectorAll('.wilsy-r7c-identity-eyebrow')
-    .forEach((node) => {
-      node.setAttribute('data-wilsy-r9y-single-source-eyebrow', 'true');
-      applyWilsyR9YStyle(node, {
-        display: 'flex',
-        flexWrap: 'nowrap',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        gap: '18px',
-        opacity: '1',
-        visibility: 'visible',
-        width: '100%',
-        minWidth: '100%',
-        maxWidth: '100%',
-        height: 'auto',
-        overflow: 'visible',
-        whiteSpace: 'nowrap'
-      });
-    });
-
-  overlay
-    .querySelectorAll('.wilsy-r7c-command-label, .wilsy-r7c-verified-label')
-    .forEach((node) => {
-      node.setAttribute('data-wilsy-r9y-single-source-label', 'true');
-      applyWilsyR9YStyle(node, {
-        display: 'inline-flex',
-        flex: '0 0 auto',
-        opacity: '1',
-        visibility: 'visible',
-        width: 'max-content',
-        minWidth: 'max-content',
-        maxWidth: 'none',
-        height: 'auto',
-        overflow: 'visible',
-        textOverflow: 'clip',
-        whiteSpace: 'nowrap',
-        letterSpacing: '0.10em',
-        fontSize: '10px',
-        lineHeight: '1',
-        fontWeight: '900',
-        textTransform: 'uppercase'
-      });
-    });
-
-  overlay
-    .querySelectorAll('.wilsy-r7f-identity-evidence')
-    .forEach((node) => {
-      node.setAttribute('data-wilsy-r9y-single-source-evidence', 'true');
-      applyWilsyR9YStyle(node, {
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        gap: '8px 14px',
-        opacity: '1',
-        visibility: 'visible',
-        width: '100%',
-        minWidth: '100%',
-        maxWidth: '100%',
-        height: 'auto',
-        overflow: 'visible',
-        whiteSpace: 'normal'
-      });
-    });
-
-  overlay
-    .querySelectorAll('.wilsy-r7f-clause-anchor, .wilsy-r7f-identity-seal')
-    .forEach((node) => {
-      node.setAttribute('data-wilsy-r9y-single-source-evidence-label', 'true');
-      applyWilsyR9YStyle(node, {
-        display: 'inline-flex',
-        flex: '0 0 auto',
-        opacity: '1',
-        visibility: 'visible',
-        width: 'max-content',
-        minWidth: 'max-content',
-        maxWidth: 'none',
-        height: 'auto',
-        overflow: 'visible',
-        textOverflow: 'clip',
-        whiteSpace: 'nowrap',
-        letterSpacing: '0.08em',
-        fontSize: '9px',
-        lineHeight: '1',
-        fontWeight: '900',
-        textTransform: 'uppercase'
-      });
-    });
-};
-
-/**
- * @function scheduleWilsyR9YSingleSourceIdentityRail
- * @description Schedules the no-duplicate identity cleanup after CRM overlay paint and interaction frames.
- * @collaboration Runs after R9W/R9X so the body-mounted duplicate is removed and the original in-card rails remain the only source.
- */
-const scheduleWilsyR9YSingleSourceIdentityRail = () => {
-  if (typeof window === 'undefined') return;
-
-  [0, 40, 120, 260, 520, 900, 1500, 2400].forEach((delay) => {
-    window.setTimeout(repairWilsyR9YSingleSourceIdentityRail, delay);
-  });
-};
-
-/**
- * @function bootWilsyR9YSingleSourceIdentityRail
- * @description Boots the single-source CRM identity rail cleanup.
- * @collaboration Finalizes the CRM Account Command Center by preventing duplicate identity and evidence rails.
- */
-const bootWilsyR9YSingleSourceIdentityRail = () => {
-  if (typeof window === 'undefined' || window.__wilsyR9YSingleSourceIdentityRailBooted) return;
-
-  window.__wilsyR9YSingleSourceIdentityRailBooted = true;
-  scheduleWilsyR9YSingleSourceIdentityRail();
-
-  window.addEventListener('click', scheduleWilsyR9YSingleSourceIdentityRail, { passive: true });
-  window.addEventListener('focusin', scheduleWilsyR9YSingleSourceIdentityRail, { passive: true });
-  window.addEventListener('resize', scheduleWilsyR9YSingleSourceIdentityRail, { passive: true });
-  window.addEventListener('scroll', scheduleWilsyR9YSingleSourceIdentityRail, { passive: true });
-};
-
-bootWilsyR9YSingleSourceIdentityRail();
-
-
