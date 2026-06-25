@@ -18105,3 +18105,289 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidenceSummary = async (op
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_MANIFEST_VERSION =
+  'R71B-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-MANIFEST-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidenceManifest
+ * @description Builds a navigable manifest from the R71A terminal evidence summary for regulators, investors, founders, and enterprise buyers.
+ * @collaboration R71A terminal evidence summary, R70E closure verifier, CRM command routes, regulator/investor inspection surfaces.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidenceManifest = async (options = {}) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const terminalSummary = await buildLeadSearchRegulatorInvestorTerminalEvidenceSummary({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const routeRegistry = {
+    summary: '/api/crm/command/search/regulator-evidence/terminal-summary/latest',
+    manifest: '/api/crm/command/search/regulator-evidence/terminal-manifest/latest',
+    terminalClosureVerifier:
+      terminalSummary.sourceRoutes?.terminalClosureVerifier ||
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/terminal-closure-certificate/verify/latest',
+    terminalClosureCertificate:
+      terminalSummary.sourceRoutes?.terminalClosureCertificate ||
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/terminal-closure-certificate/latest',
+    terminalReceiptVerifier:
+      terminalSummary.sourceRoutes?.terminalReceiptVerifier ||
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/evidence-index/verification-receipt/certificate/verification-receipt/finality-certificate/verification-receipt/finality-certificate/verify/verification-receipt/finality-certificate/verify/verification-receipt/finality-certificate/verify/verification-receipt/verify/latest',
+    terminalReceipt:
+      terminalSummary.sourceRoutes?.terminalReceipt ||
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/evidence-index/verification-receipt/certificate/verification-receipt/finality-certificate/verification-receipt/finality-certificate/verify/verification-receipt/finality-certificate/verify/verification-receipt/finality-certificate/verify/verification-receipt/latest',
+  };
+
+  const hashRegistry = [
+    {
+      key: 'terminalClosureCertificateHash',
+      label: 'Terminal closure certificate hash',
+      verified: terminalSummary.hashesVerified?.terminalClosureCertificateHash === true,
+      value: terminalSummary.terminalHashes?.storedTerminalClosureCertificateHash || null,
+      recomputed: terminalSummary.terminalHashes?.recomputedCertificateHashR70D || null,
+      sourceLane: 'R70E',
+    },
+    {
+      key: 'certificateHashR70D',
+      label: 'R70D closure certificate hash',
+      verified: terminalSummary.hashesVerified?.certificateHashR70D === true,
+      value: terminalSummary.terminalHashes?.storedCertificateHashR70D || null,
+      recomputed: terminalSummary.terminalHashes?.recomputedCertificateHashR70D || null,
+      sourceLane: 'R70D',
+    },
+    {
+      key: 'receiptHashR70B',
+      label: 'R70B terminal receipt hash',
+      verified: terminalSummary.hashesVerified?.receiptHashR70B === true,
+      value: terminalSummary.terminalHashes?.storedReceiptHashR70B || null,
+      recomputed: terminalSummary.terminalHashes?.recomputedReceiptHashR70B || null,
+      sourceLane: 'R70B',
+    },
+    {
+      key: 'verificationReceiptHash',
+      label: 'Terminal verification receipt hash',
+      verified: terminalSummary.hashesVerified?.verificationReceiptHash === true,
+      value: terminalSummary.terminalHashes?.storedVerificationReceiptHash || null,
+      recomputed: terminalSummary.terminalHashes?.recomputedReceiptHashR70B || null,
+      sourceLane: 'R70C',
+    },
+    {
+      key: 'finalityCertificateHash',
+      label: 'Finality certificate hash',
+      verified: terminalSummary.hashesVerified?.finalityCertificateHash === true,
+      value: null,
+      recomputed: null,
+      sourceLane: 'R70A',
+    },
+    {
+      key: 'certificateHashR69Z',
+      label: 'R69Z finality certificate hash',
+      verified: terminalSummary.hashesVerified?.certificateHashR69Z === true,
+      value: null,
+      recomputed: null,
+      sourceLane: 'R69Z',
+    },
+  ];
+
+  const authorityRegistry = [
+    {
+      key: 'sourceClosureCertificate',
+      label: 'R70D closure certificate authority',
+      verified: terminalSummary.authoritiesVerified?.sourceClosureCertificate === true,
+    },
+    {
+      key: 'r69rArtifact',
+      label: 'R69R authority artifact',
+      verified: terminalSummary.authoritiesVerified?.r69rArtifact === true,
+    },
+    {
+      key: 'r69rSource',
+      label: 'R69R source authority',
+      verified: terminalSummary.authoritiesVerified?.r69rSource === true,
+    },
+    {
+      key: 'r69rSummary',
+      label: 'R69R summary authority',
+      verified: terminalSummary.authoritiesVerified?.r69rSummary === true,
+    },
+    {
+      key: 'r69rDisposition',
+      label: 'R69R disposition authority',
+      verified: terminalSummary.authoritiesVerified?.r69rDisposition === true,
+    },
+    {
+      key: 'terminalVerifierSummary',
+      label: 'Terminal verifier summary',
+      verified: terminalSummary.authoritiesVerified?.sourceTerminalVerifierSummary === true,
+    },
+    {
+      key: 'terminalReceiptSummary',
+      label: 'Terminal receipt summary',
+      verified: terminalSummary.authoritiesVerified?.sourceTerminalReceiptSummary === true,
+    },
+    {
+      key: 'closureDisposition',
+      label: 'Closure disposition',
+      verified: terminalSummary.authoritiesVerified?.closureDisposition === true,
+    },
+    {
+      key: 'terminalProofSummary',
+      label: 'Terminal proof summary',
+      verified: terminalSummary.authoritiesVerified?.terminalProofSummary === true,
+    },
+  ];
+
+  const inspectionSections = [
+    {
+      section: 'executive',
+      title: 'Executive evidence status',
+      status: terminalSummary.summary?.buyerReadableStatus || 'UNKNOWN',
+      fields: [
+        'terminalLane',
+        'terminalClosure',
+        'recursiveLoopFrozen',
+        'noR70F',
+        'competitivePosture',
+      ],
+      ready:
+        terminalSummary.ok === true &&
+        terminalSummary.competitivePosture?.crmEvidenceOperatingSystem === true,
+    },
+    {
+      section: 'regulator',
+      title: 'Regulator inspection posture',
+      status:
+        terminalSummary.posture?.regulatorReady === true ? 'REGULATOR_READY' : 'REGULATOR_DEGRADED',
+      fields: [
+        'hashRegistry',
+        'authorityRegistry',
+        'routeRegistry',
+        'jsonResponseOnly',
+        'noFilesystemWrite',
+      ],
+      ready:
+        terminalSummary.posture?.regulatorReady === true &&
+        terminalSummary.jsonResponseOnly === true &&
+        terminalSummary.noFilesystemWrite === true,
+    },
+    {
+      section: 'investor',
+      title: 'Investor inspection posture',
+      status:
+        terminalSummary.posture?.investorReady === true ? 'INVESTOR_READY' : 'INVESTOR_DEGRADED',
+      fields: ['competitivePosture', 'chain', 'terminalHashes', 'sourceTerminalClosureProof'],
+      ready:
+        terminalSummary.posture?.investorReady === true &&
+        terminalSummary.competitivePosture?.investorInspectable === true,
+    },
+    {
+      section: 'engineering',
+      title: 'Engineering proof posture',
+      status:
+        terminalSummary.posture?.recursiveLoopFrozen === true &&
+        terminalSummary.posture?.noR70F === true
+          ? 'RECURSION_FROZEN'
+          : 'RECURSION_OPEN',
+      fields: ['sourceRoutes', 'sourceTerminalClosureProof', 'persistenceMode'],
+      ready:
+        terminalSummary.posture?.recursiveLoopFrozen === true &&
+        terminalSummary.posture?.noR70F === true &&
+        terminalSummary.persistenceMode === 'JSON_RESPONSE_ONLY',
+    },
+  ];
+
+  const manifest = {
+    manifestId: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_MANIFEST_R71B',
+    manifestType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_MANIFEST',
+    generatedAt: new Date().toISOString(),
+    tenantId,
+    operator,
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: terminalSummary.recursiveLoopFrozen === true,
+    terminalLane: terminalSummary.terminalLane || 'R70C',
+    terminalClosure: terminalSummary.terminalClosure === true,
+    buyerReadableStatus: terminalSummary.summary?.buyerReadableStatus || 'UNKNOWN',
+    proofType: terminalSummary.proofType || null,
+    routeRegistry,
+    hashRegistry,
+    authorityRegistry,
+    inspectionSections,
+    chain: terminalSummary.chain || [],
+    competitivePosture: terminalSummary.competitivePosture || {},
+    posture: terminalSummary.posture || {},
+    terminalHashes: terminalSummary.terminalHashes || {},
+    sourceTerminalEvidenceSummary: {
+      ok: terminalSummary.ok === true,
+      version: terminalSummary.version || null,
+      status: terminalSummary.status || null,
+      buyerReadableStatus: terminalSummary.summary?.buyerReadableStatus || null,
+      recursiveLoopFrozen: terminalSummary.recursiveLoopFrozen === true,
+      noR70F: terminalSummary.noR70F === true,
+      jsonResponseOnly: terminalSummary.jsonResponseOnly === true,
+      noFilesystemWrite: terminalSummary.noFilesystemWrite === true,
+      persistenceMode: terminalSummary.persistenceMode || 'JSON_RESPONSE_ONLY',
+    },
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const ok =
+    terminalSummary.ok === true &&
+    manifest.productizationSurface === true &&
+    manifest.terminalStop === true &&
+    manifest.noR70F === true &&
+    manifest.recursiveLoopFrozen === true &&
+    manifest.terminalClosure === true &&
+    manifest.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE' &&
+    hashRegistry.every((item) => item.verified === true) &&
+    authorityRegistry.every((item) => item.verified === true) &&
+    inspectionSections.every((item) => item.ready === true) &&
+    Object.values(manifest.competitivePosture).every(Boolean) &&
+    manifest.sourceTerminalEvidenceSummary.ok === true &&
+    manifest.sourceTerminalEvidenceSummary.recursiveLoopFrozen === true &&
+    manifest.sourceTerminalEvidenceSummary.noR70F === true &&
+    manifest.sourceTerminalEvidenceSummary.jsonResponseOnly === true &&
+    manifest.sourceTerminalEvidenceSummary.noFilesystemWrite === true &&
+    manifest.sourceTerminalEvidenceSummary.persistenceMode === 'JSON_RESPONSE_ONLY' &&
+    manifest.jsonResponseOnly === true &&
+    manifest.noFilesystemWrite === true &&
+    manifest.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_MANIFEST_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_MANIFEST_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_MANIFEST_DEGRADED',
+    manifestType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_MANIFEST',
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: manifest.recursiveLoopFrozen,
+    productizationSurface: true,
+    buyerReadableStatus: manifest.buyerReadableStatus,
+    routeRegistry,
+    hashRegistry,
+    authorityRegistry,
+    inspectionSections,
+    chain: manifest.chain,
+    competitivePosture: manifest.competitivePosture,
+    posture: manifest.posture,
+    terminalHashes: manifest.terminalHashes,
+    manifest,
+    sourceTerminalEvidenceSummary: terminalSummary,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
