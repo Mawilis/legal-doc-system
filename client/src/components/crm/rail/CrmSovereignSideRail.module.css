@@ -1,0 +1,411 @@
+.railShell {
+  --rail-expanded-width: 320px;
+  --rail-collapsed-width: 88px;
+  position: relative;
+  min-height: 100vh;
+  width: var(--rail-expanded-width);
+  z-index: 40;
+  transition: width 220ms ease;
+}
+
+.railShell[data-rail-state="COLLAPSED"],
+.railShell[data-rail-state="PEEKING"] {
+  width: var(--rail-collapsed-width);
+}
+
+.railPanel {
+  position: relative;
+  width: var(--rail-expanded-width);
+  height: 100vh;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: 24px 18px 20px;
+  border-right: 1px solid rgba(34, 197, 94, 0.24);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(34, 197, 94, 0.11), transparent 30%),
+    linear-gradient(180deg, rgba(2, 15, 7, 0.98), rgba(1, 8, 5, 0.99));
+  box-shadow: 18px 0 55px rgba(0, 0, 0, 0.26);
+  overflow: hidden;
+  transition:
+    width 220ms ease,
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.railShell[data-rail-state="COLLAPSED"] .railPanel {
+  width: var(--rail-collapsed-width);
+  padding: 18px 10px;
+}
+
+.railShell[data-rail-state="PEEKING"] .railPanel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--rail-expanded-width);
+  box-shadow:
+    28px 0 88px rgba(0, 0, 0, 0.58),
+    0 0 0 1px rgba(34, 197, 94, 0.22) inset;
+}
+
+.kineticToggle {
+  position: absolute;
+  top: 24px;
+  right: -15px;
+  z-index: 85;
+  width: 34px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 240, 190, 0.42);
+  background: linear-gradient(180deg, rgba(12, 18, 28, 0.96), rgba(3, 7, 12, 0.98));
+  color: rgba(250, 240, 190, 0.95);
+  cursor: pointer;
+  box-shadow: 0 15px 36px rgba(0, 0, 0, 0.44);
+}
+
+.kineticToggle:hover {
+  border-color: rgba(34, 197, 94, 0.7);
+  color: #86efac;
+}
+
+.railTop {
+  display: grid;
+  gap: 16px;
+}
+
+.brandBlock {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.brandBlock img {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 1px solid rgba(250, 240, 190, 0.25);
+}
+
+.brandBlock span,
+.tenantCard span {
+  display: grid;
+  gap: 5px;
+}
+
+.brandBlock strong {
+  color: #f8fafc;
+  font-size: 1.12rem;
+  letter-spacing: 0.18em;
+}
+
+.brandBlock em,
+.tenantCard em,
+.operatorCard em,
+.navGroup h4 {
+  color: rgba(250, 240, 190, 0.88);
+  font-size: 0.67rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.tenantCard {
+  min-height: 86px;
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  background: rgba(255, 255, 255, 0.035);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 12px;
+  align-items: center;
+}
+
+.tenantCard strong {
+  color: #f8fafc;
+  font-size: 1rem;
+}
+
+.tenantCard i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #86efac;
+  box-shadow: 0 0 18px rgba(134, 239, 172, 0.78);
+}
+
+.railSearch {
+  min-height: 58px;
+  border-radius: 18px;
+  padding: 0 14px;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(255, 255, 255, 0.035);
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  color: rgba(250, 240, 190, 0.9);
+}
+
+.railSearch input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f8fafc;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.railSearch input::placeholder {
+  color: rgba(203, 213, 225, 0.68);
+}
+
+.navStack {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 0;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.navGroup {
+  display: grid;
+  gap: 9px;
+}
+
+.navGroup h4 {
+  margin: 0;
+  padding: 0 10px;
+}
+
+.navGroup > div {
+  display: grid;
+  gap: 9px;
+}
+
+.navItem,
+.navItemActive {
+  position: relative;
+  min-height: 54px;
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(226, 232, 240, 0.83);
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.navItem:hover {
+  transform: translateX(2px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(34, 197, 94, 0.42);
+  color: #f8fafc;
+}
+
+.navItemActive {
+  background: linear-gradient(135deg, rgba(250, 240, 190, 0.96), rgba(34, 197, 94, 0.92));
+  color: #05100a;
+  border-color: rgba(250, 240, 190, 0.7);
+  box-shadow: 0 16px 42px rgba(34, 197, 94, 0.22);
+}
+
+.navIcon {
+  display: grid;
+  place-items: center;
+}
+
+.navItem strong,
+.navItemActive strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navItem em,
+.navItemActive em {
+  font-style: normal;
+  font-weight: 900;
+}
+
+.navItem b,
+.navItemActive b {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  min-width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #86efac;
+  color: #05100a;
+  font-size: 0.58rem;
+}
+
+.navItem small,
+.navItemActive small {
+  position: absolute;
+  left: 72px;
+  top: 50%;
+  transform: translateY(-50%) scale(0.94);
+  transform-origin: left center;
+  min-width: max-content;
+  border-radius: 10px;
+  padding: 7px 9px;
+  background: rgba(3, 7, 12, 0.98);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 120;
+}
+
+.railShell[data-rail-state="COLLAPSED"] .navItem:hover small,
+.railShell[data-rail-state="COLLAPSED"] .navItemActive:hover small {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+.operatorCard {
+  min-height: 74px;
+  border-radius: 22px;
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+}
+
+.operatorCard span {
+  grid-row: 1 / 3;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: rgba(67, 56, 202, 0.25);
+  border: 1px solid rgba(167, 139, 250, 0.42);
+  color: #facc15;
+}
+
+.operatorCard img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.operatorCard strong {
+  min-width: 0;
+  color: #f8fafc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operatorCard em {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hoverZone {
+  position: absolute;
+  inset: 0 -14px 0 auto;
+  width: 18px;
+  z-index: 70;
+}
+
+.peekScrim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+}
+
+.railShell[data-rail-state="COLLAPSED"] .brandBlock {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  min-height: 58px;
+}
+
+.railShell[data-rail-state="COLLAPSED"] .brandBlock img {
+  width: 48px;
+  height: 48px;
+}
+
+.railShell[data-rail-state="COLLAPSED"] .navStack {
+  padding-top: 18px;
+}
+
+.railShell[data-rail-state="COLLAPSED"] .navGroup {
+  justify-items: center;
+}
+
+.railShell[data-rail-state="COLLAPSED"] .navGroup > div {
+  justify-items: center;
+}
+
+.railShell[data-rail-state="COLLAPSED"] .navItem,
+.railShell[data-rail-state="COLLAPSED"] .navItemActive {
+  width: 58px;
+  height: 58px;
+  min-height: 58px;
+  padding: 0;
+  grid-template-columns: 1fr;
+  gap: 0;
+  justify-items: center;
+}
+
+.railShell[data-rail-state="COLLAPSED"] .navIcon {
+  width: 100%;
+  height: 100%;
+}
+
+.railShell[data-rail-state="COLLAPSED"] .kineticToggle {
+  right: -14px;
+  top: 22px;
+}
+
+@media (max-width: 840px) {
+  .railShell,
+  .railShell[data-rail-state="COLLAPSED"],
+  .railShell[data-rail-state="PEEKING"] {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .railPanel,
+  .railShell[data-rail-state="COLLAPSED"] .railPanel,
+  .railShell[data-rail-state="PEEKING"] .railPanel {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: auto;
+  }
+}
