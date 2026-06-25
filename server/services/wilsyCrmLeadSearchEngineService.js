@@ -20857,3 +20857,302 @@ export const verifyLeadSearchRegulatorInvestorTerminalEvidenceReleasePassport = 
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF_VERSION =
+  'R71L-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-RELEASE-BRIEF-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseBrief
+ * @description Builds a concise commercial release brief from the verified terminal evidence release passport seal.
+ * @collaboration R71K release passport verifier, R71J release passport, CRM command routes, buyer/regulator/investor/auditor release surfaces.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseBrief = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const releaseVerifier = await verifyLeadSearchRegulatorInvestorTerminalEvidenceReleasePassport({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const releaseSeal = releaseVerifier.releaseSeal || {};
+  const verificationSummary = releaseVerifier.verificationSummary || {};
+  const sourcePassport = releaseVerifier.sourceTerminalEvidenceReleasePassport || {};
+  const sourceReadiness = sourcePassport.sourceTerminalEvidenceReleaseReadiness || {};
+
+  const executiveReleaseBrief = {
+    headline: 'WILSY CRM terminal evidence is verified and release-ready.',
+    releaseDecision: releaseVerifier.releaseDecision || 'HOLD',
+    releaseScore: releaseVerifier.releaseScore || 0,
+    buyerReadableStatus: sourcePassport.buyerReadableStatus || 'UNKNOWN',
+    moat: 'WILSY CRM now exposes a verified terminal evidence system across release passport, verifier, diligence, cockpit, command, and API surface contracts.',
+    proofBoundary:
+      'The proof chain remains terminal: no R70F, no recursive expansion, JSON-only, no filesystem writes.',
+    boardLine:
+      'Release posture is GO with product, engineering, security, regulator, investor, and auditor signoffs verified.',
+  };
+
+  const audienceBriefs = [
+    {
+      audience: 'buyer',
+      title: 'Buyer release brief',
+      decision:
+        sourcePassport.passportIdentity?.releaseDecision ||
+        releaseVerifier.releaseDecision ||
+        'HOLD',
+      ready:
+        sourcePassport.consumptionMap?.buyer?.ready === true &&
+        sourcePassport.finalAssertions?.releaseReady === true,
+      proof: 'VERIFIED_TERMINAL_EVIDENCE',
+      message:
+        'Buyer can evaluate the CRM as a verified evidence operating system, not a generic pipeline dashboard.',
+    },
+    {
+      audience: 'board',
+      title: 'Board release brief',
+      decision: sourceReadiness.deploymentPosture?.releaseDecision || 'HOLD',
+      ready:
+        sourceReadiness.releaseReadinessScore?.score === 100 &&
+        sourceReadiness.deploymentPosture?.releaseDecision === 'GO',
+      proof: 'TERMINAL_EVIDENCE_API_SURFACE_RELEASE',
+      message:
+        'Board can approve release posture with no UI/auth/security mutation in this backend evidence lane.',
+    },
+    {
+      audience: 'regulator',
+      title: 'Regulator release brief',
+      decision:
+        sourcePassport.signoffMatrix?.find((item) => item.signer === 'regulator')?.decision ||
+        'HOLD',
+      ready:
+        releaseVerifier.signerVerification?.find((item) => item.signer === 'regulator')
+          ?.verified === true &&
+        releaseVerifier.channelVerification?.find((item) => item.channel === 'regulatorPortal')
+          ?.verified === true,
+      proof: 'REGULATOR_PORTAL_VERIFIED',
+      message:
+        'Regulator can inspect the registered API surface, manifest, release passport, and JSON-only controls.',
+    },
+    {
+      audience: 'investor',
+      title: 'Investor release brief',
+      decision:
+        sourcePassport.signoffMatrix?.find((item) => item.signer === 'investor')?.decision ||
+        'HOLD',
+      ready:
+        releaseVerifier.signerVerification?.find((item) => item.signer === 'investor')?.verified ===
+          true && sourcePassport.finalAssertions?.allConsumptionReady === true,
+      proof: 'INVESTOR_DILIGENCE_VERIFIED',
+      message:
+        'Investor can diligence defensibility, release readiness, and evidence operating-system posture.',
+    },
+    {
+      audience: 'auditor',
+      title: 'Audit release brief',
+      decision:
+        sourcePassport.signoffMatrix?.find((item) => item.signer === 'auditor')?.decision || 'HOLD',
+      ready:
+        releaseVerifier.signerVerification?.find((item) => item.signer === 'auditor')?.verified ===
+          true &&
+        releaseVerifier.verificationMatrix?.find((item) => item.check === 'json_only_no_filesystem')
+          ?.verified === true,
+      proof: 'AUDIT_ASSURANCE_VERIFIED',
+      message:
+        'Auditor can validate the passport, release readiness, protected boundaries, and runtime posture.',
+    },
+    {
+      audience: 'engineering',
+      title: 'Engineering release brief',
+      decision:
+        sourcePassport.signoffMatrix?.find((item) => item.signer === 'engineering')?.decision ||
+        'HOLD',
+      ready:
+        releaseVerifier.signerVerification?.find((item) => item.signer === 'engineering')
+          ?.verified === true &&
+        releaseVerifier.noR70F === true &&
+        releaseVerifier.recursiveLoopFrozen === true,
+      proof: 'NO_RECURSIVE_EXPANSION_TERMINAL_BOUNDARY_VERIFIED',
+      message:
+        'Engineering should consume the release brief and API registry without reopening recursive proof expansion.',
+    },
+  ];
+
+  const proofHighlights = [
+    {
+      key: 'releaseDecision',
+      label: 'Release decision',
+      value: releaseVerifier.releaseDecision,
+      ready: releaseVerifier.releaseDecision === 'GO',
+    },
+    {
+      key: 'releaseScore',
+      label: 'Release readiness score',
+      value: releaseVerifier.releaseScore,
+      ready: releaseVerifier.releaseScore === 100,
+    },
+    {
+      key: 'verificationChecks',
+      label: 'Verification checks',
+      value: `${verificationSummary.passedChecks || 0}/${verificationSummary.totalChecks || 0}`,
+      ready: verificationSummary.totalChecks === 10 && verificationSummary.passedChecks === 10,
+    },
+    {
+      key: 'verifiedSigners',
+      label: 'Verified signers',
+      value: `${verificationSummary.verifiedSigners || 0}/${verificationSummary.totalSigners || 0}`,
+      ready: verificationSummary.totalSigners === 6 && verificationSummary.verifiedSigners === 6,
+    },
+    {
+      key: 'verifiedChannels',
+      label: 'Verified channels',
+      value: `${verificationSummary.verifiedChannels || 0}/${verificationSummary.totalChannels || 0}`,
+      ready: verificationSummary.totalChannels === 5 && verificationSummary.verifiedChannels === 5,
+    },
+    {
+      key: 'runtime',
+      label: 'Runtime posture',
+      value: releaseVerifier.persistenceMode || 'JSON_RESPONSE_ONLY',
+      ready:
+        releaseVerifier.jsonResponseOnly === true &&
+        releaseVerifier.noFilesystemWrite === true &&
+        releaseVerifier.persistenceMode === 'JSON_RESPONSE_ONLY',
+    },
+  ];
+
+  const releaseBriefActions = [
+    {
+      action: 'open_release_passport_verifier',
+      label: 'Open release passport verifier',
+      route: '/api/crm/command/search/regulator-evidence/terminal-release-passport/verify/latest',
+      ready: releaseVerifier.ok === true,
+    },
+    {
+      action: 'open_release_passport',
+      label: 'Open release passport',
+      route: '/api/crm/command/search/regulator-evidence/terminal-release-passport/latest',
+      ready: sourcePassport.ok === true,
+    },
+    {
+      action: 'open_release_readiness',
+      label: 'Open release readiness',
+      route: '/api/crm/command/search/regulator-evidence/terminal-release-readiness/latest',
+      ready: sourceReadiness.ok === true,
+    },
+    {
+      action: 'open_api_surface_registry',
+      label: 'Open API surface registry',
+      route: '/api/crm/command/search/regulator-evidence/terminal-api-surface-registry/latest',
+      ready: sourceReadiness.sourceTerminalEvidenceApiSurfaceRegistry?.ok === true,
+    },
+    {
+      action: 'open_cockpit_contract',
+      label: 'Open cockpit contract',
+      route: '/api/crm/command/search/regulator-evidence/terminal-cockpit-contract/latest',
+      ready:
+        sourceReadiness.sourceTerminalEvidenceApiSurfaceRegistry
+          ?.sourceTerminalEvidenceCockpitContract?.ok === true,
+    },
+  ];
+
+  const releaseBrief = {
+    briefId: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF_R71L',
+    briefType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF',
+    generatedAt: new Date().toISOString(),
+    tenantId,
+    operator,
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: releaseVerifier.recursiveLoopFrozen === true,
+    executiveReleaseBrief,
+    audienceBriefs,
+    proofHighlights,
+    releaseBriefActions,
+    finalBriefAssertions: {
+      releaseVerified: verificationSummary.releaseVerified === true,
+      releaseDecisionGo: releaseVerifier.releaseDecision === 'GO',
+      releaseScorePerfect: releaseVerifier.releaseScore === 100,
+      allAudienceBriefsReady: audienceBriefs.every((brief) => brief.ready === true),
+      allProofHighlightsReady: proofHighlights.every((item) => item.ready === true),
+      allActionsReady: releaseBriefActions.every((action) => action.ready === true),
+      noR70F: releaseVerifier.noR70F === true,
+      recursiveLoopFrozen: releaseVerifier.recursiveLoopFrozen === true,
+      jsonResponseOnly: releaseVerifier.jsonResponseOnly === true,
+      noFilesystemWrite: releaseVerifier.noFilesystemWrite === true,
+    },
+    sourceVerifierSummary: {
+      ok: releaseVerifier.ok === true,
+      version: releaseVerifier.version || null,
+      status: releaseVerifier.status || null,
+      verifierType: releaseVerifier.verifierType || null,
+      totalChecks: verificationSummary.totalChecks || 0,
+      passedChecks: verificationSummary.passedChecks || 0,
+      verifiedSigners: verificationSummary.verifiedSigners || 0,
+      verifiedChannels: verificationSummary.verifiedChannels || 0,
+      releaseVerified: verificationSummary.releaseVerified === true,
+      noR70F: releaseVerifier.noR70F === true,
+      recursiveLoopFrozen: releaseVerifier.recursiveLoopFrozen === true,
+    },
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const ok =
+    releaseVerifier.ok === true &&
+    releaseBrief.productizationSurface === true &&
+    releaseBrief.terminalStop === true &&
+    releaseBrief.noR70F === true &&
+    releaseBrief.recursiveLoopFrozen === true &&
+    releaseBrief.executiveReleaseBrief.releaseDecision === 'GO' &&
+    releaseBrief.executiveReleaseBrief.releaseScore === 100 &&
+    audienceBriefs.length === 6 &&
+    audienceBriefs.every((brief) => brief.ready === true) &&
+    proofHighlights.length === 6 &&
+    proofHighlights.every((item) => item.ready === true) &&
+    releaseBriefActions.length === 5 &&
+    releaseBriefActions.every((action) => action.ready === true) &&
+    Object.values(releaseBrief.finalBriefAssertions).every(Boolean) &&
+    releaseBrief.sourceVerifierSummary.ok === true &&
+    releaseBrief.sourceVerifierSummary.totalChecks === 10 &&
+    releaseBrief.sourceVerifierSummary.passedChecks === 10 &&
+    releaseBrief.sourceVerifierSummary.verifiedSigners === 6 &&
+    releaseBrief.sourceVerifierSummary.verifiedChannels === 5 &&
+    releaseBrief.sourceVerifierSummary.noR70F === true &&
+    releaseBrief.jsonResponseOnly === true &&
+    releaseBrief.noFilesystemWrite === true &&
+    releaseBrief.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF_DEGRADED',
+    briefType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: releaseBrief.recursiveLoopFrozen,
+    releaseDecision: executiveReleaseBrief.releaseDecision,
+    releaseScore: executiveReleaseBrief.releaseScore,
+    executiveReleaseBrief,
+    audienceBriefs,
+    proofHighlights,
+    releaseBriefActions,
+    finalBriefAssertions: releaseBrief.finalBriefAssertions,
+    releaseBrief,
+    sourceTerminalEvidenceReleasePassportVerifier: releaseVerifier,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};

@@ -93,9 +93,44 @@ import {
   buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseReadiness,
   buildLeadSearchRegulatorInvestorTerminalEvidenceReleasePassport,
   verifyLeadSearchRegulatorInvestorTerminalEvidenceReleasePassport,
+  buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseBrief,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R71L terminal evidence release brief.
+ */
+router.get('/search/regulator-evidence/terminal-release-brief/latest', async (req, res) => {
+  const tenantId =
+    String(
+      req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+    ).trim() || 'MASTER';
+
+  const payload = await buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseBrief({
+    tenantId,
+    ledgerId: req.query.ledgerRoot || 'latest',
+    limit: req.query.limit || 25,
+    operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+  });
+
+  return res.status(payload.ok ? 200 : 206).json({
+    ...payload,
+    route: '/api/crm/command/search/regulator-evidence/terminal-release-brief/latest',
+    routeContract: WILSY_R71L_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF_ROUTE_CONTRACT,
+    sourceTerminalEvidenceReleasePassportVerifierRoute:
+      '/api/crm/command/search/regulator-evidence/terminal-release-passport/verify/latest',
+    sourceTerminalEvidenceReleasePassportRoute:
+      '/api/crm/command/search/regulator-evidence/terminal-release-passport/latest',
+    safeRouteAlias: 'R71L_SAFE_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF_ROUTE',
+    terminalStop: true,
+    noR70F: true,
+    productizationSurface: true,
+  });
+});
+
+const WILSY_R71L_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF_ROUTE_CONTRACT =
+  'R71L-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-RELEASE-BRIEF-AUTHORITY';
 
 /**
  * R71K terminal evidence release passport verifier.
