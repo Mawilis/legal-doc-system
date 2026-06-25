@@ -14653,3 +14653,311 @@ export const verifyLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvide
       persistenceMode: 'JSON_RESPONSE_ONLY',
     };
   };
+
+export const WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFIER_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERSION =
+  'R69V-REGULATOR-INVESTOR-EVIDENCE-CHAIN-TERMINAL-FINALITY-EVIDENCE-RECEIPT-CERTIFICATE-VERIFICATION-RECEIPT-FINALITY-CERTIFICATE-VERIFICATION-RECEIPT-FINALITY-CERTIFICATE-VERIFIER-VERIFICATION-RECEIPT-FINALITY-CERTIFICATE-AUTHORITY';
+
+/**
+ * @function normalizeRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateValue
+ * @description Produces deterministic values for R69V terminal finality certificate hashing.
+ * @collaboration R69U verifier, R69T verification receipt, R69S verifier, R69R finality artifact.
+ */
+const normalizeRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateValue =
+  (value) => {
+    if (Array.isArray(value)) {
+      return value.map((item) =>
+        normalizeRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateValue(
+          item
+        )
+      );
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.keys(value)
+        .sort()
+        .reduce((normalized, key) => {
+          normalized[key] =
+            normalizeRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateValue(
+              value[key]
+            );
+          return normalized;
+        }, {});
+    }
+
+    return value;
+  };
+
+/**
+ * @function computeRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateHash
+ * @description Computes a deterministic SHA-512 hash for the R69V finality certificate payload.
+ * @collaboration R69U verifier, certificateHashR69V, JSON-only certificate controls.
+ */
+const computeRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateHash =
+  (certificatePayload) =>
+    crypto
+      .createHash('sha512')
+      .update(
+        JSON.stringify(
+          normalizeRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateValue(
+            certificatePayload
+          )
+        )
+      )
+      .digest('hex');
+
+/**
+ * @function buildLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate
+ * @description Issues a JSON-only finality certificate over the verified R69T verifier verification receipt and R69U verifier.
+ * @collaboration R69U verifier, R69T verification receipt, R69S verifier, R69R finality certificate, CRM command routes.
+ */
+export const buildLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate =
+  async (options = {}) => {
+    const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+    const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+    const limit = options.limit || 25;
+    const operator =
+      String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+      'SYSTEM';
+
+    const receiptVerifierPacket =
+      await verifyLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceipt(
+        {
+          tenantId,
+          ledgerId,
+          limit,
+          operator,
+        }
+      );
+
+    const receiptVerifier =
+      receiptVerifierPacket.terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptVerifier ||
+      {};
+    const verificationReceipt =
+      receiptVerifierPacket.terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceipt ||
+      {};
+    const verificationReceiptPacket =
+      receiptVerifierPacket.sourceTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptPacket ||
+      {};
+    const sourceVerifier =
+      receiptVerifierPacket.sourceTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifier ||
+      {};
+
+    const issuedAt = new Date().toISOString();
+
+    const certificatePayload = {
+      version:
+        WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFIER_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERSION,
+      certificateType:
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFIER_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE',
+      tenantId,
+      operator,
+      issuedAt,
+      sourceReceiptVerifierStatus: receiptVerifierPacket.status,
+      sourceReceiptVerifierVersion: receiptVerifierPacket.version,
+      sourceReceiptStatus: receiptVerifierPacket.sourceReceiptStatus || null,
+      sourceVerifierStatus: receiptVerifierPacket.sourceVerifierStatus || null,
+      ledgerRoot:
+        receiptVerifierPacket.ledgerRoot ||
+        verificationReceipt.ledgerRoot ||
+        verificationReceiptPacket.ledgerRoot ||
+        null,
+      storedReceiptHashR69T: receiptVerifierPacket.storedReceiptHashR69T || null,
+      recomputedReceiptHashR69T: receiptVerifierPacket.recomputedReceiptHashR69T || null,
+      storedVerificationReceiptHash: receiptVerifierPacket.storedVerificationReceiptHash || null,
+      receiptHashR69TVerified: receiptVerifierPacket.receiptHashR69TVerified === true,
+      verificationReceiptHashVerified:
+        receiptVerifierPacket.verificationReceiptHashVerified === true,
+      sourceReceiptStatusVerified: receiptVerifierPacket.sourceReceiptStatusVerified === true,
+      finalityCertificateHashVerified:
+        receiptVerifierPacket.finalityCertificateHashVerified === true,
+      certificateHashR69RVerified: receiptVerifierPacket.certificateHashR69RVerified === true,
+      r69rArtifactPresent: receiptVerifierPacket.r69rArtifactPresent === true,
+      r69rSourceAuthorityVerified: receiptVerifierPacket.r69rSourceAuthorityVerified === true,
+      r69rSummaryAuthorityVerified: receiptVerifierPacket.r69rSummaryAuthorityVerified === true,
+      r69rDispositionAuthorityVerified:
+        receiptVerifierPacket.r69rDispositionAuthorityVerified === true,
+      receiptHashPostureVerified: receiptVerifierPacket.receiptHashPostureVerified === true,
+      verificationReceiptSummaryR69TVerified:
+        receiptVerifierPacket.verificationReceiptSummaryR69TVerified === true,
+      verificationReceiptDispositionR69TVerified:
+        receiptVerifierPacket.verificationReceiptDispositionR69TVerified === true,
+      sourceRoutesVerified: receiptVerifierPacket.sourceRoutesVerified === true,
+      regulatorReady: receiptVerifierPacket.regulatorReady === true,
+      investorReady: receiptVerifierPacket.investorReady === true,
+      jsonResponseOnly: receiptVerifierPacket.jsonResponseOnly === true,
+      noFilesystemWrite: receiptVerifierPacket.noFilesystemWrite === true,
+      sourceReceiptVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/evidence-index/verification-receipt/certificate/verification-receipt/finality-certificate/verification-receipt/finality-certificate/verify/verification-receipt/verify/latest',
+      sourceVerificationReceiptRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/evidence-index/verification-receipt/certificate/verification-receipt/finality-certificate/verification-receipt/finality-certificate/verify/verification-receipt/latest',
+      sourceVerifierRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/evidence-index/verification-receipt/certificate/verification-receipt/finality-certificate/verification-receipt/finality-certificate/verify/latest',
+      sourceFinalityCertificateRoute:
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/evidence-index/verification-receipt/certificate/verification-receipt/finality-certificate/verification-receipt/finality-certificate/latest',
+      finalityCertificateSummaryR69V: {
+        receiptHashR69TVerified: receiptVerifierPacket.receiptHashR69TVerified === true,
+        verificationReceiptHashVerified:
+          receiptVerifierPacket.verificationReceiptHashVerified === true,
+        sourceReceiptStatusVerified: receiptVerifierPacket.sourceReceiptStatusVerified === true,
+        finalityCertificateHashVerified:
+          receiptVerifierPacket.finalityCertificateHashVerified === true,
+        certificateHashR69RVerified: receiptVerifierPacket.certificateHashR69RVerified === true,
+        r69rArtifactPresent: receiptVerifierPacket.r69rArtifactPresent === true,
+        r69rSourceAuthorityVerified: receiptVerifierPacket.r69rSourceAuthorityVerified === true,
+        r69rSummaryAuthorityVerified: receiptVerifierPacket.r69rSummaryAuthorityVerified === true,
+        r69rDispositionAuthorityVerified:
+          receiptVerifierPacket.r69rDispositionAuthorityVerified === true,
+        receiptHashPostureVerified: receiptVerifierPacket.receiptHashPostureVerified === true,
+        verificationReceiptSummaryR69TVerified:
+          receiptVerifierPacket.verificationReceiptSummaryR69TVerified === true,
+        verificationReceiptDispositionR69TVerified:
+          receiptVerifierPacket.verificationReceiptDispositionR69TVerified === true,
+        sourceRoutesVerified: receiptVerifierPacket.sourceRoutesVerified === true,
+        regulatorReady: receiptVerifierPacket.regulatorReady === true,
+        investorReady: receiptVerifierPacket.investorReady === true,
+        jsonResponseOnly: receiptVerifierPacket.jsonResponseOnly === true,
+        noFilesystemWrite: receiptVerifierPacket.noFilesystemWrite === true,
+      },
+      finalityCertificateDispositionR69V: {
+        certificateStatus:
+          'TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFIER_VERIFICATION_RECEIPT_FINALITY_CERTIFIED',
+        sourceVerifierPassed:
+          receiptVerifierPacket.status ===
+          'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFIER_VERIFICATION_RECEIPT_VERIFIED',
+        receiptVerified:
+          receiptVerifierPacket.receiptHashR69TVerified === true &&
+          receiptVerifierPacket.verificationReceiptHashVerified === true,
+        sourceReceiptStatusVerified: receiptVerifierPacket.sourceReceiptStatusVerified === true,
+        r69rAuthorityVerified:
+          receiptVerifierPacket.r69rArtifactPresent === true &&
+          receiptVerifierPacket.r69rSourceAuthorityVerified === true &&
+          receiptVerifierPacket.r69rSummaryAuthorityVerified === true &&
+          receiptVerifierPacket.r69rDispositionAuthorityVerified === true,
+        regulatorReady: receiptVerifierPacket.regulatorReady === true,
+        investorReady: receiptVerifierPacket.investorReady === true,
+        filesystemExported: false,
+        jsonResponseOnly: true,
+        noFilesystemWrite: true,
+      },
+      sourceReceiptVerifier: receiptVerifier,
+      sourceVerificationReceipt: verificationReceipt,
+      sourceVerificationReceiptPacket: verificationReceiptPacket,
+      sourceVerifier,
+      jsonResponseOnly: true,
+      noFilesystemWrite: true,
+      persistenceMode: 'JSON_RESPONSE_ONLY',
+    };
+
+    const finalityCertificateHash =
+      computeRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateHash(
+        certificatePayload
+      );
+
+    const terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate =
+      {
+        ...certificatePayload,
+        finalityCertificateHash,
+        finalityCertificateHashShort: finalityCertificateHash.slice(0, 16),
+        certificateHashR69V: finalityCertificateHash,
+        certificateHashR69VShort: finalityCertificateHash.slice(0, 16),
+      };
+
+    const certificateIssued =
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.receiptHashR69TVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.verificationReceiptHashVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.storedReceiptHashR69T ===
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.recomputedReceiptHashR69T &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.storedVerificationReceiptHash ===
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.storedReceiptHashR69T &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.sourceReceiptStatusVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.finalityCertificateHashVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.certificateHashR69RVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.r69rArtifactPresent ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.r69rSourceAuthorityVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.r69rSummaryAuthorityVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.r69rDispositionAuthorityVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.receiptHashPostureVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.verificationReceiptSummaryR69TVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.verificationReceiptDispositionR69TVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.sourceRoutesVerified ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate
+        .finalityCertificateSummaryR69V.regulatorReady === true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate
+        .finalityCertificateSummaryR69V.investorReady === true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate
+        .finalityCertificateDispositionR69V.sourceVerifierPassed === true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate
+        .finalityCertificateDispositionR69V.receiptVerified === true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate
+        .finalityCertificateDispositionR69V.r69rAuthorityVerified === true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate
+        .finalityCertificateDispositionR69V.filesystemExported === false &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate
+        .finalityCertificateDispositionR69V.jsonResponseOnly === true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate
+        .finalityCertificateDispositionR69V.noFilesystemWrite === true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.jsonResponseOnly ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.noFilesystemWrite ===
+        true &&
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.persistenceMode ===
+        'JSON_RESPONSE_ONLY';
+
+    return {
+      ok: certificateIssued,
+      version:
+        WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFIER_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERSION,
+      status: certificateIssued
+        ? 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFIER_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_ISSUED'
+        : 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_VERIFIER_VERIFICATION_RECEIPT_FINALITY_CERTIFICATE_DEGRADED',
+      finalityCertificateHash,
+      finalityCertificateHashShort: finalityCertificateHash.slice(0, 16),
+      certificateHashR69V: finalityCertificateHash,
+      certificateHashR69VShort: finalityCertificateHash.slice(0, 16),
+      ledgerRoot:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.ledgerRoot,
+      receiptHashR69TVerified:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.receiptHashR69TVerified,
+      verificationReceiptHashVerified:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.verificationReceiptHashVerified,
+      sourceReceiptStatusVerified:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.sourceReceiptStatusVerified,
+      finalityCertificateHashVerified:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.finalityCertificateHashVerified,
+      certificateHashR69RVerified:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.certificateHashR69RVerified,
+      r69rArtifactPresent:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.r69rArtifactPresent,
+      r69rSourceAuthorityVerified:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.r69rSourceAuthorityVerified,
+      r69rSummaryAuthorityVerified:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.r69rSummaryAuthorityVerified,
+      r69rDispositionAuthorityVerified:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.r69rDispositionAuthorityVerified,
+      regulatorReady:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.regulatorReady,
+      investorReady:
+        terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate.investorReady,
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificate,
+      sourceTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptVerifier:
+        receiptVerifierPacket,
+      terminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceipt:
+        verificationReceipt,
+      jsonResponseOnly: true,
+      noFilesystemWrite: true,
+      persistenceMode: 'JSON_RESPONSE_ONLY',
+    };
+  };
