@@ -1,4 +1,7 @@
 /* eslint-disable */
+import WILSY_NEBULA_COMMAND_SKIN from './wilsyNebulaCommandSkin.js';
+import '../../styles/superadmin/themes/wilsy-nebula-command.css';
+/* eslint-disable */
 /**
  * ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
  * ║ WILSY OS - OPERATING SKIN REGISTRY [V2.1.0-FORTUNE-500-CONTROL-PLANE]                                                       ║
@@ -25,6 +28,7 @@ export const WILSY_OPERATING_SKIN_CATEGORIES = Object.freeze({
 });
 
 export const DEFAULT_OPERATING_SKINS = Object.freeze([
+  WILSY_NEBULA_COMMAND_SKIN,
   {
     id: 'wilsy_aurora',
     label: 'Wilsy Sovereign Aurora',
@@ -540,6 +544,10 @@ export const WILSY_OPERATING_SKIN_QUALITY_GATES = Object.freeze({
 });
 
 export const WILSY_OPERATING_SKIN_ALIAS_MAP = Object.freeze({
+  nebula: 'wilsy-nebula-command',
+  nebula_command: 'wilsy-nebula-command',
+  wilsy_nebula_command: 'wilsy-nebula-command',
+  crm_nebula_command: 'wilsy-nebula-command',
   aurora: 'wilsy_aurora',
   sovereign: 'sovereign_black',
   black: 'sovereign_black',
@@ -552,9 +560,9 @@ export const WILSY_OPERATING_SKIN_ALIAS_MAP = Object.freeze({
   forensic: 'forensic_violet',
   quantum: 'quantum_blue',
   analytics: 'quantum_blue',
-  crm: 'crm_revenue_pulse',
-  revenue: 'crm_revenue_pulse',
-  sales: 'crm_revenue_pulse',
+  crm: 'wilsy-nebula-command',
+  revenue: 'wilsy-nebula-command',
+  sales: 'wilsy-nebula-command',
   legal: 'legal_evidence_noir',
   evidence: 'legal_evidence_noir',
   finance: 'finance_ledger_green',
@@ -790,7 +798,7 @@ export const buildWilsyTenantOperatingSkinRecommendation = (tenant = {}) => {
   if (/construction|project|site|evm/.test(source)) return buildWilsyOperatingSkinProfile('construction_command');
   if (/security|risk|incident|threat/.test(source)) return buildWilsyOperatingSkinProfile('security_red_team');
   if (/document|contract|vault|signature/.test(source)) return buildWilsyOperatingSkinProfile('document_vault_steel');
-  if (/crm|sales|revenue|pipeline|customer/.test(source)) return buildWilsyOperatingSkinProfile('crm_revenue_pulse');
+  if (/crm|sales|revenue|pipeline|customer/.test(source)) return buildWilsyOperatingSkinProfile('wilsy-nebula-command');
 
   return buildWilsyOperatingSkinProfile(WILSY_OPERATING_SKIN_REGISTRY_METADATA.defaultSkinId);
 };

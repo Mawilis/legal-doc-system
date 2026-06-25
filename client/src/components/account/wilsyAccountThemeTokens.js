@@ -2285,7 +2285,7 @@ const publishWilsySemanticRoleCoverage = () => {
  * @returns {void}
  * @collaboration Gives Wilsy OS a single repaint path for Account, CRM and future dashboard shells.
  */
-export const applyWilsyThemeRuntime = ({ theme, effectiveMode, resolvedMode, tokens, mode 
+export const applyWilsyThemeRuntime = ({ theme, effectiveMode, resolvedMode, tokens, mode
 } = {}) => {
   if (typeof document === 'undefined') return;
 
@@ -2595,3 +2595,109 @@ export const assertWilsyThemeTokenEngine = () => {
 export const WILSY_ACCOUNT_THEME_ENGINE_HEALTH = assertWilsyThemeTokenEngine();
 
 export default buildVisualTokens;
+
+/**
+ * @function reconcileWilsyThemeRuntime
+ * @description Synchronizes all Wilsy theme storage keys and root attributes for the selected skin and mode.
+ * @param {Object} runtime - Theme runtime payload.
+ * @returns {Object} Reconciled theme runtime.
+ * @collaboration Prevents refresh-time token drift when users switch between Nebula, Aurora and other operating skins.
+ */
+function reconcileWilsyThemeRuntime(runtime = {}) {
+  const themeId = String(
+    runtime.themeId
+    || runtime.skinId
+    || runtime.id
+    || runtime.theme
+    || 'wilsy-aurora'
+  ).trim();
+
+  const mode = String(
+    runtime.mode
+    || runtime.appearance
+    || runtime.resolvedMode
+    || 'night'
+  ).trim();
+
+  const resolvedMode = mode === 'auto'
+    ? (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'day' : 'night')
+    : mode;
+
+  const nextRuntime = {
+    ...runtime,
+    id: themeId,
+    themeId,
+    skinId: themeId,
+    mode,
+    resolvedMode
+  };
+
+  if (typeof window !== 'undefined') {
+    const storagePayload = JSON.stringify(nextRuntime);
+
+    try {
+      window.localStorage.setItem('wilsy-theme-runtime', storagePayload);
+      window.localStorage.setItem('wilsy-account-theme-runtime', storagePayload);
+      window.localStorage.setItem('wilsy-theme', themeId);
+      window.localStorage.setItem('wilsy-account-theme', themeId);
+      window.localStorage.setItem('wilsy-skin', themeId);
+      window.localStorage.setItem('wilsy-account-skin', themeId);
+      window.localStorage.setItem('wilsy-mode', mode);
+      window.localStorage.setItem('wilsy-account-mode', mode);
+      window.localStorage.setItem('wilsy-resolved-mode', resolvedMode);
+      window.localStorage.setItem('wilsy-account-resolved-mode', resolvedMode);
+    } catch (error) {
+      // Storage may be unavailable in private mode; DOM attributes still reconcile below.
+    }
+
+    const root = window.document?.documentElement;
+
+    if (root) {
+      root.setAttribute('data-wilsy-theme', themeId);
+      root.setAttribute('data-theme', themeId);
+      root.setAttribute('data-wilsy-skin', themeId);
+      root.setAttribute('data-skin', themeId);
+      root.setAttribute('data-wilsy-mode', mode);
+      root.setAttribute('data-mode', mode);
+      root.setAttribute('data-wilsy-resolved-mode', resolvedMode);
+      root.setAttribute('data-resolved-mode', resolvedMode);
+    }
+  }
+
+  return nextRuntime;
+}
+
+/**
+ * @function clearWilsyThemeRuntimeDrift
+ * @description Clears stale theme keys that can resurrect a previous skin after refresh.
+ * @param {string} selectedThemeId - Selected theme id.
+ * @returns {void}
+ * @collaboration Keeps newly selected themes from inheriting stale Nebula or old CRM Revenue Pulse state.
+ */
+function clearWilsyThemeRuntimeDrift(selectedThemeId) {
+  if (typeof window === 'undefined') return;
+
+  const allowedThemeId = String(selectedThemeId || '').trim();
+  const keys = [
+    'wilsy-theme',
+    'wilsy-account-theme',
+    'wilsy-skin',
+    'wilsy-account-skin'
+  ];
+
+  try {
+    keys.forEach(key => {
+      const value = window.localStorage.getItem(key);
+      if (value && allowedThemeId && value !== allowedThemeId) {
+        window.localStorage.setItem(key, allowedThemeId);
+      }
+    });
+  } catch (error) {
+    // Ignore storage errors.
+  }
+}
+
+export {
+  reconcileWilsyThemeRuntime,
+  clearWilsyThemeRuntimeDrift
+};

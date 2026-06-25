@@ -38,19 +38,12 @@ import {
   Sparkles,
   SunMedium,
   UserRound,
-  X
-} from 'lucide-react';
-import {
-  useTenants as useWilsyAccountTenantRuntime
-} from '../../contexts/tenantContext';
-import {
-  DEFAULT_OPERATING_SKINS,
-  WILSY_OPERATING_SKINS_VERSION
-} from './wilsyOperatingSkins.js';
-import {
-  WILSY_FORENSIC_MERKLE_CLIENT_VERSION,
+  X } from 'lucide-react'; import {   useTenants as useWilsyAccountTenantRuntime } from '../../contexts/tenantContext'; import {   DEFAULT_OPERATING_SKINS,
+  WILSY_OPERATING_SKINS_VERSION } from './wilsyOperatingSkins.js'; import {   WILSY_FORENSIC_MERKLE_CLIENT_VERSION,
   buildWilsyMerkleCockpitSnapshot,
-  sealWilsyMerkleSafeWindow
+  sealWilsyMerkleSafeWindow,
+  getWilsyStoredAuthToken,
+  getWilsyForensicApiBaseCandidates
 } from '../../services/wilsyForensicMerkleClient.js';
 import { fetchWilsyAccountComplianceCommand } from '../../services/wilsyAccountIdentityPostureClient.js';
 import {
@@ -59,6 +52,7 @@ import {
   normalizeWilsyAccountIdentityPosturePayload
 } from '../../services/wilsyAccountIdentityPostureClient.js';
 
+import { clearWilsyThemeRuntimeDrift, reconcileWilsyThemeRuntime } from './wilsyAccountThemeTokens.js';
 export const WILSY_ACCOUNT_CHROME_RESET_VERSION = 'R18AD1F-ACCOUNT-IMPORT-NEWLINE-REPAIR';
 export const WILSY_ACCOUNT_COMMAND_AUTHORITY_COCKPIT_VERSION = 'R18AD1F-ACCOUNT-IMPORT-NEWLINE-REPAIR';
 export const WILSY_ACCOUNT_FORENSIC_BRIDGE_WIRING_VERSION = 'R18AD1-ACCOUNT-FORENSIC-BRIDGE-WIRING';
@@ -646,6 +640,129 @@ const MODE_OPTIONS = Object.freeze([
   { id: 'night', label: 'Night Command', meta: 'Focused sovereign cockpit', icon: MoonStar },
   { id: 'auto', label: 'Auto Command', meta: 'Follows device context', icon: Monitor }
 ]);
+
+
+
+
+/**
+ * @function installWilsyAccountSkinCardRendererFinalR45
+ * @description Installs final card renderer sizing for Operating Skin Switchboard cards.
+ * @returns {void}
+ * @collaboration Gives every skin card a visible swatch, title, two-line description and one-line category.
+ */
+function installWilsyAccountSkinCardRendererFinalR45() {
+  if (typeof document === 'undefined' || document.getElementById('wilsy-account-skin-card-renderer-final-r45')) return;
+
+  const style = document.createElement('style');
+  style.id = 'wilsy-account-skin-card-renderer-final-r45';
+  style.textContent = `
+    .wac-skin-card {
+      min-height: 250px !important;
+      height: 250px !important;
+      display: grid !important;
+      grid-template-rows: 30px 38px 58px 34px !important;
+      gap: 10px !important;
+      align-content: start !important;
+      overflow: hidden !important;
+      padding: 24px 26px !important;
+    }
+
+    .wac-skin-card .wac-swatch {
+      width: 100% !important;
+      height: 30px !important;
+      min-height: 30px !important;
+      max-height: 30px !important;
+      margin: 0 !important;
+      border-radius: 999px !important;
+    }
+
+    .wac-skin-card strong {
+      display: block !important;
+      min-height: 34px !important;
+      max-height: 38px !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      white-space: nowrap !important;
+      text-overflow: ellipsis !important;
+      font-size: clamp(21px, 1.08vw, 28px) !important;
+      line-height: 1.12 !important;
+      letter-spacing: -0.035em !important;
+    }
+
+    .wac-skin-card p {
+      display: -webkit-box !important;
+      -webkit-box-orient: vertical !important;
+      -webkit-line-clamp: 2 !important;
+      min-height: 54px !important;
+      max-height: 58px !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      color: rgba(231, 237, 249, 0.78) !important;
+      font-size: clamp(14px, 0.82vw, 18px) !important;
+      line-height: 1.32 !important;
+      letter-spacing: 0.005em !important;
+      text-overflow: ellipsis !important;
+    }
+
+    .wac-skin-card small {
+      display: block !important;
+      align-self: end !important;
+      min-height: 30px !important;
+      max-height: 34px !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      white-space: nowrap !important;
+      text-overflow: ellipsis !important;
+      color: #e5d89f !important;
+      font-size: clamp(15px, 0.9vw, 20px) !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.15em !important;
+      line-height: 1.2 !important;
+      text-transform: uppercase !important;
+    }
+
+    @media (max-width: 1500px) {
+      .wac-skin-card {
+        min-height: 240px !important;
+        height: 240px !important;
+        grid-template-rows: 28px 36px 54px 32px !important;
+        gap: 9px !important;
+        padding: 22px 24px !important;
+      }
+
+      .wac-skin-card .wac-swatch {
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
+      }
+
+      .wac-skin-card strong {
+        font-size: clamp(20px, 1.15vw, 26px) !important;
+      }
+
+      .wac-skin-card p {
+        font-size: clamp(13px, 0.92vw, 17px) !important;
+      }
+
+      .wac-skin-card small {
+        font-size: clamp(14px, 0.96vw, 18px) !important;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .wac-skin-card {
+        height: auto !important;
+        min-height: 232px !important;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+
+
+
 
 /**
  * @function readWilsyStoredValue
@@ -4122,6 +4239,75 @@ function WilsyModeButton({ option, active, onSelect }) {
   );
 }
 
+
+/**
+ * @function compactWilsySkinBestForR45
+ * @description Compacts long skin category labels so switchboard cards keep description space.
+ * @param {string} value - Skin best-for label.
+ * @returns {string} Compact label.
+ * @collaboration Prevents every operating skin card from clipping its doctrine description.
+ */
+function compactWilsySkinBestForR45(value = '') {
+  const raw = String(value || '').trim();
+
+  const aliases = {
+    'FINANCIAL SERVICES TENANTS': 'FINANCIAL SERVICES',
+    'FINANCE AND BILLING': 'FINANCE LEDGER',
+    'LOW LIGHT ENVIRONMENTS': 'LOW LIGHT OPS',
+    'DAY MODE AND PRESENTATIONS': 'DAY PRESENTATION',
+    'GOVERNMENT TENANTS': 'GOVERNMENT',
+    'CONSTRUCTION INTELLIGENCE': 'CONSTRUCTION',
+    'SECURITY OPERATIONS': 'SECURITY OPS',
+    'WILSY COMMAND DNA': 'COMMAND DNA',
+    'DOCUMENT VAULT': 'DOCUMENT VAULT',
+    'LEGAL SERVICES TENANTS': 'LEGAL SERVICES',
+    'HEALTHCARE TENANTS': 'HEALTHCARE',
+    'EXECUTIVE COCKPIT': 'EXECUTIVE',
+    'CRM VERTICAL': 'CRM VERTICAL',
+    'HR VERTICAL': 'HR VERTICAL'
+  };
+
+  const normalized = raw.toUpperCase().replace(/\s+/g, ' ');
+  return aliases[normalized] || normalized;
+}
+
+/**
+ * @function compactWilsySkinDoctrineR45
+ * @description Compacts skin doctrine text for two-line switchboard card display.
+ * @param {string} value - Skin doctrine text.
+ * @returns {string} Compact doctrine.
+ * @collaboration Keeps theme cards readable without editing every skin definition.
+ */
+function compactWilsySkinDoctrineR45(value = '') {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .replace(/skin for /gi, 'skin for ')
+    .replace(/tenants,/gi, 'tenants,')
+    .trim();
+}
+
+
+/**
+ * @function commitWilsyAccountThemeSelectionR47
+ * @description Commits a selected operating skin through the runtime reconciler.
+ * @param {Object} skin - Selected skin.
+ * @param {string} mode - Selected mode.
+ * @returns {Object} Reconciled runtime.
+ * @collaboration Ensures choosing any theme clears stale Nebula or prior theme state across refreshes.
+ */
+function commitWilsyAccountThemeSelectionR47(skin, mode = 'night') {
+  const themeId = skin?.themeId || skin?.skinId || skin?.id;
+  clearWilsyThemeRuntimeDrift(themeId);
+
+  return reconcileWilsyThemeRuntime({
+    themeId,
+    skinId: themeId,
+    mode,
+    resolvedMode: mode === 'auto' ? 'night' : mode,
+    selectedAt: new Date().toISOString()
+  });
+}
+
 /**
  * @function WilsySkinCard
  * @description Renders one operating skin with visible semantic colour preview.
@@ -4131,13 +4317,15 @@ function WilsyModeButton({ option, active, onSelect }) {
  */
 function WilsySkinCard({ skin, active, onSelect }) {
   const swatch = `linear-gradient(90deg, ${skin.accent}, ${skin.secondary}, ${skin.highlight}, ${skin.live})`;
+  const skinDoctrine = compactWilsySkinDoctrineR45(skin.doctrine);
+  const skinBestFor = compactWilsySkinBestForR45(skin.bestFor);
 
   return (
     <button type="button" className="wac-skin" data-active={active} onClick={() => onSelect(skin.id)}>
       <span className="wac-swatch" style={{ background: swatch }} />
       <strong>{skin.label}</strong>
-      <p>{skin.doctrine}</p>
-      <small>{skin.bestFor}</small>
+      <p>{skinDoctrine}</p>
+      <small>{skinBestFor}</small>
     </button>
   );
 }
@@ -4528,6 +4716,8 @@ export function WilsyAccountCommandCenter({
   const [commandReceipts, setCommandReceipts] = useState([]);
   const [forensicProof, setForensicProof] = useState(() => normalizeWilsyAccountProofPacket());
   const [forensicLoading, setForensicLoading] = useState(false);
+  const [forensicExportLoading, setForensicExportLoading] = useState(false);
+  const [forensicActionMode, setForensicActionMode] = useState('idle');
   const [forensicError, setForensicError] = useState('');
   const [activeSignalKey, setActiveSignalKey] = useState('');
   const [accountForensicProof, setAccountForensicProof] = useState(() => normalizeWilsyAccountForensicBridgePacketR18AD1());
@@ -4556,6 +4746,7 @@ export function WilsyAccountCommandCenter({
     installWilsyAccountWindowControlSizeParityStyles();
     installWilsyAccountDrilldownCloseSizeSyncStyles();
     installWilsyAccountComplianceCommandCockpitStyles();
+    installWilsyAccountSkinCardRendererFinalR45();
   }, []);
 
   useEffect(() => {
@@ -4850,10 +5041,12 @@ export function WilsyAccountCommandCenter({
    * @function refreshForensicProof
    * @description Refreshes backend-owned forensic proof posture for the Compliance cockpit.
    * @returns {Promise<void>} Refresh completion.
-   * @collaboration Connects Account Compliance to the Forensic Merkle bridge without calculating roots in the browser.
+   * @collaboration Connects AccountCompliance to the Forensic Merkle bridge without calculating roots in the browser.
    */
   async function refreshForensicProof() {
+    setForensicExportLoading(false);
     setForensicLoading(true);
+    setForensicActionMode('refreshing');
     setForensicError('');
 
     try {
@@ -4863,6 +5056,10 @@ export function WilsyAccountCommandCenter({
         replayLimit: 250
       });
 
+      if (!packet || typeof packet !== 'object') {
+        throw new Error('Backend proof packet missing.');
+      }
+
       setForensicProof(normalizeWilsyAccountProofPacket(packet));
       appendCommandReceipt('refresh_forensic_proof', 'BACKEND_PACKET_RETURNED', { tenantId: identity.tenantId });
     } catch (error) {
@@ -4870,6 +5067,7 @@ export function WilsyAccountCommandCenter({
       appendCommandReceipt('refresh_forensic_proof', 'BACKEND_PACKET_FAILED', { error: error?.message || 'unknown error' });
     } finally {
       setForensicLoading(false);
+      setForensicActionMode('idle');
     }
   }
 
@@ -4880,7 +5078,9 @@ export function WilsyAccountCommandCenter({
    * @collaboration Preserves backend-only immutable seal authority while exposing blockers to account operators.
    */
   async function requestBackendSeal() {
+    setForensicExportLoading(false);
     setForensicLoading(true);
+    setForensicActionMode('sealing');
     setForensicError('');
 
     try {
@@ -4892,6 +5092,10 @@ export function WilsyAccountCommandCenter({
         reason: 'ACCOUNT_COMMAND_CENTER_FORENSIC_CONSOLE'
       });
 
+      if (!packet || typeof packet !== 'object') {
+        throw new Error('Backend seal packet missing.');
+      }
+
       setForensicProof(normalizeWilsyAccountProofPacket(packet));
       appendCommandReceipt('request_backend_seal', 'BACKEND_DECISION_RETURNED', { sealStatus: packet?.sealStatus });
     } catch (error) {
@@ -4899,28 +5103,280 @@ export function WilsyAccountCommandCenter({
       appendCommandReceipt('request_backend_seal', 'BACKEND_DECISION_FAILED', { error: error?.message || 'unknown error' });
     } finally {
       setForensicLoading(false);
+      setForensicActionMode('idle');
     }
   }
 
   /**
-   * @function downloadRegulatorPack
-   * @description Downloads a regulator pack from current proof state.
-   * @returns {void}
-   * @collaboration Exports proof posture while keeping the browser display-only.
+   * @function buildWilsyPdfBrowserProofR51D
+   * @description Builds the browser-safe SHA-512 proof expected by the enterprise PDF controller.
+   * @param {string} type - Artifact type.
+   * @param {string} tenantId - Tenant boundary.
+   * @param {string} timestamp - Export timestamp.
+   * @returns {Promise<string>} SHA-512 proof digest.
+   * @collaboration Matches the server-side browser proof contract without putting private signing authority in the browser.
    */
-  function downloadRegulatorPack() {
-    const text = buildWilsyRegulatorPackText({ identity, proof: forensicProof });
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  async function buildWilsyPdfBrowserProofR51D(type, tenantId, timestamp) {
+    if (typeof window === 'undefined' || !window.crypto?.subtle) {
+      throw new Error('Secure browser crypto is required for branded PDF export proof.');
+    }
+
+    const proofInput = `${type}|${tenantId}|${timestamp}`;
+    const encoded = new TextEncoder().encode(proofInput);
+    const digest = await window.crypto.subtle.digest('SHA-512', encoded);
+
+    return Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  /**
+   * @function buildWilsyRegulatorPdfPayloadR51D
+   * @description Builds the payload consumed by the existing Wilsy OS enterprise PDF renderer.
+   * @param {Object} input - Export input.
+   * @returns {Object} Enterprise artifact payload.
+   * @collaboration Reuses the branded PDF engine while keeping proof data backend-owned and browser display-only.
+   */
+  function buildWilsyRegulatorPdfPayloadR51D({
+    identity,
+    proof,
+    timestamp,
+    requestProof,
+    traceId
+  }) {
+    const type = 'account-forensic-command-pack';
+    const tenantId = identity.tenantId || 'MASTER';
+    const title = 'Wilsy OS Account Forensic Command Pack';
+    const reportText = buildWilsyRegulatorPackText({ identity, proof });
+    const receiptRoot = proof.receiptMerkleRoot || proof.merkleRoot || proof.compactRoot || 'ROOT_PENDING';
+    const sourcePosture = [
+      `backendAuthority=${proof.backendAuthority ? 'TRUE' : 'FALSE'}`,
+      `browserAuthority=${proof.browserAuthority ? 'TRUE' : 'FALSE'}`,
+      `sealedReceipts=${proof.sealedReceiptCount || proof.receiptCount || 0}`,
+      `receiptRoot=${receiptRoot}`
+    ].join(' | ');
+
+    return {
+      type,
+      artifactType: type,
+      templateType: type,
+      title,
+      tenantId,
+      tenant: tenantId,
+      timestamp,
+      generatedAt: timestamp,
+      requestProof,
+      sourcePosture,
+      traceId,
+          proofRoomRoute: '/wilsy-lab/forensic-merkle',
+      generatedBy: identity.displayName || 'Wilsy OS Operator',
+      userEmail: identity.email || 'wilsonkhanyezi@gmail.com',
+      issuingEntity: 'Wilsy OS',
+      counterparty: identity.tenantLabel || tenantId,
+      jurisdiction: 'Republic of South Africa',
+      version: 'WILSY-OS-ACCOUNT-FORENSIC-PACK-v1',
+      classification: 'WILSY OS FORENSIC ACCOUNT COMMAND PACK',
+      clausePack: 'POPIA · GDPR · SOC2 · WORM · Forensic Merkle',
+      signatureRoute: 'Backend-owned Merkle proof route',
+      lifecycle: ['Refresh backend proof', 'Request backend seal', 'Export regulator pack', 'Open proof room'],
+      approvals: ['Backend authority', 'Account Command Center'],
+      data: {
+        type,
+        title,
+        tenantId,
+        operator: identity.displayName || 'Wilsy OS Operator',
+        tenantLabel: identity.tenantLabel || tenantId,
+        authority: identity.authority || 'Root Tenant Control',
+        reportText,
+        proof,
+        sourcePosture,
+        receiptRoot,
+        sections: [
+          {
+            heading: 'Backend Proof',
+            rows: [
+              ['Status', proof.label || proof.status || 'Pending'],
+              ['Raw status', proof.status || 'PENDING'],
+              ['Safe-window receipts', String(proof.receiptCount || 0)],
+              ['Review receipts', String(proof.reviewReceiptCount || 0)],
+              ['Sealed receipts', String(proof.sealedReceiptCount || 0)],
+              ['Clause bindings', String(proof.clausesAnchored || 0)],
+              ['Receipt root', proof.receiptMerkleRoot || 'Receipt root pending'],
+              ['Merkle root', proof.merkleRoot || 'Merkle root pending']
+            ]
+          },
+          {
+            heading: 'Authority Statement',
+            rows: [
+              ['Backend authority', proof.backendAuthority ? 'TRUE' : 'FALSE'],
+              ['Browser authority', proof.browserAuthority ? 'TRUE' : 'FALSE'],
+              ['Fallback authority', proof.fallbackAuthority || 'Route backend verifier'],
+              ['Blockers', proof.blockers?.length ? proof.blockers.join(', ') : 'No blockers returned by backend proof packet']
+            ]
+          }
+        ]
+      },
+      metadata: {
+        type,
+        tenantId,
+        timestamp,
+        requestProof,
+        traceId,
+        sourcePosture,
+        exportedFrom: 'WilsyAccountCommandCenter',
+        backendAuthority: proof.backendAuthority === true,
+        browserAuthority: proof.browserAuthority === true,
+        receiptCount: proof.receiptCount || 0,
+        sealedReceiptCount: proof.sealedReceiptCount || 0
+      }
+    };
+  }
+
+  /**
+   * @function downloadWilsyPdfBlobR51D
+   * @description Downloads a PDF blob returned by the enterprise renderer.
+   * @param {Blob} blob - PDF blob.
+   * @param {string} filename - Download filename.
+   * @returns {void}
+   * @collaboration Keeps browser download logic separate from backend proof and PDF generation authority.
+   */
+  function downloadWilsyPdfBlobR51D(blob, filename) {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
 
     anchor.href = url;
-    anchor.download = `wilsy-account-forensic-command-pack-${Date.now()}.txt`;
+    anchor.download = filename;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    appendCommandReceipt('download_regulator_pack', 'DOWNLOADED', { receiptCount: forensicProof.receiptCount });
+  }
+
+  /**
+   * @function postWilsyRegulatorPdfExportR51D
+   * @description Posts a regulator pack payload to the existing Wilsy OS branded PDF endpoint.
+   * @param {Object} input - Export request input.
+   * @returns {Promise<Object>} PDF blob and response metadata.
+   * @collaboration Uses /api/generate/pdf instead of creating a second PDF engine.
+   */
+  async function postWilsyRegulatorPdfExportR51D({
+    payload,
+    tenantId,
+    type,
+    timestamp,
+    requestProof,
+    traceId
+  }) {
+    const token = getWilsyStoredAuthToken();
+
+    if (!token) {
+      throw new Error('Authenticated Wilsy session required for branded PDF export.');
+    }
+
+    const candidates = getWilsyForensicApiBaseCandidates(import.meta.env.VITE_API_URL || '');
+    let lastError = null;
+
+    for (const candidate of candidates) {
+      const endpoint = `${candidate}/api/generate/pdf`;
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/pdf',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            'X-Tenant-Id': tenantId,
+            'X-Wilsy-Tenant-ID': tenantId,
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type') || '';
+          const errorPayload = contentType.includes('application/json')
+            ? await response.json().catch(() => ({}))
+            : { message: await response.text().catch(() => '') };
+
+          throw new Error(
+            errorPayload?.message
+              || errorPayload?.error
+              || `Branded PDF export failed with ${response.status}`
+          );
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+
+        if (!contentType.includes('application/pdf') && !contentType.includes('application/octet-stream')) {
+          throw new Error(`PDF renderer returned unexpected content type: ${contentType || 'unknown'}`);
+        }
+
+        return {
+          blob: await response.blob(),
+          traceId: response.headers.get('X-Wilsy-Trace-ID') || traceId,
+          proofStatus: response.headers.get('X-Artifact-Proof-Status') || 'VERIFIED',
+          requestProof: response.headers.get('X-Request-Proof') || requestProof
+        };
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error('Branded PDF export transport failed.');
+  }
+
+  /**
+   * @function downloadRegulatorPack
+   * @description Downloads a branded regulator PDF pack from the existing enterprise PDF renderer.
+   * @returns {Promise<void>} Export completion.
+   * @collaboration Exports proof posture through /api/generate/pdf while preserving backend-only immutable seal authority.
+   */
+  async function downloadRegulatorPack() {
+    setForensicExportLoading(true);
+    setForensicError('');
+
+    const type = 'account-forensic-command-pack';
+    const tenantId = identity.tenantId || 'MASTER';
+    const timestamp = new Date().toISOString();
+    const traceId = `WAC-PDF-${Date.now()}`;
+
+    try {
+      const requestProof = await buildWilsyPdfBrowserProofR51D(type, tenantId, timestamp);
+      const payload = buildWilsyRegulatorPdfPayloadR51D({
+        identity,
+        proof: forensicProof,
+        timestamp,
+        requestProof,
+        traceId
+      });
+
+      const result = await postWilsyRegulatorPdfExportR51D({
+        payload,
+        tenantId,
+        type,
+        timestamp,
+        requestProof,
+        traceId
+      });
+
+      downloadWilsyPdfBlobR51D(
+        result.blob,
+        `wilsy-account-forensic-command-pack-${tenantId}-${Date.now()}.pdf`
+      );
+
+      appendCommandReceipt('download_regulator_pack', 'BRANDED_PDF_DOWNLOADED', {
+        receiptCount: forensicProof.receiptCount,
+        traceId: result.traceId,
+        proofStatus: result.proofStatus
+      });
+    } catch (error) {
+      setForensicError(error?.message || 'Branded PDF export failed');
+      appendCommandReceipt('download_regulator_pack', 'BRANDED_PDF_FAILED', {
+        error: error?.message || 'unknown error'
+      });
+    } finally {
+      setForensicExportLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -5167,9 +5623,9 @@ export function WilsyAccountCommandCenter({
       <header className="wac-top">
         <aside className="wac-id">
           <span className="wac-avatar">{identity.initials}</span>
-          <span className="wac-eyebrow">Command Identity · Tenant verified</span>
+          <span className="wac-eyebrow">Command Identity · {identity.tenantId}</span>
           <h2>{identity.displayName}</h2>
-          <small>POPIA S19 · Tenant authority · {identity.accountReference}</small>
+          <small>{identity.tenantId} · {identity.authority} · {accountIdentityPosture.dbLabel || accountIdentityPosture.matchedCollectionsLabel || 'Live identity source'}</small>
           <label className="wac-tenant">
             <Building2 size={18} color={selectedSkin.live} />
             <select value={identity.tenantId} onChange={handleTenantSelection}>
@@ -5293,6 +5749,126 @@ export function WilsyAccountCommandCenter({
           >
             <style dangerouslySetInnerHTML={{ __html: "\n  .wac-compliance-final-board {\n    position: relative !important;\n    isolation: isolate !important;\n    display: grid !important;\n    grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.72fr) !important;\n    gap: 12px !important;\n    padding: 12px !important;\n    border-radius: 26px !important;\n    border: 1px solid rgba(225, 189, 82, 0.38) !important;\n    background:\n      radial-gradient(circle at 8% 0%, rgba(0, 198, 255, 0.16), transparent 26%),\n      radial-gradient(circle at 92% 10%, rgba(225, 189, 82, 0.22), transparent 34%),\n      linear-gradient(135deg, rgba(4, 14, 25, 0.99), rgba(7, 9, 18, 0.97)) !important;\n    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.045), 0 24px 70px rgba(0,0,0,0.42) !important;\n    overflow: hidden !important;\n  }\n\n  .wac-compliance-final-board::before {\n    content: \"WILSY OS REGULATORY COMMAND FABRIC\" !important;\n    position: absolute !important;\n    top: 10px !important;\n    right: 16px !important;\n    color: rgba(255, 240, 183, 0.62) !important;\n    font-size: 8px !important;\n    font-weight: 950 !important;\n    letter-spacing: 0.22em !important;\n    text-transform: uppercase !important;\n    pointer-events: none !important;\n    z-index: 4 !important;\n  }\n\n  .wac-compliance-final-board > * {\n    position: relative !important;\n    z-index: 1 !important;\n  }\n\n  .wac-compliance-final-main,\n  .wac-compliance-final-rail {\n    display: grid !important;\n    gap: 10px !important;\n    align-content: start !important;\n  }\n\n  .wac-compliance-final-hero,\n  .wac-compliance-final-cell,\n  .wac-compliance-final-rail-card,\n  .wac-compliance-final-authority {\n    border: 1px solid rgba(255,255,255,0.15) !important;\n    background:\n      radial-gradient(circle at 12% 0%, rgba(0,198,255,0.11), transparent 42%),\n      linear-gradient(145deg, rgba(13,20,34,0.96), rgba(8,10,18,0.94)) !important;\n    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.035), 0 18px 42px rgba(0,0,0,0.28) !important;\n  }\n\n  .wac-compliance-final-hero {\n    border-radius: 22px !important;\n    padding: 18px 20px !important;\n    display: grid !important;\n    grid-template-columns: minmax(0, 1fr) auto !important;\n    gap: 16px !important;\n    align-items: start !important;\n  }\n\n  .wac-compliance-final-kicker,\n  .wac-compliance-final-cell small,\n  .wac-compliance-final-rail-card small {\n    display: block !important;\n    color: rgba(255,240,183,0.95) !important;\n    font-size: 9px !important;\n    font-weight: 950 !important;\n    letter-spacing: 0.20em !important;\n    text-transform: uppercase !important;\n  }\n\n  .wac-compliance-final-title {\n    margin: 7px 0 7px !important;\n    color: #ffffff !important;\n    font-size: clamp(30px, 2.75vw, 44px) !important;\n    line-height: 1 !important;\n    letter-spacing: -0.06em !important;\n  }\n\n  .wac-compliance-final-copy {\n    max-width: 940px !important;\n    margin: 0 !important;\n    color: rgba(255,255,255,0.74) !important;\n    font-size: 14px !important;\n    line-height: 1.34 !important;\n  }\n\n  .wac-compliance-final-seal {\n    padding: 9px 12px !important;\n    border-radius: 999px !important;\n    border: 1px solid rgba(225,189,82,0.54) !important;\n    color: #fff0b7 !important;\n    background: rgba(225,189,82,0.10) !important;\n    font-size: 9px !important;\n    font-weight: 950 !important;\n    letter-spacing: 0.16em !important;\n    text-transform: uppercase !important;\n    white-space: nowrap !important;\n  }\n\n  .wac-compliance-final-status,\n  .wac-compliance-final-proof {\n    display: grid !important;\n    gap: 10px !important;\n  }\n\n  .wac-compliance-final-status {\n    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;\n  }\n\n  .wac-compliance-final-proof {\n    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;\n  }\n\n  .wac-compliance-final-cell {\n    border-radius: 18px !important;\n    padding: 12px !important;\n    min-height: 78px !important;\n    position: relative !important;\n    overflow: hidden !important;\n  }\n\n  .wac-compliance-final-rail-card {\n    border-radius: 18px !important;\n    padding: 14px !important;\n    min-height: 102px !important;\n    position: relative !important;\n    overflow: hidden !important;\n  }\n\n  .wac-compliance-final-cell::after,\n  .wac-compliance-final-rail-card::after {\n    content: \"\" !important;\n    position: absolute !important;\n    left: 12px !important;\n    right: 12px !important;\n    bottom: 0 !important;\n    height: 2px !important;\n    background: linear-gradient(90deg, transparent, rgba(225,189,82,0.80), rgba(0,198,255,0.58), transparent) !important;\n  }\n\n  .wac-compliance-final-cell strong,\n  .wac-compliance-final-rail-card strong {\n    display: block !important;\n    margin-top: 6px !important;\n    color: #ffffff !important;\n    font-size: clamp(18px, 1.15vw, 25px) !important;\n    line-height: 1.04 !important;\n    letter-spacing: -0.04em !important;\n  }\n\n  .wac-compliance-final-cell span,\n  .wac-compliance-final-rail-card span {\n    display: block !important;\n    margin-top: 6px !important;\n    color: rgba(255,255,255,0.62) !important;\n    line-height: 1.28 !important;\n    font-size: 11.5px !important;\n  }\n\n  .wac-compliance-final-authority {\n    border-radius: 18px !important;\n    border-color: rgba(255,86,130,0.32) !important;\n    padding: 12px 14px !important;\n    background: linear-gradient(135deg, rgba(46,12,30,0.48), rgba(7,9,18,0.72)) !important;\n  }\n\n  .wac-compliance-final-authority strong {\n    display: block !important;\n    color: #ffffff !important;\n    font-size: 14px !important;\n    margin-bottom: 4px !important;\n  }\n\n  .wac-compliance-final-authority span {\n    color: rgba(255,255,255,0.66) !important;\n    font-size: 12px !important;\n    line-height: 1.28 !important;\n  }\n\n  .wac-compliance-final-actions {\n    display: grid !important;\n    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;\n    gap: 8px !important;\n  }\n\n  .wac-compliance-final-actions button {\n    min-height: 40px !important;\n    border-radius: 13px !important;\n    padding: 0 10px !important;\n    font-size: 12px !important;\n    font-weight: 950 !important;\n  }\n\n  @media (max-width: 1200px) {\n    .wac-compliance-final-board {\n      grid-template-columns: 1fr !important;\n      overflow: auto !important;\n    }\n  }\n\n  @media (max-width: 760px) {\n    .wac-compliance-final-status,\n    .wac-compliance-final-proof,\n    .wac-compliance-final-actions {\n      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;\n    }\n  }\n" }} />
 
+            <style
+              dangerouslySetInnerHTML={{
+                __html: `
+                  /* WILSY_ACCOUNT_COMPLIANCE_DUAL_PANE_INLINE_R50E */
+                  .wac-compliance-final-board[data-wilsy-account-forensic-console="R18AD18-COMPLIANCE-ONE-SCREEN-FINAL"] {
+                    height: clamp(430px, 54vh, 620px) !important;
+                    max-height: clamp(430px, 54vh, 620px) !important;
+                    min-height: 0 !important;
+                    overflow: hidden !important;
+                    display: grid !important;
+                    grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.72fr) !important;
+                    align-items: stretch !important;
+                    align-content: stretch !important;
+                    margin-bottom: 96px !important;
+                  }
+
+                  .wac-compliance-final-main {
+                    min-height: 0 !important;
+                    height: 100% !important;
+                    max-height: 100% !important;
+                    overflow-y: auto !important;
+                    overflow-x: hidden !important;
+                    display: grid !important;
+                    gap: 10px !important;
+                    align-content: start !important;
+                    padding: 0 12px 104px 0 !important;
+                    box-sizing: border-box !important;
+                    overscroll-behavior: contain !important;
+                    scrollbar-gutter: stable both-edges !important;
+                    scroll-padding-bottom: 104px !important;
+                  }
+
+                  .wac-compliance-final-main::-webkit-scrollbar {
+                    width: 10px !important;
+                  }
+
+                  .wac-compliance-final-main::-webkit-scrollbar-track {
+                    background: rgba(255,255,255,0.055) !important;
+                    border-radius: 999px !important;
+                  }
+
+                  .wac-compliance-final-main::-webkit-scrollbar-thumb {
+                    background: linear-gradient(180deg, rgba(225,189,82,0.88), rgba(0,198,255,0.58)) !important;
+                    border-radius: 999px !important;
+                    border: 2px solid rgba(5,10,18,0.96) !important;
+                  }
+
+                  .wac-compliance-final-hero,
+                  .wac-compliance-final-status,
+                  .wac-compliance-final-proof,
+                  .wac-compliance-final-authority,
+                  .wac-compliance-final-actions {
+                    flex: 0 0 auto !important;
+                    min-width: 0 !important;
+                  }
+
+                  .wac-compliance-production-rail {
+                    min-height: 0 !important;
+                    height: 100% !important;
+                    max-height: 100% !important;
+                    overflow: hidden !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                  }
+
+                  .wac-compliance-production-rail-window {
+                    min-height: 0 !important;
+                    flex: 1 1 auto !important;
+                    height: auto !important;
+                    max-height: none !important;
+                    overflow-y: auto !important;
+                    overflow-x: hidden !important;
+                    padding-bottom: 104px !important;
+                    scroll-padding-bottom: 104px !important;
+                    overscroll-behavior: contain !important;
+                  }
+
+                  .wac-compliance-production-card,
+                  .wac-compliance-command-details,
+                  .wac-compliance-production-chevron {
+                    opacity: 1 !important;
+                    visibility: visible !important;
+                  }
+
+                  @media (max-height: 860px) {
+                    .wac-compliance-final-board[data-wilsy-account-forensic-console="R18AD18-COMPLIANCE-ONE-SCREEN-FINAL"] {
+                      height: clamp(390px, 52vh, 560px) !important;
+                      max-height: clamp(390px, 52vh, 560px) !important;
+                      margin-bottom: 124px !important;
+                    }
+
+                    .wac-compliance-final-main,
+                    .wac-compliance-production-rail-window {
+                      padding-bottom: 132px !important;
+                      scroll-padding-bottom: 132px !important;
+                    }
+                  }
+
+                  @media (max-width: 1200px) {
+                    .wac-compliance-final-board[data-wilsy-account-forensic-console="R18AD18-COMPLIANCE-ONE-SCREEN-FINAL"] {
+                      grid-template-columns: 1fr !important;
+                      height: auto !important;
+                      max-height: none !important;
+                      overflow-y: auto !important;
+                    }
+
+                    .wac-compliance-final-main,
+                    .wac-compliance-production-rail {
+                      height: auto !important;
+                      max-height: none !important;
+                      overflow: visible !important;
+                    }
+
+                    .wac-compliance-production-rail-window {
+                      max-height: 420px !important;
+                    }
+                  }
+                `
+              }}
+            />
             <div className="wac-compliance-final-main">
               <article className="wac-compliance-final-hero">
                 <div>
@@ -5386,15 +5962,15 @@ export function WilsyAccountCommandCenter({
               <div className="wac-compliance-final-actions">
                 <button type="button" className="wac-primary" onClick={refreshForensicProof} disabled={forensicLoading}>
                   <RefreshCcw size={16} />
-                  Refresh
+                  {forensicActionMode === 'refreshing' ? 'Refreshing' : 'Refresh'}
                 </button>
                 <button type="button" className="wac-secondary" onClick={requestBackendSeal} disabled={forensicLoading}>
                   <ShieldCheck size={16} />
-                  Seal
+                  {forensicActionMode === 'sealing' ? 'Sealing' : 'Seal'}
                 </button>
-                <button type="button" className="wac-secondary" onClick={downloadRegulatorPack}>
+                <button type="button" className="wac-secondary" onClick={downloadRegulatorPack} disabled={forensicExportLoading}>
                   <BookOpenText size={16} />
-                  Export
+                  {forensicExportLoading ? 'Exporting' : 'Export'}
                 </button>
                 <button type="button" className="wac-secondary" onClick={() => handleOpenRoute('open_forensic_showroom', '/wilsy-lab/forensic-merkle')}>
                   <ExternalLink size={16} />
@@ -5403,8 +5979,8 @@ export function WilsyAccountCommandCenter({
               </div>
             </div>
 
-            
-            
+
+
             <aside className="wac-compliance-production-rail" aria-label="Production regulatory command rail">
                             <style dangerouslySetInnerHTML={{ __html: "\n  .wac-compliance-final-board::before,\n  .wac-compliance-single-board::before,\n  .wac-compliance-command-board::before,\n  .wac-compliance-compact-board::before,\n  .wac-compliance-algorithm-board::before {\n    content: none !important;\n  }\n\n  .wac-compliance-production-rail {\n    position: relative !important;\n    min-height: 0 !important;\n    height: clamp(390px, 50vh, 510px) !important;\n    max-height: clamp(390px, 50vh, 510px) !important;\n    border-radius: 24px !important;\n    border: 1px solid rgba(255, 255, 255, 0.15) !important;\n    background:\n      radial-gradient(circle at 12% 0%, rgba(0, 198, 255, 0.14), transparent 38%),\n      linear-gradient(145deg, rgba(10, 18, 30, 0.96), rgba(6, 8, 15, 0.96)) !important;\n    box-shadow:\n      inset 0 0 0 1px rgba(255,255,255,0.035),\n      0 22px 60px rgba(0,0,0,0.34) !important;\n    overflow: hidden !important;\n    display: flex !important;\n    flex-direction: column !important;\n    padding: 14px !important;\n  }\n\n  .wac-compliance-production-rail-header {\n    flex: 0 0 auto !important;\n    display: flex !important;\n    align-items: center !important;\n    justify-content: space-between !important;\n    gap: 14px !important;\n    padding: 2px 10px 12px !important;\n    border-bottom: 1px solid rgba(225, 189, 82, 0.16) !important;\n    margin-bottom: 12px !important;\n  }\n\n  .wac-compliance-production-rail-header small {\n    color: rgba(255, 240, 183, 0.76) !important;\n    font-size: 10px !important;\n    font-weight: 950 !important;\n    letter-spacing: 0.24em !important;\n    text-transform: uppercase !important;\n  }\n\n  .wac-compliance-production-rail-header span {\n    color: rgba(255, 255, 255, 0.58) !important;\n    font-size: 11px !important;\n    font-weight: 850 !important;\n    letter-spacing: 0.12em !important;\n    text-transform: uppercase !important;\n  }\n\n  .wac-compliance-production-rail-window {\n    min-height: 0 !important;\n    flex: 1 1 auto !important;\n    overflow-y: auto !important;\n    overflow-x: hidden !important;\n    overscroll-behavior: contain !important;\n    scrollbar-gutter: stable !important;\n    padding: 0 12px 22px 0 !important;\n    display: grid !important;\n    gap: 12px !important;\n    align-content: start !important;\n    scroll-padding-top: 0 !important;\n    scroll-padding-bottom: 28px !important;\n  }\n\n  .wac-compliance-production-rail-window:focus-visible {\n    outline: 3px solid rgba(255, 240, 183, 0.28) !important;\n    outline-offset: 3px !important;\n    border-radius: 18px !important;\n  }\n\n  .wac-compliance-production-rail-window::-webkit-scrollbar {\n    width: 10px !important;\n  }\n\n  .wac-compliance-production-rail-window::-webkit-scrollbar-track {\n    background: rgba(255, 255, 255, 0.055) !important;\n    border-radius: 999px !important;\n  }\n\n  .wac-compliance-production-rail-window::-webkit-scrollbar-thumb {\n    background: linear-gradient(180deg, rgba(225,189,82,0.88), rgba(0,198,255,0.58)) !important;\n    border-radius: 999px !important;\n    border: 2px solid rgba(5, 10, 18, 0.96) !important;\n  }\n\n  .wac-compliance-production-card {\n    position: relative !important;\n    overflow: hidden !important;\n    min-height: 112px !important;\n    border-radius: 20px !important;\n    border: 1px solid rgba(255,255,255,0.15) !important;\n    background:\n      radial-gradient(circle at 12% 0%, rgba(0,198,255,0.13), transparent 42%),\n      linear-gradient(145deg, rgba(13,20,34,0.96), rgba(8,10,18,0.94)) !important;\n    box-shadow:\n      inset 0 0 0 1px rgba(255,255,255,0.035),\n      0 16px 38px rgba(0,0,0,0.28) !important;\n    display: grid !important;\n    grid-template-columns: 56px minmax(0, 1fr) 20px !important;\n    gap: 14px !important;\n    align-items: center !important;\n    padding: 16px !important;\n  }\n\n  .wac-compliance-production-card::after {\n    content: \"\" !important;\n    position: absolute !important;\n    left: 18px !important;\n    right: 18px !important;\n    bottom: 0 !important;\n    height: 2px !important;\n    background: linear-gradient(90deg, transparent, rgba(225,189,82,0.82), rgba(0,198,255,0.60), transparent) !important;\n  }\n\n  .wac-compliance-production-icon {\n    width: 50px !important;\n    height: 50px !important;\n    border-radius: 15px !important;\n    border: 1px solid rgba(225,189,82,0.34) !important;\n    background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)) !important;\n    display: inline-flex !important;\n    align-items: center !important;\n    justify-content: center !important;\n    color: #fff0b7 !important;\n  }\n\n  .wac-compliance-production-icon svg {\n    width: 22px !important;\n    height: 22px !important;\n    stroke-width: 2.15 !important;\n  }\n\n  .wac-compliance-production-card small {\n    display: block !important;\n    color: rgba(255,240,183,0.95) !important;\n    font-size: 10px !important;\n    font-weight: 950 !important;\n    letter-spacing: 0.20em !important;\n    text-transform: uppercase !important;\n    margin-bottom: 7px !important;\n  }\n\n  .wac-compliance-production-card strong {\n    display: block !important;\n    color: #ffffff !important;\n    font-size: clamp(18px, 1.02vw, 23px) !important;\n    line-height: 1.12 !important;\n    letter-spacing: -0.032em !important;\n    overflow-wrap: anywhere !important;\n  }\n\n  .wac-compliance-production-card span {\n    display: block !important;\n    margin-top: 6px !important;\n    color: rgba(255,255,255,0.68) !important;\n    line-height: 1.34 !important;\n    font-size: 12.2px !important;\n    overflow-wrap: anywhere !important;\n  }\n\n  .wac-compliance-production-source {\n    width: fit-content !important;\n    max-width: 100% !important;\n    margin-top: 10px !important;\n    padding: 5px 8px !important;\n    border-radius: 999px !important;\n    border: 1px solid rgba(225,189,82,0.20) !important;\n    background: rgba(255,240,183,0.07) !important;\n    color: rgba(255,240,183,0.82) !important;\n    font-size: 10px !important;\n    font-weight: 850 !important;\n    letter-spacing: 0.08em !important;\n    text-transform: uppercase !important;\n  }\n\n  .wac-compliance-production-chevron {\n    color: rgba(255,255,255,0.78) !important;\n    font-size: 30px !important;\n    line-height: 1 !important;\n    text-align: right !important;\n  }\n\n  @media (max-width: 1200px) {\n    .wac-compliance-production-rail {\n      height: clamp(360px, 48vh, 500px) !important;\n      max-height: clamp(360px, 48vh, 500px) !important;\n    }\n  }\n\n  @media (max-width: 720px) {\n    .wac-compliance-production-rail {\n      height: 440px !important;\n      max-height: 440px !important;\n    }\n\n    .wac-compliance-production-card {\n      grid-template-columns: 48px minmax(0, 1fr) 18px !important;\n      min-height: 104px !important;\n      padding: 14px !important;\n    }\n\n    .wac-compliance-production-icon {\n      width: 44px !important;\n      height: 44px !important;\n    }\n  }\n" }} />
 
@@ -5477,7 +6053,7 @@ export function WilsyAccountCommandCenter({
                   </article>
                 )}
 
-                
+
                 {/* R18AD26A_COMPLIANCE_PACKET_PENDING_STATE */}
                 {!complianceCommandLoading && !complianceCommandError && !complianceCommandPacket && (
                   <article className="wac-compliance-production-card" role="status">
