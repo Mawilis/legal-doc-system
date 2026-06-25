@@ -914,3 +914,26 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ========================================================================
+   WILSY OS R76E - CONTACTS FULL CANVAS UNIFORMITY
+   Contacts must consume the CRM module canvas exactly like Leads. The CRM
+   Home command hero is Home-only; Contacts owns its own command surface.
+   ======================================================================== */
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] {
+  width: 100% !important;
+  min-height: calc(100vh - 20px) !important;
+  margin: 0 !important;
+  align-content: start !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactAppHeader {
+  margin: 0 !important;
+  border-radius: 24px !important;
+}
+
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactRecordsWorkspace,
+.contactOperatingRoom[data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"] .contactTabSurface {
+  min-height: calc(100vh - 286px) !important;
+}

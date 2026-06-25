@@ -828,6 +828,7 @@ export default function WilsyContactOperatingRoom({
       className={styles.contactOperatingRoom}
       data-wilsy-contact-operating-room="R76C-CONTACTS-OPERATING-ROOM"
       data-wilsy-contact-module="relationship-intelligence"
+      data-wilsy-contact-canvas-parity="LEADS_FULL_CANVAS_R76E"
     >
       <header className={styles.contactAppHeader}>
         <section className={styles.contactHeaderPrimary}>

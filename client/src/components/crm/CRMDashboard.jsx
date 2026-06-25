@@ -1566,7 +1566,8 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
       />
 
       <section className={styles.commandSurface}>
-        <header className={styles.osChrome}>
+        {activeWorkspace === 'home' ? (
+        <header data-wilsy-r76e-home-command-hero="home-only" className={styles.osChrome}>
           <div className={styles.chromeTitle}>
             <small><Home size={13} /> {workspaceMeta.label}</small>
             <h1 className={styles.crmOneLineTitleLock} aria-label="Wilsy OS CRM Command Center">
@@ -1675,6 +1676,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
             </button>
           </div>
         </header>
+        ) : null}
 
         <main className={styles.workspaceViewport}>
           {activeWorkspace === 'leads' ? (
