@@ -19702,3 +19702,340 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidenceCockpitContract = a
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_API_SURFACE_REGISTRY_VERSION =
+  'R71H-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-API-SURFACE-REGISTRY-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidenceApiSurfaceRegistry
+ * @description Produces the stable terminal evidence API surface registry for future CRM UI, AI, regulator, investor, and auditor clients.
+ * @collaboration R71G cockpit contract, R71F command index, CRM command routes, evidence cockpit integration.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidenceApiSurfaceRegistry = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const cockpitContract = await buildLeadSearchRegulatorInvestorTerminalEvidenceCockpitContract({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const routeMap = cockpitContract.routeMap || {};
+  const sourceCommandIndex = cockpitContract.sourceTerminalEvidenceCommandIndex || {};
+
+  const apiSurfaceRegistry = [
+    {
+      surface: 'terminal_summary',
+      label: 'Terminal Evidence Summary',
+      method: 'GET',
+      route: routeMap.summary,
+      sourceLane: 'R71A',
+      primaryAudience: ['executive', 'buyer', 'investor'],
+      contract: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_SUMMARY_READY',
+      requiredFields: [
+        'ok',
+        'version',
+        'status',
+        'summary',
+        'hashesVerified',
+        'authoritiesVerified',
+        'posture',
+        'competitivePosture',
+      ],
+      ready: cockpitContract.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE',
+    },
+    {
+      surface: 'terminal_manifest',
+      label: 'Terminal Evidence Manifest',
+      method: 'GET',
+      route: routeMap.manifest,
+      sourceLane: 'R71B',
+      primaryAudience: ['regulator', 'investor', 'auditor', 'engineering'],
+      contract: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_MANIFEST_READY',
+      requiredFields: [
+        'routeRegistry',
+        'hashRegistry',
+        'authorityRegistry',
+        'inspectionSections',
+        'chain',
+      ],
+      ready: cockpitContract.cockpitTabs?.find((tab) => tab.id === 'manifest')?.ready === true,
+    },
+    {
+      surface: 'terminal_packet',
+      label: 'Terminal Evidence Packet',
+      method: 'GET',
+      route: routeMap.packet,
+      sourceLane: 'R71C',
+      primaryAudience: ['executive', 'regulator', 'investor', 'auditor', 'engineering'],
+      contract: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_PACKET_READY',
+      requiredFields: [
+        'executiveBrief',
+        'regulatorPacket',
+        'investorPacket',
+        'engineeringPacket',
+        'commercialAssertions',
+      ],
+      ready: cockpitContract.cockpitTabs?.find((tab) => tab.id === 'packet')?.ready === true,
+    },
+    {
+      surface: 'terminal_inspection_desk',
+      label: 'Terminal Evidence Inspection Desk',
+      method: 'GET',
+      route: routeMap.inspectionDesk,
+      sourceLane: 'R71D',
+      primaryAudience: ['executive', 'regulator', 'investor', 'auditor', 'engineering'],
+      contract: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_INSPECTION_DESK_READY',
+      requiredFields: [
+        'audienceCards',
+        'actionRegistry',
+        'endpointRegistry',
+        'proofPassport',
+        'boardBrief',
+      ],
+      ready: cockpitContract.cockpitTabs?.find((tab) => tab.id === 'overview')?.ready === true,
+    },
+    {
+      surface: 'terminal_diligence_room',
+      label: 'Terminal Evidence Diligence Room',
+      method: 'GET',
+      route: routeMap.diligenceRoom,
+      sourceLane: 'R71E',
+      primaryAudience: ['buyer', 'board', 'regulator', 'investor', 'auditor', 'engineering'],
+      contract: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_DILIGENCE_ROOM_READY',
+      requiredFields: [
+        'stakeholderRooms',
+        'diligenceChecklist',
+        'objectionMatrix',
+        'demoScript',
+        'routeMap',
+      ],
+      ready:
+        cockpitContract.primaryActions?.find(
+          (action) => action.id === 'open_terminal_diligence_room'
+        )?.ready === true,
+    },
+    {
+      surface: 'terminal_command_index',
+      label: 'Terminal Evidence Command Index',
+      method: 'GET',
+      route: '/api/crm/command/search/regulator-evidence/terminal-command-index/latest',
+      sourceLane: 'R71F',
+      primaryAudience: ['ui', 'ai', 'engineering', 'operator'],
+      contract: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COMMAND_INDEX_READY',
+      requiredFields: ['commandIndex', 'readinessIndex', 'aiCommandPrompts', 'cockpitWiringHints'],
+      ready: sourceCommandIndex.ok === true && sourceCommandIndex.commandIndex?.length === 7,
+    },
+    {
+      surface: 'terminal_cockpit_contract',
+      label: 'Terminal Evidence Cockpit Contract',
+      method: 'GET',
+      route: '/api/crm/command/search/regulator-evidence/terminal-cockpit-contract/latest',
+      sourceLane: 'R71G',
+      primaryAudience: ['ui', 'ai', 'crm_cockpit', 'evidence_hud'],
+      contract: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COCKPIT_CONTRACT_READY',
+      requiredFields: [
+        'cockpitKpis',
+        'cockpitTabs',
+        'primaryActions',
+        'evidenceHud',
+        'aiSurfaceContract',
+      ],
+      ready:
+        cockpitContract.ok === true &&
+        cockpitContract.contractType ===
+          'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COCKPIT_CONTRACT',
+    },
+  ];
+
+  const clientContracts = [
+    {
+      client: 'crm_cockpit',
+      title: 'CRM cockpit integration contract',
+      primarySurface: 'terminal_cockpit_contract',
+      requiredSurfaces: [
+        'terminal_cockpit_contract',
+        'terminal_command_index',
+        'terminal_diligence_room',
+        'terminal_packet',
+        'terminal_manifest',
+        'terminal_summary',
+      ],
+      ready:
+        cockpitContract.ok === true &&
+        cockpitContract.cockpitKpis?.every((item) => item.ready === true) &&
+        cockpitContract.cockpitTabs?.every((item) => item.ready === true),
+    },
+    {
+      client: 'ai_command_layer',
+      title: 'AI command layer contract',
+      primarySurface: 'terminal_command_index',
+      requiredSurfaces: [
+        'terminal_command_index',
+        'terminal_diligence_room',
+        'terminal_cockpit_contract',
+      ],
+      ready:
+        cockpitContract.aiSurfaceContract?.ready === true &&
+        sourceCommandIndex.aiCommandPrompts?.every((prompt) => prompt.ready === true),
+    },
+    {
+      client: 'regulator_portal',
+      title: 'Regulator portal contract',
+      primarySurface: 'terminal_manifest',
+      requiredSurfaces: ['terminal_manifest', 'terminal_packet', 'terminal_diligence_room'],
+      ready:
+        cockpitContract.evidenceHud?.values?.regulatorReady === true &&
+        cockpitContract.evidenceHud?.values?.jsonResponseOnly === true &&
+        cockpitContract.evidenceHud?.values?.noFilesystemWrite === true,
+    },
+    {
+      client: 'investor_room',
+      title: 'Investor room contract',
+      primarySurface: 'terminal_diligence_room',
+      requiredSurfaces: ['terminal_diligence_room', 'terminal_packet', 'terminal_summary'],
+      ready:
+        cockpitContract.evidenceHud?.values?.investorReady === true &&
+        cockpitContract.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE',
+    },
+    {
+      client: 'audit_assurance',
+      title: 'Audit assurance contract',
+      primarySurface: 'terminal_manifest',
+      requiredSurfaces: [
+        'terminal_manifest',
+        'terminal_inspection_desk',
+        'terminal_diligence_room',
+      ],
+      ready:
+        cockpitContract.evidenceHud?.values?.auditorReady === true &&
+        cockpitContract.evidenceHud?.values?.recursiveLoopFrozen === true,
+    },
+  ];
+
+  const responseSchemaRegistry = {
+    invariantFields: [
+      'ok',
+      'version',
+      'status',
+      'productizationSurface',
+      'terminalStop',
+      'noR70F',
+      'recursiveLoopFrozen',
+      'jsonResponseOnly',
+      'noFilesystemWrite',
+      'persistenceMode',
+    ],
+    requiredBooleanInvariants: {
+      productizationSurface: true,
+      terminalStop: true,
+      noR70F: true,
+      recursiveLoopFrozen: true,
+      jsonResponseOnly: true,
+      noFilesystemWrite: true,
+    },
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+    buyerReadableStatus: 'VERIFIED_TERMINAL_EVIDENCE',
+    routePrefix: '/api/crm/command/search/regulator-evidence',
+  };
+
+  const integrationChecklist = [
+    {
+      check: 'all_surfaces_registered',
+      ready: apiSurfaceRegistry.length === 7,
+    },
+    {
+      check: 'all_surfaces_ready',
+      ready: apiSurfaceRegistry.every((surface) => surface.ready === true),
+    },
+    {
+      check: 'all_client_contracts_ready',
+      ready: clientContracts.every((client) => client.ready === true),
+    },
+    {
+      check: 'cockpit_hud_ready',
+      ready:
+        cockpitContract.evidenceHud?.topKpi === 'VERIFIED_TERMINAL_EVIDENCE' &&
+        Object.values(cockpitContract.evidenceHud?.values || {}).every(Boolean),
+    },
+    {
+      check: 'ai_surface_ready',
+      ready: cockpitContract.aiSurfaceContract?.ready === true,
+    },
+    {
+      check: 'no_recursive_expansion',
+      ready: cockpitContract.noR70F === true && cockpitContract.recursiveLoopFrozen === true,
+    },
+    {
+      check: 'json_only_posture',
+      ready:
+        cockpitContract.jsonResponseOnly === true &&
+        cockpitContract.noFilesystemWrite === true &&
+        cockpitContract.persistenceMode === 'JSON_RESPONSE_ONLY',
+    },
+  ];
+
+  const ok =
+    cockpitContract.ok === true &&
+    apiSurfaceRegistry.length === 7 &&
+    apiSurfaceRegistry.every((surface) => surface.ready === true) &&
+    apiSurfaceRegistry.every(
+      (surface) =>
+        surface.route && surface.route.includes('/api/crm/command/search/regulator-evidence/')
+    ) &&
+    clientContracts.length === 5 &&
+    clientContracts.every((client) => client.ready === true) &&
+    integrationChecklist.length === 7 &&
+    integrationChecklist.every((item) => item.ready === true) &&
+    responseSchemaRegistry.requiredBooleanInvariants.noR70F === true &&
+    responseSchemaRegistry.requiredBooleanInvariants.recursiveLoopFrozen === true &&
+    cockpitContract.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE' &&
+    cockpitContract.terminalStop === true &&
+    cockpitContract.noR70F === true &&
+    cockpitContract.recursiveLoopFrozen === true &&
+    cockpitContract.jsonResponseOnly === true &&
+    cockpitContract.noFilesystemWrite === true &&
+    cockpitContract.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_API_SURFACE_REGISTRY_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_API_SURFACE_REGISTRY_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_API_SURFACE_REGISTRY_DEGRADED',
+    registryType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_API_SURFACE_REGISTRY',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: cockpitContract.recursiveLoopFrozen === true,
+    buyerReadableStatus: cockpitContract.buyerReadableStatus,
+    apiSurfaceRegistry,
+    clientContracts,
+    responseSchemaRegistry,
+    integrationChecklist,
+    sourceCockpitContractSummary: {
+      ok: cockpitContract.ok === true,
+      version: cockpitContract.version || null,
+      status: cockpitContract.status || null,
+      contractType: cockpitContract.contractType || null,
+      kpiCount: cockpitContract.cockpitKpis?.length || 0,
+      tabCount: cockpitContract.cockpitTabs?.length || 0,
+      actionCount: cockpitContract.primaryActions?.length || 0,
+      aiSurfaceReady: cockpitContract.aiSurfaceContract?.ready === true,
+      noR70F: cockpitContract.noR70F === true,
+      recursiveLoopFrozen: cockpitContract.recursiveLoopFrozen === true,
+    },
+    sourceTerminalEvidenceCockpitContract: cockpitContract,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
