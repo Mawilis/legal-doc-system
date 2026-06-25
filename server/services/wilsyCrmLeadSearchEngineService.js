@@ -18391,3 +18391,198 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidenceManifest = async (o
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_PACKET_VERSION =
+  'R71C-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-PACKET-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidencePacket
+ * @description Packages the terminal evidence summary and manifest into a commercial-grade regulator, investor, founder, and buyer-facing evidence packet.
+ * @collaboration R71B terminal manifest, R71A terminal summary, R70E terminal closure verifier, CRM command routes, regulator/investor evidence surfaces.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidencePacket = async (options = {}) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const terminalManifest = await buildLeadSearchRegulatorInvestorTerminalEvidenceManifest({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const sourceSummary = terminalManifest.sourceTerminalEvidenceSummary || {};
+  const manifestBody = terminalManifest.manifest || {};
+
+  const executiveBrief = {
+    title: 'WILSY CRM Terminal Evidence Packet',
+    buyerReadableStatus: terminalManifest.buyerReadableStatus || 'UNKNOWN',
+    message:
+      'The CRM terminal regulator/investor evidence chain is closed, verified, navigable, and productized as JSON-only evidence.',
+    proofType:
+      sourceSummary.proofType || 'JSON_RESPONSE_ONLY_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_CHAIN',
+    terminalLane:
+      terminalManifest.manifest?.terminalLane || terminalManifest.terminalLane || 'R70C',
+    terminalStop: terminalManifest.terminalStop === true,
+    noR70F: terminalManifest.noR70F === true,
+    recursiveLoopFrozen: terminalManifest.recursiveLoopFrozen === true,
+    crmEvidenceOperatingSystem:
+      terminalManifest.competitivePosture?.crmEvidenceOperatingSystem === true,
+    auditReadyDecisionLayer: terminalManifest.competitivePosture?.auditReadyDecisionLayer === true,
+  };
+
+  const regulatorPacket = {
+    status:
+      terminalManifest.inspectionSections?.find((section) => section.section === 'regulator')
+        ?.status || 'REGULATOR_UNKNOWN',
+    ready:
+      terminalManifest.inspectionSections?.find((section) => section.section === 'regulator')
+        ?.ready === true,
+    routeRegistry: terminalManifest.routeRegistry || {},
+    hashRegistry: terminalManifest.hashRegistry || [],
+    authorityRegistry: terminalManifest.authorityRegistry || [],
+    jsonResponseOnly: terminalManifest.jsonResponseOnly === true,
+    noFilesystemWrite: terminalManifest.noFilesystemWrite === true,
+    persistenceMode: terminalManifest.persistenceMode || 'JSON_RESPONSE_ONLY',
+  };
+
+  const investorPacket = {
+    status:
+      terminalManifest.inspectionSections?.find((section) => section.section === 'investor')
+        ?.status || 'INVESTOR_UNKNOWN',
+    ready:
+      terminalManifest.inspectionSections?.find((section) => section.section === 'investor')
+        ?.ready === true,
+    competitivePosture: terminalManifest.competitivePosture || {},
+    terminalHashes: terminalManifest.terminalHashes || {},
+    chain: terminalManifest.chain || [],
+    buyerReadableStatus: terminalManifest.buyerReadableStatus || 'UNKNOWN',
+  };
+
+  const engineeringPacket = {
+    status:
+      terminalManifest.inspectionSections?.find((section) => section.section === 'engineering')
+        ?.status || 'ENGINEERING_UNKNOWN',
+    ready:
+      terminalManifest.inspectionSections?.find((section) => section.section === 'engineering')
+        ?.ready === true,
+    recursiveLoopFrozen: terminalManifest.recursiveLoopFrozen === true,
+    terminalStop: terminalManifest.terminalStop === true,
+    noR70F: terminalManifest.noR70F === true,
+    sourceRoutes: sourceSummary.sourceRoutes || terminalManifest.routeRegistry || {},
+    sourceTerminalEvidenceSummaryStatus: sourceSummary.status || null,
+    manifestStatus: terminalManifest.status || null,
+  };
+
+  const packet = {
+    packetId: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_PACKET_R71C',
+    packetType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_PACKET',
+    generatedAt: new Date().toISOString(),
+    tenantId,
+    operator,
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: terminalManifest.recursiveLoopFrozen === true,
+    buyerReadableStatus: terminalManifest.buyerReadableStatus || 'UNKNOWN',
+    executiveBrief,
+    regulatorPacket,
+    investorPacket,
+    engineeringPacket,
+    manifestSnapshot: {
+      manifestType: terminalManifest.manifestType || null,
+      manifestId: manifestBody.manifestId || null,
+      routeRegistry: terminalManifest.routeRegistry || {},
+      hashRegistry: terminalManifest.hashRegistry || [],
+      authorityRegistry: terminalManifest.authorityRegistry || [],
+      inspectionSections: terminalManifest.inspectionSections || [],
+      chain: terminalManifest.chain || [],
+    },
+    terminalSummarySnapshot: {
+      ok: sourceSummary.ok === true,
+      version: sourceSummary.version || null,
+      status: sourceSummary.status || null,
+      proofType: sourceSummary.proofType || null,
+      buyerReadableStatus:
+        sourceSummary.summary?.buyerReadableStatus || terminalManifest.buyerReadableStatus || null,
+      hashesVerified: sourceSummary.hashesVerified || {},
+      authoritiesVerified: sourceSummary.authoritiesVerified || {},
+      posture: sourceSummary.posture || {},
+      competitivePosture:
+        sourceSummary.competitivePosture || terminalManifest.competitivePosture || {},
+    },
+    commercialAssertions: {
+      crmEvidenceOperatingSystem:
+        terminalManifest.competitivePosture?.crmEvidenceOperatingSystem === true,
+      auditReadyDecisionLayer:
+        terminalManifest.competitivePosture?.auditReadyDecisionLayer === true,
+      regulatorInspectable: terminalManifest.competitivePosture?.regulatorInspectable === true,
+      investorInspectable: terminalManifest.competitivePosture?.investorInspectable === true,
+      tamperEvidence: terminalManifest.competitivePosture?.tamperEvidence === true,
+      filesystemSideEffectsBlocked:
+        terminalManifest.competitivePosture?.filesystemSideEffectsBlocked === true,
+      recursiveProofLoopClosed:
+        terminalManifest.competitivePosture?.recursiveProofLoopClosed === true,
+      buyerDemoReady:
+        executiveBrief.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE' &&
+        regulatorPacket.ready === true &&
+        investorPacket.ready === true &&
+        engineeringPacket.ready === true,
+    },
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const ok =
+    terminalManifest.ok === true &&
+    packet.productizationSurface === true &&
+    packet.terminalStop === true &&
+    packet.noR70F === true &&
+    packet.recursiveLoopFrozen === true &&
+    packet.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE' &&
+    packet.executiveBrief.terminalStop === true &&
+    packet.executiveBrief.noR70F === true &&
+    packet.executiveBrief.recursiveLoopFrozen === true &&
+    packet.regulatorPacket.ready === true &&
+    packet.investorPacket.ready === true &&
+    packet.engineeringPacket.ready === true &&
+    packet.manifestSnapshot.hashRegistry.every((item) => item.verified === true) &&
+    packet.manifestSnapshot.authorityRegistry.every((item) => item.verified === true) &&
+    packet.manifestSnapshot.inspectionSections.every((item) => item.ready === true) &&
+    Object.values(packet.commercialAssertions).every(Boolean) &&
+    packet.terminalSummarySnapshot.ok === true &&
+    packet.jsonResponseOnly === true &&
+    packet.noFilesystemWrite === true &&
+    packet.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_PACKET_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_PACKET_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_PACKET_DEGRADED',
+    packetType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_PACKET',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: packet.recursiveLoopFrozen,
+    buyerReadableStatus: packet.buyerReadableStatus,
+    executiveBrief,
+    regulatorPacket,
+    investorPacket,
+    engineeringPacket,
+    commercialAssertions: packet.commercialAssertions,
+    manifestSnapshot: packet.manifestSnapshot,
+    terminalSummarySnapshot: packet.terminalSummarySnapshot,
+    packet,
+    sourceTerminalEvidenceManifest: terminalManifest,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
