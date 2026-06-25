@@ -26,6 +26,7 @@
  */
 
 import express from 'express';
+import crmCommandRoutes from './routes/crmCommandRoutes.js';
 import { generateSovereignArtifactPdf } from './controllers/businessArtifactPdfController.js';
 
 import helmet from 'helmet';
@@ -47,6 +48,9 @@ import auditLogger from './utils/auditLogger.js';
 import { broadcastTelemetry, getTelemetryState } from './utils/telemetryHelper.js';
 import { breakerRegistry } from './utils/circuitBreaker.js';
 import { checkRedisHealth } from './config/redis.js';
+
+import wilsyCrmLiveRoutes from './routes/wilsyCrmLiveRoutes.js';
+import wilsyCrmIntelligenceRoutes from './routes/wilsyCrmIntelligenceRoutes.js';
 
 const app = express();
 
@@ -297,6 +301,10 @@ const isWilsyPublicForensicGatewayPath = (req = {}) => {
  * @description Logs missing or malformed Authorization headers for all /api endpoints.
  * This is a lightweight, production‑safe logger that does not alter request processing.
  */
+app.use('/api/crm/live', wilsyCrmLiveRoutes);
+app.use('/api/crm/command', crmCommandRoutes);
+app.use('/api/crm/intelligence', wilsyCrmIntelligenceRoutes);
+
 app.use((req, res, next) => {
   if (req.originalUrl.includes('/api/')) {
     const publicTelemetryPaths = [
