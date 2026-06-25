@@ -278,6 +278,8 @@ const shouldBypassLegacyForensicSeal = (req = {}) => {
   if (
     safeReadMethod &&
     [
+      '/api/crm/live',
+      '/api/crm/intelligence',
       '/api/analytics',
       '/api/finance/kpis',
       '/api/finance/currency',

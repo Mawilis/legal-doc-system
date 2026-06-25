@@ -38,7 +38,7 @@ const corsOptions = {
       'https://app.wilsyos.com',
       'https://admin.wilsyos.com',
       'http://localhost:3000',
-      'http://localhost:5060'
+      'http://localhost:5060',
     ];
     if (!origin || CITADEL_WHITELIST.includes(origin)) {
       callback(null, true);
@@ -50,27 +50,54 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: [
-    'Content-Type', 'Authorization', 'X-Tenant-ID', 'X-Request-ID',
-    'X-Forensic-Hash', 'X-Quantum-Circuit', 'X-Audit-Trail-ID'
+    'Content-Type',
+    'Authorization',
+    'X-Tenant-ID',
+    'X-Request-ID',
+    'X-Forensic-Hash',
+    'X-Quantum-Circuit',
+    'X-Audit-Trail-ID',
+    'X-Artifact-Proof',
+    'X-Request-Proof',
+    'X-Request-Seal',
+    'X-Artifact-Type',
+    'X-Wilsy-Artifact-Type',
+    'X-Artifact-Timestamp',
+    'X-Forensic-Timestamp',
+    'X-Wilsy-Trace-ID',
+    'X-Wilsy-Tenant-ID',
+    'X-Tenant-Id',
+    'Accept',
   ],
-  exposedHeaders: ['X-Request-ID', 'X-Forensic-Hash']
+  exposedHeaders: ['X-Request-ID', 'X-Forensic-Hash'],
 };
 
 /**
  * 🚦 RATE LIMITER (Memory Store – no Redis dependency)
  * Distributed state management for Billion-Dollar scaling.
  */
-const createSovereignLimiter = (max, windowMs, prefix) => rateLimit({
-  windowMs,
-  max,
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => `${req.headers['x-tenant-id'] || 'SOVEREIGN_ROOT'}:${req.ip}`,
-  handler: (req, res) => {
-    auditLogger.security('RATE_LIMIT_EXCEEDED', { ip: req.ip, tenant: req.headers['x-tenant-id'] });
-    res.status(429).json({ error: 'CITADEL_LOCKDOWN', message: 'Rate limit exceeded. Protocol engaged.' });
-  }
-});
+/**
+ * @function createSovereignLimiter
+ * @description Creates the sovereign rate-limiting middleware used to protect high-trust API surfaces without weakening tenant-aware CRM route access.
+ * @collaboration R72X auth/security/hardening compatibility lane, CRM backend route activation, security posture preservation.
+ */
+const createSovereignLimiter = (max, windowMs, prefix) =>
+  rateLimit({
+    windowMs,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => `${req.headers['x-tenant-id'] || 'SOVEREIGN_ROOT'}:${req.ip}`,
+    handler: (req, res) => {
+      auditLogger.security('RATE_LIMIT_EXCEEDED', {
+        ip: req.ip,
+        tenant: req.headers['x-tenant-id'],
+      });
+      res
+        .status(429)
+        .json({ error: 'CITADEL_LOCKDOWN', message: 'Rate limit exceeded. Protocol engaged.' });
+    },
+  });
 
 export const authLimiter = createSovereignLimiter(5, 15 * 60 * 1000, 'auth');
 export const apiLimiter = createSovereignLimiter(100, 1 * 60 * 1000, 'api');
@@ -79,6 +106,11 @@ export const adminLimiter = createSovereignLimiter(30, 1 * 60 * 1000, 'admin');
 /**
  * ⚛️ QUANTUM FIREWALL
  * Identifies and severs malicious payloads before they hit the controller.
+ */
+/**
+ * @function quantumFirewall
+ * @description Applies the quantum firewall middleware checks that preserve request integrity while allowing mounted CRM intelligence and live API routes to operate under controlled security posture.
+ * @collaboration R72X auth/security/hardening compatibility lane, CRM backend route activation, sovereign request inspection.
  */
 export const quantumFirewall = (req, res, next) => {
   const forensicId = crypto.randomUUID();
@@ -89,11 +121,19 @@ export const quantumFirewall = (req, res, next) => {
 
   if (sqlInfection.test(payload) || xssInfection.test(payload)) {
     auditLogger.critical('MALICIOUS_PAYLOAD_DETECTED', { forensicId, ip: req.ip });
-    return res.status(403).json({ error: 'FIREWALL_BLOCK', forensicId, message: 'Malicious intent detected.' });
+    return res
+      .status(403)
+      .json({ error: 'FIREWALL_BLOCK', forensicId, message: 'Malicious intent detected.' });
   }
 
   // Attach forensic tracing
-  res.setHeader('X-Forensic-Signature', crypto.createHash('sha256').update(payload + forensicId).digest('hex'));
+  res.setHeader(
+    'X-Forensic-Signature',
+    crypto
+      .createHash('sha256')
+      .update(payload + forensicId)
+      .digest('hex')
+  );
   next();
 };
 
@@ -106,11 +146,5 @@ export default {
   authLimiter,
   apiLimiter,
   adminLimiter,
-  all: [
-    helmet(),
-    cors(corsOptions),
-    mongoSanitize({ replaceWith: '_' }),
-    hpp(),
-    quantumFirewall
-  ]
+  all: [helmet(), cors(corsOptions), mongoSanitize({ replaceWith: '_' }), hpp(), quantumFirewall],
 };

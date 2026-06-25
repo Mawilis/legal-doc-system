@@ -68,6 +68,8 @@ const shouldBypassIntegrityShield = (url = '', method = 'GET') => {
   if (
     safeReadMethod &&
     [
+      '/api/crm/live',
+      '/api/crm/intelligence',
       '/api/analytics',
       '/api/finance/kpis',
       '/api/finance/currency',
@@ -75,6 +77,21 @@ const shouldBypassIntegrityShield = (url = '', method = 'GET') => {
       '/api/wilsy-ai/analytics',
     ].some((route) => url.includes(route))
   ) {
+    return true;
+  }
+
+  // WILSY_R62E_CRM_COMMAND_READONLY_INTEGRITY_BYPASS
+  // CRM command status/search are read-only posture endpoints.
+  // CRM command sync is a read-side posture refresh.
+  // CRM command leads remains protected and must not be added here.
+  if (
+    safeReadMethod &&
+    ['/api/crm/command/status', '/api/crm/command/search'].some((route) => url.includes(route))
+  ) {
+    return true;
+  }
+
+  if (String(method || '').toUpperCase() === 'POST' && url.includes('/api/crm/command/sync')) {
     return true;
   }
 
