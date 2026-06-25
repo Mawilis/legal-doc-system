@@ -18859,3 +18859,361 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidenceInspectionDesk = as
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_DILIGENCE_ROOM_VERSION =
+  'R71E-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-DILIGENCE-ROOM-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidenceDiligenceRoom
+ * @description Converts the R71D terminal inspection desk into a buyer, board, regulator, investor, auditor, and engineering diligence room.
+ * @collaboration R71D inspection desk, R71C terminal evidence packet, CRM command routes, commercial due diligence surfaces.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidenceDiligenceRoom = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const inspectionDesk = await buildLeadSearchRegulatorInvestorTerminalEvidenceInspectionDesk({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const cardsByAudience = (inspectionDesk.audienceCards || []).reduce((acc, card) => {
+    acc[card.audience] = card;
+    return acc;
+  }, {});
+
+  const actionByName = (inspectionDesk.actionRegistry || []).reduce((acc, action) => {
+    acc[action.action] = action;
+    return acc;
+  }, {});
+
+  const proofPassport = inspectionDesk.proofPassport || {};
+  const commercialAssertions = inspectionDesk.commercialAssertions || {};
+  const endpointRegistry = inspectionDesk.endpointRegistry || {};
+
+  const roomPassport = {
+    product: 'WILSY CRM',
+    roomType: 'TERMINAL_REGULATOR_INVESTOR_EVIDENCE_DILIGENCE_ROOM',
+    sourceDeskType: inspectionDesk.deskType || null,
+    sourceDeskStatus: inspectionDesk.status || null,
+    buyerReadableStatus: inspectionDesk.buyerReadableStatus || null,
+    terminalLane: proofPassport.terminalLane || 'R70C',
+    terminalStop: inspectionDesk.terminalStop === true && proofPassport.terminalStop === true,
+    noR70F: inspectionDesk.noR70F === true && proofPassport.noR70F === true,
+    recursiveLoopFrozen:
+      inspectionDesk.recursiveLoopFrozen === true && proofPassport.recursiveLoopFrozen === true,
+    regulatorReady: proofPassport.regulatorReady === true,
+    investorReady: proofPassport.investorReady === true,
+    auditorReady: proofPassport.auditorReady === true,
+    engineeringReady: proofPassport.engineeringReady === true,
+    jsonResponseOnly:
+      inspectionDesk.jsonResponseOnly === true && proofPassport.jsonResponseOnly === true,
+    noFilesystemWrite:
+      inspectionDesk.noFilesystemWrite === true && proofPassport.noFilesystemWrite === true,
+    persistenceMode:
+      inspectionDesk.persistenceMode || proofPassport.persistenceMode || 'JSON_RESPONSE_ONLY',
+  };
+
+  const stakeholderRooms = [
+    {
+      room: 'buyer',
+      title: 'Buyer proof room',
+      status: inspectionDesk.buyerReadableStatus || 'UNKNOWN',
+      ready:
+        cardsByAudience.executive?.ready === true && commercialAssertions.buyerDemoReady === true,
+      evidence: ['executiveBrief', 'buyerReadableStatus', 'commercialAssertions', 'boardBrief'],
+      decision:
+        'Demo-ready evidence that WILSY CRM is an evidence operating system, not a pipeline skin.',
+    },
+    {
+      room: 'board',
+      title: 'Board command room',
+      status: inspectionDesk.boardBrief?.headline ? 'BOARD_READY' : 'BOARD_DEGRADED',
+      ready:
+        Boolean(inspectionDesk.boardBrief?.headline) && cardsByAudience.executive?.ready === true,
+      evidence: [
+        'boardBrief.headline',
+        'boardBrief.moat',
+        'boardBrief.buyerDemoLine',
+        'boardBrief.nextCommercialMove',
+      ],
+      decision:
+        'Board can see moat, proof boundary, and commercial next step without reading recursive proof internals.',
+    },
+    {
+      room: 'regulator',
+      title: 'Regulator evidence room',
+      status: cardsByAudience.regulator?.status || 'REGULATOR_UNKNOWN',
+      ready:
+        cardsByAudience.regulator?.ready === true &&
+        roomPassport.regulatorReady === true &&
+        roomPassport.jsonResponseOnly === true,
+      evidence: [
+        'routeRegistry',
+        'hashRegistry',
+        'authorityRegistry',
+        'jsonResponseOnly',
+        'noFilesystemWrite',
+      ],
+      decision:
+        'Regulator can inspect terminal proof without uncontrolled filesystem export posture.',
+    },
+    {
+      room: 'investor',
+      title: 'Investor diligence room',
+      status: cardsByAudience.investor?.status || 'INVESTOR_UNKNOWN',
+      ready:
+        cardsByAudience.investor?.ready === true &&
+        roomPassport.investorReady === true &&
+        commercialAssertions.investorInspectable === true,
+      evidence: ['competitivePosture', 'terminalHashes', 'chain', 'buyerDemoReady'],
+      decision:
+        'Investor can diligence defensibility, evidence posture, and product moat from one packet.',
+    },
+    {
+      room: 'auditor',
+      title: 'Audit assurance room',
+      status: cardsByAudience.auditor?.status || 'AUDIT_UNKNOWN',
+      ready:
+        cardsByAudience.auditor?.ready === true &&
+        roomPassport.auditorReady === true &&
+        commercialAssertions.filesystemSideEffectsBlocked === true,
+      evidence: [
+        'recursiveProofLoopClosed',
+        'filesystemSideEffectsBlocked',
+        'persistenceMode',
+        'proofPassport',
+      ],
+      decision: 'Auditor can validate closure, persistence posture, and terminal proof boundary.',
+    },
+    {
+      room: 'engineering',
+      title: 'Engineering control room',
+      status: cardsByAudience.engineering?.status || 'ENGINEERING_UNKNOWN',
+      ready:
+        cardsByAudience.engineering?.ready === true &&
+        roomPassport.engineeringReady === true &&
+        roomPassport.noR70F === true,
+      evidence: ['terminalStop', 'noR70F', 'recursiveLoopFrozen', 'endpointRegistry'],
+      decision:
+        'Engineering has a clear productization boundary and should not reopen recursive proof expansion.',
+    },
+  ];
+
+  const diligenceChecklist = [
+    {
+      check: 'terminal_closure_verified',
+      label: 'Terminal closure is verified',
+      ready: roomPassport.recursiveLoopFrozen === true && roomPassport.terminalStop === true,
+    },
+    {
+      check: 'no_recursive_expansion',
+      label: 'Recursive proof expansion is frozen',
+      ready: roomPassport.noR70F === true,
+    },
+    {
+      check: 'buyer_demo_ready',
+      label: 'Buyer demo posture is ready',
+      ready: commercialAssertions.buyerDemoReady === true,
+    },
+    {
+      check: 'regulator_inspection_ready',
+      label: 'Regulator inspection posture is ready',
+      ready:
+        roomPassport.regulatorReady === true && commercialAssertions.regulatorInspectable === true,
+    },
+    {
+      check: 'investor_diligence_ready',
+      label: 'Investor diligence posture is ready',
+      ready:
+        roomPassport.investorReady === true && commercialAssertions.investorInspectable === true,
+    },
+    {
+      check: 'audit_assurance_ready',
+      label: 'Audit assurance posture is ready',
+      ready:
+        roomPassport.auditorReady === true &&
+        commercialAssertions.recursiveProofLoopClosed === true,
+    },
+    {
+      check: 'json_only_no_filesystem_export',
+      label: 'JSON-only posture with filesystem export blocked',
+      ready:
+        roomPassport.jsonResponseOnly === true &&
+        roomPassport.noFilesystemWrite === true &&
+        roomPassport.persistenceMode === 'JSON_RESPONSE_ONLY',
+    },
+  ];
+
+  const objectionMatrix = [
+    {
+      objection: 'Competitors also have CRM dashboards.',
+      response:
+        'This is not a dashboard claim; the diligence room exposes verified terminal evidence, hashes, authorities, routes, and commercial proof posture.',
+      proof: 'crmEvidenceOperatingSystem',
+      handled: commercialAssertions.crmEvidenceOperatingSystem === true,
+    },
+    {
+      objection: 'Can regulators inspect the evidence?',
+      response:
+        'The regulator room exposes hash registry, authority registry, route registry, JSON-only posture, and noFilesystemWrite status.',
+      proof: 'regulatorInspectable',
+      handled:
+        commercialAssertions.regulatorInspectable === true &&
+        stakeholderRooms.find((room) => room.room === 'regulator')?.ready === true,
+    },
+    {
+      objection: 'Can investors diligence defensibility?',
+      response:
+        'The investor room exposes competitive posture, terminal hashes, chain, and buyer demo readiness.',
+      proof: 'investorInspectable',
+      handled:
+        commercialAssertions.investorInspectable === true &&
+        stakeholderRooms.find((room) => room.room === 'investor')?.ready === true,
+    },
+    {
+      objection: 'Can auditors validate the proof boundary?',
+      response:
+        'The audit room exposes recursiveProofLoopClosed, persistenceMode, proofPassport, and filesystem side-effect controls.',
+      proof: 'recursiveProofLoopClosed',
+      handled:
+        commercialAssertions.recursiveProofLoopClosed === true &&
+        stakeholderRooms.find((room) => room.room === 'auditor')?.ready === true,
+    },
+    {
+      objection: 'Will engineering keep adding proof recursion?',
+      response:
+        'The engineering room marks terminalStop, noR70F, recursiveLoopFrozen, and endpointRegistry as the productization boundary.',
+      proof: 'noR70F',
+      handled:
+        roomPassport.noR70F === true &&
+        stakeholderRooms.find((room) => room.room === 'engineering')?.ready === true,
+    },
+  ];
+
+  const demoScript = {
+    opening: 'WILSY CRM turns customer and revenue operations into verified terminal evidence.',
+    proofWalk: [
+      'Open the terminal evidence summary for buyer-readable status.',
+      'Open the terminal evidence manifest for route, hash, authority, and inspection registries.',
+      'Open the terminal evidence packet for regulator, investor, executive, and engineering proof sections.',
+      'Open the diligence room to answer buyer, board, regulator, investor, auditor, and engineering objections.',
+    ],
+    close:
+      'The proof loop is closed, JSON-only, filesystem-safe, buyer-demo-ready, and not extended by recursive proof expansion.',
+  };
+
+  const routeMap = {
+    diligenceRoom: '/api/crm/command/search/regulator-evidence/terminal-diligence-room/latest',
+    inspectionDesk:
+      endpointRegistry.inspectionDesk ||
+      '/api/crm/command/search/regulator-evidence/terminal-inspection-desk/latest',
+    packet:
+      endpointRegistry.terminalPacket ||
+      '/api/crm/command/search/regulator-evidence/terminal-packet/latest',
+    manifest:
+      endpointRegistry.terminalManifest ||
+      '/api/crm/command/search/regulator-evidence/terminal-manifest/latest',
+    summary:
+      endpointRegistry.terminalSummary ||
+      '/api/crm/command/search/regulator-evidence/terminal-summary/latest',
+    terminalClosureVerifier: endpointRegistry.terminalClosureVerifier || null,
+    terminalClosureCertificate: endpointRegistry.terminalClosureCertificate || null,
+  };
+
+  const diligenceRoom = {
+    roomId: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_DILIGENCE_ROOM_R71E',
+    roomType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_DILIGENCE_ROOM',
+    generatedAt: new Date().toISOString(),
+    tenantId,
+    operator,
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: roomPassport.recursiveLoopFrozen,
+    buyerReadableStatus: roomPassport.buyerReadableStatus,
+    roomPassport,
+    stakeholderRooms,
+    diligenceChecklist,
+    objectionMatrix,
+    demoScript,
+    routeMap,
+    sourceInspectionDeskSummary: {
+      ok: inspectionDesk.ok === true,
+      version: inspectionDesk.version || null,
+      status: inspectionDesk.status || null,
+      deskType: inspectionDesk.deskType || null,
+      audienceCardCount: inspectionDesk.audienceCards?.length || 0,
+      actionCount: inspectionDesk.actionRegistry?.length || 0,
+      boardBriefReady: Boolean(inspectionDesk.boardBrief?.headline),
+      terminalStop: inspectionDesk.terminalStop === true,
+      noR70F: inspectionDesk.noR70F === true,
+      recursiveLoopFrozen: inspectionDesk.recursiveLoopFrozen === true,
+    },
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const ok =
+    inspectionDesk.ok === true &&
+    diligenceRoom.productizationSurface === true &&
+    diligenceRoom.terminalStop === true &&
+    diligenceRoom.noR70F === true &&
+    diligenceRoom.recursiveLoopFrozen === true &&
+    diligenceRoom.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE' &&
+    stakeholderRooms.length === 6 &&
+    stakeholderRooms.every((room) => room.ready === true) &&
+    diligenceChecklist.length === 7 &&
+    diligenceChecklist.every((item) => item.ready === true) &&
+    objectionMatrix.length === 5 &&
+    objectionMatrix.every((item) => item.handled === true) &&
+    Object.values(commercialAssertions).every(Boolean) &&
+    routeMap.diligenceRoom.includes('/terminal-diligence-room/latest') &&
+    routeMap.inspectionDesk.includes('/terminal-inspection-desk/latest') &&
+    routeMap.packet.includes('/terminal-packet/latest') &&
+    routeMap.manifest.includes('/terminal-manifest/latest') &&
+    routeMap.summary.includes('/terminal-summary/latest') &&
+    diligenceRoom.sourceInspectionDeskSummary.ok === true &&
+    diligenceRoom.sourceInspectionDeskSummary.audienceCardCount === 5 &&
+    diligenceRoom.sourceInspectionDeskSummary.actionCount === 5 &&
+    diligenceRoom.sourceInspectionDeskSummary.boardBriefReady === true &&
+    diligenceRoom.sourceInspectionDeskSummary.noR70F === true &&
+    diligenceRoom.jsonResponseOnly === true &&
+    diligenceRoom.noFilesystemWrite === true &&
+    diligenceRoom.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_DILIGENCE_ROOM_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_DILIGENCE_ROOM_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_DILIGENCE_ROOM_DEGRADED',
+    roomType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_DILIGENCE_ROOM',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: diligenceRoom.recursiveLoopFrozen,
+    buyerReadableStatus: diligenceRoom.buyerReadableStatus,
+    stakeholderRooms,
+    diligenceChecklist,
+    objectionMatrix,
+    demoScript,
+    routeMap,
+    roomPassport,
+    diligenceRoom,
+    commercialAssertions,
+    sourceTerminalEvidenceInspectionDesk: inspectionDesk,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
