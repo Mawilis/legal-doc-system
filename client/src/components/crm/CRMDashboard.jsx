@@ -1615,7 +1615,77 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
               placeholder="Search pipeline, accounts, evidence"
               aria-label="Global CRM search"
               data-wilsy-r73b-search-input="true"
+              data-wilsy-r74a-search-typing-feedback="true"
+              data-wilsy-r74a-search-submit-feedback="true"
+              data-wilsy-r74a-search-submit-state="idle"
+              onKeyDownCapture={(event) => {
+                const key = event.key;
+
+                if (key !== 'Enter' && key !== 'Escape') {
+                  return;
+                }
+
+                const input = event.currentTarget;
+                const query = String(input.value || '').trim();
+                const statusNode = input.parentElement?.querySelector('[data-wilsy-r74a-search-submit-status="true"]');
+
+                if (key === 'Escape') {
+                  input.dataset.wilsyR74aSearchSubmitState = 'cleared';
+                  input.setAttribute('aria-busy', 'false');
+
+                  if (statusNode) {
+                    statusNode.textContent = 'Search cleared — enter a query to search sovereign CRM.';
+                  }
+
+                  return;
+                }
+
+                if (!query) {
+                  input.dataset.wilsyR74aSearchSubmitState = 'empty';
+                  input.setAttribute('aria-busy', 'false');
+
+                  if (statusNode) {
+                    statusNode.textContent = 'Type a query before pressing Enter.';
+                  }
+
+                  return;
+                }
+
+                input.dataset.wilsyR74aSearchSubmitState = 'searching';
+                input.setAttribute('aria-busy', 'true');
+
+                if (statusNode) {
+                  statusNode.textContent = 'Searching sovereign CRM for "' + query + '"…';
+                }
+
+                window.dispatchEvent(new CustomEvent('wilsy:crm-search-submit-feedback', {
+                  detail: {
+                    query,
+                    source: 'crm-sovereign-search',
+                    submittedAt: new Date().toISOString(),
+                  },
+                }));
+
+                window.setTimeout(() => {
+                  if (input.dataset.wilsyR74aSearchSubmitState === 'searching') {
+                    input.dataset.wilsyR74aSearchSubmitState = 'submitted';
+                    input.setAttribute('aria-busy', 'false');
+
+                    if (statusNode) {
+                      statusNode.textContent = 'Search initiated for "' + query + '" — source posture results are updating.';
+                    }
+                  }
+                }, 420);
+              }}
             />
+            <span
+              className={styles.sovereignSearchSubmitFeedback}
+              data-wilsy-r74a-search-submit-status="true"
+              role="status"
+              aria-live="assertive"
+            >
+              Ready — type a query and press Enter.
+            </span>
             <kbd>⌘ K</kbd>
           </label>
 
