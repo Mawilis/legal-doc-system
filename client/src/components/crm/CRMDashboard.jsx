@@ -61,6 +61,7 @@ import {
 import { useTenants } from '../../contexts/tenantContext';
 import wilsyLogo from '../../assets/logo/wilsy.jpeg';
 import styles from './CRMDashboard.module.css';
+import { installCrmSearchOutcomeRuntime } from './CrmSearchOutcomeRuntime.js';
 
 import { searchCrmCommandFabric, syncCrmCommandFabric, createCrmCommandLead } from '../../services/crmService.js';
 
@@ -1293,6 +1294,17 @@ function SovereignSearchCommandOverlay({ isOpen, query, searchState, styles, onC
  * @collaboration Coordinates CRM frontend search, mounted CRM live/intelligence APIs, tenant-aware service posture, account command center controls, and Wilsy OS production guard discipline.
  */
 function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
+  useEffect(() => {
+    return installCrmSearchOutcomeRuntime({
+      tenantId: tenantConfig?.tenantId || tenantConfig?.id || tenantConfig?.tenantKey || user?.tenantId || user?.tenant?.id || 'MASTER',
+    });
+  }, [
+    tenantConfig?.tenantId,
+    tenantConfig?.id,
+    tenantConfig?.tenantKey,
+    user?.tenantId,
+    user?.tenant?.id,
+  ]);
   /* WILSY R73B: Sovereign search runtime state. */
   const [sovereignSearchQuery, setSovereignSearchQuery] = useState('');
   const [sovereignSearchOpen, setSovereignSearchOpen] = useState(false);
