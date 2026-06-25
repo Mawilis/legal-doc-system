@@ -1,7 +1,11 @@
 @import './styles/tokens/wilsy-theme-authority.css';
+@import "tailwindcss" source(none);
+@import "./styles/tokens/z-index.css";
+
+
+
 /* eslint-disable */
 
-@import "tailwindcss" source(none);
 
 /* WILSY_R18AD6C_TAILWIND_SOURCE_LOCKOUT
    Account Command Center contains a large runtime CSS template string.
@@ -18,7 +22,6 @@
 @source not "./components/account";
 @source not "./components/account/WilsyAccountCommandCenter.jsx";
 
-@import "./styles/tokens/z-index.css";
 
 /* R18AD1L-DIRECT-TAILWIND-SOURCE-TIGHTEN: exclude generated, service, and embedded-CSS files from Tailwind candidate scanning. */
 @source not "./output.css";
