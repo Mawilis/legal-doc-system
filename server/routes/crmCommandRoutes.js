@@ -85,9 +85,47 @@ import {
   buildLeadSearchRegulatorInvestorTerminalEvidenceSummary,
   buildLeadSearchRegulatorInvestorTerminalEvidenceManifest,
   buildLeadSearchRegulatorInvestorTerminalEvidencePacket,
+  buildLeadSearchRegulatorInvestorTerminalEvidenceInspectionDesk,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R71D audience-specific terminal evidence inspection desk.
+ */
+router.get('/search/regulator-evidence/terminal-inspection-desk/latest', async (req, res) => {
+  const tenantId =
+    String(
+      req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+    ).trim() || 'MASTER';
+
+  const payload = await buildLeadSearchRegulatorInvestorTerminalEvidenceInspectionDesk({
+    tenantId,
+    ledgerId: req.query.ledgerRoot || 'latest',
+    limit: req.query.limit || 25,
+    operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+  });
+
+  return res.status(payload.ok ? 200 : 206).json({
+    ...payload,
+    route: '/api/crm/command/search/regulator-evidence/terminal-inspection-desk/latest',
+    routeContract:
+      WILSY_R71D_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_INSPECTION_DESK_ROUTE_CONTRACT,
+    sourceTerminalEvidencePacketRoute:
+      '/api/crm/command/search/regulator-evidence/terminal-packet/latest',
+    sourceTerminalEvidenceManifestRoute:
+      '/api/crm/command/search/regulator-evidence/terminal-manifest/latest',
+    sourceTerminalEvidenceSummaryRoute:
+      '/api/crm/command/search/regulator-evidence/terminal-summary/latest',
+    safeRouteAlias: 'R71D_SAFE_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_INSPECTION_DESK_ROUTE',
+    terminalStop: true,
+    noR70F: true,
+    productizationSurface: true,
+  });
+});
+
+const WILSY_R71D_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_INSPECTION_DESK_ROUTE_CONTRACT =
+  'R71D-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-INSPECTION-DESK-AUTHORITY';
 
 /**
  * R71C buyer/regulator/investor terminal evidence packet.

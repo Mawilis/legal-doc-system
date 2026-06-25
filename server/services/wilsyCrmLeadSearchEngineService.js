@@ -18586,3 +18586,276 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidencePacket = async (opt
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_INSPECTION_DESK_VERSION =
+  'R71D-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-INSPECTION-DESK-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidenceInspectionDesk
+ * @description Converts the R71C terminal evidence packet into audience-specific inspection cards and operating actions.
+ * @collaboration R71C terminal evidence packet, R71B terminal manifest, R71A summary, regulator/investor/buyer evidence surfaces.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidenceInspectionDesk = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const evidencePacket = await buildLeadSearchRegulatorInvestorTerminalEvidencePacket({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const commercialAssertions = evidencePacket.commercialAssertions || {};
+  const executiveBrief = evidencePacket.executiveBrief || {};
+  const regulatorPacket = evidencePacket.regulatorPacket || {};
+  const investorPacket = evidencePacket.investorPacket || {};
+  const engineeringPacket = evidencePacket.engineeringPacket || {};
+  const manifestSnapshot = evidencePacket.manifestSnapshot || {};
+  const terminalSummarySnapshot = evidencePacket.terminalSummarySnapshot || {};
+
+  const audienceCards = [
+    {
+      audience: 'executive',
+      title: 'Executive command evidence card',
+      status: executiveBrief.buyerReadableStatus || evidencePacket.buyerReadableStatus || 'UNKNOWN',
+      ready:
+        evidencePacket.ok === true &&
+        executiveBrief.crmEvidenceOperatingSystem === true &&
+        executiveBrief.auditReadyDecisionLayer === true,
+      value:
+        'Shows leadership that CRM decisions are backed by closed, verified, JSON-only terminal evidence.',
+      primaryProofs: [
+        'buyerReadableStatus',
+        'crmEvidenceOperatingSystem',
+        'auditReadyDecisionLayer',
+        'recursiveLoopFrozen',
+        'noR70F',
+      ],
+      objectionsHandled: [
+        'Is this only a CRM dashboard?',
+        'Can leadership trust the operating evidence?',
+        'Is the proof loop closed?',
+      ],
+    },
+    {
+      audience: 'regulator',
+      title: 'Regulator inspection evidence card',
+      status: regulatorPacket.status || 'REGULATOR_UNKNOWN',
+      ready:
+        regulatorPacket.ready === true &&
+        regulatorPacket.jsonResponseOnly === true &&
+        regulatorPacket.noFilesystemWrite === true,
+      value:
+        'Provides inspectable routes, hashes, authority registry, and non-exporting evidence posture.',
+      primaryProofs: [
+        'hashRegistry',
+        'authorityRegistry',
+        'routeRegistry',
+        'jsonResponseOnly',
+        'noFilesystemWrite',
+      ],
+      objectionsHandled: [
+        'Where is the evidence chain?',
+        'Was anything written to uncontrolled filesystem export?',
+        'Which authorities and hashes are verified?',
+      ],
+    },
+    {
+      audience: 'investor',
+      title: 'Investor diligence evidence card',
+      status: investorPacket.status || 'INVESTOR_UNKNOWN',
+      ready:
+        investorPacket.ready === true &&
+        commercialAssertions.investorInspectable === true &&
+        commercialAssertions.tamperEvidence === true,
+      value:
+        'Packages commercial proof that the CRM is an evidence operating system, not a shallow pipeline board.',
+      primaryProofs: ['competitivePosture', 'terminalHashes', 'chain', 'buyerDemoReady'],
+      objectionsHandled: [
+        'What is the moat?',
+        'Can this be reviewed during diligence?',
+        'Does the CRM create defensible evidence?',
+      ],
+    },
+    {
+      audience: 'auditor',
+      title: 'Audit and assurance evidence card',
+      status:
+        commercialAssertions.recursiveProofLoopClosed === true ? 'AUDIT_READY' : 'AUDIT_DEGRADED',
+      ready:
+        commercialAssertions.recursiveProofLoopClosed === true &&
+        commercialAssertions.filesystemSideEffectsBlocked === true &&
+        evidencePacket.persistenceMode === 'JSON_RESPONSE_ONLY',
+      value:
+        'Consolidates closure, hash verification, route traceability, and JSON-only persistence posture.',
+      primaryProofs: [
+        'recursiveProofLoopClosed',
+        'filesystemSideEffectsBlocked',
+        'persistenceMode',
+        'manifestSnapshot',
+      ],
+      objectionsHandled: [
+        'Can the evidence be reconstructed?',
+        'Can the packet be audited without filesystem side effects?',
+        'Is there a terminal proof boundary?',
+      ],
+    },
+    {
+      audience: 'engineering',
+      title: 'Engineering terminal proof card',
+      status: engineeringPacket.status || 'ENGINEERING_UNKNOWN',
+      ready:
+        engineeringPacket.ready === true &&
+        engineeringPacket.recursiveLoopFrozen === true &&
+        engineeringPacket.noR70F === true,
+      value:
+        'Gives engineering a final productization boundary: no recursive proof expansion after R70E.',
+      primaryProofs: ['terminalStop', 'noR70F', 'recursiveLoopFrozen', 'sourceRoutes'],
+      objectionsHandled: [
+        'Should we add another proof layer?',
+        'Which endpoints form the terminal evidence surface?',
+        'Where is the final stop?',
+      ],
+    },
+  ];
+
+  const endpointRegistry = {
+    inspectionDesk: '/api/crm/command/search/regulator-evidence/terminal-inspection-desk/latest',
+    terminalPacket: '/api/crm/command/search/regulator-evidence/terminal-packet/latest',
+    terminalManifest: '/api/crm/command/search/regulator-evidence/terminal-manifest/latest',
+    terminalSummary: '/api/crm/command/search/regulator-evidence/terminal-summary/latest',
+    terminalClosureVerifier:
+      evidencePacket.sourceTerminalEvidenceManifest?.routeRegistry?.terminalClosureVerifier ||
+      evidencePacket.manifestSnapshot?.routeRegistry?.terminalClosureVerifier ||
+      null,
+    terminalClosureCertificate:
+      evidencePacket.sourceTerminalEvidenceManifest?.routeRegistry?.terminalClosureCertificate ||
+      evidencePacket.manifestSnapshot?.routeRegistry?.terminalClosureCertificate ||
+      null,
+  };
+
+  const actionRegistry = [
+    {
+      action: 'open_terminal_packet',
+      label: 'Open terminal evidence packet',
+      route: endpointRegistry.terminalPacket,
+      audience: ['executive', 'regulator', 'investor', 'auditor', 'engineering'],
+      ready: evidencePacket.ok === true,
+    },
+    {
+      action: 'open_terminal_manifest',
+      label: 'Open terminal evidence manifest',
+      route: endpointRegistry.terminalManifest,
+      audience: ['regulator', 'investor', 'auditor', 'engineering'],
+      ready:
+        Array.isArray(manifestSnapshot.hashRegistry) &&
+        manifestSnapshot.hashRegistry.every((item) => item.verified === true),
+    },
+    {
+      action: 'open_terminal_summary',
+      label: 'Open buyer-readable terminal summary',
+      route: endpointRegistry.terminalSummary,
+      audience: ['executive', 'investor'],
+      ready:
+        terminalSummarySnapshot.ok === true &&
+        terminalSummarySnapshot.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE',
+    },
+    {
+      action: 'inspect_hash_registry',
+      label: 'Inspect verified hash registry',
+      route: endpointRegistry.terminalManifest,
+      audience: ['regulator', 'auditor', 'engineering'],
+      ready:
+        Array.isArray(manifestSnapshot.hashRegistry) &&
+        manifestSnapshot.hashRegistry.length === 6 &&
+        manifestSnapshot.hashRegistry.every((item) => item.verified === true),
+    },
+    {
+      action: 'inspect_authority_registry',
+      label: 'Inspect verified authority registry',
+      route: endpointRegistry.terminalManifest,
+      audience: ['regulator', 'auditor'],
+      ready:
+        Array.isArray(manifestSnapshot.authorityRegistry) &&
+        manifestSnapshot.authorityRegistry.length === 9 &&
+        manifestSnapshot.authorityRegistry.every((item) => item.verified === true),
+    },
+  ];
+
+  const proofPassport = {
+    product: 'WILSY CRM',
+    proofSurface: 'TERMINAL_REGULATOR_INVESTOR_EVIDENCE_INSPECTION_DESK',
+    terminalLane: executiveBrief.terminalLane || 'R70C',
+    packetType: evidencePacket.packetType || null,
+    packetStatus: evidencePacket.status || null,
+    manifestType: manifestSnapshot.manifestType || null,
+    summaryStatus: terminalSummarySnapshot.status || null,
+    buyerReadableStatus: evidencePacket.buyerReadableStatus || null,
+    terminalStop: evidencePacket.terminalStop === true,
+    noR70F: evidencePacket.noR70F === true,
+    recursiveLoopFrozen: evidencePacket.recursiveLoopFrozen === true,
+    regulatorReady: regulatorPacket.ready === true,
+    investorReady: investorPacket.ready === true,
+    auditorReady: audienceCards.find((card) => card.audience === 'auditor')?.ready === true,
+    engineeringReady: engineeringPacket.ready === true,
+    jsonResponseOnly: evidencePacket.jsonResponseOnly === true,
+    noFilesystemWrite: evidencePacket.noFilesystemWrite === true,
+    persistenceMode: evidencePacket.persistenceMode || 'JSON_RESPONSE_ONLY',
+  };
+
+  const boardBrief = {
+    headline: 'WILSY CRM now exposes verified terminal evidence as a commercial inspection desk.',
+    moat: 'The CRM does not merely store sales activity; it packages verified terminal evidence for executives, regulators, investors, auditors, and engineering.',
+    buyerDemoLine:
+      'Every terminal evidence surface reports VERIFIED_TERMINAL_EVIDENCE, JSON_RESPONSE_ONLY, noFilesystemWrite, recursiveLoopFrozen, and noR70F.',
+    nextCommercialMove:
+      'Wire this inspection desk into the CRM cockpit and investor/regulator evidence views without creating new proof recursion.',
+  };
+
+  const ok =
+    evidencePacket.ok === true &&
+    audienceCards.every((card) => card.ready === true) &&
+    actionRegistry.every((action) => action.ready === true) &&
+    Object.values(commercialAssertions).every(Boolean) &&
+    proofPassport.terminalStop === true &&
+    proofPassport.noR70F === true &&
+    proofPassport.recursiveLoopFrozen === true &&
+    proofPassport.regulatorReady === true &&
+    proofPassport.investorReady === true &&
+    proofPassport.auditorReady === true &&
+    proofPassport.engineeringReady === true &&
+    proofPassport.jsonResponseOnly === true &&
+    proofPassport.noFilesystemWrite === true &&
+    proofPassport.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_INSPECTION_DESK_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_INSPECTION_DESK_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_INSPECTION_DESK_DEGRADED',
+    deskType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_INSPECTION_DESK',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: proofPassport.recursiveLoopFrozen,
+    buyerReadableStatus: proofPassport.buyerReadableStatus,
+    audienceCards,
+    actionRegistry,
+    endpointRegistry,
+    proofPassport,
+    boardBrief,
+    commercialAssertions,
+    sourceTerminalEvidencePacket: evidencePacket,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
