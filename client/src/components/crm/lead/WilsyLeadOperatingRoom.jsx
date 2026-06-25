@@ -1670,8 +1670,8 @@ export default function WilsyLeadOperatingRoom({
                       <section>
                         <Database size={28} />
                         <span>
-                          <strong>No backend lead rows returned.</strong>
-                          <em>Sync a verified source, import real data, or create a validated lead to activate this list view.</em>
+                          <strong>No live lead records in this view yet.</strong>
+                          <em>Sync source routes, import verified records, or create a validated lead. WILSY OS will surface the evidence trail as soon as records arrive.</em>
                         </span>
                         <div>
                           <button type="button" onClick={handleSourceSync} disabled={isSyncing}>
@@ -1692,7 +1692,7 @@ export default function WilsyLeadOperatingRoom({
           </div>
 
           <footer className={styles.leadRecordsFooter}>
-            <span>Total Records {filteredLeads.length}</span>
+            <span>Live Records  {filteredLeads.length}</span>
             <strong>{filteredLeads.length ? `1 to ${filteredLeads.length}` : '0 to 0'}</strong>
           </footer>
         </section>
@@ -2248,6 +2248,7 @@ export default function WilsyLeadOperatingRoom({
       style={activeLeadThemeOption?.cssVars || undefined}
       data-wilsy-lead-operating-room={WILSY_LEAD_OPERATING_ROOM_VERSION}
       data-wilsy-lead-header-bridge-version={WILSY_LEAD_HEADER_BRIDGE_VERSION}
+      data-wilsy-lead-workspace-grade="R75C-SOVEREIGN-LEAD-WORKSPACE"
       data-wilsy-lead-skin={activeLeadThemeOption?.id || 'WILSY_NEBULA_COMMAND'}
       data-wilsy-theme-engine-source="wilsyOperatingSkins"
       data-wilsy-theme-bridge-version={WILSY_CRM_THEME_ENGINE_BRIDGE_VERSION}
