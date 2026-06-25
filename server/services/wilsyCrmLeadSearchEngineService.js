@@ -20638,3 +20638,222 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidenceReleasePassport = a
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_VERIFIER_VERSION =
+  'R71K-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-RELEASE-PASSPORT-VERIFIER-AUTHORITY';
+
+/**
+ * @function verifyLeadSearchRegulatorInvestorTerminalEvidenceReleasePassport
+ * @description Verifies the R71J release passport without creating a new recursive proof chain or filesystem export side effect.
+ * @collaboration R71J release passport, R71I release readiness, CRM command routes, regulator/investor/auditor verification surfaces.
+ */
+export const verifyLeadSearchRegulatorInvestorTerminalEvidenceReleasePassport = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const releasePassport = await buildLeadSearchRegulatorInvestorTerminalEvidenceReleasePassport({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const passport = releasePassport.passport || {};
+  const passportIdentity = releasePassport.passportIdentity || {};
+  const finalAssertions = releasePassport.finalAssertions || {};
+  const sourceReadiness = releasePassport.sourceTerminalEvidenceReleaseReadiness || {};
+
+  const verificationMatrix = [
+    {
+      check: 'passport_ready',
+      label: 'Release passport status is ready',
+      verified:
+        releasePassport.ok === true &&
+        releasePassport.status ===
+          'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_READY',
+    },
+    {
+      check: 'release_decision_go',
+      label: 'Release decision is GO',
+      verified: passportIdentity.releaseDecision === 'GO' && passportIdentity.releaseScore === 100,
+    },
+    {
+      check: 'signoffs_go',
+      label: 'All release signoffs are GO',
+      verified:
+        releasePassport.signoffMatrix?.length === 6 &&
+        releasePassport.signoffMatrix.every(
+          (item) => item.ready === true && item.decision === 'GO'
+        ),
+    },
+    {
+      check: 'passport_sections_ready',
+      label: 'All release passport sections are ready',
+      verified:
+        releasePassport.releasePassportSections?.length === 6 &&
+        releasePassport.releasePassportSections.every((item) => item.ready === true),
+    },
+    {
+      check: 'consumption_ready',
+      label: 'All consumption channels are ready',
+      verified: Object.values(releasePassport.consumptionMap || {}).every(
+        (item) => item.ready === true
+      ),
+    },
+    {
+      check: 'final_assertions_true',
+      label: 'All final assertions are true',
+      verified: Object.values(finalAssertions).every(Boolean),
+    },
+    {
+      check: 'source_readiness_verified',
+      label: 'Source release readiness remains verified',
+      verified:
+        sourceReadiness.ok === true &&
+        sourceReadiness.status ===
+          'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_READINESS_READY',
+    },
+    {
+      check: 'protected_boundaries_intact',
+      label: 'Protected boundaries are declared and intact',
+      verified:
+        passport.protectedBoundaries?.length === 9 &&
+        passport.sourceReleaseReadinessSummary?.protectedBoundaryCount === 9,
+    },
+    {
+      check: 'no_recursive_expansion',
+      label: 'No recursive proof expansion',
+      verified:
+        releasePassport.noR70F === true &&
+        releasePassport.recursiveLoopFrozen === true &&
+        finalAssertions.noR70F === true &&
+        finalAssertions.recursiveLoopFrozen === true,
+    },
+    {
+      check: 'json_only_no_filesystem',
+      label: 'JSON-only and no filesystem write posture',
+      verified:
+        releasePassport.jsonResponseOnly === true &&
+        releasePassport.noFilesystemWrite === true &&
+        releasePassport.persistenceMode === 'JSON_RESPONSE_ONLY' &&
+        finalAssertions.jsonResponseOnly === true &&
+        finalAssertions.noFilesystemWrite === true,
+    },
+  ];
+
+  const signerVerification = (releasePassport.signoffMatrix || []).map((signoff) => ({
+    signer: signoff.signer,
+    label: signoff.label,
+    verified: signoff.ready === true && signoff.decision === 'GO',
+    evidence: signoff.evidence || [],
+  }));
+
+  const channelVerification = Object.entries(releasePassport.consumptionMap || {}).map(
+    ([channel, entry]) => ({
+      channel,
+      route: entry.entry,
+      proof: entry.proof,
+      verified:
+        entry.ready === true &&
+        String(entry.entry || '').includes('/api/crm/command/search/regulator-evidence/'),
+    })
+  );
+
+  const releaseSeal = {
+    sealId: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_VERIFIER_R71K',
+    sealType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_VERIFICATION_SEAL',
+    verifiedAt: new Date().toISOString(),
+    tenantId,
+    operator,
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: releasePassport.recursiveLoopFrozen === true,
+    releaseDecision: passportIdentity.releaseDecision || 'HOLD',
+    releaseScore: passportIdentity.releaseScore || 0,
+    passportStatus: releasePassport.status || null,
+    verificationMatrix,
+    signerVerification,
+    channelVerification,
+    verificationSummary: {
+      totalChecks: verificationMatrix.length,
+      passedChecks: verificationMatrix.filter((item) => item.verified === true).length,
+      totalSigners: signerVerification.length,
+      verifiedSigners: signerVerification.filter((item) => item.verified === true).length,
+      totalChannels: channelVerification.length,
+      verifiedChannels: channelVerification.filter((item) => item.verified === true).length,
+      releaseVerified:
+        verificationMatrix.every((item) => item.verified === true) &&
+        signerVerification.every((item) => item.verified === true) &&
+        channelVerification.every((item) => item.verified === true),
+    },
+    sourcePassportSummary: {
+      ok: releasePassport.ok === true,
+      version: releasePassport.version || null,
+      status: releasePassport.status || null,
+      passportType: releasePassport.passportType || null,
+      releaseDecision: passportIdentity.releaseDecision || null,
+      releaseScore: passportIdentity.releaseScore || 0,
+      signoffCount: releasePassport.signoffMatrix?.length || 0,
+      sectionCount: releasePassport.releasePassportSections?.length || 0,
+      noR70F: releasePassport.noR70F === true,
+      recursiveLoopFrozen: releasePassport.recursiveLoopFrozen === true,
+    },
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const ok =
+    releasePassport.ok === true &&
+    releaseSeal.productizationSurface === true &&
+    releaseSeal.terminalStop === true &&
+    releaseSeal.noR70F === true &&
+    releaseSeal.recursiveLoopFrozen === true &&
+    releaseSeal.releaseDecision === 'GO' &&
+    releaseSeal.releaseScore === 100 &&
+    verificationMatrix.length === 10 &&
+    verificationMatrix.every((item) => item.verified === true) &&
+    signerVerification.length === 6 &&
+    signerVerification.every((item) => item.verified === true) &&
+    channelVerification.length === 5 &&
+    channelVerification.every((item) => item.verified === true) &&
+    releaseSeal.verificationSummary.releaseVerified === true &&
+    releaseSeal.sourcePassportSummary.ok === true &&
+    releaseSeal.sourcePassportSummary.signoffCount === 6 &&
+    releaseSeal.sourcePassportSummary.sectionCount === 6 &&
+    releaseSeal.sourcePassportSummary.noR70F === true &&
+    releaseSeal.jsonResponseOnly === true &&
+    releaseSeal.noFilesystemWrite === true &&
+    releaseSeal.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_VERIFIER_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_VERIFIED'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_VERIFICATION_DEGRADED',
+    verifierType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_PASSPORT_VERIFIER',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: releaseSeal.recursiveLoopFrozen,
+    releaseDecision: releaseSeal.releaseDecision,
+    releaseScore: releaseSeal.releaseScore,
+    verificationMatrix,
+    signerVerification,
+    channelVerification,
+    verificationSummary: releaseSeal.verificationSummary,
+    releaseSeal,
+    sourceTerminalEvidenceReleasePassport: releasePassport,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
