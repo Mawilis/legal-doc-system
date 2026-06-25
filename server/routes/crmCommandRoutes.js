@@ -82,9 +82,42 @@ import {
   verifyLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerifierVerificationReceiptFinalityCertificateVerificationReceiptFinalityCertificateVerificationReceipt,
   buildLeadSearchRegulatorInvestorEvidenceChainTerminalClosureCertificate,
   verifyLeadSearchRegulatorInvestorEvidenceChainTerminalClosureCertificate,
+  buildLeadSearchRegulatorInvestorTerminalEvidenceSummary,
 } from '../services/wilsyCrmLeadSearchEngineService.js';
 
 const router = express.Router();
+
+/**
+ * R71A buyer/regulator/investor readable terminal evidence summary.
+ */
+router.get('/search/regulator-evidence/terminal-summary/latest', async (req, res) => {
+  const tenantId =
+    String(
+      req.headers['x-tenant-id'] || req.query.tenantId || req.user?.tenantId || 'MASTER'
+    ).trim() || 'MASTER';
+
+  const payload = await buildLeadSearchRegulatorInvestorTerminalEvidenceSummary({
+    tenantId,
+    ledgerId: req.query.ledgerRoot || 'latest',
+    limit: req.query.limit || 25,
+    operator: req.headers['x-wilsy-operator'] || req.user?.email || req.user?.id || 'SYSTEM',
+  });
+
+  return res.status(payload.ok ? 200 : 206).json({
+    ...payload,
+    route: '/api/crm/command/search/regulator-evidence/terminal-summary/latest',
+    routeContract: WILSY_R71A_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_SUMMARY_ROUTE_CONTRACT,
+    sourceTerminalClosureVerifierRoute:
+      '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/terminal-closure-certificate/verify/latest',
+    safeRouteAlias: 'R71A_SAFE_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_SUMMARY_ROUTE',
+    terminalStop: true,
+    noR70F: true,
+    productizationSurface: true,
+  });
+});
+
+const WILSY_R71A_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_SUMMARY_ROUTE_CONTRACT =
+  'R71A-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-SUMMARY-AUTHORITY';
 
 /**
  * R70E JSON-only terminal closure certificate verifier.
