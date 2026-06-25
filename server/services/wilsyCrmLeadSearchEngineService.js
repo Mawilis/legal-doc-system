@@ -19217,3 +19217,211 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidenceDiligenceRoom = asy
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COMMAND_INDEX_VERSION =
+  'R71F-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-COMMAND-INDEX-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidenceCommandIndex
+ * @description Produces the canonical command index for terminal CRM evidence surfaces, future AI commands, cockpit wiring, and diligence actions.
+ * @collaboration R71E diligence room, R71D inspection desk, R71C packet, CRM command routes, future evidence cockpit integration.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidenceCommandIndex = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const diligenceRoom = await buildLeadSearchRegulatorInvestorTerminalEvidenceDiligenceRoom({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const routeMap = diligenceRoom.routeMap || {};
+  const roomPassport = diligenceRoom.roomPassport || {};
+  const commercialAssertions = diligenceRoom.commercialAssertions || {};
+
+  const commandIndex = [
+    {
+      command: 'open_terminal_diligence_room',
+      label: 'Open terminal diligence room',
+      route: routeMap.diligenceRoom,
+      surface: 'diligence_room',
+      audience: ['buyer', 'board', 'regulator', 'investor', 'auditor', 'engineering'],
+      readiness:
+        diligenceRoom.ok === true &&
+        diligenceRoom.roomType === 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_DILIGENCE_ROOM',
+    },
+    {
+      command: 'open_terminal_inspection_desk',
+      label: 'Open terminal inspection desk',
+      route: routeMap.inspectionDesk,
+      surface: 'inspection_desk',
+      audience: ['executive', 'regulator', 'investor', 'auditor', 'engineering'],
+      readiness: diligenceRoom.sourceTerminalEvidenceInspectionDesk?.ok === true,
+    },
+    {
+      command: 'open_terminal_packet',
+      label: 'Open terminal evidence packet',
+      route: routeMap.packet,
+      surface: 'evidence_packet',
+      audience: ['executive', 'regulator', 'investor', 'auditor', 'engineering'],
+      readiness:
+        diligenceRoom.sourceTerminalEvidenceInspectionDesk?.sourceTerminalEvidencePacket?.ok ===
+        true,
+    },
+    {
+      command: 'open_terminal_manifest',
+      label: 'Open terminal evidence manifest',
+      route: routeMap.manifest,
+      surface: 'evidence_manifest',
+      audience: ['regulator', 'investor', 'auditor', 'engineering'],
+      readiness:
+        Array.isArray(
+          diligenceRoom.sourceTerminalEvidenceInspectionDesk?.sourceTerminalEvidencePacket
+            ?.manifestSnapshot?.hashRegistry
+        ) &&
+        diligenceRoom.sourceTerminalEvidenceInspectionDesk.sourceTerminalEvidencePacket.manifestSnapshot.hashRegistry.every(
+          (item) => item.verified === true
+        ),
+    },
+    {
+      command: 'open_terminal_summary',
+      label: 'Open terminal evidence summary',
+      route: routeMap.summary,
+      surface: 'evidence_summary',
+      audience: ['executive', 'investor', 'buyer'],
+      readiness: diligenceRoom.buyerReadableStatus === 'VERIFIED_TERMINAL_EVIDENCE',
+    },
+    {
+      command: 'inspect_terminal_closure_verifier',
+      label: 'Inspect terminal closure verifier',
+      route: routeMap.terminalClosureVerifier,
+      surface: 'closure_verifier',
+      audience: ['auditor', 'engineering', 'regulator'],
+      readiness: roomPassport.recursiveLoopFrozen === true && roomPassport.noR70F === true,
+    },
+    {
+      command: 'inspect_terminal_closure_certificate',
+      label: 'Inspect terminal closure certificate',
+      route: routeMap.terminalClosureCertificate,
+      surface: 'closure_certificate',
+      audience: ['auditor', 'engineering', 'regulator'],
+      readiness: roomPassport.terminalStop === true && roomPassport.jsonResponseOnly === true,
+    },
+  ];
+
+  const readinessIndex = {
+    buyerReady:
+      diligenceRoom.stakeholderRooms?.find((room) => room.room === 'buyer')?.ready === true,
+    boardReady:
+      diligenceRoom.stakeholderRooms?.find((room) => room.room === 'board')?.ready === true,
+    regulatorReady: roomPassport.regulatorReady === true,
+    investorReady: roomPassport.investorReady === true,
+    auditorReady: roomPassport.auditorReady === true,
+    engineeringReady: roomPassport.engineeringReady === true,
+    demoReady: commercialAssertions.buyerDemoReady === true,
+    crmEvidenceOperatingSystem: commercialAssertions.crmEvidenceOperatingSystem === true,
+    auditReadyDecisionLayer: commercialAssertions.auditReadyDecisionLayer === true,
+    terminalStop: diligenceRoom.terminalStop === true,
+    noR70F: diligenceRoom.noR70F === true,
+    recursiveLoopFrozen: diligenceRoom.recursiveLoopFrozen === true,
+    jsonResponseOnly: diligenceRoom.jsonResponseOnly === true,
+    noFilesystemWrite: diligenceRoom.noFilesystemWrite === true,
+    persistenceMode: diligenceRoom.persistenceMode || 'JSON_RESPONSE_ONLY',
+  };
+
+  const aiCommandPrompts = [
+    {
+      promptId: 'explain_terminal_evidence_status',
+      prompt: 'Explain why the CRM terminal evidence chain is verified and buyer-ready.',
+      sourceCommands: ['open_terminal_summary', 'open_terminal_diligence_room'],
+      ready: readinessIndex.demoReady === true,
+    },
+    {
+      promptId: 'show_regulator_evidence',
+      prompt: 'Show the regulator-ready hash, authority, route, and JSON-only evidence posture.',
+      sourceCommands: ['open_terminal_manifest', 'open_terminal_diligence_room'],
+      ready: readinessIndex.regulatorReady === true,
+    },
+    {
+      promptId: 'show_investor_moat',
+      prompt: 'Show why WILSY CRM is an evidence operating system and not a generic CRM dashboard.',
+      sourceCommands: ['open_terminal_packet', 'open_terminal_diligence_room'],
+      ready:
+        readinessIndex.investorReady === true && readinessIndex.crmEvidenceOperatingSystem === true,
+    },
+    {
+      promptId: 'prove_no_recursive_expansion',
+      prompt: 'Prove that the recursive proof loop is frozen and that no R70F is required.',
+      sourceCommands: ['inspect_terminal_closure_verifier', 'open_terminal_diligence_room'],
+      ready: readinessIndex.noR70F === true && readinessIndex.recursiveLoopFrozen === true,
+    },
+  ];
+
+  const cockpitWiringHints = {
+    topKpi: 'VERIFIED_TERMINAL_EVIDENCE',
+    primaryAction: 'open_terminal_diligence_room',
+    secondaryActions: ['open_terminal_packet', 'open_terminal_manifest', 'open_terminal_summary'],
+    warningSuppression:
+      readinessIndex.noR70F === true
+        ? 'No recursive proof expansion required.'
+        : 'Recursive proof posture degraded.',
+    evidenceHudFields: [
+      'buyerReady',
+      'regulatorReady',
+      'investorReady',
+      'auditorReady',
+      'engineeringReady',
+      'terminalStop',
+      'noR70F',
+      'recursiveLoopFrozen',
+      'jsonResponseOnly',
+      'noFilesystemWrite',
+    ],
+    routeMap,
+  };
+
+  const ok =
+    diligenceRoom.ok === true &&
+    commandIndex.length === 7 &&
+    commandIndex.every((command) => command.readiness === true) &&
+    Object.entries(readinessIndex)
+      .filter(([key]) => key !== 'persistenceMode')
+      .every(([, value]) => value === true) &&
+    readinessIndex.persistenceMode === 'JSON_RESPONSE_ONLY' &&
+    aiCommandPrompts.length === 4 &&
+    aiCommandPrompts.every((prompt) => prompt.ready === true) &&
+    cockpitWiringHints.primaryAction === 'open_terminal_diligence_room' &&
+    cockpitWiringHints.topKpi === 'VERIFIED_TERMINAL_EVIDENCE' &&
+    cockpitWiringHints.warningSuppression === 'No recursive proof expansion required.';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COMMAND_INDEX_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COMMAND_INDEX_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COMMAND_INDEX_DEGRADED',
+    indexType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_COMMAND_INDEX',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: readinessIndex.recursiveLoopFrozen,
+    buyerReadableStatus: diligenceRoom.buyerReadableStatus,
+    commandIndex,
+    readinessIndex,
+    aiCommandPrompts,
+    cockpitWiringHints,
+    routeMap,
+    sourceTerminalEvidenceDiligenceRoom: diligenceRoom,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
