@@ -1,0 +1,1881 @@
+.leadOperatingRoom {
+  --lead-bg: #050505;
+  --lead-card: rgba(13, 13, 13, 0.96);
+  --lead-card-strong: rgba(18, 18, 18, 0.98);
+  --lead-inner: rgba(8, 8, 8, 0.98);
+  --lead-border: rgba(115, 115, 115, 0.42);
+  --lead-border-soft: rgba(64, 64, 64, 0.7);
+  --lead-muted: rgba(163, 163, 163, 0.82);
+  --lead-muted-dim: rgba(115, 115, 115, 0.72);
+  --lead-text: #f5f5f5;
+  --lead-accent: #22c55e;
+  --lead-accent-soft: rgba(34, 197, 94, 0.14);
+  --lead-gold: #efe7a5;
+  --lead-warning: #f59e0b;
+  --lead-primary: linear-gradient(135deg, #f4f1a2 0%, #22c55e 70%, #16a34a 100%);
+  --lead-shadow: 0 20px 70px rgba(0, 0, 0, 0.62);
+  --lead-shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.44);
+
+  min-height: calc(100vh - 28px);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 18px;
+  color: var(--lead-text);
+  background:
+    radial-gradient(circle at 6% -8%, rgba(34, 197, 94, 0.12), transparent 30%),
+    radial-gradient(circle at 92% 2%, rgba(14, 165, 233, 0.1), transparent 26%),
+    linear-gradient(180deg, rgba(8, 8, 8, 0.98), rgba(3, 3, 3, 1)),
+    var(--lead-bg);
+  padding: 0;
+  transition: background 260ms ease, color 260ms ease;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="CYBER_TERMINAL"] {
+  --lead-bg: #020403;
+  --lead-card: rgba(3, 8, 5, 0.97);
+  --lead-card-strong: rgba(4, 14, 8, 0.98);
+  --lead-inner: rgba(0, 0, 0, 0.98);
+  --lead-border: rgba(0, 255, 148, 0.28);
+  --lead-border-soft: rgba(0, 255, 148, 0.14);
+  --lead-muted: rgba(134, 239, 172, 0.64);
+  --lead-muted-dim: rgba(74, 222, 128, 0.48);
+  --lead-text: #d9ffe9;
+  --lead-accent: #00ff94;
+  --lead-accent-soft: rgba(0, 255, 148, 0.11);
+  --lead-gold: #d9ff99;
+  --lead-warning: #facc15;
+  --lead-primary: linear-gradient(135deg, #00ff94 0%, #ccff66 100%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="QUANTUM_GLASS"] {
+  --lead-bg: #07111f;
+  --lead-card: rgba(255, 255, 255, 0.055);
+  --lead-card-strong: rgba(255, 255, 255, 0.075);
+  --lead-inner: rgba(255, 255, 255, 0.035);
+  --lead-border: rgba(125, 211, 252, 0.25);
+  --lead-border-soft: rgba(255, 255, 255, 0.08);
+  --lead-muted: rgba(203, 213, 225, 0.74);
+  --lead-muted-dim: rgba(148, 163, 184, 0.58);
+  --lead-text: #eef8ff;
+  --lead-accent: #67e8f9;
+  --lead-accent-soft: rgba(103, 232, 249, 0.12);
+  --lead-gold: #bae6fd;
+  --lead-warning: #fbbf24;
+  --lead-primary: linear-gradient(135deg, #67e8f9 0%, #60a5fa 100%);
+}
+
+.appHeader,
+.commandStrip,
+.telemetryPanel,
+.sourcePanel,
+.ledgerPanel,
+.intelligencePanel,
+.createSurface,
+.drawer,
+.drawerWide {
+  border: 1px solid var(--lead-border-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
+    var(--lead-card);
+  box-shadow: var(--lead-shadow-soft);
+}
+
+.appHeader {
+  min-height: 112px;
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 22px 24px;
+  border-radius: 22px;
+}
+
+.appIdentity {
+  display: grid;
+  gap: 8px;
+}
+
+.appIdentity small,
+.appIdentity em,
+.telemetryPanel h3,
+.sourcePanel h3,
+.ledgerPanel small,
+.createHeader small {
+  color: var(--lead-gold);
+  font-size: 0.67rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.appIdentity strong {
+  max-width: 100%;
+  color: var(--lead-text);
+  font-size: clamp(1.95rem, 2.4vw, 3rem);
+  letter-spacing: -0.065em;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+.appIdentity em {
+  color: var(--lead-muted-dim);
+  letter-spacing: 0.22em;
+}
+
+.skinSwitcher {
+  display: inline-flex;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid var(--lead-border-soft);
+  background: rgba(0, 0, 0, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.skinButton,
+.skinActive {
+  min-height: 36px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--lead-muted-dim);
+  padding: 7px 12px;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.skinActive {
+  color: #031007;
+  background: var(--lead-primary);
+  font-weight: 950;
+  box-shadow: 0 8px 22px rgba(34, 197, 94, 0.18);
+}
+
+.commandStrip {
+  position: sticky;
+  top: 0;
+  z-index: 55;
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: minmax(360px, 0.86fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 22px;
+  backdrop-filter: blur(22px);
+}
+
+.commandSearch {
+  height: 54px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 0 16px;
+  border-radius: 15px;
+  border: 1px solid var(--lead-border-soft);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--lead-gold);
+}
+
+.commandSearch input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--lead-text);
+  font-weight: 850;
+  letter-spacing: 0.09em;
+}
+
+.commandSearch input::placeholder {
+  color: var(--lead-muted-dim);
+}
+
+.commandSearch kbd {
+  border-radius: 10px;
+  padding: 6px 9px;
+  border: 1px solid var(--lead-border-soft);
+  color: var(--lead-muted);
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.commandActions {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.toolbarButton,
+.primaryToolbarButton,
+.ledgerPanel button,
+.telemetryPanel button,
+.sourcePanel button,
+.createHeader button,
+.createCommandPanel button,
+.drawer button,
+.drawerWide button {
+  min-height: 48px;
+  border-radius: 15px;
+  border: 1px solid var(--lead-border-soft);
+  background: var(--lead-card-strong);
+  color: var(--lead-text);
+  padding: 10px 15px;
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 900;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.toolbarButton:hover,
+.ledgerPanel button:hover,
+.sourcePanel button:hover,
+.createHeader button:hover,
+.createCommandPanel button:hover {
+  transform: translateY(-1px);
+  border-color: var(--lead-border);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.toolbarButton:disabled,
+.primaryToolbarButton:disabled,
+.ledgerPanel button:disabled,
+.createHeader button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.primaryToolbarButton,
+.saveButton {
+  background: var(--lead-primary) !important;
+  color: #031007 !important;
+  border-color: rgba(250, 240, 190, 0.72) !important;
+}
+
+.coreToolsWrap {
+  position: relative;
+}
+
+.coreToolsMenu {
+  position: absolute;
+  right: 0;
+  top: 56px;
+  width: 244px;
+  z-index: 90;
+  padding: 8px;
+  border-radius: 18px;
+  border: 1px solid var(--lead-border-soft);
+  background: rgba(5, 7, 12, 0.985);
+  box-shadow: 0 28px 88px rgba(0, 0, 0, 0.55);
+  display: grid;
+  gap: 5px;
+}
+
+.coreToolsMenu button {
+  width: 100%;
+  min-height: 40px;
+  justify-content: flex-start;
+}
+
+.coreGrid,
+.coreGridSplit {
+  min-height: calc(100vh - 232px);
+  display: grid;
+  grid-template-columns: minmax(310px, 340px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.coreGridSplit {
+  grid-template-columns: minmax(300px, 330px) minmax(0, 1fr) minmax(290px, 340px);
+}
+
+.leftColumn,
+.rightColumn {
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.telemetryPanel,
+.sourcePanel {
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  gap: 11px;
+  overflow: hidden;
+}
+
+.telemetryPanel h3,
+.sourcePanel h3 {
+  margin: 0 0 5px;
+}
+
+.telemetryPanel article {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 3px 12px;
+  align-items: center;
+  border-radius: 15px;
+  border: 1px solid var(--lead-border-soft);
+  background: var(--lead-inner);
+  padding: 12px 14px;
+}
+
+.telemetryPanel article span {
+  color: var(--lead-muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.telemetryPanel article strong {
+  grid-row: 1 / 3;
+  grid-column: 2;
+  max-width: 132px;
+  color: var(--lead-text);
+  font-size: 1.18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.telemetryPanel article:last-child strong {
+  color: var(--lead-warning);
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.24);
+  border-radius: 9px;
+  padding: 4px 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+}
+
+.telemetryPanel article em {
+  color: var(--lead-gold);
+  font-size: 0.63rem;
+  font-style: normal;
+  letter-spacing: 0.11em;
+}
+
+.complianceTabs {
+  border: 1px solid var(--lead-border-soft);
+  border-radius: 22px;
+  background: var(--lead-card);
+  box-shadow: var(--lead-shadow-soft);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.complianceTab,
+.complianceTabActive,
+.routeLive,
+.routeGap {
+  min-height: 44px;
+  border-radius: 13px;
+  border: 1px solid var(--lead-border-soft);
+  background: var(--lead-inner);
+  color: var(--lead-text);
+  display: inline-flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 11px;
+  cursor: pointer;
+  font-weight: 950;
+}
+
+.complianceTabActive {
+  background: var(--lead-accent-soft);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: var(--lead-accent);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.06) inset;
+}
+
+.routeLive {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.32);
+}
+
+.routeGap {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.25);
+}
+
+.routeEmpty {
+  min-height: 230px;
+  border-radius: 18px;
+  border: 1px solid var(--lead-border-soft);
+  background: var(--lead-inner);
+  padding: 18px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 12px;
+}
+
+.routeEmpty svg {
+  color: var(--lead-muted);
+}
+
+.routeEmpty p {
+  color: var(--lead-muted);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.ledgerPanel {
+  border-radius: 22px;
+  min-height: calc(100vh - 232px);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.ledgerPanel header {
+  min-height: 82px;
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--lead-border-soft);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.ledgerPanel header span {
+  display: grid;
+  gap: 6px;
+}
+
+.ledgerPanel header strong {
+  color: var(--lead-text);
+  font-size: 1.22rem;
+}
+
+.ledgerPanel header div {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.tableFrame {
+  min-width: 0;
+  overflow: auto;
+}
+
+.tableFrame table {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+}
+
+.tableFrame th,
+.tableFrame td {
+  padding: 15px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.tableFrame th {
+  color: var(--lead-muted);
+  text-transform: uppercase;
+  font-size: 0.66rem;
+  letter-spacing: 0.13em;
+}
+
+.tableFrame code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--lead-accent);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
+.statusVERIFIED,
+.statusPENDING,
+.statusFAILED {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.statusVERIFIED {
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.statusPENDING {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.statusFAILED {
+  background: rgba(244, 63, 94, 0.12);
+  color: #fda4af;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.emptyState {
+  min-height: 390px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.emptyState svg {
+  color: var(--lead-muted);
+  filter: drop-shadow(0 0 18px rgba(34, 197, 94, 0.1));
+}
+
+.emptyState strong {
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.emptyState p {
+  max-width: 560px;
+  color: var(--lead-muted);
+  line-height: 1.65;
+}
+
+.emptyState div {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.intelligencePanel,
+.createSurface,
+.drawer,
+.drawerWide {
+  border-radius: 22px;
+  padding: 18px;
+}
+
+.intelligencePanel {
+  display: grid;
+  align-content: start;
+  gap: 13px;
+}
+
+.createSurface {
+  min-height: calc(100vh - 232px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.createHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--lead-border-soft);
+}
+
+.createHeader span {
+  display: grid;
+  gap: 6px;
+}
+
+.createHeader strong {
+  font-size: clamp(1.7rem, 2vw, 2.45rem);
+}
+
+.createHeader em {
+  color: var(--lead-muted);
+  font-style: normal;
+}
+
+.createHeader div {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.createGrid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 370px;
+  gap: 18px;
+  padding-top: 18px;
+  overflow: auto;
+}
+
+.formPanel {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.formPanel h3 {
+  margin: 0;
+  color: var(--lead-gold);
+  letter-spacing: 0.08em;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.formGrid label,
+.descriptionField {
+  display: grid;
+  gap: 7px;
+}
+
+.formGrid span,
+.descriptionField span {
+  color: var(--lead-gold);
+  font-size: 0.72rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+
+.formGrid input,
+.formGrid select,
+.descriptionField textarea {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 14px;
+  border: 1px solid var(--lead-border-soft);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--lead-text);
+  padding: 11px 13px;
+  font-weight: 750;
+}
+
+.descriptionField textarea {
+  min-height: 136px;
+  resize: vertical;
+}
+
+.wideField {
+  grid-column: span 2;
+}
+
+.createCommandPanel {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.createCommandPanel section {
+  border-radius: 18px;
+  border: 1px solid var(--lead-border-soft);
+  background: var(--lead-card-strong);
+  padding: 16px;
+  display: grid;
+  gap: 11px;
+}
+
+.createCommandPanel p,
+.createCommandPanel span {
+  color: var(--lead-muted);
+  line-height: 1.55;
+}
+
+.drawer,
+.drawerWide {
+  position: fixed;
+  right: 28px;
+  top: 96px;
+  bottom: 28px;
+  z-index: 90;
+  width: min(720px, calc(100vw - 56px));
+  background: rgba(9, 14, 24, 0.985);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.55);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+  overflow: auto;
+}
+
+.drawerWide {
+  left: 120px;
+  width: auto;
+}
+
+.drawer header,
+.drawerWide header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(86px, 1fr));
+  gap: 8px;
+}
+
+.calendarGrid button {
+  min-height: 92px;
+  display: grid;
+  align-content: start;
+  justify-content: start;
+  gap: 5px;
+}
+
+.commandTiles,
+.setupGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.commandTiles button,
+.setupGrid article button {
+  justify-content: flex-start;
+}
+
+.setupGrid article {
+  border-radius: 18px;
+  border: 1px solid var(--lead-border-soft);
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.loadingVeil {
+  position: fixed;
+  inset: auto 28px 28px auto;
+  z-index: 110;
+  border-radius: 999px;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid var(--lead-border);
+  color: var(--lead-text);
+}
+
+@media (max-width: 1440px) {
+  .commandStrip,
+  .appHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .commandActions {
+    justify-content: flex-start;
+  }
+
+  .coreGrid,
+  .coreGridSplit,
+  .createGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .formGrid,
+  .commandTiles,
+  .setupGrid,
+  .complianceTabs {
+    grid-template-columns: 1fr;
+  }
+
+  .wideField {
+    grid-column: span 1;
+  }
+
+  .drawer,
+  .drawerWide {
+    inset: 74px 12px 12px;
+    width: auto;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R66E - THEME ENGINE BRIDGE + COCKPIT LAYOUT LOCK
+   The Lead cockpit now consumes the shared wilsyOperatingSkins registry.
+   This section fixes viewport rhythm without touching the CRM side rail.
+   ======================================================================== */
+
+.leadOperatingRoom {
+  isolation: isolate;
+  padding: 18px;
+}
+
+.commandStrip {
+  position: relative !important;
+  top: auto !important;
+  z-index: 30;
+}
+
+.coreGrid,
+.coreGridSplit {
+  align-items: stretch;
+}
+
+.leftColumn {
+  align-self: start;
+  position: sticky;
+  top: 18px;
+}
+
+.ledgerPanel {
+  min-height: 640px;
+}
+
+.telemetryPanel,
+.sourcePanel,
+.complianceTabs,
+.ledgerPanel {
+  backdrop-filter: blur(18px);
+}
+
+.skinSwitcher::before {
+  content: "THEME ENGINE";
+  align-self: center;
+  padding: 0 8px;
+  color: var(--lead-muted-dim);
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+}
+
+.leadOperatingRoom[data-wilsy-theme-engine-source="wilsyOperatingSkins"] {
+  --theme-engine-bridge: 1;
+}
+
+.leadOperatingRoom[data-wilsy-theme-engine-source="wilsyOperatingSkins"] .appHeader {
+  border-color: color-mix(in srgb, var(--lead-border) 72%, transparent);
+}
+
+.leadOperatingRoom[data-wilsy-theme-engine-source="wilsyOperatingSkins"] .skinActive {
+  box-shadow:
+    0 10px 26px rgba(34, 197, 94, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.leadOperatingRoom[style] .appHeader,
+.leadOperatingRoom[style] .commandStrip,
+.leadOperatingRoom[style] .telemetryPanel,
+.leadOperatingRoom[style] .sourcePanel,
+.leadOperatingRoom[style] .ledgerPanel {
+  border-color: var(--lead-engine-border, var(--lead-border-soft));
+}
+
+@media (max-width: 1440px) {
+  .leftColumn {
+    position: static;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R66F - ZERO DEAD SPACE ACTIVATION BOARD
+   Empty data is now an operating surface, not dead black canvas.
+   ======================================================================== */
+
+.ledgerPanel {
+  min-height: 560px !important;
+}
+
+.emptyState {
+  display: none !important;
+}
+
+.emptyActivationBoard {
+  min-height: 430px;
+  width: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 20px;
+  text-align: left;
+}
+
+.activationHero {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  border-radius: 20px;
+  border: 1px solid var(--lead-border-soft);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(34, 197, 94, 0.12), transparent 36%),
+    var(--lead-inner);
+  padding: 16px;
+}
+
+.activationHero > span {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: var(--lead-accent);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.26);
+}
+
+.activationHero div {
+  display: grid;
+  gap: 5px;
+}
+
+.activationHero small,
+.activationCard small,
+.activationCardPrimary small {
+  color: var(--lead-gold);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 950;
+}
+
+.activationHero strong {
+  color: var(--lead-text);
+  font-size: clamp(1.15rem, 1.35vw, 1.65rem);
+  letter-spacing: -0.035em;
+}
+
+.activationHero p,
+.activationCard p,
+.activationCardPrimary p {
+  margin: 0;
+  color: var(--lead-muted);
+  line-height: 1.45;
+}
+
+.activationHero em {
+  justify-self: end;
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--lead-muted);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--lead-border-soft);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.activationGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.activationCard,
+.activationCardPrimary {
+  min-height: 172px;
+  border-radius: 18px;
+  border: 1px solid var(--lead-border-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
+    var(--lead-inner);
+  padding: 16px;
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.activationCard svg,
+.activationCardPrimary svg {
+  color: var(--lead-accent);
+}
+
+.activationCard strong,
+.activationCardPrimary strong {
+  color: var(--lead-text);
+  font-size: 1rem;
+}
+
+.activationCard button,
+.activationCardPrimary button {
+  align-self: end;
+  min-height: 40px;
+  border-radius: 13px;
+  border: 1px solid var(--lead-border-soft);
+  background: var(--lead-card-strong);
+  color: var(--lead-text);
+  padding: 8px 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.activationCard button:disabled {
+  opacity: 0.44;
+  cursor: not-allowed;
+}
+
+.activationCardPrimary {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(250, 240, 190, 0.13), transparent 34%),
+    radial-gradient(circle at 0% 100%, rgba(34, 197, 94, 0.16), transparent 38%),
+    var(--lead-inner);
+  border-color: rgba(34, 197, 94, 0.36);
+}
+
+.activationCardPrimary button {
+  background: var(--lead-primary);
+  color: #031007;
+  border-color: rgba(250, 240, 190, 0.72);
+}
+
+.activationFooter {
+  min-height: 44px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.activationFooter span {
+  border-radius: 999px;
+  border: 1px solid var(--lead-border-soft);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--lead-muted);
+  padding: 7px 10px;
+  font-size: 0.66rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+
+@media (max-width: 1320px) {
+  .activationGrid {
+    grid-template-columns: repeat(2, minmax(210px, 1fr));
+  }
+
+  .activationHero {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .activationHero em {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .emptyActivationBoard {
+    padding: 14px;
+  }
+
+  .activationGrid,
+  .activationHero {
+    grid-template-columns: 1fr;
+  }
+
+  .activationHero > span {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R66G - AUTO TELEMETRY + NO DEAD LEDGER
+   Empty ledger board is outside the table, responsive, and cannot clip.
+   ======================================================================== */
+
+.ledgerPanel[data-wilsy-ledger-state="empty"] {
+  min-height: auto !important;
+  overflow: hidden !important;
+}
+
+.ledgerPanel[data-wilsy-ledger-state="empty"] header {
+  min-height: 70px;
+}
+
+.ledgerEmptyFrame {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 18px;
+}
+
+.ledgerEmptyFrame .emptyActivationBoard {
+  min-height: 0;
+  padding: 0;
+}
+
+.ledgerEmptyFrame .activationHero {
+  margin-bottom: 14px;
+}
+
+.ledgerEmptyFrame .activationGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.ledgerEmptyFrame .activationCard,
+.ledgerEmptyFrame .activationCardPrimary {
+  min-width: 0;
+  min-height: 160px;
+}
+
+.ledgerEmptyFrame .activationCard strong,
+.ledgerEmptyFrame .activationCardPrimary strong,
+.ledgerEmptyFrame .activationCard p,
+.ledgerEmptyFrame .activationCardPrimary p {
+  overflow-wrap: anywhere;
+}
+
+.ledgerEmptyFrame .activationFooter {
+  margin-top: 14px;
+}
+
+.ledgerPanel[data-wilsy-ledger-state="empty"] .tableFrame {
+  display: none !important;
+}
+
+.telemetryPanel article:last-child strong:not(:empty) {
+  max-width: 152px;
+}
+
+.sourcePanel .routeLive,
+.sourcePanel .routeGap {
+  min-width: 0;
+}
+
+@media (max-width: 1500px) {
+  .ledgerEmptyFrame .activationGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 920px) {
+  .ledgerEmptyFrame .activationGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R67A - CRM THEME ENGINE AUTHORITY BRIDGE
+   The Lead cockpit now receives skin authority through the CRM theme bridge.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-theme-bridge-version="R67A-CRM-THEME-ENGINE-AUTHORITY-BRIDGE"] {
+  --lead-authority-bridge: "wilsyOperatingSkins";
+}
+
+.leadOperatingRoom[data-wilsy-theme-bridge-version] {
+  background:
+    radial-gradient(circle at 5% -8%, color-mix(in srgb, var(--lead-accent) 14%, transparent), transparent 30%),
+    radial-gradient(circle at 94% 0%, color-mix(in srgb, var(--lead-gold) 9%, transparent), transparent 28%),
+    var(--lead-bg);
+}
+
+.leadOperatingRoom[data-wilsy-theme-bridge-version] .skinSwitcher::before {
+  content: "WILSY SKIN ENGINE";
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_PEARL"],
+.leadOperatingRoom[data-wilsy-lead-skin="PEARL"] {
+  color-scheme: light;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_PEARL"] .commandSearch,
+.leadOperatingRoom[data-wilsy-lead-skin="PEARL"] .commandSearch,
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_PEARL"] .telemetryPanel article,
+.leadOperatingRoom[data-wilsy-lead-skin="PEARL"] .telemetryPanel article,
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_PEARL"] .activationCard,
+.leadOperatingRoom[data-wilsy-lead-skin="PEARL"] .activationCard {
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_NEBULA_COMMAND"] .skinActive,
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_GOLD"] .skinActive,
+.leadOperatingRoom[data-wilsy-lead-skin="GOLD"] .skinActive {
+  box-shadow:
+    0 12px 34px color-mix(in srgb, var(--lead-accent) 32%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--lead-gold) 42%, transparent) inset;
+}
+
+.leadOperatingRoom[data-wilsy-theme-bridge-version] .appHeader,
+.leadOperatingRoom[data-wilsy-theme-bridge-version] .commandStrip,
+.leadOperatingRoom[data-wilsy-theme-bridge-version] .ledgerPanel,
+.leadOperatingRoom[data-wilsy-theme-bridge-version] .telemetryPanel,
+.leadOperatingRoom[data-wilsy-theme-bridge-version] .sourcePanel {
+  border-color: color-mix(in srgb, var(--lead-border) 64%, transparent);
+}
+
+/* ========================================================================
+   WILSY OS R67D - SOVEREIGN HEADER COMMAND BRIDGE
+   Header becomes the Lead app bar: shortcuts, search, investor strip,
+   root/source/compliance posture and theme authority in one command surface.
+   ======================================================================== */
+
+.appHeader[data-wilsy-lead-appbar="sovereign-header-command-bridge"] {
+  min-height: auto !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 18px !important;
+  padding: 22px !important;
+  border-radius: 24px !important;
+  background:
+    radial-gradient(circle at 4% 0%, color-mix(in srgb, var(--lead-accent) 13%, transparent), transparent 28%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--lead-gold) 9%, transparent), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
+    var(--lead-card) !important;
+}
+
+.headerPrimaryRow {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.headerIdentity {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.headerIdentity small {
+  color: var(--lead-gold);
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 950;
+}
+
+.headerIdentity strong {
+  color: var(--lead-text);
+  font-size: clamp(2.2rem, 3.2vw, 4.35rem);
+  line-height: 0.92;
+  letter-spacing: -0.08em;
+  text-wrap: balance;
+}
+
+.headerIdentity em {
+  color: var(--lead-muted-dim);
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.headerThemeDock {
+  justify-self: end;
+  width: min(100%, 820px);
+}
+
+.headerThemeDock .skinSwitcher {
+  width: 100%;
+  min-height: 62px;
+  justify-content: flex-end;
+}
+
+.headerThemeDock .skinSwitcher::before {
+  margin-right: auto;
+  content: "WILSY SKIN ENGINE";
+}
+
+.headerCommandGrid {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.95fr) minmax(420px, 1.05fr);
+  grid-template-areas:
+    "search shortcuts"
+    "investor shortcuts";
+  gap: 14px 18px;
+  align-items: stretch;
+}
+
+.headerSearch {
+  grid-area: search;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 0 16px;
+  border-radius: 17px;
+  border: 1px solid var(--lead-border-soft);
+  background: rgba(0, 0, 0, 0.32);
+  color: var(--lead-gold);
+}
+
+.headerSearch input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--lead-text);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.headerSearch input::placeholder {
+  color: var(--lead-muted-dim);
+}
+
+.headerSearch kbd {
+  border-radius: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--lead-border-soft);
+  color: var(--lead-muted);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.headerInvestorStrip {
+  grid-area: investor;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.headerInvestorStrip article {
+  min-height: 78px;
+  border-radius: 16px;
+  border: 1px solid var(--lead-border-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
+    var(--lead-inner);
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  min-width: 0;
+}
+
+.headerInvestorStrip small {
+  color: var(--lead-gold);
+  font-size: 0.57rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 950;
+}
+
+.headerInvestorStrip strong {
+  color: var(--lead-text);
+  font-size: 0.98rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headerInvestorStrip em {
+  color: var(--lead-muted-dim);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-style: normal;
+}
+
+.headerShortcutBar {
+  grid-area: shortcuts;
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(116px, 1fr));
+  gap: 10px;
+}
+
+.headerShortcutBar > button,
+.headerMoreDock > button {
+  min-height: 58px;
+  border-radius: 16px;
+  border: 1px solid var(--lead-border-soft);
+  background: var(--lead-card-strong);
+  color: var(--lead-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 12px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.headerShortcutBar > button:hover,
+.headerMoreDock > button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--lead-accent) 48%, var(--lead-border-soft));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+.headerShortcutBar > button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.headerPrimaryAction {
+  background: var(--lead-primary) !important;
+  color: #031007 !important;
+  border-color: color-mix(in srgb, var(--lead-gold) 70%, transparent) !important;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--lead-accent) 22%, transparent);
+}
+
+.headerMoreDock {
+  position: relative;
+  min-width: 0;
+}
+
+.headerMoreDock > button {
+  width: 100%;
+}
+
+.headerMoreMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 95;
+  width: 232px;
+  padding: 8px;
+  border-radius: 18px;
+  border: 1px solid var(--lead-border-soft);
+  background: rgba(5, 7, 12, 0.985);
+  box-shadow: 0 28px 88px rgba(0, 0, 0, 0.55);
+  display: grid;
+  gap: 6px;
+}
+
+.headerMoreMenu button {
+  min-height: 40px;
+  border-radius: 12px;
+  justify-content: flex-start;
+  padding: 8px 10px;
+}
+
+.commandStrip {
+  display: none !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_PEARL"] .headerSearch,
+.leadOperatingRoom[data-wilsy-lead-skin="PEARL"] .headerSearch,
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_PEARL"] .headerInvestorStrip article,
+.leadOperatingRoom[data-wilsy-lead-skin="PEARL"] .headerInvestorStrip article {
+  background: rgba(255, 255, 255, 0.88);
+}
+
+@media (max-width: 1560px) {
+  .headerCommandGrid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "search"
+      "investor"
+      "shortcuts";
+  }
+
+  .headerShortcutBar {
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 1200px) {
+  .headerPrimaryRow {
+    grid-template-columns: 1fr;
+  }
+
+  .headerThemeDock {
+    justify-self: stretch;
+  }
+
+  .headerInvestorStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .headerShortcutBar {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .appHeader[data-wilsy-lead-appbar="sovereign-header-command-bridge"] {
+    padding: 16px !important;
+  }
+
+  .headerInvestorStrip,
+  .headerShortcutBar {
+    grid-template-columns: 1fr;
+  }
+
+  .headerThemeDock .skinSwitcher {
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R67E - HEADER THEME TOKEN AUTHORITY + ALIGNMENT LOCK
+   The skin engine now changes actual variables and the header locks to
+   disciplined command-bar alignment instead of decorative placeholder layout.
+   ======================================================================== */
+
+.appHeader[data-wilsy-lead-appbar="sovereign-header-command-bridge"] {
+  padding: 20px 24px !important;
+  border-color: color-mix(in srgb, var(--lead-border) 68%, transparent) !important;
+  background:
+    radial-gradient(circle at 4% -10%, color-mix(in srgb, var(--lead-accent) 18%, transparent), transparent 31%),
+    linear-gradient(180deg, color-mix(in srgb, var(--lead-card-strong) 74%, transparent), var(--lead-card)) !important;
+}
+
+.headerPrimaryRow {
+  grid-template-columns: minmax(420px, 0.76fr) minmax(520px, 1.24fr) !important;
+  gap: 28px !important;
+  align-items: center !important;
+}
+
+.headerIdentity {
+  justify-content: center;
+  min-height: 116px;
+}
+
+.headerIdentity small {
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.headerIdentity strong {
+  font-size: clamp(2.65rem, 3.15vw, 4.8rem) !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.095em !important;
+  max-width: 760px;
+}
+
+.headerIdentity em {
+  max-width: 760px;
+  line-height: 1.35;
+  word-spacing: 0.14em;
+}
+
+.headerThemeDock {
+  justify-self: end !important;
+  align-self: center !important;
+  width: min(100%, 1040px) !important;
+  max-width: 1040px;
+}
+
+.headerThemeDock .skinSwitcher {
+  min-height: 70px !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+  overflow: hidden !important;
+  border-radius: 20px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.005)),
+    var(--lead-inner) !important;
+}
+
+.headerThemeDock .skinSwitcher::before {
+  content: "THEME AUTHORITY" !important;
+  flex: 0 0 auto !important;
+  min-width: 154px !important;
+  margin-right: auto !important;
+  color: var(--lead-muted-dim) !important;
+  font-size: 0.62rem !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0.26em !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+}
+
+.headerThemeDock .skinButton,
+.headerThemeDock .skinActive {
+  flex: 0 0 auto !important;
+  min-width: 88px !important;
+  min-height: 46px !important;
+  padding: 10px 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.18em !important;
+}
+
+.headerThemeDock .skinActive {
+  color: #031007 !important;
+  background: var(--lead-primary) !important;
+  border: 1px solid color-mix(in srgb, var(--lead-gold) 68%, transparent) !important;
+  box-shadow:
+    0 16px 42px color-mix(in srgb, var(--lead-accent) 34%, transparent),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset !important;
+}
+
+.headerCommandGrid {
+  border-top: 1px solid color-mix(in srgb, var(--lead-border-soft) 72%, transparent);
+  padding-top: 18px;
+}
+
+.headerInvestorStrip article,
+.headerSearch,
+.headerShortcutBar > button,
+.headerMoreDock > button {
+  border-color: color-mix(in srgb, var(--lead-border) 58%, var(--lead-border-soft)) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_AURORA"] .appHeader,
+.leadOperatingRoom[data-wilsy-lead-skin="AURORA"] .appHeader {
+  box-shadow: 0 24px 80px rgba(103, 232, 249, 0.08);
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_NEBULA_COMMAND"] .appHeader,
+.leadOperatingRoom[data-wilsy-lead-skin="NEBULA"] .appHeader {
+  box-shadow: 0 24px 80px rgba(34, 197, 94, 0.09);
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="WILSY_PEARL"] .appHeader,
+.leadOperatingRoom[data-wilsy-lead-skin="PEARL"] .appHeader {
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 1480px) {
+  .headerPrimaryRow {
+    grid-template-columns: 1fr !important;
+  }
+
+  .headerThemeDock {
+    justify-self: stretch !important;
+    width: 100% !important;
+    max-width: none;
+  }
+
+  .headerThemeDock .skinSwitcher {
+    overflow-x: auto !important;
+    justify-content: flex-start !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .headerIdentity {
+    min-height: auto;
+  }
+
+  .headerIdentity strong {
+    font-size: clamp(2.1rem, 12vw, 3.2rem) !important;
+  }
+
+  .headerThemeDock .skinSwitcher::before {
+    min-width: 128px !important;
+  }
+
+  .headerThemeDock .skinButton,
+  .headerThemeDock .skinActive {
+    min-width: 82px !important;
+  }
+}
+
+/* ========================================================================
+   WILSY OS R67F - FORENSIC VIOLET HEADER LOCK
+   Focus: attached Lead Operating Room header only.
+   ======================================================================== */
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .appHeader,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .appHeader {
+  min-height: 176px !important;
+  padding: 26px 34px !important;
+  border-radius: 24px !important;
+  border-color: color-mix(in srgb, var(--lead-border) 72%, transparent) !important;
+  background:
+    radial-gradient(circle at 7% 0%, color-mix(in srgb, var(--lead-accent) 20%, transparent), transparent 28%),
+    radial-gradient(circle at 78% 8%, color-mix(in srgb, var(--lead-gold) 9%, transparent), transparent 24%),
+    linear-gradient(135deg, color-mix(in srgb, var(--lead-card-strong) 88%, transparent), var(--lead-bg)) !important;
+  box-shadow:
+    0 28px 92px color-mix(in srgb, var(--lead-header-glow, var(--lead-accent)) 32%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerPrimaryRow,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerPrimaryRow {
+  height: 100%;
+  display: grid !important;
+  grid-template-columns: minmax(520px, 0.82fr) minmax(640px, 1.18fr) !important;
+  gap: 34px !important;
+  align-items: center !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerIdentity,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerIdentity {
+  min-height: 124px !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto !important;
+  align-content: center !important;
+  justify-items: start !important;
+  text-align: left !important;
+  gap: 10px !important;
+  padding-left: 0 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerIdentity small,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerIdentity small {
+  color: var(--lead-gold) !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.72rem !important;
+  line-height: 1 !important;
+  letter-spacing: 0.24em !important;
+  text-transform: uppercase !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+  text-shadow: 0 0 18px color-mix(in srgb, var(--lead-gold) 18%, transparent);
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerIdentity strong,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerIdentity strong {
+  color: #ffffff !important;
+  max-width: 760px !important;
+  font-size: clamp(3.05rem, 4.05vw, 5.25rem) !important;
+  line-height: 0.86 !important;
+  letter-spacing: -0.105em !important;
+  font-weight: 950 !important;
+  text-align: left !important;
+  text-wrap: balance !important;
+  text-shadow:
+    0 0 22px var(--lead-header-title-glow, rgba(248, 231, 161, 0.14)),
+    0 14px 48px rgba(0, 0, 0, 0.4) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerIdentity em,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerIdentity em {
+  color: var(--lead-header-subtitle, #5eead4) !important;
+  max-width: 760px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.82rem !important;
+  line-height: 1.35 !important;
+  letter-spacing: 0.26em !important;
+  word-spacing: 0.18em !important;
+  text-transform: uppercase !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+  text-shadow: 0 0 18px color-mix(in srgb, var(--lead-header-subtitle, #5eead4) 22%, transparent);
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerThemeDock,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerThemeDock {
+  justify-self: stretch !important;
+  align-self: center !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerThemeDock .skinSwitcher,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerThemeDock .skinSwitcher {
+  min-height: 70px !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  padding: 9px 14px !important;
+  overflow: hidden !important;
+  border-radius: 22px !important;
+  border-color: color-mix(in srgb, var(--lead-border) 78%, transparent) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+    color-mix(in srgb, var(--lead-inner) 92%, transparent) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 52px rgba(0, 0, 0, 0.26) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerThemeDock .skinSwitcher::before,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerThemeDock .skinSwitcher::before {
+  content: "THEME AUTHORITY" !important;
+  flex: 0 0 180px !important;
+  margin-right: auto !important;
+  color: var(--lead-muted-dim) !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.62rem !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.26em !important;
+  text-align: left !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerThemeDock .skinButton,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerThemeDock .skinButton,
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerThemeDock .skinActive,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerThemeDock .skinActive {
+  flex: 0 0 auto !important;
+  min-width: 100px !important;
+  min-height: 46px !important;
+  padding: 10px 15px !important;
+  border-radius: 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.67rem !important;
+  letter-spacing: 0.18em !important;
+  white-space: nowrap !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerThemeDock .skinButton,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerThemeDock .skinButton {
+  color: color-mix(in srgb, var(--lead-muted-dim) 72%, transparent) !important;
+  opacity: 0.72 !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerThemeDock .skinButton:hover,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerThemeDock .skinButton:hover {
+  opacity: 1 !important;
+  color: var(--lead-gold) !important;
+  border-color: color-mix(in srgb, var(--lead-accent) 48%, transparent) !important;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--lead-accent) 18%, transparent) !important;
+}
+
+.leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerThemeDock .skinActive,
+.leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerThemeDock .skinActive {
+  color: #12071f !important;
+  background: var(--lead-primary) !important;
+  border: 1px solid color-mix(in srgb, var(--lead-gold) 72%, transparent) !important;
+  opacity: 1 !important;
+  box-shadow:
+    0 16px 44px color-mix(in srgb, var(--lead-accent) 38%, transparent),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
+}
+
+@media (max-width: 1540px) {
+  .leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerPrimaryRow,
+  .leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerPrimaryRow {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .leadOperatingRoom[data-wilsy-lead-skin="FORENSIC_VIOLET"] .headerThemeDock .skinSwitcher,
+  .leadOperatingRoom[data-wilsy-lead-skin*="FORENSIC"] .headerThemeDock .skinSwitcher {
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+  }
+}
