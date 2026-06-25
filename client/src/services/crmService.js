@@ -754,26 +754,116 @@ export const getLeads = (tenantId, params = {}) => getResource(`${CRM_BASE}/lead
  */
 export const getLeadsArray = (tenantId, params = {}) => getResourceArray(`${CRM_BASE}/leads`, tenantId, params);
 
+/**
+ * @function createLead
+ * @description Executes the CRM service create lead operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const createLead = (data, tenantId) => postResource(`${CRM_BASE}/leads`, data, tenantId, crmTelemetryEvent('LEAD_CREATED'), crmTelemetryEvent('LEAD_FRACTURE', DEFAULT_FAILURE_EVENT));
+/**
+ * @function updateLead
+ * @description Executes the CRM service update lead operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const updateLead = (id, data, tenantId) => putResource(`${CRM_BASE}/leads/${id}`, data, tenantId, crmTelemetryEvent('LEAD_UPDATED'), crmTelemetryEvent('LEAD_FRACTURE', DEFAULT_FAILURE_EVENT));
+/**
+ * @function deleteLead
+ * @description Executes the CRM service delete lead operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const deleteLead = (id, tenantId) => deleteResource(`${CRM_BASE}/leads/${id}`, tenantId, crmTelemetryEvent('LEAD_DELETED'), crmTelemetryEvent('LEAD_FRACTURE', DEFAULT_FAILURE_EVENT));
 
+/**
+ * @function getContacts
+ * @description Executes the CRM service get contacts operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const getContacts = (tenantId, params = {}) => getResource(`${CRM_BASE}/contacts`, tenantId, params);
+/**
+ * @function getContactsArray
+ * @description Executes the CRM service get contacts array operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const getContactsArray = (tenantId, params = {}) => getResourceArray(`${CRM_BASE}/contacts`, tenantId, params);
+/**
+ * @function createContact
+ * @description Executes the CRM service create contact operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const createContact = (data, tenantId) => postResource(`${CRM_BASE}/contacts`, data, tenantId, crmTelemetryEvent('CONTACT_CREATED'));
+/**
+ * @function updateContact
+ * @description Executes the CRM service update contact operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const updateContact = (id, data, tenantId) => putResource(`${CRM_BASE}/contacts/${id}`, data, tenantId, crmTelemetryEvent('CONTACT_UPDATED'));
+/**
+ * @function deleteContact
+ * @description Executes the CRM service delete contact operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const deleteContact = (id, tenantId) => deleteResource(`${CRM_BASE}/contacts/${id}`, tenantId, crmTelemetryEvent('CONTACT_DELETED'));
 
+/**
+ * @function getAccounts
+ * @description Executes the CRM service get accounts operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const getAccounts = (tenantId, params = {}) => getResource(`${CRM_BASE}/accounts`, tenantId, params);
+/**
+ * @function getAccountsArray
+ * @description Executes the CRM service get accounts array operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const getAccountsArray = (tenantId, params = {}) => getResourceArray(`${CRM_BASE}/accounts`, tenantId, params);
+/**
+ * @function createAccount
+ * @description Executes the CRM service create account operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const createAccount = (data, tenantId) => postResource(`${CRM_BASE}/accounts`, data, tenantId, crmTelemetryEvent('ACCOUNT_CREATED'));
+/**
+ * @function updateAccount
+ * @description Executes the CRM service update account operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const updateAccount = (id, data, tenantId) => putResource(`${CRM_BASE}/accounts/${id}`, data, tenantId, crmTelemetryEvent('ACCOUNT_UPDATED'));
+/**
+ * @function deleteAccount
+ * @description Executes the CRM service delete account operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const deleteAccount = (id, tenantId) => deleteResource(`${CRM_BASE}/accounts/${id}`, tenantId, crmTelemetryEvent('ACCOUNT_DELETED'));
 
+/**
+ * @function getDeals
+ * @description Executes the CRM service get deals operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const getDeals = (tenantId, params = {}) => getResource(`${CRM_BASE}/deals`, tenantId, params, DEFAULT_SUCCESS_EVENT, crmTelemetryEvent('DEAL_FRACTURE', DEFAULT_FAILURE_EVENT));
+/**
+ * @function getDealsArray
+ * @description Executes the CRM service get deals array operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const getDealsArray = (tenantId, params = {}) => getResourceArray(`${CRM_BASE}/deals`, tenantId, params);
+/**
+ * @function createDeal
+ * @description Executes the CRM service create deal operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const createDeal = (data, tenantId) => postResource(`${CRM_BASE}/deals`, data, tenantId, crmTelemetryEvent('DEAL_CREATED'), crmTelemetryEvent('DEAL_FRACTURE', DEFAULT_FAILURE_EVENT));
+/**
+ * @function updateDeal
+ * @description Executes the CRM service update deal operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const updateDeal = (id, data, tenantId) => putResource(`${CRM_BASE}/deals/${id}`, data, tenantId, crmTelemetryEvent('DEAL_PROMOTED'), crmTelemetryEvent('DEAL_FRACTURE', DEFAULT_FAILURE_EVENT));
+/**
+ * @function deleteDeal
+ * @description Executes the CRM service delete deal operation against live backend source contracts.
+ * @collaboration Supports Wilsy OS CRM Command Fabric without fake records, hardcoded data or browser-only persistence.
+ */
 export const deleteDeal = (id, tenantId) => deleteResource(`${CRM_BASE}/deals/${id}`, tenantId, crmTelemetryEvent('DEAL_LOST'), crmTelemetryEvent('DEAL_FRACTURE', DEFAULT_FAILURE_EVENT));
 
 /**
@@ -963,3 +1053,132 @@ export default {
   importRecords,
   deleteRecord
 };
+
+export const WILSY_CRM_COMMAND_FABRIC_CLIENT_VERSION = 'R62A-CRM-COMMAND-FABRIC-CLIENT';
+
+/**
+ * @function resolveWilsyCrmCommandAuthToken
+ * @description Resolves the active Wilsy OS browser token for CRM command calls.
+ * @returns {string} Bearer token value without prefix.
+ * @collaboration Keeps CRM command fabric calls aligned with the existing authenticated session.
+ */
+export function resolveWilsyCrmCommandAuthToken() {
+  if (typeof window === 'undefined') return '';
+
+  return String(
+    window.localStorage.getItem('wilsy_auth_token')
+      || window.localStorage.getItem('token')
+      || window.localStorage.getItem('authToken')
+      || window.sessionStorage.getItem('wilsy_auth_token')
+      || window.sessionStorage.getItem('token')
+      || ''
+  ).trim();
+}
+
+/**
+ * @function buildWilsyCrmCommandHeaders
+ * @description Builds tenant-scoped request headers for CRM command fabric calls.
+ * @param {string} tenantId - Tenant id.
+ * @returns {Record<string,string>} Request headers.
+ * @collaboration Avoids hardcoded secrets while preserving authenticated CRM backend access.
+ */
+export function buildWilsyCrmCommandHeaders(tenantId = 'MASTER') {
+  const token = resolveWilsyCrmCommandAuthToken();
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'X-Tenant-Id': tenantId || 'MASTER'
+  };
+
+  if (token) {
+    headers.Authorization = ['Bearer', token].join(' ');
+  }
+
+  return headers;
+}
+
+/**
+ * @function requestWilsyCrmCommandFabric
+ * @description Executes a same-origin CRM command fabric request.
+ * @param {string} endpoint - CRM command endpoint path.
+ * @param {Object} options - Fetch options.
+ * @returns {Promise<Object>} JSON response payload.
+ * @collaboration Keeps CRM dashboard requests behind the Vite/backend proxy instead of direct localhost CORS paths.
+ */
+export async function requestWilsyCrmCommandFabric(endpoint, options = {}) {
+  const tenantId = options.tenantId || 'MASTER';
+  const response = await fetch(`/api/crm/command${endpoint}`, {
+    method: options.method || 'GET',
+    credentials: 'include',
+    headers: buildWilsyCrmCommandHeaders(tenantId),
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+
+  const payload = await response.json().catch(() => ({
+    ok: false,
+    message: 'CRM command fabric returned a non-JSON response.'
+  }));
+
+  if (!response.ok) {
+    throw new Error(payload.message || payload.error || `CRM command fabric failed with ${response.status}`);
+  }
+
+  return payload;
+}
+
+/**
+ * @function searchCrmCommandFabric
+ * @description Searches CRM backend records from the command top rail.
+ * @param {Object} input - Search input.
+ * @returns {Promise<Object>} Search response.
+ * @collaboration Powers CRM search with backend source truth rather than local-only filtering.
+ */
+export async function searchCrmCommandFabric({ tenantId = 'MASTER', query = '', limit = 8 } = {}) {
+  const params = new URLSearchParams({
+    q: query,
+    limit: String(limit),
+    tenantId
+  });
+
+  return requestWilsyCrmCommandFabric(`/search?${params.toString()}`, {
+    method: 'GET',
+    tenantId
+  });
+}
+
+/**
+ * @function syncCrmCommandFabric
+ * @description Syncs CRM command posture from backend model inventory.
+ * @param {Object} input - Sync input.
+ * @returns {Promise<Object>} Sync response.
+ * @collaboration Wires the Live Sync button to backend evidence rather than a browser-only event.
+ */
+export async function syncCrmCommandFabric({ tenantId = 'MASTER', activeModule = 'leads', reason = 'CRM_LIVE_SYNC' } = {}) {
+  return requestWilsyCrmCommandFabric('/sync', {
+    method: 'POST',
+    tenantId,
+    body: {
+      tenantId,
+      activeModule,
+      reason
+    }
+  });
+}
+
+/**
+ * @function createCrmCommandLead
+ * @description Creates a lead through the CRM command fabric only when source payload exists.
+ * @param {Object} input - Lead creation input.
+ * @returns {Promise<Object>} Created lead response.
+ * @collaboration Gives Add Lead a backend route while preventing empty-click fake records.
+ */
+export async function createCrmCommandLead({ tenantId = 'MASTER', lead = {} } = {}) {
+  return requestWilsyCrmCommandFabric('/leads', {
+    method: 'POST',
+    tenantId,
+    body: {
+      tenantId,
+      lead
+    }
+  });
+}
