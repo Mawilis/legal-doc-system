@@ -9825,3 +9825,441 @@ export const buildLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEviden
       persistenceMode: 'JSON_RESPONSE_ONLY',
     };
   };
+
+export const WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFIER_VERSION =
+  'R69K-REGULATOR-INVESTOR-EVIDENCE-CHAIN-TERMINAL-FINALITY-EVIDENCE-RECEIPT-CERTIFICATE-VERIFIER-AUTHORITY';
+
+/**
+ * @function verifyLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificate
+ * @description Verifies the R69J terminal finality evidence receipt certificate by recomputing its certificate hash and validating terminal certificate posture.
+ * @collaboration R69J certificate, R69I receipt verifier, R69H verification receipt, regulator/investor certificate proof controls.
+ */
+export const verifyLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificate =
+  async (options = {}) => {
+    const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+    const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+    const limit = options.limit || 25;
+    const operator =
+      String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+      'SYSTEM';
+
+    const certificatePacket =
+      await buildLeadSearchRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificate(
+        {
+          tenantId,
+          ledgerId,
+          limit,
+          operator,
+        }
+      );
+
+    const certificate = certificatePacket.terminalFinalityEvidenceReceiptCertificate || {};
+    const {
+      certificateHash: storedCertificateHash,
+      certificateHashShort,
+      ...certificatePayload
+    } = certificate;
+
+    const recomputedCertificateHash =
+      computeRegulatorInvestorEvidenceChainTerminalFinalityEvidenceReceiptCertificateHash(
+        certificatePayload
+      );
+
+    const certificateHashVerified =
+      Boolean(storedCertificateHash) && storedCertificateHash === recomputedCertificateHash;
+
+    const expectedChainRange = [
+      'R68O',
+      'R68P',
+      'R68Q',
+      'R68R',
+      'R68S',
+      'R68T',
+      'R68U',
+      'R68V',
+      'R68W',
+      'R68X',
+      'R68Y',
+    ];
+
+    const chainRange = Array.isArray(certificate.chainRange) ? certificate.chainRange : [];
+    const chainRangeVerified = JSON.stringify(chainRange) === JSON.stringify(expectedChainRange);
+
+    const audience = Array.isArray(certificate.audience) ? certificate.audience : [];
+    const audienceVerified = JSON.stringify(audience) === JSON.stringify(['REGULATOR', 'INVESTOR']);
+
+    const expectedSourceStatusesVerified =
+      certificatePacket.status ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_ISSUED' &&
+      certificate.sourceVerificationReceiptVerifierStatus ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_INDEX_VERIFICATION_RECEIPT_VERIFIED' &&
+      certificate.sourceVerificationReceiptStatus ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_INDEX_VERIFICATION_RECEIPT_MATERIALIZED' &&
+      certificate.sourceEvidenceIndexVerifierStatus ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_CERTIFICATE_EVIDENCE_INDEX_VERIFIED' &&
+      certificate.sourceEvidenceIndexStatus ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_CERTIFICATE_EVIDENCE_INDEXED' &&
+      certificate.sourceFinalityCertificateVerifierStatus ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_RECEIPT_FINALITY_CERTIFICATE_VERIFIED' &&
+      certificate.sourceFinalityCertificateStatus ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_RECEIPT_FINALITY_CERTIFICATE_ISSUED' &&
+      certificate.sourceReceiptVerifierStatus ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT_VERIFIED' &&
+      certificate.sourceReceiptStatus ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFICATION_RECEIPT_MATERIALIZED' &&
+      certificate.sourceTerminalSealVerifierStatus ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_VERIFIED' &&
+      certificate.sourceTerminalSealStatus ===
+        'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_SEAL_ISSUED';
+
+    const statuses = certificate.statuses || {};
+    const statusesVerified =
+      statuses.R68O === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFIED' &&
+      statuses.R68P === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_MATERIALIZED' &&
+      statuses.R68Q === 'REGULATOR_DOSSIER_CHAIN_LEDGER_VERIFICATION_RECEIPT_VERIFIED' &&
+      statuses.R68R === 'REGULATOR_DOSSIER_CHAIN_VERIFICATION_FINALITY_CERTIFICATE_ISSUED' &&
+      statuses.R68S === 'REGULATOR_DOSSIER_CHAIN_FINALITY_CERTIFICATE_VERIFIED' &&
+      statuses.R68T === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEXED' &&
+      statuses.R68U === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFIED' &&
+      statuses.R68V ===
+        'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_MATERIALIZED' &&
+      statuses.R68W ===
+        'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_INDEX_VERIFICATION_RECEIPT_VERIFIED' &&
+      statuses.R68X === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_ISSUED' &&
+      statuses.R68Y === 'REGULATOR_DOSSIER_CHAIN_EVIDENCE_BUNDLE_FINAL_ATTESTATION_VERIFIED';
+
+    const routeContracts = certificate.routeContracts || {};
+    const routeContractsVerified =
+      routeContracts.R68O === 'R68O-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-AUTHORITY' &&
+      routeContracts.R68P ===
+        'R68P-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-AUTHORITY' &&
+      routeContracts.R68Q ===
+        'R68Q-REGULATOR-DOSSIER-CHAIN-LEDGER-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY' &&
+      routeContracts.R68R ===
+        'R68R-REGULATOR-DOSSIER-CHAIN-VERIFICATION-FINALITY-CERTIFICATE-AUTHORITY' &&
+      routeContracts.R68S ===
+        'R68S-REGULATOR-DOSSIER-CHAIN-FINALITY-CERTIFICATE-VERIFIER-AUTHORITY' &&
+      routeContracts.R68T === 'R68T-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-AUTHORITY' &&
+      routeContracts.R68U ===
+        'R68U-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFIER-AUTHORITY' &&
+      routeContracts.R68V ===
+        'R68V-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFICATION-RECEIPT-AUTHORITY' &&
+      routeContracts.R68W ===
+        'R68W-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-INDEX-VERIFICATION-RECEIPT-VERIFIER-AUTHORITY' &&
+      routeContracts.R68X ===
+        'R68X-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-FINAL-REGULATOR-INVESTOR-ATTESTATION-AUTHORITY' &&
+      routeContracts.R68Y ===
+        'R68Y-REGULATOR-DOSSIER-CHAIN-EVIDENCE-BUNDLE-FINAL-ATTESTATION-VERIFIER-AUTHORITY';
+
+    const sourceRoutes = certificate.sourceRoutes || {};
+    const sourceRoutesVerified =
+      sourceRoutes.R68O ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/latest?rootCheck=R68O' &&
+      sourceRoutes.R68P ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/latest' &&
+      sourceRoutes.R68Q ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/verification-receipt/verify/latest' &&
+      sourceRoutes.R68R ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/latest' &&
+      sourceRoutes.R68S ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/finality-certificate/verify/latest' &&
+      sourceRoutes.R68T ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/latest' &&
+      sourceRoutes.R68U ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verify/latest' &&
+      sourceRoutes.R68V ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/latest' &&
+      sourceRoutes.R68W ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/index/verification-receipt/verify/latest' &&
+      sourceRoutes.R68X ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/final-attestation/latest' &&
+      sourceRoutes.R68Y ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/final-attestation/verify/latest';
+
+    const evidenceRoutes = certificate.evidenceRoutes || {};
+    const evidenceRoutesVerified =
+      evidenceRoutes.R68Z ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/latest' &&
+      evidenceRoutes.R69A ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verify/latest' &&
+      evidenceRoutes.R69B ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/latest' &&
+      evidenceRoutes.R69C ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/verify/latest' &&
+      evidenceRoutes.R69D ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/latest' &&
+      evidenceRoutes.R69E ===
+        '/api/crm/command/search/regulator-evidence/dossier-chain/evidence-bundle/terminal-seal/verification-receipt/finality-certificate/verify/latest';
+
+    const hashes = certificate.hashes || {};
+    const hashEqualityVerified =
+      Boolean(hashes.storedCertificateHash) &&
+      hashes.storedCertificateHash === hashes.recomputedCertificateHash &&
+      Boolean(hashes.storedReceiptHash) &&
+      hashes.storedReceiptHash === hashes.recomputedReceiptHash &&
+      Boolean(hashes.storedTerminalSealHash) &&
+      hashes.storedTerminalSealHash === hashes.recomputedTerminalSealHash;
+
+    const proofSummary = certificate.proofSummary || {};
+    const proofSummaryVerified =
+      proofSummary.verificationReceiptHashVerified === true &&
+      proofSummary.receiptHashVerified === true &&
+      proofSummary.evidenceIndexHashVerified === true &&
+      proofSummary.expectedSourceStatusesVerified === true &&
+      proofSummary.chainRangeVerified === true &&
+      proofSummary.audienceVerified === true &&
+      proofSummary.statusesVerified === true &&
+      proofSummary.routeContractsVerified === true &&
+      proofSummary.sourceRoutesVerified === true &&
+      proofSummary.evidenceRoutesVerified === true &&
+      proofSummary.hashEqualityVerified === true &&
+      proofSummary.proofFlagsAllTrue === true &&
+      proofSummary.terminalDispositionVerified === true &&
+      proofSummary.finalityDispositionVerified === true &&
+      proofSummary.evidenceIndexPostureVerified === true &&
+      proofSummary.receiptDispositionVerified === true &&
+      proofSummary.certificateHashVerified === true &&
+      proofSummary.sourceReceiptHashVerified === true &&
+      proofSummary.terminalSealHashVerified === true &&
+      proofSummary.regulatorReady === true &&
+      proofSummary.investorReady === true &&
+      proofSummary.jsonResponseOnly === true &&
+      proofSummary.noFilesystemWrite === true;
+
+    const certificateDisposition = certificate.certificateDisposition || {};
+    const certificateDispositionVerified =
+      certificateDisposition.certificateStatus === 'TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFIED' &&
+      certificateDisposition.sourceVerifierPassed === true &&
+      certificateDisposition.receiptVerified === true &&
+      certificateDisposition.receiptHashVerified === true &&
+      certificateDisposition.evidenceIndexVerified === true &&
+      certificateDisposition.evidenceRoutesVerified === true &&
+      certificateDisposition.proofFlagsAllTrue === true &&
+      certificateDisposition.receiptDispositionVerified === true &&
+      certificateDisposition.regulatorReady === true &&
+      certificateDisposition.investorReady === true &&
+      certificateDisposition.filesystemExported === false &&
+      certificateDisposition.jsonResponseOnly === true &&
+      certificateDisposition.noFilesystemWrite === true;
+
+    const receiptDisposition = certificate.receiptDisposition || {};
+    const receiptDispositionVerified =
+      receiptDisposition.receiptStatus ===
+        'TERMINAL_FINALITY_EVIDENCE_INDEX_VERIFICATION_RECEIPT_MATERIALIZED' &&
+      receiptDisposition.sourceVerifierPassed === true &&
+      receiptDisposition.evidenceIndexVerified === true &&
+      receiptDisposition.evidenceRoutesVerified === true &&
+      receiptDisposition.proofFlagsAllTrue === true &&
+      receiptDisposition.regulatorReady === true &&
+      receiptDisposition.investorReady === true &&
+      receiptDisposition.filesystemExported === false &&
+      receiptDisposition.jsonResponseOnly === true &&
+      receiptDisposition.noFilesystemWrite === true;
+
+    const evidenceIndexPosture = certificate.evidenceIndexPosture || {};
+    const evidenceIndexPostureVerified =
+      evidenceIndexPosture.evidenceIndexStatus === 'FINALITY_CERTIFICATE_EVIDENCE_INDEXED' &&
+      evidenceIndexPosture.sourceVerifierPassed === true &&
+      evidenceIndexPosture.certificateVerified === true &&
+      evidenceIndexPosture.receiptVerified === true &&
+      evidenceIndexPosture.terminalSealVerified === true &&
+      evidenceIndexPosture.finalityDispositionVerified === true &&
+      evidenceIndexPosture.terminalDispositionVerified === true &&
+      evidenceIndexPosture.regulatorReady === true &&
+      evidenceIndexPosture.investorReady === true &&
+      evidenceIndexPosture.filesystemExported === false &&
+      evidenceIndexPosture.jsonResponseOnly === true &&
+      evidenceIndexPosture.noFilesystemWrite === true;
+
+    const terminalDisposition = certificate.terminalDisposition || {};
+    const terminalDispositionVerified =
+      terminalDisposition.evidenceChainStatus === 'TERMINALLY_SEALED' &&
+      terminalDisposition.regulatorReady === true &&
+      terminalDisposition.investorReady === true &&
+      terminalDisposition.filesystemExported === false &&
+      terminalDisposition.jsonResponseOnly === true &&
+      terminalDisposition.noFilesystemWrite === true;
+
+    const finalityDisposition = certificate.finalityDisposition || {};
+    const finalityDispositionVerified =
+      finalityDisposition.certificateStatus === 'FINALITY_CERTIFIED' &&
+      finalityDisposition.evidenceChainStatus === 'TERMINALLY_SEALED' &&
+      finalityDisposition.receiptVerified === true &&
+      finalityDisposition.terminalSealVerified === true &&
+      finalityDisposition.regulatorReady === true &&
+      finalityDisposition.investorReady === true &&
+      finalityDisposition.filesystemExported === false &&
+      finalityDisposition.jsonResponseOnly === true &&
+      finalityDisposition.noFilesystemWrite === true;
+
+    const verificationReceiptHashVerified =
+      proofSummary.verificationReceiptHashVerified === true &&
+      Boolean(certificate.storedVerificationReceiptHash) &&
+      certificate.storedVerificationReceiptHash === certificate.recomputedVerificationReceiptHash &&
+      certificate.receiptHash === certificate.storedVerificationReceiptHash;
+
+    const receiptHashVerified =
+      proofSummary.receiptHashVerified === true &&
+      Boolean(certificate.receiptHash) &&
+      certificate.receiptHash === certificate.storedVerificationReceiptHash &&
+      certificate.receiptHash === certificate.recomputedVerificationReceiptHash;
+
+    const evidenceIndexHashVerified =
+      proofSummary.evidenceIndexHashVerified === true &&
+      Boolean(certificate.storedEvidenceIndexHash) &&
+      certificate.storedEvidenceIndexHash === certificate.recomputedEvidenceIndexHash;
+
+    const proofFlags = certificate.proofFlags || {};
+    const proofFlagsAllTrue =
+      proofSummary.proofFlagsAllTrue === true &&
+      Object.values(proofFlags).length > 0 &&
+      Object.values(proofFlags).every((value) => value === true);
+
+    const regulatorReady =
+      proofSummary.regulatorReady === true &&
+      certificateDisposition.regulatorReady === true &&
+      receiptDisposition.regulatorReady === true &&
+      evidenceIndexPosture.regulatorReady === true &&
+      terminalDisposition.regulatorReady === true &&
+      finalityDisposition.regulatorReady === true;
+
+    const investorReady =
+      proofSummary.investorReady === true &&
+      certificateDisposition.investorReady === true &&
+      receiptDisposition.investorReady === true &&
+      evidenceIndexPosture.investorReady === true &&
+      terminalDisposition.investorReady === true &&
+      finalityDisposition.investorReady === true;
+
+    const jsonResponseOnly =
+      certificatePacket.jsonResponseOnly === true &&
+      certificate.jsonResponseOnly === true &&
+      certificate.persistenceMode === 'JSON_RESPONSE_ONLY' &&
+      proofSummary.jsonResponseOnly === true &&
+      certificateDisposition.jsonResponseOnly === true &&
+      receiptDisposition.jsonResponseOnly === true &&
+      evidenceIndexPosture.jsonResponseOnly === true &&
+      terminalDisposition.jsonResponseOnly === true &&
+      finalityDisposition.jsonResponseOnly === true;
+
+    const noFilesystemWrite =
+      certificatePacket.noFilesystemWrite === true &&
+      certificate.noFilesystemWrite === true &&
+      proofSummary.noFilesystemWrite === true &&
+      certificateDisposition.noFilesystemWrite === true &&
+      receiptDisposition.noFilesystemWrite === true &&
+      evidenceIndexPosture.noFilesystemWrite === true &&
+      terminalDisposition.noFilesystemWrite === true &&
+      finalityDisposition.noFilesystemWrite === true;
+
+    const verified =
+      certificateHashVerified &&
+      expectedSourceStatusesVerified &&
+      chainRangeVerified &&
+      audienceVerified &&
+      statusesVerified &&
+      routeContractsVerified &&
+      sourceRoutesVerified &&
+      evidenceRoutesVerified &&
+      hashEqualityVerified &&
+      proofSummaryVerified &&
+      certificateDispositionVerified &&
+      receiptDispositionVerified &&
+      evidenceIndexPostureVerified &&
+      terminalDispositionVerified &&
+      finalityDispositionVerified &&
+      verificationReceiptHashVerified &&
+      receiptHashVerified &&
+      evidenceIndexHashVerified &&
+      proofFlagsAllTrue &&
+      regulatorReady &&
+      investorReady &&
+      jsonResponseOnly &&
+      noFilesystemWrite;
+
+    return {
+      ok: verified,
+      version:
+        WILSY_CRM_REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFIER_VERSION,
+      status: verified
+        ? 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFIED'
+        : 'REGULATOR_INVESTOR_EVIDENCE_CHAIN_TERMINAL_FINALITY_EVIDENCE_RECEIPT_CERTIFICATE_VERIFICATION_FAILED',
+      certificateHashVerified,
+      storedCertificateHash,
+      storedCertificateHashShort:
+        certificateHashShort || String(storedCertificateHash || '').slice(0, 16),
+      recomputedCertificateHash,
+      recomputedCertificateHashShort: recomputedCertificateHash.slice(0, 16),
+      verificationReceiptHashVerified,
+      receiptHashVerified,
+      evidenceIndexHashVerified,
+      expectedSourceStatusesVerified,
+      chainRangeVerified,
+      audienceVerified,
+      statusesVerified,
+      routeContractsVerified,
+      sourceRoutesVerified,
+      evidenceRoutesVerified,
+      hashEqualityVerified,
+      proofSummaryVerified,
+      proofFlagsAllTrue,
+      certificateDispositionVerified,
+      receiptDispositionVerified,
+      evidenceIndexPostureVerified,
+      terminalDispositionVerified,
+      finalityDispositionVerified,
+      regulatorReady,
+      investorReady,
+      sourceVerificationReceiptVerifierStatus:
+        certificate.sourceVerificationReceiptVerifierStatus || null,
+      sourceVerificationReceiptStatus: certificate.sourceVerificationReceiptStatus || null,
+      sourceEvidenceIndexVerifierStatus: certificate.sourceEvidenceIndexVerifierStatus || null,
+      sourceEvidenceIndexStatus: certificate.sourceEvidenceIndexStatus || null,
+      sourceFinalityCertificateVerifierStatus:
+        certificate.sourceFinalityCertificateVerifierStatus || null,
+      sourceFinalityCertificateStatus: certificate.sourceFinalityCertificateStatus || null,
+      sourceReceiptVerifierStatus: certificate.sourceReceiptVerifierStatus || null,
+      sourceReceiptStatus: certificate.sourceReceiptStatus || null,
+      sourceTerminalSealVerifierStatus: certificate.sourceTerminalSealVerifierStatus || null,
+      sourceTerminalSealStatus: certificate.sourceTerminalSealStatus || null,
+      ledgerRoot: certificate.ledgerRoot || certificatePacket.ledgerRoot || null,
+      terminalFinalityEvidenceReceiptCertificateVerifier: {
+        tenantId,
+        operator,
+        verifiedAt: new Date().toISOString(),
+        sourceCertificateStatus: certificatePacket.status,
+        certificateHashVerified,
+        storedCertificateHash,
+        recomputedCertificateHash,
+        verificationReceiptHashVerified,
+        receiptHashVerified,
+        evidenceIndexHashVerified,
+        expectedSourceStatusesVerified,
+        chainRangeVerified,
+        audienceVerified,
+        statusesVerified,
+        routeContractsVerified,
+        sourceRoutesVerified,
+        evidenceRoutesVerified,
+        hashEqualityVerified,
+        proofSummaryVerified,
+        proofFlagsAllTrue,
+        certificateDispositionVerified,
+        receiptDispositionVerified,
+        evidenceIndexPostureVerified,
+        terminalDispositionVerified,
+        finalityDispositionVerified,
+        regulatorReady,
+        investorReady,
+        jsonResponseOnly,
+        noFilesystemWrite,
+      },
+      terminalFinalityEvidenceReceiptCertificate: certificate,
+      sourceTerminalFinalityEvidenceReceiptCertificatePacket: certificatePacket,
+      terminalFinalityEvidenceIndexVerificationReceipt:
+        certificatePacket.terminalFinalityEvidenceIndexVerificationReceipt || null,
+      jsonResponseOnly: true,
+      noFilesystemWrite: true,
+      persistenceMode: 'JSON_RESPONSE_ONLY',
+    };
+  };
