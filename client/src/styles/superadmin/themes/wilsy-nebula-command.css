@@ -1,0 +1,329 @@
+/* eslint-disable */
+/**
+ * WILSY OS - NEBULA COMMAND THEME
+ * Extracted from approved CRM command hero.
+ */
+
+:root[data-wilsy-theme="wilsy-nebula-command"],
+:root[data-theme="wilsy-nebula-command"],
+[data-wilsy-theme="wilsy-nebula-command"],
+[data-theme="wilsy-nebula-command"] {
+  --wilsy-nebula-void: #040812;
+  --wilsy-nebula-navy: #071123;
+  --wilsy-nebula-surface: #101D33;
+  --wilsy-nebula-card: #142844;
+  --wilsy-nebula-blue: #3C7CD2;
+  --wilsy-nebula-cyan: #1C929F;
+  --wilsy-nebula-cyan-edge: #2FE8DC;
+  --wilsy-nebula-gold: #B59960;
+  --wilsy-nebula-green: #20E070;
+  --wilsy-nebula-text: #F6F7F3;
+  --wilsy-nebula-text-soft: #DEE3F0;
+  --wilsy-nebula-muted: #8FA7C9;
+}
+
+:root[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="night"],
+:root[data-theme="wilsy-nebula-command"][data-mode="night"],
+[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="night"],
+[data-theme="wilsy-nebula-command"][data-mode="night"] {
+  --wilsy-bg: #040812;
+  --wilsy-bg-alt: #071123;
+  --wilsy-surface: #101D33;
+  --wilsy-surface-elevated: #142844;
+  --wilsy-card: #101D33;
+  --wilsy-border: rgba(47, 232, 220, 0.26);
+  --wilsy-border-strong: rgba(62, 124, 210, 0.55);
+  --wilsy-primary: #3C7CD2;
+  --wilsy-secondary: #1C929F;
+  --wilsy-accent: #B59960;
+  --wilsy-success: #20E070;
+  --wilsy-text: #F6F7F3;
+  --wilsy-text-soft: #DEE3F0;
+  --wilsy-text-muted: #8FA7C9;
+  --wilsy-hero-gradient: radial-gradient(circle at 72% 18%, rgba(47,232,220,0.22), transparent 34%), radial-gradient(circle at 32% 100%, rgba(60,124,210,0.24), transparent 38%), linear-gradient(135deg, #040812, #071123 48%, #101D33);
+
+  --tenant-primary: #3C7CD2;
+  --tenant-secondary: #1C929F;
+  --tenant-accent: #B59960;
+
+  --crm-bg: #040812;
+  --crm-card: #101D33;
+  --crm-panel: #142844;
+  --crm-border: rgba(47, 232, 220, 0.26);
+  --crm-blue: #3C7CD2;
+  --crm-cyan: #1C929F;
+  --crm-gold: #B59960;
+  --crm-green: #20E070;
+  --crm-text: #F6F7F3;
+  --crm-soft: #8FA7C9;
+}
+
+:root[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="day"],
+:root[data-theme="wilsy-nebula-command"][data-mode="day"],
+[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="day"],
+[data-theme="wilsy-nebula-command"][data-mode="day"] {
+  --wilsy-bg: #F6F9FF;
+  --wilsy-bg-alt: #EAF3FF;
+  --wilsy-surface: #FFFFFF;
+  --wilsy-surface-elevated: #F2F7FF;
+  --wilsy-card: #FFFFFF;
+  --wilsy-border: rgba(14, 138, 178, 0.28);
+  --wilsy-border-strong: rgba(11, 59, 120, 0.34);
+  --wilsy-primary: #0B3B78;
+  --wilsy-secondary: #0E8AB2;
+  --wilsy-accent: #B78D38;
+  --wilsy-success: #139A53;
+  --wilsy-text: #091527;
+  --wilsy-text-soft: #203451;
+  --wilsy-text-muted: #5F7391;
+  --wilsy-hero-gradient: radial-gradient(circle at 72% 18%, rgba(14,138,178,0.16), transparent 34%), radial-gradient(circle at 32% 100%, rgba(11,59,120,0.12), transparent 38%), linear-gradient(135deg, #F6F9FF, #FFFFFF 48%, #EAF3FF);
+
+  --tenant-primary: #0B3B78;
+  --tenant-secondary: #0E8AB2;
+  --tenant-accent: #B78D38;
+
+  --crm-bg: #F6F9FF;
+  --crm-card: #FFFFFF;
+  --crm-panel: #EAF3FF;
+  --crm-border: rgba(14, 138, 178, 0.28);
+  --crm-blue: #0B3B78;
+  --crm-cyan: #0E8AB2;
+  --crm-gold: #B78D38;
+  --crm-green: #139A53;
+  --crm-text: #091527;
+  --crm-soft: #5F7391;
+}
+
+/* ==========================================================================
+   WILSY OS R46 NEBULA REFRESH TOKEN LOCK
+   Purpose: prevent partial colour fallback after refresh by mapping every
+   theme selector state to the same Wilsy / CRM / tenant token families.
+   ========================================================================== */
+
+:root[data-wilsy-theme="wilsy-nebula-command"],
+:root[data-theme="wilsy-nebula-command"],
+:root[data-wilsy-skin="wilsy-nebula-command"],
+html[data-wilsy-theme="wilsy-nebula-command"],
+html[data-theme="wilsy-nebula-command"],
+body[data-wilsy-theme="wilsy-nebula-command"],
+body[data-theme="wilsy-nebula-command"],
+[data-wilsy-theme="wilsy-nebula-command"],
+[data-theme="wilsy-nebula-command"],
+[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-theme="wilsy-nebula-command"],
+[data-wilsy-theme="wilsy-nebula-command"] [data-wilsy-crm-dashboard="sovereign-sales-cockpit"],
+[data-theme="wilsy-nebula-command"] [data-wilsy-crm-dashboard="sovereign-sales-cockpit"] {
+  color-scheme: dark;
+
+  --wilsy-bg: #040812;
+  --wilsy-bg-alt: #071123;
+  --wilsy-canvas: #040812;
+  --wilsy-panel: #071123;
+  --wilsy-surface: #101D33;
+  --wilsy-surface-elevated: #142844;
+  --wilsy-card: #101D33;
+  --wilsy-card-strong: #142844;
+  --wilsy-rail: rgba(4, 8, 18, 0.92);
+  --wilsy-overlay: rgba(4, 8, 18, 0.78);
+
+  --wilsy-border: rgba(47, 232, 220, 0.26);
+  --wilsy-border-strong: rgba(62, 124, 210, 0.55);
+  --wilsy-primary: #3C7CD2;
+  --wilsy-secondary: #1C929F;
+  --wilsy-highlight: #2FE8DC;
+  --wilsy-accent: #B59960;
+  --wilsy-accent-strong: #D7BC79;
+  --wilsy-live: #20E070;
+  --wilsy-success: #20E070;
+
+  --wilsy-text: #F6F7F3;
+  --wilsy-bright-text: #F6F7F3;
+  --wilsy-text-soft: #DEE3F0;
+  --wilsy-soft-text: #DEE3F0;
+  --wilsy-text-muted: #8FA7C9;
+  --wilsy-muted-text: #8FA7C9;
+
+  --tenant-primary: #3C7CD2;
+  --tenant-secondary: #1C929F;
+  --tenant-accent: #B59960;
+  --tenant-success: #20E070;
+  --tenant-bg: #040812;
+  --tenant-surface: #101D33;
+  --tenant-card: #142844;
+  --tenant-border: rgba(47, 232, 220, 0.26);
+  --tenant-text: #F6F7F3;
+  --tenant-muted: #8FA7C9;
+
+  --crm-bg: #040812;
+  --crm-shell: #040812;
+  --crm-surface: #071123;
+  --crm-panel: #101D33;
+  --crm-card: #101D33;
+  --crm-card-strong: #142844;
+  --crm-border: rgba(47, 232, 220, 0.26);
+  --crm-border-strong: rgba(62, 124, 210, 0.55);
+  --crm-blue: #3C7CD2;
+  --crm-primary: #3C7CD2;
+  --crm-cyan: #1C929F;
+  --crm-highlight: #2FE8DC;
+  --crm-gold: #B59960;
+  --crm-accent: #B59960;
+  --crm-green: #20E070;
+  --crm-live: #20E070;
+  --crm-success: #20E070;
+  --crm-text: #F6F7F3;
+  --crm-soft: #8FA7C9;
+  --crm-muted: #8FA7C9;
+  --crm-grid-line: rgba(47, 232, 220, 0.12);
+
+  --sovereign-bg: #040812;
+  --sovereign-surface: #101D33;
+  --sovereign-border: rgba(47, 232, 220, 0.26);
+  --forensic-success: #20E070;
+  --forensic-info: #2FE8DC;
+  --forensic-warning: #B59960;
+  --text-primary: #F6F7F3;
+  --text-secondary: #DEE3F0;
+  --text-muted: #8FA7C9;
+
+  --glow-primary: rgba(60, 124, 210, 0.42);
+  --glow-secondary: rgba(47, 232, 220, 0.32);
+  --glow-accent: rgba(181, 153, 96, 0.28);
+
+  --wilsy-hero-gradient:
+    radial-gradient(circle at 74% 18%, rgba(47, 232, 220, 0.22), transparent 34%),
+    radial-gradient(circle at 28% 100%, rgba(60, 124, 210, 0.24), transparent 38%),
+    linear-gradient(135deg, #040812, #071123 48%, #101D33);
+}
+
+/* Night mode aliases: explicit and resolved states */
+:root[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="night"],
+:root[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-resolved-mode="night"],
+:root[data-theme="wilsy-nebula-command"][data-mode="night"],
+:root[data-theme="wilsy-nebula-command"][data-resolved-mode="night"],
+html[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="night"],
+body[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="night"],
+[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="night"],
+[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-resolved-mode="night"],
+[data-theme="wilsy-nebula-command"][data-mode="night"],
+[data-theme="wilsy-nebula-command"][data-resolved-mode="night"] {
+  color-scheme: dark;
+}
+
+/* Day mode override: every common attribute shape */
+:root[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="day"],
+:root[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-resolved-mode="day"],
+:root[data-theme="wilsy-nebula-command"][data-mode="day"],
+:root[data-theme="wilsy-nebula-command"][data-resolved-mode="day"],
+html[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="day"],
+body[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="day"],
+[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="day"],
+[data-wilsy-theme="wilsy-nebula-command"][data-wilsy-resolved-mode="day"],
+[data-theme="wilsy-nebula-command"][data-mode="day"],
+[data-theme="wilsy-nebula-command"][data-resolved-mode="day"],
+[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-theme="wilsy-nebula-command"][data-wilsy-mode="day"],
+[data-wilsy-crm-dashboard="sovereign-sales-cockpit"][data-wilsy-theme="wilsy-nebula-command"][data-wilsy-resolved-mode="day"] {
+  color-scheme: light;
+
+  --wilsy-bg: #F6F9FF;
+  --wilsy-bg-alt: #EAF3FF;
+  --wilsy-canvas: #F6F9FF;
+  --wilsy-panel: #FFFFFF;
+  --wilsy-surface: #FFFFFF;
+  --wilsy-surface-elevated: #F2F7FF;
+  --wilsy-card: #FFFFFF;
+  --wilsy-card-strong: #EAF3FF;
+  --wilsy-rail: rgba(255, 255, 255, 0.92);
+  --wilsy-overlay: rgba(234, 243, 255, 0.68);
+
+  --wilsy-border: rgba(14, 138, 178, 0.28);
+  --wilsy-border-strong: rgba(11, 59, 120, 0.34);
+  --wilsy-primary: #0B3B78;
+  --wilsy-secondary: #0E8AB2;
+  --wilsy-highlight: #31B8D4;
+  --wilsy-accent: #B78D38;
+  --wilsy-accent-strong: #8B6422;
+  --wilsy-live: #139A53;
+  --wilsy-success: #139A53;
+
+  --wilsy-text: #091527;
+  --wilsy-bright-text: #091527;
+  --wilsy-text-soft: #203451;
+  --wilsy-soft-text: #203451;
+  --wilsy-text-muted: #5F7391;
+  --wilsy-muted-text: #5F7391;
+
+  --tenant-primary: #0B3B78;
+  --tenant-secondary: #0E8AB2;
+  --tenant-accent: #B78D38;
+  --tenant-success: #139A53;
+  --tenant-bg: #F6F9FF;
+  --tenant-surface: #FFFFFF;
+  --tenant-card: #EAF3FF;
+  --tenant-border: rgba(14, 138, 178, 0.28);
+  --tenant-text: #091527;
+  --tenant-muted: #5F7391;
+
+  --crm-bg: #F6F9FF;
+  --crm-shell: #F6F9FF;
+  --crm-surface: #FFFFFF;
+  --crm-panel: #FFFFFF;
+  --crm-card: #FFFFFF;
+  --crm-card-strong: #EAF3FF;
+  --crm-border: rgba(14, 138, 178, 0.28);
+  --crm-border-strong: rgba(11, 59, 120, 0.34);
+  --crm-blue: #0B3B78;
+  --crm-primary: #0B3B78;
+  --crm-cyan: #0E8AB2;
+  --crm-highlight: #31B8D4;
+  --crm-gold: #B78D38;
+  --crm-accent: #B78D38;
+  --crm-green: #139A53;
+  --crm-live: #139A53;
+  --crm-success: #139A53;
+  --crm-text: #091527;
+  --crm-soft: #5F7391;
+  --crm-muted: #5F7391;
+  --crm-grid-line: rgba(11, 59, 120, 0.12);
+
+  --sovereign-bg: #F6F9FF;
+  --sovereign-surface: #FFFFFF;
+  --sovereign-border: rgba(14, 138, 178, 0.28);
+  --forensic-success: #139A53;
+  --forensic-info: #0E8AB2;
+  --forensic-warning: #B78D38;
+  --text-primary: #091527;
+  --text-secondary: #203451;
+  --text-muted: #5F7391;
+
+  --glow-primary: rgba(11, 59, 120, 0.18);
+  --glow-secondary: rgba(14, 138, 178, 0.16);
+  --glow-accent: rgba(183, 141, 56, 0.18);
+
+  --wilsy-hero-gradient:
+    radial-gradient(circle at 74% 18%, rgba(14, 138, 178, 0.16), transparent 34%),
+    radial-gradient(circle at 28% 100%, rgba(11, 59, 120, 0.12), transparent 38%),
+    linear-gradient(135deg, #F6F9FF, #FFFFFF 48%, #EAF3FF);
+}
+
+/* Account command center static class bridge */
+[data-wilsy-theme="wilsy-nebula-command"] .wac-panel,
+[data-theme="wilsy-nebula-command"] .wac-panel {
+  background: linear-gradient(135deg, var(--wilsy-surface), var(--wilsy-card-strong)) !important;
+  border-color: var(--wilsy-border) !important;
+}
+
+[data-wilsy-theme="wilsy-nebula-command"] .wac-skin-card,
+[data-theme="wilsy-nebula-command"] .wac-skin-card {
+  border-color: color-mix(in srgb, var(--wilsy-secondary) 32%, rgba(255,255,255,0.08)) !important;
+}
+
+[data-wilsy-theme="wilsy-nebula-command"] .wac-skin-card[aria-pressed="true"],
+[data-theme="wilsy-nebula-command"] .wac-skin-card[aria-pressed="true"] {
+  border-color: var(--wilsy-accent) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--wilsy-accent) 52%, transparent),
+    0 20px 55px color-mix(in srgb, var(--wilsy-accent) 18%, transparent) !important;
+}
+
+/* END WILSY OS R46 NEBULA REFRESH TOKEN LOCK
+   ========================================================================== */
