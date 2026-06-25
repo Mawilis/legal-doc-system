@@ -1,0 +1,921 @@
+/* eslint-disable */
+
+.accountOperatingRoom {
+  --account-bg: #030807;
+  --account-panel: rgba(7, 18, 13, 0.92);
+  --account-panel-strong: rgba(12, 26, 19, 0.96);
+  --account-inner: rgba(2, 10, 7, 0.88);
+  --account-line: rgba(112, 255, 184, 0.2);
+  --account-line-strong: rgba(112, 255, 184, 0.34);
+  --account-text: rgba(245, 255, 250, 0.98);
+  --account-muted: rgba(202, 222, 213, 0.66);
+  --account-soft: rgba(112, 255, 184, 0.1);
+  --account-accent: #24df75;
+  --account-cyan: #41d7ff;
+  --account-gold: #e5d38c;
+  --account-danger: #ff6b6b;
+  --account-warning: #ffcf6b;
+
+  min-width: 0;
+  width: 100%;
+  min-height: calc(100vh - 20px);
+  margin: 0;
+  padding: 18px 20px 22px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  color: var(--account-text);
+  background:
+    radial-gradient(circle at 14% -8%, color-mix(in srgb, var(--account-accent) 20%, transparent), transparent 30%),
+    radial-gradient(circle at 88% 2%, color-mix(in srgb, var(--account-cyan) 18%, transparent), transparent 28%),
+    linear-gradient(135deg, rgba(1, 10, 6, 0.98), rgba(3, 8, 13, 0.99) 48%, rgba(1, 5, 4, 1));
+}
+
+.accountAppHeader,
+.accountRecordsPanel,
+.accountFilterRail,
+.relationshipPanel,
+.revenuePanel,
+.sourcePanel,
+.accountMetricDeck article {
+  border: 1px solid var(--account-line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.01)),
+    var(--account-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 22px 64px rgba(0, 0, 0, 0.34);
+}
+
+.accountAppHeader {
+  border-radius: 24px;
+  border-color: var(--account-line-strong);
+  overflow: visible;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+    radial-gradient(circle at 100% 0%, rgba(65, 215, 255, 0.16), transparent 38%),
+    var(--account-panel-strong);
+}
+
+.accountHeaderPrimary {
+  min-height: 112px;
+  display: grid;
+  grid-template-columns: minmax(360px, 0.82fr) minmax(560px, 1.18fr);
+  gap: 18px;
+  align-items: center;
+  padding: 18px;
+}
+
+.accountTitleBlock {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  align-content: center;
+}
+
+.accountTitleBlock small,
+.accountMetricCopy small,
+.accountRecordsHeader small,
+.accountInvestorStrip small,
+.relationshipPanel small,
+.revenuePanel small,
+.sourcePanel small {
+  color: var(--account-gold);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.accountTitleBlock strong {
+  color: var(--account-text);
+  font-size: clamp(2.55rem, 3.4vw, 4.85rem);
+  line-height: 0.9;
+  letter-spacing: -0.075em;
+  text-shadow: 0 0 34px color-mix(in srgb, var(--account-accent) 18%, transparent);
+}
+
+.accountTitleBlock em {
+  max-width: 680px;
+  color: color-mix(in srgb, var(--account-text) 72%, var(--account-muted));
+  font-size: 0.76rem;
+  font-style: normal;
+  line-height: 1.35;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.accountHeaderUtilities {
+  justify-self: stretch;
+  display: grid;
+  grid-template-columns: repeat(3, 52px) minmax(190px, auto);
+  gap: 10px;
+  align-items: center;
+  justify-content: end;
+}
+
+.accountIconButton,
+.accountThemeAuthority,
+.accountToolbar button,
+.accountViewButton,
+.accountDropdownMenu button,
+.accountRecordsHeader button,
+.accountBulkActionBar button,
+.accountRecordsTable button,
+.accountRowActionMenu a,
+.accountRowActionMenu button,
+.accountEmptyRow button,
+.sourcePanel button {
+  min-height: 42px;
+  border: 1px solid color-mix(in srgb, var(--account-accent) 28%, var(--account-line));
+  border-radius: 13px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+    color-mix(in srgb, var(--account-panel-strong) 88%, transparent);
+  color: var(--account-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 12px;
+  font-size: 0.84rem;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.accountIconButton {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+}
+
+.accountThemeAuthority {
+  min-height: 52px;
+  justify-content: space-between;
+}
+
+.accountThemeAuthority span {
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.accountThemeAuthority small {
+  color: var(--account-muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.accountCommandRow {
+  display: grid;
+  grid-template-columns: minmax(380px, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 0 18px 14px;
+}
+
+.accountSearch,
+.accountFilterSearch {
+  min-height: 52px;
+  border: 1px solid var(--account-line-strong);
+  border-radius: 16px;
+  background: var(--account-inner);
+  color: var(--account-muted);
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 0 14px;
+}
+
+.accountSearch input,
+.accountFilterSearch input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--account-text);
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.accountSearch kbd {
+  border: 1px solid var(--account-line);
+  border-radius: 10px;
+  padding: 6px 9px;
+  color: var(--account-accent);
+  background: rgba(255, 255, 255, 0.035);
+  font-weight: 900;
+}
+
+.accountToolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.accountListViewWrap,
+.accountSortWrap,
+.accountRowActionsCell {
+  position: relative;
+}
+
+.accountViewButton {
+  min-width: 250px;
+  min-height: 52px;
+  justify-content: space-between;
+}
+
+.accountViewButton span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.accountViewButton em {
+  color: var(--account-muted);
+  font-style: normal;
+  font-size: 0.72rem;
+}
+
+.accountPrimaryAction {
+  color: #031007 !important;
+  border-color: color-mix(in srgb, var(--account-accent) 75%, #d8ff9c) !important;
+  background: linear-gradient(135deg, #d8ff9c, var(--account-accent)) !important;
+  box-shadow: 0 0 28px color-mix(in srgb, var(--account-accent) 24%, transparent) !important;
+}
+
+.accountDropdownMenu {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 288px;
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--account-line-strong);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--account-panel-strong) 96%, #020805 4%);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  padding: 7px;
+  display: grid;
+  gap: 5px;
+}
+
+.accountListViewWrap:not(:hover) .accountDropdownMenu {
+  display: none;
+}
+
+.accountDropdownMenu button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.accountDropdownMenu button[data-active="true"],
+.accountDropdownMenu button:hover,
+.accountToolbar button[data-active="true"] {
+  color: var(--account-accent);
+  background: var(--account-soft);
+}
+
+.accountDropdownMenu em {
+  color: var(--account-muted);
+  font-style: normal;
+  font-size: 0.72rem;
+}
+
+.accountTabBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  padding: 0 18px 16px;
+}
+
+.accountTabs {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  overflow-x: auto;
+}
+
+.accountTabs button {
+  min-width: 122px;
+  min-height: 46px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--account-muted);
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.accountTabs button[data-active="true"] {
+  color: var(--account-accent);
+  border-color: color-mix(in srgb, var(--account-accent) 42%, transparent);
+  background: var(--account-soft);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--account-accent) 16%, transparent);
+}
+
+.accountInvestorStrip,
+.accountMetricDeck {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.accountInvestorStrip article {
+  min-height: 58px;
+  border: 1px solid color-mix(in srgb, var(--account-accent) 18%, var(--account-line));
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.18);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 1px 8px;
+  padding: 10px 12px;
+}
+
+.accountInvestorStrip strong {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+  color: var(--account-text);
+  font-size: 1rem;
+}
+
+.accountInvestorStrip em {
+  color: var(--account-muted);
+  font-style: normal;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+}
+
+.accountMetricDeck article {
+  min-width: 0;
+  min-height: 118px;
+  border-radius: 20px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) 5px;
+  gap: 10px 12px;
+  overflow: hidden;
+}
+
+.accountMetricIcon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--account-accent);
+  background: var(--account-soft);
+  border: 1px solid color-mix(in srgb, var(--account-accent) 36%, transparent);
+}
+
+.accountMetricCopy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.accountMetricCopy strong {
+  color: var(--account-text);
+  font-size: clamp(1.45rem, 1.8vw, 2.3rem);
+  line-height: 1;
+}
+
+.accountMetricCopy em {
+  color: var(--account-muted);
+  font-style: normal;
+  font-size: 0.78rem;
+}
+
+.accountMetricBar {
+  grid-column: 1 / -1;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.accountMetricBar b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--account-accent), var(--account-cyan));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--account-accent) 30%, transparent);
+}
+
+.accountSourceWarning {
+  min-height: 46px;
+  border: 1px solid color-mix(in srgb, var(--account-warning) 42%, transparent);
+  border-radius: 16px;
+  background: rgba(255, 207, 107, 0.09);
+  color: var(--account-warning);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-weight: 850;
+}
+
+.accountRecordsWorkspace {
+  min-width: 0;
+  min-height: calc(100vh - 286px);
+  display: grid;
+  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.accountFilterRail,
+.accountRecordsPanel {
+  min-width: 0;
+  border-radius: 22px;
+}
+
+.accountFilterRail {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  overflow: auto;
+}
+
+.accountFilterRail header,
+.accountRecordsHeader,
+.accountRecordsFooter,
+.relationshipPanel header,
+.sourcePanel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.accountFilterRail header span,
+.accountRecordsHeader span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.accountFilterRail header strong,
+.accountRecordsHeader strong,
+.relationshipPanel strong,
+.revenuePanel strong,
+.sourcePanel strong {
+  color: var(--account-text);
+}
+
+.accountFilterGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.accountFilterGroup > strong {
+  color: var(--account-text);
+  font-size: 0.82rem;
+}
+
+.accountFilterGroup button {
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--account-muted);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+.accountFilterGroup button span {
+  width: 16px;
+  height: 16px;
+  border: 2px solid color-mix(in srgb, var(--account-muted) 44%, transparent);
+  border-radius: 4px;
+}
+
+.accountFilterGroup em {
+  font-style: normal;
+}
+
+.accountRecordsPanel {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.accountRecordsHeader {
+  min-height: 82px;
+  padding: 16px 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--account-accent) 16%, var(--account-line));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--account-accent) 8%, transparent), transparent 56%);
+}
+
+.accountRecordsHeader em,
+.accountRecordsFooter,
+.accountFilterRail small {
+  color: var(--account-muted);
+  font-style: normal;
+  font-size: 0.78rem;
+}
+
+.accountBulkActionBar {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--account-line);
+  background: var(--account-soft);
+}
+
+.accountBulkActionBar strong {
+  color: var(--account-accent);
+}
+
+.accountRecordsTableFrame {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.accountRecordsTable {
+  width: 100%;
+  min-width: 1240px;
+  border-collapse: collapse;
+}
+
+.accountRecordsTable th,
+.accountRecordsTable td {
+  min-height: 52px;
+  padding: 11px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--account-line) 72%, transparent);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.accountRecordsTable th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  color: color-mix(in srgb, var(--account-text) 66%, var(--account-muted));
+  background: color-mix(in srgb, var(--account-panel) 94%, #020805 6%);
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.accountRecordsTable td {
+  color: var(--account-text);
+  font-size: 0.9rem;
+}
+
+.accountRecordsTable tbody tr:hover,
+.accountRecordsTable tbody tr[data-selected="true"] {
+  background: rgba(112, 255, 184, 0.07);
+}
+
+.accountRecordsTable input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--account-accent);
+}
+
+.accountNameCell {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  display: grid !important;
+  justify-content: start !important;
+  gap: 2px !important;
+  color: var(--account-text) !important;
+  text-decoration: none !important;
+}
+
+.accountNameCell strong,
+.accountNameCell em,
+.accountRecordsTable td,
+.accountRecordsTable a {
+  overflow-wrap: anywhere;
+}
+
+.accountNameCell em {
+  color: var(--account-muted);
+  font-style: normal;
+  font-size: 0.74rem;
+}
+
+.accountRecordsTable a {
+  color: var(--account-accent);
+  text-decoration: none;
+}
+
+.accountScorePill,
+.accountStatusACTIVE,
+.accountStatusAT_RISK,
+.accountStatusINACTIVE,
+.accountStatusNEW {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.74rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.accountScorePill {
+  border: 1px solid color-mix(in srgb, var(--account-gold) 38%, transparent);
+  background: rgba(229, 211, 140, 0.09);
+  color: var(--account-gold);
+}
+
+.accountStatusACTIVE {
+  color: var(--account-accent);
+  border: 1px solid color-mix(in srgb, var(--account-accent) 42%, transparent);
+  background: var(--account-soft);
+}
+
+.accountStatusAT_RISK,
+.accountStatusNEW {
+  color: var(--account-warning);
+  border: 1px solid color-mix(in srgb, var(--account-warning) 42%, transparent);
+  background: rgba(255, 207, 107, 0.09);
+}
+
+.accountStatusINACTIVE {
+  color: var(--account-danger);
+  border: 1px solid color-mix(in srgb, var(--account-danger) 42%, transparent);
+  background: rgba(255, 107, 107, 0.09);
+}
+
+.accountRowActionsCell {
+  width: 58px;
+}
+
+.accountRowActionsCell > button {
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+}
+
+.accountRowActionMenu {
+  position: absolute;
+  z-index: 90;
+  top: 38px;
+  right: 8px;
+  width: 230px;
+  border: 1px solid var(--account-line-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--account-panel-strong) 96%, #020805 4%);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  padding: 7px;
+  display: grid;
+  gap: 5px;
+}
+
+.accountRowActionMenu a,
+.accountRowActionMenu button {
+  width: 100%;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  justify-content: flex-start;
+}
+
+.accountEmptyRow td {
+  padding: 0;
+}
+
+.accountEmptyRow section {
+  min-height: 360px;
+  margin: 18px;
+  border: 1px solid color-mix(in srgb, var(--account-accent) 22%, transparent);
+  border-radius: 24px;
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--account-accent) 12%, transparent), transparent 32%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+}
+
+.accountEmptyRow svg {
+  width: 44px;
+  height: 44px;
+  color: var(--account-accent);
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--account-accent) 28%, transparent));
+}
+
+.accountEmptyRow span {
+  display: grid;
+  gap: 6px;
+}
+
+.accountEmptyRow strong {
+  color: var(--account-text);
+  font-size: 1.22rem;
+  line-height: 1.12;
+}
+
+.accountEmptyRow em {
+  max-width: 720px;
+  color: color-mix(in srgb, var(--account-text) 66%, var(--account-muted));
+  font-style: normal;
+  font-size: 0.88rem;
+}
+
+.accountEmptyRow div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.accountRecordsFooter {
+  min-height: 44px;
+  padding: 9px 14px;
+  border-top: 1px solid var(--account-line);
+}
+
+.accountTabSurface {
+  min-width: 0;
+  min-height: calc(100vh - 286px);
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.relationshipGrid,
+.sourceGrid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(320px, 440px);
+  gap: 14px;
+}
+
+.relationshipPanel,
+.sourcePanel {
+  min-width: 0;
+  border-radius: 22px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.relationshipNodeGrid,
+.connectorMatrix {
+  display: grid;
+  gap: 8px;
+}
+
+.relationshipNodeGrid span,
+.connectorMatrix span {
+  min-height: 42px;
+  border: 1px solid var(--account-line);
+  border-radius: 14px;
+  background: var(--account-inner);
+  color: var(--account-muted);
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+}
+
+.relationshipNodeGrid span[data-linked="true"] {
+  color: var(--account-accent);
+  border-color: color-mix(in srgb, var(--account-accent) 42%, var(--account-line));
+}
+
+.relationshipNodeGrid em,
+.connectorMatrix em {
+  min-width: 0;
+  overflow: hidden;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relationshipNodeGrid b,
+.connectorMatrix b {
+  font-size: 0.72rem;
+  color: var(--account-text);
+}
+
+.relationshipStats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.relationshipStats span {
+  min-height: 34px;
+  border: 1px solid var(--account-line);
+  border-radius: 999px;
+  background: var(--account-inner);
+  color: var(--account-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  font-weight: 850;
+}
+
+.revenueGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.revenuePanel {
+  min-width: 0;
+  min-height: 180px;
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.revenuePanel > svg {
+  color: var(--account-accent);
+}
+
+.revenuePanel span {
+  display: grid;
+  gap: 7px;
+}
+
+.revenuePanel em,
+.relationshipPanel p,
+.sourcePanel p {
+  color: var(--account-muted);
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.spin {
+  animation: accountSpin 0.9s linear infinite;
+}
+
+@keyframes accountSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1320px) {
+  .accountHeaderPrimary,
+  .accountCommandRow,
+  .accountRecordsWorkspace,
+  .relationshipGrid,
+  .sourceGrid,
+  .revenueGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .accountHeaderUtilities,
+  .accountToolbar {
+    justify-content: start;
+    flex-wrap: wrap;
+  }
+
+  .accountInvestorStrip,
+  .accountMetricDeck {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .accountOperatingRoom {
+    padding: 10px;
+  }
+
+  .accountInvestorStrip,
+  .accountMetricDeck {
+    grid-template-columns: 1fr;
+  }
+
+  .accountEmptyRow section {
+    grid-template-columns: 1fr;
+  }
+}

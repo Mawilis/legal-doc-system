@@ -62,6 +62,7 @@ import { useTenants } from '../../contexts/tenantContext';
 import wilsyLogo from '../../assets/logo/wilsy.jpeg';
 import styles from './CRMDashboard.module.css';
 import WilsyContactOperatingRoom from './contact/WilsyContactOperatingRoom.jsx';
+import WilsyAccountOperatingRoom from './account/WilsyAccountOperatingRoom.jsx';
 import { installCrmSearchOutcomeRuntime } from './CrmSearchOutcomeRuntime.js';
 
 import { searchCrmCommandFabric, syncCrmCommandFabric, createCrmCommandLead } from '../../services/crmService.js';
@@ -2006,6 +2007,21 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 user={user}
                 onRefresh={refreshSources}
                 onCreate={() => openCreateFlow('contacts')}
+              />
+            ) : activeWorkspace === 'accounts' ? (
+              <WilsyAccountOperatingRoom
+                accounts={snapshot.accounts || []}
+                contacts={snapshot.contacts || []}
+                deals={snapshot.deals || []}
+                evidence={snapshot.evidence || []}
+                connectors={snapshot.connectors || []}
+                sourcePosture={snapshot.sourcePosture || {}}
+                sourceErrors={sourceErrors}
+                loading={loading}
+                tenantConfig={tenantConfig}
+                user={user}
+                onRefresh={refreshSources}
+                onCreate={() => openCreateFlow('accounts')}
               />
             ) : (
             <section className={styles.recordsSurface}>
