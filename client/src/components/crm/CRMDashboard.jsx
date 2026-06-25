@@ -1634,7 +1634,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   input.setAttribute('aria-busy', 'false');
 
                   if (statusNode) {
-                    statusNode.textContent = 'Search cleared — enter a query to search sovereign CRM.';
+                    statusNode.textContent = 'CLEARED — READY';
                   }
 
                   return;
@@ -1645,7 +1645,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                   input.setAttribute('aria-busy', 'false');
 
                   if (statusNode) {
-                    statusNode.textContent = 'Type a query before pressing Enter.';
+                    statusNode.textContent = 'EMPTY QUERY — TYPE FIRST';
                   }
 
                   return;
@@ -1655,7 +1655,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                 input.setAttribute('aria-busy', 'true');
 
                 if (statusNode) {
-                  statusNode.textContent = 'Searching sovereign CRM for "' + query + '"…';
+                  statusNode.textContent = 'SEARCHING — ' + query;
                 }
 
                 window.dispatchEvent(new CustomEvent('wilsy:crm-search-submit-feedback', {
@@ -1672,7 +1672,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
                     input.setAttribute('aria-busy', 'false');
 
                     if (statusNode) {
-                      statusNode.textContent = 'Search initiated for "' + query + '" — source posture results are updating.';
+                      statusNode.textContent = 'INITIATED — ' + query;
                     }
                   }
                 }, 420);
@@ -1684,7 +1684,7 @@ function CRMDashboard({ user = {}, tenantConfig = {}, onExit = null }) {
               role="status"
               aria-live="assertive"
             >
-              Ready — type a query and press Enter.
+              READY — PRESS ENTER
             </span>
             <kbd>⌘ K</kbd>
           </label>

@@ -3611,3 +3611,117 @@
     letter-spacing: 0.055em;
   }
 }
+
+/* R74B CRM search CSS-only visible capsule feedback */
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"])) {
+  position: relative;
+}
+
+:global(input[data-wilsy-r74a-search-submit-feedback="true"]) {
+  padding-right: min(26rem, 48vw);
+}
+
+.sovereignSearchSubmitFeedback {
+  position: absolute !important;
+  top: 50%;
+  right: 5.55rem;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: min(22rem, calc(100% - 14rem));
+  min-height: 2.45rem;
+  margin: 0 !important;
+  padding: 0.46rem 0.82rem;
+  border: 1px solid rgba(93, 255, 174, 0.36);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(93, 255, 174, 0.18), rgba(4, 16, 11, 0.94)),
+    rgba(4, 16, 11, 0.92);
+  color: rgba(238, 255, 246, 0.98);
+  box-shadow:
+    0 0 0 1px rgba(93, 255, 174, 0.14),
+    0 0 36px rgba(93, 255, 174, 0.22);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.085em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(0.25rem) scale(0.98);
+  transition:
+    opacity 150ms ease,
+    visibility 150ms ease,
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"]:focus)) > .sovereignSearchSubmitFeedback,
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"]:not(:placeholder-shown))) > .sovereignSearchSubmitFeedback,
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"][data-wilsy-r74a-search-submit-state="searching"])) > .sovereignSearchSubmitFeedback,
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"][data-wilsy-r74a-search-submit-state="submitted"])) > .sovereignSearchSubmitFeedback,
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"][data-wilsy-r74a-search-submit-state="empty"])) > .sovereignSearchSubmitFeedback,
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"][data-wilsy-r74a-search-submit-state="cleared"])) > .sovereignSearchSubmitFeedback {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0) scale(1);
+}
+
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"][data-wilsy-r74a-search-submit-state="searching"])) > .sovereignSearchSubmitFeedback {
+  border-color: rgba(93, 255, 174, 0.84);
+  background:
+    linear-gradient(90deg, rgba(93, 255, 174, 0.24), rgba(4, 18, 12, 0.96)),
+    rgba(4, 18, 12, 0.96);
+  box-shadow:
+    0 0 0 1px rgba(93, 255, 174, 0.32),
+    0 0 48px rgba(93, 255, 174, 0.34);
+}
+
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"][data-wilsy-r74a-search-submit-state="submitted"])) > .sovereignSearchSubmitFeedback {
+  border-color: rgba(180, 255, 210, 0.68);
+  background: rgba(6, 28, 18, 0.92);
+  color: rgba(240, 255, 247, 0.98);
+}
+
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"][data-wilsy-r74a-search-submit-state="empty"])) > .sovereignSearchSubmitFeedback {
+  border-color: rgba(255, 207, 118, 0.76);
+  background: rgba(32, 24, 8, 0.94);
+  color: rgba(255, 231, 179, 0.98);
+  box-shadow:
+    0 0 0 1px rgba(255, 207, 118, 0.26),
+    0 0 34px rgba(255, 207, 118, 0.2);
+}
+
+:global(*:has(> input[data-wilsy-r74a-search-submit-feedback="true"][data-wilsy-r74a-search-submit-state="cleared"])) > .sovereignSearchSubmitFeedback {
+  border-color: rgba(164, 181, 177, 0.44);
+  background: rgba(10, 14, 13, 0.9);
+  color: rgba(216, 227, 224, 0.88);
+}
+
+@media (max-width: 920px) {
+  :global(input[data-wilsy-r74a-search-submit-feedback="true"]) {
+    padding-right: min(17rem, 42vw);
+  }
+
+  .sovereignSearchSubmitFeedback {
+    right: 5.1rem;
+    max-width: min(13rem, calc(100% - 11rem));
+    font-size: 0.58rem;
+    letter-spacing: 0.045em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sovereignSearchSubmitFeedback {
+    transition: none;
+  }
+}
