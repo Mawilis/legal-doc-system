@@ -3,27 +3,30 @@
 const CRM_SEARCH_SELECTOR = [
   'input[aria-label="Global CRM search"]',
   'input[placeholder="Search pipeline, accounts, evidence"]',
+  'input[placeholder*="Search leads"]',
+  'input[placeholder*="Search records"]',
+  'input[aria-label*="Search Lead"]',
 ].join(',');
 
 const CRM_SEARCH_SOURCES = Object.freeze([
-  { label: 'Live leads', endpoint: '/api/crm/live/leads' },
-  { label: 'Live contacts', endpoint: '/api/crm/live/contacts' },
-  { label: 'Live accounts', endpoint: '/api/crm/live/accounts' },
-  { label: 'Live deals', endpoint: '/api/crm/live/deals' },
-  { label: 'Live tasks', endpoint: '/api/crm/live/tasks' },
-  { label: 'Live meetings', endpoint: '/api/crm/live/meetings' },
-  { label: 'Live evidence', endpoint: '/api/crm/live/evidence' },
-  { label: 'Live connectors', endpoint: '/api/crm/live/connectors' },
-  { label: 'Intelligence leads', endpoint: '/api/crm/intelligence/leads' },
-  { label: 'Intelligence accounts', endpoint: '/api/crm/intelligence/accounts' },
-  { label: 'Intelligence deals', endpoint: '/api/crm/intelligence/deals' },
-  { label: 'Source posture', endpoint: '/api/crm/live/source-posture' },
+  { label: 'Leads', endpoint: '/api/crm/live/leads' },
+  { label: 'Contacts', endpoint: '/api/crm/live/contacts' },
+  { label: 'Accounts', endpoint: '/api/crm/live/accounts' },
+  { label: 'Deals', endpoint: '/api/crm/live/deals' },
+  { label: 'Tasks', endpoint: '/api/crm/live/tasks' },
+  { label: 'Meetings', endpoint: '/api/crm/live/meetings' },
+  { label: 'Evidence', endpoint: '/api/crm/live/evidence' },
+  { label: 'Connectors', endpoint: '/api/crm/live/connectors' },
+  { label: 'Intel Leads', endpoint: '/api/crm/intelligence/leads' },
+  { label: 'Intel Accounts', endpoint: '/api/crm/intelligence/accounts' },
+  { label: 'Intel Deals', endpoint: '/api/crm/intelligence/deals' },
+  { label: 'Source Posture', endpoint: '/api/crm/live/source-posture' },
 ]);
 
 /**
  * @function resolveTenantId
- * @description Resolves a stable tenant id for CRM search source requests.
- * @collaboration R74D runtime outcome engine, tenant context, CRM source calls.
+ * @description Resolves the tenant id used for CRM live source searches.
+ * @collaboration R74E inline result deck, tenant context, live CRM source requests.
  */
 function resolveTenantId(tenantId) {
   return String(tenantId || 'MASTER').trim() || 'MASTER';
@@ -31,193 +34,240 @@ function resolveTenantId(tenantId) {
 
 /**
  * @function buildRuntimeStyles
- * @description Builds the fixed-position runtime outcome panel styles.
- * @collaboration R74D visible search outcomes, operator cockpit, WILSY OS UI dominance.
+ * @description Builds compact inline result-deck styles for CRM Home and Leads search inputs.
+ * @collaboration R74E OS-grade search deck, CRM Home search, Leads search.
  */
 function buildRuntimeStyles() {
   return `
-    [data-wilsy-r74d-crm-search-outcome-runtime="true"] {
-      position: fixed;
-      z-index: 2147483000;
-      width: min(960px, calc(100vw - 40px));
-      max-height: min(68vh, 620px);
-      overflow: hidden;
-      border: 1px solid rgba(93, 255, 174, 0.36);
-      border-radius: 28px;
+    [data-wilsy-r74e-search-deck="true"] {
+      display: none;
+      width: 100%;
+      margin-top: 0.7rem;
+      border: 1px solid rgba(96, 255, 176, 0.28);
+      border-radius: 20px;
       background:
-        radial-gradient(circle at 8% 0%, rgba(93, 255, 174, 0.22), transparent 34%),
-        linear-gradient(135deg, rgba(5, 18, 13, 0.98), rgba(1, 7, 5, 0.98));
-      color: rgba(238, 255, 246, 0.98);
+        linear-gradient(135deg, rgba(4, 18, 12, 0.96), rgba(1, 8, 6, 0.98)),
+        rgba(1, 8, 6, 0.98);
+      color: rgba(240, 255, 247, 0.98);
       box-shadow:
-        0 0 0 1px rgba(93, 255, 174, 0.16),
-        0 32px 90px rgba(0, 0, 0, 0.62),
-        0 0 70px rgba(93, 255, 174, 0.24);
-      backdrop-filter: blur(22px);
-      transform-origin: top center;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transform: translateY(-8px) scale(0.985);
-      transition:
-        opacity 150ms ease,
-        visibility 150ms ease,
-        transform 150ms ease;
+        0 0 0 1px rgba(96, 255, 176, 0.1),
+        0 18px 42px rgba(0, 0, 0, 0.42),
+        0 0 34px rgba(96, 255, 176, 0.14);
+      overflow: hidden;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    [data-wilsy-r74d-crm-search-outcome-runtime="true"][data-wilsy-r74d-open="true"] {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-      transform: translateY(0) scale(1);
+    [data-wilsy-r74e-search-deck="true"][data-open="true"] {
+      display: block;
     }
 
-    .wilsy-r74d-search-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 1.05rem 1.15rem;
-      border-bottom: 1px solid rgba(93, 255, 174, 0.18);
+    .wilsy-r74e-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.72rem 0.84rem;
+      border-bottom: 1px solid rgba(96, 255, 176, 0.16);
       background: rgba(255, 255, 255, 0.035);
     }
 
-    .wilsy-r74d-search-kicker {
-      color: rgba(181, 255, 214, 0.72);
-      font-size: 0.68rem;
+    .wilsy-r74e-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .wilsy-r74e-kicker {
+      color: rgba(174, 255, 211, 0.7);
+      font-size: 0.58rem;
       font-weight: 950;
       letter-spacing: 0.14em;
       text-transform: uppercase;
     }
 
-    .wilsy-r74d-search-title {
-      margin-top: 0.34rem;
-      color: rgba(248, 255, 251, 0.98);
-      font-size: clamp(1rem, 1.6vw, 1.45rem);
+    .wilsy-r74e-query {
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      color: rgba(249, 255, 252, 0.98);
+      font-size: 0.78rem;
       font-weight: 950;
-      letter-spacing: -0.02em;
-    }
-
-    .wilsy-r74d-search-meta {
-      margin-top: 0.45rem;
-      color: rgba(215, 236, 225, 0.74);
-      font-size: 0.74rem;
-      font-weight: 760;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.01em;
+      text-overflow: ellipsis;
       text-transform: uppercase;
+      white-space: nowrap;
     }
 
-    .wilsy-r74d-search-close {
+    .wilsy-r74e-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.72rem;
+      padding: 0.28rem 0.56rem;
+      border: 1px solid rgba(96, 255, 176, 0.24);
+      border-radius: 999px;
+      background: rgba(96, 255, 176, 0.08);
+      color: rgba(226, 255, 239, 0.94);
+      font-size: 0.58rem;
+      font-weight: 950;
+      letter-spacing: 0.085em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .wilsy-r74e-status[data-tone="found"] {
+      border-color: rgba(112, 255, 184, 0.48);
+      background: rgba(96, 255, 176, 0.14);
+      box-shadow: 0 0 22px rgba(96, 255, 176, 0.18);
+    }
+
+    .wilsy-r74e-status[data-tone="empty"] {
+      border-color: rgba(255, 209, 118, 0.5);
+      background: rgba(255, 209, 118, 0.12);
+      color: rgba(255, 235, 194, 0.98);
+    }
+
+    .wilsy-r74e-status[data-tone="error"] {
+      border-color: rgba(255, 110, 110, 0.5);
+      background: rgba(255, 110, 110, 0.11);
+      color: rgba(255, 221, 221, 0.98);
+    }
+
+    .wilsy-r74e-close {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 2.4rem;
-      height: 2.4rem;
+      width: 1.85rem;
+      height: 1.85rem;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.055);
-      color: rgba(255, 255, 255, 0.86);
+      color: rgba(255, 255, 255, 0.84);
       cursor: pointer;
-      font-size: 1rem;
-      font-weight: 900;
-    }
-
-    .wilsy-r74d-search-body {
-      display: grid;
-      gap: 0.72rem;
-      max-height: calc(min(68vh, 620px) - 7.2rem);
-      overflow: auto;
-      padding: 1rem;
-    }
-
-    .wilsy-r74d-search-state {
-      display: grid;
-      gap: 0.4rem;
-      padding: 1rem;
-      border: 1px solid rgba(93, 255, 174, 0.18);
-      border-radius: 20px;
-      background: rgba(93, 255, 174, 0.075);
-      color: rgba(235, 255, 244, 0.94);
-      font-weight: 820;
-    }
-
-    .wilsy-r74d-search-state[data-tone="empty"] {
-      border-color: rgba(255, 207, 118, 0.34);
-      background: rgba(255, 207, 118, 0.09);
-      color: rgba(255, 237, 196, 0.96);
-    }
-
-    .wilsy-r74d-search-state[data-tone="error"] {
-      border-color: rgba(255, 103, 103, 0.38);
-      background: rgba(255, 103, 103, 0.09);
-      color: rgba(255, 217, 217, 0.96);
-    }
-
-    .wilsy-r74d-result-card {
-      display: grid;
-      gap: 0.35rem;
-      padding: 0.9rem 1rem;
-      border: 1px solid rgba(93, 255, 174, 0.2);
-      border-radius: 18px;
-      background:
-        linear-gradient(135deg, rgba(93, 255, 174, 0.08), rgba(255, 255, 255, 0.025)),
-        rgba(4, 14, 10, 0.78);
-    }
-
-    .wilsy-r74d-result-card strong {
-      color: rgba(248, 255, 251, 0.98);
       font-size: 0.92rem;
-      font-weight: 940;
+      font-weight: 950;
     }
 
-    .wilsy-r74d-result-card span {
-      color: rgba(215, 236, 225, 0.74);
-      font-size: 0.74rem;
+    .wilsy-r74e-body {
+      display: grid;
+      gap: 0.5rem;
+      max-height: min(34vh, 320px);
+      overflow: auto;
+      padding: 0.68rem;
+    }
+
+    .wilsy-r74e-state {
+      padding: 0.72rem 0.78rem;
+      border: 1px solid rgba(96, 255, 176, 0.16);
+      border-radius: 15px;
+      background: rgba(96, 255, 176, 0.055);
+      color: rgba(225, 242, 233, 0.9);
+      font-size: 0.78rem;
       font-weight: 760;
-      letter-spacing: 0.035em;
+      line-height: 1.42;
+    }
+
+    .wilsy-r74e-state[data-tone="empty"] {
+      border-color: rgba(255, 209, 118, 0.3);
+      background: rgba(255, 209, 118, 0.08);
+      color: rgba(255, 238, 205, 0.94);
+    }
+
+    .wilsy-r74e-state[data-tone="error"] {
+      border-color: rgba(255, 110, 110, 0.34);
+      background: rgba(255, 110, 110, 0.08);
+      color: rgba(255, 226, 226, 0.94);
+    }
+
+    .wilsy-r74e-grid {
+      display: grid;
+      gap: 0.48rem;
+    }
+
+    .wilsy-r74e-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.58rem;
+      align-items: center;
+      padding: 0.64rem 0.72rem;
+      border: 1px solid rgba(96, 255, 176, 0.18);
+      border-radius: 15px;
+      background:
+        linear-gradient(135deg, rgba(96, 255, 176, 0.075), rgba(255, 255, 255, 0.02)),
+        rgba(3, 14, 9, 0.74);
+    }
+
+    .wilsy-r74e-main {
+      display: grid;
+      gap: 0.22rem;
+      min-width: 0;
+    }
+
+    .wilsy-r74e-source {
+      color: rgba(174, 255, 211, 0.62);
+      font-size: 0.55rem;
+      font-weight: 950;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
     }
 
-    .wilsy-r74d-result-card code {
-      width: fit-content;
-      max-width: 100%;
+    .wilsy-r74e-name {
       overflow: hidden;
-      padding: 0.24rem 0.44rem;
-      border: 1px solid rgba(93, 255, 174, 0.18);
-      border-radius: 999px;
-      background: rgba(1, 8, 5, 0.82);
-      color: rgba(202, 255, 224, 0.9);
-      font-size: 0.66rem;
+      color: rgba(248, 255, 251, 0.98);
+      font-size: 0.82rem;
+      font-weight: 930;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .wilsy-r74d-source-strip {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.42rem;
-      padding: 0 1rem 1rem;
+    .wilsy-r74e-meta {
+      overflow: hidden;
+      color: rgba(210, 232, 220, 0.72);
+      font-size: 0.64rem;
+      font-weight: 760;
+      letter-spacing: 0.035em;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
-    .wilsy-r74d-source-pill {
-      padding: 0.34rem 0.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.09);
+    .wilsy-r74e-code {
+      max-width: 12rem;
+      overflow: hidden;
+      padding: 0.25rem 0.44rem;
+      border: 1px solid rgba(96, 255, 176, 0.16);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.045);
-      color: rgba(226, 236, 231, 0.7);
-      font-size: 0.62rem;
+      background: rgba(1, 8, 5, 0.82);
+      color: rgba(205, 255, 226, 0.86);
+      font-size: 0.56rem;
       font-weight: 850;
-      letter-spacing: 0.06em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .wilsy-r74e-sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      padding: 0 0.68rem 0.68rem;
+    }
+
+    .wilsy-r74e-pill {
+      padding: 0.22rem 0.38rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(226, 236, 231, 0.64);
+      font-size: 0.5rem;
+      font-weight: 880;
+      letter-spacing: 0.055em;
       text-transform: uppercase;
     }
 
     @media (max-width: 720px) {
-      [data-wilsy-r74d-crm-search-outcome-runtime="true"] {
-        width: calc(100vw - 20px);
-      }
-
-      .wilsy-r74d-search-head {
-        padding: 0.9rem;
+      .wilsy-r74e-card {
+        grid-template-columns: 1fr;
       }
     }
   `;
@@ -225,14 +275,18 @@ function buildRuntimeStyles() {
 
 /**
  * @function ensureRuntimeStyle
- * @description Installs the runtime outcome panel stylesheet once per document.
- * @collaboration R74D styling, DOM runtime bridge, CRM search outcome surface.
+ * @description Installs or replaces the inline search result deck stylesheet.
+ * @collaboration R74E styling, compact result deck, CRM operator search UX.
  */
 function ensureRuntimeStyle(doc) {
-  const styleId = 'wilsy-r74d-crm-search-outcome-style';
+  const styleId = 'wilsy-r74e-crm-search-inline-result-style';
+  const oldStyle = doc.getElementById('wilsy-r74d-crm-search-outcome-style');
   const existing = doc.getElementById(styleId);
 
+  oldStyle?.remove();
+
   if (existing) {
+    existing.textContent = buildRuntimeStyles();
     return existing;
   }
 
@@ -245,67 +299,72 @@ function ensureRuntimeStyle(doc) {
 }
 
 /**
- * @function selectVisibleSearchInput
- * @description Selects the actual visible top CRM search input from the rendered DOM.
- * @collaboration R74D DOM ownership proof, Chrome runtime evidence, CRM top search.
+ * @function cleanupLegacyPanels
+ * @description Removes stale modal search panels from previous runtime attempts.
+ * @collaboration R74E migration, R74D modal removal, clean operator UI.
  */
-function selectVisibleSearchInput(doc) {
-  const candidates = [...doc.querySelectorAll(CRM_SEARCH_SELECTOR)];
-
-  return candidates.find((input) => {
-    const rect = input.getBoundingClientRect();
-
-    return rect.width > 240 && rect.height > 30 && input.offsetParent !== null;
-  }) || candidates[0] || null;
+function cleanupLegacyPanels(doc) {
+  doc
+    .querySelectorAll('[data-wilsy-r74d-crm-search-outcome-runtime="true"], [data-wilsy-r74e-search-deck="true"]')
+    .forEach((node) => node.remove());
 }
 
 /**
- * @function createOutcomePanel
- * @description Creates the fixed runtime search outcome panel.
- * @collaboration R74D operator-visible results, found/not-found state, CRM cockpit UX.
+ * @function getSearchInputs
+ * @description Returns visible CRM Home and Leads search inputs.
+ * @collaboration R74E actual DOM inputs, CRM Home search, Leads search.
  */
-function createOutcomePanel(doc) {
-  const existing = doc.querySelector('[data-wilsy-r74d-crm-search-outcome-runtime="true"]');
+function getSearchInputs(doc) {
+  return [...doc.querySelectorAll(CRM_SEARCH_SELECTOR)].filter((input) => {
+    const rect = input.getBoundingClientRect();
+    return rect.width > 220 && rect.height > 26 && input.offsetParent !== null;
+  });
+}
+
+/**
+ * @function findDeckAnchor
+ * @description Finds the best DOM anchor immediately around the active search input.
+ * @collaboration R74E inline result placement, actual search shell, non-modal UX.
+ */
+function findDeckAnchor(input) {
+  return input.closest('label') || input.closest('form') || input.parentElement;
+}
+
+/**
+ * @function createDeckForInput
+ * @description Creates or returns the compact inline result deck for one search input.
+ * @collaboration R74E per-input result deck, CRM Home and Leads search, DOM runtime.
+ */
+function createDeckForInput(input) {
+  const anchor = findDeckAnchor(input);
+
+  if (!anchor) {
+    return null;
+  }
+
+  const existing = anchor.parentElement?.querySelector(`[data-wilsy-r74e-search-deck="true"][data-owner="${input.dataset.wilsyR74eSearchOwner}"]`);
 
   if (existing) {
     return existing;
   }
 
-  const panel = doc.createElement('aside');
-  panel.setAttribute('data-wilsy-r74d-crm-search-outcome-runtime', 'true');
-  panel.setAttribute('data-wilsy-r74d-open', 'false');
-  panel.setAttribute('role', 'region');
-  panel.setAttribute('aria-live', 'polite');
-  panel.setAttribute('aria-label', 'CRM search outcome results');
-  doc.body.appendChild(panel);
+  const deck = document.createElement('section');
+  deck.setAttribute('data-wilsy-r74e-search-deck', 'true');
+  deck.setAttribute('data-open', 'false');
+  deck.setAttribute('data-owner', input.dataset.wilsyR74eSearchOwner || 'crm-search');
+  deck.setAttribute('role', 'region');
+  deck.setAttribute('aria-live', 'polite');
+  deck.setAttribute('aria-label', 'CRM search results');
 
-  return panel;
-}
+  anchor.insertAdjacentElement('afterend', deck);
 
-/**
- * @function positionOutcomePanel
- * @description Positions the outcome panel directly below the live search input.
- * @collaboration R74D actual DOM anchoring, visible CRM search bar, operator acceptance.
- */
-function positionOutcomePanel(panel, input) {
-  if (!panel || !input) {
-    return;
-  }
-
-  const rect = input.getBoundingClientRect();
-  const width = Math.min(Math.max(rect.width, 620), window.innerWidth - 40);
-  const left = Math.min(Math.max(rect.left, 20), window.innerWidth - width - 20);
-  const top = Math.min(rect.bottom + 12, window.innerHeight - 120);
-
-  panel.style.left = `${left}px`;
-  panel.style.top = `${top}px`;
-  panel.style.width = `${width}px`;
+  return deck;
 }
 
 /**
  * @function escapeHtml
- * @description Escapes runtime CRM search values before writing outcome HTML.
- * @collaboration R74D source safety, DOM rendering, operator search result display.
+ * @description Escapes values before rendering live CRM search output.
+ * @collaboration R74E DOM safety, CRM result rendering, operator trust.
  */
 function escapeHtml(value) {
   return String(value ?? '')
@@ -318,25 +377,23 @@ function escapeHtml(value) {
 
 /**
  * @function extractRecords
- * @description Extracts object records from flexible CRM API payload shapes.
- * @collaboration R74D source-honest search, CRM live routes, CRM intelligence routes.
+ * @description Extracts record-like objects from flexible CRM API payloads.
+ * @collaboration R74E live DB compatibility, CRM route payloads, result normalization.
  */
 function extractRecords(payload) {
   const records = [];
   const seen = new Set();
+  const stack = [{ value: payload, depth: 0 }];
 
-  /**
-   * @function visit
-   * @description Recursively visits payload branches and collects record-like objects.
-   * @collaboration R74D payload normalization, CRM source compatibility, resilient search.
-   */
-  function visit(value, depth = 0) {
-    if (!value || depth > 5) {
-      return;
+  while (stack.length > 0) {
+    const current = stack.pop();
+
+    if (!current || current.depth > 5 || current.value == null) {
+      continue;
     }
 
-    if (Array.isArray(value)) {
-      value.forEach((item) => {
+    if (Array.isArray(current.value)) {
+      current.value.forEach((item) => {
         if (item && typeof item === 'object' && !Array.isArray(item)) {
           const key = JSON.stringify(item).slice(0, 800);
 
@@ -347,23 +404,23 @@ function extractRecords(payload) {
         }
       });
 
-      return;
+      continue;
     }
 
-    if (typeof value === 'object') {
-      Object.values(value).forEach((child) => visit(child, depth + 1));
+    if (typeof current.value === 'object') {
+      Object.values(current.value).forEach((child) => {
+        stack.push({ value: child, depth: current.depth + 1 });
+      });
     }
   }
-
-  visit(payload);
 
   return records;
 }
 
 /**
  * @function recordMatchesQuery
- * @description Tests whether a CRM record contains the operator search query.
- * @collaboration R74D client-side fallback filtering, found/not-found truthfulness, CRM search.
+ * @description Checks whether a CRM record contains the operator search query.
+ * @collaboration R74E client-side filtering, live DB result truth, CRM search outcome.
  */
 function recordMatchesQuery(record, query) {
   return JSON.stringify(record || {}).toLowerCase().includes(String(query || '').toLowerCase());
@@ -371,8 +428,8 @@ function recordMatchesQuery(record, query) {
 
 /**
  * @function summarizeRecord
- * @description Builds a compact operator-facing CRM search result summary.
- * @collaboration R74D result cards, CRM evidence surface, operator decisioning.
+ * @description Converts a CRM source record into compact result-card data.
+ * @collaboration R74E result card model, CRM evidence surface, operator decisioning.
  */
 function summarizeRecord(record, sourceLabel) {
   const title =
@@ -418,8 +475,8 @@ function summarizeRecord(record, sourceLabel) {
 
 /**
  * @function fetchCrmSource
- * @description Fetches and filters one CRM live/intelligence source for the query.
- * @collaboration R74D source calls, found/not-found result engine, CRM route posture.
+ * @description Fetches one CRM source lane and filters records by query.
+ * @collaboration R74E live DB search, CRM source posture, found/not-found outcome.
  */
 async function fetchCrmSource(source, query, tenantId) {
   const controller = new AbortController();
@@ -455,7 +512,7 @@ async function fetchCrmSource(source, query, tenantId) {
     const payload = await response.json().catch(() => null);
     const records = extractRecords(payload)
       .filter((record) => recordMatchesQuery(record, query))
-      .slice(0, 5)
+      .slice(0, 6)
       .map((record) => summarizeRecord(record, source.label));
 
     return {
@@ -478,121 +535,108 @@ async function fetchCrmSource(source, query, tenantId) {
 
 /**
  * @function searchCrmSources
- * @description Searches all configured CRM runtime sources and returns an outcome summary.
- * @collaboration R74D multi-source search, CRM results found/not-found, source posture.
+ * @description Searches CRM live and intelligence source lanes.
+ * @collaboration R74E source search, live DB outcome, source posture evidence.
  */
 async function searchCrmSources(query, tenantId) {
   const sourceResults = await Promise.all(
     CRM_SEARCH_SOURCES.map((source) => fetchCrmSource(source, query, tenantId))
   );
 
-  const records = sourceResults.flatMap((sourceResult) => sourceResult.records);
-  const okSources = sourceResults.filter((sourceResult) => sourceResult.ok);
-  const failedSources = sourceResults.filter((sourceResult) => !sourceResult.ok);
-
   return {
-    records,
     sourceResults,
-    okSources,
-    failedSources,
+    okSources: sourceResults.filter((sourceResult) => sourceResult.ok),
+    failedSources: sourceResults.filter((sourceResult) => !sourceResult.ok),
+    records: sourceResults.flatMap((sourceResult) => sourceResult.records),
   };
 }
 
 /**
- * @function renderOutcome
- * @description Renders loading, found, not-found, and source-blocked states into the runtime panel.
- * @collaboration R74D operator outcome visibility, CRM search results, evidence surface.
+ * @function renderDeck
+ * @description Renders searching, found, no-records, and source-blocked outcomes into an inline deck.
+ * @collaboration R74E inline results, CRM search outcome, operator UX.
  */
-function renderOutcome(panel, state) {
+function renderDeck(deck, state) {
   const query = escapeHtml(state.query || '');
   const records = state.records || [];
-  const failedSources = state.failedSources || [];
   const sourceResults = state.sourceResults || [];
-  const tone = state.tone || 'ready';
+  const failedSources = state.failedSources || [];
+  const okCount = sourceResults.filter((sourceResult) => sourceResult.ok).length;
+  const tone = state.tone || 'loading';
 
-  let title = 'READY — PRESS ENTER';
-  let meta = 'Search CRM live and intelligence sources.';
+  let status = 'SEARCHING';
   let body = `
-    <div class="wilsy-r74d-search-state" data-tone="ready">
-      Type a query and press Enter to search CRM records, evidence and source posture.
+    <div class="wilsy-r74e-state" data-tone="loading">
+      Searching live CRM database lanes, evidence, accounts, deals and intelligence posture.
     </div>
   `;
 
-  if (tone === 'loading') {
-    title = `SEARCHING CRM SOURCES — ${query}`;
-    meta = 'Live source query in progress.';
+  if (tone === 'found') {
+    status = `FOUND ${records.length}`;
     body = `
-      <div class="wilsy-r74d-search-state" data-tone="loading">
-        Searching leads, accounts, deals, evidence, connectors and intelligence sources for “${query}”.
+      <div class="wilsy-r74e-grid">
+        ${records.map((record) => `
+          <article class="wilsy-r74e-card">
+            <div class="wilsy-r74e-main">
+              <span class="wilsy-r74e-source">${escapeHtml(record.sourceLabel)}</span>
+              <strong class="wilsy-r74e-name">${escapeHtml(record.title)}</strong>
+              <span class="wilsy-r74e-meta">${escapeHtml(record.subtitle)}</span>
+            </div>
+            <code class="wilsy-r74e-code">${escapeHtml(record.code)}</code>
+          </article>
+        `).join('')}
       </div>
     `;
   }
 
-  if (tone === 'found') {
-    title = `FOUND ${records.length} RESULT${records.length === 1 ? '' : 'S'} — ${query}`;
-    meta = `${sourceResults.filter((item) => item.ok).length} source lanes responded.`;
-
-    body = records.map((record) => `
-      <article class="wilsy-r74d-result-card">
-        <span>${escapeHtml(record.sourceLabel)}</span>
-        <strong>${escapeHtml(record.title)}</strong>
-        <span>${escapeHtml(record.subtitle)}</span>
-        <code>${escapeHtml(record.code)}</code>
-      </article>
-    `).join('');
-  }
-
   if (tone === 'empty') {
-    title = `NO CRM RECORDS FOUND — ${query}`;
-    meta = `${sourceResults.filter((item) => item.ok).length} source lanes checked.`;
+    status = 'NO RECORDS';
     body = `
-      <div class="wilsy-r74d-search-state" data-tone="empty">
-        No live CRM records matched “${query}”. This is a real not-found outcome, not a silent search.
+      <div class="wilsy-r74e-state" data-tone="empty">
+        No live CRM records matched “${query}”. ${okCount} source lane${okCount === 1 ? '' : 's'} checked.
       </div>
     `;
   }
 
   if (tone === 'error') {
-    title = `CRM SEARCH SOURCE BLOCKED — ${query}`;
-    meta = `${failedSources.length} source lane${failedSources.length === 1 ? '' : 's'} failed or returned protected status.`;
+    status = 'SOURCE BLOCKED';
     body = `
-      <div class="wilsy-r74d-search-state" data-tone="error">
-        Search could not return source records. Check auth/session, tenant context, and backend CRM route posture.
+      <div class="wilsy-r74e-state" data-tone="error">
+        CRM search could not return source records. ${failedSources.length} source lane${failedSources.length === 1 ? '' : 's'} failed or returned protected status.
       </div>
     `;
   }
 
   const sourceStrip = sourceResults.slice(0, 12).map((sourceResult) => `
-    <span class="wilsy-r74d-source-pill">
+    <span class="wilsy-r74e-pill">
       ${escapeHtml(sourceResult.source.label)} · ${escapeHtml(sourceResult.ok ? 'OK' : sourceResult.code)}
     </span>
   `).join('');
 
-  panel.innerHTML = `
-    <div class="wilsy-r74d-search-head">
-      <div>
-        <div class="wilsy-r74d-search-kicker">WILSY OS · CRM SEARCH OUTCOME</div>
-        <div class="wilsy-r74d-search-title">${title}</div>
-        <div class="wilsy-r74d-search-meta">${meta}</div>
+  deck.innerHTML = `
+    <div class="wilsy-r74e-head">
+      <div class="wilsy-r74e-title-row">
+        <span class="wilsy-r74e-kicker">WILSY OS · CRM SEARCH</span>
+        <span class="wilsy-r74e-query">${query}</span>
+        <span class="wilsy-r74e-status" data-tone="${escapeHtml(tone)}">${escapeHtml(status)}</span>
       </div>
-      <button class="wilsy-r74d-search-close" type="button" aria-label="Close CRM search results">×</button>
+      <button class="wilsy-r74e-close" type="button" aria-label="Close CRM search results">×</button>
     </div>
-    <div class="wilsy-r74d-search-body">${body}</div>
-    <div class="wilsy-r74d-source-strip">${sourceStrip}</div>
+    <div class="wilsy-r74e-body">${body}</div>
+    <div class="wilsy-r74e-sources">${sourceStrip}</div>
   `;
 
-  panel.setAttribute('data-wilsy-r74d-open', 'true');
+  deck.setAttribute('data-open', 'true');
 
-  const closeButton = panel.querySelector('.wilsy-r74d-search-close');
-  closeButton?.addEventListener('click', () => {
-    panel.setAttribute('data-wilsy-r74d-open', 'false');
+  deck.querySelector('.wilsy-r74e-close')?.addEventListener('click', () => {
+    deck.setAttribute('data-open', 'false');
   });
 }
 
 /**
  * @function installCrmSearchOutcomeRuntime
- * @description Installs a runtime bridge on the actual visible CRM top search input and shows found/not-found/error results.
- * @collaboration R74D runtime DOM owner, CRM search outcome engine, WILSY OS competitive search UX.
+ * @description Installs compact inline CRM search result decks on visible CRM Home and Leads search inputs.
+ * @collaboration R74E actual search inputs, live DB found/no-records outcomes, WILSY OS operator UX.
  */
 export function installCrmSearchOutcomeRuntime({ tenantId = 'MASTER' } = {}) {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -605,71 +649,64 @@ export function installCrmSearchOutcomeRuntime({ tenantId = 'MASTER' } = {}) {
 
   const doc = document;
   const resolvedTenantId = resolveTenantId(tenantId);
-  let disposed = false;
-  let attachedInput = null;
-/**
-   * @function detachInput
-   * @description Stores the active CRM search input event-detach callback for safe runtime rebinding and teardown.
-   * @collaboration R74D runtime outcome engine, DOM listener lifecycle, WILSY OS CRM search stability.
-   */
-  let detachInput = () => {};
+  const listenerRegistry = new Map();
 
   ensureRuntimeStyle(doc);
-
-  const panel = createOutcomePanel(doc);
+  cleanupLegacyPanels(doc);
 
   /**
-   * @function attachToInput
-   * @description Attaches runtime search handlers to the actual visible CRM search input.
-   * @collaboration R74D live DOM handler, operator search entry, CRM outcome panel.
+   * @function closeAllDecksExcept
+   * @description Closes all inline search decks except the active one.
+   * @collaboration R74E multi-search cleanup, CRM Home and Leads deck coordination, operator focus.
    */
-  function attachToInput() {
-    if (disposed) {
+  function closeAllDecksExcept(activeDeck) {
+    doc.querySelectorAll('[data-wilsy-r74e-search-deck="true"]').forEach((deck) => {
+      if (deck !== activeDeck) {
+        deck.setAttribute('data-open', 'false');
+      }
+    });
+  }
+
+  /**
+   * @function bindInput
+   * @description Binds Enter/Escape outcome behavior to one visible CRM search input.
+   * @collaboration R74E input binding, live DB search trigger, no typing modal behavior.
+   */
+  function bindInput(input, index) {
+    if (listenerRegistry.has(input)) {
       return;
     }
 
-    const input = selectVisibleSearchInput(doc);
-
-    if (!input || input === attachedInput) {
-      return;
-    }
-
-    detachInput();
-    attachedInput = input;
-    input.setAttribute('data-wilsy-r74d-runtime-outcome-input', 'true');
+    input.setAttribute('data-wilsy-r74e-runtime-result-input', 'true');
+    input.dataset.wilsyR74eSearchOwner = `crm-search-${index}`;
 
     /**
-     * @function openReadyState
-     * @description Shows ready-state feedback for the current CRM search query.
-     * @collaboration R74D ready feedback, visible input anchoring, CRM search outcome.
+     * @function closeDeck
+     * @description Closes the inline result deck for the active search input.
+     * @collaboration R74E Escape behavior, inline deck control, operator command UX.
      */
-    function openReadyState() {
-      positionOutcomePanel(panel, input);
-
-      const query = String(input.value || '').trim();
-
-      if (query) {
-        renderOutcome(panel, {
-          tone: 'ready',
-          query,
-          records: [],
-          sourceResults: [],
-          failedSources: [],
-        });
-      }
+    function closeDeck() {
+      const deck = createDeckForInput(input);
+      deck?.setAttribute('data-open', 'false');
     }
 
     /**
      * @function runSearch
-     * @description Executes the source-honest CRM search and renders found/not-found/error outcomes.
-     * @collaboration R74D Enter key search, CRM route calls, found-not-found UX.
+     * @description Runs live CRM source search and renders found, no-records, or source-blocked inline outcome.
+     * @collaboration R74E Enter key behavior, live DB query, search result deck.
      */
     async function runSearch() {
+      const deck = createDeckForInput(input);
       const query = String(input.value || '').trim();
-      positionOutcomePanel(panel, input);
+
+      if (!deck) {
+        return;
+      }
+
+      closeAllDecksExcept(deck);
 
       if (!query) {
-        renderOutcome(panel, {
+        renderDeck(deck, {
           tone: 'empty',
           query: 'EMPTY QUERY',
           records: [],
@@ -679,7 +716,7 @@ export function installCrmSearchOutcomeRuntime({ tenantId = 'MASTER' } = {}) {
         return;
       }
 
-      renderOutcome(panel, {
+      renderDeck(deck, {
         tone: 'loading',
         query,
         records: [],
@@ -690,7 +727,7 @@ export function installCrmSearchOutcomeRuntime({ tenantId = 'MASTER' } = {}) {
       const outcome = await searchCrmSources(query, resolvedTenantId);
 
       if (outcome.records.length > 0) {
-        renderOutcome(panel, {
+        renderDeck(deck, {
           tone: 'found',
           query,
           ...outcome,
@@ -699,7 +736,7 @@ export function installCrmSearchOutcomeRuntime({ tenantId = 'MASTER' } = {}) {
       }
 
       if (outcome.okSources.length === 0 && outcome.failedSources.length > 0) {
-        renderOutcome(panel, {
+        renderDeck(deck, {
           tone: 'error',
           query,
           ...outcome,
@@ -707,7 +744,7 @@ export function installCrmSearchOutcomeRuntime({ tenantId = 'MASTER' } = {}) {
         return;
       }
 
-      renderOutcome(panel, {
+      renderDeck(deck, {
         tone: 'empty',
         query,
         ...outcome,
@@ -716,8 +753,8 @@ export function installCrmSearchOutcomeRuntime({ tenantId = 'MASTER' } = {}) {
 
     /**
      * @function handleKeyDown
-     * @description Handles Enter and Escape for the runtime CRM search outcome panel.
-     * @collaboration R74D keyboard UX, Enter search, Escape close.
+     * @description Opens the inline result deck only on Enter and closes it on Escape.
+     * @collaboration R74E keyboard search command, no-modal typing, CRM result output.
      */
     function handleKeyDown(event) {
       if (event.key === 'Enter') {
@@ -726,51 +763,49 @@ export function installCrmSearchOutcomeRuntime({ tenantId = 'MASTER' } = {}) {
       }
 
       if (event.key === 'Escape') {
-        panel.setAttribute('data-wilsy-r74d-open', 'false');
+        closeDeck();
       }
     }
 
-    input.addEventListener('focus', openReadyState);
-    input.addEventListener('input', openReadyState);
     input.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('resize', openReadyState);
-    window.addEventListener('scroll', openReadyState, true);
 
-    detachInput = () => {
-      input.removeEventListener('focus', openReadyState);
-      input.removeEventListener('input', openReadyState);
+    listenerRegistry.set(input, () => {
       input.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('resize', openReadyState);
-      window.removeEventListener('scroll', openReadyState, true);
-    };
-
-    if (String(input.value || '').trim()) {
-      openReadyState();
-    }
+    });
   }
 
-  const observer = new MutationObserver(attachToInput);
+  /**
+   * @function bindVisibleInputs
+   * @description Binds all currently visible CRM search inputs.
+   * @collaboration R74E CRM Home and Leads search binding, route changes, DOM lifecycle.
+   */
+  function bindVisibleInputs() {
+    getSearchInputs(doc).forEach((input, index) => bindInput(input, index));
+  }
+
+  const observer = new MutationObserver(bindVisibleInputs);
   observer.observe(doc.body, {
     childList: true,
     subtree: true,
   });
 
-  const interval = window.setInterval(attachToInput, 500);
-  window.setTimeout(attachToInput, 0);
-  attachToInput();
+  const interval = window.setInterval(bindVisibleInputs, 600);
+  window.setTimeout(bindVisibleInputs, 0);
+  bindVisibleInputs();
 
-/**
+  /**
    * @function cleanup
-   * @description Tears down the CRM runtime search outcome panel, listeners, observer, and polling interval.
-   * @collaboration R74D runtime outcome engine, React effect cleanup, WILSY OS production browser hygiene.
+   * @description Removes runtime listeners, observers, polling, styles, and inline result decks.
+   * @collaboration R74E runtime cleanup, React effect lifecycle, browser hygiene.
    */
-  const cleanup = () => {
-    disposed = true;
-    detachInput();
+  function cleanup() {
+    listenerRegistry.forEach((detach) => detach());
+    listenerRegistry.clear();
     observer.disconnect();
     window.clearInterval(interval);
-    panel.remove();
-  };
+    doc.querySelectorAll('[data-wilsy-r74e-search-deck="true"]').forEach((deck) => deck.remove());
+    doc.getElementById('wilsy-r74e-crm-search-inline-result-style')?.remove();
+  }
 
   window.__wilsyCrmSearchOutcomeRuntimeCleanup = cleanup;
 
