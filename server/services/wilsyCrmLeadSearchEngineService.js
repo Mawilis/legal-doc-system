@@ -21156,3 +21156,337 @@ export const buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseBrief = asyn
     persistenceMode: 'JSON_RESPONSE_ONLY',
   };
 };
+
+export const WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_LAUNCH_PACKET_VERSION =
+  'R71M-CRM-TERMINAL-REGULATOR-INVESTOR-EVIDENCE-LAUNCH-PACKET-AUTHORITY';
+
+/**
+ * @function buildLeadSearchRegulatorInvestorTerminalEvidenceLaunchPacket
+ * @description Builds a launch packet from the verified terminal evidence release brief for buyer demo, board review, regulator inspection, investor diligence, audit assurance, and engineering handoff.
+ * @collaboration R71L release brief, R71K verifier, CRM command routes, terminal evidence launch surfaces.
+ */
+export const buildLeadSearchRegulatorInvestorTerminalEvidenceLaunchPacket = async (
+  options = {}
+) => {
+  const tenantId = String(options.tenantId || 'MASTER').trim() || 'MASTER';
+  const ledgerId = options.ledgerId || options.ledgerRoot || 'latest';
+  const limit = options.limit || 25;
+  const operator =
+    String(options.operator || options.operatorId || options.requestedBy || 'SYSTEM').trim() ||
+    'SYSTEM';
+
+  const releaseBrief = await buildLeadSearchRegulatorInvestorTerminalEvidenceReleaseBrief({
+    tenantId,
+    ledgerId,
+    limit,
+    operator,
+  });
+
+  const audienceByName = (releaseBrief.audienceBriefs || []).reduce((acc, brief) => {
+    acc[brief.audience] = brief;
+    return acc;
+  }, {});
+
+  const actionsByName = (releaseBrief.releaseBriefActions || []).reduce((acc, action) => {
+    acc[action.action] = action;
+    return acc;
+  }, {});
+
+  const proofByKey = (releaseBrief.proofHighlights || []).reduce((acc, proof) => {
+    acc[proof.key] = proof;
+    return acc;
+  }, {});
+
+  const launchPacketIdentity = {
+    product: 'WILSY CRM',
+    packetType: 'TERMINAL_REGULATOR_INVESTOR_EVIDENCE_LAUNCH_PACKET',
+    releaseDecision: releaseBrief.releaseDecision || 'HOLD',
+    releaseScore: releaseBrief.releaseScore || 0,
+    buyerReadableStatus: releaseBrief.executiveReleaseBrief?.buyerReadableStatus || 'UNKNOWN',
+    launchClass: 'COMMERCIAL_EVIDENCE_LAUNCH',
+    sourceBriefStatus: releaseBrief.status || null,
+    authorityVersion: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_LAUNCH_PACKET_VERSION,
+  };
+
+  const launchArtifacts = [
+    {
+      artifact: 'buyer_demo_packet',
+      title: 'Buyer demo launch packet',
+      audience: 'buyer',
+      ready:
+        audienceByName.buyer?.ready === true &&
+        releaseBrief.finalBriefAssertions?.releaseVerified === true,
+      route: actionsByName.open_release_passport_verifier?.route,
+      claim:
+        'WILSY CRM is a verified evidence operating system for customer and revenue operations.',
+      proof: audienceByName.buyer?.proof,
+    },
+    {
+      artifact: 'board_approval_packet',
+      title: 'Board approval launch packet',
+      audience: 'board',
+      ready: audienceByName.board?.ready === true && proofByKey.releaseScore?.ready === true,
+      route: actionsByName.open_release_readiness?.route,
+      claim:
+        'Release posture is GO with a perfect readiness score and controlled mutation boundary.',
+      proof: audienceByName.board?.proof,
+    },
+    {
+      artifact: 'regulator_inspection_packet',
+      title: 'Regulator inspection launch packet',
+      audience: 'regulator',
+      ready:
+        audienceByName.regulator?.ready === true &&
+        releaseBrief.finalBriefAssertions?.jsonResponseOnly === true,
+      route: actionsByName.open_api_surface_registry?.route,
+      claim:
+        'Regulator can inspect registered evidence APIs, response invariants, and JSON-only posture.',
+      proof: audienceByName.regulator?.proof,
+    },
+    {
+      artifact: 'investor_diligence_packet',
+      title: 'Investor diligence launch packet',
+      audience: 'investor',
+      ready:
+        audienceByName.investor?.ready === true &&
+        releaseBrief.executiveReleaseBrief?.releaseDecision === 'GO',
+      route: actionsByName.open_release_passport?.route,
+      claim:
+        'Investor can diligence moat, release posture, buyer proof, and evidence operating-system defensibility.',
+      proof: audienceByName.investor?.proof,
+    },
+    {
+      artifact: 'audit_assurance_packet',
+      title: 'Audit assurance launch packet',
+      audience: 'auditor',
+      ready:
+        audienceByName.auditor?.ready === true &&
+        releaseBrief.finalBriefAssertions?.noFilesystemWrite === true,
+      route: actionsByName.open_release_passport_verifier?.route,
+      claim:
+        'Auditor can validate release passport verification, protected boundaries, and runtime posture.',
+      proof: audienceByName.auditor?.proof,
+    },
+    {
+      artifact: 'engineering_handoff_packet',
+      title: 'Engineering handoff launch packet',
+      audience: 'engineering',
+      ready:
+        audienceByName.engineering?.ready === true &&
+        releaseBrief.finalBriefAssertions?.noR70F === true &&
+        releaseBrief.finalBriefAssertions?.recursiveLoopFrozen === true,
+      route: actionsByName.open_cockpit_contract?.route,
+      claim:
+        'Engineering should wire cockpit and API surfaces while preserving terminal proof boundary.',
+      proof: audienceByName.engineering?.proof,
+    },
+  ];
+
+  const launchSequence = [
+    {
+      step: 1,
+      action: 'open_release_brief',
+      label: 'Open release brief',
+      route: '/api/crm/command/search/regulator-evidence/terminal-release-brief/latest',
+      ready: releaseBrief.ok === true,
+    },
+    {
+      step: 2,
+      action: 'open_release_passport_verifier',
+      label: 'Verify release passport',
+      route: actionsByName.open_release_passport_verifier?.route,
+      ready: actionsByName.open_release_passport_verifier?.ready === true,
+    },
+    {
+      step: 3,
+      action: 'open_release_passport',
+      label: 'Open release passport',
+      route: actionsByName.open_release_passport?.route,
+      ready: actionsByName.open_release_passport?.ready === true,
+    },
+    {
+      step: 4,
+      action: 'open_api_surface_registry',
+      label: 'Open API surface registry',
+      route: actionsByName.open_api_surface_registry?.route,
+      ready: actionsByName.open_api_surface_registry?.ready === true,
+    },
+    {
+      step: 5,
+      action: 'open_cockpit_contract',
+      label: 'Open cockpit contract',
+      route: actionsByName.open_cockpit_contract?.route,
+      ready: actionsByName.open_cockpit_contract?.ready === true,
+    },
+  ];
+
+  const competitivePositioning = {
+    oneLine: 'WILSY CRM ships with verified terminal evidence, not dashboard decoration.',
+    againstGenericCrm:
+      'Generic CRMs show pipeline state; WILSY CRM exposes verified release-ready evidence surfaces for buyers, regulators, investors, auditors, and engineering.',
+    againstAutomationTools:
+      'Automation tools orchestrate tasks; WILSY CRM packages proof, readiness, signoff, consumption, and launch posture as API contracts.',
+    boardMoat: releaseBrief.executiveReleaseBrief?.moat || null,
+    terminalBoundary: releaseBrief.executiveReleaseBrief?.proofBoundary || null,
+    buyerDemoLine:
+      'Release decision is GO, release score is 100, and every launch artifact is ready.',
+  };
+
+  const launchReadinessMatrix = [
+    {
+      check: 'release_brief_ready',
+      ready:
+        releaseBrief.ok === true &&
+        releaseBrief.status === 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_RELEASE_BRIEF_READY',
+    },
+    {
+      check: 'launch_identity_ready',
+      ready:
+        launchPacketIdentity.releaseDecision === 'GO' && launchPacketIdentity.releaseScore === 100,
+    },
+    {
+      check: 'launch_artifacts_ready',
+      ready:
+        launchArtifacts.length === 6 &&
+        launchArtifacts.every((artifact) => artifact.ready === true),
+    },
+    {
+      check: 'launch_sequence_ready',
+      ready: launchSequence.length === 5 && launchSequence.every((step) => step.ready === true),
+    },
+    {
+      check: 'proof_highlights_ready',
+      ready:
+        releaseBrief.proofHighlights?.length === 6 &&
+        releaseBrief.proofHighlights.every((proof) => proof.ready === true),
+    },
+    {
+      check: 'final_brief_assertions_ready',
+      ready: Object.values(releaseBrief.finalBriefAssertions || {}).every(Boolean),
+    },
+    {
+      check: 'terminal_boundary_ready',
+      ready:
+        releaseBrief.noR70F === true &&
+        releaseBrief.recursiveLoopFrozen === true &&
+        releaseBrief.terminalStop === true,
+    },
+    {
+      check: 'runtime_posture_ready',
+      ready:
+        releaseBrief.jsonResponseOnly === true &&
+        releaseBrief.noFilesystemWrite === true &&
+        releaseBrief.persistenceMode === 'JSON_RESPONSE_ONLY',
+    },
+  ];
+
+  const launchPacket = {
+    packetId: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_LAUNCH_PACKET_R71M',
+    packetType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_LAUNCH_PACKET',
+    generatedAt: new Date().toISOString(),
+    tenantId,
+    operator,
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: releaseBrief.recursiveLoopFrozen === true,
+    launchPacketIdentity,
+    launchArtifacts,
+    launchSequence,
+    competitivePositioning,
+    launchReadinessMatrix,
+    launchAssertions: {
+      releaseBriefReady: releaseBrief.ok === true,
+      allArtifactsReady: launchArtifacts.every((artifact) => artifact.ready === true),
+      allSequenceStepsReady: launchSequence.every((step) => step.ready === true),
+      buyerDemoReady:
+        launchArtifacts.find((artifact) => artifact.artifact === 'buyer_demo_packet')?.ready ===
+        true,
+      boardReady:
+        launchArtifacts.find((artifact) => artifact.artifact === 'board_approval_packet')?.ready ===
+        true,
+      regulatorReady:
+        launchArtifacts.find((artifact) => artifact.artifact === 'regulator_inspection_packet')
+          ?.ready === true,
+      investorReady:
+        launchArtifacts.find((artifact) => artifact.artifact === 'investor_diligence_packet')
+          ?.ready === true,
+      auditorReady:
+        launchArtifacts.find((artifact) => artifact.artifact === 'audit_assurance_packet')
+          ?.ready === true,
+      engineeringReady:
+        launchArtifacts.find((artifact) => artifact.artifact === 'engineering_handoff_packet')
+          ?.ready === true,
+      noR70F: releaseBrief.noR70F === true,
+      recursiveLoopFrozen: releaseBrief.recursiveLoopFrozen === true,
+      jsonResponseOnly: releaseBrief.jsonResponseOnly === true,
+      noFilesystemWrite: releaseBrief.noFilesystemWrite === true,
+    },
+    sourceReleaseBriefSummary: {
+      ok: releaseBrief.ok === true,
+      version: releaseBrief.version || null,
+      status: releaseBrief.status || null,
+      briefType: releaseBrief.briefType || null,
+      releaseDecision: releaseBrief.releaseDecision || null,
+      releaseScore: releaseBrief.releaseScore || 0,
+      audienceBriefCount: releaseBrief.audienceBriefs?.length || 0,
+      proofHighlightCount: releaseBrief.proofHighlights?.length || 0,
+      actionCount: releaseBrief.releaseBriefActions?.length || 0,
+      noR70F: releaseBrief.noR70F === true,
+      recursiveLoopFrozen: releaseBrief.recursiveLoopFrozen === true,
+    },
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+
+  const ok =
+    releaseBrief.ok === true &&
+    launchPacket.productizationSurface === true &&
+    launchPacket.terminalStop === true &&
+    launchPacket.noR70F === true &&
+    launchPacket.recursiveLoopFrozen === true &&
+    launchPacketIdentity.releaseDecision === 'GO' &&
+    launchPacketIdentity.releaseScore === 100 &&
+    launchArtifacts.length === 6 &&
+    launchArtifacts.every((artifact) => artifact.ready === true) &&
+    launchSequence.length === 5 &&
+    launchSequence.every((step) => step.ready === true) &&
+    launchReadinessMatrix.length === 8 &&
+    launchReadinessMatrix.every((item) => item.ready === true) &&
+    Object.values(launchPacket.launchAssertions).every(Boolean) &&
+    launchPacket.sourceReleaseBriefSummary.ok === true &&
+    launchPacket.sourceReleaseBriefSummary.audienceBriefCount === 6 &&
+    launchPacket.sourceReleaseBriefSummary.proofHighlightCount === 6 &&
+    launchPacket.sourceReleaseBriefSummary.actionCount === 5 &&
+    launchPacket.sourceReleaseBriefSummary.noR70F === true &&
+    launchPacket.jsonResponseOnly === true &&
+    launchPacket.noFilesystemWrite === true &&
+    launchPacket.persistenceMode === 'JSON_RESPONSE_ONLY';
+
+  return {
+    ok,
+    version: WILSY_CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_LAUNCH_PACKET_VERSION,
+    status: ok
+      ? 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_LAUNCH_PACKET_READY'
+      : 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_LAUNCH_PACKET_DEGRADED',
+    packetType: 'CRM_TERMINAL_REGULATOR_INVESTOR_EVIDENCE_LAUNCH_PACKET',
+    productizationSurface: true,
+    terminalStop: true,
+    noR70F: true,
+    recursiveLoopFrozen: launchPacket.recursiveLoopFrozen,
+    releaseDecision: launchPacketIdentity.releaseDecision,
+    releaseScore: launchPacketIdentity.releaseScore,
+    launchPacketIdentity,
+    launchArtifacts,
+    launchSequence,
+    competitivePositioning,
+    launchReadinessMatrix,
+    launchAssertions: launchPacket.launchAssertions,
+    launchPacket,
+    sourceTerminalEvidenceReleaseBrief: releaseBrief,
+    jsonResponseOnly: true,
+    noFilesystemWrite: true,
+    persistenceMode: 'JSON_RESPONSE_ONLY',
+  };
+};
