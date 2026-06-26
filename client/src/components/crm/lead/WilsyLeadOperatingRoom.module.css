@@ -4711,3 +4711,280 @@
     height: min(36rem, 62vh) !important;
   }
 }
+
+/* ========================================================================
+   WILSY OS R80B - LEAD WORKBENCH COMPOSITION SEAL
+   The Leads filter rail and records grid become one composed CRM workbench:
+   calm, bounded, scroll-contained, and presentation-grade.
+   ======================================================================== */
+
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] {
+  --lead-workbench-gap: clamp(0.8rem, 1.05vw, 1.1rem);
+  --lead-workbench-filter-width: clamp(17.5rem, 18.25vw, 21.5rem);
+  --lead-workbench-height: clamp(38rem, calc(100vh - 20rem), 52rem);
+
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: var(--lead-workbench-gap) !important;
+  padding: 0.9rem !important;
+  border-radius: 1.65rem !important;
+  border: 1px solid color-mix(in srgb, var(--lead-cyan, #6ee7ff) 28%, rgba(255,255,255,0.08)) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.006)),
+    color-mix(in srgb, var(--lead-module-panel, #0c121d) 92%, black 8%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.055),
+    0 22px 54px rgba(0,0,0,0.34) !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"]:not(:has([data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"])) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  z-index: 2 !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] > :not([data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]) {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  position: relative !important;
+  z-index: 1 !important;
+  overflow: hidden !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+  width: var(--lead-workbench-filter-width) !important;
+  min-width: 16.5rem !important;
+  max-width: min(24rem, 34vw) !important;
+  height: var(--lead-workbench-height) !important;
+  max-height: var(--lead-workbench-height) !important;
+  min-height: 34rem !important;
+  position: relative !important;
+  top: auto !important;
+  align-self: stretch !important;
+  resize: horizontal !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  gap: 0.85rem !important;
+  padding: 1rem !important;
+  border-radius: 1.2rem !important;
+  border: 1px solid rgba(139, 154, 190, 0.22) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+    color-mix(in srgb, var(--lead-card-strong, #111827) 86%, black 14%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.055),
+    0 12px 28px rgba(0,0,0,0.24) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]::after {
+  right: 0.28rem !important;
+  top: 0.95rem !important;
+  bottom: 0.95rem !important;
+  width: 0.18rem !important;
+  opacity: 0.35 !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] .leadFilterRailHeader {
+  min-height: 2.7rem !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: start !important;
+  justify-content: space-between !important;
+  gap: 0.75rem !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] .leadFilterRailHeader span {
+  display: grid !important;
+  gap: 0.18rem !important;
+  min-width: 0 !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] .leadFilterRailHeader strong {
+  color: var(--lead-text, #f8fbff) !important;
+  font-size: 1rem !important;
+  line-height: 1.15 !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.015em !important;
+  text-transform: none !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] .leadFilterRailHeader em {
+  color: var(--lead-muted, rgba(220,226,245,0.62)) !important;
+  font-size: 0.72rem !important;
+  line-height: 1.2 !important;
+  font-style: normal !important;
+  font-weight: 740 !important;
+  letter-spacing: 0.01em !important;
+  text-transform: none !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] .leadFilterRailHeader button {
+  width: 2rem !important;
+  min-width: 2rem !important;
+  height: 2rem !important;
+  min-height: 2rem !important;
+  border-radius: 0.65rem !important;
+  font-size: 0.95rem !important;
+  color: rgba(244,247,255,0.86) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  background: rgba(255,255,255,0.04) !important;
+  box-shadow: none !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] .leadFilterSearch {
+  min-height: 3.15rem !important;
+  height: 3.15rem !important;
+  border-radius: 0.82rem !important;
+  padding: 0 0.9rem !important;
+  gap: 0.65rem !important;
+  background: color-mix(in srgb, var(--lead-module-panel, #0b1220) 74%, white 3%) !important;
+  border-color: rgba(154, 166, 206, 0.28) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.035) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] .leadFilterSearch input {
+  color: rgba(248,251,255,0.92) !important;
+  font-size: 0.88rem !important;
+  font-weight: 720 !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] .leadFilterSearch input::placeholder {
+  color: rgba(220,226,245,0.54) !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] .leadFilterRailMeta {
+  display: none !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-independent-scroll="lead-filter-options"] {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 0.82rem !important;
+  padding: 0.05rem 0.35rem 0.2rem 0 !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--lead-accent, #8b7cff) 52%, transparent) transparent !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-independent-scroll="lead-filter-options"]::-webkit-scrollbar {
+  width: 0.42rem !important;
+}
+
+[class*="leadOperatingRoom"] [data-wilsy-independent-scroll="lead-filter-options"]::-webkit-scrollbar-thumb {
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--lead-accent, #8b7cff) 54%, rgba(255,255,255,0.08)) !important;
+}
+
+[class*="leadOperatingRoom"] .leadFilterSection {
+  gap: 0.38rem !important;
+}
+
+[class*="leadOperatingRoom"] .leadFilterSectionHeader {
+  min-height: 2rem !important;
+  grid-template-columns: 0.85rem minmax(0, 1fr) !important;
+  gap: 0.5rem !important;
+}
+
+[class*="leadOperatingRoom"] .leadFilterSectionHeader strong {
+  font-size: 0.84rem !important;
+  font-weight: 880 !important;
+  color: rgba(248,251,255,0.92) !important;
+}
+
+[class*="leadOperatingRoom"] .leadFilterOptionStack {
+  gap: 0.08rem !important;
+}
+
+[class*="leadOperatingRoom"] .leadFilterOption {
+  min-height: 2.08rem !important;
+  padding: 0.3rem 0.24rem !important;
+  grid-template-columns: 1.05rem minmax(0, 1fr) !important;
+  gap: 0.62rem !important;
+  border-radius: 0.55rem !important;
+}
+
+[class*="leadOperatingRoom"] .leadFilterOption span {
+  width: 0.92rem !important;
+  height: 0.92rem !important;
+  border-radius: 0.24rem !important;
+  border-width: 1.6px !important;
+}
+
+[class*="leadOperatingRoom"] .leadFilterOption em {
+  font-size: 0.83rem !important;
+  line-height: 1.15 !important;
+  font-weight: 720 !important;
+  color: rgba(228,232,250,0.74) !important;
+}
+
+[class*="leadOperatingRoom"] .leadFilterOption:hover em,
+[class*="leadOperatingRoom"] .leadFilterOption[data-selected="true"] em {
+  color: rgba(248,251,255,0.96) !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] table {
+  width: 100% !important;
+  min-width: 58rem !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] thead {
+  background: rgba(255,255,255,0.022) !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] th,
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] td {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] [class*="leadRecordsPanel"],
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] [class*="leadTable"],
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] [class*="recordsTable"] {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: auto !important;
+}
+
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] [class*="leadEmpty"],
+[class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] [class*="empty"] {
+  max-width: 100% !important;
+}
+
+@media (max-width: 1180px) {
+  [class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"],
+  [class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] > :not([data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]) {
+    grid-column: 1 !important;
+  }
+
+  [class*="leadOperatingRoom"] [class*="leadRecordsWorkspace"][data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"] > [data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+    width: 100% !important;
+    max-width: none !important;
+    resize: none !important;
+    height: min(33rem, 60vh) !important;
+  }
+}

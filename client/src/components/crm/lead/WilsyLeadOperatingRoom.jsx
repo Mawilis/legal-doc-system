@@ -1645,6 +1645,7 @@ export default function WilsyLeadOperatingRoom({
       }))
       .filter(section => section.options.length > 0);
     const selectedFilterCount = selectedLeadFilterOptions.size;
+    const visibleFilterCount = visibleFilterSections.reduce((total, section) => total + section.options.length, 0);
 
     return (
       <aside
@@ -1654,8 +1655,8 @@ export default function WilsyLeadOperatingRoom({
       >
         <header className={styles.leadFilterRailHeader}>
           <span>
-            <small>Filter Leads by</small>
-            <strong>Operating criteria</strong>
+            <strong>Filter Leads by</strong>
+            <em>{visibleFilterCount} available filters</em>
           </span>
           <button
             type="button"
@@ -1737,7 +1738,8 @@ export default function WilsyLeadOperatingRoom({
     const activeSort = LEAD_SORT_OPTIONS.find(option => option.id === sortMode) || LEAD_SORT_OPTIONS[0];
 
     return (
-      <section className={styles.leadRecordsWorkspace} data-wilsy-lead-records="tabbed-list-view">
+      <section className={styles.leadRecordsWorkspace}
+        data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE" data-wilsy-lead-records="tabbed-list-view">
         {renderLeadFilterRail()}
 
         <section className={styles.leadRecordsPanel}>
