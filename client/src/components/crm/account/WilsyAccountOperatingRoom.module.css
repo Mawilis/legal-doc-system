@@ -964,3 +964,81 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+/* ========================================================================
+   WILSY OS R79C - CRM COMMAND BAR CONTRAST SEAL
+   Accounts command pills inherit global skin colour but keep guaranteed
+   text/icon contrast and structured Theme Authority typography.
+   ======================================================================== */
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountHeaderUtilities {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 14px !important;
+}
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountIconButton,
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountThemeAuthority,
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountViewButton {
+  color: #fff9d7 !important;
+  border-color: color-mix(in srgb, var(--account-gold, #e5d38c) 42%, transparent) !important;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
+    color-mix(in srgb, var(--account-panel, #070a12) 84%, black 16%) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 16px 38px rgba(0,0,0,0.44) !important;
+}
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountIconButton {
+  width: 58px !important;
+  height: 58px !important;
+  min-width: 58px !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountThemeAuthority {
+  min-width: 300px !important;
+  min-height: 64px !important;
+  display: grid !important;
+  grid-template-columns: 24px minmax(0, 1fr) 18px !important;
+  gap: 14px !important;
+  align-items: center !important;
+  text-align: left !important;
+}
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountThemeAuthority > span {
+  display: grid !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  line-height: 1.05 !important;
+}
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountThemeAuthority small,
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountThemeAuthority strong,
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountThemeAuthority em {
+  display: block !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  color: #fff9d7 !important;
+}
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountThemeAuthority small,
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountThemeAuthority em {
+  color: color-mix(in srgb, #fff9d7 76%, var(--account-muted, rgba(255,255,255,0.55))) !important;
+  font-size: 0.68rem !important;
+  font-style: normal !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountIconButton svg,
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountThemeAuthority svg,
+.accountOperatingRoom[data-wilsy-crm-visual-contract="R78B-UNIFIED-CRM-SHELL"] .accountViewButton svg {
+  color: #fff9d7 !important;
+  stroke: currentColor !important;
+  opacity: 1 !important;
+}
