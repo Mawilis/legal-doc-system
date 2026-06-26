@@ -5095,3 +5095,325 @@
     box-shadow: none !important;
   }
 }
+
+/* ========================================================================
+   WILSY OS R81C - LEADS FILTER SCROLL CONTAINMENT SEAL
+   Final bounded-scroll contract. The filter rail behaves like a CRM list-view
+   panel: header/search stay visible, options scroll internally, the page does
+   not stretch, and the records table remains aligned beside the filter.
+   ======================================================================== */
+
+.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"],
+.leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"],
+.leadRecordsWorkspace[data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"],
+.leadRecordsWorkspace[data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] {
+  --r81c-filter-width: clamp(16.5rem, 18.25vw, 19.5rem);
+  --r81c-workbench-height: clamp(32rem, calc(100vh - 20.25rem), 42.5rem);
+  --r81c-filter-header: 2.65rem;
+  --r81c-filter-search: 2.7rem;
+  --r81c-filter-gap: 0.72rem;
+  --r81c-filter-pad-y: 0.95rem;
+
+  display: grid !important;
+  grid-template-columns: var(--r81c-filter-width) minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  height: var(--r81c-workbench-height) !important;
+  min-height: var(--r81c-workbench-height) !important;
+  max-height: var(--r81c-workbench-height) !important;
+  overflow: hidden !important;
+  contain: layout paint !important;
+}
+
+.leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"][data-wilsy-filter-state="closed"],
+.leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"][data-wilsy-filter-state="closed"],
+.leadRecordsWorkspace[data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"][data-wilsy-filter-state="closed"],
+.leadRecordsWorkspace[data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"][data-wilsy-filter-state="closed"] {
+  grid-template-columns: 3rem minmax(0, 1fr) !important;
+}
+
+.leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+  width: var(--r81c-filter-width) !important;
+  min-width: var(--r81c-filter-width) !important;
+  max-width: var(--r81c-filter-width) !important;
+  height: var(--r81c-workbench-height) !important;
+  min-height: var(--r81c-workbench-height) !important;
+  max-height: var(--r81c-workbench-height) !important;
+  align-self: stretch !important;
+  position: relative !important;
+  top: auto !important;
+  resize: none !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-rows: var(--r81c-filter-header) var(--r81c-filter-search) minmax(0, 1fr) !important;
+  gap: var(--r81c-filter-gap) !important;
+  padding: var(--r81c-filter-pad-y) 0.95rem !important;
+  border-radius: 0 !important;
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+  border-right: 1px solid rgba(154, 166, 206, 0.18) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.006)),
+    #101725 !important;
+  box-shadow: none !important;
+  z-index: 2 !important;
+}
+
+.leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]::after {
+  content: "" !important;
+  position: absolute !important;
+  top: calc(var(--r81c-filter-pad-y) + var(--r81c-filter-header) + var(--r81c-filter-search) + (var(--r81c-filter-gap) * 2)) !important;
+  right: 0.26rem !important;
+  bottom: 0.75rem !important;
+  width: 0.18rem !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lead-accent, #7c61ff) 58%, transparent), rgba(255,255,255,0.08)) !important;
+  opacity: 0.52 !important;
+  pointer-events: none !important;
+}
+
+.leadFilterRailHeader {
+  min-height: var(--r81c-filter-header) !important;
+  height: var(--r81c-filter-header) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.65rem !important;
+  overflow: hidden !important;
+}
+
+.leadFilterRailHeader span {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 0.1rem !important;
+}
+
+.leadFilterRailHeader strong {
+  color: rgba(248,250,255,0.96) !important;
+  font-size: 0.9rem !important;
+  line-height: 1.08 !important;
+  font-weight: 840 !important;
+  letter-spacing: -0.01em !important;
+  white-space: nowrap !important;
+}
+
+.leadFilterRailHeader em {
+  display: block !important;
+  color: rgba(220,226,244,0.58) !important;
+  font-size: 0.72rem !important;
+  line-height: 1.08 !important;
+  font-style: normal !important;
+  white-space: nowrap !important;
+}
+
+.leadFilterRailHeader button {
+  width: 1.85rem !important;
+  min-width: 1.85rem !important;
+  height: 1.85rem !important;
+  min-height: 1.85rem !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid rgba(154,166,206,0.18) !important;
+  background: rgba(255,255,255,0.035) !important;
+  color: rgba(220,226,244,0.68) !important;
+  box-shadow: none !important;
+}
+
+.leadFilterSearch {
+  min-height: var(--r81c-filter-search) !important;
+  height: var(--r81c-filter-search) !important;
+  max-height: var(--r81c-filter-search) !important;
+  display: grid !important;
+  grid-template-columns: 1.05rem minmax(0, 1fr) !important;
+  gap: 0.58rem !important;
+  align-items: center !important;
+  padding: 0 0.75rem !important;
+  border-radius: 0.62rem !important;
+  border: 1px solid rgba(154,166,206,0.20) !important;
+  background: #0d1421 !important;
+  color: rgba(231,236,251,0.82) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+.leadFilterSearch input {
+  min-width: 0 !important;
+  width: 100% !important;
+  color: rgba(248,250,255,0.92) !important;
+  font-size: 0.78rem !important;
+  font-weight: 660 !important;
+  letter-spacing: 0 !important;
+}
+
+.leadFilterRailMeta {
+  display: none !important;
+}
+
+.leadFilterScroll,
+[data-wilsy-independent-scroll="lead-filter-options"] {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-gutter: stable !important;
+  scrollbar-width: thin !important;
+  padding: 0.05rem 0.42rem 0.25rem 0 !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 0.7rem !important;
+  box-sizing: border-box !important;
+}
+
+.leadFilterScroll::-webkit-scrollbar,
+[data-wilsy-independent-scroll="lead-filter-options"]::-webkit-scrollbar {
+  width: 0.44rem !important;
+}
+
+.leadFilterScroll::-webkit-scrollbar-track,
+[data-wilsy-independent-scroll="lead-filter-options"]::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.leadFilterScroll::-webkit-scrollbar-thumb,
+[data-wilsy-independent-scroll="lead-filter-options"]::-webkit-scrollbar-thumb {
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--lead-accent, #7c61ff) 54%, rgba(255,255,255,0.10)) !important;
+}
+
+.leadFilterSection {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 0.34rem !important;
+}
+
+.leadFilterSectionHeader {
+  min-height: 1.55rem !important;
+  display: grid !important;
+  grid-template-columns: 0.65rem minmax(0, 1fr) !important;
+  gap: 0.38rem !important;
+  align-items: center !important;
+}
+
+.leadFilterSectionHeader span {
+  color: rgba(220,226,244,0.72) !important;
+  font-size: 0.58rem !important;
+  line-height: 1 !important;
+}
+
+.leadFilterSectionHeader strong {
+  min-width: 0 !important;
+  color: rgba(248,250,255,0.84) !important;
+  font-size: 0.72rem !important;
+  line-height: 1.1 !important;
+  font-weight: 780 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.leadFilterOptionStack {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 0.16rem !important;
+}
+
+.leadFilterOption {
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 1.86rem !important;
+  height: auto !important;
+  display: grid !important;
+  grid-template-columns: 0.88rem minmax(0, 1fr) !important;
+  gap: 0.5rem !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  padding: 0.22rem 0.12rem !important;
+  border: 0 !important;
+  border-radius: 0.44rem !important;
+  background: transparent !important;
+  color: rgba(220,226,244,0.70) !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+.leadFilterOption:hover,
+.leadFilterOption[data-selected="true"] {
+  background: color-mix(in srgb, var(--lead-accent, #7c61ff) 10%, transparent) !important;
+  color: rgba(248,250,255,0.94) !important;
+}
+
+.leadFilterOption span {
+  width: 0.76rem !important;
+  height: 0.76rem !important;
+  min-width: 0.76rem !important;
+  border-radius: 0.2rem !important;
+  border: 1.35px solid rgba(184,193,222,0.42) !important;
+  background: transparent !important;
+}
+
+.leadFilterOption em {
+  min-width: 0 !important;
+  color: inherit !important;
+  font-style: normal !important;
+  font-size: 0.72rem !important;
+  line-height: 1.18 !important;
+  font-weight: 650 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+}
+
+.leadRecordsPanel {
+  height: var(--r81c-workbench-height) !important;
+  min-height: var(--r81c-workbench-height) !important;
+  max-height: var(--r81c-workbench-height) !important;
+  overflow: hidden !important;
+  align-self: stretch !important;
+}
+
+.leadRecordsTableFrame {
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+.leadFilterRailCollapsed {
+  height: var(--r81c-workbench-height) !important;
+  min-height: var(--r81c-workbench-height) !important;
+  max-height: var(--r81c-workbench-height) !important;
+  align-self: stretch !important;
+}
+
+@media (max-width: 1320px) {
+  .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"],
+  .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"],
+  .leadRecordsWorkspace[data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"],
+  .leadRecordsWorkspace[data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: min(25rem, 46vh) !important;
+    min-height: min(25rem, 46vh) !important;
+    max-height: min(25rem, 46vh) !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(154,166,206,0.18) !important;
+  }
+
+  .leadRecordsPanel {
+    height: auto !important;
+    min-height: 28rem !important;
+    max-height: none !important;
+  }
+}
