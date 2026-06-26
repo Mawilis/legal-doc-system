@@ -290,6 +290,122 @@ export const verifyContextSeal = (tenantId, userId, traceId, timestamp, provided
   return computedSeal === providedSeal;
 };
 
+/**
+ * @function isWilsyUnanchoredTenantValue
+ * @description Detects missing, sentinel or root-placeholder tenant values that must resolve to the sovereign default tenant.
+ * @param {unknown} value - Tenant candidate.
+ * @returns {boolean} True when the value is not a usable tenant id.
+ * @collaboration CRM command routes need tenant normalization before shard selection, not after policy rejection.
+ */
+function isWilsyUnanchoredTenantValue(value) {
+  const candidate = String(value || '')
+    .trim()
+    .toLowerCase();
+
+  return !candidate || ['undefined', 'null', 'global_root', 'master', 'root'].includes(candidate);
+}
+
+/**
+ * @function normalizeWilsyTenantCandidate
+ * @description Normalizes tenant candidates while preserving legitimate tenant ids.
+ * @param {unknown} value - Tenant candidate.
+ * @returns {string} Normalized tenant id.
+ * @collaboration Keeps tenant headers from falling into GLOBAL_ROOT drift during CRM saves.
+ */
+function normalizeWilsyTenantCandidate(value) {
+  if (isWilsyUnanchoredTenantValue(value)) {
+    return TENANT_CONSTANTS.DEFAULT_TENANT;
+  }
+
+  return String(value).trim();
+}
+
+/**
+ * @function resolveIncomingTenantCandidate
+ * @description Resolves the first explicit tenant candidate from supported request headers, body and query aliases.
+ * @param {Object} req - Express request.
+ * @returns {string} Raw tenant candidate before normalization.
+ * @collaboration Accepts WILSY client header variants without trusting browser-only casing assumptions.
+ */
+function resolveIncomingTenantCandidate(req = {}) {
+  const headers = req.headers || {};
+  const body = req.body || {};
+  const query = req.query || {};
+
+  const candidates = [
+    headers['x-tenant-id'],
+    headers['x-tenantid'],
+    headers['x-wilsy-tenant-id'],
+    headers['x-wilsy-tenantid'],
+    headers['tenant-id'],
+    headers.tenantid,
+    headers.tenant,
+    body.tenantId,
+    body.tenant_id,
+    body.tenant,
+    query.tenantId,
+    query.tenant_id,
+    query.tenant,
+  ];
+
+  const matched = candidates.find((value) => !isWilsyUnanchoredTenantValue(value));
+
+  return matched ? String(matched).trim() : '';
+}
+
+/**
+ * @function isCrmCommandMutationRoute
+ * @description Identifies CRM write routes that must receive the original request body while redaction proof is stored separately.
+ * @param {Object} req - Express request.
+ * @returns {boolean} True when the request is a CRM mutation route.
+ * @collaboration Prevents POPIA middleware from corrupting Lead create/update payloads before DB persistence.
+ */
+function isCrmCommandMutationRoute(req = {}) {
+  const path = String(req.originalUrl || req.path || '').toLowerCase();
+  const method = String(req.method || 'GET').toUpperCase();
+
+  if (!['POST', 'PUT', 'PATCH'].includes(method)) return false;
+
+  return ['/api/crm/command/leads', '/api/crm/leads', '/api/crm/live/leads'].some((route) =>
+    path.includes(route)
+  );
+}
+
+/**
+ * @function applyTenantComplianceBodyOverlay
+ * @description Applies POPIA redaction evidence without destroying CRM command mutation payloads.
+ * @param {Object} req - Express request.
+ * @param {Object} complianceFlags - Existing compliance flags.
+ * @returns {Object} Updated compliance flags.
+ * @collaboration Keeps privacy evidence and DB persistence both intact for Lead saves.
+ */
+function applyTenantComplianceBodyOverlay(req, complianceFlags) {
+  if (!TENANT_CONSTANTS.POPIA_STRICT_MODE || !req.body || Object.keys(req.body).length === 0) {
+    return complianceFlags;
+  }
+
+  const redacted = cryptoCore.redact
+    ? cryptoCore.redact(req.body)
+    : { data: req.body, metadata: { complianceStatus: 'BYPASSED' } };
+
+  const nextFlags = {
+    ...complianceFlags,
+    POPIA: redacted.metadata?.complianceStatus || 'BYPASSED',
+    bodyPreservation: isCrmCommandMutationRoute(req)
+      ? 'RAW_BODY_PRESERVED_FOR_CRM_WRITE'
+      : 'BODY_REDACTED_IN_PLACE',
+  };
+
+  req.complianceRedactedBody = redacted.data;
+  req.complianceFlags = nextFlags;
+
+  if (!isCrmCommandMutationRoute(req)) {
+    req.body = redacted.data;
+  }
+
+  return nextFlags;
+}
+
 // ============================================================================
 // 🧬 RUN WITH CONTEXT
 // ============================================================================
@@ -402,17 +518,9 @@ export const tenantContext = async (req, res, next) => {
   }
 
   // 🏛️ TENANT DISCOVERY
-  let incomingTenantId =
-    req.headers['x-tenant-id'] ||
-    req.headers['X-Tenant-ID'] ||
-    req.body?.tenantId ||
-    req.query.tenantId;
-
-  // 🔥 MARS PROTOCOL FIX: Intercept unanchored/GLOBAL_ROOT headers immediately
-  let tenantId = incomingTenantId;
-  if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === 'GLOBAL_ROOT') {
-    tenantId = TENANT_CONSTANTS.DEFAULT_TENANT;
-  }
+  const incomingTenantId = resolveIncomingTenantCandidate(req);
+  const tenantId = normalizeWilsyTenantCandidate(incomingTenantId);
+  req.incomingTenantId = incomingTenantId || 'UNRESOLVED_TENANT_INPUT';
 
   const userId = req.user?.id || req.user?._id || TENANT_CONSTANTS.ANONYMOUS_USER;
 
@@ -466,13 +574,7 @@ export const tenantContext = async (req, res, next) => {
 
     // ⚖️ COMPLIANCE OVERLAYS & POPIA REDACTION
     let complianceFlags = { POPIA: 'POPIA_CLEAN', GDPR: 'COMPLIANT' };
-    if (TENANT_CONSTANTS.POPIA_STRICT_MODE && req.body && Object.keys(req.body).length > 0) {
-      const redacted = cryptoCore.redact
-        ? cryptoCore.redact(req.body)
-        : { data: req.body, metadata: { complianceStatus: 'BYPASSED' } };
-      req.body = redacted.data;
-      complianceFlags.POPIA = redacted.metadata.complianceStatus;
-    }
+    complianceFlags = applyTenantComplianceBodyOverlay(req, complianceFlags);
 
     const contextSeal = generateContextSeal(req.tenantId, userId, traceId, contextTimestamp);
 
@@ -488,8 +590,10 @@ export const tenantContext = async (req, res, next) => {
 
     // 🛰️ OBSERVABILITY HEADERS
     res.setHeader('X-Wilsy-Tenant-ID', req.tenantId);
+    res.setHeader('X-Wilsy-Tenant-Input', incomingTenantId || 'UNRESOLVED_TENANT_INPUT');
     res.setHeader('X-Wilsy-Trace-ID', traceId);
     res.setHeader('X-Wilsy-Context-Seal', contextSeal);
+    res.setHeader('X-Wilsy-Context-Status', req.tenantContextStatus || 'SEALED');
 
     const store = {
       tenantId: req.tenantId,
