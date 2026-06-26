@@ -5097,30 +5097,46 @@
 }
 
 /* ========================================================================
-   WILSY OS R81C - LEADS FILTER SCROLL CONTAINMENT SEAL
-   Final bounded-scroll contract. The filter rail behaves like a CRM list-view
-   panel: header/search stay visible, options scroll internally, the page does
-   not stretch, and the records table remains aligned beside the filter.
+   WILSY OS R82A - LEADS FILTER SCROLL PRODUCT RESET
+   Final lower-workspace contract. The filter is a bounded internal-scroll
+   panel, the records table owns the remaining surface, the empty state is
+   compact and real, and no fake CRM rows are introduced.
    ======================================================================== */
 
+.leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] {
+  --r82a-stage-height: clamp(29rem, calc(100dvh - 23.5rem), 35rem);
+  --r82a-filter-width: clamp(16.5rem, 18vw, 19rem);
+  --r82a-closed-filter-width: 3rem;
+  --r82a-surface: #101827;
+  --r82a-surface-soft: #141c2b;
+  --r82a-filter: #101725;
+  --r82a-line: rgba(154, 166, 206, 0.18);
+  --r82a-line-strong: rgba(164, 177, 218, 0.28);
+  --r82a-text: rgba(248, 250, 255, 0.96);
+  --r82a-soft: rgba(220, 226, 244, 0.72);
+  --r82a-muted: rgba(184, 193, 222, 0.55);
+  --r82a-accent: var(--lead-accent, #7c61ff);
+  --r82a-cyan: #6ee7ff;
+}
+
+/* Lower workspace: one bounded CRM list-view surface. */
 .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"],
 .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"],
 .leadRecordsWorkspace[data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"],
 .leadRecordsWorkspace[data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"] {
-  --r81c-filter-width: clamp(16.5rem, 18.25vw, 19.5rem);
-  --r81c-workbench-height: clamp(32rem, calc(100vh - 20.25rem), 42.5rem);
-  --r81c-filter-header: 2.65rem;
-  --r81c-filter-search: 2.7rem;
-  --r81c-filter-gap: 0.72rem;
-  --r81c-filter-pad-y: 0.95rem;
-
   display: grid !important;
-  grid-template-columns: var(--r81c-filter-width) minmax(0, 1fr) !important;
+  grid-template-columns: var(--r82a-filter-width) minmax(0, 1fr) !important;
   align-items: stretch !important;
   gap: 0 !important;
-  height: var(--r81c-workbench-height) !important;
-  min-height: var(--r81c-workbench-height) !important;
-  max-height: var(--r81c-workbench-height) !important;
+  height: var(--r82a-stage-height) !important;
+  min-height: var(--r82a-stage-height) !important;
+  max-height: var(--r82a-stage-height) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid var(--r82a-line-strong) !important;
+  border-radius: 1rem !important;
+  background: var(--r82a-surface) !important;
+  box-shadow: 0 18px 44px rgba(0,0,0,0.24) !important;
   overflow: hidden !important;
   contain: layout paint !important;
 }
@@ -5129,34 +5145,91 @@
 .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"][data-wilsy-filter-state="closed"],
 .leadRecordsWorkspace[data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"][data-wilsy-filter-state="closed"],
 .leadRecordsWorkspace[data-wilsy-lead-product-surface="R81A-REAL-DATA-LISTVIEW"][data-wilsy-filter-state="closed"] {
-  grid-template-columns: 3rem minmax(0, 1fr) !important;
+  grid-template-columns: var(--r82a-closed-filter-width) minmax(0, 1fr) !important;
 }
 
+/* Closed filter: visible restore affordance, never dead space. */
+.leadFilterRailCollapsed {
+  width: var(--r82a-closed-filter-width) !important;
+  min-width: var(--r82a-closed-filter-width) !important;
+  max-width: var(--r82a-closed-filter-width) !important;
+  height: var(--r82a-stage-height) !important;
+  min-height: var(--r82a-stage-height) !important;
+  max-height: var(--r82a-stage-height) !important;
+  display: grid !important;
+  align-content: start !important;
+  justify-items: center !important;
+  padding: 0.72rem 0.34rem !important;
+  border-right: 1px solid var(--r82a-line) !important;
+  background: var(--r82a-filter) !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+}
+
+.leadFilterRailCollapsed button {
+  width: 2.18rem !important;
+  min-width: 2.18rem !important;
+  height: 2.18rem !important;
+  min-height: 2.18rem !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 0.62rem !important;
+  border: 1px solid var(--r82a-line) !important;
+  background: rgba(255,255,255,0.035) !important;
+  color: var(--r82a-soft) !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+
+.leadFilterRailCollapsed button:hover {
+  color: var(--r82a-text) !important;
+  border-color: color-mix(in srgb, var(--r82a-accent) 42%, transparent) !important;
+  background: color-mix(in srgb, var(--r82a-accent) 12%, transparent) !important;
+}
+
+.leadFilterRailCollapsed button span {
+  position: absolute !important;
+  left: calc(100% + 0.6rem) !important;
+  top: 0.75rem !important;
+  min-width: 6.8rem !important;
+  padding: 0.42rem 0.58rem !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid var(--r82a-line) !important;
+  background: rgba(10, 15, 26, 0.98) !important;
+  color: var(--r82a-text) !important;
+  font-size: 0.72rem !important;
+  font-weight: 760 !important;
+  white-space: nowrap !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.28) !important;
+}
+
+.leadFilterRailCollapsed button:hover span {
+  opacity: 1 !important;
+}
+
+/* Open filter: bounded shell. Header/search remain fixed; options scroll. */
 .leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"] {
-  width: var(--r81c-filter-width) !important;
-  min-width: var(--r81c-filter-width) !important;
-  max-width: var(--r81c-filter-width) !important;
-  height: var(--r81c-workbench-height) !important;
-  min-height: var(--r81c-workbench-height) !important;
-  max-height: var(--r81c-workbench-height) !important;
+  width: var(--r82a-filter-width) !important;
+  min-width: var(--r82a-filter-width) !important;
+  max-width: var(--r82a-filter-width) !important;
+  height: var(--r82a-stage-height) !important;
+  min-height: var(--r82a-stage-height) !important;
+  max-height: var(--r82a-stage-height) !important;
+  display: flex !important;
+  flex-direction: column !important;
   align-self: stretch !important;
   position: relative !important;
   top: auto !important;
   resize: none !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
-  display: grid !important;
-  grid-template-rows: var(--r81c-filter-header) var(--r81c-filter-search) minmax(0, 1fr) !important;
-  gap: var(--r81c-filter-gap) !important;
-  padding: var(--r81c-filter-pad-y) 0.95rem !important;
+  padding: 0.95rem !important;
+  border: 0 !important;
+  border-right: 1px solid var(--r82a-line) !important;
   border-radius: 0 !important;
-  border-top: 0 !important;
-  border-bottom: 0 !important;
-  border-left: 0 !important;
-  border-right: 1px solid rgba(154, 166, 206, 0.18) !important;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.006)),
-    #101725 !important;
+  background: var(--r82a-filter) !important;
   box-shadow: none !important;
   z-index: 2 !important;
 }
@@ -5164,19 +5237,20 @@
 .leadFilterRail[data-wilsy-lead-filter-operating-system="R80A-INDEPENDENT-SCROLL"]::after {
   content: "" !important;
   position: absolute !important;
-  top: calc(var(--r81c-filter-pad-y) + var(--r81c-filter-header) + var(--r81c-filter-search) + (var(--r81c-filter-gap) * 2)) !important;
-  right: 0.26rem !important;
+  top: 6.85rem !important;
+  right: 0.28rem !important;
   bottom: 0.75rem !important;
   width: 0.18rem !important;
   border-radius: 999px !important;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lead-accent, #7c61ff) 58%, transparent), rgba(255,255,255,0.08)) !important;
-  opacity: 0.52 !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--r82a-accent) 55%, transparent), rgba(255,255,255,0.08)) !important;
+  opacity: 0.5 !important;
   pointer-events: none !important;
 }
 
 .leadFilterRailHeader {
-  min-height: var(--r81c-filter-header) !important;
-  height: var(--r81c-filter-header) !important;
+  flex: 0 0 2.35rem !important;
+  min-height: 2.35rem !important;
+  height: 2.35rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -5187,11 +5261,15 @@
 .leadFilterRailHeader span {
   min-width: 0 !important;
   display: grid !important;
-  gap: 0.1rem !important;
+  gap: 0.08rem !important;
+}
+
+.leadFilterRailHeader small {
+  display: none !important;
 }
 
 .leadFilterRailHeader strong {
-  color: rgba(248,250,255,0.96) !important;
+  color: var(--r82a-text) !important;
   font-size: 0.9rem !important;
   line-height: 1.08 !important;
   font-weight: 840 !important;
@@ -5201,7 +5279,7 @@
 
 .leadFilterRailHeader em {
   display: block !important;
-  color: rgba(220,226,244,0.58) !important;
+  color: var(--r82a-muted) !important;
   font-size: 0.72rem !important;
   line-height: 1.08 !important;
   font-style: normal !important;
@@ -5214,25 +5292,28 @@
   height: 1.85rem !important;
   min-height: 1.85rem !important;
   border-radius: 0.5rem !important;
-  border: 1px solid rgba(154,166,206,0.18) !important;
+  border: 1px solid var(--r82a-line) !important;
   background: rgba(255,255,255,0.035) !important;
-  color: rgba(220,226,244,0.68) !important;
+  color: var(--r82a-muted) !important;
   box-shadow: none !important;
+  cursor: pointer !important;
 }
 
 .leadFilterSearch {
-  min-height: var(--r81c-filter-search) !important;
-  height: var(--r81c-filter-search) !important;
-  max-height: var(--r81c-filter-search) !important;
+  flex: 0 0 2.6rem !important;
+  min-height: 2.6rem !important;
+  height: 2.6rem !important;
+  max-height: 2.6rem !important;
   display: grid !important;
-  grid-template-columns: 1.05rem minmax(0, 1fr) !important;
+  grid-template-columns: 1.1rem minmax(0, 1fr) !important;
   gap: 0.58rem !important;
   align-items: center !important;
+  margin: 0.72rem 0 0.78rem !important;
   padding: 0 0.75rem !important;
   border-radius: 0.62rem !important;
   border: 1px solid rgba(154,166,206,0.20) !important;
   background: #0d1421 !important;
-  color: rgba(231,236,251,0.82) !important;
+  color: var(--r82a-soft) !important;
   box-shadow: none !important;
   overflow: hidden !important;
 }
@@ -5240,31 +5321,40 @@
 .leadFilterSearch input {
   min-width: 0 !important;
   width: 100% !important;
-  color: rgba(248,250,255,0.92) !important;
+  color: var(--r82a-text) !important;
   font-size: 0.78rem !important;
   font-weight: 660 !important;
   letter-spacing: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  outline: 0 !important;
+}
+
+.leadFilterSearch input::placeholder {
+  color: rgba(220,226,244,0.48) !important;
 }
 
 .leadFilterRailMeta {
   display: none !important;
 }
 
+/* This is the important part: independent filter option scroll. */
 .leadFilterScroll,
 [data-wilsy-independent-scroll="lead-filter-options"] {
-  height: auto !important;
+  flex: 1 1 auto !important;
   min-height: 0 !important;
-  max-height: none !important;
+  height: auto !important;
+  max-height: calc(var(--r82a-stage-height) - 7.3rem) !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   overscroll-behavior: contain !important;
-  -webkit-overflow-scrolling: touch !important;
   scrollbar-gutter: stable !important;
   scrollbar-width: thin !important;
-  padding: 0.05rem 0.42rem 0.25rem 0 !important;
+  -webkit-overflow-scrolling: touch !important;
   display: grid !important;
   align-content: start !important;
-  gap: 0.7rem !important;
+  gap: 0.65rem !important;
+  padding: 0.05rem 0.42rem 0.25rem 0 !important;
   box-sizing: border-box !important;
 }
 
@@ -5281,7 +5371,7 @@
 .leadFilterScroll::-webkit-scrollbar-thumb,
 [data-wilsy-independent-scroll="lead-filter-options"]::-webkit-scrollbar-thumb {
   border-radius: 999px !important;
-  background: color-mix(in srgb, var(--lead-accent, #7c61ff) 54%, rgba(255,255,255,0.10)) !important;
+  background: color-mix(in srgb, var(--r82a-accent) 54%, rgba(255,255,255,0.10)) !important;
 }
 
 .leadFilterSection {
@@ -5299,7 +5389,7 @@
 }
 
 .leadFilterSectionHeader span {
-  color: rgba(220,226,244,0.72) !important;
+  color: var(--r82a-soft) !important;
   font-size: 0.58rem !important;
   line-height: 1 !important;
 }
@@ -5325,12 +5415,10 @@
   min-width: 0 !important;
   width: 100% !important;
   min-height: 1.86rem !important;
-  height: auto !important;
   display: grid !important;
   grid-template-columns: 0.88rem minmax(0, 1fr) !important;
   gap: 0.5rem !important;
   align-items: center !important;
-  justify-content: stretch !important;
   padding: 0.22rem 0.12rem !important;
   border: 0 !important;
   border-radius: 0.44rem !important;
@@ -5342,8 +5430,8 @@
 
 .leadFilterOption:hover,
 .leadFilterOption[data-selected="true"] {
-  background: color-mix(in srgb, var(--lead-accent, #7c61ff) 10%, transparent) !important;
-  color: rgba(248,250,255,0.94) !important;
+  background: color-mix(in srgb, var(--r82a-accent) 10%, transparent) !important;
+  color: var(--r82a-text) !important;
 }
 
 .leadFilterOption span {
@@ -5364,31 +5452,158 @@
   font-weight: 650 !important;
   white-space: normal !important;
   overflow: visible !important;
-  text-overflow: clip !important;
   overflow-wrap: anywhere !important;
 }
 
+/* Records side: table owns the remaining surface, no clipped empty board. */
 .leadRecordsPanel {
-  height: var(--r81c-workbench-height) !important;
-  min-height: var(--r81c-workbench-height) !important;
-  max-height: var(--r81c-workbench-height) !important;
-  overflow: hidden !important;
+  min-width: 0 !important;
+  height: var(--r82a-stage-height) !important;
+  min-height: var(--r82a-stage-height) !important;
+  max-height: var(--r82a-stage-height) !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
   align-self: stretch !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--r82a-surface) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+.leadRecordsHeader {
+  min-height: 4rem !important;
+  padding: 0.86rem 1.05rem !important;
+  border-bottom: 1px solid var(--r82a-line) !important;
+  background: var(--r82a-surface-soft) !important;
+}
+
+.leadRecordsHeader small {
+  color: var(--r82a-cyan) !important;
+  font-size: 0.68rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.14em !important;
+}
+
+.leadRecordsHeader strong {
+  color: var(--r82a-text) !important;
+  font-size: 1.04rem !important;
+  font-weight: 850 !important;
+}
+
+.leadRecordsHeader em {
+  color: var(--r82a-muted) !important;
+  font-size: 0.78rem !important;
+}
+
+.leadRecordsHeader button,
+.leadBulkActionBar button {
+  min-height: 2.35rem !important;
+  border-radius: 0.65rem !important;
+  border: 1px solid color-mix(in srgb, var(--r82a-accent) 34%, transparent) !important;
+  background: color-mix(in srgb, var(--r82a-accent) 12%, #101827) !important;
+  color: var(--r82a-text) !important;
+  box-shadow: none !important;
 }
 
 .leadRecordsTableFrame {
+  min-width: 0 !important;
   min-height: 0 !important;
   overflow: auto !important;
+  background: var(--r82a-surface) !important;
 }
 
-.leadFilterRailCollapsed {
-  height: var(--r81c-workbench-height) !important;
-  min-height: var(--r81c-workbench-height) !important;
-  max-height: var(--r81c-workbench-height) !important;
-  align-self: stretch !important;
+.leadRecordsTable {
+  width: 100% !important;
+  min-width: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+.leadRecordsTable th {
+  height: 2.8rem !important;
+  padding: 0 0.78rem !important;
+  color: rgba(226,232,250,0.84) !important;
+  background: #151d2c !important;
+  border-bottom: 1px solid var(--r82a-line) !important;
+  font-size: 0.72rem !important;
+  font-weight: 780 !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.leadRecordsTable td {
+  height: 2.9rem !important;
+  padding: 0 0.78rem !important;
+  color: rgba(222,227,244,0.84) !important;
+  border-bottom: 1px solid rgba(154,166,206,0.12) !important;
+  font-size: 0.74rem !important;
+  font-weight: 610 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.leadRecordsTable tbody tr:hover {
+  background: rgba(109,124,255,0.07) !important;
+}
+
+.leadEmptyRow td {
+  height: calc(var(--r82a-stage-height) - 9rem) !important;
+  min-height: calc(var(--r82a-stage-height) - 9rem) !important;
+  padding: 0 !important;
+  border-bottom: 0 !important;
+  overflow: visible !important;
+}
+
+.leadRealEmptyState,
+.leadEmptyRow section {
+  min-height: calc(var(--r82a-stage-height) - 11rem) !important;
+  width: calc(100% - 1.5rem) !important;
+  margin: 0.75rem !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 0.38rem !important;
+  text-align: center !important;
+  border-radius: 0.9rem !important;
+  border: 1px dashed rgba(154,166,206,0.22) !important;
+  background: rgba(255,255,255,0.018) !important;
+  overflow: hidden !important;
+}
+
+.leadRealEmptyState strong,
+.leadEmptyRow strong {
+  max-width: 34rem !important;
+  color: var(--r82a-text) !important;
+  font-size: 0.98rem !important;
+  font-weight: 820 !important;
+  white-space: normal !important;
+}
+
+.leadRealEmptyState em,
+.leadEmptyRow em {
+  max-width: 44rem !important;
+  color: var(--r82a-muted) !important;
+  font-size: 0.8rem !important;
+  font-style: normal !important;
+  line-height: 1.42 !important;
+  white-space: normal !important;
+}
+
+.leadRecordsFooter {
+  min-height: 2.6rem !important;
+  padding: 0.58rem 0.95rem !important;
+  border-top: 1px solid var(--r82a-line) !important;
+  background: var(--r82a-surface-soft) !important;
 }
 
 @media (max-width: 1320px) {
+  .leadOperatingRoom[data-wilsy-lead-operating-room="R68B-TABBED-MODULE-OPERATING-SYSTEM"] {
+    --r82a-stage-height: 34rem;
+  }
+
   .leadRecordsWorkspace[data-wilsy-leads-listview-shell="R81A-ZOHO-PARITY"],
   .leadRecordsWorkspace[data-wilsy-lead-records="tabbed-list-view"],
   .leadRecordsWorkspace[data-wilsy-lead-workbench="R80B-COMPOSED-RECORDS-SURFACE"],
@@ -5404,11 +5619,11 @@
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
-    height: min(25rem, 46vh) !important;
-    min-height: min(25rem, 46vh) !important;
-    max-height: min(25rem, 46vh) !important;
+    height: 24rem !important;
+    min-height: 24rem !important;
+    max-height: 24rem !important;
     border-right: 0 !important;
-    border-bottom: 1px solid rgba(154,166,206,0.18) !important;
+    border-bottom: 1px solid var(--r82a-line) !important;
   }
 
   .leadRecordsPanel {
